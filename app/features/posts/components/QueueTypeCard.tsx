@@ -1,0 +1,118 @@
+import { Edit, Trash2 } from "lucide-react";
+
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Card, CardContent } from "~/components/ui/card";
+
+interface QueueType {
+  id: string;
+  name: string;
+  description?: string;
+  color?: string;
+  scheduleType: "INTERVAL" | "FIXED_SLOTS";
+  scheduleConfig: any;
+  isDefault: boolean;
+  isEnabled: boolean;
+  hashTagPreset?: {
+    id: string;
+    name: string;
+    tags: string;
+    description?: string;
+  } | null;
+}
+
+interface QueueTypeCardProps {
+  queueType: QueueType;
+  onEdit: (queueType: QueueType) => void;
+  isDeletingQueueType: boolean;
+  deleteFetcher: any;
+}
+
+export function QueueTypeCard({
+  queueType,
+  onEdit,
+  isDeletingQueueType,
+  deleteFetcher,
+}: QueueTypeCardProps) {
+  const handleDelete = () => {
+    const formData = new FormData();
+    formData.set("_action", "delete_queue_type");
+    formData.set("id", queueType.id);
+    deleteFetcher.submit(formData, { method: "post" });
+  };
+
+  const getScheduleDescription = () => {
+    if (queueType.scheduleType === "INTERVAL") {
+      if (queueType.scheduleConfig.useGlobalInterval) {
+        return "Uses global schedule intervals";
+      }
+      return `Every ${queueType.scheduleConfig.intervalHours} hours`;
+    } else {
+      return `Fixed slots: ${queueType.scheduleConfig.slots?.join(", ") || "None"}`;
+    }
+  };
+
+  return (
+    <Card className="transition-colors hover:bg-accent/50">
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div
+              className="h-4 w-4 rounded-full"
+              style={{ backgroundColor: queueType.color || "#6B7280" }}
+            />
+            <div className="space-y-1">
+              <div className="flex items-center space-x-2">
+                <h4 className="font-medium">{queueType.name}</h4>
+                {queueType.isDefault ? (
+                  <Badge variant="secondary" className="text-xs">
+                    Default
+                  </Badge>
+                ) : null}
+                {!queueType.isEnabled ? (
+                  <Badge variant="outline" className="text-xs">
+                    Disabled
+                  </Badge>
+                ) : null}
+              </div>
+              {queueType.description ? (
+                <p className="text-sm text-muted-foreground">
+                  {queueType.description}
+                </p>
+              ) : null}
+              <p className="text-xs text-muted-foreground">
+                {getScheduleDescription()}
+              </p>
+              {queueType.hashTagPreset ? (
+                <div className="flex items-center space-x-1">
+                  <Badge variant="outline" className="text-xs">
+                    #{queueType.hashTagPreset.name}
+                  </Badge>
+                </div>
+              ) : null}
+            </div>
+          </div>
+          <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEdit(queueType)}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            {!queueType.isDefault ? (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleDelete}
+                disabled={isDeletingQueueType}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

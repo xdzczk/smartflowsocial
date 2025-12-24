@@ -1,0 +1,155 @@
+import { useState, useCallback } from "react";
+
+interface QueueType {
+    id?: string;
+    name: string;
+    color?: string | null;
+    hashtags?: string | null;
+    scheduleType?: string;
+    isEnabled?: boolean;
+}
+
+interface UseLongFormSchedulingOptions {
+    queueTypes: (string | QueueType)[];
+    scheduleIntervals: number[];
+    userTags: string;
+    userTimezone: string;
+    initialQueueType?: string;
+    onQueueTypeChange?: (name: string) => void;
+}
+
+export function useLongFormScheduling({
+    queueTypes,
+    scheduleIntervals,
+    userTags,
+    userTimezone,
+    initialQueueType = "Unassigned",
+    onQueueTypeChange,
+}: UseLongFormSchedulingOptions) {
+    const [selectedQueueType, setSelectedQueueType] = useState(initialQueueType);
+    const [scheduledFor, setScheduledFor] = useState("");
+    const [displayedHashtags, setDisplayedHashtags] = useState(userTags);
+
+    const calculateQueueScheduleTime = useCallback(async (queueTypeName: string) => {
+        if (queueTypeName === "Unassigned") {
+            setScheduledFor("");
+            return;
+        }
+
+        // Find the queue type object to get its ID
+        const selectedQueue = queueTypes.find(qt =>
+            (typeof qt === "string" ? qt : qt.name) === queueTypeName
+        );
+        const queueTypeId = typeof selectedQueue === "object" ? selectedQueue.id : null;
+
+        try {
+            const response = await fetch("/api/queue-schedule", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    queueTypeId,
+                    queueTypeName, // Keep for backward compatibility
+                }),
+            });
+
+            if (response.ok) {
+                const { scheduledTime } = await response.json();
+                setScheduledFor(scheduledTime);
+            }
+        } catch (error) {
+            console.error("Error calculating schedule time:", error);
+        }
+    }, [queueTypes]);
+
+    const updateDisplayedHashtags = useCallback(async (queueTypeName: string) => {
+        setSelectedQueueType(queueTypeName);
+
+        // Calculate the next scheduled time when queue type changes
+        if (queueTypeName !== "Unassigned") {
+            await calculateQueueScheduleTime(queueTypeName);
+        } else {
+            setScheduledFor("");
+        }
+
+        if (queueTypeName === "Unassigned") {
+            setDisplayedHashtags(userTags);
+            if (onQueueTypeChange) onQueueTypeChange(queueTypeName);
+            return;
+        }
+
+        try {
+            const response = await fetch("/api/effective-hashtags", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    queueTypeName: queueTypeName,
+                }),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setDisplayedHashtags(data.hashtags || userTags);
+                if (onQueueTypeChange) onQueueTypeChange(queueTypeName);
+            } else {
+                setDisplayedHashtags(userTags);
+            }
+        } catch (error) {
+            console.error("Error fetching effective hashtags:", error);
+            setDisplayedHashtags(userTags);
+        }
+    }, [userTags, onQueueTypeChange, calculateQueueScheduleTime]);
+
+    const handleScheduleIntervalClick = useCallback((intervalHours: number) => {
+        // Find the currently selected queue type
+        const currentQueueType = queueTypes.find(qt =>
+            (typeof qt === "string" ? qt : qt.name) === selectedQueueType
+        );
+
+        // If this is a fixed slot queue, use the API to get the next scheduled time instead
+        if (currentQueueType && typeof currentQueueType === "object" && currentQueueType.scheduleType === "FIXED_SLOTS") {
+            // For fixed slot queues, recalculate the schedule time instead of adding hours
+            calculateQueueScheduleTime((currentQueueType as QueueType).name);
+            return;
+        }
+
+        const now = new Date();
+        const hoursLater = new Date(
+            now.getTime() + intervalHours * 60 * 60 * 1000,
+        );
+
+        // Format the date in the user's timezone
+        const formattedDate = hoursLater.toLocaleString("en-US", {
+            timeZone: userTimezone,
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+        });
+
+        // Parse the formatted date back into components
+        const [datePart, timePart] = formattedDate.split(", ");
+        const [month, day, year] = datePart.split("/");
+        const [hours, minutes] = timePart.split(":");
+
+        // Create the datetime-local format (YYYY-MM-DDTHH:mm)
+        const formattedForInput = `${year}-${month}-${day}T${hours}:${minutes}`;
+
+        setScheduledFor(formattedForInput);
+    }, [queueTypes, selectedQueueType, userTimezone, calculateQueueScheduleTime]);
+
+    return {
+        selectedQueueType,
+        scheduledFor,
+        setScheduledFor,
+        displayedHashtags,
+        updateDisplayedHashtags,
+        handleScheduleIntervalClick,
+        calculateQueueScheduleTime,
+    };
+}

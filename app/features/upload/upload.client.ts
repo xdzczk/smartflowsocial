@@ -1,0 +1,238 @@
+// Type declaration for window.nostr
+declare global {
+  interface Window {
+    nostr?: {
+      getPublicKey(): Promise<string>;
+      signEvent(event: any): Promise<any>;
+    };
+  }
+}
+
+interface UploadResult {
+  success: boolean;
+  file?: {
+    url: string;
+    size: number;
+    name: string;
+    extension: string;
+    sha256?: string;
+    mimeType?: string;
+    provider: "S3" | "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR";
+  };
+  error?: string;
+}
+
+/**
+ * Upload a file using the user's preferred upload provider (S3 or Blossom)
+ * This function handles client-side uploads and server-side processing
+ */
+export async function uploadFile(file: File): Promise<UploadResult> {
+  try {
+    // First, check what upload provider the user prefers
+    const response = await fetch("/api/user-upload-provider");
+    if (!response.ok) {
+      throw new Error("Failed to get upload provider");
+    }
+
+    const {
+      provider: uploadProvider,
+      enableMirrorBlossom,
+      mirrorUploadUrls,
+    } = await response.json();
+
+    if (
+      uploadProvider === "BLOSSOM_PRIMAL" ||
+      uploadProvider === "BLOSSOM_BLOSSTR" ||
+      uploadProvider === "BLOSSOM"
+    ) {
+      return await uploadFileToBlossom(
+        file,
+        uploadProvider,
+        enableMirrorBlossom,
+        mirrorUploadUrls,
+      );
+    } else {
+      return await uploadFileToS3(file);
+    }
+  } catch (error) {
+    console.error("Upload error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Upload failed",
+    };
+  }
+}
+
+/**
+ * Upload file to S3 via server-side processing
+ */
+async function uploadFileToS3(file: File): Promise<UploadResult> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch("/api/upload", {
+    method: "POST",
+    body: formData,
+  });
+
+  const result = await response.json();
+
+  if (result.success && result.fileUrl) {
+    return {
+      success: true,
+      file: {
+        url: result.fileUrl,
+        size: file.size,
+        name: file.name,
+        extension: file.name.split(".").pop() || "",
+        provider: "S3" as const,
+      },
+    };
+  } else {
+    return {
+      success: false,
+      error: result.error || "S3 upload failed",
+    };
+  }
+}
+
+/**
+ * Upload file to Blossom via client-side processing
+ */
+async function uploadFileToBlossom(
+  file: File,
+  provider = "BLOSSOM_PRIMAL",
+  enableMirrorBlossom = false,
+  mirrorUploadUrls: string[] = [],
+): Promise<UploadResult> {
+  try {
+    // Check if NOSTR is available
+    if (!window.nostr) {
+      throw new Error(
+        "NOSTR extension not available. Please install a NOSTR browser extension like Alby, Amber, or nos2x.",
+      );
+    }
+
+    // Dynamic import to avoid SSR issues
+    const { BlossomUploader } = await import("@nostrify/nostrify/uploaders");
+
+    // Determine primary server based on provider
+    let primaryServerUrl;
+    if (provider === "BLOSSOM_BLOSSTR") {
+      primaryServerUrl = "https://blosstr.com";
+    } else {
+      // Default to Primal for BLOSSOM_PRIMAL or legacy BLOSSOM
+      primaryServerUrl = "https://blossom.primal.net";
+    }
+
+    // Build servers array starting with primary server
+    const servers = [primaryServerUrl];
+
+    // Add mirror URLs if enabled and available
+    if (
+      enableMirrorBlossom &&
+      Array.isArray(mirrorUploadUrls) &&
+      mirrorUploadUrls.length > 0
+    ) {
+      servers.push(...mirrorUploadUrls);
+    }
+
+    // Create uploader with NOSTR signer and all servers
+    const uploader = new BlossomUploader({
+      servers: servers,
+      signer: window.nostr,
+    });
+
+    // Upload the file
+    const tags = await uploader.upload(file);
+
+    // Validate that we got the expected tag format
+    if (!Array.isArray(tags)) {
+      throw new Error(
+        "BlossomUploader returned invalid format - expected array of tags",
+      );
+    }
+
+    // Send the result to server for processing
+    const response = await fetch("/api/upload-blossom", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        tags,
+        fileName: file.name,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.success && result.file) {
+      return {
+        success: true,
+        file: result.file,
+      };
+    } else {
+      return {
+        success: false,
+        error: result.error || "Blossom upload failed",
+      };
+    }
+  } catch (error) {
+    console.error("Blossom upload error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Blossom upload failed",
+    };
+  }
+}
+
+/**
+ * Upload multiple files
+ */
+export async function uploadMultipleFiles(
+  files: File[],
+): Promise<UploadResult[]> {
+  const uploadPromises = files.map((file) => uploadFile(file));
+  return Promise.all(uploadPromises);
+}
+
+/**
+ * Upload file for EditorJS image tool compatibility
+ * This specifically uses the EditorJS endpoint which handles image processing
+ */
+export async function uploadEditorJSImage(
+  file: File,
+): Promise<{ success: number; file?: { url: string } }> {
+  try {
+    const formData = new FormData();
+    formData.append("image", file);
+
+    const response = await fetch("/api/upload-editorjs-image", {
+      method: "POST",
+      body: formData,
+    });
+
+    const result = await response.json();
+
+    if (result.success === 1 && result.file) {
+      return {
+        success: 1,
+        file: {
+          url: result.file.url,
+        },
+      };
+    } else {
+      console.error("EditorJS upload failed:", result.error);
+      return {
+        success: 0,
+        // EditorJS expects no error property in success response
+      };
+    }
+  } catch (error) {
+    console.error("EditorJS upload error:", error);
+    return {
+      success: 0,
+    };
+  }
+}

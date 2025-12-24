@@ -1,0 +1,295 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  String         @id @default(cuid())
+  npub                String         @unique
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  isEnabled           Boolean        @default(false)
+  timezone            String?        @default("Etc/GMT")
+  userRelays          String[]       @default(["wss://relay.bullishbounty.com", "wss://relay.snort.social", "wss://relay.primal.net", "wss://relay.damus.io", "wss://relay.nostr.band"])
+  giveawayBlackListed String[]       @default([])
+  uploadProvider      UploadProvider @default(S3)
+  showHashTagsinPosts Boolean        @default(false)
+  scheduleInterval    String[]       @default(["2", "4", "6", "12", "24"])
+  nostrProfile        Json?
+  enableMirrorBlossom Boolean        @default(false)
+  mirrorUploadUrls    String[]
+  encryptedNwc        String?
+  nwcEnabled          Boolean        @default(false)
+  nwcLastUsed         DateTime?
+  mutedList           Json?
+  filterMuted          Boolean        @default(false)
+  hidePostsFromLowTrustUsers Boolean        @default(false)
+  // Child/parent self-relation via npub
+  isChild               Boolean  @default(false)
+  parentNpub            String?
+  parent                User?    @relation("UserChildrenByNpub", fields: [parentNpub], references: [npub], onDelete: SetNull)
+  children              User[]   @relation("UserChildrenByNpub")
+  pendingParentRequests String[] @default([])
+
+  assets         Asset[]
+  hashTagPresets HashTagPreset[]
+  longFormPosts  LongFormPost[]
+  Payment        Payment[]
+  notes          Post[]
+  queueTypes     QueueType[]
+  Subscription   Subscription?
+  templates      Template[]
+
+  @@index([parentNpub])
+}
+
+model QueueType {
+  id              String         @id @default(cuid())
+  name            String
+  scheduleType    ScheduleType   @default(INTERVAL)
+  scheduleConfig  Json
+  isEnabled       Boolean        @default(true)
+  color           String?
+  description     String?
+  lastPostTime    DateTime?
+  isDefault       Boolean        @default(false)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  userId          String
+  hashTagPresetId String?
+  longFormPosts   LongFormPost[]
+  posts           Post[]
+  hashTagPreset   HashTagPreset? @relation(fields: [hashTagPresetId], references: [id])
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name])
+}
+
+model HashTagPreset {
+  id            String         @id @default(cuid())
+  name          String
+  tags          String
+  description   String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  longFormPosts LongFormPost[]
+  posts         Post[]
+  queueTypes    QueueType[]
+
+  @@unique([userId, name])
+}
+
+model Post {
+  id              String         @id @default(cuid())
+  nostrEventId    String?
+  caption         String?
+  fileUrl         String[]
+  scheduledFor    String?
+  postedAt        DateTime?
+  content         String?
+  isPosted        Boolean        @default(false)
+  isScheduled     Boolean        @default(false)
+  postType        PostType       @default(IMAGE)
+  repost          Boolean        @default(false)
+  isQuotedPost    Boolean        @default(false)
+  isRecyclable    Boolean        @default(false)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  draft           Boolean        @default(false)
+  status          Status         @default(ACTIVE)
+  signedEvent     Json?
+  nostrEvent      Json?
+  queueTypeId     String?
+  tags            String[]
+  manual_override Boolean        @default(false)
+  userId          String
+  templateId      String?
+  hashTagPresetId String?
+  hashTagPreset   HashTagPreset? @relation(fields: [hashTagPresetId], references: [id])
+  queueType       QueueType?     @relation(fields: [queueTypeId], references: [id])
+  template        Template?      @relation(fields: [templateId], references: [id])
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model LongFormPost {
+  id              String         @id @default(cuid())
+  nostrEventId    String?
+  title           String?
+  summary         String?
+  content         String?
+  image           String?
+  scheduledFor    String?
+  isScheduled     Boolean        @default(false)
+  postedAt        DateTime?
+  publishedAt     DateTime?
+  updatedAt       DateTime       @updatedAt
+  createdAt       DateTime       @default(now())
+  isPublished     Boolean        @default(false)
+  draft           Boolean        @default(false)
+  status          Status         @default(DRAFT)
+  queueTypeId     String?
+  tags            String[]
+  signedEvent     Json?
+  nostrEvent      Json?
+  userId          String
+  hashTagPresetId String?
+  hashTagPreset   HashTagPreset? @relation(fields: [hashTagPresetId], references: [id])
+  queueType       QueueType?     @relation(fields: [queueTypeId], references: [id])
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Template {
+  id        String   @id @default(cuid())
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String
+  posts     Post[]
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Asset {
+  id        String    @id @default(cuid())
+  title     String?
+  content   String?
+  fileUrl   String?
+  tags      String[]  @default([])
+  assetType AssetType @default(TEXT)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Payment {
+  id             String        @id
+  userId         String
+  amount         Int
+  amountUsd      Decimal?
+  invoice        String
+  paymentHash    String
+  preimage       String?
+  status         PaymentStatus @default(PENDING)
+  description    String?
+  subscriptionId String?
+  expiresAt      DateTime?
+  paidAt         DateTime?
+  failedAt       DateTime?
+  failureReason  String?
+  paymentMethod  String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  Subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
+  User           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Plan {
+  id                           String         @id
+  name                         String
+  price                        Decimal
+  description                  String?
+  features                     Json
+  maxPostsPerMonth             Int?
+  maxQueueTypes                Int?
+  maxTemplates                 Int?
+  maxAssets                    Int?
+  maxLongFormPosts             Int?
+  isActive                     Boolean        @default(true)
+  createdAt                    DateTime       @default(now())
+  updatedAt                    DateTime       @updatedAt
+  enableAdvancedAnalytics      Boolean        @default(false)
+  enableBasicScheduling        Boolean        @default(false)
+  enableBulkScheduling         Boolean        @default(false)
+  enableCommissions            Boolean        @default(false)
+  enableEngagementFeed         Boolean        @default(false)
+  enableGiveaways              Boolean        @default(false)
+  enableLeaderboards           Boolean        @default(false)
+  enableLifetimeAccess         Boolean        @default(false)
+  enableMultiAccountSwitching  Boolean        @default(false)
+  enableMultipleQueues         Boolean        @default(false)
+  enableNativeS3BlossomStorage Boolean        @default(false)
+  enableRelayBlast             Boolean        @default(false)
+  enableRepostsAndQuotes       Boolean        @default(false)
+  enableVisualPerks            Boolean        @default(false)
+  enableWolfFilteringAndVortex Boolean        @default(false)
+  Subscription                 Subscription[]
+}
+
+model Subscription {
+  id                 String             @id
+  userId             String             @unique
+  planId             String?
+  status             SubscriptionStatus @default(INACTIVE)
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd  Boolean            @default(false)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  endDate            DateTime?
+  lastPaymentDate    DateTime?
+  metadata           Json?
+  nextPaymentDue     DateTime?
+  plan               String?
+  startDate          DateTime
+  amountSats         BigInt?
+  amountUsd          Decimal?
+  Payment            Payment[]
+  Plan               Plan?              @relation(fields: [planId], references: [id])
+  User               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum PostType {
+  IMAGE
+  CAROUSEL
+  TEXT
+  VIDEO
+}
+
+enum AssetType {
+  TEXT
+  IMAGE
+  VIDEO
+}
+
+enum ScheduleType {
+  INTERVAL
+  FIXED_SLOTS
+}
+
+enum Status {
+  DRAFT
+  ACTIVE
+  SCHEDULED
+  PAUSED
+  POSTED
+  FAILED
+}
+
+enum UploadProvider {
+  S3
+  BLOSSOM_PRIMAL
+  BLOSSOM_BLOSSTR
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  EXPIRED
+  CANCELED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  UNPAID
+  TRIALING
+  INACTIVE
+}
