@@ -99,8 +99,16 @@ export function withErrorHandling<T>(
   return async (args: LoaderFunctionArgs) => {
     try {
       const result = await loaderFn(args);
+      // If result is already a Response (e.g., redirect), return it as-is
+      if (result instanceof Response) {
+        return result;
+      }
       return json(result);
     } catch (error) {
+      // If error is a Response (e.g., redirect), rethrow it
+      if (error instanceof Response) {
+        throw error;
+      }
       const [errorResponse, statusCode] = createErrorResponse(error);
       return json(errorResponse, { status: statusCode });
     }
@@ -116,8 +124,16 @@ export function withActionErrorHandling<T>(
   return async (args: ActionFunctionArgs) => {
     try {
       const result = await actionFn(args);
+      // If result is already a Response (e.g., redirect), return it as-is
+      if (result instanceof Response) {
+        return result;
+      }
       return json(result);
     } catch (error) {
+      // If error is a Response (e.g., redirect from requireUserId), rethrow it
+      if (error instanceof Response) {
+        throw error;
+      }
       const [errorResponse, statusCode] = createErrorResponse(error);
       return json(errorResponse, { status: statusCode });
     }

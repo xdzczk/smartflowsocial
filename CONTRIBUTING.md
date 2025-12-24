@@ -38,7 +38,7 @@ SmartFlowSocial is built with **Remix**, a full-stack web framework. Follow thes
 
 ### Prerequisites
 
-- **Node.js**: Version 18.0.0 or higher
+- **Node.js**: Version 20.0.0 or higher
 - **PostgreSQL**: Database server (local or remote)
 - **Git**: For version control
 

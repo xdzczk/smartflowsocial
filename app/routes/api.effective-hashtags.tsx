@@ -1,10 +1,13 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
+import { json } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth/session.server";
 import { getQueueTypes } from "~/models/user.server";
+import { ValidationError } from "~/lib/errors";
 import {
   withActionErrorHandling,
   createSuccessResponse,
+  assert,
 } from "~/lib/error-handler.server";
 
 // Returns effective hashtags for a queue type
@@ -25,8 +28,16 @@ export const action = withActionErrorHandling(
 
     const { queueTypeName, queueTypeId } = requestBody;
 
-    if ((!queueTypeName && !queueTypeId) || queueTypeName === "unassigned") {
+    // If explicitly "unassigned", return empty hashtags (valid case)
+    if (queueTypeName === "unassigned") {
       return json({ hashtags: "" });
+    }
+
+    // If no queue type specified at all, return validation error
+    if (!queueTypeName && !queueTypeId) {
+      throw new ValidationError("queueTypeName or queueTypeId is required", {
+        receivedBody: requestBody,
+      });
     }
 
     // Get all queue types for the user
@@ -40,13 +51,13 @@ export const action = withActionErrorHandling(
       queueType = queueTypes.find((qt) => qt.name === queueTypeName);
     }
 
-    if (!queueType || !queueType.hashTagPreset) {
+    if (!queueType || !("hashTagPreset" in queueType) || !queueType.hashTagPreset) {
       return json({ hashtags: "" });
     }
 
     // Return the hashtag preset tags assigned to this queue type
     return createSuccessResponse({
-      hashtags: queueType.hashTagPreset.tags || "",
+      hashtags: (queueType.hashTagPreset as { tags: string | null })?.tags || "",
     });
   },
 );

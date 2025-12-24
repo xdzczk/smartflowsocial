@@ -49,6 +49,7 @@ npm run test
 | `npm run test:loaders` | Run loader integration tests only |
 | `npm run test:integration` | Run integration tests (loaders + subscription) |
 | `npm run test:unit` | Run unit tests only |
+| `npm run test:error-handling` | Run error handling integration tests |
 | `npm run test:open` | Open Cypress UI for interactive testing |
 | `npm run test:dev` | Starts dev server and opens Cypress (all-in-one) |
 

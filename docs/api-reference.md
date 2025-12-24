@@ -214,6 +214,63 @@ Fetch a Nostr thread from the cache or relays.
 
 ---
 
+### Error Metrics
+
+#### GET `/api/error-metrics`
+Get error metrics and statistics.
+
+**Query Parameters:**
+- `summary` (boolean) - Return summary metrics with error rate
+- `top` (number) - Get top N error codes (e.g., `?top=10`)
+- `checkRate` (boolean) - Check if error rate is high
+
+**Response (summary=true):**
+```json
+{
+  "summary": {
+    "totalErrors": 150,
+    "errorsByCode": { ... },
+    "errorsByType": { ... }
+  },
+  "errorRate": {
+    "perMinute": 5.2,
+    "isHigh": false,
+    "threshold": 10
+  }
+}
+```
+
+**Response (top=N):**
+```json
+{
+  "topErrors": [
+    { "code": "VALIDATION_ERROR", "count": 45 },
+    { "code": "NOT_FOUND", "count": 32 }
+  ]
+}
+```
+
+**Response (checkRate=true):**
+```json
+{
+  "errorRate": 5.2,
+  "isHigh": false,
+  "threshold": 10
+}
+```
+
+**Response (default):**
+```json
+{
+  "metrics": { ... },
+  "errorRate": 5.2
+}
+```
+
+> **Note:** This endpoint requires authentication and should be restricted to admins in production.
+
+---
+
 ### Payments
 
 #### GET `/api/payment-status`

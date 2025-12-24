@@ -31,7 +31,7 @@ smartflow-social/
 │   │   ├── engagement/          # Engagement feed & notifications
 │   │   ├── giveaway/            # Giveaway management
 │   │   ├── payments/            # Payment processing
-│   │   ├── posts/               # Post creation & scheduling (40+ files)
+│   │   ├── posts/               # Post creation & scheduling (59 files)
 │   │   ├── templates/           # Post templates
 │   │   ├── upload/              # File upload handling
 │   │   └── user/                # User management
