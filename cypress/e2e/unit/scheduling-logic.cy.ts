@@ -6,7 +6,7 @@
  * so it cannot be unit tested here. Only pure functions are tested.
  */
 
-import { formatScheduleTimeForInput } from "~/features/posts/schedulers";
+import { formatScheduleTimeForInput } from "~/lib/schedule-formatting";
 
 describe("Scheduling Logic Unit Tests", () => {
     describe("formatScheduleTimeForInput - UTC Formatting", () => {

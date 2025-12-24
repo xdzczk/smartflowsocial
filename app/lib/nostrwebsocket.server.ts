@@ -3,11 +3,27 @@ import WebSocket from "ws";
 type CacheParams = Record<string, unknown>;
 type CacheResponse = unknown[];
 
-const CACHE_ENDPOINTS = [
-  "wss://cache.smartflowsocial.com/v1",
-  "wss://cache1.primal.net/v1",
-  "wss://cache2.primal.net/v1",
-];
+/**
+ * Gets Primal cache endpoints from environment variable or uses defaults
+ * Supports comma-separated list of WebSocket URLs
+ */
+function getCacheEndpoints(): string[] {
+  const envUrl = process.env.PRIMAL_CACHING_URL;
+  
+  if (envUrl) {
+    // Support comma-separated list of endpoints
+    const endpoints = envUrl.split(",").map((url) => url.trim()).filter(Boolean);
+    if (endpoints.length > 0) {
+      return endpoints;
+    }
+  }
+  
+  // Default fallback endpoints (public Primal cache servers only)
+  return [
+    "wss://cache1.primal.net/v1",
+    "wss://cache2.primal.net/v1",
+  ];
+}
 
 async function tryConnectToCache(
   endpoint: string,
@@ -208,12 +224,16 @@ async function tryConnectToCache(
 
 /**
  * Attempts each Primal cache endpoint, returning the first successful non-empty response.
+ * Uses PRIMAL_CACHING_URL from environment (comma-separated for multiple endpoints),
+ * or falls back to default endpoints if not configured.
  */
 export async function connectToPrimalCache(
   requestType: string,
   params: CacheParams,
 ): Promise<CacheResponse> {
-  for (const endpoint of CACHE_ENDPOINTS) {
+  const endpoints = getCacheEndpoints();
+  
+  for (const endpoint of endpoints) {
     try {
       const responses = await tryConnectToCache(endpoint, requestType, params);
 

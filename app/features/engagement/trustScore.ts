@@ -99,7 +99,7 @@ export function calculateTrustScore(user: User): number {
 /**
  * Gets account age in days from timeJoined timestamp
  */
-function getAccountAgeInDays(timeJoined: number): number {
+export function getAccountAgeInDays(timeJoined: number): number {
   if (timeJoined === 0) return 0;
 
   const joinedDate = new Date(timeJoined * 1000);

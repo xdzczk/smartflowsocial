@@ -120,11 +120,23 @@ STORAGE_BUCKET=smartflow
 
 ### PRIMAL_CACHING_URL
 
-URL to [Primal Caching Service](https://github.com/PrimalHQ/primal-caching-service) for profile and event lookups.
+WebSocket URL(s) to [Primal Caching Service](https://github.com/PrimalHQ/primal-caching-service) for profile and event lookups.
 
+**Single endpoint:**
 ```env
-PRIMAL_CACHING_URL=wss://your-primal-cache.example.com
+PRIMAL_CACHING_URL=wss://your-primal-cache.example.com/v1
 ```
+
+**Multiple endpoints (comma-separated):**
+```env
+PRIMAL_CACHING_URL=wss://cache1.example.com/v1,wss://cache2.example.com/v1
+```
+
+**If not set:** The app will use default public Primal cache endpoints:
+- `wss://cache1.primal.net/v1`
+- `wss://cache2.primal.net/v1`
+
+> **Note:** These are public endpoints provided by Primal. For production use, consider setting up your own Primal cache instance or using a managed service.
 
 **Required for:**
 - Profile lookups and user metadata
@@ -206,8 +218,9 @@ SESSION_SECRET=your-super-secret-session-key-here
 NOSTR_PUBLISHER_URL=https://publisher.example.com
 NOSTR_NSEC=nsec1...
 
-# Primal Cache
-PRIMAL_CACHING_URL=wss://cache.example.com
+# Primal Cache (supports comma-separated endpoints for redundancy)
+PRIMAL_CACHING_URL=wss://cache.example.com/v1
+# Or multiple: PRIMAL_CACHING_URL=wss://cache1.example.com/v1,wss://cache2.example.com/v1
 
 # Redis for queues
 REDIS_URL=redis://localhost:6379

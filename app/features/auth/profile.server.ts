@@ -1,6 +1,7 @@
 import { nip19 } from "nostr-tools";
 
 import { npubToHex } from "~/lib/nostr";
+import { connectToPrimalCache } from "~/lib/nostrwebsocket.server";
 import type {
   PrimalEvent,
   ProfileData,
@@ -24,30 +25,22 @@ export function validateNpub(npub: string): boolean {
 }
 
 /**
- * Fetches profile data from Primal API
+ * Fetches profile data from Primal API using WebSocket
  */
 export async function fetchPrimalProfileData(
   npub: string,
 ): Promise<PrimalEvent[]> {
-  const primalUrl = process.env.PRIMAL_CACHING_URL;
-  if (!primalUrl) {
-    throw new Error("PRIMAL_CACHING_URL environment variable is not set");
+  try {
+    const pubkey = npubToHex(npub);
+    const responses = await connectToPrimalCache("user_profile", {
+      pubkey,
+    });
+    return responses as PrimalEvent[];
+  } catch (error) {
+    console.error("Failed to fetch profile data from Primal cache:", error);
+    // Return empty array to allow login to proceed without profile data
+    return [];
   }
-
-  const response = await fetch(primalUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      requestType: "user_profile",
-      params: {
-        pubkey: npubToHex(npub),
-      },
-    }),
-  });
-
-  return await response.json();
 }
 
 /**
@@ -106,6 +99,15 @@ export async function getCompleteProfile({
   npub,
 }: GetCompleteProfileParams): Promise<CompleteProfileResult> {
   const primalData = await fetchPrimalProfileData(npub);
+  
+  // If no data returned, return empty profile
+  if (!primalData || primalData.length === 0) {
+    return {
+      nostrProfile: {} as ProcessedProfile,
+      lud16: undefined,
+    };
+  }
+  
   const { profile } = processPrimalData(primalData);
 
   return {
