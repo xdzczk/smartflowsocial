@@ -1,5 +1,6 @@
 import { nip19 } from "nostr-tools";
 import { useState } from "react";
+import { handleErrorSafely } from "~/lib/error-handler.client";
 
 interface RandomUser {
   pubkey: string;
@@ -36,7 +37,10 @@ const GiveawayPost = ({ randomUsers }: GiveawayPostProps) => {
         const npub = nip19.npubEncode(pubkey);
         return `nostr:${npub}`;
       } catch (error) {
-        console.error("Error converting pubkey to npub:", error);
+        handleErrorSafely(error, {
+          component: "GiveawayPost",
+          action: "formatNpub",
+        });
         return "unknown";
       }
     };

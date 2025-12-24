@@ -15,5 +15,6 @@ node_modules
 /cypress/screenshots
 /cypress/videos
 /postgres-data
+/redis-data
 .DS_Store
 

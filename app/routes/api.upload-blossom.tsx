@@ -1,42 +1,49 @@
-import { json } from "@remix-run/node";
 import type { ActionFunctionArgs } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth/session.server";
 import { getUserUploadProvider } from "~/models/user.server";
+import {
+  ValidationError,
+  AuthorizationError,
+} from "~/lib/errors";
+import {
+  withActionErrorHandling,
+  createSuccessResponse,
+  assert,
+} from "~/lib/error-handler.server";
 
-export async function action({ request }: ActionFunctionArgs) {
-
-  try {
+export const action = withActionErrorHandling(
+  async ({ request }: ActionFunctionArgs) => {
     // Ensure user is authenticated
     const userId = await requireUserId(request);
 
     // Check if user has any Blossom provider as their preferred upload provider
     const uploadProvider = await getUserUploadProvider(userId);
     if (!uploadProvider.includes("BLOSSOM")) {
-      return json(
-        {
-          success: false,
-          error: "Blossom uploads not enabled for this user",
-        },
-        { status: 403 },
-      );
+      throw new AuthorizationError("Blossom uploads not enabled for this user", {
+        userId,
+        uploadProvider,
+      });
     }
 
     // Parse the incoming data from client-side Blossom upload
-    const data = await request.json();
+    let data: { tags?: unknown; fileName?: string };
+    try {
+      data = await request.json();
+    } catch (error) {
+      throw new ValidationError("Invalid JSON in request body", {
+        originalError: error instanceof Error ? error.message : String(error),
+      });
+    }
 
     // The BlossomUploader returns the tags array directly, not wrapped in an object
     const tags = data.tags || data;
 
-    if (!Array.isArray(tags)) {
-      return json(
-        {
-          success: false,
-          error: "Invalid Blossom upload data - tags must be an array",
-        },
-        { status: 400 },
-      );
-    }
+    assert(
+      Array.isArray(tags),
+      "Invalid Blossom upload data - tags must be an array",
+      { tagsType: typeof tags, isArray: Array.isArray(tags) },
+    );
 
     // Extract relevant information from the Blossom tags
     // Expected format: [['url', 'https://...'], ['x', 'hash'], ['size', '123'], ['m', 'image/jpeg']]
@@ -47,27 +54,27 @@ export async function action({ request }: ActionFunctionArgs) {
     const sizeTag = tags.find((tag: string[]) => tag[0] === "size");
     const mimeTypeTag = tags.find((tag: string[]) => tag[0] === "m");
 
-    if (!urlTag || !hashTag || !sizeTag) {
-      return json(
-        {
-          success: false,
-          error:
-            "Invalid Blossom upload data - missing required tags (url, x/ox, size)",
-        },
-        { status: 400 },
-      );
-    }
+    assert(
+      urlTag && hashTag && sizeTag,
+      "Invalid Blossom upload data - missing required tags (url, x/ox, size)",
+      {
+        hasUrlTag: !!urlTag,
+        hasHashTag: !!hashTag,
+        hasSizeTag: !!sizeTag,
+        tagsCount: tags.length,
+      },
+    );
 
-    const fileUrl = urlTag[1];
-    const sha256 = hashTag[1];
-    const fileSize = parseInt(sizeTag[1], 10);
-    const mimeType = mimeTypeTag ? mimeTypeTag[1] : "application/octet-stream";
-
+    const fileUrl = urlTag[1] as string;
+    const sha256 = hashTag[1] as string;
+    const fileSize = parseInt(sizeTag[1] as string, 10);
+    const mimeType = mimeTypeTag
+      ? (mimeTypeTag[1] as string)
+      : "application/octet-stream";
 
     // Return success response with processed data
     // This matches the S3 upload response format for compatibility
-    return json({
-      success: true,
+    return createSuccessResponse({
       file: {
         url: fileUrl,
         size: fileSize,
@@ -78,23 +85,8 @@ export async function action({ request }: ActionFunctionArgs) {
         provider: uploadProvider,
       },
     });
-  } catch (error) {
-    console.error("Blossom upload API error details:", {
-      message: error.message,
-      stack: error.stack,
-      name: error.name,
-      cause: error.cause,
-    });
-
-    return json(
-      {
-        success: false,
-        error: `API Error: ${error.message || "Upload processing failed"}`,
-      },
-      { status: 500 },
-    );
-  }
-}
+  },
+);
 
 // Handle preflight requests for CORS
 export async function loader() {

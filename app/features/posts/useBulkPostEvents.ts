@@ -439,10 +439,20 @@ export function useBulkPostEvents({
                             method: "post",
                         });
                     } catch (error: any) {
-                        console.error("Upload error:", error);
+                        const { handleAsyncErrorWithMessage, getErrorMessage } = await import("~/lib/error-handler.client");
+                        const errorMessage = `Upload failed: ${getErrorMessage(error)}`;
+                        handleAsyncErrorWithMessage(
+                            error,
+                            errorMessage,
+                            {
+                                component: "useBulkPostEvents",
+                                action: "prepareEvents",
+                            },
+                            false, // Don't show toast, we set toast state instead
+                        );
                         setToast({
                             type: "error",
-                            message: `Upload failed: ${error.message || "Unknown error"}`,
+                            message: errorMessage,
                         });
                         setTimeout(() => setToast(null), 5000);
                         setIsPreviewSubmitting(false);
@@ -467,7 +477,16 @@ export function useBulkPostEvents({
                 }
             }
         } catch (error: any) {
-            console.error("Error preparing events:", error);
+            const { handleAsyncErrorWithMessage } = await import("~/lib/error-handler.client");
+            handleAsyncErrorWithMessage(
+                error,
+                "An error occurred while preparing posts. Please try again.",
+                {
+                    component: "useBulkPostEvents",
+                    action: "prepareEvents",
+                },
+                false, // Don't show toast, we set toast state instead
+            );
             setToast({
                 type: "error",
                 message: "An error occurred while preparing posts. Please try again.",

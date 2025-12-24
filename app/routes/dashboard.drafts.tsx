@@ -62,10 +62,11 @@ export async function loader({ request, params }) {
 }
 
 export async function action({ request }) {
-  const userId = await requireUserId(request);
-  const formData = await request.formData();
-  const postId = formData.get("postId");
-  const _action = formData.get("_action");
+  try {
+    const userId = await requireUserId(request);
+    const formData = await request.formData();
+    const postId = formData.get("postId");
+    const _action = formData.get("_action");
 
   if (_action === "delete") {
     await deletePost({ id: postId, userId });
@@ -122,7 +123,11 @@ export async function action({ request }) {
     return json({ success: true });
   }
 
-  return json({ error: "Invalid action" }, { status: 400 });
+    return json({ error: "Invalid action" }, { status: 400 });
+  } catch (error) {
+    const { handleActionError } = await import("~/lib/error-handler.server");
+    return handleActionError(error);
+  }
 }
 
 export default function DraftPosts() {

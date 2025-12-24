@@ -53,7 +53,16 @@ export default function ImagePost({
       );
       setFiles((prev: any) => [...prev, ...processedFiles]);
     } catch (error) {
-      console.error("Error processing images:", error);
+      const { handleAsyncErrorWithMessage } = await import("~/lib/error-handler.client");
+      handleAsyncErrorWithMessage(
+        error,
+        "Error processing images. Using original files.",
+        {
+          component: "ImagePost",
+          action: "handleFileChange",
+        },
+        false, // Don't show toast, we call toast.error instead
+      );
       toast.error("Error processing images. Using original files.");
       setFiles((prev: any) => [...prev, ...selectedFiles]);
     }
@@ -79,7 +88,16 @@ export default function ImagePost({
         );
         setFiles((prev: any) => [...prev, ...processedFiles]);
       } catch (error) {
-        console.error("Error processing dropped images:", error);
+        const { handleAsyncErrorWithMessage } = await import("~/lib/error-handler.client");
+        handleAsyncErrorWithMessage(
+          error,
+          "Error processing images. Using original files.",
+          {
+            component: "ImagePost",
+            action: "handleDrop",
+          },
+          false, // Don't show toast, we call toast.error instead
+        );
         toast.error("Error processing images. Using original files.");
         setFiles((prev: any) => [...prev, ...imageFiles]);
       }

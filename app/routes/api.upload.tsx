@@ -1,5 +1,6 @@
+import type { ActionFunctionArgs } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import {
-  json,
   unstable_composeUploadHandlers as composeUploadHandlers,
   unstable_createMemoryUploadHandler as createMemoryUploadHandler,
   unstable_parseMultipartFormData as parseMultipartFormData,
@@ -7,83 +8,69 @@ import {
 
 import { requireUserId } from "~/features/auth/session.server";
 import { createUploadHandler } from "~/features/upload/s3.server";
+import {
+  ValidationError,
+  ExternalServiceError,
+} from "~/lib/errors";
+import {
+  withActionErrorHandling,
+  createSuccessResponse,
+  assert,
+} from "~/lib/error-handler.server";
 
-export async function action({ request }) {
-
-  try {
+export const action = withActionErrorHandling(
+  async ({ request }: ActionFunctionArgs) => {
     // Ensure user is authenticated
     const userId = await requireUserId(request);
 
-    // Check content type
+    // Validate content type
     const contentType = request.headers.get("content-type") || "";
-
-    if (!contentType.includes("multipart/form-data")) {
-      console.error("Invalid content type:", contentType);
-      return json(
-        {
-          success: false,
-          error: "Request must be multipart/form-data",
-        },
-        { status: 400 },
-      );
-    }
+    assert(
+      contentType.includes("multipart/form-data"),
+      "Request must be multipart/form-data",
+      { contentType },
+    );
 
     // Parse the multipart form data using the general upload handler
-    const uploadHandler = composeUploadHandlers(
-      createUploadHandler(userId),
-      createMemoryUploadHandler({
-        maxPartSize: 100 * 1024 * 1024, // 100MB max for videos
-      }),
-    );
-    const formData = await parseMultipartFormData(request, uploadHandler);
-
-    const file = formData.get("file");
-
-    if (!file) {
-      console.error("No file in form data");
-      return json(
+    let formData: FormData;
+    try {
+      const uploadHandler = composeUploadHandlers(
+        createUploadHandler(userId),
+        createMemoryUploadHandler({
+          maxPartSize: 100 * 1024 * 1024, // 100MB max for videos
+        }),
+      );
+      formData = await parseMultipartFormData(request, uploadHandler);
+    } catch (error) {
+      throw new ExternalServiceError(
+        "Failed to parse multipart form data",
+        400,
         {
-          success: false,
-          error: "No file provided",
+          originalError: error instanceof Error ? error.message : String(error),
         },
-        { status: 400 },
       );
     }
 
-    // If the upload handler processed the file, it should return a URL string
-    if (typeof file === "string" && file.startsWith("https://")) {
-      return json({
-        success: true,
-        fileUrl: file,
-      });
-    }
-
-    // If we get here, the file wasn't processed properly
-    console.error("File upload failed - no URL returned");
-    return json(
-      {
-        success: false,
-        error: "File upload failed",
-      },
-      { status: 500 },
-    );
-  } catch (error) {
-    console.error("General upload API error details:", {
-      message: error.message,
-      stack: error.stack,
-      name: error.name,
-      cause: error.cause,
+    // Validate file exists
+    const file = formData.get("file");
+    assert(file !== null, "No file provided", {
+      formDataKeys: Array.from(formData.keys()),
     });
 
-    return json(
+    // Validate file was processed correctly
+    assert(
+      typeof file === "string" && file.startsWith("https://"),
+      "File upload failed - no URL returned",
       {
-        success: false,
-        error: `API Error: ${error.message || "Upload failed"}`,
+        fileType: typeof file,
+        fileValue:
+          typeof file === "string" ? file.substring(0, 50) : "not a string",
       },
-      { status: 500 },
     );
-  }
-}
+
+    return createSuccessResponse({ fileUrl: file });
+  },
+);
 
 // Handle preflight requests for CORS
 export async function loader() {

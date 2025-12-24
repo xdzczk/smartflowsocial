@@ -29,6 +29,7 @@ export async function loader({ request, params }) {
   ]);
 
   if (!post || !post.draft) {
+    // Use Remix's Response pattern for loaders (more direct)
     throw new Response("Draft not found", { status: 404 });
   }
 
@@ -41,10 +42,11 @@ export async function loader({ request, params }) {
 }
 
 export async function action({ request, params }) {
-  const userId = await requireUserId(request);
-  const postId = params.id;
-  const formData = await request.formData();
-  const _action = formData.get("_action");
+  try {
+    const userId = await requireUserId(request);
+    const postId = params.id;
+    const formData = await request.formData();
+    const _action = formData.get("_action");
 
   if (_action === "update") {
     const content = formData.get("content");
@@ -83,10 +85,12 @@ export async function action({ request, params }) {
 
     // Ensure the post is signed before resuming
     if (!signedEvent || !nostrEvent) {
-      return json(
-        { error: "Post must be signed before resuming" },
-        { status: 400 },
-      );
+      const { ValidationError } = await import("~/lib/errors");
+      throw new ValidationError("Post must be signed before resuming", {
+        postId,
+        hasSignedEvent: !!signedEvent,
+        hasNostrEvent: !!nostrEvent,
+      });
     }
 
     await updatePost({
@@ -109,7 +113,11 @@ export async function action({ request, params }) {
     return redirect("/dashboard/scheduled");
   }
 
-  return json({ error: "Invalid action" }, { status: 400 });
+    return json({ error: "Invalid action" }, { status: 400 });
+  } catch (error) {
+    const { handleActionError } = await import("~/lib/error-handler.server");
+    return handleActionError(error);
+  }
 }
 
 export default function EditDraft() {

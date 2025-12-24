@@ -158,11 +158,18 @@ export async function action({ request }) {
         const imageUrl = await uploadBufferToS3(buffer, userId, file.name);
         return json({ success: true, imageUrl });
       } catch (error) {
-        console.error("S3 upload error:", error);
-        return json({
-          success: false,
-          error: "Failed to upload image to storage.",
-        });
+        const { ExternalServiceError } = await import("~/lib/errors");
+        const { handleActionError } = await import("~/lib/error-handler.server");
+        const uploadError = new ExternalServiceError(
+          "Failed to upload image to storage",
+          500,
+          {
+            service: "S3",
+            fileName: (imageFile as File).name,
+            originalError: error instanceof Error ? error.message : String(error),
+          },
+        );
+        return handleActionError(uploadError);
       }
     }
 
@@ -346,11 +353,9 @@ export async function action({ request }) {
 
     return json({ success: false });
   } catch (error) {
-    console.error("Error in long-form post action:", error);
-    return json(
-      { error: error.message || "An error occurred" },
-      { status: 400 },
-    );
+    // Use centralized error handling
+    const { handleActionError } = await import("~/lib/error-handler.server");
+    return handleActionError(error);
   }
 }
 

@@ -59,8 +59,18 @@ export function useAssetUpload({
 
             assetFetcher.submit(serverFormData, { method: "post" });
         } catch (error: any) {
-            console.error("Upload error:", error);
-            onError(`Upload failed: ${error.message || "Unknown error"}`);
+            const { handleAsyncErrorWithMessage, getErrorMessage } = await import("~/lib/error-handler.client");
+            const errorMessage = `Upload failed: ${getErrorMessage(error)}`;
+            handleAsyncErrorWithMessage(
+                error,
+                errorMessage,
+                {
+                    component: "useAssetUpload",
+                    action: "handleSingleFileUpload",
+                },
+                false, // Don't show toast, we call onError instead
+            );
+            onError(errorMessage);
         } finally {
             setSingleFileUploading(false);
         }
@@ -105,8 +115,18 @@ export function useAssetUpload({
 
             assetFetcher.submit(serverFormData, { method: "post" });
         } catch (error: any) {
-            console.error("Bulk upload error:", error);
-            onError(`Bulk upload failed: ${error.message || "Unknown error"}`);
+            const { handleAsyncErrorWithMessage, getErrorMessage } = await import("~/lib/error-handler.client");
+            const errorMessage = `Bulk upload failed: ${getErrorMessage(error)}`;
+            handleAsyncErrorWithMessage(
+                error,
+                errorMessage,
+                {
+                    component: "useAssetUpload",
+                    action: "handleBulkFileUpload",
+                },
+                false, // Don't show toast, we call onError instead
+            );
+            onError(errorMessage);
         } finally {
             setBulkFileUploading(false);
         }
@@ -132,9 +152,14 @@ export function useAssetUpload({
                 );
                 setBulkUploadFiles(processedFiles);
             } catch (error) {
-                console.error("Error processing media files:", error);
-                // Fallback to original files if processing fails
-                setBulkUploadFiles(selectedFiles);
+                const { handleErrorSafely } = await import("~/lib/error-handler.client");
+                handleErrorSafely(error, {
+                    component: "useAssetUpload",
+                    action: "handleBulkFileChange",
+                }, () => {
+                    // Fallback to original files if processing fails
+                    setBulkUploadFiles(selectedFiles);
+                });
             } finally {
                 setIsProcessingImages(false);
             }

@@ -67,7 +67,11 @@ export default function SchedulingControls({
         onScheduleChange(scheduledTime);
       }
     } catch (error) {
-      console.error("Error calculating schedule time:", error);
+      const { handleErrorSafely } = await import("~/lib/error-handler.client");
+      handleErrorSafely(error, {
+        component: "SchedulingControls",
+        action: "calculateScheduleTime",
+      });
     }
   };
 

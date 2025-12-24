@@ -509,9 +509,9 @@ export async function loader({ request, params }) {
       trustScores: trustScores || {},
     });
   } catch (error) {
-    console.error("Error in engagement feed loader:", error);
-    // Return safe default data on error
-    return json({
+    // Return safe default data on error using centralized error handling
+    const { handleLoaderError } = await import("~/lib/error-handler.server");
+    return handleLoaderError(error, {
       posts: [],
       stats: {},
       user: {},
@@ -521,8 +521,7 @@ export async function loader({ request, params }) {
         quotes: [],
       },
       trustScores: {},
-      error: error instanceof Error ? error.message : "An error occurred loading the engagement feed",
-    }, { status: 500 });
+    });
   }
 }
 

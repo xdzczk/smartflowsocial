@@ -2,6 +2,7 @@ import { useFetcher } from "@remix-run/react";
 import { useEffect, useState } from "react";
 
 import { signEventFn } from "~/lib/nostr";
+import { handleErrorSafely } from "~/lib/error-handler.client";
 
 interface SimpleRescheduleModalProps {
   post: any;
@@ -146,11 +147,18 @@ export function SimpleRescheduleModal({
 
       fetcher.submit(formData, { method: "post" });
     } catch (error: any) {
-      console.error("Error re-signing event:", error);
-      setIsSigningEvent(false);
-      setSigningError(
-        error.message || "Failed to sign event. Please try again.",
+      const { handleAsyncErrorWithMessage, getErrorMessage } = await import("~/lib/error-handler.client");
+      handleAsyncErrorWithMessage(
+        error,
+        "Failed to sign event. Please try again.",
+        {
+          component: "SimpleRescheduleModal",
+          action: "handleReschedule",
+        },
+        false, // Don't show toast, we set signingError instead
       );
+      setIsSigningEvent(false);
+      setSigningError(getErrorMessage(error) || "Failed to sign event. Please try again.");
     }
   };
 
@@ -168,7 +176,10 @@ export function SimpleRescheduleModal({
         }
         return firstFileUrl;
       } catch (error) {
-        console.error("Error getting first image:", error);
+        handleErrorSafely(error, {
+          component: "SimpleRescheduleModal",
+          action: "getFirstImage",
+        });
         return null;
       }
     }

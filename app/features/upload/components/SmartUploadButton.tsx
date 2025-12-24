@@ -48,7 +48,11 @@ export function SmartUploadButton({
       }
       return { provider: "S3", isUsingBlossom: false };
     } catch (error) {
-      console.error("Failed to check upload provider:", error);
+      const { handleErrorSafely } = await import("~/lib/error-handler.client");
+      handleErrorSafely(error, {
+        component: "SmartUploadButton",
+        action: "checkUploadProvider",
+      });
       return { provider: "S3", isUsingBlossom: false };
     }
   };
@@ -90,7 +94,11 @@ export function SmartUploadButton({
         "Direct blossom uploads not supported in SmartUploadButton. Use upload.client.ts instead.",
       );
     } catch (error) {
-      console.error("Blossom upload error:", error);
+      const { handleAsyncError } = await import("~/lib/error-handler.client");
+      handleAsyncError(error, {
+        component: "SmartUploadButton",
+        action: "uploadToBlossom",
+      }, false); // Don't show toast, throw to caller
       throw error;
     }
   };

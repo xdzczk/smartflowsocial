@@ -51,11 +51,23 @@ export async function calculateQueueScheduleTime(
       return scheduledTime;
     } else {
       const errorData = await response.json();
-      console.error(`[queueTypes.client] API error:`, errorData?.error || 'Unknown error');
+      const { logClientError } = await import("~/lib/error-handler.client");
+      logClientError(
+        new Error(errorData?.error?.message || 'Unknown error'),
+        {
+          component: "queueTypes.client",
+          action: "calculateQueueScheduleTime",
+        },
+        "warning",
+      );
       return null;
     }
   } catch (error) {
-    console.error("Error calculating schedule time:", error);
+    const { handleErrorSafely } = await import("~/lib/error-handler.client");
+    handleErrorSafely(error, {
+      component: "queueTypes.client",
+      action: "calculateQueueScheduleTime",
+    });
     return null;
   }
 }
@@ -91,11 +103,23 @@ export async function fetchEffectiveHashtags(
       const data = await response.json();
       return data.hashtags || "";
     } else {
-      console.error(`[queueTypes.client] Hashtags API error`);
+      const { logClientError } = await import("~/lib/error-handler.client");
+      logClientError(
+        new Error("Hashtags API error"),
+        {
+          component: "queueTypes.client",
+          action: "fetchEffectiveHashtags",
+        },
+        "warning",
+      );
       return "";
     }
   } catch (error) {
-    console.error("Error fetching effective hashtags:", error);
+    const { handleErrorSafely } = await import("~/lib/error-handler.client");
+    handleErrorSafely(error, {
+      component: "queueTypes.client",
+      action: "fetchEffectiveHashtags",
+    });
     return "";
   }
 }

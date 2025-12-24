@@ -15,19 +15,26 @@ function extractProfileBits(nostrProfile: any | null | undefined) {
       const p: any = nostrProfile;
       return { name: p?.name, display_name: p?.display_name, picture: p?.picture } as const;
     }
-  } catch { }
+  } catch {
+    // Silently ignore parse errors - return defaults
+  }
   return { name: undefined, display_name: undefined, picture: undefined } as const;
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const userId = await requireUserId(request);
-  const me = await getUserBasicInfo(userId);
-  if (!me?.isChild || !me.parentNpub) {
-    return json({ parent: null });
+  try {
+    const userId = await requireUserId(request);
+    const me = await getUserBasicInfo(userId);
+    if (!me?.isChild || !me.parentNpub) {
+      return json({ parent: null });
+    }
+    const parent = await getUserByNpubWithProfile(me.parentNpub);
+    if (!parent) return json({ parent: null });
+    const bits = extractProfileBits(parent.nostrProfile);
+    return json({ parent: { npub: parent.npub, name: bits.name, displayName: bits.display_name, picture: bits.picture } });
+  } catch (error) {
+    const { handleLoaderError } = await import("~/lib/error-handler.server");
+    return handleLoaderError(error, { parent: null });
   }
-  const parent = await getUserByNpubWithProfile(me.parentNpub);
-  if (!parent) return json({ parent: null });
-  const bits = extractProfileBits(parent.nostrProfile);
-  return json({ parent: { npub: parent.npub, name: bits.name, displayName: bits.display_name, picture: bits.picture } });
 }
 

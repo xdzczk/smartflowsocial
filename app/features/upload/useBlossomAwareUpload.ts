@@ -228,11 +228,14 @@ export function useBlossomAwareUpload() {
 
         return result;
       } catch (error: any) {
-        console.error("Upload error:", error);
+        const { handleAsyncError } = await import("~/lib/error-handler.client");
         const errorMessage =
           error instanceof Error ? error.message : "Upload failed";
+        handleAsyncError(error, {
+          component: "useBlossomAwareUpload",
+          action: "submitForm",
+        });
         setError(errorMessage);
-        toast.error(errorMessage);
         throw error;
       } finally {
         setTimeout(() => {

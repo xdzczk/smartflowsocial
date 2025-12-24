@@ -34,20 +34,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
     return json({ template });
   } catch (error) {
-    console.error("Error loading template:", error);
-    throw new Response("Error loading template", { status: 500 });
+    // Use centralized error handling for loader errors
+    const { handleLoaderError } = await import("~/lib/error-handler.server");
+    return handleLoaderError(error, { template: null });
   }
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const userId = await requireUserId(request);
-  const templateId = params.id;
+  try {
+    const userId = await requireUserId(request);
+    const templateId = params.id;
 
-  if (!templateId) {
-    throw new Response("Template ID is required", { status: 400 });
-  }
-  const formData = await request.formData();
-  const _action = formData.get("_action");
+    if (!templateId) {
+      const { ValidationError } = await import("~/lib/errors");
+      throw new ValidationError("Template ID is required");
+    }
+    const formData = await request.formData();
+    const _action = formData.get("_action");
 
   if (_action === "updateName") {
     const name = formData.get("name");
@@ -119,7 +122,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return json({ scheduleData: templateData });
   }
 
-  return json({ error: "Invalid action" }, { status: 400 });
+    return json({ error: "Invalid action" }, { status: 400 });
+  } catch (error) {
+    const { handleActionError } = await import("~/lib/error-handler.server");
+    return handleActionError(error);
+  }
 }
 
 export default function EditTemplate() {

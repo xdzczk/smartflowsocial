@@ -184,6 +184,8 @@ npm run start:worker
 | [Architecture](./docs/architecture.md)           | Project structure          |
 | [Database Schema](./docs/database-schema.md)     | Data models                |
 | [API Reference](./docs/api-reference.md)         | API endpoints              |
+| [Error Handling](./docs/ERROR_HANDLING.md)       | Centralized error handling |
+| [Error Metrics](./docs/ERROR_METRICS.md)        | Error tracking and monitoring |
 | [Onboarding](./docs/onboarding.md)               | User getting started       |
 | [Posting Workflow](./docs/posting.md)            | How to create posts        |
 | [Calendar Feature](./docs/calendar-feature.md)   | Visual scheduling          |

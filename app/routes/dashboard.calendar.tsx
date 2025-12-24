@@ -151,7 +151,12 @@ export async function action({ request }: ActionFunctionArgs) {
           parsedSignedEvent = JSON.parse(signedEvent);
           parsedNostrEvent = JSON.parse(nostrEvent);
         } catch (e) {
-          console.error("Error parsing signed events:", e);
+          // Log parsing error but continue without signed events
+          const { logWarning } = await import("~/lib/error-logger.server");
+          logWarning("Failed to parse signed events in reschedule", {
+            postId,
+            error: e instanceof Error ? e.message : String(e),
+          });
         }
       }
 
@@ -189,8 +194,8 @@ export async function action({ request }: ActionFunctionArgs) {
       // Return success but indicate signing is needed
       return json({ success: true, post: updatedPost, needsSigning: true });
     } catch (error) {
-      console.error("Reschedule error:", error);
-      return json({ error: "Failed to reschedule post" }, { status: 500 });
+      const { handleActionError } = await import("~/lib/error-handler.server");
+      return handleActionError(error);
     }
   }
 
@@ -220,7 +225,12 @@ export async function action({ request }: ActionFunctionArgs) {
           parsedSignedEvent = JSON.parse(signedEvent);
           parsedNostrEvent = JSON.parse(nostrEvent);
         } catch (e) {
-          console.error("Error parsing signed events:", e);
+          // Log parsing error but continue without signed events
+          const { logWarning } = await import("~/lib/error-logger.server");
+          logWarning("Failed to parse signed events in reschedule", {
+            postId,
+            error: e instanceof Error ? e.message : String(e),
+          });
         }
       }
 
@@ -239,11 +249,8 @@ export async function action({ request }: ActionFunctionArgs) {
         signed: !!parsedSignedEvent,
       });
     } catch (error) {
-      console.error("Longform reschedule error:", error);
-      return json(
-        { error: "Failed to reschedule longform post" },
-        { status: 500 },
-      );
+      const { handleActionError } = await import("~/lib/error-handler.server");
+      return handleActionError(error);
     }
   }
 

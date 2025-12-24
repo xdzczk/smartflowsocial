@@ -355,11 +355,14 @@ export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps)
                         setTimeout(() => setToast(null), 8000);
                     }, 1000);
                 } catch (error: any) {
-                    console.error("Longform repost signing/publishing error:", error);
+                    const { handleAsyncError, getErrorMessage } = await import("~/lib/error-handler.client");
+                    handleAsyncError(error, {
+                        component: "usePostedPosts",
+                        action: "handleLongformRepost",
+                    }, false); // Don't show toast, we set toast state instead
                     setToast({
                         type: "error",
-                        message:
-                            error.message || "Failed to sign or publish longform repost",
+                        message: getErrorMessage(error) || "Failed to sign or publish longform repost",
                     });
 
                     // Hide toast after 5 seconds for errors
@@ -447,10 +450,14 @@ export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps)
                         setTimeout(() => setToast(null), 8000);
                     }, 1000); // 1 second delay
                 } catch (error: any) {
-                    console.error("Repost signing/publishing error:", error);
+                    const { handleAsyncError, getErrorMessage } = await import("~/lib/error-handler.client");
+                    handleAsyncError(error, {
+                        component: "usePostedPosts",
+                        action: "handleRepost",
+                    }, false); // Don't show toast, we set toast state instead
                     setToast({
                         type: "error",
-                        message: error.message || "Failed to sign or publish repost",
+                        message: getErrorMessage(error) || "Failed to sign or publish repost",
                     });
 
                     // Hide toast after 5 seconds for errors

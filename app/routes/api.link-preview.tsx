@@ -1,36 +1,85 @@
+import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 
-export async function loader({ request }) {
-  const url = new URL(request.url);
-  const targetUrl = url.searchParams.get("url");
+import {
+  ValidationError,
+  ExternalServiceError,
+} from "~/lib/errors";
+import {
+  withErrorHandling,
+  assert,
+} from "~/lib/error-handler.server";
 
-  if (!targetUrl) {
-    return json({ success: 0, meta: {} }, { status: 400 });
-  }
+export const loader = withErrorHandling(
+  async ({ request }: LoaderFunctionArgs) => {
+    const url = new URL(request.url);
+    const targetUrl = url.searchParams.get("url");
 
-  try {
-    new URL(targetUrl);
-  } catch {
-    return json({ success: 0, meta: {} }, { status: 400 });
-  }
-
-  if (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://")) {
-    return json({ success: 0, meta: {} }, { status: 400 });
-  }
-
-  try {
-    const response = await fetch(targetUrl, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; LinkPreview/1.0)",
-      },
-      signal: AbortSignal.timeout(5000),
+    assert(targetUrl !== null, "URL parameter is required", {
+      searchParams: Array.from(url.searchParams.entries()),
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+    // Validate URL format
+    try {
+      new URL(targetUrl);
+    } catch {
+      throw new ValidationError("Invalid URL format", { targetUrl });
     }
 
-    const html = await response.text();
+    assert(
+      targetUrl.startsWith("http://") || targetUrl.startsWith("https://"),
+      "URL must start with http:// or https://",
+      { targetUrl },
+    );
+
+    // Fetch the URL
+    let response: Response;
+    try {
+      response = await fetch(targetUrl, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (compatible; LinkPreview/1.0)",
+        },
+        signal: AbortSignal.timeout(5000),
+      });
+    } catch (error) {
+      throw new ExternalServiceError(
+        "Failed to fetch URL",
+        502,
+        {
+          service: "LinkPreview",
+          targetUrl,
+          originalError: error instanceof Error ? error.message : String(error),
+        },
+      );
+    }
+
+    if (!response.ok) {
+      throw new ExternalServiceError(
+        `Failed to fetch URL: HTTP ${response.status}`,
+        response.status >= 500 ? 502 : response.status,
+        {
+          service: "LinkPreview",
+          targetUrl,
+          status: response.status,
+          statusText: response.statusText,
+        },
+      );
+    }
+
+    let html: string;
+    try {
+      html = await response.text();
+    } catch (error) {
+      throw new ExternalServiceError(
+        "Failed to read response from URL",
+        502,
+        {
+          service: "LinkPreview",
+          targetUrl,
+          originalError: error instanceof Error ? error.message : String(error),
+        },
+      );
+    }
 
     const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
     const descriptionMatch =
@@ -52,7 +101,7 @@ export async function loader({ request }) {
     const description = descriptionMatch ? descriptionMatch[1].trim() : "";
     const image = imageMatch ? imageMatch[1].trim() : "";
 
-    return json({
+    return {
       success: 1,
       meta: {
         title,
@@ -61,9 +110,6 @@ export async function loader({ request }) {
           url: image,
         },
       },
-    });
-  } catch (error) {
-    console.error("Link preview error:", error);
-    return json({ success: 0, meta: {} }, { status: 500 });
-  }
-}
+    };
+  },
+);

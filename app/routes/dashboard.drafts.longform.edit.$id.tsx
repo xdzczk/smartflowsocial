@@ -360,11 +360,9 @@ export async function action({ request, params }) {
 
     return json({ success: false });
   } catch (error) {
-    console.error("Error in long-form post update action:", error);
-    return json(
-      { error: error.message || "An error occurred" },
-      { status: 400 },
-    );
+    // Use centralized error handling
+    const { handleActionError } = await import("~/lib/error-handler.server");
+    return handleActionError(error);
   }
 }
 

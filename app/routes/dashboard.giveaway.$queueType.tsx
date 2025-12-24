@@ -55,7 +55,12 @@ async function fetchUserProfile(pubkey: string): Promise<User | null> {
       try {
         profile = JSON.parse(profileEvent.content);
       } catch (e) {
-        console.error("Failed to parse profile content:", e);
+        // Log but continue with empty profile
+        const { logWarning } = await import("~/lib/error-logger.server");
+        logWarning("Failed to parse profile content", {
+          pubkey,
+          error: e instanceof Error ? e.message : String(e),
+        });
       }
     }
 
@@ -65,7 +70,12 @@ async function fetchUserProfile(pubkey: string): Promise<User | null> {
       try {
         stats = JSON.parse(statsEvent.content);
       } catch (e) {
-        console.error("Failed to parse stats content:", e);
+        // Log but continue with empty stats
+        const { logWarning } = await import("~/lib/error-logger.server");
+        logWarning("Failed to parse stats content", {
+          pubkey,
+          error: e instanceof Error ? e.message : String(e),
+        });
       }
     }
 
@@ -90,7 +100,21 @@ async function fetchUserProfile(pubkey: string): Promise<User | null> {
 
     return user;
   } catch (error) {
-    console.error(`Failed to fetch user profile for ${pubkey}:`, error);
+    // Log error but return null (non-critical - just means we can't calculate trust score)
+    const { ExternalServiceError } = await import("~/lib/errors");
+    const { logError } = await import("~/lib/error-logger.server");
+    
+    const serviceError = new ExternalServiceError(
+      `Failed to fetch user profile for ${pubkey}`,
+      502,
+      {
+        service: "PrimalCache",
+        pubkey,
+        originalError: error instanceof Error ? error.message : String(error),
+      },
+    );
+    
+    logError(serviceError, { pubkey });
     return null;
   }
 }

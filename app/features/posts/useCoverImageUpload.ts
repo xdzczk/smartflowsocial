@@ -64,7 +64,16 @@ export function useCoverImageUpload({
                 });
             }
         } catch (error) {
-            console.error("Error processing/uploading image:", error);
+            const { handleAsyncErrorWithMessage } = await import("~/lib/error-handler.client");
+            handleAsyncErrorWithMessage(
+                error,
+                "Error uploading image. Please try again.",
+                {
+                    component: "useCoverImageUpload",
+                    action: "handleImageUpload",
+                },
+                false, // Don't show toast, we set uploadError instead
+            );
             setUploadError("Error uploading image. Please try again.");
         }
     }, [uploadProvider, uploadFetcher]);

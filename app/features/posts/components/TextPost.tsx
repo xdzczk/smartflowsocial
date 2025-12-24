@@ -156,7 +156,11 @@ export default function TextPost({
               : tags || "";
           }
         } catch (error) {
-          console.error("Error fetching effective hashtags:", error);
+          const { handleErrorSafely } = await import("~/lib/error-handler.client");
+          handleErrorSafely(error, {
+            component: "TextPost",
+            action: "fetchEffectiveHashtags",
+          });
           // Fallback to user's default hashtags
           effectiveHashtags = Array.isArray(tags) ? tags.join(" ") : tags || "";
         }
@@ -185,7 +189,11 @@ export default function TextPost({
 
       fetcher.submit(formData, { method: "post" });
     } catch (error) {
-      console.error("Error signing event:", error);
+      const { handleAsyncError } = await import("~/lib/error-handler.client");
+      handleAsyncError(error, {
+        component: "TextPost",
+        action: "handleSubmit",
+      }, false); // Don't show toast, let component handle it
     }
   };
 

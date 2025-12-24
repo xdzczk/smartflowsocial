@@ -4,6 +4,7 @@ import { useCallback } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { useOptionalUser } from "~/lib/remix-utils";
+import { handleAsyncError } from "~/lib/error-handler.client";
 
 export default function NostrAuthButton() {
   const user = useOptionalUser();
@@ -58,7 +59,11 @@ export default function NostrAuthButton() {
         new CustomEvent("nlLaunch", { detail: "welcome" }),
       );
     } catch (error) {
-      console.error("Error during Nostr login:", error);
+      // Log and handle error
+      handleAsyncError(error, {
+        component: "NostrAuthButton",
+        action: "handleNostrLogin",
+      }, true); // Show toast to user
     }
   }, [fetcher]);
 

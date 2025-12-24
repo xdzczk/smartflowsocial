@@ -48,7 +48,11 @@ export default function NewPostImagesConfirmation({
           effectiveHashtags = Array.isArray(tags) ? tags.join(" ") : tags || "";
         }
       } catch (error) {
-        console.error("Error fetching effective hashtags:", error);
+        const { handleErrorSafely } = await import("~/lib/error-handler.client");
+        handleErrorSafely(error, {
+          component: "NewPostImagesConfirmation",
+          action: "fetchEffectiveHashtags",
+        });
         // Fallback to user's default hashtags
         effectiveHashtags = Array.isArray(tags) ? tags.join(" ") : tags || "";
       }
@@ -121,7 +125,11 @@ export default function NewPostImagesConfirmation({
         action: "/dashboard/newpost",
       });
     } catch (error) {
-      console.error("Error signing and submitting:", error);
+      const { handleAsyncError } = await import("~/lib/error-handler.client");
+      handleAsyncError(error, {
+        component: "NewPostImagesConfirmation",
+        action: "handleSignAndSubmit",
+      }, false); // Don't show toast, let component handle it
     }
   };
 

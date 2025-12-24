@@ -2,39 +2,35 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 
 import { checkPaymentStatus } from "~/models/payment.server";
+import { ValidationError, DatabaseError } from "~/lib/errors";
+import {
+  withActionErrorHandling,
+  createSuccessResponse,
+  assert,
+} from "~/lib/error-handler.server";
 
-export async function action({ request }: ActionFunctionArgs) {
+export const action = withActionErrorHandling(
+  async ({ request }: ActionFunctionArgs) => {
+    assert(request.method === "POST", "Method not allowed", {
+      method: request.method,
+    });
 
-  if (request.method !== "POST") {
-    return json(
-      { success: false, error: "Method not allowed" },
-      {
-        status: 405,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-  }
-
-  try {
     const formData = await request.formData();
     const paymentId = formData.get("paymentId") as string;
 
+    assert(paymentId !== null && paymentId !== "", "Payment ID is required", {
+      hasPaymentId: paymentId !== null,
+    });
 
-    if (!paymentId) {
-      return json(
-        { success: false, error: "Payment ID is required" },
-        {
-          status: 200,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+    let paymentStatus;
+    try {
+      paymentStatus = await checkPaymentStatus(paymentId);
+    } catch (error) {
+      throw new DatabaseError("Failed to check payment status", {
+        paymentId,
+        originalError: error instanceof Error ? error.message : String(error),
+      });
     }
-
-    const paymentStatus = await checkPaymentStatus(paymentId);
 
     if (paymentStatus.paid) {
       return json(
@@ -49,7 +45,7 @@ export async function action({ request }: ActionFunctionArgs) {
           headers: {
             "Content-Type": "application/json",
           },
-        }
+        },
       );
     }
 
@@ -64,24 +60,10 @@ export async function action({ request }: ActionFunctionArgs) {
         headers: {
           "Content-Type": "application/json",
         },
-      }
-    );
-  } catch (error) {
-    console.error("Error checking payment status:", error);
-    return json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : "Failed to check payment status"
       },
-      {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
     );
-  }
-}
+  },
+);
 
 // Handle GET requests with a proper error response
 export async function loader() {

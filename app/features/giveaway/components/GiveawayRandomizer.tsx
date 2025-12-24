@@ -2,6 +2,7 @@ import { nip19 } from "nostr-tools";
 import { useState, useEffect } from "react";
 
 import ZapButton from "~/components/dashboard/ZapButton";
+import { handleErrorSafely } from "~/lib/error-handler.client";
 
 import GiveawayPost from "./GiveawayPost";
 
@@ -48,7 +49,10 @@ const GiveawayRandomizer = ({ relatedEvents }: GiveawayRandomizerProps) => {
       const npub = nip19.npubEncode(pubkey);
       return npub;
     } catch (error) {
-      console.error("Error converting pubkey to npub:", error);
+      handleErrorSafely(error, {
+        component: "GiveawayRandomizer",
+        action: "formatPubkey",
+      });
       return pubkey;
     }
   };

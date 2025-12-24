@@ -1,4 +1,3 @@
-import { json } from "@remix-run/node";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth/session.server";
@@ -7,21 +6,33 @@ import {
   getUserEnableMirrorBlossom,
   getUserMirrorUploadUrls,
 } from "~/models/user.server";
+import { DatabaseError } from "~/lib/errors";
+import {
+  withErrorHandling,
+} from "~/lib/error-handler.server";
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  try {
+export const loader = withErrorHandling(
+  async ({ request }: LoaderFunctionArgs) => {
     const userId = await requireUserId(request);
-    const provider = await getUserUploadProvider(userId);
-    const enableMirrorBlossom = await getUserEnableMirrorBlossom(userId);
-    const mirrorUploadUrls = await getUserMirrorUploadUrls(userId);
 
-    return json({
+    let provider, enableMirrorBlossom, mirrorUploadUrls;
+    try {
+      [provider, enableMirrorBlossom, mirrorUploadUrls] = await Promise.all([
+        getUserUploadProvider(userId),
+        getUserEnableMirrorBlossom(userId),
+        getUserMirrorUploadUrls(userId),
+      ]);
+    } catch (error) {
+      throw new DatabaseError("Failed to get upload provider settings", {
+        userId,
+        originalError: error instanceof Error ? error.message : String(error),
+      });
+    }
+
+    return {
       provider,
       enableMirrorBlossom,
       mirrorUploadUrls,
-    });
-  } catch (error) {
-    console.error("Get upload provider error:", error);
-    return json({ error: "Failed to get upload provider" }, { status: 500 });
-  }
-}
+    };
+  },
+);

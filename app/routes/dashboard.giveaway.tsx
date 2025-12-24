@@ -57,7 +57,12 @@ async function fetchUserProfile(pubkey: string): Promise<User | null> {
       try {
         profile = JSON.parse(profileEvent.content);
       } catch (e) {
-        console.error("Failed to parse profile content:", e);
+        // Log but continue with empty profile
+        const { logWarning } = await import("~/lib/error-logger.server");
+        logWarning("Failed to parse profile content", {
+          pubkey,
+          error: e instanceof Error ? e.message : String(e),
+        });
       }
     }
 
@@ -67,7 +72,12 @@ async function fetchUserProfile(pubkey: string): Promise<User | null> {
       try {
         stats = JSON.parse(statsEvent.content);
       } catch (e) {
-        console.error("Failed to parse stats content:", e);
+        // Log but continue with empty stats
+        const { logWarning } = await import("~/lib/error-logger.server");
+        logWarning("Failed to parse stats content", {
+          pubkey,
+          error: e instanceof Error ? e.message : String(e),
+        });
       }
     }
 
@@ -92,7 +102,21 @@ async function fetchUserProfile(pubkey: string): Promise<User | null> {
 
     return user;
   } catch (error) {
-    console.error(`Failed to fetch user profile for ${pubkey}:`, error);
+    // Log error but return null (non-critical - just means we can't calculate trust score)
+    const { ExternalServiceError } = await import("~/lib/errors");
+    const { logError } = await import("~/lib/error-logger.server");
+    
+    const serviceError = new ExternalServiceError(
+      `Failed to fetch user profile for ${pubkey}`,
+      502,
+      {
+        service: "PrimalCache",
+        pubkey,
+        originalError: error instanceof Error ? error.message : String(error),
+      },
+    );
+    
+    logError(serviceError, { pubkey });
     return null;
   }
 }
@@ -190,7 +214,25 @@ export async function loader({ request, params }) {
     stats = statsResults.reduce((acc, curr) => ({ ...acc, ...curr }), {});
     clearTimeout(timeoutId);
   } catch (error) {
-    console.error("Error fetching stats:", error);
+    // Use centralized error handling but provide safe defaults
+    const { handleLoaderError } = await import("~/lib/error-handler.server");
+    const { ExternalServiceError } = await import("~/lib/errors");
+    
+    // Log the error but continue with empty stats
+    const serviceError = new ExternalServiceError(
+      "Failed to fetch stats from Primal cache",
+      502,
+      {
+        service: "PrimalCache",
+        eventIdsCount: eventIds.length,
+        originalError: error instanceof Error ? error.message : String(error),
+      },
+    );
+    
+    // Log but don't throw - we want to continue with empty stats
+    const { logError } = await import("~/lib/error-logger.server");
+    logError(serviceError, { userId, path: request.url });
+    
     // Initialize empty stats object with 0 values for each post
     stats = posts.reduce((acc, post) => {
       acc[post.signedEvent.id] = {

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { handleErrorSafely } from "~/lib/error-handler.client";
 
 interface UseLongFormEditorOptions {
     uploadProvider: string | null;
@@ -194,7 +195,16 @@ export function useLongFormEditor({
                                                         },
                                                     };
                                                 } else {
-                                                    console.error("Blossom upload failed:", uploadResult.error);
+                                                    const { logClientError } = await import("~/lib/error-handler.client");
+                                                    logClientError(
+                                                        new Error(uploadResult.error || "Blossom upload failed"),
+                                                        {
+                                                            component: "useLongFormEditor",
+                                                            action: "uploadImage",
+                                                            provider: "Blossom",
+                                                        },
+                                                        "warning",
+                                                    );
                                                     throw new Error(uploadResult.error || "Blossom upload failed");
                                                 }
                                             } else {
@@ -212,7 +222,17 @@ export function useLongFormEditor({
 
                                                 if (!response.ok) {
                                                     const errorText = await response.text();
-                                                    console.error("Server error response:", errorText);
+                                                    const { logClientError } = await import("~/lib/error-handler.client");
+                                                    logClientError(
+                                                        new Error(`Server error: ${response.status}`),
+                                                        {
+                                                            component: "useLongFormEditor",
+                                                            action: "uploadImage",
+                                                            provider: "S3",
+                                                            serverResponse: errorText,
+                                                        },
+                                                        "error",
+                                                    );
                                                     throw new Error(`Server error: ${response.status}`);
                                                 }
 
@@ -233,12 +253,25 @@ export function useLongFormEditor({
                                                         },
                                                     };
                                                 } else {
-                                                    console.error("S3 upload failed:", result.error);
+                                                    const { logClientError } = await import("~/lib/error-handler.client");
+                                                    logClientError(
+                                                        new Error(result.error || "Upload failed"),
+                                                        {
+                                                            component: "useLongFormEditor",
+                                                            action: "uploadImage",
+                                                            provider: "S3",
+                                                        },
+                                                        "warning",
+                                                    );
                                                     throw new Error(result.error || "Upload failed");
                                                 }
                                             }
                                         } catch (error) {
-                                            console.error("EditorJS upload error:", error);
+                                            const { handleAsyncError } = await import("~/lib/error-handler.client");
+                                            handleAsyncError(error, {
+                                                component: "useLongFormEditor",
+                                                action: "uploadImage",
+                                            }, false); // Don't show toast, let EditorJS handle it
                                             throw error;
                                         }
                                     },
@@ -252,7 +285,11 @@ export function useLongFormEditor({
                             const outputData = await api.saver.save();
                             onContentChange(JSON.stringify(outputData));
                         } catch (error) {
-                            console.error("Editor save error:", error);
+                            const { handleErrorSafely } = await import("~/lib/error-handler.client");
+                            handleErrorSafely(error, {
+                                component: "useLongFormEditor",
+                                action: "onChange",
+                            });
                         }
                     },
                 }) as EditorJSInstance;
@@ -338,7 +375,11 @@ export function useLongFormEditor({
                             blockElement.style.opacity = "0.5";
                             blockElement.classList.add("dragging");
                         } catch (error) {
-                            console.error("Error getting block data:", error);
+                            const { handleErrorSafely } = await import("~/lib/error-handler.client");
+                            handleErrorSafely(error, {
+                                component: "useLongFormEditor",
+                                action: "handleDragStart",
+                            });
                         }
                     };
 
@@ -412,7 +453,11 @@ export function useLongFormEditor({
                                 `Moved block from index ${draggedBlockIndex} to ${newIndex}`,
                             );
                         } catch (error) {
-                            console.error("Error reordering blocks:", error);
+                            const { handleErrorSafely } = await import("~/lib/error-handler.client");
+                            handleErrorSafely(error, {
+                                component: "useLongFormEditor",
+                                action: "handleDrop",
+                            });
                         } finally {
                             // Clean up drag state
                             dropBlockElement.classList.remove("drag-over");
@@ -529,14 +574,22 @@ export function useLongFormEditor({
                 await editorRef.current.render(parsedContent);
                 onContentChange(JSON.stringify(parsedContent));
             } catch (error) {
-                console.error("Error loading initial data:", error);
+                const { handleAsyncError } = await import("~/lib/error-handler.client");
+                handleAsyncError(error, {
+                    component: "useLongFormEditor",
+                    action: "loadInitialData",
+                }, false); // Don't show toast, fallback will handle it
                 // Fallback to empty editor if all else fails
                 try {
                     const emptyContent = { blocks: [] };
                     await editorRef.current.render(emptyContent);
                     onContentChange(JSON.stringify(emptyContent));
                 } catch (fallbackError) {
-                    console.error("Even fallback failed:", fallbackError);
+                    const { handleAsyncError: handleFallbackError } = await import("~/lib/error-handler.client");
+                    handleFallbackError(fallbackError, {
+                        component: "useLongFormEditor",
+                        action: "loadInitialDataFallback",
+                    }, false);
                 }
             }
         }
@@ -619,7 +672,11 @@ export function useLongFormEditor({
                 editorRef.current?.focus();
             }, 100);
         } catch (error) {
-            console.error("Error inserting assets into editor:", error);
+            const { handleAsyncError } = await import("~/lib/error-handler.client");
+            handleAsyncError(error, {
+                component: "useLongFormEditor",
+                action: "insertAssetIntoEditor",
+            }, false); // Don't show toast, fallback will handle it
             // Fallback to simple insertion
             try {
                 for (const asset of selectedAssets) {
@@ -645,7 +702,11 @@ export function useLongFormEditor({
                 const updatedData = await editorRef.current.save();
                 onContentChange(JSON.stringify(updatedData));
             } catch (fallbackError) {
-                console.error("Fallback insertion also failed:", fallbackError);
+                const { handleAsyncError: handleFallbackError } = await import("~/lib/error-handler.client");
+                handleFallbackError(fallbackError, {
+                    component: "useLongFormEditor",
+                    action: "insertAssetIntoEditorFallback",
+                }, false);
             }
         }
     }, [onContentChange]);
@@ -676,7 +737,10 @@ export function useLongFormEditor({
 
             return generatedSummary;
         } catch (error) {
-            console.error("Error generating summary:", error);
+            handleErrorSafely(error, {
+                component: "useLongFormEditor",
+                action: "generateSummaryFromContent",
+            });
             return "";
         }
     }, []);

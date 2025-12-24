@@ -64,7 +64,16 @@ export function useNotificationActions({
             await navigator.clipboard.writeText(`nostr:${neventEncoded}`);
             showToast("success", "NEvent copied to clipboard!", 2000);
         } catch (error) {
-            console.error("Copy error:", error);
+            const { handleAsyncErrorWithMessage } = await import("~/lib/error-handler.client");
+            handleAsyncErrorWithMessage(
+                error,
+                "Failed to copy",
+                {
+                    component: "useNotificationActions",
+                    action: "handleCopyNEvent",
+                },
+                false, // Don't show toast, we call showToast instead
+            );
             showToast("error", "Failed to copy", 2000);
         }
     };
@@ -101,8 +110,12 @@ export function useNotificationActions({
             setReplyContent("");
             setShowReplyInput(false);
         } catch (error) {
-            console.error("Reply error:", error);
-            showToast("error", error instanceof Error ? error.message : "Failed to post reply");
+            const { handleAsyncError, getErrorMessage } = await import("~/lib/error-handler.client");
+            handleAsyncError(error, {
+                component: "useNotificationActions",
+                action: "handleReply",
+            }, false); // Don't show toast, we call showToast instead
+            showToast("error", getErrorMessage(error) || "Failed to post reply");
         } finally {
             setIsReplying(false);
         }
@@ -136,8 +149,12 @@ export function useNotificationActions({
 
             showToast("success", "Reposted successfully!");
         } catch (error) {
-            console.error("Repost error:", error);
-            showToast("error", error instanceof Error ? error.message : "Failed to repost");
+            const { handleAsyncError, getErrorMessage } = await import("~/lib/error-handler.client");
+            handleAsyncError(error, {
+                component: "useNotificationActions",
+                action: "handleRepost",
+            }, false); // Don't show toast, we call showToast instead
+            showToast("error", getErrorMessage(error) || "Failed to repost");
         } finally {
             setIsReposting(false);
         }
@@ -170,8 +187,12 @@ export function useNotificationActions({
 
             showToast("success", "Liked!", 2000);
         } catch (error) {
-            console.error("Like error:", error);
-            showToast("error", error instanceof Error ? error.message : "Failed to like");
+            const { handleAsyncError, getErrorMessage } = await import("~/lib/error-handler.client");
+            handleAsyncError(error, {
+                component: "useNotificationActions",
+                action: "handleLike",
+            }, false); // Don't show toast, we call showToast instead
+            showToast("error", getErrorMessage(error) || "Failed to like");
         }
     };
 
@@ -218,8 +239,12 @@ export function useNotificationActions({
             setQuoteContent("");
             setShowQuoteInput(false);
         } catch (error) {
-            console.error("Quote post error:", error);
-            showToast("error", error instanceof Error ? error.message : "Failed to post quote");
+            const { handleAsyncError, getErrorMessage } = await import("~/lib/error-handler.client");
+            handleAsyncError(error, {
+                component: "useNotificationActions",
+                action: "handleQuote",
+            }, false); // Don't show toast, we call showToast instead
+            showToast("error", getErrorMessage(error) || "Failed to post quote");
         } finally {
             setIsQuoting(false);
         }
@@ -244,7 +269,16 @@ export function useNotificationActions({
             setChildReplies(directReplies);
             setChildMetadata(data.metadata || {});
         } catch (error) {
-            console.error("Failed to fetch child replies:", error);
+            const { handleAsyncErrorWithMessage } = await import("~/lib/error-handler.client");
+            handleAsyncErrorWithMessage(
+                error,
+                "Failed to load replies",
+                {
+                    component: "useNotificationActions",
+                    action: "fetchChildReplies",
+                },
+                false, // Don't show toast, we call showToast instead
+            );
             showToast("error", "Failed to load replies");
         } finally {
             setIsLoadingReplies(false);

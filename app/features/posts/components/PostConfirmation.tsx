@@ -27,7 +27,12 @@ export default function PostConfirmation({ preparedEvents, postsCount }) {
               originalPostId: eventData.originalPostId,
             };
           } catch (eventError) {
-            console.error(`Error signing event ${index}:`, eventError);
+            const { handleAsyncError } = await import("~/lib/error-handler.client");
+            handleAsyncError(eventError, {
+              component: "PostConfirmation",
+              action: "signEvent",
+              eventIndex: index,
+            }, false); // Don't show toast, throw to outer catch
             throw eventError;
           }
         }),
@@ -58,7 +63,11 @@ export default function PostConfirmation({ preparedEvents, postsCount }) {
         action: actionUrl,
       });
     } catch (error) {
-      console.error("Error signing and submitting:", error);
+      const { handleAsyncError } = await import("~/lib/error-handler.client");
+      handleAsyncError(error, {
+        component: "PostConfirmation",
+        action: "handleSignAndSubmit",
+      }, false); // Don't show toast, let component handle it
     }
   };
 

@@ -186,7 +186,13 @@ export default function MediaPost({
     fetch("/api/user-upload-provider")
       .then((res) => res.json())
       .then((data) => setUploadProvider(data.provider))
-      .catch((err) => console.error("Failed to get upload provider:", err));
+      .catch((err) => {
+        const { handleErrorSafely } = require("~/lib/error-handler.client");
+        handleErrorSafely(err, {
+          component: "MediaPost",
+          action: "fetchUploadProvider",
+        });
+      });
   }, []);
 
   const handleImagePreview = async (e) => {
@@ -258,8 +264,13 @@ export default function MediaPost({
       setFiles([]);
       setIsUploading(false);
     } catch (error) {
-      console.error("Upload error:", error);
-      toast.error(`Upload failed: ${error.message || "Unknown error"}`);
+      const { handleAsyncError, getErrorMessage } = await import("~/lib/error-handler.client");
+      const errorMessage = getErrorMessage(error) || "Unknown error";
+      handleAsyncError(error, {
+        component: "MediaPost",
+        action: "handleImagePreview",
+      }, false); // Don't show toast, we call toast.error instead
+      toast.error(`Upload failed: ${errorMessage}`);
       setIsUploading(false);
     }
   };

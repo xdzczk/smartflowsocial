@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { type BulkPost } from "~/features/posts/components/BulkPostCard";
+import { handleErrorSafely } from "~/lib/error-handler.client";
 
 interface UseBulkPostsStateProps {
     mode: string | null;
@@ -51,7 +52,10 @@ export function useBulkPostsState({ mode, posts, setPosts }: UseBulkPostsStatePr
                     // Clear sessionStorage after loading
                     sessionStorage.removeItem("repostData");
                 } catch (error) {
-                    console.error("Error parsing repost data:", error);
+                    handleErrorSafely(error, {
+                        component: "useBulkPostsState",
+                        action: "loadRepostData",
+                    });
                 }
             }
         } else if (mode === "repost") {
@@ -79,7 +83,10 @@ export function useBulkPostsState({ mode, posts, setPosts }: UseBulkPostsStatePr
                                 return originalPosts;
                             }
                         } catch (error) {
-                            console.error("Error fetching original posts:", error);
+                            handleErrorSafely(error, {
+                                component: "useBulkPostsState",
+                                action: "fetchOriginalPosts",
+                            });
                         }
                         return [];
                     };
@@ -113,7 +120,10 @@ export function useBulkPostsState({ mode, posts, setPosts }: UseBulkPostsStatePr
                     // Clear sessionStorage after loading
                     sessionStorage.removeItem("scheduledRepostData");
                 } catch (error) {
-                    console.error("Error parsing scheduled repost data:", error);
+                    handleErrorSafely(error, {
+                        component: "useBulkPostsState",
+                        action: "loadScheduledRepostData",
+                    });
                 }
             }
         } else if (mode === "quote") {
@@ -164,7 +174,10 @@ export function useBulkPostsState({ mode, posts, setPosts }: UseBulkPostsStatePr
                     // Clear sessionStorage after loading
                     sessionStorage.removeItem("quotePostData");
                 } catch (error) {
-                    console.error("Error parsing quote post data:", error);
+                    handleErrorSafely(error, {
+                        component: "useBulkPostsState",
+                        action: "loadQuotePostData",
+                    });
                 }
             }
         }

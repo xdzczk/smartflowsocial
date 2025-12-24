@@ -12,22 +12,43 @@ export const loader = async ({ request }) => {
 };
 
 export async function action({ request }) {
-  const formData = await request.formData();
-  const event = formData.get("event");
+  try {
+    const formData = await request.formData();
+    const event = formData.get("event");
 
-  // Parse the event JSON
-  const parsedEvent = JSON.parse(event);
+    if (!event || typeof event !== "string") {
+      const { ValidationError } = await import("~/lib/errors");
+      throw new ValidationError("Missing or invalid event");
+    }
 
-  // Verify the signature
-  const isValid = validateEvent(parsedEvent);
+    // Parse the event JSON
+    let parsedEvent: any;
+    try {
+      parsedEvent = JSON.parse(event);
+    } catch (parseError) {
+      const { ValidationError } = await import("~/lib/errors");
+      throw new ValidationError("Invalid event JSON format", {
+        error: parseError instanceof Error ? parseError.message : String(parseError),
+      });
+    }
 
-  if (isValid) {
-    // The signature is valid, so this is the real user
-    // You can now create a session or token for the user
-    return json({ success: true });
-  } else {
-    // The signature is not valid
-    return json({ error: "Invalid signature" }, { status: 401 });
+    // Verify the signature
+    const isValid = validateEvent(parsedEvent);
+
+    if (isValid) {
+      // The signature is valid, so this is the real user
+      // You can now create a session or token for the user
+      return json({ success: true });
+    } else {
+      // The signature is not valid
+      const { AuthenticationError } = await import("~/lib/errors");
+      throw new AuthenticationError("Invalid signature or expired event", {
+        hasEvent: !!event,
+      });
+    }
+  } catch (error) {
+    const { handleActionError } = await import("~/lib/error-handler.server");
+    return handleActionError(error);
   }
 }
 

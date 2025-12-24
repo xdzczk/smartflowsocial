@@ -1,25 +1,50 @@
-import { json } from "@remix-run/node";
+import type { ActionFunctionArgs } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth/session.server";
 import { getPostsByIds } from "~/models/post.server";
+import { ValidationError, DatabaseError } from "~/lib/errors";
+import {
+  withActionErrorHandling,
+  createSuccessResponse,
+  assert,
+} from "~/lib/error-handler.server";
 
-export async function action({ request }: { request: Request }) {
-  if (request.method !== "POST") {
-    return json({ error: "Method not allowed" }, { status: 405 });
-  }
+export const action = withActionErrorHandling(
+  async ({ request }: ActionFunctionArgs) => {
+    assert(request.method === "POST", "Method not allowed", {
+      method: request.method,
+    });
 
-  const userId = await requireUserId(request);
-  const { postIds } = await request.json();
+    const userId = await requireUserId(request);
 
-  if (!Array.isArray(postIds)) {
-    return json({ error: "postIds must be an array" }, { status: 400 });
-  }
+    let body: { postIds?: unknown };
+    try {
+      body = await request.json();
+    } catch (error) {
+      throw new ValidationError("Invalid JSON in request body", {
+        originalError: error instanceof Error ? error.message : String(error),
+      });
+    }
 
-  try {
-    const posts = await getPostsByIds({ ids: postIds, userId });
-    return json(posts);
-  } catch (error) {
-    console.error("Error fetching posts:", error);
-    return json({ error: "Failed to fetch posts" }, { status: 500 });
-  }
-}
+    const { postIds } = body;
+
+    assert(
+      Array.isArray(postIds),
+      "postIds must be an array",
+      { postIdsType: typeof postIds, isArray: Array.isArray(postIds) },
+    );
+
+    let posts;
+    try {
+      posts = await getPostsByIds({ ids: postIds as string[], userId });
+    } catch (error) {
+      throw new DatabaseError("Failed to fetch posts", {
+        userId,
+        postIdsCount: (postIds as string[]).length,
+        originalError: error instanceof Error ? error.message : String(error),
+      });
+    }
+
+    return createSuccessResponse(posts);
+  },
+);

@@ -34,13 +34,23 @@ export { bulkPostsAction as action } from "~/features/posts/bulkposts.action.ser
 
 
 export async function loader({ request }: { request: Request }) {
-  const userId = await requireUserId(request);
+  try {
+    const userId = await requireUserId(request);
 
-  // Check if user has access to bulk scheduling feature
-  await requireFeatureAccess(userId, 'bulkScheduling');
-  const data = await getBulkPostsDashboardData(userId);
+    // Check if user has access to bulk scheduling feature
+    await requireFeatureAccess(userId, 'bulkScheduling');
+    const data = await getBulkPostsDashboardData(userId);
 
-  return json(data);
+    return json(data);
+  } catch (error) {
+    const { handleLoaderError } = await import("~/lib/error-handler.server");
+    return handleLoaderError(error, {
+      tags: [],
+      queueTypes: [],
+      hashTagPresets: [],
+      mode: null,
+    });
+  }
 }
 
 
@@ -101,7 +111,13 @@ export default function BulkPosts() {
     fetch("/api/user-upload-provider")
       .then((res) => res.json())
       .then((data) => setUploadProvider(data.provider))
-      .catch((err) => console.error("Failed to get upload provider:", err));
+      .catch((err) => {
+        const { handleErrorSafely } = require("~/lib/error-handler.client");
+        handleErrorSafely(err, {
+          component: "BulkPosts",
+          action: "fetchUploadProvider",
+        });
+      });
   }, []);
 
 

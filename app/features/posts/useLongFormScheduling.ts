@@ -59,7 +59,11 @@ export function useLongFormScheduling({
                 setScheduledFor(scheduledTime);
             }
         } catch (error) {
-            console.error("Error calculating schedule time:", error);
+            const { handleErrorSafely } = await import("~/lib/error-handler.client");
+            handleErrorSafely(error, {
+                component: "useLongFormScheduling",
+                action: "calculateQueueScheduleTime",
+            });
         }
     }, [queueTypes]);
 
@@ -98,7 +102,11 @@ export function useLongFormScheduling({
                 setDisplayedHashtags(userTags);
             }
         } catch (error) {
-            console.error("Error fetching effective hashtags:", error);
+            const { handleErrorSafely } = await import("~/lib/error-handler.client");
+            handleErrorSafely(error, {
+                component: "useLongFormScheduling",
+                action: "updateDisplayedHashtags",
+            });
             setDisplayedHashtags(userTags);
         }
     }, [userTags, onQueueTypeChange, calculateQueueScheduleTime]);

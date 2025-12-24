@@ -64,7 +64,11 @@ export function SubscriptionSettings({
       setCopiedHash(hashId);
       setTimeout(() => setCopiedHash(null), 2000);
     } catch (err) {
-      console.error('Failed to copy text: ', err);
+      const { handleErrorSafely } = require("~/lib/error-handler.client");
+      handleErrorSafely(err, {
+        component: "SubscriptionSettings",
+        action: "copyToClipboard",
+      });
     }
   };
 

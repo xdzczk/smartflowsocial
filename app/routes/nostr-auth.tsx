@@ -32,59 +32,79 @@ interface NostrProfileType {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  const formData = await request.formData();
+  try {
+    const formData = await request.formData();
 
-  const event = formData.get("event");
+    const event = formData.get("event");
 
-  if (!event || typeof event !== "string") {
-    return json({ error: "Missing or invalid event" }, { status: 400 });
-  }
-
-  // Parse the event JSON
-  const parsedEvent = JSON.parse(event);
-
-  const redirectTo = safeRedirect(formData.get("redirectTo"), `/dashboard`);
-
-  // Verify the signature
-  const isValid = validateEvent(parsedEvent);
-  const createdAt = new Date(parsedEvent.created_at * 1000);
-  const sixHoursAgo = new Date(Date.now() - 1000 * 60 * 60 * 6);
-  const contentSign = formData.get("contentSign");
-
-  if (
-    isValid &&
-    parsedEvent.content === contentSign &&
-    createdAt >= sixHoursAgo &&
-    parsedEvent.kind === 27235
-  ) {
-    // The signature is valid, so this is the real user
-    // You can now create a session or token for the user
-    let user = await getUserByNpub(parsedEvent.pubkey);
-    const { nostrProfile } = await getCompleteProfile({
-      npub: parsedEvent.pubkey,
-    });
-
-    if (!user) {
-      user = await createUser(
-        parsedEvent.pubkey,
-        nostrProfile as NostrProfileType,
-      );
+    if (!event || typeof event !== "string") {
+      const { ValidationError } = await import("~/lib/errors");
+      throw new ValidationError("Missing or invalid event");
     }
-    const twelveHoursAgo = new Date(Date.now() - 1000 * 60 * 60 * 12);
-    if (user.updatedAt < twelveHoursAgo) {
-      await updateUserProfile({
-        nostrProfile: nostrProfile as NostrProfileType,
-        npub: parsedEvent.pubkey,
+
+    // Parse the event JSON
+    let parsedEvent: any;
+    try {
+      parsedEvent = JSON.parse(event);
+    } catch (parseError) {
+      const { ValidationError } = await import("~/lib/errors");
+      throw new ValidationError("Invalid event JSON format", {
+        error: parseError instanceof Error ? parseError.message : String(parseError),
       });
     }
-    return createUserSession({
-      redirectTo,
-      remember: false,
-      request,
-      userId: user.id,
-    });
-  } else {
-    // The signature is not valid
-    return json({ error: "Invalid signature" }, { status: 401 });
+
+    const redirectTo = safeRedirect(formData.get("redirectTo"), `/dashboard`);
+
+    // Verify the signature
+    const isValid = validateEvent(parsedEvent);
+    const createdAt = new Date(parsedEvent.created_at * 1000);
+    const sixHoursAgo = new Date(Date.now() - 1000 * 60 * 60 * 6);
+    const contentSign = formData.get("contentSign");
+
+    if (
+      isValid &&
+      parsedEvent.content === contentSign &&
+      createdAt >= sixHoursAgo &&
+      parsedEvent.kind === 27235
+    ) {
+      // The signature is valid, so this is the real user
+      // You can now create a session or token for the user
+      let user = await getUserByNpub(parsedEvent.pubkey);
+      const { nostrProfile } = await getCompleteProfile({
+        npub: parsedEvent.pubkey,
+      });
+
+      if (!user) {
+        user = await createUser(
+          parsedEvent.pubkey,
+          nostrProfile as NostrProfileType,
+        );
+      }
+      const twelveHoursAgo = new Date(Date.now() - 1000 * 60 * 60 * 12);
+      if (user.updatedAt < twelveHoursAgo) {
+        await updateUserProfile({
+          nostrProfile: nostrProfile as NostrProfileType,
+          npub: parsedEvent.pubkey,
+        });
+      }
+      return createUserSession({
+        redirectTo,
+        remember: false,
+        request,
+        userId: user.id,
+      });
+    } else {
+      // The signature is not valid
+      const { AuthenticationError } = await import("~/lib/errors");
+      throw new AuthenticationError("Invalid signature or expired event", {
+        isValid,
+        hasContentSign: !!contentSign,
+        createdAt: parsedEvent.created_at,
+        kind: parsedEvent.kind,
+      });
+    }
+  } catch (error) {
+    const { handleActionError } = await import("~/lib/error-handler.server");
+    return handleActionError(error);
   }
 }

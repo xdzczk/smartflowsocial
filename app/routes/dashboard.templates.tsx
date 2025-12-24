@@ -59,10 +59,11 @@ export async function loader({ request }: { request: Request }) {
 }
 
 export async function action({ request }: { request: Request }) {
-  const userId = await requireUserId(request);
+  try {
+    const userId = await requireUserId(request);
 
-  const formData = await request.formData();
-  const _action = formData.get("_action");
+    const formData = await request.formData();
+    const _action = formData.get("_action");
 
   if (_action === "delete") {
     const templateId = formData.get("templateId");
@@ -278,7 +279,12 @@ export async function action({ request }: { request: Request }) {
     return json({ scheduleData: templateData });
   }
 
-  return json({ error: "Invalid action" }, { status: 400 });
+    return json({ error: "Invalid action" }, { status: 400 });
+  } catch (error) {
+    // Use centralized error handling
+    const { handleActionError } = await import("~/lib/error-handler.server");
+    return handleActionError(error);
+  }
 }
 
 export default function Templates() {

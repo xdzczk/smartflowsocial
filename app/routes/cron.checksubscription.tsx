@@ -311,14 +311,20 @@ export async function loader() {
       ...results,
     });
   } catch (error: unknown) {
-    console.error("[CRON] Cron job error:", error);
+    // Use centralized error handling but preserve results
+    const { normalizeError } = await import("~/lib/errors");
+    const { createErrorResponse } = await import("~/lib/error-handler.server");
+    const normalizedError = normalizeError(error);
+    const [errorResponse] = createErrorResponse(normalizedError);
+
     return json(
       {
         success: false,
-        error: error instanceof Error ? error.message : String(error),
+        error: errorResponse.error,
+        timestamp: new Date().toISOString(),
         ...results,
       },
-      { status: 500 },
+      { status: normalizedError.statusCode },
     );
   }
 }

@@ -20,6 +20,7 @@
     "test:e2e": "cypress run",
     "test:loaders": "cypress run --spec \"cypress/e2e/loaders/**/*.cy.ts\"",
     "test:integration": "cypress run --spec \"cypress/e2e/loaders/**/*.cy.ts,cypress/e2e/subscription/**/*.cy.ts\"",
+    "test:error-handling": "cypress run --spec \"cypress/e2e/integration/error-handling.cy.ts\"",
     "test:unit": "cypress run --spec \"cypress/e2e/unit/**/*.cy.ts\"",
     "typecheck": "tsc && tsc -p cypress",
     "precheck": "npm run lint && npx tsc --noEmit",

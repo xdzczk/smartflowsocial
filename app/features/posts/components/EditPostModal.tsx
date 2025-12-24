@@ -171,7 +171,11 @@ export function EditPostModal({
                           throw new Error(result.error || "Upload failed");
                         }
                       } catch (error) {
-                        console.error("EditorJS upload error:", error);
+                        const { handleAsyncError } = await import("~/lib/error-handler.client");
+                        handleAsyncError(error, {
+                          component: "EditPostModal",
+                          action: "uploadImage",
+                        }, false); // Don't show toast, let EditorJS handle it
                         throw error;
                       }
                     },

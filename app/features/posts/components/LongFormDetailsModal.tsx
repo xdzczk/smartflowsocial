@@ -3,6 +3,7 @@ import { useState } from "react";
 
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { handleErrorSafely } from "~/lib/error-handler.client";
 import type { LongFormPost } from "~/models/longformpost.server";
 
 interface LongFormDetailsModalProps {
@@ -105,7 +106,10 @@ export default function LongFormDetailsModal({
         '<p class="text-gray-500 italic">Content could not be rendered</p>'
       );
     } catch (error) {
-      console.error("Error parsing EditorJS content:", error);
+      handleErrorSafely(error, {
+        component: "LongFormDetailsModal",
+        action: "parseEditorJSContent",
+      });
       // Try to display as plain text if JSON parsing fails
       const plainTextContent = content.replace(/<[^>]*>/g, "");
       return `<p class="text-gray-700 dark:text-gray-300">${plainTextContent || "Content parsing failed"}</p>`;

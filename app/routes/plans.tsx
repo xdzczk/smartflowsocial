@@ -85,14 +85,14 @@ export async function action({ request }: ActionFunctionArgs) {
         },
       );
     } catch (error) {
-      console.error("Error checking payment status:", error);
+      const { handleActionError } = await import("~/lib/error-handler.server");
+      // For payment polling, we want to return 200 with error info, not throw
+      const errorResponse = await handleActionError(error);
+      const errorData = await errorResponse.json();
       return json(
         {
           success: false,
-          error:
-            error instanceof Error
-              ? error.message
-              : "Failed to check payment status",
+          error: errorData.message || "Failed to check payment status",
         },
         {
           status: 200,

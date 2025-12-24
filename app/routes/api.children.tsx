@@ -16,42 +16,49 @@ function extractProfileBits(nostrProfile: any | null | undefined) {
       const p: any = nostrProfile;
       return { name: p?.name, display_name: p?.display_name, picture: p?.picture } as const;
     }
-  } catch { }
+  } catch {
+    // Silently ignore parse errors - return defaults
+  }
   return { name: undefined, display_name: undefined, picture: undefined } as const;
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const userId = await requireUserId(request);
+  try {
+    const userId = await requireUserId(request);
 
-  // Fetch minimal user info
-  const me = await getUserBasicInfo(userId);
-  if (!me?.npub) {
-    return json({ children: [] });
+    // Fetch minimal user info
+    const me = await getUserBasicInfo(userId);
+    if (!me?.npub) {
+      return json({ children: [] });
+    }
+    // Only parents can fetch children
+    if (me.isChild) {
+      return json({ children: [] });
+    }
+
+    // Check subscription plan is Premium or Founder
+    const sub = await getUserSubscription(userId);
+    const planId = (sub?.planId || "").toLowerCase();
+    const planName = (sub?.Plan?.name || "").toLowerCase();
+    const hasAccountsAccess = planId === "premium" || planName === "premium" || planName === "founder";
+    if (!hasAccountsAccess) {
+      return json({ children: [] });
+    }
+
+    const confirmed = await getConfirmedChildrenForParent(me.npub);
+    const children = confirmed.map((c) => {
+      const bits = extractProfileBits(c.nostrProfile);
+      return {
+        npub: c.npub,
+        name: bits.name,
+        displayName: bits.display_name,
+        picture: bits.picture,
+      };
+    });
+
+    return json({ children });
+  } catch (error) {
+    const { handleLoaderError } = await import("~/lib/error-handler.server");
+    return handleLoaderError(error, { children: [] });
   }
-  // Only parents can fetch children
-  if (me.isChild) {
-    return json({ children: [] });
-  }
-
-  // Check subscription plan is Premium or Founder
-  const sub = await getUserSubscription(userId);
-  const planId = (sub?.planId || "").toLowerCase();
-  const planName = (sub?.Plan?.name || "").toLowerCase();
-  const hasAccountsAccess = planId === "premium" || planName === "premium" || planName === "founder";
-  if (!hasAccountsAccess) {
-    return json({ children: [] });
-  }
-
-  const confirmed = await getConfirmedChildrenForParent(me.npub);
-  const children = confirmed.map((c) => {
-    const bits = extractProfileBits(c.nostrProfile);
-    return {
-      npub: c.npub,
-      name: bits.name,
-      displayName: bits.display_name,
-      picture: bits.picture,
-    };
-  });
-
-  return json({ children });
 }

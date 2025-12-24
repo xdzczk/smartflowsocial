@@ -55,10 +55,14 @@ export async function uploadFile(file: File): Promise<UploadResult> {
       return await uploadFileToS3(file);
     }
   } catch (error) {
-    console.error("Upload error:", error);
+    const { handleAsyncError, getErrorMessage } = await import("~/lib/error-handler.client");
+    handleAsyncError(error, {
+      component: "upload.client",
+      action: "uploadFile",
+    }, false); // Don't show toast, return error instead
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Upload failed",
+      error: getErrorMessage(error) || "Upload failed",
     };
   }
 }
@@ -179,10 +183,15 @@ async function uploadFileToBlossom(
       };
     }
   } catch (error) {
-    console.error("Blossom upload error:", error);
+    const { handleAsyncError, getErrorMessage } = await import("~/lib/error-handler.client");
+    handleAsyncError(error, {
+      component: "upload.client",
+      action: "uploadFileToBlossom",
+      provider,
+    }, false); // Don't show toast, return error instead
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Blossom upload failed",
+      error: getErrorMessage(error) || "Blossom upload failed",
     };
   }
 }
@@ -223,14 +232,26 @@ export async function uploadEditorJSImage(
         },
       };
     } else {
-      console.error("EditorJS upload failed:", result.error);
+      const { logClientError } = await import("~/lib/error-handler.client");
+      logClientError(
+        new Error(result.error?.message || "EditorJS upload failed"),
+        {
+          component: "upload.client",
+          action: "uploadEditorJSImage",
+        },
+        "warning",
+      );
       return {
         success: 0,
         // EditorJS expects no error property in success response
       };
     }
   } catch (error) {
-    console.error("EditorJS upload error:", error);
+    const { handleAsyncError } = await import("~/lib/error-handler.client");
+    handleAsyncError(error, {
+      component: "upload.client",
+      action: "uploadEditorJSImage",
+    }, false); // Don't show toast, return error code instead
     return {
       success: 0,
     };

@@ -89,7 +89,16 @@ function GroupedNotificationCard({
       setParentToast({ type: "success", message: "NEvent copied to clipboard!" });
       setTimeout(() => setParentToast(null), 2000);
     } catch (error) {
-      console.error("Copy error:", error);
+      const { handleAsyncErrorWithMessage } = await import("~/lib/error-handler.client");
+      handleAsyncErrorWithMessage(
+        error,
+        "Failed to copy",
+        {
+          component: "GroupedNotificationList",
+          action: "handleCopyNEvent",
+        },
+        false, // Don't show toast, we set parentToast instead
+      );
       setParentToast({ type: "error", message: "Failed to copy" });
       setTimeout(() => setParentToast(null), 2000);
     }

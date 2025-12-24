@@ -132,8 +132,8 @@ export async function action({ request }) {
 
       return redirect("/dashboard/drafts");
     } catch (error) {
-      console.error("Error saving draft:", error);
-      return json({ error: error.message }, { status: 400 });
+      const { handleActionError } = await import("~/lib/error-handler.server");
+      return handleActionError(error);
     }
   }
 
@@ -217,8 +217,8 @@ export async function action({ request }) {
         return redirect("/dashboard/scheduled");
       }
     } catch (error) {
-      console.error("Error in post-text action:", error);
-      return json({ error: error.message }, { status: 400 });
+      const { handleActionError } = await import("~/lib/error-handler.server");
+      return handleActionError(error);
     }
   }
 

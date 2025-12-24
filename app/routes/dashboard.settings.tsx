@@ -740,18 +740,22 @@ export async function action({ request }: { request: Request }) {
 
     return json({ error: "Invalid action type" }, { status: 400 });
   } catch (error) {
-    console.error(`Action error for ${_action}:`, error);
+    // Use centralized error handling
+    const { handleActionError } = await import("~/lib/error-handler.server");
+    const { logError } = await import("~/lib/error-logger.server");
+    const { normalizeError } = await import("~/lib/errors");
 
-    // Log the form data for debugging
-    const formDataEntries = Object.fromEntries(formData.entries());
-    console.error("Form data:", formDataEntries);
+    // Log additional context for debugging
+    const normalizedError = normalizeError(error);
+    logError(normalizedError, {
+      userId,
+      path: request.url,
+      method: request.method,
+      action: _action,
+      formDataEntries: Object.fromEntries(formData.entries()),
+    });
 
-    return json(
-      {
-        error: `Failed to process ${_action}: ${error instanceof Error ? error.message : "Unknown error"}`,
-      },
-      { status: 500 },
-    );
+    return handleActionError(error);
   }
 }
 

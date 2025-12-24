@@ -4,6 +4,7 @@ import { toast } from "react-hot-toast";
 import { signEventFn } from "~/lib/nostr";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { isVideoFile } from "~/lib/helpers";
+const { handleErrorSafely } = require("~/lib/error-handler.client");
 
 export function RescheduleModal({
   data,
@@ -66,7 +67,10 @@ export function RescheduleModal({
         }
         return firstFileUrl;
       } catch (error) {
-        console.error("Error getting first media:", error);
+        handleErrorSafely(error, {
+          component: "RescheduleModal",
+          action: "getFirstMedia",
+        });
         return null;
       }
     }

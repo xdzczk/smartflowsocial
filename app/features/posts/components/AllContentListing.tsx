@@ -2,6 +2,7 @@ import { useFetcher, Link } from "@remix-run/react";
 import { useState } from "react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
+import { handleErrorSafely } from "~/lib/error-handler.client";
 import type { CombinedContent } from "~/features/posts/combined.server";
 import { getQueueColor } from "~/features/posts/queueColors";
 
@@ -141,7 +142,10 @@ export default function AllContentListing({
       try {
         return JSON.parse(fileUrl[0]);
       } catch (e) {
-        console.error("Error parsing fileUrl:", e);
+        handleErrorSafely(e, {
+          component: "AllContentListing",
+          action: "parseFileUrl",
+        });
         return [];
       }
     }

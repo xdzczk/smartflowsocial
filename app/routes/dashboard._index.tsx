@@ -96,34 +96,53 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 };
 
 export async function action({ request }) {
-  const userId = await requireUserId(request);
-  const formData = await request.formData();
-  const postId = formData.get("postId");
-  const _action = formData.get("_action");
+  try {
+    const userId = await requireUserId(request);
+    const formData = await request.formData();
+    const postId = formData.get("postId");
+    const _action = formData.get("_action");
 
-  if (_action === "delete") {
-    await deletePost({ id: postId, userId });
-    return json({ success: true });
+    if (_action === "delete") {
+      await deletePost({ id: postId, userId });
+      return json({ success: true });
+    }
+
+    if (_action === "deleteLongForm") {
+      await deleteLongFormPost({ id: postId, userId });
+      return json({ success: true });
+    }
+
+    if (_action === "bulkDelete") {
+      try {
+        const postIds = JSON.parse(formData.get("postIds") as string);
+        await Promise.all(postIds.map((id) => deletePost({ id, userId })));
+        return json({ success: true });
+      } catch (parseError) {
+        const { ValidationError } = await import("~/lib/errors");
+        throw new ValidationError("Invalid postIds format", {
+          error: parseError instanceof Error ? parseError.message : String(parseError),
+        });
+      }
+    }
+
+    if (_action === "bulkDeleteLongForm") {
+      try {
+        const postIds = JSON.parse(formData.get("postIds") as string);
+        await Promise.all(postIds.map((id) => deleteLongFormPost({ id, userId })));
+        return json({ success: true });
+      } catch (parseError) {
+        const { ValidationError } = await import("~/lib/errors");
+        throw new ValidationError("Invalid postIds format", {
+          error: parseError instanceof Error ? parseError.message : String(parseError),
+        });
+      }
+    }
+
+    return json({ error: "Invalid action" }, { status: 400 });
+  } catch (error) {
+    const { handleActionError } = await import("~/lib/error-handler.server");
+    return handleActionError(error);
   }
-
-  if (_action === "deleteLongForm") {
-    await deleteLongFormPost({ id: postId, userId });
-    return json({ success: true });
-  }
-
-  if (_action === "bulkDelete") {
-    const postIds = JSON.parse(formData.get("postIds"));
-    await Promise.all(postIds.map((id) => deletePost({ id, userId })));
-    return json({ success: true });
-  }
-
-  if (_action === "bulkDeleteLongForm") {
-    const postIds = JSON.parse(formData.get("postIds"));
-    await Promise.all(postIds.map((id) => deleteLongFormPost({ id, userId })));
-    return json({ success: true });
-  }
-
-  return json({ error: "Invalid action" }, { status: 400 });
 }
 
 export default function DashboardIndex() {

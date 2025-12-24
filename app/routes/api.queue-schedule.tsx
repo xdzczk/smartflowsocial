@@ -1,24 +1,42 @@
-import { json } from "@remix-run/node";
+import type { ActionFunctionArgs } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth/session.server";
 import {
   calculateNextScheduleTime,
   formatScheduleTimeForInput,
 } from "~/features/posts/schedulers";
-import { getQueueTypes, getUserTimezone, getQueueTypeByIdForUser } from "~/models/user.server";
+import {
+  getQueueTypes,
+  getUserTimezone,
+  getQueueTypeByIdForUser,
+} from "~/models/user.server";
+import { NotFoundError } from "~/lib/errors";
+import {
+  withActionErrorHandling,
+  createSuccessResponse,
+  assert,
+} from "~/lib/error-handler.server";
 
-export async function action({ request }: { request: Request }) {
-  if (request.method !== "POST") {
-    return json({ error: "Method not allowed" }, { status: 405 });
-  }
+export const action = withActionErrorHandling(
+  async ({ request }: ActionFunctionArgs) => {
+    assert(request.method === "POST", "Method not allowed", {
+      method: request.method,
+    });
 
-  try {
     const userId = await requireUserId(request);
-    const requestBody = await request.json();
+
+    let requestBody: { queueTypeName?: string; queueTypeId?: string };
+    try {
+      requestBody = await request.json();
+    } catch (error) {
+      const { ValidationError } = await import("~/lib/errors");
+      throw new ValidationError("Invalid JSON in request body", {
+        originalError: error instanceof Error ? error.message : String(error),
+      });
+    }
 
     // Support both old format (queueTypeName) and new format (queueTypeId)
     const { queueTypeName, queueTypeId } = requestBody;
-
 
     if ((!queueTypeName && !queueTypeId) || queueTypeName === "unassigned") {
       return json({ scheduledTime: "" });
@@ -32,18 +50,19 @@ export async function action({ request }: { request: Request }) {
     if (queueTypeId) {
       // Use queue type ID for direct lookup (preferred method)
       selectedQueue = await getQueueTypeByIdForUser(userId, queueTypeId);
-
     } else {
       // Fallback to name-based lookup for backward compatibility
       const queueTypes = await getQueueTypes(userId);
       selectedQueue = queueTypes.find((qt) => qt.name === queueTypeName);
-
     }
 
     if (!selectedQueue) {
-      return json({ error: "Queue type not found" }, { status: 404 });
+      throw new NotFoundError("Queue type not found", {
+        queueTypeName,
+        queueTypeId,
+        userId,
+      });
     }
-
 
     // Calculate next schedule time with user timezone
     const nextScheduleTime = await calculateNextScheduleTime({
@@ -58,10 +77,6 @@ export async function action({ request }: { request: Request }) {
       userTimezone || "UTC",
     );
 
-
-    return json({ scheduledTime: formattedTime });
-  } catch (error) {
-    console.error("Error calculating queue schedule:", error);
-    return json({ error: "Internal server error" }, { status: 500 });
-  }
-}
+    return createSuccessResponse({ scheduledTime: formattedTime });
+  },
+);

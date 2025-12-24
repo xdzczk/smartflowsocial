@@ -16,18 +16,19 @@ export async function loader({ request }) {
 }
 
 export async function action({ request }) {
-  const userId = await requireUserId(request);
-  const formData = await request.formData();
-  const _action = formData.get("_action");
+  try {
+    const userId = await requireUserId(request);
+    const formData = await request.formData();
+    const _action = formData.get("_action");
 
-  if (_action === "searchEvent") {
-    const eventInput = formData.get("eventInput");
+    if (_action === "searchEvent") {
+      const eventInput = formData.get("eventInput");
 
-    if (!eventInput || eventInput.trim() === "") {
-      return json({ error: "Please enter an event ID or nevent1" }, { status: 400 });
-    }
+      if (!eventInput || eventInput.trim() === "") {
+        const { ValidationError } = await import("~/lib/errors");
+        throw new ValidationError("Please enter an event ID or nevent1");
+      }
 
-    try {
       let eventId = eventInput.trim();
 
       // Check if input is in nevent1 format
@@ -47,7 +48,11 @@ export async function action({ request }) {
             eventId = decoded.data.id;
           }
         } catch (e) {
-          return json({ error: "Invalid nevent1 format" }, { status: 400 });
+          const { ValidationError } = await import("~/lib/errors");
+          throw new ValidationError("Invalid nevent1 format", {
+            input: eventInput,
+            error: e instanceof Error ? e.message : String(e),
+          });
         }
       } else if (eventId.startsWith("note1")) {
         try {
@@ -56,32 +61,54 @@ export async function action({ request }) {
             eventId = decoded.data;
           }
         } catch (e) {
-          return json({ error: "Invalid note1 format" }, { status: 400 });
+          const { ValidationError } = await import("~/lib/errors");
+          throw new ValidationError("Invalid note1 format", {
+            input: eventInput,
+            error: e instanceof Error ? e.message : String(e),
+          });
         }
       }
 
       // Validate hex format (64 character hex string)
       if (!/^[a-f0-9]{64}$/i.test(eventId)) {
-        return json(
-          { error: "Invalid event ID format. Must be a 64-character hex string, note1, or nevent1" },
-          { status: 400 }
+        const { ValidationError } = await import("~/lib/errors");
+        throw new ValidationError(
+          "Invalid event ID format. Must be a 64-character hex string, note1, or nevent1",
+          { eventId, input: eventInput },
         );
       }
 
       // Fetch event from Primal cache
-      const responses = await connectToPrimalCache("events", {
-        event_ids: [eventId],
-      });
+      let responses: unknown;
+      try {
+        responses = await connectToPrimalCache("events", {
+          event_ids: [eventId],
+        });
+      } catch (error) {
+        const { ExternalServiceError } = await import("~/lib/errors");
+        throw new ExternalServiceError(
+          "Failed to fetch event from cache",
+          502,
+          {
+            service: "PrimalCache",
+            eventId,
+            originalError: error instanceof Error ? error.message : String(error),
+          },
+        );
+      }
 
       // Find the EVENT response
-      const eventResponse = responses?.find(
-        (res) => Array.isArray(res) && res[0] === "EVENT" && res[2]
-      );
+      const eventResponse = Array.isArray(responses)
+        ? responses.find(
+            (res) => Array.isArray(res) && res[0] === "EVENT" && res[2],
+          )
+        : null;
 
       if (!eventResponse || !eventResponse[2]) {
-        return json(
-          { error: "Event not found. Please check the event ID and try again." },
-          { status: 404 }
+        const { NotFoundError } = await import("~/lib/errors");
+        throw new NotFoundError(
+          "Event not found. Please check the event ID and try again.",
+          { eventId },
         );
       }
 
@@ -151,7 +178,12 @@ export async function action({ request }) {
           };
         }
       } catch (error) {
-        console.error("[Search] Error fetching stats:", error);
+        // Log but continue - stats are optional
+        const { logWarning } = await import("~/lib/error-logger.server");
+        logWarning("Failed to fetch stats for searched event", {
+          eventId,
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
 
       // Extract media URLs from content
@@ -173,16 +205,14 @@ export async function action({ request }) {
         },
         stats,
       });
-    } catch (error) {
-      console.error("[Search] Error:", error);
-      return json(
-        { error: `Failed to fetch event: ${error.message}` },
-        { status: 500 }
-      );
     }
+  } catch (error) {
+    const { handleActionError } = await import("~/lib/error-handler.server");
+    return handleActionError(error);
   }
 
-  return json({ error: "Invalid action" }, { status: 400 });
+  const { ValidationError } = await import("~/lib/errors");
+  throw new ValidationError("Invalid action", { action: _action });
 }
 
 export default function SearchPosts() {

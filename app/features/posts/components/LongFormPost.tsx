@@ -285,7 +285,11 @@ export default function LongFormPost({
       document.body.appendChild(form);
       form.submit();
     } catch (error) {
-      console.error("Error signing event:", error);
+      const { handleAsyncError } = await import("~/lib/error-handler.client");
+      handleAsyncError(error, {
+        component: "LongFormPost",
+        action: "handleSubmit",
+      }, false); // Don't show toast, let component handle it
     }
   };
 

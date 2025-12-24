@@ -483,7 +483,8 @@ export async function handleRecyclablePostAction(formData: FormData, userId: str
             // Get the original post data
             const postsData = await getPostsByIds({ ids: [postId], userId });
             if (!postsData || postsData.length === 0) {
-                return json({ error: "Post not found" }, { status: 404 });
+                const { NotFoundError } = await import("~/lib/errors");
+                throw new NotFoundError("Post not found", { postId, userId });
             }
 
             const originalPost = postsData[0];
@@ -507,15 +508,9 @@ export async function handleRecyclablePostAction(formData: FormData, userId: str
                 repostEventData: kind6EventData,
                 originalPost: originalPost,
             });
-        } catch (error: any) {
-            console.error("Repost error:", error);
-            return json(
-                {
-                    error: true,
-                    message: error.message || "Failed to create repost",
-                },
-                { status: 500 },
-            );
+        } catch (error) {
+            const { handleActionError } = await import("~/lib/error-handler.server");
+            return handleActionError(error);
         }
     }
 
@@ -524,7 +519,8 @@ export async function handleRecyclablePostAction(formData: FormData, userId: str
             // Get the original post data
             const postsData = await getPostsByIds({ ids: [postId], userId });
             if (!postsData || postsData.length === 0) {
-                return json({ error: "Post not found" }, { status: 404 });
+                const { NotFoundError } = await import("~/lib/errors");
+                throw new NotFoundError("Post not found", { postId, userId });
             }
 
             const originalPost = postsData[0];
@@ -544,15 +540,9 @@ export async function handleRecyclablePostAction(formData: FormData, userId: str
             };
 
             return json({ quotePostData: [quotePostData] });
-        } catch (error: any) {
-            console.error("Quote post error:", error);
-            return json(
-                {
-                    error: true,
-                    message: error.message || "Failed to create quote post",
-                },
-                { status: 500 },
-            );
+        } catch (error) {
+            const { handleActionError } = await import("~/lib/error-handler.server");
+            return handleActionError(error);
         }
     }
 

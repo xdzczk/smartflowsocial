@@ -127,7 +127,11 @@ export default function AccountSwitchMenu() {
       });
       document.dispatchEvent(new CustomEvent("nlLaunch", { detail: "switch" }));
     } catch (e) {
-      console.error("Error during account switch:", e);
+      const { handleErrorSafely } = require("~/lib/error-handler.client");
+      handleErrorSafely(e, {
+        component: "AccountSwitchMenu",
+        action: "onSwitchAccount",
+      });
     }
   };
 
@@ -164,7 +168,11 @@ export default function AccountSwitchMenu() {
       });
       document.dispatchEvent(new CustomEvent("nlLaunch", { detail: "switch" }));
     } catch (e) {
-      console.error("Error during parent switch:", e);
+      const { handleErrorSafely } = require("~/lib/error-handler.client");
+      handleErrorSafely(e, {
+        component: "AccountSwitchMenu",
+        action: "onSwitchParent",
+      });
     }
   };
 

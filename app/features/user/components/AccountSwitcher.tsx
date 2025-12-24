@@ -76,7 +76,11 @@ export default function AccountSwitcher() {
 
       document.dispatchEvent(new CustomEvent("nlLaunch", { detail: "switch" }));
     } catch (e) {
-      console.error("Error during account switch:", e);
+      const { handleErrorSafely } = require("~/lib/error-handler.client");
+      handleErrorSafely(e, {
+        component: "AccountSwitcher",
+        action: "handleAccountSwitch",
+      });
     }
   };
 

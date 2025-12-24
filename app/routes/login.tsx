@@ -7,9 +7,15 @@ import NostrAuthButton from "~/features/auth/components/NostrAuthButton";
 import { getUserId } from "~/features/auth/session.server";
 
 export const loader = async ({ request }) => {
-  const userId = await getUserId(request);
-  if (userId) return redirect("/dashboard");
-  return json({});
+  try {
+    const userId = await getUserId(request);
+    if (userId) return redirect("/dashboard");
+    return json({});
+  } catch (error) {
+    // For login page, errors are non-critical - just return empty data
+    const { handleLoaderError } = await import("~/lib/error-handler.server");
+    return handleLoaderError(error, {});
+  }
 };
 
 export const meta = () => [{ title: "Login" }];

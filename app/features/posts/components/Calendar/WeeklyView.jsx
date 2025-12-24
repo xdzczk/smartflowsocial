@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { PostBlock } from "./PostBlock";
+const { handleErrorSafely } = require("~/lib/error-handler.client");
 
 export function WeeklyView({
   scheduledPosts,
@@ -151,10 +152,14 @@ export function WeeklyView({
 
       onPostDrop(postData, newDateTime);
     } catch (error) {
-      console.error("Error converting timezone:", error);
-      // Fallback to simple date creation
-      const newDateTime = new Date(isoString);
-      onPostDrop(postData, newDateTime);
+      handleErrorSafely(error, {
+        component: "WeeklyView",
+        action: "handleDrop",
+      }, () => {
+        // Fallback to simple date creation
+        const newDateTime = new Date(isoString);
+        onPostDrop(postData, newDateTime);
+      });
     }
   };
 

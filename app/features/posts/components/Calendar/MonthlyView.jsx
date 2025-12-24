@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { PostBlock } from "./PostBlock";
+const { handleErrorSafely } = require("~/lib/error-handler.client");
 
 export function MonthlyView({
   scheduledPosts,
@@ -130,11 +131,15 @@ export function MonthlyView({
 
       onPostDrop(postData, newDateTime);
     } catch (error) {
-      console.error("Error converting timezone:", error);
-      // Fallback to simple date creation
-      const newDateTime = new Date(date);
-      newDateTime.setHours(9, 0, 0, 0);
-      onPostDrop(postData, newDateTime);
+      handleErrorSafely(error, {
+        component: "MonthlyView",
+        action: "handlePostDrop",
+      }, () => {
+        // Fallback to simple date creation
+        const newDateTime = new Date(date);
+        newDateTime.setHours(9, 0, 0, 0);
+        onPostDrop(postData, newDateTime);
+      });
     }
   };
 

@@ -1,5 +1,5 @@
+import type { ActionFunctionArgs } from "@remix-run/node";
 import {
-  json,
   unstable_composeUploadHandlers as composeUploadHandlers,
   unstable_createMemoryUploadHandler as createMemoryUploadHandler,
   unstable_parseMultipartFormData as parseMultipartFormData,
@@ -13,9 +13,18 @@ import {
 } from "~/features/upload/image-resize.server";
 import { uploadEditorJSImage } from "~/features/upload/s3.server";
 import { getUserUploadProvider } from "~/models/user.server";
+import {
+  ValidationError,
+  ExternalServiceError,
+} from "~/lib/errors";
+import {
+  withActionErrorHandling,
+  createSuccessResponse,
+  assert,
+} from "~/lib/error-handler.server";
 
-export async function action({ request }) {
-  try {
+export const action = withActionErrorHandling(
+  async ({ request }: ActionFunctionArgs) => {
     // Ensure user is authenticated
     const userId = await requireUserId(request);
 
@@ -24,106 +33,121 @@ export async function action({ request }) {
 
     // If user prefers blossom, handle it differently
     if (uploadProvider.includes("BLOSSOM")) {
-      return json({
-        success: 0,
-        error: "EditorJS uploads with Blossom are not supported. Please use the Asset Browser to insert images into your content.",
-      });
+      throw new ValidationError(
+        "EditorJS uploads with Blossom are not supported. Please use the Asset Browser to insert images into your content.",
+      );
     }
 
     // Continue with S3 upload for EditorJS
 
     // Check content type
     const contentType = request.headers.get("content-type") || "";
-
-    if (!contentType.includes("multipart/form-data")) {
-      return json({
-        success: 0,
-        error: "Request must be multipart/form-data",
-      });
-    }
-
-    const uploadHandler = composeUploadHandlers(
-      createMemoryUploadHandler({
-        maxPartSize: 10 * 1024 * 1024, // 10MB max
-      }),
+    assert(
+      contentType.includes("multipart/form-data"),
+      "Request must be multipart/form-data",
+      { contentType },
     );
-    const formData = await parseMultipartFormData(request, uploadHandler);
+
+    let formData: FormData;
+    try {
+      const uploadHandler = composeUploadHandlers(
+        createMemoryUploadHandler({
+          maxPartSize: 10 * 1024 * 1024, // 10MB max
+        }),
+      );
+      formData = await parseMultipartFormData(request, uploadHandler);
+    } catch (error) {
+      throw new ExternalServiceError(
+        "Failed to parse multipart form data",
+        400,
+        {
+          originalError: error instanceof Error ? error.message : String(error),
+        },
+      );
+    }
 
     const imageFile = formData.get("image") || formData.get("imageFile");
-
-    if (!imageFile) {
-      return json({
-        success: 0,
-        error: "No image file provided",
-      });
-    }
+    assert(imageFile !== null, "No image file provided", {
+      formDataKeys: Array.from(formData.keys()),
+    });
 
     // Handle File object
     if (imageFile instanceof File) {
       // Validate file type
-      if (!imageFile.type.startsWith("image/")) {
-        return json({
-          success: 0,
-          error: "File must be an image",
-        });
-      }
+      assert(
+        imageFile.type.startsWith("image/"),
+        "File must be an image",
+        { fileType: imageFile.type },
+      );
 
       // Validate file size (5MB limit)
-      if (imageFile.size > 5 * 1024 * 1024) {
-        return json({
-          success: 0,
-          error: "Image must be smaller than 5MB",
-        });
-      }
+      assert(
+        imageFile.size <= 5 * 1024 * 1024,
+        "Image must be smaller than 5MB",
+        { fileSize: imageFile.size, maxSize: 5 * 1024 * 1024 },
+      );
 
+      // Convert File to Buffer for upload
+      const arrayBuffer = await imageFile.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      // Validate the image buffer
+      const isValidImage = await validateImageBuffer(buffer);
+      assert(isValidImage, "Invalid image file format");
+
+      // Get image info for logging
+      const _imageInfo = await getImageInfo(buffer);
+
+      // Process the image with Sharp for optimization and metadata removal
+      let processedBuffer: Buffer;
       try {
-        // Convert File to Buffer for upload
-        const arrayBuffer = await imageFile.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-
-        // Validate the image buffer
-        const isValidImage = await validateImageBuffer(buffer);
-        if (!isValidImage) {
-          return json({
-            success: 0,
-            error: "Invalid image file format",
-          });
-        }
-
-        // Get image info for logging
-        const _imageInfo = await getImageInfo(buffer);
-
-        // Process the image with Sharp for optimization and metadata removal
-        const processedBuffer = await processImageForWeb(buffer, {
+        processedBuffer = await processImageForWeb(buffer, {
           maxWidth: 1200,
           maxHeight: 1200,
           quality: 85,
           format: "jpeg",
         });
+      } catch (error) {
+        throw new ExternalServiceError(
+          "Failed to process image",
+          500,
+          {
+            service: "ImageProcessing",
+            originalError: error instanceof Error ? error.message : String(error),
+          },
+        );
+      }
 
-        // Upload to S3 using EditorJS-specific function
-        const imageUrl = await uploadEditorJSImage(
+      // Upload to S3 using EditorJS-specific function
+      let imageUrl: string;
+      try {
+        imageUrl = await uploadEditorJSImage(
           processedBuffer,
           userId,
           imageFile.name,
         );
-        // Return EditorJS compatible response
-        return json({
-          success: 1,
-          file: {
-            url: imageUrl,
-            size: processedBuffer.length,
-            name: imageFile.name.replace(/\.[^/.]+$/, ".jpg"), // Always .jpg since we convert
-            extension: "jpg",
+      } catch (error) {
+        throw new ExternalServiceError(
+          "Failed to upload image to storage",
+          500,
+          {
+            service: "S3",
+            fileName: imageFile.name,
+            originalError: error instanceof Error ? error.message : String(error),
           },
-        });
-      } catch (uploadError) {
-        console.error("Image upload error:", uploadError instanceof Error ? uploadError.message : uploadError);
-        return json({
-          success: 0,
-          error: `Upload failed: ${uploadError instanceof Error ? uploadError.message : "Unknown error"}`,
-        });
+        );
       }
+
+      // Return EditorJS compatible response
+      return json({
+        success: 1,
+        file: {
+          url: imageUrl,
+          size: processedBuffer.length,
+          name: imageFile.name.replace(/\.[^/.]+$/, ".jpg"), // Always .jpg since we convert
+          extension: "jpg",
+        },
+      });
     }
 
     // Handle string URL (if it's already a URL)
@@ -139,23 +163,12 @@ export async function action({ request }) {
       });
     }
 
-    return json({
-      success: 0,
-      error: "Invalid file format",
+    throw new ValidationError("Invalid file format", {
+      fileType: typeof imageFile,
+      isFile: imageFile instanceof File,
     });
-  } catch (error) {
-    console.error("EditorJS upload API error:", error instanceof Error ? error.message : error);
-
-    // Always return JSON, never HTML
-    return json(
-      {
-        success: 0,
-        error: `API Error: ${error.message || "Upload failed"}`,
-      },
-      { status: 500 },
-    );
-  }
-}
+  },
+);
 
 // Handle preflight requests for CORS
 export async function loader() {

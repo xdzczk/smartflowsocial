@@ -154,7 +154,11 @@ export default function DraftBulkResume({
         return scheduledTime;
       }
     } catch (error) {
-      console.error("Error calculating schedule time:", error);
+      const { handleErrorSafely } = await import("~/lib/error-handler.client");
+      handleErrorSafely(error, {
+        component: "DraftBulkResume",
+        action: "calculateQueueScheduleTime",
+      });
     }
 
     return "";
@@ -279,7 +283,11 @@ export default function DraftBulkResume({
             const data = await response.json();
             tagsString = data.hashtags || "";
           } catch (error) {
-            console.error("Error getting effective hashtags:", error);
+            const { handleErrorSafely } = await import("~/lib/error-handler.client");
+            handleErrorSafely(error, {
+              component: "DraftBulkResume",
+              action: "getEffectiveHashtags",
+            });
             // Fallback to user's default hashtags
             const tags = user?.hashTags?.tags;
             tagsString = Array.isArray(tags) ? tags.join(" ") : tags || "";

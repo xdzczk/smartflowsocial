@@ -1,6 +1,7 @@
 import { useState } from "react";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { isVideoFile } from "~/lib/helpers";
+const { handleErrorSafely } = require("~/lib/error-handler.client");
 
 export function PostBlock({
   post,
@@ -117,7 +118,10 @@ export function PostBlock({
         }
         return firstFileUrl;
       } catch (error) {
-        console.error("Error getting first image:", error);
+        handleErrorSafely(error, {
+          component: "PostBlock",
+          action: "getFirstImage",
+        });
         return null;
       }
     }
