@@ -5,10 +5,11 @@ import { Avatar, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
+import type { ProfileData } from "~/features/nostr/types";
 
 interface AccountInfo {
   npub: string;
-  nostrProfile?: any | null;
+  nostrProfile?: ProfileData | null;
 }
 
 interface SearchResult {
@@ -22,7 +23,7 @@ interface SearchResult {
   pendingParentRequests?: string[];
 }
 
-function extractProfileBits(nostrProfile: any | null | undefined) {
+function extractProfileBits(nostrProfile: ProfileData | null | undefined) {
   if (!nostrProfile)
     return {
       name: undefined,
@@ -39,7 +40,7 @@ function extractProfileBits(nostrProfile: any | null | undefined) {
       } as const;
     }
     if (typeof nostrProfile === "object") {
-      const p: any = nostrProfile;
+      const p = nostrProfile;
       return {
         name: p?.name,
         display_name: p?.display_name,
@@ -110,13 +111,13 @@ export function AccountsSettings({
     if (
       (submittingAction === "unlink_parent" || submittingAction === "unlink_child" || submittingAction === "cancel_child_request") &&
       fetcher.state === "idle" &&
-      (fetcher.data as any)?.success
+      (fetcher.data as { success?: boolean } | undefined)?.success
     ) {
       revalidator.revalidate();
     }
   }, [fetcher.state, fetcher.data, submittingAction]);
 
-  const renderAccountRow = (npub: string, nostrProfile?: any | null) => {
+  const renderAccountRow = (npub: string, nostrProfile?: ProfileData | null) => {
     const bits = extractProfileBits(nostrProfile);
     return (
       <div

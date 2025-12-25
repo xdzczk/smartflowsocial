@@ -5,7 +5,7 @@ interface Post {
   id: string;
   caption?: string | null;
   scheduledFor: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface UseDashboardStateProps {
@@ -30,7 +30,8 @@ export function useDashboardState({
   const [selectedPosts, setSelectedPosts] = useState<Set<string>>(new Set());
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
   const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
-  const [selectedLongFormPost, setSelectedLongFormPost] = useState<any>(null);
+
+  const [selectedLongFormPost, setSelectedLongFormPost] = useState<LongFormPostData | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [postToEdit, setPostToEdit] = useState<Post | null>(null);

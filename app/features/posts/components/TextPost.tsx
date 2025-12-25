@@ -1,5 +1,5 @@
 import { useFetcher } from "@remix-run/react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { toast } from "react-hot-toast";
 
 import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
@@ -8,7 +8,10 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import AssetBrowser from "~/features/assets/components/AssetBrowser";
-import { getDynamicQueueStyle } from "~/features/posts/queueColors";
+import type { Asset } from "~/features/assets/types";
+import { QueueSelector } from "~/features/posts/components/QueueSelector";
+import { SchedulingSection } from "~/features/posts/components/SchedulingSection";
+import { usePostScheduling } from "~/features/posts/hooks/usePostScheduling";
 import { signEventFn } from "~/lib/nostr";
 import { useOptionalUser } from "~/lib/remix-utils";
 
@@ -23,8 +26,6 @@ export default function TextPost({
   const fetcher = useFetcher();
   const user = useOptionalUser();
   const tags = user?.hashTags?.tags;
-  const scheduleIntervals = user?.scheduleInterval;
-  const [scheduledFor, setScheduledFor] = useState("");
   const [contentError, setContentError] = useState("");
   const [showAssetBrowser, setShowAssetBrowser] = useState(false);
   const [content, setContent] = useState("");
@@ -36,12 +37,22 @@ export default function TextPost({
   const [selectedHashtags, setSelectedHashtags] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Determine initial queue selection - default to "unassigned"
-  const getInitialQueue = () => {
-    return "unassigned";
-  };
-
-  const [selectedQueue, setSelectedQueue] = useState(getInitialQueue());
+  // Use the shared scheduling hook
+  const {
+    selectedQueue,
+    setSelectedQueue,
+    scheduledFor,
+    setScheduledFor,
+    calculateQueueScheduleTime,
+    handleScheduleIntervalClick,
+    scheduleIntervals,
+  } = usePostScheduling({
+    queueTypes,
+    scheduleIntervals: user?.scheduleInterval,
+    userTimezone: user?.timezone,
+    initialQueue: "unassigned",
+    onQueueTypeChange,
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -197,90 +208,6 @@ export default function TextPost({
     }
   };
 
-  const calculateQueueScheduleTime = async (queueTypeName) => {
-    if (queueTypeName === "unassigned") {
-      setScheduledFor("");
-      return;
-    }
-
-    // Find the queue type object to get its ID
-    const selectedQueueType = queueTypes.find(qt => 
-      (typeof qt === "string" ? qt : qt.name) === queueTypeName
-    );
-    const queueTypeId = typeof selectedQueueType === "object" ? selectedQueueType.id : null;
-
-    try {
-      const response = await fetch("/api/queue-schedule", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          queueTypeId,
-          queueTypeName, // Keep for backward compatibility
-          userId: user?.id,
-        }),
-      });
-
-      if (response.ok) {
-        const { scheduledTime } = await response.json();
-        setScheduledFor(scheduledTime);
-      }
-    } catch (error) {
-      console.error("Error calculating schedule time:", error);
-    }
-  };
-
-  useEffect(() => {
-    if (selectedQueue !== "unassigned") {
-      calculateQueueScheduleTime(selectedQueue);
-    }
-    // Notify parent component of queue type change
-    if (onQueueTypeChange) {
-      onQueueTypeChange(selectedQueue);
-    }
-  }, [selectedQueue, onQueueTypeChange]);
-
-  const handleScheduleIntervalClick = (intervalHours) => {
-    // Find the currently selected queue type
-    const selectedQueueType = queueTypes.find(qt => 
-      (typeof qt === "string" ? qt : qt.name) === selectedQueue
-    );
-    
-    // If this is a fixed slot queue, use the API to get the next scheduled time instead
-    if (selectedQueueType && typeof selectedQueueType === "object" && selectedQueueType.scheduleType === "FIXED_SLOTS") {
-      // For fixed slot queues, recalculate the schedule time instead of adding hours
-      calculateQueueScheduleTime(selectedQueue);
-      return;
-    }
-
-    const now = new Date();
-    const hoursLater = new Date(
-      now.getTime() + parseInt(intervalHours) * 60 * 60 * 1000,
-    );
-
-    // Format the date in the user's timezone
-    const userTimezone = user?.timezone || "UTC";
-    const formattedDate = hoursLater.toLocaleString("en-US", {
-      timeZone: userTimezone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-
-    // Parse the formatted date back into components
-    const [datePart, timePart] = formattedDate.split(", ");
-    const [month, day, year] = datePart.split("/");
-    const [hours, minutes] = timePart.split(":");
-
-    // Create the datetime-local format (YYYY-MM-DDTHH:mm)
-    const formattedForInput = `${year}-${month}-${day}T${hours}:${minutes}`;
-
-    setScheduledFor(formattedForInput);
-  };
 
   const handleHashtagPresetSelect = (
     presetId: string | null,
@@ -293,10 +220,10 @@ export default function TextPost({
     }
   };
 
-  const handleAssetsSelected = (selectedAssets: any[]) => {
+  const handleAssetsSelected = (selectedAssets: Asset[]) => {
     // Separate text assets and image assets
-    const textAssets = [];
-    const imageAssets = [];
+    const textAssets: string[] = [];
+    const imageAssets: string[] = [];
 
     selectedAssets.forEach((asset) => {
       if (asset.assetType === "TEXT") {
@@ -373,64 +300,13 @@ export default function TextPost({
       <div className="mt-2 text-right text-sm text-gray-500">0/2200</div>
       <div className="mt-6 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-4">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="queueType">Queue Type</Label>
-            <div className="flex flex-wrap gap-2">
-              {/* Unassigned option */}
-              <button
-                type="button"
-                onClick={() => setSelectedQueue("unassigned")}
-                disabled={fetcher.state !== "idle"}
-                className={`rounded-full px-4 py-2 text-sm ${getDynamicQueueStyle(null, selectedQueue === "unassigned")} disabled:cursor-not-allowed disabled:opacity-50`}
-              >
-                Unassigned
-              </button>
-
-              {/* Queue types */}
-              {queueTypes
-                .filter((queue) => {
-                  const queueName = typeof queue === "string" ? queue : queue.name;
-                  const isEnabled =
-                    typeof queue === "object"
-                      ? queue.isEnabled !== false
-                      : true;
-                  // Exclude "Unassigned" queue type since we have a hard-coded unassigned option
-                  return isEnabled && queueName !== "Unassigned";
-                })
-                .map((queue) => {
-                  const queueName =
-                    typeof queue === "string" ? queue : queue.name;
-                  const queueColor =
-                    typeof queue === "object" ? queue.color : null;
-                  return (
-                    <button
-                      key={queueName}
-                      type="button"
-                      onClick={() => setSelectedQueue(queueName)}
-                      disabled={fetcher.state !== "idle"}
-                      className={`rounded-full px-4 py-2 text-sm ${getDynamicQueueStyle(queueColor, selectedQueue === queueName)} disabled:cursor-not-allowed disabled:opacity-50`}
-                      style={{
-                        backgroundColor: queueColor || undefined,
-                        borderColor: queueColor || undefined,
-                      }}
-                    >
-                      {queueName}
-                    </button>
-                  );
-                })}
-            </div>
-            <input type="hidden" name="queueType" value={selectedQueue} />
-            <input 
-              type="hidden" 
-              name="queueTypeId" 
-              value={(() => {
-                const selectedQueueType = queueTypes.find(qt => 
-                  (typeof qt === "string" ? qt : qt.name) === selectedQueue
-                );
-                return typeof selectedQueueType === "object" ? selectedQueueType.id : "";
-              })()} 
-            />
-          </div>
+          <QueueSelector
+            queueTypes={queueTypes}
+            selectedQueue={selectedQueue}
+            onQueueChange={setSelectedQueue}
+            disabled={fetcher.state !== "idle"}
+            className="mb-2"
+          />
 
           {/* Hashtag Preset Toggle */}
           <HashtagPresetToggle
@@ -499,45 +375,17 @@ export default function TextPost({
                   : "Sign and Schedule"}
               </Button>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {(() => {
-                // Find the currently selected queue type
-                const selectedQueueType = queueTypes.find(qt => 
-                  (typeof qt === "string" ? qt : qt.name) === selectedQueue
-                );
-                
-                // For fixed slot queues, show a different UI
-                if (selectedQueueType && typeof selectedQueueType === "object" && selectedQueueType.scheduleType === "FIXED_SLOTS") {
-                  return (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => calculateQueueScheduleTime(selectedQueue)}
-                      className="border-blue-500 text-blue-700 hover:bg-blue-50"
-                    >
-                      Next Slot
-                    </Button>
-                  );
-                }
-                
-                // For interval-based queues, show the hour buttons
-                return scheduleIntervals
-                  ? scheduleIntervals.map((interval) => (
-                      <Button
-                        key={interval}
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => handleScheduleIntervalClick(interval)}
-                      >
-                        +{interval}h
-                      </Button>
-                    ))
-                  : null;
-              })()
-              }
-            </div>
+            <SchedulingSection
+              scheduledFor={scheduledFor}
+              onScheduledForChange={setScheduledFor}
+              scheduleIntervals={scheduleIntervals}
+              queueTypes={queueTypes}
+              selectedQueue={selectedQueue}
+              onScheduleIntervalClick={handleScheduleIntervalClick}
+              onCalculateNextSlot={() => calculateQueueScheduleTime(selectedQueue)}
+              disabled={fetcher.state !== "idle"}
+              showTimeInput={false}
+            />
           </div>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">

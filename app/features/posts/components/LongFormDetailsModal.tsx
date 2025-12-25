@@ -5,6 +5,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { handleErrorSafely } from "~/lib/error-handler.client";
 import type { LongFormPost } from "~/models/longformpost.server";
+import type { EditorJSBlock } from "~/features/posts/types/editorjs.types";
 
 interface LongFormDetailsModalProps {
   post: LongFormPost;
@@ -38,7 +39,7 @@ export default function LongFormDetailsModal({
 
       let html = "";
 
-      editorData.blocks.forEach((block: any) => {
+      editorData.blocks.forEach((block: EditorJSBlock) => {
         switch (block.type) {
           case "header":
             const level = block.data.level || 3;
@@ -162,7 +163,7 @@ export default function LongFormDetailsModal({
       // If it's JSON (EditorJS format), extract text from blocks
       if (content.startsWith("{")) {
         const editorData = JSON.parse(content);
-        editorData.blocks?.forEach((block: any) => {
+        editorData.blocks?.forEach((block: EditorJSBlock) => {
           if (block.type === "paragraph" || block.type === "header") {
             const text = block.data.text?.replace(/<[^>]*>/g, "") || "";
             wordCount += text

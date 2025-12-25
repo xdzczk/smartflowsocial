@@ -8,7 +8,16 @@ import type {
   UserProfile,
   ParentPost,
   GroupedNotifications,
+  NotificationEvent,
+  PrimalEvent,
+  NostrTag,
 } from "~/features/engagement/types";
+import type { PostData, LongFormPostData } from "~/features/posts/types";
+
+type ConnectToPrimalCache = (
+  requestType: string,
+  params: Record<string, unknown>,
+) => Promise<unknown[]>;
 
 // Re-export types for consumers
 export type {
@@ -230,8 +239,8 @@ export function groupNotificationsByType(notifications: Notification[]) {
  */
 export function groupNotificationsByParent(
   notifications: Notification[],
-  posts: any[],
-  longformPosts: any[],
+  posts: PostData[],
+  longformPosts: LongFormPostData[],
   stats: Record<string, EventStats> = {},
 ): GroupedNotifications[] {
   // Create a map of event ID to post data
@@ -308,8 +317,8 @@ export function groupNotificationsByParent(
  * Extracts the quoted event ID from tags and enriches with user profile data
  */
 export async function processQuoteReposts(
-  quoteRepostEvents: any[],
-  connectToPrimalCache: (requestType: string, params: any) => Promise<any>,
+  quoteRepostEvents: NotificationEvent[],
+  connectToPrimalCache: typeof ConnectToPrimalCache,
 ): Promise<NotificationQuoteRepost[]> {
   const _notifications: NotificationQuoteRepost[] = [];
   const userProfiles = new Map<string, UserProfile>();
@@ -328,7 +337,7 @@ export async function processQuoteReposts(
 
         // Find the profile event (kind 0)
         const profileEvent = profileData?.find(
-          (item: any) => Array.isArray(item) && item[0] === "EVENT" && item[2]?.kind === 0
+          (item: PrimalEvent) => Array.isArray(item) && item[0] === "EVENT" && item[2]?.kind === 0
         );
 
         if (profileEvent && profileEvent[2]) {
@@ -349,8 +358,8 @@ export async function processQuoteReposts(
   const quotePromises = quoteRepostEvents.map(async (event) => {
     try {
       // Extract the quoted event ID from the "e" tags with "mention" marker
-      const eTags = event.tags?.filter((tag: any[]) => tag[0] === "e") || [];
-      const quotedEventTag = eTags.find((tag: any[]) => tag[3] === "mention");
+      const eTags = event.tags?.filter((tag: NostrTag) => tag[0] === "e") || [];
+      const quotedEventTag = eTags.find((tag: NostrTag) => tag[3] === "mention");
 
       if (!quotedEventTag || !quotedEventTag[1]) {
         return null;
@@ -376,7 +385,7 @@ export async function processQuoteReposts(
 
         // Find the stats event
         const statsEvent = threadViewData?.find(
-          (item: any) =>
+          (item: PrimalEvent) =>
             Array.isArray(item) &&
             item[0] === "EVENT" &&
             item[2]?.kind === 10000100 &&

@@ -1,10 +1,11 @@
 import { Link, useParams, useRevalidator } from "@remix-run/react";
 
 import { getQueueColor } from "~/features/posts/queueColors";
+import type { QueueType } from "~/features/posts/types";
 
 interface QueueSelectionTabsProps {
   currentTab: string;
-  queueTypes: any[];
+  queueTypes: (QueueType | string)[];
   basePath?: string;
 }
 

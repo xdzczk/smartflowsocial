@@ -5,9 +5,30 @@ interface User {
   timezone?: string | null;
 }
 
+interface SearchResultData {
+  event?: {
+    id: string;
+    pubkey: string;
+    created_at: number;
+    kind: number;
+    content: string;
+    tags: string[][];
+    mediaUrls?: string[];
+  };
+  stats?: {
+    likes: number;
+    replies: number;
+    mentions: number;
+    reposts: number;
+    zaps: number;
+    satszapped: number;
+  };
+  error?: string;
+}
+
 interface UseSearchStateProps {
   user: User | null;
-  fetcherData: any;
+  fetcherData: SearchResultData | null;
 }
 
 /**

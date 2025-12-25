@@ -15,6 +15,13 @@ import {
 import { useSubscription } from "~/features/payments/types";
 import { hexToNpub } from "~/lib/nostr";
 import { useOptionalUser } from "~/lib/remix-utils";
+import type { ProfileData } from "~/features/nostr/types";
+
+interface UserWithProfile {
+  npub: string;
+  nostrProfile?: ProfileData | null;
+  [key: string]: unknown;
+}
 
 interface ChildAccount {
   npub: string;
@@ -23,7 +30,7 @@ interface ChildAccount {
   picture?: string;
 }
 
-function displayLabel(user: any): string {
+function displayLabel(user: UserWithProfile | null | undefined): string {
   try {
     const p =
       typeof user?.nostrProfile === "string"
@@ -35,7 +42,7 @@ function displayLabel(user: any): string {
   }
 }
 
-function displayPicture(user: any): string | undefined {
+function displayPicture(user: UserWithProfile | null | undefined): string | undefined {
   try {
     const p =
       typeof user?.nostrProfile === "string"
@@ -58,7 +65,7 @@ function formatNpubShort(hexOrNpub?: string): string {
 }
 
 export default function AccountSwitchMenu() {
-  const user = useOptionalUser() as any;
+  const user = useOptionalUser() as UserWithProfile | null | undefined;
   const subscription = useSubscription();
   const fetcher = useFetcher<{ children: ChildAccount[] }>();
   const [open, setOpen] = React.useState(false);
@@ -109,7 +116,7 @@ export default function AccountSwitchMenu() {
               created_at: Math.floor(Date.now() / 1000),
               tags: [],
               content: contentSign,
-            } as any;
+            } as NostrEventData;
             const signedEvent = await window.nostr.signEvent(event);
             if (signedEvent.pubkey !== childNpub) {
               // Silent no-op on mismatch
@@ -150,7 +157,7 @@ export default function AccountSwitchMenu() {
               created_at: Math.floor(Date.now() / 1000),
               tags: [],
               content: contentSign,
-            } as any;
+            } as NostrEventData;
             const signedEvent = await window.nostr.signEvent(event);
             if (signedEvent.pubkey !== parentNpub) {
               // Silent no-op on mismatch

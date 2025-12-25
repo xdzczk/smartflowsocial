@@ -42,7 +42,7 @@ export async function fetchUserProfile(pubkey: string): Promise<User | null> {
     }
 
     // Parse profile data
-    let profile: any = {};
+    let profile: GiveawayProfile = {};
     if (profileEvent && profileEvent.content) {
       try {
         profile = JSON.parse(profileEvent.content);
@@ -57,7 +57,7 @@ export async function fetchUserProfile(pubkey: string): Promise<User | null> {
     }
 
     // Parse stats data
-    let stats: any = {};
+    let stats: GiveawayStats = {};
     if (statsEvent && statsEvent.content) {
       try {
         stats = JSON.parse(statsEvent.content);
@@ -146,7 +146,7 @@ async function fetchPostStats(eventIds: string[]): Promise<Record<string, any>> 
       const data = await response.json();
       // Find the stats event in the response array
       const statsEvent = data.find(
-        (event: any) =>
+        (event: PrimalEvent) =>
           event[0] === "EVENT" &&
           event[2] &&
           event[2].kind === 10000100 &&
@@ -221,10 +221,10 @@ async function fetchPostStats(eventIds: string[]): Promise<Record<string, any>> 
  * Filter and process giveaway participants
  */
 async function processGiveawayParticipants(
-  relatedEvents: any[],
+  relatedEvents: RelatedEvent[],
   userId: string,
-  user: any,
-): Promise<any[]> {
+  user: { id: string; npub?: string; filterMuted?: boolean; mutedList?: { npubs?: string[] }; [key: string]: unknown },
+): Promise<RelatedEvent[]> {
   if (relatedEvents.length === 0) {
     return [];
   }
@@ -256,7 +256,7 @@ async function processGiveawayParticipants(
   }
 
   // Filter relatedEvents to only include users with valid lud16 address and totalZapped > 5
-  const filteredRelatedEvents: any[] = [];
+  const filteredRelatedEvents: RelatedEvent[] = [];
 
   // Process events in parallel with Promise.all
   const profilePromises = uniqueRelatedEvents.map(async (event) => {
@@ -278,12 +278,12 @@ async function processGiveawayParticipants(
 
       // Find user profile event (kind 0)
       const userProfile = userProfileResponse.find(
-        (data: any) => data[0] === "EVENT" && data[2].kind === 0,
+        (data: PrimalEvent) => data[0] === "EVENT" && data[2].kind === 0,
       );
 
       // Find stats event (kind 10000105)
       const statsEvent = userProfileResponse.find(
-        (data: any) => data[0] === "EVENT" && data[2].kind === 10000105,
+        (data: PrimalEvent) => data[0] === "EVENT" && data[2].kind === 10000105,
       );
 
       let lud16 = null;
@@ -291,7 +291,7 @@ async function processGiveawayParticipants(
 
       // Extract lud16 from profile
       if (userProfile && Array.isArray(userProfile) && userProfile[2]) {
-        const profileEvent = userProfile[2] as any;
+        const profileEvent = userProfile[2] as GiveawayProfile;
         if (profileEvent.content) {
           const profileContent = JSON.parse(profileEvent.content);
           lud16 = profileContent.lud16;
@@ -300,7 +300,7 @@ async function processGiveawayParticipants(
 
       // Extract zap stats
       if (statsEvent && Array.isArray(statsEvent) && statsEvent[2]) {
-        const statsEventData = statsEvent[2] as any;
+        const statsEventData = statsEvent[2] as GiveawayStats;
         if (statsEventData.content) {
           const stats = JSON.parse(statsEventData.content);
           totalZapped = stats.total_zap_count ?? 0;
@@ -424,7 +424,7 @@ export async function loadGiveawayData(
     .filter((id): id is string => id !== null);
 
   // Handle case when there are no posts with engagement
-  let relatedEvents: any[] = [];
+  let relatedEvents: RelatedEvent[] = [];
   if (postIds.length > 0) {
     const result = await fetchGiveawayParticipants(postIds);
     relatedEvents = result.relatedEvents;

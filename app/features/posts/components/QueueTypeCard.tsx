@@ -1,31 +1,16 @@
 import { Edit, Trash2 } from "lucide-react";
+import type { FetcherWithComponents } from "@remix-run/react";
 
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
-
-interface QueueType {
-  id: string;
-  name: string;
-  description?: string;
-  color?: string;
-  scheduleType: "INTERVAL" | "FIXED_SLOTS";
-  scheduleConfig: any;
-  isDefault: boolean;
-  isEnabled: boolean;
-  hashTagPreset?: {
-    id: string;
-    name: string;
-    tags: string;
-    description?: string;
-  } | null;
-}
+import type { QueueType } from "~/features/posts/types";
 
 interface QueueTypeCardProps {
   queueType: QueueType;
   onEdit: (queueType: QueueType) => void;
   isDeletingQueueType: boolean;
-  deleteFetcher: any;
+  deleteFetcher: FetcherWithComponents<{ success?: boolean; error?: string }>;
 }
 
 export function QueueTypeCard({

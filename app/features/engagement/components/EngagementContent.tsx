@@ -3,12 +3,13 @@
  */
 
 import GroupedNotificationList from "~/features/engagement/components/GroupedNotificationList";
+import type { GroupedNotification } from "~/features/engagement/types";
 
 interface EngagementContentProps {
   activeTab: "all" | "replies" | "quotes";
   groupedNotifications: {
-    replies: any[];
-    quotes: any[];
+    replies: GroupedNotification[];
+    quotes: GroupedNotification[];
   };
   userTimezone?: string | null;
   userRelays?: string[];

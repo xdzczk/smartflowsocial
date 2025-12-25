@@ -33,7 +33,7 @@ export default function PostedPosts() {
   const data = useLoaderData<typeof loader>();
 
   // Transform serialized dates back to Date objects
-  const posts = data.posts.map((post: any) => ({
+  const posts = data.posts.map((post: typeof data.posts[0]) => ({
     ...post,
     createdAt: new Date(post.createdAt),
     updatedAt: new Date(post.updatedAt),
@@ -42,7 +42,7 @@ export default function PostedPosts() {
     // Based on models/post.server.ts it is string in DB.
   }));
 
-  const longformPosts = data.longformPosts.map((post: any) => ({
+  const longformPosts = data.longformPosts.map((post: typeof data.longformPosts[0]) => ({
     ...post,
     createdAt: new Date(post.createdAt),
     updatedAt: new Date(post.updatedAt),
@@ -57,7 +57,7 @@ export default function PostedPosts() {
 
   } = data;
 
-  const queueTypes = data.queueTypes.map((qt: any) => ({
+  const queueTypes = data.queueTypes.map((qt: typeof data.queueTypes[0]) => ({
     ...qt,
     createdAt: new Date(qt.createdAt),
     updatedAt: new Date(qt.updatedAt),

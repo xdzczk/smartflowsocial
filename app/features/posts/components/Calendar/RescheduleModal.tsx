@@ -4,7 +4,40 @@ import { toast } from "react-hot-toast";
 import { signEventFn } from "~/lib/nostr";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { isVideoFile } from "~/lib/helpers";
-const { handleErrorSafely } = require("~/lib/error-handler.client");
+import { handleErrorSafely } from "~/lib/error-handler.client";
+import type { PostData, QueueType, UserData } from "~/features/posts/types";
+
+interface CalendarPost extends PostData {
+  title?: string;
+  image?: string;
+  publishedAt?: Date | string;
+  postedAt?: Date | string;
+  scheduledFor?: string;
+  queueType?: QueueType | null;
+  manual_override?: boolean;
+  postType?: string;
+  fileUrl?: string[];
+  caption?: string;
+  signedEvent?: unknown;
+  nostrEvent?: unknown;
+}
+
+interface RescheduleData {
+  post: CalendarPost;
+  newDateTime: Date;
+  wasAutoScheduled: boolean;
+  queueName: string | null;
+  isEdit: boolean;
+  isLongform: boolean;
+}
+
+interface RescheduleModalProps {
+  data: RescheduleData | null;
+  onClose: () => void;
+  onConfirm: (success?: boolean) => void;
+  user?: UserData | null;
+  queueTypes?: QueueType[];
+}
 
 export function RescheduleModal({
   data,
@@ -12,15 +45,15 @@ export function RescheduleModal({
   onConfirm,
   user: userProp,
   queueTypes,
-}) {
+}: RescheduleModalProps) {
   const fetcher = useFetcher();
-  const loaderData = useLoaderData();
+  const loaderData = useLoaderData<{ user?: UserData }>();
   const user = userProp || loaderData?.user;
   const [isSigningEvent, setIsSigningEvent] = useState(false);
-  const [signingError, setSigningError] = useState(null);
-  const [editableDateTime, setEditableDateTime] = useState(null);
-  const [validationError, setValidationError] = useState(null);
-  const [selectedQueueType, setSelectedQueueType] = useState(null);
+  const [signingError, setSigningError] = useState<string | null>(null);
+  const [editableDateTime, setEditableDateTime] = useState<Date | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const [selectedQueueType, setSelectedQueueType] = useState<string | null>(null);
 
   useEffect(() => {
     if (fetcher.data?.success) {
@@ -49,7 +82,7 @@ export function RescheduleModal({
 
   const { post, wasAutoScheduled, isEdit } = data;
 
-  const getFirstMedia = () => {
+  const getFirstMedia = (): string | null => {
     if (data.isLongform && post.image) {
       return post.image;
     }
@@ -65,7 +98,7 @@ export function RescheduleModal({
             return firstFileUrl;
           }
         }
-        return firstFileUrl;
+        return firstFileUrl as string;
       } catch (error) {
         handleErrorSafely(error, {
           component: "RescheduleModal",
@@ -77,7 +110,7 @@ export function RescheduleModal({
     return null;
   };
 
-  const formatDateTime = (date) => {
+  const formatDateTime = (date: Date): string => {
     const userTimezone = user?.timezone || "Etc/UTC";
     return date.toLocaleDateString("en-US", {
       weekday: "long",
@@ -89,7 +122,8 @@ export function RescheduleModal({
     });
   };
 
-  const validateDateTime = (dateTime) => {
+  const validateDateTime = (dateTime: Date | null): boolean => {
+    if (!dateTime) return false;
     const now = new Date();
     const userTimezone = user?.timezone || "Etc/UTC";
     const nowInUserTz = new Date(
@@ -105,13 +139,13 @@ export function RescheduleModal({
     return true;
   };
 
-  const handleDateTimeChange = (e) => {
+  const handleDateTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = new Date(e.target.value);
     setEditableDateTime(newValue);
     validateDateTime(newValue);
   };
 
-  const formatDateTimeForInput = (date) => {
+  const formatDateTimeForInput = (date: Date): string => {
     const userTimezone = user?.timezone || "Etc/UTC";
     // Create date string in format needed for datetime-local input
     const dateInUserTz = new Date(
@@ -131,13 +165,15 @@ export function RescheduleModal({
       return;
     }
 
+    if (!editableDateTime) return;
+
     const newTimeUnix = Math.floor(editableDateTime.getTime() / 1000);
 
     try {
       setIsSigningEvent(true);
 
       // Use the exact same content and tags from the original signed event
-      const originalSignedEvent = post.signedEvent;
+      const originalSignedEvent = post.signedEvent as { content: string; kind?: number; tags?: string[][] } | undefined;
       const originalNostrEvent = post.nostrEvent;
 
       if (!originalSignedEvent || !originalNostrEvent) {
@@ -171,7 +207,7 @@ export function RescheduleModal({
       console.error("Error re-signing event:", error);
       setIsSigningEvent(false);
       const errorMessage =
-        error.message || "Failed to sign event. Please try again.";
+        error instanceof Error ? error.message : "Failed to sign event. Please try again.";
       setSigningError(errorMessage);
       toast.error(errorMessage);
     }
@@ -223,17 +259,17 @@ export function RescheduleModal({
                 <div className="mb-2">
                   <div className="post-thumbnail h-20 w-full overflow-hidden rounded-md">
                     <MediaThumbnail
-                      src={getFirstMedia()}
+                      src={getFirstMedia()!}
                       alt="Post preview"
                       className="h-full w-full rounded-md"
                       forceType={
-                        isVideoFile(getFirstMedia()) ? "video" : "image"
+                        isVideoFile(getFirstMedia()!) ? "video" : "image"
                       }
                       hidePlayButton={false}
                       fallback={
                         <div className="flex h-full w-full items-center justify-center bg-gray-100 text-xs font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-400">
                           {post.postType === "VIDEO" ||
-                          isVideoFile(getFirstMedia())
+                          isVideoFile(getFirstMedia()!)
                             ? "VIDEO"
                             : "MEDIA"}
                         </div>
@@ -401,7 +437,7 @@ export function RescheduleModal({
               disabled={
                 fetcher.state === "submitting" ||
                 isSigningEvent ||
-                validationError
+                !!validationError
               }
             >
               {isSigningEvent
@@ -420,3 +456,4 @@ export function RescheduleModal({
     </div>
   );
 }
+

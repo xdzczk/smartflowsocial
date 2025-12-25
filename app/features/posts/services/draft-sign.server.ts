@@ -4,6 +4,8 @@
  */
 
 import { signEventFn } from "~/lib/nostr";
+import type { UserData, PostData, SignedEvent, NostrEvent } from "~/features/posts/types";
+import type { NostrEvent as NostrEventType } from "~/features/nostr/types";
 
 interface SignDraftParams {
   content: string;
@@ -12,9 +14,9 @@ interface SignDraftParams {
   selectedQueue: string;
   useHashtagPresets: boolean;
   selectedHashtags: string;
-  user: any;
-  currentUser: any;
-  post: any;
+  user: UserData;
+  currentUser: UserData | null;
+  post: PostData;
 }
 
 /**
@@ -25,7 +27,7 @@ async function getEffectiveHashtags(
   selectedHashtags: string,
   selectedQueue: string,
   userId: string,
-  user: any,
+  user: UserData,
 ): Promise<string> {
   if (useHashtagPresets) {
     // Manual hashtag presets are enabled
@@ -117,7 +119,7 @@ function calculateScheduledTime(
  */
 export async function signDraftForScheduling(
   params: SignDraftParams,
-): Promise<{ signedEvent: any; nostrEvent: any; scheduledForUnix: number }> {
+): Promise<{ signedEvent: SignedEvent; nostrEvent: NostrEventType; scheduledForUnix: number }> {
   const {
     content,
     caption,

@@ -102,17 +102,17 @@ export default function Templates() {
           {activeTab === "assets" ? (
             <>
               <AssetsTab
-                assets={assets as any}
+                assets={assets}
                 selectedAssets={selectedAssets}
                 searchInput={searchInput}
                 onSearchInputChange={setSearchInput}
                 onSearch={handleSearch}
                 onAssetSelect={handleAssetSelect}
-                onSelectAllAssets={() => handleSelectAllAssets(assets as any[])}
-                onBulkPostAssets={() => handleBulkPostAssets(assets as any[])}
+                onSelectAllAssets={() => handleSelectAllAssets(assets)}
+                onBulkPostAssets={() => handleBulkPostAssets(assets)}
                 onBulkDeleteAssets={handleBulkDeleteAssets}
                 deleteFetcherState={deleteFetcher.state}
-                deleteFetcherForm={deleteFetcher.Form as any}
+                deleteFetcherForm={deleteFetcher.Form}
                 onDeleteAsset={handleDeleteAsset}
               />
               <AssetPagination
@@ -127,7 +127,7 @@ export default function Templates() {
               textAssetFormRef={textAssetFormRef}
               imageAssetFormRef={imageAssetFormRef}
               assetFetcher={{
-                Form: assetFetcher.Form as any,
+                Form: assetFetcher.Form,
                 state: assetFetcher.state,
               }}
               uploadProvider={uploadProvider}

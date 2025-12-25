@@ -1,21 +1,22 @@
 import { Link, type FetcherWithComponents } from "@remix-run/react";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { getQueueColor } from "~/features/posts/queueColors";
+import type { PostData, PostFetcher } from "~/features/posts/types";
 import { formatDate, getImageUrls } from "~/lib/helpers";
 import type { PostStats } from "~/features/posts/stats.server";
 
 interface PostedPostsTableProps {
-    filteredPosts: any[];
+    filteredPosts: PostData[];
     selectedPosts: Set<string>;
     stats: Record<string, PostStats>;
     sortConfig: { key: string; direction: string };
     toggleSelectAll: () => void;
     togglePostSelection: (postId: string) => void;
     requestSort: (key: string) => void;
-    setSelectedPost: (post: any) => void;
-    individualRepostFetcher: FetcherWithComponents<any>;
-    deleteFetcher: FetcherWithComponents<any>;
-    bulkDeleteFetcher: FetcherWithComponents<any>;
+    setSelectedPost: (post: PostData) => void;
+    individualRepostFetcher: PostFetcher;
+    deleteFetcher: PostFetcher;
+    bulkDeleteFetcher: PostFetcher;
 }
 
 export default function PostedPostsTable({

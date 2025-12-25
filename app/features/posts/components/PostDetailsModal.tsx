@@ -6,9 +6,10 @@ import MediaModal from "~/components/ui/MediaModal";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { getQueueColor } from "~/features/posts/queueColors";
 import { formatDate, getImageUrls } from "~/lib/helpers";
+import type { CombinedContent, PostData } from "~/features/posts/types";
 
 interface PostDetailsModalProps {
-  post: Post;
+  post: Post | PostData | CombinedContent;
   stats?: {
     likes: number;
     replies: number;

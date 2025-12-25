@@ -305,7 +305,7 @@ export function useBulkPostEvents({
             }),
         );
 
-        setPreparedEvents(events as any);
+        setPreparedEvents(events);
         setShowConfirmation(true);
 
         // Reset loading state when events are processed successfully
@@ -438,7 +438,7 @@ export function useBulkPostEvents({
                         fetcher.submit(formData, {
                             method: "post",
                         });
-                    } catch (error: any) {
+                    } catch (error: unknown) {
                         const { handleAsyncErrorWithMessage, getErrorMessage } = await import("~/lib/error-handler.client");
                         const errorMessage = `Upload failed: ${getErrorMessage(error)}`;
                         handleAsyncErrorWithMessage(
@@ -476,7 +476,7 @@ export function useBulkPostEvents({
                     });
                 }
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             const { handleAsyncErrorWithMessage } = await import("~/lib/error-handler.client");
             handleAsyncErrorWithMessage(
                 error,

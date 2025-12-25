@@ -3,56 +3,60 @@
  * Shared TypeScript interfaces for giveaway features
  */
 
+import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
+
 /**
- * Random user selected for giveaway
+ * Nostr event tag structure
  */
-export interface RandomUser {
-    pubkey: string;
-    name?: string;
-    picture?: string;
+export type NostrTag = string[];
+
+/**
+ * Primal API event structure
+ */
+export interface PrimalEvent {
+  [0]: string;
+  [1]: string;
+  [2]: NostrEvent | SignedEvent;
 }
 
 /**
- * Collection of random users for giveaway
+ * Related event for giveaways
  */
-export interface RandomUsers {
-    randomUsers: RandomUser[];
-    count: number;
-    totalParticipants: number;
+export interface RelatedEvent {
+  id: string;
+  pubkey: string;
+  created_at: number;
+  kind: number;
+  content?: string;
+  tags?: NostrTag[];
+  sig?: string;
 }
 
 /**
- * Props for GiveawayPost component
+ * Profile data from Primal API
  */
-export interface GiveawayPostProps {
-    eventId: string;
-    content: string;
-    createdAt: number;
-    author?: {
-        name?: string;
-        picture?: string;
-        pubkey: string;
-    };
-    stats?: {
-        likes: number;
-        replies: number;
-        reposts: number;
-        zaps: number;
-    };
-    isSelected?: boolean;
-    onSelect?: () => void;
+export interface GiveawayProfile {
+  name?: string;
+  display_name?: string;
+  picture?: string;
+  [key: string]: unknown;
 }
 
 /**
- * Statistics for a Nostr event (Imported or redefined? It was used in GiveawayPostProps stats)
- * The original file had a stats object structure in GiveawayPostProps.
- * Let's double check `giveaway.types.ts` content.
- * It had:
- * stats?: {
- *    likes: number;
- *    replies: number;
- *    reposts: number;
- *    zaps: number;
- * };
- * It did NOT import EventStats.
+ * Stats data from Primal API
  */
+export interface GiveawayStats {
+  followers_count?: number;
+  follows_count?: number;
+  note_count?: number;
+  total_zap_count?: number;
+  total_satszapped?: number;
+  [key: string]: unknown;
+}
+
+/**
+ * Giveaway state data
+ */
+export interface GiveawayStateData {
+  [key: string]: unknown;
+}

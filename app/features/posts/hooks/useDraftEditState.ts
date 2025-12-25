@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useFetcher } from "@remix-run/react";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { signDraftForScheduling } from "~/features/posts/services/draft-sign.server";
+import type { UserData, HashTagPreset } from "~/features/posts/types";
 
 interface Post {
   content?: string | null;
@@ -13,8 +14,8 @@ interface Post {
 
 interface UseDraftEditStateProps {
   post: Post;
-  user: any;
-  hashTagPresets: any[];
+  user: UserData;
+  hashTagPresets: HashTagPreset[];
 }
 
 /**

@@ -1,6 +1,7 @@
 import { getPublicKey, finishEvent } from "nostr-tools";
 
 import { sanitizeMarkdown } from "~/lib/markdown-sanitizer.server";
+import type { EditorJSOutput, EditorJSBlock } from "~/features/posts/types/editorjs.types";
 
 export function createLongFormEvent({
   privateKey,
@@ -74,14 +75,14 @@ export function generateArticleIdentifier(title: string): string {
     .substring(0, 64);
 }
 
-export function convertEditorJSToMarkdown(editorData: any): string {
+export function convertEditorJSToMarkdown(editorData: EditorJSOutput): string {
   if (!editorData || !editorData.blocks) {
     return "";
   }
 
   let markdown = "";
 
-  editorData.blocks.forEach((block: any) => {
+  editorData.blocks.forEach((block: EditorJSBlock) => {
     switch (block.type) {
       case "header": {
         const level = "#".repeat(block.data.level || 1);
@@ -163,12 +164,12 @@ export function convertEditorJSToMarkdown(editorData: any): string {
   return markdown.trim();
 }
 
-export function convertMarkdownToEditorJS(markdown: string): any {
+export function convertMarkdownToEditorJS(markdown: string): EditorJSOutput {
   if (!markdown || markdown.trim() === "") {
     return { blocks: [] };
   }
 
-  const blocks: any[] = [];
+  const blocks: EditorJSBlock[] = [];
   const lines = markdown.split("\n");
   let i = 0;
 

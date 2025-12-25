@@ -1,4 +1,4 @@
-import { json } from "@remix-run/node";
+import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useParams } from "@remix-run/react";
 
 import { requireUserId } from "~/features/auth/session.server";
@@ -11,7 +11,7 @@ import { loadGiveawayData } from "~/features/giveaway/giveaway-loader.server";
 import { requireFeatureAccess, requireAnySubscription } from "~/features/payments/subscriptions.server";
 import PostDetailsModal from "~/features/posts/components/PostDetailsModal";
 
-export async function loader({ request, params }: { request: Request; params: any }) {
+export async function loader({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
 
   // Require that the user has at least a subscription record
@@ -71,7 +71,7 @@ export default function PostedPosts() {
 
       {selectedPost ? (
         <PostDetailsModal
-          post={selectedPost as any}
+              post={selectedPost}
           stats={stats[selectedPost.signedEvent.id]}
           onClose={() => setSelectedPost(null)}
           showStats={true}

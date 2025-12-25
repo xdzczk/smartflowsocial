@@ -2,9 +2,10 @@ import type { QueueType } from "@prisma/client";
 
 import { getLastPostTimeForQueue } from "~/models/post.server";
 import { getScheduleInterval } from "~/models/user.server";
+import type { QueueType as TypedQueueType } from "~/features/posts/types";
 
 interface CalculateNextScheduleTimeParams {
-  queueType: QueueType;
+  queueType: QueueType | TypedQueueType;
   userId: string;
   userTimezone?: string;
   baseTime?: Date;
@@ -26,7 +27,7 @@ export async function calculateNextScheduleTime({
   });
 
   if (queueType.scheduleType === "INTERVAL") {
-    const config = queueType.scheduleConfig as any;
+    const config = queueType.scheduleConfig;
 
     // Handle missing scheduleConfig
     if (!config) {
@@ -69,7 +70,7 @@ export async function calculateNextScheduleTime({
       }
     }
   } else if (queueType.scheduleType === "FIXED_SLOTS") {
-    const config = queueType.scheduleConfig as any;
+    const config = queueType.scheduleConfig;
     const slots = config.slots || [];
 
     if (slots.length === 0) {

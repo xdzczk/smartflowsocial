@@ -1,6 +1,41 @@
 import { useState, useMemo } from "react";
 import { PostBlock } from "./PostBlock";
-const { handleErrorSafely } = require("~/lib/error-handler.client");
+import { handleErrorSafely } from "~/lib/error-handler.client";
+import type { PostData, QueueType, UserData } from "~/features/posts/types";
+
+interface CalendarPost extends Omit<PostData, "scheduledFor" | "postedAt" | "publishedAt"> {
+  title?: string;
+  image?: string;
+  publishedAt?: Date | string | null;
+  postedAt?: Date | string | null;
+  scheduledFor?: string | null;
+  queueType?: QueueType | null;
+  manual_override?: boolean;
+  isPast?: boolean;
+}
+
+interface WeeklyViewProps {
+  scheduledPosts: CalendarPost[];
+  pastPosts?: CalendarPost[];
+  currentDate: Date;
+  onPostDrop: (post: CalendarPost, newDateTime: Date) => void;
+  onPostEdit: (post: CalendarPost) => void;
+  user?: UserData | null;
+  queueTypes?: QueueType[];
+  isLongform?: boolean;
+  isAll?: boolean;
+}
+
+interface PostsGrid {
+  [dateKey: string]: {
+    [timeSlot: string]: CalendarPost[];
+  };
+}
+
+interface CurrentTimeIndicatorProps {
+  user?: UserData | null;
+  weekDays: Date[];
+}
 
 export function WeeklyView({
   scheduledPosts,
@@ -12,12 +47,12 @@ export function WeeklyView({
   queueTypes,
   isLongform = false,
   isAll = false,
-}) {
-  const [dragOverSlot, setDragOverSlot] = useState(null);
+}: WeeklyViewProps) {
+  const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
 
   // Generate week days starting from Monday
   const weekDays = useMemo(() => {
-    const days = [];
+    const days: Date[] = [];
     const startOfWeek = new Date(currentDate);
     const day = startOfWeek.getDay();
     const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1); // Adjust for Monday start
@@ -33,7 +68,7 @@ export function WeeklyView({
 
   // Generate hours (00:00 to 23:30)
   const hours = useMemo(() => {
-    const hoursList = [];
+    const hoursList: string[] = [];
     for (let h = 0; h < 24; h++) {
       hoursList.push(`${h.toString().padStart(2, "0")}:00`);
       hoursList.push(`${h.toString().padStart(2, "0")}:30`);
@@ -43,7 +78,7 @@ export function WeeklyView({
 
   // Group posts by date and time
   const postsGrid = useMemo(() => {
-    const grid = {};
+    const grid: PostsGrid = {};
     const userTimezone = user?.timezone || "Etc/UTC";
 
     // Initialize grid with user timezone date keys
@@ -63,7 +98,7 @@ export function WeeklyView({
       const timestamp = postIsLongform ? post.publishedAt : post.scheduledFor;
       if (timestamp) {
         const postDate = postIsLongform
-          ? new Date(timestamp)
+          ? new Date(timestamp as string)
           : new Date(Number(timestamp) * 1000);
         // Convert to user's timezone for display
         const timeInUserTz = new Date(
@@ -91,7 +126,7 @@ export function WeeklyView({
       // Use postedAt for past posts
       const timestamp = post.postedAt;
       if (timestamp) {
-        const postDate = new Date(timestamp);
+        const postDate = new Date(timestamp as string);
         // Convert to user's timezone for display
         const timeInUserTz = new Date(
           postDate.toLocaleString("en-US", { timeZone: userTimezone }),
@@ -116,16 +151,16 @@ export function WeeklyView({
     return grid;
   }, [scheduledPosts, pastPosts, weekDays, user?.timezone, isLongform, isAll]);
 
-  const handleDragOver = (e, date, time) => {
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>, date: string, time: string) => {
     e.preventDefault();
     setDragOverSlot(`${date}-${time}`);
   };
 
-  const handleDrop = (e, date, time) => {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>, date: string, time: string) => {
     e.preventDefault();
     setDragOverSlot(null);
 
-    const postData = JSON.parse(e.dataTransfer.getData("text/plain"));
+    const postData = JSON.parse(e.dataTransfer.getData("text/plain")) as CalendarPost;
     const [hours, minutes] = time.split(":").map(Number);
 
     // Create the datetime that represents the intended time in the user's timezone
@@ -304,7 +339,7 @@ export function WeeklyView({
   );
 }
 
-function CurrentTimeIndicator({ user, weekDays }) {
+function CurrentTimeIndicator({ user, weekDays }: CurrentTimeIndicatorProps) {
   const userTimezone = user?.timezone || "Etc/UTC";
   const now = new Date();
   const nowInUserTz = new Date(
@@ -341,3 +376,4 @@ function CurrentTimeIndicator({ user, weekDays }) {
     </div>
   );
 }
+

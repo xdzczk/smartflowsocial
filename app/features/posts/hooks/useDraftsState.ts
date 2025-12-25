@@ -5,7 +5,7 @@ interface Post {
   id: string;
   caption?: string | null;
   createdAt: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface UseDraftsStateProps {

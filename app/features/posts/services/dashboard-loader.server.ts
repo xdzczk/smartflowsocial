@@ -16,6 +16,7 @@ import {
   getQueueTypes,
   getUserHashTagPresets,
 } from "~/models/user.server";
+import { filterPostsByQueueType } from "./post-filtering.server";
 
 /**
  * Load dashboard data
@@ -41,10 +42,7 @@ export async function loadDashboardData(
   ]);
 
   // Filter longform posts by queue type if specific queue is selected
-  const longformPosts =
-    queueType === "all"
-      ? allLongformPosts
-      : allLongformPosts.filter((post) => post.queueType?.name === queueType);
+  const longformPosts = filterPostsByQueueType(allLongformPosts, queueType);
 
   // Combine posts and longform posts for the "All" tab
   const allContent = combineContent(

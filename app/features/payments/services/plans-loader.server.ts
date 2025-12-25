@@ -31,7 +31,7 @@ export async function loadPlansData(request: Request) {
 
   // Transform database plans to match the frontend format
   const plans = dbPlans.map((plan) => {
-    const features = plan.features as any;
+    const features = plan.features as Record<string, boolean> | null;
     const price = Number(plan.price);
     const period =
       price === 0

@@ -13,9 +13,23 @@ interface InvoiceData {
   planId: string;
 }
 
+interface ActionData {
+  success?: boolean;
+  paid?: boolean;
+  invoice?: string;
+  paymentHash?: string;
+  amount?: number;
+  amountUsd?: number;
+  paymentId?: string;
+  expiresAt?: string;
+  planName?: string;
+  planId?: string;
+  error?: string;
+}
+
 interface UsePlansStateProps {
   user: { id: string; isEnabled: boolean } | null;
-  actionData: any;
+  actionData: ActionData | null;
 }
 
 /**

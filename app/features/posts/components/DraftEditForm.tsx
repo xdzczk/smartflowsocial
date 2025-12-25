@@ -8,17 +8,18 @@ import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { getSelectedQueueStyle } from "~/features/posts/queueColors";
+import type { PostData, QueueType, HashTagPreset } from "~/features/posts/types";
 
 interface DraftEditFormProps {
-  post: any;
+  post: PostData;
   content: string;
   caption: string;
   selectedQueue: string;
   scheduledFor: string;
   useHashtagPresets: boolean;
   selectedHashtagPresetId: string | null;
-  queueTypes: any[];
-  hashTagPresets: any[];
+  queueTypes: QueueType[];
+  hashTagPresets: HashTagPreset[];
   isSubmitting: boolean;
   onContentChange: (value: string) => void;
   onQueueChange: (queue: string) => void;

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { handleErrorSafely } from "~/lib/error-handler.client";
+import type { EditorJSBlock } from "~/features/posts/types/editorjs.types";
 
 interface LongFormPreviewModalProps {
   isOpen: boolean;
@@ -41,7 +42,7 @@ export default function LongFormPreviewModal({
 
       let html = "";
 
-      editorData.blocks.forEach((block: any) => {
+      editorData.blocks.forEach((block: EditorJSBlock) => {
         switch (block.type) {
           case "header":
             const level = block.data.level || 3;

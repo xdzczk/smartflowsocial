@@ -1,4 +1,4 @@
-import { json } from "@remix-run/node";
+import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useParams, useFetcher } from "@remix-run/react";
 
 import {
@@ -19,7 +19,7 @@ import { RecyclablesPagination } from "~/features/posts/components/RecyclablesPa
 import { RecyclablesToast } from "~/features/posts/components/RecyclablesToast";
 import { useRecyclablesState } from "~/features/posts/hooks/useRecyclablesState";
 
-export async function loader({ request, params }: { request: Request; params: any }) {
+export async function loader({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
 
   // Require that the user has at least a subscription record
@@ -125,7 +125,7 @@ export default function RecyclablesPosts() {
 
       {selectedPost ? (
         <PostDetailsModal
-          post={selectedPost as any}
+              post={selectedPost}
           stats={stats[selectedPost.signedEvent.id]}
           onClose={() => setSelectedPost(null)}
           showStats={true}

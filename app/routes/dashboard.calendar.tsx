@@ -13,6 +13,7 @@ import { requireFeatureAccess, requireAnySubscription } from "~/features/payment
 import { combineContent } from "~/features/posts/combined.server";
 import { Calendar } from "~/features/posts/components/Calendar/Calendar";
 import { getQueueColor } from "~/features/posts/queueColors";
+import { filterPostsArraysByQueueType } from "~/features/posts/services/post-filtering.server";
 import {
   cancelPostJob as cancelScheduledPost,
   enqueuePostJob as schedulePost,
@@ -62,33 +63,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ]);
 
   // Filter posts by queue type if specific queue is selected
-  // Cast to any to handle Prisma include relations
-  const scheduledPosts =
-    queueType === "all"
-      ? allScheduledPosts
-      : allScheduledPosts.filter((post: any) => post.queueType?.name === queueType);
-
-  // Filter longform posts by queue type if specific queue is selected
-  const scheduledLongFormPosts =
-    queueType === "all"
-      ? allScheduledLongFormPosts
-      : allScheduledLongFormPosts.filter(
-        (post: any) => post.queueType?.name === queueType,
-      );
-
-  // Filter past posts by queue type if specific queue is selected
-  const pastPosts =
-    queueType === "all"
-      ? allPastPosts
-      : allPastPosts.filter((post: any) => post.queueType?.name === queueType);
-
-  // Filter past longform posts by queue type if specific queue is selected
-  const pastLongFormPosts =
-    queueType === "all"
-      ? allPastLongFormPosts
-      : allPastLongFormPosts.filter(
-        (post: any) => post.queueType?.name === queueType,
-      );
+  const {
+    scheduledPosts,
+    scheduledLongFormPosts,
+    pastPosts,
+    pastLongFormPosts,
+  } = filterPostsArraysByQueueType({
+    scheduledPosts: allScheduledPosts,
+    scheduledLongFormPosts: allScheduledLongFormPosts,
+    pastPosts: allPastPosts,
+    pastLongFormPosts: allPastLongFormPosts,
+    queueType,
+  });
 
   // Combine posts and longform posts for the "All" tab
   const allContent = combineContent(
@@ -403,15 +389,15 @@ export default function CalendarRoute() {
           />
         ) : currentTab === "posts" ? (
           <Calendar
-            scheduledPosts={scheduledPosts as any}
-            pastPosts={pastPosts as any}
+            scheduledPosts={scheduledPosts}
+            pastPosts={pastPosts}
             user={user}
             queueTypes={queueTypes}
           />
         ) : (
           <Calendar
-            scheduledPosts={scheduledLongFormPosts as any}
-            pastPosts={pastLongFormPosts as any}
+            scheduledPosts={scheduledLongFormPosts}
+            pastPosts={pastLongFormPosts}
             user={user}
             queueTypes={queueTypes}
             isLongform={true}

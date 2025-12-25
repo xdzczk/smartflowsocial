@@ -1,10 +1,11 @@
 import { Link, useParams } from "@remix-run/react";
+import type { CombinedContent, PostData, LongFormPostData } from "~/features/posts/types";
 
 interface PostTypeTabsProps {
   currentTab: string;
-  allContent?: any[];
-  posts?: any[];
-  longformPosts?: any[];
+  allContent?: CombinedContent[];
+  posts?: PostData[];
+  longformPosts?: LongFormPostData[];
   basePath?: string;
 }
 

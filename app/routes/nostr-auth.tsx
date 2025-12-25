@@ -26,7 +26,7 @@ interface NostrProfileType {
   zaps_count?: number;
   total_satszapped?: number;
   media?: {
-    resources: any[];
+    resources: Array<{ url?: string; [key: string]: unknown }>;
     event_id: string;
   };
 }
@@ -43,7 +43,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     // Parse the event JSON
-    let parsedEvent: any;
+    let parsedEvent: { id?: string; pubkey?: string; sig?: string; [key: string]: unknown };
     try {
       parsedEvent = JSON.parse(event);
     } catch (parseError) {

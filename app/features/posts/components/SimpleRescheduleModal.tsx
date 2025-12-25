@@ -3,13 +3,14 @@ import { useEffect, useState } from "react";
 
 import { signEventFn } from "~/lib/nostr";
 import { handleErrorSafely } from "~/lib/error-handler.client";
+import type { PostData, LongFormPostData, UserData, QueueType } from "~/features/posts/types";
 
 interface SimpleRescheduleModalProps {
-  post: any;
+  post: PostData | LongFormPostData;
   onClose: () => void;
   onConfirm: () => void;
-  user?: any;
-  queueTypes?: any[];
+  user?: UserData;
+  queueTypes?: QueueType[];
 }
 
 export function SimpleRescheduleModal({
@@ -146,7 +147,7 @@ export function SimpleRescheduleModal({
       }
 
       fetcher.submit(formData, { method: "post" });
-    } catch (error: any) {
+    } catch (error: unknown) {
       const { handleAsyncErrorWithMessage, getErrorMessage } = await import("~/lib/error-handler.client");
       handleAsyncErrorWithMessage(
         error,

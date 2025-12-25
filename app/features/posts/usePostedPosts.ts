@@ -2,12 +2,13 @@ import { useFetcher, useRevalidator, useSearchParams } from "@remix-run/react";
 import { useState, useEffect } from "react";
 import { signEventFn } from "~/lib/nostr";
 import type { ToastMessage } from "~/components/types";
+import type { CombinedContent, PostData, LongFormPostData } from "~/features/posts/types";
 import { type User } from "~/models/user.server";
 
 interface UsePostedPostsProps {
     user: User;
-    allContent: any[];
-    posts: any[];
+    allContent: CombinedContent[];
+    posts: PostData[];
 }
 
 export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps) {
@@ -22,9 +23,9 @@ export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps)
         direction: "desc",
     });
     const [searchTerm, setSearchTerm] = useState("");
-    const [selectedPost, setSelectedPost] = useState<any>(null);
+    const [selectedPost, setSelectedPost] = useState<PostData | null>(null);
     const [selectedPosts, setSelectedPosts] = useState<Set<string>>(new Set());
-    const [selectedLongFormPost, setSelectedLongFormPost] = useState<any>(null);
+    const [selectedLongFormPost, setSelectedLongFormPost] = useState<LongFormPostData | null>(null);
     const [toast, setToast] = useState<ToastMessage | null>(null);
 
     const deleteFetcher = useFetcher();
@@ -54,7 +55,7 @@ export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps)
         });
     };
 
-    const toggleSelectAll = (filteredPosts: any[]) => {
+    const toggleSelectAll = (filteredPosts: PostData[] | CombinedContent[]) => {
         if (selectedPosts.size === filteredPosts.length) {
             setSelectedPosts(new Set());
         } else {
@@ -200,7 +201,7 @@ export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps)
             );
             localDate.setHours(localDate.getHours() + 1);
 
-            const repostData = postsData.map((post: any, index: number) => {
+            const repostData = postsData.map((post: PostData, index: number) => {
                 const scheduleDate = new Date(localDate);
                 scheduleDate.setHours(scheduleDate.getHours() + index);
 
@@ -247,7 +248,7 @@ export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps)
             );
             localDate.setHours(localDate.getHours() + 1);
 
-            const scheduledRepostData = postsData.map((post: any, index: number) => {
+            const scheduledRepostData = postsData.map((post: PostData, index: number) => {
                 const scheduleDate = new Date(localDate);
                 scheduleDate.setHours(scheduleDate.getHours() + index);
 
@@ -354,7 +355,7 @@ export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps)
                         // Hide toast after 8 seconds
                         setTimeout(() => setToast(null), 8000);
                     }, 1000);
-                } catch (error: any) {
+                } catch (error: unknown) {
                     const { handleAsyncError, getErrorMessage } = await import("~/lib/error-handler.client");
                     handleAsyncError(error, {
                         component: "usePostedPosts",
@@ -442,14 +443,14 @@ export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps)
                         setToast({
                             type: "success",
                             message: "Post reposted successfully!",
-                            link: `https://primal.net/e/${eventData.tags.find((tag: any) => tag[0] === "e")?.[1]}`,
+                            link: `https://primal.net/e/${eventData.tags.find((tag: string[]) => tag[0] === "e")?.[1]}`,
                             linkText: "View Original Post",
                         });
 
                         // Hide toast after 8 seconds for success with link
                         setTimeout(() => setToast(null), 8000);
                     }, 1000); // 1 second delay
-                } catch (error: any) {
+                } catch (error: unknown) {
                     const { handleAsyncError, getErrorMessage } = await import("~/lib/error-handler.client");
                     handleAsyncError(error, {
                         component: "usePostedPosts",

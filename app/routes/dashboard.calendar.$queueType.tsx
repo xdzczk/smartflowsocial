@@ -10,6 +10,7 @@ import {
 import { requireUserId } from "~/features/auth/session.server";
 import { Calendar } from "~/features/posts/components/Calendar/Calendar";
 import { getQueueColor } from "~/features/posts/queueColors";
+import { filterPostsByQueueType } from "~/features/posts/services/post-filtering.server";
 import {
   cancelPostJob as cancelScheduledPost,
   enqueuePostJob as schedulePost,
@@ -32,11 +33,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ]);
 
   // Filter posts by queue type if specific queue is selected
-  // Cast to any to handle Prisma include relations
-  const scheduledPosts =
-    queueType === "all"
-      ? allScheduledPosts
-      : allScheduledPosts.filter((post: any) => post.queueType?.name === queueType);
+  const scheduledPosts = filterPostsByQueueType(allScheduledPosts, queueType);
 
   return json({
     scheduledPosts,

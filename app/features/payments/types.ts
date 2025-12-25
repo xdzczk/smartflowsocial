@@ -148,12 +148,12 @@ export function useSubscription(): SubscriptionData | null {
   const matches = useMatches();
 
   // Prefer a match that includes currentSubscription; fall back to a match that only has user
-  let foundUser: any = null;
-  let foundSub: any = null;
+  let foundUser: { id: string; isEnabled: boolean } | null = null;
+  let foundSub: UserSubscription | null = null;
 
   for (let i = matches.length - 1; i >= 0; i--) {
     const match = matches[i];
-    const data: any = match?.data;
+    const data = match?.data as { user?: { id: string; isEnabled: boolean }; currentSubscription?: UserSubscription } | undefined;
     if (!data || typeof data !== "object") continue;
 
     if (!foundSub && data.currentSubscription) {

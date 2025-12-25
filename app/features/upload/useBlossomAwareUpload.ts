@@ -131,7 +131,7 @@ export function useBlossomAwareUpload() {
             );
             toast.success("Upload authorized!", { id: "blossom-auth" });
             setUploadProgress(60);
-          } catch (authError: any) {
+          } catch (authError: unknown) {
             toast.error("Failed to authorize upload: " + authError.message, {
               id: "blossom-auth",
             });
@@ -227,7 +227,7 @@ export function useBlossomAwareUpload() {
         }
 
         return result;
-      } catch (error: any) {
+      } catch (error: unknown) {
         const { handleAsyncError } = await import("~/lib/error-handler.client");
         const errorMessage =
           error instanceof Error ? error.message : "Upload failed";

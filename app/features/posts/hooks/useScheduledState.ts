@@ -1,17 +1,19 @@
 import { useState, useEffect } from "react";
 import { useFetcher } from "@remix-run/react";
 
+import type { CombinedContent, LongFormPostData } from "~/features/posts/types";
+
 interface Post {
   id: string;
   caption?: string | null;
   scheduledFor: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface UseScheduledStateProps {
   scheduledPosts: Post[];
   userTimezone?: string | null;
-  allContent?: any[];
+  allContent?: CombinedContent[];
   currentTab: string;
 }
 
@@ -35,7 +37,8 @@ export function useScheduledState({
   const [selectedPosts, setSelectedPosts] = useState<Set<string>>(new Set());
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
   const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
-  const [selectedLongFormPost, setSelectedLongFormPost] = useState<any>(null);
+
+  const [selectedLongFormPost, setSelectedLongFormPost] = useState<LongFormPostData | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [postToEdit, setPostToEdit] = useState<Post | null>(null);

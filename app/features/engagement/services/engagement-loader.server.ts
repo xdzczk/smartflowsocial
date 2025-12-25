@@ -4,6 +4,7 @@
  */
 
 import { connectToPrimalCache } from "~/features/cache/primalCache.server";
+import type { NotificationEvent, GroupedNotification, PrimalEvent, NostrTag, ThreadViewData, EngagementProfile, EngagementStats, EventStats } from "~/features/engagement/types";
 import {
   parseThreadViewNotifications,
   groupNotificationsByType,
@@ -43,7 +44,7 @@ async function fetchUserProfile(pubkey: string): Promise<User | null> {
     }
 
     // Parse profile data
-    let profile: any = {};
+    let profile: EngagementProfile = {};
     if (profileEvent && profileEvent.content) {
       try {
         profile = JSON.parse(profileEvent.content);
@@ -53,7 +54,7 @@ async function fetchUserProfile(pubkey: string): Promise<User | null> {
     }
 
     // Parse stats data
-    let stats: any = {};
+    let stats: EngagementStats = {};
     if (statsEvent && statsEvent.content) {
       try {
         stats = JSON.parse(statsEvent.content);
@@ -117,13 +118,13 @@ async function processEventBatch(
     try {
       const threadViewData = await fetchThreadViewWithTimeout(eventId);
       const notifications = parseThreadViewNotifications(
-        threadViewData as any,
+        threadViewData as ThreadViewData,
         eventId,
         userNpub,
       );
 
-      const statsEvent = (threadViewData as any[]).find(
-        (event: any) =>
+      const statsEvent = (threadViewData as PrimalEvent[]).find(
+        (event: PrimalEvent) =>
           Array.isArray(event) &&
           event[0] === "EVENT" &&
           event[2] &&
@@ -242,7 +243,7 @@ export async function loadEngagementFeedData(
   // Get event IDs from signedEvent.id
   const eventIds = posts.map((post) => post.signedEvent.id);
 
-  let stats: Record<string, any> = {};
+  let stats: Record<string, EventStats> = {};
   let allNotifications: Notification[] = [];
   const userProfilesMap = new Map<string, User>();
   const trustScoresMap = new Map<string, number>();
@@ -269,7 +270,7 @@ export async function loadEngagementFeedData(
         acc[result.eventId] = result.stats;
       }
       return acc;
-    }, {} as Record<string, any>);
+    }, {} as Record<string, EventStats>);
 
     allNotifications = results.flatMap((result) =>
       result && Array.isArray(result.notifications) ? result.notifications : [],
@@ -330,7 +331,7 @@ export async function loadEngagementFeedData(
         satszapped: 0,
       };
       return acc;
-    }, {} as Record<string, any>);
+    }, {} as Record<string, EventStats>);
   }
 
   // Group notifications by type
@@ -353,8 +354,8 @@ export async function loadEngagementFeedData(
   });
 
   // Fetch quote reposts using get_notifications
-  let quoteRepostNotifications: any[] = [];
-  let groupedQuoteReposts: any[] = [];
+  let quoteRepostNotifications: NotificationEvent[] = [];
+  let groupedQuoteReposts: GroupedNotification[] = [];
   try {
     const notificationsData = await connectToPrimalCache("get_notifications", {
       pubkey: user.npub,
@@ -364,7 +365,7 @@ export async function loadEngagementFeedData(
     // Extract quote reposts (kind 1 events with mention tags)
     if (Array.isArray(notificationsData)) {
       const rawQuoteReposts = notificationsData
-        .filter((item: any) => {
+        .filter((item: PrimalEvent) => {
           if (
             Array.isArray(item) &&
             item[0] === "EVENT" &&
@@ -389,12 +390,12 @@ export async function loadEngagementFeedData(
 
             // Check if it has both "e" and "p" tags with mention marker
             const eMentionTags = tags.filter(
-              (tag: any[]) => tag[0] === "e" && tag[3] === "mention",
+              (tag: NostrTag) => tag[0] === "e" && tag[3] === "mention",
             );
             const hasEMention = eMentionTags.length > 0;
 
             const pMentionTags = tags.filter(
-              (tag: any[]) =>
+              (tag: NostrTag) =>
                 tag[0] === "p" && (tag[3] === "mention" || tag[3] === ""),
             );
             const hasPMention = pMentionTags.length > 0;
@@ -405,7 +406,7 @@ export async function loadEngagementFeedData(
 
             // Check if the mentioned user (p tag) is the current user
             const mentionedUserPubkey = tags.find(
-              (tag: any[]) =>
+              (tag: NostrTag) =>
                 tag[0] === "p" && (tag[3] === "mention" || tag[3] === ""),
             )?.[1];
             const isMentioningUser = mentionedUserPubkey === user.npub;
@@ -414,7 +415,7 @@ export async function loadEngagementFeedData(
           }
           return false;
         })
-        .map((item: any) => item[2]); // Extract the event object
+        .map((item: PrimalEvent) => item[2] as NotificationEvent); // Extract the event object
 
       // Process quote reposts
       if (rawQuoteReposts.length > 0) {

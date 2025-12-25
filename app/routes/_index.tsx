@@ -22,7 +22,7 @@ export async function action({ request }) {
     }
 
     // Parse the event JSON
-    let parsedEvent: any;
+    let parsedEvent: { id?: string; pubkey?: string; sig?: string; [key: string]: unknown };
     try {
       parsedEvent = JSON.parse(event);
     } catch (parseError) {

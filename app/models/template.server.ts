@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "~/lib/prisma.server";
 
 export async function createTemplate({
@@ -61,7 +62,7 @@ export async function updateTemplate({
   name?: string;
   postIds?: string[];
 }) {
-  const updateData: any = {};
+  const updateData: Prisma.TemplateUpdateInput = {};
   if (name !== undefined) updateData.name = name;
   if (postIds !== undefined) {
     updateData.posts = {

@@ -3,7 +3,7 @@
  * Used by the "All" tab to display both types of content together
  */
 
-import type { CombinedContent } from "~/features/posts/types";
+import type { CombinedContent, PostData, LongFormPostData } from "~/features/posts/types";
 
 // Re-export the type
 export type { CombinedContent } from "~/features/posts/types";
@@ -11,7 +11,7 @@ export type { CombinedContent } from "~/features/posts/types";
 /**
  * Converts a Post to CombinedContent format
  */
-export function postToCombinedContent(post: any): CombinedContent {
+export function postToCombinedContent(post: PostData): CombinedContent {
   return {
     id: post.id,
     type: "post",
@@ -47,7 +47,7 @@ export function postToCombinedContent(post: any): CombinedContent {
  * Converts a LongFormPost to CombinedContent format
  */
 export function longFormPostToCombinedContent(
-  longFormPost: any,
+  longFormPost: LongFormPostData,
 ): CombinedContent {
   return {
     id: longFormPost.id,
@@ -81,8 +81,8 @@ export function longFormPostToCombinedContent(
  * Combines posts and longform posts into a single sorted array
  */
 export function combineContent(
-  posts: any[] = [],
-  longFormPosts: any[] = [],
+  posts: PostData[] = [],
+  longFormPosts: LongFormPostData[] = [],
   sortBy = "createdAt",
   sortDirection: "asc" | "desc" = "desc",
 ): CombinedContent[] {

@@ -1,15 +1,16 @@
 import type { User } from "@prisma/client";
 
 import { prisma } from "~/lib/prisma.server";
+import type { ProfileData } from "~/features/nostr/types";
 
 type MinimalUser = Pick<User, "id" | "npub"> & {
-  nostrProfile?: any | null;
+  nostrProfile?: ProfileData | null;
   isChild?: boolean;
   parentNpub?: string | null;
   pendingParentRequests?: string[];
 };
 
-function extractProfileBits(nostrProfile: any | null | undefined): {
+function extractProfileBits(nostrProfile: ProfileData | null | undefined): {
   name?: string;
   display_name?: string;
   picture?: string;
@@ -26,9 +27,9 @@ function extractProfileBits(nostrProfile: any | null | undefined): {
     }
     if (typeof nostrProfile === "object") {
       return {
-        name: (nostrProfile as any)?.name,
-        display_name: (nostrProfile as any)?.display_name,
-        picture: (nostrProfile as any)?.picture,
+        name: nostrProfile?.name,
+        display_name: nostrProfile?.display_name,
+        picture: nostrProfile?.picture,
       };
     }
   } catch { }

@@ -5,8 +5,26 @@
 import { json, redirect } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth/session.server";
+import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 import { createPost, updatePost } from "~/models/post.server";
 import { isVideoUrl } from "~/utils/media-helpers";
+
+/**
+ * Upload result from client-side upload system
+ */
+interface UploadResult {
+    success: boolean;
+    file?: {
+        url: string;
+        size: number;
+        name: string;
+        extension: string;
+        sha256?: string;
+        mimeType?: string;
+        provider: "S3" | "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR";
+    };
+    error?: string;
+}
 
 /**
  * Handle file upload preview results from client-side upload system
@@ -19,7 +37,7 @@ export async function handleUploadImagesPreview(formData: FormData) {
             throw new ValidationError("Missing uploadResults");
         }
 
-        let uploadResults: any;
+        let uploadResults: UploadResult[];
         try {
             uploadResults = JSON.parse(uploadResultsStr);
         } catch (parseError) {
@@ -32,7 +50,7 @@ export async function handleUploadImagesPreview(formData: FormData) {
         const scheduledDates = formData.getAll("scheduledDates");
         const queueTypes = formData.getAll("queueTypes");
 
-        const fileUrls = uploadResults.map((result: any, index: number) => ({
+        const fileUrls = uploadResults.map((result: UploadResult, index: number) => ({
             fileUrl: result.file?.url || result.url,
             scheduledFor: scheduledDates[index],
             queueType: queueTypes[index],
@@ -55,7 +73,7 @@ export async function handleSignAndSchedule(
 ) {
     try {
         // Parse signed events with error handling
-        let signedEvents: any[];
+        let signedEvents: SignedEvent[];
         try {
             signedEvents = formData
                 .getAll("signedEvents")
@@ -67,7 +85,7 @@ export async function handleSignAndSchedule(
             });
         }
 
-        let nostrEvents: any[];
+        let nostrEvents: NostrEvent[];
         try {
             nostrEvents = formData
                 .getAll("nostrEvent")

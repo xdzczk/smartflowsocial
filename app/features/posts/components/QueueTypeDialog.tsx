@@ -22,16 +22,10 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Textarea } from "~/components/ui/textarea";
+import type { QueueType } from "~/features/posts/types";
 
-interface QueueType {
-  id: string;
-  name: string;
-  description?: string;
-  color?: string;
-  scheduleType: "INTERVAL" | "FIXED_SLOTS";
-  scheduleConfig: any;
-  isDefault: boolean;
-  isEnabled: boolean;
+interface QueueTypeDialogQueueType extends QueueType {
+  isDefault?: boolean;
   hashTagPreset?: {
     id: string;
     name: string;
@@ -44,7 +38,7 @@ interface QueueType {
 interface QueueTypeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  queueType?: QueueType | null;
+  queueType?: QueueTypeDialogQueueType | null;
   hashTagPresets: {
     id: string;
     name: string;

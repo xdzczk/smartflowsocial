@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useFetcher } from "@remix-run/react";
 
 import { signEventFn } from "~/lib/nostr";
+import type { PostData } from "~/features/posts/types";
 
 interface Post {
   id: string;
@@ -11,7 +12,7 @@ interface Post {
   signedEvent: { id: string };
   queueType?: { name: string; color?: string | null } | null;
   status?: string;
-  [key: string]: any; // Allow additional properties from Prisma
+  [key: string]: unknown; // Allow additional properties from Prisma
 }
 
 interface Stats {
@@ -30,14 +31,52 @@ interface User {
   relays?: string[];
 }
 
+interface RepostFetcherData {
+  repostData?: PostData[];
+  scheduledRepostData?: PostData[];
+  quotePostData?: {
+    caption?: string;
+    fileUrl?: string | string[];
+    queueType?: string;
+    scheduledFor?: string;
+    originalPostId?: string;
+    originalEventId?: string;
+    originalEventPubkey?: string;
+    [key: string]: unknown;
+  };
+}
+
+interface IndividualRepostFetcherData {
+  repostEventData?: {
+    kind: number;
+    content: string;
+    tags: string[][];
+    created_at: number;
+    pubkey: string;
+    [key: string]: unknown;
+  };
+  quotePostData?: {
+    caption?: string;
+    fileUrl?: string | string[];
+    queueType?: string;
+    scheduledFor?: string;
+    originalPostId?: string;
+    originalEventId?: string;
+    originalEventPubkey?: string;
+    [key: string]: unknown;
+  };
+  error?: boolean;
+  message?: string;
+}
+
 interface UseRecyclablesStateProps {
-  posts: Post[] | any[]; // Accept any post type from loader
+  posts: Post[] | PostData[]; // Accept any post type from loader
   stats: Stats;
   user?: User | null;
-  repostFetcher: ReturnType<typeof useFetcher>;
+  repostFetcher: ReturnType<typeof useFetcher<RepostFetcherData>>;
   bulkDeleteFetcher: ReturnType<typeof useFetcher>;
   bulkRepostFetcher: ReturnType<typeof useFetcher>;
-  individualRepostFetcher: ReturnType<typeof useFetcher>;
+  individualRepostFetcher: ReturnType<typeof useFetcher<IndividualRepostFetcherData>>;
 }
 
 interface SortConfig {
@@ -194,7 +233,7 @@ export function useRecyclablesState({
 
   // Handle repost data and navigation
   useEffect(() => {
-    const fetcherData = repostFetcher.data as { repostData?: any[]; scheduledRepostData?: any[]; quotePostData?: any } | undefined;
+    const fetcherData = repostFetcher.data as RepostFetcherData | undefined;
     if (fetcherData?.repostData) {
       const postsData = fetcherData.repostData;
 
@@ -206,7 +245,7 @@ export function useRecyclablesState({
       );
       localDate.setHours(localDate.getHours() + 1);
 
-      const repostData = postsData.map((post: any, index: number) => {
+      const repostData = postsData.map((post: PostData, index: number) => {
         const scheduleDate = new Date(localDate);
         scheduleDate.setHours(scheduleDate.getHours() + index);
 
@@ -248,7 +287,7 @@ export function useRecyclablesState({
       );
       localDate.setHours(localDate.getHours() + 1);
 
-      const scheduledRepostData = postsData.map((post: any, index: number) => {
+      const scheduledRepostData = postsData.map((post: PostData, index: number) => {
         const scheduleDate = new Date(localDate);
         scheduleDate.setHours(scheduleDate.getHours() + index);
 
@@ -292,12 +331,7 @@ export function useRecyclablesState({
   // Handle individual repost actions
   useEffect(() => {
     const handleRepost = async () => {
-      const data = individualRepostFetcher.data as {
-        repostEventData?: any;
-        quotePostData?: any;
-        error?: boolean;
-        message?: string;
-      } | undefined;
+      const data = individualRepostFetcher.data as IndividualRepostFetcherData | undefined;
       
       if (data?.repostEventData) {
         try {
@@ -330,18 +364,21 @@ export function useRecyclablesState({
             setToast({
               type: "success",
               message: "Post reposted successfully!",
-              link: `https://primal.net/e/${eventData.tags.find((tag: any[]) => tag[0] === "e")?.[1]}`,
+              link: `https://primal.net/e/${eventData.tags.find((tag: string[]) => tag[0] === "e")?.[1]}`,
               linkText: "View Original Post",
             });
 
             // Hide toast after 8 seconds for success with link
             setTimeout(() => setToast(null), 8000);
           }, 1000); // 1 second delay
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error("Repost signing/publishing error:", error);
+          const errorMessage = error instanceof Error 
+            ? error.message 
+            : "Failed to sign or publish repost";
           setToast({
             type: "error",
-            message: error.message || "Failed to sign or publish repost",
+            message: errorMessage,
           });
 
           // Hide toast after 5 seconds for errors

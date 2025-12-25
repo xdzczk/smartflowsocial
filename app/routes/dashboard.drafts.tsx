@@ -170,7 +170,7 @@ export default function DraftPosts() {
 
           {selectedPost ? (
             <PostDetailsModal
-              post={selectedPost as any}
+              post={selectedPost}
               onClose={() => setSelectedPost(null)}
               type="draft"
               userTimezone={user?.timezone || undefined}

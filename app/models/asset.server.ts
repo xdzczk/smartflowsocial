@@ -89,7 +89,12 @@ export async function updateAsset({
   fileUrl?: string;
   tags?: string[];
 }) {
-  const updateData: any = {};
+  const updateData: Partial<{
+    title?: string;
+    content?: string;
+    fileUrl?: string;
+    tags?: string[];
+  }> = {};
   if (title !== undefined) updateData.title = title;
   if (content !== undefined) updateData.content = content;
   if (fileUrl !== undefined) updateData.fileUrl = fileUrl;

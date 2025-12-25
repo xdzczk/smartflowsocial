@@ -14,16 +14,10 @@ import {
 
 import { QueueTypeCard } from "./QueueTypeCard";
 import { QueueTypeDialog } from "./QueueTypeDialog";
+import type { QueueType } from "~/features/posts/types";
 
-interface QueueType {
-  id: string;
-  name: string;
-  description?: string;
-  color?: string;
-  scheduleType: "INTERVAL" | "FIXED_SLOTS";
-  scheduleConfig: any;
+interface QueueTypeSettings extends QueueType {
   isDefault: boolean;
-  isEnabled: boolean;
   hashTagPreset?: {
     id: string;
     name: string;
@@ -34,7 +28,7 @@ interface QueueType {
 }
 
 interface QueueTypesSettingsProps {
-  queueTypes: QueueType[];
+  queueTypes: QueueTypeSettings[];
   hashTagPresets: {
     id: string;
     name: string;

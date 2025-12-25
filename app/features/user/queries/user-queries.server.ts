@@ -23,9 +23,11 @@ export async function getUserBasicInfo(
 /**
  * Gets users by an array of npubs with their profile info
  */
+import type { ProfileData } from "~/features/nostr/types";
+
 export async function getUsersByNpubs(
   npubs: string[],
-): Promise<Array<{ npub: string; nostrProfile: any }>> {
+): Promise<Array<{ npub: string; nostrProfile: ProfileData | null }>> {
   if (!npubs.length) return [];
   return prisma.user.findMany({
     where: { npub: { in: npubs } },
@@ -38,7 +40,7 @@ export async function getUsersByNpubs(
  */
 export async function getUserByNpubWithProfile(
   npub: string,
-): Promise<{ npub: string; nostrProfile: any } | null> {
+): Promise<{ npub: string; nostrProfile: ProfileData | null } | null> {
   return prisma.user.findUnique({
     where: { npub },
     select: { npub: true, nostrProfile: true },

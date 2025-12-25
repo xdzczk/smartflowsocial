@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from "react";
 import { useFetcher } from "@remix-run/react";
 import { resizeImage } from "~/features/upload/image-resize";
 import { uploadFile, uploadMultipleFiles } from "~/features/upload/upload.client";
+import type { Asset } from "~/features/assets/types";
 
 interface UseAssetUploadOptions {
     onSuccess: (message: string) => void;
@@ -12,7 +13,7 @@ export function useAssetUpload({
     onSuccess,
     onError,
 }: UseAssetUploadOptions) {
-    const assetFetcher = useFetcher<{ success?: boolean; asset?: any; assets?: any[]; error?: string }>();
+    const assetFetcher = useFetcher<{ success?: boolean; asset?: Asset; assets?: Asset[]; error?: string }>();
     const [bulkUploadFiles, setBulkUploadFiles] = useState<File[]>([]);
     const [isProcessingImages, setIsProcessingImages] = useState(false);
     const [singleFileUploading, setSingleFileUploading] = useState(false);
@@ -58,7 +59,7 @@ export function useAssetUpload({
             serverFormData.append("uploadResult", JSON.stringify(uploadResult));
 
             assetFetcher.submit(serverFormData, { method: "post" });
-        } catch (error: any) {
+        } catch (error: unknown) {
             const { handleAsyncErrorWithMessage, getErrorMessage } = await import("~/lib/error-handler.client");
             const errorMessage = `Upload failed: ${getErrorMessage(error)}`;
             handleAsyncErrorWithMessage(
@@ -114,7 +115,7 @@ export function useAssetUpload({
             tags.forEach((tag) => serverFormData.append("tags", tag as string));
 
             assetFetcher.submit(serverFormData, { method: "post" });
-        } catch (error: any) {
+        } catch (error: unknown) {
             const { handleAsyncErrorWithMessage, getErrorMessage } = await import("~/lib/error-handler.client");
             const errorMessage = `Bulk upload failed: ${getErrorMessage(error)}`;
             handleAsyncErrorWithMessage(

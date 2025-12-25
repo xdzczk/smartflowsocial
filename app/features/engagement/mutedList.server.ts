@@ -1,5 +1,5 @@
 import { connectToPrimalCache } from "~/features/cache/primalCache.server";
-import type { MutedListData } from "~/features/engagement/types";
+import type { MutedListData, PrimalEvent } from "~/features/engagement/types";
 
 // Re-export the type
 export type { MutedListData } from "~/features/engagement/types";
@@ -23,7 +23,7 @@ export async function fetchMutedList(
     }
 
     // Find the mute list event (kind 10000)
-    const muteListEvent = responses.find((res: any) => {
+    const muteListEvent = responses.find((res: PrimalEvent) => {
       if (Array.isArray(res) && res[0] === "EVENT" && res[2]) {
         return res[2].kind === 10000;
       }

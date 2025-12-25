@@ -2,6 +2,7 @@ import { useFetcher } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
 import { getSelectedQueueStyle } from "~/features/posts/queueColors";
+import type { QueueType } from "~/features/posts/types";
 import { signEventFn } from "~/lib/nostr";
 import { useOptionalUser } from "~/lib/remix-utils";
 
@@ -81,7 +82,7 @@ export default function DraftBulkResume({
             const baseDate = new Date(scheduledTime);
 
             if (queueType.scheduleType === "INTERVAL") {
-              const config = queueType.scheduleConfig as any;
+              const config = queueType.scheduleConfig;
               let intervalHours = 4; // default
 
               if (config.useGlobalInterval) {
@@ -94,7 +95,7 @@ export default function DraftBulkResume({
                 baseDate.getHours() + baseIndex * intervalHours,
               );
             } else if (queueType.scheduleType === "FIXED_SLOTS") {
-              const config = queueType.scheduleConfig as any;
+              const config = queueType.scheduleConfig;
               const slots = config.slots || [];
 
               if (slots.length > 0) {

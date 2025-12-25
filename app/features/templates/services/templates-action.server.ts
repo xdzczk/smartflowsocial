@@ -117,14 +117,14 @@ export async function handleTemplatesAction(
 
     // Check for failed uploads
     const failedUploads = uploadResults.filter(
-      (result: any) => !result.success,
+      (result: { success: boolean; error?: string }) => !result.success,
     );
     if (failedUploads.length > 0) {
       return { error: "Some uploads failed" };
     }
 
     const assets = await Promise.all(
-      uploadResults.map(async (uploadResult: any, index: number) => {
+      uploadResults.map(async (uploadResult: { success: boolean; fileUrl?: string; file?: { url: string; mimeType?: string }; error?: string }, index: number) => {
         const fileUrl = uploadResult.file.url;
         const mimeType = uploadResult.file.mimeType || "";
 

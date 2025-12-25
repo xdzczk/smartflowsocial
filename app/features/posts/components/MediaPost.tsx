@@ -1,30 +1,34 @@
 import { useFetcher } from "@remix-run/react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { toast } from "react-hot-toast";
 
 import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
-import { getDynamicQueueStyle } from "~/features/posts/queueColors";
+import type { QueueType, HashTagPreset } from "~/features/posts/types";
+import { QueueSelector } from "~/features/posts/components/QueueSelector";
+import { SchedulingSection } from "~/features/posts/components/SchedulingSection";
+import { usePostScheduling } from "~/features/posts/hooks/usePostScheduling";
 import { resizeImage } from "~/features/upload/image-resize";
 import { uploadMultipleFiles } from "~/features/upload/upload.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 
-interface QueueType {
-  id: string;
-  name: string;
-  scheduleType: "INTERVAL" | "FIXED_SLOTS";
-  scheduleConfig: any;
-  color?: string;
-  description?: string;
-  isEnabled: boolean;
+interface PreparedEventData {
+  content: {
+    fileUrl: string;
+    scheduledFor: string;
+    caption: string;
+    queueType: string;
+  };
+  type: "media";
+  queueType: string;
 }
 
 interface MediaPostProps {
-  files: any;
-  setFiles: any;
-  setShowImagePreview: any;
-  setPreparedImageEvent: any;
+  files: File[];
+  setFiles: React.Dispatch<React.SetStateAction<File[]>>;
+  setShowImagePreview: (show: boolean) => void;
+  setPreparedImageEvent: (data: PreparedEventData[]) => void;
   queueTypes?: (string | QueueType)[];
-  hashTagPresets?: any[];
+  hashTagPresets?: HashTagPreset[];
   onQueueTypeChange?: (queueType: string) => void;
   selectedHashTagPresetId?: string | null;
   onHashtagPresetChange?: (presetId: string | null, hashtags: string) => void;
@@ -73,9 +77,6 @@ export default function MediaPost({
   const fetcher = useFetcher();
   const user = useOptionalUser();
 
-  const scheduleIntervals = user?.scheduleInterval;
-  const [scheduledFor, setScheduledFor] = useState("");
-  const [timeError, setTimeError] = useState("");
   const [isRecyclable, setIsRecyclable] = useState(false);
   const [useHashtagPresets, setUseHashtagPresets] = useState(false);
   const [selectedHashtagPresetId, setSelectedHashtagPresetId] = useState(
@@ -83,14 +84,27 @@ export default function MediaPost({
   );
   const [selectedHashtags, setSelectedHashtags] = useState("");
 
-  // Determine initial queue selection - default to "unassigned"
-  const getInitialQueue = () => {
-    return "unassigned";
-  };
+  // Use the shared scheduling hook
+  const {
+    selectedQueue,
+    setSelectedQueue,
+    scheduledFor,
+    setScheduledFor,
+    timeError,
+    setTimeError,
+    calculateQueueScheduleTime,
+    handleScheduleIntervalClick,
+    scheduleIntervals,
+  } = usePostScheduling({
+    queueTypes,
+    scheduleIntervals: user?.scheduleInterval,
+    userTimezone: user?.timezone,
+    initialQueue: "unassigned",
+    onQueueTypeChange,
+    onTimeError: setTimeError,
+  });
 
-  const [selectedQueue, setSelectedQueue] = useState(getInitialQueue());
-
-  const handleFileChange = async (e: any) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files) as File[];
 
     // Filter out unacceptable files
@@ -135,15 +149,15 @@ export default function MediaPost({
           return file;
         }),
       );
-      setFiles((prev: any) => [...prev, ...processedFiles]);
+      setFiles((prev: File[]) => [...prev, ...processedFiles]);
     } catch (error) {
       console.error("Error processing media files:", error);
       toast.error("Error processing files. Using original files.");
-      setFiles((prev: any) => [...prev, ...validFiles]);
+      setFiles((prev: File[]) => [...prev, ...validFiles]);
     }
   };
 
-  const handleDrop = async (e: any) => {
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const droppedFiles = Array.from(e.dataTransfer.files) as File[];
     if (droppedFiles.length > 0) {
@@ -165,16 +179,16 @@ export default function MediaPost({
             return file; // Videos are not processed
           }),
         );
-        setFiles((prev: any) => [...prev, ...processedFiles]);
+        setFiles((prev: File[]) => [...prev, ...processedFiles]);
       } catch (error) {
         console.error("Error processing dropped media files:", error);
         toast.error("Error processing files. Using original files.");
-        setFiles((prev: any) => [...prev, ...validFiles]);
+        setFiles((prev: File[]) => [...prev, ...validFiles]);
       }
     }
   };
 
-  const handleDragOver = (e: any) => {
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
   };
 
@@ -195,7 +209,7 @@ export default function MediaPost({
       });
   }, []);
 
-  const handleImagePreview = async (e) => {
+  const handleImagePreview = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     // Check if scheduledFor is empty
@@ -275,51 +289,6 @@ export default function MediaPost({
     }
   };
 
-  const calculateQueueScheduleTime = async (queueTypeName: string) => {
-    if (queueTypeName === "unassigned") {
-      setScheduledFor("");
-      return;
-    }
-
-    // Find the queue type object to get its ID
-    const selectedQueueType = queueTypes.find(qt => 
-      (typeof qt === "string" ? qt : qt.name) === queueTypeName
-    );
-    const queueTypeId = typeof selectedQueueType === "object" ? selectedQueueType.id : null;
-
-    try {
-      const response = await fetch("/api/queue-schedule", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          queueTypeId,
-          queueTypeName, // Keep for backward compatibility
-          userId: user?.id,
-        }),
-      });
-
-      if (response.ok) {
-        const { scheduledTime } = await response.json();
-        setScheduledFor(scheduledTime);
-        setTimeError("");
-      }
-    } catch (error) {
-      console.error("Error calculating schedule time:", error);
-    }
-  };
-
-  useEffect(() => {
-    if (selectedQueue !== "unassigned") {
-      calculateQueueScheduleTime(selectedQueue);
-    }
-    // Notify parent component of queue type change
-    if (onQueueTypeChange) {
-      onQueueTypeChange(selectedQueue);
-    }
-  }, [selectedQueue, onQueueTypeChange]);
-
   const handleHashtagPresetSelect = (
     presetId: string | null,
     hashtags: string,
@@ -329,48 +298,6 @@ export default function MediaPost({
     if (onHashtagPresetChange) {
       onHashtagPresetChange(presetId, hashtags);
     }
-  };
-
-  const handleScheduleIntervalClick = (intervalHours: any) => {
-    // Find the currently selected queue type
-    const selectedQueueType = queueTypes.find(qt => 
-      (typeof qt === "string" ? qt : qt.name) === selectedQueue
-    );
-    
-    // If this is a fixed slot queue, use the API to get the next scheduled time instead
-    if (selectedQueueType && typeof selectedQueueType === "object" && selectedQueueType.scheduleType === "FIXED_SLOTS") {
-      // For fixed slot queues, recalculate the schedule time instead of adding hours
-      calculateQueueScheduleTime(selectedQueue);
-      return;
-    }
-
-    const now = new Date();
-    const hoursLater = new Date(
-      now.getTime() + parseInt(intervalHours) * 60 * 60 * 1000,
-    );
-
-    // Format the date in the user's timezone
-    const userTimezone = user?.timezone || "UTC";
-    const formattedDate = hoursLater.toLocaleString("en-US", {
-      timeZone: userTimezone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-
-    // Parse the formatted date back into components
-    const [datePart, timePart] = formattedDate.split(", ");
-    const [month, day, year] = datePart.split("/");
-    const [hours, minutes] = timePart.split(":");
-
-    // Create the datetime-local format (YYYY-MM-DDTHH:mm)
-    const formattedForInput = `${year}-${month}-${day}T${hours}:${minutes}`;
-
-    setScheduledFor(formattedForInput);
-    setTimeError("");
   };
 
   const isUploaded = false; // Removed old fetcher logic
@@ -485,66 +412,13 @@ export default function MediaPost({
       </div>
       <div className="mt-4 flex items-center justify-between gap-4">
         <div className="flex flex-col gap-2">
-          <div className="mb-2">
-            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Queue Type
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {/* Unassigned option */}
-              <button
-                type="button"
-                onClick={() => setSelectedQueue("unassigned")}
-                disabled={isUploading || isUploaded}
-                className={`rounded-full px-4 py-2 text-sm ${getDynamicQueueStyle(null, selectedQueue === "unassigned")} disabled:cursor-not-allowed disabled:opacity-50`}
-              >
-                Unassigned
-              </button>
-
-              {/* Queue types */}
-              {queueTypes
-                .filter((queue) => {
-                  const queueName = typeof queue === "string" ? queue : queue.name;
-                  const isEnabled =
-                    typeof queue === "object"
-                      ? queue.isEnabled !== false
-                      : true;
-                  // Exclude "Unassigned" queue type since we have a hard-coded unassigned option
-                  return isEnabled && queueName !== "Unassigned";
-                })
-                .map((queue) => {
-                  const queueName =
-                    typeof queue === "string" ? queue : queue.name;
-                  const queueColor =
-                    typeof queue === "object" ? queue.color : null;
-                  return (
-                    <button
-                      key={queueName}
-                      type="button"
-                      onClick={() => setSelectedQueue(queueName)}
-                      disabled={isUploading || isUploaded}
-                      className={`rounded-full px-4 py-2 text-sm ${getDynamicQueueStyle(queueColor, selectedQueue === queueName)} disabled:cursor-not-allowed disabled:opacity-50`}
-                      style={{
-                        backgroundColor: queueColor || undefined,
-                        borderColor: queueColor || undefined,
-                      }}
-                    >
-                      {queueName}
-                    </button>
-                  );
-                })}
-            </div>
-            <input type="hidden" name="queueType" value={selectedQueue} />
-            <input 
-              type="hidden" 
-              name="queueTypeId" 
-              value={(() => {
-                const selectedQueueType = queueTypes.find(qt => 
-                  (typeof qt === "string" ? qt : qt.name) === selectedQueue
-                );
-                return typeof selectedQueueType === "object" ? selectedQueueType.id : "";
-              })()} 
-            />
-          </div>
+          <QueueSelector
+            queueTypes={queueTypes}
+            selectedQueue={selectedQueue}
+            onQueueChange={setSelectedQueue}
+            disabled={isUploading || isUploaded}
+            className="mb-2"
+          />
 
           {/* Hashtag Preset Toggle */}
           <HashtagPresetToggle
@@ -576,60 +450,20 @@ export default function MediaPost({
               Make this post recyclable
             </label>
           </div>
-          <div className="flex items-center gap-4">
-            <input
-              type="datetime-local"
-              name="scheduledFor"
-              value={scheduledFor}
-              onChange={(e) => {
-                setScheduledFor(e.target.value);
-                setTimeError("");
-              }}
-              className={`rounded-md border ${timeError ? "border-red-500" : "border-gray-300"} p-2 text-gray-900`}
-              disabled={isUploading || isUploaded}
-            />
-          </div>
+          <SchedulingSection
+            scheduledFor={scheduledFor}
+            onScheduledForChange={setScheduledFor}
+            scheduleIntervals={scheduleIntervals}
+            queueTypes={queueTypes}
+            selectedQueue={selectedQueue}
+            onScheduleIntervalClick={handleScheduleIntervalClick}
+            onCalculateNextSlot={() => calculateQueueScheduleTime(selectedQueue)}
+            disabled={isUploading || isUploaded}
+            showTimeInput={true}
+          />
           {timeError ? (
             <p className="text-sm text-red-500">{timeError}</p>
           ) : null}
-          <div className="flex flex-wrap gap-2">
-            {(() => {
-              // Find the currently selected queue type
-              const selectedQueueType = queueTypes.find(qt => 
-                (typeof qt === "string" ? qt : qt.name) === selectedQueue
-              );
-              
-              // For fixed slot queues, show a different UI
-              if (selectedQueueType && typeof selectedQueueType === "object" && selectedQueueType.scheduleType === "FIXED_SLOTS") {
-                return (
-                  <button
-                    type="button"
-                    onClick={() => calculateQueueScheduleTime(selectedQueue)}
-                    className="rounded-md bg-blue-100 px-2.5 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-200 dark:bg-blue-800 dark:text-blue-300 dark:hover:bg-blue-700"
-                    disabled={isUploading || isUploaded}
-                  >
-                    Next Slot
-                  </button>
-                );
-              }
-              
-              // For interval-based queues, show the hour buttons
-              return scheduleIntervals
-                ? scheduleIntervals.map((interval) => (
-                    <button
-                      key={interval}
-                      type="button"
-                      onClick={() => handleScheduleIntervalClick(interval)}
-                      className="rounded-md bg-gray-100 px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-                      disabled={isUploading || isUploaded}
-                    >
-                      +{interval}h
-                    </button>
-                  ))
-                : null;
-            })()
-            }
-          </div>
         </div>
         <div className="flex flex-col items-end gap-2">
           {uploadProvider ? (

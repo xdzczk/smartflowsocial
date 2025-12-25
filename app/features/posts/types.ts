@@ -3,20 +3,34 @@
  * Shared TypeScript interfaces for post and queue features
  */
 
+import type { Post, LongFormPost, QueueType as PrismaQueueType, HashTagPreset as PrismaHashTagPreset } from "@prisma/client";
+import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
+import type { FetcherWithComponents } from "@remix-run/react";
+
 /**
  * Queue type with scheduling configuration
  */
 export interface QueueType {
-    id?: string;
+    id: string;
     name: string;
     color?: string | null;
+    description?: string | null;
     scheduleType?: "INTERVAL" | "FIXED_SLOTS";
     scheduleConfig?: {
         useGlobalInterval?: boolean;
         intervalHours?: number;
         slots?: string[];
     };
+    isEnabled?: boolean;
+    userId?: string;
 }
+
+/**
+ * Extended queue type with relations
+ */
+export type QueueTypeWithRelations = PrismaQueueType & {
+    hashTagPreset?: HashTagPreset | null;
+};
 
 /**
  * Bulk post data for scheduling
@@ -60,6 +74,26 @@ export interface BulkPostsHandlerDeps {
 }
 
 /**
+ * Post data structure for editing/displaying
+ */
+export interface PostData extends Omit<Post, "signedEvent" | "nostrEvent"> {
+    signedEvent?: SignedEvent | null;
+    nostrEvent?: NostrEvent | null;
+    queueType?: QueueType | null;
+    hashTagPreset?: HashTagPreset | null;
+    hashtags?: string; // Space-separated hashtags string
+}
+
+/**
+ * Longform post data structure for editing/displaying
+ */
+export interface LongFormPostData extends Omit<LongFormPost, "signedEvent" | "nostrEvent"> {
+    signedEvent?: SignedEvent | null;
+    nostrEvent?: NostrEvent | null;
+    queueType?: QueueType | null;
+}
+
+/**
  * Combined content for displaying posts and longform posts together
  */
 export interface CombinedContent {
@@ -89,8 +123,8 @@ export interface CombinedContent {
     queueTypeId?: string;
     userId: string;
     tags?: string[];
-    signedEvent?: any;
-    nostrEvent?: any;
+    signedEvent?: SignedEvent;
+    nostrEvent?: NostrEvent;
     nostrEventId?: string;
     manual_override?: boolean;
     postType?: string;
@@ -98,7 +132,7 @@ export interface CombinedContent {
     isQuotedPost?: boolean;
     isRecyclable?: boolean;
     templateId?: string;
-    originalData: any;
+    originalData: PostData | LongFormPostData;
 }
 
 /**
@@ -107,7 +141,7 @@ export interface CombinedContent {
 export interface PostJobData {
     postId: string;
     userId: string;
-    signedEvent: any;
+    signedEvent: SignedEvent;
 }
 
 /**
@@ -116,7 +150,7 @@ export interface PostJobData {
 export interface LongFormPostJobData {
     postId: string;
     userId: string;
-    signedEvent: any;
+    signedEvent: SignedEvent;
 }
 
 /**
@@ -146,10 +180,17 @@ export interface PreparedEvent {
 export interface HashTagPreset {
     id: string;
     name: string;
-    hashtags: string[];
-    createdAt: Date;
-    updatedAt: Date;
+    tags: string; // Stored as space-separated string
+    description?: string | null;
+    createdAt?: Date;
+    updatedAt?: Date;
+    userId?: string;
 }
+
+/**
+ * Extended hashtag preset with relations
+ */
+export type HashTagPresetWithRelations = PrismaHashTagPreset;
 
 /**
  * Props for HashtagPresetToggle component
@@ -184,4 +225,65 @@ export interface BulkPostCardProps {
     onIsRecyclableChange: (index: number, checked: boolean) => void;
     onRemove: (index: number) => void;
     onMediaClick: (src: string) => void;
+}
+
+/**
+ * User data structure for components
+ */
+export interface UserData {
+    id: string;
+    npub?: string;
+    pubKey?: string;
+    name?: string | null;
+    picture?: string | null;
+    timezone?: string | null;
+    scheduleInterval?: number[];
+    userRelays?: string[];
+    showHashTagsinPosts?: boolean;
+    isEnabled?: boolean;
+}
+
+/**
+ * Remix Fetcher type for form submissions
+ */
+export type PostFetcher = FetcherWithComponents<{
+    success?: boolean;
+    error?: string;
+    needsSigning?: boolean;
+    post?: PostData | LongFormPostData;
+}>;
+
+/**
+ * EditorJS block data structure
+ */
+export interface EditorJSBlock {
+    id?: string;
+    type: string;
+    data: Record<string, unknown>;
+}
+
+/**
+ * EditorJS output data structure
+ */
+export interface EditorJSOutput {
+    blocks: EditorJSBlock[];
+    time?: number;
+    version?: string;
+}
+
+/**
+ * EditorJS API interface
+ */
+export interface EditorJSAPI {
+    saver: {
+        save: () => Promise<EditorJSOutput>;
+    };
+    blocks: {
+        getCurrentBlockIndex: () => number;
+        insert: (type: string, data: Record<string, unknown>) => void;
+    };
+    focus: () => void;
+    isReady: Promise<void>;
+    render: (data: EditorJSOutput) => Promise<void>;
+    destroy: () => void;
 }

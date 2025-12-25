@@ -4,7 +4,9 @@ import type { LoaderFunctionArgs } from "@remix-run/node";
 import { requireUserId } from "~/features/auth/session.server";
 import { getUserBasicInfo, getUserByNpubWithProfile } from "~/models/user.server";
 
-function extractProfileBits(nostrProfile: any | null | undefined) {
+import type { ProfileData } from "~/features/nostr/types";
+
+function extractProfileBits(nostrProfile: ProfileData | null | undefined) {
   if (!nostrProfile) return { name: undefined, display_name: undefined, picture: undefined } as const;
   try {
     if (typeof nostrProfile === "string") {
@@ -12,7 +14,7 @@ function extractProfileBits(nostrProfile: any | null | undefined) {
       return { name: p?.name, display_name: p?.display_name, picture: p?.picture } as const;
     }
     if (typeof nostrProfile === "object") {
-      const p: any = nostrProfile;
+      const p = nostrProfile;
       return { name: p?.name, display_name: p?.display_name, picture: p?.picture } as const;
     }
   } catch {

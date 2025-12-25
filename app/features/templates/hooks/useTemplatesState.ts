@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { useFetcher, useLocation } from "@remix-run/react";
 import { resizeImage } from "~/features/upload/image-resize";
 import { uploadFile, uploadMultipleFiles } from "~/features/upload/upload.client";
+import type { Template, ScheduleData, TemplateFetcher } from "~/features/templates/types";
+import type { Asset, AssetFetcher } from "~/features/assets/types";
 
 interface UseTemplatesStateProps {
   searchTerm: string;
@@ -11,7 +13,7 @@ interface UseTemplatesStateProps {
  * Custom hook for managing templates/assets state and operations
  */
 export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
-  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [activeTab, setActiveTab] = useState<"assets" | "upload">("assets");
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
   const [searchInput, setSearchInput] = useState(searchTerm || "");
@@ -27,8 +29,8 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
   const location = useLocation();
 
   const deleteFetcher = useFetcher();
-  const scheduleFetcher = useFetcher<{ scheduleData?: any[] }>();
-  const assetFetcher = useFetcher<{ success?: boolean; asset?: any; assets?: any[] }>();
+  const scheduleFetcher: TemplateFetcher = useFetcher<{ scheduleData?: ScheduleData[] }>();
+  const assetFetcher: AssetFetcher = useFetcher<{ success?: boolean; asset?: Asset; assets?: Asset[] }>();
 
   // Fetch upload provider on component mount
   useEffect(() => {
@@ -90,22 +92,22 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
     );
   };
 
-  const handleSelectAllAssets = (assets: any[]) => {
+  const handleSelectAllAssets = (assets: Asset[]) => {
     if (selectedAssets.length === assets.length) {
       setSelectedAssets([]);
     } else {
-      setSelectedAssets(assets.map((asset: any) => asset.id));
+      setSelectedAssets(assets.map((asset) => asset.id));
     }
   };
 
-  const handleBulkPostAssets = (assets: any[]) => {
+  const handleBulkPostAssets = (assets: Asset[]) => {
     if (selectedAssets.length === 0) return;
 
-    const selectedAssetData = assets.filter((asset: any) =>
+    const selectedAssetData = assets.filter((asset) =>
       selectedAssets.includes(asset.id),
     );
 
-    const assetData = selectedAssetData.map((asset: any) => ({
+    const assetData = selectedAssetData.map((asset) => ({
       caption: asset.assetType === "TEXT" ? asset.content : asset.title || "",
       fileUrl:
         asset.assetType === "IMAGE" || asset.assetType === "VIDEO"
@@ -207,9 +209,10 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
       serverFormData.append("uploadResult", JSON.stringify(uploadResult));
 
       assetFetcher.submit(serverFormData, { method: "post" });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Upload error:", error);
-      setToastMessage(`Upload failed: ${error.message || "Unknown error"}`);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      setToastMessage(`Upload failed: ${errorMessage}`);
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
     } finally {
@@ -251,11 +254,10 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
       tags.forEach((tag) => serverFormData.append("tags", tag as string));
 
       assetFetcher.submit(serverFormData, { method: "post" });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Bulk upload error:", error);
-      setToastMessage(
-        `Bulk upload failed: ${error.message || "Unknown error"}`,
-      );
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      setToastMessage(`Bulk upload failed: ${errorMessage}`);
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
     } finally {

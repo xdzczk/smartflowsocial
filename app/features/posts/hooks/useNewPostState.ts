@@ -1,17 +1,18 @@
 import { useState } from "react";
+import type { PreparedEvent } from "~/features/posts/types";
 
 /**
  * Custom hook for managing new post state
  */
 export function useNewPostState() {
-  const [files, setFiles] = useState<any[]>([]);
+  const [files, setFiles] = useState<File[]>([]);
   const [selectedQueueType, setSelectedQueueType] = useState("unassigned");
   const [selectedHashTagPresetId, setSelectedHashTagPresetId] = useState<
     string | null
   >(null);
   const [selectedHashtags, setSelectedHashtags] = useState("");
   const [showImagePreview, setShowImagePreview] = useState(false);
-  const [preparedImageEvent, setPreparedImageEvent] = useState<any>(null);
+  const [preparedImageEvent, setPreparedImageEvent] = useState<PreparedEvent | null>(null);
 
   const handleQueueTypeChange = (queueTypeName: string) => {
     setSelectedQueueType(queueTypeName);

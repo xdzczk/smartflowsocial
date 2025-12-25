@@ -1,4 +1,4 @@
-import type { LongFormPost, User } from "@prisma/client";
+import type { LongFormPost, User, Prisma } from "@prisma/client";
 
 import { prisma } from "~/lib/prisma.server";
 
@@ -129,7 +129,7 @@ export async function updateLongFormPost({
     }
   }
 
-  const updateData: any = {
+  const updateData: Prisma.LongFormPostUpdateInput = {
     updatedAt: new Date(),
   };
 
@@ -220,7 +220,7 @@ export async function getUserLongFormPosts({
 }) {
   const skip = (page - 1) * limit;
 
-  const where: any = { userId };
+  const where: Prisma.LongFormPostWhereInput = { userId };
   if (isPublished !== undefined) {
     where.isPublished = isPublished;
   }
@@ -407,7 +407,7 @@ export async function getPastLongFormPosts({
   endDate: Date;
   queueType?: string;
 }): Promise<LongFormPost[]> {
-  const whereClause: any = {
+  const whereClause: Prisma.LongFormPostWhereInput = {
     userId,
     // Look for posts that are published OR have active status
     AND: [

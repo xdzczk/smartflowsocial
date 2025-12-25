@@ -1,6 +1,40 @@
 import { useMemo } from "react";
 import { PostBlock } from "./PostBlock";
-const { handleErrorSafely } = require("~/lib/error-handler.client");
+import { handleErrorSafely } from "~/lib/error-handler.client";
+import type { PostData, QueueType, UserData } from "~/features/posts/types";
+
+interface CalendarPost extends Omit<PostData, "scheduledFor" | "postedAt" | "publishedAt"> {
+  title?: string;
+  image?: string;
+  publishedAt?: Date | string | null;
+  postedAt?: Date | string | null;
+  scheduledFor?: string | null;
+  queueType?: QueueType | null;
+  manual_override?: boolean;
+  isPast?: boolean;
+}
+
+interface MonthlyViewProps {
+  scheduledPosts: CalendarPost[];
+  pastPosts?: CalendarPost[];
+  currentDate: Date;
+  onPostDrop: (post: CalendarPost, newDateTime: Date) => void;
+  onPostEdit: (post: CalendarPost) => void;
+  user?: UserData | null;
+  queueTypes?: QueueType[];
+  isLongform?: boolean;
+  isAll?: boolean;
+}
+
+interface CalendarDay {
+  date: Date;
+  isCurrentMonth: boolean;
+  isToday: boolean;
+}
+
+interface PostsByDate {
+  [dateKey: string]: CalendarPost[];
+}
 
 export function MonthlyView({
   scheduledPosts,
@@ -12,7 +46,7 @@ export function MonthlyView({
   queueTypes,
   isLongform = false,
   isAll = false,
-}) {
+}: MonthlyViewProps) {
   // Generate calendar grid
   const calendarDays = useMemo(() => {
     const year = currentDate.getFullYear();
@@ -29,7 +63,7 @@ export function MonthlyView({
     );
 
     // Generate 6 weeks (42 days)
-    const days = [];
+    const days: CalendarDay[] = [];
     for (let i = 0; i < 42; i++) {
       const date = new Date(startDate);
       date.setDate(startDate.getDate() + i);
@@ -45,7 +79,7 @@ export function MonthlyView({
 
   // Group posts by date
   const postsByDate = useMemo(() => {
-    const grouped = {};
+    const grouped: PostsByDate = {};
     const userTimezone = user?.timezone || "Etc/UTC";
 
     // Process scheduled posts
@@ -56,7 +90,7 @@ export function MonthlyView({
       const timestamp = postIsLongform ? post.publishedAt : post.scheduledFor;
       if (timestamp) {
         const postDate = postIsLongform
-          ? new Date(timestamp)
+          ? new Date(timestamp as string)
           : new Date(Number(timestamp) * 1000);
         // Convert to user's timezone for display
         const timeInUserTz = new Date(
@@ -79,7 +113,7 @@ export function MonthlyView({
       // Use postedAt for past posts
       const timestamp = post.postedAt;
       if (timestamp) {
-        const postDate = new Date(timestamp);
+        const postDate = new Date(timestamp as string);
         // Convert to user's timezone for display
         const timeInUserTz = new Date(
           postDate.toLocaleString("en-US", { timeZone: userTimezone }),
@@ -99,14 +133,14 @@ export function MonthlyView({
     return grouped;
   }, [scheduledPosts, pastPosts, user?.timezone, isLongform, isAll]);
 
-  const handleDragOver = (e) => {
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
   };
 
-  const handleDrop = (e, date) => {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>, date: Date) => {
     e.preventDefault();
 
-    const postData = JSON.parse(e.dataTransfer.getData("text/plain"));
+    const postData = JSON.parse(e.dataTransfer.getData("text/plain")) as CalendarPost;
     const userTimezone = user?.timezone || "Etc/UTC";
 
     // For monthly view, we'll set time to 9:00 AM by default in user's timezone
@@ -225,3 +259,4 @@ export function MonthlyView({
     </div>
   );
 }
+

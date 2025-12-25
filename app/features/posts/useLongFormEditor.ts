@@ -1,30 +1,21 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { handleErrorSafely } from "~/lib/error-handler.client";
+import { createEditorJSToolsConfig } from "~/features/posts/utils/editorjs-config";
+import { setupCustomDragDrop } from "~/features/posts/utils/editorjs-dragdrop";
+import {
+  loadEditorJSContent,
+  insertAssetsIntoEditor,
+  generateSummaryFromContent as generateSummary,
+} from "~/features/posts/utils/editorjs-content";
+import {
+  disableCaptions,
+  setupCaptionObserver,
+} from "~/features/posts/utils/editorjs-captions";
+import type { EditorJSInstance, EditorJSAPI } from "~/features/posts/types/editorjs.types";
 
 interface UseLongFormEditorOptions {
     uploadProvider: string | null;
     initialContent?: string;
     onContentChange: (content: string) => void;
-}
-
-interface EditorJSInstance {
-    isReady: Promise<void>;
-    save: () => Promise<{ blocks: any[] }>;
-    render: (data: { blocks: any[] }) => Promise<void>;
-    blocks: {
-        getCurrentBlockIndex: () => number;
-        insert: (type: string, data: any) => void;
-    };
-    focus: () => void;
-    destroy: () => void;
-    _captionObserver?: MutationObserver;
-    _dragObserver?: MutationObserver;
-}
-
-declare global {
-    interface Window {
-        EditorJSInstances?: EditorJSInstance[];
-    }
 }
 
 export function useLongFormEditor({
@@ -37,16 +28,8 @@ export function useLongFormEditor({
     const [editorReady, setEditorReady] = useState(false);
 
     // Disable captions function
-    const disableCaptions = useCallback(() => {
-        const captions = document.querySelectorAll(
-            ".image-tool__caption, .image-tool .cdx-input",
-        );
-        captions.forEach((caption) => {
-            if (caption) {
-                (caption as HTMLElement).style.display = "none";
-                caption.remove();
-            }
-        });
+    const disableCaptionsFn = useCallback(() => {
+        disableCaptions();
     }, []);
 
     // Main editor initialization effect
@@ -103,184 +86,15 @@ export function useLongFormEditor({
                 // Add a small delay to ensure DOM is fully ready
                 await new Promise((resolve) => setTimeout(resolve, 100));
 
+                // Create tools configuration
+                const tools = await createEditorJSToolsConfig(uploadProvider);
+
                 const editorInstance = new EditorJS({
                     holder: "editorjs",
                     minHeight: 300,
-                    tools: {
-                        header: {
-                            class: (await import("@editorjs/header")).default,
-                            config: {
-                                placeholder: "Enter a header",
-                                levels: [2, 3, 4],
-                                defaultLevel: 3,
-                            },
-                        },
-                        list: {
-                            class: (await import("@editorjs/list")).default,
-                            inlineToolbar: true,
-                        },
-                        quote: {
-                            class: (await import("@editorjs/quote")).default,
-                            inlineToolbar: true,
-                            config: {
-                                quotePlaceholder: "Enter a quote",
-                                captionPlaceholder: "Quote's author",
-                            },
-                        },
-                        code: {
-                            class: (await import("@editorjs/code")).default,
-                            config: {
-                                placeholder: "Enter code here...",
-                            },
-                        },
-                        inlineCode: {
-                            class: (await import("@editorjs/inline-code")).default,
-                        },
-                        linkTool: {
-                            class: (await import("@editorjs/link")).default,
-                            config: {
-                                endpoint: "/api/link-preview",
-                            },
-                        },
-                        embed: {
-                            class: (await import("@editorjs/embed")).default,
-                            config: {
-                                services: {
-                                    youtube: true,
-                                    twitter: true,
-                                },
-                            },
-                        },
-                        image: {
-                            class: (await import("@editorjs/image")).default,
-                            config: {
-                                buttonContent: "Select Image",
-                                captionPlaceholder: "",
-                                withBorder: false,
-                                withBackground: false,
-                                stretched: false,
-                                uploader: {
-                                    uploadByUrl: (url: string) => {
-                                        // Handle direct URL uploads (for assets)
-                                        return Promise.resolve({
-                                            success: 1,
-                                            file: {
-                                                url: url,
-                                            },
-                                        });
-                                    },
-                                    uploadByFile: async (file: File) => {
-                                        try {
-                                            console.log(
-                                                "Starting EditorJS image upload:",
-                                                file.name,
-                                                file.size,
-                                            );
-
-                                            // Check upload provider and use appropriate method
-                                            if (uploadProvider && uploadProvider.includes("BLOSSOM")) {
-                                                // Use client-side upload for Blossom
-                                                const { uploadFile } = await import("~/features/upload/upload.client");
-                                                const uploadResult = await uploadFile(file);
-
-                                                if (uploadResult.success && uploadResult.file) {
-                                                    console.log("Blossom upload successful:", uploadResult.file.url);
-                                                    return {
-                                                        success: 1,
-                                                        file: {
-                                                            url: uploadResult.file.url,
-                                                            size: uploadResult.file.size || file.size,
-                                                            name: uploadResult.file.name || file.name,
-                                                            extension: uploadResult.file.extension || file.name.split(".").pop(),
-                                                        },
-                                                    };
-                                                } else {
-                                                    const { logClientError } = await import("~/lib/error-handler.client");
-                                                    logClientError(
-                                                        new Error(uploadResult.error || "Blossom upload failed"),
-                                                        {
-                                                            component: "useLongFormEditor",
-                                                            action: "uploadImage",
-                                                            provider: "Blossom",
-                                                        },
-                                                        "warning",
-                                                    );
-                                                    throw new Error(uploadResult.error || "Blossom upload failed");
-                                                }
-                                            } else {
-                                                // Use server-side upload for S3
-                                                const formData = new FormData();
-                                                formData.append("image", file);
-
-                                                const response = await fetch(
-                                                    "/api/upload-editorjs-image",
-                                                    {
-                                                        method: "POST",
-                                                        body: formData,
-                                                    },
-                                                );
-
-                                                if (!response.ok) {
-                                                    const errorText = await response.text();
-                                                    const { logClientError } = await import("~/lib/error-handler.client");
-                                                    logClientError(
-                                                        new Error(`Server error: ${response.status}`),
-                                                        {
-                                                            component: "useLongFormEditor",
-                                                            action: "uploadImage",
-                                                            provider: "S3",
-                                                            serverResponse: errorText,
-                                                        },
-                                                        "error",
-                                                    );
-                                                    throw new Error(`Server error: ${response.status}`);
-                                                }
-
-                                                const result = await response.json();
-                                                console.log("S3 EditorJS upload response:", result);
-
-                                                if (result.success === 1 && result.file?.url) {
-                                                    console.log("S3 upload successful:", result.file.url);
-                                                    return {
-                                                        success: 1,
-                                                        file: {
-                                                            url: result.file.url,
-                                                            size: result.file.size || file.size,
-                                                            name: result.file.name || file.name,
-                                                            extension:
-                                                                result.file.extension ||
-                                                                file.name.split(".").pop(),
-                                                        },
-                                                    };
-                                                } else {
-                                                    const { logClientError } = await import("~/lib/error-handler.client");
-                                                    logClientError(
-                                                        new Error(result.error || "Upload failed"),
-                                                        {
-                                                            component: "useLongFormEditor",
-                                                            action: "uploadImage",
-                                                            provider: "S3",
-                                                        },
-                                                        "warning",
-                                                    );
-                                                    throw new Error(result.error || "Upload failed");
-                                                }
-                                            }
-                                        } catch (error) {
-                                            const { handleAsyncError } = await import("~/lib/error-handler.client");
-                                            handleAsyncError(error, {
-                                                component: "useLongFormEditor",
-                                                action: "uploadImage",
-                                            }, false); // Don't show toast, let EditorJS handle it
-                                            throw error;
-                                        }
-                                    },
-                                },
-                            },
-                        },
-                    },
+                    tools,
                     data: undefined, // Initial data will be loaded separately
-                    onChange: async (api: any) => {
+                    onChange: async (api: EditorJSAPI) => {
                         try {
                             const outputData = await api.saver.save();
                             onContentChange(JSON.stringify(outputData));
@@ -300,193 +114,28 @@ export function useLongFormEditor({
 
                 // Initialize custom drag and drop functionality after editor is ready
                 editorRef.current.isReady.then(() => {
-                    setupCustomDragDrop();
+                    const editorElement = document.getElementById("editorjs");
+                    if (editorElement) {
+                        const dragObserver = setupCustomDragDrop(
+                            editorRef,
+                            editorElement,
+                            onContentChange,
+                            disableCaptionsFn,
+                        );
+                        editorRef.current._dragObserver = dragObserver;
+                    }
                     setEditorReady(true);
                 });
 
                 // Run caption disabling immediately and on editor changes
-                setTimeout(disableCaptions, 100);
+                setTimeout(disableCaptionsFn, 100);
 
                 // Set up a mutation observer to remove captions whenever they appear
-                const captionObserver = new MutationObserver((mutations) => {
-                    mutations.forEach((mutation) => {
-                        if (mutation.type === "childList") {
-                            setTimeout(disableCaptions, 10);
-                        }
-                    });
-                });
-
-                // Observe the editor container for changes
                 const editorElement = document.getElementById("editorjs");
                 if (editorElement) {
-                    captionObserver.observe(editorElement, {
-                        childList: true,
-                        subtree: true,
-                    });
+                    const captionObserver = setupCaptionObserver(editorElement, disableCaptionsFn);
+                    editorRef.current._captionObserver = captionObserver;
                 }
-
-                // Store observer reference for cleanup
-                editorRef.current._captionObserver = captionObserver;
-
-                // Custom drag and drop setup function using EditorJS API
-                const setupCustomDragDrop = () => {
-                    const editorElement = document.getElementById("editorjs");
-                    if (!editorElement) return;
-
-                    let draggedBlockIndex: number | null = null;
-                    let draggedBlockData: any = null;
-
-                    const addDragHandlers = () => {
-                        const blocks = editorElement.querySelectorAll(".ce-block");
-
-                        blocks.forEach((block, index) => {
-                            const blockElement = block as HTMLElement;
-                            // Remove existing handlers to avoid duplicates
-                            blockElement.removeEventListener("dragstart", handleDragStart);
-                            blockElement.removeEventListener("dragend", handleDragEnd);
-                            blockElement.removeEventListener("dragover", handleDragOver);
-                            blockElement.removeEventListener("drop", handleDrop);
-
-                            // Make blocks draggable
-                            blockElement.draggable = true;
-                            blockElement.dataset.blockIndex = String(index);
-
-                            // Add drag handlers
-                            blockElement.addEventListener("dragstart", handleDragStart);
-                            blockElement.addEventListener("dragend", handleDragEnd);
-                            blockElement.addEventListener("dragover", handleDragOver);
-                            blockElement.addEventListener("drop", handleDrop);
-                        });
-                    };
-
-                    const handleDragStart = async (e: Event) => {
-                        const dragEvent = e as DragEvent;
-                        const blockElement = (dragEvent.target as HTMLElement).closest(".ce-block") as HTMLElement;
-                        draggedBlockIndex = parseInt(blockElement.dataset.blockIndex || "0");
-
-                        // Get block data using EditorJS API
-                        try {
-                            const currentData = await editorRef.current!.save();
-                            draggedBlockData = currentData.blocks[draggedBlockIndex];
-
-                            dragEvent.dataTransfer!.effectAllowed = "move";
-                            dragEvent.dataTransfer!.setData("text/html", blockElement.outerHTML);
-
-                            blockElement.style.opacity = "0.5";
-                            blockElement.classList.add("dragging");
-                        } catch (error) {
-                            const { handleErrorSafely } = await import("~/lib/error-handler.client");
-                            handleErrorSafely(error, {
-                                component: "useLongFormEditor",
-                                action: "handleDragStart",
-                            });
-                        }
-                    };
-
-                    const handleDragEnd = (e: Event) => {
-                        const blockElement = (e.target as HTMLElement).closest(".ce-block") as HTMLElement;
-                        if (blockElement) {
-                            blockElement.style.opacity = "1";
-                            blockElement.classList.remove("dragging");
-                        }
-
-                        // Clean up
-                        draggedBlockIndex = null;
-                        draggedBlockData = null;
-                    };
-
-                    const handleDragOver = (e: Event) => {
-                        e.preventDefault();
-                        const dragEvent = e as DragEvent;
-                        dragEvent.dataTransfer!.dropEffect = "move";
-
-                        const blockElement = (dragEvent.target as HTMLElement).closest(".ce-block") as HTMLElement;
-                        if (blockElement && draggedBlockIndex !== null) {
-                            blockElement.classList.add("drag-over");
-                        }
-                    };
-
-                    const handleDrop = async (e: Event) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-
-                        const dropBlockElement = (e.target as HTMLElement).closest(".ce-block") as HTMLElement;
-                        if (
-                            !dropBlockElement ||
-                            draggedBlockIndex === null ||
-                            !draggedBlockData
-                        )
-                            return;
-
-                        const dropIndex = parseInt(dropBlockElement.dataset.blockIndex || "0");
-
-                        // Don't do anything if dropping on the same position
-                        if (draggedBlockIndex === dropIndex) return;
-
-                        try {
-                            // Get current editor data
-                            const currentData = await editorRef.current!.save();
-                            const blocks = [...currentData.blocks];
-
-                            // Remove the dragged block from its original position
-                            blocks.splice(draggedBlockIndex, 1);
-
-                            // Calculate the new insertion index
-                            let newIndex = dropIndex;
-                            if (draggedBlockIndex < dropIndex) {
-                                newIndex = dropIndex - 1;
-                            }
-
-                            // Insert the block at the new position
-                            blocks.splice(newIndex, 0, draggedBlockData);
-
-                            // Update the editor with the new order
-                            const newData = {
-                                ...currentData,
-                                blocks: blocks,
-                            };
-
-                            await editorRef.current!.render(newData);
-                            onContentChange(JSON.stringify(newData));
-
-                            console.log(
-                                `Moved block from index ${draggedBlockIndex} to ${newIndex}`,
-                            );
-                        } catch (error) {
-                            const { handleErrorSafely } = await import("~/lib/error-handler.client");
-                            handleErrorSafely(error, {
-                                component: "useLongFormEditor",
-                                action: "handleDrop",
-                            });
-                        } finally {
-                            // Clean up drag state
-                            dropBlockElement.classList.remove("drag-over");
-                            document.querySelectorAll(".ce-block").forEach((block) => {
-                                block.classList.remove("drag-over", "dragging");
-                            });
-                        }
-                    };
-
-                    // Initial setup
-                    addDragHandlers();
-
-                    // Re-add handlers when content changes
-                    const dragObserver = new MutationObserver(() => {
-                        setTimeout(() => {
-                            addDragHandlers();
-                            // Remove captions that might have been added
-                            setTimeout(disableCaptions, 50);
-                        }, 100);
-                    });
-
-                    dragObserver.observe(editorElement, {
-                        childList: true,
-                        subtree: true,
-                    });
-
-                    // Store observer for cleanup
-                    editorRef.current!._dragObserver = dragObserver;
-                };
             }
         };
 
@@ -535,63 +184,12 @@ export function useLongFormEditor({
                 }
             }
         };
-    }, [uploadProvider, onContentChange, disableCaptions]);
+    }, [uploadProvider, onContentChange, disableCaptionsFn]);
 
     // Load initial content when editor is ready
     const loadInitialData = useCallback(async (content: string) => {
         if (editorReady && editorRef.current && content) {
-            try {
-                await editorRef.current.isReady;
-
-                const { convertMarkdownToEditorJS } = await import("~/lib/nostr");
-                let parsedContent;
-
-                // Try to parse as JSON first (for legacy EditorJS format)
-                if (content.trim().startsWith("{")) {
-                    try {
-                        parsedContent = JSON.parse(content);
-                        // Validate it has EditorJS structure
-                        if (
-                            !parsedContent.blocks ||
-                            !Array.isArray(parsedContent.blocks)
-                        ) {
-                            throw new Error("Not valid EditorJS format");
-                        }
-                    } catch (jsonError) {
-                        console.warn(
-                            "Content is not valid EditorJS JSON, treating as markdown:",
-                            jsonError,
-                        );
-                        // If JSON parsing fails, treat as markdown and convert to EditorJS
-                        parsedContent = convertMarkdownToEditorJS(content);
-                    }
-                } else {
-                    // Content is in markdown format, convert to EditorJS
-                    console.log("Converting markdown content to EditorJS format");
-                    parsedContent = convertMarkdownToEditorJS(content);
-                }
-
-                await editorRef.current.render(parsedContent);
-                onContentChange(JSON.stringify(parsedContent));
-            } catch (error) {
-                const { handleAsyncError } = await import("~/lib/error-handler.client");
-                handleAsyncError(error, {
-                    component: "useLongFormEditor",
-                    action: "loadInitialData",
-                }, false); // Don't show toast, fallback will handle it
-                // Fallback to empty editor if all else fails
-                try {
-                    const emptyContent = { blocks: [] };
-                    await editorRef.current.render(emptyContent);
-                    onContentChange(JSON.stringify(emptyContent));
-                } catch (fallbackError) {
-                    const { handleAsyncError: handleFallbackError } = await import("~/lib/error-handler.client");
-                    handleFallbackError(fallbackError, {
-                        component: "useLongFormEditor",
-                        action: "loadInitialDataFallback",
-                    }, false);
-                }
-            }
+            await loadEditorJSContent(editorRef, content, onContentChange);
         }
     }, [editorReady, onContentChange]);
 
@@ -602,147 +200,12 @@ export function useLongFormEditor({
         content?: string;
         title?: string;
     }>) => {
-        if (!editorRef.current) return;
-
-        try {
-            // Wait for editor to be ready
-            await editorRef.current.isReady;
-
-            // Get current editor data and insert at current block position
-            const currentData = await editorRef.current.save();
-            const blocks = [...currentData.blocks];
-
-            // Try to get current block index
-            let insertIndex = blocks.length; // Default to end
-            try {
-                const currentBlockIndex =
-                    editorRef.current.blocks.getCurrentBlockIndex();
-                if (currentBlockIndex >= 0) {
-                    insertIndex = currentBlockIndex + 1; // Insert after current block
-                }
-            } catch (error) {
-                console.log("Using default insertion position at end");
-            }
-
-            // Create new blocks for assets
-            const newBlocks: any[] = [];
-            for (const asset of selectedAssets) {
-                if (asset.assetType === "TEXT") {
-                    const textContent = asset.content || asset.title || "";
-                    if (textContent) {
-                        newBlocks.push({
-                            id: Math.random().toString(36).substr(2, 9),
-                            type: "paragraph",
-                            data: {
-                                text: textContent,
-                            },
-                        });
-                    }
-                } else if (asset.assetType === "IMAGE") {
-                    newBlocks.push({
-                        id: Math.random().toString(36).substr(2, 9),
-                        type: "image",
-                        data: {
-                            file: {
-                                url: asset.fileUrl,
-                            },
-                            caption: "",
-                            withBorder: false,
-                            withBackground: false,
-                            stretched: false,
-                        },
-                    });
-                }
-            }
-
-            // Insert new blocks at the determined position
-            blocks.splice(insertIndex, 0, ...newBlocks);
-
-            // Render the updated data
-            const updatedData = {
-                ...currentData,
-                blocks: blocks,
-            };
-
-            await editorRef.current.render(updatedData);
-            onContentChange(JSON.stringify(updatedData));
-
-            // Focus editor
-            setTimeout(() => {
-                editorRef.current?.focus();
-            }, 100);
-        } catch (error) {
-            const { handleAsyncError } = await import("~/lib/error-handler.client");
-            handleAsyncError(error, {
-                component: "useLongFormEditor",
-                action: "insertAssetIntoEditor",
-            }, false); // Don't show toast, fallback will handle it
-            // Fallback to simple insertion
-            try {
-                for (const asset of selectedAssets) {
-                    if (asset.assetType === "TEXT") {
-                        const textContent = asset.content || asset.title || "";
-                        if (textContent) {
-                            await editorRef.current.blocks.insert("paragraph", {
-                                text: textContent,
-                            });
-                        }
-                    } else if (asset.assetType === "IMAGE") {
-                        await editorRef.current.blocks.insert("image", {
-                            file: {
-                                url: asset.fileUrl,
-                            },
-                            caption: "",
-                            withBorder: false,
-                            withBackground: false,
-                            stretched: false,
-                        });
-                    }
-                }
-                const updatedData = await editorRef.current.save();
-                onContentChange(JSON.stringify(updatedData));
-            } catch (fallbackError) {
-                const { handleAsyncError: handleFallbackError } = await import("~/lib/error-handler.client");
-                handleFallbackError(fallbackError, {
-                    component: "useLongFormEditor",
-                    action: "insertAssetIntoEditorFallback",
-                }, false);
-            }
-        }
+        await insertAssetsIntoEditor(editorRef, selectedAssets, onContentChange);
     }, [onContentChange]);
 
     // Generate summary from editor content
     const generateSummaryFromContent = useCallback((content: string) => {
-        if (!content) return "";
-
-        try {
-            const editorData = JSON.parse(content);
-            let textContent = "";
-
-            editorData.blocks?.forEach((block: any) => {
-                if (block.type === "paragraph" || block.type === "header") {
-                    textContent += block.data.text + " ";
-                } else if (block.type === "list") {
-                    block.data.items?.forEach((item: string) => {
-                        textContent += item + " ";
-                    });
-                }
-            });
-
-            const plainText = textContent.replace(/<[^>]*>/g, "").trim();
-            const generatedSummary =
-                plainText.length > 280
-                    ? plainText.substring(0, 280) + "..."
-                    : plainText;
-
-            return generatedSummary;
-        } catch (error) {
-            handleErrorSafely(error, {
-                component: "useLongFormEditor",
-                action: "generateSummaryFromContent",
-            });
-            return "";
-        }
+        return generateSummary(content);
     }, []);
 
     return {

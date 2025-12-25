@@ -218,7 +218,7 @@ export default function DashboardIndex() {
 
           {selectedPost ? (
             <PostDetailsModal
-              post={selectedPost as any}
+              post={selectedPost}
               onClose={() => setSelectedPost(null)}
               showSignedEvent={true}
               type="scheduled"
@@ -265,7 +265,7 @@ export default function DashboardIndex() {
       {/* Edit Post Modal */}
       {showEditModal && postToEdit ? (
         <EditPostModal
-          post={postToEdit as any}
+          post={postToEdit}
           onClose={handleCloseEditModal}
           onConfirm={handleModalSuccess}
           user={user}
@@ -277,7 +277,7 @@ export default function DashboardIndex() {
       {/* Reschedule Post Modal */}
       {showRescheduleModal && postToReschedule ? (
         <SimpleRescheduleModal
-          post={postToReschedule as any}
+          post={postToReschedule}
           onClose={handleCloseRescheduleModal}
           onConfirm={handleModalSuccess}
           user={user}

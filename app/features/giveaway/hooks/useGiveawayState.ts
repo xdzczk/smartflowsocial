@@ -1,11 +1,12 @@
 import { useState } from "react";
+import type { GiveawayStateData } from "~/features/giveaway/types";
 
 interface Post {
   id: string;
   caption?: string | null;
   postedAt: Date | null;
   totalEngagement: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface UseGiveawayStateProps {

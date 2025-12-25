@@ -481,8 +481,8 @@ export default function LongFormPost({
         {/* Asset Browser Modal */}
         {showAssetBrowser ? (
           <AssetBrowser
-            assets={assets as any}
-            onAssetsSelected={handleAssetBrowserSelect as any}
+            assets={assets}
+            onAssetsSelected={handleAssetBrowserSelect}
             onClose={() => setShowAssetBrowser("")}
           />
         ) : null}

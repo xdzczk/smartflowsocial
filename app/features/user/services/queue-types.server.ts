@@ -1,4 +1,4 @@
-import type { QueueType, ScheduleType } from "@prisma/client";
+import type { QueueType, ScheduleType, Prisma } from "@prisma/client";
 
 import { prisma } from "~/lib/prisma.server";
 
@@ -42,7 +42,7 @@ export async function updateQueueType(
     id?: string;
     name: string;
     scheduleType: ScheduleType;
-    scheduleConfig: any;
+    scheduleConfig: QueueType['scheduleConfig'];
     color?: string;
     description?: string;
     isEnabled?: boolean;
@@ -51,7 +51,7 @@ export async function updateQueueType(
 ): Promise<QueueType> {
   if (queueTypeData.id) {
     // Update existing queue type
-    const updateData: any = {
+    const updateData: Prisma.QueueTypeUpdateInput = {
       name: queueTypeData.name.trim(),
       scheduleType: queueTypeData.scheduleType,
       scheduleConfig: queueTypeData.scheduleConfig,
@@ -78,7 +78,7 @@ export async function updateQueueType(
     });
   } else {
     // Create new queue type
-    const createData: any = {
+    const createData: Prisma.QueueTypeCreateInput = {
       userId: userId,
       name: queueTypeData.name.trim(),
       scheduleType: queueTypeData.scheduleType,

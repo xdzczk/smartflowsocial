@@ -105,8 +105,8 @@ async function handleBulkQuote(formData: FormData, userId: string) {
         queueType: post.queueTypeId || "unassigned",
         scheduledFor: "",
         originalPostId: post.id,
-        originalEventId: (post.signedEvent as any)?.id,
-        originalEventPubkey: (post.signedEvent as any)?.pubkey,
+        originalEventId: post.signedEvent?.id,
+        originalEventPubkey: post.signedEvent?.pubkey,
         isQuotePost: true,
         originalCaption: post.caption || "",
     }));
@@ -128,7 +128,7 @@ async function handleRepost(formData: FormData, userId: string) {
         }
 
         const originalPost = postsData[0];
-        const originalEvent = originalPost.signedEvent as any;
+        const originalEvent = originalPost.signedEvent;
 
         // Create kind 6 repost event structure according to NIP-18
         const kind6EventData = {
@@ -148,7 +148,7 @@ async function handleRepost(formData: FormData, userId: string) {
             repostEventData: kind6EventData,
             originalPost: originalPost,
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Repost error:", error);
         return json(
             {
@@ -174,7 +174,7 @@ async function handleQuote(formData: FormData, userId: string) {
         }
 
         const originalPost = postsData[0];
-        const originalEvent = originalPost.signedEvent as any;
+        const originalEvent = originalPost.signedEvent;
 
         // Create quote post data for bulk posts page
         const quotePostData = {
@@ -190,7 +190,7 @@ async function handleQuote(formData: FormData, userId: string) {
         };
 
         return json({ quotePostData: [quotePostData] });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Quote post error:", error);
         return json(
             {
@@ -219,7 +219,7 @@ async function handleLongformRepost(formData: FormData, userId: string) {
         }
 
         const originalPost = longformData[0];
-        const originalEvent = originalPost.signedEvent as any;
+        const originalEvent = originalPost.signedEvent;
 
         if (!originalEvent || !originalEvent.id) {
             return json(
@@ -261,7 +261,7 @@ async function handleLongformRepost(formData: FormData, userId: string) {
             originalPost: originalPost,
             naddr: naddr,
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Longform repost error:", error);
         return json(
             {
@@ -290,7 +290,7 @@ async function handleLongformQuote(formData: FormData, userId: string) {
         }
 
         const originalPost = longformData[0];
-        const originalEvent = originalPost.signedEvent as any;
+        const originalEvent = originalPost.signedEvent;
 
         if (!originalEvent || !originalEvent.id) {
             return json(
@@ -324,7 +324,7 @@ async function handleLongformQuote(formData: FormData, userId: string) {
         };
 
         return json({ longformQuotePostData: [quotePostData] });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Longform quote post error:", error);
         return json(
             {

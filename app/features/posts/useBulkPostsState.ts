@@ -18,7 +18,15 @@ export function useBulkPostsState({ mode, posts, setPosts }: UseBulkPostsStatePr
                     const parsedData = JSON.parse(repostData);
 
                     // Convert repost data to posts format with file objects from URLs
-                    const repostPosts = parsedData.map((item: any) => {
+                    interface RepostDataItem {
+                        fileUrl?: string | string[];
+                        caption?: string;
+                        queueType?: string;
+                        scheduledFor?: string;
+                        isRecyclable?: boolean;
+                        originalPostId?: string;
+                    }
+                    const repostPosts = parsedData.map((item: RepostDataItem) => {
                         let fileUrl = item.fileUrl;
 
                         // Handle case where fileUrl might be a JSON string array
@@ -74,7 +82,7 @@ export function useBulkPostsState({ mode, posts, setPosts }: UseBulkPostsStatePr
                                     "Content-Type": "application/json",
                                 },
                                 body: JSON.stringify({
-                                    postIds: parsedData.map((item: any) => item.originalPostId),
+                                    postIds: parsedData.map((item: RepostDataItem) => item.originalPostId).filter((id): id is string => id !== undefined),
                                 }),
                             });
 
@@ -91,11 +99,25 @@ export function useBulkPostsState({ mode, posts, setPosts }: UseBulkPostsStatePr
                         return [];
                     };
 
+                    interface ScheduledRepostDataItem {
+                        caption?: string;
+                        queueType?: string;
+                        scheduledFor?: string;
+                        originalPostId?: string;
+                        originalEventId?: string;
+                        originalEventPubkey?: string;
+                        isRecyclable?: boolean;
+                    }
+                    interface OriginalPost {
+                        id: string;
+                        fileUrl?: string | string[];
+                        caption?: string;
+                    }
                     // Fetch original posts and merge with repost data
-                    fetchOriginalPosts().then((originalPosts) => {
-                        const repostPosts = parsedData.map((item: any) => {
+                    fetchOriginalPosts().then((originalPosts: OriginalPost[]) => {
+                        const repostPosts = parsedData.map((item: ScheduledRepostDataItem) => {
                             const originalPost = originalPosts.find(
-                                (p: any) => p.id === item.originalPostId,
+                                (p: OriginalPost) => p.id === item.originalPostId,
                             );
 
                             return {
@@ -133,8 +155,23 @@ export function useBulkPostsState({ mode, posts, setPosts }: UseBulkPostsStatePr
                 try {
                     const parsedData = JSON.parse(quotePostData);
 
+                    interface QuotePostDataItem {
+                        fileUrl?: string | string[];
+                        caption?: string;
+                        queueType?: string;
+                        scheduledFor?: string;
+                        isQuotePost?: boolean;
+                        isLongformQuote?: boolean;
+                        naddr?: string;
+                        originalPostId?: string;
+                        originalEventId?: string;
+                        originalEventPubkey?: string;
+                        originalCaption?: string;
+                        originalTitle?: string;
+                        isRecyclable?: boolean;
+                    }
                     // Convert quote post data to posts format
-                    const quotePosts = parsedData.map((item: any) => {
+                    const quotePosts = parsedData.map((item: QuotePostDataItem) => {
                         let fileUrl = item.fileUrl;
 
                         // Handle case where fileUrl might be a JSON string array

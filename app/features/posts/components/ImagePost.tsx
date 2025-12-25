@@ -3,15 +3,22 @@ import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 
 import { getDynamicQueueStyle } from "~/features/posts/queueColors";
+import type { QueueType } from "~/features/posts/types";
 import { resizeImage } from "~/features/upload/image-resize";
 import { useOptionalUser } from "~/lib/remix-utils";
 
+interface PreparedEventData {
+  content: string;
+  type: "image";
+  queueType: string;
+}
+
 interface ImagePostProps {
-  files: any;
-  setFiles: any;
-  setShowImagePreview: any;
-  setPreparedImageEvent: any;
-  queueTypes?: string[];
+  files: File[];
+  setFiles: React.Dispatch<React.SetStateAction<File[]>>;
+  setShowImagePreview: (show: boolean) => void;
+  setPreparedImageEvent: (data: PreparedEventData[]) => void;
+  queueTypes?: (string | QueueType)[];
   onQueueTypeChange?: (queueType: string) => void;
 }
 
@@ -38,7 +45,7 @@ export default function ImagePost({
 
   const [selectedQueue, setSelectedQueue] = useState(getInitialQueue());
 
-  const handleFileChange = async (e: any) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files) as File[];
 
     // Process files to remove metadata for privacy
@@ -51,7 +58,7 @@ export default function ImagePost({
           return file;
         }),
       );
-      setFiles((prev: any) => [...prev, ...processedFiles]);
+      setFiles((prev: File[]) => [...prev, ...processedFiles]);
     } catch (error) {
       const { handleAsyncErrorWithMessage } = await import("~/lib/error-handler.client");
       handleAsyncErrorWithMessage(
@@ -64,11 +71,11 @@ export default function ImagePost({
         false, // Don't show toast, we call toast.error instead
       );
       toast.error("Error processing images. Using original files.");
-      setFiles((prev: any) => [...prev, ...selectedFiles]);
+      setFiles((prev: File[]) => [...prev, ...selectedFiles]);
     }
   };
 
-  const handleDrop = async (e: any) => {
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const droppedFiles = Array.from(e.dataTransfer.files) as File[];
     if (droppedFiles.length > 0) {
@@ -86,7 +93,7 @@ export default function ImagePost({
         const processedFiles = await Promise.all(
           imageFiles.map(async (file) => await resizeImage(file)),
         );
-        setFiles((prev: any) => [...prev, ...processedFiles]);
+        setFiles((prev: File[]) => [...prev, ...processedFiles]);
       } catch (error) {
         const { handleAsyncErrorWithMessage } = await import("~/lib/error-handler.client");
         handleAsyncErrorWithMessage(
@@ -99,16 +106,16 @@ export default function ImagePost({
           false, // Don't show toast, we call toast.error instead
         );
         toast.error("Error processing images. Using original files.");
-        setFiles((prev: any) => [...prev, ...imageFiles]);
+        setFiles((prev: File[]) => [...prev, ...imageFiles]);
       }
     }
   };
 
-  const handleDragOver = (e: any) => {
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
   };
 
-  const handleImagePreview = async (e) => {
+  const handleImagePreview = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     // Check if scheduledFor is empty
@@ -187,7 +194,7 @@ export default function ImagePost({
     }
   }, [selectedQueue, onQueueTypeChange]);
 
-  const handleScheduleIntervalClick = (intervalHours: any) => {
+  const handleScheduleIntervalClick = (intervalHours: string | number) => {
     // Find the currently selected queue type
     const selectedQueueType = queueTypes.find(qt => 
       (typeof qt === "string" ? qt : qt.name) === selectedQueue

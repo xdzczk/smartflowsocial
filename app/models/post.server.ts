@@ -1,6 +1,7 @@
-import type { Post, PostType, QueueType } from "@prisma/client";
+import type { Post, PostType, QueueType, Prisma } from "@prisma/client";
 
 import { prisma } from "~/lib/prisma.server";
+import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 
 interface CreatePostData {
   userId: string;
@@ -9,8 +10,8 @@ interface CreatePostData {
   fileUrl: string[];
   scheduledFor?: Date | string;
   nostrEventId?: string;
-  signedEvent?: any;
-  nostrEvent?: any;
+  signedEvent?: SignedEvent;
+  nostrEvent?: NostrEvent;
   postType: PostType;
   tags: string[];
   caption?: string;
@@ -135,7 +136,7 @@ export async function getScheduledPosts({
   userId: string;
   queueType?: string;
 }): Promise<PostWithQueueType[]> {
-  const whereClause: any = {
+  const whereClause: Prisma.PostWhereInput = {
     isScheduled: true,
     isPosted: false,
     draft: false,
@@ -167,7 +168,7 @@ export async function getDraftPosts({
   userId: string;
   queueType?: string;
 }): Promise<PostWithQueueType[]> {
-  const whereClause: any = {
+  const whereClause: Prisma.PostWhereInput = {
     draft: true,
     isPosted: false,
     userId: userId,
@@ -253,7 +254,7 @@ export async function getPostedPosts({
 }): Promise<PostsWithPagination> {
   const skip = (page - 1) * limit;
 
-  const whereClause: any = {
+  const whereClause: Prisma.PostWhereInput = {
     isPosted: true,
     userId: userId,
   };
@@ -305,7 +306,7 @@ export async function getRecentPostedPosts({
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
 
-  const whereClause: any = {
+  const whereClause: Prisma.PostWhereInput = {
     isPosted: true,
     userId: userId,
     postedAt: {
@@ -374,7 +375,7 @@ export async function getPastPosts({
   endDate: Date;
   queueType?: string;
 }): Promise<PostWithQueueType[]> {
-  const whereClause: any = {
+  const whereClause: Prisma.PostWhereInput = {
     userId,
     // Look for posts that are either marked as posted OR have a posted status
     OR: [{ isPosted: true }, { status: "POSTED" }],
@@ -415,10 +416,10 @@ export async function reschedulePost({
   userId: string;
   newScheduledFor: string;
   overrideQueue: boolean;
-  signedEvent?: any;
-  nostrEvent?: any;
+  signedEvent?: SignedEvent;
+  nostrEvent?: NostrEvent;
 }): Promise<Post> {
-  const updateData: any = {
+  const updateData: Partial<Post> = {
     scheduledFor: newScheduledFor,
     manual_override: overrideQueue,
     updatedAt: new Date(),
@@ -490,7 +491,7 @@ export async function updatePost({
   data: Partial<CreatePostData>;
 }): Promise<Post> {
   // Prepare the update data
-  const updateData: any = {
+  const updateData: Prisma.PostUpdateInput = {
     ...data,
     scheduledFor: data.scheduledFor?.toString(),
     updatedAt: new Date(),
@@ -549,7 +550,7 @@ export async function getRecyclablePosts({
 }): Promise<PostsWithPagination> {
   const skip = (page - 1) * limit;
 
-  const whereClause: any = {
+  const whereClause: Prisma.PostWhereInput = {
     isRecyclable: true,
     isPosted: true,
     userId: userId,

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { nip19 } from "nostr-tools";
 import { signEventFn } from "~/lib/nostr";
+import type { NotificationEvent, NostrTag } from "~/features/engagement/types";
 
 export interface NotificationActionTarget {
     eventId: string;
@@ -261,9 +262,9 @@ export function useNotificationActions({
             const data = await response.json();
 
             // Filter to only show direct replies
-            const directReplies = (data.events || []).filter((event: any) => {
-                const eTags = event.tags?.filter((tag: any) => tag[0] === "e") || [];
-                return eTags.some((tag: any) => tag[1] === notification.eventId);
+            const directReplies = (data.events || []).filter((event: NotificationEvent) => {
+                const eTags = event.tags?.filter((tag: NostrTag) => tag[0] === "e") || [];
+                return eTags.some((tag: NostrTag) => tag[1] === notification.eventId);
             });
 
             setChildReplies(directReplies);

@@ -10,7 +10,7 @@ interface SearchResultData {
   created_at: number;
   kind: number;
   content: string;
-  tags: any[];
+  tags: string[][];
   authorName: string;
   authorImage: string | null;
   mediaUrls: string[];

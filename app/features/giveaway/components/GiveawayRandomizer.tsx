@@ -3,33 +3,34 @@ import { useState, useEffect } from "react";
 
 import ZapButton from "~/components/dashboard/ZapButton";
 import { handleErrorSafely } from "~/lib/error-handler.client";
+import type { RelatedEvent } from "~/features/giveaway/types";
 
 import GiveawayPost from "./GiveawayPost";
 
 interface GiveawayRandomizerProps {
-  relatedEvents: any;
+  relatedEvents: RelatedEvent[];
 }
 
 const GiveawayRandomizer = ({ relatedEvents }: GiveawayRandomizerProps) => {
   const [randomUsers, setRandomUsers] = useState({
-    reposters: [] as any[],
-    likers: [] as any[],
-    commenters: [] as any[],
+    reposters: [] as RelatedEvent[],
+    likers: [] as RelatedEvent[],
+    commenters: [] as RelatedEvent[],
   });
 
   useEffect(() => {
     if (!relatedEvents || relatedEvents.length === 0) return;
 
     // Group events by type
-    const reposters = relatedEvents.filter((event: any) => event.kind === 6);
+    const reposters = relatedEvents.filter((event) => event.kind === 6);
     const likers = relatedEvents.filter(
-      (event: any) =>
+      (event) =>
         event.kind === 7 || event.kind === 9735 || event.kind === 9734,
     );
-    const commenters = relatedEvents.filter((event: any) => event.kind === 1);
+    const commenters = relatedEvents.filter((event) => event.kind === 1);
 
     // Function to get random items from array
-    const getRandomItems = (array: any[], count: any) => {
+    const getRandomItems = (array: RelatedEvent[], count: number) => {
       const shuffled = [...array].sort(() => 0.5 - Math.random());
       return shuffled.slice(0, Math.min(count, shuffled.length));
     };
@@ -43,7 +44,7 @@ const GiveawayRandomizer = ({ relatedEvents }: GiveawayRandomizerProps) => {
   }, [relatedEvents]);
 
   // Convert pubkey to npub format using nostr-tools
-  const formatPubkey = (pubkey: any) => {
+  const formatPubkey = (pubkey: string | undefined) => {
     if (!pubkey) return "unknown";
     try {
       const npub = nip19.npubEncode(pubkey);

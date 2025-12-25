@@ -3,11 +3,12 @@
  */
 
 import { getSelectedQueueStyle } from "~/features/posts/queueColors";
+import type { PostData, QueueType } from "~/features/posts/types";
 
 interface DraftPreviewProps {
-  post: any;
+  post: PostData;
   selectedQueue: string;
-  queueTypes: any[];
+  queueTypes: QueueType[];
 }
 
 export function DraftPreview({

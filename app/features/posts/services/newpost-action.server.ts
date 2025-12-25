@@ -16,6 +16,7 @@ import {
   getHashTagPresetById,
 } from "~/models/user.server";
 import { createUploadHandler } from "~/features/upload/s3.server";
+import type { SignedEvent } from "~/features/nostr/types";
 
 /**
  * Determine if a file URL is a video based on extension
@@ -105,7 +106,7 @@ function applyHashtags(
  */
 async function publishToNostr(
   relays: string[],
-  signedEvent: any,
+  signedEvent: SignedEvent,
 ): Promise<void> {
   const response = await fetch(process.env.NOSTR_PUBLISHER_URL!, {
     method: "POST",
@@ -229,7 +230,7 @@ async function handlePostOrScheduleText(
  */
 function handleUploadPreview(
   formData: FormData,
-): { success: boolean; fileUrls?: any[]; error?: string } {
+): { success: boolean; fileUrls?: string[]; error?: string } {
   const files = formData.getAll("files");
   const scheduledFor = formData.get("scheduledFor");
   const caption = formData.get("caption");

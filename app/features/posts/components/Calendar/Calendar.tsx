@@ -2,6 +2,35 @@ import { useState, useCallback } from "react";
 import { WeeklyView } from "./WeeklyView";
 import { MonthlyView } from "./MonthlyView";
 import { RescheduleModal } from "./RescheduleModal";
+import type { PostData, LongFormPostData, QueueType, UserData } from "~/features/posts/types";
+
+interface CalendarPost extends Omit<PostData, "scheduledFor" | "postedAt" | "publishedAt"> {
+  title?: string;
+  image?: string;
+  publishedAt?: Date | string | null;
+  postedAt?: Date | string | null;
+  scheduledFor?: string | null;
+  queueType?: QueueType | null;
+  manual_override?: boolean;
+}
+
+interface RescheduleData {
+  post: CalendarPost;
+  newDateTime: Date;
+  wasAutoScheduled: boolean;
+  queueName: string | null;
+  isEdit: boolean;
+  isLongform: boolean;
+}
+
+interface CalendarProps {
+  scheduledPosts: CalendarPost[];
+  pastPosts?: CalendarPost[];
+  user?: UserData | null;
+  queueTypes?: QueueType[];
+  isLongform?: boolean;
+  isAll?: boolean;
+}
 
 export function Calendar({
   scheduledPosts,
@@ -10,14 +39,14 @@ export function Calendar({
   queueTypes,
   isLongform = false,
   isAll = false,
-}) {
-  const [view, setView] = useState("week"); // 'week' or 'month'
+}: CalendarProps) {
+  const [view, setView] = useState<"week" | "month">("week");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
-  const [rescheduleData, setRescheduleData] = useState(null);
+  const [rescheduleData, setRescheduleData] = useState<RescheduleData | null>(null);
 
   const handlePostDrop = useCallback(
-    (post, newDateTime) => {
+    (post: CalendarPost, newDateTime: Date) => {
       // Determine if this specific post is a longform post
       const postIsLongform = isAll ? !!post.title && post.publishedAt : isLongform;
       const wasAutoScheduled = postIsLongform ? false : !post.manual_override;
@@ -36,13 +65,13 @@ export function Calendar({
   );
 
   const handlePostEdit = useCallback(
-    (post) => {
+    (post: CalendarPost) => {
       // Determine if this specific post is a longform post
       const postIsLongform = isAll ? !!post.title && post.publishedAt : isLongform;
       const wasAutoScheduled = postIsLongform ? false : !post.manual_override;
       // For longform posts, use publishedAt instead of scheduledFor
       const currentDateTime = postIsLongform
-        ? new Date(post.publishedAt)
+        ? new Date(post.publishedAt as string)
         : new Date(Number(post.scheduledFor) * 1000);
 
       setRescheduleData({
@@ -213,3 +242,4 @@ export function Calendar({
     </div>
   );
 }
+

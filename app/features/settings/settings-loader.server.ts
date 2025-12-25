@@ -28,6 +28,28 @@ import {
   getConfirmedChildrenForParent,
   getPendingChildrenForParent,
 } from "~/models/user.server";
+import type { QueueType, HashTagPreset } from "~/features/posts/types";
+import type { ProfileData } from "~/features/nostr/types";
+
+/**
+ * User account info for parent/child relationships
+ */
+export interface UserAccountInfo {
+  id: string;
+  npub: string;
+  name?: string | null;
+  picture?: string | null;
+  pubKey?: string;
+}
+
+/**
+ * Muted list structure
+ */
+export interface MutedList {
+  users?: string[];
+  keywords?: string[];
+  [key: string]: unknown;
+}
 
 export interface SettingsLoaderData {
   timezone: string | null;
@@ -35,11 +57,11 @@ export interface SettingsLoaderData {
   showHashTagsInPosts: boolean;
   giveawayBlacklist: string[];
   scheduleIntervals: string[];
-  queueTypes: any;
+  queueTypes: QueueType[];
   uploadProvider: string;
   enableMirrorBlossom: boolean;
   mirrorUploadUrls: string[];
-  hashTagPresets: any;
+  hashTagPresets: HashTagPreset[];
   nwcEnabled: boolean;
   maskedNwcString: string | null;
   nwcLastUsed: Date | null;
@@ -80,11 +102,11 @@ export interface SettingsLoaderData {
   accounts: {
     isChild: boolean;
     parentNpub: string | null;
-    parentUser: any;
-    confirmedChildren: any[];
-    pendingChildren: any[];
+    parentUser: (UserAccountInfo & { nostrProfile?: ProfileData | null }) | null;
+    confirmedChildren: UserAccountInfo[];
+    pendingChildren: UserAccountInfo[];
   };
-  mutedList: any;
+  mutedList: MutedList | null;
   filterMuted: boolean;
   hidePostsFromLowTrustUsers: boolean;
 }
@@ -137,7 +159,7 @@ export async function loadSettingsData(userId: string): Promise<SettingsLoaderDa
   ]);
 
   // Accounts data
-  let accounts: any = {};
+  let accounts: SettingsLoaderData['accounts'];
   if (isChild) {
     const parentUser = userRecord?.parentNpub
       ? await getUserByNpubWithProfile(userRecord.parentNpub)

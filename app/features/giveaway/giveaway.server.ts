@@ -1,4 +1,5 @@
 import { connectToPrimalCache } from "~/features/cache/primalCache.server";
+import type { RelatedEvent, PrimalEvent } from "~/features/giveaway/types";
 
 /**
  * Fetches all engagement events for giveaway participation
@@ -12,7 +13,8 @@ import { connectToPrimalCache } from "~/features/cache/primalCache.server";
 export const fetchGiveawayParticipants = async (
   eventIds: string | string[],
 ): Promise<{
-  relatedEvents: any[];
+
+  relatedEvents: RelatedEvent[];
   count: number;
   stats: {
     likes: number;
@@ -30,7 +32,7 @@ export const fetchGiveawayParticipants = async (
       throw new Error("At least one event ID is required");
     }
 
-    const allRelatedEvents: any[] = [];
+    const allRelatedEvents: RelatedEvent[] = [];
     const aggregatedStats = {
       likes: 0,
       reposts: 0,
@@ -41,7 +43,7 @@ export const fetchGiveawayParticipants = async (
 
     // Fetch all data for each event ID in parallel
     const fetchPromises = eventIdArray.map(async (eventId) => {
-      const events: any[] = [];
+      const events: RelatedEvent[] = [];
 
       try {
         // 1. Fetch thread_view for replies, zaps, and stats
@@ -50,7 +52,7 @@ export const fetchGiveawayParticipants = async (
         });
 
         // Process thread_view response
-        threadResponse.forEach((item: any) => {
+        threadResponse.forEach((item: PrimalEvent) => {
           if (!Array.isArray(item) || item[0] !== "EVENT" || !item[2]) return;
 
           const event = item[2];
@@ -114,13 +116,13 @@ export const fetchGiveawayParticipants = async (
 
           const likeEvents = likesResponse
             .filter(
-              (item: any) =>
+              (item: PrimalEvent) =>
                 Array.isArray(item) &&
                 item[0] === "EVENT" &&
                 item[2] &&
                 item[2].kind === 7,
             )
-            .map((item: any) => item[2]);
+            .map((item: PrimalEvent) => item[2] as RelatedEvent);
 
           events.push(...likeEvents);
         } catch (error) {
@@ -136,13 +138,13 @@ export const fetchGiveawayParticipants = async (
 
           const repostEvents = repostsResponse
             .filter(
-              (item: any) =>
+              (item: PrimalEvent) =>
                 Array.isArray(item) &&
                 item[0] === "EVENT" &&
                 item[2] &&
                 item[2].kind === 6,
             )
-            .map((item: any) => item[2]);
+            .map((item: PrimalEvent) => item[2] as RelatedEvent);
 
           events.push(...repostEvents);
         } catch (error) {

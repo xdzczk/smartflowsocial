@@ -3,6 +3,8 @@
  * Shared TypeScript interfaces for user features
  */
 
+import type { ProfileData } from "~/features/nostr/types";
+
 /**
  * Parameters for updating user profile
  */
@@ -17,7 +19,7 @@ export interface UpdateUserProfileParams {
         timezone?: string;
         scheduleInterval?: number[];
         userRelays?: string[];
-        hashtagPresets?: any;
+        hashtagPresets?: unknown;
         nwcUri?: string;
         autoRenewalEnabled?: boolean;
         receivePostNotifications?: boolean;

@@ -11,10 +11,11 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { getDynamicQueueStyle } from "~/features/posts/queueColors";
+import type { QueueType } from "~/features/posts/types";
 
 interface SchedulingControlsProps {
-  queueTypes?: any[];
-  scheduleIntervals?: any[];
+  queueTypes?: QueueType[];
+  scheduleIntervals?: number[];
   selectedQueueType: string;
   scheduledFor: string;
   onQueueTypeChange: (queueType: string) => void;

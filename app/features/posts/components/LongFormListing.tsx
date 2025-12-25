@@ -1,7 +1,10 @@
 import { useFetcher, Link } from "@remix-run/react";
 import { useState, useEffect } from "react";
+import type { FetcherWithComponents } from "@remix-run/react";
 
 import type { LongFormPost } from "~/models/longformpost.server";
+import type { PostFetcher } from "~/features/posts/types";
+import type { EditorJSBlock } from "~/features/posts/types/editorjs.types";
 
 interface LongFormListingProps {
   posts: LongFormPost[];
@@ -10,8 +13,8 @@ interface LongFormListingProps {
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
   userTimezone?: string;
-  longformRepostFetcher?: any;
-  longformQuoteFetcher?: any;
+  longformRepostFetcher?: PostFetcher;
+  longformQuoteFetcher?: PostFetcher;
   onEditPost?: (post: LongFormPost) => void;
   onReschedulePost?: (post: LongFormPost) => void;
 }
@@ -130,7 +133,7 @@ export default function LongFormListing({
       // If it's JSON (EditorJS format), extract text from blocks
       if (content.startsWith("{")) {
         const editorData = JSON.parse(content);
-        editorData.blocks?.forEach((block: any) => {
+        editorData.blocks?.forEach((block: EditorJSBlock) => {
           if (block.type === "paragraph" || block.type === "header") {
             const text = block.data.text?.replace(/<[^>]*>/g, "") || "";
             wordCount += text
