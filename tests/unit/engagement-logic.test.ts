@@ -4,7 +4,7 @@
  * - app/features/engagement/engagement.server.ts
  * - app/features/engagement/trustScore.ts
  * 
- * Migrated from cypress/e2e/unit/engagement-logic.cy.ts
+ * Migrated from tests/e2e/unit/engagement-logic.cy.ts
  */
 
 import { describe, it, expect } from "vitest";

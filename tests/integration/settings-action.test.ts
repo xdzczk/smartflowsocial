@@ -2,7 +2,7 @@
  * Integration tests for settings action handlers
  * 
  * Tests the action handler logic directly, without requiring a browser.
- * For UI interaction tests, see cypress/e2e/settings/*.cy.ts
+ * For UI interaction tests, see tests/e2e/settings/*.cy.ts
  * 
  * Note: This file tests the most critical settings actions.
  * The full settings-actions.server.ts has many actions - we test the key ones.

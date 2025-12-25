@@ -20,7 +20,9 @@ Welcome to the SmartFlowSocial documentation hub! This guide will help you under
 
 ### Development
 - [Contributing Guide](../CONTRIBUTING.md) - How to contribute to the project
-- [Testing Guide](./testing.md) - Running and writing Cypress tests
+- [Testing Guide](./testing.md) - Complete testing guide (Vitest, Cypress, property-based, security, performance)
+- [Test Strategy](./TEST_STRATEGY.md) - Testing philosophy, strategy, and coverage goals
+- [Error Handling](./ERROR_HANDLING.md) - Centralized error handling (includes implementation and metrics)
 - [Roadmap](../ROADMAP.md) - Future development plans
 - [Changelog](../CHANGELOG.md) - Version history
 

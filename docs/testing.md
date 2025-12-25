@@ -16,8 +16,8 @@ SmartFlowSocial uses the following test types:
 | **Property-Based Tests** | Random input generation to find edge cases | `tests/property/*.test.ts` | Vitest + fast-check |
 | **Security Tests** | XSS, SQL injection, authentication, etc. | `tests/security/*.test.ts` | Vitest |
 | **Performance Tests** | Function performance benchmarks | `tests/performance/*.test.ts` | Vitest + k6 |
-| **E2E Tests** | Full user flow tests (login, navigation, forms) | `cypress/e2e/*.cy.ts` | Cypress |
-| **Smoke Tests** | Quick sanity checks for critical paths | `cypress/e2e/smoke.cy.ts` | Cypress |
+| **E2E Tests** | Full user flow tests (login, navigation, forms) | `tests/e2e/**/*.cy.ts` | Cypress |
+| **Smoke Tests** | Quick sanity checks for critical paths | `tests/e2e/smoke.cy.ts` | Cypress |
 
 > [!NOTE]
 > **Vitest** is used for fast unit, integration, property-based, security, and performance tests that don't require a browser. **Cypress** is used for E2E tests that need real browser interactions.
@@ -123,10 +123,10 @@ npm run test -- tests/unit/scheduling-logic.test.ts
 npm run test -- --grep "dashboard"
 
 # Cypress - Run a single test file
-npx cypress run --spec "cypress/e2e/smoke.cy.ts"
+npx cypress run --spec "tests/e2e/smoke.cy.ts"
 
 # Cypress - Run tests in a specific folder
-npx cypress run --spec "cypress/e2e/posts/**/*.cy.ts"
+npx cypress run --spec "tests/e2e/posts/**/*.cy.ts"
 ```
 
 ---
@@ -203,19 +203,19 @@ tests/                       # Vitest tests
 └── utils/                    # Test utilities
     └── test-helpers.ts
 
-cypress/                     # Cypress E2E tests
-├── e2e/                     # Test files organized by feature
-│   ├── smoke.cy.ts
-│   ├── dashboard.cy.ts
-│   ├── nostr-auth.cy.ts
-│   ├── engagement/
-│   ├── loaders/
-│   ├── posts/
-│   ├── settings/
-│   └── subscription/
-├── fixtures/
-├── memes_test_files/
-└── support/
+tests/
+└── e2e/                     # Cypress E2E tests
+    ├── smoke.cy.ts
+    ├── dashboard.cy.ts
+    ├── nostr-auth.cy.ts
+    ├── engagement/
+    ├── loaders/
+    ├── posts/
+    ├── settings/
+    ├── subscription/
+    ├── fixtures/
+    ├── memes_test_files/
+    └── support/
 ```
 
 ---
@@ -298,13 +298,13 @@ Performance tests verify that functions meet performance benchmarks.
 - Bulk operations load tests (`bulk-operations.js`)
 - Loader performance tests (`loader-performance.js`)
 
-See [Performance Testing Guide](./PERFORMANCE_TESTING.md) for details.
+See the [Performance Testing](#performance-testing) section above for details.
 
 ### E2E Tests (Cypress)
 
 E2E tests verify full user flows in a real browser environment.
 
-**Location**: `cypress/e2e/*.cy.ts`
+**Location**: `tests/e2e/**/*.cy.ts`
 
 **Coverage**: ~40% of user flows
 
@@ -313,6 +313,241 @@ E2E tests verify full user flows in a real browser environment.
 - Dashboard tests (`dashboard.cy.ts`)
 - Post creation tests (`posts/new-post.cy.ts`)
 - Authentication tests (`nostr-auth.cy.ts`)
+
+---
+
+## Vitest Setup
+
+### Overview
+
+Vitest is used for both unit tests and integration tests. It runs tests in Node.js without browser overhead, making it 10-100x faster than Cypress for these test types.
+
+### When to Use Vitest
+
+| Test Type | Framework | Why |
+|-----------|-----------|-----|
+| Pure functions (utilities, business logic) | **Vitest** | Fast, no browser needed |
+| Remix loaders/actions | **Vitest** | Test server logic directly |
+| API routes | **Vitest** | Test without HTTP overhead |
+| React components (isolated) | **Vitest** | Fast rendering with jsdom |
+| Full user flows | **Cypress** | Real browser interactions |
+| UI interactions | **Cypress** | Real DOM events |
+
+### Benefits
+
+1. **Speed**: Runs in Node.js without browser overhead (10-100x faster)
+2. **No Server Required**: Unit/integration tests don't need a running dev server
+3. **Better Developer Experience**: Fast feedback, watch mode, better error messages
+4. **Direct Function Testing**: Test functions directly without HTTP requests
+5. **Better Mocking**: Native support for mocking with `vi.mock()`
+
+### Running Vitest Tests
+
+```bash
+# Run all tests once
+npm run test
+
+# Watch mode (recommended for development)
+npm run test:watch
+
+# Run with UI
+npm run test:ui
+
+# Generate coverage
+npm run test:coverage
+
+# Run only unit tests
+npm run test:unit
+
+# Run only integration tests
+npm run test:integration
+```
+
+### Configuration
+
+Configuration is in `vitest.config.ts`:
+- Test environment: Node.js (for server-side tests)
+- Path aliases: `~/*` for app imports
+- Coverage: v8 provider with thresholds
+- Exclusions: E2E tests, build files, node_modules
+
+See `tests/setup.ts` for global test setup and jest-dom matchers.
+
+---
+
+## Property-Based Testing
+
+### Overview
+
+Property-based testing generates random inputs to test functions, automatically discovering edge cases that manual tests might miss. Instead of writing specific test cases, you define **properties** that should always hold true.
+
+### Installation
+
+```bash
+npm install --save-dev fast-check
+```
+
+### Example
+
+Instead of:
+```typescript
+it("should format dates correctly", () => {
+  expect(formatDate(new Date("2024-01-15"))).toBe("01/15/2024");
+});
+```
+
+Property-based testing:
+```typescript
+import { fc } from "fast-check";
+
+it("should always return a string for valid date inputs", () => {
+  fc.assert(
+    fc.property(
+      fc.date({ min: new Date("1900-01-01"), max: new Date("2100-12-31") }),
+      (date) => {
+        const result = formatDate(date);
+        return typeof result === "string" && result.length > 0;
+      },
+    ),
+    { numRuns: 100 },
+  );
+});
+```
+
+### Test Files
+
+- `tests/property/helpers-property.test.ts` - Helper function properties
+- `tests/property/nostr-conversion-property.test.ts` - Nostr conversion properties
+- `tests/property/scheduling-property.test.ts` - Scheduling algorithm properties
+
+### Running Property-Based Tests
+
+```bash
+npm run test:property
+```
+
+---
+
+## Security Testing
+
+### Overview
+
+Security testing ensures that SmartFlowSocial is protected against common security vulnerabilities.
+
+### Test Coverage
+
+Located in `tests/security/`, these tests verify:
+
+1. **XSS Prevention** (`xss-prevention.test.ts`)
+   - Script tag removal
+   - Inline event handler removal
+   - Dangerous protocol removal
+   - Safe HTML tag preservation
+
+2. **SQL Injection Prevention** (`sql-injection.test.ts`)
+   - Parameterized query usage
+   - SQL injection attempt handling
+   - Special character handling
+
+3. **Authentication & Authorization** (`authentication.test.ts`)
+   - Session management
+   - Authentication checks
+   - Authorization checks
+   - Session cookie security
+
+4. **CSRF Protection** (`csrf-protection.test.ts`)
+   - Remix's built-in CSRF protection
+   - SameSite cookie usage
+
+5. **Input Validation** (`input-validation.test.ts`)
+   - Form data validation
+   - Query parameter validation
+   - Request body validation
+
+6. **File Upload Security** (`file-upload-security.test.ts`)
+   - File type validation
+   - File size limits
+   - Malicious file detection
+
+7. **Security Headers** (`security-headers.test.ts`)
+   - Content-Security-Policy
+   - X-Frame-Options
+   - X-Content-Type-Options
+
+### Running Security Tests
+
+```bash
+# Run all security tests
+npm run test:security
+
+# Run specific security test file
+npm run test tests/security/xss-prevention.test.ts
+```
+
+---
+
+## Performance Testing
+
+### Overview
+
+Performance testing ensures that SmartFlowSocial can handle expected load and meets performance benchmarks. We use a combination of:
+
+1. **k6 Load Tests** - For API endpoints and loaders under realistic load
+2. **Vitest Unit Performance Tests** - For individual function performance benchmarks
+
+### Installing k6
+
+**macOS:**
+```bash
+brew install k6
+```
+
+**Linux:**
+```bash
+sudo gpg -k
+sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+sudo apt-get update
+sudo apt-get install k6
+```
+
+**Windows:**
+```bash
+choco install k6
+```
+
+Or download from [k6.io](https://k6.io/docs/getting-started/installation/)
+
+### Running Performance Tests
+
+```bash
+# Unit performance tests
+npm run test:performance
+
+# k6 load tests
+k6 run tests/performance/api-endpoints.js
+k6 run tests/performance/bulk-operations.js
+k6 run tests/performance/loader-performance.js
+
+# All performance tests
+npm run test:performance:all
+```
+
+### Performance Benchmarks
+
+| Function | Small (< 100) | Medium (100-1000) | Large (1000+) |
+|----------|---------------|-------------------|---------------|
+| `combineContent()` | < 50ms | < 200ms | < 1000ms |
+| `getPostStats()` (single) | < 500ms | - | - |
+| `getPostStats()` (10-50) | - | < 2000ms | - |
+| `getPostStats()` (50-100) | - | - | < 5000ms |
+
+### Test Files
+
+- `tests/performance/unit-performance.test.ts` - Unit performance benchmarks
+- `tests/performance/api-endpoints.js` - API endpoint load tests
+- `tests/performance/bulk-operations.js` - Bulk operations load tests
+- `tests/performance/loader-performance.js` - Loader performance tests
 
 ---
 
@@ -421,7 +656,7 @@ Coverage thresholds are enforced:
 | Branches | 60% |
 | Statements | 70% |
 
-See [Coverage Reporting Guide](./COVERAGE_REPORTING.md) for details.
+See [Test Strategy](./TEST_STRATEGY.md#coverage-strategy) for coverage details.
 
 ### Cypress Configuration
 
@@ -451,16 +686,14 @@ See [CI/CD Guide](./CI_CD.md) for details.
 
 ## Documentation
 
-- [Test Strategy](./TEST_STRATEGY.md) - Overall testing strategy and philosophy
+- [Test Strategy](./TEST_STRATEGY.md) - Overall testing strategy, philosophy, and coverage goals
 - [Testing Patterns](./TESTING_PATTERNS.md) - Common testing patterns and examples
 - [Mocking Guidelines](./MOCKING_GUIDELINES.md) - How to mock dependencies
-- [Coverage Goals](./COVERAGE_GOALS.md) - Coverage targets and rationale
 - [Test Troubleshooting](./TEST_TROUBLESHOOTING.md) - Common issues and solutions
-- [Coverage Reporting](./COVERAGE_REPORTING.md) - Coverage tracking and reporting
-- [Property-Based Testing](./PROPERTY_BASED_TESTING.md) - Property-based testing guide
-- [Security Testing](./SECURITY_TESTING.md) - Security testing guide
-- [Performance Testing](./PERFORMANCE_TESTING.md) - Performance testing guide
+- [Test Database](./TEST_DATABASE.md) - Database integration testing guide
 - [CI/CD Guide](./CI_CD.md) - CI/CD pipeline documentation
+
+> **Note**: Vitest setup, property-based testing, security testing, and performance testing are now covered in this document (see sections above).
 
 ---
 
@@ -519,7 +752,7 @@ See [Testing Patterns Guide](./TESTING_PATTERNS.md) for more best practices.
 
 ## Next Steps
 
-- Read [Test Strategy](./TEST_STRATEGY.md) to understand testing philosophy
+- Read [Test Strategy](./TEST_STRATEGY.md) to understand testing philosophy and coverage goals
 - Review [Testing Patterns](./TESTING_PATTERNS.md) for common patterns
 - Check [Mocking Guidelines](./MOCKING_GUIDELINES.md) for mocking strategies
-- See [Coverage Goals](./COVERAGE_GOALS.md) for coverage targets
+- See [Test Database](./TEST_DATABASE.md) for database testing guidance

@@ -2,7 +2,7 @@
  * Unit tests for subscription and plan enforcement logic
  * Tests real exported functions from app/features/payments/types.ts
  * 
- * Migrated from cypress/e2e/unit/subscription-logic.cy.ts
+ * Migrated from tests/e2e/unit/subscription-logic.cy.ts
  */
 
 import { describe, it, expect } from "vitest";

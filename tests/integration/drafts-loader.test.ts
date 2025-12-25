@@ -2,9 +2,9 @@
  * Integration tests for drafts loader
  * 
  * Tests the loader function logic directly, without requiring a browser.
- * For UI rendering tests, see cypress/e2e/posts/drafts.cy.ts
+ * For UI rendering tests, see tests/e2e/posts/drafts.cy.ts
  * 
- * Migrated from: cypress/e2e/loaders/queues-loader.cy.ts (Drafts Queue Loader section)
+ * Migrated from: tests/e2e/loaders/queues-loader.cy.ts (Drafts Queue Loader section)
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";

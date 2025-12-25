@@ -3,7 +3,7 @@ import { faker } from "@faker-js/faker";
 import { TEST_NPUB } from "./nostr-test-keys";
 import { signEvent, type SignedEvent } from "./nostr-signer";
 
-// Available test files in cypress/memes_test_files/
+// Available test files in tests/e2e/memes_test_files/
 export const TEST_FILES = [
   "3cecbbd43d51b4eb9f16f6229efcb5d8037e350150b55b4ae0a3277176b1db40.jpg",
   "490ee2539277d4d58dbdd4e949dcd796e49787bbde6156287a54dfae833dd352.jpg",
@@ -79,7 +79,7 @@ declare global {
       visitAndCheck: typeof visitAndCheck;
 
       /**
-       * Upload test files from cypress/memes_test_files/ to a file input
+       * Upload test files from tests/e2e/memes_test_files/ to a file input
        *
        * @returns {typeof uploadTestFile}
        * @memberof Chainable
@@ -124,7 +124,7 @@ function login({
   email?: string;
 } = {}) {
   cy.then(() => ({ email })).as("user");
-  cy.exec(`npx tsx ./cypress/support/create-user.ts "${email}"`).then(
+  cy.exec(`npx tsx ./tests/e2e/support/create-user.ts "${email}"`).then(
     ({ stdout }) => {
       const cookieValue = stdout
         .replace(/.*<cookie>(?<cookieValue>.*)<\/cookie>.*/s, "$<cookieValue>")
@@ -138,10 +138,10 @@ function login({
 function loginNostr({ npub = TEST_NPUB }: { npub?: string } = {}) {
   cy.then(() => ({ npub })).as("user");
   // Delete user first to ensure fresh state, then create
-  cy.exec(`npx tsx ./cypress/support/delete-nostr-user.ts "${npub}"`, {
+    cy.exec(`npx tsx ./tests/e2e/support/delete-nostr-user.ts "${npub}"`, {
     failOnNonZeroExit: false,
   }).then(() => {
-    cy.exec(`npx tsx ./cypress/support/create-nostr-user.ts "${npub}"`).then(
+    cy.exec(`npx tsx ./tests/e2e/support/create-nostr-user.ts "${npub}"`).then(
       ({ stdout }) => {
         const cookieValue = stdout
           .replace(/.*<cookie>(?<cookieValue>.*)<\/cookie>.*/s, "$<cookieValue>")
@@ -192,12 +192,12 @@ function cleanupNostrUser({ npub }: { npub?: string } = {}) {
 }
 
 function deleteUserByEmail(email: string) {
-  cy.exec(`npx tsx ./cypress/support/delete-user.ts "${email}"`);
+  cy.exec(`npx tsx ./tests/e2e/support/delete-user.ts "${email}"`);
   cy.clearCookie("__session");
 }
 
 function deleteNostrUserByNpub(npub: string) {
-  cy.exec(`npx tsx ./cypress/support/delete-nostr-user.ts "${npub}"`);
+  cy.exec(`npx tsx ./tests/e2e/support/delete-nostr-user.ts "${npub}"`);
   cy.clearCookie("__session");
 }
 
@@ -218,7 +218,7 @@ function visitAndCheck(url: string, waitTime = 1000) {
 }
 
 /**
- * Upload test file(s) from cypress/memes_test_files/ to a file input
+ * Upload test file(s) from tests/e2e/memes_test_files/ to a file input
  * @param selector - CSS selector for the file input
  * @param fileIndex - Index of file(s) to upload from TEST_FILES array (0, 1, 2, or array of indices)
  */
@@ -227,7 +227,7 @@ function uploadTestFile(
   fileIndex: number | number[] = 0,
 ): void {
   const indices = Array.isArray(fileIndex) ? fileIndex : [fileIndex];
-  const filePaths = indices.map((i) => `cypress/memes_test_files/${TEST_FILES[i]}`);
+  const filePaths = indices.map((i) => `tests/e2e/memes_test_files/${TEST_FILES[i]}`);
 
   cy.get(selector).selectFile(filePaths, { force: true });
 }
@@ -255,7 +255,7 @@ function setSubscriptionStatus(status: TestSubscriptionStatus): void {
     if (!npub) {
       throw new Error("No npub found on user. Make sure to call cy.loginNostr() first.");
     }
-    cy.exec(`npx tsx ./cypress/support/update-subscription-status.ts "${npub}" "${status}"`).then(
+    cy.exec(`npx tsx ./tests/e2e/support/update-subscription-status.ts "${npub}" "${status}"`).then(
       ({ stdout }) => {
         const resultStatus = stdout
           .replace(/.*<status>(?<statusValue>.*)<\/status>.*/s, "$<statusValue>")

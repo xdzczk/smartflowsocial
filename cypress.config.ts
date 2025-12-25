@@ -7,6 +7,10 @@ config({ path: resolve(__dirname, ".env") });
 
 export default defineConfig({
     e2e: {
+        specPattern: 'tests/e2e/**/*.cy.ts',
+        supportFile: 'tests/e2e/support/e2e.ts',
+        fixturesFolder: 'tests/e2e/fixtures',
+        screenshotsFolder: 'tests/e2e/screenshots',
         setupNodeEvents: (on, config) => {
             // Use PORT env var, or default to 3000 for dev
             // Only use 8811 if explicitly in CI environment

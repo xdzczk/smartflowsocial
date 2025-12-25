@@ -2,9 +2,9 @@
  * Integration tests for dashboard loader
  * 
  * These tests verify the loader function logic directly, without requiring a browser.
- * For UI rendering tests, see cypress/e2e/dashboard.cy.ts
+ * For UI rendering tests, see tests/e2e/dashboard.cy.ts
  * 
- * Migrated from: cypress/e2e/loaders/dashboard-loader.cy.ts
+ * Migrated from: tests/e2e/loaders/dashboard-loader.cy.ts
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";

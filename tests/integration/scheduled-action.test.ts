@@ -2,7 +2,7 @@
  * Integration tests for scheduled posts action handlers
  * 
  * Tests the action handler logic directly, without requiring a browser.
- * For UI interaction tests, see cypress/e2e/posts/scheduled-posts.cy.ts
+ * For UI interaction tests, see tests/e2e/posts/scheduled-posts.cy.ts
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";

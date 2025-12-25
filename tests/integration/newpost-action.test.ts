@@ -2,7 +2,7 @@
  * Integration tests for new post action handlers
  * 
  * Tests the action handler logic directly, without requiring a browser.
- * For UI interaction tests, see cypress/e2e/posts/new-post.cy.ts
+ * For UI interaction tests, see tests/e2e/posts/new-post.cy.ts
  * 
  * Note: This tests the core logic. File uploads are tested separately.
  */

@@ -157,7 +157,7 @@ We follow the **test pyramid** principle:
 - Dashboard navigation
 - Settings updates
 
-**Location**: `cypress/e2e/*.cy.ts`
+**Location**: `tests/e2e/**/*.cy.ts`
 
 **Framework**: Cypress
 
@@ -167,21 +167,97 @@ We follow the **test pyramid** principle:
 
 ### Coverage Goals
 
-| Metric | Current | Target | Critical Paths |
-|--------|---------|--------|----------------|
-| Overall | 70-75% | 80% | 95%+ |
-| Unit Tests | 40% | 60-70% | 90%+ |
-| Integration Tests | 70% | 80-90% | 95%+ |
-| E2E Tests | 40% | 50-60% | 80%+ |
+#### Overall Coverage
+
+- **Current**: 70-75%
+- **Target**: 80%
+- **Critical Paths**: 95%+
+
+#### By Test Type
+
+| Test Type | Current | Target | Status |
+|-----------|---------|--------|--------|
+| Unit Tests | 40% | 60-70% | 🟡 In Progress |
+| Integration Tests | 70% | 80-90% | 🟢 Good |
+| E2E Tests | 40% | 50-60% | 🟡 In Progress |
+| Property-Based | 3 functions | 10+ functions | 🟡 In Progress |
+| Security Tests | 7 areas | 7 areas | ✅ Complete |
+| Performance Tests | 3 areas | 5+ areas | 🟡 In Progress |
 
 ### Coverage Thresholds
 
-Enforced in CI/CD:
+#### Enforced Thresholds
 
-- **Lines**: 70%
-- **Functions**: 65%
-- **Branches**: 60%
-- **Statements**: 70%
+Coverage thresholds are enforced in CI/CD and `vitest.config.ts`:
+
+| Metric | Threshold | Rationale |
+|--------|-----------|-----------|
+| **Lines** | 70% | Ensures most code paths are tested |
+| **Functions** | 65% | Ensures most functions have tests |
+| **Branches** | 60% | Ensures conditional logic is tested |
+| **Statements** | 70% | Ensures most statements execute |
+
+#### Threshold Rationale
+
+**Why 70% for Lines and Statements?**
+- High enough to catch most bugs
+- Achievable without excessive effort
+- Leaves room for hard-to-test code
+- Industry standard for most projects
+
+**Why 65% for Functions?**
+- Functions are easier to test than branches
+- Some functions are simple getters/setters
+- Focus on testing complex functions
+
+**Why 60% for Branches?**
+- Branches are harder to test (conditionals, error paths)
+- Some branches are defensive (unlikely to execute)
+- Focus on critical decision points
+
+### Coverage Goals by Area
+
+#### Critical Paths (95%+)
+
+**Areas:**
+- Authentication/authorization
+- Payment processing
+- Post publishing
+- Queue scheduling
+- Error handling
+
+**Rationale**: These areas have high business impact and security implications.
+
+#### High Priority (80-90%)
+
+**Areas:**
+- API routes
+- Action handlers
+- Loaders
+- Model functions
+- Business logic services
+
+**Rationale**: These are core functionality that users interact with directly.
+
+#### Medium Priority (70-80%)
+
+**Areas:**
+- Utility functions
+- Helper functions
+- Data transformations
+- Formatting functions
+
+**Rationale**: Important but less critical than core business logic.
+
+#### Low Priority (50-60%)
+
+**Areas:**
+- Configuration files
+- Type definitions
+- Simple getters/setters
+- Pass-through functions
+
+**Rationale**: Less critical, but still should have some coverage.
 
 ### What to Test
 
@@ -205,11 +281,95 @@ Enforced in CI/CD:
 
 ### What NOT to Test
 
+**Excluded from Coverage:**
 - Third-party library code
 - Framework code (Remix, Prisma)
 - Generated code
 - Simple pass-through functions
 - Configuration constants
+- Test files themselves
+- Build artifacts
+- Type definitions (`*.d.ts`)
+- Config files (`*.config.*`)
+
+### Coverage Reporting
+
+#### Running Coverage Reports
+
+```bash
+# Generate coverage report
+npm run test:coverage
+
+# View HTML report
+open coverage/index.html
+
+# Coverage with thresholds check
+./scripts/coverage-report.sh
+```
+
+#### Coverage Reports
+
+The coverage system generates multiple report formats:
+
+- **HTML Report** (`coverage/index.html`) - Most detailed, file-by-file coverage
+- **JSON Summary** (`coverage/coverage-summary.json`) - For CI/CD integration
+- **LCOV Report** (`coverage/lcov.info`) - Compatible with Codecov, Coveralls, SonarQube
+- **Text Report** - Console output
+
+#### Coverage Tracking
+
+Track coverage trends over time:
+
+```bash
+# Record current coverage snapshot
+npm run test:coverage:report
+
+# View coverage trend report
+npm run test:coverage:trend
+```
+
+The trend tracking:
+- Records coverage snapshots over time
+- Keeps last 100 snapshots
+- Shows coverage trends (increasing/decreasing)
+- Helps identify coverage regressions
+
+#### CI/CD Integration
+
+Coverage is automatically checked in CI/CD:
+- Runs tests with coverage on PRs and pushes
+- Checks coverage thresholds
+- Fails build if thresholds not met
+- Uploads coverage artifacts
+
+### Adjusting Thresholds
+
+Edit `vitest.config.ts`:
+
+```typescript
+coverage: {
+  thresholds: {
+    lines: 75,      // Increase to 75%
+    functions: 70,  // Increase to 70%
+    branches: 65,   // Increase to 65%
+    statements: 75, // Increase to 75%
+  },
+}
+```
+
+**Threshold Strategy:**
+1. **Start Low**: Begin with achievable thresholds (50-60%)
+2. **Gradually Increase**: Raise thresholds as coverage improves
+3. **Maintain**: Keep thresholds at sustainable levels
+4. **Per-File**: Consider per-file thresholds for critical code
+
+### Coverage Best Practices
+
+1. **Focus on Quality**: High coverage doesn't mean good tests
+2. **Test Behavior, Not Implementation**: Focus on what functions do
+3. **Prioritize Critical Paths**: Some code needs more coverage than others
+4. **Maintain Sustainable Levels**: Don't sacrifice test quality for coverage
+5. **Review Regularly**: Identify untested code paths and missing edge cases
 
 ## Test Organization
 

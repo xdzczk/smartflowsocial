@@ -410,10 +410,274 @@ try {
 }
 ```
 
+## Implementation Details
+
+### File Structure
+
+```
+app/
+├── lib/
+│   ├── errors.ts                          # Error classes and types
+│   ├── error-handler.server.ts            # Server-side error handling
+│   ├── error-logger.server.ts             # Error logging service
+│   ├── error-metrics.server.ts            # Error metrics tracking
+│   └── error-handler.example.ts           # Usage examples
+├── components/
+│   └── ErrorDisplay.tsx                   # Client-side error display
+└── root.tsx                               # Error boundaries
+```
+
+### Components
+
+#### 1. Custom Error Classes (`app/lib/errors.ts`)
+
+- **AppError**: Base error class with status codes, error codes, and context
+- **ValidationError** (400): Invalid input data
+- **AuthenticationError** (401): User not authenticated
+- **AuthorizationError** (403): Insufficient permissions
+- **NotFoundError** (404): Resource not found
+- **ConflictError** (409): Resource conflicts
+- **RateLimitError** (429): Rate limit exceeded
+- **ExternalServiceError** (502/503/504): External API failures
+- **DatabaseError** (500): Database operation failures
+
+**Features:**
+- Type-safe error handling
+- Structured error data (code, statusCode, context, timestamp)
+- Error normalization for unknown error types
+- User-friendly message generation
+
+#### 2. Error Handler Utilities (`app/lib/error-handler.server.ts`)
+
+**Wrapper Functions:**
+- `withErrorHandling()`: Automatic error handling for loaders
+- `withActionErrorHandling()`: Automatic error handling for actions
+
+**Helper Functions:**
+- `handleLoaderError()`: Manual error handling with safe defaults
+- `handleActionError()`: Manual error handling for actions
+- `createErrorResponse()`: Standardized error response format
+- `createSuccessResponse()`: Standardized success response format
+
+**Assertion Helpers:**
+- `assert()`: Assert a condition, throw ValidationError if false
+- `assertExists()`: Assert value exists, throw NotFoundError if null/undefined
+- `assertAuthenticated()`: Assert user is authenticated
+- `assertAuthorized()`: Assert user has permission
+
+#### 3. Error Logging Service (`app/lib/error-logger.server.ts`)
+
+**Features:**
+- Structured error logging
+- Development vs. production log formats
+- Contextual information (userId, request path, method, etc.)
+- Stack trace support
+- Ready for integration with external services (Sentry, LogRocket, etc.)
+
+**Functions:**
+- `logError()`: Log errors with structured output
+- `logWarning()`: Log warnings
+- `logInfo()`: Log informational messages
+
+#### 4. Error Boundaries (`app/root.tsx`)
+
+**Features:**
+- Root-level error boundary
+- Catches errors from loaders, actions, and components
+- User-friendly error pages
+- Development error details
+- Proper HTTP status codes
+
+#### 5. Client-Side Error Display (`app/components/ErrorDisplay.tsx`)
+
+**Components:**
+- `ErrorDisplay`: Display errors inline or as alerts
+- `showErrorToast()`: Show errors as toast notifications
+
+**Variants:**
+- `toast`: Toast notification
+- `alert`: Alert box
+- `inline`: Inline text
+
+## Error Metrics
+
+### Overview
+
+The error metrics system automatically tracks error rates, types, and patterns for monitoring and alerting.
+
+### Features
+
+**Automatic Tracking:**
+- Error counts by error code
+- Error rates (errors per minute)
+- Error types (operational vs non-operational)
+- Recent errors with context
+- Status code distribution
+
+**In-Memory Storage:**
+Metrics are stored in-memory by default. For production, consider:
+- Redis for distributed systems
+- Time-series database (InfluxDB, TimescaleDB)
+- External monitoring service (Datadog, New Relic)
+
+### Usage
+
+#### Viewing Metrics
+
+Access metrics via the API endpoint:
+
+```bash
+# Get full metrics
+GET /api/error-metrics
+
+# Get summary with error rate
+GET /api/error-metrics?summary=true
+
+# Get top N error codes
+GET /api/error-metrics?top=10
+
+# Check if error rate is high
+GET /api/error-metrics?checkRate=true
+```
+
+#### Programmatic Access
+
+```typescript
+import {
+  getErrorMetrics,
+  getErrorRate,
+  getTopErrorCodes,
+  isErrorRateHigh,
+} from "~/lib/error-metrics.server";
+
+// Get full metrics summary
+const metrics = getErrorMetrics();
+console.log(metrics.totalErrors);
+console.log(metrics.errorsByCode);
+
+// Get error rate (errors per minute)
+const rate = getErrorRate();
+console.log(`Error rate: ${rate} errors/minute`);
+
+// Check if error rate exceeds threshold
+if (isErrorRateHigh(10)) {
+  // Alert or take action
+  console.warn("High error rate detected!");
+}
+
+// Get top error codes
+const topErrors = getTopErrorCodes(5);
+topErrors.forEach((error) => {
+  console.log(`${error.code}: ${error.count} occurrences`);
+});
+```
+
+### Metrics Structure
+
+```typescript
+{
+  totalErrors: number;
+  operationalErrors: number;
+  nonOperationalErrors: number;
+  errorsByCode: {
+    [code: string]: {
+      code: string;
+      count: number;
+      lastOccurred: string;
+      statusCode: number;
+      isOperational: boolean;
+    };
+  };
+  errorsByStatusCode: {
+    [statusCode: number]: number;
+  };
+  recentErrors: Array<{
+    code: string;
+    message: string;
+    timestamp: string;
+    statusCode: number;
+    context?: Record<string, unknown>;
+  }>;
+  timeRange: {
+    start: string;
+    end: string;
+  };
+}
+```
+
+### Monitoring & Alerting
+
+#### Setting Up Alerts
+
+You can create a cron job or scheduled task to check error rates:
+
+```typescript
+// In a cron job or scheduled task
+import { isErrorRateHigh, getErrorRate } from "~/lib/error-metrics.server";
+
+export async function checkErrorRates() {
+  const rate = getErrorRate();
+  const isHigh = isErrorRateHigh(10); // 10 errors/minute threshold
+
+  if (isHigh) {
+    // Send alert (email, Slack, PagerDuty, etc.)
+    await sendAlert({
+      message: `High error rate detected: ${rate} errors/minute`,
+      severity: "warning",
+    });
+  }
+}
+```
+
+### Production Considerations
+
+#### Persistence
+
+For production, consider persisting metrics:
+1. **Redis**: Store metrics with TTL
+2. **Database**: Store in time-series table
+3. **External Service**: Send directly to monitoring service
+
+#### Memory Management
+
+The in-memory store keeps the last 100 errors. For high-traffic applications:
+- Reduce `maxRecentErrors` if memory is a concern
+- Implement periodic cleanup of old metrics
+- Use external storage for long-term metrics
+
+#### Security
+
+The `/api/error-metrics` endpoint requires authentication. In production:
+- Add admin role check
+- Rate limit the endpoint
+- Consider IP whitelisting
+
+Example admin check:
+
+```typescript
+import { requireAdmin } from "~/features/auth/session.server";
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  await requireAdmin(request); // Add this
+  // ... rest of code
+}
+```
+
+### Testing
+
+Reset metrics for testing:
+
+```typescript
+import { resetErrorMetrics } from "~/lib/error-metrics.server";
+
+beforeEach(() => {
+  resetErrorMetrics();
+});
+```
+
 ## See Also
 
 - [Error Handler Example](./app/lib/error-handler.example.ts) - Complete examples
 - [Error Classes](./app/lib/errors.ts) - All error types
 - [Error Handler Utilities](./app/lib/error-handler.server.ts) - Helper functions
-- [Error Metrics Guide](./ERROR_METRICS.md) - Error tracking and monitoring
 

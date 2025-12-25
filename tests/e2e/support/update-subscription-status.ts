@@ -1,6 +1,6 @@
 // Use this to update a Nostr user's subscription status for testing
 // Simply call this with:
-// npx tsx ./cypress/support/update-subscription-status.ts npub1xxx STATUS
+// npx tsx ./tests/e2e/support/update-subscription-status.ts npub1xxx STATUS
 //
 // Where STATUS is one of: FREE, ACTIVE, EXPIRED, CANCELED, PAST_DUE
 

@@ -2,7 +2,7 @@
  * Integration tests for plans action handlers
  * 
  * Tests the action handler logic directly, without requiring a browser.
- * For UI interaction tests, see cypress/e2e/subscription/billing-loader.cy.ts
+ * For UI interaction tests, see tests/e2e/subscription/billing-loader.cy.ts
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";

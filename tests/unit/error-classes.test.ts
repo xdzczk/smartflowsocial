@@ -2,7 +2,7 @@
  * Unit tests for error classes and utilities
  * Tests error classes from: app/lib/errors.ts
  * 
- * Migrated from cypress/e2e/unit/error-classes.cy.ts
+ * Migrated from tests/e2e/unit/error-classes.cy.ts
  */
 
 import { describe, it, expect, beforeEach } from "vitest";

@@ -1,6 +1,6 @@
 // Use this to create a new Nostr user and login with that user
 // Simply call this with:
-// npx tsx ./cypress/support/create-nostr-user.ts npub1xxx
+// npx tsx ./tests/e2e/support/create-nostr-user.ts npub1xxx
 // and it will log out the cookie value you can use to interact with the server
 //
 // The user will be created with an ACTIVE subscription if they don't already exist.

@@ -2,9 +2,9 @@
  * Integration tests for subscription/billing loader
  * 
  * Tests the loader function logic directly, without requiring a browser.
- * For UI rendering tests, see cypress/e2e/subscription/billing-loader.cy.ts
+ * For UI rendering tests, see tests/e2e/subscription/billing-loader.cy.ts
  * 
- * Migrated from: cypress/e2e/subscription/billing-loader.cy.ts
+ * Migrated from: tests/e2e/subscription/billing-loader.cy.ts
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";

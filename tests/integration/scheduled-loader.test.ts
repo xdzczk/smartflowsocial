@@ -2,9 +2,9 @@
  * Integration tests for scheduled posts loader
  * 
  * Tests the loader function logic directly, without requiring a browser.
- * For UI rendering tests, see cypress/e2e/posts/scheduled-posts.cy.ts
+ * For UI rendering tests, see tests/e2e/posts/scheduled-posts.cy.ts
  * 
- * Migrated from: cypress/e2e/loaders/queues-loader.cy.ts (Scheduled Posts section)
+ * Migrated from: tests/e2e/loaders/queues-loader.cy.ts (Scheduled Posts section)
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";

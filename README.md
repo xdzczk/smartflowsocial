@@ -189,22 +189,16 @@ npm run start:worker
 | [Architecture](./docs/architecture.md)           | Project structure          |
 | [Database Schema](./docs/database-schema.md)     | Data models                |
 | [API Reference](./docs/api-reference.md)         | API endpoints              |
-| [Error Handling](./docs/ERROR_HANDLING.md)       | Centralized error handling |
-| [Error Metrics](./docs/ERROR_METRICS.md)        | Error tracking and monitoring |
+| [Error Handling](./docs/ERROR_HANDLING.md)       | Centralized error handling (includes metrics) |
 | [Onboarding](./docs/onboarding.md)               | User getting started       |
 | [Posting Workflow](./docs/posting.md)            | How to create posts        |
 | [Calendar Feature](./docs/calendar-feature.md)   | Visual scheduling          |
-| [Testing Guide](./docs/testing.md)               | How to run tests           |
-| [Test Strategy](./docs/TEST_STRATEGY.md)         | Testing philosophy and strategy |
+| [Testing Guide](./docs/testing.md)               | How to run tests (includes Vitest, property-based, security, performance) |
+| [Test Strategy](./docs/TEST_STRATEGY.md)         | Testing philosophy, strategy, and coverage goals |
 | [Testing Patterns](./docs/TESTING_PATTERNS.md)  | Common testing patterns and examples |
 | [Mocking Guidelines](./docs/MOCKING_GUIDELINES.md) | How to mock dependencies |
 | [Test Database](./docs/TEST_DATABASE.md)         | Database integration testing |
-| [Coverage Goals](./docs/COVERAGE_GOALS.md)      | Coverage targets and rationale |
 | [Test Troubleshooting](./docs/TEST_TROUBLESHOOTING.md) | Common issues and solutions |
-| [Coverage Reporting](./docs/COVERAGE_REPORTING.md) | Test coverage tracking     |
-| [Property-Based Testing](./docs/PROPERTY_BASED_TESTING.md) | Property-based testing guide |
-| [Security Testing](./docs/SECURITY_TESTING.md)  | Security testing guide |
-| [Performance Testing](./docs/PERFORMANCE_TESTING.md) | Performance testing guide |
 | [CI/CD Guide](./docs/CI_CD.md)                   | CI/CD pipeline and workflows |
 | [Contributing](./CONTRIBUTING.md)                | Contribution guidelines    |
 | [Roadmap](./ROADMAP.md)                          | Future plans               |

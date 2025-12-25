@@ -10,7 +10,7 @@ export default defineConfig({
     // Glob patterns for test files
     include: ["**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}", "**/property/**/*.test.ts"],
     // Exclude patterns
-    exclude: ["node_modules", "build", "cypress", ".next", ".remix"],
+    exclude: ["node_modules", "build", "tests/e2e", ".next", ".remix"],
     // Setup files
     setupFiles: ["./tests/setup.ts"],
     // Coverage configuration
@@ -20,7 +20,7 @@ export default defineConfig({
       exclude: [
         "node_modules/",
         "build/",
-        "cypress/",
+        "tests/e2e/",
         "tests/",
         "**/*.d.ts",
         "**/*.config.*",

@@ -2,7 +2,7 @@
  * Unit tests for scheduling/queue logic
  * Tests real exported functions from app/lib/schedule-formatting.ts
  * 
- * Migrated from cypress/e2e/unit/scheduling-logic.cy.ts
+ * Migrated from tests/e2e/unit/scheduling-logic.cy.ts
  */
 
 import { describe, it, expect } from "vitest";

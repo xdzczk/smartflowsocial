@@ -102,7 +102,7 @@ Keep these tests in Cypress (they test UI rendering):
 ### Phase 3: Clean Up
 
 After migration:
-- Remove duplicate unit tests from `cypress/e2e/unit/` (already migrated)
+- Remove duplicate unit tests from `tests/e2e/unit/` (already migrated)
 - Update test documentation
 - Update CI/CD to run both Vitest and Cypress
 
@@ -110,7 +110,7 @@ After migration:
 
 ### Before (Cypress - Slow, Tests UI)
 ```typescript
-// cypress/e2e/loaders/dashboard-loader.cy.ts
+// tests/e2e/loaders/dashboard-loader.cy.ts
 it("should load dashboard without errors", () => {
   cy.visitAndCheck("/dashboard");
   cy.location("pathname").should("include", "dashboard");
@@ -143,7 +143,7 @@ describe("Dashboard Loader", () => {
 
 ### Keep in Cypress (UI Rendering)
 ```typescript
-// cypress/e2e/dashboard.cy.ts
+// tests/e2e/dashboard.cy.ts
 it("should display dashboard UI correctly", () => {
   cy.loginNostr();
   cy.visitAndCheck("/dashboard");

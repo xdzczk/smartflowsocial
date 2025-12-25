@@ -147,7 +147,7 @@ This guide helps you diagnose and fix common test issues.
 **Symptoms**: Cypress tests timeout
 
 **Solutions**:
-1. Increase timeout in `cypress.config.ts`:
+1. Increase timeout in `cypress.config.ts` (located at project root):
    ```typescript
    defaultCommandTimeout: 10000,
    ```
@@ -163,7 +163,7 @@ This guide helps you diagnose and fix common test issues.
 1. Use `cy.loginNostr()` before tests
 2. Check test user exists in database
 3. Verify session cookies are set
-4. Check `cypress/support/nostr-test-keys.ts` has valid keys
+4. Check `tests/e2e/support/nostr-test-keys.ts` has valid keys
 
 ### Database Issues
 

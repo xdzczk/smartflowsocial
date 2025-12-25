@@ -1,6 +1,6 @@
 // Use this to delete a Nostr user by their npub
 // Simply call this with:
-// npx tsx ./cypress/support/delete-nostr-user.ts npub1xxx
+// npx tsx ./tests/e2e/support/delete-nostr-user.ts npub1xxx
 
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import { installGlobals } from "@remix-run/node";

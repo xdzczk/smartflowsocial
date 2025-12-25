@@ -2,9 +2,9 @@
  * Integration tests for calendar loader
  * 
  * Tests the loader function logic directly, without requiring a browser.
- * For UI rendering tests, see cypress/e2e/posts/calendar.cy.ts
+ * For UI rendering tests, see tests/e2e/posts/calendar.cy.ts
  * 
- * Migrated from: cypress/e2e/loaders/queues-loader.cy.ts (Calendar Queue Loader section)
+ * Migrated from: tests/e2e/loaders/queues-loader.cy.ts (Calendar Queue Loader section)
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
