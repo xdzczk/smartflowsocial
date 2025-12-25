@@ -79,5 +79,7 @@ export const isVideoFile = (url: string): boolean => {
     '.wmv'
   ];
 
-  return videoExtensions.some(ext => lowerUrl.includes(ext));
+  // Check if URL ends with a video extension (after removing query params and fragments)
+  const urlWithoutQuery = lowerUrl.split('?')[0].split('#')[0];
+  return videoExtensions.some(ext => urlWithoutQuery.endsWith(ext));
 };

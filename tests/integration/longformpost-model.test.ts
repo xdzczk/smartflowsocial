@@ -17,19 +17,24 @@ import {
   updateLongFormPostStatus,
 } from "~/models/longformpost.server";
 
-// Mock Prisma
-const mockPrisma = {
-  longFormPost: {
-    create: vi.fn(),
-    delete: vi.fn(),
-    update: vi.fn(),
-    findUnique: vi.fn(),
-    findMany: vi.fn(),
-  },
-  queueType: {
-    findFirst: vi.fn(),
-  },
-};
+// Mock Prisma - use vi.hoisted to allow top-level variables in mocks
+const { mockPrisma } = vi.hoisted(() => {
+  const mockPrisma = {
+    longFormPost: {
+      create: vi.fn(),
+      delete: vi.fn(),
+      update: vi.fn(),
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+      findFirst: vi.fn(),
+      count: vi.fn(),
+    },
+    queueType: {
+      findFirst: vi.fn(),
+    },
+  };
+  return { mockPrisma };
+});
 
 vi.mock("~/lib/prisma.server", () => ({
   prisma: mockPrisma,
@@ -76,11 +81,10 @@ describe("LongFormPost Model Functions", () => {
           image: "https://example.com/image.jpg",
           tags: ["article", "longform"],
           isPublished: false,
-          queueType: {
-            connect: {
-              id: TEST_QUEUE_TYPE_ID,
-            },
-          },
+          queueTypeId: TEST_QUEUE_TYPE_ID,
+          status: "DRAFT",
+          draft: true,
+          isScheduled: false,
         }),
       });
       expect(result).toEqual(mockLongFormPost);
@@ -167,16 +171,12 @@ describe("LongFormPost Model Functions", () => {
 
   describe("updateLongFormPost", () => {
     it("should update a longform post with new data", async () => {
-      const updateData = {
-        title: "Updated Article",
-        content: "Updated content",
-        summary: "Updated summary",
-      };
-
       const mockUpdatedPost = {
         id: TEST_LONGFORM_ID,
         userId: TEST_USER_ID,
-        ...updateData,
+        title: "Updated Article",
+        content: "Updated content",
+        summary: "Updated summary",
       };
 
       mockPrisma.longFormPost.update.mockResolvedValue(mockUpdatedPost);
@@ -184,7 +184,9 @@ describe("LongFormPost Model Functions", () => {
       const result = await updateLongFormPost({
         id: TEST_LONGFORM_ID,
         userId: TEST_USER_ID,
-        data: updateData,
+        title: "Updated Article",
+        content: "Updated content",
+        summary: "Updated summary",
       });
 
       expect(mockPrisma.longFormPost.update).toHaveBeenCalledWith({
@@ -192,7 +194,12 @@ describe("LongFormPost Model Functions", () => {
           id: TEST_LONGFORM_ID,
           userId: TEST_USER_ID,
         },
-        data: updateData,
+        data: expect.objectContaining({
+          title: "Updated Article",
+          content: "Updated content",
+          summary: "Updated summary",
+          updatedAt: expect.any(Date),
+        }),
       });
       expect(result).toEqual(mockUpdatedPost);
     });
@@ -207,13 +214,17 @@ describe("LongFormPost Model Functions", () => {
         queueType: { name: "articles" },
       };
 
-      mockPrisma.longFormPost.findUnique.mockResolvedValue(mockLongFormPost);
+      mockPrisma.longFormPost.findFirst.mockResolvedValue(mockLongFormPost);
 
-      const result = await getLongFormPost(TEST_LONGFORM_ID);
+      const result = await getLongFormPost({
+        id: TEST_LONGFORM_ID,
+        userId: TEST_USER_ID,
+      });
 
-      expect(mockPrisma.longFormPost.findUnique).toHaveBeenCalledWith({
+      expect(mockPrisma.longFormPost.findFirst).toHaveBeenCalledWith({
         where: {
           id: TEST_LONGFORM_ID,
+          userId: TEST_USER_ID,
         },
         include: {
           queueType: true,
@@ -239,22 +250,19 @@ describe("LongFormPost Model Functions", () => {
 
       const result = await getDraftLongFormPosts({
         userId: TEST_USER_ID,
-        queueType: "articles",
       });
 
       expect(mockPrisma.longFormPost.findMany).toHaveBeenCalledWith({
-        where: expect.objectContaining({
+        where: {
           userId: TEST_USER_ID,
+          isPublished: false,
           draft: true,
-          queueType: {
-            name: "articles",
-          },
-        }),
+        },
         include: {
           queueType: true,
         },
         orderBy: {
-          createdAt: "desc",
+          updatedAt: "desc",
         },
       });
       expect(result).toEqual(mockPosts);
@@ -282,18 +290,21 @@ describe("LongFormPost Model Functions", () => {
       });
 
       expect(mockPrisma.longFormPost.findMany).toHaveBeenCalledWith({
-        where: expect.objectContaining({
+        where: {
           userId: TEST_USER_ID,
           isPublished: true,
-        }),
-        include: {
-          queueType: true,
         },
         orderBy: {
           publishedAt: "desc",
         },
         skip: 0,
         take: 50,
+      });
+      expect(mockPrisma.longFormPost.count).toHaveBeenCalledWith({
+        where: {
+          userId: TEST_USER_ID,
+          isPublished: true,
+        },
       });
       expect(result.posts).toEqual(mockPosts);
     });
@@ -318,11 +329,10 @@ describe("LongFormPost Model Functions", () => {
       });
 
       expect(mockPrisma.longFormPost.findMany).toHaveBeenCalledWith({
-        where: expect.objectContaining({
+        where: {
           userId: TEST_USER_ID,
-          isScheduled: true,
-          isPublished: false,
-        }),
+          status: "SCHEDULED",
+        },
         include: {
           queueType: true,
         },
@@ -358,7 +368,8 @@ describe("LongFormPost Model Functions", () => {
         },
         data: {
           isPublished: true,
-          publishedAt: expect.any(Date),
+          status: "ACTIVE",
+          postedAt: expect.any(Date),
         },
       });
       expect(result).toEqual(mockUpdatedPost);

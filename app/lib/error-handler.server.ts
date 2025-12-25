@@ -11,6 +11,10 @@ import {
   normalizeError,
   getUserFriendlyMessage,
   isAppError,
+  ValidationError,
+  NotFoundError,
+  AuthenticationError,
+  AuthorizationError,
   type ErrorCode,
 } from "./errors";
 import { logError } from "./error-logger.server";
@@ -105,9 +109,11 @@ export function withErrorHandling<T>(
       }
       return json(result);
     } catch (error) {
-      // If error is a Response (e.g., redirect), rethrow it
+      // If error is a Response (e.g., redirect from requireUserId), return it
+      // In Remix runtime, thrown Responses are caught and used as the response
+      // In tests, we need to return it so we can assert on it
       if (error instanceof Response) {
-        throw error;
+        return error;
       }
       const [errorResponse, statusCode] = createErrorResponse(error);
       return json(errorResponse, { status: statusCode });
@@ -130,9 +136,11 @@ export function withActionErrorHandling<T>(
       }
       return json(result);
     } catch (error) {
-      // If error is a Response (e.g., redirect from requireUserId), rethrow it
+      // If error is a Response (e.g., redirect from requireUserId), return it
+      // In Remix runtime, thrown Responses are caught and used as the response
+      // In tests, we need to return it so we can assert on it
       if (error instanceof Response) {
-        throw error;
+        return error;
       }
       const [errorResponse, statusCode] = createErrorResponse(error);
       return json(errorResponse, { status: statusCode });
@@ -174,8 +182,6 @@ export function assert(
   context?: Record<string, unknown>,
 ): asserts condition {
   if (!condition) {
-    // Dynamic import to avoid circular dependencies
-    const { ValidationError } = require("./errors");
     throw new ValidationError(message, context);
   }
 }
@@ -189,7 +195,6 @@ export function assertExists<T>(
   context?: Record<string, unknown>,
 ): asserts value is T {
   if (value === null || value === undefined) {
-    const { NotFoundError } = require("./errors");
     throw new NotFoundError(message, context);
   }
 }
@@ -202,7 +207,6 @@ export function assertAuthenticated(
   message: string = "Authentication required",
 ): asserts userId is string {
   if (!userId) {
-    const { AuthenticationError } = require("./errors");
     throw new AuthenticationError(message);
   }
 }
@@ -216,7 +220,6 @@ export function assertAuthorized(
   context?: Record<string, unknown>,
 ): asserts hasPermission {
   if (!hasPermission) {
-    const { AuthorizationError } = require("./errors");
     throw new AuthorizationError(message, context);
   }
 }

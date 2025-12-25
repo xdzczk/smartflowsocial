@@ -10,16 +10,26 @@ import { Job } from "bullmq";
 // Mock global fetch
 global.fetch = vi.fn();
 
-// Mock BullMQ Worker
-vi.mock("bullmq", () => ({
-  Worker: vi.fn().mockImplementation((queueName, processor, options) => ({
-    queueName,
-    process: processor,
-    close: vi.fn(),
-  })),
-  Queue: vi.fn(),
-  Job: vi.fn(),
-}));
+// Mock BullMQ Worker - needs to be a class constructor
+vi.mock("bullmq", () => {
+  class MockWorker {
+    queueName: string;
+    process: any;
+    close: ReturnType<typeof vi.fn>;
+    
+    constructor(queueName: string, processor: any, options?: any) {
+      this.queueName = queueName;
+      this.process = processor;
+      this.close = vi.fn();
+    }
+  }
+  
+  return {
+    Worker: MockWorker,
+    Queue: vi.fn(),
+    Job: vi.fn(),
+  };
+});
 
 // Mock dependencies
 vi.mock("~/models/post.server", () => ({

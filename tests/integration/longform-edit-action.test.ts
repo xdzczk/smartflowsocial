@@ -35,15 +35,45 @@ vi.mock("~/models/user.server", () => ({
   getQueueTypeByNameForUser: vi.fn(),
 }));
 
+// Store FormData objects for mock access (using URL as key since Request objects are recreated)
+const formDataStore = new Map<string, FormData>();
+
 // Mock Remix upload handlers
 vi.mock("@remix-run/node", async () => {
   const actual = await vi.importActual("@remix-run/node");
   return {
     ...actual,
-    unstable_composeUploadHandlers: vi.fn((...handlers) => vi.fn()),
+    unstable_composeUploadHandlers: vi.fn((...handlers) => {
+      // Return a handler that processes files through the first handler
+      return async (part) => {
+        if (part.filename) {
+          // It's a file - process through the first handler (S3 upload handler)
+          const firstHandler = handlers[0];
+          if (firstHandler) {
+            return await firstHandler(part);
+          }
+        }
+        // For non-file parts, return the value as-is
+        return part.data;
+      };
+    }),
     unstable_createMemoryUploadHandler: vi.fn(() => vi.fn()),
-    unstable_parseMultipartFormData: vi.fn(async (request, handler) => {
-      return new FormData();
+    unstable_parseMultipartFormData: vi.fn(async (request, uploadHandler) => {
+      // Try to get FormData from store first (set by test using request URL as key)
+      const storedFormData = formDataStore.get(request.url);
+      if (storedFormData) {
+        formDataStore.delete(request.url); // Clean up after use
+        return storedFormData;
+      }
+      
+      // Fallback: try to parse from request
+      try {
+        const formData = await request.formData();
+        return formData;
+      } catch (error) {
+        // If parsing fails, return empty FormData
+        return new FormData();
+      }
     }),
   };
 });
@@ -65,6 +95,13 @@ describe("Longform Edit Action Handler", () => {
       userRelays: ["wss://relay1.com", "wss://relay2.com"],
       showHashTagsinPosts: true,
     });
+    // Default mock for getQueueTypeByNameForUser to prevent undefined errors
+    (getQueueTypeByNameForUser as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: "queue-1",
+      name: "posts",
+      hashTagPreset: null,
+    });
+    (getEffectiveHashtags as ReturnType<typeof vi.fn>).mockResolvedValue("");
   });
 
   describe("Image Upload Action", () => {
@@ -96,7 +133,11 @@ describe("Longform Edit Action Handler", () => {
       formData.append("_action", "upload-image");
       formData.append("imageFile", mockFile);
 
-      const request = new Request("http://localhost:3000/dashboard/longform/edit", {
+      // Store FormData before creating Request (mock will retrieve it by URL)
+      const requestUrl = "http://localhost:3000/dashboard/longform/edit";
+      formDataStore.set(requestUrl, formData);
+
+      const request = new Request(requestUrl, {
         method: "POST",
         headers: { "Content-Type": "multipart/form-data" },
         body: formData,

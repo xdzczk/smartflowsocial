@@ -20,7 +20,6 @@ export const action = withActionErrorHandling(
     try {
       requestBody = await request.json();
     } catch (error) {
-      const { ValidationError } = await import("~/lib/errors");
       throw new ValidationError("Invalid JSON in request body", {
         originalError: error instanceof Error ? error.message : String(error),
       });
@@ -56,7 +55,8 @@ export const action = withActionErrorHandling(
     }
 
     // Return the hashtag preset tags assigned to this queue type
-    return createSuccessResponse({
+    // Use consistent unwrapped format to match other return statements
+    return json({
       hashtags: (queueType.hashTagPreset as { tags: string | null })?.tags || "",
     });
   },

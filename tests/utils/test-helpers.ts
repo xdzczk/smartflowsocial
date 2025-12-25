@@ -34,6 +34,11 @@ export function createActionFormData(
 }
 
 /**
+ * Alias for createFormData (for backward compatibility)
+ */
+export const createMockFormData = createFormData;
+
+/**
  * Create a mock user ID for testing
  */
 export const TEST_USER_ID = "test-user-123";

@@ -161,17 +161,17 @@ describe("Settings Action Handler", () => {
 
         const formData = createFormData({
           _action: "update_schedule_intervals",
-          scheduleIntervals: "09:00\n12:00\n15:00\n18:00",
+          scheduleIntervals: "2\n3\n4\n5",
         });
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
         const data = await result.json();
 
         expect(updateScheduleInterval).toHaveBeenCalledWith(TEST_USER_ID, [
-          "09:00",
-          "12:00",
-          "15:00",
-          "18:00",
+          "2",
+          "3",
+          "4",
+          "5",
         ]);
         expect(data).toEqual({ success: true });
       });

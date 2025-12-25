@@ -14,20 +14,24 @@ import {
   getPlanById,
 } from "~/models/payment.server";
 
-// Mock Prisma
-const mockPrisma = {
-  plan: {
-    findUnique: vi.fn(),
-    findMany: vi.fn(),
-  },
-  payment: {
-    create: vi.fn(),
-    findUnique: vi.fn(),
-  },
-  subscription: {
-    findUnique: vi.fn(),
-  },
-};
+// Mock Prisma - use vi.hoisted to allow top-level variables in mocks
+const { mockPrisma } = vi.hoisted(() => {
+  const mockPrisma = {
+    plan: {
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+    },
+    payment: {
+      create: vi.fn(),
+      findUnique: vi.fn(),
+    },
+    subscription: {
+      findUnique: vi.fn(),
+    },
+    $transaction: vi.fn(),
+  };
+  return { mockPrisma };
+});
 
 vi.mock("~/lib/prisma.server", () => ({
   prisma: mockPrisma,
@@ -152,6 +156,10 @@ describe("Payment Model Functions", () => {
 
       expect(mockPrisma.payment.findUnique).toHaveBeenCalledWith({
         where: { id: TEST_PAYMENT_ID },
+        select: {
+          paidAt: true,
+          status: true,
+        },
       });
       expect(result).toEqual({
         paid: true,
@@ -173,7 +181,7 @@ describe("Payment Model Functions", () => {
 
       expect(result).toEqual({
         paid: false,
-        paidAt: null,
+        paidAt: undefined,
         status: "PENDING",
       });
     });

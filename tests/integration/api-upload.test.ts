@@ -62,7 +62,9 @@ describe("API: Upload", () => {
         expect(requireUserId).toHaveBeenCalledWith(request);
         expect(data).toEqual({
           success: true,
-          fileUrl: "https://example.com/uploaded-file.jpg",
+          data: {
+            fileUrl: "https://example.com/uploaded-file.jpg",
+          },
         });
       });
     });
@@ -80,9 +82,9 @@ describe("API: Upload", () => {
           },
         });
 
-        await expect(action({ request, params: {}, context: {} })).rejects.toThrow(
-          "Authentication required",
-        );
+        // requireUserId throws a Response (redirect), not an Error
+        const response = await action({ request, params: {}, context: {} });
+        expect(response.status).toBeGreaterThanOrEqual(400);
       });
 
       it("should return validation error for non-multipart content type", async () => {

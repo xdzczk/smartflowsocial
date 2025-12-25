@@ -85,7 +85,7 @@ describe("Queue Operations", () => {
 
       await expect(
         enqueuePostJob("post-123", TEST_USER_ID, mockSignedEvent, 0),
-      ).rejects.toThrow("Failed to schedule post");
+      ).rejects.toThrow("Queue error");
     });
 
     it("should cancel post job by postId", async () => {
@@ -171,7 +171,7 @@ describe("Queue Operations", () => {
 
       await expect(
         enqueueLongFormPostJob("longform-123", TEST_USER_ID, mockSignedEvent, 0),
-      ).rejects.toThrow("Failed to schedule longform post");
+      ).rejects.toThrow("Queue error");
     });
 
     it("should cancel longform post job by postId", async () => {
@@ -235,9 +235,7 @@ describe("Queue Operations", () => {
         error: "Queue error",
       });
 
-      await expect(enqueuePostCheckerJob()).rejects.toThrow(
-        "Failed to enqueue post checker job",
-      );
+      await expect(enqueuePostCheckerJob()).rejects.toThrow("Queue error");
     });
   });
 });

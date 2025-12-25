@@ -1,4 +1,5 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
+import { json } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth/session.server";
 import {
@@ -10,7 +11,7 @@ import {
   getUserTimezone,
   getQueueTypeByIdForUser,
 } from "~/models/user.server";
-import { NotFoundError } from "~/lib/errors";
+import { NotFoundError, ValidationError } from "~/lib/errors";
 import {
   withActionErrorHandling,
   createSuccessResponse,
@@ -29,7 +30,6 @@ export const action = withActionErrorHandling(
     try {
       requestBody = await request.json();
     } catch (error) {
-      const { ValidationError } = await import("~/lib/errors");
       throw new ValidationError("Invalid JSON in request body", {
         originalError: error instanceof Error ? error.message : String(error),
       });

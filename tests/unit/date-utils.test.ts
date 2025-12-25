@@ -19,7 +19,7 @@ describe("Date Utilities", () => {
     });
 
     it("should contain common timezones", () => {
-      expect(timeZonesList).toContain("UTC");
+      expect(timeZonesList).toContain("Etc/GMT"); // UTC equivalent
       expect(timeZonesList).toContain("America/New_York");
       expect(timeZonesList).toContain("America/Los_Angeles");
       expect(timeZonesList).toContain("Europe/London");

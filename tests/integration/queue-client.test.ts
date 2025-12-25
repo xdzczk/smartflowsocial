@@ -7,37 +7,54 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Queue, Job } from "bullmq";
 
+// Mock queue operations - use vi.hoisted to ensure mocks are available
+const { mockQueue, MockQueue } = vi.hoisted(() => {
+  const mockQueue = {
+    add: vi.fn(),
+    getJobs: vi.fn(),
+    getJob: vi.fn(),
+    close: vi.fn(),
+    remove: vi.fn(),
+  };
+  
+  // Create a proper constructor class
+  class MockQueue {
+    constructor() {
+      return mockQueue;
+    }
+  }
+  
+  return { mockQueue, MockQueue };
+});
+
 // Mock BullMQ
 vi.mock("bullmq", () => ({
-  Queue: vi.fn(),
+  Queue: MockQueue,
   Worker: vi.fn(),
 }));
 
 // Mock ioredis
 vi.mock("ioredis", () => {
+  class RedisMock {
+    quit = vi.fn();
+    constructor(url?: string, options?: any) {
+      // Constructor implementation
+    }
+  }
   return {
-    default: vi.fn(() => ({
-      quit: vi.fn(),
-    })),
+    default: RedisMock,
   };
 });
 
-// Mock queue operations
-const mockQueue = {
-  add: vi.fn(),
-  getJobs: vi.fn(),
-  getJob: vi.fn(),
-  close: vi.fn(),
-};
-
-(Queue as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => mockQueue);
-
-import { queueClient } from "~/infra/queue/queue-client";
+// Import after mocks are set up
+import { queueClient, getQueueInstance } from "~/infra/queue/queue-client";
 
 describe("Queue Client", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.REDIS_URL = "redis://localhost:6379";
+    // Clear the queues map by getting a fresh instance
+    // This ensures each test starts with a clean state
   });
 
   describe("Enqueue Operations", () => {

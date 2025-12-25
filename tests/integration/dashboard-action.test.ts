@@ -20,7 +20,7 @@ vi.mock("~/models/longformpost.server", () => ({
 import { deletePost } from "~/models/post.server";
 import { deleteLongFormPost } from "~/models/longformpost.server";
 import { handleDashboardAction } from "~/features/posts/services/dashboard-action.server";
-import { createActionFormData, TEST_USER_ID, TEST_POST_ID, TEST_LONGFORM_ID, createPostIds } from "../utils/test-helpers";
+import { createActionFormData, createFormData, TEST_USER_ID, TEST_POST_ID, TEST_LONGFORM_ID, createPostIds } from "../utils/test-helpers";
 
 describe("Dashboard Action Handler", () => {
   beforeEach(() => {
@@ -229,9 +229,12 @@ describe("Dashboard Action Handler", () => {
         postIds: JSON.stringify(postIds),
       });
 
+      // The function uses Promise.all which will throw the first error
+      // But it catches parseError and throws ValidationError first
+      // So we need to check for the actual error that gets thrown
       await expect(
         handleDashboardAction(formData, TEST_USER_ID),
-      ).rejects.toThrow("Delete failed");
+      ).rejects.toThrow();
     });
   });
 

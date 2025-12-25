@@ -144,7 +144,8 @@ describe("Helper Utilities", () => {
     });
 
     it("should handle midnight correctly", () => {
-      const date = new Date("2024-01-15T00:00:00Z");
+      // Create date in local timezone to avoid timezone conversion issues
+      const date = new Date(2024, 0, 15, 0, 0, 0); // Jan 15, 2024, midnight local time
 
       const result = formatDate(date);
 
@@ -152,7 +153,8 @@ describe("Helper Utilities", () => {
     });
 
     it("should handle noon correctly", () => {
-      const date = new Date("2024-01-15T12:00:00Z");
+      // Create date in local timezone to avoid timezone conversion issues
+      const date = new Date(2024, 0, 15, 12, 0, 0); // Jan 15, 2024, noon local time
 
       const result = formatDate(date);
 

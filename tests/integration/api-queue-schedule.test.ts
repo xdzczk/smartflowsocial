@@ -74,7 +74,9 @@ describe("API: Queue Schedule", () => {
       );
       expect(data).toEqual({
         success: true,
-        scheduledTime: formattedTime,
+        data: {
+          scheduledTime: formattedTime,
+        },
       });
     });
 
@@ -107,7 +109,9 @@ describe("API: Queue Schedule", () => {
       expect(getQueueTypes).toHaveBeenCalledWith(TEST_USER_ID);
       expect(data).toEqual({
         success: true,
-        scheduledTime: formattedTime,
+        data: {
+          scheduledTime: formattedTime,
+        },
       });
     });
 
@@ -123,6 +127,8 @@ describe("API: Queue Schedule", () => {
 
       expect(getQueueTypes).not.toHaveBeenCalled();
       expect(calculateNextScheduleTime).not.toHaveBeenCalled();
+      // When unassigned, the function returns json({ scheduledTime: "" }) directly
+      // This is not wrapped in createSuccessResponse, so it's a plain object
       expect(data).toEqual({ scheduledTime: "" });
     });
 
@@ -205,9 +211,14 @@ describe("API: Queue Schedule", () => {
     });
 
     it("should require authentication", async () => {
-      (requireUserId as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Authentication required"),
-      );
+      // requireUserId throws a Response (redirect), not an Error
+      const redirectResponse = new Response(null, {
+        status: 302,
+        headers: { Location: "/login" },
+      });
+      (requireUserId as ReturnType<typeof vi.fn>).mockImplementation(() => {
+        throw redirectResponse;
+      });
 
       const request = new Request("http://localhost:3000/api/queue-schedule", {
         method: "POST",
@@ -215,9 +226,10 @@ describe("API: Queue Schedule", () => {
         body: JSON.stringify({ queueTypeName: "posts" }),
       });
 
-      await expect(action({ request, params: {}, context: {} })).rejects.toThrow(
-        "Authentication required",
-      );
+      const response = await action({ request, params: {}, context: {} });
+      // Response should be rethrown by error handler, so we should get a redirect
+      expect(response.status).toBe(302);
+      expect(response.headers.get("Location")).toBe("/login");
     });
 
     it("should return validation error for invalid JSON", async () => {

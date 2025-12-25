@@ -36,6 +36,7 @@ import { createActionFormData, createFormData, TEST_USER_ID } from "../utils/tes
 describe("New Post Action Handler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env.NOSTR_PUBLISHER_URL = "https://api.nostr-publisher.com/publish";
     
     // Default mocks
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -201,7 +202,7 @@ describe("New Post Action Handler", () => {
         }),
       );
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining("NOSTR_PUBLISHER_URL"),
+        "https://api.nostr-publisher.com/publish",
         expect.objectContaining({
           method: "POST",
           body: expect.stringContaining("event-123"),
@@ -249,11 +250,13 @@ describe("New Post Action Handler", () => {
   describe("Upload Preview Action", () => {
     it("should return file URLs for valid upload preview", async () => {
       const formData = createActionFormData("upload-images-preview", {
-        files: JSON.stringify(["https://example.com/image1.jpg", "https://example.com/image2.jpg"]),
         scheduledFor: "2024-01-01T10:00:00Z",
         caption: "Test caption",
         queueType: "posts",
       });
+      // Add files as separate entries (not JSON string)
+      formData.append("files", "https://example.com/image1.jpg");
+      formData.append("files", "https://example.com/image2.jpg");
 
       const request = new Request("http://localhost:3000/dashboard/newpost", {
         method: "POST",
@@ -263,6 +266,7 @@ describe("New Post Action Handler", () => {
       const result = await handleNewPostAction(TEST_USER_ID, request);
       const data = await result.json();
 
+      // handleUploadPreview returns Response.json with success and fileUrls
       expect(result.status).toBe(200);
       expect(data).toEqual({
         success: true,

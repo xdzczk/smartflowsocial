@@ -17,21 +17,27 @@ import {
   updatePostStatus,
 } from "~/models/post.server";
 
-// Mock Prisma
-const mockPrisma = {
-  post: {
-    create: vi.fn(),
-    delete: vi.fn(),
-    update: vi.fn(),
-    findMany: vi.fn(),
-    findFirst: vi.fn(),
-    findUnique: vi.fn(),
-    count: vi.fn(),
-  },
-  queueType: {
-    findFirst: vi.fn(),
-  },
-};
+// Mock Prisma - use vi.hoisted to allow top-level variables in mocks
+const { mockPrisma } = vi.hoisted(() => {
+  const mockPrisma = {
+    post: {
+      create: vi.fn(),
+      delete: vi.fn(),
+      update: vi.fn(),
+      findMany: vi.fn(),
+      findFirst: vi.fn(),
+      findUnique: vi.fn(),
+      count: vi.fn(),
+    },
+    queueType: {
+      findFirst: vi.fn(),
+    },
+    longFormPost: {
+      findFirst: vi.fn(),
+    },
+  };
+  return { mockPrisma };
+});
 
 vi.mock("~/lib/prisma.server", () => ({
   prisma: mockPrisma,
@@ -265,7 +271,12 @@ describe("Post Model Functions", () => {
           id: TEST_POST_ID,
           userId: TEST_USER_ID,
         },
-        data: updateData,
+        data: expect.objectContaining({
+          content: "Updated content",
+          caption: "Updated caption",
+          isScheduled: true,
+          updatedAt: expect.any(Date),
+        }),
       });
       expect(result).toEqual(mockUpdatedPost);
     });
@@ -435,16 +446,17 @@ describe("Post Model Functions", () => {
         queueType: { name: "posts" },
       };
 
-      mockPrisma.post.findUnique.mockResolvedValue(mockPost);
+      mockPrisma.post.findFirst.mockResolvedValue(mockPost);
 
-      const result = await getPostById(TEST_POST_ID);
+      const result = await getPostById({
+        id: TEST_POST_ID,
+        userId: TEST_USER_ID,
+      });
 
-      expect(mockPrisma.post.findUnique).toHaveBeenCalledWith({
+      expect(mockPrisma.post.findFirst).toHaveBeenCalledWith({
         where: {
           id: TEST_POST_ID,
-        },
-        include: {
-          queueType: true,
+          userId: TEST_USER_ID,
         },
       });
       expect(result).toEqual(mockPost);

@@ -33,8 +33,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const bits = extractProfileBits(parent.nostrProfile);
     return json({ parent: { npub: parent.npub, name: bits.name, displayName: bits.display_name, picture: bits.picture } });
   } catch (error) {
-    const { handleLoaderError } = await import("~/lib/error-handler.server");
-    return handleLoaderError(error, { parent: null });
+    // If error is a Response (e.g., redirect from requireUserId), rethrow it
+    if (error instanceof Response) {
+      throw error;
+    }
+    // Gracefully handle other errors by returning null parent
+    // Log error but don't expose it to client
+    const { normalizeError } = await import("~/lib/errors");
+    const { logError } = await import("~/lib/error-logger.server");
+    logError(normalizeError(error), { path: request.url });
+    return json({ parent: null });
   }
 }
 

@@ -54,19 +54,42 @@ export function describeDatabase(
     teardown?: () => Promise<void>;
   },
 ): void {
+  const testDatabaseUrl = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL;
+  const shouldSkip = !testDatabaseUrl || process.env.SKIP_DATABASE_TESTS === "true";
+
+  // Skip the entire suite if database is not configured
+  // This prevents beforeAll from failing and marking the suite as failed
+  if (shouldSkip) {
+    describe.skip(name, fn);
+    return;
+  }
+
   describe(name, () => {
     beforeAll(async () => {
-      await setupDatabaseTests();
-      if (options?.setup) {
-        await options.setup();
+      try {
+        await setupDatabaseTests();
+        if (options?.setup) {
+          await options.setup();
+        }
+      } catch (error) {
+        console.warn(
+          `Database setup failed for "${name}". Tests will be skipped.`,
+          error,
+        );
+        // Skip all tests in this suite if setup fails
+        throw error;
       }
     });
 
     afterAll(async () => {
-      if (options?.teardown) {
-        await options.teardown();
+      try {
+        if (options?.teardown) {
+          await options.teardown();
+        }
+        await teardownDatabaseTests();
+      } catch (error) {
+        console.warn("Database teardown failed:", error);
       }
-      await teardownDatabaseTests();
     });
 
     fn();

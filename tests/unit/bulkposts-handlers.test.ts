@@ -11,7 +11,7 @@ import {
   handleCaptionChange,
   handleDateChange,
   handleRemovePost,
-  handleToggleRecyclable,
+  handleBulkRecyclableToggle,
   handleScheduleIntervalClick,
 } from "~/features/posts/bulkposts.handlers";
 
@@ -254,7 +254,7 @@ describe("Bulk Posts Handlers", () => {
     });
   });
 
-  describe("handleToggleRecyclable", () => {
+  describe("handleBulkRecyclableToggle", () => {
     it("should toggle recyclable status for all posts", () => {
       const posts: BulkPost[] = [
         { caption: "Post 1", queueType: "unassigned", isRecyclable: false },
@@ -264,7 +264,7 @@ describe("Bulk Posts Handlers", () => {
 
       const setPosts = vi.fn();
 
-      handleToggleRecyclable(posts, setPosts);
+      handleBulkRecyclableToggle(posts, setPosts);
 
       expect(setPosts).toHaveBeenCalledWith([
         { caption: "Post 1", queueType: "unassigned", isRecyclable: true },
@@ -281,7 +281,7 @@ describe("Bulk Posts Handlers", () => {
 
       const setPosts = vi.fn();
 
-      handleToggleRecyclable(posts, setPosts);
+      handleBulkRecyclableToggle(posts, setPosts);
 
       expect(setPosts).toHaveBeenCalledWith([
         { caption: "Post 1", queueType: "unassigned", isRecyclable: false },
@@ -289,7 +289,7 @@ describe("Bulk Posts Handlers", () => {
       ]);
     });
 
-    it("should set all to false if mixed states", () => {
+    it("should set all to true if mixed states", () => {
       const posts: BulkPost[] = [
         { caption: "Post 1", queueType: "unassigned", isRecyclable: true },
         { caption: "Post 2", queueType: "unassigned", isRecyclable: false },
@@ -297,11 +297,12 @@ describe("Bulk Posts Handlers", () => {
 
       const setPosts = vi.fn();
 
-      handleToggleRecyclable(posts, setPosts);
+      handleBulkRecyclableToggle(posts, setPosts);
 
+      // When not all are recyclable, it sets all to true (opposite of allRecyclable which is false)
       expect(setPosts).toHaveBeenCalledWith([
-        { caption: "Post 1", queueType: "unassigned", isRecyclable: false },
-        { caption: "Post 2", queueType: "unassigned", isRecyclable: false },
+        { caption: "Post 1", queueType: "unassigned", isRecyclable: true },
+        { caption: "Post 2", queueType: "unassigned", isRecyclable: true },
       ]);
     });
 
@@ -309,9 +310,10 @@ describe("Bulk Posts Handlers", () => {
       const posts: BulkPost[] = [];
       const setPosts = vi.fn();
 
-      handleToggleRecyclable(posts, setPosts);
+      handleBulkRecyclableToggle(posts, setPosts);
 
-      expect(setPosts).toHaveBeenCalledWith([]);
+      // Function returns early if posts array is empty, so setPosts should not be called
+      expect(setPosts).not.toHaveBeenCalled();
     });
 
     it("should handle posts without isRecyclable field", () => {
@@ -321,7 +323,7 @@ describe("Bulk Posts Handlers", () => {
 
       const setPosts = vi.fn();
 
-      handleToggleRecyclable(posts, setPosts);
+      handleBulkRecyclableToggle(posts, setPosts);
 
       expect(setPosts).toHaveBeenCalledWith([
         { caption: "Post 1", queueType: "unassigned", isRecyclable: true },

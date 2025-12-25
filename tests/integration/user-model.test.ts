@@ -14,19 +14,28 @@ import {
   updateUserTimezone,
 } from "~/features/user";
 
-// Mock Prisma
-const mockPrisma = {
-  user: {
-    findUnique: vi.fn(),
-    update: vi.fn(),
-  },
-  queueType: {
-    findMany: vi.fn(),
-  },
-  hashTagPreset: {
-    findMany: vi.fn(),
-  },
-};
+// Mock Prisma - use vi.hoisted to allow top-level variables in mocks
+const { mockPrisma } = vi.hoisted(() => {
+  const mockPrisma = {
+    user: {
+      findUnique: vi.fn(),
+      update: vi.fn(),
+    },
+    queueType: {
+      findMany: vi.fn(),
+      count: vi.fn(),
+      create: vi.fn(),
+      createMany: vi.fn(),
+    },
+    hashTagPreset: {
+      findMany: vi.fn(),
+    },
+    subscription: {
+      findUnique: vi.fn(),
+    },
+  };
+  return { mockPrisma };
+});
 
 vi.mock("~/lib/prisma.server", () => ({
   prisma: mockPrisma,
@@ -95,13 +104,23 @@ describe("User Model Functions", () => {
         },
       ];
 
+      mockPrisma.queueType.count.mockResolvedValue(2);
       mockPrisma.queueType.findMany.mockResolvedValue(mockQueueTypes);
 
       const result = await getQueueTypes(TEST_USER_ID);
 
+      expect(mockPrisma.queueType.count).toHaveBeenCalledWith({
+        where: { userId: TEST_USER_ID },
+      });
       expect(mockPrisma.queueType.findMany).toHaveBeenCalledWith({
         where: { userId: TEST_USER_ID },
-        orderBy: { createdAt: "asc" },
+        include: {
+          hashTagPreset: true,
+        },
+        orderBy: [
+          { isDefault: "desc" },
+          { createdAt: "asc" },
+        ],
       });
       expect(result).toEqual(mockQueueTypes);
     });
@@ -138,7 +157,7 @@ describe("User Model Functions", () => {
 
       expect(mockPrisma.hashTagPreset.findMany).toHaveBeenCalledWith({
         where: { userId: TEST_USER_ID },
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: "asc" },
       });
       expect(result).toEqual(mockPresets);
     });

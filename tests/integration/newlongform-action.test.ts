@@ -36,15 +36,45 @@ vi.mock("~/models/user.server", () => ({
   getQueueTypeByNameForUser: vi.fn(),
 }));
 
+// Store FormData objects for mock access (using URL as key since Request objects are recreated)
+const formDataStore = new Map<string, FormData>();
+
 // Mock Remix upload handlers
 vi.mock("@remix-run/node", async () => {
   const actual = await vi.importActual("@remix-run/node");
   return {
     ...actual,
-    unstable_composeUploadHandlers: vi.fn((...handlers) => vi.fn()),
+    unstable_composeUploadHandlers: vi.fn((...handlers) => {
+      // Return a handler that processes files through the first handler
+      return async (part) => {
+        if (part.filename) {
+          // It's a file - process through the first handler (S3 upload handler)
+          const firstHandler = handlers[0];
+          if (firstHandler) {
+            return await firstHandler(part);
+          }
+        }
+        // For non-file parts, return the value as-is
+        return part.data;
+      };
+    }),
     unstable_createMemoryUploadHandler: vi.fn(() => vi.fn()),
-    unstable_parseMultipartFormData: vi.fn(async (request, handler) => {
-      return new FormData();
+    unstable_parseMultipartFormData: vi.fn(async (request, uploadHandler) => {
+      // Try to get FormData from store first (set by test using request URL as key)
+      const storedFormData = formDataStore.get(request.url);
+      if (storedFormData) {
+        formDataStore.delete(request.url); // Clean up after use
+        return storedFormData;
+      }
+      
+      // Fallback: try to parse from request
+      try {
+        const formData = await request.formData();
+        return formData;
+      } catch (error) {
+        // If parsing fails, return empty FormData
+        return new FormData();
+      }
     }),
   };
 });
@@ -63,6 +93,16 @@ describe("New Longform Action Handler", () => {
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
       userRelays: ["wss://relay1.com", "wss://relay2.com"],
       showHashTagsinPosts: true,
+    });
+    // Default mock for getQueueTypes to prevent undefined errors
+    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { id: "queue-1", name: "posts", hashTagPreset: null },
+      { id: "unassigned", name: "Unassigned", hashTagPreset: null },
+    ]);
+    (getQueueTypeByNameForUser as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: "queue-1",
+      name: "posts",
+      hashTagPreset: null,
     });
   });
 
@@ -95,7 +135,11 @@ describe("New Longform Action Handler", () => {
       formData.append("_action", "upload-image");
       formData.append("imageFile", mockFile);
 
-      const request = new Request("http://localhost:3000/dashboard/newlongform", {
+      // Store FormData before creating Request (mock will retrieve it by URL)
+      const requestUrl = "http://localhost:3000/dashboard/newlongform";
+      formDataStore.set(requestUrl, formData);
+
+      const request = new Request(requestUrl, {
         method: "POST",
         headers: { "Content-Type": "multipart/form-data" },
         body: formData,
@@ -117,7 +161,11 @@ describe("New Longform Action Handler", () => {
       formData.append("_action", "upload-image");
       formData.append("imageFile", mockFile);
 
-      const request = new Request("http://localhost:3000/dashboard/newlongform", {
+      // Store FormData before creating Request (mock will retrieve it by URL)
+      const requestUrl = "http://localhost:3000/dashboard/newlongform";
+      formDataStore.set(requestUrl, formData);
+
+      const request = new Request(requestUrl, {
         method: "POST",
         headers: { "Content-Type": "multipart/form-data" },
         body: formData,
@@ -137,6 +185,14 @@ describe("New Longform Action Handler", () => {
         id: "queue-1",
         name: "posts",
       });
+      // Mock getQueueTypes for when useHashtagPresets is "off"
+      (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([
+        {
+          id: "queue-1",
+          name: "posts",
+          hashTagPreset: null,
+        },
+      ]);
 
       const formData = createMockFormData({
         _action: "save-draft",
@@ -258,6 +314,14 @@ describe("New Longform Action Handler", () => {
         id: "queue-1",
         name: "posts",
       });
+      // Mock getQueueTypes for when useHashtagPresets is "off"
+      (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([
+        {
+          id: "queue-1",
+          name: "posts",
+          hashTagPreset: null,
+        },
+      ]);
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         status: 200,

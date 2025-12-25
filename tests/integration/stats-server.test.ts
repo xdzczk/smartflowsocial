@@ -338,8 +338,16 @@ describe("Statistics Service", () => {
         json: async () => mockResponse,
       });
 
-      // Should not throw, but handle gracefully
-      await expect(getPostStats(["event-1"])).rejects.toThrow();
+      // Should handle gracefully and return default stats
+      const result = await getPostStats(["event-1"]);
+      expect(result["event-1"]).toEqual({
+        likes: 0,
+        replies: 0,
+        mentions: 0,
+        reposts: 0,
+        zaps: 0,
+        satszapped: 0,
+      });
     });
 
     it("should match event ID in stats content", async () => {

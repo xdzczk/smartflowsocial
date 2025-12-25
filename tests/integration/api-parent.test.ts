@@ -181,17 +181,30 @@ describe("API: Parent", () => {
 
   describe("Error Handling", () => {
     it("should require authentication", async () => {
-      (requireUserId as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Authentication required"),
-      );
+      // requireUserId throws a Response (redirect), not an Error
+      const redirectResponse = new Response(null, {
+        status: 302,
+        headers: { Location: "/login" },
+      });
+      (requireUserId as ReturnType<typeof vi.fn>).mockImplementation(() => {
+        throw redirectResponse;
+      });
 
       const request = new Request("http://localhost:3000/api/parent");
 
-      const response = await loader({ request, params: {}, context: {} });
-      const data = await response.json();
-
-      expect(response.status).toBeGreaterThanOrEqual(400);
-      expect(data).toBeDefined();
+      // Loader throws Response, so we need to catch it
+      let response: Response;
+      try {
+        response = await loader({ request, params: {}, context: {} });
+      } catch (error) {
+        if (error instanceof Response) {
+          response = error;
+        } else {
+          throw error;
+        }
+      }
+      expect(response!.status).toBe(302);
+      expect(response!.headers.get("Location")).toBe("/login");
     });
 
     it("should handle database errors gracefully", async () => {

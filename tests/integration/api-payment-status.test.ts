@@ -42,10 +42,11 @@ describe("API: Payment Status", () => {
         const data = await response.json();
 
         expect(checkPaymentStatus).toHaveBeenCalledWith("payment-123");
+        // paidAt is serialized to ISO string in JSON response
         expect(data).toEqual({
           success: true,
           paid: true,
-          paidAt,
+          paidAt: paidAt.toISOString(),
           message: "Payment completed successfully!",
         });
         expect(response.status).toBe(200);

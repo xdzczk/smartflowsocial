@@ -38,9 +38,11 @@ describe("API: Publish", () => {
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         status: 200,
+        statusText: "OK",
         headers: new Headers({ "content-type": "application/json" }),
         json: async () => ({ success: true }),
-      });
+        text: async () => "",
+      } as Response);
 
       const request = new Request("http://localhost:3000/api/publish", {
         method: "POST",
@@ -78,9 +80,11 @@ describe("API: Publish", () => {
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         status: 200,
+        statusText: "OK",
         headers: new Headers({ "content-type": "text/plain" }),
+        json: async () => ({}),
         text: async () => "Published successfully",
-      });
+      } as Response);
 
       const request = new Request("http://localhost:3000/api/publish", {
         method: "POST",
@@ -112,9 +116,14 @@ describe("API: Publish", () => {
     });
 
     it("should require authentication", async () => {
-      (requireUserId as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Authentication required"),
-      );
+      // requireUserId throws a Response (redirect), not an Error
+      const redirectResponse = new Response(null, {
+        status: 302,
+        headers: { Location: "/login" },
+      });
+      (requireUserId as ReturnType<typeof vi.fn>).mockImplementation(() => {
+        throw redirectResponse;
+      });
 
       const request = new Request("http://localhost:3000/api/publish", {
         method: "POST",
@@ -125,9 +134,10 @@ describe("API: Publish", () => {
         }),
       });
 
-      await expect(action({ request, params: {}, context: {} })).rejects.toThrow(
-        "Authentication required",
-      );
+      const response = await action({ request, params: {}, context: {} });
+      // Response should be rethrown by error handler, so we should get a redirect
+      expect(response.status).toBe(302);
+      expect(response.headers.get("Location")).toBe("/login");
     });
 
     it("should return validation error for invalid JSON", async () => {

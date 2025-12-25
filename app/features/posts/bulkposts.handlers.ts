@@ -146,8 +146,23 @@ export function handleDateChange(
 ): void {
     const updatedPosts = [...posts];
 
+    // Handle empty string
+    if (!value || value.trim() === "") {
+        updatedPosts[index].scheduledFor = "";
+        setPosts(updatedPosts);
+        return;
+    }
+
     // Parse the input value
     const localDate = new Date(value);
+    
+    // Check if date is invalid
+    if (isNaN(localDate.getTime())) {
+        updatedPosts[index].scheduledFor = "";
+        setPosts(updatedPosts);
+        return;
+    }
+    
     const hours = localDate.getHours();
 
     // Create a new date string maintaining the hours exactly as input

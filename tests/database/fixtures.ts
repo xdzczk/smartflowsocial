@@ -20,7 +20,7 @@ import {
   queueTypeFactory,
   hashTagPresetFactory,
   paymentFactory,
-} from "~/tests/factories";
+} from "../factories";
 
 export interface TestFixtures {
   users?: Partial<User>[];

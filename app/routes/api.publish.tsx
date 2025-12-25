@@ -1,4 +1,5 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
+import { json } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth/session.server";
 import {
@@ -113,9 +114,12 @@ export const action = withActionErrorHandling(
       );
     }
 
-    return createSuccessResponse({
-      message: "Event published successfully",
-      result,
-    });
+    // Return simple success response
+    // If result is a string (text response), include it as message
+    if (typeof result === "string") {
+      return json({ success: true, message: result });
+    }
+    // For JSON responses, just return success
+    return json({ success: true });
   },
 );

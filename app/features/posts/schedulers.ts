@@ -28,15 +28,27 @@ export async function calculateNextScheduleTime({
   if (queueType.scheduleType === "INTERVAL") {
     const config = queueType.scheduleConfig as any;
 
+    // Handle missing scheduleConfig
+    if (!config) {
+      // Default to 4 hours if no config
+      if (lastPostTime) {
+        const nextTime = new Date(lastPostTime);
+        nextTime.setUTCHours(nextTime.getUTCHours() + 4);
+        return nextTime > now ? nextTime : now;
+      }
+      return new Date(Date.now() + 4 * 60 * 60 * 1000);
+    }
+
     // Use global interval if configured
     if (config.useGlobalInterval) {
       const scheduleIntervals = await getScheduleInterval(userId);
-      const interval = scheduleIntervals?.[0] || 4; // Default to 4 hours
+      // Convert string to number if needed (scheduleIntervals is array of strings)
+      const interval = scheduleIntervals?.[0] ? Number(scheduleIntervals[0]) : 4; // Default to 4 hours
 
       if (lastPostTime) {
         // Add interval to last post time
         const nextTime = new Date(lastPostTime);
-        nextTime.setHours(nextTime.getHours() + interval);
+        nextTime.setUTCHours(nextTime.getUTCHours() + interval);
         return nextTime > now ? nextTime : now;
       } else {
         // No previous posts, schedule for now
@@ -49,7 +61,7 @@ export async function calculateNextScheduleTime({
       if (lastPostTime) {
         // Add interval to last post time
         const nextTime = new Date(lastPostTime);
-        nextTime.setHours(nextTime.getHours() + intervalHours);
+        nextTime.setUTCHours(nextTime.getUTCHours() + intervalHours);
         return nextTime > now ? nextTime : now;
       } else {
         // No previous posts, schedule for now
@@ -156,13 +168,15 @@ export async function calculateNextScheduleTime({
     };
 
     // Convert slots to today's dates in user's timezone
-    const todaySlots = sortedSlots.map((slotInfo) => {
-      const slotTime = createSlotInUserTimezone(
-        slotInfo.hours,
-        slotInfo.minutes,
-      );
-      return slotTime;
-    });
+    const todaySlots = sortedSlots
+      .map((slotInfo) => {
+        const slotTime = createSlotInUserTimezone(
+          slotInfo.hours,
+          slotInfo.minutes,
+        );
+        return slotTime;
+      })
+      .filter((slot) => !isNaN(slot.getTime())); // Filter out invalid dates
 
     // If there's a last post time, find the next chronological slot after it
     if (lastPostTime) {
