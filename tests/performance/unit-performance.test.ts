@@ -8,7 +8,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { combineContent } from "~/features/posts/combined.server";
 import { getPostStats } from "~/features/posts/stats.server";
-import { postFactory, longFormPostFactory } from "~/tests/factories";
+import { postFactory, longFormPostFactory } from "../factories";
 
 describe("Performance: combineContent()", () => {
   it("should handle small arrays (< 100 items) in < 50ms", () => {

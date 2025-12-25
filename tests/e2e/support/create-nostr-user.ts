@@ -10,7 +10,7 @@ import { installGlobals } from "@remix-run/node";
 import { parse } from "cookie";
 import { PrismaClient } from "@prisma/client";
 
-import { sessionStorage } from "../../app/features/auth/session.server";
+import { sessionStorage } from "../../../app/features/auth/session.server";
 
 installGlobals();
 

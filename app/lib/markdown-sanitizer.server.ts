@@ -1,4 +1,4 @@
-import marked from "marked";
+import { marked } from "marked";
 
 const ALLOWED_TAGS = [
   "p",
@@ -71,23 +71,28 @@ function sanitizeAttribute(
 
 function sanitizeHtml(html: string): string {
   return html
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+    // Remove script tags and all content between them (case-insensitive)
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
+    .replace(/<SCRIPT\b[^>]*>[\s\S]*?<\/SCRIPT>/gi, "")
+    // Remove inline event handlers
     .replace(/on\w+\s*=\s*["'][^"']*["']/gi, "")
     .replace(/on\w+\s*=\s*[^>\s]*/gi, "")
+    // Remove dangerous protocols
     .replace(/javascript:/gi, "")
     .replace(/data:/gi, "")
     .replace(/vbscript:/gi, "")
-    .replace(/<iframe\b[^>]*>/gi, "")
+    // Remove dangerous tags
+    .replace(/<iframe\b[^>]*>[\s\S]*?<\/iframe>/gi, "")
     .replace(/<embed\b[^>]*>/gi, "")
-    .replace(/<object\b[^>]*>/gi, "")
-    .replace(/<form\b[^>]*>/gi, "")
+    .replace(/<object\b[^>]*>[\s\S]*?<\/object>/gi, "")
+    .replace(/<form\b[^>]*>[\s\S]*?<\/form>/gi, "")
     .replace(/<input\b[^>]*>/gi, "")
-    .replace(/<textarea\b[^>]*>/gi, "")
-    .replace(/<select\b[^>]*>/gi, "")
-    .replace(/<button\b[^>]*>/gi, "")
+    .replace(/<textarea\b[^>]*>[\s\S]*?<\/textarea>/gi, "")
+    .replace(/<select\b[^>]*>[\s\S]*?<\/select>/gi, "")
+    .replace(/<button\b[^>]*>[\s\S]*?<\/button>/gi, "")
     .replace(/<link\b[^>]*>/gi, "")
     .replace(/<meta\b[^>]*>/gi, "")
-    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "");
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "");
 }
 
 export function sanitizeMarkdown(markdown: string): string {
@@ -96,61 +101,97 @@ export function sanitizeMarkdown(markdown: string): string {
   }
 
   try {
-    const renderer = new marked.Renderer();
-
-    renderer.html = () => "";
-
-    renderer.link = (href, title, text) => {
-      const sanitizedHref = sanitizeAttribute("a", "href", href || "");
-      if (!sanitizedHref) {
-        return text;
-      }
-
-      const titleAttr = title
-        ? ` title="${title.replace(/"/g, "&quot;")}"`
-        : "";
-      return `<a href="${sanitizedHref}" target="_blank" rel="noopener noreferrer"${titleAttr}>${text}</a>`;
-    };
-
-    renderer.image = (src, title, text) => {
-      const sanitizedSrc = sanitizeAttribute("img", "src", src || "");
-      if (!sanitizedSrc) {
-        return text || "";
-      }
-
-      const titleAttr = title
-        ? ` title="${title.replace(/"/g, "&quot;")}"`
-        : "";
-      const altAttr = text ? ` alt="${text.replace(/"/g, "&quot;")}"` : "";
-      return `<img src="${sanitizedSrc}"${altAttr}${titleAttr} loading="lazy">`;
-    };
-
-    renderer.code = (code, language) => {
-      const escapedCode = code
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
-
-      if (language) {
-        const sanitizedLang = language.replace(/[^a-zA-Z0-9-_]/g, "");
-        return `<pre><code class="language-${sanitizedLang}">${escapedCode}</code></pre>`;
-      }
-
-      return `<pre><code>${escapedCode}</code></pre>`;
-    };
-
-    const html = marked.marked(markdown, {
-      renderer,
+    // Parse markdown to HTML
+    let html = marked(markdown, {
       gfm: true,
       breaks: false,
       pedantic: false,
       smartLists: true,
       smartypants: false,
+    }) as string;
+
+    // Sanitize links and images by processing the HTML
+    html = html.replace(
+      /<a\s+([^>]*?)href=["']([^"']*?)["']([^>]*?)>(.*?)<\/a>/gi,
+      (match, before, href, after, text) => {
+        const sanitizedHref = sanitizeAttribute("a", "href", href);
+        if (!sanitizedHref) {
+          return text; // Return just the text if href is invalid
+        }
+        return `<a href="${sanitizedHref}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+      }
+    );
+
+    html = html.replace(
+      /<img\s+([^>]*?)src=["']([^"']*?)["']([^>]*?)>/gi,
+      (match, before, src, after) => {
+        const sanitizedSrc = sanitizeAttribute("img", "src", src);
+        if (!sanitizedSrc) {
+          return ""; // Remove image if src is invalid
+        }
+        return `<img src="${sanitizedSrc}" loading="lazy">`;
+      }
+    );
+
+    // FIRST: Remove dangerous tags and content (script tags, event handlers, etc.)
+    html = sanitizeHtml(html);
+
+    // SECOND: Escape code blocks properly - decode HTML entities first, then escape
+    html = html.replace(
+      /<pre><code(?: class="language-([^"]*)")?>([\s\S]*?)<\/code><\/pre>/gi,
+      (match, lang, code) => {
+        // Decode HTML entities that marked might have added, then escape properly
+        let decodedCode = code
+          .replace(/&amp;/g, "&")
+          .replace(/&lt;/g, "<")
+          .replace(/&gt;/g, ">")
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          .replace(/&#x27;/g, "'");
+
+        // Now escape properly
+        const escapedCode = decodedCode
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+
+        if (lang) {
+          const sanitizedLang = lang.replace(/[^a-zA-Z0-9-_]/g, "");
+          return `<pre><code class="language-${sanitizedLang}">${escapedCode}</code></pre>`;
+        }
+
+        return `<pre><code>${escapedCode}</code></pre>`;
+      }
+    );
+
+    // THIRD: Escape HTML tags that aren't in our allowed list
+    // This handles cases like <b>, <i>, etc. that aren't dangerous but should be escaped
+    // Store code blocks temporarily to avoid escaping their content
+    const codeBlockPlaceholders: { placeholder: string; content: string }[] = [];
+    let placeholderIndex = 0;
+    
+    html = html.replace(/<pre><code[^>]*>[\s\S]*?<\/code><\/pre>/gi, (match) => {
+      const placeholder = `__CODE_BLOCK_${placeholderIndex}__`;
+      codeBlockPlaceholders.push({ placeholder, content: match });
+      placeholderIndex++;
+      return placeholder;
+    });
+    
+    // Escape HTML tags that aren't in our allowed list
+    html = html.replace(/<(\/?)(?!\/?(?:p|br|strong|em|h[1-6]|ul|ol|li|blockquote|pre|code|a|img)\b)[a-z][^>]*>/gi, (match) => {
+      return match
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    });
+    
+    // Restore code blocks
+    codeBlockPlaceholders.forEach(({ placeholder, content }) => {
+      html = html.replace(placeholder, content);
     });
 
-    return sanitizeHtml(html);
+    return html;
   } catch (error) {
     console.error("Error sanitizing markdown:", error);
     return "";

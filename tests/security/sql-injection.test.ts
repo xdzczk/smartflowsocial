@@ -17,6 +17,9 @@ vi.mock("~/lib/prisma.server", () => ({
       findUnique: vi.fn(),
     },
     post: {
+      findFirst: vi.fn(),
+    },
+    subscription: {
       findUnique: vi.fn(),
     },
   },
@@ -33,13 +36,18 @@ describe("SQL Injection Prevention: Prisma Parameterized Queries", () => {
     (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: userId,
       npub: "npub123",
+      hashTagPresets: [],
     });
+    (prisma.subscription.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
     await getUserById(userId);
 
     // Verify Prisma was called with parameterized query (not string concatenation)
     expect(prisma.user.findUnique).toHaveBeenCalledWith({
       where: { id: userId },
+      include: {
+        hashTagPresets: true,
+      },
     });
     
     // Verify the userId was passed as a parameter, not concatenated
@@ -51,12 +59,16 @@ describe("SQL Injection Prevention: Prisma Parameterized Queries", () => {
     const maliciousId = "'; DROP TABLE users; --";
     
     (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    (prisma.subscription.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
     await getUserById(maliciousId);
 
     // Prisma should treat the malicious string as a literal value, not SQL
     expect(prisma.user.findUnique).toHaveBeenCalledWith({
       where: { id: maliciousId },
+      include: {
+        hashTagPresets: true,
+      },
     });
     
     // The malicious string should be passed as-is to Prisma (which will parameterize it)
@@ -66,30 +78,32 @@ describe("SQL Injection Prevention: Prisma Parameterized Queries", () => {
 
   it("should use parameterized queries for post lookup by ID", async () => {
     const postId = "test-post-123";
+    const userId = "user-123";
     
-    (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+    (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: postId,
-      userId: "user-123",
+      userId: userId,
     });
 
-    await getPostById(postId);
+    await getPostById({ id: postId, userId });
 
     // Verify Prisma was called with parameterized query
-    expect(prisma.post.findUnique).toHaveBeenCalledWith({
-      where: { id: postId },
+    expect(prisma.post.findFirst).toHaveBeenCalledWith({
+      where: { id: postId, userId },
     });
   });
 
   it("should prevent SQL injection in post ID parameter", async () => {
     const maliciousId = "1' OR '1'='1";
+    const userId = "user-123";
     
-    (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
-    await getPostById(maliciousId);
+    await getPostById({ id: maliciousId, userId });
 
     // Prisma should treat the malicious string as a literal value
-    expect(prisma.post.findUnique).toHaveBeenCalledWith({
-      where: { id: maliciousId },
+    expect(prisma.post.findFirst).toHaveBeenCalledWith({
+      where: { id: maliciousId, userId },
     });
   });
 
@@ -97,6 +111,7 @@ describe("SQL Injection Prevention: Prisma Parameterized Queries", () => {
     const specialChars = "test'; -- comment\nDROP TABLE users;";
     
     (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    (prisma.subscription.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
     await getUserById(specialChars);
 

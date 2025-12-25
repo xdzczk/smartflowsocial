@@ -34,7 +34,6 @@
     "test:e2e:open": "cypress open",
     "test:e2e:dev": "start-server-and-test dev http://localhost:3000 \"npx cypress open\"",
     "test:loaders": "cypress run --spec \"tests/e2e/loaders/**/*.cy.ts\"",
-    "test:error-handling": "cypress run --spec \"tests/e2e/integration/error-handling.cy.ts\"",
     "typecheck": "tsc && tsc -p tests/e2e",
     "precheck": "npm run lint && npx tsc --noEmit",
     "git:status": "git status",

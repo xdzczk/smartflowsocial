@@ -1,4 +1,4 @@
-import { TEST_NPUB } from "../../support/nostr-test-keys";
+import { TEST_NPUB } from "../support/nostr-test-keys";
 
 describe("Queues Loader Integration", () => {
     beforeEach(() => {

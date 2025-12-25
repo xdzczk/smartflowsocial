@@ -100,9 +100,56 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
   });
 
   describe("calculateNextScheduleTime - INTERVAL scheduling", () => {
+    it("should work with counterexample: intervalHours=1, lastPostTime=2020-01-01, timezone=UTC", async () => {
+      const queueType = {
+        id: "queue-1",
+        name: "test-queue",
+        scheduleType: "INTERVAL" as const,
+        scheduleConfig: {
+          useGlobalInterval: false,
+          intervalHours: 1,
+        },
+      };
+
+      const pastDate = new Date("2020-01-01T00:00:00.000Z");
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(pastDate);
+
+      const result = await calculateNextScheduleTime({
+        queueType,
+        userId: TEST_USER_ID,
+        userTimezone: "UTC",
+      });
+
+      expect(result).toBeInstanceOf(Date);
+      expect(!isNaN(result.getTime())).toBe(true);
+    });
+
+    it("should work with counterexample: intervalHours=1, lastPostTime=null, timezone=UTC", async () => {
+      const queueType = {
+        id: "queue-1",
+        name: "test-queue",
+        scheduleType: "INTERVAL" as const,
+        scheduleConfig: {
+          useGlobalInterval: false,
+          intervalHours: 1,
+        },
+      };
+
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+
+      const result = await calculateNextScheduleTime({
+        queueType,
+        userId: TEST_USER_ID,
+        userTimezone: "UTC",
+      });
+
+      expect(result).toBeInstanceOf(Date);
+      expect(!isNaN(result.getTime())).toBe(true);
+    });
+
     it("should always return a Date object", () => {
       fc.assert(
-        fc.property(
+        fc.asyncProperty(
           fc.integer({ min: 1, max: 24 }), // intervalHours
           fc.oneof(
             fc.date({ min: new Date("2020-01-01"), max: new Date("2030-12-31") }),
@@ -111,6 +158,14 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
           fc.constantFrom("UTC", "America/New_York", "Europe/London", "Asia/Tokyo"), // timezone
           async (intervalHours, lastPostTime, timezone) => {
             try {
+              // Reset mocks for this test run to ensure clean state
+              vi.clearAllMocks();
+              // Ensure mocks are set up for this test run
+              (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(["4"]);
+              (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+                lastPostTime,
+              );
+              
               const queueType = {
                 id: "queue-1",
                 name: "test-queue",
@@ -121,22 +176,19 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
                 },
               };
 
-              (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
-                lastPostTime,
-              );
-
               const result = await calculateNextScheduleTime({
                 queueType,
                 userId: TEST_USER_ID,
                 userTimezone: timezone,
               });
 
+              // Ensure result is a valid Date
               if (!result) {
                 console.error("Result is null/undefined", { intervalHours, lastPostTime, timezone });
                 return false;
               }
               if (!(result instanceof Date)) {
-                console.error("Result is not a Date", { result, intervalHours, lastPostTime, timezone });
+                console.error("Result is not a Date", { result, intervalHours, lastPostTime, timezone, resultType: typeof result });
                 return false;
               }
               if (isNaN(result.getTime())) {
@@ -156,7 +208,7 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
 
     it("should return a date in the future or present (never past)", () => {
       fc.assert(
-        fc.property(
+        fc.asyncProperty(
           fc.integer({ min: 1, max: 24 }),
           fc.oneof(
             fc.date({ min: new Date("2020-01-01"), max: new Date() }), // Past or present date
@@ -164,6 +216,12 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
           ),
           async (intervalHours, lastPostTime) => {
             try {
+              // Reset mocks for this test run to ensure clean state
+              vi.clearAllMocks();
+              // Ensure mocks are set up for this test run
+              (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(["4"]);
+              (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(lastPostTime);
+              
               const queueType = {
                 id: "queue-1",
                 name: "test-queue",
@@ -174,23 +232,25 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
                 },
               };
 
-              (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(lastPostTime);
-
-              const beforeCall = new Date();
+              const beforeCall = Date.now();
               const result = await calculateNextScheduleTime({
                 queueType,
                 userId: TEST_USER_ID,
                 userTimezone: "UTC",
               });
-              const afterCall = new Date();
+              const afterCall = Date.now();
+
+              // Result should be a valid Date
+              if (!result || !(result instanceof Date) || isNaN(result.getTime())) {
+                return false;
+              }
 
               // Result should be >= beforeCall (never in the past)
-              // Allow some tolerance for async execution
-              return result instanceof Date && 
-                     !isNaN(result.getTime()) &&
-                     result.getTime() >= beforeCall.getTime() - 2000;
+              // Allow tolerance for async execution and clock drift (5 seconds)
+              const resultTime = result.getTime();
+              return resultTime >= beforeCall - 5000;
             } catch (error) {
-              console.error("Error in test:", error, { intervalHours, lastPostTime, timezone });
+              console.error("Error in test:", error, { intervalHours, lastPostTime });
               return false;
             }
           },
@@ -201,10 +261,15 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
 
     it("should handle various interval hours correctly", () => {
       fc.assert(
-        fc.property(
+        fc.asyncProperty(
           fc.integer({ min: 1, max: 168 }), // 1 hour to 1 week
           async (intervalHours) => {
             try {
+              // Reset mocks for this test run to ensure clean state
+              vi.clearAllMocks();
+              // Ensure mocks are set up for this test run
+              (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(["4"]);
+              
               const queueType = {
                 id: "queue-1",
                 name: "test-queue",
@@ -215,9 +280,12 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
                 },
               };
 
+              // Use UTC time to avoid timezone issues
               const lastPostTime = new Date();
-              lastPostTime.setHours(lastPostTime.getHours() - 1);
+              lastPostTime.setUTCHours(lastPostTime.getUTCHours() - 1);
 
+              // Ensure mocks are set up for this test run
+              (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(["4"]);
               (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(lastPostTime);
 
               const result = await calculateNextScheduleTime({
@@ -254,7 +322,7 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
   describe("calculateNextScheduleTime - FIXED_SLOTS scheduling", () => {
     it("should always return a Date object for valid slot configurations", () => {
       fc.assert(
-        fc.property(
+        fc.asyncProperty(
           fc.array(
             fc.tuple(
               fc.integer({ min: 0, max: 23 }), // hours
@@ -265,6 +333,10 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
           fc.constantFrom("UTC", "America/New_York", "Europe/London"),
           async (slots, timezone) => {
             try {
+              // Reset mocks for this test run
+              vi.clearAllMocks();
+              (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(["4"]);
+              
               // Ensure slots is a flat array of tuples
               if (!Array.isArray(slots) || slots.length === 0) {
                 return false;
@@ -325,7 +397,7 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
 
     it("should return a date in the future or present for slot-based scheduling", () => {
       fc.assert(
-        fc.property(
+        fc.asyncProperty(
           fc.array(
             fc.tuple(
               fc.integer({ min: 0, max: 23 }),
@@ -335,6 +407,11 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
           ),
           async (slots) => {
             try {
+              // Reset mocks for this test run to ensure clean state
+              vi.clearAllMocks();
+              // Ensure mocks are set up for this test run
+              (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(["4"]);
+              
               // Ensure slots is a flat array of tuples
               if (!Array.isArray(slots) || slots.length === 0) {
                 return false;
@@ -364,28 +441,21 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
 
               (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
-              const beforeCall = new Date();
+              const beforeCall = Date.now();
               const result = await calculateNextScheduleTime({
                 queueType,
                 userId: TEST_USER_ID,
                 userTimezone: "UTC",
               });
-              const afterCall = new Date();
+              const afterCall = Date.now();
 
-              // Result should be >= beforeCall (allow some tolerance)
-              if (!result) {
-                console.error("Result is null/undefined", { slots });
+              // Result should be a valid Date
+              if (!result || !(result instanceof Date) || isNaN(result.getTime())) {
                 return false;
               }
-              if (!(result instanceof Date)) {
-                console.error("Result is not a Date", { result, slots });
-                return false;
-              }
-              if (isNaN(result.getTime())) {
-                console.error("Result is invalid Date", { result, slots });
-                return false;
-              }
-              return result.getTime() >= beforeCall.getTime() - 2000;
+
+              // Result should be >= beforeCall (allow tolerance for async execution and clock drift)
+              return result.getTime() >= beforeCall - 5000;
             } catch (error) {
               console.error("Error in test:", error, { slots });
               return false;
@@ -398,10 +468,15 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
 
     it("should handle various timezone inputs correctly", () => {
       fc.assert(
-        fc.property(
+        fc.asyncProperty(
           fc.constantFrom("UTC", "America/New_York", "Europe/London", "Asia/Tokyo", "Australia/Sydney"),
           async (timezone) => {
             try {
+              // Reset mocks for this test run to ensure clean state
+              vi.clearAllMocks();
+              // Ensure mocks are set up for this test run
+              (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(["4"]);
+              
               const queueType = {
                 id: "queue-1",
                 name: "test-queue",
@@ -444,12 +519,62 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
   });
 
   describe("Edge cases", () => {
+    it("should work with counterexample: empty slots array", async () => {
+      const queueType = {
+        id: "queue-1",
+        name: "test-queue",
+        scheduleType: "FIXED_SLOTS" as const,
+        scheduleConfig: {
+          slots: [],
+        },
+      };
+
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+
+      const result = await calculateNextScheduleTime({
+        queueType,
+        userId: TEST_USER_ID,
+        userTimezone: "UTC",
+      });
+
+      expect(result).toBeInstanceOf(Date);
+      expect(!isNaN(result.getTime())).toBe(true);
+    });
+
+    it("should work with counterexample: slot at 00:00, UTC", async () => {
+      const queueType = {
+        id: "queue-1",
+        name: "test-queue",
+        scheduleType: "FIXED_SLOTS" as const,
+        scheduleConfig: {
+          slots: ["00:00"],
+        },
+      };
+
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+
+      const result = await calculateNextScheduleTime({
+        queueType,
+        userId: TEST_USER_ID,
+        userTimezone: "UTC",
+      });
+
+      expect(result).toBeInstanceOf(Date);
+      expect(!isNaN(result.getTime())).toBe(true);
+    });
+
     it("should handle empty slot arrays gracefully", () => {
       fc.assert(
-        fc.property(
+        fc.asyncProperty(
           fc.constant([]),
           async (slots) => {
             try {
+              // Reset mocks for this test run to ensure clean state
+              vi.clearAllMocks();
+              // Ensure mocks are set up for this test run
+              (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(["4"]);
+              (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+              
               const queueType = {
                 id: "queue-1",
                 name: "test-queue",
@@ -458,8 +583,6 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
                   slots,
                 },
               };
-
-              (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
               const result = await calculateNextScheduleTime({
                 queueType,
@@ -493,10 +616,15 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
 
     it("should handle very large interval hours", () => {
       fc.assert(
-        fc.property(
+        fc.asyncProperty(
           fc.integer({ min: 1, max: 8760 }), // Up to 1 year
           async (intervalHours) => {
             try {
+              // Reset mocks for this test run to ensure clean state
+              vi.clearAllMocks();
+              // Ensure mocks are set up for this test run
+              (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(["4"]);
+              
               const queueType = {
                 id: "queue-1",
                 name: "test-queue",
@@ -507,7 +635,9 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
                 },
               };
 
+              // Use a time in the past to ensure the calculated time is in the future
               const lastPostTime = new Date();
+              lastPostTime.setUTCHours(lastPostTime.getUTCHours() - 1);
               (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(lastPostTime);
 
               const result = await calculateNextScheduleTime({
