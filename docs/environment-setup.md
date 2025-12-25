@@ -1,14 +1,46 @@
 # Environment Setup
 
-This guide explains all environment variables required to run SmartFlowSocial.
+This comprehensive guide explains all environment variables required to run SmartFlowSocial, including configuration options, validation, troubleshooting, and platform-specific setup.
+
+## Table of Contents
+
+- [Quick Start](#quick-start)
+- [Environment Variables](#environment-variables)
+- [Detailed Configuration](#detailed-configuration)
+- [Platform-Specific Setup](#platform-specific-setup)
+- [Validation](#validation)
+- [Troubleshooting](#troubleshooting)
+- [Security Best Practices](#security-best-practices)
+
+---
 
 ## Quick Start
+
+### 1. Copy Example File
 
 ```bash
 cp example.env .env
 ```
 
-Then edit `.env` with your configuration values.
+### 2. Edit Configuration
+
+Open `.env` in your editor and configure all required variables.
+
+### 3. Verify Setup
+
+```bash
+# Check environment variables are set
+node -e "console.log(process.env.DATABASE_URL)"
+
+# Or use a validation script
+npm run validate-env
+```
+
+### 4. Start Application
+
+```bash
+npm run dev
+```
 
 ## Environment Variables
 
@@ -260,3 +292,225 @@ npm run dev
 ```
 
 The app should be running at http://localhost:3000
+
+---
+
+## Platform-Specific Setup
+
+### Local Development
+
+**Using Docker Compose:**
+
+```bash
+# Start PostgreSQL and Redis
+npm run docker
+
+# Use these connection strings:
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/smartflow
+REDIS_URL=redis://localhost:6379
+```
+
+**Using Local Services:**
+
+```bash
+# Install PostgreSQL and Redis locally
+# Then configure:
+DATABASE_URL=postgresql://user:password@localhost:5432/smartflow
+REDIS_URL=redis://localhost:6379
+```
+
+### Production Platforms
+
+#### Fly.io
+
+```bash
+# Set secrets
+fly secrets set DATABASE_URL="postgresql://..."
+fly secrets set SESSION_SECRET="..."
+# ... other secrets
+```
+
+#### Railway
+
+Configure in Railway dashboard → Variables section.
+
+#### Vercel
+
+Configure in Vercel dashboard → Settings → Environment Variables.
+
+#### AWS/EC2
+
+```bash
+# Use .env file or environment variables
+export DATABASE_URL="postgresql://..."
+export SESSION_SECRET="..."
+```
+
+---
+
+## Validation
+
+### Required Variables Checklist
+
+- [ ] `DATABASE_URL` - PostgreSQL connection string
+- [ ] `SESSION_SECRET` - Session encryption secret
+- [ ] `NOSTR_PUBLISHER_URL` - HTTP Nostr Publisher URL
+- [ ] `REDIS_URL` - Redis connection string
+- [ ] `STORAGE_ACCESS_KEY` - Storage access key
+- [ ] `STORAGE_SECRET` - Storage secret key
+- [ ] `STORAGE_REGION` - Storage region
+- [ ] `STORAGE_BUCKET` - Storage bucket name
+
+### Optional Variables
+
+- [ ] `NOSTR_NSEC` - Server-side signing key
+- [ ] `PRIMAL_CACHING_URL` - Primal cache URL
+- [ ] `OWNER_NWC` - Payment receiving NWC
+- [ ] `METRICS_PORT` - Metrics port (default: 3010)
+
+### Validation Script
+
+Create `scripts/validate-env.js`:
+
+```javascript
+const required = [
+  'DATABASE_URL',
+  'SESSION_SECRET',
+  'NOSTR_PUBLISHER_URL',
+  'REDIS_URL',
+];
+
+const missing = required.filter(key => !process.env[key]);
+
+if (missing.length > 0) {
+  console.error('❌ Missing required environment variables:');
+  missing.forEach(key => console.error(`  - ${key}`));
+  process.exit(1);
+}
+
+console.log('✅ All required environment variables are set');
+```
+
+Run: `node scripts/validate-env.js`
+
+---
+
+## Troubleshooting
+
+### Database Connection Issues
+
+**Problem:** Can't connect to database
+
+**Solutions:**
+1. Verify `DATABASE_URL` format: `postgresql://user:pass@host:port/db`
+2. Check database is running: `pg_isready -h localhost`
+3. Verify credentials are correct
+4. Check firewall rules
+5. Test connection: `psql $DATABASE_URL`
+
+### Redis Connection Issues
+
+**Problem:** Can't connect to Redis
+
+**Solutions:**
+1. Verify `REDIS_URL` format: `redis://host:port`
+2. Check Redis is running: `redis-cli ping`
+3. Verify credentials if using auth
+4. Check network connectivity
+5. Test connection: `redis-cli -u $REDIS_URL ping`
+
+### Storage Configuration Issues
+
+**Problem:** Image uploads fail
+
+**Solutions:**
+1. Verify storage credentials
+2. Check bucket exists and is accessible
+3. Verify IAM permissions (for AWS S3)
+4. Test upload manually
+5. Check CORS configuration (if needed)
+
+### Nostr Publisher Issues
+
+**Problem:** Posts not publishing
+
+**Solutions:**
+1. Verify `NOSTR_PUBLISHER_URL` is correct
+2. Test publisher endpoint: `curl $NOSTR_PUBLISHER_URL/health`
+3. Check publisher is running
+4. Verify publisher configuration
+5. Check network connectivity
+
+### Session Secret Issues
+
+**Problem:** Sessions not persisting
+
+**Solutions:**
+1. Verify `SESSION_SECRET` is set
+2. Check secret is at least 32 characters
+3. Ensure secret is consistent across restarts
+4. Clear browser cookies
+5. Check cookie settings
+
+---
+
+## Security Best Practices
+
+### Secret Management
+
+1. **Never Commit Secrets**
+   - Add `.env` to `.gitignore`
+   - Use `.env.example` for templates
+   - Never commit actual secrets
+
+2. **Use Strong Secrets**
+   ```bash
+   # Generate strong session secret
+   openssl rand -base64 32
+   ```
+
+3. **Rotate Secrets Regularly**
+   - Session secrets: Every 90 days
+   - Database passwords: Every 180 days
+   - API keys: As needed
+
+4. **Use Secret Management Services**
+   - AWS Secrets Manager
+   - HashiCorp Vault
+   - Platform-specific secret stores
+
+### Environment-Specific Configuration
+
+**Development:**
+- Use local services
+- Less strict security
+- Debug logging enabled
+
+**Production:**
+- Use managed services
+- Strict security
+- Minimal logging
+- HTTPS only
+
+### Validation
+
+Always validate environment variables:
+
+```typescript
+// Validate required variables
+const required = ['DATABASE_URL', 'SESSION_SECRET'];
+required.forEach(key => {
+  if (!process.env[key]) {
+    throw new Error(`Missing required environment variable: ${key}`);
+  }
+});
+```
+
+---
+
+## Additional Resources
+
+- [Deployment Guide](./DEPLOYMENT.md) - Production deployment
+- [Security Guide](./SECURITY.md) - Security best practices
+- [Troubleshooting Guide](./TROUBLESHOOTING.md) - Common issues
+- [Architecture Documentation](./architecture.md) - System architecture

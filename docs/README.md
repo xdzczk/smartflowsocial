@@ -26,6 +26,19 @@ Welcome to the SmartFlowSocial documentation hub! This guide will help you under
 - [Roadmap](../ROADMAP.md) - Future development plans
 - [Changelog](../CHANGELOG.md) - Version history
 
+### Operations & Deployment
+- [Deployment Guide](./DEPLOYMENT.md) - Production deployment guide (Fly.io, Railway, Docker, AWS)
+- [Operations Guide](./OPERATIONS.md) - Monitoring, logging, alerting, and maintenance
+- [Queue System](./QUEUE_SYSTEM.md) - BullMQ/Redis queue system documentation
+- [Security Guide](./SECURITY.md) - Security best practices and guidelines
+- [Troubleshooting Guide](./TROUBLESHOOTING.md) - Common issues and solutions
+- [Performance Guide](./PERFORMANCE.md) - Performance optimization strategies
+- [Backup & Recovery](./BACKUP_RECOVERY.md) - Backup procedures and disaster recovery
+
+### Integration & Development
+- [Nostr Integration](./NOSTR_INTEGRATION.md) - Nostr protocol integration and NIP implementations
+- [Component Library](./COMPONENTS.md) - UI component documentation and usage guide
+
 ## 🔗 Quick Links
 
 | Resource | Description |

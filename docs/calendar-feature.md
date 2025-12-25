@@ -1,8 +1,23 @@
 # Calendar Feature Documentation
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [Calendar Views](#calendar-views)
+- [Post Blocks](#post-blocks)
+- [Drag & Drop](#drag--drop)
+- [Queue Override System](#queue-override-system)
+- [Usage Guide](#usage-guide)
+- [Best Practices](#best-practices)
+- [Troubleshooting](#troubleshooting)
+- [Technical Details](#technical-details)
+
+---
+
 ## Overview
 
-The calendar feature provides a Notion-style visual interface for managing scheduled posts with drag-and-drop functionality and smart queue override logic.
+The calendar feature provides a Notion-style visual interface for managing scheduled posts with drag-and-drop functionality and smart queue override logic. It's designed for users who prefer visual content management over list-based interfaces.
 
 ## Features
 
@@ -102,7 +117,207 @@ app/routes/
 4. Confirm changes in the modal that appears
 5. Posts will need to be re-signed after rescheduling
 
-## Technical Notes
+## Usage Guide
+
+### Accessing the Calendar
+
+1. **Navigate to Calendar**
+   - Click "Calendar" in dashboard navigation
+   - Or go to `/dashboard/calendar`
+
+2. **Select Queue Type** (Optional)
+   - Choose specific queue to view
+   - Or view all queues together
+
+3. **Switch Views**
+   - Toggle between Weekly and Monthly views
+   - Use view selector in header
+
+### Weekly View
+
+**Layout:**
+- Horizontal timeline (Monday-Sunday)
+- Hourly time slots (00:00-23:59)
+- Current time indicator (red line)
+- Post blocks positioned by time
+
+**Navigation:**
+- Previous/Next week buttons
+- "Today" button to jump to current week
+- Date range display
+
+**Interactions:**
+- Click post block to view details
+- Drag post to reschedule
+- Hover for quick preview
+
+### Monthly View
+
+**Layout:**
+- Traditional calendar grid
+- Days of the month
+- Post cards under each date
+- Color-coded by queue
+
+**Navigation:**
+- Previous/Next month buttons
+- "Today" button
+- Month/year selector
+
+**Interactions:**
+- Click date to see all posts
+- Click post card for details
+- Drag posts between dates
+
+### Rescheduling Posts
+
+**Simple Reschedule (Manual Posts):**
+
+1. **Drag Post Block**
+   - Click and hold post
+   - Drag to new time slot
+   - Release to drop
+
+2. **Confirm Reschedule**
+   - Modal appears with new time
+   - Review changes
+   - Click "Confirm"
+
+3. **Re-sign Event**
+   - Extension prompts for signing
+   - Sign with new timestamp
+   - Post rescheduled
+
+**Advanced Reschedule (Auto-scheduled Posts):**
+
+1. **Drag Post Block**
+   - Same as above
+
+2. **Choose Option**
+   - **Cancel**: No changes
+   - **Keep Queue Rule**: Update time, keep auto-scheduling
+   - **Convert to Manual**: Update time, disable auto-scheduling
+
+3. **Confirm and Sign**
+   - Confirm choice
+   - Re-sign event
+   - Post updated
+
+---
+
+## Best Practices
+
+### Organizing Content
+
+1. **Use Queue Colors**
+   - Assign colors to queues
+   - Visual organization
+   - Easy identification
+
+2. **Group Related Posts**
+   - Schedule related content together
+   - Use consistent times
+   - Create content blocks
+
+3. **Balance Schedule**
+   - Don't overload single time slots
+   - Space posts appropriately
+   - Consider audience timezone
+
+### Time Management
+
+1. **Peak Times**
+   - Schedule during peak engagement
+   - Use analytics to find best times
+   - Test different times
+
+2. **Consistency**
+   - Post at regular intervals
+   - Use queues for automation
+   - Maintain schedule
+
+3. **Flexibility**
+   - Leave room for adjustments
+   - Use calendar for quick changes
+   - Don't over-schedule
+
+### Visual Organization
+
+1. **Queue Colors**
+   - Use distinct colors
+   - Match brand colors if possible
+   - Keep consistent
+
+2. **Post Previews**
+   - Use clear captions
+   - Include relevant images
+   - Make posts identifiable
+
+---
+
+## Troubleshooting
+
+### Calendar Not Loading
+
+**Symptoms:**
+- Calendar view is blank
+- Posts not appearing
+- Loading spinner stuck
+
+**Solutions:**
+1. Refresh the page
+2. Check browser console for errors
+3. Verify you have scheduled posts
+4. Check queue filter settings
+5. Clear browser cache
+
+### Drag and Drop Not Working
+
+**Symptoms:**
+- Can't drag posts
+- Drop doesn't work
+- No feedback
+
+**Solutions:**
+1. Check browser compatibility
+2. Disable browser extensions
+3. Try different browser
+4. Check JavaScript errors
+5. Verify post is scheduled (not posted)
+
+### Posts Not Rescheduling
+
+**Symptoms:**
+- Reschedule doesn't save
+- Time doesn't update
+- Error messages
+
+**Solutions:**
+1. Check post has signed event
+2. Verify new time is in future
+3. Check network connection
+4. Re-sign event if needed
+5. Check queue configuration
+
+### Performance Issues
+
+**Symptoms:**
+- Calendar loads slowly
+- Lag when dragging
+- Browser freezes
+
+**Solutions:**
+1. Reduce number of posts visible
+2. Use queue filters
+3. Close other browser tabs
+4. Check browser performance
+5. Update browser
+
+See [Troubleshooting Guide](./TROUBLESHOOTING.md) for more solutions.
+
+---
+
+## Technical Details
 
 ### Signing Behavior
 
@@ -121,6 +336,7 @@ app/routes/
 - Auto-scheduled posts are detected by checking `manual_override` field
 - Original queue jobs are cancelled when posts are rescheduled
 - New jobs are scheduled only after posts are properly signed
+- Queue rules are preserved unless manually overridden
 
 ### Performance Considerations
 
@@ -130,3 +346,38 @@ app/routes/
 - **Image Loading**: Lazy loading for thumbnails to improve performance
 - **Smart Image Parsing**: Handles both JSON array and direct URL formats
 - **Error Handling**: Graceful fallbacks when images fail to load
+- **Memoization**: Components are memoized to prevent unnecessary re-renders
+- **Debouncing**: Reschedule operations are debounced to reduce API calls
+
+### Data Flow
+
+```
+User Drags Post
+    ↓
+Calculate New Time
+    ↓
+Show Confirmation Modal
+    ↓
+User Confirms
+    ↓
+Cancel Old Queue Job
+    ↓
+Clear Signed Event
+    ↓
+User Re-signs Event
+    ↓
+Update Post in Database
+    ↓
+Schedule New Queue Job
+    ↓
+Update Calendar View
+```
+
+---
+
+## Additional Resources
+
+- [Posting Workflow](./posting.md) - How to create posts
+- [Queue System](./QUEUE_SYSTEM.md) - Queue documentation
+- [Nostr Integration](./NOSTR_INTEGRATION.md) - Protocol details
+- [Troubleshooting Guide](./TROUBLESHOOTING.md) - Common issues
