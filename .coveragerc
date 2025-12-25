@@ -1,0 +1,41 @@
+# Coverage configuration for Vitest
+# This file is used for reference and documentation
+# Actual coverage is configured in vitest.config.ts
+
+[run]
+source = app
+omit = 
+    */node_modules/*
+    */build/*
+    */cypress/*
+    */tests/*
+    */prisma/*
+    */build/*
+    **/*.d.ts
+    **/*.config.*
+    **/entry.*
+    **/root.tsx
+    **/tailwind.css
+    server.ts
+    worker.ts
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise AssertionError
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    @abstractmethod
+
+precision = 2
+show_missing = True
+skip_covered = False
+
+[html]
+directory = coverage/html
+
+[xml]
+output = coverage/coverage.xml
+

@@ -1,0 +1,113 @@
+/**
+ * Database Test Helpers
+ * 
+ * Utilities for writing database-integrated tests
+ */
+
+import { describe, it, beforeEach, afterEach, beforeAll, afterAll } from "vitest";
+import {
+  getTestPrisma,
+  setupTestDatabase,
+  teardownTestDatabase,
+  useTestDatabase,
+  resetTestDatabase,
+} from "./test-db";
+import type { TestFixtures } from "./fixtures";
+import { createMinimalFixtures, createCompleteFixtures } from "./fixtures";
+
+/**
+ * Setup database before all tests
+ */
+export async function setupDatabaseTests(): Promise<void> {
+  await setupTestDatabase();
+}
+
+/**
+ * Teardown database after all tests
+ */
+export async function teardownDatabaseTests(): Promise<void> {
+  await teardownTestDatabase();
+}
+
+/**
+ * Create a test suite with database support
+ * 
+ * @example
+ * ```typescript
+ * describeDatabase("User Model", () => {
+ *   it("should create a user", async () => {
+ *     await useTestDatabase(async (prisma) => {
+ *       const user = await prisma.user.create({
+ *         data: { npub: "npub123", isEnabled: true },
+ *       });
+ *       expect(user).toBeDefined();
+ *     });
+ *   });
+ * });
+ * ```
+ */
+export function describeDatabase(
+  name: string,
+  fn: () => void,
+  options?: {
+    setup?: () => Promise<void>;
+    teardown?: () => Promise<void>;
+  },
+): void {
+  describe(name, () => {
+    beforeAll(async () => {
+      await setupDatabaseTests();
+      if (options?.setup) {
+        await options.setup();
+      }
+    });
+
+    afterAll(async () => {
+      if (options?.teardown) {
+        await options.teardown();
+      }
+      await teardownDatabaseTests();
+    });
+
+    fn();
+  });
+}
+
+/**
+ * Helper to run a test with database access
+ * Uses a separate test database for isolation
+ * 
+ * Note: For true isolation, use a separate TEST_DATABASE_URL.
+ * This ensures tests don't interfere with each other.
+ */
+export async function withDatabase<T>(
+  testFn: (prisma: Awaited<ReturnType<typeof getTestPrisma>>) => Promise<T>,
+  fixtures?: TestFixtures,
+): Promise<T> {
+  return await useTestDatabase(testFn, {
+    useTransaction: false, // Use separate test database instead
+    fixtures,
+    cleanup: false, // Cleanup handled by separate database
+  });
+}
+
+/**
+ * Helper to run a test with database access without transactions
+ * Useful for testing transaction behavior itself
+ * WARNING: Requires manual cleanup
+ */
+export async function withDatabaseNoTransaction<T>(
+  testFn: (prisma: Awaited<ReturnType<typeof getTestPrisma>>) => Promise<T>,
+  fixtures?: TestFixtures,
+): Promise<T> {
+  return await useTestDatabase(testFn, {
+    useTransaction: false,
+    fixtures,
+  });
+}
+
+/**
+ * Create test data using factories
+ */
+export { createMinimalFixtures, createCompleteFixtures, fixtures } from "./fixtures";
+

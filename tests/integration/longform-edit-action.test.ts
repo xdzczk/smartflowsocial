@@ -1,0 +1,442 @@
+/**
+ * Integration tests for longform edit action handler
+ * 
+ * Tests the action handler in app/features/posts/services/longform-edit-action.server.ts
+ */
+
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+// Mock global fetch
+global.fetch = vi.fn();
+
+// Mock dependencies
+vi.mock("~/features/posts/longform.server", () => ({
+  convertEditorJSToMarkdown: vi.fn((data) => `Markdown: ${JSON.stringify(data)}`),
+}));
+
+vi.mock("~/features/upload/s3.server", () => ({
+  createUploadHandler: vi.fn(() => vi.fn()),
+  uploadBufferToS3: vi.fn(),
+}));
+
+vi.mock("~/lib/markdown-sanitizer.server", () => ({
+  sanitizeMarkdown: vi.fn((content) => `Sanitized: ${content}`),
+  generateSummary: vi.fn((content) => `Summary of ${content.substring(0, 50)}`),
+}));
+
+vi.mock("~/models/longformpost.server", () => ({
+  updateLongFormPost: vi.fn(),
+}));
+
+vi.mock("~/models/user.server", () => ({
+  getUserById: vi.fn(),
+  getEffectiveHashtags: vi.fn(),
+  getHashTagPresetById: vi.fn(),
+  getQueueTypeByNameForUser: vi.fn(),
+}));
+
+// Mock Remix upload handlers
+vi.mock("@remix-run/node", async () => {
+  const actual = await vi.importActual("@remix-run/node");
+  return {
+    ...actual,
+    unstable_composeUploadHandlers: vi.fn((...handlers) => vi.fn()),
+    unstable_createMemoryUploadHandler: vi.fn(() => vi.fn()),
+    unstable_parseMultipartFormData: vi.fn(async (request, handler) => {
+      return new FormData();
+    }),
+  };
+});
+
+import { handleLongFormEditAction } from "~/features/posts/services/longform-edit-action.server";
+import { updateLongFormPost } from "~/models/longformpost.server";
+import { getUserById, getEffectiveHashtags, getHashTagPresetById, getQueueTypeByNameForUser } from "~/models/user.server";
+import { uploadBufferToS3 } from "~/features/upload/s3.server";
+import { TEST_USER_ID } from "../utils/test-helpers";
+import { createMockFormData } from "../utils/test-helpers";
+
+describe("Longform Edit Action Handler", () => {
+  const POST_ID = "post-123";
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    process.env.NOSTR_PUBLISHER_URL = "https://api.nostr-publisher.com/publish";
+    (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
+      userRelays: ["wss://relay1.com", "wss://relay2.com"],
+      showHashTagsinPosts: true,
+    });
+  });
+
+  describe("Image Upload Action", () => {
+    it("should return existing URL if imageFile is already a URL", async () => {
+      const formData = createMockFormData({
+        _action: "upload-image",
+        imageFile: "https://example.com/image.jpg",
+      });
+
+      const request = new Request("http://localhost:3000/dashboard/longform/edit", {
+        method: "POST",
+        body: formData,
+      });
+
+      const response = await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
+      const data = await response.json();
+
+      expect(data).toEqual({
+        success: true,
+        imageUrl: "https://example.com/image.jpg",
+      });
+    });
+
+    it("should upload File object to S3", async () => {
+      const mockFile = new File(["test"], "image.jpg", { type: "image/jpeg" });
+      (uploadBufferToS3 as ReturnType<typeof vi.fn>).mockResolvedValue("https://s3.example.com/image.jpg");
+
+      const formData = new FormData();
+      formData.append("_action", "upload-image");
+      formData.append("imageFile", mockFile);
+
+      const request = new Request("http://localhost:3000/dashboard/longform/edit", {
+        method: "POST",
+        headers: { "Content-Type": "multipart/form-data" },
+        body: formData,
+      });
+
+      const response = await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
+      const data = await response.json();
+
+      expect(uploadBufferToS3).toHaveBeenCalled();
+      expect(data.success).toBe(true);
+    });
+  });
+
+  describe("Save Draft Action", () => {
+    it("should update draft with all required fields", async () => {
+      (getQueueTypeByNameForUser as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: "queue-1",
+        name: "posts",
+      });
+      (getEffectiveHashtags as ReturnType<typeof vi.fn>).mockResolvedValue("");
+
+      const formData = createMockFormData({
+        _action: "save-draft",
+        title: "Updated Post",
+        content: JSON.stringify({ blocks: [{ type: "paragraph", data: { text: "Updated content" } }] }),
+        summary: "Updated summary",
+        tags: "tag1,tag2",
+        queueType: "posts",
+        useHashtagPresets: "false",
+      });
+
+      const request = new Request("http://localhost:3000/dashboard/longform/edit", {
+        method: "POST",
+        body: formData,
+      });
+
+      const response = await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
+
+      expect(updateLongFormPost).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: POST_ID,
+          userId: TEST_USER_ID,
+          title: "Updated Post",
+          isPublished: false,
+        }),
+      );
+      expect(response.status).toBe(302);
+    });
+
+    it("should require title", async () => {
+      (getEffectiveHashtags as ReturnType<typeof vi.fn>).mockResolvedValue("");
+
+      const formData = createMockFormData({
+        _action: "save-draft",
+        content: "Test content",
+      });
+
+      const request = new Request("http://localhost:3000/dashboard/longform/edit", {
+        method: "POST",
+        body: formData,
+      });
+
+      const response = await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.error).toBe("Title is required");
+    });
+
+    it("should require content", async () => {
+      (getEffectiveHashtags as ReturnType<typeof vi.fn>).mockResolvedValue("");
+
+      const formData = createMockFormData({
+        _action: "save-draft",
+        title: "Test Post",
+      });
+
+      const request = new Request("http://localhost:3000/dashboard/longform/edit", {
+        method: "POST",
+        body: formData,
+      });
+
+      const response = await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.error).toBe("Content is required");
+    });
+  });
+
+  describe("Publish Action", () => {
+    beforeEach(() => {
+      (getQueueTypeByNameForUser as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: "queue-1",
+        name: "posts",
+      });
+      (getEffectiveHashtags as ReturnType<typeof vi.fn>).mockResolvedValue("#hashtags");
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        status: 200,
+      });
+    });
+
+    it("should publish updated post", async () => {
+      const mockSignedEvent = { id: "event-123", kind: 30023 };
+      const mockNostrEvent = { id: "event-123", kind: 30023 };
+
+      const formData = createMockFormData({
+        _action: "publish",
+        title: "Updated Post",
+        content: JSON.stringify({ blocks: [{ type: "paragraph", data: { text: "Updated content" } }] }),
+        summary: "Updated summary",
+        image: "https://example.com/image.jpg",
+        signedEvent: JSON.stringify(mockSignedEvent),
+        nostrEvent: JSON.stringify(mockNostrEvent),
+        tags: "tag1",
+        queueType: "posts",
+        useHashtagPresets: "false",
+      });
+
+      const request = new Request("http://localhost:3000/dashboard/longform/edit", {
+        method: "POST",
+        body: formData,
+      });
+
+      const response = await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
+
+      expect(updateLongFormPost).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: POST_ID,
+          userId: TEST_USER_ID,
+          title: "Updated Post",
+          isPublished: true,
+          signedEvent: mockSignedEvent,
+          nostrEvent: mockNostrEvent,
+        }),
+      );
+      expect(global.fetch).toHaveBeenCalledWith(
+        "https://api.nostr-publisher.com/publish",
+        expect.any(Object),
+      );
+      expect(response.status).toBe(302);
+    });
+
+    it("should require summary for publishing", async () => {
+      const formData = createMockFormData({
+        _action: "publish",
+        title: "Test Post",
+        content: "Test content",
+        image: "https://example.com/image.jpg",
+        signedEvent: JSON.stringify({ id: "event-123" }),
+        nostrEvent: JSON.stringify({ id: "event-123" }),
+        useHashtagPresets: "false",
+      });
+
+      const request = new Request("http://localhost:3000/dashboard/longform/edit", {
+        method: "POST",
+        body: formData,
+      });
+
+      const response = await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.error).toBe("Summary is required for publishing");
+    });
+
+    it("should require cover image for publishing", async () => {
+      const formData = createMockFormData({
+        _action: "publish",
+        title: "Test Post",
+        content: "Test content",
+        summary: "Test summary",
+        signedEvent: JSON.stringify({ id: "event-123" }),
+        nostrEvent: JSON.stringify({ id: "event-123" }),
+        useHashtagPresets: "false",
+      });
+
+      const request = new Request("http://localhost:3000/dashboard/longform/edit", {
+        method: "POST",
+        body: formData,
+      });
+
+      const response = await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.error).toBe("Cover image is required for publishing");
+    });
+
+    it("should add hashtags to content when enabled", async () => {
+      (getEffectiveHashtags as ReturnType<typeof vi.fn>).mockResolvedValue("#marketing #social");
+
+      const mockSignedEvent = { id: "event-123", kind: 30023 };
+      const mockNostrEvent = { id: "event-123", kind: 30023 };
+
+      const formData = createMockFormData({
+        _action: "publish",
+        title: "Test Post",
+        content: JSON.stringify({ blocks: [{ type: "paragraph", data: { text: "Content" } }] }),
+        summary: "Test summary",
+        image: "https://example.com/image.jpg",
+        signedEvent: JSON.stringify(mockSignedEvent),
+        nostrEvent: JSON.stringify(mockNostrEvent),
+        queueType: "posts",
+        useHashtagPresets: "false",
+      });
+
+      const request = new Request("http://localhost:3000/dashboard/longform/edit", {
+        method: "POST",
+        body: formData,
+      });
+
+      await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
+
+      expect(updateLongFormPost).toHaveBeenCalledWith(
+        expect.objectContaining({
+          content: expect.stringContaining("#marketing #social"),
+        }),
+      );
+    });
+  });
+
+  describe("Schedule Longform Action", () => {
+    beforeEach(() => {
+      (getQueueTypeByNameForUser as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: "queue-1",
+        name: "posts",
+      });
+      (getEffectiveHashtags as ReturnType<typeof vi.fn>).mockResolvedValue("");
+    });
+
+    it("should schedule post with published_at tag", async () => {
+      const mockSignedEvent = {
+        id: "event-123",
+        kind: 30023,
+        tags: [["published_at", "1704067200"]],
+      };
+      const mockNostrEvent = { id: "event-123", kind: 30023 };
+
+      const formData = createMockFormData({
+        _action: "schedule-longform",
+        title: "Test Post",
+        content: "Test content",
+        summary: "Test summary",
+        image: "https://example.com/image.jpg",
+        signedEvent: JSON.stringify(mockSignedEvent),
+        nostrEvent: JSON.stringify(mockNostrEvent),
+        queueType: "posts",
+        useHashtagPresets: "false",
+      });
+
+      const request = new Request("http://localhost:3000/dashboard/longform/edit", {
+        method: "POST",
+        body: formData,
+      });
+
+      const response = await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
+
+      expect(updateLongFormPost).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: POST_ID,
+          isPublished: false,
+          scheduledFor: "1704067200",
+        }),
+      );
+      expect(response.status).toBe(302);
+    });
+
+    it("should require all fields for scheduling", async () => {
+      const formData = createMockFormData({
+        _action: "schedule-longform",
+        title: "Test Post",
+        content: "Test content",
+      });
+
+      const request = new Request("http://localhost:3000/dashboard/longform/edit", {
+        method: "POST",
+        body: formData,
+      });
+
+      const response = await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.error).toBeDefined();
+    });
+  });
+
+  describe("Hashtag Preset Handling", () => {
+    it("should use manual hashtag preset when enabled", async () => {
+      (getHashTagPresetById as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: "preset-1",
+        tags: "#custom #tags",
+      });
+
+      const formData = createMockFormData({
+        _action: "save-draft",
+        title: "Test Post",
+        content: "Test content",
+        useHashtagPresets: "true",
+        hashTagPresetId: "preset-1",
+        queueType: "posts",
+      });
+
+      const request = new Request("http://localhost:3000/dashboard/longform/edit", {
+        method: "POST",
+        body: formData,
+      });
+
+      await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
+
+      expect(getHashTagPresetById).toHaveBeenCalledWith(TEST_USER_ID, "preset-1");
+      expect(updateLongFormPost).toHaveBeenCalledWith(
+        expect.objectContaining({
+          hashTagPresetId: "preset-1",
+        }),
+      );
+    });
+
+    it("should use queue type default when manual presets disabled", async () => {
+      (getEffectiveHashtags as ReturnType<typeof vi.fn>).mockResolvedValue("#queue #tags");
+
+      const formData = createMockFormData({
+        _action: "save-draft",
+        title: "Test Post",
+        content: "Test content",
+        useHashtagPresets: "false",
+        queueType: "posts",
+      });
+
+      const request = new Request("http://localhost:3000/dashboard/longform/edit", {
+        method: "POST",
+        body: formData,
+      });
+
+      await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
+
+      expect(getEffectiveHashtags).toHaveBeenCalledWith(TEST_USER_ID, "posts");
+    });
+  });
+});
+

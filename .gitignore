@@ -18,3 +18,13 @@ node_modules
 /redis-data
 .DS_Store
 
+# Coverage reports
+/coverage
+/.nyc_output
+
+# Performance test results
+tests/performance/results/
+
+# Test results
+test-results/
+

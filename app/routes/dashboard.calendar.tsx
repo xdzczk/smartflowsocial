@@ -13,7 +13,10 @@ import { requireFeatureAccess, requireAnySubscription } from "~/features/payment
 import { combineContent } from "~/features/posts/combined.server";
 import { Calendar } from "~/features/posts/components/Calendar/Calendar";
 import { getQueueColor } from "~/features/posts/queueColors";
-import { cancelScheduledPost, schedulePost } from "~/features/posts/queues.server";
+import {
+  cancelPostJob as cancelScheduledPost,
+  enqueuePostJob as schedulePost,
+} from "~/infra/queue";
 import {
   getScheduledLongFormPosts,
   updateLongFormPost,

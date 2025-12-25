@@ -1,0 +1,120 @@
+name: Flaky Test Detection
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_suite:
+        description: 'Test suite to check for flaky tests'
+        required: true
+        type: choice
+        options:
+          - unit
+          - integration
+          - property
+          - security
+          - performance
+      runs:
+        description: 'Number of test runs'
+        required: false
+        default: '10'
+        type: string
+
+jobs:
+  detect-flaky-tests:
+    name: Detect Flaky Tests (${{ inputs.test_suite }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        run: ${{ fromJSON(format('[{0}]', join(range(1, fromJSON(inputs.runs || '10') + 1), ','))) }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ${{ inputs.test_suite }} tests (Run ${{ matrix.run }})
+        run: |
+          case "${{ inputs.test_suite }}" in
+            unit)
+              npm run test:unit
+              ;;
+            integration)
+              npm run test:integration
+              ;;
+            property)
+              npm run test:property
+              ;;
+            security)
+              npm run test:security
+              ;;
+            performance)
+              npm run test:performance
+              ;;
+          esac
+        id: test-run
+        continue-on-error: true
+
+      - name: Save test results
+        if: always()
+        run: |
+          mkdir -p flaky-test-results
+          echo "${{ steps.test-run.outcome }}" > "flaky-test-results/run-${{ matrix.run }}.txt"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flaky-test-results-${{ inputs.test_suite }}-run-${{ matrix.run }}
+          path: flaky-test-results
+          retention-days: 30
+
+  analyze-flaky-tests:
+    name: Analyze Flaky Tests
+    runs-on: ubuntu-latest
+    needs: detect-flaky-tests
+    if: always()
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all test results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: 'flaky-test-results-*'
+          merge-multiple: true
+          path: flaky-test-results
+
+      - name: Analyze results
+        run: |
+          echo "## Flaky Test Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Analyzing test results for ${{ inputs.test_suite }} tests..." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          total_runs=$(ls flaky-test-results/*.txt 2>/dev/null | wc -l || echo "0")
+          success_count=$(grep -c "success" flaky-test-results/*.txt 2>/dev/null || echo "0")
+          failure_count=$(grep -c "failure" flaky-test-results/*.txt 2>/dev/null || echo "0")
+          
+          echo "Total runs: $total_runs" >> $GITHUB_STEP_SUMMARY
+          echo "Successful: $success_count" >> $GITHUB_STEP_SUMMARY
+          echo "Failed: $failure_count" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "$failure_count" -gt 0 ] && [ "$success_count" -gt 0 ]; then
+            echo "⚠️ **Flaky tests detected!** Some tests passed and some failed across multiple runs." >> $GITHUB_STEP_SUMMARY
+          elif [ "$failure_count" -eq 0 ]; then
+            echo "✅ All tests passed consistently across all runs." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ All test runs failed. This may indicate a real issue, not flakiness." >> $GITHUB_STEP_SUMMARY
+          fi
+

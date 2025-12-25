@@ -1,0 +1,69 @@
+name: Test Caching Optimization
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+env:
+  NODE_ENV: test
+
+jobs:
+  cached-tests:
+    name: Cached Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v40
+        with:
+          files: |
+            app/**
+            tests/**
+
+      - name: Cache test results
+        uses: actions/cache@v4
+        with:
+          path: |
+            .vitest-cache
+            node_modules/.cache
+            test-results
+          key: ${{ runner.os }}-test-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('tests/**/*.test.ts') }}
+          restore-keys: |
+            ${{ runner.os }}-test-${{ hashFiles('**/package-lock.json') }}-
+            ${{ runner.os }}-test-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests with cache
+        run: |
+          if [ "${{ steps.changed-files.outputs.any_changed }}" == "true" ]; then
+            echo "Files changed, running all tests"
+            npm run test
+          else
+            echo "No test-related files changed, skipping tests"
+          fi
+
+      - name: Save test cache
+        if: always()
+        uses: actions/cache@v4
+        with:
+          path: |
+            .vitest-cache
+            node_modules/.cache
+            test-results
+          key: ${{ runner.os }}-test-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('tests/**/*.test.ts') }}
+

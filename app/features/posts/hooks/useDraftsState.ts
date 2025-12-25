@@ -1,0 +1,115 @@
+import { useState, useEffect } from "react";
+import { useFetcher } from "@remix-run/react";
+
+interface Post {
+  id: string;
+  caption?: string | null;
+  createdAt: string;
+  [key: string]: any;
+}
+
+interface UseDraftsStateProps {
+  posts: Post[];
+}
+
+/**
+ * Custom hook for managing drafts state and operations
+ */
+export function useDraftsState({ posts }: UseDraftsStateProps) {
+  const [sortConfig, setSortConfig] = useState({
+    key: "createdAt",
+    direction: "desc" as "asc" | "desc",
+  });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [selectedPosts, setSelectedPosts] = useState<Set<string>>(new Set());
+  const [showAdvancedBulkResume, setShowAdvancedBulkResume] = useState(false);
+  const bulkDeleteFetcher = useFetcher();
+  const bulkResumeFetcher = useFetcher();
+
+  // Sort posts
+  const sortedPosts = [...posts].sort((a, b) => {
+    if (sortConfig.key === "createdAt") {
+      const dateA = new Date(a[sortConfig.key]).getTime();
+      const dateB = new Date(b[sortConfig.key]).getTime();
+      return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
+    }
+    const aValue = a[sortConfig.key];
+    const bValue = b[sortConfig.key];
+    if (aValue < bValue)
+      return sortConfig.direction === "asc" ? -1 : 1;
+    if (aValue > bValue)
+      return sortConfig.direction === "asc" ? 1 : -1;
+    return 0;
+  });
+
+  // Filter posts
+  const filteredPosts = sortedPosts.filter((post) =>
+    post.caption?.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
+
+  const requestSort = (key: string) => {
+    setSortConfig((current) => ({
+      key,
+      direction:
+        current.key === key && current.direction === "asc" ? "desc" : "asc",
+    }));
+  };
+
+  const togglePostSelection = (postId: string) => {
+    setSelectedPosts((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(postId)) {
+        newSet.delete(postId);
+      } else {
+        newSet.add(postId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedPosts.size === filteredPosts.length) {
+      setSelectedPosts(new Set());
+    } else {
+      setSelectedPosts(new Set(filteredPosts.map((post) => post.id)));
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedPosts.size === 0) return;
+
+    const formData = new FormData();
+    formData.append("_action", "bulkDelete");
+    formData.append("postIds", JSON.stringify(Array.from(selectedPosts)));
+
+    bulkDeleteFetcher.submit(formData, { method: "post" });
+  };
+
+  // Clear selected posts after bulk operations
+  useEffect(() => {
+    if (bulkDeleteFetcher.data?.success || bulkResumeFetcher.data?.success) {
+      setSelectedPosts(new Set());
+      setShowAdvancedBulkResume(false);
+    }
+  }, [bulkDeleteFetcher.data, bulkResumeFetcher.data]);
+
+  return {
+    sortConfig,
+    searchTerm,
+    selectedPost,
+    selectedPosts,
+    showAdvancedBulkResume,
+    filteredPosts,
+    bulkDeleteFetcher,
+    bulkResumeFetcher,
+    requestSort,
+    setSearchTerm,
+    setSelectedPost,
+    togglePostSelection,
+    toggleSelectAll,
+    handleBulkDelete,
+    setShowAdvancedBulkResume,
+  };
+}
+

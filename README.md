@@ -5,6 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-blue?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Coverage](https://img.shields.io/badge/Coverage-70%25-brightgreen)](./docs/COVERAGE_REPORTING.md)
 
 > Professional-grade social media management platform for NOSTR. Built with Remix.
 
@@ -155,6 +156,10 @@ npm run start:worker
 | `npm run test:loaders`     | Run loader integration tests     |
 | `npm run test:integration` | Run integration tests            |
 | `npm run test:unit`        | Run unit tests only              |
+| `npm run test:property`    | Run property-based tests         |
+| `npm run test:coverage`    | Run tests with coverage report   |
+| `npm run test:coverage:report` | Generate coverage and record trend |
+| `npm run test:coverage:trend` | View coverage trend report      |
 | `npm run test:open`        | Open Cypress UI                  |
 | `npm run test:dev`         | Start dev server + open Cypress  |
 | `npm run db:seed`          | Seed database with initial data  |
@@ -190,6 +195,17 @@ npm run start:worker
 | [Posting Workflow](./docs/posting.md)            | How to create posts        |
 | [Calendar Feature](./docs/calendar-feature.md)   | Visual scheduling          |
 | [Testing Guide](./docs/testing.md)               | How to run tests           |
+| [Test Strategy](./docs/TEST_STRATEGY.md)         | Testing philosophy and strategy |
+| [Testing Patterns](./docs/TESTING_PATTERNS.md)  | Common testing patterns and examples |
+| [Mocking Guidelines](./docs/MOCKING_GUIDELINES.md) | How to mock dependencies |
+| [Test Database](./docs/TEST_DATABASE.md)         | Database integration testing |
+| [Coverage Goals](./docs/COVERAGE_GOALS.md)      | Coverage targets and rationale |
+| [Test Troubleshooting](./docs/TEST_TROUBLESHOOTING.md) | Common issues and solutions |
+| [Coverage Reporting](./docs/COVERAGE_REPORTING.md) | Test coverage tracking     |
+| [Property-Based Testing](./docs/PROPERTY_BASED_TESTING.md) | Property-based testing guide |
+| [Security Testing](./docs/SECURITY_TESTING.md)  | Security testing guide |
+| [Performance Testing](./docs/PERFORMANCE_TESTING.md) | Performance testing guide |
+| [CI/CD Guide](./docs/CI_CD.md)                   | CI/CD pipeline and workflows |
 | [Contributing](./CONTRIBUTING.md)                | Contribution guidelines    |
 | [Roadmap](./ROADMAP.md)                          | Future plans               |
 

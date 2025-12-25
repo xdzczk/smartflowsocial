@@ -1,0 +1,241 @@
+/**
+ * Integration tests for queue client
+ * 
+ * Tests the queue client in app/infra/queue/queue-client.ts
+ */
+
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { Queue, Job } from "bullmq";
+
+// Mock BullMQ
+vi.mock("bullmq", () => ({
+  Queue: vi.fn(),
+  Worker: vi.fn(),
+}));
+
+// Mock ioredis
+vi.mock("ioredis", () => {
+  return {
+    default: vi.fn(() => ({
+      quit: vi.fn(),
+    })),
+  };
+});
+
+// Mock queue operations
+const mockQueue = {
+  add: vi.fn(),
+  getJobs: vi.fn(),
+  getJob: vi.fn(),
+  close: vi.fn(),
+};
+
+(Queue as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => mockQueue);
+
+import { queueClient } from "~/infra/queue/queue-client";
+
+describe("Queue Client", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    process.env.REDIS_URL = "redis://localhost:6379";
+  });
+
+  describe("Enqueue Operations", () => {
+    it("should enqueue job with delay option", async () => {
+      const mockJob = {
+        id: "job-123",
+      } as Job;
+
+      mockQueue.add.mockResolvedValue(mockJob);
+
+      const result = await queueClient.enqueue(
+        "scheduled-posts",
+        "publish-post",
+        { postId: "post-123", userId: "user-123", signedEvent: {} },
+        { delay: 5000 },
+      );
+
+      expect(mockQueue.add).toHaveBeenCalledWith(
+        "publish-post",
+        { postId: "post-123", userId: "user-123", signedEvent: {} },
+        { delay: 5000 },
+      );
+      expect(result).toEqual({
+        success: true,
+        jobId: "job-123",
+      });
+    });
+
+    it("should enqueue job with scheduledFor option", async () => {
+      const mockJob = {
+        id: "job-123",
+      } as Job;
+
+      const scheduledFor = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
+      mockQueue.add.mockResolvedValue(mockJob);
+
+      const result = await queueClient.enqueue(
+        "scheduled-posts",
+        "publish-post",
+        { postId: "post-123", userId: "user-123", signedEvent: {} },
+        { scheduledFor },
+      );
+
+      expect(mockQueue.add).toHaveBeenCalled();
+      expect(result.success).toBe(true);
+      expect(result.jobId).toBe("job-123");
+    });
+
+    it("should return error for past scheduledFor timestamp", async () => {
+      const pastTime = Math.floor(Date.now() / 1000) - 3600; // 1 hour ago
+
+      const result = await queueClient.enqueue(
+        "scheduled-posts",
+        "publish-post",
+        { postId: "post-123", userId: "user-123", signedEvent: {} },
+        { scheduledFor: pastTime },
+      );
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Scheduled time must be in the future");
+    });
+
+    it("should handle enqueue errors", async () => {
+      mockQueue.add.mockRejectedValue(new Error("Queue error"));
+
+      const result = await queueClient.enqueue(
+        "scheduled-posts",
+        "publish-post",
+        { postId: "post-123", userId: "user-123", signedEvent: {} },
+      );
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Queue error");
+    });
+  });
+
+  describe("Cancel Operations", () => {
+    it("should cancel job by data key", async () => {
+      const mockJob = {
+        id: "job-123",
+        data: { postId: "post-123" },
+        remove: vi.fn().mockResolvedValue(undefined),
+      } as unknown as Job;
+
+      mockQueue.getJobs.mockResolvedValue([mockJob]);
+
+      const result = await queueClient.cancelByData(
+        "scheduled-posts",
+        "postId",
+        "post-123",
+      );
+
+      expect(mockQueue.getJobs).toHaveBeenCalledWith(["waiting", "delayed"]);
+      expect(mockJob.remove).toHaveBeenCalled();
+      expect(result).toBe(true);
+    });
+
+    it("should return false when job not found", async () => {
+      mockQueue.getJobs.mockResolvedValue([]);
+
+      const result = await queueClient.cancelByData(
+        "scheduled-posts",
+        "postId",
+        "post-123",
+      );
+
+      expect(result).toBe(false);
+    });
+
+    it("should handle cancel errors gracefully", async () => {
+      mockQueue.getJobs.mockRejectedValue(new Error("Redis error"));
+
+      const result = await queueClient.cancelByData(
+        "scheduled-posts",
+        "postId",
+        "post-123",
+      );
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe("Get Jobs Operations", () => {
+    it("should get jobs by status", async () => {
+      const mockJobs = [
+        {
+          id: "job-1",
+          data: { postId: "post-1" },
+          opts: { delay: 0 },
+        },
+        {
+          id: "job-2",
+          data: { postId: "post-2" },
+          opts: { delay: 5000 },
+        },
+      ] as unknown as Job[];
+
+      mockQueue.getJobs.mockResolvedValue(mockJobs);
+
+      const result = await queueClient.getJobs("scheduled-posts", [
+        "waiting",
+        "delayed",
+      ]);
+
+      expect(mockQueue.getJobs).toHaveBeenCalledWith(["waiting", "delayed"]);
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual({
+        id: "job-1",
+        data: { postId: "post-1" },
+        status: "waiting",
+      });
+      expect(result[1]).toEqual({
+        id: "job-2",
+        data: { postId: "post-2" },
+        status: "delayed",
+      });
+    });
+
+    it("should handle get jobs errors gracefully", async () => {
+      mockQueue.getJobs.mockRejectedValue(new Error("Redis error"));
+
+      const result = await queueClient.getJobs("scheduled-posts", ["waiting"]);
+
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe("Remove Job Operations", () => {
+    it("should remove job by ID", async () => {
+      const mockJob = {
+        id: "job-123",
+        remove: vi.fn().mockResolvedValue(undefined),
+      } as unknown as Job;
+
+      mockQueue.getJob.mockResolvedValue(mockJob);
+
+      const result = await queueClient.removeJob("scheduled-posts", "job-123");
+
+      expect(mockQueue.getJob).toHaveBeenCalledWith("job-123");
+      expect(mockJob.remove).toHaveBeenCalled();
+      expect(result).toBe(true);
+    });
+
+    it("should return false when job not found", async () => {
+      mockQueue.getJob.mockResolvedValue(null);
+
+      const result = await queueClient.removeJob("scheduled-posts", "job-123");
+
+      expect(result).toBe(false);
+    });
+
+    it("should handle remove errors gracefully", async () => {
+      mockQueue.getJob.mockRejectedValue(new Error("Redis error"));
+
+      const result = await queueClient.removeJob("scheduled-posts", "job-123");
+
+      expect(result).toBe(false);
+    });
+  });
+});
+

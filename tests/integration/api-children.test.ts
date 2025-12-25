@@ -1,0 +1,359 @@
+/**
+ * Integration tests for children API route
+ * 
+ * Tests the API endpoint in app/routes/api.children.tsx
+ */
+
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+// Mock dependencies
+vi.mock("~/features/auth/session.server", () => ({
+  requireUserId: vi.fn(),
+}));
+
+vi.mock("~/models/user.server", () => ({
+  getUserBasicInfo: vi.fn(),
+  getConfirmedChildrenForParent: vi.fn(),
+}));
+
+vi.mock("~/models/payment.server", () => ({
+  getUserSubscription: vi.fn(),
+}));
+
+import { requireUserId } from "~/features/auth/session.server";
+import { getUserBasicInfo, getConfirmedChildrenForParent } from "~/models/user.server";
+import { getUserSubscription } from "~/models/payment.server";
+import { loader } from "~/routes/api.children";
+import { TEST_USER_ID } from "../utils/test-helpers";
+
+describe("API: Children", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue(TEST_USER_ID);
+  });
+
+  describe("Successful Requests", () => {
+    it("should return children for parent with premium subscription", async () => {
+      const mockUser = {
+        id: TEST_USER_ID,
+        npub: "npub123",
+        isChild: false,
+      };
+
+      const mockSubscription = {
+        planId: "premium",
+        Plan: { name: "Premium" },
+      };
+
+      const mockChildren = [
+        {
+          npub: "npub-child-1",
+          nostrProfile: JSON.stringify({
+            name: "Child 1",
+            display_name: "Child One",
+            picture: "https://example.com/pic1.jpg",
+          }),
+        },
+        {
+          npub: "npub-child-2",
+          nostrProfile: JSON.stringify({
+            name: "Child 2",
+            display_name: "Child Two",
+            picture: "https://example.com/pic2.jpg",
+          }),
+        },
+      ];
+
+      (getUserBasicInfo as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
+      (getUserSubscription as ReturnType<typeof vi.fn>).mockResolvedValue(mockSubscription);
+      (getConfirmedChildrenForParent as ReturnType<typeof vi.fn>).mockResolvedValue(mockChildren);
+
+      const request = new Request("http://localhost:3000/api/children");
+
+      const response = await loader({ request, params: {}, context: {} });
+      const data = await response.json();
+
+      expect(requireUserId).toHaveBeenCalledWith(request);
+      expect(getUserBasicInfo).toHaveBeenCalledWith(TEST_USER_ID);
+      expect(getUserSubscription).toHaveBeenCalledWith(TEST_USER_ID);
+      expect(getConfirmedChildrenForParent).toHaveBeenCalledWith("npub123");
+      expect(data).toEqual({
+        children: [
+          {
+            npub: "npub-child-1",
+            name: "Child 1",
+            displayName: "Child One",
+            picture: "https://example.com/pic1.jpg",
+          },
+          {
+            npub: "npub-child-2",
+            name: "Child 2",
+            displayName: "Child Two",
+            picture: "https://example.com/pic2.jpg",
+          },
+        ],
+      });
+    });
+
+    it("should return children for founder subscription", async () => {
+      const mockUser = {
+        id: TEST_USER_ID,
+        npub: "npub123",
+        isChild: false,
+      };
+
+      const mockSubscription = {
+        planId: "basic",
+        Plan: { name: "Founder" },
+      };
+
+      (getUserBasicInfo as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
+      (getUserSubscription as ReturnType<typeof vi.fn>).mockResolvedValue(mockSubscription);
+      (getConfirmedChildrenForParent as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+
+      const request = new Request("http://localhost:3000/api/children");
+
+      const response = await loader({ request, params: {}, context: {} });
+      const data = await response.json();
+
+      expect(data.children).toEqual([]);
+    });
+
+    it("should handle case-insensitive plan matching", async () => {
+      const mockUser = {
+        id: TEST_USER_ID,
+        npub: "npub123",
+        isChild: false,
+      };
+
+      const mockSubscription = {
+        planId: "PREMIUM",
+        Plan: { name: "premium" },
+      };
+
+      (getUserBasicInfo as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
+      (getUserSubscription as ReturnType<typeof vi.fn>).mockResolvedValue(mockSubscription);
+      (getConfirmedChildrenForParent as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+
+      const request = new Request("http://localhost:3000/api/children");
+
+      const response = await loader({ request, params: {}, context: {} });
+      const data = await response.json();
+
+      expect(data.children).toEqual([]);
+    });
+
+    it("should handle children with missing profile data", async () => {
+      const mockUser = {
+        id: TEST_USER_ID,
+        npub: "npub123",
+        isChild: false,
+      };
+
+      const mockSubscription = {
+        planId: "premium",
+        Plan: { name: "Premium" },
+      };
+
+      const mockChildren = [
+        {
+          npub: "npub-child-1",
+          nostrProfile: null,
+        },
+      ];
+
+      (getUserBasicInfo as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
+      (getUserSubscription as ReturnType<typeof vi.fn>).mockResolvedValue(mockSubscription);
+      (getConfirmedChildrenForParent as ReturnType<typeof vi.fn>).mockResolvedValue(mockChildren);
+
+      const request = new Request("http://localhost:3000/api/children");
+
+      const response = await loader({ request, params: {}, context: {} });
+      const data = await response.json();
+
+      expect(data.children).toEqual([
+        {
+          npub: "npub-child-1",
+          name: undefined,
+          displayName: undefined,
+          picture: undefined,
+        },
+      ]);
+    });
+
+    it("should handle children with object profile data", async () => {
+      const mockUser = {
+        id: TEST_USER_ID,
+        npub: "npub123",
+        isChild: false,
+      };
+
+      const mockSubscription = {
+        planId: "premium",
+        Plan: { name: "Premium" },
+      };
+
+      const mockChildren = [
+        {
+          npub: "npub-child-1",
+          nostrProfile: {
+            name: "Child 1",
+            display_name: "Child One",
+            picture: "https://example.com/pic.jpg",
+          },
+        },
+      ];
+
+      (getUserBasicInfo as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
+      (getUserSubscription as ReturnType<typeof vi.fn>).mockResolvedValue(mockSubscription);
+      (getConfirmedChildrenForParent as ReturnType<typeof vi.fn>).mockResolvedValue(mockChildren);
+
+      const request = new Request("http://localhost:3000/api/children");
+
+      const response = await loader({ request, params: {}, context: {} });
+      const data = await response.json();
+
+      expect(data.children[0].name).toBe("Child 1");
+      expect(data.children[0].displayName).toBe("Child One");
+      expect(data.children[0].picture).toBe("https://example.com/pic.jpg");
+    });
+  });
+
+  describe("Access Control", () => {
+    it("should return empty array when user has no npub", async () => {
+      (getUserBasicInfo as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: TEST_USER_ID,
+        npub: null,
+      });
+
+      const request = new Request("http://localhost:3000/api/children");
+
+      const response = await loader({ request, params: {}, context: {} });
+      const data = await response.json();
+
+      expect(data).toEqual({ children: [] });
+      expect(getUserSubscription).not.toHaveBeenCalled();
+    });
+
+    it("should return empty array when user is a child account", async () => {
+      (getUserBasicInfo as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: TEST_USER_ID,
+        npub: "npub123",
+        isChild: true,
+      });
+
+      const request = new Request("http://localhost:3000/api/children");
+
+      const response = await loader({ request, params: {}, context: {} });
+      const data = await response.json();
+
+      expect(data).toEqual({ children: [] });
+      expect(getUserSubscription).not.toHaveBeenCalled();
+    });
+
+    it("should return empty array when user doesn't have premium/founder subscription", async () => {
+      const mockUser = {
+        id: TEST_USER_ID,
+        npub: "npub123",
+        isChild: false,
+      };
+
+      const mockSubscription = {
+        planId: "basic",
+        Plan: { name: "Basic" },
+      };
+
+      (getUserBasicInfo as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
+      (getUserSubscription as ReturnType<typeof vi.fn>).mockResolvedValue(mockSubscription);
+
+      const request = new Request("http://localhost:3000/api/children");
+
+      const response = await loader({ request, params: {}, context: {} });
+      const data = await response.json();
+
+      expect(data).toEqual({ children: [] });
+      expect(getConfirmedChildrenForParent).not.toHaveBeenCalled();
+    });
+
+    it("should return empty array when subscription is null", async () => {
+      const mockUser = {
+        id: TEST_USER_ID,
+        npub: "npub123",
+        isChild: false,
+      };
+
+      (getUserBasicInfo as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
+      (getUserSubscription as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+
+      const request = new Request("http://localhost:3000/api/children");
+
+      const response = await loader({ request, params: {}, context: {} });
+      const data = await response.json();
+
+      expect(data).toEqual({ children: [] });
+    });
+  });
+
+  describe("Error Handling", () => {
+    it("should require authentication", async () => {
+      (requireUserId as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error("Authentication required"),
+      );
+
+      const request = new Request("http://localhost:3000/api/children");
+
+      const response = await loader({ request, params: {}, context: {} });
+      const data = await response.json();
+
+      expect(response.status).toBeGreaterThanOrEqual(400);
+      expect(data).toBeDefined();
+    });
+
+    it("should handle database errors gracefully", async () => {
+      (getUserBasicInfo as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error("Database error"),
+      );
+
+      const request = new Request("http://localhost:3000/api/children");
+
+      const response = await loader({ request, params: {}, context: {} });
+      const data = await response.json();
+
+      // Should return empty array on error
+      expect(data).toEqual({ children: [] });
+    });
+
+    it("should handle invalid JSON in nostrProfile", async () => {
+      const mockUser = {
+        id: TEST_USER_ID,
+        npub: "npub123",
+        isChild: false,
+      };
+
+      const mockSubscription = {
+        planId: "premium",
+        Plan: { name: "Premium" },
+      };
+
+      const mockChildren = [
+        {
+          npub: "npub-child-1",
+          nostrProfile: "invalid json",
+        },
+      ];
+
+      (getUserBasicInfo as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
+      (getUserSubscription as ReturnType<typeof vi.fn>).mockResolvedValue(mockSubscription);
+      (getConfirmedChildrenForParent as ReturnType<typeof vi.fn>).mockResolvedValue(mockChildren);
+
+      const request = new Request("http://localhost:3000/api/children");
+
+      const response = await loader({ request, params: {}, context: {} });
+      const data = await response.json();
+
+      // Should handle parse error gracefully
+      expect(data.children[0].name).toBeUndefined();
+    });
+  });
+});
+

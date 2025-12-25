@@ -1,5 +1,12 @@
-import { Queue, Worker, Job } from "bullmq";
-import Redis from "ioredis";
+/**
+ * Queue workers and initialization
+ * 
+ * This file handles the worker processes that process queue jobs.
+ * For enqueueing/canceling jobs, use the queue abstraction layer:
+ *   import { enqueuePostJob, cancelPostJob } from "~/infra/queue";
+ */
+
+import { Worker, Job } from "bullmq";
 
 import {
   updateLongFormPostStatus,
@@ -10,46 +17,20 @@ import {
   getCronDueScheduledPosts,
 } from "~/models/post.server";
 import { getUserById } from "~/models/user.server";
+import {
+  getQueueInstance,
+  redis,
+  closeAllQueues,
+} from "~/infra/queue";
+import type {
+  PostJobData,
+  LongFormPostJobData,
+} from "~/infra/queue";
 
-// Redis connection with BullMQ required config
-const redis = new Redis(process.env.REDIS_URL!, {
-  maxRetriesPerRequest: null,
-});
-
-// Queue for scheduled posts
-export const scheduledPostsQueue = new Queue("scheduled-posts", {
-  connection: redis,
-  defaultJobOptions: {
-    removeOnComplete: 100,
-    removeOnFail: 50,
-  },
-});
-
-// Queue for scheduled longform posts
-export const scheduledLongFormPostsQueue = new Queue(
-  "scheduled-longform-posts",
-  {
-    connection: redis,
-    defaultJobOptions: {
-      removeOnComplete: 100,
-      removeOnFail: 50,
-    },
-  },
-);
-
-// Job data interface
-interface PostJobData {
-  postId: string;
-  userId: string;
-  signedEvent: any;
-}
-
-// LongForm Job data interface
-interface LongFormPostJobData {
-  postId: string;
-  userId: string;
-  signedEvent: any;
-}
+// Get queue instances using the abstraction
+const scheduledPostsQueue = getQueueInstance("scheduled-posts");
+const scheduledLongFormPostsQueue = getQueueInstance("scheduled-longform-posts");
+const postCheckerQueue = getQueueInstance("post-checker");
 
 // Worker to process scheduled posts
 export const scheduledPostsWorker = new Worker<PostJobData>(
@@ -66,8 +47,11 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
       });
 
       // Get user relays
-      const { userRelays } = await getUserById(userId);
-      const sanitizedRelays = userRelays.map((relay) => relay.trim());
+      const user = await getUserById(userId);
+      if (!user) {
+        throw new Error(`User ${userId} not found`);
+      }
+      const sanitizedRelays = (user.userRelays || []).map((relay: string) => relay.trim());
 
       // Post to nostr publisher endpoint
       const response = await fetch(process.env.NOSTR_PUBLISHER_URL!, {
@@ -114,8 +98,11 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
       });
 
       // Get user relays
-      const { userRelays } = await getUserById(userId);
-      const sanitizedRelays = userRelays.map((relay) => relay.trim());
+      const user = await getUserById(userId);
+      if (!user) {
+        throw new Error(`User ${userId} not found`);
+      }
+      const sanitizedRelays = (user.userRelays || []).map((relay: string) => relay.trim());
 
       // Post to nostr publisher endpoint
       const response = await fetch(process.env.NOSTR_PUBLISHER_URL!, {
@@ -150,84 +137,6 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
   },
 );
 
-// Function to schedule a post
-export async function schedulePost(
-  postId: string,
-  userId: string,
-  signedEvent: any,
-  scheduledFor: number,
-) {
-  const delay = scheduledFor * 1000 - Date.now();
-
-  if (delay <= 0) {
-    throw new Error("Scheduled time must be in the future");
-  }
-
-  await scheduledPostsQueue.add(
-    "publish-post",
-    { postId, userId, signedEvent },
-    { delay },
-  );
-}
-
-// Function to cancel a scheduled post
-export async function cancelScheduledPost(postId: string) {
-  const jobs = await scheduledPostsQueue.getJobs(["waiting", "delayed"]);
-  const job = jobs.find((j) => j.data.postId === postId);
-
-  if (job) {
-    await job.remove();
-    return true;
-  }
-
-  return false;
-}
-
-// Function to schedule a longform post
-export async function scheduleLongFormPost(
-  postId: string,
-  userId: string,
-  signedEvent: any,
-  scheduledFor: number,
-) {
-  const delay = scheduledFor * 1000 - Date.now();
-
-  if (delay <= 0) {
-    throw new Error("Scheduled time must be in the future");
-  }
-
-  await scheduledLongFormPostsQueue.add(
-    "publish-longform-post",
-    { postId, userId, signedEvent },
-    { delay },
-  );
-}
-
-// Function to cancel a scheduled longform post
-export async function cancelScheduledLongFormPost(postId: string) {
-  const jobs = await scheduledLongFormPostsQueue.getJobs([
-    "waiting",
-    "delayed",
-  ]);
-  const job = jobs.find((j) => j.data.postId === postId);
-
-  if (job) {
-    await job.remove();
-    return true;
-  }
-
-  return false;
-}
-
-// Background job to check for due scheduled posts
-export const postCheckerQueue = new Queue("post-checker", {
-  connection: redis,
-  defaultJobOptions: {
-    removeOnComplete: 10,
-    removeOnFail: 10,
-  },
-});
-
 // Worker to check for due posts and schedule them
 export const postCheckerWorker = new Worker(
   "post-checker",
@@ -241,48 +150,43 @@ export const postCheckerWorker = new Worker(
 
       // Process regular posts
       for (const post of posts) {
+        if (!post.userId || !post.signedEvent || !post.scheduledFor) continue;
+        
         const scheduledTime = parseInt(post.scheduledFor, 10);
         const timeDiff = scheduledTime - now;
 
         if (timeDiff <= 1) {
-          // Schedule immediate processing
-          await scheduledPostsQueue.add(
-            "publish-post",
-            {
-              postId: post.id,
-              userId: post.userId,
-              signedEvent: post.signedEvent,
-            },
-            { delay: 0 },
+          // Schedule immediate processing using the abstraction
+          const { enqueuePostJob } = await import("~/infra/queue");
+          // Use 0 for immediate processing when timeDiff <= 1
+          await enqueuePostJob(
+            post.id,
+            post.userId,
+            post.signedEvent,
+            timeDiff <= 0 ? 0 : scheduledTime,
           );
         }
       }
 
       // Process longform posts
       for (const longformPost of longformPosts) {
+        if (!longformPost.userId || !longformPost.signedEvent || !longformPost.scheduledFor) continue;
+        
         const scheduledTime = parseInt(longformPost.scheduledFor, 10);
         const timeDiff = scheduledTime - now;
 
         if (timeDiff <= 1) {
-          // Schedule immediate processing
-          await scheduledLongFormPostsQueue.add(
-            "publish-longform-post",
-            {
-              postId: longformPost.id,
-              userId: longformPost.userId,
-              signedEvent: longformPost.signedEvent,
-            },
-            { delay: 0 },
+          // Schedule immediate processing using the abstraction
+          const { enqueueLongFormPostJob } = await import("~/infra/queue");
+          // Use 0 for immediate processing when timeDiff <= 1
+          await enqueueLongFormPostJob(
+            longformPost.id,
+            longformPost.userId,
+            longformPost.signedEvent,
+            timeDiff <= 0 ? 0 : scheduledTime,
           );
         }
       }
-
-      const readyPosts = posts.filter(
-        (p) => parseInt(p.scheduledFor, 10) - now <= 1,
-      ).length;
-      const readyLongformPosts = longformPosts.filter(
-        (p) => parseInt(p.scheduledFor, 10) - now <= 1,
-      ).length;
 
       return { processed: posts.length + longformPosts.length };
     } catch (error) {
@@ -298,6 +202,7 @@ export const postCheckerWorker = new Worker(
 
 // Start the recurring job to check for due posts every minute
 async function startPostChecker() {
+  // Set up recurring job directly (recurring jobs need direct queue access)
   await postCheckerQueue.add(
     "check-due-posts",
     {},
@@ -317,12 +222,21 @@ process.on("SIGTERM", async () => {
   await scheduledPostsWorker.close();
   await scheduledLongFormPostsWorker.close();
   await postCheckerWorker.close();
-  await redis.quit();
+  await closeAllQueues();
 });
 
 process.on("SIGINT", async () => {
   await scheduledPostsWorker.close();
   await scheduledLongFormPostsWorker.close();
   await postCheckerWorker.close();
-  await redis.quit();
+  await closeAllQueues();
 });
+
+// Re-export queue operations for backward compatibility during migration
+// These will be removed once all imports are updated
+export {
+  enqueuePostJob as schedulePost,
+  cancelPostJob as cancelScheduledPost,
+  enqueueLongFormPostJob as scheduleLongFormPost,
+  cancelLongFormPostJob as cancelScheduledLongFormPost,
+} from "~/infra/queue";

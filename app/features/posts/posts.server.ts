@@ -2,9 +2,9 @@ import { json } from "@remix-run/node";
 import { combineContent } from "~/features/posts/combined.server";
 import { getPostStats } from "~/features/posts/stats.server";
 import {
-    schedulePost,
-    cancelScheduledPost,
-} from "~/features/posts/queues.server";
+    enqueuePostJob as schedulePost,
+    cancelPostJob as cancelScheduledPost,
+} from "~/infra/queue";
 import {
     getScheduledLongFormPosts,
     deleteLongFormPost,

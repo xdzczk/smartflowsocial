@@ -1,0 +1,104 @@
+/**
+ * User Feature Public API
+ * 
+ * This module exports the public API for user-related operations.
+ * Internal implementation details are kept in services/ and queries/ directories.
+ */
+
+// Re-export Prisma types for convenience
+export type { User, HashTagPreset, QueueType, ScheduleType, UploadProvider } from "@prisma/client";
+
+// User Profile
+export {
+  updateUserProfile,
+  getUserById,
+  getUserByNpub,
+  createUser,
+  type UserWithHashTagPresets,
+} from "./services/user-profile.server";
+
+// Hashtag Presets
+export {
+  createHashTagPreset,
+  updateHashTagPreset,
+  deleteHashTagPreset,
+  getUserHashTagPresets,
+  getHashTagPresetById,
+  hashTagPresetExistsForUser,
+  // Legacy functions
+  updateUserHashTags,
+  updateUserHashTagsAndSettings,
+  getUserHashTags,
+  getShowHashTagsInPosts,
+  updateShowHashTagsInPosts,
+  getEffectiveHashtags,
+} from "./services/hashtag-presets.server";
+
+// User Settings
+export {
+  updateUserTimezone,
+  getUserTimezone,
+  updateUserRelays,
+  getUserRelays,
+  updateGiveawayBlacklist,
+  getGiveawayBlacklist,
+  updateScheduleInterval,
+  getScheduleInterval,
+  updateUserUploadProvider,
+  getUserUploadProvider,
+  getUserEnableMirrorBlossom,
+  updateUserEnableMirrorBlossom,
+  getUserMirrorUploadUrls,
+  updateUserMirrorUploadUrls,
+  updateUserMutedList,
+  getUserMutedList,
+  updateUserFilterMuted,
+  getUserFilterMuted,
+  updateUserHidePostsFromLowTrustUsers,
+  getUserHidePostsFromLowTrustUsers,
+} from "./services/user-settings.server";
+
+// Queue Types
+export {
+  createDefaultQueueTypes,
+  updateQueueType,
+  deleteQueueType,
+  getQueueTypes,
+  getQueueType,
+  getQueueTypeByIdForUser,
+  getQueueTypeByNameForUser,
+} from "./services/queue-types.server";
+
+// NWC (Nostr Wallet Connect)
+export {
+  updateUserNWC,
+  updateUserNWCEnabled,
+  clearUserNWC,
+  getUserNWC,
+  getDecryptedUserNWC,
+} from "./services/nwc.server";
+
+// Parent/Child Accounts
+export {
+  searchUsersByProfileName,
+  requestChildLink,
+  cancelChildLinkRequest,
+  getConfirmedChildrenForParent,
+  getPendingChildrenForParent,
+  getPendingParentRequestsForChild,
+  respondToChildRequest,
+  unlinkParent,
+  unlinkChildByParent,
+} from "./services/parent-child.server";
+
+// User Queries
+export {
+  getUserBasicInfo,
+  getUsersByNpubs,
+  getUserByNpubWithProfile,
+  getUserIdByNpub,
+  countUsers,
+  getEnabledUsersWithSubscriptions,
+  disableUserAccount,
+} from "./queries/user-queries.server";
+
