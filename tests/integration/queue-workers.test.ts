@@ -33,8 +33,11 @@ vi.mock("bullmq", () => {
 });
 
 // Mock dependencies
-vi.mock("~/models/post.server", () => ({
+vi.mock("~/models/post.commands.server", () => ({
   updatePostStatus: vi.fn(),
+}));
+
+vi.mock("~/models/post.queries.server", () => ({
   getCronDueScheduledPosts: vi.fn(),
 }));
 
@@ -80,7 +83,8 @@ vi.mock("~/lib/prisma.server", () => ({
 
 import { prisma } from "~/lib/prisma.server";
 
-import { updatePostStatus, getCronDueScheduledPosts } from "~/models/post.server";
+import { updatePostStatus } from "~/models/post.commands.server";
+import { getCronDueScheduledPosts } from "~/models/post.queries.server";
 import { updateLongFormPostStatus, getCronDueScheduledLongFormPosts } from "~/models/longformpost.server";
 import { getUserById } from "~/models/user.server";
 import { enqueuePostJob, enqueueLongFormPostJob } from "~/infra/queue";

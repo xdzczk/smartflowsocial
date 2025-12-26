@@ -16,12 +16,16 @@ vi.mock("~/lib/prisma.server", () => ({
 }));
 
 // Mock dependencies
-vi.mock("~/models/post.server", () => ({
+vi.mock("~/models/post.commands.server", () => ({
   deletePost: vi.fn(),
+}));
+
+vi.mock("~/models/post.queries.server", () => ({
   getPostsByIds: vi.fn(),
 }));
 
-import { deletePost, getPostsByIds } from "~/models/post.server";
+import { deletePost } from "~/models/post.commands.server";
+import { getPostsByIds } from "~/models/post.queries.server";
 import { handleRecyclablePostAction } from "~/features/posts/posts.server";
 import {
   createActionFormData,

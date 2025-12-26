@@ -40,7 +40,7 @@ export default function PostedPosts() {
     updatedAt: new Date(post.updatedAt),
     postedAt: post.postedAt ? new Date(post.postedAt) : null,
     // scheduledFor might be a string in DB, but if it needs to be Date, convert here.
-    // Based on models/post.server.ts it is string in DB.
+    // Based on models/post.types.ts - scheduledFor is stored as string in DB.
   }));
 
   const longformPosts = data.longformPosts.map((post: typeof data.longformPosts[0]) => ({

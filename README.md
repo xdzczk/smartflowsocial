@@ -137,7 +137,7 @@ npm run dev
 
 **That's it!** Open [http://localhost:3000](http://localhost:3000) and start managing your Nostr presence.
 
-> 💡 **Tip**: See [Environment Setup](./docs/environment-setup.md) for detailed configuration, or [Deployment Guide](./docs/DEPLOYMENT.md) for production deployment.
+> 💡 **Tip**: See [Environment Setup](./docs/getting-started/environment-setup.md) for detailed configuration, or [Deployment Guide](./docs/operations/deployment.md) for production deployment.
 
 ### Docker Quick Start (Alternative)
 
@@ -312,7 +312,7 @@ SmartFlowSocial vs. other Nostr scheduling and management tools:
 ### Getting Started
 - [Environment Setup](./docs/environment-setup.md) - Configure environment variables
 - [User Onboarding](./docs/onboarding.md) - First-time user guide
-- [Deployment Guide](./docs/DEPLOYMENT.md) - Production deployment
+- [Deployment Guide](./docs/operations/deployment.md) - Production deployment
 
 ### Core Features
 - [Posting Workflow](./docs/posting.md) - Create and manage posts
@@ -326,11 +326,11 @@ SmartFlowSocial vs. other Nostr scheduling and management tools:
 - [Nostr Integration](./docs/NOSTR_INTEGRATION.md) - Nostr protocol details
 
 ### Operations
-- [Operations Guide](./docs/OPERATIONS.md) - Monitoring and maintenance
-- [Queue System](./docs/QUEUE_SYSTEM.md) - BullMQ/Redis documentation
-- [Security Guide](./docs/SECURITY.md) - Security best practices
-- [Performance Guide](./docs/PERFORMANCE.md) - Optimization strategies
-- [Troubleshooting](./docs/TROUBLESHOOTING.md) - Common issues
+- [Operations Guide](./docs/operations/operations.md) - Monitoring and maintenance
+- [Queue System](./docs/operations/queue-system.md) - BullMQ/Redis documentation
+- [Security Guide](./docs/security/security.md) - Security best practices
+- [Performance Guide](./docs/reference/performance.md) - Optimization strategies
+- [Troubleshooting](./docs/operations/troubleshooting.md) - Common issues
 
 ### Development
 - [Contributing Guide](./CONTRIBUTING.md) - How to contribute
@@ -391,7 +391,7 @@ SmartFlowSocial integrates with several external services:
 
 | Service | Purpose | Required | Setup Guide |
 |---------|---------|----------|-------------|
-| [HTTP Nostr Publisher](https://github.com/getAlby/http-nostr-publisher) | Signs and publishes Nostr events | ✅ Yes | [Deployment Guide](./docs/DEPLOYMENT.md) |
+| [HTTP Nostr Publisher](https://github.com/getAlby/http-nostr-publisher) | Signs and publishes Nostr events | ✅ Yes | [Deployment Guide](./docs/operations/deployment.md) |
 | [Primal Caching Service](https://github.com/PrimalHQ/primal-caching-service) | Profile/event lookups | ⚠️ Optional | Uses public endpoints by default |
 | Redis | Background job processing | ✅ Yes | [Queue System](./docs/QUEUE_SYSTEM.md) |
 | PostgreSQL | Database | ✅ Yes | [Environment Setup](./docs/environment-setup.md) |
@@ -411,13 +411,13 @@ SmartFlowSocial can be deployed to various platforms:
 
 ### Manual Deployment
 
-- **Fly.io**: [Deployment Guide](./docs/DEPLOYMENT.md#flyio)
-- **Railway**: [Deployment Guide](./docs/DEPLOYMENT.md#railway)
-- **Docker**: [Docker Deployment](./docs/DEPLOYMENT.md#docker-deployment)
-- **AWS/EC2**: [AWS Deployment](./docs/DEPLOYMENT.md#aws-ec2ecs)
-- **VPS**: [VPS Deployment](./docs/DEPLOYMENT.md#vps-deployment)
+- **Fly.io**: [Deployment Guide](./docs/operations/deployment.md#flyio)
+- **Railway**: [Deployment Guide](./docs/operations/deployment.md#railway)
+- **Docker**: [Docker Deployment](./docs/operations/deployment.md#docker-deployment)
+- **AWS/EC2**: [AWS Deployment](./docs/operations/deployment.md#aws-ec2ecs)
+- **VPS**: [VPS Deployment](./docs/operations/deployment.md#vps-deployment)
 
-See [Deployment Guide](./docs/DEPLOYMENT.md) for detailed instructions.
+See [Deployment Guide](./docs/operations/deployment.md) for detailed instructions.
 
 ---
 
@@ -456,7 +456,7 @@ Security is a top priority:
 - 🔍 **Regular Audits**: Security testing included
 - 📝 **Responsible Disclosure**: Report security issues privately
 
-See [Security Guide](./docs/SECURITY.md) for best practices and reporting.
+See [Security Guide](./docs/security/security.md) for best practices and reporting.
 
 ---
 
@@ -571,7 +571,7 @@ See [LICENSE](./LICENSE) for details.
 - 📖 **Documentation**: [docs/README.md](./docs/README.md)
 - 🐛 **Bug Reports**: [GitHub Issues](https://github.com/xdzczk/SmartFlowSocial/issues)
 - 💡 **Feature Requests**: [GitHub Discussions](https://github.com/xdzczk/SmartFlowSocial/discussions)
-- 📧 **Security Issues**: Report privately (see [Security Guide](./docs/SECURITY.md))
+- 📧 **Security Issues**: Report privately (see [Security Guide](./docs/security/security.md))
 
 ---
 

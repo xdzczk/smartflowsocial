@@ -11,123 +11,35 @@ import { requireUserId } from "~/features/auth/session.server";
 import { getQueueColor } from "~/features/posts/queueColors";
 import { formatDate, getImageUrls } from "~/lib/helpers";
 import {
-  getTemplateById,
-  updateTemplate,
-  deleteTemplate,
-  removePostFromTemplate,
-} from "~/models/template.server";
+  loadTemplateEditData,
+  handleTemplateEditAction,
+} from "~/features/templates/services/template-edit.server";
+import { withErrorHandling, withActionErrorHandling } from "~/lib/error-handler.server";
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
+export const loader = withErrorHandling(async ({ request, params }: LoaderFunctionArgs) => {
   const userId = await requireUserId(request);
   const templateId = params.id;
 
   if (!templateId) {
-    throw new Response("Template ID is required", { status: 400 });
+    const { ValidationError } = await import("~/lib/errors");
+    throw new ValidationError("Template ID is required");
   }
 
-  try {
-    const template = await getTemplateById({ id: templateId, userId });
+  return loadTemplateEditData(templateId, userId);
+});
 
-    if (!template) {
-      throw new Response("Template not found", { status: 404 });
-    }
+export const action = withActionErrorHandling(async ({ request, params }: ActionFunctionArgs) => {
+  const userId = await requireUserId(request);
+  const templateId = params.id;
 
-    return json({ template });
-  } catch (error) {
-    // Use centralized error handling for loader errors
-    const { handleLoaderError } = await import("~/lib/error-handler.server");
-    return handleLoaderError(error, { template: null });
-  }
-}
-
-export async function action({ request, params }: ActionFunctionArgs) {
-  try {
-    const userId = await requireUserId(request);
-    const templateId = params.id;
-
-    if (!templateId) {
-      const { ValidationError } = await import("~/lib/errors");
-      throw new ValidationError("Template ID is required");
-    }
-    const formData = await request.formData();
-    const _action = formData.get("_action");
-
-  if (_action === "updateName") {
-    const name = formData.get("name");
-    if (!name || typeof name !== "string") {
-      return json({ error: "Template name is required" }, { status: 400 });
-    }
-
-    await updateTemplate({
-      id: templateId,
-      userId,
-      name,
-    });
-
-    return json({ success: true });
+  if (!templateId) {
+    const { ValidationError } = await import("~/lib/errors");
+    throw new ValidationError("Template ID is required");
   }
 
-  if (_action === "removePost") {
-    const postId = formData.get("postId");
-    if (!postId || typeof postId !== "string") {
-      return json({ error: "Post ID is required" }, { status: 400 });
-    }
-
-    await removePostFromTemplate({
-      templateId,
-      postId,
-      userId,
-    });
-
-    return json({ success: true });
-  }
-
-  if (_action === "deleteTemplate") {
-    await deleteTemplate({ id: templateId, userId });
-    return redirect("/dashboard/templates");
-  }
-
-  if (_action === "schedule") {
-    const template = await getTemplateById({ id: templateId, userId });
-
-    if (!template) {
-      return json({ error: "Template not found" }, { status: 404 });
-    }
-
-    // Prepare template data for scheduling (similar to repost mode)
-    const localDate = new Date();
-    localDate.setHours(localDate.getHours() + 1);
-
-    const templateData = template.posts.map((post, index) => {
-      const scheduleDate = new Date(localDate);
-      scheduleDate.setHours(scheduleDate.getHours() + index);
-
-      return {
-        caption: post.caption || "",
-        fileUrl: post.fileUrl,
-        queueType: post.queueType || "unassigned",
-        scheduledFor: scheduleDate
-          .toLocaleString("en-US", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: false,
-          })
-          .replace(/(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+)/, "$3-$1-$2T$4:$5"),
-      };
-    });
-
-    return json({ scheduleData: templateData });
-  }
-
-    return json({ error: "Invalid action" }, { status: 400 });
-  } catch (error) {
-    const { handleActionError } = await import("~/lib/error-handler.server");
-    return handleActionError(error);
-  }
-}
+  const formData = await request.formData();
+  return handleTemplateEditAction(formData, templateId, userId);
+});
 
 export default function EditTemplate() {
   const { template } = useLoaderData<typeof loader>();

@@ -49,7 +49,7 @@ vi.mock("~/lib/prisma.server", () => ({
   },
 }));
 
-vi.mock("~/models/post.server", () => ({
+vi.mock("~/models/post.commands.server", () => ({
   updatePostStatus: vi.fn(),
 }));
 
@@ -75,7 +75,7 @@ vi.mock("~/infra/queue", () => ({
 global.fetch = vi.fn();
 
 import { prisma } from "~/lib/prisma.server";
-import { updatePostStatus } from "~/models/post.server";
+import { updatePostStatus } from "~/models/post.commands.server";
 import { updateLongFormPostStatus } from "~/models/longformpost.server";
 import { getUserById } from "~/models/user.server";
 import { TEST_USER_ID, createMockPost } from "../utils/test-helpers";

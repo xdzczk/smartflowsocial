@@ -569,7 +569,7 @@ Monitor these metrics:
 
 ### Setting Up Monitoring
 
-See [Operations Guide](./OPERATIONS.md) for detailed monitoring setup.
+See [Operations Guide](./operations.md) for detailed monitoring setup.
 
 ---
 
@@ -651,8 +651,8 @@ See [Operations Guide](./OPERATIONS.md) for detailed monitoring setup.
 
 ## Additional Resources
 
-- [Operations Guide](./OPERATIONS.md) - Monitoring setup
-- [Deployment Guide](./DEPLOYMENT.md) - Production deployment
+- [Operations Guide](./operations.md) - Monitoring setup
+- [Deployment Guide](./deployment.md) - Production deployment
 - [Database Schema](./database-schema.md) - Database structure
 - [Architecture](./architecture.md) - System architecture
 

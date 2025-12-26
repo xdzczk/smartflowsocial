@@ -12,7 +12,7 @@ import {
   getImageInfo,
 } from "~/features/upload/image-resize.server";
 import { uploadEditorJSImage } from "~/features/upload/s3.server";
-import { getUserUploadProvider } from "~/models/user.server";
+import { loadUploadProviderSettings } from "~/features/user/services/upload-provider.server";
 import {
   ValidationError,
   ExternalServiceError,
@@ -29,7 +29,8 @@ export const action = withActionErrorHandling(
     const userId = await requireUserId(request);
 
     // Check user's upload provider preference
-    const uploadProvider = await getUserUploadProvider(userId);
+    const { provider } = await loadUploadProviderSettings(userId);
+    const uploadProvider = provider;
 
     // If user prefers blossom, handle it differently
     if (uploadProvider.includes("BLOSSOM")) {

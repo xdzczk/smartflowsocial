@@ -1,6 +1,10 @@
 import { useEffect } from "react";
 
-export default function ZapButton({ npub }) {
+interface ZapButtonProps {
+  npub: string;
+}
+
+export default function ZapButton({ npub }: ZapButtonProps) {
   useEffect(() => {
     // Initialize nostr-zap after component mounts
     const script = document.createElement("script");

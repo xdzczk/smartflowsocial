@@ -16,8 +16,13 @@ interface RelaysSettingsProps {
   relays: string[];
 }
 
+interface FetcherData {
+  success?: boolean;
+  error?: string;
+}
+
 export function RelaysSettings({ relays }: RelaysSettingsProps) {
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<FetcherData>();
   const [userRelays, setUserRelays] = useState(relays || []);
   const [relayErrors, setRelayErrors] = useState<string[]>([]);
 

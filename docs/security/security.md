@@ -346,7 +346,7 @@ const rateLimiter = new RateLimiterRedis({
 
 ### Reverse Proxy Configuration
 
-See [Deployment Guide](./DEPLOYMENT.md) for nginx/Caddy configuration.
+See [Deployment Guide](./deployment.md) for nginx/Caddy configuration.
 
 ### Certificate Management
 
@@ -542,16 +542,8 @@ throw new Error(`Database error: ${dbError.message}`);
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 - [Remix Security](https://remix.run/docs/en/main/guides/security)
 - [Node.js Security Best Practices](https://nodejs.org/en/docs/guides/security/)
-- [Deployment Guide](../operations/deployment.md)
-- [Error Handling Guide](../error-handling.md)
-
-## See Also
-
-- [Deployment Guide](../operations/deployment.md) - Production deployment security
-- [Error Handling Guide](../error-handling.md) - Secure error handling
-- [Sentry Setup](./sentry-setup.md) - Error tracking and monitoring
-- [Operations Guide](../operations/operations.md) - Security monitoring
-- [Architecture Guide](../getting-started/architecture.md) - Security architecture
+- [Deployment Guide](./deployment.md)
+- [Error Handling Guide](./error-handling.md)
 
 ---
 

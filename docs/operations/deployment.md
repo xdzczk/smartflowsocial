@@ -781,19 +781,10 @@ upstream smartflow {
 
 ## Additional Resources
 
-- [Environment Setup Guide](../getting-started/environment-setup.md)
+- [Environment Setup Guide](./environment-setup.md)
 - [Operations Guide](./operations.md)
 - [Troubleshooting Guide](./troubleshooting.md)
-- [Architecture Documentation](../getting-started/architecture.md)
-
-## See Also
-
-- [Operations Guide](./operations.md) - Monitoring, logging, and maintenance
-- [Troubleshooting Guide](./troubleshooting.md) - Common deployment issues
-- [Environment Setup](../getting-started/environment-setup.md) - Required environment variables
-- [Security Guide](../security/security.md) - Security best practices for deployment
-- [Backup & Recovery](./backup-recovery.md) - Backup procedures
-- [Queue System](./queue-system.md) - Queue system setup
+- [Architecture Documentation](./architecture.md)
 
 
 

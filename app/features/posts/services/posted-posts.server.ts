@@ -7,7 +7,7 @@
 import { combineContent } from "~/features/posts/combined.server";
 import { getPostStats } from "~/features/posts/stats.server";
 import { getPublishedLongFormPosts } from "~/models/longformpost.server";
-import { getPostedPosts } from "~/models/post.server";
+import { getPostedPosts } from "~/models/post.queries.server";
 import { getUserById, getQueueTypes } from "~/models/user.server";
 
 /**

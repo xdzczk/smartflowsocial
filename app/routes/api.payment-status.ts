@@ -1,11 +1,10 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 
-import { checkPaymentStatus } from "~/models/payment.server";
-import { ValidationError, DatabaseError } from "~/lib/errors";
+import { checkPaymentStatusById } from "~/features/payments/services/payment-status.server";
+import { ValidationError } from "~/lib/errors";
 import {
   withActionErrorHandling,
-  createSuccessResponse,
   assert,
 } from "~/lib/error-handler.server";
 
@@ -22,46 +21,7 @@ export const action = withActionErrorHandling(
       hasPaymentId: paymentId !== null,
     });
 
-    let paymentStatus;
-    try {
-      paymentStatus = await checkPaymentStatus(paymentId);
-    } catch (error) {
-      throw new DatabaseError("Failed to check payment status", {
-        paymentId,
-        originalError: error instanceof Error ? error.message : String(error),
-      });
-    }
-
-    if (paymentStatus.paid) {
-      return json(
-        {
-          success: true,
-          paid: true,
-          paidAt: paymentStatus.paidAt,
-          message: "Payment completed successfully!",
-        },
-        {
-          status: 200,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      );
-    }
-
-    return json(
-      {
-        success: true,
-        paid: false,
-        status: paymentStatus.status,
-      },
-      {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      },
-    );
+    return checkPaymentStatusById(paymentId);
   },
 );
 

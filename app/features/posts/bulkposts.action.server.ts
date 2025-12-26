@@ -6,7 +6,7 @@ import { json, redirect } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth/session.server";
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
-import { createPost, updatePost } from "~/models/post.server";
+import { createPost, updatePost } from "~/models/post.commands.server";
 import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
 import { isVideoUrl } from "~/utils/media-helpers";
 import { logInfo } from "~/lib/error-logger.server";

@@ -262,7 +262,7 @@ This guide helps you diagnose and resolve common issues with SmartFlowSocial.
    pm2 restart smartflow-worker
    ```
 
-See [Queue System Documentation](./QUEUE_SYSTEM.md) for more details.
+See [Queue System Documentation](./queue-system.md) for more details.
 
 ### Jobs Failing
 
@@ -650,10 +650,10 @@ If you're still experiencing issues:
 
 ## Additional Resources
 
-- [Deployment Guide](./DEPLOYMENT.md)
-- [Queue System Documentation](./QUEUE_SYSTEM.md)
-- [Operations Guide](./OPERATIONS.md)
-- [Error Handling Guide](./ERROR_HANDLING.md)
+- [Deployment Guide](./deployment.md)
+- [Queue System Documentation](./queue-system.md)
+- [Operations Guide](./operations.md)
+- [Error Handling Guide](./error-handling.md)
 
 
 

@@ -28,5 +28,5 @@ export {
 
 export {
   updateUserProfile,
-} from "./profile.server";
+} from "~/features/user";
 

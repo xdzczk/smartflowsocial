@@ -13,9 +13,12 @@ vi.mock("~/features/auth/session.server", () => ({
   requireUserId: vi.fn(),
 }));
 
-vi.mock("~/models/post.server", () => ({
+vi.mock("~/models/post.commands.server", () => ({
   createPost: vi.fn(),
   updatePost: vi.fn(),
+}));
+
+vi.mock("~/models/post.queries.server", () => ({
   getPostsByIds: vi.fn(),
 }));
 
@@ -24,7 +27,8 @@ vi.mock("~/features/posts/services/queue-type-resolver.server", () => ({
 }));
 
 import { requireUserId } from "~/features/auth/session.server";
-import { createPost, updatePost, getPostsByIds } from "~/models/post.server";
+import { createPost, updatePost } from "~/models/post.commands.server";
+import { getPostsByIds } from "~/models/post.queries.server";
 import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
 import { bulkPostsAction } from "~/features/posts/bulkposts.action.server";
 import {

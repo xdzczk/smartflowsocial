@@ -1,6 +1,6 @@
 import type { QueueType } from "@prisma/client";
 
-import { getLastPostTimeForQueue } from "~/models/post.server";
+import { getLastPostTimeForQueue } from "~/models/post.queries.server";
 import { getScheduleInterval } from "~/models/user.server";
 import type {
   QueueType as TypedQueueType,

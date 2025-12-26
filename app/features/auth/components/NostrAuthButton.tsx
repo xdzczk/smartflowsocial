@@ -79,14 +79,16 @@ export default function NostrAuthButton() {
     }
   }, [fetcher]);
 
-  const handleLogout = useCallback(async (event) => {
+  const handleLogout = useCallback(async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     // Dispatch nostr logout event
     document.dispatchEvent(new Event("nlLogout"));
 
     // Submit the logout form after a small delay to ensure nostr logout completes
     setTimeout(() => {
-      event.target.submit();
+      if (event.target instanceof HTMLFormElement) {
+        event.target.submit();
+      }
     }, 100);
   }, []);
 
@@ -97,20 +99,22 @@ export default function NostrAuthButton() {
           <div className="flex items-center gap-3">
             <Avatar>
               <AvatarImage
-                src={user.nostrProfile?.picture}
+                src={typeof user.nostrProfile === 'object' && user.nostrProfile !== null && 'picture' in user.nostrProfile ? String(user.nostrProfile.picture) : undefined}
                 alt="Profile"
               />
               <AvatarFallback>
-                {user.nostrProfile?.name?.[0] ||
-                  user.nostrProfile?.display_name?.[0] ||
-                  "U"}
+                {typeof user.nostrProfile === 'object' && user.nostrProfile !== null
+                  ? (('name' in user.nostrProfile && user.nostrProfile.name ? String(user.nostrProfile.name)[0] : null) ||
+                     ('display_name' in user.nostrProfile && user.nostrProfile.display_name ? String(user.nostrProfile.display_name)[0] : null) ||
+                     "U")
+                  : "U"}
               </AvatarFallback>
             </Avatar>
             <span className="hidden sm:inline">
-              {user.nostrProfile?.name ||
-                user.nostrProfile?.display_name
-                ? user.nostrProfile.name ||
-                user.nostrProfile.display_name
+              {typeof user.nostrProfile === 'object' && user.nostrProfile !== null
+                ? (('name' in user.nostrProfile && user.nostrProfile.name ? String(user.nostrProfile.name) : null) ||
+                   ('display_name' in user.nostrProfile && user.nostrProfile.display_name ? String(user.nostrProfile.display_name) : null) ||
+                   `${(user.npub || "").slice(0, 12)}...${(user.npub || "").slice(-8)}`)
                 : `${(user.npub || "").slice(0, 12)}...${(user.npub || "").slice(-8)}`}
             </span>
             {location.pathname === "/" ? (

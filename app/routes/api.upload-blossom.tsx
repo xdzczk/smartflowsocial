@@ -1,7 +1,7 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth/session.server";
-import { getUserUploadProvider } from "~/models/user.server";
+import { loadUploadProviderSettings } from "~/features/user/services/upload-provider.server";
 import {
   ValidationError,
   AuthorizationError,
@@ -18,7 +18,8 @@ export const action = withActionErrorHandling(
     const userId = await requireUserId(request);
 
     // Check if user has any Blossom provider as their preferred upload provider
-    const uploadProvider = await getUserUploadProvider(userId);
+    const { provider } = await loadUploadProviderSettings(userId);
+    const uploadProvider = provider;
     if (!uploadProvider.includes("BLOSSOM")) {
       throw new AuthorizationError("Blossom uploads not enabled for this user", {
         userId,

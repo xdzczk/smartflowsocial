@@ -9,9 +9,7 @@ import Footer from "~/components/layout/DashboardFooter";
 import Header from "~/components/layout/DashboardHeader";
 import { requireUser } from "~/features/auth/session.server";
 import { requireActiveSubscription } from "~/features/payments/subscriptions.server";
-import { updateUserSubscription } from "~/models/payment.server";
-import { respondToChildRequest, getUsersByNpubs } from "~/models/user.server";
-import { logWarning } from "~/lib/error-logger.server";
+import { loadDashboardData, handleDashboardAction } from "~/features/user/services/dashboard.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const user = await requireUser(request);
@@ -20,56 +18,24 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const subscriptionData = await requireActiveSubscription(user.id);
 
   // Pending parent link requests for this user (as child)
-  const childNpub = user.npub;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pendingParentNpubs: string[] =
     (user as unknown as { pendingParentRequests?: string[] }).pendingParentRequests || [];
-  const pendingParentUsers = await getUsersByNpubs(pendingParentNpubs);
+  
+  const dashboardData = await loadDashboardData(user.id, user.npub, pendingParentNpubs);
 
   return json({
     userId: user.id,
     user: subscriptionData.user,
     currentSubscription: subscriptionData.currentSubscription,
-    pendingParentUsers,
-    childNpub,
+    ...dashboardData,
   });
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const user = await requireUser(request);
   const formData = await request.formData();
-  const _action = formData.get("_action") as string;
-  if (_action === "respond_child_request") {
-    const parentNpub = formData.get("parentNpub") as string;
-    const decision = formData.get("decision") as "accept" | "reject";
-
-    const res = await respondToChildRequest(
-      user.npub,
-      parentNpub,
-      decision === "accept",
-    );
-    if (!res.ok) return json({ error: res.reason }, { status: 400 });
-
-    // Promote child's subscription to basic on accept
-    if (decision === "accept") {
-      try {
-        await updateUserSubscription(
-          user.id,
-          "basic",
-          `free_childlink_basic_${Date.now()}_${user.id}`,
-        );
-      } catch (e) {
-        logWarning("Failed to promote child to basic plan after accept", {
-          userId: user.id,
-          error: e instanceof Error ? e.message : String(e),
-        });
-      }
-    }
-
-    return json({ success: true });
-  }
-
-  return json({ error: "Invalid action" }, { status: 400 });
+  return handleDashboardAction(formData, user.id, user.npub);
 };
 
 function ProfileBits({ nostrProfile }: { nostrProfile: unknown }) {

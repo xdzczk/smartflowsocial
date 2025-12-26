@@ -16,6 +16,7 @@ export const PLAN_FEATURES = {
     posted: true, // Free users can access posted content
     giveaways: true, // Free users can access giveaways
     settings: true, // Free users can access settings
+    engagement_feed: false, // Free users cannot access engagement feed
   },
   basic: {
     basicScheduling: true,
@@ -84,7 +85,7 @@ export const PLAN_FEATURES = {
 } as const;
 
 export type PlanType = keyof typeof PLAN_FEATURES;
-export type FeatureName = keyof typeof PLAN_FEATURES.free;
+export type FeatureName = keyof typeof PLAN_FEATURES.free | keyof typeof PLAN_FEATURES.basic;
 
 export interface UserSubscription {
   planId: string;

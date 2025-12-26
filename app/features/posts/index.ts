@@ -89,12 +89,8 @@ export {
 // ============================================================================
 // Queue Management
 // ============================================================================
-
-export {
-  getQueueWorkers,
-  startQueueWorkers,
-  stopQueueWorkers,
-} from "./queues.server";
+// Note: Queue workers are automatically started when the module is imported.
+// They are managed by the queues.server.ts file and don't need explicit start/stop functions.
 
 // ============================================================================
 // Long Form Posts

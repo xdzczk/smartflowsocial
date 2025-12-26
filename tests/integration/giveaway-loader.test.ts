@@ -14,7 +14,7 @@ vi.mock("~/lib/nostrwebsocket.server", () => ({
   connectToPrimalCache: vi.fn(),
 }));
 
-vi.mock("~/models/post.server", () => ({
+vi.mock("~/models/post.queries.server", () => ({
   getRecentPostedPosts: vi.fn(),
 }));
 
@@ -39,7 +39,7 @@ vi.mock("~/lib/helpers", () => ({
 }));
 
 import { connectToPrimalCache } from "~/lib/nostrwebsocket.server";
-import { getRecentPostedPosts } from "~/models/post.server";
+import { getRecentPostedPosts } from "~/models/post.queries.server";
 import { getGiveawayBlacklist, getUserById, getQueueTypes } from "~/models/user.server";
 import { fetchGiveawayParticipants } from "~/features/giveaway/giveaway.server";
 import { loadGiveawayData } from "~/features/giveaway/giveaway-loader.server";

@@ -23,7 +23,7 @@ import {
 } from "../utils/scheduling-test-helpers";
 
 // Mock dependencies
-vi.mock("~/models/post.server", () => ({
+vi.mock("~/models/post.queries.server", () => ({
   getLastPostTimeForQueue: vi.fn(),
 }));
 
@@ -31,7 +31,7 @@ vi.mock("~/models/user.server", () => ({
   getScheduleInterval: vi.fn(),
 }));
 
-import { getLastPostTimeForQueue } from "~/models/post.server";
+import { getLastPostTimeForQueue } from "~/models/post.queries.server";
 import { getScheduleInterval } from "~/models/user.server";
 
 describe("Scheduling Algorithms", () => {

@@ -4,7 +4,7 @@
  */
 
 import { connectToPrimalCache } from "~/lib/nostrwebsocket.server";
-import { getRecentPostedPosts } from "~/models/post.server";
+import { getRecentPostedPosts } from "~/models/post.queries.server";
 import {
   getGiveawayBlacklist,
   getUserById,

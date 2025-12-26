@@ -548,7 +548,7 @@ Access at `http://localhost:5555`
 
 ## Queue Monitoring
 
-See [Queue System Documentation](./QUEUE_SYSTEM.md) for detailed queue monitoring.
+See [Queue System Documentation](./queue-system.md) for detailed queue monitoring.
 
 ### Key Metrics
 
@@ -674,10 +674,10 @@ cp /var/lib/redis/dump.rdb /backups/redis-$(date +%Y%m%d).rdb
 
 ## Additional Resources
 
-- [Deployment Guide](./DEPLOYMENT.md)
-- [Queue System Documentation](./QUEUE_SYSTEM.md)
-- [Troubleshooting Guide](./TROUBLESHOOTING.md)
-- [Error Handling Guide](./ERROR_HANDLING.md)
+- [Deployment Guide](./deployment.md)
+- [Queue System Documentation](./queue-system.md)
+- [Troubleshooting Guide](./troubleshooting.md)
+- [Error Handling Guide](./error-handling.md)
 
 
 

@@ -172,7 +172,7 @@ DROP INDEX IF EXISTS "Post_userId_isPosted_idx";
 ## References
 
 - [Prisma Indexes Documentation](https://www.prisma.io/docs/concepts/components/prisma-schema/indexes)
-- [Query Optimization Guide](./PERFORMANCE.md)
+- [Query Optimization Guide](../reference/performance.md)
 - [Database Schema](./database-schema.md)
 
 

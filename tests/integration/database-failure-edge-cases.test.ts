@@ -40,7 +40,8 @@ vi.mock("~/lib/prisma.server", () => ({
 }));
 
 import { prisma } from "~/lib/prisma.server";
-import { getScheduledPosts, createPost, updatePost } from "~/models/post.server";
+import { getScheduledPosts } from "~/models/post.queries.server";
+import { createPost, updatePost } from "~/models/post.commands.server";
 import { getUserById } from "~/models/user.server";
 
 describe("Database Failure Edge Cases", () => {

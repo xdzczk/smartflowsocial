@@ -7,6 +7,7 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import AssetBrowser from "~/features/assets/components/AssetBrowser";
+import type { Asset } from "~/features/assets/types";
 import {
   signLongFormEvent,
   convertEditorJSToMarkdown,
@@ -35,14 +36,6 @@ interface HashTagPreset {
   name: string;
   tags: string;
   description?: string | null;
-}
-
-interface Asset {
-  id: string;
-  assetType: string;
-  fileUrl?: string;
-  content?: string;
-  title?: string;
 }
 
 interface InitialData {

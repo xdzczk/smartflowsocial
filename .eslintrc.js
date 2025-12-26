@@ -100,6 +100,12 @@ module.exports = {
             // Prevent importing from feature subdirectories (services/, hooks/, components/, utils/)
             // Must use public API via index.ts instead
             zones: [
+              // Routes cannot import from models directly - must use service layers
+              {
+                target: "app/routes/**/*",
+                from: "app/models/**",
+                message: "Routes cannot import from ~/models/* directly. Use feature service layers instead (e.g., ~/features/*/services/*.server.ts)",
+              },
               // Routes can only import from features via public API
               {
                 target: "app/routes/**/*",

@@ -14,7 +14,7 @@ import {
 } from "../database/database-test-helpers";
 import { getTestPrisma } from "../database/test-db";
 import { getUserById } from "~/models/user.server";
-import { createPost } from "~/models/post.server";
+import { createPost } from "~/models/post.commands.server";
 
 // Don't mock Prisma - this test uses the real database
 // Model functions will use the real Prisma client from getTestPrisma()

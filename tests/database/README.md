@@ -109,7 +109,8 @@ describeDatabase("Post Model", () => {
 
 ```typescript
 import { withDatabase } from "~/tests/database/database-test-helpers";
-import { createPost, getUserById } from "~/models/post.server";
+import { createPost } from "~/models/post.commands.server";
+import { getUserById } from "~/models/user.server";
 
 it("should create post using model function", async () => {
   await withDatabase(async (prisma) => {

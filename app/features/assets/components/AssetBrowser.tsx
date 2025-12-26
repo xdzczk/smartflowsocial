@@ -2,15 +2,7 @@ import { useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-
-interface Asset {
-  id: string;
-  title: string;
-  content?: string;
-  fileUrl?: string;
-  assetType: "TEXT" | "IMAGE";
-  tags?: string[];
-}
+import type { Asset } from "~/features/assets/types";
 
 interface AssetBrowserProps {
   assets: Asset[];

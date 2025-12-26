@@ -20,7 +20,7 @@ vi.mock("~/lib/prisma.server", () => ({
   },
 }));
 
-vi.mock("~/models/post.server", () => ({
+vi.mock("~/models/post.commands.server", () => ({
   updatePostStatus: vi.fn(),
 }));
 
@@ -29,7 +29,7 @@ vi.mock("~/models/user.server", () => ({
 }));
 
 import { prisma } from "~/lib/prisma.server";
-import { updatePostStatus } from "~/models/post.server";
+import { updatePostStatus } from "~/models/post.commands.server";
 import { getUserById } from "~/models/user.server";
 
 describe("Property-Based Tests: Queue Operations", () => {

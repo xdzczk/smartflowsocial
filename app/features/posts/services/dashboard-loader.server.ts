@@ -10,7 +10,7 @@ import {
 import {
   getScheduledPosts,
   getPostStatistics,
-} from "~/models/post.server";
+} from "~/models/post.queries.server";
 import {
   getUserById,
   getQueueTypes,

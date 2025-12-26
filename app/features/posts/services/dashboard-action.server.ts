@@ -6,9 +6,7 @@
 import {
   deleteLongFormPost,
 } from "~/models/longformpost.server";
-import {
-  deletePost,
-} from "~/models/post.server";
+import { deletePost } from "~/models/post.commands.server";
 
 export async function handleDashboardAction(
   formData: FormData,

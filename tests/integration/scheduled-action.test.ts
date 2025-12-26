@@ -8,7 +8,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock dependencies
-vi.mock("~/models/post.server", () => ({
+vi.mock("~/models/post.commands.server", () => ({
   deletePost: vi.fn(),
 }));
 
@@ -16,7 +16,7 @@ vi.mock("~/models/longformpost.server", () => ({
   deleteLongFormPost: vi.fn(),
 }));
 
-import { deletePost } from "~/models/post.server";
+import { deletePost } from "~/models/post.commands.server";
 import { deleteLongFormPost } from "~/models/longformpost.server";
 import { handleScheduledAction } from "~/features/posts/services/scheduled-action.server";
 import { createActionFormData, TEST_USER_ID, TEST_POST_ID, TEST_LONGFORM_ID, createPostIds } from "../utils/test-helpers";

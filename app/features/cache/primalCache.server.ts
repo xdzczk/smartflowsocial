@@ -6,14 +6,18 @@ type CacheResponse = unknown[];
 /**
  * Fetches data from the Primal cache REST API
  */
-async function fetchFromCache(
+export async function fetchFromCache(
   requestType: string,
   params: CacheParams,
   retries = 2,
 ): Promise<CacheResponse> {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const response = await fetch(process.env.PRIMAL_CACHING_URL, {
+      const url = process.env.PRIMAL_CACHING_URL;
+      if (!url) {
+        throw new Error("PRIMAL_CACHING_URL environment variable is not set");
+      }
+      const response = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -1,7 +1,7 @@
 /**
  * Integration tests for Post model functions
  * 
- * Tests the database operations in app/models/post.server.ts
+ * Tests the database operations in app/models/post.queries.server.ts and app/models/post.commands.server.ts
  * Uses mocked Prisma to test business logic without requiring a real database.
  */
 
@@ -10,12 +10,14 @@ import {
   createPost,
   deletePost,
   updatePost,
+  updatePostStatus,
+} from "~/models/post.commands.server";
+import {
   getScheduledPosts,
   getPostedPosts,
   getPostById,
   getPostStatistics,
-  updatePostStatus,
-} from "~/models/post.server";
+} from "~/models/post.queries.server";
 
 // Mock Prisma - use vi.hoisted to allow top-level variables in mocks
 const { mockPrisma } = vi.hoisted(() => {

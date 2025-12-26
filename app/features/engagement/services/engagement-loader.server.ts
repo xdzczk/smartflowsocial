@@ -13,7 +13,7 @@ import {
   type Notification,
 } from "~/features/engagement/engagement.server";
 import { calculateTrustScore, type User } from "~/features/engagement/trustScore";
-import { getPostedPosts } from "~/models/post.server";
+import { getPostedPosts } from "~/models/post.queries.server";
 import { getUserById } from "~/models/user.server";
 
 /**

@@ -209,18 +209,39 @@ export async function schedulePost(userId: string, postData: PostData) {
   - Minimal orchestration (calling feature services)
 - **What does NOT belong here**:
   - Business logic (delegate to features)
-  - Database queries (delegate to models)
+  - Database queries (delegate to models via feature services)
+  - Direct model imports (use feature service layers instead)
   - Complex calculations
   - Permission logic (delegate to features)
 
 **Example**:
 ```typescript
-// ✅ Good: HTTP wiring with minimal orchestration
+// ✅ Good: HTTP wiring with service layer
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const userId = await requireUserId(request);
+  const queueType = params.queueType || "all";
+  
+  // Use service layer function from features
+  return loadCalendarData(userId, queueType);
+}
+
 export async function action({ request }: ActionFunctionArgs) {
   const userId = await requireUserId(request);
   const formData = await request.formData();
-  const result = await schedulePost(userId, parseFormData(formData));
-  return json(result);
+  
+  // Use service layer function from features
+  return handleCalendarAction(formData, userId);
+}
+
+// ❌ Bad: Direct model imports in routes
+export async function loader({ request }: LoaderFunctionArgs) {
+  const userId = await requireUserId(request);
+  
+  // ❌ Don't import models directly
+  const posts = await getScheduledPosts({ userId }); // BAD
+  const user = await getUserById(userId); // BAD
+  
+  return json({ posts, user });
 }
 
 // ❌ Bad: Business logic in routes
@@ -233,6 +254,15 @@ export async function action({ request }: ActionFunctionArgs) {
   // ... business logic
 }
 ```
+
+**Service Layer Pattern**:
+- Routes should call service layer functions from `app/features/*/services/*.server.ts`
+- Service layers handle orchestration, business logic, and model calls
+- This keeps routes thin and testable
+- Example service layers:
+  - `loadCalendarData()` - Loads calendar data
+  - `handleCalendarAction()` - Handles calendar actions
+  - `calculateQueueScheduleTime()` - Calculates schedule times
 
 #### **Summary Table**
 
@@ -278,13 +308,21 @@ import { getUser } from "~/features/auth/session.server";
 
 ESLint rules automatically enforce these boundaries:
 
+- **Routes** cannot import from `~/models/*` directly (must use service layers)
 - **Routes** cannot import from feature internals (services/, hooks/, components/, utils/)
 - **Features** cannot import from other features' internals
 - **Models** cannot import from feature internals
 
-If you see an ESLint error about restricted imports, use the feature's public API instead.
+If you see an ESLint error about restricted imports, use the feature's public API or service layers instead.
 
-**Example ESLint Error:**
+**Example ESLint Errors:**
+
+```
+Routes cannot import from ~/models/* directly. Use feature service layers instead (e.g., ~/features/*/services/*.server.ts)
+```
+
+**Fix**: Change `import { getUserById } from "~/models/user.server"` to `import { loadUserData } from "~/features/user/services/user-profile.server"`
+
 ```
 Routes must use feature public API (index.ts), not internal services
 ```
@@ -656,7 +694,7 @@ npm run test:performance
 - [ ] XSS protection (sanitize user content)
 - [ ] CSRF protection (use Remix Forms)
 
-See [Security Guide](./docs/SECURITY.md) for detailed security practices.
+See [Security Guide](./docs/security/security.md) for detailed security practices.
 
 ### 7. **Debugging**
 
@@ -684,7 +722,7 @@ redis-cli -u $REDIS_URL
 5. Review error messages
 6. Use browser DevTools for frontend issues
 
-See [Troubleshooting Guide](./docs/TROUBLESHOOTING.md) for common issues and solutions.
+See [Troubleshooting Guide](./docs/operations/troubleshooting.md) for common issues and solutions.
 
 ---
 

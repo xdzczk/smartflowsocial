@@ -1,11 +1,13 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth/session.server";
-import { getPostsByIds } from "~/models/post.server";
-import { ValidationError, DatabaseError } from "~/lib/errors";
+import {
+  getBatchPosts,
+  parseBatchPostsRequest,
+} from "~/features/posts/services/batch-posts.server";
+import { ValidationError } from "~/lib/errors";
 import {
   withActionErrorHandling,
-  createSuccessResponse,
   assert,
 } from "~/lib/error-handler.server";
 
@@ -17,7 +19,7 @@ export const action = withActionErrorHandling(
 
     const userId = await requireUserId(request);
 
-    let body: { postIds?: unknown };
+    let body: unknown;
     try {
       body = await request.json();
     } catch (error) {
@@ -26,25 +28,8 @@ export const action = withActionErrorHandling(
       });
     }
 
-    const { postIds } = body;
+    const { postIds } = parseBatchPostsRequest(body);
 
-    assert(
-      Array.isArray(postIds),
-      "postIds must be an array",
-      { postIdsType: typeof postIds, isArray: Array.isArray(postIds) },
-    );
-
-    let posts;
-    try {
-      posts = await getPostsByIds({ ids: postIds as string[], userId });
-    } catch (error) {
-      throw new DatabaseError("Failed to fetch posts", {
-        userId,
-        postIdsCount: (postIds as string[]).length,
-        originalError: error instanceof Error ? error.message : String(error),
-      });
-    }
-
-    return createSuccessResponse(posts);
+    return getBatchPosts(userId, postIds);
   },
 );

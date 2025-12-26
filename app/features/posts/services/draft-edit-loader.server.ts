@@ -3,7 +3,7 @@
  * Centralized data fetching for draft edit page
  */
 
-import { getPostById } from "~/models/post.server";
+import { getPostById } from "~/models/post.queries.server";
 import {
   getUserById,
   getQueueTypes,

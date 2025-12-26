@@ -49,10 +49,13 @@ vi.mock("~/features/auth/session.server", () => ({
   requireUserId: vi.fn(),
 }));
 
-vi.mock("~/models/post.server", () => ({
+vi.mock("~/models/post.queries.server", () => ({
   getScheduledPosts: vi.fn(),
-  reschedulePost: vi.fn(),
   getPostById: vi.fn(),
+}));
+
+vi.mock("~/models/post.commands.server", () => ({
+  reschedulePost: vi.fn(),
 }));
 
 vi.mock("~/models/user.server", () => ({
@@ -62,7 +65,7 @@ vi.mock("~/models/user.server", () => ({
 
 // Import after mocks are set up
 import { requireUserId } from "~/features/auth/session.server";
-import { getScheduledPosts } from "~/models/post.server";
+import { getScheduledPosts } from "~/models/post.queries.server";
 import { getUserById, getQueueTypes } from "~/models/user.server";
 import { loader } from "~/routes/dashboard.calendar.$queueType";
 

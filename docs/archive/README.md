@@ -7,15 +7,22 @@ This directory contains historical documentation, assessments, and implementatio
 ## What's Archived
 
 ### Codebase Assessments
-- **`current-codebase-rating.md`** ⭐ **Most Recent** (2025-12-26) - Latest codebase quality assessment
-- **`codebase-quality-rating-2025.md`** (2025-01-27) - Earlier assessment for comparison
+- **`current-codebase-rating.md`** ⭐ **Most Recent** (2025-12-26) - Latest comprehensive codebase quality assessment
+- **`assessment-history.md`** - Consolidated history of all assessments and evaluations
 
-### Improvement Plans
-- **`improvement-plan.md`** (2025-12-26) - Historical improvement plan and roadmap
-
-### ChatGPT/AI Assessments
-- **`chatgpt-assessment-evaluation.md`** - Evaluation of ChatGPT's codebase assessment
-- **`chatgpt-assessment-response.md`** - Response to ChatGPT assessment
+### Historical Assessments (Consolidated)
+- All historical assessments, evaluations, and improvement plans have been consolidated into `assessment-history.md`
+- Individual assessment files have been archived for reference:
+  - `codebase-quality-rating-2025.md` (2025-01-27)
+  - `chatgpt-assessment-evaluation.md` (2025-12-26)
+  - `chatgpt-assessment-response.md` (2025-12-26)
+  - `test-quality-assessment-2025.md` (2025-01-27)
+  - `test-improvements-summary.md`
+  - `world-class-testing-gaps.md`
+  - `type-safety-improvements.md`
+  - `third-party-types-improvements.md`
+  - `documentation-assessment.md`
+  - `improvement-plan.md`
 
 ### Migration Documentation
 - **`migration-plan.md`** - Historical migration plan (see `../migration-plan.md` for current)
@@ -81,6 +88,23 @@ All files in this archive follow **kebab-case** naming convention:
 
 ## Archive Statistics
 
-- **Total Files**: 21 documentation files + 1 README
+- **Total Files**: 12 documentation files + 1 README + 1 consolidated history
 - **Most Recent Assessment**: `current-codebase-rating.md` (2025-12-26)
-- **Categories**: Assessments, Migrations, Refactoring, Testing, Type Safety
+- **Consolidated History**: `assessment-history.md` (contains all historical assessments)
+- **Categories**: Assessments (consolidated), Migrations, Refactoring
+
+## Consolidated Files
+
+The following assessment files have been consolidated into `assessment-history.md`:
+- `codebase-quality-rating-2025.md` (2025-01-27)
+- `chatgpt-assessment-evaluation.md` (2025-12-26)
+- `chatgpt-assessment-response.md` (2025-12-26)
+- `test-quality-assessment-2025.md` (2025-01-27)
+- `test-improvements-summary.md`
+- `world-class-testing-gaps.md`
+- `type-safety-improvements.md`
+- `third-party-types-improvements.md`
+- `documentation-assessment.md`
+- `improvement-plan.md` (2025-12-26)
+
+All content from these files is preserved in `assessment-history.md` for reference.

@@ -2,12 +2,13 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth/session.server";
-import { getQueueTypes } from "~/models/user.server";
+import {
+  getEffectiveHashtags,
+  parseEffectiveHashtagsRequest,
+} from "~/features/posts/services/effective-hashtags.server";
 import { ValidationError } from "~/lib/errors";
 import {
   withActionErrorHandling,
-  createSuccessResponse,
-  assert,
 } from "~/lib/error-handler.server";
 
 // Returns effective hashtags for a queue type
@@ -16,7 +17,7 @@ export const action = withActionErrorHandling(
   async ({ request }: ActionFunctionArgs) => {
     const userId = await requireUserId(request);
 
-    let requestBody: { queueTypeName?: string; queueTypeId?: string };
+    let requestBody: unknown;
     try {
       requestBody = await request.json();
     } catch (error) {
@@ -25,39 +26,8 @@ export const action = withActionErrorHandling(
       });
     }
 
-    const { queueTypeName, queueTypeId } = requestBody;
+    const { queueTypeName, queueTypeId } = parseEffectiveHashtagsRequest(requestBody);
 
-    // If explicitly "unassigned", return empty hashtags (valid case)
-    if (queueTypeName === "unassigned") {
-      return json({ hashtags: "" });
-    }
-
-    // If no queue type specified at all, return validation error
-    if (!queueTypeName && !queueTypeId) {
-      throw new ValidationError("queueTypeName or queueTypeId is required", {
-        receivedBody: requestBody,
-      });
-    }
-
-    // Get all queue types for the user
-    const queueTypes = await getQueueTypes(userId);
-
-    // Find the specified queue type - prefer ID over name
-    let queueType;
-    if (queueTypeId) {
-      queueType = queueTypes.find((qt) => qt.id === queueTypeId);
-    } else {
-      queueType = queueTypes.find((qt) => qt.name === queueTypeName);
-    }
-
-    if (!queueType || !("hashTagPreset" in queueType) || !queueType.hashTagPreset) {
-      return json({ hashtags: "" });
-    }
-
-    // Return the hashtag preset tags assigned to this queue type
-    // Use consistent unwrapped format to match other return statements
-    return json({
-      hashtags: (queueType.hashTagPreset as { tags: string | null })?.tags || "",
-    });
+    return getEffectiveHashtags(userId, queueTypeName, queueTypeId);
   },
 );

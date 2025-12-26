@@ -23,8 +23,13 @@ interface TimezoneSettingsProps {
   timezone: string | null;
 }
 
+interface FetcherData {
+  success?: boolean;
+  error?: string;
+}
+
 export function TimezoneSettings({ timezone }: TimezoneSettingsProps) {
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<FetcherData>();
   const [selectedTimezone, setSelectedTimezone] = useState(
     timezone || "Etc/UTC",
   );

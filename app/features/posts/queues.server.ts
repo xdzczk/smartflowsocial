@@ -7,15 +7,14 @@
  */
 
 import { Worker, Job } from "bullmq";
+import type { Prisma } from "@prisma/client";
 
 import {
   updateLongFormPostStatus,
   getCronDueScheduledLongFormPosts,
 } from "~/models/longformpost.server";
-import {
-  updatePostStatus,
-  getCronDueScheduledPosts,
-} from "~/models/post.server";
+import { getCronDueScheduledPosts } from "~/models/post.queries.server";
+import { updatePostStatus } from "~/models/post.commands.server";
 import { getUserById } from "~/models/user.server";
 import { prisma } from "~/lib/prisma.server";
 import {
@@ -27,7 +26,35 @@ import type {
   PostJobData,
   LongFormPostJobData,
 } from "~/infra/queue";
+import type { SignedEvent } from "~/features/nostr/types";
 import { logInfo, logError } from "~/lib/error-logger.server";
+
+/**
+ * Type guard to check if value is a SignedEvent
+ */
+function isSignedEvent(value: unknown): value is SignedEvent {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "id" in value &&
+    "pubkey" in value &&
+    "created_at" in value &&
+    "kind" in value &&
+    "tags" in value &&
+    "content" in value &&
+    "sig" in value
+  );
+}
+
+/**
+ * Convert Prisma JsonValue to SignedEvent if valid
+ */
+function toSignedEvent(value: Prisma.JsonValue | null | undefined): SignedEvent | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+  return isSignedEvent(value) ? value : null;
+}
 
 // Get queue instances using the abstraction
 const scheduledPostsQueue = getQueueInstance("scheduled-posts");
@@ -100,7 +127,6 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
         message: "Error processing scheduled post",
       });
       throw error;
-    }
     }
   },
   {
@@ -198,6 +224,9 @@ export const postCheckerWorker = new Worker(
       for (const post of posts) {
         if (!post.userId || !post.signedEvent || !post.scheduledFor) continue;
         
+        const signedEvent = toSignedEvent(post.signedEvent);
+        if (!signedEvent) continue;
+        
         const scheduledTime = parseInt(post.scheduledFor, 10);
         const timeDiff = scheduledTime - now;
 
@@ -208,7 +237,7 @@ export const postCheckerWorker = new Worker(
           await enqueuePostJob(
             post.id,
             post.userId,
-            post.signedEvent,
+            signedEvent,
             timeDiff <= 0 ? 0 : scheduledTime,
           );
         }
@@ -217,6 +246,9 @@ export const postCheckerWorker = new Worker(
       // Process longform posts
       for (const longformPost of longformPosts) {
         if (!longformPost.userId || !longformPost.signedEvent || !longformPost.scheduledFor) continue;
+        
+        const signedEvent = toSignedEvent(longformPost.signedEvent);
+        if (!signedEvent) continue;
         
         const scheduledTime = parseInt(longformPost.scheduledFor, 10);
         const timeDiff = scheduledTime - now;
@@ -228,7 +260,7 @@ export const postCheckerWorker = new Worker(
           await enqueueLongFormPostJob(
             longformPost.id,
             longformPost.userId,
-            longformPost.signedEvent,
+            signedEvent,
             timeDiff <= 0 ? 0 : scheduledTime,
           );
         }

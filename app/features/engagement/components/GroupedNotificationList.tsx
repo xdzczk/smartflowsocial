@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import type { GroupedNotifications, Notification } from "~/features/engagement/engagement.server";
+import type { GroupedNotification } from "~/features/engagement/types";
 import { formatDate } from "~/lib/helpers";
 import { NotificationItem } from "./NotificationItem";
 
@@ -256,15 +257,22 @@ function GroupedNotificationCard({
           </div>
 
           <div className="max-h-[500px] divide-y divide-gray-200 overflow-y-auto dark:divide-gray-700">
-            {notifications.map((notification) => (
-              <NotificationItem
-                key={notification.id}
-                notification={notification}
-                userTimezone={userTimezone}
-                userRelays={userRelays}
-                trustScores={trustScores}
-              />
-            ))}
+            {notifications.map((notification: GroupedNotification) => {
+              // Convert GroupedNotification to Notification format
+              const notificationData: Notification = {
+                ...notification.event,
+                eventId: notification.eventId,
+              } as Notification;
+              return (
+                <NotificationItem
+                  key={notification.eventId}
+                  notification={notificationData}
+                  userTimezone={userTimezone}
+                  userRelays={userRelays}
+                  trustScores={trustScores}
+                />
+              );
+            })}
           </div>
         </div>
       </div>

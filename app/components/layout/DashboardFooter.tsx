@@ -24,14 +24,14 @@ export default function Footer() {
             <span className="font-mono">
               {" "}
               {time.toLocaleDateString("en-US", {
-                timeZone: user?.timezone,
+                timeZone: user?.timezone || undefined,
                 month: "short",
                 day: "numeric",
                 year: "numeric",
               })}
               {" ⏰ "}
               {time.toLocaleTimeString("en-US", {
-                timeZone: user?.timezone,
+                timeZone: user?.timezone || undefined,
                 hour: "2-digit",
                 minute: "2-digit",
                 second: "2-digit",

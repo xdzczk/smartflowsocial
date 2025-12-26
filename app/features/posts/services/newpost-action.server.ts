@@ -9,7 +9,7 @@ import {
   unstable_createMemoryUploadHandler as createMemoryUploadHandler,
   unstable_parseMultipartFormData as parseMultipartFormData,
 } from "@remix-run/node";
-import { createPost } from "~/models/post.server";
+import { createPost } from "~/models/post.commands.server";
 import {
   getUserById,
   getQueueTypes,

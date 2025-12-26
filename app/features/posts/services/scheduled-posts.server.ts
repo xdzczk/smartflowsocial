@@ -19,11 +19,13 @@ import {
 } from "~/models/longformpost.server";
 import {
   getScheduledPosts,
+  getPostById,
+} from "~/models/post.queries.server";
+import {
   deletePost,
   reschedulePost,
-  getPostById,
   updatePost,
-} from "~/models/post.server";
+} from "~/models/post.commands.server";
 import {
   getUserById,
   getQueueTypes,

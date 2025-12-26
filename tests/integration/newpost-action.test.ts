@@ -17,7 +17,7 @@ vi.mock("~/models/user.server", () => ({
   getHashTagPresetById: vi.fn(),
 }));
 
-vi.mock("~/models/post.server", () => ({
+vi.mock("~/models/post.commands.server", () => ({
   createPost: vi.fn(),
 }));
 
@@ -33,7 +33,7 @@ vi.mock("~/features/upload/s3.server", () => ({
 global.fetch = vi.fn();
 
 import { getUserById, getQueueTypes, getHashTagPresetById } from "~/models/user.server";
-import { createPost } from "~/models/post.server";
+import { createPost } from "~/models/post.commands.server";
 import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
 import { handleNewPostAction } from "~/features/posts/services/newpost-action.server";
 import { createActionFormData, createFormData, TEST_USER_ID } from "../utils/test-helpers";

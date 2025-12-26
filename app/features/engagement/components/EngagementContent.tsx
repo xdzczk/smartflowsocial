@@ -39,7 +39,7 @@ export function EngagementContent({
             </h4>
             <GroupedNotificationList
               groupedNotifications={groupedNotifications.replies}
-              userTimezone={userTimezone}
+              userTimezone={userTimezone || undefined}
               userRelays={userRelays || defaultRelays}
               trustScores={trustScores}
             />
@@ -54,7 +54,7 @@ export function EngagementContent({
             </h4>
             <GroupedNotificationList
               groupedNotifications={groupedNotifications.quotes}
-              userTimezone={userTimezone}
+              userTimezone={userTimezone || undefined}
               userRelays={userRelays || defaultRelays}
               trustScores={trustScores}
             />
@@ -81,7 +81,7 @@ export function EngagementContent({
         {groupedNotifications.replies.length > 0 ? (
           <GroupedNotificationList
             groupedNotifications={groupedNotifications.replies}
-            userTimezone={userTimezone}
+            userTimezone={userTimezone || undefined}
             userRelays={userRelays || defaultRelays}
             trustScores={trustScores}
           />
@@ -106,7 +106,7 @@ export function EngagementContent({
         {groupedNotifications.quotes && groupedNotifications.quotes.length > 0 ? (
           <GroupedNotificationList
             groupedNotifications={groupedNotifications.quotes}
-            userTimezone={userTimezone}
+            userTimezone={userTimezone || undefined}
             userRelays={userRelays || defaultRelays}
             trustScores={trustScores}
           />

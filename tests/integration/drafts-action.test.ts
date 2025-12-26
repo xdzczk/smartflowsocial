@@ -8,7 +8,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock dependencies
-vi.mock("~/models/post.server", () => ({
+vi.mock("~/models/post.commands.server", () => ({
   deletePost: vi.fn(),
   updatePost: vi.fn(),
 }));
@@ -21,7 +21,7 @@ vi.mock("~/features/posts/services/queue-type-resolver.server", () => ({
   resolveQueueTypeId: vi.fn(),
 }));
 
-import { deletePost, updatePost } from "~/models/post.server";
+import { deletePost, updatePost } from "~/models/post.commands.server";
 import { deleteLongFormPost } from "~/models/longformpost.server";
 import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
 import { handleDraftsAction } from "~/features/posts/services/drafts-action.server";

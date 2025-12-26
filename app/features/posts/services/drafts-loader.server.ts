@@ -9,7 +9,7 @@ import {
 } from "~/models/longformpost.server";
 import {
   getDraftPosts,
-} from "~/models/post.server";
+} from "~/models/post.queries.server";
 import {
   getUserById,
   getQueueTypes,
