@@ -1,7 +1,8 @@
 # We don't want lockfiles in stacks, as people could use a different package manager
 # This part will be removed by `remix.init`
+# Note: package-lock.json is committed because CI workflows use npm ci and require it
 bun.lockb
-package-lock.json
+# package-lock.json - committed for CI
 pnpm-lock.yaml
 pnpm-lock.yml
 yarn.lock
