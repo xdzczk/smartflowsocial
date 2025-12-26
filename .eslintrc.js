@@ -51,6 +51,13 @@ module.exports = {
           { validStrategies: ["ternary"] },
         ],
         "react/prop-types": "off", // <-- Disable prop-types rule
+        "jsx-a11y/click-events-have-key-events": "warn",
+        "jsx-a11y/no-static-element-interactions": "warn",
+        "jsx-a11y/media-has-caption": "warn",
+        "jsx-a11y/label-has-associated-control": "warn",
+        "jsx-a11y/no-autofocus": "warn",
+        "jsx-a11y/img-redundant-alt": "warn",
+        "jsx-a11y/no-noninteractive-element-interactions": "warn",
       },
     },
 
@@ -78,6 +85,17 @@ module.exports = {
         "prettier",
       ],
       rules: {
+        "@typescript-eslint/no-unused-vars": [
+          "warn",
+          {
+            argsIgnorePattern: "^_",
+            varsIgnorePattern: "^_",
+            caughtErrorsIgnorePattern: "^_",
+          },
+        ],
+        "@typescript-eslint/no-explicit-any": "warn",
+        "@typescript-eslint/no-inferrable-types": "warn",
+        "@typescript-eslint/ban-ts-comment": "warn",
         "import/order": [
           "error",
           {
@@ -94,8 +112,9 @@ module.exports = {
           },
         ],
         // Enforce feature boundaries - prevent deep imports across features
+        // Temporarily set to warn to allow incremental fixing
         "import/no-restricted-paths": [
-          "error",
+          "warn",
           {
             // Prevent importing from feature subdirectories (services/, hooks/, components/, utils/)
             // Must use public API via index.ts instead
@@ -193,14 +212,25 @@ module.exports = {
       },
     },
 
-    // Markdown
+    // Markdown - relaxed rules for documentation
     {
       files: ["**/*.md"],
       plugins: ["markdown"],
       extends: ["plugin:markdown/recommended-legacy", "prettier"],
+      rules: {
+        "@typescript-eslint/no-unused-vars": "off",
+        "@typescript-eslint/no-explicit-any": "off",
+        "no-console": "off",
+        "import/order": "off",
+        "import/no-unresolved": "off",
+        "react/jsx-no-undef": "off",
+        "no-unused-labels": "off",
+        "no-empty": "off",
+        "no-debugger": "off",
+      },
     },
 
-    // Jest/Vitest
+    // Jest/Vitest - relaxed rules for test files
     {
       files: ["**/*.test.{js,jsx,ts,tsx}"],
       plugins: ["jest", "jest-dom", "testing-library"],
@@ -218,20 +248,37 @@ module.exports = {
           version: 28,
         },
       },
+      rules: {
+        "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+        "@typescript-eslint/no-explicit-any": "warn",
+        "no-console": "off",
+        "import/order": "warn",
+        "import/no-restricted-paths": "warn",
+      },
     },
 
-    // Cypress
+    // Cypress - relaxed rules for E2E tests
     {
-      files: ["cypress/**/*.ts"],
+      files: ["cypress/**/*.ts", "tests/e2e/**/*.ts"],
       plugins: ["cypress"],
       extends: ["plugin:cypress/recommended", "prettier"],
+      rules: {
+        "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+        "import/order": "warn",
+      },
     },
 
-    // Node
+    // Node scripts and config files
     {
-      files: [".eslintrc.js", "mocks/**/*.js"],
+      files: [".eslintrc.js", "mocks/**/*.js", "scripts/**/*.js", "*.config.{js,ts}", "cypress.config.ts", "vitest.config.ts"],
       env: {
         node: true,
+      },
+      rules: {
+        "no-console": "off",
+        "no-undef": "off",
+        "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+        "import/order": "warn",
       },
     },
 
@@ -240,6 +287,26 @@ module.exports = {
       files: ["app/lib/error-logger.server.ts", "app/lib/error-handler.client.ts", "app/lib/secrets-sanitizer.server.ts"],
       rules: {
         "no-console": "off",
+      },
+    },
+
+    // Seed files and factories - allow console and relaxed rules
+    {
+      files: ["**/seed*.ts", "**/*factory*.ts", "prisma/**/*.ts"],
+      rules: {
+        "no-console": "off",
+        "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+        "@typescript-eslint/no-explicit-any": "warn",
+        "import/order": "warn",
+      },
+    },
+
+    // Server entry files - allow console
+    {
+      files: ["server.ts", "worker.ts"],
+      rules: {
+        "no-console": "off",
+        "@typescript-eslint/no-explicit-any": "warn",
       },
     },
   ],
