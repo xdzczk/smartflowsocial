@@ -132,8 +132,16 @@ export function setupCustomDragDrop(
       await editorRef.current!.render(newData);
       onContentChange(JSON.stringify(newData));
 
-      console.log(
+      const { logClientError } = await import("~/lib/error-handler.client");
+      logClientError(
         `Moved block from index ${draggedBlockIndex} to ${newIndex}`,
+        {
+          component: "editorjs-dragdrop",
+          action: "handleDrop",
+          draggedBlockIndex,
+          newIndex,
+        },
+        "info",
       );
     } catch (error) {
       const { handleErrorSafely } = await import("~/lib/error-handler.client");

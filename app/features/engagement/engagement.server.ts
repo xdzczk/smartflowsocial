@@ -13,6 +13,7 @@ import type {
   NostrTag,
 } from "~/features/engagement/types";
 import type { PostData, LongFormPostData } from "~/features/posts/types";
+import { logError } from "~/lib/error-logger.server";
 
 type ConnectToPrimalCache = (
   requestType: string,
@@ -345,13 +346,18 @@ export async function processQuoteReposts(
           userProfiles.set(pubkey, profile);
         }
       } catch (error) {
-        console.error(`Failed to fetch profile for ${pubkey}:`, error);
+        logError(error instanceof Error ? error : new Error(String(error)), {
+          pubkey,
+          message: "Failed to fetch profile",
+        });
       }
     });
 
     await Promise.all(profilePromises);
   } catch (error) {
-    console.error("Error fetching user profiles:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "Error fetching user profiles",
+    });
   }
 
   // Second pass: process each quote repost and fetch thread_view for stats
@@ -421,7 +427,10 @@ export async function processQuoteReposts(
         stats,
       };
     } catch (error) {
-      console.error("Error processing quote repost:", error);
+      logError(error instanceof Error ? error : new Error(String(error)), {
+        eventId: event?.id,
+        message: "Error processing quote repost",
+      });
       return null;
     }
   });

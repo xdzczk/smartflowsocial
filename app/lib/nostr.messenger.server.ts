@@ -4,6 +4,7 @@ import { nip04, finalizeEvent } from "nostr-tools";
 
 import { convertToHex } from "./nostr-conversion";
 import { relaysArray } from "./relays";
+import { logWarning, logError } from "~/lib/error-logger.server";
 
 interface SendNostrDirectMessageResult {
   success: boolean;
@@ -40,10 +41,10 @@ export async function sendNostrDirectMessage(
         if (converted) receiverHex = converted;
       }
     } catch (e) {
-      console.warn(
-        "Failed to convert receiver pubkey to hex; using original value",
-        e,
-      );
+      logWarning("Failed to convert receiver pubkey to hex; using original value", {
+        receiverPubkey,
+        error: e instanceof Error ? e.message : String(e),
+      });
     }
 
     // Encrypt the content
@@ -104,7 +105,10 @@ export async function sendNostrDirectMessage(
 
     return { success: true, event: signedEvent };
   } catch (error: any) {
-    console.error("Error sending Nostr direct message:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      receiverPubkey,
+      message: "Error sending Nostr direct message",
+    });
     return {
       success: false,
       error: error?.message || String(error),

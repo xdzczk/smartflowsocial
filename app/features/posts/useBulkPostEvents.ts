@@ -6,6 +6,7 @@ import { type PreparedEvent } from "~/features/posts/types";
 import { type ToastMessage } from "~/components/types";
 import { uploadMultipleFiles } from "~/features/upload/upload.client";
 import { type User } from "~/models/user.server";
+import { logClientError } from "~/lib/error-handler.client";
 
 interface UseBulkPostEventsProps {
     posts: BulkPost[];
@@ -235,7 +236,15 @@ export function useBulkPostEvents({
                                     ];
                                 }
                             } catch (e) {
-                                console.warn("Failed to decode naddr for longform quote:", e);
+                                logClientError(
+                                    e instanceof Error ? e : new Error(String(e)),
+                                    {
+                                        component: "useBulkPostEvents",
+                                        action: "decodeNaddr",
+                                        message: "Failed to decode naddr for longform quote",
+                                    },
+                                    "warning",
+                                );
                             }
                         }
 

@@ -244,6 +244,73 @@ export async function action({ request }: ActionFunctionArgs) {
 
 **When in doubt**: Ask yourself "Is this about data access, business rules, or HTTP handling?" and place it accordingly.
 
+### 4.2. **Feature Public APIs**
+
+To maintain clear boundaries and prevent tight coupling, all features expose a **public API** via `index.ts` files. This enforces encapsulation and makes refactoring safer.
+
+#### **Using Feature Public APIs**
+
+**✅ DO**: Import from feature public API
+```typescript
+// ✅ Good: Use public API
+import { getScheduledDashboardData, calculateNextScheduleTime } from "~/features/posts";
+import { getUserPlanType, hasFeatureAccess } from "~/features/payments";
+import { getUser, requireUserId } from "~/features/auth";
+```
+
+**❌ DON'T**: Import from feature internals
+```typescript
+// ❌ Bad: Deep import from feature internals
+import { getScheduledDashboardData } from "~/features/posts/services/dashboard-loader.server";
+import { getUserPlanType } from "~/features/payments/types";
+import { getUser } from "~/features/auth/session.server";
+```
+
+#### **Why Public APIs?**
+
+1. **Encapsulation**: Internal implementation can change without breaking consumers
+2. **Clear Boundaries**: Makes dependencies explicit and visible
+3. **Refactoring Safety**: Can refactor internals without affecting other features
+4. **Documentation**: Public API serves as documentation of what's available
+5. **Testing**: Easier to mock and test when using public APIs
+
+#### **ESLint Enforcement**
+
+ESLint rules automatically enforce these boundaries:
+
+- **Routes** cannot import from feature internals (services/, hooks/, components/, utils/)
+- **Features** cannot import from other features' internals
+- **Models** cannot import from feature internals
+
+If you see an ESLint error about restricted imports, use the feature's public API instead.
+
+**Example ESLint Error:**
+```
+Routes must use feature public API (index.ts), not internal services
+```
+
+**Fix**: Change `import { ... } from "~/features/posts/services/..."` to `import { ... } from "~/features/posts"`
+
+#### **Available Feature Public APIs**
+
+All features have `index.ts` files that export their public API:
+
+- `~/features/posts` - Post scheduling, management, and operations
+- `~/features/payments` - Subscription management and plan features
+- `~/features/auth` - Authentication and session management
+- `~/features/user` - User profile and settings
+- `~/features/engagement` - Engagement data and notifications
+- `~/features/settings` - User settings management
+- `~/features/templates` - Post templates
+- `~/features/giveaway` - Giveaway management
+- `~/features/search` - Search functionality
+- `~/features/upload` - File upload operations
+- `~/features/assets` - Asset management
+- `~/features/cache` - Cache operations
+- `~/features/nostr` - Nostr types and utilities
+
+**See each feature's `index.ts` file for available exports.**
+
 ### 5. **Comments & Documentation**
 
 - Write clear, concise comments for complex logic

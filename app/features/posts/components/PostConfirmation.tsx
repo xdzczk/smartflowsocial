@@ -3,6 +3,7 @@ import { useFetcher } from "@remix-run/react";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { getSelectedQueueStyle } from "~/features/posts/queueColors";
 import { signEventFn } from "~/lib/nostr";
+import { logClientError } from "~/lib/error-handler.client";
 
 export default function PostConfirmation({ preparedEvents, postsCount }) {
   const fetcher = useFetcher();
@@ -117,12 +118,19 @@ export default function PostConfirmation({ preparedEvents, postsCount }) {
 
             // Debug logging for reposts
             if (isRepost) {
-              console.log(`Repost ${index + 1} data:`, {
-                fileUrl: eventData.fileUrl,
-                caption: eventData.caption,
-                kind: eventData.events.kind,
-                tags: eventData.events.tags,
-              });
+              logClientError(
+                `Repost ${index + 1} data`,
+                {
+                  component: "PostConfirmation",
+                  action: "renderRepost",
+                  index: index + 1,
+                  fileUrl: eventData.fileUrl,
+                  caption: eventData.caption,
+                  kind: eventData.events.kind,
+                  tags: eventData.events.tags,
+                },
+                "info",
+              );
             }
 
             // For reposts, use the original fileUrl directly

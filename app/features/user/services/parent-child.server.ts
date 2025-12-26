@@ -2,6 +2,7 @@ import type { User } from "@prisma/client";
 
 import { prisma } from "~/lib/prisma.server";
 import type { ProfileData } from "~/features/nostr/types";
+import { logWarning, logError } from "~/lib/error-logger.server";
 
 type MinimalUser = Pick<User, "id" | "npub"> & {
   nostrProfile?: ProfileData | null;
@@ -112,25 +113,25 @@ export async function requestChildLink(
   const child = (childHex || "").trim();
 
   if (!/^[0-9a-fA-F]{64}$/.test(parent) || !/^[0-9a-fA-F]{64}$/.test(child)) {
-    console.warn("[requestChildLink] Invalid hex key(s)", { parent, child });
+    logWarning("[requestChildLink] Invalid hex key(s)", { parent, child });
     return { ok: false, reason: "Invalid hex public key provided." };
   }
 
   if (parent === child) {
-    console.warn("[requestChildLink] Attempt to add self as child", { parent });
+    logWarning("[requestChildLink] Attempt to add self as child", { parent });
     return { ok: false, reason: "You cannot add yourself as a child." };
   }
 
   const childUser = await prisma.user.findUnique({ where: { npub: child } });
   if (!childUser) {
-    console.error("[requestChildLink] Child account not found in DB", {
+    logError(new Error("[requestChildLink] Child account not found in DB"), {
       child,
     });
     return { ok: false, reason: "Child account not found." };
   }
 
   if (childUser.parentNpub) {
-    console.warn("[requestChildLink] Child already linked to a parent", {
+    logWarning("[requestChildLink] Child already linked to a parent", {
       parentNpub: childUser.parentNpub,
       child: childUser.npub,
     });

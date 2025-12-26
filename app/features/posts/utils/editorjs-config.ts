@@ -2,6 +2,8 @@
  * EditorJS configuration and tools setup
  */
 
+import { logClientError } from "~/lib/error-handler.client";
+
 export async function createEditorJSToolsConfig(uploadProvider: string | null) {
   const Header = (await import("@editorjs/header")).default;
   const List = (await import("@editorjs/list")).default;
@@ -85,10 +87,16 @@ export async function createEditorJSToolsConfig(uploadProvider: string | null) {
 async function createImageUploadHandler(uploadProvider: string | null) {
   return async (file: File) => {
     try {
-      console.log(
-        "Starting EditorJS image upload:",
-        file.name,
-        file.size,
+      logClientError(
+        "Starting EditorJS image upload",
+        {
+          component: "createImageUploadHandler",
+          action: "uploadImage",
+          fileName: file.name,
+          fileSize: file.size,
+          uploadProvider,
+        },
+        "info",
       );
 
       // Check upload provider and use appropriate method
@@ -98,7 +106,16 @@ async function createImageUploadHandler(uploadProvider: string | null) {
         const uploadResult = await uploadFile(file);
 
         if (uploadResult.success && uploadResult.file) {
-          console.log("Blossom upload successful:", uploadResult.file.url);
+          logClientError(
+            "Blossom upload successful",
+            {
+              component: "createImageUploadHandler",
+              action: "uploadImage",
+              provider: "Blossom",
+              fileUrl: uploadResult.file.url,
+            },
+            "info",
+          );
           return {
             success: 1,
             file: {
@@ -151,10 +168,28 @@ async function createImageUploadHandler(uploadProvider: string | null) {
         }
 
         const result = await response.json();
-        console.log("S3 EditorJS upload response:", result);
+        logClientError(
+          "S3 EditorJS upload response",
+          {
+            component: "createImageUploadHandler",
+            action: "uploadImage",
+            provider: "S3",
+            response: result,
+          },
+          "info",
+        );
 
         if (result.success === 1 && result.file?.url) {
-          console.log("S3 upload successful:", result.file.url);
+          logClientError(
+            "S3 upload successful",
+            {
+              component: "createImageUploadHandler",
+              action: "uploadImage",
+              provider: "S3",
+              fileUrl: result.file.url,
+            },
+            "info",
+          );
           return {
             success: 1,
             file: {
@@ -190,6 +225,7 @@ async function createImageUploadHandler(uploadProvider: string | null) {
     }
   };
 }
+
 
 
 

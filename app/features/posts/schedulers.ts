@@ -10,6 +10,7 @@ import {
   isIntervalScheduleConfig,
   isFixedSlotsScheduleConfig,
 } from "~/features/posts/types";
+import { logError } from "~/lib/error-logger.server";
 
 interface CalculateNextScheduleTimeParams {
   queueType: QueueType | TypedQueueType;
@@ -38,12 +39,20 @@ export async function calculateNextScheduleTime({
     });
     // Validate that result is a valid Date object
     if (!result || !(result instanceof Date) || isNaN(result.getTime())) {
-      console.error("Invalid date returned from calculateNextScheduleTimeInternal:", result);
+      logError(new Error("Invalid date returned from calculateNextScheduleTimeInternal"), {
+        userId,
+        queueTypeId: queueType?.id,
+        result: String(result),
+      });
       return fallbackDate;
     }
     return result;
   } catch (error) {
-    console.error("Error in calculateNextScheduleTime wrapper:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      userId,
+      queueTypeId: queueType?.id,
+      message: "Error in calculateNextScheduleTime wrapper",
+    });
     return fallbackDate;
   }
 }
@@ -72,13 +81,20 @@ async function calculateNextScheduleTimeInternal({
         queueTypeName: queueType.name, // Keep for backward compatibility
       });
     } catch (error) {
-      console.error("Error getting last post time:", error);
+      logError(error instanceof Error ? error : new Error(String(error)), {
+        userId,
+        queueTypeId: queueType?.id,
+        message: "Error getting last post time",
+      });
       lastPostTime = null;
     }
 
     // Validate queueType structure
     if (!queueType || !queueType.scheduleType) {
-      console.error("Invalid queueType:", queueType);
+      logError(new Error("Invalid queueType"), {
+        userId,
+        queueType: String(queueType),
+      });
       // Return now + 1000ms to ensure it's in the future
       return new Date(now.getTime() + 1000);
     }
@@ -118,7 +134,10 @@ async function calculateNextScheduleTimeInternal({
         try {
           scheduleIntervals = await getScheduleInterval(userId);
         } catch (error) {
-          console.error("Error getting schedule interval:", error);
+          logError(error instanceof Error ? error : new Error(String(error)), {
+            userId,
+            message: "Error getting schedule interval",
+          });
           scheduleIntervals = null;
         }
         // Convert string to number if needed (scheduleIntervals is array of strings)
@@ -194,7 +213,11 @@ async function calculateNextScheduleTimeInternal({
           }
           return { slot, hours, minutes, totalMinutes: hours * 60 + minutes };
         } catch (error) {
-          console.error("Error parsing slot:", error, { slot });
+          logError(error instanceof Error ? error : new Error(String(error)), {
+            userId,
+            slot: String(slot),
+            message: "Error parsing slot",
+          });
           return null;
         }
       })
@@ -285,9 +308,12 @@ async function calculateNextScheduleTimeInternal({
         }
         return testUTC;
       } catch (error) {
-        console.error("Error in createSlotInUserTimezone:", error, {
+        logError(error instanceof Error ? error : new Error(String(error)), {
+          userId,
+          userTimezone,
           hours,
           minutes,
+          message: "Error in createSlotInUserTimezone",
           userTimezone,
         });
         // Fallback to UTC
@@ -446,10 +472,11 @@ async function calculateNextScheduleTimeInternal({
     const fallbackTime = baseTime && baseTime instanceof Date && !isNaN(baseTime.getTime())
       ? baseTime
       : new Date();
-    console.error("Error in calculateNextScheduleTime:", error, {
-      queueType: queueType?.id,
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      queueTypeId: queueType?.id,
       userId,
       userTimezone,
+      message: "Error in calculateNextScheduleTime",
     });
     // Use fallbackTime + 1 second as fallback to ensure it's in the future
     return new Date(fallbackTime.getTime() + 1000);

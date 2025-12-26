@@ -6,6 +6,7 @@
 import { signEventFn } from "~/lib/nostr";
 import type { UserData, PostData, SignedEvent, NostrEvent } from "~/features/posts/types";
 import type { NostrEvent as NostrEventType } from "~/features/nostr/types";
+import { logError } from "~/lib/error-logger.server";
 
 interface SignDraftParams {
   content: string;
@@ -60,7 +61,11 @@ async function getEffectiveHashtags(
         return Array.isArray(tags) ? tags.join(" ") : tags || "";
       }
     } catch (error) {
-      console.error("Error fetching effective hashtags:", error);
+      logError(error instanceof Error ? error : new Error(String(error)), {
+        userId: user?.id,
+        selectedQueue,
+        message: "Error fetching effective hashtags",
+      });
       // Fallback to user's default hashtags
       const tags = user?.hashTags?.tags;
       return Array.isArray(tags) ? tags.join(" ") : tags || "";
@@ -79,7 +84,10 @@ function getImageUrls(fileUrl: string[] | null | undefined): string[] {
     try {
       return JSON.parse(fileUrl[0]);
     } catch (e) {
-      console.error("Error parsing fileUrl:", e);
+      logError(e instanceof Error ? e : new Error(String(e)), {
+        fileUrl: fileUrl[0],
+        message: "Error parsing fileUrl",
+      });
       return [];
     }
   }

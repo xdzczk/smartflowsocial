@@ -11,6 +11,7 @@ import type {
   InvoiceResponse,
   CreateRenewalPaymentParams,
 } from "~/features/payments/types";
+import { logError } from "~/lib/error-logger.server";
 
 /**
  * Creates an invoice for a specific plan using owner's NWC
@@ -131,7 +132,10 @@ export async function createPlanInvoice({
           }
         }
       } catch (error) {
-        console.error("Error parsing Lightning invoice amount:", error);
+        logError(error instanceof Error ? error : new Error(String(error)), {
+          invoiceString,
+          message: "Error parsing Lightning invoice amount",
+        });
       }
 
       // If we still don't have an amount, use live Bitcoin rate as fallback
@@ -139,7 +143,10 @@ export async function createPlanInvoice({
         try {
           amountSats = await getBitcoinRate(amountUsd);
         } catch (error) {
-          console.error("Failed to fetch Bitcoin rate, using fallback:", error);
+          logError(error instanceof Error ? error : new Error(String(error)), {
+            amountUsd,
+            message: "Failed to fetch Bitcoin rate, using fallback",
+          });
           // Fallback approximation: $1 ≈ 2,500 sats (at $40,000 per BTC)
           amountSats = Math.round(amountUsd * 2500);
         }
@@ -147,7 +154,7 @@ export async function createPlanInvoice({
     }
 
     if (!invoiceString || !paymentHashString) {
-      console.error("Failed to extract invoice or paymentHash from request:", {
+      logError(new Error("Failed to extract invoice or paymentHash from request"), {
         invoiceString,
         paymentHashString,
         requestStructure: Object.keys(request),
@@ -195,7 +202,11 @@ export async function createPlanInvoice({
       planId: plan.id,
     };
   } catch (error) {
-    console.error("Failed to create invoice:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      planId,
+      userId,
+      message: "Failed to create invoice",
+    });
     throw new Error("Failed to create payment invoice");
   }
 }
@@ -221,7 +232,12 @@ export async function handlePaymentCompleted(
     // Update user subscription
     await updateUserSubscription(userId, planId, paymentId);
   } catch (error) {
-    console.error("Error handling completed payment:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      userId,
+      planId,
+      paymentId,
+      message: "Error handling completed payment",
+    });
     throw error;
   }
 }
@@ -240,7 +256,10 @@ export async function handlePaymentTimeout(paymentId: string): Promise<void> {
       },
     });
   } catch (error) {
-    console.error("Error handling payment timeout:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      paymentId,
+      message: "Error handling payment timeout",
+    });
   }
 }
 

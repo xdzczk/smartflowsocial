@@ -13,6 +13,7 @@ import {
   unlinkChildByParent,
   getUserIdByNpub,
 } from "~/models/user.server";
+import { logWarning } from "~/lib/error-logger.server";
 
 export async function handleAccountsAction(
   userId: string,
@@ -106,7 +107,10 @@ export async function handleAccountsAction(
         `free_child_unlink_${Date.now()}_${userId}`,
       );
     } catch (e) {
-      console.warn("Failed to demote child to free after unlink:", e);
+      logWarning("Failed to demote child to free after unlink", {
+        userId,
+        error: e instanceof Error ? e.message : String(e),
+      });
     }
     return json({ success: true });
   }
@@ -137,7 +141,10 @@ export async function handleAccountsAction(
         );
       }
     } catch (e) {
-      console.warn("Failed to demote unlinked child to free:", e);
+      logWarning("Failed to demote unlinked child to free", {
+        childNpub,
+        error: e instanceof Error ? e.message : String(e),
+      });
     }
     return json({ success: true });
   }

@@ -7,6 +7,7 @@ import {
   convertEditorJSToMarkdown,
   convertMarkdownToEditorJS,
 } from "~/lib/nostr";
+import { logClientError } from "~/lib/error-handler.client";
 import type { PostData, LongFormPostData, UserData, HashTagPreset, EditorJSInstance } from "~/features/posts/types";
 import type { EditorJSInstance as EditorJSInstanceType } from "~/features/posts/types/editorjs.types";
 
@@ -260,7 +261,15 @@ export function useEditPostModal({
             editorRef.current.destroy();
           }
         } catch (error) {
-          console.warn("Error during editor cleanup:", error);
+          logClientError(
+            error instanceof Error ? error : new Error(String(error)),
+            {
+              component: "useEditPostModal",
+              action: "cleanup",
+              message: "Error during editor cleanup",
+            },
+            "warning",
+          );
         } finally {
           editorRef.current = null;
           editorInitialized.current = false;

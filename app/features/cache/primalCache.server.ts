@@ -1,3 +1,5 @@
+import { logError } from "~/lib/error-logger.server";
+
 type CacheParams = Record<string, unknown>;
 type CacheResponse = unknown[];
 
@@ -83,10 +85,17 @@ export async function connectToPrimalCache(
       return responses;
     }
 
-    console.error("[REST Cache] Empty response");
+    logError(new Error("[REST Cache] Empty response"), {
+      requestType,
+      params,
+    });
     throw new Error("Primal cache gave empty response.");
   } catch (err) {
-    console.error(`[REST Cache] Failed:`, err);
+    logError(err instanceof Error ? err : new Error(String(err)), {
+      requestType,
+      params,
+      message: "[REST Cache] Failed",
+    });
     throw err;
   }
 }

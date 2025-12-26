@@ -11,6 +11,7 @@ import { requireUser } from "~/features/auth/session.server";
 import { requireActiveSubscription } from "~/features/payments/subscriptions.server";
 import { updateUserSubscription } from "~/models/payment.server";
 import { respondToChildRequest, getUsersByNpubs } from "~/models/user.server";
+import { logWarning } from "~/lib/error-logger.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const user = await requireUser(request);
@@ -58,7 +59,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           `free_childlink_basic_${Date.now()}_${user.id}`,
         );
       } catch (e) {
-        console.warn("Failed to promote child to basic plan after accept:", e);
+        logWarning("Failed to promote child to basic plan after accept", {
+          userId: user.id,
+          error: e instanceof Error ? e.message : String(e),
+        });
       }
     }
 

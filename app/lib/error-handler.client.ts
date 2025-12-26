@@ -6,6 +6,7 @@
 
 import { toast } from "react-hot-toast";
 import type { ErrorResponse } from "./error-handler.server";
+import { captureException } from "./sentry.client";
 
 export type ClientErrorLevel = "error" | "warning" | "info";
 
@@ -53,11 +54,19 @@ export function logClientError(
     }
   }
 
-  // TODO: Send to external error tracking service (e.g., Sentry, LogRocket)
-  // Example:
-  // if (window.Sentry) {
-  //   window.Sentry.captureException(error, { extra: context });
-  // }
+  // Send to Sentry if configured
+  if (error instanceof Error) {
+    captureException(error, {
+      tags: {
+        level,
+        component: context?.component,
+        action: context?.action,
+      },
+      extra: context,
+      user: context?.userId ? { id: context.userId } : undefined,
+      level: level === "error" ? "error" : level === "warning" ? "warning" : "info",
+    });
+  }
 }
 
 /**
@@ -214,6 +223,7 @@ export function isTimeoutError(error: unknown): boolean {
   }
   return false;
 }
+
 
 
 

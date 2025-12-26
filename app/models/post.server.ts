@@ -24,6 +24,7 @@ import type { Post, PostType, QueueType, Prisma } from "@prisma/client";
 
 import { prisma } from "~/lib/prisma.server";
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
+import { logError } from "~/lib/error-logger.server";
 
 interface CreatePostData {
   userId: string;
@@ -696,7 +697,11 @@ export async function getLastPostTimeForQueue({
 
     return parsedDate;
   } catch (error) {
-    console.error("Error parsing scheduledFor:", lastPost.scheduledFor, error);
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      postId: lastPost.id,
+      scheduledFor: String(lastPost.scheduledFor),
+      message: "Error parsing scheduledFor",
+    });
     return null;
   }
 }

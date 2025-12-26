@@ -40,3 +40,4 @@ WHERE tablename IN ('Post', 'LongFormPost')
 ORDER BY tablename, indexname;
 
 
+

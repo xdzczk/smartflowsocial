@@ -8,6 +8,10 @@ import { RemixBrowser } from "@remix-run/react";
 import { startTransition, StrictMode } from "react";
 import { hydrateRoot } from "react-dom/client";
 
+// Initialize Sentry early for client-side error tracking
+import { initSentry } from "~/lib/sentry.client";
+initSentry();
+
 startTransition(() => {
   hydrateRoot(
     document,

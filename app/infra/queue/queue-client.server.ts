@@ -14,6 +14,7 @@ import type {
   PostJobData,
   LongFormPostJobData,
 } from "./queue-types";
+import { logError } from "~/lib/error-logger.server";
 
 // Redis connection with BullMQ required config
 const redis = new Redis(process.env.REDIS_URL!, {
@@ -100,7 +101,10 @@ class BullMQClient implements QueueClient {
 
       return false;
     } catch (error) {
-      console.error(`Error canceling job in ${queueName}:`, error);
+      logError(error instanceof Error ? error : new Error(String(error)), {
+        queueName,
+        message: "Error canceling job",
+      });
       return false;
     }
   }
@@ -120,7 +124,11 @@ class BullMQClient implements QueueClient {
         status: (job.opts.delay && job.opts.delay > 0 ? "delayed" : "waiting") as JobStatus,
       }));
     } catch (error) {
-      console.error(`Error getting jobs from ${queueName}:`, error);
+      logError(error instanceof Error ? error : new Error(String(error)), {
+        queueName,
+        statuses,
+        message: "Error getting jobs",
+      });
       return [];
     }
   }
@@ -137,7 +145,11 @@ class BullMQClient implements QueueClient {
       
       return false;
     } catch (error) {
-      console.error(`Error removing job ${jobId} from ${queueName}:`, error);
+      logError(error instanceof Error ? error : new Error(String(error)), {
+        queueName,
+        jobId,
+        message: "Error removing job",
+      });
       return false;
     }
   }

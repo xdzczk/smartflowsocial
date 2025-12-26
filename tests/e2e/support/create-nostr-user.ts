@@ -28,81 +28,129 @@ async function createNostrUserAndLogin(npub: string) {
         include: { Subscription: true },
     });
 
-    if (!user) {
-        // Create user with a subscription in a transaction
-        user = await prisma.$transaction(async (tx) => {
-            // Create the user
-            const newUser = await tx.user.create({
+    // Ensure user exists and has an active subscription
+    user = await prisma.$transaction(async (tx) => {
+        let currentUser = user;
+        
+        // Create user if it doesn't exist
+        if (!currentUser) {
+            currentUser = await tx.user.create({
                 data: {
                     npub,
                     timezone: "UTC",
                     isEnabled: true,
                 },
             });
+        } else {
+            // Ensure user is enabled
+            if (!currentUser.isEnabled) {
+                currentUser = await tx.user.update({
+                    where: { id: currentUser.id },
+                    data: { isEnabled: true },
+                });
+            }
+        }
 
-            // Find the premium plan for full feature access during testing
-            let plan = await tx.plan.findFirst({
-                where: { id: "premium" },
+        // Find or create the premium plan for full feature access during testing
+        let plan = await tx.plan.findFirst({
+            where: { id: "premium" },
+        });
+
+        if (!plan) {
+            // Fall back to any active plan
+            plan = await tx.plan.findFirst({
+                where: { isActive: true },
             });
+        }
 
-            if (!plan) {
-                // Fall back to any active plan
-                plan = await tx.plan.findFirst({
-                    where: { isActive: true },
-                });
-            }
-
-            // If no plan exists, create a premium plan for testing
-            if (!plan) {
-                plan = await tx.plan.create({
-                    data: {
-                        id: "premium",
-                        name: "Premium",
-                        price: 71,
-                        isActive: true,
-                        features: {
-                            basicScheduling: true,
-                            multipleQueues: true,
-                            bulkScheduling: true,
-                            engagementFeed: true,
-                            giveaways: true,
-                        },
-                        enableBasicScheduling: true,
-                        enableMultipleQueues: true,
-                        enableBulkScheduling: true,
-                        enableEngagementFeed: true,
-                        enableGiveaways: true,
-                        enableLifetimeAccess: false,
+        // If no plan exists, create a premium plan for testing
+        // This plan should have all features enabled for e2e tests
+        if (!plan) {
+            plan = await tx.plan.create({
+                data: {
+                    id: "premium",
+                    name: "Premium",
+                    price: 71,
+                    isActive: true,
+                    features: {
+                        basicScheduling: true,
+                        multipleQueues: true,
+                        bulkScheduling: true,
+                        engagementFeed: true,
+                        giveaways: true,
                     },
-                });
-            }
+                    enableBasicScheduling: true,
+                    enableMultipleQueues: true,
+                    enableBulkScheduling: true,
+                    enableEngagementFeed: true,
+                    enableGiveaways: true,
+                    enableLifetimeAccess: false,
+                },
+            });
+        }
+        
+        // Ensure the plan has the correct name for feature detection
+        // The getUserPlanType function checks planId and plan name
+        if (plan.name !== "Premium" && plan.name !== "premium") {
+            plan = await tx.plan.update({
+                where: { id: plan.id },
+                data: { name: "Premium" },
+            });
+        }
 
-            // Create an active subscription with a valid planId
-            const subscriptionId = `test_sub_${Date.now()}_${newUser.id.slice(-8)}`;
+        // Check if user has an active subscription
+        const existingSubscription = await tx.subscription.findUnique({
+            where: { userId: currentUser.id },
+        });
+
+        if (!existingSubscription || existingSubscription.status !== "ACTIVE") {
+            // Create or update subscription to be active
             const now = new Date();
             const thirtyDaysFromNow = new Date(
                 now.getTime() + 30 * 24 * 60 * 60 * 1000,
             );
 
-            await tx.subscription.create({
-                data: {
-                    id: subscriptionId,
-                    userId: newUser.id,
-                    planId: plan.id, // Always set planId
-                    status: "ACTIVE",
-                    startDate: now,
-                    currentPeriodStart: now,
-                    currentPeriodEnd: thirtyDaysFromNow,
-                },
+            if (existingSubscription) {
+                // Update existing subscription to be active
+                await tx.subscription.update({
+                    where: { id: existingSubscription.id },
+                    data: {
+                        planId: plan.id,
+                        status: "ACTIVE",
+                        startDate: now,
+                        currentPeriodStart: now,
+                        currentPeriodEnd: thirtyDaysFromNow,
+                    },
+                });
+            } else {
+                // Create new active subscription
+                const subscriptionId = `test_sub_${Date.now()}_${currentUser.id.slice(-8)}`;
+                await tx.subscription.create({
+                    data: {
+                        id: subscriptionId,
+                        userId: currentUser.id,
+                        planId: plan.id,
+                        status: "ACTIVE",
+                        startDate: now,
+                        currentPeriodStart: now,
+                        currentPeriodEnd: thirtyDaysFromNow,
+                    },
+                });
+            }
+        } else if (existingSubscription.planId !== plan.id) {
+            // Update subscription to use the premium plan
+            await tx.subscription.update({
+                where: { id: existingSubscription.id },
+                data: { planId: plan.id },
             });
+        }
 
-            // Return user with subscription
-            return tx.user.findUnique({
-                where: { id: newUser.id },
-                include: { Subscription: true },
-            });
+        // Return user with subscription
+        return tx.user.findUnique({
+            where: { id: currentUser.id },
+            include: { Subscription: true },
         });
-    }
+    });
 
     if (!user) {
         throw new Error("Failed to create user");

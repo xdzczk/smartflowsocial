@@ -27,6 +27,7 @@ import type {
   PostJobData,
   LongFormPostJobData,
 } from "~/infra/queue";
+import { logInfo, logError } from "~/lib/error-logger.server";
 
 // Get queue instances using the abstraction
 const scheduledPostsQueue = getQueueInstance("scheduled-posts");
@@ -52,7 +53,10 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
 
       // If already posted, skip processing (idempotency)
       if (existingPost.isPosted) {
-        console.log(`Post ${postId} already posted, skipping duplicate job`);
+        logInfo("Post already posted, skipping duplicate job", {
+          postId,
+          userId,
+        });
         return { success: true, postId, skipped: true };
       }
 
@@ -90,8 +94,13 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
 
       return { success: true, postId };
     } catch (error) {
-      console.error(`Error processing scheduled post ${postId}:`, error);
+      logError(error instanceof Error ? error : new Error(String(error)), {
+        userId,
+        postId,
+        message: "Error processing scheduled post",
+      });
       throw error;
+    }
     }
   },
   {
@@ -119,7 +128,10 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
 
       // If already published, skip processing (idempotency)
       if (existingPost.isPublished) {
-        console.log(`Longform post ${postId} already published, skipping duplicate job`);
+        logInfo("Longform post already published, skipping duplicate job", {
+          postId,
+          userId,
+        });
         return { success: true, postId, skipped: true };
       }
 
@@ -157,10 +169,11 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
 
       return { success: true, postId };
     } catch (error) {
-      console.error(
-        `Error processing scheduled longform post ${postId}:`,
-        error,
-      );
+      logError(error instanceof Error ? error : new Error(String(error)), {
+        userId,
+        postId,
+        message: "Error processing scheduled longform post",
+      });
       throw error;
     }
   },
@@ -223,7 +236,9 @@ export const postCheckerWorker = new Worker(
 
       return { processed: posts.length + longformPosts.length };
     } catch (error) {
-      console.error("Error checking scheduled posts:", error);
+      logError(error instanceof Error ? error : new Error(String(error)), {
+        message: "Error checking scheduled posts",
+      });
       throw error;
     }
   },
@@ -248,7 +263,11 @@ async function startPostChecker() {
 }
 
 // Initialize the post checker
-startPostChecker().catch(console.error);
+startPostChecker().catch((error) => {
+  logError(error instanceof Error ? error : new Error(String(error)), {
+    message: "Error starting post checker",
+  });
+});
 
 // Graceful shutdown
 process.on("SIGTERM", async () => {

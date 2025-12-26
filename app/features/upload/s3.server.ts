@@ -4,6 +4,7 @@ import {
   unstable_createMemoryUploadHandler as createMemoryUploadHandler,
 } from "@remix-run/node";
 import { v4 as uuidv4 } from "uuid";
+import { logError } from "~/lib/error-logger.server";
 
 type UploadStream = AsyncIterable<Uint8Array>;
 
@@ -31,7 +32,11 @@ const uploadStreamToS3 = async (
     // Construct the URL manually since v3 doesn't return Location
     return `https://${process.env.STORAGE_BUCKET}.s3.${process.env.STORAGE_REGION}.amazonaws.com/${key}`;
   } catch (error) {
-    console.error("S3 upload error:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      key,
+      bucket: process.env.STORAGE_BUCKET,
+      message: "S3 upload error",
+    });
     throw error;
   }
 };
@@ -69,7 +74,11 @@ export function createUploadHandler(userId: string) {
 
         return uploadedFileLocation;
       } catch (error) {
-        console.error("Upload handler error:", error);
+        logError(error instanceof Error ? error : new Error(String(error)), {
+          userId,
+          filename,
+          message: "Upload handler error",
+        });
         throw error;
       }
     },
@@ -112,7 +121,12 @@ export async function uploadBufferToS3(
     // Return the full URL
     return `https://${process.env.STORAGE_BUCKET}.s3.${process.env.STORAGE_REGION}.amazonaws.com/${key}`;
   } catch (error) {
-    console.error("S3 buffer upload error:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      userId,
+      filename: finalFilename,
+      key,
+      message: "S3 buffer upload error",
+    });
     throw error;
   }
 }
@@ -158,7 +172,11 @@ export async function uploadEditorJSImage(
 
     return imageUrl;
   } catch (error) {
-    console.error("EditorJS S3 upload error:", error);
-    throw new Error(`Failed to upload image: ${error.message}`);
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      userId,
+      filename,
+      message: "EditorJS S3 upload error",
+    });
+    throw new Error(`Failed to upload image: ${error instanceof Error ? error.message : String(error)}`);
   }
 }

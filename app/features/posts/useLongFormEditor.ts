@@ -10,6 +10,7 @@ import {
   disableCaptions,
   setupCaptionObserver,
 } from "~/features/posts/utils/editorjs-captions";
+import { logClientError } from "~/lib/error-handler.client";
 import type { EditorJSInstance, EditorJSAPI } from "~/features/posts/types/editorjs.types";
 
 interface UseLongFormEditorOptions {
@@ -53,7 +54,14 @@ export function useLongFormEditor({
                         existingEditor.innerHTML.trim().length > 0;
 
                     if (hasEditorContent) {
-                        console.log("EditorJS already initialized, skipping...");
+                        logClientError(
+                            "EditorJS already initialized, skipping...",
+                            {
+                                component: "useLongFormEditor",
+                                action: "loadEditor",
+                            },
+                            "info",
+                        );
                         editorInitialized.current = false; // Reset flag so it can try again if needed
                         return;
                     }
@@ -157,7 +165,15 @@ export function useLongFormEditor({
                         editorRef.current.destroy();
                     }
                 } catch (error) {
-                    console.warn("Error during editor cleanup:", error);
+                    logClientError(
+                        error instanceof Error ? error : new Error(String(error)),
+                        {
+                            component: "useLongFormEditor",
+                            action: "cleanup",
+                            message: "Error during editor cleanup",
+                        },
+                        "warning",
+                    );
                 } finally {
                     editorRef.current = null;
                     editorInitialized.current = false;

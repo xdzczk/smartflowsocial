@@ -6,6 +6,7 @@ import { json } from "@remix-run/node";
 import { nip19 } from "nostr-tools";
 
 import { requireUserId } from "~/features/auth/session.server";
+import { logError } from "~/lib/error-logger.server";
 import {
     deleteLongFormPost,
     getLongFormPostsByIds,
@@ -149,7 +150,11 @@ async function handleRepost(formData: FormData, userId: string) {
             originalPost: originalPost,
         });
     } catch (error: unknown) {
-        console.error("Repost error:", error);
+        logError(error instanceof Error ? error : new Error(String(error)), {
+            userId,
+            postId: formData.get("postId") as string,
+            message: "Repost error",
+        });
         return json(
             {
                 error: true,
@@ -191,7 +196,11 @@ async function handleQuote(formData: FormData, userId: string) {
 
         return json({ quotePostData: [quotePostData] });
     } catch (error: unknown) {
-        console.error("Quote post error:", error);
+        logError(error instanceof Error ? error : new Error(String(error)), {
+            userId,
+            postId: formData.get("postId") as string,
+            message: "Quote post error",
+        });
         return json(
             {
                 error: true,
@@ -262,7 +271,11 @@ async function handleLongformRepost(formData: FormData, userId: string) {
             naddr: naddr,
         });
     } catch (error: unknown) {
-        console.error("Longform repost error:", error);
+        logError(error instanceof Error ? error : new Error(String(error)), {
+            userId,
+            longformPostId: formData.get("longformPostId") as string,
+            message: "Longform repost error",
+        });
         return json(
             {
                 error: true,
@@ -325,7 +338,11 @@ async function handleLongformQuote(formData: FormData, userId: string) {
 
         return json({ longformQuotePostData: [quotePostData] });
     } catch (error: unknown) {
-        console.error("Longform quote post error:", error);
+        logError(error instanceof Error ? error : new Error(String(error)), {
+            userId,
+            longformPostId: formData.get("longformPostId") as string,
+            message: "Longform quote post error",
+        });
         return json(
             {
                 error: true,

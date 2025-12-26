@@ -120,3 +120,4 @@ You should see the new indexes:
 4. Monitor slow query logs
 
 
+

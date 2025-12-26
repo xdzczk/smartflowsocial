@@ -10,6 +10,7 @@ import {
   ScrollRestoration,
   isRouteErrorResponse,
   useRouteError,
+  useLoaderData,
 } from "@remix-run/react";
 import { Toaster } from "react-hot-toast";
 
@@ -25,10 +26,23 @@ export const links: LinksFunction = () => [
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
-    return json({ user: await getUser(request) });
+    return json({ 
+      user: await getUser(request),
+      // Expose Sentry DSN to client (safe - it's a public key)
+      ENV: {
+        SENTRY_DSN: process.env.SENTRY_DSN || null,
+        NODE_ENV: process.env.NODE_ENV || "development",
+      },
+    });
   } catch (error) {
     // Handle root loader errors gracefully
-    return handleLoaderError(error, { user: null });
+    return handleLoaderError(error, { 
+      user: null, 
+      ENV: {
+        SENTRY_DSN: null,
+        NODE_ENV: "development",
+      },
+    });
   }
 };
 
@@ -64,6 +78,8 @@ export const meta = () => [
 ];
 
 export default function App() {
+  const { ENV } = useLoaderData<typeof loader>();
+
   return (
     <html lang="en" className="h-full">
       <head>
@@ -77,6 +93,11 @@ export default function App() {
         <Outlet />
         <ScrollRestoration />
         <Scripts />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.ENV = ${JSON.stringify(ENV)}`,
+          }}
+        />
         <LiveReload />
       </body>
     </html>

@@ -15,11 +15,16 @@ export default function NostrAuthButton() {
     try {
       // Load and initialize nostr-login when button is clicked
       const { init } = await import("nostr-login");
+      
       init({
         methods: ["connect", "extension"],
         noBanner: true,
         onAuth: async () => {
-          if (window.nostr) {
+          try {
+            if (!window.nostr) {
+              throw new Error("Nostr extension not found. Please install a Nostr extension like Alby or nos2x.");
+            }
+
             const randomKeys = () => {
               const chars =
                 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -40,16 +45,23 @@ export default function NostrAuthButton() {
             };
 
             const signedEvent = await window.nostr.signEvent(event);
+            
             const formData = new FormData();
             formData.append("pubkey", signedEvent.pubkey);
             formData.append("signature", signedEvent.sig);
             formData.append("event", JSON.stringify(signedEvent));
             formData.append("contentSign", contentSign);
+            
             // Submit auth request
             fetcher.submit(formData, {
               method: "post",
               action: "/nostr-auth",
             });
+          } catch (authError) {
+            handleAsyncError(authError, {
+              component: "NostrAuthButton",
+              action: "onAuth",
+            }, true);
           }
         },
       });
@@ -63,7 +75,7 @@ export default function NostrAuthButton() {
       handleAsyncError(error, {
         component: "NostrAuthButton",
         action: "handleNostrLogin",
-      }, true); // Show toast to user
+      }, true);
     }
   }, [fetcher]);
 
@@ -119,6 +131,7 @@ export default function NostrAuthButton() {
           disabled={fetcher.state === "submitting"}
           className="bg-gradient-to-r from-purple-500 to-indigo-600 font-bold text-white hover:from-purple-600 hover:to-indigo-700"
           size="lg"
+          type="button"
         >
           {fetcher.state === "submitting"
             ? "Logging in..."

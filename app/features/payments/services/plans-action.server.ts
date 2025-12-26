@@ -8,6 +8,7 @@ import {
   createPlanInvoice,
   checkPaymentStatus,
 } from "~/models/payment.server";
+import { logError } from "~/lib/error-logger.server";
 
 export async function handlePlansAction(
   formData: FormData,
@@ -94,7 +95,11 @@ export async function handlePlansAction(
         planId: invoice.planId,
       };
     } catch (error) {
-      console.error("Error creating plan invoice:", error);
+      logError(error instanceof Error ? error : new Error(String(error)), {
+        userId: user.id,
+        planId: formData.get("planId") as string,
+        message: "Error creating plan invoice",
+      });
       return {
         error:
           error instanceof Error
@@ -106,6 +111,7 @@ export async function handlePlansAction(
 
   return { error: "Invalid intent" };
 }
+
 
 
 

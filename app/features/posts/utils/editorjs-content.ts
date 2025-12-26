@@ -4,7 +4,7 @@
 
 import React from "react";
 import { convertMarkdownToEditorJS } from "~/lib/nostr";
-import { handleErrorSafely } from "~/lib/error-handler.client";
+import { handleErrorSafely, logClientError } from "~/lib/error-handler.client";
 import type { EditorJSInstance, EditorJSBlock } from "~/features/posts/types/editorjs.types";
 
 /**
@@ -34,16 +34,28 @@ export async function loadEditorJSContent(
           throw new Error("Not valid EditorJS format");
         }
       } catch (jsonError) {
-        console.warn(
-          "Content is not valid EditorJS JSON, treating as markdown:",
-          jsonError,
+        logClientError(
+          jsonError instanceof Error ? jsonError : new Error(String(jsonError)),
+          {
+            component: "loadEditorJSContent",
+            action: "parseContent",
+            message: "Content is not valid EditorJS JSON, treating as markdown",
+          },
+          "warning",
         );
         // If JSON parsing fails, treat as markdown and convert to EditorJS
         parsedContent = convertMarkdownToEditorJS(content);
       }
     } else {
       // Content is in markdown format, convert to EditorJS
-      console.log("Converting markdown content to EditorJS format");
+      logClientError(
+        "Converting markdown content to EditorJS format",
+        {
+          component: "loadEditorJSContent",
+          action: "convertMarkdown",
+        },
+        "info",
+      );
       parsedContent = convertMarkdownToEditorJS(content);
     }
 
@@ -102,7 +114,15 @@ export async function insertAssetsIntoEditor(
         insertIndex = currentBlockIndex + 1; // Insert after current block
       }
     } catch (error) {
-      console.log("Using default insertion position at end");
+      logClientError(
+        "Using default insertion position at end",
+        {
+          component: "insertAssetsIntoEditor",
+          action: "getCurrentBlockIndex",
+          error: error instanceof Error ? error.message : String(error),
+        },
+        "info",
+      );
     }
 
     // Create new blocks for assets

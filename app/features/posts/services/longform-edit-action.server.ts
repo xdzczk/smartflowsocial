@@ -23,6 +23,7 @@ import {
 import {
   updateLongFormPost,
 } from "~/models/longformpost.server";
+import { logError } from "~/lib/error-logger.server";
 import {
   getUserById,
   getEffectiveHashtags,
@@ -124,7 +125,11 @@ async function handleImageUpload(
 
       return Response.json({ success: true, imageUrl });
     } catch (error) {
-      console.error("S3 upload error:", error);
+      logError(error instanceof Error ? error : new Error(String(error)), {
+        userId,
+        fileName: file.name,
+        message: "S3 upload error",
+      });
       return Response.json(
         {
           success: false,
@@ -499,6 +504,7 @@ export async function handleLongFormEditAction(
 
   return Response.json({ success: false });
 }
+
 
 
 

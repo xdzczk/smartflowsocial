@@ -7,6 +7,7 @@
 import type { AppError } from "./errors";
 import { recordErrorMetric } from "./error-metrics.server";
 import { sanitizeObject, sanitizeError } from "./secrets-sanitizer.server";
+import { captureException } from "./sentry.server";
 
 export type LogLevel = "error" | "warn" | "info" | "debug";
 
@@ -118,14 +119,21 @@ export function logError(
     recordErrorMetric(error);
   }
 
-  // TODO: Integrate with external logging service (e.g., Sentry, LogRocket, etc.)
-  // Example:
-  // if (process.env.SENTRY_DSN) {
-  //   Sentry.captureException(error, {
-  //     tags: { code: isAppError(error) ? error.code : "UNKNOWN" },
-  //     extra: context,
-  //   });
-  // }
+  // Send to Sentry if configured
+  captureException(sanitizedError, {
+    tags: {
+      code: isAppError(error) ? error.code : "UNKNOWN_ERROR",
+      statusCode: String(logEntry.error.statusCode),
+      isOperational: String(logEntry.error.isOperational),
+    },
+    extra: {
+      ...sanitizedLogEntry,
+      // Include sanitized context
+      context: sanitizedLogEntry.request || sanitizedLogEntry.user || {},
+    },
+    user: context.userId ? { id: context.userId } : undefined,
+    level: logEntry.error.isOperational ? "warning" : "error",
+  });
 }
 
 /**

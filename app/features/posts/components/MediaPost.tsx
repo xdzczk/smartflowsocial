@@ -7,7 +7,10 @@ import type { QueueType, HashTagPreset } from "~/features/posts/types";
 import { QueueSelector } from "~/features/posts/components/QueueSelector";
 import { SchedulingSection } from "~/features/posts/components/SchedulingSection";
 import { usePostScheduling } from "~/features/posts/hooks/usePostScheduling";
-import { resizeImage } from "~/features/upload/image-resize";
+import {
+  validateAndProcessFiles,
+  isAcceptableFile,
+} from "~/features/posts/utils/file-processing.client";
 import { uploadMultipleFiles } from "~/features/upload/upload.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 
@@ -34,34 +37,14 @@ interface MediaPostProps {
   onHashtagPresetChange?: (presetId: string | null, hashtags: string) => void;
 }
 
-// Helper function to determine media type
+// Helper function to determine media type (kept for backward compatibility)
 const getMediaType = (file: File) => {
   if (file.type.startsWith("image/")) return "image";
   if (file.type.startsWith("video/")) return "video";
   return "unknown";
 };
 
-// Helper function to check if file is acceptable
-const isAcceptableFile = (file: File) => {
-  const acceptedImageTypes = [
-    "image/jpeg",
-    "image/png",
-    "image/gif",
-    "image/webp",
-  ];
-  const acceptedVideoTypes = [
-    "video/mp4",
-    "video/webm",
-    "video/ogg",
-    "video/mov",
-    "video/avi",
-  ];
-
-  return (
-    acceptedImageTypes.includes(file.type) ||
-    acceptedVideoTypes.includes(file.type)
-  );
-};
+// isAcceptableFile is now imported from file-processing.client.ts
 
 export default function MediaPost({
   files,
@@ -107,83 +90,24 @@ export default function MediaPost({
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files) as File[];
 
-    // Filter out unacceptable files
-    const validFiles = selectedFiles.filter((file) => {
-      if (!isAcceptableFile(file)) {
-        toast.error(`File type not supported: ${file.name}`);
-        return false;
-      }
-      return true;
-    });
-
-    if (validFiles.length === 0) return;
-
-    // Check file sizes
-    const maxImageSize = 10 * 1024 * 1024; // 10MB for images
-    const maxVideoSize = 100 * 1024 * 1024; // 100MB for videos
-
-    const oversizedFiles = validFiles.filter((file) => {
-      const isImage = file.type.startsWith("image/");
-      const maxSize = isImage ? maxImageSize : maxVideoSize;
-      return file.size > maxSize;
-    });
-
-    if (oversizedFiles.length > 0) {
-      oversizedFiles.forEach((file) => {
-        const isImage = file.type.startsWith("image/");
-        const maxSizeMB = isImage ? 10 : 100;
-        toast.error(`${file.name} exceeds ${maxSizeMB}MB limit`);
-      });
-      return;
-    }
-
-    // Process files
-    try {
-      const processedFiles = await Promise.all(
-        validFiles.map(async (file) => {
-          if (file.type.startsWith("image/")) {
-            // Process images to remove metadata
-            return await resizeImage(file);
-          }
-          // Videos are uploaded as-is (no processing needed for privacy)
-          return file;
-        }),
-      );
+    // Use extracted utility for validation and processing
+    const processedFiles = await validateAndProcessFiles(selectedFiles);
+    
+    if (processedFiles) {
       setFiles((prev: File[]) => [...prev, ...processedFiles]);
-    } catch (error) {
-      console.error("Error processing media files:", error);
-      toast.error("Error processing files. Using original files.");
-      setFiles((prev: File[]) => [...prev, ...validFiles]);
     }
   };
 
   const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const droppedFiles = Array.from(e.dataTransfer.files) as File[];
+    
     if (droppedFiles.length > 0) {
-      // Filter acceptable files
-      const validFiles = droppedFiles.filter((file) => isAcceptableFile(file));
-
-      if (validFiles.length === 0) {
-        toast.error("Please drop only supported image or video files");
-        return;
-      }
-
-      // Process files to remove metadata for images
-      try {
-        const processedFiles = await Promise.all(
-          validFiles.map(async (file) => {
-            if (file.type.startsWith("image/")) {
-              return await resizeImage(file);
-            }
-            return file; // Videos are not processed
-          }),
-        );
+      // Use extracted utility for validation and processing
+      const processedFiles = await validateAndProcessFiles(droppedFiles);
+      
+      if (processedFiles) {
         setFiles((prev: File[]) => [...prev, ...processedFiles]);
-      } catch (error) {
-        console.error("Error processing dropped media files:", error);
-        toast.error("Error processing files. Using original files.");
-        setFiles((prev: File[]) => [...prev, ...validFiles]);
       }
     }
   };

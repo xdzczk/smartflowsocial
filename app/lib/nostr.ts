@@ -18,7 +18,8 @@ export function hexToNpub(hex: string): string | null {
   try {
     return nip19.npubEncode(hex);
   } catch (error) {
-    console.error("Error converting hex to npub:", error);
+    // This is a utility function, errors are expected and handled gracefully
+    // No need to log conversion errors as they're not critical
     return null;
   }
 }
@@ -31,7 +32,8 @@ export function npubToHex(npub: string): string | null {
     const { data } = nip19.decode(npub);
     return data as string;
   } catch (error) {
-    console.error("Error converting npub to hex:", error);
+    // This is a utility function, errors are expected and handled gracefully
+    // No need to log conversion errors as they're not critical
     return null;
   }
 }
@@ -82,7 +84,18 @@ export const signEventFn = async (
       "Nostr extension not found after retries. Please install a Nostr extension.",
     );
   } catch (error) {
-    console.error("Error in signEventFn:", error);
+    // Only log on client side (these functions use window.nostr)
+    if (typeof window !== "undefined") {
+      const { logClientError } = await import("~/lib/error-handler.client");
+      logClientError(
+        error instanceof Error ? error : new Error(String(error)),
+        {
+          component: "nostr",
+          action: "signEventFn",
+        },
+        "error",
+      );
+    }
     throw error;
   }
 };
@@ -173,7 +186,18 @@ export const signLongFormEvent = async (
       "Nostr extension not found after retries. Please install a Nostr extension.",
     );
   } catch (error) {
-    console.error("Error in signLongFormEvent:", error);
+    // Only log on client side (these functions use window.nostr)
+    if (typeof window !== "undefined") {
+      const { logClientError } = await import("~/lib/error-handler.client");
+      logClientError(
+        error instanceof Error ? error : new Error(String(error)),
+        {
+          component: "nostr",
+          action: "signLongFormEvent",
+        },
+        "error",
+      );
+    }
     throw error;
   }
 };

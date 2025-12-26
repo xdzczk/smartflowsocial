@@ -12,6 +12,10 @@ import { RemixServer } from "@remix-run/react";
 import { isbot } from "isbot";
 import { renderToPipeableStream } from "react-dom/server";
 
+// Initialize Sentry early for server-side error tracking
+import { initSentry } from "~/lib/sentry.server";
+initSentry();
+
 const ABORT_DELAY = 5_000;
 
 export default function handleRequest(
@@ -68,7 +72,13 @@ function handleBotRequest(
         },
         onError(error: unknown) {
           responseStatusCode = 500;
-          console.error(error);
+          // Log error through centralized logger
+          const { logError } = require("~/lib/error-logger.server");
+          logError(error instanceof Error ? error : new Error(String(error)), {
+            path: request.url,
+            method: request.method,
+            message: "Error during bot request rendering",
+          });
         },
       },
     );
@@ -109,7 +119,13 @@ function handleBrowserRequest(
           reject(error);
         },
         onError(error: unknown) {
-          console.error(error);
+          // Log error through centralized logger
+          const { logError } = require("~/lib/error-logger.server");
+          logError(error instanceof Error ? error : new Error(String(error)), {
+            path: request.url,
+            method: request.method,
+            message: "Error during browser request rendering",
+          });
           responseStatusCode = 500;
         },
       },

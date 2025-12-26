@@ -223,6 +223,11 @@ async function run() {
             "'self'",
             "wss:", // WebSocket connections for Nostr
             "https:", // External API calls
+            ...(isDevelopment ? ["ws://localhost:3001"] : []), // Remix dev server WebSocket
+          ],
+          workerSrc: [
+            "'self'",
+            "blob:", // Required for Sentry workers
           ],
           fontSrc: ["'self'", "data:"],
           objectSrc: ["'none'"],

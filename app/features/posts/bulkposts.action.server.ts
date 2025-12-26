@@ -9,6 +9,7 @@ import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 import { createPost, updatePost } from "~/models/post.server";
 import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
 import { isVideoUrl } from "~/utils/media-helpers";
+import { logInfo } from "~/lib/error-logger.server";
 
 /**
  * Upload result from client-side upload system
@@ -158,9 +159,12 @@ export async function handleSignAndSchedule(
                 mode === "quote" ||
                 (signedEvent.kind === 1 &&
                     (!!signedEvent.isQuotePost || hasEventTags));
-            console.log(
-                `Server: Calculated isQuotePost: ${isQuotePost} (mode: "${mode}", hasEventTags: ${hasEventTags})`
-            );
+            logInfo("Calculated isQuotePost", {
+                isQuotePost,
+                mode,
+                hasEventTags,
+                userId,
+            });
 
             // Determine post type based on file URL
             const isVideo = isVideoUrl(fileUrl);
@@ -188,9 +192,12 @@ export async function handleSignAndSchedule(
                 isRecyclable,
             });
 
-            console.log(
-                `Server: Created post ${index} with queueType: ${post?.queueType}`
-            );
+            logInfo("Created post", {
+                postId: post?.id,
+                index,
+                queueType: post?.queueType,
+                userId,
+            });
             return post;
         })
     );
@@ -297,10 +304,11 @@ async function markOriginalPostsAsNonRecyclable(
     userId: string,
     isDraft: boolean = false
 ) {
-    console.log(
-        `Server: Marking original posts as non-recyclable${isDraft ? " (draft)" : ""}:`,
-        originalPostIds
-    );
+    logInfo(`Marking original posts as non-recyclable${isDraft ? " (draft)" : ""}`, {
+        originalPostIds,
+        userId,
+        isDraft,
+    });
 
     // Update all original posts to mark them as non-recyclable
     await Promise.all(
@@ -311,9 +319,11 @@ async function markOriginalPostsAsNonRecyclable(
                     userId,
                     data: { isRecyclable: false },
                 });
-                console.log(
-                    `Server: Marked post ${originalPostId} as non-recyclable${isDraft ? " (draft)" : ""}`
-                );
+                logInfo(`Marked post as non-recyclable${isDraft ? " (draft)" : ""}`, {
+                    postId: originalPostId,
+                    userId,
+                    isDraft,
+                });
             } catch (error) {
                 // Log but don't throw - marking as non-recyclable is non-critical
                 const { logWarning } = await import("~/lib/error-logger.server");
