@@ -18,13 +18,13 @@ export {
   enqueueLongFormPostJob,
   cancelLongFormPostJob,
   enqueuePostCheckerJob,
-} from "./queue-operations";
+} from "./queue-operations.server";
 
 // Queue client (for advanced usage)
-export { queueClient } from "./queue-client";
+export { queueClient } from "./queue-client.server";
 
 // Queue instances and utilities (for workers)
-export { getQueueInstance, redis, closeAllQueues } from "./queue-client";
+export { getQueueInstance, redis, closeAllQueues } from "./queue-client.server";
 
 // Types
 export type {
@@ -36,4 +36,5 @@ export type {
   JobStatus,
   QueueType,
 } from "./queue-types";
+
 

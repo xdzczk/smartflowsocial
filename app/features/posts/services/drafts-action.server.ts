@@ -10,6 +10,7 @@ import {
   deletePost,
   updatePost,
 } from "~/models/post.server";
+import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
 
 export async function handleDraftsAction(
   formData: FormData,
@@ -45,19 +46,27 @@ export async function handleDraftsAction(
     const contents = formData.getAll("contents");
     const captions = formData.getAll("captions");
     const queueTypes = formData.getAll("queueTypes");
+    const queueTypeIds = formData.getAll("queueTypeIds");
     const scheduledFors = formData.getAll("scheduledFors");
     const signedEvents = formData.getAll("signedEvents");
     const nostrEvents = formData.getAll("nostrEvents");
 
     await Promise.all(
-      postIds.map((id, index) =>
-        updatePost({
+      postIds.map(async (id, index) => {
+        // Resolve queue type ID in feature layer (business logic)
+        const resolvedQueueTypeId = await resolveQueueTypeId(
+          userId,
+          (queueTypeIds[index] as string) || null,
+          (queueTypes[index] as string) || null,
+        );
+
+        return updatePost({
           id: id as string,
           userId,
           data: {
             content: contents[index] as string,
             caption: captions[index] as string,
-            queueType: queueTypes[index] as string,
+            queueTypeId: resolvedQueueTypeId,
             scheduledFor: scheduledFors[index] as string,
             signedEvent: JSON.parse(signedEvents[index] as string),
             nostrEvent: JSON.parse(nostrEvents[index] as string),
@@ -65,12 +74,13 @@ export async function handleDraftsAction(
             isScheduled: true,
             isPosted: false,
           },
-        }),
-      ),
+        });
+      }),
     );
     return { success: true };
   }
 
   return { error: "Invalid action" };
 }
+
 

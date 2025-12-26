@@ -115,6 +115,13 @@ model Post {
   queueType       QueueType?     @relation(fields: [queueTypeId], references: [id])
   template        Template?      @relation(fields: [templateId], references: [id])
   user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Indexes for common query patterns
+  @@index([userId, isScheduled, isPosted])
+  @@index([userId, isPosted])
+  @@index([userId, draft])
+  @@index([isScheduled, scheduledFor])
+  @@index([userId, scheduledFor])
 }
 
 model LongFormPost {
@@ -142,6 +149,13 @@ model LongFormPost {
   hashTagPreset   HashTagPreset? @relation(fields: [hashTagPresetId], references: [id])
   queueType       QueueType?     @relation(fields: [queueTypeId], references: [id])
   user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Indexes for common query patterns
+  @@index([userId, isScheduled])
+  @@index([userId, isPublished])
+  @@index([userId, draft])
+  @@index([isScheduled, scheduledFor])
+  @@index([userId, scheduledFor])
 }
 
 model Template {

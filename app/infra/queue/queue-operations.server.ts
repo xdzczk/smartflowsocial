@@ -3,8 +3,9 @@
  * These functions provide a clean API for common queue operations
  */
 
-import { queueClient } from "./queue-client";
+import { queueClient } from "./queue-client.server";
 import type { PostJobData, LongFormPostJobData } from "./queue-types";
+import type { SignedEvent } from "~/features/nostr/types";
 
 /**
  * Schedule a regular post to be published
@@ -16,7 +17,7 @@ import type { PostJobData, LongFormPostJobData } from "./queue-types";
 export async function enqueuePostJob(
   postId: string,
   userId: string,
-  signedEvent: any,
+  signedEvent: SignedEvent,
   scheduledFor: number,
 ): Promise<void> {
   // Handle immediate scheduling (delay: 0)
@@ -55,7 +56,7 @@ export async function cancelPostJob(postId: string): Promise<boolean> {
 export async function enqueueLongFormPostJob(
   postId: string,
   userId: string,
-  signedEvent: any,
+  signedEvent: SignedEvent,
   scheduledFor: number,
 ): Promise<void> {
   // Handle immediate scheduling (delay: 0)

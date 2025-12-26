@@ -22,8 +22,9 @@ import { PostsSearch } from "~/features/posts/components/PostsSearch";
 import { useDraftsState } from "~/features/posts/hooks/useDraftsState";
 import { loadDraftsData } from "~/features/posts/services/drafts-loader.server";
 import { handleDraftsAction } from "~/features/posts/services/drafts-action.server";
+import { withErrorHandling, withActionErrorHandling } from "~/lib/error-handler.server";
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
+export const loader = withErrorHandling(async ({ request, params }: LoaderFunctionArgs) => {
   const userId = await requireUserId(request);
 
   // Require that the user has at least a subscription record
@@ -34,25 +35,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const queueType = params.queueType || "all";
 
   const data = await loadDraftsData(userId, queueType);
-  return json(data);
-}
+  return data;
+});
 
-export async function action({ request }: ActionFunctionArgs) {
-  try {
-    const userId = await requireUserId(request);
-    const formData = await request.formData();
-    const result = await handleDraftsAction(formData, userId);
-    
-    if (result.error) {
-      return json(result, { status: 400 });
-    }
-    
-    return json(result);
-  } catch (error) {
-    const { handleActionError } = await import("~/lib/error-handler.server");
-    return handleActionError(error);
+export const action = withActionErrorHandling(async ({ request }: ActionFunctionArgs) => {
+  const userId = await requireUserId(request);
+  const formData = await request.formData();
+  const result = await handleDraftsAction(formData, userId);
+  
+  if (result.error) {
+    return json(result, { status: 400 });
   }
-}
+  
+  return json(result);
+});
 
 export default function DraftPosts() {
   const {

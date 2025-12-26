@@ -1,9 +1,73 @@
+/**
+ * LongFormPost Model - Database Access Layer
+ * 
+ * This module provides pure database access operations for LongFormPost entities.
+ * It contains ONLY Prisma queries and data persistence operations.
+ * 
+ * **What belongs here:**
+ * - CRUD operations (create, read, update, delete)
+ * - Database queries with filters, pagination, sorting
+ * - Data aggregation queries
+ * - Prisma transactions
+ * 
+ * **What does NOT belong here:**
+ * - Business logic or workflows
+ * - Status determination logic
+ * - PublishedAt calculation logic
+ * - Permission checks or authorization
+ * - Plan enforcement or subscription validation
+ * 
+ * For business logic, see: app/features/posts/
+ */
+
 import type { LongFormPost, User, Prisma } from "@prisma/client";
 
 import { prisma } from "~/lib/prisma.server";
+import { calculateLongFormStatus } from "~/features/posts/services/longform-status-calculator.server";
+import type { SignedEvent } from "~/features/nostr/types";
 
 export type { LongFormPost } from "@prisma/client";
 
+/**
+ * Type guard to check if a value is a SignedEvent
+ */
+function isSignedEvent(value: unknown): value is SignedEvent {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "id" in value &&
+    "pubkey" in value &&
+    "created_at" in value &&
+    "kind" in value &&
+    "tags" in value &&
+    "content" in value &&
+    "sig" in value &&
+    typeof (value as SignedEvent).id === "string" &&
+    typeof (value as SignedEvent).pubkey === "string" &&
+    typeof (value as SignedEvent).created_at === "number" &&
+    typeof (value as SignedEvent).kind === "number" &&
+    Array.isArray((value as SignedEvent).tags) &&
+    typeof (value as SignedEvent).content === "string" &&
+    typeof (value as SignedEvent).sig === "string"
+  );
+}
+
+/**
+ * Convert Prisma JsonValue to SignedEvent if valid
+ */
+function toSignedEvent(value: Prisma.JsonValue | null | undefined): SignedEvent | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+  return isSignedEvent(value) ? value : null;
+}
+
+/**
+ * Create a new longform post in the database
+ * 
+ * Note: This is a pure data access function. Status calculation
+ * is done using calculateLongFormStatus() from the feature layer.
+ */
 export async function createLongFormPost({
   userId,
   title,
@@ -29,44 +93,22 @@ export async function createLongFormPost({
   scheduledFor?: string | null;
   queueTypeId?: LongFormPost["queueTypeId"];
 }) {
-  // Extract published_at from NOSTR event tags if not provided as scheduledFor
-  let finalScheduledFor = scheduledFor;
-  if (!finalScheduledFor && !isPublished && signedEvent?.tags) {
-    const publishedAtTag = signedEvent.tags.find(
-      (tag) => Array.isArray(tag) && tag[0] === "published_at",
-    );
-    if (publishedAtTag && publishedAtTag[1]) {
-      finalScheduledFor = publishedAtTag[1].toString();
-    }
-  }
-
-  // Determine status based on publishing state and scheduling
-  let status: "DRAFT" | "ACTIVE" | "SCHEDULED";
-  const isScheduled = Boolean(finalScheduledFor && !isPublished);
-  const isDraft = !isPublished && !isScheduled;
-
-  if (isPublished) {
-    status = "ACTIVE";
-  } else if (isScheduled) {
-    status = "SCHEDULED";
-  } else {
-    status = "DRAFT";
-  }
-
-  // Extract nostrEventId from signedEvent if available
-  const nostrEventId = signedEvent?.id || null;
-
-  // Calculate publishedAt based on scheduling
-  let publishedAt: Date | null = null;
-  if (isPublished) {
-    // For published posts, use the event's published_at if available, otherwise current time
-    publishedAt = signedEvent?.published_at
-      ? new Date(signedEvent.published_at * 1000)
-      : new Date();
-  } else if (isScheduled && finalScheduledFor) {
-    // For scheduled posts, set publishedAt to the scheduled time
-    publishedAt = new Date(parseInt(finalScheduledFor) * 1000);
-  }
+  // Calculate status and related fields using business logic from feature layer
+  // Convert Prisma JsonValue to SignedEvent type
+  const typedSignedEvent = signedEvent ? toSignedEvent(signedEvent) : null;
+  
+  const {
+    status,
+    isScheduled,
+    isDraft,
+    publishedAt,
+    nostrEventId,
+    finalScheduledFor,
+  } = calculateLongFormStatus({
+    isPublished,
+    scheduledFor,
+    signedEvent: typedSignedEvent,
+  });
 
   return prisma.longFormPost.create({
     data: {

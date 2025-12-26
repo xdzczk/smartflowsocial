@@ -20,9 +20,11 @@ Welcome to the SmartFlowSocial documentation hub! This guide will help you under
 
 ### Development
 - [Contributing Guide](../CONTRIBUTING.md) - How to contribute to the project
-- [Testing Guide](./testing.md) - Complete testing guide (Vitest, Cypress, property-based, security, performance)
-- [Test Strategy](./TEST_STRATEGY.md) - Testing philosophy, strategy, and coverage goals
+- [Testing Guide](./testing.md) - Complete testing guide (Vitest setup, Cypress, property-based, security, performance)
+- [Test Strategy](./TEST_STRATEGY.md) - Testing philosophy, strategy, coverage goals, and reporting
 - [Error Handling](./ERROR_HANDLING.md) - Centralized error handling (includes implementation and metrics)
+- [Improvement Plan](./IMPROVEMENT_PLAN.md) - Codebase improvement roadmap and status
+- [Current Codebase Rating](./CURRENT_CODEBASE_RATING.md) - Latest codebase quality assessment
 - [Roadmap](../ROADMAP.md) - Future development plans
 - [Changelog](../CHANGELOG.md) - Version history
 

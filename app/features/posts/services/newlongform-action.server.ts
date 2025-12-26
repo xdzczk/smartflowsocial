@@ -27,8 +27,8 @@ import {
   getUserById,
   getQueueTypes,
   getHashTagPresetById,
-  getQueueTypeByNameForUser,
 } from "~/models/user.server";
+import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
 
 /**
  * Parse and combine tags from form data
@@ -179,12 +179,8 @@ async function handleSaveDraft(
   const summary = formData.get("summary")?.toString();
   const tags = parseTags(formData);
 
-  // Get queueTypeId if queueType is provided and not "Unassigned"
-  let queueTypeId = null;
-  if (queueType && queueType !== "Unassigned") {
-    const queueTypeRecord = await getQueueTypeByNameForUser(userId, queueType);
-    queueTypeId = queueTypeRecord?.id || null;
-  }
+  // Resolve queue type ID in feature layer (business logic)
+  const queueTypeId = await resolveQueueTypeId(userId, null, queueType === "Unassigned" ? null : queueType);
 
   if (!title.trim()) {
     return Response.json({ error: "Title is required" }, { status: 400 });
@@ -240,12 +236,8 @@ async function handlePublish(
   const signedEvent = formData.get("signedEvent");
   const nostrEvent = formData.get("nostrEvent");
 
-  // Get queueTypeId if queueType is provided and not "Unassigned"
-  let queueTypeId = null;
-  if (queueType && queueType !== "Unassigned") {
-    const queueTypeRecord = await getQueueTypeByNameForUser(userId, queueType);
-    queueTypeId = queueTypeRecord?.id || null;
-  }
+  // Resolve queue type ID in feature layer (business logic)
+  const queueTypeId = await resolveQueueTypeId(userId, null, queueType === "Unassigned" ? null : queueType);
 
   if (!title.trim()) {
     return Response.json({ error: "Title is required" }, { status: 400 });
@@ -347,12 +339,8 @@ async function handleScheduleLongform(
   const signedEvent = formData.get("signedEvent");
   const nostrEvent = formData.get("nostrEvent");
 
-  // Get queueTypeId if queueType is provided and not "Unassigned"
-  let queueTypeId = null;
-  if (queueType && queueType !== "Unassigned") {
-    const queueTypeRecord = await getQueueTypeByNameForUser(userId, queueType);
-    queueTypeId = queueTypeRecord?.id || null;
-  }
+  // Resolve queue type ID in feature layer (business logic)
+  const queueTypeId = await resolveQueueTypeId(userId, null, queueType === "Unassigned" ? null : queueType);
 
   if (!title.trim()) {
     return Response.json({ error: "Title is required" }, { status: 400 });
@@ -507,4 +495,5 @@ export async function handleNewLongFormAction(
 
   return Response.json({ success: false });
 }
+
 

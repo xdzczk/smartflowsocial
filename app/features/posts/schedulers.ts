@@ -2,7 +2,12 @@ import type { QueueType } from "@prisma/client";
 
 import { getLastPostTimeForQueue } from "~/models/post.server";
 import { getScheduleInterval } from "~/models/user.server";
-import type { QueueType as TypedQueueType } from "~/features/posts/types";
+import type {
+  QueueType as TypedQueueType,
+  ScheduleConfig,
+  isIntervalScheduleConfig,
+  isFixedSlotsScheduleConfig,
+} from "~/features/posts/types";
 
 interface CalculateNextScheduleTimeParams {
   queueType: QueueType | TypedQueueType;
@@ -18,6 +23,10 @@ export async function calculateNextScheduleTime({
   baseTime,
 }: CalculateNextScheduleTimeParams): Promise<Date> {
   // Wrapper to ensure we always return a valid Date
+  const fallbackDate = baseTime && baseTime instanceof Date && !isNaN(baseTime.getTime()) 
+    ? baseTime 
+    : new Date();
+  
   try {
     const result = await calculateNextScheduleTimeInternal({
       queueType,
@@ -28,12 +37,12 @@ export async function calculateNextScheduleTime({
     // Validate that result is a valid Date object
     if (!result || !(result instanceof Date) || isNaN(result.getTime())) {
       console.error("Invalid date returned from calculateNextScheduleTimeInternal:", result);
-      return new Date();
+      return fallbackDate;
     }
     return result;
   } catch (error) {
     console.error("Error in calculateNextScheduleTime wrapper:", error);
-    return new Date();
+    return fallbackDate;
   }
 }
 
@@ -68,37 +77,36 @@ async function calculateNextScheduleTimeInternal({
     // Validate queueType structure
     if (!queueType || !queueType.scheduleType) {
       console.error("Invalid queueType:", queueType);
-      return new Date();
+      return now;
     }
 
     if (queueType.scheduleType === "INTERVAL") {
-      const config = queueType.scheduleConfig || {};
+      const config = queueType.scheduleConfig;
 
       // Handle missing scheduleConfig
-      if (!config || typeof config !== "object") {
+      if (!config || !isIntervalScheduleConfig(config)) {
         // Default to 4 hours if no config
         if (lastPostTime && lastPostTime instanceof Date && !isNaN(lastPostTime.getTime())) {
           // Add 4 hours using milliseconds to avoid date calculation issues
           const nextTime = new Date(lastPostTime.getTime() + 4 * 60 * 60 * 1000);
           // Ensure the date is valid
           if (!(nextTime instanceof Date) || isNaN(nextTime.getTime())) {
-            return new Date();
+            return now;
           }
           // Always ensure the returned time is in the future or present
-          // Check against current time (not captured 'now') to handle any delays
-          const currentTime = new Date();
-          return nextTime >= currentTime ? nextTime : currentTime;
+          // Check against baseTime (now) to ensure consistent test behavior
+          return nextTime >= now ? nextTime : now;
         }
-        const futureTime = new Date(Date.now() + 4 * 60 * 60 * 1000);
+        const futureTime = new Date(now.getTime() + 4 * 60 * 60 * 1000);
         // Ensure the date is valid
         if (!(futureTime instanceof Date) || isNaN(futureTime.getTime())) {
-          return new Date();
+          return now;
         }
         return futureTime;
       }
 
       // Use global interval if configured
-      if (config && typeof config === "object" && config.useGlobalInterval) {
+      if (config.useGlobalInterval) {
         let scheduleIntervals;
         try {
           scheduleIntervals = await getScheduleInterval(userId);
@@ -114,19 +122,18 @@ async function calculateNextScheduleTimeInternal({
           const nextTime = new Date(lastPostTime.getTime() + interval * 60 * 60 * 1000);
           // Ensure the date is valid
           if (!(nextTime instanceof Date) || isNaN(nextTime.getTime())) {
-            return new Date();
+            return now;
           }
           // Always ensure the returned time is in the future or present
-          // Check against current time (not captured 'now') to handle any delays
-          const currentTime = new Date();
-          return nextTime >= currentTime ? nextTime : currentTime;
+          // Check against baseTime (now) to ensure consistent test behavior
+          return nextTime >= now ? nextTime : now;
         } else {
-          // No previous posts or invalid lastPostTime, schedule for now (use current time to avoid timing issues)
-          return new Date();
+          // No previous posts or invalid lastPostTime, schedule for now
+          return now;
         }
       } else {
         // Use queue-specific interval
-        const intervalHours = (config && typeof config === "object" && typeof config.intervalHours === "number") 
+        const intervalHours = typeof config.intervalHours === "number" 
           ? config.intervalHours 
           : 4;
 
@@ -135,26 +142,25 @@ async function calculateNextScheduleTimeInternal({
           const nextTime = new Date(lastPostTime.getTime() + intervalHours * 60 * 60 * 1000);
           // Ensure the date is valid
           if (!(nextTime instanceof Date) || isNaN(nextTime.getTime())) {
-            return new Date();
+            return now;
           }
           // Always ensure the returned time is in the future or present
-          // Check against current time (not captured 'now') to handle any delays
-          const currentTime = new Date();
-          return nextTime >= currentTime ? nextTime : currentTime;
+          // Check against baseTime (now) to ensure consistent test behavior
+          return nextTime >= now ? nextTime : now;
         } else {
-          // No previous posts or invalid lastPostTime, schedule for now (use current time to avoid timing issues)
-          return new Date();
+          // No previous posts or invalid lastPostTime, schedule for now
+          return now;
         }
       }
     } else if (queueType.scheduleType === "FIXED_SLOTS") {
-      const config = queueType.scheduleConfig || {};
-      const slots = (config && typeof config === "object" && Array.isArray(config.slots)) 
-        ? config.slots 
+      const config = queueType.scheduleConfig;
+      const slots = config && isFixedSlotsScheduleConfig(config)
+        ? config.slots
         : [];
 
       if (slots.length === 0) {
-        // No slots configured, fallback to immediate (use current time to avoid timing issues)
-        return new Date();
+        // No slots configured, fallback to immediate
+        return now;
       }
 
       // Sort slots to ensure consistent ordering
@@ -197,7 +203,7 @@ async function calculateNextScheduleTimeInternal({
           utcSlot.setUTCHours(hours, minutes, 0, 0);
           // Ensure the date is valid
           if (isNaN(utcSlot.getTime())) {
-            return new Date();
+            return now;
           }
           return utcSlot;
         }
@@ -238,7 +244,7 @@ async function calculateNextScheduleTimeInternal({
           if (testHours === hours && testMinutes === minutes) {
             // Ensure the date is valid
             if (isNaN(testUTC.getTime())) {
-              return new Date();
+              return actualBaseDate;
             }
             return testUTC;
           }
@@ -262,7 +268,7 @@ async function calculateNextScheduleTimeInternal({
 
         // Ensure the date is valid before returning
         if (isNaN(testUTC.getTime())) {
-          return new Date();
+          return now;
         }
         return testUTC;
       } catch (error) {
@@ -276,47 +282,48 @@ async function calculateNextScheduleTimeInternal({
         utcSlot.setUTCHours(hours, minutes, 0, 0);
         // Ensure the date is valid
         if (isNaN(utcSlot.getTime())) {
-          return new Date();
+          return now;
         }
         return utcSlot;
       }
     };
 
       // Convert slots to today's dates in user's timezone
-      // If a slot is in the past, automatically move it to tomorrow
-      const currentTime = new Date(); // Get current time for comparison
+      // Only include slots that are actually today and in the future
       const todaySlots = sortedSlots
       .map((slotInfo) => {
         const slotTime = createSlotInUserTimezone(
           slotInfo.hours,
           slotInfo.minutes,
-          currentTime,
+          now,
         );
-        // If the slot is in the past, move it to tomorrow
-        if (slotTime instanceof Date && !isNaN(slotTime.getTime()) && slotTime < currentTime) {
-          const tomorrow = new Date(currentTime);
-          tomorrow.setDate(tomorrow.getDate() + 1);
-          return createSlotInUserTimezone(
-            slotInfo.hours,
-            slotInfo.minutes,
-            tomorrow,
-          );
-        }
         return slotTime;
       })
-      .filter((slot) => slot instanceof Date && !isNaN(slot.getTime()) && slot >= currentTime); // Filter out invalid dates and ensure future or present dates
+      .filter((slot) => {
+        // Only keep slots that are valid, today (same day as now), and in the future or present
+        if (!(slot instanceof Date) || isNaN(slot.getTime()) || slot < now) {
+          return false;
+        }
+        // Check if slot is on the same day as now
+        const slotDate = new Date(slot);
+        const nowDate = new Date(now);
+        return (
+          slotDate.getUTCFullYear() === nowDate.getUTCFullYear() &&
+          slotDate.getUTCMonth() === nowDate.getUTCMonth() &&
+          slotDate.getUTCDate() === nowDate.getUTCDate()
+        );
+      });
 
       // If there's a last post time, find the next chronological slot after it
       if (lastPostTime && lastPostTime instanceof Date && !isNaN(lastPostTime.getTime())) {
-        // If lastPostTime is in the past (more than 1 day ago), start from today instead
+        // If lastPostTime is in the past (more than 1 day ago), start from baseTime instead
         // to avoid creating slots in the distant past
-        const currentTimeForBase = new Date(); // Use current time for base date calculation
-        const oneDayAgo = new Date(currentTimeForBase);
+        const oneDayAgo = new Date(now);
         oneDayAgo.setDate(oneDayAgo.getDate() - 1);
         
         const lastPostDate = new Date(lastPostTime);
-        // If last post was more than 1 day ago, use today as the base date
-        const baseDate = lastPostTime < oneDayAgo ? currentTimeForBase : lastPostDate;
+        // If last post was more than 1 day ago, use baseTime as the base date
+        const baseDate = lastPostTime < oneDayAgo ? now : lastPostDate;
         const dayAfterBase = new Date(baseDate);
         dayAfterBase.setDate(dayAfterBase.getDate() + 1);
 
@@ -351,7 +358,6 @@ async function calculateNextScheduleTimeInternal({
         ].sort((a, b) => a.slot.getTime() - b.slot.getTime());
 
         // Find the next slot after the last post time that's also in the future
-        const currentTime = new Date(); // Get current time for comparison
         for (const { slot: slotTime } of allSlots) {
           try {
             // Ensure slotTime is valid, after lastPostTime, and in the future or present
@@ -359,7 +365,7 @@ async function calculateNextScheduleTimeInternal({
               slotTime instanceof Date &&
               !isNaN(slotTime.getTime()) &&
               slotTime > lastPostTime &&
-              slotTime >= currentTime
+              slotTime >= now
             ) {
               return slotTime;
             }
@@ -378,30 +384,29 @@ async function calculateNextScheduleTimeInternal({
             twoDaysAfterBase,
           );
           // Ensure the fallback slot is valid and in the future or present
-          // Check against current time to handle any delays
-          if (!(fallbackSlot instanceof Date) || isNaN(fallbackSlot.getTime()) || fallbackSlot < currentTime) {
-            return new Date();
+          // Check against baseTime (now) to ensure consistent test behavior
+          if (!(fallbackSlot instanceof Date) || isNaN(fallbackSlot.getTime()) || fallbackSlot < now) {
+            return now;
           }
           return fallbackSlot;
         }
-        // If all slots were invalid, fallback to now (use current time to avoid timing issues)
-        return new Date();
+        // If all slots were invalid, fallback to now
+        return now;
       } else {
         // No previous posts, find next available slot today
-        const currentTime = new Date(); // Get current time for comparison
         // todaySlots already filters for future dates, so just return the first one
         if (todaySlots.length > 0) {
           const firstFutureSlot = todaySlots[0];
           // Double-check it's valid and in the future or present
-          // Check against current time to handle any delays
-          if (firstFutureSlot instanceof Date && !isNaN(firstFutureSlot.getTime()) && firstFutureSlot >= currentTime) {
+          // Check against baseTime (now) to ensure consistent test behavior
+          if (firstFutureSlot instanceof Date && !isNaN(firstFutureSlot.getTime()) && firstFutureSlot >= now) {
             return firstFutureSlot;
           }
         }
 
         // If no slots today work, get first slot of tomorrow
         if (sortedSlots.length > 0) {
-          const tomorrow = new Date(currentTime);
+          const tomorrow = new Date(now);
           tomorrow.setDate(tomorrow.getDate() + 1);
           const tomorrowSlot = createSlotInUserTimezone(
             sortedSlots[0].hours,
@@ -409,24 +414,19 @@ async function calculateNextScheduleTimeInternal({
             tomorrow,
           );
           // Ensure the tomorrow slot is valid and in the future or present
-          // Check against current time to handle any delays
-          if (tomorrowSlot instanceof Date && !isNaN(tomorrowSlot.getTime()) && tomorrowSlot >= currentTime) {
+          // Check against baseTime (now) to ensure consistent test behavior
+          if (tomorrowSlot instanceof Date && !isNaN(tomorrowSlot.getTime()) && tomorrowSlot >= now) {
             return tomorrowSlot;
           }
         }
-        // If all slots were invalid, fallback to now (use current time to avoid timing issues)
-        return new Date();
+        // If all slots were invalid, fallback to now
+        return now;
       }
     }
 
-    // Fallback to immediate scheduling (use current time to avoid timing issues)
+    // Fallback to immediate scheduling
     // This should never be reached, but ensures we always return a Date
-    const fallbackDate = new Date();
-    if (!(fallbackDate instanceof Date) || isNaN(fallbackDate.getTime())) {
-      // Last resort: create a new Date object
-      return new Date(Date.now());
-    }
-    return fallbackDate;
+    return now;
   } catch (error) {
     // Ensure we always return a valid Date, even if there's an error
     console.error("Error in calculateNextScheduleTime:", error, {
@@ -434,11 +434,8 @@ async function calculateNextScheduleTimeInternal({
       userId,
       userTimezone,
     });
-    const errorFallback = new Date();
-    if (!(errorFallback instanceof Date) || isNaN(errorFallback.getTime())) {
-      return new Date(Date.now());
-    }
-    return errorFallback;
+    // Use now (baseTime) as fallback to ensure consistent test behavior
+    return now;
   }
 }
 

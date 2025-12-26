@@ -14,6 +14,7 @@ import { combineContent } from "~/features/posts/combined.server";
 import { Calendar } from "~/features/posts/components/Calendar/Calendar";
 import { getQueueColor } from "~/features/posts/queueColors";
 import { filterPostsArraysByQueueType } from "~/features/posts/services/post-filtering.server";
+import { mixedPostsToCalendarPosts, postsToCalendarPosts, longFormPostsToCalendarPosts } from "~/features/posts/utils/calendar-post-converter";
 import {
   cancelPostJob as cancelScheduledPost,
   enqueuePostJob as schedulePost,
@@ -31,8 +32,9 @@ import {
   getPastPosts,
 } from "~/models/post.server";
 import { getUserById, getQueueTypes } from "~/models/user.server";
+import { withErrorHandling, withActionErrorHandling } from "~/lib/error-handler.server";
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
+export const loader = withErrorHandling(async ({ request, params }: LoaderFunctionArgs) => {
   const userId = await requireUserId(request);
 
   // Require that the user has at least a subscription record
@@ -90,7 +92,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     "desc",
   );
 
-  return json({
+  return {
     scheduledPosts,
     scheduledLongFormPosts,
     pastPosts,
@@ -101,150 +103,140 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     queueTypes: queueTypes.filter((qt) => qt.isEnabled !== false),
     selectedQueueType: queueType,
     scheduleIntervals: user?.scheduleInterval || [],
-  });
-}
+  };
+});
 
-export async function action({ request }: ActionFunctionArgs) {
+export const action = withActionErrorHandling(async ({ request }: ActionFunctionArgs) => {
   const userId = await requireUserId(request);
   const formData = await request.formData();
   const actionType = formData.get("action");
 
   if (actionType === "reschedule") {
-    try {
-      const postId = formData.get("postId") as string | null;
-      const newTime = formData.get("newTime") as string | null;
-      const overrideQueue = formData.get("overrideQueue") === "true";
-      const signedEvent = formData.get("signedEvent") as string | null;
-      const nostrEvent = formData.get("nostrEvent") as string | null;
-      const queueTypeId = formData.get("queueTypeId") as string | null;
+    const postId = formData.get("postId") as string | null;
+    const newTime = formData.get("newTime") as string | null;
+    const overrideQueue = formData.get("overrideQueue") === "true";
+    const signedEvent = formData.get("signedEvent") as string | null;
+    const nostrEvent = formData.get("nostrEvent") as string | null;
+    const queueTypeId = formData.get("queueTypeId") as string | null;
 
-      if (!postId || !newTime) {
-        return json({ error: "Missing required fields" }, { status: 400 });
+    if (!postId || !newTime) {
+      return json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    // Get the original post
+    const originalPost = await getPostById({ id: postId, userId });
+    if (!originalPost) {
+      return json({ error: "Post not found" }, { status: 404 });
+    }
+
+    // Cancel existing scheduled job
+    await cancelScheduledPost(postId);
+
+    // Parse signed events if provided (from client-side re-signing)
+    let parsedSignedEvent = null;
+    let parsedNostrEvent = null;
+
+    if (signedEvent && nostrEvent) {
+      try {
+        parsedSignedEvent = JSON.parse(signedEvent);
+        parsedNostrEvent = JSON.parse(nostrEvent);
+      } catch (e) {
+        // Log parsing error but continue without signed events
+        const { logWarning } = await import("~/lib/error-logger.server");
+        logWarning("Failed to parse signed events in reschedule", {
+          postId,
+          error: e instanceof Error ? e.message : String(e),
+        });
       }
+    }
 
-      // Get the original post
-      const originalPost = await getPostById({ id: postId, userId });
-      if (!originalPost) {
-        return json({ error: "Post not found" }, { status: 404 });
-      }
+    // Update post in database
+    const updatedPost = await reschedulePost({
+      id: postId,
+      userId,
+      newScheduledFor: newTime,
+      overrideQueue,
+    });
 
-      // Cancel existing scheduled job
-      await cancelScheduledPost(postId);
-
-      // Parse signed events if provided (from client-side re-signing)
-      let parsedSignedEvent = null;
-      let parsedNostrEvent = null;
-
-      if (signedEvent && nostrEvent) {
-        try {
-          parsedSignedEvent = JSON.parse(signedEvent);
-          parsedNostrEvent = JSON.parse(nostrEvent);
-        } catch (e) {
-          // Log parsing error but continue without signed events
-          const { logWarning } = await import("~/lib/error-logger.server");
-          logWarning("Failed to parse signed events in reschedule", {
-            postId,
-            error: e instanceof Error ? e.message : String(e),
-          });
-        }
-      }
-
-      // Update post in database
-      const updatedPost = await reschedulePost({
+    // If we have a newly signed event, update the post with it and schedule the job
+    if (parsedSignedEvent && parsedNostrEvent) {
+      // Update post with new signed event
+      const finalPost = await reschedulePost({
         id: postId,
         userId,
         newScheduledFor: newTime,
         overrideQueue,
-      });
-
-      // If we have a newly signed event, update the post with it and schedule the job
-      if (parsedSignedEvent && parsedNostrEvent) {
-        // Update post with new signed event
-        const finalPost = await reschedulePost({
-          id: postId,
-          userId,
-          newScheduledFor: newTime,
-          overrideQueue,
-          signedEvent: parsedSignedEvent,
-          nostrEvent: parsedNostrEvent,
-        });
-
-        // Schedule new job
-        await schedulePost(
-          postId,
-          userId,
-          parsedSignedEvent,
-          parseInt(newTime),
-        );
-
-        return json({ success: true, post: finalPost, signed: true });
-      }
-
-      // Return success but indicate signing is needed
-      return json({ success: true, post: updatedPost, needsSigning: true });
-    } catch (error) {
-      const { handleActionError } = await import("~/lib/error-handler.server");
-      return handleActionError(error);
-    }
-  }
-
-  if (actionType === "rescheduleLongform") {
-    try {
-      const postId = formData.get("postId") as string | null;
-      const newTime = formData.get("newTime") as string | null;
-      const signedEvent = formData.get("signedEvent") as string | null;
-      const nostrEvent = formData.get("nostrEvent") as string | null;
-
-      if (!postId || !newTime) {
-        return json({ error: "Missing required fields" }, { status: 400 });
-      }
-
-      // Get the original longform post
-      const originalPost = await getLongFormPost({ id: postId, userId });
-      if (!originalPost) {
-        return json({ error: "Longform post not found" }, { status: 404 });
-      }
-
-      // Parse signed events if provided (from client-side re-signing)
-      let parsedSignedEvent = null;
-      let parsedNostrEvent = null;
-
-      if (signedEvent && nostrEvent) {
-        try {
-          parsedSignedEvent = JSON.parse(signedEvent);
-          parsedNostrEvent = JSON.parse(nostrEvent);
-        } catch (e) {
-          // Log parsing error but continue without signed events
-          const { logWarning } = await import("~/lib/error-logger.server");
-          logWarning("Failed to parse signed events in reschedule", {
-            postId,
-            error: e instanceof Error ? e.message : String(e),
-          });
-        }
-      }
-
-      // Update longform post in database
-      const updatedPost = await updateLongFormPost({
-        id: postId,
-        userId,
-        scheduledFor: newTime,
         signedEvent: parsedSignedEvent,
         nostrEvent: parsedNostrEvent,
       });
 
-      return json({
-        success: true,
-        post: updatedPost,
-        signed: !!parsedSignedEvent,
-      });
-    } catch (error) {
-      const { handleActionError } = await import("~/lib/error-handler.server");
-      return handleActionError(error);
+      // Schedule new job
+      await schedulePost(
+        postId,
+        userId,
+        parsedSignedEvent,
+        parseInt(newTime),
+      );
+
+      return json({ success: true, post: finalPost, signed: true });
     }
+
+    // Return success but indicate signing is needed
+    return json({ success: true, post: updatedPost, needsSigning: true });
+  }
+
+  if (actionType === "rescheduleLongform") {
+    const postId = formData.get("postId") as string | null;
+    const newTime = formData.get("newTime") as string | null;
+    const signedEvent = formData.get("signedEvent") as string | null;
+    const nostrEvent = formData.get("nostrEvent") as string | null;
+
+    if (!postId || !newTime) {
+      return json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    // Get the original longform post
+    const originalPost = await getLongFormPost({ id: postId, userId });
+    if (!originalPost) {
+      return json({ error: "Longform post not found" }, { status: 404 });
+    }
+
+    // Parse signed events if provided (from client-side re-signing)
+    let parsedSignedEvent = null;
+    let parsedNostrEvent = null;
+
+    if (signedEvent && nostrEvent) {
+      try {
+        parsedSignedEvent = JSON.parse(signedEvent);
+        parsedNostrEvent = JSON.parse(nostrEvent);
+      } catch (e) {
+        // Log parsing error but continue without signed events
+        const { logWarning } = await import("~/lib/error-logger.server");
+        logWarning("Failed to parse signed events in reschedule", {
+          postId,
+          error: e instanceof Error ? e.message : String(e),
+        });
+      }
+    }
+
+    // Update longform post in database
+    const updatedPost = await updateLongFormPost({
+      id: postId,
+      userId,
+      scheduledFor: newTime,
+      signedEvent: parsedSignedEvent,
+      nostrEvent: parsedNostrEvent,
+    });
+
+    return json({
+      success: true,
+      post: updatedPost,
+      signed: !!parsedSignedEvent,
+    });
   }
 
   return json({ error: "Invalid action" }, { status: 400 });
-}
+});
 
 export default function CalendarRoute() {
   const {
@@ -381,23 +373,23 @@ export default function CalendarRoute() {
       <div className="flex-1 min-h-0">
         {currentTab === "all" ? (
           <Calendar
-            scheduledPosts={[...scheduledPosts, ...scheduledLongFormPosts] as any}
-            pastPosts={[...pastPosts, ...pastLongFormPosts] as any}
+            scheduledPosts={mixedPostsToCalendarPosts(scheduledPosts, scheduledLongFormPosts)}
+            pastPosts={mixedPostsToCalendarPosts(pastPosts, pastLongFormPosts)}
             user={user}
             queueTypes={queueTypes}
             isAll={true}
           />
         ) : currentTab === "posts" ? (
           <Calendar
-            scheduledPosts={scheduledPosts}
-            pastPosts={pastPosts}
+            scheduledPosts={postsToCalendarPosts(scheduledPosts)}
+            pastPosts={postsToCalendarPosts(pastPosts)}
             user={user}
             queueTypes={queueTypes}
           />
         ) : (
           <Calendar
-            scheduledPosts={scheduledLongFormPosts}
-            pastPosts={pastLongFormPosts}
+            scheduledPosts={longFormPostsToCalendarPosts(scheduledLongFormPosts)}
+            pastPosts={longFormPostsToCalendarPosts(pastLongFormPosts)}
             user={user}
             queueTypes={queueTypes}
             isLongform={true}

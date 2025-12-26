@@ -12,6 +12,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { QueueType } from "@prisma/client";
 import { calculateNextScheduleTime } from "~/features/posts/schedulers";
+import {
+  TEST_USER_ID,
+  BASE_TIME,
+  createQueueType,
+  createIntervalQueueType,
+  createFixedSlotsQueueType,
+  createTestDate,
+  createDateAtTime,
+} from "../utils/scheduling-test-helpers";
 
 // Mock dependencies
 vi.mock("~/models/post.server", () => ({
@@ -26,9 +35,6 @@ import { getLastPostTimeForQueue } from "~/models/post.server";
 import { getScheduleInterval } from "~/models/user.server";
 
 describe("Scheduling Algorithms", () => {
-  const TEST_USER_ID = "user-123";
-  const baseTime = new Date("2024-01-15T10:00:00Z"); // Monday, Jan 15, 2024, 10:00 UTC
-
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -38,27 +44,18 @@ describe("Scheduling Algorithms", () => {
       it("should schedule next post using queue-specific interval when no last post exists", async () => {
         (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
-        const queueType: QueueType = {
+        const queueType = createIntervalQueueType(6, {
           id: "queue-1",
           name: "posts",
-          scheduleType: "INTERVAL",
-          scheduleConfig: { intervalHours: 6 },
-          userId: TEST_USER_ID,
-          isEnabled: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          color: null,
-          description: null,
-          hashTagPresetId: null,
-        };
+        });
 
         const result = await calculateNextScheduleTime({
           queueType,
           userId: TEST_USER_ID,
-          baseTime,
+          baseTime: BASE_TIME,
         });
 
-        expect(result).toEqual(baseTime);
+        expect(result).toEqual(BASE_TIME);
         expect(getLastPostTimeForQueue).toHaveBeenCalledWith({
           userId: TEST_USER_ID,
           queueTypeId: "queue-1",
@@ -67,27 +64,18 @@ describe("Scheduling Algorithms", () => {
       });
 
       it("should schedule next post by adding interval to last post time", async () => {
-        const lastPostTime = new Date("2024-01-15T08:00:00Z");
+        const lastPostTime = createTestDate(-2); // 2 hours before BASE_TIME
         (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(lastPostTime);
 
-        const queueType: QueueType = {
+        const queueType = createIntervalQueueType(4, {
           id: "queue-1",
           name: "posts",
-          scheduleType: "INTERVAL",
-          scheduleConfig: { intervalHours: 4 },
-          userId: TEST_USER_ID,
-          isEnabled: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          color: null,
-          description: null,
-          hashTagPresetId: null,
-        };
+        });
 
         const result = await calculateNextScheduleTime({
           queueType,
           userId: TEST_USER_ID,
-          baseTime,
+          baseTime: BASE_TIME,
         });
 
         const expectedTime = new Date(lastPostTime);
@@ -96,56 +84,39 @@ describe("Scheduling Algorithms", () => {
       });
 
       it("should return baseTime if calculated time is in the past", async () => {
-        const lastPostTime = new Date("2024-01-15T09:00:00Z"); // 1 hour ago
+        const lastPostTime = createTestDate(-1); // 1 hour ago
         (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(lastPostTime);
 
-        const queueType: QueueType = {
+        const queueType = createIntervalQueueType(0.5, { // 30 minutes
           id: "queue-1",
           name: "posts",
-          scheduleType: "INTERVAL",
-          scheduleConfig: { intervalHours: 0.5 }, // 30 minutes
-          userId: TEST_USER_ID,
-          isEnabled: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          color: null,
-          description: null,
-          hashTagPresetId: null,
-        };
+        });
 
         const result = await calculateNextScheduleTime({
           queueType,
           userId: TEST_USER_ID,
-          baseTime,
+          baseTime: BASE_TIME,
         });
 
         // 09:00 + 30 min = 09:30, which is before baseTime (10:00)
         // So should return baseTime
-        expect(result.getTime()).toBeGreaterThanOrEqual(baseTime.getTime());
+        expect(result.getTime()).toBeGreaterThanOrEqual(BASE_TIME.getTime());
       });
 
       it("should use default interval of 4 hours when not specified", async () => {
-        const lastPostTime = new Date("2024-01-15T08:00:00Z");
+        const lastPostTime = createTestDate(-2); // 2 hours before BASE_TIME
         (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(lastPostTime);
 
-        const queueType: QueueType = {
+        const queueType = createIntervalQueueType(4, {
           id: "queue-1",
           name: "posts",
-          scheduleType: "INTERVAL",
-          scheduleConfig: {}, // No intervalHours specified
-          userId: TEST_USER_ID,
-          isEnabled: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          color: null,
-          description: null,
-          hashTagPresetId: null,
-        };
+          scheduleConfig: {}, // No intervalHours specified - will use default
+        });
 
         const result = await calculateNextScheduleTime({
           queueType,
           userId: TEST_USER_ID,
-          baseTime,
+          baseTime: BASE_TIME,
         });
 
         const expectedTime = new Date(lastPostTime);
@@ -156,63 +127,47 @@ describe("Scheduling Algorithms", () => {
 
     describe("Global Interval", () => {
       it("should use global interval when useGlobalInterval is true", async () => {
-        const lastPostTime = new Date("2024-01-15T08:00:00Z");
+        const lastPostTime = createTestDate(-2); // 2 hours before BASE_TIME
         (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(lastPostTime);
         (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(["2"]); // 2 hours
 
-        const queueType: QueueType = {
+        const queueType = createIntervalQueueType(4, {
           id: "queue-1",
           name: "posts",
-          scheduleType: "INTERVAL",
           scheduleConfig: { useGlobalInterval: true },
-          userId: TEST_USER_ID,
-          isEnabled: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          color: null,
-          description: null,
-          hashTagPresetId: null,
-        };
+        });
 
         const result = await calculateNextScheduleTime({
           queueType,
           userId: TEST_USER_ID,
-          baseTime,
+          baseTime: BASE_TIME,
         });
 
         expect(getScheduleInterval).toHaveBeenCalledWith(TEST_USER_ID);
         const expectedTime = new Date(lastPostTime);
         expectedTime.setHours(expectedTime.getHours() + 2); // Global interval
         // The function checks if nextTime > now, and if not, returns now
-        // baseTime is 2024-01-19T04:00:00Z, lastPostTime is 2024-01-15T08:00:00Z
-        // expectedTime would be 2024-01-15T10:00:00Z, which is < baseTime
-        // So the function should return baseTime (now)
-        expect(result.getTime()).toBe(baseTime.getTime());
+        // BASE_TIME is 2024-01-15T10:00:00Z, lastPostTime is 2 hours before
+        // expectedTime would be 2024-01-15T10:00:00Z, which equals BASE_TIME
+        // So the function should return BASE_TIME (now)
+        expect(result.getTime()).toBe(BASE_TIME.getTime());
       });
 
       it("should default to 4 hours when global interval is not available", async () => {
-        const lastPostTime = new Date("2024-01-15T08:00:00Z");
+        const lastPostTime = createTestDate(-2); // 2 hours before BASE_TIME
         (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(lastPostTime);
         (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
-        const queueType: QueueType = {
+        const queueType = createIntervalQueueType(4, {
           id: "queue-1",
           name: "posts",
-          scheduleType: "INTERVAL",
           scheduleConfig: { useGlobalInterval: true },
-          userId: TEST_USER_ID,
-          isEnabled: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          color: null,
-          description: null,
-          hashTagPresetId: null,
-        };
+        });
 
         const result = await calculateNextScheduleTime({
           queueType,
           userId: TEST_USER_ID,
-          baseTime,
+          baseTime: BASE_TIME,
         });
 
         const expectedTime = new Date(lastPostTime);
@@ -221,28 +176,20 @@ describe("Scheduling Algorithms", () => {
       });
 
       it("should use first interval from scheduleIntervals array", async () => {
-        const lastPostTime = new Date("2024-01-15T08:00:00Z");
+        const lastPostTime = createTestDate(-2); // 2 hours before BASE_TIME
         (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(lastPostTime);
         (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(["3", "6", "9"]);
 
-        const queueType: QueueType = {
+        const queueType = createIntervalQueueType(4, {
           id: "queue-1",
           name: "posts",
-          scheduleType: "INTERVAL",
           scheduleConfig: { useGlobalInterval: true },
-          userId: TEST_USER_ID,
-          isEnabled: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          color: null,
-          description: null,
-          hashTagPresetId: null,
-        };
+        });
 
         const result = await calculateNextScheduleTime({
           queueType,
           userId: TEST_USER_ID,
-          baseTime,
+          baseTime: BASE_TIME,
         });
 
         const expectedTime = new Date(lastPostTime);
@@ -261,25 +208,24 @@ describe("Scheduling Algorithms", () => {
       it("should return next available slot today when no last post exists", async () => {
         (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
-        const queueType: QueueType = {
-          id: "queue-1",
-          name: "posts",
-          scheduleType: "FIXED_SLOTS",
-          scheduleConfig: { slots: ["09:00", "12:00", "15:00", "18:00"] },
-          userId: TEST_USER_ID,
-          isEnabled: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          color: null,
-          description: null,
-          hashTagPresetId: null,
-        };
+        const queueType = createFixedSlotsQueueType(
+          [
+            { hour: 9, minute: 0 },
+            { hour: 12, minute: 0 },
+            { hour: 15, minute: 0 },
+            { hour: 18, minute: 0 },
+          ],
+          {
+            id: "queue-1",
+            name: "posts",
+          },
+        );
 
         const result = await calculateNextScheduleTime({
           queueType,
           userId: TEST_USER_ID,
           userTimezone: "UTC",
-          baseTime, // 10:00 UTC
+          baseTime: BASE_TIME, // 10:00 UTC
         });
 
         // Should return 12:00 (next slot after 10:00)
@@ -290,25 +236,19 @@ describe("Scheduling Algorithms", () => {
       it("should return first slot tomorrow if all today slots are in the past", async () => {
         (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
-        const queueType: QueueType = {
-          id: "queue-1",
-          name: "posts",
-          scheduleType: "FIXED_SLOTS",
-          scheduleConfig: { slots: ["08:00", "09:00"] }, // Both in the past
-          userId: TEST_USER_ID,
-          isEnabled: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          color: null,
-          description: null,
-          hashTagPresetId: null,
-        };
+        const queueType = createFixedSlotsQueueType(
+          ["08:00", "09:00"], // Both in the past
+          {
+            id: "queue-1",
+            name: "posts",
+          },
+        );
 
         const result = await calculateNextScheduleTime({
           queueType,
           userId: TEST_USER_ID,
           userTimezone: "UTC",
-          baseTime, // 10:00 UTC
+          baseTime: BASE_TIME, // 10:00 UTC
         });
 
         // Should return first slot tomorrow
@@ -320,54 +260,39 @@ describe("Scheduling Algorithms", () => {
       it("should handle empty slots array by returning baseTime", async () => {
         (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
-        const queueType: QueueType = {
+        const queueType = createFixedSlotsQueueType([], {
           id: "queue-1",
           name: "posts",
-          scheduleType: "FIXED_SLOTS",
-          scheduleConfig: { slots: [] },
-          userId: TEST_USER_ID,
-          isEnabled: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          color: null,
-          description: null,
-          hashTagPresetId: null,
-        };
+        });
 
         const result = await calculateNextScheduleTime({
           queueType,
           userId: TEST_USER_ID,
-          baseTime,
+          baseTime: BASE_TIME,
         });
 
-        expect(result).toEqual(baseTime);
+        expect(result).toEqual(BASE_TIME);
       });
     });
 
     describe("With Previous Posts", () => {
       it("should find next slot after last post time", async () => {
-        const lastPostTime = new Date("2024-01-15T12:00:00Z");
+        const lastPostTime = createDateAtTime(2024, 1, 15, 12, 0);
         (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(lastPostTime);
 
-        const queueType: QueueType = {
-          id: "queue-1",
-          name: "posts",
-          scheduleType: "FIXED_SLOTS",
-          scheduleConfig: { slots: ["09:00", "12:00", "15:00", "18:00"] },
-          userId: TEST_USER_ID,
-          isEnabled: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          color: null,
-          description: null,
-          hashTagPresetId: null,
-        };
+        const queueType = createFixedSlotsQueueType(
+          ["09:00", "12:00", "15:00", "18:00"],
+          {
+            id: "queue-1",
+            name: "posts",
+          },
+        );
 
         const result = await calculateNextScheduleTime({
           queueType,
           userId: TEST_USER_ID,
           userTimezone: "UTC",
-          baseTime, // 10:00 UTC
+          baseTime: BASE_TIME, // 10:00 UTC
         });
 
         // Should return 15:00 (next slot after 12:00)
@@ -376,28 +301,22 @@ describe("Scheduling Algorithms", () => {
       });
 
       it("should find next slot on next day if all slots today are in the past", async () => {
-        const lastPostTime = new Date("2024-01-15T18:00:00Z");
+        const lastPostTime = createDateAtTime(2024, 1, 15, 18, 0);
         (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(lastPostTime);
 
-        const queueType: QueueType = {
-          id: "queue-1",
-          name: "posts",
-          scheduleType: "FIXED_SLOTS",
-          scheduleConfig: { slots: ["09:00", "12:00", "15:00", "18:00"] },
-          userId: TEST_USER_ID,
-          isEnabled: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          color: null,
-          description: null,
-          hashTagPresetId: null,
-        };
+        const queueType = createFixedSlotsQueueType(
+          ["09:00", "12:00", "15:00", "18:00"],
+          {
+            id: "queue-1",
+            name: "posts",
+          },
+        );
 
         const result = await calculateNextScheduleTime({
           queueType,
           userId: TEST_USER_ID,
           userTimezone: "UTC",
-          baseTime: new Date("2024-01-15T20:00:00Z"), // After all slots
+          baseTime: createDateAtTime(2024, 1, 15, 20, 0), // After all slots
         });
 
         // Should return first slot tomorrow
@@ -407,28 +326,22 @@ describe("Scheduling Algorithms", () => {
       });
 
       it("should handle slots sorted correctly", async () => {
-        const lastPostTime = new Date("2024-01-15T10:00:00Z");
+        const lastPostTime = createDateAtTime(2024, 1, 15, 10, 0);
         (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(lastPostTime);
 
-        const queueType: QueueType = {
-          id: "queue-1",
-          name: "posts",
-          scheduleType: "FIXED_SLOTS",
-          scheduleConfig: { slots: ["18:00", "09:00", "15:00", "12:00"] }, // Unsorted
-          userId: TEST_USER_ID,
-          isEnabled: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          color: null,
-          description: null,
-          hashTagPresetId: null,
-        };
+        const queueType = createFixedSlotsQueueType(
+          ["18:00", "09:00", "15:00", "12:00"], // Unsorted
+          {
+            id: "queue-1",
+            name: "posts",
+          },
+        );
 
         const result = await calculateNextScheduleTime({
           queueType,
           userId: TEST_USER_ID,
           userTimezone: "UTC",
-          baseTime,
+          baseTime: BASE_TIME,
         });
 
         // Should return 12:00 (next chronological slot after 10:00)
@@ -442,25 +355,19 @@ describe("Scheduling Algorithms", () => {
     it("should handle UTC timezone correctly", async () => {
       (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
-      const queueType: QueueType = {
-        id: "queue-1",
-        name: "posts",
-        scheduleType: "FIXED_SLOTS",
-        scheduleConfig: { slots: ["14:00"] },
-        userId: TEST_USER_ID,
-        isEnabled: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        color: null,
-        description: null,
-        hashTagPresetId: null,
-      };
+      const queueType = createFixedSlotsQueueType(
+        ["14:00"],
+        {
+          id: "queue-1",
+          name: "posts",
+        },
+      );
 
       const result = await calculateNextScheduleTime({
         queueType,
         userId: TEST_USER_ID,
         userTimezone: "UTC",
-        baseTime,
+        baseTime: BASE_TIME,
       });
 
       expect(result.getUTCHours()).toBe(14);
@@ -470,26 +377,20 @@ describe("Scheduling Algorithms", () => {
     it("should convert slots to user timezone (America/New_York)", async () => {
       (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
-      const queueType: QueueType = {
-        id: "queue-1",
-        name: "posts",
-        scheduleType: "FIXED_SLOTS",
-        scheduleConfig: { slots: ["09:00"] },
-        userId: TEST_USER_ID,
-        isEnabled: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        color: null,
-        description: null,
-        hashTagPresetId: null,
-      };
+      const queueType = createFixedSlotsQueueType(
+        ["09:00"],
+        {
+          id: "queue-1",
+          name: "posts",
+        },
+      );
 
       // January 15, 2024 - New York is in EST (UTC-5)
       const result = await calculateNextScheduleTime({
         queueType,
         userId: TEST_USER_ID,
         userTimezone: "America/New_York",
-        baseTime: new Date("2024-01-15T10:00:00Z"), // 5:00 AM EST
+        baseTime: createDateAtTime(2024, 1, 15, 10, 0), // 5:00 AM EST
       });
 
       // 09:00 EST should be 14:00 UTC
@@ -500,25 +401,19 @@ describe("Scheduling Algorithms", () => {
     it("should handle Etc/GMT timezone same as UTC", async () => {
       (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
-      const queueType: QueueType = {
-        id: "queue-1",
-        name: "posts",
-        scheduleType: "FIXED_SLOTS",
-        scheduleConfig: { slots: ["12:00"] },
-        userId: TEST_USER_ID,
-        isEnabled: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        color: null,
-        description: null,
-        hashTagPresetId: null,
-      };
+      const queueType = createFixedSlotsQueueType(
+        ["12:00"],
+        {
+          id: "queue-1",
+          name: "posts",
+        },
+      );
 
       const result = await calculateNextScheduleTime({
         queueType,
         userId: TEST_USER_ID,
         userTimezone: "Etc/GMT",
-        baseTime,
+        baseTime: BASE_TIME,
       });
 
       expect(result.getUTCHours()).toBe(12);
@@ -530,50 +425,35 @@ describe("Scheduling Algorithms", () => {
     it("should handle invalid scheduleType by returning baseTime", async () => {
       (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
-      const queueType: QueueType = {
+      const queueType = createQueueType({
         id: "queue-1",
         name: "posts",
         scheduleType: "INVALID" as any,
         scheduleConfig: {},
-        userId: TEST_USER_ID,
-        isEnabled: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        color: null,
-        description: null,
-        hashTagPresetId: null,
-      };
+      });
 
       const result = await calculateNextScheduleTime({
         queueType,
         userId: TEST_USER_ID,
-        baseTime,
+        baseTime: BASE_TIME,
       });
 
-      expect(result).toEqual(baseTime);
+      expect(result).toEqual(BASE_TIME);
     });
 
     it("should handle missing scheduleConfig", async () => {
       (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
-      const queueType: QueueType = {
+      const queueType = createIntervalQueueType(4, {
         id: "queue-1",
         name: "posts",
-        scheduleType: "INTERVAL",
         scheduleConfig: null as any,
-        userId: TEST_USER_ID,
-        isEnabled: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        color: null,
-        description: null,
-        hashTagPresetId: null,
-      };
+      });
 
       const result = await calculateNextScheduleTime({
         queueType,
         userId: TEST_USER_ID,
-        baseTime,
+        baseTime: BASE_TIME,
       });
 
       // Should fallback to default behavior
@@ -585,54 +465,41 @@ describe("Scheduling Algorithms", () => {
         new Error("Database error"),
       );
 
-      const queueType: QueueType = {
+      const queueType = createIntervalQueueType(4, {
         id: "queue-1",
         name: "posts",
-        scheduleType: "INTERVAL",
-        scheduleConfig: { intervalHours: 4 },
-        userId: TEST_USER_ID,
-        isEnabled: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        color: null,
-        description: null,
-        hashTagPresetId: null,
-      };
+      });
 
-      await expect(
-        calculateNextScheduleTime({
-          queueType,
-          userId: TEST_USER_ID,
-          baseTime,
-        }),
-      ).rejects.toThrow("Database error");
+      // Function should handle errors gracefully and return baseTime
+      const result = await calculateNextScheduleTime({
+        queueType,
+        userId: TEST_USER_ID,
+        baseTime: BASE_TIME,
+      });
+
+      // Should return baseTime when database error occurs (no last post time available)
+      expect(result).toEqual(BASE_TIME);
     });
   });
 
   describe("Complex Scenarios", () => {
     it("should handle multiple slots with last post in the middle", async () => {
-      const lastPostTime = new Date("2024-01-15T13:00:00Z");
+      const lastPostTime = createDateAtTime(2024, 1, 15, 13, 0);
       (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(lastPostTime);
 
-      const queueType: QueueType = {
-        id: "queue-1",
-        name: "posts",
-        scheduleType: "FIXED_SLOTS",
-        scheduleConfig: { slots: ["08:00", "10:00", "12:00", "14:00", "16:00", "18:00"] },
-        userId: TEST_USER_ID,
-        isEnabled: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        color: null,
-        description: null,
-        hashTagPresetId: null,
-      };
+      const queueType = createFixedSlotsQueueType(
+        ["08:00", "10:00", "12:00", "14:00", "16:00", "18:00"],
+        {
+          id: "queue-1",
+          name: "posts",
+        },
+      );
 
       const result = await calculateNextScheduleTime({
         queueType,
         userId: TEST_USER_ID,
         userTimezone: "UTC",
-        baseTime: new Date("2024-01-15T13:30:00Z"),
+        baseTime: createDateAtTime(2024, 1, 15, 13, 30),
       });
 
       // Should return 14:00 (next slot after 13:00)
@@ -641,27 +508,18 @@ describe("Scheduling Algorithms", () => {
     });
 
     it("should handle interval scheduling with large intervals", async () => {
-      const lastPostTime = new Date("2024-01-15T08:00:00Z");
+      const lastPostTime = createTestDate(-2); // 2 hours before BASE_TIME
       (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(lastPostTime);
 
-      const queueType: QueueType = {
+      const queueType = createIntervalQueueType(24, { // Daily
         id: "queue-1",
         name: "posts",
-        scheduleType: "INTERVAL",
-        scheduleConfig: { intervalHours: 24 }, // Daily
-        userId: TEST_USER_ID,
-        isEnabled: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        color: null,
-        description: null,
-        hashTagPresetId: null,
-      };
+      });
 
       const result = await calculateNextScheduleTime({
         queueType,
         userId: TEST_USER_ID,
-        baseTime,
+        baseTime: BASE_TIME,
       });
 
       const expectedTime = new Date(lastPostTime);

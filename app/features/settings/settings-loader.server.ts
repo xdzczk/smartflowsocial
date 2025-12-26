@@ -67,7 +67,7 @@ export interface SettingsLoaderData {
   nwcLastUsed: Date | null;
   subscription: {
     id: string;
-    planId: string;
+    planId: string | null;
     status: string;
     startDate: Date;
     currentPeriodEnd: Date | null;
@@ -93,9 +93,9 @@ export interface SettingsLoaderData {
     description: string | null;
     paidAt: Date | null;
     paymentMethod: string | null;
-    paymentHash: string | null;
-    planName: string | null;
-    planPrice: number | null;
+    paymentHash: string;
+    planName?: string;
+    planPrice?: number;
   }>;
   isChild: boolean;
   hasAccountsAccess: boolean;
@@ -209,7 +209,7 @@ export async function loadSettingsData(userId: string): Promise<SettingsLoaderDa
     subscription: subscription
       ? {
           id: subscription.id,
-          planId: subscription.planId ?? "",
+          planId: subscription.planId ?? null,
           status: subscription.status as string,
           startDate: subscription.startDate,
           currentPeriodEnd: subscription.currentPeriodEnd,
@@ -238,9 +238,9 @@ export async function loadSettingsData(userId: string): Promise<SettingsLoaderDa
       description: payment.description,
       paidAt: payment.paidAt,
       paymentMethod: payment.paymentMethod,
-      paymentHash: payment.paymentHash ?? null,
-      planName: payment.Subscription?.Plan?.name ?? null,
-      planPrice: payment.Subscription?.Plan?.price ? Number(payment.Subscription.Plan.price) : null,
+      paymentHash: payment.paymentHash ?? "",
+      planName: payment.Subscription?.Plan?.name ?? undefined,
+      planPrice: payment.Subscription?.Plan?.price ? Number(payment.Subscription.Plan.price) : undefined,
     })),
     isChild,
     hasAccountsAccess,

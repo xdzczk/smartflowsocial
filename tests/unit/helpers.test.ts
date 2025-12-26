@@ -61,11 +61,13 @@ describe("Helper Utilities", () => {
     });
 
     it("should use current time when not provided", () => {
-      const future = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2 hours from now
+      const now = Date.now();
+      const future = new Date(now + 2 * 60 * 60 * 1000); // 2 hours from now
 
       const result = getTimeRemaining(future);
 
-      expect(result).toMatch(/2h \d+m/);
+      // Allow for small timing differences (should be close to 2h, but might be 1h 59m due to execution time)
+      expect(result).toMatch(/(1h 59m|2h \d+m)/);
     });
 
     it("should handle past dates (negative time)", () => {

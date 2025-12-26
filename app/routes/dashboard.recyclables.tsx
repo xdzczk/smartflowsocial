@@ -1,4 +1,4 @@
-import { json, type LoaderFunctionArgs } from "@remix-run/node";
+import { json, type LoaderFunctionArgs, type ActionFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useParams, useFetcher } from "@remix-run/react";
 
 import {
@@ -18,8 +18,9 @@ import { RecyclablesTable } from "~/features/posts/components/RecyclablesTable";
 import { RecyclablesPagination } from "~/features/posts/components/RecyclablesPagination";
 import { RecyclablesToast } from "~/features/posts/components/RecyclablesToast";
 import { useRecyclablesState } from "~/features/posts/hooks/useRecyclablesState";
+import { withErrorHandling, withActionErrorHandling } from "~/lib/error-handler.server";
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
+export const loader = withErrorHandling(async ({ request, params }: LoaderFunctionArgs) => {
   const userId = await requireUserId(request);
 
   // Require that the user has at least a subscription record
@@ -31,15 +32,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const data = await getRecyclableDashboardData({ userId, params, url });
 
-  return json(data);
-}
+  return data;
+});
 
-export async function action({ request }: { request: Request }) {
+export const action = withActionErrorHandling(async ({ request }: ActionFunctionArgs) => {
   const userId = await requireUserId(request);
   const formData = await request.formData();
 
   return handleRecyclablePostAction(formData, userId);
-}
+});
 
 export default function RecyclablesPosts() {
   const { posts, pagination, stats, user, queueTypes, selectedQueueType } =

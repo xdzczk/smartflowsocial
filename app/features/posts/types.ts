@@ -8,6 +8,61 @@ import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 import type { FetcherWithComponents } from "@remix-run/react";
 
 /**
+ * Schedule configuration for INTERVAL schedule type
+ */
+export interface IntervalScheduleConfig {
+    useGlobalInterval?: boolean;
+    intervalHours?: number;
+}
+
+/**
+ * Schedule configuration for FIXED_SLOTS schedule type
+ */
+export interface FixedSlotsScheduleConfig {
+    slots: string[];
+}
+
+/**
+ * Union type for schedule configurations
+ */
+export type ScheduleConfig = IntervalScheduleConfig | FixedSlotsScheduleConfig;
+
+/**
+ * Type guard to check if config is IntervalScheduleConfig
+ */
+export function isIntervalScheduleConfig(
+    config: ScheduleConfig | unknown
+): config is IntervalScheduleConfig {
+    if (typeof config !== "object" || config === null) {
+        return false;
+    }
+    
+    const cfg = config as Record<string, unknown>;
+    
+    // Check if it's NOT a FixedSlotsScheduleConfig (doesn't have slots array)
+    const hasSlotsArray = Array.isArray(cfg.slots);
+    
+    // Must have either useGlobalInterval or intervalHours, but not slots array
+    return !hasSlotsArray && ("useGlobalInterval" in cfg || "intervalHours" in cfg);
+}
+
+/**
+ * Type guard to check if config is FixedSlotsScheduleConfig
+ */
+export function isFixedSlotsScheduleConfig(
+    config: ScheduleConfig | unknown
+): config is FixedSlotsScheduleConfig {
+    if (typeof config !== "object" || config === null) {
+        return false;
+    }
+    
+    const cfg = config as Record<string, unknown>;
+    
+    // Must have slots array
+    return Array.isArray(cfg.slots);
+}
+
+/**
  * Queue type with scheduling configuration
  */
 export interface QueueType {
@@ -16,11 +71,7 @@ export interface QueueType {
     color?: string | null;
     description?: string | null;
     scheduleType?: "INTERVAL" | "FIXED_SLOTS";
-    scheduleConfig?: {
-        useGlobalInterval?: boolean;
-        intervalHours?: number;
-        slots?: string[];
-    };
+    scheduleConfig?: ScheduleConfig;
     isEnabled?: boolean;
     userId?: string;
 }

@@ -307,6 +307,142 @@ open coverage/index.html
 ./scripts/coverage-report.sh
 ```
 
+#### Coverage Configuration
+
+Coverage is configured in `vitest.config.ts` with the following settings:
+
+- **Provider**: v8 (fast and accurate)
+- **Reporters**: text, json, json-summary, html, lcov
+- **Thresholds**:
+  - Lines: 70%
+  - Functions: 65%
+  - Branches: 60%
+  - Statements: 70%
+
+#### Coverage Exclusions
+
+The following are excluded from coverage:
+- `node_modules/`
+- `build/`
+- `tests/e2e/`
+- `tests/`
+- `prisma/`
+- Type definitions (`**/*.d.ts`)
+- Config files (`**/*.config.*`)
+- Entry files (`**/entry.*`)
+- Root component (`**/root.tsx`)
+- Styles (`**/tailwind.css`)
+- Server files (`server.ts`, `worker.ts`)
+
+#### Coverage Reports
+
+**HTML Report**:
+```bash
+npm run test:coverage
+open coverage/index.html
+```
+
+Shows:
+- File-by-file coverage
+- Line-by-line highlighting
+- Branch coverage details
+- Function coverage details
+
+**JSON Summary** (`coverage/coverage-summary.json`):
+- Overall coverage percentages
+- Per-file coverage
+- Per-directory coverage
+
+Useful for CI/CD integration and coverage tracking tools.
+
+**LCOV Report** (`coverage/lcov.info`):
+Compatible with:
+- Codecov
+- Coveralls
+- SonarQube
+- Other coverage tools
+
+#### Coverage Trend Tracking
+
+Track coverage over time:
+
+```bash
+# Record snapshot after each test run
+npm run test:coverage && node scripts/coverage-trend.js record
+
+# View trends
+node scripts/coverage-trend.js report
+```
+
+The trend tracking:
+- Records coverage snapshots over time
+- Keeps last 100 snapshots
+- Shows coverage trends (increasing/decreasing)
+- Helps identify coverage regressions
+
+#### CI/CD Integration
+
+**GitHub Actions**:
+A GitHub Actions workflow (`.github/workflows/coverage.yml`) is configured to:
+1. Run tests with coverage on PRs and pushes
+2. Check coverage thresholds
+3. Upload coverage to Codecov (if configured)
+4. Comment on PRs with coverage information
+5. Upload coverage artifacts
+
+**Codecov Integration**:
+To enable Codecov:
+1. Sign up at [codecov.io](https://codecov.io)
+2. Add your repository
+3. Get your Codecov token
+4. Add `CODECOV_TOKEN` to GitHub secrets
+5. The workflow will automatically upload coverage
+
+#### Adjusting Thresholds
+
+Edit `vitest.config.ts`:
+
+```typescript
+coverage: {
+  thresholds: {
+    lines: 75,      // Increase to 75%
+    functions: 70,  // Increase to 70%
+    branches: 65,   // Increase to 65%
+    statements: 75, // Increase to 75%
+  },
+}
+```
+
+**Threshold Strategy**:
+1. **Start Low**: Begin with achievable thresholds (50-60%)
+2. **Gradually Increase**: Raise thresholds as coverage improves
+3. **Maintain**: Keep thresholds at sustainable levels
+4. **Per-File**: Consider per-file thresholds for critical code
+
+#### Coverage Best Practices
+
+1. **Regular Coverage Checks**: Run coverage checks regularly (before committing, in CI/CD, before releases)
+2. **Coverage Reviews**: Review coverage reports to identify untested code paths, find missing edge cases, discover dead code
+3. **Incremental Improvement**: Improve coverage incrementally - focus on high-impact areas first, add tests for new code, gradually increase thresholds
+4. **Coverage vs Quality**: Remember that coverage ≠ quality. High coverage doesn't mean good tests. Focus on critical paths and avoid coverage gaming.
+
+#### Troubleshooting
+
+**Coverage Not Generating**:
+1. Check that `@vitest/coverage-v8` is installed
+2. Verify coverage provider in `vitest.config.ts`
+3. Check that tests are actually running
+
+**Thresholds Not Enforced**:
+1. Verify thresholds in `vitest.config.ts`
+2. Check that coverage is actually below threshold
+3. Ensure `reportOnFailure: true` is set
+
+**Coverage Reports Missing Files**:
+1. Check exclusion patterns in `vitest.config.ts`
+2. Verify files are in included directories
+3. Check that files are actually executed by tests
+
 #### Coverage Reports
 
 The coverage system generates multiple report formats:

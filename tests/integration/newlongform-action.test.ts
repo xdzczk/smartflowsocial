@@ -83,27 +83,23 @@ import { handleNewLongFormAction } from "~/features/posts/services/newlongform-a
 import { createLongFormPost } from "~/models/longformpost.server";
 import { getUserById, getQueueTypes, getHashTagPresetById, getQueueTypeByNameForUser } from "~/models/user.server";
 import { uploadBufferToS3 } from "~/features/upload/s3.server";
-import { TEST_USER_ID } from "../utils/test-helpers";
-import { createMockFormData } from "../utils/test-helpers";
+import { TEST_USER_ID, createMockUser, createMockQueueType, createMockFormData } from "../utils/test-helpers";
 
 describe("New Longform Action Handler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.NOSTR_PUBLISHER_URL = "https://api.nostr-publisher.com/publish";
-    (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
-      userRelays: ["wss://relay1.com", "wss://relay2.com"],
-      showHashTagsinPosts: true,
-    });
+    (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(
+      createMockUser({ userRelays: ["wss://relay1.com", "wss://relay2.com"] }),
+    );
     // Default mock for getQueueTypes to prevent undefined errors
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([
-      { id: "queue-1", name: "posts", hashTagPreset: null },
-      { id: "unassigned", name: "Unassigned", hashTagPreset: null },
+      createMockQueueType({ id: "queue-1", name: "posts" }),
+      createMockQueueType({ id: "unassigned", name: "Unassigned" }),
     ]);
-    (getQueueTypeByNameForUser as ReturnType<typeof vi.fn>).mockResolvedValue({
-      id: "queue-1",
-      name: "posts",
-      hashTagPreset: null,
-    });
+    (getQueueTypeByNameForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
+      createMockQueueType({ id: "queue-1", name: "posts" }),
+    );
   });
 
   describe("Image Upload Action", () => {
@@ -181,10 +177,9 @@ describe("New Longform Action Handler", () => {
 
   describe("Save Draft Action", () => {
     it("should save draft with all required fields", async () => {
-      (getQueueTypeByNameForUser as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: "queue-1",
-        name: "posts",
-      });
+      (getQueueTypeByNameForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
+        createMockQueueType({ id: "queue-1", name: "posts" }),
+      );
       // Mock getQueueTypes for when useHashtagPresets is "off"
       (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([
         {
@@ -258,10 +253,9 @@ describe("New Longform Action Handler", () => {
     });
 
     it("should parse and combine tags", async () => {
-      (getQueueTypeByNameForUser as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: "queue-1",
-        name: "posts",
-      });
+      (getQueueTypeByNameForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
+        createMockQueueType({ id: "queue-1", name: "posts" }),
+      );
 
       const formData = createMockFormData({
         _action: "save-draft",
@@ -310,17 +304,12 @@ describe("New Longform Action Handler", () => {
 
   describe("Publish Action", () => {
     beforeEach(() => {
-      (getQueueTypeByNameForUser as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: "queue-1",
-        name: "posts",
-      });
+      (getQueueTypeByNameForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
+        createMockQueueType({ id: "queue-1", name: "posts" }),
+      );
       // Mock getQueueTypes for when useHashtagPresets is "off"
       (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([
-        {
-          id: "queue-1",
-          name: "posts",
-          hashTagPreset: null,
-        },
+        createMockQueueType({ id: "queue-1", name: "posts" }),
       ]);
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
@@ -505,10 +494,9 @@ describe("New Longform Action Handler", () => {
 
   describe("Schedule Longform Action", () => {
     beforeEach(() => {
-      (getQueueTypeByNameForUser as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: "queue-1",
-        name: "posts",
-      });
+      (getQueueTypeByNameForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
+        createMockQueueType({ id: "queue-1", name: "posts" }),
+      );
     });
 
     it("should schedule post with published_at tag", async () => {

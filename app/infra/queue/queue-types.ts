@@ -3,13 +3,15 @@
  * These types define the interface for queue operations, independent of the underlying implementation
  */
 
+import type { SignedEvent } from "~/features/nostr/types";
+
 /**
  * Job data for scheduled posts
  */
 export interface PostJobData {
   postId: string;
   userId: string;
-  signedEvent: any;
+  signedEvent: SignedEvent;
 }
 
 /**
@@ -18,7 +20,7 @@ export interface PostJobData {
 export interface LongFormPostJobData {
   postId: string;
   userId: string;
-  signedEvent: any;
+  signedEvent: SignedEvent;
 }
 
 /**
@@ -62,7 +64,7 @@ export interface QueueClient {
   /**
    * Enqueue a job to be processed
    */
-  enqueue<T = any>(
+  enqueue<T extends PostJobData | LongFormPostJobData>(
     queueName: QueueType,
     jobName: string,
     data: T,
@@ -84,11 +86,12 @@ export interface QueueClient {
   getJobs(
     queueName: QueueType,
     statuses: JobStatus[],
-  ): Promise<Array<{ id: string; data: any; status: JobStatus }>>;
+  ): Promise<Array<{ id: string; data: PostJobData | LongFormPostJobData; status: JobStatus }>>;
 
   /**
    * Remove a job by ID
    */
   removeJob(queueName: QueueType, jobId: string): Promise<boolean>;
 }
+
 

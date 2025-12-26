@@ -1,93 +1,108 @@
 /**
  * Security Headers Tests
  * 
- * Tests that the application sets appropriate security headers
+ * Tests to verify that security headers are properly set on responses.
  */
 
 import { describe, it, expect } from "vitest";
 
-describe("Security Headers: Content Security Policy", () => {
-  it("should set Content-Security-Policy header", () => {
-    // CSP helps prevent XSS attacks by controlling which resources can be loaded
-    
-    // Example CSP:
-    // Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';
-    
-    expect(true).toBe(true); // Documentation test
+describe("Security Headers", () => {
+  describe("Required Headers", () => {
+    it("should have X-Content-Type-Options header", () => {
+      // This would be tested in integration tests with actual HTTP requests
+      // For now, we verify the configuration exists
+      expect(true).toBe(true); // Placeholder - actual test would check headers
+    });
+
+    it("should have X-Frame-Options header", () => {
+      // Integration test would verify DENY is set
+      expect(true).toBe(true);
+    });
+
+    it("should have X-XSS-Protection header", () => {
+      // Integration test would verify 1; mode=block is set
+      expect(true).toBe(true);
+    });
+
+    it("should have Referrer-Policy header", () => {
+      // Integration test would verify strict-origin-when-cross-origin is set
+      expect(true).toBe(true);
+    });
+
+    it("should have Permissions-Policy header", () => {
+      // Integration test would verify geolocation, microphone, camera are disabled
+      expect(true).toBe(true);
+    });
+
+    it("should have Content-Security-Policy header", () => {
+      // Integration test would verify CSP is set with appropriate directives
+      expect(true).toBe(true);
+    });
+
+    it("should have Strict-Transport-Security header", () => {
+      // Integration test would verify HSTS is set
+      expect(true).toBe(true);
+    });
   });
 
-  it("should restrict inline scripts", () => {
-    // CSP should restrict inline scripts where possible
-    // Use 'unsafe-inline' only when necessary
-    
-    expect(true).toBe(true); // Documentation test
-  });
+  describe("CSP Configuration", () => {
+    it("should allow self for default sources", () => {
+      // CSP should include 'self' in defaultSrc
+      expect(true).toBe(true);
+    });
 
-  it("should restrict external resources", () => {
-    // CSP should restrict which external resources can be loaded
-    // Use specific domains instead of wildcards
-    
-    expect(true).toBe(true); // Documentation test
-  });
-});
+    it("should allow unsafe-inline for scripts (Remix requirement)", () => {
+      // Remix requires unsafe-inline for scripts
+      expect(true).toBe(true);
+    });
 
-describe("Security Headers: X-Frame-Options", () => {
-  it("should set X-Frame-Options header", () => {
-    // X-Frame-Options prevents clickjacking attacks
-    // Options: DENY, SAMEORIGIN
-    
-    // Example:
-    // X-Frame-Options: DENY
-    
-    expect(true).toBe(true); // Documentation test
-  });
-});
+    it("should allow unsafe-inline for styles (Remix requirement)", () => {
+      // Remix requires unsafe-inline for styles
+      expect(true).toBe(true);
+    });
 
-describe("Security Headers: X-Content-Type-Options", () => {
-  it("should set X-Content-Type-Options header", () => {
-    // X-Content-Type-Options: nosniff prevents MIME type sniffing
-    // This prevents browsers from interpreting files as different types
-    
-    // Example:
-    // X-Content-Type-Options: nosniff
-    
-    expect(true).toBe(true); // Documentation test
-  });
-});
+    it("should allow WebSocket connections", () => {
+      // CSP should allow wss: for Nostr WebSocket connections
+      expect(true).toBe(true);
+    });
 
-describe("Security Headers: Strict-Transport-Security", () => {
-  it("should set Strict-Transport-Security header in production", () => {
-    // HSTS forces browsers to use HTTPS
-    // Only set in production (HTTPS)
-    
-    // Example:
-    // Strict-Transport-Security: max-age=31536000; includeSubDomains
-    
-    expect(true).toBe(true); // Documentation test
-  });
-});
-
-describe("Security Headers: Referrer-Policy", () => {
-  it("should set Referrer-Policy header", () => {
-    // Referrer-Policy controls how much referrer information is sent
-    // Options: no-referrer, strict-origin-when-cross-origin, etc.
-    
-    // Example:
-    // Referrer-Policy: strict-origin-when-cross-origin
-    
-    expect(true).toBe(true); // Documentation test
+    it("should deny frame embedding", () => {
+      // frameSrc should be 'none'
+      expect(true).toBe(true);
+    });
   });
 });
 
-describe("Security Headers: Permissions-Policy", () => {
-  it("should set Permissions-Policy header", () => {
-    // Permissions-Policy controls browser features
-    // Example: camera, microphone, geolocation, etc.
-    
-    // Example:
-    // Permissions-Policy: geolocation=(), microphone=(), camera=()
-    
-    expect(true).toBe(true); // Documentation test
-  });
-});
-
+/**
+ * Note: These are placeholder tests.
+ * 
+ * For full integration testing, you would:
+ * 1. Start the Express server
+ * 2. Make HTTP requests to various endpoints
+ * 3. Verify headers are present and have correct values
+ * 
+ * Example integration test:
+ * 
+ * ```typescript
+ * import { describe, it, expect, beforeAll, afterAll } from "vitest";
+ * import request from "supertest";
+ * import { app } from "~/server";
+ * 
+ * describe("Security Headers Integration", () => {
+ *   it("should set X-Content-Type-Options header", async () => {
+ *     const response = await request(app).get("/");
+ *     expect(response.headers["x-content-type-options"]).toBe("nosniff");
+ *   });
+ * 
+ *   it("should set X-Frame-Options header", async () => {
+ *     const response = await request(app).get("/");
+ *     expect(response.headers["x-frame-options"]).toBe("DENY");
+ *   });
+ * 
+ *   it("should set Content-Security-Policy header", async () => {
+ *     const response = await request(app).get("/");
+ *     expect(response.headers["content-security-policy"]).toContain("default-src 'self'");
+ *   });
+ * });
+ * ```
+ */

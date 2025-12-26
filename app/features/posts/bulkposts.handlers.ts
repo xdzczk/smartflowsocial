@@ -2,7 +2,14 @@
  * Handler functions for Bulk Posts feature
  * Extracted from dashboard.bulkposts.tsx
  */
-import { type BulkPost, type QueueType, type BulkPostsHandlerDeps } from "~/features/posts/types";
+import {
+    type BulkPost,
+    type QueueType,
+    type BulkPostsHandlerDeps,
+    type ScheduleConfig,
+    isIntervalScheduleConfig,
+    isFixedSlotsScheduleConfig,
+} from "~/features/posts/types";
 import { resizeImage } from "~/features/upload/image-resize";
 import { isVideoFile } from "~/utils/media-helpers";
 
@@ -389,12 +396,6 @@ export async function handleQueueTypeChange(
     }
 }
 
-interface ScheduleConfig {
-    useGlobalInterval?: boolean;
-    intervalHours?: number;
-    slots?: string[];
-}
-
 /**
  * Handle bulk queue update for all posts
  */
@@ -457,13 +458,15 @@ export async function handleBulkQueueUpdate(
             let calculatedTime = "";
 
             if (queueTypeConfig.scheduleType === "INTERVAL") {
-                const config = queueTypeConfig.scheduleConfig as ScheduleConfig;
+                const config = queueTypeConfig.scheduleConfig;
                 let intervalHours = 4; // default
 
-                if (config.useGlobalInterval) {
-                    intervalHours = user?.scheduleInterval?.[0] || 4;
-                } else {
-                    intervalHours = config.intervalHours || 4;
+                if (config && isIntervalScheduleConfig(config)) {
+                    if (config.useGlobalInterval) {
+                        intervalHours = user?.scheduleInterval?.[0] || 4;
+                    } else {
+                        intervalHours = config.intervalHours || 4;
+                    }
                 }
 
                 // Add interval * index to base time
@@ -479,8 +482,8 @@ export async function handleBulkQueueUpdate(
 
                 calculatedTime = `${year}-${month}-${day}T${hours}:${minutes}`;
             } else if (queueTypeConfig.scheduleType === "FIXED_SLOTS") {
-                const config = queueTypeConfig.scheduleConfig as ScheduleConfig;
-                const slots = config.slots || [];
+                const config = queueTypeConfig.scheduleConfig;
+                const slots = config && isFixedSlotsScheduleConfig(config) ? config.slots : [];
 
                 if (slots.length > 0) {
                     // Sort slots to ensure consistent ordering

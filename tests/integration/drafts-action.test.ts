@@ -17,14 +17,28 @@ vi.mock("~/models/longformpost.server", () => ({
   deleteLongFormPost: vi.fn(),
 }));
 
+vi.mock("~/features/posts/services/queue-type-resolver.server", () => ({
+  resolveQueueTypeId: vi.fn(),
+}));
+
 import { deletePost, updatePost } from "~/models/post.server";
 import { deleteLongFormPost } from "~/models/longformpost.server";
+import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
 import { handleDraftsAction } from "~/features/posts/services/drafts-action.server";
 import { createActionFormData, createFormData, TEST_USER_ID, TEST_POST_ID, TEST_LONGFORM_ID, createPostIds } from "../utils/test-helpers";
 
 describe("Drafts Action Handler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default mock for resolveQueueTypeId - returns the queueTypeId if provided, otherwise resolves from queueType name
+    (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockImplementation(
+      async (userId, queueTypeId, queueType) => {
+        if (queueTypeId) return queueTypeId;
+        if (queueType === "queue-1") return "queue-1";
+        if (queueType === "queue-2") return "queue-2";
+        return null;
+      },
+    );
   });
 
   describe("Delete Post Action", () => {
@@ -117,13 +131,24 @@ describe("Drafts Action Handler", () => {
       const result = await handleDraftsAction(formData, TEST_USER_ID);
 
       expect(updatePost).toHaveBeenCalledTimes(2);
+      expect(resolveQueueTypeId).toHaveBeenCalledTimes(2);
+      expect(resolveQueueTypeId).toHaveBeenCalledWith(
+        TEST_USER_ID,
+        null,
+        "queue-1",
+      );
+      expect(resolveQueueTypeId).toHaveBeenCalledWith(
+        TEST_USER_ID,
+        null,
+        "queue-2",
+      );
       expect(updatePost).toHaveBeenCalledWith({
         id: "post-1",
         userId: TEST_USER_ID,
         data: {
           content: "Content 1",
           caption: "Caption 1",
-          queueType: "queue-1",
+          queueTypeId: "queue-1",
           scheduledFor: "2024-01-01T10:00:00Z",
           signedEvent: { id: "event-1", pubkey: "pk1" },
           nostrEvent: { id: "nostr-1" },
@@ -138,7 +163,7 @@ describe("Drafts Action Handler", () => {
         data: {
           content: "Content 2",
           caption: "Caption 2",
-          queueType: "queue-2",
+          queueTypeId: "queue-2",
           scheduledFor: "2024-01-01T11:00:00Z",
           signedEvent: { id: "event-2", pubkey: "pk2" },
           nostrEvent: { id: "nostr-2" },

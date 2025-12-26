@@ -4,6 +4,7 @@
  */
 
 import { updatePost } from "~/models/post.server";
+import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
 
 export async function handleDraftEditAction(
   formData: FormData,
@@ -16,10 +17,18 @@ export async function handleDraftEditAction(
     const content = formData.get("content");
     const caption = formData.get("caption");
     const queueType = formData.get("queueType");
+    const queueTypeId = formData.get("queueTypeId");
     const useHashtagPresets = formData.get("useHashtagPresets") === "on";
     const hashTagPresetId = useHashtagPresets
       ? formData.get("hashTagPresetId") || null
       : null;
+
+    // Resolve queue type ID in feature layer (business logic)
+    const resolvedQueueTypeId = await resolveQueueTypeId(
+      userId,
+      queueTypeId as string | null,
+      queueType as string | null,
+    );
 
     await updatePost({
       id: postId,
@@ -27,7 +36,7 @@ export async function handleDraftEditAction(
       data: {
         content: content as string,
         caption: caption as string,
-        queueType: queueType as string,
+        queueTypeId: resolvedQueueTypeId,
         hashTagPresetId: hashTagPresetId as string | null,
       },
     });
@@ -39,6 +48,7 @@ export async function handleDraftEditAction(
     const content = formData.get("content");
     const caption = formData.get("caption");
     const queueType = formData.get("queueType");
+    const queueTypeId = formData.get("queueTypeId");
     const scheduledFor = formData.get("scheduledFor");
     const signedEvent = formData.get("signedEvent");
     const nostrEvent = formData.get("nostrEvent");
@@ -57,13 +67,20 @@ export async function handleDraftEditAction(
       });
     }
 
+    // Resolve queue type ID in feature layer (business logic)
+    const resolvedQueueTypeId = await resolveQueueTypeId(
+      userId,
+      queueTypeId as string | null,
+      queueType as string | null,
+    );
+
     await updatePost({
       id: postId,
       userId,
       data: {
         content: content as string,
         caption: caption as string,
-        queueType: queueType as string,
+        queueTypeId: resolvedQueueTypeId,
         scheduledFor: scheduledFor as string,
         signedEvent: JSON.parse(signedEvent as string),
         nostrEvent: JSON.parse(nostrEvent as string),
@@ -79,4 +96,5 @@ export async function handleDraftEditAction(
 
   return { error: "Invalid action" };
 }
+
 

@@ -188,56 +188,86 @@ export function generateArticleIdentifier(title: string): string {
     .substring(0, 64);
 }
 
-export function convertEditorJSToMarkdown(editorData: any): string {
-  if (!editorData || !editorData.blocks) {
+import type { EditorJSOutput, EditorJSBlock } from "~/features/posts/types/editorjs.types";
+
+export function convertEditorJSToMarkdown(editorData: EditorJSOutput | string | null | undefined): string {
+  // Handle string input (JSON string)
+  let parsedData: EditorJSOutput | null = null;
+  if (typeof editorData === "string") {
+    try {
+      parsedData = JSON.parse(editorData);
+    } catch {
+      return "";
+    }
+  } else if (editorData && typeof editorData === "object") {
+    parsedData = editorData as EditorJSOutput;
+  }
+
+  if (!parsedData || !parsedData.blocks || !Array.isArray(parsedData.blocks)) {
     return "";
   }
 
   let markdown = "";
 
-  editorData.blocks.forEach((block: any) => {
+  parsedData.blocks.forEach((block: EditorJSBlock) => {
+    const data = block.data as Record<string, unknown>;
+    
     switch (block.type) {
       case "header": {
-        const level = "#".repeat(block.data.level || 1);
-        markdown += `${level} ${block.data.text}\n\n`;
+        const level = "#".repeat((typeof data.level === "number" ? data.level : 1));
+        const text = typeof data.text === "string" ? data.text : "";
+        markdown += `${level} ${text}\n\n`;
         break;
       }
 
-      case "paragraph":
-        markdown += `${block.data.text}\n\n`;
+      case "paragraph": {
+        const text = typeof data.text === "string" ? data.text : "";
+        markdown += `${text}\n\n`;
         break;
+      }
 
-      case "list":
-        if (block.data.style === "ordered") {
-          block.data.items.forEach((item: string, index: number) => {
-            markdown += `${index + 1}. ${item}\n`;
+      case "list": {
+        const style = data.style;
+        const items = Array.isArray(data.items) ? data.items : [];
+        if (style === "ordered") {
+          items.forEach((item: unknown, index: number) => {
+            const itemText = typeof item === "string" ? item : String(item);
+            markdown += `${index + 1}. ${itemText}\n`;
           });
         } else {
-          block.data.items.forEach((item: string) => {
-            markdown += `- ${item}\n`;
+          items.forEach((item: unknown) => {
+            const itemText = typeof item === "string" ? item : String(item);
+            markdown += `- ${itemText}\n`;
           });
         }
         markdown += "\n";
         break;
+      }
 
-      case "quote":
-        markdown += `> ${block.data.text}\n`;
-        if (block.data.caption) {
-          markdown += `> \n> — ${block.data.caption}\n`;
+      case "quote": {
+        const text = typeof data.text === "string" ? data.text : "";
+        markdown += `> ${text}\n`;
+        if (data.caption && typeof data.caption === "string") {
+          markdown += `> \n> — ${data.caption}\n`;
         }
         markdown += "\n";
         break;
+      }
 
-      case "code":
+      case "code": {
+        const code = typeof data.code === "string" ? data.code : "";
         markdown += "```\n";
-        markdown += block.data.code;
+        markdown += code;
         markdown += "\n```\n\n";
         break;
+      }
 
       case "linkTool": {
-        const { link, meta } = block.data;
-        if (meta.title) {
-          markdown += `[${meta.title}](${link})\n\n`;
+        const link = typeof data.link === "string" ? data.link : "";
+        const meta = data.meta && typeof data.meta === "object" ? data.meta as Record<string, unknown> : {};
+        const title = typeof meta.title === "string" ? meta.title : null;
+        if (title) {
+          markdown += `[${title}](${link})\n\n`;
         } else {
           markdown += `${link}\n\n`;
         }
@@ -245,7 +275,8 @@ export function convertEditorJSToMarkdown(editorData: any): string {
       }
 
       case "embed": {
-        const { service, source } = block.data;
+        const service = typeof data.service === "string" ? data.service : "";
+        const source = typeof data.source === "string" ? data.source : "";
         if (service === "youtube") {
           markdown += `[![YouTube Video](https://img.youtube.com/vi/${source}/0.jpg)](${source})\n\n`;
         } else {
@@ -255,8 +286,11 @@ export function convertEditorJSToMarkdown(editorData: any): string {
       }
 
       case "image": {
-        const imageUrl = block.data.file?.url || block.data.url;
-        const caption = block.data.caption;
+        const file = data.file && typeof data.file === "object" ? data.file as Record<string, unknown> : null;
+        const fileUrl = file && typeof file.url === "string" ? file.url : null;
+        const url = typeof data.url === "string" ? data.url : null;
+        const imageUrl = fileUrl || url;
+        const caption = typeof data.caption === "string" ? data.caption : "";
         if (imageUrl) {
           if (caption && caption.trim()) {
             markdown += `![${caption}](${imageUrl})\n\n`;
@@ -267,22 +301,25 @@ export function convertEditorJSToMarkdown(editorData: any): string {
         break;
       }
 
-      default:
-        if (block.data.text) {
-          markdown += `${block.data.text}\n\n`;
+      default: {
+        const text = typeof data.text === "string" ? data.text : null;
+        if (text) {
+          markdown += `${text}\n\n`;
         }
+        break;
+      }
     }
   });
 
   return markdown.trim();
 }
 
-export function convertMarkdownToEditorJS(markdown: string): any {
+export function convertMarkdownToEditorJS(markdown: string): EditorJSOutput {
   if (!markdown || markdown.trim() === "") {
     return { blocks: [] };
   }
 
-  const blocks: any[] = [];
+  const blocks: EditorJSBlock[] = [];
   const lines = markdown.split("\n");
   let i = 0;
 

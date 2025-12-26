@@ -39,3 +39,4 @@ directory = coverage/html
 [xml]
 output = coverage/coverage.xml
 
+

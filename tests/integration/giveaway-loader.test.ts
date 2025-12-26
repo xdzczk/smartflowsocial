@@ -43,7 +43,7 @@ import { getRecentPostedPosts } from "~/models/post.server";
 import { getGiveawayBlacklist, getUserById, getQueueTypes } from "~/models/user.server";
 import { fetchGiveawayParticipants } from "~/features/giveaway/giveaway.server";
 import { loadGiveawayData } from "~/features/giveaway/giveaway-loader.server";
-import { TEST_USER_ID } from "../utils/test-helpers";
+import { TEST_USER_ID, createMockUser, createMockQueueType, createMockPost } from "../utils/test-helpers";
 
 describe("Giveaway Loader", () => {
   beforeEach(() => {
@@ -54,29 +54,14 @@ describe("Giveaway Loader", () => {
   describe("Successful Data Loading", () => {
     it("should load giveaway data with posts and participants", async () => {
       const mockPosts = [
-        {
-          id: "post-1",
-          signedEvent: { id: "event-1" },
-        },
-        {
-          id: "post-2",
-          signedEvent: { id: "event-2" },
-        },
+        createMockPost({ id: "post-1", signedEvent: { id: "event-1" } }),
+        createMockPost({ id: "post-2", signedEvent: { id: "event-2" } }),
       ];
 
-      const mockUser = {
-        id: TEST_USER_ID,
-        filterMuted: false,
-        hidePostsFromLowTrustUsers: false,
-        mutedList: { npubs: [] },
-      };
+      const mockUser = createMockUser();
 
       const mockQueueTypes = [
-        {
-          id: "queue-1",
-          name: "posts",
-          isEnabled: true,
-        },
+        createMockQueueType({ id: "queue-1" }),
       ];
 
       const mockRelatedEvents = [
@@ -130,22 +115,11 @@ describe("Giveaway Loader", () => {
 
     it("should filter posts to only show those with engagement", async () => {
       const mockPosts = [
-        {
-          id: "post-1",
-          signedEvent: { id: "event-1" },
-        },
-        {
-          id: "post-2",
-          signedEvent: { id: "event-2" },
-        },
+        createMockPost({ id: "post-1", signedEvent: { id: "event-1" } }),
+        createMockPost({ id: "post-2", signedEvent: { id: "event-2" } }),
       ];
 
-      const mockUser = {
-        id: TEST_USER_ID,
-        filterMuted: false,
-        hidePostsFromLowTrustUsers: false,
-        mutedList: { npubs: [] },
-      };
+      const mockUser = createMockUser();
 
       (getRecentPostedPosts as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
@@ -195,18 +169,10 @@ describe("Giveaway Loader", () => {
 
     it("should filter participants by blacklist", async () => {
       const mockPosts = [
-        {
-          id: "post-1",
-          signedEvent: { id: "event-1" },
-        },
+        createMockPost({ id: "post-1", signedEvent: { id: "event-1" } }),
       ];
 
-      const mockUser = {
-        id: TEST_USER_ID,
-        filterMuted: false,
-        hidePostsFromLowTrustUsers: false,
-        mutedList: { npubs: [] },
-      };
+      const mockUser = createMockUser();
 
       const mockRelatedEvents = [
         {
@@ -255,18 +221,10 @@ describe("Giveaway Loader", () => {
 
     it("should filter participants by lud16 and totalZapped requirements", async () => {
       const mockPosts = [
-        {
-          id: "post-1",
-          signedEvent: { id: "event-1" },
-        },
+        createMockPost({ id: "post-1", signedEvent: { id: "event-1" } }),
       ];
 
-      const mockUser = {
-        id: TEST_USER_ID,
-        filterMuted: false,
-        hidePostsFromLowTrustUsers: false,
-        mutedList: { npubs: [] },
-      };
+      const mockUser = createMockUser();
 
       const mockRelatedEvents = [
         {
@@ -342,12 +300,7 @@ describe("Giveaway Loader", () => {
         },
       ];
 
-      const mockUser = {
-        id: TEST_USER_ID,
-        filterMuted: false,
-        hidePostsFromLowTrustUsers: true,
-        mutedList: { npubs: [] },
-      };
+      const mockUser = createMockUser({ hidePostsFromLowTrustUsers: true });
 
       const mockRelatedEvents = [
         {
@@ -418,12 +371,7 @@ describe("Giveaway Loader", () => {
 
   describe("Error Handling", () => {
     it("should handle empty posts gracefully", async () => {
-      const mockUser = {
-        id: TEST_USER_ID,
-        filterMuted: false,
-        hidePostsFromLowTrustUsers: false,
-        mutedList: { npubs: [] },
-      };
+      const mockUser = createMockUser();
 
       (getRecentPostedPosts as ReturnType<typeof vi.fn>).mockResolvedValue([]);
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
@@ -437,18 +385,10 @@ describe("Giveaway Loader", () => {
 
     it("should handle stats fetch errors gracefully", async () => {
       const mockPosts = [
-        {
-          id: "post-1",
-          signedEvent: { id: "event-1" },
-        },
+        createMockPost({ id: "post-1", signedEvent: { id: "event-1" } }),
       ];
 
-      const mockUser = {
-        id: TEST_USER_ID,
-        filterMuted: false,
-        hidePostsFromLowTrustUsers: false,
-        mutedList: { npubs: [] },
-      };
+      const mockUser = createMockUser();
 
       (getRecentPostedPosts as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
@@ -468,25 +408,12 @@ describe("Giveaway Loader", () => {
 
     it("should filter out disabled queue types", async () => {
       const mockQueueTypes = [
-        {
-          id: "queue-1",
-          name: "posts",
-          isEnabled: true,
-        },
-        {
-          id: "queue-2",
-          name: "disabled",
-          isEnabled: false,
-        },
+        createMockQueueType({ id: "queue-1", isEnabled: true }),
+        createMockQueueType({ id: "queue-2", name: "disabled", isEnabled: false }),
       ];
 
       (getRecentPostedPosts as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-      (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: TEST_USER_ID,
-        filterMuted: false,
-        hidePostsFromLowTrustUsers: false,
-        mutedList: { npubs: [] },
-      });
+      (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(createMockUser());
       (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueTypes);
 
       const result = await loadGiveawayData(TEST_USER_ID, "posts", 7);

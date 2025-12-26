@@ -11,6 +11,8 @@ import type {
   ScheduleOptions,
   QueueOperationResult,
   JobStatus,
+  PostJobData,
+  LongFormPostJobData,
 } from "./queue-types";
 
 // Redis connection with BullMQ required config
@@ -106,10 +108,11 @@ class BullMQClient implements QueueClient {
   async getJobs(
     queueName: QueueType,
     statuses: JobStatus[],
-  ): Promise<Array<{ id: string; data: any; status: JobStatus }>> {
+  ): Promise<Array<{ id: string; data: PostJobData | LongFormPostJobData; status: JobStatus }>> {
     try {
       const queue = getQueue(queueName);
-      const jobs = await queue.getJobs(statuses as any);
+      // BullMQ's getJobs accepts an array of status strings
+      const jobs = await queue.getJobs(statuses as JobStatus[]);
       
       return jobs.map((job) => ({
         id: job.id!,

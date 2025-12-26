@@ -10,8 +10,9 @@ import { useGiveawayState } from "~/features/giveaway/hooks/useGiveawayState";
 import { loadGiveawayData } from "~/features/giveaway/giveaway-loader.server";
 import { requireFeatureAccess, requireAnySubscription } from "~/features/payments/subscriptions.server";
 import PostDetailsModal from "~/features/posts/components/PostDetailsModal";
+import { withErrorHandling } from "~/lib/error-handler.server";
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
+export const loader = withErrorHandling(async ({ request, params }: LoaderFunctionArgs) => {
   const userId = await requireUserId(request);
 
   // Require that the user has at least a subscription record
@@ -24,8 +25,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const days = parseInt(url.searchParams.get("days") || "7");
 
   const data = await loadGiveawayData(userId, queueType, days);
-  return json(data);
-}
+  return data;
+});
 
 export default function PostedPosts() {
   const { posts, stats, relatedEvents, user, queueTypes, selectedQueueType } =

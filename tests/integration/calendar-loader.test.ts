@@ -204,10 +204,12 @@ describe("Calendar Loader Integration", () => {
       );
 
       const request = new Request("http://localhost:3000/dashboard/calendar");
+      const response = await loader({ request, params: {} });
+      const data = await response.json();
       
-      await expect(loader({ request, params: {} })).rejects.toThrow(
-        "Authentication required"
-      );
+      expect(response.status).toBe(500);
+      expect(data.error).toBeDefined();
+      expect(data.error.message).toContain("Authentication required");
     });
 
     it("should handle data loading errors", async () => {
@@ -216,10 +218,12 @@ describe("Calendar Loader Integration", () => {
       );
 
       const request = new Request("http://localhost:3000/dashboard/calendar");
+      const response = await loader({ request, params: {} });
+      const data = await response.json();
       
-      await expect(loader({ request, params: {} })).rejects.toThrow(
-        "Database error"
-      );
+      expect(response.status).toBe(500);
+      expect(data.error).toBeDefined();
+      expect(data.error.message).toContain("Database error");
     });
   });
 });

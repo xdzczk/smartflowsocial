@@ -83,7 +83,8 @@ export async function withTransaction<T>(
 
 /**
  * Setup test database
- * Runs migrations and seeds test data
+ * Syncs schema and seeds test data
+ * Uses `db push` for test databases as it doesn't require migrations
  */
 export async function setupTestDatabase(): Promise<void> {
   const testDatabaseUrl = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL;
@@ -93,13 +94,18 @@ export async function setupTestDatabase(): Promise<void> {
   }
 
   try {
-    // Run migrations
-    execSync("npx prisma migrate deploy", {
+    // Use db push for test databases - it syncs schema without requiring migrations
+    // This works even if the database already has schema
+    // db push is safer than migrate deploy for test databases as it doesn't require
+    // migration history or baseline setup
+    execSync("npx prisma db push --skip-generate", {
       env: { ...process.env, DATABASE_URL: testDatabaseUrl },
       stdio: "inherit",
     });
   } catch (error) {
-    console.error("Failed to run migrations:", error);
+    console.error("Failed to sync database schema:", error);
+    // If db push fails, it might be due to breaking schema changes
+    // In that case, use a fresh test database or manually resolve conflicts
     throw error;
   }
 }
@@ -177,36 +183,106 @@ export async function seedTestDatabase(fixtures?: any): Promise<void> {
 
 /**
  * Apply fixtures to database
+ * Uses upsert to handle existing records (idempotent)
  */
 async function applyFixtures(prisma: PrismaClient, fixtures: any): Promise<void> {
   // Apply fixtures in dependency order
   if (fixtures.users) {
     for (const user of fixtures.users) {
-      await prisma.user.create({ data: user });
+      // Use upsert to handle existing records
+      if (user.id) {
+        await prisma.user.upsert({
+          where: { id: user.id },
+          update: user,
+          create: user,
+        });
+      } else {
+        await prisma.user.create({ data: user });
+      }
     }
   }
   
   if (fixtures.queueTypes) {
     for (const queueType of fixtures.queueTypes) {
-      await prisma.queueType.create({ data: queueType });
+      if (queueType.id) {
+        await prisma.queueType.upsert({
+          where: { id: queueType.id },
+          update: queueType,
+          create: queueType,
+        });
+      } else {
+        await prisma.queueType.create({ data: queueType });
+      }
     }
   }
   
   if (fixtures.hashTagPresets) {
     for (const preset of fixtures.hashTagPresets) {
-      await prisma.hashTagPreset.create({ data: preset });
+      if (preset.id) {
+        await prisma.hashTagPreset.upsert({
+          where: { id: preset.id },
+          update: preset,
+          create: preset,
+        });
+      } else {
+        await prisma.hashTagPreset.create({ data: preset });
+      }
     }
   }
   
   if (fixtures.posts) {
     for (const post of fixtures.posts) {
-      await prisma.post.create({ data: post });
+      if (post.id) {
+        await prisma.post.upsert({
+          where: { id: post.id },
+          update: post,
+          create: post,
+        });
+      } else {
+        await prisma.post.create({ data: post });
+      }
     }
   }
   
   if (fixtures.longFormPosts) {
     for (const longform of fixtures.longFormPosts) {
-      await prisma.longFormPost.create({ data: longform });
+      if (longform.id) {
+        await prisma.longFormPost.upsert({
+          where: { id: longform.id },
+          update: longform,
+          create: longform,
+        });
+      } else {
+        await prisma.longFormPost.create({ data: longform });
+      }
+    }
+  }
+  
+  if (fixtures.payments) {
+    for (const payment of fixtures.payments) {
+      if (payment.id) {
+        await prisma.payment.upsert({
+          where: { id: payment.id },
+          update: payment,
+          create: payment,
+        });
+      } else {
+        await prisma.payment.create({ data: payment });
+      }
+    }
+  }
+  
+  if (fixtures.plans) {
+    for (const plan of fixtures.plans) {
+      if (plan.id) {
+        await prisma.plan.upsert({
+          where: { id: plan.id },
+          update: plan,
+          create: plan,
+        });
+      } else {
+        await prisma.plan.create({ data: plan });
+      }
     }
   }
 }

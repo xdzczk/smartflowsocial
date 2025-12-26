@@ -7,7 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-blue?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Coverage](https://img.shields.io/badge/Coverage-70%25-brightgreen)](./docs/COVERAGE_REPORTING.md)
+[![Coverage](https://img.shields.io/badge/Coverage-70%25-brightgreen)](./docs/TEST_STRATEGY.md#coverage-strategy)
 [![Node.js](https://img.shields.io/badge/Node.js-20.0.0+-green?logo=node.js)](https://nodejs.org/)
 
 **Professional-grade social media management platform for Nostr. Schedule, manage, and optimize your decentralized social presence.**
@@ -15,6 +15,20 @@
 [Features](#-features) • [Quick Start](#-quick-start) • [Documentation](./docs/README.md) • [Contributing](./CONTRIBUTING.md) • [Roadmap](./ROADMAP.md)
 
 </div>
+
+---
+
+## 🌐 Get Started
+
+**Choose your path:**
+
+- 🚀 **[Try Hosted Version](https://smartflow.social)** - No setup required, start in seconds
+- 🏠 **[Self-Host](#-quick-start)** - Full control, free forever
+- 🔓 **[Contribute](./CONTRIBUTING.md)** - Open source, MIT licensed
+
+**New to SmartFlowSocial?** Start with our [hosted instance](https://smartflow.social) to explore features, then self-host if you want full control over your data and infrastructure.
+
+> 💡 **Note**: SmartFlowSocial is also available at [smartflowsocial.com](https://smartflowsocial.com)
 
 ---
 
@@ -36,8 +50,9 @@ SmartFlowSocial is a **self-hosted, professional-grade social media management p
 - **Content Creators**: Schedule posts, manage multiple accounts, track engagement
 - **Businesses**: Professional social media management for Nostr
 - **Communities**: Manage community accounts and engagement
-- **Developers**: Self-hosted alternative to centralized platforms
+- **Developers**: Self-hosted alternative to centralized platforms, or contribute to open source
 - **Bitcoiners**: Native Lightning payments and Nostr integration
+- **Privacy-Conscious Users**: Self-host for complete data control, or use our hosted instance with client-side signing
 
 ---
 
@@ -461,11 +476,24 @@ See [Security Guide](./docs/SECURITY.md) for best practices and reporting.
 
 ### Is SmartFlowSocial free?
 
-Yes! SmartFlowSocial is open-source (MIT License) and free to use. Some features require a paid subscription plan, but basic posting and scheduling are available on the free plan.
+Yes! SmartFlowSocial is open-source (MIT License) and free to use. The hosted version offers a free plan with basic features, and paid plans for advanced features. Self-hosting is completely free forever.
+
+### Is there a hosted version?
+
+Yes! We offer a hosted instance at [smartflow.social](https://smartflow.social) and [smartflowsocial.com](https://smartflowsocial.com). You can also [self-host](#-quick-start) for full control over your data and infrastructure.
+
+### How do I sign up for the hosted version?
+
+Visit [smartflow.social](https://smartflow.social) and sign up with your Nostr extension. No credit card required for the free plan.
+
+### What's the difference between hosted and self-hosted?
+
+- **Hosted**: Managed by us, no setup required, optional paid plans for advanced features
+- **Self-Hosted**: Full control, free forever, requires technical setup
 
 ### Do I need to host it myself?
 
-Yes, SmartFlowSocial is self-hosted. You can deploy it to any platform that supports Node.js (Fly.io, Railway, AWS, your own VPS, etc.).
+No! You can use our [hosted instance](https://smartflow.social) with no setup required. Alternatively, you can self-host for full control over your data and infrastructure.
 
 ### Is my data private?
 
@@ -493,7 +521,16 @@ Yes! SmartFlowSocial uses TailwindCSS and is highly customizable. You can modify
 
 ### Is there a hosted version?
 
-Currently, SmartFlowSocial is self-hosted only. This ensures you maintain full control over your data and keys.
+Yes! We offer a hosted instance at [smartflow.social](https://smartflow.social) and [smartflowsocial.com](https://smartflowsocial.com). You can also [self-host](#-quick-start) for full control over your data and infrastructure.
+
+### How do I sign up for the hosted version?
+
+Visit [smartflow.social](https://smartflow.social) and sign up with your Nostr extension. No credit card required for the free plan.
+
+### What's the difference between hosted and self-hosted?
+
+- **Hosted**: Managed by us, no setup required, optional paid plans for advanced features
+- **Self-Hosted**: Full control, free forever, requires technical setup
 
 ---
 
@@ -530,6 +567,7 @@ See [LICENSE](./LICENSE) for details.
 
 ## 💬 Community & Support
 
+- 🌐 **Hosted Instance**: [smartflow.social](https://smartflow.social) | [smartflowsocial.com](https://smartflowsocial.com)
 - 📖 **Documentation**: [docs/README.md](./docs/README.md)
 - 🐛 **Bug Reports**: [GitHub Issues](https://github.com/xdzczk/SmartFlowSocial/issues)
 - 💡 **Feature Requests**: [GitHub Discussions](https://github.com/xdzczk/SmartFlowSocial/discussions)
@@ -555,6 +593,6 @@ If SmartFlowSocial helps you manage your Nostr presence, consider:
 
 Built with ❤️ for the Nostr community.
 
-[Get Started](#-quick-start) • [Documentation](./docs/README.md) • [Contributing](./CONTRIBUTING.md)
+[Try Hosted](https://smartflow.social) • [Self-Host](#-quick-start) • [Documentation](./docs/README.md) • [Contributing](./CONTRIBUTING.md)
 
 </div>

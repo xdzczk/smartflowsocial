@@ -13,3 +13,4 @@ export async function loadSearchData(userId: string) {
   return { user };
 }
 
+

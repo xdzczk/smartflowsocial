@@ -17,6 +17,7 @@ import {
 } from "~/models/user.server";
 import { createUploadHandler } from "~/features/upload/s3.server";
 import type { SignedEvent } from "~/features/nostr/types";
+import { resolveQueueTypeId } from "./queue-type-resolver.server";
 
 /**
  * Determine if a file URL is a video based on extension
@@ -141,6 +142,9 @@ async function handleDraftText(
 ): Promise<Response> {
   const content = formData.get("content") as string;
 
+  // Resolve queue type ID in feature layer (business logic)
+  const resolvedQueueTypeId = await resolveQueueTypeId(userId, queueTypeId, queueType);
+
   await createPost({
     userId,
     content: applyHashtags(content, hashTagPresetTags, showHashTagsinPosts),
@@ -150,8 +154,7 @@ async function handleDraftText(
     isPosted: false,
     postType: "TEXT",
     tags: [],
-    queueType,
-    queueTypeId,
+    queueTypeId: resolvedQueueTypeId,
     draft: true,
     isRecyclable,
     hashTagPresetId,
@@ -181,6 +184,9 @@ async function handlePostOrScheduleText(
   const signedEventJson = signedEvent;
 
   if (action === "post-text") {
+    // Resolve queue type ID in feature layer (business logic)
+    const resolvedQueueTypeId = await resolveQueueTypeId(userId, queueTypeId, queueType);
+    
     const post = await createPost({
       userId,
       content: applyHashtags(content, hashTagPresetTags, showHashTagsinPosts),
@@ -193,8 +199,7 @@ async function handlePostOrScheduleText(
       nostrEvent: nostrEvent,
       postType: "TEXT",
       tags: [],
-      queueType,
-      queueTypeId,
+      queueTypeId: resolvedQueueTypeId,
       isRecyclable,
       hashTagPresetId,
     });
@@ -204,6 +209,9 @@ async function handlePostOrScheduleText(
     return redirect("/dashboard/posted");
   } else {
     // schedule-text
+    // Resolve queue type ID in feature layer (business logic)
+    const resolvedQueueTypeId = await resolveQueueTypeId(userId, queueTypeId, queueType);
+    
     await createPost({
       userId,
       content: applyHashtags(content, hashTagPresetTags, showHashTagsinPosts),
@@ -215,8 +223,7 @@ async function handlePostOrScheduleText(
       nostrEvent: nostrEvent,
       postType: "TEXT",
       tags: [],
-      queueType,
-      queueTypeId,
+      queueTypeId: resolvedQueueTypeId,
       isRecyclable,
       hashTagPresetId,
     });
@@ -284,6 +291,9 @@ async function handlePostImages(
 
   const isVideo = isVideoFile(fileUrl);
 
+  // Resolve queue type ID in feature layer (business logic)
+  const resolvedQueueTypeId = await resolveQueueTypeId(userId, queueTypeId, queueType);
+
   const post = await createPost({
     userId,
     content: applyHashtags(caption, hashTagPresetTags, showHashTagsinPosts),
@@ -298,8 +308,7 @@ async function handlePostImages(
     signedEvent,
     postType: isVideo ? "VIDEO" : "IMAGE",
     tags: [],
-    queueType,
-    queueTypeId,
+    queueTypeId: resolvedQueueTypeId,
     isRecyclable,
     hashTagPresetId,
   });
@@ -329,6 +338,9 @@ async function handleScheduleImages(
 
   const isVideo = isVideoFile(fileUrl);
 
+  // Resolve queue type ID in feature layer (business logic)
+  const resolvedQueueTypeId = await resolveQueueTypeId(userId, queueTypeId, queueType);
+
   await createPost({
     userId,
     content: applyHashtags(caption, hashTagPresetTags, showHashTagsinPosts),
@@ -341,8 +353,7 @@ async function handleScheduleImages(
     nostrEvent: nostrEvent,
     postType: isVideo ? "VIDEO" : "IMAGE",
     tags: [],
-    queueType,
-    queueTypeId,
+    queueTypeId: resolvedQueueTypeId,
     isRecyclable,
     hashTagPresetId,
   });
@@ -373,6 +384,9 @@ async function handleDraftImages(
     postType = isVideo ? "VIDEO" : "IMAGE";
   }
 
+  // Resolve queue type ID in feature layer (business logic)
+  const resolvedQueueTypeId = await resolveQueueTypeId(userId, queueTypeId, queueType);
+
   await createPost({
     userId,
     content: applyHashtags(caption, hashTagPresetTags, showHashTagsinPosts),
@@ -382,8 +396,7 @@ async function handleDraftImages(
     isPosted: false,
     postType,
     tags: [],
-    queueType,
-    queueTypeId,
+    queueTypeId: resolvedQueueTypeId,
     draft: true,
     isRecyclable,
     hashTagPresetId,

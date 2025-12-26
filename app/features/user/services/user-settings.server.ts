@@ -2,6 +2,7 @@ import type { User, UploadProvider } from "@prisma/client";
 
 import { prisma } from "~/lib/prisma.server";
 import { blastrRelay } from "~/lib/relays";
+import type { MutedListData } from "~/features/engagement/types";
 
 /**
  * Updates user's timezone
@@ -191,7 +192,8 @@ export async function getUserUploadProvider(
 
   // Handle legacy BLOSSOM value by converting to BLOSSOM_PRIMAL
   const provider = user?.uploadProvider || "S3";
-  if (provider === ("BLOSSOM" as any)) {
+  // Check for legacy string value (not in enum)
+  if (provider === "BLOSSOM" || (provider as string) === "BLOSSOM") {
     return "BLOSSOM_PRIMAL";
   }
   return provider;
@@ -296,11 +298,17 @@ export async function getUserMutedList(userId: string): Promise<{
     return null;
   }
 
-  // Handle JSON parsing
-  const mutedList = user.mutedList as any;
+  // Handle JSON parsing - mutedList is stored as Json in Prisma
+  const mutedList = user.mutedList as MutedListData | null;
+  if (!mutedList || typeof mutedList !== "object") {
+    return null;
+  }
+  
   return {
-    npubs: mutedList.npubs || [],
-    lastSynced: mutedList.lastSynced || new Date().toISOString(),
+    npubs: Array.isArray(mutedList.npubs) ? mutedList.npubs : [],
+    lastSynced: typeof mutedList.lastSynced === "string" 
+      ? mutedList.lastSynced 
+      : new Date().toISOString(),
   };
 }
 

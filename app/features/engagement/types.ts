@@ -93,3 +93,12 @@ export interface EventStats {
   zaps: number;
   satszapped: number;
 }
+
+/**
+ * Muted list data structure
+ * Stored as Json in Prisma User.mutedList field
+ */
+export interface MutedListData {
+  npubs: string[];
+  lastSynced: string;
+}

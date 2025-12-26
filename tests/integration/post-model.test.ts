@@ -43,10 +43,9 @@ vi.mock("~/lib/prisma.server", () => ({
   prisma: mockPrisma,
 }));
 
+import { TEST_USER_ID, TEST_POST_ID, TEST_QUEUE_TYPE_ID } from "../utils/test-helpers";
+
 describe("Post Model Functions", () => {
-  const TEST_USER_ID = "user-123";
-  const TEST_POST_ID = "post-123";
-  const TEST_QUEUE_TYPE_ID = "queue-123";
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -96,7 +95,7 @@ describe("Post Model Functions", () => {
       expect(result).toEqual(mockPost);
     });
 
-    it("should lookup queue type by name when queueTypeId not provided", async () => {
+    it("should create a post with queueTypeId directly (preferred pattern)", async () => {
       const postData = {
         userId: TEST_USER_ID,
         content: "Test content",
@@ -104,43 +103,40 @@ describe("Post Model Functions", () => {
         tags: [],
         isScheduled: false,
         isPosted: false,
-        queueType: "posts",
+        queueTypeId: TEST_QUEUE_TYPE_ID,
       };
 
-      mockPrisma.queueType.findFirst.mockResolvedValue({
-        id: TEST_QUEUE_TYPE_ID,
-      });
-
-      mockPrisma.post.create.mockResolvedValue({
+      const mockPost = {
         id: TEST_POST_ID,
         ...postData,
-      });
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
-      await createPost(postData);
+      mockPrisma.post.create.mockResolvedValue(mockPost);
 
-      expect(mockPrisma.queueType.findFirst).toHaveBeenCalledWith({
-        where: {
-          userId: TEST_USER_ID,
-          name: "posts",
-        },
-        select: {
-          id: true,
-        },
-      });
-      expect(mockPrisma.post.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            queueType: {
-              connect: {
-                id: TEST_QUEUE_TYPE_ID,
-              },
+      const result = await createPost(postData);
+
+      // Should NOT call queueType.findFirst when queueTypeId is provided
+      expect(mockPrisma.queueType.findFirst).not.toHaveBeenCalled();
+      
+      expect(mockPrisma.post.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          content: "Test content",
+          postType: "TEXT",
+          isScheduled: false,
+          isPosted: false,
+          queueType: {
+            connect: {
+              id: TEST_QUEUE_TYPE_ID,
             },
-          }),
+          },
         }),
-      );
+      });
+      expect(result).toEqual(mockPost);
     });
 
-    it("should not connect queue type for unassigned posts", async () => {
+    it("should not connect queue type when queueTypeId is null", async () => {
       const postData = {
         userId: TEST_USER_ID,
         content: "Test content",
@@ -148,16 +144,21 @@ describe("Post Model Functions", () => {
         tags: [],
         isScheduled: false,
         isPosted: false,
-        queueType: "unassigned",
+        queueTypeId: null,
       };
 
-      mockPrisma.post.create.mockResolvedValue({
+      const mockPost = {
         id: TEST_POST_ID,
         ...postData,
-      });
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
-      await createPost(postData);
+      mockPrisma.post.create.mockResolvedValue(mockPost);
 
+      const result = await createPost(postData);
+
+      // Should NOT call queueType.findFirst when queueTypeId is null
       expect(mockPrisma.queueType.findFirst).not.toHaveBeenCalled();
       expect(mockPrisma.post.create).toHaveBeenCalledWith({
         data: expect.not.objectContaining({

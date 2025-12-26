@@ -11,7 +11,7 @@ import {
   generateSummary,
 } from "~/lib/markdown-sanitizer.server";
 
-// Mock marked - Renderer needs to be a class
+// Mock marked - it exports { marked } as a named export
 vi.mock("marked", () => {
   class MockRenderer {
     html = vi.fn(() => "");
@@ -21,13 +21,15 @@ vi.mock("marked", () => {
   }
 
   return {
-    default: {
-      Renderer: MockRenderer,
-      marked: vi.fn((markdown, options) => {
-        // Simple mock that returns basic HTML
-        return `<p>${markdown}</p>`;
-      }),
-    },
+    marked: vi.fn((markdown, options) => {
+      // Simple mock that returns basic HTML
+      // For code blocks, return a pre/code structure
+      if (markdown.includes("```")) {
+        return `<pre><code>${markdown.replace(/```/g, "")}</code></pre>`;
+      }
+      return `<p>${markdown}</p>`;
+    }),
+    Renderer: MockRenderer,
   };
 });
 

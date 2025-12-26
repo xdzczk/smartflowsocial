@@ -1,3 +1,25 @@
+/**
+ * Post Model - Database Access Layer
+ * 
+ * This module provides pure database access operations for Post entities.
+ * It contains ONLY Prisma queries and data persistence operations.
+ * 
+ * **What belongs here:**
+ * - CRUD operations (create, read, update, delete)
+ * - Database queries with filters, pagination, sorting
+ * - Data aggregation queries (counts, statistics)
+ * - Prisma transactions
+ * 
+ * **What does NOT belong here:**
+ * - Business logic or workflows
+ * - Permission checks or authorization
+ * - Plan enforcement or subscription validation
+ * - Queue type lookups or name-to-ID resolution
+ * - Complex calculations or business rules
+ * 
+ * For business logic, see: app/features/posts/
+ */
+
 import type { Post, PostType, QueueType, Prisma } from "@prisma/client";
 
 import { prisma } from "~/lib/prisma.server";
@@ -18,8 +40,8 @@ interface CreatePostData {
   isScheduled: boolean;
   isPosted: boolean;
   manual_override?: boolean;
-  queueType?: string;
-  queueTypeId?: string; // Direct queue type ID
+  /** Resolved queue type ID. Use resolveQueueTypeId() from features layer before calling. */
+  queueTypeId?: string | null;
   draft?: boolean;
   repost?: boolean;
   isQuotedPost?: boolean;
@@ -44,6 +66,13 @@ interface PostStatistics {
   successCount: number;
 }
 
+/**
+ * Create a new post in the database
+ * 
+ * Note: This is a pure data access function. For best practices,
+ * resolve queueTypeId in the feature layer before calling this function.
+ * Use resolveQueueTypeId() from app/features/posts/services/queue-type-resolver.server.ts
+ */
 export async function createPost(data: CreatePostData): Promise<Post> {
   const {
     userId,
@@ -60,7 +89,6 @@ export async function createPost(data: CreatePostData): Promise<Post> {
     isScheduled,
     isPosted,
     manual_override,
-    queueType,
     queueTypeId,
     draft,
     repost,
@@ -68,24 +96,6 @@ export async function createPost(data: CreatePostData): Promise<Post> {
     isRecyclable,
     hashTagPresetId,
   } = data;
-  // Get queueTypeId - use direct ID if provided, otherwise lookup by name
-  let finalQueueTypeId = null;
-  if (queueTypeId) {
-    // Use provided queue type ID directly
-    finalQueueTypeId = queueTypeId;
-  } else if (queueType && queueType !== "unassigned") {
-    // Fallback to name lookup for backward compatibility
-    const queueTypeRecord = await prisma.queueType.findFirst({
-      where: {
-        userId,
-        name: queueType,
-      },
-      select: {
-        id: true,
-      },
-    });
-    finalQueueTypeId = queueTypeRecord?.id || null;
-  }
 
   return prisma.post.create({
     data: {
@@ -111,10 +121,10 @@ export async function createPost(data: CreatePostData): Promise<Post> {
           id: userId,
         },
       },
-      ...(finalQueueTypeId && {
+      ...(queueTypeId && {
         queueType: {
           connect: {
-            id: finalQueueTypeId,
+            id: queueTypeId,
           },
         },
       }),
@@ -154,6 +164,8 @@ export async function getScheduledPosts({
     where: whereClause,
     include: {
       queueType: true,
+      hashTagPreset: true,
+      template: true,
     },
     orderBy: {
       scheduledFor: "asc",
@@ -185,6 +197,8 @@ export async function getDraftPosts({
     where: whereClause,
     include: {
       queueType: true,
+      hashTagPreset: true,
+      template: true,
     },
     orderBy: {
       createdAt: "desc",
@@ -325,6 +339,8 @@ export async function getRecentPostedPosts({
     where: whereClause,
     include: {
       queueType: true,
+      hashTagPreset: true,
+      template: true,
     },
     orderBy: {
       postedAt: "desc",
@@ -397,6 +413,8 @@ export async function getPastPosts({
     where: whereClause,
     include: {
       queueType: true,
+      hashTagPreset: true,
+      template: true,
     },
     orderBy: {
       postedAt: "desc",
@@ -458,6 +476,11 @@ export async function getPostById({
       id,
       userId,
     },
+    include: {
+      queueType: true,
+      hashTagPreset: true,
+      template: true,
+    },
   });
 }
 
@@ -477,6 +500,8 @@ export async function getPostsByIds({
     },
     include: {
       queueType: true,
+      hashTagPreset: true,
+      template: true,
     },
   });
 }
@@ -497,31 +522,18 @@ export async function updatePost({
     updatedAt: new Date(),
   };
 
-  // Handle queueType conversion to queueTypeId
-  if (data.queueType !== undefined) {
-    delete updateData.queueType; // Remove queueType from updateData
+  // Handle queueTypeId connection/disconnection
+  if (data.queueTypeId !== undefined) {
+    delete updateData.queueTypeId; // Remove queueTypeId from updateData (Prisma expects connect/disconnect)
 
-    if (data.queueType && data.queueType !== "unassigned") {
-      // Find the queueType record to get its ID
-      const queueTypeRecord = await prisma.queueType.findFirst({
-        where: {
-          userId,
-          name: data.queueType,
+    if (data.queueTypeId) {
+      updateData.queueType = {
+        connect: {
+          id: data.queueTypeId,
         },
-        select: {
-          id: true,
-        },
-      });
-
-      if (queueTypeRecord) {
-        updateData.queueType = {
-          connect: {
-            id: queueTypeRecord.id,
-          },
-        };
-      }
+      };
     } else {
-      // Disconnect from queue type if "unassigned"
+      // Disconnect from queue type if null
       updateData.queueType = {
         disconnect: true,
       };

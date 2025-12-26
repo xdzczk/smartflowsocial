@@ -158,9 +158,9 @@ export default function Settings() {
           <TabsContent value="subscription" className="mt-6 space-y-6">
             <div className="grid gap-6 md:grid-cols-1">
               <SubscriptionSettings
-                subscription={subscription as any}
-                availablePlans={availablePlans as any}
-                paymentHistory={paymentHistory as any}
+                subscription={subscription}
+                availablePlans={availablePlans}
+                paymentHistory={paymentHistory}
               />
               <NWCSettings
                 nwcEnabled={nwcEnabled}

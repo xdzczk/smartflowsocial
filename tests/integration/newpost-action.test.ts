@@ -21,6 +21,10 @@ vi.mock("~/models/post.server", () => ({
   createPost: vi.fn(),
 }));
 
+vi.mock("~/features/posts/services/queue-type-resolver.server", () => ({
+  resolveQueueTypeId: vi.fn(),
+}));
+
 vi.mock("~/features/upload/s3.server", () => ({
   createUploadHandler: vi.fn(() => vi.fn()),
 }));
@@ -30,6 +34,7 @@ global.fetch = vi.fn();
 
 import { getUserById, getQueueTypes, getHashTagPresetById } from "~/models/user.server";
 import { createPost } from "~/models/post.server";
+import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
 import { handleNewPostAction } from "~/features/posts/services/newpost-action.server";
 import { createActionFormData, createFormData, TEST_USER_ID } from "../utils/test-helpers";
 
@@ -58,6 +63,14 @@ describe("New Post Action Handler", () => {
       id: "post-123",
       signedEvent: { id: "event-123" },
     });
+    (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockImplementation(
+      async (userId, queueTypeId, queueType) => {
+        // Mock behavior: if queueTypeId provided, use it; otherwise resolve from queueType name
+        if (queueTypeId) return queueTypeId;
+        if (queueType === "posts") return "queue-1";
+        return null;
+      },
+    );
     (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       statusText: "OK",
@@ -79,6 +92,11 @@ describe("New Post Action Handler", () => {
 
       const result = await handleNewPostAction(TEST_USER_ID, request);
 
+      expect(resolveQueueTypeId).toHaveBeenCalledWith(
+        TEST_USER_ID,
+        "queue-1",
+        "posts",
+      );
       expect(createPost).toHaveBeenCalledWith(
         expect.objectContaining({
           userId: TEST_USER_ID,
@@ -89,8 +107,7 @@ describe("New Post Action Handler", () => {
           isPosted: false,
           postType: "TEXT",
           draft: true,
-          queueType: "posts",
-          queueTypeId: "queue-1",
+          queueTypeId: "queue-1", // Now only queueTypeId is passed
         }),
       );
       expect(result).toBeInstanceOf(Response);
@@ -495,10 +512,14 @@ describe("New Post Action Handler", () => {
 
       await handleNewPostAction(TEST_USER_ID, request);
 
+      expect(resolveQueueTypeId).toHaveBeenCalledWith(
+        TEST_USER_ID,
+        null,
+        "unassigned",
+      );
       expect(createPost).toHaveBeenCalledWith(
         expect.objectContaining({
-          queueType: "unassigned",
-          queueTypeId: null,
+          queueTypeId: null, // Resolved to null for "unassigned"
         }),
       );
     });

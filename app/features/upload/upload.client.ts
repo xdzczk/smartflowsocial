@@ -1,9 +1,11 @@
 // Type declaration for window.nostr
+import type { NostrEventData, SignedEvent } from "~/features/nostr/types";
+
 declare global {
   interface Window {
     nostr?: {
       getPublicKey(): Promise<string>;
-      signEvent(event: any): Promise<any>;
+      signEvent(event: NostrEventData): Promise<SignedEvent>;
     };
   }
 }

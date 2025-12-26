@@ -11,13 +11,14 @@ import PostedPostsTable from "~/features/posts/components/PostedPostsTable";
 import PostedPostsTabs from "~/features/posts/components/PostedPostsTabs";
 import { usePostedPosts } from "~/features/posts/usePostedPosts";
 import Toast from "~/components/ui/Toast";
+import { withErrorHandling } from "~/lib/error-handler.server";
 
 // Re-export action from server module
 export { postedPostsAction as action } from "~/features/posts/posted.action.server";
 
 import { getPostedDashboardData } from "~/features/posts/posts.server";
 
-export async function loader({ request, params }: { request: Request; params: { queueType?: string } }) {
+export const loader = withErrorHandling(async ({ request, params }: { request: Request; params: { queueType?: string } }) => {
   const userId = await requireUserId(request);
   // Require that the user has at least a subscription record
   await requireAnySubscription(userId);
@@ -26,8 +27,8 @@ export async function loader({ request, params }: { request: Request; params: { 
 
   const data = await getPostedDashboardData({ userId, params, url });
 
-  return json(data);
-}
+  return data;
+});
 
 export default function PostedPosts() {
   const data = useLoaderData<typeof loader>();

@@ -134,6 +134,116 @@ To ensure a consistent and maintainable codebase, please follow these coding sta
 - **Utils**: `app/utils/` - Utility functions and helpers
 - **Styles**: `app/tailwind.css` - Global styles
 
+### 4.1. **Architecture Boundaries**
+
+To maintain clear separation of concerns, follow these strict boundaries:
+
+#### **`app/models/*` - Database Access Layer**
+- **Purpose**: Pure database access and persistence primitives
+- **What belongs here**:
+  - Prisma queries (CRUD operations)
+  - Database transactions
+  - Raw SQL queries (if needed)
+  - Data access patterns (find, create, update, delete)
+- **What does NOT belong here**:
+  - Business logic or workflows
+  - Permission checks or authorization
+  - Plan enforcement or subscription validation
+  - Scheduling decisions or business rules
+  - Complex calculations or statistics (unless purely data aggregation)
+
+**Example**:
+```typescript
+// ✅ Good: Pure data access
+export async function createPost(data: CreatePostData) {
+  return prisma.post.create({ data });
+}
+
+// ❌ Bad: Business logic in model
+export async function createPost(data: CreatePostData) {
+  if (user.subscription.status !== 'active') {
+    throw new Error('Subscription required');
+  }
+  // ... business logic
+}
+```
+
+#### **`app/features/*` - Business Logic Layer**
+- **Purpose**: Business workflows, policies, and feature-specific logic
+- **What belongs here**:
+  - Business workflows and orchestration
+  - Permission checks and authorization
+  - Plan enforcement and subscription validation
+  - Scheduling decisions and business rules
+  - Feature-specific services and handlers
+  - Complex calculations and business logic
+- **What does NOT belong here**:
+  - Direct Prisma queries (use models instead)
+  - Database schema definitions
+  - Raw database operations
+
+**Example**:
+```typescript
+// ✅ Good: Business logic in features
+export async function schedulePost(userId: string, postData: PostData) {
+  await requireFeatureAccess(userId, 'scheduling');
+  const user = await getUserById(userId);
+  if (!user.subscription) {
+    throw new AuthorizationError('Subscription required');
+  }
+  return createPost({ ...postData, userId });
+}
+
+// ❌ Bad: Direct database access in features
+export async function schedulePost(userId: string, postData: PostData) {
+  return prisma.post.create({ data: { ...postData, userId } });
+}
+```
+
+#### **`app/routes/*` - HTTP Wiring Layer**
+- **Purpose**: HTTP request/response handling and UI composition
+- **What belongs here**:
+  - Request parsing (formData, params, searchParams)
+  - Response formatting (json, redirect, etc.)
+  - UI component composition
+  - Minimal orchestration (calling feature services)
+- **What does NOT belong here**:
+  - Business logic (delegate to features)
+  - Database queries (delegate to models)
+  - Complex calculations
+  - Permission logic (delegate to features)
+
+**Example**:
+```typescript
+// ✅ Good: HTTP wiring with minimal orchestration
+export async function action({ request }: ActionFunctionArgs) {
+  const userId = await requireUserId(request);
+  const formData = await request.formData();
+  const result = await schedulePost(userId, parseFormData(formData));
+  return json(result);
+}
+
+// ❌ Bad: Business logic in routes
+export async function action({ request }: ActionFunctionArgs) {
+  const userId = await requireUserId(request);
+  const user = await getUserById(userId);
+  if (!user.subscription) {
+    return json({ error: 'Subscription required' }, { status: 403 });
+  }
+  // ... business logic
+}
+```
+
+#### **Summary Table**
+
+| Directory | Purpose | Contains | Does NOT Contain |
+|-----------|---------|----------|------------------|
+| `app/models/*` | Database access | Prisma queries, transactions, data access | Business logic, permissions, workflows |
+| `app/features/*` | Business logic | Workflows, permissions, plan enforcement, scheduling | Direct Prisma queries, HTTP handling |
+| `app/routes/*` | HTTP wiring | Request parsing, response formatting, UI composition | Business logic, database queries |
+
+**When in doubt**: Ask yourself "Is this about data access, business rules, or HTTP handling?" and place it accordingly.
+
 ### 5. **Comments & Documentation**
 
 - Write clear, concise comments for complex logic

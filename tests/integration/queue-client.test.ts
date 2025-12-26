@@ -1,7 +1,7 @@
 /**
  * Integration tests for queue client
  * 
- * Tests the queue client in app/infra/queue/queue-client.ts
+ * Tests the queue client in app/infra/queue/queue-client.server.ts
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -47,7 +47,7 @@ vi.mock("ioredis", () => {
 });
 
 // Import after mocks are set up
-import { queueClient, getQueueInstance } from "~/infra/queue/queue-client";
+import { queueClient, getQueueInstance } from "~/infra/queue/queue-client.server";
 
 describe("Queue Client", () => {
   beforeEach(() => {

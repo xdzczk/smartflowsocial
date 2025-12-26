@@ -1,13 +1,13 @@
 /**
  * Integration tests for queue operations
  * 
- * Tests the queue operations in app/infra/queue/queue-operations.ts
+ * Tests the queue operations in app/infra/queue/queue-operations.server.ts
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock dependencies
-vi.mock("~/infra/queue/queue-client", () => ({
+vi.mock("~/infra/queue/queue-client.server", () => ({
   queueClient: {
     enqueue: vi.fn(),
     cancelByData: vi.fn(),
@@ -20,8 +20,8 @@ import {
   enqueueLongFormPostJob,
   cancelLongFormPostJob,
   enqueuePostCheckerJob,
-} from "~/infra/queue/queue-operations";
-import { queueClient } from "~/infra/queue/queue-client";
+} from "~/infra/queue/queue-operations.server";
+import { queueClient } from "~/infra/queue/queue-client.server";
 import { TEST_USER_ID } from "../utils/test-helpers";
 
 describe("Queue Operations", () => {

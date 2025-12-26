@@ -1,17 +1,13 @@
 import { useState, useEffect } from "react";
 import { useFetcher } from "@remix-run/react";
 
-import type { CombinedContent, LongFormPostData } from "~/features/posts/types";
+import type { CombinedContent, LongFormPostData, PostData } from "~/features/posts/types";
 
-interface Post {
-  id: string;
-  caption?: string | null;
-  scheduledFor: string;
-  [key: string]: unknown;
-}
+// Union type for posts that can be edited/rescheduled
+type EditablePost = PostData | LongFormPostData;
 
 interface UseScheduledStateProps {
-  scheduledPosts: Post[];
+  scheduledPosts: PostData[];
   userTimezone?: string | null;
   allContent?: CombinedContent[];
   currentTab: string;
@@ -33,7 +29,7 @@ export function useScheduledState({
   });
   const [searchTerm, setSearchTerm] = useState("");
   const [countdowns, setCountdowns] = useState<Record<string, string>>({});
-  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [selectedPost, setSelectedPost] = useState<PostData | null>(null);
   const [selectedPosts, setSelectedPosts] = useState<Set<string>>(new Set());
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
   const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
@@ -41,8 +37,8 @@ export function useScheduledState({
   const [selectedLongFormPost, setSelectedLongFormPost] = useState<LongFormPostData | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
-  const [postToEdit, setPostToEdit] = useState<Post | null>(null);
-  const [postToReschedule, setPostToReschedule] = useState<Post | null>(null);
+  const [postToEdit, setPostToEdit] = useState<EditablePost | null>(null);
+  const [postToReschedule, setPostToReschedule] = useState<EditablePost | null>(null);
   const bulkDeleteFetcher = useFetcher();
   const deleteFetcher = useFetcher();
 
@@ -56,7 +52,8 @@ export function useScheduledState({
       const newCountdowns: Record<string, string> = {};
 
       scheduledPosts.forEach((post) => {
-        const utcTime = parseInt(post.scheduledFor) * 1000;
+        const scheduledFor = typeof post.scheduledFor === "string" ? post.scheduledFor : String(post.scheduledFor || "0");
+        const utcTime = parseInt(scheduledFor) * 1000;
         const userTime = new Date(utcTime).toLocaleString("en-US", {
           timeZone: tz,
         });
@@ -95,12 +92,14 @@ export function useScheduledState({
   // Sort posts
   const sortedPosts = [...scheduledPosts].sort((a, b) => {
     if (sortConfig.key === "scheduledFor") {
-      const dateA = parseInt(a[sortConfig.key]) * 1000;
-      const dateB = parseInt(b[sortConfig.key]) * 1000;
+      const aScheduledFor = typeof a.scheduledFor === "string" ? a.scheduledFor : String(a.scheduledFor || "0");
+      const bScheduledFor = typeof b.scheduledFor === "string" ? b.scheduledFor : String(b.scheduledFor || "0");
+      const dateA = parseInt(aScheduledFor) * 1000;
+      const dateB = parseInt(bScheduledFor) * 1000;
       return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
     }
-    const aValue = a[sortConfig.key];
-    const bValue = b[sortConfig.key];
+    const aValue = (a as Record<string, unknown>)[sortConfig.key];
+    const bValue = (b as Record<string, unknown>)[sortConfig.key];
     if (aValue < bValue)
       return sortConfig.direction === "asc" ? -1 : 1;
     if (aValue > bValue)

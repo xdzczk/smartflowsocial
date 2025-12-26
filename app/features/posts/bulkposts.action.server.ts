@@ -7,6 +7,7 @@ import { json, redirect } from "@remix-run/node";
 import { requireUserId } from "~/features/auth/session.server";
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 import { createPost, updatePost } from "~/models/post.server";
+import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
 import { isVideoUrl } from "~/utils/media-helpers";
 
 /**
@@ -165,6 +166,9 @@ export async function handleSignAndSchedule(
             const isVideo = isVideoUrl(fileUrl);
             const postType = isVideo ? "VIDEO" : "IMAGE";
 
+            // Resolve queue type ID in feature layer (business logic)
+            const resolvedQueueTypeId = await resolveQueueTypeId(userId, null, queueType);
+
             const post = await createPost({
                 userId,
                 content,
@@ -178,7 +182,7 @@ export async function handleSignAndSchedule(
                 isScheduled: true,
                 isPosted: false,
                 postType: postType,
-                queueType: queueType,
+                queueTypeId: resolvedQueueTypeId,
                 repost: signedEvent.kind === 6, // Mark as repost if it's kind 6
                 isQuotedPost: isQuotePost, // Use the calculated value
                 isRecyclable,
@@ -251,6 +255,9 @@ export async function handleSaveAsDraft(
             const isVideo = isVideoUrl(fileUrl);
             const postType = isVideo ? "VIDEO" : "IMAGE";
 
+            // Resolve queue type ID in feature layer (business logic)
+            const resolvedQueueTypeId = await resolveQueueTypeId(userId, null, queueType);
+
             const post = await createPost({
                 userId,
                 content: caption,
@@ -260,7 +267,7 @@ export async function handleSaveAsDraft(
                 isPosted: false,
                 postType: postType,
                 tags: [],
-                queueType: queueType,
+                queueTypeId: resolvedQueueTypeId,
                 draft: true,
                 isRecyclable,
             });

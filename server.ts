@@ -13,6 +13,13 @@ import express from "express";
 import morgan from "morgan";
 import sourceMapSupport from "source-map-support";
 
+import {
+  apiLimiter,
+  strictLimiter,
+  authLimiter,
+} from "./app/lib/rate-limit.server";
+import helmet from "helmet";
+
 sourceMapSupport.install();
 installGlobals();
 
@@ -38,6 +45,10 @@ async function run() {
 
   const app = express();
   const metricsApp = express();
+  
+  // Import query metrics to register them
+  await import("./app/lib/query-metrics.server");
+  
   app.use(
     prom({
       metricsPath: "/metrics",
@@ -93,6 +104,83 @@ async function run() {
   // http://expressjs.com/en/advanced/best-practice-security.html#at-a-minimum-disable-x-powered-by-header
   app.disable("x-powered-by");
 
+  // Security headers with Helmet
+  // Configure CSP to work with Remix (which uses inline scripts/styles)
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: [
+            "'self'",
+            "'unsafe-inline'", // Required for Remix
+            "'unsafe-eval'", // Required for Remix in development
+          ],
+          styleSrc: [
+            "'self'",
+            "'unsafe-inline'", // Required for Remix
+          ],
+          imgSrc: ["'self'", "data:", "https:", "blob:"],
+          connectSrc: [
+            "'self'",
+            "wss:", // WebSocket connections for Nostr
+            "https:", // External API calls
+          ],
+          fontSrc: ["'self'", "data:"],
+          objectSrc: ["'none'"],
+          mediaSrc: ["'self'"],
+          frameSrc: ["'none'"],
+          baseUri: ["'self'"],
+          formAction: ["'self'"],
+          upgradeInsecureRequests: process.env.NODE_ENV === "production" ? [] : null,
+        },
+      },
+      hsts: {
+        maxAge: 31536000, // 1 year
+        includeSubDomains: true,
+        preload: true,
+      },
+      frameguard: {
+        action: "deny",
+      },
+      noSniff: true,
+      xssFilter: true,
+      referrerPolicy: {
+        policy: "strict-origin-when-cross-origin",
+      },
+      permissionsPolicy: {
+        features: {
+          geolocation: ["'none'"],
+          microphone: ["'none'"],
+          camera: ["'none'"],
+        },
+      },
+    }),
+  );
+
+  // Additional custom security headers
+  app.use((req, res, next) => {
+    // X-Content-Type-Options: Prevent MIME type sniffing
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    
+    // X-Frame-Options: Prevent clickjacking (redundant with helmet frameguard, but explicit)
+    res.setHeader("X-Frame-Options", "DENY");
+    
+    // X-XSS-Protection: Enable XSS filter (legacy browsers)
+    res.setHeader("X-XSS-Protection", "1; mode=block");
+    
+    // Referrer-Policy: Control referrer information (redundant with helmet, but explicit)
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    
+    // Permissions-Policy: Control browser features (redundant with helmet, but explicit)
+    res.setHeader(
+      "Permissions-Policy",
+      "geolocation=(), microphone=(), camera=()",
+    );
+    
+    next();
+  });
+
   // Remix fingerprints its assets so we can cache forever.
   app.use(
     "/build",
@@ -104,6 +192,23 @@ async function run() {
   app.use(express.static("public", { maxAge: "1h" }));
 
   app.use(morgan("tiny"));
+
+  // Rate limiting
+  // Apply general API rate limiting to all API routes
+  app.use("/api/", apiLimiter);
+  
+  // Stricter limits for sensitive endpoints
+  app.use("/api/publish", strictLimiter);
+  app.use("/api/upload", strictLimiter);
+  app.use("/api/upload-blossom", strictLimiter);
+  app.use("/api/upload-editorjs-image", strictLimiter);
+  
+  // Very strict limits for authentication endpoints
+  app.use("/api/payment-status", strictLimiter);
+  
+  // Auth endpoints get the strictest limits
+  app.use("/login", authLimiter);
+  app.use("/nostr-auth", authLimiter);
 
   app.all("*", remixHandler);
 

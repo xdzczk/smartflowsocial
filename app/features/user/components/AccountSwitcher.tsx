@@ -5,6 +5,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import { useSubscription } from "~/features/payments/types";
 import { useOptionalUser } from "~/lib/remix-utils";
+import type { NostrEventData } from "~/features/nostr/types";
 
 interface ChildAccount {
   npub: string;
@@ -14,7 +15,7 @@ interface ChildAccount {
 }
 
 export default function AccountSwitcher() {
-  const user = useOptionalUser() as any;
+  const user = useOptionalUser();
   const subscription = useSubscription();
   const fetcher = useFetcher<{ children: ChildAccount[] }>();
   const [children, setChildren] = React.useState<ChildAccount[]>([]);
@@ -49,12 +50,12 @@ export default function AccountSwitcher() {
           if (window.nostr) {
             const randomKeys = () => Math.random().toString(36).slice(2, 12);
             const contentSign = `Switch account ${randomKeys()}`;
-            const event = {
+            const event: NostrEventData = {
               kind: 27235,
               created_at: Math.floor(Date.now() / 1000),
               tags: [],
               content: contentSign,
-            } as any;
+            };
 
             const signedEvent = await window.nostr.signEvent(event);
             if (signedEvent.pubkey !== childNpub) {
