@@ -119,3 +119,4 @@ You should see the new indexes:
 3. Test query performance
 4. Monitor slow query logs
 
+

@@ -248,3 +248,4 @@ Install k6 using the instructions above.
 - [ ] CPU profiling during load tests
 
 
+

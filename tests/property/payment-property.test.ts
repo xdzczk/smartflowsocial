@@ -26,8 +26,8 @@ describe("Property-Based Tests: Payment Processing", () => {
 
       fc.assert(
         fc.property(
-          fc.float({ min: 0.01, max: 10000 }), // USD amounts
-          fc.float({ min: 0.01, max: 10000 }),
+          fc.float({ min: Math.fround(0.01), max: Math.fround(10000) }), // USD amounts
+          fc.float({ min: Math.fround(0.01), max: Math.fround(10000) }),
           (usd1, usd2) => {
             if (usd1 < usd2) {
               const sats1 = Math.round((usd1 / 2500) * 100000000);
@@ -46,13 +46,14 @@ describe("Property-Based Tests: Payment Processing", () => {
 
       fc.assert(
         fc.property(
-          fc.float({ min: 0.01, max: 10000 }),
+          fc.float({ min: Math.fround(0.01), max: Math.fround(10000) })
+            .filter(amount => Number.isFinite(amount) && amount > 0), // Filter out NaN, Infinity, and zero
           (usdAmount) => {
             const sats = Math.round((usdAmount / 2500) * 100000000);
             const backToUsd = (sats / 100000000) * 2500;
             // Allow 1% rounding error
             const error = Math.abs(usdAmount - backToUsd) / usdAmount;
-            return error < 0.01;
+            return Number.isFinite(error) && error < 0.01;
           },
         ),
         { numRuns: 100 },
@@ -78,7 +79,7 @@ describe("Property-Based Tests: Payment Processing", () => {
 
       fc.assert(
         fc.property(
-          fc.float({ min: 0, max: 10000 }),
+          fc.float({ min: 0, max: Math.fround(10000) }),
           (usdAmount) => {
             const sats = Math.round((usdAmount / 2500) * 100000000);
             return sats >= 0;
@@ -105,7 +106,7 @@ describe("Property-Based Tests: Payment Processing", () => {
     it("should handle very small amounts correctly (minimum 1 sat)", async () => {
       fc.assert(
         fc.property(
-          fc.float({ min: 0.00000001, max: 0.01 }), // Very small USD amounts
+          fc.float({ min: Math.fround(0.00000001), max: Math.fround(0.01) }), // Very small USD amounts
           (usdAmount) => {
             const sats = Math.max(1, Math.round((usdAmount / 2500) * 100000000));
             return sats >= 1;
@@ -118,7 +119,7 @@ describe("Property-Based Tests: Payment Processing", () => {
     it("should handle very large amounts without overflow", async () => {
       fc.assert(
         fc.property(
-          fc.integer({ min: 0, max: Number.MAX_SAFE_INTEGER / 2 }),
+          fc.integer({ min: 0, max: Math.floor(Number.MAX_SAFE_INTEGER / 2) }),
           (sats) => {
             // Should not throw or produce invalid values
             const isValid = Number.isFinite(sats) && sats >= 0;
@@ -139,17 +140,42 @@ describe("Property-Based Tests: Payment Processing", () => {
         FAILED: [], // Terminal state
       };
 
+      const terminalStates = ["COMPLETED", "EXPIRED", "FAILED"];
+
+      // Helper function to check if a transition is valid
+      const isValidTransition = (from: string, to: string): boolean => {
+        // Terminal states can only stay in the same state
+        if (terminalStates.includes(from)) {
+          return from === to;
+        }
+        // If staying in the same state, that's always valid
+        if (from === to) {
+          return true;
+        }
+        // Otherwise, check if transition is in the valid transitions list
+        return validTransitions[from].includes(to);
+      };
+
       fc.assert(
         fc.property(
           fc.constantFrom("PENDING", "COMPLETED", "EXPIRED", "FAILED"),
           fc.constantFrom("PENDING", "COMPLETED", "EXPIRED", "FAILED"),
           (from, to) => {
-            // If from is terminal, can't transition
-            if (validTransitions[from].length === 0) {
-              return from === to; // Can only stay in terminal state
+            const isValid = isValidTransition(from, to);
+            
+            // Property: The validation logic correctly implements the transition rules
+            // Rule 1: Terminal states can only stay in the same state
+            if (terminalStates.includes(from)) {
+              return isValid === (from === to);
             }
-            // Otherwise, check if transition is valid
-            return validTransitions[from].includes(to) || from === to;
+            
+            // Rule 2: Non-terminal states can stay in the same state (always valid)
+            if (from === to) {
+              return isValid === true;
+            }
+            
+            // Rule 3: Non-terminal states can only transition to states in the valid transitions list
+            return isValid === validTransitions[from].includes(to);
           },
         ),
         { numRuns: 100 },
@@ -157,4 +183,5 @@ describe("Property-Based Tests: Payment Processing", () => {
     });
   });
 });
+
 

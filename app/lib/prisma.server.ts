@@ -35,7 +35,7 @@ function getPrismaClient() {
   // that this only runs once per server restart and won't automatically be
   // re-run per request like everything else is. So if you need to change
   // something in this file, you'll need to manually restart the server.
-  const client = new PrismaClient({
+  const baseClient = new PrismaClient({
     datasources: {
       db: {
         url: databaseUrl.toString(),
@@ -47,67 +47,71 @@ function getPrismaClient() {
       : ["error"],
   });
   
-  // Add query performance monitoring middleware
-  client.$use(async (params, next) => {
-    const before = Date.now();
-    let success = true;
-    let error: Error | undefined;
-    
-    try {
-      const result = await next(params);
-      const after = Date.now();
-      const duration = after - before;
-      
-      // Record metrics
-      recordQueryMetrics(
-        params.model || "unknown",
-        params.action,
-        duration,
-        true,
-      );
-      
-      // Log slow queries (over 100ms)
-      if (duration > 100) {
-        console.warn(
-          `⚠️ Slow query detected: ${params.model}.${params.action} took ${duration}ms`,
-          {
-            model: params.model,
-            action: params.action,
-            duration,
-            args: params.args,
-          },
-        );
-      }
-      
-      return result;
-    } catch (err) {
-      success = false;
-      error = err instanceof Error ? err : new Error(String(err));
-      const after = Date.now();
-      const duration = after - before;
-      
-      // Record error metrics
-      recordQueryMetrics(
-        params.model || "unknown",
-        params.action,
-        duration,
-        false,
-        error,
-      );
-      
-      // Log query errors
-      console.error(
-        `❌ Query error: ${params.model}.${params.action} failed after ${duration}ms`,
-        {
-          model: params.model,
-          action: params.action,
-          error: error.message,
-          duration,
+  // Add query performance monitoring middleware using $extends (Prisma 5+)
+  const client = baseClient.$extends({
+    query: {
+      $allModels: {
+        async $allOperations({ model, operation, args, query }) {
+          const before = Date.now();
+          let error: Error | undefined;
+          
+          try {
+            const result = await query(args);
+            const after = Date.now();
+            const duration = after - before;
+            
+            // Record metrics
+            recordQueryMetrics(
+              model || "unknown",
+              operation,
+              duration,
+              true,
+            );
+            
+            // Log slow queries (over 100ms)
+            if (duration > 100) {
+              console.warn(
+                `⚠️ Slow query detected: ${model}.${operation} took ${duration}ms`,
+                {
+                  model,
+                  operation,
+                  duration,
+                  args,
+                },
+              );
+            }
+            
+            return result;
+          } catch (err) {
+            error = err instanceof Error ? err : new Error(String(err));
+            const after = Date.now();
+            const duration = after - before;
+            
+            // Record error metrics
+            recordQueryMetrics(
+              model || "unknown",
+              operation,
+              duration,
+              false,
+              error,
+            );
+            
+            // Log query errors
+            console.error(
+              `❌ Query error: ${model}.${operation} failed after ${duration}ms`,
+              {
+                model,
+                operation,
+                error: error.message,
+                duration,
+              },
+            );
+            
+            throw err;
+          }
         },
-      );
-      
-      throw err;
-    }
+      },
+    },
   });
   
   // connect eagerly

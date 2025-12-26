@@ -39,3 +39,4 @@ FROM pg_stat_user_indexes
 WHERE tablename IN ('Post', 'LongFormPost')
 ORDER BY tablename, indexname;
 
+

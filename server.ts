@@ -38,6 +38,11 @@ function validateEnvironment(): void {
     'SESSION_SECRET',
     'NOSTR_PUBLISHER_URL',
     'REDIS_URL',
+  ];
+
+  // Storage variables are optional - only required if using image uploads
+  // If any storage variable is set, all must be set
+  const storageVariables = [
     'STORAGE_ACCESS_KEY',
     'STORAGE_SECRET',
     'STORAGE_REGION',
@@ -72,6 +77,18 @@ function validateEnvironment(): void {
         });
       }
     }
+  }
+
+  // Validate storage variables: if any is set, all must be set
+  const storageValues = storageVariables.map(key => process.env[key]);
+  const hasSomeStorage = storageValues.some(v => v && v.trim() !== '');
+  const hasAllStorage = storageValues.every(v => v && v.trim() !== '');
+
+  if (hasSomeStorage && !hasAllStorage) {
+    missing.push(...storageVariables.filter(key => {
+      const value = process.env[key];
+      return !value || value.trim() === '';
+    }));
   }
 
   if (missing.length > 0 || invalid.length > 0) {

@@ -33,6 +33,7 @@
     "test:e2e": "cypress run",
     "test:e2e:open": "cypress open",
     "test:e2e:dev": "start-server-and-test dev http://localhost:3000 \"npx cypress open\"",
+    "test:e2e:run": "start-server-and-test dev http://localhost:3000 \"cypress run\"",
     "test:loaders": "cypress run --spec \"tests/e2e/loaders/**/*.cy.ts\"",
     "typecheck": "tsc && tsc -p tests/e2e",
     "precheck": "npm run lint && npx tsc --noEmit",
