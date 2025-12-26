@@ -10,6 +10,21 @@ import { redirect } from "@remix-run/node";
 // Mock global fetch
 global.fetch = vi.fn();
 
+// Mock Prisma to prevent $use errors and provide necessary methods
+const { mockPrisma } = vi.hoisted(() => {
+  const mockPrisma = {
+    $use: vi.fn(),
+    queueType: {
+      findFirst: vi.fn(),
+    },
+  };
+  return { mockPrisma };
+});
+
+vi.mock("~/lib/prisma.server", () => ({
+  prisma: mockPrisma,
+}));
+
 // Mock dependencies
 vi.mock("~/features/posts/longform.server", () => ({
   convertEditorJSToMarkdown: vi.fn((data) => `Markdown: ${JSON.stringify(data)}`),
@@ -180,6 +195,9 @@ describe("New Longform Action Handler", () => {
       (getQueueTypeByNameForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
         createMockQueueType({ id: "queue-1", name: "posts" }),
       );
+      (mockPrisma.queueType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: "queue-1",
+      });
       // Mock getQueueTypes for when useHashtagPresets is "off"
       (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([
         {
@@ -318,6 +336,9 @@ describe("New Longform Action Handler", () => {
     });
 
     it("should publish post with all required fields", async () => {
+      (mockPrisma.queueType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: "queue-1",
+      });
       const mockSignedEvent = { id: "event-123", kind: 30023 };
       const mockNostrEvent = { id: "event-123", kind: 30023 };
 
@@ -500,6 +521,9 @@ describe("New Longform Action Handler", () => {
     });
 
     it("should schedule post with published_at tag", async () => {
+      (mockPrisma.queueType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: "queue-1",
+      });
       const mockSignedEvent = {
         id: "event-123",
         kind: 30023,
@@ -557,6 +581,9 @@ describe("New Longform Action Handler", () => {
 
   describe("Hashtag Preset Handling", () => {
     it("should use manual hashtag preset when enabled", async () => {
+      (mockPrisma.queueType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: "queue-1",
+      });
       (getHashTagPresetById as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: "preset-1",
         tags: "#custom #tags",
@@ -587,6 +614,9 @@ describe("New Longform Action Handler", () => {
     });
 
     it("should use queue type default when manual presets disabled", async () => {
+      (mockPrisma.queueType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: "queue-1",
+      });
       (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([
         {
           id: "queue-1",

@@ -11,6 +11,16 @@ import { redirect } from "@remix-run/node";
 // Set up environment variable before mocking
 process.env.SESSION_SECRET = "test-secret-key-for-testing";
 
+// Mock Prisma to prevent $use middleware errors
+vi.mock("~/lib/prisma.server", () => ({
+  prisma: {
+    $use: vi.fn(),
+    user: {
+      findUnique: vi.fn(),
+    },
+  },
+}));
+
 // Create mock function that will be used
 const mockGetSession = vi.fn();
 

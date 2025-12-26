@@ -6,6 +6,7 @@
 
 import type { AppError } from "./errors";
 import { recordErrorMetric } from "./error-metrics.server";
+import { sanitizeObject, sanitizeError } from "./secrets-sanitizer.server";
 
 export type LogLevel = "error" | "warn" | "info" | "debug";
 
@@ -49,6 +50,7 @@ interface ErrorLogEntry {
 
 /**
  * Log an error with structured output
+ * Automatically sanitizes sensitive data (NWC strings, secrets, etc.)
  */
 export function logError(
   error: AppError | Error,
@@ -82,21 +84,32 @@ export function logError(
     environment: process.env.NODE_ENV || "development",
   };
 
+  // Sanitize log entry to prevent secrets from appearing in logs
+  const sanitizedError = sanitizeError(error);
+  const sanitizedLogEntry = sanitizeObject({
+    ...logEntry,
+    error: {
+      ...logEntry.error,
+      message: sanitizedError.message,
+      stack: sanitizedError.stack,
+    },
+  });
+
   // In production, you might want to send to an external service
   // For now, we'll use structured console logging
   if (process.env.NODE_ENV === "production") {
     // In production, log as JSON for log aggregation services
-    console.error(JSON.stringify(logEntry));
+    console.error(JSON.stringify(sanitizedLogEntry));
   } else {
     // In development, use more readable format
     console.error("\n❌ Error:", {
-      message: logEntry.error.message,
+      message: sanitizedError.message,
       code: logEntry.error.code,
       statusCode: logEntry.error.statusCode,
       path: logEntry.request?.path,
       method: logEntry.request?.method,
       userId: logEntry.user?.id,
-      ...(context.includeStack && { stack: error.stack }),
+      ...(context.includeStack && sanitizedError.stack && { stack: sanitizedError.stack }),
     });
   }
 

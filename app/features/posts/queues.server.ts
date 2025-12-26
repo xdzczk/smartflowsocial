@@ -17,6 +17,7 @@ import {
   getCronDueScheduledPosts,
 } from "~/models/post.server";
 import { getUserById } from "~/models/user.server";
+import { prisma } from "~/lib/prisma.server";
 import {
   getQueueInstance,
   redis,
@@ -39,7 +40,23 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
     const { postId, userId, signedEvent } = job.data;
 
     try {
-      // Update post status to posted
+      // Idempotency check: verify post exists and is not already posted
+      const existingPost = await prisma.post.findUnique({
+        where: { id: postId, userId },
+        select: { isPosted: true, nostrEventId: true },
+      });
+
+      if (!existingPost) {
+        throw new Error(`Post ${postId} not found for user ${userId}`);
+      }
+
+      // If already posted, skip processing (idempotency)
+      if (existingPost.isPosted) {
+        console.log(`Post ${postId} already posted, skipping duplicate job`);
+        return { success: true, postId, skipped: true };
+      }
+
+      // Update post status to posted (atomic operation)
       await updatePostStatus({
         id: postId,
         userId: userId,
@@ -90,7 +107,23 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
     const { postId, userId, signedEvent } = job.data;
 
     try {
-      // Update longform post status to published
+      // Idempotency check: verify post exists and is not already published
+      const existingPost = await prisma.longFormPost.findUnique({
+        where: { id: postId, userId },
+        select: { isPublished: true, nostrEventId: true },
+      });
+
+      if (!existingPost) {
+        throw new Error(`Longform post ${postId} not found for user ${userId}`);
+      }
+
+      // If already published, skip processing (idempotency)
+      if (existingPost.isPublished) {
+        console.log(`Longform post ${postId} already published, skipping duplicate job`);
+        return { success: true, postId, skipped: true };
+      }
+
+      // Update longform post status to published (atomic operation)
       await updateLongFormPostStatus({
         id: postId,
         userId: userId,

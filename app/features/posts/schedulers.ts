@@ -5,6 +5,8 @@ import { getScheduleInterval } from "~/models/user.server";
 import type {
   QueueType as TypedQueueType,
   ScheduleConfig,
+} from "~/features/posts/types";
+import {
   isIntervalScheduleConfig,
   isFixedSlotsScheduleConfig,
 } from "~/features/posts/types";
@@ -77,7 +79,8 @@ async function calculateNextScheduleTimeInternal({
     // Validate queueType structure
     if (!queueType || !queueType.scheduleType) {
       console.error("Invalid queueType:", queueType);
-      return now;
+      // Return now + 1000ms to ensure it's in the future
+      return new Date(now.getTime() + 1000);
     }
 
     if (queueType.scheduleType === "INTERVAL") {
@@ -91,16 +94,20 @@ async function calculateNextScheduleTimeInternal({
           const nextTime = new Date(lastPostTime.getTime() + 4 * 60 * 60 * 1000);
           // Ensure the date is valid
           if (!(nextTime instanceof Date) || isNaN(nextTime.getTime())) {
-            return now;
+            return new Date(now.getTime() + 1000);
           }
           // Always ensure the returned time is in the future or present
           // Check against baseTime (now) to ensure consistent test behavior
-          return nextTime >= now ? nextTime : now;
+          if (nextTime >= now) {
+            return nextTime;
+          } else {
+            return new Date(now.getTime() + 1000);
+          }
         }
         const futureTime = new Date(now.getTime() + 4 * 60 * 60 * 1000);
         // Ensure the date is valid
         if (!(futureTime instanceof Date) || isNaN(futureTime.getTime())) {
-          return now;
+          return new Date(now.getTime() + 1000);
         }
         return futureTime;
       }
@@ -146,10 +153,16 @@ async function calculateNextScheduleTimeInternal({
           }
           // Always ensure the returned time is in the future or present
           // Check against baseTime (now) to ensure consistent test behavior
-          return nextTime >= now ? nextTime : now;
+          if (nextTime >= now) {
+            return nextTime;
+          } else {
+            // If calculated time is in the past, return now + 1 second to ensure it's in the future
+            return new Date(now.getTime() + 1000);
+          }
         } else {
-          // No previous posts or invalid lastPostTime, schedule for now
-          return now;
+          // No previous posts or invalid lastPostTime, schedule for now + 1 second
+          // to ensure it's always in the future
+          return new Date(now.getTime() + 1000);
         }
       }
     } else if (queueType.scheduleType === "FIXED_SLOTS") {
@@ -159,8 +172,8 @@ async function calculateNextScheduleTimeInternal({
         : [];
 
       if (slots.length === 0) {
-        // No slots configured, fallback to immediate
-        return now;
+        // No slots configured, fallback to now + 1 second to ensure it's in the future
+        return new Date(now.getTime() + 1000);
       }
 
       // Sort slots to ensure consistent ordering
@@ -203,7 +216,7 @@ async function calculateNextScheduleTimeInternal({
           utcSlot.setUTCHours(hours, minutes, 0, 0);
           // Ensure the date is valid
           if (isNaN(utcSlot.getTime())) {
-            return now;
+            return new Date(now.getTime() + 1000);
           }
           return utcSlot;
         }
@@ -244,7 +257,7 @@ async function calculateNextScheduleTimeInternal({
           if (testHours === hours && testMinutes === minutes) {
             // Ensure the date is valid
             if (isNaN(testUTC.getTime())) {
-              return actualBaseDate;
+              return new Date(now.getTime() + 1000);
             }
             return testUTC;
           }
@@ -268,7 +281,7 @@ async function calculateNextScheduleTimeInternal({
 
         // Ensure the date is valid before returning
         if (isNaN(testUTC.getTime())) {
-          return now;
+          return new Date(now.getTime() + 1000);
         }
         return testUTC;
       } catch (error) {
@@ -282,7 +295,7 @@ async function calculateNextScheduleTimeInternal({
         utcSlot.setUTCHours(hours, minutes, 0, 0);
         // Ensure the date is valid
         if (isNaN(utcSlot.getTime())) {
-          return now;
+          return new Date(now.getTime() + 1000);
         }
         return utcSlot;
       }
@@ -386,12 +399,12 @@ async function calculateNextScheduleTimeInternal({
           // Ensure the fallback slot is valid and in the future or present
           // Check against baseTime (now) to ensure consistent test behavior
           if (!(fallbackSlot instanceof Date) || isNaN(fallbackSlot.getTime()) || fallbackSlot < now) {
-            return now;
+            return new Date(now.getTime() + 1000);
           }
           return fallbackSlot;
         }
-        // If all slots were invalid, fallback to now
-        return now;
+        // If all slots were invalid, fallback to now + 1 second to ensure it's in the future
+        return new Date(now.getTime() + 1000);
       } else {
         // No previous posts, find next available slot today
         // todaySlots already filters for future dates, so just return the first one
@@ -419,23 +432,27 @@ async function calculateNextScheduleTimeInternal({
             return tomorrowSlot;
           }
         }
-        // If all slots were invalid, fallback to now
-        return now;
+        // If all slots were invalid, fallback to now + 1 second to ensure it's in the future
+        return new Date(now.getTime() + 1000);
       }
     }
 
     // Fallback to immediate scheduling
     // This should never be reached, but ensures we always return a Date
-    return now;
+    // Return now + 1 second to ensure it's in the future
+    return new Date(now.getTime() + 1000);
   } catch (error) {
     // Ensure we always return a valid Date, even if there's an error
+    const fallbackTime = baseTime && baseTime instanceof Date && !isNaN(baseTime.getTime())
+      ? baseTime
+      : new Date();
     console.error("Error in calculateNextScheduleTime:", error, {
       queueType: queueType?.id,
       userId,
       userTimezone,
     });
-    // Use now (baseTime) as fallback to ensure consistent test behavior
-    return now;
+    // Use fallbackTime + 1 second as fallback to ensure it's in the future
+    return new Date(fallbackTime.getTime() + 1000);
   }
 }
 

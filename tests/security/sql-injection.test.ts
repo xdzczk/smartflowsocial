@@ -13,6 +13,7 @@ import { getPostById } from "~/models/post.server";
 // Mock Prisma client
 vi.mock("~/lib/prisma.server", () => ({
   prisma: {
+    $use: vi.fn(),
     user: {
       findUnique: vi.fn(),
     },
@@ -90,6 +91,11 @@ describe("SQL Injection Prevention: Prisma Parameterized Queries", () => {
     // Verify Prisma was called with parameterized query
     expect(prisma.post.findFirst).toHaveBeenCalledWith({
       where: { id: postId, userId },
+      include: {
+        queueType: true,
+        hashTagPreset: true,
+        template: true,
+      },
     });
   });
 
@@ -104,6 +110,11 @@ describe("SQL Injection Prevention: Prisma Parameterized Queries", () => {
     // Prisma should treat the malicious string as a literal value
     expect(prisma.post.findFirst).toHaveBeenCalledWith({
       where: { id: maliciousId, userId },
+      include: {
+        queueType: true,
+        hashTagPreset: true,
+        template: true,
+      },
     });
   });
 

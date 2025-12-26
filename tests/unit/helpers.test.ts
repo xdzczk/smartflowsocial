@@ -78,6 +78,10 @@ describe("Helper Utilities", () => {
 
       // Should return negative time or 0s
       expect(result).toBeDefined();
+      expect(typeof result).toBe("string");
+      expect(result.length).toBeGreaterThan(0);
+      // Should indicate past time (negative or 0s)
+      expect(result).toMatch(/^-?\d+[hms]|0s$/);
     });
 
     it("should handle exact same time", () => {
@@ -100,7 +104,14 @@ describe("Helper Utilities", () => {
 
       // If npub is invalid, it should return null
       // For a real test, we'd need a valid npub
-      expect(result).toBeDefined();
+      // More specific: should return null or a hex string
+      if (result !== null) {
+        expect(typeof result).toBe("string");
+        expect(result).toMatch(/^[0-9a-f]+$/i); // Hex format
+        expect(result.length).toBeGreaterThan(0);
+      } else {
+        expect(result).toBeNull();
+      }
     });
 
     it("should return null for invalid npub", () => {

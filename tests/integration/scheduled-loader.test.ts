@@ -10,6 +10,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { json } from "@remix-run/node";
 
+// Mock Prisma to prevent $use errors
+vi.mock("~/lib/prisma.server", () => ({
+  prisma: {
+    $use: vi.fn(),
+  },
+}));
+
 // Mock dependencies
 vi.mock("~/features/auth/session.server", () => ({
   requireUserId: vi.fn(),
@@ -146,6 +153,8 @@ describe("Scheduled Posts Loader Integration", () => {
 
       // The loadScheduledData function should already filter, but we verify the structure
       expect(data.queueTypes).toBeDefined();
+      expect(Array.isArray(data.queueTypes)).toBe(true);
+      expect(data.queueTypes.length).toBeGreaterThanOrEqual(0);
     });
   });
 

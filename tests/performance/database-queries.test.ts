@@ -4,7 +4,27 @@
  * Tests to verify query optimization and prevent N+1 query problems.
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+
+// Mock Prisma to prevent $use middleware errors
+vi.mock("~/lib/prisma.server", () => ({
+  prisma: {
+    $use: vi.fn(),
+    user: {
+      findMany: vi.fn().mockResolvedValue([]),
+    },
+    queueType: {
+      findMany: vi.fn().mockResolvedValue([]),
+    },
+    hashTagPreset: {
+      findMany: vi.fn().mockResolvedValue([]),
+    },
+    template: {
+      findMany: vi.fn().mockResolvedValue([]),
+    },
+  },
+}));
+
 import {
   batchLoadUsers,
   batchLoadQueueTypes,

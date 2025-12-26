@@ -5,7 +5,7 @@
  * with transaction-based isolation for safety
  */
 
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import {
   describeDatabase,
   withDatabase,
@@ -15,6 +15,21 @@ import {
 import { getTestPrisma } from "../database/test-db";
 import { getUserById } from "~/models/user.server";
 import { createPost } from "~/models/post.server";
+
+// Don't mock Prisma - this test uses the real database
+// Model functions will use the real Prisma client from getTestPrisma()
+// We need to ensure prisma.server.ts uses getTestPrisma() in test mode
+// For now, we'll mock it minimally to prevent $use errors, but the actual
+// database operations will use the real client from withDatabase
+vi.mock("~/lib/prisma.server", async () => {
+  // Return a proxy that forwards to getTestPrisma() when accessed
+  const { getTestPrisma } = await import("../database/test-db");
+  return {
+    get prisma() {
+      return getTestPrisma();
+    },
+  };
+});
 
 // Example: Test with database using transactions
 describeDatabase("Database Integration Example", () => {

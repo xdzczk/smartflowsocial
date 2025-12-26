@@ -143,7 +143,9 @@ export async function getDecryptedUserNWC(
   try {
     return decrypt(user.encryptedNwc);
   } catch (error) {
-    console.error("Failed to decrypt NWC string:", error);
+    // Use safe logging to prevent NWC strings from appearing in logs
+    const { safeConsoleError } = require("~/lib/secrets-sanitizer.server");
+    safeConsoleError("Failed to decrypt NWC string for user", userId);
     return null;
   }
 }

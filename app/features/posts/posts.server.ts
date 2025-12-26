@@ -466,7 +466,7 @@ export async function handleRecyclablePostAction(formData: FormData, userId: str
         const quotePostsData = postsData.map((post) => ({
             caption: "", // Empty caption - user can add content
             fileUrl: post.fileUrl || "",
-            queueType: post.queueType || "unassigned",
+            queueType: post.queueType?.name || "unassigned",
             scheduledFor: "",
             originalPostId: post.id,
             originalEventId: post.signedEvent?.id,
@@ -530,7 +530,7 @@ export async function handleRecyclablePostAction(formData: FormData, userId: str
             const quotePostData = {
                 caption: "", // Empty caption - user can add content
                 fileUrl: originalPost.fileUrl || "",
-                queueType: originalPost.queueType || "unassigned",
+                queueType: originalPost.queueType?.name || "unassigned",
                 scheduledFor: "",
                 originalPostId: originalPost.id,
                 originalEventId: originalEvent.id,

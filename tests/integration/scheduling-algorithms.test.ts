@@ -55,7 +55,8 @@ describe("Scheduling Algorithms", () => {
           baseTime: BASE_TIME,
         });
 
-        expect(result).toEqual(BASE_TIME);
+        // When no last post exists, scheduler returns baseTime + 1000ms as fallback
+        expect(result.getTime()).toBe(BASE_TIME.getTime() + 1000);
         expect(getLastPostTimeForQueue).toHaveBeenCalledWith({
           userId: TEST_USER_ID,
           queueTypeId: "queue-1",
@@ -271,7 +272,8 @@ describe("Scheduling Algorithms", () => {
           baseTime: BASE_TIME,
         });
 
-        expect(result).toEqual(BASE_TIME);
+        // When empty slots array, scheduler returns baseTime + 1000ms as fallback
+        expect(result.getTime()).toBe(BASE_TIME.getTime() + 1000);
       });
     });
 
@@ -438,7 +440,8 @@ describe("Scheduling Algorithms", () => {
         baseTime: BASE_TIME,
       });
 
-      expect(result).toEqual(BASE_TIME);
+      // When invalid scheduleType, scheduler returns baseTime + 1000ms as fallback
+      expect(result.getTime()).toBe(BASE_TIME.getTime() + 1000);
     });
 
     it("should handle missing scheduleConfig", async () => {
@@ -458,6 +461,9 @@ describe("Scheduling Algorithms", () => {
 
       // Should fallback to default behavior
       expect(result).toBeDefined();
+      expect(result).toBeInstanceOf(Date);
+      expect(!isNaN(result.getTime())).toBe(true);
+      expect(result.getTime()).toBeGreaterThan(0);
     });
 
     it("should handle database errors gracefully", async () => {
@@ -477,8 +483,8 @@ describe("Scheduling Algorithms", () => {
         baseTime: BASE_TIME,
       });
 
-      // Should return baseTime when database error occurs (no last post time available)
-      expect(result).toEqual(BASE_TIME);
+      // Should return baseTime + 1000ms when database error occurs (fallback ensures future time)
+      expect(result.getTime()).toBe(BASE_TIME.getTime() + 1000);
     });
   });
 

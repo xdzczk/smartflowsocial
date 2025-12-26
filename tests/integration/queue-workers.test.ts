@@ -19,6 +19,7 @@ vi.mock("bullmq", () => {
     
     constructor(queueName: string, processor: any, options?: any) {
       this.queueName = queueName;
+      // Store the processor function so tests can call it
       this.process = processor;
       this.close = vi.fn();
     }
@@ -57,6 +58,27 @@ vi.mock("~/infra/queue", () => ({
   enqueuePostJob: vi.fn(),
   enqueueLongFormPostJob: vi.fn(),
 }));
+
+const { mockPrisma } = vi.hoisted(() => {
+  const mockPrisma = {
+    post: {
+      findUnique: vi.fn(),
+      update: vi.fn(),
+    },
+    longFormPost: {
+      findUnique: vi.fn(),
+      update: vi.fn(),
+    },
+    $use: vi.fn(),
+  };
+  return { mockPrisma };
+});
+
+vi.mock("~/lib/prisma.server", () => ({
+  prisma: mockPrisma,
+}));
+
+import { prisma } from "~/lib/prisma.server";
 
 import { updatePostStatus, getCronDueScheduledPosts } from "~/models/post.server";
 import { updateLongFormPostStatus, getCronDueScheduledLongFormPosts } from "~/models/longformpost.server";
@@ -99,6 +121,13 @@ describe("Queue Workers", () => {
         id: TEST_USER_ID,
         userRelays: ["wss://relay1.com", "wss://relay2.com"],
       };
+
+      // Mock Prisma post.findUnique to return existing post
+      (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: "post-123",
+        isPosted: false,
+        nostrEventId: null,
+      });
 
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (updatePostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
@@ -174,6 +203,13 @@ describe("Queue Workers", () => {
         },
       } as Job;
 
+      // Mock Prisma post.findUnique to return existing post
+      (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: "post-123",
+        isPosted: false,
+        nostrEventId: null,
+      });
+
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
       await expect(scheduledPostsWorker.process(mockJob)).rejects.toThrow(
@@ -223,6 +259,13 @@ describe("Queue Workers", () => {
           signedEvent: { id: "event-123" },
         },
       } as Job;
+
+      // Mock Prisma post.findUnique to return existing post
+      (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: "post-123",
+        isPosted: false,
+        nostrEventId: null,
+      });
 
       const mockUser = {
         id: TEST_USER_ID,
@@ -280,6 +323,13 @@ describe("Queue Workers", () => {
         },
       } as Job;
 
+      // Mock Prisma longFormPost.findUnique to return existing post
+      (prisma.longFormPost.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: "longform-123",
+        isPublished: false,
+        nostrEventId: null,
+      });
+
       const mockUser = {
         id: TEST_USER_ID,
         userRelays: ["wss://relay1.com"],
@@ -326,6 +376,13 @@ describe("Queue Workers", () => {
           signedEvent: { id: "event-123" },
         },
       } as Job;
+
+      // Mock Prisma longFormPost.findUnique to return existing post
+      (prisma.longFormPost.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: "longform-123",
+        isPublished: false,
+        nostrEventId: null,
+      });
 
       const mockUser = {
         id: TEST_USER_ID,

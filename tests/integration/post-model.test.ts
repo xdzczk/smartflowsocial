@@ -314,12 +314,15 @@ describe("Post Model Functions", () => {
           userId: TEST_USER_ID,
           isScheduled: true,
           isPosted: false,
+          draft: false,
           queueType: {
             name: "posts",
           },
         }),
         include: {
           queueType: true,
+          hashTagPreset: true,
+          template: true,
         },
         orderBy: {
           scheduledFor: "asc",
@@ -351,9 +354,12 @@ describe("Post Model Functions", () => {
           userId: TEST_USER_ID,
           isScheduled: true,
           isPosted: false,
+          draft: false,
         }),
         include: {
           queueType: true,
+          hashTagPreset: true,
+          template: true,
         },
         orderBy: {
           scheduledFor: "asc",
@@ -455,6 +461,11 @@ describe("Post Model Functions", () => {
       });
 
       expect(mockPrisma.post.findFirst).toHaveBeenCalledWith({
+        include: {
+          queueType: true,
+          hashTagPreset: true,
+          template: true,
+        },
         where: {
           id: TEST_POST_ID,
           userId: TEST_USER_ID,

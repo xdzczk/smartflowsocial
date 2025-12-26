@@ -10,6 +10,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { json } from "@remix-run/node";
 
+// Mock Prisma to prevent $use errors
+vi.mock("~/lib/prisma.server", () => ({
+  prisma: {
+    $use: vi.fn(),
+  },
+}));
+
 // Mock dependencies
 vi.mock("~/features/auth/session.server", () => ({
   requireUserId: vi.fn(),

@@ -28,6 +28,83 @@ if (!(globalThis as any).crypto || !(globalThis as any).crypto.getRandomValues) 
   (globalThis as any).crypto = nodeWebcrypto as any;
 }
 
+/**
+ * Validate required environment variables at startup
+ * Prevents the application from starting with missing critical configuration
+ */
+function validateEnvironment(): void {
+  const required = [
+    'DATABASE_URL',
+    'SESSION_SECRET',
+    'NOSTR_PUBLISHER_URL',
+    'REDIS_URL',
+    'STORAGE_ACCESS_KEY',
+    'STORAGE_SECRET',
+    'STORAGE_REGION',
+    'STORAGE_BUCKET',
+  ];
+
+  const missing: string[] = [];
+  const invalid: Array<{ key: string; reason: string }> = [];
+
+  for (const key of required) {
+    const value = process.env[key];
+    if (!value || value.trim() === '') {
+      missing.push(key);
+    } else {
+      // Additional validation for specific variables
+      if (key === 'SESSION_SECRET' && value.length < 32) {
+        invalid.push({
+          key,
+          reason: 'must be at least 32 characters long',
+        });
+      }
+      if (key === 'DATABASE_URL' && !value.startsWith('postgresql://')) {
+        invalid.push({
+          key,
+          reason: 'must be a valid PostgreSQL connection string (postgresql://...)',
+        });
+      }
+      if (key === 'REDIS_URL' && !value.startsWith('redis://')) {
+        invalid.push({
+          key,
+          reason: 'must be a valid Redis connection string (redis://...)',
+        });
+      }
+    }
+  }
+
+  if (missing.length > 0 || invalid.length > 0) {
+    console.error('❌ Environment validation failed:');
+    
+    if (missing.length > 0) {
+      console.error('\nMissing required environment variables:');
+      missing.forEach((key) => console.error(`  - ${key}`));
+    }
+    
+    if (invalid.length > 0) {
+      console.error('\nInvalid environment variables:');
+      invalid.forEach(({ key, reason }) =>
+        console.error(`  - ${key}: ${reason}`),
+      );
+    }
+    
+    console.error(
+      '\nPlease check your .env file or environment configuration.',
+    );
+    console.error(
+      'See docs/environment-setup.md for detailed configuration instructions.',
+    );
+    
+    process.exit(1);
+  }
+
+  console.log('✅ Environment variables validated');
+}
+
+// Validate environment before starting
+validateEnvironment();
+
 run();
 
 async function run() {
@@ -106,16 +183,20 @@ async function run() {
 
   // Security headers with Helmet
   // Configure CSP to work with Remix (which uses inline scripts/styles)
+  // In production, we remove 'unsafe-eval' for better security
+  const isDevelopment = process.env.NODE_ENV === "development";
+  const scriptSrc = [
+    "'self'",
+    "'unsafe-inline'", // Required for Remix
+    ...(isDevelopment ? ["'unsafe-eval'"] : []), // Only in development
+  ];
+
   app.use(
     helmet({
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
-          scriptSrc: [
-            "'self'",
-            "'unsafe-inline'", // Required for Remix
-            "'unsafe-eval'", // Required for Remix in development
-          ],
+          scriptSrc,
           styleSrc: [
             "'self'",
             "'unsafe-inline'", // Required for Remix
@@ -132,7 +213,7 @@ async function run() {
           frameSrc: ["'none'"],
           baseUri: ["'self'"],
           formAction: ["'self'"],
-          upgradeInsecureRequests: process.env.NODE_ENV === "production" ? [] : null,
+          upgradeInsecureRequests: !isDevelopment ? [] : null,
         },
       },
       hsts: {
