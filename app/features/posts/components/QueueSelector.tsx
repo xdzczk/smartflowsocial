@@ -25,10 +25,10 @@ export function QueueSelector({
 
   return (
     <div className={className}>
-      <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+      <label id="queue-type-label" htmlFor="queue-type-selector" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
         Queue Type
       </label>
-      <div className="flex flex-wrap gap-2">
+      <div id="queue-type-selector" className="flex flex-wrap gap-2" role="group" aria-labelledby="queue-type-label">
         {/* Unassigned option */}
         <button
           type="button"

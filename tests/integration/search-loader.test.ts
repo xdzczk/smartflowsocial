@@ -11,8 +11,9 @@ vi.mock("~/models/user.server", () => ({
   getUserById: vi.fn(),
 }));
 
-import { getUserById } from "~/models/user.server";
 import { loadSearchData } from "~/features/search/services/search-loader.server";
+import { getUserById } from "~/models/user.server";
+
 import { TEST_USER_ID } from "../utils/test-helpers";
 
 describe("Search Loader", () => {

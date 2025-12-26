@@ -4,9 +4,9 @@
  * Centralized error logging with different log levels and structured output
  */
 
-import type { AppError } from "./errors";
 import { recordErrorMetric } from "./error-metrics.server";
-import { sanitizeObject, sanitizeError } from "./secrets-sanitizer.server";
+import type { AppError } from "./errors";
+import { sanitizeError, sanitizeObject } from "./secrets-sanitizer.server";
 import { captureException } from "./sentry.server";
 
 export type LogLevel = "error" | "warn" | "info" | "debug";

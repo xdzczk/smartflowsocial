@@ -5,11 +5,11 @@ import {
   getBatchPosts,
   parseBatchPostsRequest,
 } from "~/features/posts/services/batch-posts.server";
-import { ValidationError } from "~/lib/errors";
 import {
   withActionErrorHandling,
   assert,
 } from "~/lib/error-handler.server";
+import { ValidationError } from "~/lib/errors";
 
 export const action = withActionErrorHandling(
   async ({ request }: ActionFunctionArgs) => {

@@ -1,16 +1,16 @@
 import { nip19 } from "nostr-tools";
 
-import { npubToHex } from "~/lib/nostr";
-import { connectToPrimalCache } from "~/lib/nostrwebsocket.server";
 import type {
-  PrimalEvent,
-  ProfileData,
-  StatsData,
-  MediaData,
-  ProcessedProfile,
   CompleteProfileResult,
   GetCompleteProfileParams,
+  MediaData,
+  PrimalEvent,
+  ProcessedProfile,
+  ProfileData,
+  StatsData,
 } from "~/features/nostr/types";
+import { npubToHex } from "~/lib/nostr";
+import { connectToPrimalCache } from "~/lib/nostrwebsocket.server";
 
 /**
  * Validates an npub string

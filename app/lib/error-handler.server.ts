@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Server-side Error Handling Utilities
  * 
@@ -6,18 +7,19 @@
 
 import { json, type ActionFunctionArgs, type LoaderFunctionArgs } from "@remix-run/node";
 
-import type { AppError } from "./errors";
-import {
-  normalizeError,
-  getUserFriendlyMessage,
-  isAppError,
-  ValidationError,
-  NotFoundError,
+import { logError } from "./error-logger.server";
+import type {
   AuthenticationError,
   AuthorizationError,
-  type ErrorCode,
+  ErrorCode,
+  NotFoundError,
+  ValidationError,
 } from "./errors";
-import { logError } from "./error-logger.server";
+import {
+  getUserFriendlyMessage,
+  isAppError,
+  normalizeError,
+} from "./errors";
 
 /**
  * Standard error response structure
@@ -191,7 +193,7 @@ export function assert(
  */
 export function assertExists<T>(
   value: T | null | undefined,
-  message: string = "Resource not found",
+  message = "Resource not found",
   context?: Record<string, unknown>,
 ): asserts value is T {
   if (value === null || value === undefined) {
@@ -204,7 +206,7 @@ export function assertExists<T>(
  */
 export function assertAuthenticated(
   userId: string | undefined | null,
-  message: string = "Authentication required",
+  message = "Authentication required",
 ): asserts userId is string {
   if (!userId) {
     throw new AuthenticationError(message);
@@ -216,7 +218,7 @@ export function assertAuthenticated(
  */
 export function assertAuthorized(
   hasPermission: boolean,
-  message: string = "Insufficient permissions",
+  message = "Insufficient permissions",
   context?: Record<string, unknown>,
 ): asserts hasPermission {
   if (!hasPermission) {

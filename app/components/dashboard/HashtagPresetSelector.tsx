@@ -169,15 +169,26 @@ export function HashtagPresetSelector({
         <CardContent className="pt-0">
           <div className="max-h-64 overflow-y-auto">
             <div className="space-y-2">
-              {presets.map((preset) => (
-                <div
-                  key={preset.id}
-                  className={`cursor-pointer rounded-lg border p-3 transition-colors ${selectedPresetId === preset.id
-                      ? "border-primary bg-primary/10"
-                      : "hover:bg-accent/50"
-                    } ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
-                  onClick={() => !disabled && handlePresetClick(preset)}
-                >
+              {presets.map((preset) => {
+                const handleKeyDown = (e: React.KeyboardEvent) => {
+                  if (!disabled && (e.key === "Enter" || e.key === " ")) {
+                    e.preventDefault();
+                    handlePresetClick(preset);
+                  }
+                };
+
+                return (
+                  <div
+                    key={preset.id}
+                    className={`cursor-pointer rounded-lg border p-3 transition-colors ${selectedPresetId === preset.id
+                        ? "border-primary bg-primary/10"
+                        : "hover:bg-accent/50"
+                      } ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
+                    onClick={() => !disabled && handlePresetClick(preset)}
+                    onKeyDown={handleKeyDown}
+                    role="button"
+                    tabIndex={disabled ? -1 : 0}
+                  >
                   <div className="flex items-start justify-between">
                     <div className="min-w-0 flex-1">
                       <div className="mb-1 flex items-center gap-2">
@@ -224,7 +235,8 @@ export function HashtagPresetSelector({
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 

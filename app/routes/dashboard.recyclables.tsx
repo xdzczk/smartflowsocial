@@ -1,23 +1,23 @@
-import { json, type LoaderFunctionArgs, type ActionFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useParams, useFetcher } from "@remix-run/react";
 
-import {
-  getRecyclableDashboardData,
-  handleRecyclablePostAction,
-} from "~/features/posts/posts.server";
 import { requireUserId } from "~/features/auth/session.server";
 import {
   requireFeatureAccess,
   requireAnySubscription,
 } from "~/features/payments/subscriptions.server";
 import PostDetailsModal from "~/features/posts/components/PostDetailsModal";
-import { RecyclablesSearch } from "~/features/posts/components/RecyclablesSearch";
-import { RecyclablesQueueTabs } from "~/features/posts/components/RecyclablesQueueTabs";
 import { RecyclablesBulkActions } from "~/features/posts/components/RecyclablesBulkActions";
-import { RecyclablesTable } from "~/features/posts/components/RecyclablesTable";
 import { RecyclablesPagination } from "~/features/posts/components/RecyclablesPagination";
+import { RecyclablesQueueTabs } from "~/features/posts/components/RecyclablesQueueTabs";
+import { RecyclablesSearch } from "~/features/posts/components/RecyclablesSearch";
+import { RecyclablesTable } from "~/features/posts/components/RecyclablesTable";
 import { RecyclablesToast } from "~/features/posts/components/RecyclablesToast";
 import { useRecyclablesState } from "~/features/posts/hooks/useRecyclablesState";
+import {
+  getRecyclableDashboardData,
+  handleRecyclablePostAction,
+} from "~/features/posts/posts.server";
 import { withErrorHandling, withActionErrorHandling } from "~/lib/error-handler.server";
 
 export const loader = withErrorHandling(async ({ request, params }: LoaderFunctionArgs) => {
@@ -43,7 +43,7 @@ export const action = withActionErrorHandling(async ({ request }: ActionFunction
 });
 
 export default function RecyclablesPosts() {
-  const { posts, pagination, stats, user, queueTypes, selectedQueueType } =
+  const { posts, pagination, stats, user, queueTypes } =
     useLoaderData<typeof loader>();
   const params = useParams();
 

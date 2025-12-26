@@ -1,5 +1,4 @@
 import { useState } from "react";
-import type { GiveawayStateData } from "~/features/giveaway/types";
 
 interface Post {
   id: string;

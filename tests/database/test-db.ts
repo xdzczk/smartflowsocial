@@ -5,8 +5,9 @@
  * with transaction-based isolation for test safety
  */
 
-import { PrismaClient } from "@prisma/client";
 import { execSync } from "child_process";
+
+import { PrismaClient } from "@prisma/client";
 
 let testPrisma: PrismaClient | null = null;
 let transactionClient: PrismaClient | null = null;

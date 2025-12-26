@@ -3,6 +3,9 @@
  * Centralized data fetching and processing for giveaway page
  */
 
+import type { User } from "~/features/engagement/trustScore";
+import { calculateTrustScore } from "~/features/engagement/trustScore";
+import { convertToHex } from "~/lib/helpers";
 import { connectToPrimalCache } from "~/lib/nostrwebsocket.server";
 import { getRecentPostedPosts } from "~/models/post.queries.server";
 import {
@@ -10,9 +13,14 @@ import {
   getUserById,
   getQueueTypes,
 } from "~/models/user.server";
+
 import { fetchGiveawayParticipants } from "./giveaway.server";
-import { calculateTrustScore, type User } from "~/features/engagement/trustScore";
-import { convertToHex } from "~/lib/helpers";
+import type {
+  GiveawayProfile,
+  GiveawayStats,
+  PrimalEvent,
+  RelatedEvent,
+} from "./types";
 
 /**
  * Fetches user profile data from Primal API and converts to User type for trust scoring
@@ -114,7 +122,14 @@ export async function fetchUserProfile(pubkey: string): Promise<User | null> {
 /**
  * Fetch post stats from Primal cache
  */
-async function fetchPostStats(eventIds: string[]): Promise<Record<string, any>> {
+async function fetchPostStats(eventIds: string[]): Promise<Record<string, {
+  likes: number;
+  replies: number;
+  mentions: number;
+  reposts: number;
+  zaps: number;
+  satszapped: number;
+}>> {
   if (eventIds.length === 0) {
     return {};
   }
@@ -213,7 +228,14 @@ async function fetchPostStats(eventIds: string[]): Promise<Record<string, any>> 
         satszapped: 0,
       };
       return acc;
-    }, {} as Record<string, any>);
+    }, {} as Record<string, {
+      likes: number;
+      replies: number;
+      mentions: number;
+      reposts: number;
+      zaps: number;
+      satszapped: number;
+    }>);
   }
 }
 

@@ -1,10 +1,10 @@
-import { useFetcher, Link, useLocation } from "@remix-run/react";
+import { Link, useFetcher, useLocation } from "@remix-run/react";
 import { useCallback } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
-import { useOptionalUser } from "~/lib/remix-utils";
 import { handleAsyncError } from "~/lib/error-handler.client";
+import { useOptionalUser } from "~/lib/remix-utils";
 
 export default function NostrAuthButton() {
   const user = useOptionalUser();

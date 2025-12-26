@@ -8,8 +8,8 @@
  * The full settings-actions.server.ts has many actions - we test the key ones.
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { json } from "@remix-run/node";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock all dependencies
 vi.mock("~/models/user.server", () => ({
@@ -30,6 +30,8 @@ vi.mock("~/models/payment.server", () => ({
   getUserSubscription: vi.fn(),
 }));
 
+import { handleSettingsAction } from "~/features/settings/settings-actions.server";
+import { getUserSubscription } from "~/models/payment.server";
 import {
   updateUserTimezone,
   updateUserRelays,
@@ -42,8 +44,7 @@ import {
   deleteHashTagPreset,
   hashTagPresetExistsForUser,
 } from "~/models/user.server";
-import { getUserSubscription } from "~/models/payment.server";
-import { handleSettingsAction } from "~/features/settings/settings-actions.server";
+
 import { createActionFormData, createFormData, TEST_USER_ID } from "../utils/test-helpers";
 
 describe("Settings Action Handler", () => {

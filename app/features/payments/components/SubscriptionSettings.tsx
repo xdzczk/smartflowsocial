@@ -64,10 +64,11 @@ export function SubscriptionSettings({
       setCopiedHash(hashId);
       setTimeout(() => setCopiedHash(null), 2000);
     } catch (err) {
-      const { handleErrorSafely } = require("~/lib/error-handler.client");
-      handleErrorSafely(err, {
-        component: "SubscriptionSettings",
-        action: "copyToClipboard",
+      import("~/lib/error-handler.client").then(({ handleErrorSafely }) => {
+        handleErrorSafely(err, {
+          component: "SubscriptionSettings",
+          action: "copyToClipboard",
+        });
       });
     }
   };
@@ -297,7 +298,7 @@ export function SubscriptionSettings({
           <Crown className="mx-auto mb-4 h-12 w-12 text-gray-400" />
           <h3 className="mb-2 text-lg font-medium">No Active Subscription</h3>
           <p className="mb-6 text-muted-foreground">
-            You don't have an active subscription. Choose a plan to unlock
+            You don&apos;t have an active subscription. Choose a plan to unlock
             premium features.
           </p>
           <Link

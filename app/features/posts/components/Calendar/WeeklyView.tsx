@@ -1,7 +1,9 @@
 import { useState, useMemo } from "react";
-import { PostBlock } from "./PostBlock";
-import { handleErrorSafely } from "~/lib/error-handler.client";
+
 import type { PostData, QueueType, UserData } from "~/features/posts/types";
+import { handleErrorSafely } from "~/lib/error-handler.client";
+
+import { PostBlock } from "./PostBlock";
 
 interface CalendarPost extends Omit<PostData, "scheduledFor" | "postedAt" | "publishedAt"> {
   title?: string;
@@ -26,11 +28,7 @@ interface WeeklyViewProps {
   isAll?: boolean;
 }
 
-interface PostsGrid {
-  [dateKey: string]: {
-    [timeSlot: string]: CalendarPost[];
-  };
-}
+type PostsGrid = Record<string, Record<string, CalendarPost[]>>;
 
 interface CurrentTimeIndicatorProps {
   user?: UserData | null;

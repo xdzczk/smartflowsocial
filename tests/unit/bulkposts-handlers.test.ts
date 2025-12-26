@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, vi } from "vitest";
-import type { BulkPost } from "~/features/posts/types";
+
 import {
   handleCaptionChange,
   handleDateChange,
@@ -14,6 +14,7 @@ import {
   handleBulkRecyclableToggle,
   handleScheduleIntervalClick,
 } from "~/features/posts/bulkposts.handlers";
+import type { BulkPost } from "~/features/posts/types";
 
 describe("Bulk Posts Handlers", () => {
   describe("handleCaptionChange", () => {
@@ -429,7 +430,6 @@ describe("Bulk Posts Handlers", () => {
       ];
 
       const setPosts = vi.fn();
-      const now = new Date();
 
       handleScheduleIntervalClick(1, posts, setPosts, false);
 

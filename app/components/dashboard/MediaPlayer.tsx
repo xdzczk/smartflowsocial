@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 
 interface MediaPlayerProps {
   src: string;
@@ -142,6 +142,7 @@ export default function MediaPlayer({
         <source src={src} type="video/mp4" />
         <source src={src} type="video/webm" />
         <source src={src} type="video/ogg" />
+        <track kind="captions" srcLang="en" label="English" />
         Your browser does not support the video tag.
       </video>
     );
@@ -174,8 +175,21 @@ export function MediaThumbnail({
 }) {
   const isVideo = isVideoUrl(src);
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (onClick && (e.key === "Enter" || e.key === " ")) {
+      e.preventDefault();
+      onClick();
+    }
+  };
+
   return (
-    <div className="group relative cursor-pointer" onClick={onClick}>
+    <div 
+      className="group relative cursor-pointer" 
+      onClick={onClick}
+      onKeyDown={onClick ? handleKeyDown : undefined}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+    >
       <MediaPlayer
         src={src}
         alt={alt}

@@ -16,9 +16,10 @@ vi.mock("~/models/longformpost.server", () => ({
   deleteLongFormPost: vi.fn(),
 }));
 
-import { deletePost } from "~/models/post.commands.server";
-import { deleteLongFormPost } from "~/models/longformpost.server";
 import { handleScheduledAction } from "~/features/posts/services/scheduled-action.server";
+import { deleteLongFormPost } from "~/models/longformpost.server";
+import { deletePost } from "~/models/post.commands.server";
+
 import { createActionFormData, TEST_USER_ID, TEST_POST_ID, TEST_LONGFORM_ID, createPostIds } from "../utils/test-helpers";
 
 describe("Scheduled Action Handler", () => {

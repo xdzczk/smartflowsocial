@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Example Usage of Centralized Error Handling
  * 
@@ -8,6 +9,14 @@
 import { json, type ActionFunctionArgs, type LoaderFunctionArgs } from "@remix-run/node";
 
 import {
+  withErrorHandling,
+  withActionErrorHandling,
+  handleLoaderError,
+  handleActionError,
+  createSuccessResponse,
+  assert as assertHandler,
+} from "./error-handler.server";
+import {
   ValidationError,
   NotFoundError,
   AuthenticationError,
@@ -16,15 +25,8 @@ import {
   assertExists,
   assertAuthenticated,
   assertAuthorized,
+  ExternalServiceError,
 } from "./errors";
-import {
-  withErrorHandling,
-  withActionErrorHandling,
-  handleLoaderError,
-  handleActionError,
-  createSuccessResponse,
-  assert as assertHandler,
-} from "./error-handler.server";
 
 // ============================================================================
 // Example 1: Using error handling wrapper (Recommended)
@@ -164,7 +166,6 @@ export async function specificErrorsExample({
 // Example 6: Handling external service errors
 // ============================================================================
 
-import { ExternalServiceError } from "./errors";
 
 export async function externalServiceExample({
   request,

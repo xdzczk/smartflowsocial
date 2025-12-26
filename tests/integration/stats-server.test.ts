@@ -5,6 +5,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+
 import { getPostStats } from "~/features/posts/stats.server";
 
 // Mock global fetch

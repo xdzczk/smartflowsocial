@@ -86,7 +86,7 @@ export interface QueueClient {
   getJobs(
     queueName: QueueType,
     statuses: JobStatus[],
-  ): Promise<Array<{ id: string; data: PostJobData | LongFormPostJobData; status: JobStatus }>>;
+  ): Promise<{ id: string; data: PostJobData | LongFormPostJobData; status: JobStatus }[]>;
 
   /**
    * Remove a job by ID

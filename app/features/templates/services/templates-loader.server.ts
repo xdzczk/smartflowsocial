@@ -15,9 +15,9 @@ import { getUserById } from "~/models/user.server";
  */
 export async function loadTemplatesData(
   userId: string,
-  searchTerm: string = "",
-  page: number = 1,
-  limit: number = 100,
+  searchTerm = "",
+  page = 1,
+  limit = 100,
 ) {
   const [templates, user, assetsData] = await Promise.all([
     getTemplates({ userId }),

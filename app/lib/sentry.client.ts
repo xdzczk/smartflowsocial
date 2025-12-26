@@ -17,7 +17,7 @@ export function initSentry(): void {
   }
 
   // Get DSN from window.ENV (set by root.tsx)
-  const dsn = (window as any).ENV?.SENTRY_DSN || null;
+  const dsn = (window as { ENV?: { SENTRY_DSN?: string } }).ENV?.SENTRY_DSN || null;
 
   if (!dsn) {
     // Sentry not configured - that's okay, just return
@@ -27,7 +27,7 @@ export function initSentry(): void {
   try {
     // Use dynamic import for async initialization
     import("@sentry/remix").then((Sentry) => {
-      const isProduction = (window as any).ENV?.NODE_ENV === "production" || false;
+      const isProduction = (window as { ENV?: { NODE_ENV?: string } }).ENV?.NODE_ENV === "production" || false;
       
       Sentry.init({
         dsn,

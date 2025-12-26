@@ -1,15 +1,15 @@
 import { json, type ActionFunctionArgs, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 
-import { requireUserId } from "~/features/auth/session.server";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { requireUserId } from "~/features/auth/session.server";
 import MediaPost from "~/features/posts/components/MediaPost";
+import { NewPostHeader } from "~/features/posts/components/NewPostHeader";
 import NewPostImagesConfirmation from "~/features/posts/components/NewPostImagesConfirmation";
 import TextPost from "~/features/posts/components/TextPost";
-import { NewPostHeader } from "~/features/posts/components/NewPostHeader";
 import { useNewPostState } from "~/features/posts/hooks/useNewPostState";
-import { loadNewPostData } from "~/features/posts/services/newpost-loader.server";
 import { handleNewPostAction } from "~/features/posts/services/newpost-action.server";
+import { loadNewPostData } from "~/features/posts/services/newpost-loader.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);

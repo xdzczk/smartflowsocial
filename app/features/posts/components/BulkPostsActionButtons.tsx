@@ -1,7 +1,6 @@
-import { type BulkPost } from "~/features/posts/components/BulkPostCard";
-import { type QueueType } from "~/features/posts/components/BulkPostCard";
-import { getDynamicQueueStyle } from "~/features/posts/queueColors";
 import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
+import type { BulkPost, QueueType } from "~/features/posts/components/BulkPostCard";
+import { getDynamicQueueStyle } from "~/features/posts/queueColors";
 
 interface BulkPostsActionButtonsProps {
     posts: BulkPost[];

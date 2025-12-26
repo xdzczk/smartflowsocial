@@ -81,9 +81,9 @@ Processes scheduled short-form posts (notes).
 **Job Data:**
 ```typescript
 {
-  postId: string;
-  userId: string;
-  signedEvent: any; // Nostr signed event
+  string;
+  string;
+  any; // Nostr signed event
 }
 ```
 
@@ -100,9 +100,9 @@ Processes scheduled long-form articles (NIP-23).
 **Job Data:**
 ```typescript
 {
-  postId: string;
-  userId: string;
-  signedEvent: any; // Nostr signed event
+  string;
+  string;
+  any; // Nostr signed event
 }
 ```
 
@@ -249,13 +249,13 @@ Adjust concurrency based on your needs:
 
 ```typescript
 // High throughput
-concurrency: 10
+10
 
 // Conservative
-concurrency: 1
+1
 
 // Default
-concurrency: 5
+5
 ```
 
 ---
@@ -450,7 +450,7 @@ docker-compose scale worker=3
 Increase worker concurrency:
 
 ```typescript
-concurrency: 10 // Process more jobs simultaneously
+10 // Process more jobs simultaneously
 ```
 
 ### Redis Scaling

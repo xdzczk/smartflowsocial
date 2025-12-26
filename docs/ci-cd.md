@@ -102,7 +102,7 @@ Test results are exported in JUnit XML format for integration with CI/CD tools:
 
 ```typescript
 // vitest.config.ts
-reporters: [
+[
   "default",
   ["junit", { outputFile: "test-results/junit.xml" }],
   ["json", { outputFile: "test-results/results.json" }],

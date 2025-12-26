@@ -1,4 +1,5 @@
 import type { Prisma } from "@prisma/client";
+
 import { prisma } from "~/lib/prisma.server";
 
 export async function createTemplate({

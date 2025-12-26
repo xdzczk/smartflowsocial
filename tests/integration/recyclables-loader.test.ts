@@ -5,8 +5,8 @@
  * Tests getRecyclableDashboardData function
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { json } from "@remix-run/node";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock Prisma to prevent $use errors
 vi.mock("~/lib/prisma.server", () => ({
@@ -29,10 +29,11 @@ vi.mock("~/features/posts/stats.server", () => ({
   getPostStats: vi.fn(),
 }));
 
+import { getRecyclableDashboardData } from "~/features/posts/posts.server";
+import { getPostStats } from "~/features/posts/stats.server";
 import { getRecyclablePosts } from "~/models/post.queries.server";
 import { getUserById, getQueueTypes } from "~/models/user.server";
-import { getPostStats } from "~/features/posts/stats.server";
-import { getRecyclableDashboardData } from "~/features/posts/posts.server";
+
 import {
   TEST_USER_ID,
   createMockUser,

@@ -151,16 +151,27 @@ export default function AssetBrowser({
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredAssets.map((asset) => (
-                <div
-                  key={asset.id}
-                  className={`cursor-pointer rounded-lg border p-4 transition-all hover:shadow-md ${
-                    selectedAssets.includes(asset.id)
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                      : "border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
-                  }`}
-                  onClick={() => handleAssetSelect(asset.id)}
-                >
+              {filteredAssets.map((asset) => {
+                const handleKeyDown = (e: React.KeyboardEvent) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleAssetSelect(asset.id);
+                  }
+                };
+
+                return (
+                  <div
+                    key={asset.id}
+                    className={`cursor-pointer rounded-lg border p-4 transition-all hover:shadow-md ${
+                      selectedAssets.includes(asset.id)
+                        ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                        : "border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
+                    }`}
+                    onClick={() => handleAssetSelect(asset.id)}
+                    onKeyDown={handleKeyDown}
+                    role="button"
+                    tabIndex={0}
+                  >
                   <div className="flex items-start gap-3">
                     <input
                       type="checkbox"
@@ -224,7 +235,8 @@ export default function AssetBrowser({
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

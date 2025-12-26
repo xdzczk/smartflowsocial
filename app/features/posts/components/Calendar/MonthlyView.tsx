@@ -1,7 +1,9 @@
 import { useMemo } from "react";
-import { PostBlock } from "./PostBlock";
-import { handleErrorSafely } from "~/lib/error-handler.client";
+
 import type { PostData, QueueType, UserData } from "~/features/posts/types";
+import { handleErrorSafely } from "~/lib/error-handler.client";
+
+import { PostBlock } from "./PostBlock";
 
 interface CalendarPost extends Omit<PostData, "scheduledFor" | "postedAt" | "publishedAt"> {
   title?: string;
@@ -32,9 +34,7 @@ interface CalendarDay {
   isToday: boolean;
 }
 
-interface PostsByDate {
-  [dateKey: string]: CalendarPost[];
-}
+type PostsByDate = Record<string, CalendarPost[]>;
 
 export function MonthlyView({
   scheduledPosts,

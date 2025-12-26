@@ -8,7 +8,7 @@ import { installGlobals } from "@remix-run/node";
 import { parse } from "cookie";
 
 import { createUser } from "~/models/user.server";
-import { createUserSession } from "~/session.server";
+import { createUserSession } from "~/features/auth";
 
 installGlobals();
 
@@ -36,6 +36,7 @@ async function createAndLogin(email: string) {
   const parsedCookie = parse(cookieValue);
   // we log it like this so our cypress command can parse it out and set it as
   // the cookie value.
+  // eslint-disable-next-line no-console
   console.log(
     `
 <cookie>

@@ -4,11 +4,12 @@
  */
 
 import { json } from "@remix-run/node";
+
+import type { ProfileData } from "~/features/nostr/types";
+import { logError } from "~/lib/error-logger.server";
+import { normalizeError } from "~/lib/errors";
 import { getUserSubscription } from "~/models/payment.server";
 import { getConfirmedChildrenForParent, getUserBasicInfo } from "~/models/user.server";
-import type { ProfileData } from "~/features/nostr/types";
-import { normalizeError } from "~/lib/errors";
-import { logError } from "~/lib/error-logger.server";
 
 function extractProfileBits(nostrProfile: ProfileData | null | undefined) {
   if (!nostrProfile) {

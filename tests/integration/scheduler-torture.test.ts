@@ -7,9 +7,11 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
 import { calculateNextScheduleTime } from "~/features/posts/schedulers";
 import { getLastPostTimeForQueue } from "~/models/post.queries.server";
 import { getScheduleInterval } from "~/models/user.server";
+
 import { TEST_USER_ID } from "../utils/test-helpers";
 
 // Mock dependencies

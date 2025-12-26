@@ -7,8 +7,8 @@
  * Note: This tests the core logic. File uploads are tested separately.
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { redirect } from "@remix-run/node";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock dependencies
 vi.mock("~/models/user.server", () => ({
@@ -32,10 +32,11 @@ vi.mock("~/features/upload/s3.server", () => ({
 // Mock global fetch for Nostr publisher
 global.fetch = vi.fn();
 
-import { getUserById, getQueueTypes, getHashTagPresetById } from "~/models/user.server";
-import { createPost } from "~/models/post.commands.server";
-import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
 import { handleNewPostAction } from "~/features/posts/services/newpost-action.server";
+import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
+import { createPost } from "~/models/post.commands.server";
+import { getUserById, getQueueTypes, getHashTagPresetById } from "~/models/user.server";
+
 import { createActionFormData, createFormData, TEST_USER_ID } from "../utils/test-helpers";
 
 describe("New Post Action Handler", () => {

@@ -1,18 +1,18 @@
 import { json, type LoaderFunctionArgs, type ActionFunctionArgs } from "@remix-run/node";
 import { useLoaderData, Outlet } from "@remix-run/react";
 
+import { AssetPagination } from "~/features/assets/components/AssetPagination";
+import { AssetsTab } from "~/features/assets/components/AssetsTab";
+import { UploadTab } from "~/features/assets/components/UploadTab";
 import { requireUserId } from "~/features/auth/session.server";
 import { requireFeatureAccess, requireAnySubscription } from "~/features/payments/subscriptions.server";
-import { AssetsTab } from "~/features/assets/components/AssetsTab";
-import { AssetPagination } from "~/features/assets/components/AssetPagination";
-import { UploadTab } from "~/features/assets/components/UploadTab";
 import { TemplateDetailsModal } from "~/features/templates/components/TemplateDetailsModal";
 import { TemplatesHeader } from "~/features/templates/components/TemplatesHeader";
 import { TemplatesTabs } from "~/features/templates/components/TemplatesTabs";
 import { ToastNotification } from "~/features/templates/components/ToastNotification";
 import { useTemplatesState } from "~/features/templates/hooks/useTemplatesState";
-import { loadTemplatesData } from "~/features/templates/services/templates-loader.server";
 import { handleTemplatesAction } from "~/features/templates/services/templates-action.server";
+import { loadTemplatesData } from "~/features/templates/services/templates-loader.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
@@ -72,7 +72,7 @@ export default function Templates() {
     imageAssetFormRef,
     isOnChildRoute,
     deleteFetcher,
-    scheduleFetcher,
+    scheduleFetcher: _scheduleFetcher,
     assetFetcher,
     setSelectedTemplate,
     setActiveTab,
@@ -144,7 +144,9 @@ export default function Templates() {
           {showToast ? (
             <ToastNotification
               message={toastMessage}
-              onClose={() => {}}
+              onClose={() => {
+                // Toast close handler
+              }}
             />
           ) : null}
 

@@ -1,7 +1,7 @@
 import { faker } from "@faker-js/faker";
 
-import { TEST_NPUB } from "./nostr-test-keys";
 import { signEvent, type SignedEvent } from "./nostr-signer";
+import { TEST_NPUB } from "./nostr-test-keys";
 
 // Available test files in tests/e2e/memes_test_files/
 export const TEST_FILES = [

@@ -1,7 +1,7 @@
 import { getPublicKey, finishEvent } from "nostr-tools";
 
-import { sanitizeMarkdown } from "~/lib/markdown-sanitizer.server";
 import type { EditorJSOutput, EditorJSBlock } from "~/features/posts/types/editorjs.types";
+import { sanitizeMarkdown } from "~/lib/markdown-sanitizer.server";
 
 export function createLongFormEvent({
   privateKey,

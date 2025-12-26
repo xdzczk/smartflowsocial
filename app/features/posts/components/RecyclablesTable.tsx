@@ -1,7 +1,7 @@
 import { Link, useFetcher } from "@remix-run/react";
 
-import { formatDate, getImageUrls } from "~/lib/helpers";
 import { getQueueColor } from "~/features/posts/queueColors";
+import { formatDate, getImageUrls } from "~/lib/helpers";
 
 interface Post {
   id: string;
@@ -13,16 +13,14 @@ interface Post {
   status?: string;
 }
 
-interface Stats {
-  [eventId: string]: {
+type Stats = Record<string, {
     likes?: number;
     replies?: number;
     mentions?: number;
     reposts?: number;
     zaps?: number;
     satszapped?: number;
-  };
-}
+  }>;
 
 interface RecyclablesTableProps {
   posts: Post[];

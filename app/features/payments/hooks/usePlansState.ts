@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
 import { useNavigate } from "@remix-run/react";
+import { useEffect, useState } from "react";
+
 import { usePaymentPolling } from "./usePaymentPolling";
 
 interface InvoiceData {
@@ -43,7 +44,7 @@ export function usePlansState({ user, actionData }: UsePlansStateProps) {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
 
-  const { isPolling, startPaymentPolling, checkPaymentStatusNow } =
+  const { isPolling, startPaymentPolling } =
     usePaymentPolling({
       paymentId: invoiceData?.paymentId || null,
       onPaymentComplete: () => {

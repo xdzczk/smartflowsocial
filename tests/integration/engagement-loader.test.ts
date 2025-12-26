@@ -28,9 +28,10 @@ vi.mock("~/models/user.server", () => ({
 
 import { connectToPrimalCache } from "~/features/cache/primalCache.server";
 import { parseThreadViewNotifications, groupNotificationsByType, groupNotificationsByParent, processQuoteReposts } from "~/features/engagement/engagement.server";
+import { loadEngagementFeedData } from "~/features/engagement/services/engagement-loader.server";
 import { getPostedPosts } from "~/models/post.queries.server";
 import { getUserById } from "~/models/user.server";
-import { loadEngagementFeedData } from "~/features/engagement/services/engagement-loader.server";
+
 import { TEST_USER_ID } from "../utils/test-helpers";
 
 describe("Engagement Loader", () => {

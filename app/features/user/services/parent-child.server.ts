@@ -1,8 +1,8 @@
 import type { User } from "@prisma/client";
 
-import { prisma } from "~/lib/prisma.server";
 import type { ProfileData } from "~/features/nostr/types";
 import { logWarning, logError } from "~/lib/error-logger.server";
+import { prisma } from "~/lib/prisma.server";
 
 type MinimalUser = Pick<User, "id" | "npub"> & {
   nostrProfile?: ProfileData | null;
@@ -33,7 +33,9 @@ function extractProfileBits(nostrProfile: ProfileData | null | undefined): {
         picture: nostrProfile?.picture,
       };
     }
-  } catch { }
+  } catch {
+    // Ignore parsing errors, return empty object
+  }
   return {};
 }
 

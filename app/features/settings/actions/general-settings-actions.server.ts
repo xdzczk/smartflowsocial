@@ -3,11 +3,12 @@
  */
 
 import { json } from "@remix-run/node";
+
 import {
-  updateUserTimezone,
-  updateUserRelays,
   updateGiveawayBlacklist,
   updateScheduleInterval,
+  updateUserRelays,
+  updateUserTimezone,
 } from "~/models/user.server";
 
 export async function handleGeneralSettingsAction(

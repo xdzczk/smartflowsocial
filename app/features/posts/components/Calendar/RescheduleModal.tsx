@@ -1,11 +1,12 @@
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
-import { signEventFn } from "~/lib/nostr";
+
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
-import { isVideoFile } from "~/lib/helpers";
-import { handleErrorSafely } from "~/lib/error-handler.client";
 import type { PostData, QueueType, UserData } from "~/features/posts/types";
+import { handleErrorSafely } from "~/lib/error-handler.client";
+import { isVideoFile } from "~/lib/helpers";
+import { signEventFn } from "~/lib/nostr";
 
 interface CalendarPost extends PostData {
   title?: string;
@@ -306,7 +307,7 @@ export function RescheduleModal({
 
             {/* New time */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="reschedule-datetime" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 {isEdit ? "Edit scheduled time:" : "New time:"}
               </label>
               <div className="flex items-center space-x-2">
@@ -324,6 +325,7 @@ export function RescheduleModal({
                   />
                 </svg>
                 <input
+                  id="reschedule-datetime"
                   type="datetime-local"
                   value={
                     editableDateTime
@@ -343,10 +345,11 @@ export function RescheduleModal({
 
             {/* Queue Type Selection */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="reschedule-queue-type" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Queue Type:
               </label>
               <select
+                id="reschedule-queue-type"
                 value={selectedQueueType || ""}
                 onChange={(e) => setSelectedQueueType(e.target.value || null)}
                 className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"

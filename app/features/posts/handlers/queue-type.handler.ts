@@ -10,6 +10,7 @@ import {
   isFixedSlotsScheduleConfig,
 } from "~/features/posts/types";
 import { logClientError } from "~/lib/error-handler.client";
+
 import { updateDisplayedHashtags } from "./hashtag.handler";
 
 /**

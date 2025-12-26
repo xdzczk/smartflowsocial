@@ -65,7 +65,7 @@ export function QuoteInputPanel({
     return (
         <div className="mt-2 rounded-lg border border-green-300 bg-green-50 p-2 dark:border-green-600 dark:bg-green-900/30">
             <div className="mb-2 text-xs text-gray-600 dark:text-gray-400">
-                Quoting: <span className="italic">"{truncatedOriginal}"</span>
+                Quoting: <span className="italic">&quot;{truncatedOriginal}&quot;</span>
             </div>
             <textarea
                 value={quoteContent}

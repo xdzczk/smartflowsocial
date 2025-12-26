@@ -3,10 +3,10 @@ import { useState } from "react";
 import { toast } from "react-hot-toast";
 
 import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
-import type { QueueType, HashTagPreset } from "~/features/posts/types";
 import { QueueSelector } from "~/features/posts/components/QueueSelector";
 import { SchedulingSection } from "~/features/posts/components/SchedulingSection";
 import { usePostScheduling } from "~/features/posts/hooks/usePostScheduling";
+import type { QueueType, HashTagPreset } from "~/features/posts/types";
 import {
   validateAndProcessFiles,
   isAcceptableFile,
@@ -125,6 +125,7 @@ export default function MediaPost({
       .then((res) => res.json())
       .then((data) => setUploadProvider(data.provider))
       .catch((err) => {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
         const { handleErrorSafely } = require("~/lib/error-handler.client");
         handleErrorSafely(err, {
           component: "MediaPost",

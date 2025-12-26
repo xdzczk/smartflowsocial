@@ -4,8 +4,9 @@
  */
 
 import { json } from "@remix-run/node";
-import { getQueueTypes } from "~/models/user.server";
+
 import { ValidationError } from "~/lib/errors";
+import { getQueueTypes } from "~/models/user.server";
 
 /**
  * Get effective hashtags for a queue type

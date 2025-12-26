@@ -3,20 +3,21 @@
  * Centralized action processing for new post page
  */
 
-import { redirect } from "@remix-run/node";
-import {
+import { redirect ,
   unstable_composeUploadHandlers as composeUploadHandlers,
   unstable_createMemoryUploadHandler as createMemoryUploadHandler,
   unstable_parseMultipartFormData as parseMultipartFormData,
 } from "@remix-run/node";
+
+import type { SignedEvent } from "~/features/nostr/types";
+import { createUploadHandler } from "~/features/upload/s3.server";
 import { createPost } from "~/models/post.commands.server";
 import {
   getUserById,
   getQueueTypes,
   getHashTagPresetById,
 } from "~/models/user.server";
-import { createUploadHandler } from "~/features/upload/s3.server";
-import type { SignedEvent } from "~/features/nostr/types";
+
 import { resolveQueueTypeId } from "./queue-type-resolver.server";
 
 /**

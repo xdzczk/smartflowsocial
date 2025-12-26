@@ -4,14 +4,14 @@ import { useActionData, useLoaderData, useNavigation } from "@remix-run/react";
 
 import Footer from "~/components/layout/FrontendFooter";
 import Header from "~/components/layout/FrontendHeader";
-import { PricingCard } from "~/features/payments/components/PricingCard";
+import { ErrorMessage } from "~/features/payments/components/ErrorMessage";
 import { FeatureComparisonTable } from "~/features/payments/components/FeatureComparisonTable";
 import { InvoiceModal } from "~/features/payments/components/InvoiceModal";
 import { PaymentSuccessModal } from "~/features/payments/components/PaymentSuccessModal";
-import { ErrorMessage } from "~/features/payments/components/ErrorMessage";
+import { PricingCard } from "~/features/payments/components/PricingCard";
 import { usePlansState } from "~/features/payments/hooks/usePlansState";
-import { loadPlansData } from "~/features/payments/services/plans-loader.server";
 import { handlePlansAction } from "~/features/payments/services/plans-action.server";
+import { loadPlansData } from "~/features/payments/services/plans-loader.server";
 
 export const meta: MetaFunction = () => {
   return [

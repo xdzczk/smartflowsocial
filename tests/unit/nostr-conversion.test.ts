@@ -4,8 +4,9 @@
  * Tests the utility functions in app/lib/nostr-conversion.ts
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { nip19 } from "nostr-tools";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
 import { convertToHex, convertHexToNpub } from "~/lib/nostr-conversion";
 
 // Mock nostr-tools
@@ -74,7 +75,9 @@ describe("Nostr Conversion Utilities", () => {
     });
 
     it("should log error on decode failure", () => {
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {
+        // Mock console.error to suppress output
+      });
       const invalidNpub = "invalid";
 
       (nip19.decode as ReturnType<typeof vi.fn>).mockImplementation(() => {
@@ -128,7 +131,9 @@ describe("Nostr Conversion Utilities", () => {
     });
 
     it("should log error on encode failure", () => {
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {
+        // Mock console.error to suppress output
+      });
       const invalidHex = "invalid-hex";
 
       (nip19.npubEncode as ReturnType<typeof vi.fn>).mockImplementation(() => {

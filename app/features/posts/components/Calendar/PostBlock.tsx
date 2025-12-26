@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { ThumbnailPostBlock } from "./ThumbnailPostBlock";
-import { MinimalPostBlock } from "./MinimalPostBlock";
+
 import { CompactPostBlock } from "./CompactPostBlock";
 import { FullPostBlock } from "./FullPostBlock";
+import { MinimalPostBlock } from "./MinimalPostBlock";
 import type { PostBlockProps } from "./PostBlock.types";
 import { getQueueColorStyle, getDisplayTime } from "./PostBlock.utils";
+import { ThumbnailPostBlock } from "./ThumbnailPostBlock";
 
 export function PostBlock({
   post,

@@ -7,8 +7,8 @@
  * Comprehensive test coverage is essential.
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { json } from "@remix-run/node";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock dependencies
 vi.mock("~/models/user.server", () => ({
@@ -60,10 +60,11 @@ vi.mock("~/features/payments/btc.rate", () => ({
   getBitcoinRate: vi.fn(),
 }));
 
-import { getEnabledUsersWithSubscriptions, disableUserAccount } from "~/models/user.server";
-import { createRenewalPayment, updateUserSubscription } from "~/models/payment.server";
 import { decrypt } from "~/lib/encryption.server";
 import { sendNostrDirectMessage } from "~/lib/nostr.messenger.server";
+import { createRenewalPayment, updateUserSubscription } from "~/models/payment.server";
+import { getEnabledUsersWithSubscriptions, disableUserAccount } from "~/models/user.server";
+
 import { LN } from "@getalby/sdk/lnclient";
 
 describe("Cron Subscription Checker", () => {

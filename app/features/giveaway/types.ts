@@ -57,6 +57,4 @@ export interface GiveawayStats {
 /**
  * Giveaway state data
  */
-export interface GiveawayStateData {
-  [key: string]: unknown;
-}
+export type GiveawayStateData = Record<string, unknown>;

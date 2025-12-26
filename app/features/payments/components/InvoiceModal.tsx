@@ -61,11 +61,12 @@ export function InvoiceModal({
         </div>
 
         <div className="mb-4">
-          <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label htmlFor="lightning-invoice" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
             Lightning Invoice:
           </label>
           <div className="flex">
             <input
+              id="lightning-invoice"
               type="text"
               value={invoiceData.invoice}
               readOnly

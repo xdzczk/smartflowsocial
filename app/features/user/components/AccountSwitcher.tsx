@@ -3,9 +3,9 @@ import * as React from "react";
 
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import type { NostrEventData } from "~/features/nostr/types";
 import { useSubscription } from "~/features/payments/types";
 import { useOptionalUser } from "~/lib/remix-utils";
-import type { NostrEventData } from "~/features/nostr/types";
 
 interface ChildAccount {
   npub: string;
@@ -29,7 +29,7 @@ export default function AccountSwitcher() {
     if (!isChild && hasAccountsAccess && fetcher.state === "idle" && !fetcher.data) {
       fetcher.load("/api/children");
     }
-  }, [isChild, hasAccountsAccess, fetcher.state]);
+  }, [isChild, hasAccountsAccess, fetcher.state, fetcher]);
 
   React.useEffect(() => {
     if (fetcher.data?.children) {
@@ -77,6 +77,7 @@ export default function AccountSwitcher() {
 
       document.dispatchEvent(new CustomEvent("nlLaunch", { detail: "switch" }));
     } catch (e) {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { handleErrorSafely } = require("~/lib/error-handler.client");
       handleErrorSafely(e, {
         component: "AccountSwitcher",

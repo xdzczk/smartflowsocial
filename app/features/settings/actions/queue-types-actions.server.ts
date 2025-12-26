@@ -3,11 +3,12 @@
  */
 
 import { json } from "@remix-run/node";
+
 import { getUserSubscription } from "~/models/payment.server";
 import {
-  updateQueueType,
   deleteQueueType,
   hashTagPresetExistsForUser,
+  updateQueueType,
 } from "~/models/user.server";
 
 export async function handleQueueTypeAction(

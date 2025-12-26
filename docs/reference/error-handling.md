@@ -17,9 +17,9 @@ The error handling system consists of:
 ### Basic Usage in a Loader
 
 ```typescript
-import { withErrorHandling } from "~/lib/error-handler.server";
-import { assertExists } from "~/lib/error-handler.server";
 import type { LoaderFunctionArgs } from "@remix-run/node";
+
+import { withErrorHandling , assertExists } from "~/lib/error-handler.server";
 
 export const loader = withErrorHandling(
   async ({ request, params }: LoaderFunctionArgs) => {
@@ -35,9 +35,10 @@ export const loader = withErrorHandling(
 ### Basic Usage in an Action
 
 ```typescript
+import type { ActionFunctionArgs } from "@remix-run/node";
+
 import { withActionErrorHandling, createSuccessResponse } from "~/lib/error-handler.server";
 import { ValidationError } from "~/lib/errors";
-import type { ActionFunctionArgs } from "@remix-run/node";
 
 export const action = withActionErrorHandling(
   async ({ request }: ActionFunctionArgs) => {
@@ -383,12 +384,12 @@ Make sure you're using the error handling wrapper or manually catching errors:
 
 ```typescript
 // ✅ Will be caught
-export const loader = withErrorHandling(async () => {
+const loader = withErrorHandling(async () => {
   throw new ValidationError("Error");
 });
 
 // ❌ Won't be caught automatically
-export async function loader() {
+async function loaderWithoutWrapper() {
   throw new ValidationError("Error"); // Must wrap or catch manually
 }
 ```
@@ -398,8 +399,8 @@ export async function loader() {
 Check that errors are being normalized:
 
 ```typescript
-import { normalizeError } from "~/lib/errors";
 import { logError } from "~/lib/error-logger.server";
+import { normalizeError } from "~/lib/errors";
 
 try {
   // ...

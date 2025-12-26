@@ -4,15 +4,24 @@
  */
 
 import { connectToPrimalCache } from "~/features/cache/primalCache.server";
-import type { NotificationEvent, GroupedNotification, PrimalEvent, NostrTag, ThreadViewData, EngagementProfile, EngagementStats, EventStats } from "~/features/engagement/types";
 import {
-  parseThreadViewNotifications,
-  groupNotificationsByType,
   groupNotificationsByParent,
+  groupNotificationsByType,
+  parseThreadViewNotifications,
   processQuoteReposts,
   type Notification,
 } from "~/features/engagement/engagement.server";
 import { calculateTrustScore, type User } from "~/features/engagement/trustScore";
+import type {
+  EngagementProfile,
+  EngagementStats,
+  EventStats,
+  GroupedNotification,
+  NostrTag,
+  NotificationEvent,
+  PrimalEvent,
+  ThreadViewData,
+} from "~/features/engagement/types";
 import { getPostedPosts } from "~/models/post.queries.server";
 import { getUserById } from "~/models/user.server";
 
@@ -216,8 +225,8 @@ function filterLowTrustNotifications(
  */
 export async function loadEngagementFeedData(
   userId: string,
-  page: number = 1,
-  limit: number = 50,
+  page = 1,
+  limit = 50,
 ) {
   const [{ posts }, user] = await Promise.all([
     getPostedPosts({

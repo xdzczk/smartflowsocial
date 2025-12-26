@@ -10,9 +10,10 @@
 
 import fc from "fast-check";
 import { describe, it, expect } from "vitest";
-import { formatScheduleTimeForInput } from "~/lib/schedule-formatting";
-import { formatDate } from "~/lib/helpers";
+
 import { formatDate as formatDateWithTimezone } from "~/features/posts/utils/content-helpers";
+import { formatDate } from "~/lib/helpers";
+import { formatScheduleTimeForInput } from "~/lib/schedule-formatting";
 
 // Valid IANA timezone identifiers
 const validTimezones = [

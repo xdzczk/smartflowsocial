@@ -3,13 +3,14 @@
  */
 
 import { json } from "@remix-run/node";
+
+import { fetchMutedList } from "~/features/engagement/mutedList.server";
 import {
   getUserBasicInfo,
-  updateUserMutedList,
   updateUserFilterMuted,
   updateUserHidePostsFromLowTrustUsers as updateUserHideLowTrust,
+  updateUserMutedList,
 } from "~/models/user.server";
-import { fetchMutedList } from "~/features/engagement/mutedList.server";
 
 export async function handleEngagementAction(
   userId: string,

@@ -46,16 +46,14 @@ export default function Toast({ toast, onClose }: ToastProps) {
                         <pre className="whitespace-pre-wrap text-sm font-medium">
                             {toast.message}
                         </pre>
-                        {toast.link && (
-                            <a
+                        {toast.link ? <a
                                 href={toast.link}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="mt-1 block text-sm underline hover:no-underline"
                             >
                                 {toast.linkText || "View"}
-                            </a>
-                        )}
+                            </a> : null}
                     </div>
                     <button
                         onClick={onClose}

@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "@remix-run/react";
+import { useEffect, useRef, useState } from "react";
 
 interface UsePaymentPollingProps {
   paymentId: string | null;
@@ -10,7 +10,7 @@ interface UsePaymentPollingProps {
  * Custom hook for managing payment polling
  */
 export function usePaymentPolling({
-  paymentId,
+  paymentId: _paymentId,
   onPaymentComplete,
 }: UsePaymentPollingProps) {
   const navigate = useNavigate();

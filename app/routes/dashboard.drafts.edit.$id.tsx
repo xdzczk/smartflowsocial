@@ -2,12 +2,12 @@ import { json, redirect, type LoaderFunctionArgs, type ActionFunctionArgs } from
 import { useLoaderData, Link } from "@remix-run/react";
 
 import { requireUserId } from "~/features/auth/session.server";
-import { DraftPreview } from "~/features/posts/components/DraftPreview";
 import { DraftEditForm } from "~/features/posts/components/DraftEditForm";
+import { DraftPreview } from "~/features/posts/components/DraftPreview";
 import { ResumeModal } from "~/features/posts/components/ResumeModal";
 import { useDraftEditState } from "~/features/posts/hooks/useDraftEditState";
-import { loadDraftEditData } from "~/features/posts/services/draft-edit-loader.server";
 import { handleDraftEditAction } from "~/features/posts/services/draft-edit-action.server";
+import { loadDraftEditData } from "~/features/posts/services/draft-edit-loader.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);

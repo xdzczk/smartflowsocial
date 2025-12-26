@@ -6,8 +6,8 @@
 
 import type { BulkPostsHandlerDeps } from "~/features/posts/types";
 import { resizeImage } from "~/features/upload/image-resize";
-import { isVideoFile } from "~/utils/media-helpers";
 import { logClientError } from "~/lib/error-handler.client";
+import { isVideoFile } from "~/utils/media-helpers";
 
 // File size limits
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB for images

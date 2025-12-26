@@ -1,8 +1,8 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
 
-import { safeRedirect } from "~/lib/remix-utils";
 import { authenticateNostrUser } from "~/features/auth/services/nostr-auth.server";
 import { withActionErrorHandling } from "~/lib/error-handler.server";
+import { safeRedirect } from "~/lib/remix-utils";
 
 export const action = withActionErrorHandling(async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();

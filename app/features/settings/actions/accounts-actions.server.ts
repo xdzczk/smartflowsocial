@@ -3,6 +3,8 @@
  */
 
 import { json } from "@remix-run/node";
+
+import { logWarning } from "~/lib/error-logger.server";
 import { updateUserSubscription, getUserSubscription } from "~/models/payment.server";
 import {
   getUserBasicInfo,
@@ -13,7 +15,6 @@ import {
   unlinkChildByParent,
   getUserIdByNpub,
 } from "~/models/user.server";
-import { logWarning } from "~/lib/error-logger.server";
 
 export async function handleAccountsAction(
   userId: string,

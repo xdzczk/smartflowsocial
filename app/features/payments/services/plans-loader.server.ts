@@ -3,11 +3,11 @@
  * Centralized data fetching for plans page
  */
 
-import {
-  getUserSubscription,
-  getAllPlans,
-} from "~/models/payment.server";
 import { requireUser } from "~/features/auth/session.server";
+import {
+  getAllPlans,
+  getUserSubscription,
+} from "~/models/payment.server";
 
 /**
  * Load plans data

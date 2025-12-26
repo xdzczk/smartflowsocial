@@ -6,6 +6,7 @@ import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import type { GroupedNotifications, Notification } from "~/features/engagement/engagement.server";
 import type { GroupedNotification } from "~/features/engagement/types";
 import { formatDate } from "~/lib/helpers";
+
 import { NotificationItem } from "./NotificationItem";
 
 interface GroupedNotificationListProps {
@@ -43,7 +44,7 @@ export default function GroupedNotificationList({
           No notifications yet
         </p>
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          When you get replies or mentions, they'll show up here
+          When you get replies or mentions, they&apos;ll show up here
         </p>
       </div>
     );

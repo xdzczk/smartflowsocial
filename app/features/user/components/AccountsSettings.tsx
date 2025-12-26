@@ -47,7 +47,9 @@ function extractProfileBits(nostrProfile: ProfileData | null | undefined) {
         picture: p?.picture,
       } as const;
     }
-  } catch {}
+  } catch {
+    // Ignore parsing errors, return defaults
+  }
   return {
     name: undefined,
     display_name: undefined,
@@ -92,7 +94,7 @@ export function AccountsSettings({
     }, 300);
 
     return () => clearTimeout(i);
-  }, [q]);
+  }, [q, fetcher]);
 
   const onRequestChild = (childNpub: string) => {
     const np = (childNpub || "").trim();
@@ -115,7 +117,7 @@ export function AccountsSettings({
     ) {
       revalidator.revalidate();
     }
-  }, [fetcher.state, fetcher.data, submittingAction]);
+  }, [fetcher.state, fetcher.data, submittingAction, revalidator]);
 
   const renderAccountRow = (npub: string, nostrProfile?: ProfileData | null) => {
     const bits = extractProfileBits(nostrProfile);
@@ -202,8 +204,9 @@ export function AccountsSettings({
       </div>
 
       <div className="mb-6">
-        <label className="mb-2 block text-sm font-medium">Search users</label>
+        <label htmlFor="accounts-search" className="mb-2 block text-sm font-medium">Search users</label>
         <Input
+          id="accounts-search"
           placeholder="Search by name or npub..."
           value={q}
           onChange={(e) => setQ(e.target.value)}

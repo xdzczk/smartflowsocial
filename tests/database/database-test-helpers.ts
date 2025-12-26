@@ -5,6 +5,9 @@
  */
 
 import { describe, it, beforeEach, afterEach, beforeAll, afterAll } from "vitest";
+
+import type { TestFixtures } from "./fixtures";
+import { createMinimalFixtures, createCompleteFixtures } from "./fixtures";
 import {
   getTestPrisma,
   setupTestDatabase,
@@ -12,8 +15,6 @@ import {
   useTestDatabase,
   resetTestDatabase,
 } from "./test-db";
-import type { TestFixtures } from "./fixtures";
-import { createMinimalFixtures, createCompleteFixtures } from "./fixtures";
 
 /**
  * Setup database before all tests
@@ -107,6 +108,7 @@ export async function withDatabase<T>(
   testFn: (prisma: Awaited<ReturnType<typeof getTestPrisma>>) => Promise<T>,
   fixtures?: TestFixtures,
 ): Promise<T> {
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   return await useTestDatabase(testFn, {
     useTransaction: false, // Use separate test database instead
     fixtures,
@@ -123,6 +125,7 @@ export async function withDatabaseNoTransaction<T>(
   testFn: (prisma: Awaited<ReturnType<typeof getTestPrisma>>) => Promise<T>,
   fixtures?: TestFixtures,
 ): Promise<T> {
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   return await useTestDatabase(testFn, {
     useTransaction: false,
     fixtures,

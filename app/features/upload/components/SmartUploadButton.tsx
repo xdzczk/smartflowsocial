@@ -75,7 +75,7 @@ export function SmartUploadButton({
     return result.fileUrl;
   };
 
-  const uploadToBlossom = async (
+  const uploadToBlossom = useCallback(async (
     file: File,
     provider: "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR",
   ): Promise<string> => {
@@ -101,7 +101,7 @@ export function SmartUploadButton({
       }, false); // Don't show toast, throw to caller
       throw error;
     }
-  };
+  }, [onUploadProgress]);
 
   const handleFileUpload = useCallback(
     async (file: File) => {
@@ -148,7 +148,7 @@ export function SmartUploadButton({
         }
       }
     },
-    [onUploadStart, onUploadProgress, onUploadComplete, onUploadError],
+    [onUploadStart, onUploadProgress, onUploadComplete, onUploadError, uploadToBlossom],
   );
 
   const handleFileSelect = useCallback(

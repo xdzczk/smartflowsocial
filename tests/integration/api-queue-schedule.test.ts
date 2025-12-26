@@ -4,8 +4,8 @@
  * Tests the API endpoint in app/routes/api.queue-schedule.tsx
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { json } from "@remix-run/node";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock dependencies
 vi.mock("~/features/auth/session.server", () => ({
@@ -24,9 +24,10 @@ vi.mock("~/features/posts/schedulers", () => ({
 }));
 
 import { requireUserId } from "~/features/auth/session.server";
-import { getQueueTypes, getUserTimezone, getQueueTypeByIdForUser } from "~/models/user.server";
 import { calculateNextScheduleTime, formatScheduleTimeForInput } from "~/features/posts/schedulers";
+import { getQueueTypes, getUserTimezone, getQueueTypeByIdForUser } from "~/models/user.server";
 import { action } from "~/routes/api.queue-schedule";
+
 import { TEST_USER_ID } from "../utils/test-helpers";
 
 describe("API: Queue Schedule", () => {

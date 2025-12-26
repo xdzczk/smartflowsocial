@@ -4,13 +4,14 @@
  */
 
 import { json, redirect } from "@remix-run/node";
+
+import { ValidationError } from "~/lib/errors";
 import {
   getTemplateById,
   updateTemplate,
   deleteTemplate,
   removePostFromTemplate,
 } from "~/models/template.server";
-import { ValidationError } from "~/lib/errors";
 
 /**
  * Load template data for editing

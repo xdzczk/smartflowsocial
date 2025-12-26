@@ -1,22 +1,20 @@
-import { json } from "@remix-run/node";
-import { useLoaderData, Link, useParams } from "@remix-run/react";
+import { Link, useLoaderData, useParams } from "@remix-run/react";
+
+import Toast from "~/components/ui/Toast";
 import { requireUserId } from "~/features/auth/session.server";
 import { requireAnySubscription } from "~/features/payments/subscriptions.server";
-import { combineContent } from "~/features/posts/combined.server";
 import AllContentListing from "~/features/posts/components/AllContentListing";
 import LongFormDetailsModal from "~/features/posts/components/LongFormDetailsModal";
 import LongFormListing from "~/features/posts/components/LongFormListing";
 import PostDetailsModal from "~/features/posts/components/PostDetailsModal";
 import PostedPostsTable from "~/features/posts/components/PostedPostsTable";
 import PostedPostsTabs from "~/features/posts/components/PostedPostsTabs";
+import { getPostedDashboardData } from "~/features/posts/posts.server";
 import { usePostedPosts } from "~/features/posts/usePostedPosts";
-import Toast from "~/components/ui/Toast";
 import { withErrorHandling } from "~/lib/error-handler.server";
 
 // Re-export action from server module
 export { postedPostsAction as action } from "~/features/posts/posted.action.server";
-
-import { getPostedDashboardData } from "~/features/posts/posts.server";
 
 export const loader = withErrorHandling(async ({ request, params }: { request: Request; params: { queueType?: string } }) => {
   const userId = await requireUserId(request);

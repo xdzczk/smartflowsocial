@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
 import { useFetcher } from "@remix-run/react";
+import { useEffect, useState } from "react";
 
 interface User {
   timezone?: string | null;

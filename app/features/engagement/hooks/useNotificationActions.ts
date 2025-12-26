@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
 import { nip19 } from "nostr-tools";
-import { signEventFn } from "~/lib/nostr";
+import { useEffect, useState } from "react";
+
 import type { NotificationEvent, NostrTag } from "~/features/engagement/types";
+import { signEventFn } from "~/lib/nostr";
 
 export interface NotificationActionTarget {
     eventId: string;
@@ -47,7 +48,7 @@ export function useNotificationActions({
 
     // Child replies data
     const [childReplies, setChildReplies] = useState<ChildReply[]>([]);
-    const [childMetadata, setChildMetadata] = useState<Record<string, any>>({});
+    const [childMetadata, setChildMetadata] = useState<Record<string, unknown>>({});
 
     const showToast = (type: "success" | "error", message: string, duration = 3000) => {
         setToast({ type, message });
@@ -291,6 +292,7 @@ export function useNotificationActions({
         if (showChildReplies && childReplies.length === 0) {
             fetchChildReplies();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [showChildReplies]);
 
     return {

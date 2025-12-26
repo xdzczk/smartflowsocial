@@ -4,8 +4,9 @@
  * Uses fast-check to generate random inputs and verify properties
  */
 
-import { describe, it, expect } from "vitest";
 import fc from "fast-check";
+import { describe, it, expect } from "vitest";
+
 import { convertToHex, convertHexToNpub } from "~/lib/nostr-conversion";
 
 describe("Property-Based Tests: Nostr Conversion", () => {

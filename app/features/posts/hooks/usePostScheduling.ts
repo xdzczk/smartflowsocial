@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+
 import type { QueueType } from "~/features/posts/types";
 import { useOptionalUser } from "~/lib/remix-utils";
 
@@ -24,7 +25,7 @@ export function usePostScheduling({
   const [scheduledFor, setScheduledFor] = useState("");
   const [timeError, setTimeError] = useState("");
 
-  const calculateQueueScheduleTime = async (queueTypeName: string) => {
+  const calculateQueueScheduleTime = useCallback(async (queueTypeName: string) => {
     if (queueTypeName === "unassigned") {
       setScheduledFor("");
       return;
@@ -61,7 +62,7 @@ export function usePostScheduling({
     } catch (error) {
       console.error("Error calculating schedule time:", error);
     }
-  };
+  }, [queueTypes, user?.id, onTimeError]);
 
   const handleScheduleIntervalClick = (intervalHours: string | number) => {
     // Find the currently selected queue type
@@ -123,7 +124,7 @@ export function usePostScheduling({
     if (onQueueTypeChange) {
       onQueueTypeChange(selectedQueue);
     }
-  }, [selectedQueue, onQueueTypeChange]);
+  }, [selectedQueue, onQueueTypeChange, calculateQueueScheduleTime]);
 
   const handleScheduledForChange = (value: string) => {
     setScheduledFor(value);

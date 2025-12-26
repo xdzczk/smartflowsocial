@@ -1,17 +1,14 @@
-import { Link } from "@remix-run/react";
-
 import type {
     Notification,
-    NotificationReply,
-    NotificationMention,
-    NotificationQuoteRepost,
 } from "~/features/engagement/engagement.server";
 import { getTrustLevel, getTrustScoreBadgeColor } from "~/features/engagement/trustScore";
 import { formatDate } from "~/lib/helpers";
+
 import { useNotificationActions } from "../hooks/useNotificationActions";
-import { NotificationActionButtons, type NotificationStats } from "./NotificationActionButtons";
-import { ReplyInputPanel, QuoteInputPanel } from "./NotificationInputPanels";
+
 import { ChildRepliesPanel } from "./ChildRepliesPanel";
+import { NotificationActionButtons, type NotificationStats } from "./NotificationActionButtons";
+import { QuoteInputPanel, ReplyInputPanel } from "./NotificationInputPanels";
 
 interface NotificationItemProps {
     notification: Notification;
@@ -57,7 +54,7 @@ const TYPE_BADGES = {
 
 export function NotificationItem({
     notification,
-    userTimezone,
+    userTimezone: _userTimezone,
     userRelays = ["wss://relay.primal.net"],
     trustScores = {},
 }: NotificationItemProps) {

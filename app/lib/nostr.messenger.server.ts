@@ -2,9 +2,10 @@
 
 import { nip04, finalizeEvent } from "nostr-tools";
 
+import { logWarning, logError } from "~/lib/error-logger.server";
+
 import { convertToHex } from "./nostr-conversion";
 import { relaysArray } from "./relays";
-import { logWarning, logError } from "~/lib/error-logger.server";
 
 interface SendNostrDirectMessageResult {
   success: boolean;

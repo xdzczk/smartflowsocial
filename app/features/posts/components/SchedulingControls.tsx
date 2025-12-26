@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -36,7 +36,7 @@ export default function SchedulingControls({
 }: SchedulingControlsProps) {
   const [localScheduledFor, setLocalScheduledFor] = useState(scheduledFor);
 
-  const calculateQueueScheduleTime = async (queueTypeName: string) => {
+  const calculateQueueScheduleTime = useCallback(async (queueTypeName: string) => {
     if (queueTypeName === "unassigned") {
       setLocalScheduledFor("");
       onScheduleChange("");
@@ -74,13 +74,13 @@ export default function SchedulingControls({
         action: "calculateScheduleTime",
       });
     }
-  };
+  }, [queueTypes, userId, onScheduleChange]);
 
   useEffect(() => {
     if (selectedQueueType !== "unassigned") {
       calculateQueueScheduleTime(selectedQueueType);
     }
-  }, [selectedQueueType, userId]);
+  }, [selectedQueueType, calculateQueueScheduleTime]);
 
   const handleScheduleIntervalClick = (intervalHours: string) => {
     const now = new Date();

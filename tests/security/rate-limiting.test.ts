@@ -4,8 +4,9 @@
  * Tests for rate limiting middleware to ensure proper protection against abuse.
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
 import type { Request, Response, NextFunction } from "express";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+
 import {
   apiLimiter,
   strictLimiter,

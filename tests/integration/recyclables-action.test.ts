@@ -5,8 +5,8 @@
  * Tests handleRecyclablePostAction function
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { json } from "@remix-run/node";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock Prisma to prevent $use errors
 vi.mock("~/lib/prisma.server", () => ({
@@ -24,9 +24,10 @@ vi.mock("~/models/post.queries.server", () => ({
   getPostsByIds: vi.fn(),
 }));
 
+import { handleRecyclablePostAction } from "~/features/posts/posts.server";
 import { deletePost } from "~/models/post.commands.server";
 import { getPostsByIds } from "~/models/post.queries.server";
-import { handleRecyclablePostAction } from "~/features/posts/posts.server";
+
 import {
   createActionFormData,
   createFormData,

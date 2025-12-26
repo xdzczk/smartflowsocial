@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
 import { useFetcher } from "@remix-run/react";
-import { useOptionalUser } from "~/lib/remix-utils";
+import { useState, useEffect, useCallback } from "react";
+
 import { signDraftForScheduling } from "~/features/posts/services/draft-sign.server";
 import type { UserData, HashTagPreset } from "~/features/posts/types";
+import { useOptionalUser } from "~/lib/remix-utils";
 
 interface Post {
   content?: string | null;
@@ -53,7 +54,7 @@ export function useDraftEditState({
     setShowResumeModal(true);
   };
 
-  const calculateQueueScheduleTime = async (queueTypeName: string) => {
+  const calculateQueueScheduleTime = useCallback(async (queueTypeName: string) => {
     if (queueTypeName === "unassigned") {
       setScheduledFor("");
       return;
@@ -78,7 +79,7 @@ export function useDraftEditState({
     } catch (error) {
       console.error("Error calculating schedule time:", error);
     }
-  };
+  }, [currentUser?.id]);
 
   const handleSignAndResume = async () => {
     try {
@@ -128,7 +129,7 @@ export function useDraftEditState({
     } else {
       setScheduledFor("");
     }
-  }, [selectedQueue, currentUser?.id]);
+  }, [selectedQueue, calculateQueueScheduleTime]);
 
   // Initialize hashtag preset data on component mount
   useEffect(() => {

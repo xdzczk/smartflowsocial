@@ -61,7 +61,7 @@ function generateTrendReport(trendData) {
   // Show last 5 entries
   const recent = history.slice(-5);
   console.log("Recent coverage:");
-  recent.forEach((entry, index) => {
+  recent.forEach((entry) => {
     const date = new Date(entry.timestamp).toLocaleDateString();
     console.log(
       `  ${date}: Lines ${entry.coverage.lines.toFixed(2)}% | Functions ${entry.coverage.functions.toFixed(2)}% | Branches ${entry.coverage.branches.toFixed(2)}% | Statements ${entry.coverage.statements.toFixed(2)}%`,

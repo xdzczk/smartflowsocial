@@ -6,9 +6,9 @@
 // The user will be created with an ACTIVE subscription if they don't already exist.
 // Each test creates a fresh user, and afterEach cleans it up.
 
+import { PrismaClient } from "@prisma/client";
 import { installGlobals } from "@remix-run/node";
 import { parse } from "cookie";
-import { PrismaClient } from "@prisma/client";
 
 import { sessionStorage } from "../../../app/features/auth/session.server";
 
@@ -167,6 +167,7 @@ async function createNostrUserAndLogin(npub: string) {
     const parsedCookie = parse(cookieValue);
 
     // Log the cookie in a parseable format
+    // eslint-disable-next-line no-console
     console.log(
         `
 <cookie>

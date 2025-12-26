@@ -5,8 +5,8 @@
  * For UI interaction tests, see tests/e2e/dashboard.cy.ts
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { json } from "@remix-run/node";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock dependencies
 vi.mock("~/models/post.commands.server", () => ({
@@ -17,9 +17,10 @@ vi.mock("~/models/longformpost.server", () => ({
   deleteLongFormPost: vi.fn(),
 }));
 
-import { deletePost } from "~/models/post.commands.server";
-import { deleteLongFormPost } from "~/models/longformpost.server";
 import { handleDashboardAction } from "~/features/posts/services/dashboard-action.server";
+import { deleteLongFormPost } from "~/models/longformpost.server";
+import { deletePost } from "~/models/post.commands.server";
+
 import { createActionFormData, createFormData, TEST_USER_ID, TEST_POST_ID, TEST_LONGFORM_ID, createPostIds } from "../utils/test-helpers";
 
 describe("Dashboard Action Handler", () => {

@@ -13,7 +13,9 @@ import { isbot } from "isbot";
 import { renderToPipeableStream } from "react-dom/server";
 
 // Initialize Sentry early for server-side error tracking
+import { logError } from "~/lib/error-logger.server";
 import { initSentry } from "~/lib/sentry.server";
+
 initSentry();
 
 const ABORT_DELAY = 5_000;
@@ -73,7 +75,6 @@ function handleBotRequest(
         onError(error: unknown) {
           responseStatusCode = 500;
           // Log error through centralized logger
-          const { logError } = require("~/lib/error-logger.server");
           logError(error instanceof Error ? error : new Error(String(error)), {
             path: request.url,
             method: request.method,
@@ -120,7 +121,6 @@ function handleBrowserRequest(
         },
         onError(error: unknown) {
           // Log error through centralized logger
-          const { logError } = require("~/lib/error-logger.server");
           logError(error instanceof Error ? error : new Error(String(error)), {
             path: request.url,
             method: request.method,

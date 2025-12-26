@@ -53,6 +53,7 @@ beforeAll(async () => {
 
 ```typescript
 import { describe, it, expect } from "vitest";
+
 import { withDatabase } from "~/tests/database/database-test-helpers";
 
 describe("User Model", () => {
@@ -108,9 +109,9 @@ describeDatabase("Post Model", () => {
 ### Testing Model Functions
 
 ```typescript
-import { withDatabase } from "~/tests/database/database-test-helpers";
 import { createPost } from "~/models/post.commands.server";
 import { getUserById } from "~/models/user.server";
+import { withDatabase } from "~/tests/database/database-test-helpers";
 
 it("should create post using model function", async () => {
   await withDatabase(async (prisma) => {
@@ -201,6 +202,7 @@ Test that migrations work correctly:
 
 ```typescript
 import { describe, it, expect } from "vitest";
+
 import { setupTestDatabase } from "~/tests/database/test-db";
 
 describe("Migrations", () => {

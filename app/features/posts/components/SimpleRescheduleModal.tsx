@@ -1,9 +1,9 @@
 import { useFetcher } from "@remix-run/react";
 import { useEffect, useState } from "react";
 
-import { signEventFn } from "~/lib/nostr";
-import { handleErrorSafely } from "~/lib/error-handler.client";
 import type { PostData, LongFormPostData, UserData, QueueType } from "~/features/posts/types";
+import { handleErrorSafely } from "~/lib/error-handler.client";
+import { signEventFn } from "~/lib/nostr";
 
 interface SimpleRescheduleModalProps {
   post: PostData | LongFormPostData;
@@ -267,7 +267,7 @@ export function SimpleRescheduleModal({
 
             {/* New time */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="simple-reschedule-datetime" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 New scheduled time:
               </label>
               <div className="flex items-center space-x-2">
@@ -285,6 +285,7 @@ export function SimpleRescheduleModal({
                   />
                 </svg>
                 <input
+                  id="simple-reschedule-datetime"
                   type="datetime-local"
                   value={
                     scheduledFor ? formatDateTimeForInput(scheduledFor) : ""
@@ -303,10 +304,11 @@ export function SimpleRescheduleModal({
             {/* Queue Type Selection for regular posts */}
             {!isLongform ? (
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label htmlFor="simple-reschedule-queue-type" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Queue Type:
                 </label>
                 <select
+                  id="simple-reschedule-queue-type"
                   value={selectedQueueType}
                   onChange={(e) => setSelectedQueueType(e.target.value)}
                   className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"

@@ -5,12 +5,12 @@
  * All functions in this file perform INSERT, UPDATE, or DELETE operations.
  */
 
-import type { Prisma } from "@prisma/client";
+import type { Prisma , Post } from "@prisma/client";
 
-import { prisma } from "~/lib/prisma.server";
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
+import { prisma } from "~/lib/prisma.server";
+
 import type { CreatePostData } from "./post.types";
-import type { Post } from "@prisma/client";
 
 /**
  * Create a new post in the database

@@ -5,8 +5,8 @@
  * For UI interaction tests, see tests/e2e/subscription/billing-loader.cy.ts
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { json } from "@remix-run/node";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock dependencies
 vi.mock("~/features/auth/session.server", () => ({
@@ -19,8 +19,9 @@ vi.mock("~/models/payment.server", () => ({
 }));
 
 import { requireUser } from "~/features/auth/session.server";
-import { createPlanInvoice, checkPaymentStatus } from "~/models/payment.server";
 import { handlePlansAction } from "~/features/payments/services/plans-action.server";
+import { createPlanInvoice, checkPaymentStatus } from "~/models/payment.server";
+
 import { createActionFormData, createFormData, TEST_USER_ID } from "../utils/test-helpers";
 
 describe("Plans Action Handler", () => {

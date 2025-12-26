@@ -3,33 +3,33 @@
  * Centralized data fetching for settings page
  */
 
+import type { ProfileData } from "~/features/nostr/types";
+import type { HashTagPreset, QueueType } from "~/features/posts/types";
 import {
-  getUserSubscription,
   getAllPlans,
   getUserPaymentHistory,
+  getUserSubscription,
 } from "~/models/payment.server";
 import {
-  getUserTimezone,
-  getUserRelays,
+  getConfirmedChildrenForParent,
   getGiveawayBlacklist,
-  getShowHashTagsInPosts,
-  getScheduleInterval,
+  getPendingChildrenForParent,
   getQueueTypes,
-  getUserUploadProvider,
-  getUserEnableMirrorBlossom,
-  getUserMirrorUploadUrls,
-  getUserHashTagPresets,
-  getUserNWC,
-  getUserMutedList,
-  getUserFilterMuted,
-  getUserHidePostsFromLowTrustUsers,
+  getScheduleInterval,
+  getShowHashTagsInPosts,
   getUserBasicInfo,
   getUserByNpubWithProfile,
-  getConfirmedChildrenForParent,
-  getPendingChildrenForParent,
+  getUserEnableMirrorBlossom,
+  getUserFilterMuted,
+  getUserHashTagPresets,
+  getUserHidePostsFromLowTrustUsers,
+  getUserMirrorUploadUrls,
+  getUserMutedList,
+  getUserNWC,
+  getUserRelays,
+  getUserTimezone,
+  getUserUploadProvider,
 } from "~/models/user.server";
-import type { QueueType, HashTagPreset } from "~/features/posts/types";
-import type { ProfileData } from "~/features/nostr/types";
 
 /**
  * User account info for parent/child relationships
@@ -80,13 +80,13 @@ export interface SettingsLoaderData {
       enableLifetimeAccess: boolean;
     } | null;
   } | null;
-  availablePlans: Array<{
+  availablePlans: {
     id: string;
     name: string;
     price: number;
     enableLifetimeAccess: boolean;
-  }>;
-  paymentHistory: Array<{
+  }[];
+  paymentHistory: {
     id: string;
     amount: number;
     amountUsd: number | null;
@@ -96,7 +96,7 @@ export interface SettingsLoaderData {
     paymentHash: string;
     planName?: string;
     planPrice?: number;
-  }>;
+  }[];
   isChild: boolean;
   hasAccountsAccess: boolean;
   accounts: {

@@ -1,11 +1,12 @@
 import { useFetcher } from "@remix-run/react";
 import { useState, useEffect } from "react";
-import { useEditPostModal } from "~/features/posts/hooks/useEditPostModal";
-import { EditPostFormFields } from "~/features/posts/components/EditPostFormFields";
+
 import { EditLongFormFormFields } from "~/features/posts/components/EditLongFormFormFields";
 import { EditorJSStyles } from "~/features/posts/components/EditorJSStyles";
-import { prepareEditPostSubmission } from "~/features/posts/utils/editPostSubmit.client";
+import { EditPostFormFields } from "~/features/posts/components/EditPostFormFields";
+import { useEditPostModal } from "~/features/posts/hooks/useEditPostModal";
 import type { PostData, LongFormPostData, QueueType, HashTagPreset, UserData, PostFetcher } from "~/features/posts/types";
+import { prepareEditPostSubmission } from "~/features/posts/utils/editPostSubmit.client";
 
 interface EditPostModalProps {
   post: PostData | LongFormPostData;
@@ -194,10 +195,11 @@ export function EditPostModal({
 
               {/* Schedule Date */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label htmlFor="edit-post-scheduled-for" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Scheduled For
                 </label>
                 <input
+                  id="edit-post-scheduled-for"
                   type="datetime-local"
                   value={
                     scheduledFor ? formatDateTimeForInput(scheduledFor) : ""

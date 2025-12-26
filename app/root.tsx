@@ -15,8 +15,8 @@ import {
 import { Toaster } from "react-hot-toast";
 
 import { getUser } from "~/features/auth/session.server";
-import { normalizeError } from "~/lib/errors";
 import { handleLoaderError } from "~/lib/error-handler.server";
+import { normalizeError } from "~/lib/errors";
 import stylesheet from "~/tailwind.css";
 
 export const links: LinksFunction = () => [
@@ -115,7 +115,7 @@ export function ErrorBoundary() {
   let statusCode = 500;
   let errorMessage = "An unexpected error occurred";
   let errorTitle = "Oops!";
-  let isDevelopment = process.env.NODE_ENV === "development";
+  const isDevelopment = process.env.NODE_ENV === "development";
 
   if (isRouteErrorResponse(error)) {
     statusCode = error.status;
@@ -158,16 +158,14 @@ export function ErrorBoundary() {
                   Go back home
                 </a>
               </div>
-              {isDevelopment && error instanceof Error && (
-                <details className="mt-10 text-left">
+              {isDevelopment && error instanceof Error ? <details className="mt-10 text-left">
                   <summary className="cursor-pointer text-sm font-semibold text-gray-700 dark:text-gray-300">
                     Error Details (Development Only)
                   </summary>
                   <pre className="mt-4 overflow-auto rounded-lg bg-gray-100 p-4 text-xs text-gray-800 dark:bg-gray-800 dark:text-gray-200">
                     {error.stack || error.toString()}
                   </pre>
-                </details>
-              )}
+                </details> : null}
             </div>
           </main>
         </div>

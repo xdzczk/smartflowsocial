@@ -4,8 +4,10 @@
  * Tests database migrations to ensure they work correctly
  */
 
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { execSync } from "child_process";
+
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+
 import { getTestPrisma, setupTestDatabase, resetTestDatabase } from "./test-db";
 
 describe("Database Migrations", () => {

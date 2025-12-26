@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect } from "vitest";
+
 import {
   PLAN_FEATURES,
   getUserPlanType,
@@ -15,7 +16,6 @@ import {
   type UserSubscription,
   type SubscriptionData,
   type PlanType,
-  type FeatureName,
 } from "~/features/payments/types";
 
 describe("Subscription & Plan Enforcement Unit Tests", () => {

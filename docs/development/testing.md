@@ -688,6 +688,7 @@ See [Test Factories README](../tests/factories/README.md) for details.
 
 ```typescript
 import { describe, it, expect } from "vitest";
+
 import { formatScheduleTimeForInput } from "~/lib/schedule-formatting";
 
 describe("Scheduling Logic", () => {
@@ -703,6 +704,7 @@ describe("Scheduling Logic", () => {
 
 ```typescript
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
 import { getUserById } from "~/models/user.server";
 
 vi.mock("~/lib/prisma.server", () => ({
@@ -728,6 +730,7 @@ describe("User Model", () => {
 
 ```typescript
 import { fc, test } from "@fast-check/vitest";
+
 import { formatDate } from "~/lib/helpers";
 
 test.prop([fc.date()])("formatDate handles all dates", (date) => {

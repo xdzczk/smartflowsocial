@@ -8,7 +8,17 @@ import imageCompression from "browser-image-compression";
  * @param customOptions - Optional configuration overrides
  * @returns A new File object with metadata removed and size optimized
  */
-export async function resizeImage(file, customOptions = {}) {
+export async function resizeImage(
+  file: File,
+  customOptions: {
+    maxSizeMB?: number;
+    maxWidthOrHeight?: number;
+    useWebWorker?: boolean;
+    fileType?: string;
+    preserveExif?: boolean;
+    [key: string]: unknown;
+  } = {},
+) {
   // Default options focused on privacy and optimization
   const options = {
     maxSizeMB: 0.1,
@@ -37,6 +47,7 @@ export async function resizeImage(file, customOptions = {}) {
 
     return newFile;
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error("Error processing image:", error);
     throw error;
   }
@@ -49,7 +60,7 @@ export async function resizeImage(file, customOptions = {}) {
  * @param file - The image file to strip metadata from
  * @returns A Blob containing the image data with all metadata removed
  */
-async function stripAllMetadata(file) {
+async function stripAllMetadata(file: File): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
     const img = new Image();

@@ -10,6 +10,7 @@ import { broadcastDevReady, installGlobals } from "@remix-run/node";
 import compression from "compression";
 import type { RequestHandler } from "express";
 import express from "express";
+import helmet from "helmet";
 import morgan from "morgan";
 import sourceMapSupport from "source-map-support";
 
@@ -18,7 +19,6 @@ import {
   strictLimiter,
   authLimiter,
 } from "./app/lib/rate-limit.server";
-import helmet from "helmet";
 
 sourceMapSupport.install();
 installGlobals();
@@ -50,7 +50,7 @@ function validateEnvironment(): void {
   ];
 
   const missing: string[] = [];
-  const invalid: Array<{ key: string; reason: string }> = [];
+  const invalid: { key: string; reason: string }[] = [];
 
   for (const key of required) {
     const value = process.env[key];

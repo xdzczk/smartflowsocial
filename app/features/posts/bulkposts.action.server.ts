@@ -5,11 +5,11 @@
 import { json, redirect } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth/session.server";
-import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
-import { createPost, updatePost } from "~/models/post.commands.server";
+import type { NostrEvent, SignedEvent } from "~/features/nostr/types";
 import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
-import { isVideoUrl } from "~/utils/media-helpers";
 import { logInfo } from "~/lib/error-logger.server";
+import { createPost, updatePost } from "~/models/post.commands.server";
+import { isVideoUrl } from "~/utils/media-helpers";
 
 /**
  * Upload result from client-side upload system
@@ -128,7 +128,7 @@ export async function handleSignAndSchedule(
         .filter((id) => id && id !== "");
 
 
-    const uploadedPosts = await Promise.all(
+    await Promise.all(
         signedEvents.map(async (signedEvent, index) => {
             // Parse content assuming format: "caption imageUrl1 imageUrl2 ..."
             let content = "";
@@ -302,7 +302,7 @@ export async function handleSaveAsDraft(
 async function markOriginalPostsAsNonRecyclable(
     originalPostIds: string[],
     userId: string,
-    isDraft: boolean = false
+    isDraft = false,
 ) {
     logInfo(`Marking original posts as non-recyclable${isDraft ? " (draft)" : ""}`, {
         originalPostIds,

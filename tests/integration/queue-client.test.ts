@@ -4,8 +4,8 @@
  * Tests the queue client in app/infra/queue/queue-client.server.ts
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Queue, Job } from "bullmq";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock queue operations - use vi.hoisted to ensure mocks are available
 const { mockQueue, MockQueue } = vi.hoisted(() => {

@@ -46,7 +46,7 @@ export function EditPostFormFields({
     <>
       {/* Images section */}
       <div>
-        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label htmlFor="edit-post-images" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
           Images / Media
         </label>
         <div className="flex flex-wrap gap-3">
@@ -85,8 +85,9 @@ export function EditPostFormFields({
               </div>
             );
           })}
-          <label className="flex h-24 w-24 cursor-pointer items-center justify-center rounded border-2 border-dashed border-gray-300 hover:border-gray-400">
+          <label htmlFor="edit-post-file-input" className="flex h-24 w-24 cursor-pointer items-center justify-center rounded border-2 border-dashed border-gray-300 hover:border-gray-400">
             <input
+              id="edit-post-file-input"
               type="file"
               className="hidden"
               accept="image/*,video/*"
@@ -100,10 +101,11 @@ export function EditPostFormFields({
 
       {/* Caption */}
       <div>
-        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label htmlFor="edit-post-caption" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
           Caption
         </label>
         <textarea
+          id="edit-post-caption"
           value={caption}
           onChange={(e) => setCaption(e.target.value)}
           rows={4}
@@ -124,10 +126,11 @@ export function EditPostFormFields({
       {/* Manual hashtags fallback */}
       {!useHashtagPresets ? (
         <div>
-          <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label htmlFor="edit-post-hashtags" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
             Hashtags (space-separated, e.g. #nostr #bitcoin)
           </label>
           <input
+            id="edit-post-hashtags"
             type="text"
             value={manualHashtags}
             onChange={(e) => setManualHashtags(e.target.value)}
@@ -138,10 +141,11 @@ export function EditPostFormFields({
       ) : null}
 
       <div>
-        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label htmlFor="edit-post-queue-type" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
           Queue Type
         </label>
         <select
+          id="edit-post-queue-type"
           value={selectedQueueType}
           onChange={(e) => setSelectedQueueType(e.target.value)}
           className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"

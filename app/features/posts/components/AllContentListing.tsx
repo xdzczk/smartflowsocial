@@ -1,10 +1,16 @@
-import { useFetcher, type FetcherWithComponents } from "@remix-run/react";
+import { useFetcher } from "@remix-run/react";
 import { useState } from "react";
-import type { CombinedContent, PostData, LongFormPostData, PostFetcher } from "~/features/posts/types";
-import { ContentSearchBar } from "~/features/posts/components/ContentSearchBar";
+
 import { ContentBulkActions } from "~/features/posts/components/ContentBulkActions";
+import { ContentSearchBar } from "~/features/posts/components/ContentSearchBar";
 import { ContentTableHeader } from "~/features/posts/components/ContentTableHeader";
 import { ContentTableRow } from "~/features/posts/components/ContentTableRow";
+import type {
+  CombinedContent,
+  LongFormPostData,
+  PostData,
+  PostFetcher,
+} from "~/features/posts/types";
 
 interface AllContentListingProps {
   content: CombinedContent[];

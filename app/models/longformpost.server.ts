@@ -22,9 +22,9 @@
 
 import type { LongFormPost, User, Prisma } from "@prisma/client";
 
-import { prisma } from "~/lib/prisma.server";
-import { calculateLongFormStatus } from "~/features/posts/services/longform-status-calculator.server";
 import type { SignedEvent } from "~/features/nostr/types";
+import { calculateLongFormStatus } from "~/features/posts/services/longform-status-calculator.server";
+import { prisma } from "~/lib/prisma.server";
 
 export type { LongFormPost } from "@prisma/client";
 

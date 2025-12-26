@@ -14,13 +14,14 @@ import {
   generateArticleIdentifier,
 } from "~/lib/nostr";
 
-import { useLongFormEditor } from "../useLongFormEditor";
 import { useCoverImageUpload } from "../useCoverImageUpload";
+import { useLongFormEditor } from "../useLongFormEditor";
 import { useLongFormScheduling } from "../useLongFormScheduling";
-import { LongFormEditorStyles } from "./LongFormEditorStyles";
-import { LongFormCoverImage } from "./LongFormCoverImage";
-import { LongFormPublishingOptions } from "./LongFormPublishingOptions";
+
 import { LongFormActionButtons } from "./LongFormActionButtons";
+import { LongFormCoverImage } from "./LongFormCoverImage";
+import { LongFormEditorStyles } from "./LongFormEditorStyles";
+import { LongFormPublishingOptions } from "./LongFormPublishingOptions";
 
 interface QueueType {
   id?: string;
@@ -449,8 +450,8 @@ export default function LongFormPost({
           useHashtagPresets={useHashtagPresets}
           selectedHashtagPresetId={selectedHashtagPresetId}
           selectedHashtags={selectedHashtags}
-          onHashtagPresetChange={onHashtagPresetChange || ((_id, _tags) => { })}
-          onUseHashtagPresetsChange={onUseHashtagPresetsChange || (() => { })}
+          onHashtagPresetChange={onHashtagPresetChange || ((_id, _tags) => { void _id; void _tags; })}
+          onUseHashtagPresetsChange={onUseHashtagPresetsChange || (() => { void 0; })}
         />
 
         <LongFormActionButtons

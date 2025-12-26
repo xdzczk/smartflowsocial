@@ -4,13 +4,14 @@
  */
 
 import { nip19 } from "nostr-tools";
+
 import { connectToPrimalCache } from "~/features/cache/primalCache.server";
 
 /**
  * Decode event ID from various formats (nevent1, note1, hex)
  */
 function decodeEventId(eventInput: string): string {
-  let eventId = eventInput.trim();
+  const eventId = eventInput.trim();
 
   // Check if input is in nevent1 format
   if (eventId.startsWith("nevent1")) {

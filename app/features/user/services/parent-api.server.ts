@@ -4,10 +4,11 @@
  */
 
 import { json } from "@remix-run/node";
-import { getUserBasicInfo, getUserByNpubWithProfile } from "~/models/user.server";
+
 import type { ProfileData } from "~/features/nostr/types";
-import { normalizeError } from "~/lib/errors";
 import { logError } from "~/lib/error-logger.server";
+import { normalizeError } from "~/lib/errors";
+import { getUserBasicInfo, getUserByNpubWithProfile } from "~/models/user.server";
 
 function extractProfileBits(nostrProfile: ProfileData | null | undefined) {
   if (!nostrProfile) {

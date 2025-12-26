@@ -20,9 +20,9 @@ export class AppError extends Error {
 
   constructor(
     message: string,
-    statusCode: number = 500,
-    code: string = "INTERNAL_ERROR",
-    isOperational: boolean = true,
+    statusCode = 500,
+    code = "INTERNAL_ERROR",
+    isOperational = true,
     context?: Record<string, unknown>,
   ) {
     super(message);
@@ -68,7 +68,7 @@ export class ValidationError extends AppError {
  */
 export class AuthenticationError extends AppError {
   constructor(
-    message: string = "Authentication required",
+    message = "Authentication required",
     context?: Record<string, unknown>,
   ) {
     super(message, 401, "AUTHENTICATION_ERROR", true, context);
@@ -80,7 +80,7 @@ export class AuthenticationError extends AppError {
  */
 export class AuthorizationError extends AppError {
   constructor(
-    message: string = "Insufficient permissions",
+    message = "Insufficient permissions",
     context?: Record<string, unknown>,
   ) {
     super(message, 403, "AUTHORIZATION_ERROR", true, context);
@@ -92,7 +92,7 @@ export class AuthorizationError extends AppError {
  */
 export class NotFoundError extends AppError {
   constructor(
-    message: string = "Resource not found",
+    message = "Resource not found",
     context?: Record<string, unknown>,
   ) {
     super(message, 404, "NOT_FOUND_ERROR", true, context);
@@ -104,7 +104,7 @@ export class NotFoundError extends AppError {
  */
 export class ConflictError extends AppError {
   constructor(
-    message: string = "Resource conflict",
+    message = "Resource conflict",
     context?: Record<string, unknown>,
   ) {
     super(message, 409, "CONFLICT_ERROR", true, context);
@@ -116,7 +116,7 @@ export class ConflictError extends AppError {
  */
 export class RateLimitError extends AppError {
   constructor(
-    message: string = "Rate limit exceeded",
+    message = "Rate limit exceeded",
     context?: Record<string, unknown>,
   ) {
     super(message, 429, "RATE_LIMIT_ERROR", true, context);
@@ -129,7 +129,7 @@ export class RateLimitError extends AppError {
 export class ExternalServiceError extends AppError {
   constructor(
     message: string,
-    statusCode: number = 502,
+    statusCode = 502,
     context?: Record<string, unknown>,
   ) {
     super(
@@ -147,7 +147,7 @@ export class ExternalServiceError extends AppError {
  */
 export class DatabaseError extends AppError {
   constructor(
-    message: string = "Database operation failed",
+    message = "Database operation failed",
     context?: Record<string, unknown>,
   ) {
     super(message, 500, "DATABASE_ERROR", true, context);

@@ -472,6 +472,7 @@ API endpoints are same-origin only by default. If you need cross-origin access, 
 ### Enabling CORS
 
 ```typescript
+// eslint-disable-next-line import/no-unresolved
 import cors from 'cors';
 
 app.use(cors({

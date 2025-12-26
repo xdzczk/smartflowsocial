@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect } from "vitest";
+
 import { formatScheduleTimeForInput } from "~/lib/schedule-formatting";
 
 describe("Scheduling Logic Unit Tests", () => {

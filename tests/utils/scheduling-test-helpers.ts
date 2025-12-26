@@ -53,13 +53,13 @@ export function createIntervalQueueType(
  * @param slots - Array of slot objects with hour and minute, OR array of time strings like "09:00"
  */
 export function createFixedSlotsQueueType(
-  slots: Array<{ hour: number; minute: number }> | string[],
+  slots: { hour: number; minute: number }[] | string[],
   overrides: Partial<QueueType> = {},
 ): QueueType {
   // Convert to string format that the scheduler expects (e.g., "09:00")
   const slotStrings = typeof slots[0] === "string"
     ? slots as string[]
-    : (slots as Array<{ hour: number; minute: number }>).map(
+    : (slots as { hour: number; minute: number }[]).map(
         (slot) => `${String(slot.hour).padStart(2, '0')}:${String(slot.minute).padStart(2, '0')}`
       );
 
@@ -87,7 +87,7 @@ export function createDateAtTime(
   month: number,
   day: number,
   hour: number,
-  minute: number = 0,
+  minute = 0,
 ): Date {
   return new Date(Date.UTC(year, month - 1, day, hour, minute));
 }

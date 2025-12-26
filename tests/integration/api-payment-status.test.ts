@@ -4,8 +4,8 @@
  * Tests the API endpoint in app/routes/api.payment-status.ts
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { json } from "@remix-run/node";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock dependencies
 vi.mock("~/models/payment.server", () => ({

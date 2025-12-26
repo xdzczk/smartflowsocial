@@ -8,20 +8,20 @@ import MediaModal from "~/components/ui/MediaModal";
 import { requireUserId } from "~/features/auth/session.server";
 import { requireFeatureAccess, requireAnySubscription } from "~/features/payments/subscriptions.server";
 import AllContentListing from "~/features/posts/components/AllContentListing";
+import { BulkDeleteBar } from "~/features/posts/components/BulkDeleteBar";
+import { DashboardHeader } from "~/features/posts/components/DashboardHeader";
 import { EditPostModal } from "~/features/posts/components/EditPostModal";
 import LongFormDetailsModal from "~/features/posts/components/LongFormDetailsModal";
 import LongFormListing from "~/features/posts/components/LongFormListing";
 import PostDetailsModal from "~/features/posts/components/PostDetailsModal";
+import { PostsSearch } from "~/features/posts/components/PostsSearch";
 import PostTypeTabs from "~/features/posts/components/PostTypeTabs";
 import QueueSelectionTabs from "~/features/posts/components/QueueSelectionTabs";
-import { SimpleRescheduleModal } from "~/features/posts/components/SimpleRescheduleModal";
-import { DashboardHeader } from "~/features/posts/components/DashboardHeader";
 import { ScheduledPostsTable } from "~/features/posts/components/ScheduledPostsTable";
-import { BulkDeleteBar } from "~/features/posts/components/BulkDeleteBar";
-import { PostsSearch } from "~/features/posts/components/PostsSearch";
+import { SimpleRescheduleModal } from "~/features/posts/components/SimpleRescheduleModal";
 import { useScheduledState } from "~/features/posts/hooks/useScheduledState";
-import { loadScheduledData } from "~/features/posts/services/scheduled-loader.server";
 import { handleScheduledAction } from "~/features/posts/services/scheduled-action.server";
+import { loadScheduledData } from "~/features/posts/services/scheduled-loader.server";
 import { withErrorHandling, withActionErrorHandling } from "~/lib/error-handler.server";
 
 export const loader = withErrorHandling(async ({ request, params }: LoaderFunctionArgs) => {
@@ -79,7 +79,7 @@ export default function ScheduledPosts() {
     postToReschedule,
     filteredPosts,
     bulkDeleteFetcher,
-    deleteFetcher,
+    deleteFetcher: _deleteFetcher,
     requestSort,
     setSearchTerm,
     setSelectedPost,

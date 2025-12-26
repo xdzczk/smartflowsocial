@@ -10,14 +10,14 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 // The require() uses a relative path "./secrets-sanitizer.server" which vitest
 // should handle through the alias mock, but we ensure it's properly set up
 vi.mock("~/lib/secrets-sanitizer.server", () => {
-  const mockSafeConsoleError = vi.fn((...args: any[]) => {
+  const mockSafeConsoleError = vi.fn(() => {
     // Silently handle errors in tests - don't actually log
   });
   
   return {
     safeConsoleError: mockSafeConsoleError,
-    sanitizeObject: vi.fn((obj: any) => obj),
-    sanitizeError: vi.fn((err: any) => err),
+    sanitizeObject: vi.fn((obj: unknown) => obj),
+    sanitizeError: vi.fn((err: unknown) => err),
   };
 });
 

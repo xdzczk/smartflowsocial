@@ -8,6 +8,7 @@
 import type { Request, Response, NextFunction } from "express";
 import rateLimit from "express-rate-limit";
 import { RateLimiterRedis } from "rate-limiter-flexible";
+
 import { redis } from "~/infra/queue/queue-client.server";
 import { RateLimitError } from "~/lib/errors";
 
@@ -83,8 +84,8 @@ function isRedisAvailable(): boolean {
  * @param duration - Time window in seconds
  */
 export function createUserRateLimiter(
-  points: number = 100,
-  duration: number = 60,
+  points = 100,
+  duration = 60,
 ) {
   return async (req: Request, res: Response, next: NextFunction) => {
     // Get user ID from request (set by auth middleware)
@@ -134,8 +135,8 @@ export function createUserRateLimiter(
  * Falls back to in-memory limiter if Redis is not available
  */
 export function createIPRateLimiter(
-  points: number = 100,
-  duration: number = 60,
+  points = 100,
+  duration = 60,
 ) {
   return async (req: Request, res: Response, next: NextFunction) => {
     if (!isRedisAvailable()) {

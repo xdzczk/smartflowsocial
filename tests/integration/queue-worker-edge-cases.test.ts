@@ -9,8 +9,8 @@
  * - Job retry scenarios
  */
 
-import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
 import type { Job } from "bullmq";
+import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
 
 // Mock BullMQ Worker
 vi.mock("bullmq", () => {
@@ -75,9 +75,10 @@ vi.mock("~/infra/queue", () => ({
 global.fetch = vi.fn();
 
 import { prisma } from "~/lib/prisma.server";
-import { updatePostStatus } from "~/models/post.commands.server";
 import { updateLongFormPostStatus } from "~/models/longformpost.server";
+import { updatePostStatus } from "~/models/post.commands.server";
 import { getUserById } from "~/models/user.server";
+
 import { TEST_USER_ID, createMockPost } from "../utils/test-helpers";
 
 // Import workers after mocks are set up

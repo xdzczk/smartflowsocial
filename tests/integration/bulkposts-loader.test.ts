@@ -5,8 +5,8 @@
  * Tests getBulkPostsDashboardData function
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { json } from "@remix-run/node";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock Prisma to prevent $use errors
 vi.mock("~/lib/prisma.server", () => ({
@@ -22,8 +22,9 @@ vi.mock("~/models/user.server", () => ({
   getUserHashTagPresets: vi.fn(),
 }));
 
-import { getQueueTypes, getUserHashTags, getUserHashTagPresets } from "~/models/user.server";
 import { getBulkPostsDashboardData } from "~/features/posts/posts.server";
+import { getQueueTypes, getUserHashTags, getUserHashTagPresets } from "~/models/user.server";
+
 import {
   TEST_USER_ID,
   createMockQueueType,

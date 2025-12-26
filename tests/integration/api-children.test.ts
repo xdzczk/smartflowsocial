@@ -21,9 +21,10 @@ vi.mock("~/models/payment.server", () => ({
 }));
 
 import { requireUserId } from "~/features/auth/session.server";
-import { getUserBasicInfo, getConfirmedChildrenForParent } from "~/models/user.server";
 import { getUserSubscription } from "~/models/payment.server";
+import { getUserBasicInfo, getConfirmedChildrenForParent } from "~/models/user.server";
 import { loader } from "~/routes/api.children";
+
 import { TEST_USER_ID } from "../utils/test-helpers";
 
 describe("API: Children", () => {

@@ -1,17 +1,18 @@
 if (process.env.NODE_ENV !== "development") {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   require("websocket-polyfill");
 }
 
 import { LN, USD } from "@getalby/sdk/lnclient";
 
 import { getBitcoinRate } from "~/features/payments/btc.rate";
-import { prisma } from "~/lib/prisma.server";
 import type {
   CreateInvoiceParams,
   InvoiceResponse,
   CreateRenewalPaymentParams,
 } from "~/features/payments/types";
 import { logError } from "~/lib/error-logger.server";
+import { prisma } from "~/lib/prisma.server";
 
 /**
  * Creates an invoice for a specific plan using owner's NWC

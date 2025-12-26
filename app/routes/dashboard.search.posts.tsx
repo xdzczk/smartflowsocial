@@ -6,8 +6,8 @@ import { SearchForm } from "~/features/search/components/SearchForm";
 import { SearchResult } from "~/features/search/components/SearchResult";
 import { SearchToast } from "~/features/search/components/SearchToast";
 import { useSearchState } from "~/features/search/hooks/useSearchState";
-import { loadSearchData } from "~/features/search/services/search-loader.server";
 import { handleSearchEvent } from "~/features/search/services/search-action.server";
+import { loadSearchData } from "~/features/search/services/search-loader.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);

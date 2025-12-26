@@ -1,10 +1,11 @@
 import { formatDate } from "~/lib/helpers";
+
 import type { ChildReply } from "../hooks/useNotificationActions";
 
 interface ChildRepliesPanelProps {
     isLoading: boolean;
     replies: ChildReply[];
-    metadata: Record<string, any>;
+    metadata: Record<string, unknown>;
 }
 
 export function ChildRepliesPanel({

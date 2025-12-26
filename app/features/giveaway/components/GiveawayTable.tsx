@@ -1,8 +1,8 @@
 import { Link } from "@remix-run/react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
-import { formatDate, getImageUrls } from "~/lib/helpers";
 import { getQueueColor } from "~/features/posts/queueColors";
+import { formatDate, getImageUrls } from "~/lib/helpers";
 
 interface Post {
   id: string;

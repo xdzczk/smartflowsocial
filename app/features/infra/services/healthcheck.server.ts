@@ -3,9 +3,9 @@
  * Handles application health checks
  */
 
-import { countUsers } from "~/models/user.server";
-import { ValidationError, ExternalServiceError, DatabaseError } from "~/lib/errors";
 import { logError } from "~/lib/error-logger.server";
+import { DatabaseError, ExternalServiceError, ValidationError } from "~/lib/errors";
+import { countUsers } from "~/models/user.server";
 
 /**
  * Perform health check

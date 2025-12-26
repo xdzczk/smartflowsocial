@@ -6,6 +6,7 @@
  */
 
 import { toast } from "react-hot-toast";
+
 import { resizeImage } from "~/features/upload/image-resize";
 import { logClientError } from "~/lib/error-handler.client";
 

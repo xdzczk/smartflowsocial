@@ -2,6 +2,7 @@ import { json } from "@remix-run/node";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import { useState, useEffect, useMemo } from "react";
 
+import { type ToastMessage } from "~/components/types";
 import MediaModal from "~/components/ui/MediaModal";
 import Toast from "~/components/ui/Toast";
 import { requireUserId } from "~/features/auth/session.server";
@@ -17,18 +18,16 @@ import {
   handleQueueTypeChange as handleQueueTypeChangeHandler,
   handleBulkQueueUpdate as handleBulkQueueUpdateHandler,
 } from "~/features/posts/bulkposts.handlers";
-import { type BulkPost, type QueueType } from "~/features/posts/types";
+import BulkPostsActionButtons from "~/features/posts/components/BulkPostsActionButtons";
+import BulkPostsTable from "~/features/posts/components/BulkPostsTable";
 import BulkPostsUploadArea from "~/features/posts/components/BulkPostsUploadArea";
 import PostConfirmation from "~/features/posts/components/PostConfirmation";
-import BulkPostsTable from "~/features/posts/components/BulkPostsTable";
-import BulkPostsActionButtons from "~/features/posts/components/BulkPostsActionButtons";
-import { useOptionalUser } from "~/lib/remix-utils";
 import { getBulkPostsDashboardData } from "~/features/posts/posts.server";
-import { isVideoFile } from "~/utils/media-helpers";
-import { type ToastMessage } from "~/components/types";
-import { type PreparedEvent } from "~/features/posts/types";
-import { useBulkPostsState } from "~/features/posts/useBulkPostsState";
+import { type BulkPost, type QueueType , type PreparedEvent } from "~/features/posts/types";
 import { useBulkPostEvents } from "~/features/posts/useBulkPostEvents";
+import { useBulkPostsState } from "~/features/posts/useBulkPostsState";
+import { useOptionalUser } from "~/lib/remix-utils";
+import { isVideoFile } from "~/utils/media-helpers";
 
 export { bulkPostsAction as action } from "~/features/posts/bulkposts.action.server";
 
@@ -112,6 +111,7 @@ export default function BulkPosts() {
       .then((res) => res.json())
       .then((data) => setUploadProvider(data.provider))
       .catch((err) => {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
         const { handleErrorSafely } = require("~/lib/error-handler.client");
         handleErrorSafely(err, {
           component: "BulkPosts",

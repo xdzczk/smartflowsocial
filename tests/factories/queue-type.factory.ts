@@ -4,6 +4,7 @@
  */
 
 import type { QueueType, ScheduleType } from "@prisma/client";
+
 import { TEST_USER_ID } from "../utils/test-helpers";
 
 export interface QueueTypeFactoryOptions {
@@ -59,7 +60,7 @@ export class QueueTypeFactory {
     return this;
   }
 
-  asInterval(intervalHours: number, useGlobalInterval: boolean = false): this {
+  asInterval(intervalHours: number, useGlobalInterval = false): this {
     this.options.scheduleType = "INTERVAL";
     this.options.scheduleConfig = {
       intervalHours,

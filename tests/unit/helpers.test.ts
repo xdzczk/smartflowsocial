@@ -5,6 +5,7 @@
  */
 
 import { describe, it, expect } from "vitest";
+
 import {
   getTimeRemaining,
   convertToHex,
@@ -130,7 +131,7 @@ describe("Helper Utilities", () => {
 
     it("should handle non-string inputs gracefully", () => {
       // TypeScript should prevent this, but test runtime behavior
-      const result = convertToHex(null as any);
+      const result = convertToHex(null as unknown as string);
 
       expect(result).toBeNull();
     });
@@ -193,8 +194,8 @@ describe("Helper Utilities", () => {
     });
 
     it("should return empty array for null/undefined", () => {
-      expect(getImageUrls(null as any)).toEqual([]);
-      expect(getImageUrls(undefined as any)).toEqual([]);
+      expect(getImageUrls(null as unknown as string[])).toEqual([]);
+      expect(getImageUrls(undefined as unknown as string[])).toEqual([]);
     });
 
     it("should return direct URLs when array contains strings", () => {
@@ -310,8 +311,8 @@ describe("Helper Utilities", () => {
     });
 
     it("should return false for null or undefined", () => {
-      expect(isVideoFile(null as any)).toBe(false);
-      expect(isVideoFile(undefined as any)).toBe(false);
+      expect(isVideoFile(null as unknown as string)).toBe(false);
+      expect(isVideoFile(undefined as unknown as string)).toBe(false);
     });
 
     it("should return false for empty string", () => {

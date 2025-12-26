@@ -121,6 +121,7 @@ it("should load dashboard without errors", () => {
 ```typescript
 // tests/integration/dashboard-loader.test.ts
 import { describe, it, expect, vi } from "vitest";
+
 import { loader } from "~/routes/dashboard._index";
 
 describe("Dashboard Loader", () => {

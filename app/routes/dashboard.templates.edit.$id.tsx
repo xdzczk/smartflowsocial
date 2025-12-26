@@ -1,20 +1,15 @@
-import {
-  json,
-  redirect,
-  type LoaderFunctionArgs,
-  type ActionFunctionArgs,
-} from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, Link, useFetcher } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
 import { requireUserId } from "~/features/auth/session.server";
 import { getQueueColor } from "~/features/posts/queueColors";
-import { formatDate, getImageUrls } from "~/lib/helpers";
 import {
   loadTemplateEditData,
   handleTemplateEditAction,
 } from "~/features/templates/services/template-edit.server";
 import { withErrorHandling, withActionErrorHandling } from "~/lib/error-handler.server";
+import { formatDate, getImageUrls } from "~/lib/helpers";
 
 export const loader = withErrorHandling(async ({ request, params }: LoaderFunctionArgs) => {
   const userId = await requireUserId(request);

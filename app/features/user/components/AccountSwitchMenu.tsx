@@ -12,10 +12,10 @@ import {
   DialogTitle,
   DialogDescription,
 } from "~/components/ui/dialog";
+import type { ProfileData } from "~/features/nostr/types";
 import { useSubscription } from "~/features/payments/types";
 import { hexToNpub } from "~/lib/nostr";
 import { useOptionalUser } from "~/lib/remix-utils";
-import type { ProfileData } from "~/features/nostr/types";
 
 interface UserWithProfile {
   npub: string;
@@ -93,7 +93,7 @@ export default function AccountSwitchMenu() {
     ) {
       fetcher.load("/api/children");
     }
-  }, [open, hasAccountsAccess, fetcher.state]);
+  }, [open, hasAccountsAccess, fetcher.state, fetcher]);
 
   React.useEffect(() => {
     if (fetcher.data?.children) setChildren(fetcher.data.children);
@@ -134,6 +134,7 @@ export default function AccountSwitchMenu() {
       });
       document.dispatchEvent(new CustomEvent("nlLaunch", { detail: "switch" }));
     } catch (e) {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { handleErrorSafely } = require("~/lib/error-handler.client");
       handleErrorSafely(e, {
         component: "AccountSwitchMenu",
@@ -175,6 +176,7 @@ export default function AccountSwitchMenu() {
       });
       document.dispatchEvent(new CustomEvent("nlLaunch", { detail: "switch" }));
     } catch (e) {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { handleErrorSafely } = require("~/lib/error-handler.client");
       handleErrorSafely(e, {
         component: "AccountSwitchMenu",

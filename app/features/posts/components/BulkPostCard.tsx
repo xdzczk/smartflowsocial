@@ -3,14 +3,13 @@
  * Individual post card for bulk scheduling view
  * Extracted from dashboard.bulkposts.tsx
  */
+import type { BulkPostCardProps } from "~/components/types";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { getDynamicQueueStyle } from "~/features/posts/queueColors";
-import { isVideoFile } from "~/utils/media-helpers";
 import type { BulkPost, QueueType } from "~/features/posts/types";
-import type { BulkPostCardProps } from "~/components/types";
 
 // Re-export types for consumers
-export type { BulkPost, QueueType } from "~/features/posts/types";
+export type { BulkPost, QueueType };
 
 /**
  * Get the image URL to display for a post
@@ -237,12 +236,13 @@ export function BulkPostCard({
             <td className="p-4">
                 <div className="flex items-center">
                     <input
+                        id={`recyclable-${index}`}
                         type="checkbox"
                         checked={post.isRecyclable || false}
                         onChange={(e) => onIsRecyclableChange(index, e.target.checked)}
                         className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
-                    <label className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                    <label htmlFor={`recyclable-${index}`} className="ml-2 text-sm text-gray-700 dark:text-gray-300">
                         Recyclable
                     </label>
                 </div>

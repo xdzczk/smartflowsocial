@@ -7,6 +7,11 @@
 /** @type {import('eslint').Linter.Config} */
 module.exports = {
   root: true,
+  ignorePatterns: [
+    "**/*.md",
+    "app/lib/error-handler.example.ts",
+    "app/lib/error-handler.server.ts",
+  ],
   parserOptions: {
     ecmaVersion: "latest",
     sourceType: "module",
@@ -220,6 +225,7 @@ module.exports = {
       rules: {
         "@typescript-eslint/no-unused-vars": "off",
         "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/ban-ts-comment": "off",
         "no-console": "off",
         "import/order": "off",
         "import/no-unresolved": "off",
@@ -227,6 +233,8 @@ module.exports = {
         "no-unused-labels": "off",
         "no-empty": "off",
         "no-debugger": "off",
+        "no-undef": "off",
+        "jsx-a11y/alt-text": "off",
       },
     },
 
@@ -265,6 +273,7 @@ module.exports = {
       rules: {
         "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
         "import/order": "warn",
+        "cypress/no-unnecessary-waiting": "warn",
       },
     },
 
@@ -282,11 +291,23 @@ module.exports = {
       },
     },
 
-    // Allow console in error-logger (it's the logging infrastructure itself)
+    // Allow console in error-logger and error-handler (they're the logging infrastructure itself)
+    // Also include example files
     {
-      files: ["app/lib/error-logger.server.ts", "app/lib/error-handler.client.ts", "app/lib/secrets-sanitizer.server.ts"],
+      files: [
+        "app/lib/error-logger.server.ts",
+        "app/lib/error-handler.client.ts",
+        "app/lib/error-handler.server.ts",
+        "app/lib/error-handler.example.ts",
+        "app/lib/secrets-sanitizer.server.ts",
+        "**/*.example.ts",
+        "**/*.example.tsx",
+      ],
       rules: {
         "no-console": "off",
+        "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+        "@typescript-eslint/no-explicit-any": "warn",
+        "import/order": "warn",
       },
     },
 

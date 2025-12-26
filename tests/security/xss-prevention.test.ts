@@ -5,6 +5,7 @@
  */
 
 import { describe, it, expect } from "vitest";
+
 import { sanitizeMarkdown } from "~/lib/markdown-sanitizer.server";
 
 describe("XSS Prevention: Markdown Sanitization", () => {

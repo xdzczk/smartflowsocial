@@ -5,9 +5,7 @@
  */
 
 import { check, sleep } from "k6";
-import http from "k6/http";
-import { Rate, Trend } from "k6/metrics";
-import { BASE_URL, authenticatedRequest, createSession, thresholds } from "./k6-setup.js";
+import { authenticatedRequest, createSession, thresholds } from "./k6-setup.js";
 
 export const options = {
   stages: [

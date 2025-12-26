@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
 import { useFetcher } from "@remix-run/react";
+import { useState, useEffect } from "react";
 
-import { signEventFn } from "~/lib/nostr";
 import type { PostData } from "~/features/posts/types";
+import { signEventFn } from "~/lib/nostr";
 
 interface Post {
   id: string;
@@ -15,16 +15,14 @@ interface Post {
   [key: string]: unknown; // Allow additional properties from Prisma
 }
 
-interface Stats {
-  [eventId: string]: {
+type Stats = Record<string, {
     likes?: number;
     replies?: number;
     mentions?: number;
     reposts?: number;
     zaps?: number;
     satszapped?: number;
-  };
-}
+  }>;
 
 interface User {
   timezone?: string | null;

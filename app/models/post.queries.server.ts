@@ -5,16 +5,16 @@
  * All functions in this file perform SELECT operations only.
  */
 
-import type { Prisma } from "@prisma/client";
+import type { Prisma , Post } from "@prisma/client";
 
-import { prisma } from "~/lib/prisma.server";
 import { logError } from "~/lib/error-logger.server";
+import { prisma } from "~/lib/prisma.server";
+
 import type {
   PostWithQueueType,
   PostsWithPagination,
   PostStatistics,
 } from "./post.types";
-import type { Post } from "@prisma/client";
 
 export async function getScheduledPosts({
   userId,

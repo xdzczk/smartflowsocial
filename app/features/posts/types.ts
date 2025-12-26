@@ -4,8 +4,9 @@
  */
 
 import type { Post, LongFormPost, QueueType as PrismaQueueType, HashTagPreset as PrismaHashTagPreset } from "@prisma/client";
-import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 import type { FetcherWithComponents } from "@remix-run/react";
+
+import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 
 /**
  * Schedule configuration for INTERVAL schedule type

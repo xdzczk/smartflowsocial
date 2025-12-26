@@ -1,5 +1,5 @@
-import { Edit, Trash2 } from "lucide-react";
 import type { FetcherWithComponents } from "@remix-run/react";
+import { Edit, Trash2 } from "lucide-react";
 
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";

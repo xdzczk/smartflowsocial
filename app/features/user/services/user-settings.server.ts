@@ -1,8 +1,8 @@
 import type { User, UploadProvider } from "@prisma/client";
 
+import type { MutedListData } from "~/features/engagement/types";
 import { prisma } from "~/lib/prisma.server";
 import { blastrRelay } from "~/lib/relays";
-import type { MutedListData } from "~/features/engagement/types";
 
 /**
  * Updates user's timezone

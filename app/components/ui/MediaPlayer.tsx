@@ -68,7 +68,9 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
         onEnded={handleVideoEnded}
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
-      />
+      >
+        <track kind="captions" srcLang="en" label="English" />
+      </video>
       {!isPlaying ? (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <div className="rounded-full bg-black bg-opacity-50 p-3">

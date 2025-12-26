@@ -7,8 +7,8 @@
  * Migrated from: tests/e2e/loaders/queues-loader.cy.ts (Calendar Queue Loader section)
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { json } from "@remix-run/node";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock client-side dependencies FIRST (before route import)
 vi.mock("~/lib/error-handler.client", () => ({

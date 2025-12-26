@@ -5,6 +5,7 @@
  */
 
 import { toast } from "react-hot-toast";
+
 import type { ErrorResponse } from "./error-handler.server";
 import { captureException } from "./sentry.client";
 

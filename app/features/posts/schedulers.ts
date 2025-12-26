@@ -1,7 +1,5 @@
 import type { QueueType } from "@prisma/client";
 
-import { getLastPostTimeForQueue } from "~/models/post.queries.server";
-import { getScheduleInterval } from "~/models/user.server";
 import type {
   QueueType as TypedQueueType,
   ScheduleConfig,
@@ -11,6 +9,8 @@ import {
   isFixedSlotsScheduleConfig,
 } from "~/features/posts/types";
 import { logError } from "~/lib/error-logger.server";
+import { getLastPostTimeForQueue } from "~/models/post.queries.server";
+import { getScheduleInterval } from "~/models/user.server";
 
 interface CalculateNextScheduleTimeParams {
   queueType: QueueType | TypedQueueType;

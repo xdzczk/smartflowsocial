@@ -9,9 +9,11 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
 import { calculateNextScheduleTime } from "~/features/posts/schedulers";
 import { getScheduledPosts, getLastPostTimeForQueue } from "~/models/post.queries.server";
-import { getUserById } from "~/models/user.server";
+import { getUserById , getScheduleInterval } from "~/models/user.server";
+
 import { TEST_USER_ID } from "../utils/test-helpers";
 
 // Mock dependencies
@@ -24,7 +26,6 @@ vi.mock("~/models/user.server", () => ({
   getUserById: vi.fn(),
   getScheduleInterval: vi.fn(),
 }));
-import { getScheduleInterval } from "~/models/user.server";
 
 /**
  * Performance thresholds (in milliseconds)
@@ -206,13 +207,14 @@ describe("Performance Regression Tests", () => {
 export function measurePerformance<T>(
   fn: () => Promise<T>,
 ): Promise<{ result: T; duration: number }> {
-  return new Promise(async (resolve) => {
+  return new Promise((resolve) => {
     const startTime = performance.now();
-    const result = await fn();
-    const endTime = performance.now();
-    resolve({
-      result,
-      duration: endTime - startTime,
+    fn().then((result) => {
+      const endTime = performance.now();
+      resolve({
+        result,
+        duration: endTime - startTime,
+      });
     });
   });
 }

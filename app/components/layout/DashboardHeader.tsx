@@ -29,7 +29,6 @@ import {
   type FeatureName,
 } from "~/features/payments/types";
 import AccountSwitchMenu from "~/features/user/components/AccountSwitchMenu";
-import { useOptionalUser } from "~/lib/remix-utils";
 
 // Navigation item component with lock functionality
 interface NavigationItemProps {
@@ -104,7 +103,6 @@ export default function Header() {
     featureName: string;
   }>({ isOpen: false, feature: null, featureName: "" });
   const location = useLocation();
-  const user = useOptionalUser() as any;
 
   const handleUpgradeClick = (feature: FeatureName, featureName: string) => {
     setUpgradePrompt({ isOpen: true, feature, featureName });

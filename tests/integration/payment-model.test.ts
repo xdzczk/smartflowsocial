@@ -9,6 +9,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
 // Import only what we need - updateUserSubscription will be dynamically imported
 // to ensure it uses mocked prisma. Other functions are imported statically for convenience.
 import {
@@ -93,6 +94,7 @@ vi.mock("@getalby/sdk/lnclient", () => ({
 }));
 
 import { getBitcoinRate } from "~/features/payments/btc.rate";
+
 import { LN } from "@getalby/sdk/lnclient";
 
 describe("Payment Model Functions", () => {

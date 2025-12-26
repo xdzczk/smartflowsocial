@@ -1,9 +1,9 @@
 import { nip19 } from "nostr-tools";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import ZapButton from "~/components/dashboard/ZapButton";
-import { handleErrorSafely } from "~/lib/error-handler.client";
 import type { RelatedEvent } from "~/features/giveaway/types";
+import { handleErrorSafely } from "~/lib/error-handler.client";
 
 import GiveawayPost from "./GiveawayPost";
 

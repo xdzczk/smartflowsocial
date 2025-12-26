@@ -1,12 +1,12 @@
-import { useEffect, useState, useRef } from "react";
 import { type FetcherWithComponents } from "@remix-run/react";
 import { nip19 } from "nostr-tools";
-import { type BulkPost } from "~/features/posts/types";
-import { type PreparedEvent } from "~/features/posts/types";
+import { useEffect, useState, useRef, useCallback } from "react";
+
 import { type ToastMessage } from "~/components/types";
+import { type BulkPost , type PreparedEvent } from "~/features/posts/types";
 import { uploadMultipleFiles } from "~/features/upload/upload.client";
-import { type User } from "~/models/user.server";
 import { logClientError } from "~/lib/error-handler.client";
+import { type User } from "~/models/user.server";
 
 interface UseBulkPostEventsProps {
     posts: BulkPost[];
@@ -85,7 +85,7 @@ export function useBulkPostEvents({
         return { isValid: errors.length === 0, errors };
     };
 
-    const processEvents = async () => {
+    const processEvents = useCallback(async () => {
         // Create events with image URLs and hashtags
         const events = await Promise.all(
             posts.map(async (post, index) => {
@@ -319,7 +319,7 @@ export function useBulkPostEvents({
 
         // Reset loading state when events are processed successfully
         setIsPreviewSubmitting(false);
-    };
+    }, [posts, useHashtagPresets, selectedHashtags, user, tags, fetcher.data, setPreparedEvents, setShowConfirmation, setIsPreviewSubmitting]);
 
     const prepareEvents = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -409,7 +409,7 @@ export function useBulkPostEvents({
                 if (filesToUpload.length > 0) {
                     try {
                         // Upload all files using the new upload system
-                        // @ts-ignore
+                        // @ts-expect-error - uploadMultipleFiles may have type issues
                         const uploadResults = await uploadMultipleFiles(filesToUpload);
 
                         // Check for failed uploads
@@ -527,7 +527,7 @@ export function useBulkPostEvents({
                 handleRepostEventsPrepared,
             );
         };
-    }, [fetcher.data, posts, tags, user?.npub]);
+    }, [fetcher.data, processEvents]);
 
     // Watch for upload completion
     useEffect(() => {
@@ -539,7 +539,7 @@ export function useBulkPostEvents({
             isWaitingForUpload.current = false;
             processEvents();
         }
-    }, [fetcher.state, fetcher.data]);
+    }, [fetcher.state, fetcher.data, processEvents]);
 
     return { prepareEvents };
 }

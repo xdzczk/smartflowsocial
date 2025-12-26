@@ -4,36 +4,16 @@
  */
 
 import { validateEvent } from "nostr-tools";
+
 import { getCompleteProfile } from "~/features/auth/profile.server";
 import { createUserSession } from "~/features/auth/session.server";
+import { AuthenticationError, ValidationError } from "~/lib/errors";
 import { safeRedirect } from "~/lib/remix-utils";
 import {
   createUser,
   getUserByNpub,
   updateUserProfile,
 } from "~/models/user.server";
-import { AuthenticationError, ValidationError } from "~/lib/errors";
-
-interface NostrProfileType {
-  website?: string;
-  display_name?: string;
-  picture?: string;
-  nip05?: string;
-  lud16?: string;
-  banner?: string;
-  lud06?: string;
-  name?: string;
-  about?: string;
-  followers_count?: number;
-  following_count?: number;
-  posts_count?: number;
-  zaps_count?: number;
-  total_satszapped?: number;
-  media?: {
-    resources: Array<{ url?: string; [key: string]: unknown }>;
-    event_id: string;
-  };
-}
 
 /**
  * Authenticate user via Nostr event signature
@@ -49,7 +29,15 @@ export async function authenticateNostrUser(
   }
 
   // Parse the event JSON
-  let parsedEvent: { id?: string; pubkey?: string; sig?: string; created_at?: number; kind?: number; content?: string; [key: string]: unknown };
+  let parsedEvent: {
+    id?: string;
+    pubkey?: string;
+    sig?: string;
+    created_at?: number;
+    kind?: number;
+    content?: string;
+    [key: string]: unknown;
+  };
   try {
     parsedEvent = JSON.parse(event);
   } catch (parseError) {

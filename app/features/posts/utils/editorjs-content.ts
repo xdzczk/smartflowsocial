@@ -3,9 +3,10 @@
  */
 
 import React from "react";
-import { convertMarkdownToEditorJS } from "~/lib/nostr";
-import { handleErrorSafely, logClientError } from "~/lib/error-handler.client";
+
 import type { EditorJSInstance, EditorJSBlock } from "~/features/posts/types/editorjs.types";
+import { handleErrorSafely, logClientError } from "~/lib/error-handler.client";
+import { convertMarkdownToEditorJS } from "~/lib/nostr";
 
 /**
  * Load initial content into EditorJS
@@ -87,12 +88,12 @@ export async function loadEditorJSContent(
  */
 export async function insertAssetsIntoEditor(
   editorRef: React.RefObject<EditorJSInstance>,
-  selectedAssets: Array<{
+  selectedAssets: {
     assetType: string;
     fileUrl?: string;
     content?: string;
     title?: string;
-  }>,
+  }[],
   onContentChange: (content: string) => void,
 ) {
   if (!editorRef.current) return;

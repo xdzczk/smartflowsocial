@@ -52,10 +52,11 @@ export function UploadTab({
                             value="create_text_asset"
                         />
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            <label htmlFor="text-asset-title" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Title (optional)
                             </label>
                             <input
+                                id="text-asset-title"
                                 type="text"
                                 name="title"
                                 placeholder="Asset title"
@@ -63,10 +64,11 @@ export function UploadTab({
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            <label htmlFor="text-asset-content" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Content
                             </label>
                             <textarea
+                                id="text-asset-content"
                                 name="content"
                                 placeholder="Enter your text content..."
                                 rows={4}
@@ -75,10 +77,11 @@ export function UploadTab({
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            <label htmlFor="text-asset-tags" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Tags (comma-separated)
                             </label>
                             <input
+                                id="text-asset-tags"
                                 type="text"
                                 name="tags"
                                 placeholder="tag1, tag2, tag3"
@@ -116,10 +119,11 @@ export function UploadTab({
                             value="create_media_asset"
                         />
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            <label htmlFor="media-asset-title" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Title (optional)
                             </label>
                             <input
+                                id="media-asset-title"
                                 type="text"
                                 name="title"
                                 placeholder="Asset title"
@@ -127,10 +131,11 @@ export function UploadTab({
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            <label htmlFor="media-asset-file" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Media File (Image or Video)
                             </label>
                             <input
+                                id="media-asset-file"
                                 type="file"
                                 name="file"
                                 accept="image/*,video/*"
@@ -151,10 +156,11 @@ export function UploadTab({
                             ) : null}
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            <label htmlFor="media-asset-tags" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Tags (comma-separated)
                             </label>
                             <input
+                                id="media-asset-tags"
                                 type="text"
                                 name="tags"
                                 placeholder="tag1, tag2, tag3"
@@ -179,10 +185,11 @@ export function UploadTab({
                 </h3>
                 <div className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <label htmlFor="bulk-media-files" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                             Select Multiple Media Files
                         </label>
                         <input
+                            id="bulk-media-files"
                             type="file"
                             multiple
                             accept="image/*,video/*"

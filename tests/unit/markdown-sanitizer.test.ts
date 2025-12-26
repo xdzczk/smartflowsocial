@@ -5,6 +5,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
 import {
   sanitizeMarkdown,
   extractPlainText,
@@ -21,7 +22,7 @@ vi.mock("marked", () => {
   }
 
   return {
-    marked: vi.fn((markdown, options) => {
+    marked: vi.fn((markdown, _options) => {
       // Simple mock that returns basic HTML
       // For code blocks, return a pre/code structure
       if (markdown.includes("```")) {
@@ -40,13 +41,13 @@ describe("Markdown Sanitization", () => {
 
   describe("sanitizeMarkdown", () => {
     it("should return empty string for null input", () => {
-      const result = sanitizeMarkdown(null as any);
+      const result = sanitizeMarkdown(null as unknown as string);
 
       expect(result).toBe("");
     });
 
     it("should return empty string for undefined input", () => {
-      const result = sanitizeMarkdown(undefined as any);
+      const result = sanitizeMarkdown(undefined as unknown as string);
 
       expect(result).toBe("");
     });
@@ -151,7 +152,9 @@ describe("Markdown Sanitization", () => {
 
     it("should return empty string on parsing error", () => {
       // Force an error by using invalid markdown that breaks the parser
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {
+        // Mock console.error to suppress output
+      });
 
       // This would need to actually break marked to test error handling
       const result = sanitizeMarkdown("Valid markdown");

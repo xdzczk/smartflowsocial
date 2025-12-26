@@ -4,7 +4,7 @@ import { prisma } from "~/lib/prisma.server";
 import { blastrRelay } from "~/lib/relays";
 
 export type UserWithHashTagPresets = User & {
-  hashTagPresets: Array<{ id: string; name: string; tags: string; description?: string | null }>;
+  hashTagPresets: { id: string; name: string; tags: string; description?: string | null }[];
 };
 
 interface UpdateUserProfileParams {

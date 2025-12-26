@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from "react";
 import { useFetcher, useLocation } from "@remix-run/react";
+import { useState, useEffect, useRef } from "react";
+
+import type { Asset, AssetFetcher } from "~/features/assets/types";
+import type { Template, ScheduleData, TemplateFetcher } from "~/features/templates/types";
 import { resizeImage } from "~/features/upload/image-resize";
 import { uploadFile, uploadMultipleFiles } from "~/features/upload/upload.client";
-import type { Template, ScheduleData, TemplateFetcher } from "~/features/templates/types";
-import type { Asset, AssetFetcher } from "~/features/assets/types";
 
 interface UseTemplatesStateProps {
   searchTerm: string;

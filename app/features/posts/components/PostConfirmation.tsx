@@ -2,8 +2,8 @@ import { useFetcher } from "@remix-run/react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { getSelectedQueueStyle } from "~/features/posts/queueColors";
-import { signEventFn } from "~/lib/nostr";
 import { logClientError } from "~/lib/error-handler.client";
+import { signEventFn } from "~/lib/nostr";
 
 export default function PostConfirmation({ preparedEvents, postsCount }) {
   const fetcher = useFetcher();

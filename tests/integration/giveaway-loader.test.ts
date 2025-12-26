@@ -38,11 +38,12 @@ vi.mock("~/lib/helpers", () => ({
   convertToHex: vi.fn((npub) => npub),
 }));
 
+import { loadGiveawayData } from "~/features/giveaway/giveaway-loader.server";
+import { fetchGiveawayParticipants } from "~/features/giveaway/giveaway.server";
 import { connectToPrimalCache } from "~/lib/nostrwebsocket.server";
 import { getRecentPostedPosts } from "~/models/post.queries.server";
 import { getGiveawayBlacklist, getUserById, getQueueTypes } from "~/models/user.server";
-import { fetchGiveawayParticipants } from "~/features/giveaway/giveaway.server";
-import { loadGiveawayData } from "~/features/giveaway/giveaway-loader.server";
+
 import { TEST_USER_ID, createMockUser, createMockQueueType, createMockPost } from "../utils/test-helpers";
 
 describe("Giveaway Loader", () => {

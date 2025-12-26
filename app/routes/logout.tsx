@@ -16,7 +16,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 };
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
+export const loader = async ({ request: _request }: LoaderFunctionArgs) => {
   try {
     return redirect("/");
   } catch (error) {

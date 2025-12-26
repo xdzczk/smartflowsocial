@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
 import { useFetcher } from "@remix-run/react";
+import { useState, useEffect } from "react";
 
 import type { CombinedContent, LongFormPostData, PostData } from "~/features/posts/types";
 

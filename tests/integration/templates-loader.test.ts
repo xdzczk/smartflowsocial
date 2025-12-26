@@ -20,10 +20,11 @@ vi.mock("~/models/user.server", () => ({
   getUserById: vi.fn(),
 }));
 
+import { loadTemplatesData } from "~/features/templates/services/templates-loader.server";
 import { getAssets, searchAssets } from "~/models/asset.server";
 import { getTemplates } from "~/models/template.server";
 import { getUserById } from "~/models/user.server";
-import { loadTemplatesData } from "~/features/templates/services/templates-loader.server";
+
 import { TEST_USER_ID } from "../utils/test-helpers";
 
 describe("Templates Loader", () => {

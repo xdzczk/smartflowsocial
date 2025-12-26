@@ -1,17 +1,18 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+
+import type { EditorJSInstance, EditorJSAPI } from "~/features/posts/types/editorjs.types";
+import {
+  disableCaptions,
+  setupCaptionObserver,
+} from "~/features/posts/utils/editorjs-captions";
 import { createEditorJSToolsConfig } from "~/features/posts/utils/editorjs-config";
-import { setupCustomDragDrop } from "~/features/posts/utils/editorjs-dragdrop";
 import {
   loadEditorJSContent,
   insertAssetsIntoEditor,
   generateSummaryFromContent as generateSummary,
 } from "~/features/posts/utils/editorjs-content";
-import {
-  disableCaptions,
-  setupCaptionObserver,
-} from "~/features/posts/utils/editorjs-captions";
+import { setupCustomDragDrop } from "~/features/posts/utils/editorjs-dragdrop";
 import { logClientError } from "~/lib/error-handler.client";
-import type { EditorJSInstance, EditorJSAPI } from "~/features/posts/types/editorjs.types";
 
 interface UseLongFormEditorOptions {
     uploadProvider: string | null;
@@ -210,12 +211,12 @@ export function useLongFormEditor({
     }, [editorReady, onContentChange]);
 
     // Insert assets into the editor
-    const insertAssetIntoEditor = useCallback(async (selectedAssets: Array<{
+    const insertAssetIntoEditor = useCallback(async (selectedAssets: {
         assetType: string;
         fileUrl?: string;
         content?: string;
         title?: string;
-    }>) => {
+    }[]) => {
         await insertAssetsIntoEditor(editorRef, selectedAssets, onContentChange);
     }, [onContentChange]);
 

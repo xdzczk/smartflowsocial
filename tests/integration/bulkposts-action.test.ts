@@ -5,8 +5,8 @@
  * Tests bulkPostsAction function
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { json, redirect } from "@remix-run/node";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock dependencies
 vi.mock("~/features/auth/session.server", () => ({
@@ -27,10 +27,11 @@ vi.mock("~/features/posts/services/queue-type-resolver.server", () => ({
 }));
 
 import { requireUserId } from "~/features/auth/session.server";
+import { bulkPostsAction } from "~/features/posts/bulkposts.action.server";
+import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
 import { createPost, updatePost } from "~/models/post.commands.server";
 import { getPostsByIds } from "~/models/post.queries.server";
-import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
-import { bulkPostsAction } from "~/features/posts/bulkposts.action.server";
+
 import {
   TEST_USER_ID,
   TEST_POST_ID,

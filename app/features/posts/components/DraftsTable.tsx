@@ -2,8 +2,8 @@
  * Drafts table component
  */
 
-import { Link } from "@remix-run/react";
-import { useFetcher } from "@remix-run/react";
+import { Link , useFetcher } from "@remix-run/react";
+
 import { getQueueColor } from "~/features/posts/queueColors";
 
 interface Post {

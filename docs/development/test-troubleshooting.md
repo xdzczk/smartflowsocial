@@ -334,6 +334,7 @@ npm run test -- --reporter=verbose
 
 ```typescript
 it("should debug", () => {
+  // eslint-disable-next-line no-debugger
   debugger; // Set breakpoint
   // Test code
 });

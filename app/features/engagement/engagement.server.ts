@@ -1,24 +1,16 @@
 import type {
   EventStats,
-  NotificationReply,
-  NotificationZap,
-  NotificationMention,
-  NotificationQuoteRepost,
-  Notification,
-  UserProfile,
-  ParentPost,
   GroupedNotifications,
+  Notification,
   NotificationEvent,
-  PrimalEvent,
+  NotificationQuoteRepost,
   NostrTag,
+  ParentPost,
+  PrimalEvent,
+  UserProfile,
 } from "~/features/engagement/types";
-import type { PostData, LongFormPostData } from "~/features/posts/types";
+import type { LongFormPostData, PostData } from "~/features/posts/types";
 import { logError } from "~/lib/error-logger.server";
-
-type ConnectToPrimalCache = (
-  requestType: string,
-  params: Record<string, unknown>,
-) => Promise<unknown[]>;
 
 // Re-export types for consumers
 export type {
@@ -319,7 +311,10 @@ export function groupNotificationsByParent(
  */
 export async function processQuoteReposts(
   quoteRepostEvents: NotificationEvent[],
-  connectToPrimalCache: typeof ConnectToPrimalCache,
+  connectToPrimalCache: (
+    requestType: string,
+    params: Record<string, unknown>,
+  ) => Promise<unknown[]>,
 ): Promise<NotificationQuoteRepost[]> {
   const _notifications: NotificationQuoteRepost[] = [];
   const userProfiles = new Map<string, UserProfile>();

@@ -4,8 +4,8 @@
  * Utility functions to convert PostData and LongFormPostData to CalendarPost format
  */
 
-import type { PostData, LongFormPostData } from "~/features/posts/types";
 import type { CalendarPost } from "~/features/posts/components/Calendar/PostBlock.types";
+import type { PostData, LongFormPostData } from "~/features/posts/types";
 
 /**
  * Convert PostData to CalendarPost

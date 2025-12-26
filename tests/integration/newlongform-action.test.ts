@@ -4,8 +4,8 @@
  * Tests the action handler in app/features/posts/services/newlongform-action.server.ts
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { redirect } from "@remix-run/node";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock global fetch
 global.fetch = vi.fn();
@@ -95,9 +95,10 @@ vi.mock("@remix-run/node", async () => {
 });
 
 import { handleNewLongFormAction } from "~/features/posts/services/newlongform-action.server";
+import { uploadBufferToS3 } from "~/features/upload/s3.server";
 import { createLongFormPost } from "~/models/longformpost.server";
 import { getUserById, getQueueTypes, getHashTagPresetById, getQueueTypeByNameForUser } from "~/models/user.server";
-import { uploadBufferToS3 } from "~/features/upload/s3.server";
+
 import { TEST_USER_ID, createMockUser, createMockQueueType, createMockFormData } from "../utils/test-helpers";
 
 describe("New Longform Action Handler", () => {

@@ -18,7 +18,7 @@ interface UseAssetManagementOptions {
 export function useAssetManagement({
     assets,
     onBulkDelete,
-    deleteFetcherState,
+    deleteFetcherState: _deleteFetcherState,
 }: UseAssetManagementOptions) {
     const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
     const [searchInput, setSearchInput] = useState("");

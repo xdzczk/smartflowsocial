@@ -4,8 +4,6 @@
  * Extends Express Request interface with custom properties used in middleware
  */
 
-import type { Request } from "express";
-
 declare global {
   namespace Express {
     interface Request {

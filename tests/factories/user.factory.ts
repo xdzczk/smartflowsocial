@@ -4,6 +4,7 @@
  */
 
 import type { User, UploadProvider } from "@prisma/client";
+
 import { TEST_USER_ID } from "../utils/test-helpers";
 
 export interface UserFactoryOptions {
@@ -100,7 +101,7 @@ export class UserFactory {
     return this;
   }
 
-  withHashTagsInPosts(enabled: boolean = true): this {
+  withHashTagsInPosts(enabled = true): this {
     this.options.showHashTagsinPosts = enabled;
     return this;
   }
@@ -121,7 +122,7 @@ export class UserFactory {
     return this;
   }
 
-  withTrustFilter(enabled: boolean = true): this {
+  withTrustFilter(enabled = true): this {
     this.options.hidePostsFromLowTrustUsers = enabled;
     return this;
   }
@@ -138,7 +139,7 @@ export class UserFactory {
     return this;
   }
 
-  withNwc(enabled: boolean = true, encryptedNwc?: string): this {
+  withNwc(enabled = true, encryptedNwc?: string): this {
     this.options.nwcEnabled = enabled;
     this.options.encryptedNwc = encryptedNwc || null;
     return this;

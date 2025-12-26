@@ -5,8 +5,9 @@
  * These functions help optimize database access by loading related data in batches.
  */
 
-import { prisma } from "~/lib/prisma.server";
 import type { User, QueueType, HashTagPreset, Template } from "@prisma/client";
+
+import { prisma } from "~/lib/prisma.server";
 
 /**
  * Batch load users by their IDs

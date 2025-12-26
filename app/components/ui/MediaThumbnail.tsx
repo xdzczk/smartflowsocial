@@ -24,18 +24,6 @@ const MediaThumbnail: React.FC<MediaThumbnailProps> = ({
 }) => {
   const [hasError, setHasError] = React.useState(false);
 
-  // Handle missing src early
-  if (!src || typeof src !== "string") {
-    if (fallback) return <>{fallback}</>;
-    return (
-      <div
-        className={`flex items-center justify-center bg-gray-100 text-xs font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-400 ${className}`}
-      >
-        NO MEDIA
-      </div>
-    );
-  }
-
   // Reset error state when src changes
   React.useEffect(() => {
     setHasError(false);
@@ -59,6 +47,18 @@ const MediaThumbnail: React.FC<MediaThumbnailProps> = ({
     ];
     return videoExtensions.some((ext) => lower.includes(ext));
   }, [src, forceType]);
+
+  // Handle missing src early
+  if (!src || typeof src !== "string") {
+    if (fallback) return <>{fallback}</>;
+    return (
+      <div
+        className={`flex items-center justify-center bg-gray-100 text-xs font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-400 ${className}`}
+      >
+        NO MEDIA
+      </div>
+    );
+  }
 
   const handleImageError = () => {
     setHasError(true);
@@ -85,14 +85,25 @@ const MediaThumbnail: React.FC<MediaThumbnailProps> = ({
     );
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (onClick && (e.key === "Enter" || e.key === " ")) {
+      e.preventDefault();
+      onClick(e as unknown as React.MouseEvent);
+    }
+  };
+
   if (!isVideo) {
     // Render image thumbnail
     return (
+      // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
       <img
         src={src}
         alt={alt}
         className={`${className} ${onClick ? "cursor-pointer hover:opacity-75" : ""}`}
         onClick={onClick}
+        onKeyDown={onClick ? handleKeyDown : undefined}
+        role={onClick ? "button" : undefined}
+        tabIndex={onClick ? 0 : undefined}
         loading="lazy"
         onError={handleImageError}
         onLoad={handleImageLoad}
@@ -105,7 +116,11 @@ const MediaThumbnail: React.FC<MediaThumbnailProps> = ({
     <div
       className={`relative ${className} ${onClick ? "cursor-pointer hover:opacity-75" : ""}`}
       onClick={onClick}
+      onKeyDown={onClick ? handleKeyDown : undefined}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
     >
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
       <video
         src={src}
         className="h-full w-full object-cover"

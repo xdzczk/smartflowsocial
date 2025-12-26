@@ -97,9 +97,7 @@ Text input component.
 
 **Props:**
 ```typescript
-interface InputProps extends React.ComponentProps<"input"> {
-  // Standard HTML input props
-}
+type InputProps = React.ComponentProps<"input">
 ```
 
 **Usage:**
@@ -626,9 +624,9 @@ Use Tailwind spacing scale:
 ### Form with Validation
 
 ```tsx
+import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { Button } from "~/components/ui/button";
 
 function MyForm() {
   const [value, setValue] = useState("");
@@ -652,8 +650,8 @@ function MyForm() {
 ### Modal with Form
 
 ```tsx
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 
 function MyModal({ isOpen, onClose }) {
   return (

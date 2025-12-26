@@ -1,15 +1,16 @@
 import { useState, useEffect, useRef } from "react";
 import { toast } from "react-hot-toast";
+
+import type { PostData, LongFormPostData, UserData, HashTagPreset, EditorJSInstance } from "~/features/posts/types";
+import type { EditorJSInstance as EditorJSInstanceType } from "~/features/posts/types/editorjs.types";
 import { resizeImage } from "~/features/upload/image-resize";
 import { uploadMultipleFiles } from "~/features/upload/upload.client";
+import { logClientError } from "~/lib/error-handler.client";
 import {
   signEventFn,
   convertEditorJSToMarkdown,
   convertMarkdownToEditorJS,
 } from "~/lib/nostr";
-import { logClientError } from "~/lib/error-handler.client";
-import type { PostData, LongFormPostData, UserData, HashTagPreset, EditorJSInstance } from "~/features/posts/types";
-import type { EditorJSInstance as EditorJSInstanceType } from "~/features/posts/types/editorjs.types";
 
 interface UseEditPostModalProps {
   post: PostData | LongFormPostData;

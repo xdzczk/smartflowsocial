@@ -22,6 +22,7 @@ This guide covers common testing patterns used in SmartFlowSocial.
 
 ```typescript
 import { describe, it, expect } from "vitest";
+
 import { formatDate } from "~/lib/helpers";
 
 describe("formatDate", () => {
@@ -62,7 +63,9 @@ describe("getTimeRemaining", () => {
 **Pattern**: Use property-based tests for functions with many inputs
 
 ```typescript
+// eslint-disable-next-line import/no-unresolved
 import { fc, test } from "@fast-check/vitest";
+
 import { formatDate } from "~/lib/helpers";
 
 test.prop([fc.date()])("formatDate handles all dates", (date) => {
@@ -79,6 +82,7 @@ test.prop([fc.date()])("formatDate handles all dates", (date) => {
 
 ```typescript
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
 import { loader } from "~/routes/dashboard._index";
 
 vi.mock("~/features/auth/session.server", () => ({
@@ -107,8 +111,9 @@ describe("Dashboard Loader", () => {
 
 ```typescript
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createActionFormData } from "~/tests/utils/test-helpers";
+
 import { action } from "~/routes/dashboard._index";
+import { createActionFormData } from "~/tests/utils/test-helpers";
 
 describe("Dashboard Action", () => {
   it("should handle post deletion", async () => {
@@ -133,6 +138,7 @@ describe("Dashboard Action", () => {
 
 ```typescript
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
 import { loader } from "~/routes/api.effective-hashtags";
 
 describe("Effective Hashtags API", () => {
@@ -361,6 +367,7 @@ vi.mock("~/features/auth/session.server", () => ({
 
 ```typescript
 import { vi } from "vitest";
+
 import * as authModule from "~/features/auth/session.server";
 
 vi.spyOn(authModule, "requireUserId").mockResolvedValue("user-123");

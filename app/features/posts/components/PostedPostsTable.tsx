@@ -1,9 +1,10 @@
 import { Link, type FetcherWithComponents } from "@remix-run/react";
+
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { getQueueColor } from "~/features/posts/queueColors";
+import type { PostStats } from "~/features/posts/stats.server";
 import type { PostData, PostFetcher } from "~/features/posts/types";
 import { formatDate, getImageUrls } from "~/lib/helpers";
-import type { PostStats } from "~/features/posts/stats.server";
 
 interface PostedPostsTableProps {
     filteredPosts: PostData[];

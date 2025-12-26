@@ -141,7 +141,7 @@ export function sanitizeMarkdown(markdown: string): string {
       /<pre><code(?: class="language-([^"]*)")?>([\s\S]*?)<\/code><\/pre>/gi,
       (match, lang, code) => {
         // Decode HTML entities that marked might have added, then escape properly
-        let decodedCode = code
+        const decodedCode = code
           .replace(/&amp;/g, "&")
           .replace(/&lt;/g, "<")
           .replace(/&gt;/g, ">")

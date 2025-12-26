@@ -14,6 +14,7 @@ vi.mock("~/infra/queue/queue-client.server", () => ({
   },
 }));
 
+import { queueClient } from "~/infra/queue/queue-client.server";
 import {
   enqueuePostJob,
   cancelPostJob,
@@ -21,7 +22,7 @@ import {
   cancelLongFormPostJob,
   enqueuePostCheckerJob,
 } from "~/infra/queue/queue-operations.server";
-import { queueClient } from "~/infra/queue/queue-client.server";
+
 import { TEST_USER_ID } from "../utils/test-helpers";
 
 describe("Queue Operations", () => {

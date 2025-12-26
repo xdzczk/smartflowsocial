@@ -1,5 +1,6 @@
 import { nip19 } from "nostr-tools";
 import { useState } from "react";
+
 import { handleErrorSafely } from "~/lib/error-handler.client";
 
 interface RandomUser {

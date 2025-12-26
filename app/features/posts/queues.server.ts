@@ -6,17 +6,10 @@
  *   import { enqueuePostJob, cancelPostJob } from "~/infra/queue";
  */
 
-import { Worker, Job } from "bullmq";
 import type { Prisma } from "@prisma/client";
+import { Worker, Job } from "bullmq";
 
-import {
-  updateLongFormPostStatus,
-  getCronDueScheduledLongFormPosts,
-} from "~/models/longformpost.server";
-import { getCronDueScheduledPosts } from "~/models/post.queries.server";
-import { updatePostStatus } from "~/models/post.commands.server";
-import { getUserById } from "~/models/user.server";
-import { prisma } from "~/lib/prisma.server";
+import type { SignedEvent } from "~/features/nostr/types";
 import {
   getQueueInstance,
   redis,
@@ -26,8 +19,15 @@ import type {
   PostJobData,
   LongFormPostJobData,
 } from "~/infra/queue";
-import type { SignedEvent } from "~/features/nostr/types";
 import { logInfo, logError } from "~/lib/error-logger.server";
+import { prisma } from "~/lib/prisma.server";
+import {
+  updateLongFormPostStatus,
+  getCronDueScheduledLongFormPosts,
+} from "~/models/longformpost.server";
+import { updatePostStatus } from "~/models/post.commands.server";
+import { getCronDueScheduledPosts } from "~/models/post.queries.server";
+import { getUserById } from "~/models/user.server";
 
 /**
  * Type guard to check if value is a SignedEvent

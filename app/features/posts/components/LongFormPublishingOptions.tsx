@@ -1,7 +1,7 @@
+import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
 import { getDynamicQueueStyle } from "~/features/posts/queueColors";
 
 interface QueueType {

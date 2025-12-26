@@ -5,6 +5,7 @@
  */
 
 import type { Post, QueueType } from "@prisma/client";
+
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 
 export interface CreatePostData {

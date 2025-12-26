@@ -5,9 +5,11 @@
 
 import { NWCClient } from "@getalby/sdk";
 import { LN, USD } from "@getalby/sdk/lnclient";
-import { json } from "@remix-run/node";
+
 import { getBitcoinRate } from "~/features/payments/btc.rate";
 import { decrypt } from "~/lib/encryption.server";
+import { createErrorResponse } from "~/lib/error-handler.server";
+import { normalizeError } from "~/lib/errors";
 import { sendNostrDirectMessage } from "~/lib/nostr.messenger.server";
 import {
   createRenewalPayment,
@@ -17,8 +19,6 @@ import {
   disableUserAccount,
   getEnabledUsersWithSubscriptions,
 } from "~/models/user.server";
-import { normalizeError } from "~/lib/errors";
-import { createErrorResponse } from "~/lib/error-handler.server";
 
 interface RenewalResults {
   checked: number;

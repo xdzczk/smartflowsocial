@@ -1,8 +1,9 @@
 import { useFetcher, useRevalidator, useSearchParams } from "@remix-run/react";
 import { useState, useEffect } from "react";
-import { signEventFn } from "~/lib/nostr";
+
 import type { ToastMessage } from "~/components/types";
 import type { CombinedContent, PostData, LongFormPostData } from "~/features/posts/types";
+import { signEventFn } from "~/lib/nostr";
 import { type User } from "~/models/user.server";
 
 interface UsePostedPostsProps {
@@ -488,7 +489,7 @@ export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps)
         if (individualRepostFetcher.data) {
             handleRepost();
         }
-    }, [individualRepostFetcher.data]);
+    }, [individualRepostFetcher.data, user.relays]);
 
     return {
         currentTab,

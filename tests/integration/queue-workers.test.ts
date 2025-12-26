@@ -4,8 +4,8 @@
  * Tests the workers in app/features/posts/queues.server.ts
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Job } from "bullmq";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock global fetch
 global.fetch = vi.fn();
@@ -81,13 +81,13 @@ vi.mock("~/lib/prisma.server", () => ({
   prisma: mockPrisma,
 }));
 
+import { enqueuePostJob, enqueueLongFormPostJob } from "~/infra/queue";
 import { prisma } from "~/lib/prisma.server";
-
+import { updateLongFormPostStatus, getCronDueScheduledLongFormPosts } from "~/models/longformpost.server";
 import { updatePostStatus } from "~/models/post.commands.server";
 import { getCronDueScheduledPosts } from "~/models/post.queries.server";
-import { updateLongFormPostStatus, getCronDueScheduledLongFormPosts } from "~/models/longformpost.server";
 import { getUserById } from "~/models/user.server";
-import { enqueuePostJob, enqueueLongFormPostJob } from "~/infra/queue";
+
 import { TEST_USER_ID } from "../utils/test-helpers";
 
 // Import workers after mocks are set up

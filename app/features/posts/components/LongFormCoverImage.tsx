@@ -64,6 +64,15 @@ export function LongFormCoverImage({
                                 onClick={() =>
                                     document.getElementById("cover-image-input")?.click()
                                 }
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter" || e.key === " ") {
+                                        e.preventDefault();
+                                        document.getElementById("cover-image-input")?.click();
+                                    }
+                                }}
+                                role="button"
+                                tabIndex={0}
+                                aria-label="Upload cover image"
                             >
                                 <div className="flex flex-col items-center justify-center gap-4">
                                     <svg
@@ -125,7 +134,7 @@ export function LongFormCoverImage({
                     <div className="relative overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800">
                         <img
                             src={image}
-                            alt="Cover image preview"
+                            alt="Cover preview"
                             className="h-48 w-full object-cover"
                         />
                         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 opacity-0 transition-all duration-200 hover:bg-opacity-20 hover:opacity-100">

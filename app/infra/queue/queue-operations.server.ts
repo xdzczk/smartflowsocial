@@ -3,9 +3,10 @@
  * These functions provide a clean API for common queue operations
  */
 
+import type { SignedEvent } from "~/features/nostr/types";
+
 import { queueClient } from "./queue-client.server";
 import type { PostJobData, LongFormPostJobData } from "./queue-types";
-import type { SignedEvent } from "~/features/nostr/types";
 
 /**
  * Schedule a regular post to be published
@@ -89,7 +90,7 @@ export async function cancelLongFormPostJob(postId: string): Promise<boolean> {
  * Enqueue a post checker job (for cron-like recurring jobs)
  * @param delay - Delay in milliseconds before processing
  */
-export async function enqueuePostCheckerJob(delay: number = 0): Promise<void> {
+export async function enqueuePostCheckerJob(delay = 0): Promise<void> {
   const result = await queueClient.enqueue(
     "post-checker",
     "check-due-posts",

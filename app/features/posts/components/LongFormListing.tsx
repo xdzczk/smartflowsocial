@@ -1,10 +1,10 @@
 import { useFetcher, Link } from "@remix-run/react";
-import { useState, useEffect } from "react";
 import type { FetcherWithComponents } from "@remix-run/react";
+import { useState, useEffect } from "react";
 
-import type { LongFormPost } from "~/models/longformpost.server";
 import type { PostFetcher } from "~/features/posts/types";
 import type { EditorJSBlock } from "~/features/posts/types/editorjs.types";
+import type { LongFormPost } from "~/models/longformpost.server";
 
 interface LongFormListingProps {
   posts: LongFormPost[];

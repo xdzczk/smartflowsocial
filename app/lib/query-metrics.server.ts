@@ -117,7 +117,7 @@ export function recordQueryMetrics(
   model: string,
   action: string,
   duration: number,
-  success: boolean = true,
+  success = true,
   error?: Error,
 ): void {
   const status = success ? "success" : "error";

@@ -42,8 +42,7 @@ export function SchedulingSection({
 
   return (
     <div className={className}>
-      {showTimeInput && (
-        <div className="flex flex-col gap-2">
+      {showTimeInput ? <div className="flex flex-col gap-2">
           <Label htmlFor="scheduledFor">{label}</Label>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <Input
@@ -55,8 +54,7 @@ export function SchedulingSection({
               disabled={disabled}
             />
           </div>
-        </div>
-      )}
+        </div> : null}
 
       <div className="mt-2 flex flex-wrap gap-2">
         {isFixedSlotQueue ? (

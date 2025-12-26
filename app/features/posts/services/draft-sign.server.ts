@@ -3,10 +3,10 @@
  * Handles signing and scheduling logic for draft posts
  */
 
-import { signEventFn } from "~/lib/nostr";
-import type { UserData, PostData, SignedEvent, NostrEvent } from "~/features/posts/types";
 import type { NostrEvent as NostrEventType } from "~/features/nostr/types";
+import type { UserData, PostData, SignedEvent, NostrEvent } from "~/features/posts/types";
 import { logError } from "~/lib/error-logger.server";
+import { signEventFn } from "~/lib/nostr";
 
 interface SignDraftParams {
   content: string;

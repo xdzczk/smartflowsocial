@@ -2,13 +2,13 @@ import type { LoaderFunctionArgs } from "@remix-run/node";
 
 import { connectToPrimalCache } from "~/features/cache/primalCache.server";
 import {
-  ValidationError,
-  ExternalServiceError,
-} from "~/lib/errors";
-import {
   withErrorHandling,
   assert,
 } from "~/lib/error-handler.server";
+import {
+  ValidationError,
+  ExternalServiceError,
+} from "~/lib/errors";
 
 /**
  * API route to fetch thread view data from Primal cache

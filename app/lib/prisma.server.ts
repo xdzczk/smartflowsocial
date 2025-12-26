@@ -1,8 +1,8 @@
 import { PrismaClient } from "@prisma/client";
 import invariant from "tiny-invariant";
 
-import { singleton } from "./singleton.server";
 import { recordQueryMetrics } from "./query-metrics.server";
+import { singleton } from "./singleton.server";
 
 // Hard-code a unique key, so we can look up the client when this module gets re-imported
 const prisma = singleton("prisma", getPrismaClient);
@@ -70,6 +70,7 @@ function getPrismaClient() {
             
             // Log slow queries (over 100ms)
             if (duration > 100) {
+              // eslint-disable-next-line no-console
               console.warn(
                 `⚠️ Slow query detected: ${model}.${operation} took ${duration}ms`,
                 {
@@ -97,6 +98,7 @@ function getPrismaClient() {
             );
             
             // Log query errors
+            // eslint-disable-next-line no-console
             console.error(
               `❌ Query error: ${model}.${operation} failed after ${duration}ms`,
               {

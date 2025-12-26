@@ -11,10 +11,10 @@ import {
     deleteLongFormPost,
     getLongFormPostsByIds,
 } from "~/models/longformpost.server";
+import { deletePost } from "~/models/post.commands.server";
 import {
     getPostsByIds,
 } from "~/models/post.queries.server";
-import { deletePost } from "~/models/post.commands.server";
 
 // Type for mixed content items (posts and longform posts)
 interface MixedContentItem {

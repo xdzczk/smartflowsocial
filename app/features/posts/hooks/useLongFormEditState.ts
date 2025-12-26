@@ -1,9 +1,9 @@
-import { useState } from "react";
 import { useNavigation } from "@remix-run/react";
+import { useState } from "react";
 
 interface UseLongFormEditStateProps {
   userTags: string;
-  hashtagPresets: Array<{ id: string; tags: string }>;
+  hashtagPresets: { id: string; tags: string }[];
 }
 
 /**

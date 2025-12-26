@@ -1,4 +1,5 @@
 import { handleErrorSafely } from "~/lib/error-handler.client";
+
 import type { CalendarPost, QueueColorStyle, QueueType } from "./PostBlock.types";
 
 export function getPostPreview(post: CalendarPost, isLongform: boolean): string {

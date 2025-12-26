@@ -9,9 +9,11 @@
  * - Edge cases and error handling
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { QueueType } from "@prisma/client";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
 import { calculateNextScheduleTime } from "~/features/posts/schedulers";
+
 import {
   TEST_USER_ID,
   BASE_TIME,

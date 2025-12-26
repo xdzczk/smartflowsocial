@@ -1,5 +1,5 @@
 import { useFetcher } from "@remix-run/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "react-hot-toast";
 
 import { getDynamicQueueStyle } from "~/features/posts/queueColors";
@@ -149,7 +149,7 @@ export default function ImagePost({
     });
   };
 
-  const calculateQueueScheduleTime = async (queueTypeName: string) => {
+  const calculateQueueScheduleTime = useCallback(async (queueTypeName: string) => {
     if (queueTypeName === "unassigned") {
       setScheduledFor("");
       return;
@@ -182,7 +182,7 @@ export default function ImagePost({
     } catch (error) {
       console.error("Error calculating schedule time:", error);
     }
-  };
+  }, [queueTypes, user?.id]);
 
   useEffect(() => {
     if (selectedQueue !== "unassigned") {
@@ -192,7 +192,7 @@ export default function ImagePost({
     if (onQueueTypeChange) {
       onQueueTypeChange(selectedQueue);
     }
-  }, [selectedQueue, onQueueTypeChange]);
+  }, [selectedQueue, onQueueTypeChange, calculateQueueScheduleTime]);
 
   const handleScheduleIntervalClick = (intervalHours: string | number) => {
     // Find the currently selected queue type
@@ -352,7 +352,7 @@ export default function ImagePost({
       <div className="mt-4 flex items-center justify-between gap-4">
         <div className="flex flex-col gap-2">
           <div className="mb-2">
-            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="queue-type-selector" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Queue Type
             </label>
             <div className="flex flex-wrap gap-2">

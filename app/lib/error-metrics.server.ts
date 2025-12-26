@@ -20,13 +20,13 @@ export interface ErrorMetricsSummary {
   nonOperationalErrors: number;
   errorsByCode: Record<string, ErrorMetric>;
   errorsByStatusCode: Record<number, number>;
-  recentErrors: Array<{
+  recentErrors: {
     code: string;
     message: string;
     timestamp: string;
     statusCode: number;
     context?: Record<string, unknown>;
-  }>;
+  }[];
   timeRange: {
     start: string;
     end: string;
@@ -38,14 +38,14 @@ export interface ErrorMetricsSummary {
  * In production, consider using Redis or a time-series database
  */
 class ErrorMetricsStore {
-  private metrics: Map<string, ErrorMetric> = new Map();
-  private recentErrors: Array<{
+  private metrics = new Map<string, ErrorMetric>();
+  private recentErrors: {
     code: string;
     message: string;
     timestamp: string;
     statusCode: number;
     context?: Record<string, unknown>;
-  }> = [];
+  }[] = [];
   private readonly maxRecentErrors = 100; // Keep last 100 errors
   private startTime: Date = new Date();
 
@@ -94,13 +94,13 @@ class ErrorMetricsStore {
   /**
    * Get recent errors
    */
-  getRecentErrors(limit: number = 20): Array<{
+  getRecentErrors(limit = 20): {
     code: string;
     message: string;
     timestamp: string;
     statusCode: number;
     context?: Record<string, unknown>;
-  }> {
+  }[] {
     return this.recentErrors.slice(0, limit);
   }
 
@@ -191,14 +191,14 @@ export function getErrorRate(): number {
  * Get recent errors
  */
 export function getRecentErrors(
-  limit: number = 20,
-): Array<{
+  limit = 20,
+): {
   code: string;
   message: string;
   timestamp: string;
   statusCode: number;
   context?: Record<string, unknown>;
-}> {
+}[] {
   return metricsStore.getRecentErrors(limit);
 }
 
@@ -212,18 +212,18 @@ export function resetErrorMetrics(): void {
 /**
  * Check if error rate exceeds threshold
  */
-export function isErrorRateHigh(threshold: number = 10): boolean {
+export function isErrorRateHigh(threshold = 10): boolean {
   return getErrorRate() > threshold;
 }
 
 /**
  * Get top error codes by count
  */
-export function getTopErrorCodes(limit: number = 10): Array<{
+export function getTopErrorCodes(limit = 10): {
   code: string;
   count: number;
   statusCode: number;
-}> {
+}[] {
   const summary = getErrorMetrics();
   return Object.values(summary.errorsByCode)
     .sort((a, b) => b.count - a.count)

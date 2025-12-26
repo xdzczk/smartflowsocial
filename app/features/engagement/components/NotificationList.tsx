@@ -39,7 +39,7 @@ export default function NotificationList({
           No notifications yet
         </p>
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          When you get replies, mentions, or zaps, they'll show up here
+          When you get replies, mentions, or zaps, they&apos;ll show up here
         </p>
       </div>
     );

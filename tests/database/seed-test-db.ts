@@ -4,8 +4,8 @@
  * Utility script to seed the test database with initial data
  */
 
-import { getTestPrisma, setupTestDatabase } from "./test-db";
 import { createCompleteFixtures, fixtures } from "./fixtures";
+import { getTestPrisma, setupTestDatabase } from "./test-db";
 
 async function seedTestDatabase() {
   try {

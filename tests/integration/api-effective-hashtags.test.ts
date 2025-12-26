@@ -4,8 +4,8 @@
  * Tests the API endpoint in app/routes/api.effective-hashtags.tsx
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { json } from "@remix-run/node";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock dependencies
 vi.mock("~/features/auth/session.server", () => ({
@@ -19,6 +19,7 @@ vi.mock("~/models/user.server", () => ({
 import { requireUserId } from "~/features/auth/session.server";
 import { getQueueTypes } from "~/models/user.server";
 import { action } from "~/routes/api.effective-hashtags";
+
 import { TEST_USER_ID } from "../utils/test-helpers";
 
 describe("API: Effective Hashtags", () => {

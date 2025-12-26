@@ -37,7 +37,9 @@ export default function BulkPostsUploadArea({
                 ) : null}
             </div>
             <label
+                htmlFor="bulk-posts-file-input"
                 className={`block ${isProcessing ? "cursor-not-allowed" : "cursor-pointer"}`}
+                aria-label="Upload media files"
             >
                 <div
                     className={`rounded-lg border-2 border-dashed p-12 text-center ${isProcessing
@@ -71,7 +73,7 @@ export default function BulkPostsUploadArea({
                                 </div>
                                 <div>
                                     <p className="text-xl font-medium text-gray-700 dark:text-gray-300">
-                                        Processing media files...{" "}
+                                        Processing media files&hellip;{" "}
                                         {processingProgress.current}/
                                         {processingProgress.total}
                                     </p>
@@ -111,6 +113,7 @@ export default function BulkPostsUploadArea({
                             </>
                         )}
                         <input
+                            id="bulk-posts-file-input"
                             type="file"
                             name="files"
                             className="hidden"

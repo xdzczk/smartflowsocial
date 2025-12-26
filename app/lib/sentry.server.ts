@@ -19,6 +19,7 @@ export function initSentry(): void {
 
   try {
     // Dynamic import to avoid bundling Sentry in production if not configured
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const Sentry = require("@sentry/remix");
     
     Sentry.init({
@@ -75,6 +76,7 @@ export function captureException(
   }
 
   try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const Sentry = require("@sentry/remix");
     
     Sentry.captureException(error, {
@@ -106,6 +108,7 @@ export function captureMessage(
   }
 
   try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const Sentry = require("@sentry/remix");
     
     Sentry.captureMessage(message, {
@@ -128,6 +131,7 @@ export function setUser(user: { id?: string; email?: string; username?: string }
   }
 
   try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const Sentry = require("@sentry/remix");
     Sentry.setUser(user);
   } catch (err) {
@@ -145,6 +149,7 @@ export function clearUser(): void {
   }
 
   try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const Sentry = require("@sentry/remix");
     Sentry.setUser(null);
   } catch (err) {

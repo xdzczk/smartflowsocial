@@ -297,7 +297,6 @@ npm run build
 ```typescript
 // ❌ Bad: Import entire library
 import _ from 'lodash';
-
 // ✅ Good: Import specific function
 import debounce from 'lodash/debounce';
 ```
@@ -323,6 +322,7 @@ function ExpensiveComponent({ data }) {
 For long lists, use virtual scrolling:
 
 ```tsx
+// eslint-disable-next-line import/no-unresolved
 import { FixedSizeList } from 'react-window';
 
 function PostList({ posts }) {

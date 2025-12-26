@@ -1,16 +1,19 @@
 import { nip19 } from "nostr-tools";
 
 import type {
-  NostrEventData,
-  NostrEvent,
-  SignedEvent,
-  SignEventResult,
   LongFormEventData,
+  NostrEvent,
+  NostrEventData,
+  SignEventResult,
+  SignedEvent,
 } from "~/features/nostr/types";
+import type { EditorJSBlock, EditorJSOutput } from "~/features/posts/types/editorjs.types";
 
 declare global {
   interface Window {
-    nostr?: any;
+    nostr?: {
+      signEvent: (event: NostrEvent) => Promise<SignedEvent | string>;
+    };
   }
 }
 
@@ -211,8 +214,6 @@ export function generateArticleIdentifier(title: string): string {
     .trim()
     .substring(0, 64);
 }
-
-import type { EditorJSOutput, EditorJSBlock } from "~/features/posts/types/editorjs.types";
 
 export function convertEditorJSToMarkdown(editorData: EditorJSOutput | string | null | undefined): string {
   // Handle string input (JSON string)

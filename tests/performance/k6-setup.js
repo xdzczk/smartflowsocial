@@ -5,8 +5,8 @@
  */
 
 import http from "k6/http";
-import { check, sleep } from "k6";
-import { Rate, Trend, Counter } from "k6/metrics";
+import { check } from "k6";
+import { Counter, Rate, Trend } from "k6/metrics";
 
 // Custom metrics
 export const errorRate = new Rate("errors");
@@ -14,6 +14,7 @@ export const responseTime = new Trend("response_time");
 export const requestCount = new Counter("requests");
 
 // Test configuration
+// eslint-disable-next-line no-undef
 export const BASE_URL = __ENV.BASE_URL || "http://localhost:3000";
 
 // Helper function to create authenticated session

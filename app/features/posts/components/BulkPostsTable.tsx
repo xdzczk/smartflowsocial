@@ -1,6 +1,5 @@
-import { type BulkPost } from "~/features/posts/components/BulkPostCard";
-import { type QueueType } from "~/features/posts/components/BulkPostCard";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
+import type { BulkPost, QueueType } from "~/features/posts/components/BulkPostCard";
 import { getDynamicQueueStyle } from "~/features/posts/queueColors";
 
 interface BulkPostsTableProps {
@@ -279,6 +278,7 @@ export default function BulkPostsTable({
                             <td className="p-4">
                                 <div className="flex items-center">
                                     <input
+                                        id={`bulk-recyclable-${index}`}
                                         type="checkbox"
                                         checked={post.isRecyclable || false}
                                         onChange={(e) =>
@@ -286,7 +286,7 @@ export default function BulkPostsTable({
                                         }
                                         className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                     />
-                                    <label className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                                    <label htmlFor={`bulk-recyclable-${index}`} className="ml-2 text-sm text-gray-700 dark:text-gray-300">
                                         Recyclable
                                     </label>
                                 </div>

@@ -4,9 +4,10 @@
  * Tests that the application properly authenticates and authorizes users
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { AuthenticationError } from "~/lib/errors";
 import { redirect } from "@remix-run/node";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+import { AuthenticationError } from "~/lib/errors";
 
 // Set up environment variable before mocking
 process.env.SESSION_SECRET = "test-secret-key-for-testing";

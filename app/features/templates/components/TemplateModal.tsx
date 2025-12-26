@@ -64,7 +64,6 @@ export default function TemplateModal({
             onChange={(e) => setTemplateName(e.target.value)}
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring focus:ring-blue-500/50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:focus:border-blue-400"
             placeholder="Enter template name..."
-            autoFocus
           />
         </div>
 

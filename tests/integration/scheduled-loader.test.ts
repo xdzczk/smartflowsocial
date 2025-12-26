@@ -7,8 +7,8 @@
  * Migrated from: tests/e2e/loaders/queues-loader.cy.ts (Scheduled Posts section)
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { json } from "@remix-run/node";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock Prisma to prevent $use errors
 vi.mock("~/lib/prisma.server", () => ({

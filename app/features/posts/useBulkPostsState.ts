@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+
 import { type BulkPost } from "~/features/posts/components/BulkPostCard";
 import { handleErrorSafely } from "~/lib/error-handler.client";
 

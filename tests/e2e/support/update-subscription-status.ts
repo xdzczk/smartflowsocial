@@ -4,8 +4,8 @@
 //
 // Where STATUS is one of: FREE, ACTIVE, EXPIRED, CANCELED, PAST_DUE
 
-import { installGlobals } from "@remix-run/node";
 import { PrismaClient, SubscriptionStatus } from "@prisma/client";
+import { installGlobals } from "@remix-run/node";
 
 installGlobals();
 
@@ -39,6 +39,7 @@ async function updateSubscriptionStatus(npub: string, targetStatus: TestSubscrip
                 where: { userId: user.id },
             });
         }
+        // eslint-disable-next-line no-console
         console.log(`<status>FREE</status>`);
     } else if (targetStatus === "ACTIVE") {
         const now = new Date();
@@ -84,6 +85,7 @@ async function updateSubscriptionStatus(npub: string, targetStatus: TestSubscrip
                 },
             });
         }
+        // eslint-disable-next-line no-console
         console.log(`<status>ACTIVE</status>`);
     } else if (targetStatus === "EXPIRED") {
         const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
@@ -130,6 +132,7 @@ async function updateSubscriptionStatus(npub: string, targetStatus: TestSubscrip
                 },
             });
         }
+        // eslint-disable-next-line no-console
         console.log(`<status>EXPIRED</status>`);
     } else if (targetStatus === "CANCELED") {
         const now = new Date();
@@ -175,6 +178,7 @@ async function updateSubscriptionStatus(npub: string, targetStatus: TestSubscrip
                 },
             });
         }
+        // eslint-disable-next-line no-console
         console.log(`<status>CANCELED</status>`);
     } else if (targetStatus === "PAST_DUE") {
         const now = new Date();
@@ -218,6 +222,7 @@ async function updateSubscriptionStatus(npub: string, targetStatus: TestSubscrip
                 },
             });
         }
+        // eslint-disable-next-line no-console
         console.log(`<status>PAST_DUE</status>`);
     } else {
         throw new Error(`Unknown status: ${targetStatus}`);

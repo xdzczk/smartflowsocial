@@ -3,7 +3,7 @@
  * Shared TypeScript interfaces for asset features
  */
 
-import type { Asset as PrismaAsset, AssetType } from "@prisma/client";
+import type { AssetType } from "@prisma/client";
 import type { FetcherWithComponents } from "@remix-run/react";
 
 /**

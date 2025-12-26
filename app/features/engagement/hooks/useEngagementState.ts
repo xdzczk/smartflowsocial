@@ -4,7 +4,7 @@ import { useState } from "react";
  * Custom hook for managing engagement feed state
  */
 export function useEngagementState() {
-  const [selectedPost, setSelectedPost] = useState<any>(null);
+  const [selectedPost, setSelectedPost] = useState<unknown>(null);
   const [activeTab, setActiveTab] = useState<"all" | "replies" | "quotes">(
     "all",
   );

@@ -5,6 +5,9 @@
 
 import { Queue, Job } from "bullmq";
 import Redis from "ioredis";
+
+import { logError } from "~/lib/error-logger.server";
+
 import type {
   QueueClient,
   QueueType,
@@ -14,7 +17,6 @@ import type {
   PostJobData,
   LongFormPostJobData,
 } from "./queue-types";
-import { logError } from "~/lib/error-logger.server";
 
 // Redis connection with BullMQ required config
 const redis = new Redis(process.env.REDIS_URL!, {
@@ -112,7 +114,7 @@ class BullMQClient implements QueueClient {
   async getJobs(
     queueName: QueueType,
     statuses: JobStatus[],
-  ): Promise<Array<{ id: string; data: PostJobData | LongFormPostJobData; status: JobStatus }>> {
+  ): Promise<{ id: string; data: PostJobData | LongFormPostJobData; status: JobStatus }[]> {
     try {
       const queue = getQueue(queueName);
       // BullMQ's getJobs accepts an array of status strings

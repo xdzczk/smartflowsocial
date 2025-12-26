@@ -2,8 +2,8 @@ import { useState } from "react";
 
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { handleErrorSafely } from "~/lib/error-handler.client";
 import type { EditorJSBlock } from "~/features/posts/types/editorjs.types";
+import { handleErrorSafely } from "~/lib/error-handler.client";
 
 interface LongFormPreviewModalProps {
   isOpen: boolean;
@@ -44,14 +44,15 @@ export default function LongFormPreviewModal({
 
       editorData.blocks.forEach((block: EditorJSBlock) => {
         switch (block.type) {
-          case "header":
+          case "header": {
             const level = block.data.level || 3;
             html += `<h${level} class="text-${level === 2 ? "2xl" : level === 3 ? "xl" : "lg"} font-bold mb-4 text-gray-900 dark:text-white">${block.data.text}</h${level}>`;
             break;
+          }
           case "paragraph":
             html += `<p class="mb-4 text-gray-700 dark:text-gray-300 leading-relaxed">${block.data.text}</p>`;
             break;
-          case "list":
+          case "list": {
             const listType = block.data.style === "ordered" ? "ol" : "ul";
             const listClass =
               block.data.style === "ordered" ? "list-decimal" : "list-disc";
@@ -61,6 +62,7 @@ export default function LongFormPreviewModal({
             });
             html += `</${listType}>`;
             break;
+          }
           case "quote":
             html += `<blockquote class="border-l-4 border-blue-500 pl-4 py-2 mb-4 italic text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded-r">
               <p>${block.data.text}</p>
@@ -83,7 +85,7 @@ export default function LongFormPreviewModal({
               <iframe src="${block.data.embed}" class="w-full aspect-video rounded-lg" frameborder="0" allowfullscreen></iframe>
             </div>`;
             break;
-          case "image":
+          case "image": {
             const imageUrl = block.data.file?.url || block.data.url;
             const caption = block.data.caption || "";
             if (imageUrl) {
@@ -93,6 +95,7 @@ export default function LongFormPreviewModal({
               </figure>`;
             }
             break;
+          }
           default:
             if (block.data.text) {
               html += `<p class="mb-4 text-gray-700 dark:text-gray-300">${block.data.text}</p>`;
@@ -128,12 +131,22 @@ export default function LongFormPreviewModal({
     });
   };
 
+  const handleBackdropKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") {
+      onClose();
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black bg-opacity-50"
         onClick={onClose}
+        onKeyDown={handleBackdropKeyDown}
+        role="button"
+        tabIndex={0}
+        aria-label="Close modal"
       />
 
       {/* Modal */}

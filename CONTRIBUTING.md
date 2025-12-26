@@ -155,12 +155,12 @@ To maintain clear separation of concerns, follow these strict boundaries:
 **Example**:
 ```typescript
 // ✅ Good: Pure data access
-export async function createPost(data: CreatePostData) {
+async function createPost(data: CreatePostData) {
   return prisma.post.create({ data });
 }
 
 // ❌ Bad: Business logic in model
-export async function createPost(data: CreatePostData) {
+async function createPostWithLogic(data: CreatePostData) {
   if (user.subscription.status !== 'active') {
     throw new Error('Subscription required');
   }
@@ -185,7 +185,7 @@ export async function createPost(data: CreatePostData) {
 **Example**:
 ```typescript
 // ✅ Good: Business logic in features
-export async function schedulePost(userId: string, postData: PostData) {
+async function schedulePost(userId: string, postData: PostData) {
   await requireFeatureAccess(userId, 'scheduling');
   const user = await getUserById(userId);
   if (!user.subscription) {
@@ -195,7 +195,7 @@ export async function schedulePost(userId: string, postData: PostData) {
 }
 
 // ❌ Bad: Direct database access in features
-export async function schedulePost(userId: string, postData: PostData) {
+async function schedulePostDirect(userId: string, postData: PostData) {
   return prisma.post.create({ data: { ...postData, userId } });
 }
 ```
@@ -217,7 +217,7 @@ export async function schedulePost(userId: string, postData: PostData) {
 **Example**:
 ```typescript
 // ✅ Good: HTTP wiring with service layer
-export async function loader({ request, params }: LoaderFunctionArgs) {
+async function loader({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   const queueType = params.queueType || "all";
   
@@ -225,7 +225,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return loadCalendarData(userId, queueType);
 }
 
-export async function action({ request }: ActionFunctionArgs) {
+async function action({ request }: ActionFunctionArgs) {
   const userId = await requireUserId(request);
   const formData = await request.formData();
   
@@ -234,7 +234,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 // ❌ Bad: Direct model imports in routes
-export async function loader({ request }: LoaderFunctionArgs) {
+async function badLoader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   
   // ❌ Don't import models directly
@@ -245,7 +245,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 // ❌ Bad: Business logic in routes
-export async function action({ request }: ActionFunctionArgs) {
+async function badAction({ request }: ActionFunctionArgs) {
   const userId = await requireUserId(request);
   const user = await getUserById(userId);
   if (!user.subscription) {
@@ -283,17 +283,17 @@ To maintain clear boundaries and prevent tight coupling, all features expose a *
 **✅ DO**: Import from feature public API
 ```typescript
 // ✅ Good: Use public API
-import { getScheduledDashboardData, calculateNextScheduleTime } from "~/features/posts";
-import { getUserPlanType, hasFeatureAccess } from "~/features/payments";
 import { getUser, requireUserId } from "~/features/auth";
+import { getUserPlanType, hasFeatureAccess } from "~/features/payments";
+import { getScheduledDashboardData, calculateNextScheduleTime } from "~/features/posts";
 ```
 
 **❌ DON'T**: Import from feature internals
 ```typescript
 // ❌ Bad: Deep import from feature internals
-import { getScheduledDashboardData } from "~/features/posts/services/dashboard-loader.server";
-import { getUserPlanType } from "~/features/payments/types";
 import { getUser } from "~/features/auth/session.server";
+import { getUserPlanType } from "~/features/payments/types";
+import { getScheduledDashboardData } from "~/features/posts/services/dashboard-loader.server";
 ```
 
 #### **Why Public APIs?**
@@ -643,12 +643,12 @@ export function YourComponent({ ...props }: YourComponentProps) {
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 
-export async function loader({ request }: LoaderFunctionArgs) {
+async function loader({ request }: LoaderFunctionArgs) {
   // Handle GET requests
   return json({ data: "..." });
 }
 
-export async function action({ request }: ActionFunctionArgs) {
+async function action({ request }: ActionFunctionArgs) {
   // Handle POST/PUT/DELETE requests
   return json({ success: true });
 }

@@ -128,9 +128,9 @@ export function setupPostMocks(mocks: {
 /**
  * Setup default mocks for fetch (Nostr publisher, etc.)
  */
-export function setupFetchMock(status: number = 200, ok: boolean = true, jsonResponse: any = {}) {
+export function setupFetchMock(status = 200, ok = true, jsonResponse: unknown = {}) {
   const mockFetch = vi.fn();
-  global.fetch = mockFetch as any;
+  global.fetch = mockFetch as unknown as typeof fetch;
   
   // Default successful response
   mockFetch.mockResolvedValue({
@@ -146,7 +146,7 @@ export function setupFetchMock(status: number = 200, ok: boolean = true, jsonRes
 /**
  * Create a mock user object for testing
  */
-export function createMockUser(overrides: any = {}) {
+export function createMockUser(overrides: Record<string, unknown> = {}) {
   return {
     id: TEST_USER_ID,
     userRelays: ["wss://relay1.com", "wss://relay2.com"],
@@ -162,7 +162,7 @@ export function createMockUser(overrides: any = {}) {
 /**
  * Create a mock queue type object for testing
  */
-export function createMockQueueType(overrides: any = {}) {
+export function createMockQueueType(overrides: Record<string, unknown> = {}) {
   return {
     id: TEST_QUEUE_TYPE_ID,
     name: "posts",
@@ -175,7 +175,7 @@ export function createMockQueueType(overrides: any = {}) {
 /**
  * Create a mock post object for testing
  */
-export function createMockPost(overrides: any = {}) {
+export function createMockPost(overrides: Record<string, unknown> = {}) {
   return {
     id: TEST_POST_ID,
     userId: TEST_USER_ID,

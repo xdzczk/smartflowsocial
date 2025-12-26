@@ -39,21 +39,6 @@ export function createActionFormData(
 export const createMockFormData = createFormData;
 
 /**
- * Create a mock user ID for testing
- */
-export const TEST_USER_ID = "test-user-123";
-
-/**
- * Create a mock post ID for testing
- */
-export const TEST_POST_ID = "test-post-123";
-
-/**
- * Create a mock longform post ID for testing
- */
-export const TEST_LONGFORM_ID = "test-longform-123";
-
-/**
  * Helper to create multiple post IDs
  */
 export function createPostIds(count: number): string[] {
@@ -82,11 +67,20 @@ export {
 
 /**
  * Re-export scheduling test helpers
+ * Note: Exports everything except TEST_USER_ID which is also in mock-helpers
  */
-export * from "./scheduling-test-helpers";
+export {
+  BASE_TIME,
+  createQueueType,
+  createIntervalQueueType,
+  createFixedSlotsQueueType,
+  createTestDate,
+  createDateAtTime,
+} from "./scheduling-test-helpers";
 
 /**
  * Re-export mock helpers
+ * Note: TEST_USER_ID, TEST_POST_ID, TEST_LONGFORM_ID are exported from mock-helpers
  */
 export * from "./mock-helpers";
 

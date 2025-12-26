@@ -11,10 +11,10 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import type { QueueType } from "~/features/posts/types";
 
 import { QueueTypeCard } from "./QueueTypeCard";
 import { QueueTypeDialog } from "./QueueTypeDialog";
-import type { QueueType } from "~/features/posts/types";
 
 interface QueueTypeSettings extends QueueType {
   isDefault: boolean;

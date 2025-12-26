@@ -1,8 +1,11 @@
 import { useState, useCallback } from "react";
-import { WeeklyView } from "./WeeklyView";
+
+import type { PostData, LongFormPostData, QueueType, UserData } from "~/features/posts/types";
+
 import { MonthlyView } from "./MonthlyView";
 import { RescheduleModal } from "./RescheduleModal";
-import type { PostData, LongFormPostData, QueueType, UserData } from "~/features/posts/types";
+import { WeeklyView } from "./WeeklyView";
+
 
 interface CalendarPost extends Omit<PostData, "scheduledFor" | "postedAt" | "publishedAt"> {
   title?: string;

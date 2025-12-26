@@ -4,8 +4,9 @@
  * Displays user-friendly error messages in the UI
  */
 
-import type { ErrorResponse } from "~/lib/error-handler.server";
 import { showErrorToast as showErrorToastUtil } from "~/lib/error-handler.client";
+import type { ErrorResponse } from "~/lib/error-handler.server";
+
 
 interface ErrorDisplayProps {
   error: ErrorResponse["error"] | string;

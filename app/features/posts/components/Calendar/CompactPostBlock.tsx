@@ -1,10 +1,11 @@
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { isVideoFile } from "~/lib/helpers";
-import { PostIcon } from "./PostIcon";
+
 import { PostBadges } from "./PostBadges";
-import { PostStatusIcons } from "./PostStatusIcons";
 import type { PostBlockBaseProps, QueueColorStyle } from "./PostBlock.types";
 import { getPostPreview, getFirstImage, getStatusColor, getDisplayTime } from "./PostBlock.utils";
+import { PostIcon } from "./PostIcon";
+import { PostStatusIcons } from "./PostStatusIcons";
 
 interface CompactPostBlockProps extends PostBlockBaseProps {
   queueColorStyle: QueueColorStyle | null;

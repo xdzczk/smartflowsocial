@@ -1,5 +1,6 @@
 import type { User } from "@prisma/client";
 
+import type { ProfileData } from "~/features/nostr/types";
 import { prisma } from "~/lib/prisma.server";
 
 /**
@@ -23,11 +24,10 @@ export async function getUserBasicInfo(
 /**
  * Gets users by an array of npubs with their profile info
  */
-import type { ProfileData } from "~/features/nostr/types";
 
 export async function getUsersByNpubs(
   npubs: string[],
-): Promise<Array<{ npub: string; nostrProfile: ProfileData | null }>> {
+): Promise<{ npub: string; nostrProfile: ProfileData | null }[]> {
   if (!npubs.length) return [];
   return prisma.user.findMany({
     where: { npub: { in: npubs } },
