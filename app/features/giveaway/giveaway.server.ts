@@ -52,14 +52,15 @@ export const fetchGiveawayParticipants = async (
         });
 
         // Process thread_view response
-        threadResponse.forEach((item: PrimalEvent) => {
+        (threadResponse as PrimalEvent[]).forEach((item: PrimalEvent) => {
           if (!Array.isArray(item) || item[0] !== "EVENT" || !item[2]) return;
 
           const event = item[2];
+          if (typeof event !== "object" || Array.isArray(event) || !("kind" in event)) return;
 
           // Extract zap receipts (kind 9735)
           if (event.kind === 9735) {
-            events.push(event);
+            events.push(event as RelatedEvent);
 
             // Extract zap amount for stats
             try {
@@ -82,12 +83,12 @@ export const fetchGiveawayParticipants = async (
           }
 
           // Extract reply events (kind 1) that reference our event
-          if (event.kind === 1 && event.id !== eventId) {
-            const eTag = event.tags?.find(
+          if (event.kind === 1 && "id" in event && event.id !== eventId) {
+            const eTag = ("tags" in event && Array.isArray(event.tags)) ? event.tags.find(
               (tag: string[]) => tag[0] === "e" && tag[1] === eventId,
-            );
+            ) : undefined;
             if (eTag) {
-              events.push(event);
+              events.push(event as RelatedEvent);
             }
           }
 
@@ -114,12 +115,15 @@ export const fetchGiveawayParticipants = async (
             kind: 7,
           });
 
-          const likeEvents = likesResponse
+          const likeEvents = (likesResponse as PrimalEvent[])
             .filter(
               (item: PrimalEvent) =>
                 Array.isArray(item) &&
                 item[0] === "EVENT" &&
                 item[2] &&
+                typeof item[2] === "object" &&
+                !Array.isArray(item[2]) &&
+                "kind" in item[2] &&
                 item[2].kind === 7,
             )
             .map((item: PrimalEvent) => item[2] as RelatedEvent);
@@ -136,12 +140,15 @@ export const fetchGiveawayParticipants = async (
             kind: 6,
           });
 
-          const repostEvents = repostsResponse
+          const repostEvents = (repostsResponse as PrimalEvent[])
             .filter(
               (item: PrimalEvent) =>
                 Array.isArray(item) &&
                 item[0] === "EVENT" &&
                 item[2] &&
+                typeof item[2] === "object" &&
+                !Array.isArray(item[2]) &&
+                "kind" in item[2] &&
                 item[2].kind === 6,
             )
             .map((item: PrimalEvent) => item[2] as RelatedEvent);

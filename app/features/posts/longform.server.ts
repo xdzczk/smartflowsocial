@@ -1,4 +1,4 @@
-import { getPublicKey, finishEvent } from "nostr-tools";
+import { getPublicKey, finalizeEvent, nip19 } from "nostr-tools";
 
 import type { EditorJSOutput, EditorJSBlock } from "~/features/posts/types/editorjs.types";
 import { sanitizeMarkdown } from "~/lib/markdown-sanitizer.server";
@@ -22,7 +22,30 @@ export function createLongFormEvent({
   dTag?: string;
   publishedAt?: number;
 }) {
-  const publicKey = getPublicKey(privateKey);
+  // Convert privateKey (hex string or nsec) to Uint8Array
+  let privateKeyBytes: Uint8Array;
+  try {
+    if (privateKey.startsWith("nsec")) {
+      const decoded = nip19.decode(privateKey);
+      if (decoded.type === "nsec") {
+        privateKeyBytes = decoded.data as Uint8Array;
+      } else {
+        throw new Error("Invalid nsec format");
+      }
+    } else {
+      // Assume hex string
+      privateKeyBytes = new Uint8Array(
+        privateKey.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) || []
+      );
+    }
+  } catch {
+    // Fallback: treat as hex string
+    privateKeyBytes = new Uint8Array(
+      privateKey.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) || []
+    );
+  }
+  
+  const publicKey = getPublicKey(privateKeyBytes);
 
   const eventTags = [];
 
@@ -62,7 +85,7 @@ export function createLongFormEvent({
     content: sanitizedContent,
   };
 
-  return finishEvent(event, privateKey);
+  return finalizeEvent(event, privateKeyBytes);
 }
 
 export function generateArticleIdentifier(title: string): string {
@@ -85,8 +108,9 @@ export function convertEditorJSToMarkdown(editorData: EditorJSOutput): string {
   editorData.blocks.forEach((block: EditorJSBlock) => {
     switch (block.type) {
       case "header": {
-        const level = "#".repeat(block.data.level || 1);
-        markdown += `${level} ${block.data.text}\n\n`;
+        const level = typeof block.data.level === "number" ? block.data.level : 1;
+        const text = typeof block.data.text === "string" ? block.data.text : "";
+        markdown += `${"#".repeat(level)} ${text}\n\n`;
         break;
       }
 
@@ -95,14 +119,16 @@ export function convertEditorJSToMarkdown(editorData: EditorJSOutput): string {
         break;
 
       case "list":
-        if (block.data.style === "ordered") {
-          block.data.items.forEach((item: string, index: number) => {
-            markdown += `${index + 1}. ${item}\n`;
-          });
-        } else {
-          block.data.items.forEach((item: string) => {
-            markdown += `- ${item}\n`;
-          });
+        if (Array.isArray(block.data.items)) {
+          if (block.data.style === "ordered") {
+            block.data.items.forEach((item: unknown, index: number) => {
+              markdown += `${index + 1}. ${typeof item === "string" ? item : String(item)}\n`;
+            });
+          } else {
+            block.data.items.forEach((item: unknown) => {
+              markdown += `- ${typeof item === "string" ? item : String(item)}\n`;
+            });
+          }
         }
         markdown += "\n";
         break;
@@ -122,7 +148,10 @@ export function convertEditorJSToMarkdown(editorData: EditorJSOutput): string {
         break;
 
       case "linkTool": {
-        const { link, meta } = block.data;
+        const link = typeof block.data.link === "string" ? block.data.link : "";
+        const meta = block.data.meta && typeof block.data.meta === "object" && "title" in block.data.meta
+          ? block.data.meta as { title?: string }
+          : { title: undefined };
         if (meta.title) {
           markdown += `[${meta.title}](${link})\n\n`;
         } else {
@@ -142,8 +171,12 @@ export function convertEditorJSToMarkdown(editorData: EditorJSOutput): string {
       }
 
       case "image": {
-        const imageUrl = block.data.file?.url || block.data.url;
-        const caption = block.data.caption;
+        const file = block.data.file && typeof block.data.file === "object" && "url" in block.data.file
+          ? block.data.file as { url?: string }
+          : { url: undefined };
+        const url = typeof block.data.url === "string" ? block.data.url : undefined;
+        const imageUrl = file.url || url;
+        const caption = typeof block.data.caption === "string" ? block.data.caption : undefined;
         if (imageUrl) {
           if (caption && caption.trim()) {
             markdown += `![${caption}](${imageUrl})\n\n`;

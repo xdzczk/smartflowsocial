@@ -36,10 +36,15 @@ interface HashtagPresetsSettingsProps {
   presets: HashTagPreset[];
 }
 
+interface FetcherData {
+  success?: boolean;
+  error?: string;
+}
+
 export function HashtagPresetsSettings({
   presets,
 }: HashtagPresetsSettingsProps) {
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<FetcherData>();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingPreset, setEditingPreset] = useState<HashTagPreset | null>(

@@ -127,7 +127,7 @@ async function handleImageUpload(
     } catch (error) {
       logError(error instanceof Error ? error : new Error(String(error)), {
         userId,
-        fileName: file.name,
+        fileName: (imageFile as File).name,
         message: "S3 upload error",
       });
       return Response.json(
@@ -403,7 +403,7 @@ async function handleScheduleLongform(
 
   if (signedEventJson?.tags) {
     const publishedAtTag = signedEventJson.tags.find(
-      (tag) => Array.isArray(tag) && tag[0] === "published_at",
+      (tag: unknown) => Array.isArray(tag) && tag[0] === "published_at",
     );
     if (publishedAtTag && publishedAtTag[1]) {
       scheduledForTimestamp = publishedAtTag[1].toString();
@@ -437,8 +437,12 @@ export async function handleLongFormEditAction(
   postId: string,
   request: Request,
 ): Promise<Response> {
-  const { userRelays, showHashTagsinPosts } = await getUserById(userId);
-  const sanitizedRelays = userRelays.map((relay) => relay.trim());
+  const user = await getUserById(userId);
+  if (!user) {
+    return new Response("User not found", { status: 404 });
+  }
+  const { userRelays, showHashTagsinPosts } = user;
+  const sanitizedRelays = userRelays.map((relay: string) => relay.trim());
 
   const contentType = request.headers.get("Content-Type") || "";
   let formData: FormData;

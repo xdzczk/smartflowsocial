@@ -44,11 +44,20 @@ export function ChildRepliesPanel({
 
                 if (replyMetadata) {
                     try {
-                        const profile = typeof replyMetadata.content === "string"
-                            ? JSON.parse(replyMetadata.content)
-                            : replyMetadata.content;
-                        replyAuthorName = profile?.display_name || profile?.name || replyAuthorName;
-                        replyAuthorPicture = profile?.picture;
+                        const metadataContent = replyMetadata && typeof replyMetadata === "object" && "content" in replyMetadata
+                            ? replyMetadata.content
+                            : null;
+                        const profile = typeof metadataContent === "string"
+                            ? JSON.parse(metadataContent)
+                            : metadataContent && typeof metadataContent === "object"
+                                ? metadataContent
+                                : null;
+                        if (profile && typeof profile === "object") {
+                            replyAuthorName = (profile as { display_name?: string; name?: string })?.display_name || 
+                                            (profile as { name?: string })?.name || 
+                                            replyAuthorName;
+                            replyAuthorPicture = (profile as { picture?: string | null })?.picture || null;
+                        }
                     } catch (e) {
                         // Ignore parsing errors
                     }

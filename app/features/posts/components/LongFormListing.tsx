@@ -44,7 +44,10 @@ export default function LongFormListing({
   const [selectedPosts, setSelectedPosts] = useState(new Set<string>());
   const [countdowns, setCountdowns] = useState<Record<string, string>>({});
   const deleteFetcher = useFetcher();
-  const bulkDeleteFetcher = useFetcher();
+  interface BulkDeleteFetcherData {
+    success?: boolean;
+  }
+  const bulkDeleteFetcher = useFetcher<BulkDeleteFetcherData>();
 
   const sortedPosts = [...posts].sort((a, b) => {
     let aValue, bValue;
@@ -60,14 +63,17 @@ export default function LongFormListing({
       aValue = new Date(a.createdAt).getTime();
       bValue = new Date(b.createdAt).getTime();
     } else {
-      aValue = a[sortConfig.key as keyof LongFormPost] || "";
-      bValue = b[sortConfig.key as keyof LongFormPost] || "";
+      const aVal = a[sortConfig.key as keyof LongFormPost];
+      const bVal = b[sortConfig.key as keyof LongFormPost];
 
-      if (typeof aValue === "string" && typeof bValue === "string") {
+      if (typeof aVal === "string" && typeof bVal === "string") {
         return sortConfig.direction === "asc"
-          ? aValue.localeCompare(bValue)
-          : bValue.localeCompare(aValue);
+          ? aVal.localeCompare(bVal)
+          : bVal.localeCompare(aVal);
       }
+
+      aValue = typeof aVal === "number" ? aVal : 0;
+      bValue = typeof bVal === "number" ? bVal : 0;
     }
 
     return sortConfig.direction === "asc" ? aValue - bValue : bValue - aValue;
@@ -135,16 +141,17 @@ export default function LongFormListing({
         const editorData = JSON.parse(content);
         editorData.blocks?.forEach((block: EditorJSBlock) => {
           if (block.type === "paragraph" || block.type === "header") {
-            const text = block.data.text?.replace(/<[^>]*>/g, "") || "";
+            const text = typeof block.data.text === "string" ? block.data.text.replace(/<[^>]*>/g, "") : "";
             wordCount += text
               .split(/\s+/)
-              .filter((word) => word.length > 0).length;
+              .filter((word: string) => word.length > 0).length;
           } else if (block.type === "list") {
-            block.data.items?.forEach((item: string) => {
-              const text = item.replace(/<[^>]*>/g, "");
+            const items = Array.isArray(block.data.items) ? block.data.items : [];
+            items.forEach((item: unknown) => {
+              const text = typeof item === "string" ? item.replace(/<[^>]*>/g, "") : "";
               wordCount += text
                 .split(/\s+/)
-                .filter((word) => word.length > 0).length;
+                .filter((word: string) => word.length > 0).length;
             });
           }
         });
@@ -350,7 +357,7 @@ export default function LongFormListing({
                   checked={
                     filteredPosts.length > 0
                       ? selectedPosts.size === filteredPosts.length
-                      : null
+                      : false
                   }
                   onChange={toggleSelectAll}
                   className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
@@ -449,14 +456,14 @@ export default function LongFormListing({
                 </td>
                 <td className="p-3">
                   <p className="font-medium">
-                    {post.title?.length > 40
+                    {post.title && post.title.length > 40
                       ? post.title.substring(0, 40) + "..."
                       : post.title || "Untitled"}
                   </p>
                 </td>
                 <td className="max-w-xs p-3">
                   <p className="line-clamp-2 text-sm text-gray-600 dark:text-gray-400">
-                    {post.summary?.length > 60
+                    {post.summary && post.summary.length > 60
                       ? post.summary.substring(0, 60) + "..."
                       : post.summary || "No summary"}
                   </p>
@@ -464,15 +471,15 @@ export default function LongFormListing({
                 <td className="p-3">
                   {formatDate(
                     type === "posted"
-                      ? post.publishedAt
+                      ? (post.publishedAt || undefined)
                       : type === "scheduled"
-                        ? post.scheduledFor
-                        : post.createdAt,
+                        ? (post.scheduledFor || undefined)
+                        : (post.createdAt || undefined),
                   )}
                 </td>
                 <td className="p-3 text-center">
                   <span className="text-sm text-gray-500 dark:text-gray-400">
-                    {getReadingTime(post.content)}
+                    {getReadingTime(post.content || undefined)}
                   </span>
                 </td>
                 {type === "scheduled" ? (
@@ -508,7 +515,9 @@ export default function LongFormListing({
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            onReschedulePost(post);
+                            if (onReschedulePost) {
+                              onReschedulePost(post);
+                            }
                           }}
                           className="inline-flex items-center justify-center gap-2 rounded-lg border border-green-200 bg-white px-2 py-1 text-sm font-semibold leading-5 text-green-800 hover:border-green-300 hover:text-green-900 hover:shadow-sm focus:ring focus:ring-green-300/25 active:border-green-200 active:shadow-none dark:border-green-700 dark:bg-gray-800 dark:text-green-300 dark:hover:border-green-600 dark:hover:text-green-200 dark:focus:ring-green-600/40 dark:active:border-green-700"
                         >
@@ -517,10 +526,10 @@ export default function LongFormListing({
                       </>
                     ) : null}
                     {type === "posted" &&
-                    (post.nostrEventId || post.signedEvent?.id) ? (
+                    (post.nostrEventId || (post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent ? (post.signedEvent as { id?: string }).id : undefined)) ? (
                       <>
                         <Link
-                          to={`https://primal.net/a/${post.nostrEventId || post.signedEvent?.id}`}
+                          to={`https://primal.net/a/${post.nostrEventId || (post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent ? (post.signedEvent as { id?: string }).id : "")}`}
                           target="_blank"
                           rel="noreferrer"
                           onClick={(e) => e.stopPropagation()}
@@ -528,8 +537,10 @@ export default function LongFormListing({
                         >
                           View Article
                         </Link>
-                        {longformRepostFetcher ? (
-                          <longformRepostFetcher.Form
+                        {longformRepostFetcher ? (() => {
+                          const fetcher = longformRepostFetcher;
+                          return (
+                            <fetcher.Form
                             method="post"
                             onClick={(e) => e.stopPropagation()}
                           >
@@ -546,23 +557,24 @@ export default function LongFormListing({
                             <button
                               type="submit"
                               disabled={
-                                longformRepostFetcher.state !== "idle" ||
-                                longformRepostFetcher.formData?.get(
-                                  "postId",
-                                ) === post.id
+                                fetcher.state !== "idle" ||
+                                (fetcher.formData ? (fetcher.formData.get("postId") as string | null) === post.id : false)
                               }
                               className="inline-flex items-center justify-center gap-2 rounded-lg border border-purple-200 bg-white px-2 py-1 text-sm font-semibold leading-5 text-purple-800 hover:border-purple-300 hover:text-purple-900 hover:shadow-sm focus:ring focus:ring-purple-300/25 active:border-purple-200 active:shadow-none disabled:opacity-50 dark:border-purple-700 dark:bg-gray-800 dark:text-purple-300 dark:hover:border-purple-600 dark:hover:text-purple-200 dark:focus:ring-purple-600/40 dark:active:border-purple-700"
                             >
-                              {longformRepostFetcher.state !== "idle" &&
-                              longformRepostFetcher.formData?.get("postId") ===
+                              {fetcher.state !== "idle" &&
+                              fetcher.formData?.get("postId") ===
                                 post.id
                                 ? "Reposting..."
                                 : "Repost"}
                             </button>
-                          </longformRepostFetcher.Form>
-                        ) : null}
-                        {longformQuoteFetcher ? (
-                          <longformQuoteFetcher.Form
+                          </fetcher.Form>
+                          );
+                        })() : null}
+                        {longformQuoteFetcher ? (() => {
+                          const fetcher = longformQuoteFetcher;
+                          return (
+                            <fetcher.Form
                             method="post"
                             onClick={(e) => e.stopPropagation()}
                           >
@@ -579,20 +591,20 @@ export default function LongFormListing({
                             <button
                               type="submit"
                               disabled={
-                                longformQuoteFetcher.state !== "idle" ||
-                                longformQuoteFetcher.formData?.get("postId") ===
-                                  post.id
+                                fetcher.state !== "idle" ||
+                                (fetcher.formData ? (fetcher.formData.get("postId") as string | null) === post.id : false)
                               }
                               className="inline-flex items-center justify-center gap-2 rounded-lg border border-green-200 bg-white px-2 py-1 text-sm font-semibold leading-5 text-green-800 hover:border-green-300 hover:text-green-900 hover:shadow-sm focus:ring focus:ring-green-300/25 active:border-green-200 active:shadow-none disabled:opacity-50 dark:border-green-700 dark:bg-gray-800 dark:text-green-300 dark:hover:border-green-600 dark:hover:text-green-200 dark:focus:ring-green-600/40 dark:active:border-green-700"
                             >
-                              {longformQuoteFetcher.state !== "idle" &&
-                              longformQuoteFetcher.formData?.get("postId") ===
+                              {fetcher.state !== "idle" &&
+                              fetcher.formData?.get("postId") ===
                                 post.id
                                 ? "Quoting..."
                                 : "Quote Post"}
                             </button>
-                          </longformQuoteFetcher.Form>
-                        ) : null}
+                          </fetcher.Form>
+                          );
+                        })() : null}
                       </>
                     ) : null}
                     <deleteFetcher.Form

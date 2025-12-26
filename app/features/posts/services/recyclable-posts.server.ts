@@ -39,7 +39,13 @@ export async function getRecyclableDashboardData({
   ]);
 
   // Get event IDs from signedEvent.id
-  const eventIds = posts.map((post) => post.signedEvent.id);
+  const eventIds = posts.map((post) => {
+    const signedEvent = post.signedEvent;
+    if (signedEvent && typeof signedEvent === "object" && "id" in signedEvent && typeof signedEvent.id === "string") {
+      return signedEvent.id;
+    }
+    return "";
+  }).filter((id) => id !== "");
 
   // Use the extracted stats fetching logic
   const stats = await getPostStats(eventIds);
@@ -92,17 +98,22 @@ export async function handleRecyclablePostAction(
     const postsData = await getPostsByIds({ ids: postIds, userId });
 
     // Transform posts data into quote post format
-    const quotePostsData = postsData.map((post) => ({
-      caption: "", // Empty caption - user can add content
-      fileUrl: post.fileUrl || "",
-      queueType: post.queueType?.name || "unassigned",
-      scheduledFor: "",
-      originalPostId: post.id,
-      originalEventId: post.signedEvent?.id,
-      originalEventPubkey: post.signedEvent?.pubkey,
-      isQuotePost: true,
-      originalCaption: post.caption || "",
-    }));
+    const quotePostsData = postsData.map((post) => {
+      const signedEvent = post.signedEvent;
+      const eventId = signedEvent && typeof signedEvent === "object" && "id" in signedEvent && typeof signedEvent.id === "string" ? signedEvent.id : "";
+      const eventPubkey = signedEvent && typeof signedEvent === "object" && "pubkey" in signedEvent && typeof signedEvent.pubkey === "string" ? signedEvent.pubkey : "";
+      return {
+        caption: "", // Empty caption - user can add content
+        fileUrl: post.fileUrl || "",
+        queueType: post.queueType?.name || "unassigned",
+        scheduledFor: "",
+        originalPostId: post.id,
+        originalEventId: eventId,
+        originalEventPubkey: eventPubkey,
+        isQuotePost: true,
+        originalCaption: post.caption || "",
+      };
+    });
 
     return json({ quotePostData: quotePostsData });
   }
@@ -119,15 +130,22 @@ export async function handleRecyclablePostAction(
       const originalPost = postsData[0];
       const originalEvent = originalPost.signedEvent;
 
+      if (!originalEvent || typeof originalEvent !== "object" || !("id" in originalEvent) || !("pubkey" in originalEvent)) {
+        return json({ error: "Invalid event data" }, { status: 400 });
+      }
+
+      const eventId = typeof originalEvent.id === "string" ? originalEvent.id : String(originalEvent.id);
+      const eventPubkey = typeof originalEvent.pubkey === "string" ? originalEvent.pubkey : String(originalEvent.pubkey);
+
       // Create kind 6 repost event structure according to NIP-18
       const kind6EventData = {
         kind: 6,
         content: "", // Empty content as recommended by NIP-18
         tags: [
           // e tag with the id of the note being reposted and relay URL
-          ["e", originalEvent.id, "wss://relay.primal.net"],
+          ["e", eventId, "wss://relay.primal.net"],
           // p tag with the pubkey of the event being reposted
-          ["p", originalEvent.pubkey],
+          ["p", eventPubkey],
         ],
         created_at: Math.floor(Date.now() / 1000),
       };
@@ -155,6 +173,13 @@ export async function handleRecyclablePostAction(
       const originalPost = postsData[0];
       const originalEvent = originalPost.signedEvent;
 
+      if (!originalEvent || typeof originalEvent !== "object" || !("id" in originalEvent) || !("pubkey" in originalEvent)) {
+        return json({ error: "Invalid event data" }, { status: 400 });
+      }
+
+      const eventId = typeof originalEvent.id === "string" ? originalEvent.id : String(originalEvent.id);
+      const eventPubkey = typeof originalEvent.pubkey === "string" ? originalEvent.pubkey : String(originalEvent.pubkey);
+
       // Create quote post data for bulk posts page
       const quotePostData = {
         caption: "", // Empty caption - user can add content
@@ -162,8 +187,8 @@ export async function handleRecyclablePostAction(
         queueType: originalPost.queueType?.name || "unassigned",
         scheduledFor: "",
         originalPostId: originalPost.id,
-        originalEventId: originalEvent.id,
-        originalEventPubkey: originalEvent.pubkey,
+        originalEventId: eventId,
+        originalEventPubkey: eventPubkey,
         isQuotePost: true,
         originalCaption: originalPost.caption || "",
       };

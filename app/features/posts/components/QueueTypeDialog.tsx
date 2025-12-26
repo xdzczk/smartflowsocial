@@ -23,6 +23,7 @@ import {
 } from "~/components/ui/select";
 import { Textarea } from "~/components/ui/textarea";
 import type { QueueType } from "~/features/posts/types";
+import { isIntervalScheduleConfig, isFixedSlotsScheduleConfig } from "~/features/posts/types";
 
 interface QueueTypeDialogQueueType extends QueueType {
   isDefault?: boolean;
@@ -53,7 +54,11 @@ export function QueueTypeDialog({
   queueType,
   hashTagPresets,
 }: QueueTypeDialogProps) {
-  const fetcher = useFetcher();
+  interface FetcherData {
+    success?: boolean;
+    error?: string;
+  }
+  const fetcher = useFetcher<FetcherData>();
   const [scheduleType, setScheduleType] = useState<"INTERVAL" | "FIXED_SLOTS">(
     "INTERVAL",
   );
@@ -66,7 +71,7 @@ export function QueueTypeDialog({
 
   useEffect(() => {
     if (queueType) {
-      setScheduleType(queueType.scheduleType);
+      setScheduleType(queueType.scheduleType || "INTERVAL");
       setHashTagPresetId(queueType.hashTagPresetId || "none");
     } else {
       setScheduleType("INTERVAL");
@@ -213,7 +218,7 @@ export function QueueTypeDialog({
                 <Checkbox
                   id="useGlobalInterval"
                   name="useGlobalInterval"
-                  defaultChecked={queueType?.scheduleConfig?.useGlobalInterval}
+                  defaultChecked={queueType?.scheduleConfig && isIntervalScheduleConfig(queueType.scheduleConfig) ? queueType.scheduleConfig.useGlobalInterval : false}
                 />
                 <Label
                   htmlFor="useGlobalInterval"
@@ -230,7 +235,7 @@ export function QueueTypeDialog({
                   type="number"
                   min="1"
                   max="168"
-                  defaultValue={queueType?.scheduleConfig?.intervalHours || 4}
+                  defaultValue={queueType?.scheduleConfig && isIntervalScheduleConfig(queueType.scheduleConfig) ? (queueType.scheduleConfig.intervalHours || 4) : 4}
                 />
               </div>
             </div>
@@ -245,7 +250,7 @@ export function QueueTypeDialog({
                 id="slots"
                 name="slots"
                 defaultValue={
-                  queueType?.scheduleConfig?.slots?.join(", ") || ""
+                  queueType?.scheduleConfig && isFixedSlotsScheduleConfig(queueType.scheduleConfig) ? (queueType.scheduleConfig.slots?.join(", ") || "") : ""
                 }
                 placeholder="08:00, 12:00, 18:00"
               />

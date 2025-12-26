@@ -4,6 +4,7 @@
  */
 
 import { combineContent } from "~/features/posts/combined.server";
+import type { PostData, LongFormPostData } from "~/features/posts/types";
 import {
   getScheduledLongFormPosts,
 } from "~/models/longformpost.server";
@@ -37,10 +38,31 @@ export async function loadScheduledData(
   // Filter longform posts by queue type if specific queue is selected
   const longformPosts = filterPostsByQueueType(allLongformPosts, queueType);
 
+  // Convert PostWithQueueType[] to PostData[] for combineContent
+  const postsData: PostData[] = posts.map((post) => {
+    const { queueType, ...rest } = post;
+    return {
+      ...rest,
+      queueType: queueType || undefined,
+      signedEvent: post.signedEvent as PostData["signedEvent"],
+      nostrEvent: post.nostrEvent as PostData["nostrEvent"],
+    } as PostData;
+  });
+
+  // Convert LongFormPost[] to LongFormPostData[] for combineContent
+  const longformPostsData: LongFormPostData[] = longformPosts.map((post) => {
+    return {
+      ...post,
+      queueType: ("queueType" in post && post.queueType) || undefined,
+      signedEvent: post.signedEvent as LongFormPostData["signedEvent"],
+      nostrEvent: post.nostrEvent as LongFormPostData["nostrEvent"],
+    } as LongFormPostData;
+  });
+
   // Combine posts and longform posts for the "All" tab
   const allContent = combineContent(
-    posts,
-    longformPosts,
+    postsData,
+    longformPostsData,
     "scheduledFor",
     "asc",
   );

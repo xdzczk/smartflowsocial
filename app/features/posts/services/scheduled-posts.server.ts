@@ -7,6 +7,7 @@
 import { json } from "@remix-run/node";
 
 import { combineContent } from "~/features/posts/combined.server";
+import type { PostData, LongFormPostData } from "~/features/posts/types";
 import {
   enqueuePostJob as schedulePost,
   cancelPostJob as cancelScheduledPost,
@@ -58,10 +59,31 @@ export async function getScheduledDashboardData({
       ? allLongformPosts
       : allLongformPosts.filter((post) => post.queueType?.name === queueType);
 
+  // Convert PostWithQueueType[] to PostData[] for combineContent
+  const postsData: PostData[] = posts.map((post) => {
+    const { queueType, ...rest } = post;
+    return {
+      ...rest,
+      queueType: queueType || undefined,
+      signedEvent: post.signedEvent as PostData["signedEvent"],
+      nostrEvent: post.nostrEvent as PostData["nostrEvent"],
+    } as PostData;
+  });
+
+  // Convert LongFormPost[] to LongFormPostData[] for combineContent
+  const longformPostsData: LongFormPostData[] = longformPosts.map((post) => {
+    return {
+      ...post,
+      queueType: ("queueType" in post && post.queueType) || undefined,
+      signedEvent: post.signedEvent as LongFormPostData["signedEvent"],
+      nostrEvent: post.nostrEvent as LongFormPostData["nostrEvent"],
+    } as LongFormPostData;
+  });
+
   // Combine posts and longform posts for the "All" tab
   const allContent = combineContent(
-    posts,
-    longformPosts,
+    postsData,
+    longformPostsData,
     "scheduledFor",
     "asc",
   );
@@ -278,7 +300,7 @@ export async function handleScheduledPostAction(
           ? hashtags.toString().split(" ").filter((tag) => tag.trim())
           : [],
         queueTypeId,
-        scheduledFor: scheduledFor ? Number(scheduledFor) : undefined,
+        scheduledFor: scheduledFor ? String(Number(scheduledFor)) : undefined,
         signedEvent: parsedSignedEvent || undefined,
         nostrEvent: parsedNostrEvent || undefined,
         hashTagPresetId,

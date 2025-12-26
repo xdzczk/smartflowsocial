@@ -180,6 +180,7 @@ export async function loadSettingsData(userId: string): Promise<SettingsLoaderDa
     accounts = {
       isChild: false,
       parentNpub,
+      parentUser: null,
       confirmedChildren,
       pendingChildren,
     };

@@ -2,15 +2,22 @@ import { useFetcher } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
 import { getSelectedQueueStyle } from "~/features/posts/queueColors";
-import type { QueueType } from "~/features/posts/types";
+import type { QueueType, PostData } from "~/features/posts/types";
+import { isIntervalScheduleConfig, isFixedSlotsScheduleConfig } from "~/features/posts/types";
 import { signEventFn } from "~/lib/nostr";
 import { useOptionalUser } from "~/lib/remix-utils";
+
+interface DraftBulkResumeProps {
+  selectedDrafts: PostData[];
+  queueTypes: QueueType[];
+  onCancel: () => void;
+}
 
 export default function DraftBulkResume({
   selectedDrafts,
   queueTypes,
   onCancel,
-}) {
+}: DraftBulkResumeProps) {
   const fetcher = useFetcher();
   const user = useOptionalUser();
   const scheduleIntervals = user?.scheduleInterval;
@@ -51,7 +58,7 @@ export default function DraftBulkResume({
     }),
   );
 
-  const calculateQueueScheduleTime = async (queueTypeName, baseIndex = 0) => {
+  const calculateQueueScheduleTime = async (queueTypeName: string, baseIndex = 0): Promise<string> => {
     if (queueTypeName === "unassigned") {
       return "";
     }
@@ -85,10 +92,13 @@ export default function DraftBulkResume({
               const config = queueType.scheduleConfig;
               let intervalHours = 4; // default
 
-              if (config.useGlobalInterval) {
-                intervalHours = user?.scheduleInterval?.[0] || 4;
-              } else {
-                intervalHours = config.intervalHours || 4;
+              if (config && isIntervalScheduleConfig(config)) {
+                if (config.useGlobalInterval) {
+                  const userInterval = user?.scheduleInterval?.[0];
+                  intervalHours = typeof userInterval === "number" ? userInterval : (typeof userInterval === "string" ? Number(userInterval) : 4) || 4;
+                } else {
+                  intervalHours = config.intervalHours || 4;
+                }
               }
 
               baseDate.setHours(
@@ -96,12 +106,12 @@ export default function DraftBulkResume({
               );
             } else if (queueType.scheduleType === "FIXED_SLOTS") {
               const config = queueType.scheduleConfig;
-              const slots = config.slots || [];
+              const slots = (config && isFixedSlotsScheduleConfig(config)) ? config.slots || [] : [];
 
               if (slots.length > 0) {
                 // Sort slots to ensure consistent ordering
                 const sortedSlots = slots
-                  .map((slot) => {
+                  .map((slot: string) => {
                     const [hours, minutes] = slot.split(":").map(Number);
                     return {
                       slot,
@@ -110,7 +120,7 @@ export default function DraftBulkResume({
                       totalMinutes: hours * 60 + minutes,
                     };
                   })
-                  .sort((a, b) => a.totalMinutes - b.totalMinutes);
+                  .sort((a: { totalMinutes: number }, b: { totalMinutes: number }) => a.totalMinutes - b.totalMinutes);
 
                 // Get the current slot index based on the base time
                 const baseHours = baseDate.getHours();
@@ -165,13 +175,14 @@ export default function DraftBulkResume({
     return "";
   };
 
-  const handleQueueTypeChange = async (index, value) => {
+  const handleQueueTypeChange = async (index: number, value: string | QueueType) => {
     const updatedPosts = [...posts];
     updatedPosts[index].queueType = value;
 
     // Auto-calculate schedule time if not unassigned
-    if (value !== "unassigned") {
-      const scheduledTime = await calculateQueueScheduleTime(value, 0);
+    const queueTypeName = typeof value === "string" ? value : value.name;
+    if (queueTypeName !== "unassigned") {
+      const scheduledTime = await calculateQueueScheduleTime(queueTypeName, 0);
       if (scheduledTime) {
         updatedPosts[index].scheduledFor = scheduledTime;
       }
@@ -182,13 +193,13 @@ export default function DraftBulkResume({
     setPosts(updatedPosts);
   };
 
-  const handleDateChange = (index, value) => {
+  const handleDateChange = (index: number, value: string) => {
     const updatedPosts = [...posts];
     updatedPosts[index].scheduledFor = value;
     setPosts(updatedPosts);
   };
 
-  const handleScheduleIntervalClick = (interval) => {
+  const handleScheduleIntervalClick = (interval: number) => {
     if (posts.length === 0) return;
 
     const updatedPosts = [...posts];
@@ -210,7 +221,7 @@ export default function DraftBulkResume({
     setPosts(updatedPosts);
   };
 
-  const handleBulkQueueUpdate = async (queueType) => {
+  const handleBulkQueueUpdate = async (queueType: QueueType | string) => {
     if (posts.length === 0) return;
 
     const updatedPosts = await Promise.all(
@@ -218,9 +229,10 @@ export default function DraftBulkResume({
         let scheduledFor = post.scheduledFor;
 
         // Auto-calculate schedule time if not unassigned
-        if (queueType !== "unassigned") {
+        const queueTypeName = typeof queueType === "string" ? queueType : queueType.name;
+        if (queueTypeName !== "unassigned") {
           const calculatedTime = await calculateQueueScheduleTime(
-            queueType,
+            queueTypeName,
             index,
           );
           if (calculatedTime) {
@@ -258,7 +270,7 @@ export default function DraftBulkResume({
               },
             );
             const userOffset =
-              (new Date(userDate) - new Date(post.scheduledFor)) / 60000;
+              (new Date(userDate).getTime() - new Date(post.scheduledFor).getTime()) / 60000;
             utcDate.setMinutes(utcDate.getMinutes() - userOffset);
             scheduledTime = utcDate.getTime();
           } else {
@@ -290,8 +302,8 @@ export default function DraftBulkResume({
               action: "getEffectiveHashtags",
             });
             // Fallback to user's default hashtags
-            const tags = user?.hashTags?.tags;
-            tagsString = Array.isArray(tags) ? tags.join(" ") : tags || "";
+            // Note: User doesn't have hashTags property - this would need to come from hashTagPresets relation
+            tagsString = "";
           }
 
           const tagArray = tagsString
@@ -300,8 +312,8 @@ export default function DraftBulkResume({
             .map((tag) => ["t", tag.replace("#", "")]);
 
           const contentToSign = user?.showHashTagsinPosts
-            ? `${post.content}\n${tagsString}`
-            : post.content;
+            ? `${post.content || ""}\n${tagsString}`
+            : (post.content || "");
 
           const { nostrEvent, signedEvent } = await signEventFn({
             content: contentToSign,
@@ -326,10 +338,11 @@ export default function DraftBulkResume({
       formData.append("_action", "bulkSignAndResume");
       signedPosts.forEach((post) => {
         formData.append("postIds", post.id);
-        formData.append("contents", post.content);
-        formData.append("captions", post.caption);
-        formData.append("queueTypes", post.queueType);
-        formData.append("scheduledFors", post.scheduledFor);
+        formData.append("contents", post.content || "");
+        formData.append("captions", post.caption || "");
+        const queueTypeValue = typeof post.queueType === "string" ? post.queueType : (post.queueType?.name || "");
+        formData.append("queueTypes", queueTypeValue);
+        formData.append("scheduledFors", post.scheduledFor || "");
         formData.append("signedEvents", post.signedEvent);
         formData.append("nostrEvents", post.nostrEvent);
       });
@@ -342,7 +355,7 @@ export default function DraftBulkResume({
     }
   };
 
-  const getImageUrls = (fileUrl) => {
+  const getImageUrls = (fileUrl: string[] | null | undefined) => {
     if (!fileUrl || fileUrl.length === 0) return [];
 
     if (typeof fileUrl[0] === "string" && fileUrl[0].startsWith("[")) {
@@ -357,8 +370,12 @@ export default function DraftBulkResume({
     return fileUrl;
   };
 
+  interface FetcherData {
+    success?: boolean;
+  }
+  
   useEffect(() => {
-    if (fetcher.data?.success) {
+    if ((fetcher.data as FetcherData | undefined)?.success) {
       onCancel(); // Close the modal and refresh
     }
   }, [fetcher.data, onCancel]);
@@ -384,7 +401,7 @@ export default function DraftBulkResume({
                   <button
                     key={interval}
                     type="button"
-                    onClick={() => handleScheduleIntervalClick(interval)}
+                    onClick={() => handleScheduleIntervalClick(typeof interval === "string" ? parseInt(interval, 10) : interval)}
                     disabled={isSubmitting}
                     className="mx-2 rounded-md bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 shadow-md transition-all hover:scale-105 hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                   >
@@ -460,8 +477,8 @@ export default function DraftBulkResume({
                   <td className="p-4">
                     <div className="max-h-20 overflow-y-auto">
                       <p className="text-sm text-gray-700 dark:text-gray-300">
-                        {post.content?.substring(0, 150)}
-                        {post.content?.length > 150 ? "..." : null}
+                        {post.content?.substring(0, 150) || ""}
+                        {(post.content?.length || 0) > 150 ? "..." : null}
                       </p>
                     </div>
                   </td>

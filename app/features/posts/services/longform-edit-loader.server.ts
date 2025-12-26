@@ -48,7 +48,7 @@ export async function loadLongFormEditData(userId: string, postId: string) {
     scheduleIntervals,
     queueTypes,
     assets: assetsData.assets,
-    userTimezone: user.timezone || "Etc/GMT",
+    userTimezone: user?.timezone || "Etc/GMT",
     hashtagPresets,
   };
 }

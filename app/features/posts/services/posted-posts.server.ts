@@ -6,6 +6,7 @@
 
 import { combineContent } from "~/features/posts/combined.server";
 import { getPostStats } from "~/features/posts/stats.server";
+import type { PostData, LongFormPostData } from "~/features/posts/types";
 import { getPublishedLongFormPosts } from "~/models/longformpost.server";
 import { getPostedPosts } from "~/models/post.queries.server";
 import { getUserById, getQueueTypes } from "~/models/user.server";
@@ -45,20 +46,50 @@ export async function getPostedDashboardData({
       queueType === "all"
         ? allLongformResult.posts
         : allLongformResult.posts.filter(
-            (post) => post.queueType?.name === queueType,
+            (post) => {
+              if ("queueType" in post && post.queueType && typeof post.queueType === "object" && "name" in post.queueType) {
+                return post.queueType.name === queueType;
+              }
+              return false;
+            },
           ),
   };
 
+  // Convert PostWithQueueType[] to PostData[] for combineContent
+  const postsData: PostData[] = posts.map((post) => {
+    const { queueType, ...rest } = post;
+    return {
+      ...rest,
+      queueType: ("queueType" in post && post.queueType) || undefined,
+      signedEvent: post.signedEvent as PostData["signedEvent"],
+      nostrEvent: post.nostrEvent as PostData["nostrEvent"],
+    } as PostData;
+  });
+
+  // Convert LongFormPost[] to LongFormPostData[] for combineContent
+  const longformPostsData: LongFormPostData[] = longformResult.posts.map((post) => {
+    return {
+      ...post,
+      queueType: ("queueType" in post && post.queueType) || undefined,
+      signedEvent: post.signedEvent as LongFormPostData["signedEvent"],
+      nostrEvent: post.nostrEvent as LongFormPostData["nostrEvent"],
+    } as LongFormPostData;
+  });
+
   const allContent = combineContent(
-    posts,
-    longformResult.posts,
+    postsData,
+    longformPostsData,
     "postedAt",
     "desc",
   );
 
-  const eventIds = posts.map(
-    (post) => (post.signedEvent as { id: string }).id,
-  );
+  const eventIds = posts.map((post) => {
+    const signedEvent = post.signedEvent;
+    if (signedEvent && typeof signedEvent === "object" && "id" in signedEvent && typeof signedEvent.id === "string") {
+      return signedEvent.id;
+    }
+    return "";
+  }).filter((id) => id !== "");
   const stats = await getPostStats(eventIds);
 
   return {

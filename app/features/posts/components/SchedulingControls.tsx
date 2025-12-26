@@ -118,7 +118,7 @@ export default function SchedulingControls({
 
   const selectedQueueColor =
     selectedQueueType !== "unassigned"
-      ? getDynamicQueueStyle(selectedQueueType)
+      ? getDynamicQueueStyle(selectedQueueType, false)
       : "bg-gray-100 text-gray-800";
 
   return (
@@ -158,13 +158,20 @@ export default function SchedulingControls({
           <div className="mt-2 flex flex-wrap gap-2">
             {scheduleIntervals.map((interval) => (
               <Button
-                key={interval.hours}
+                key={interval}
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => handleScheduleIntervalClick(interval.hours)}
+                onClick={() => {
+                  const hoursFromNow = interval;
+                  const newDate = new Date();
+                  newDate.setHours(newDate.getHours() + hoursFromNow);
+                  const formattedDate = newDate.toISOString().slice(0, 16);
+                  setLocalScheduledFor(formattedDate);
+                  onScheduleChange(formattedDate);
+                }}
               >
-                {interval.label}
+                {interval} hour{interval !== 1 ? "s" : ""}
               </Button>
             ))}
           </div>

@@ -23,7 +23,7 @@ export function BlossomMediaMirrorsSettings({
   enableMirrorBlossom,
   mirrorUploadUrls,
 }: BlossomMediaMirrorsSettingsProps) {
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<{ success?: boolean; error?: string }>();
   const [enableMirrorBlossomState, setEnableMirrorBlossomState] =
     useState(enableMirrorBlossom);
   const [userMirrorUrls, setUserMirrorUrls] = useState(mirrorUploadUrls || []);

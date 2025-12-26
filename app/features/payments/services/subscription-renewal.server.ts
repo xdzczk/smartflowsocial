@@ -139,9 +139,9 @@ export async function checkAndRenewSubscriptions(): Promise<{
 
     return {
       success: false,
-      error: errorResponse.error,
       timestamp: new Date().toISOString(),
       ...results,
+      errors: [...results.errors, typeof errorResponse.error === "string" ? errorResponse.error : errorResponse.error.message || String(errorResponse.error)],
     };
   }
 }

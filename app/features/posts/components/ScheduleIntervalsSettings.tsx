@@ -16,10 +16,15 @@ interface ScheduleIntervalsSettingsProps {
   scheduleIntervals: string[];
 }
 
+interface FetcherData {
+  success?: boolean;
+  error?: string;
+}
+
 export function ScheduleIntervalsSettings({
   scheduleIntervals,
 }: ScheduleIntervalsSettingsProps) {
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<FetcherData>();
   const [intervalsState, setIntervalsState] = useState(
     scheduleIntervals ? scheduleIntervals.map(String) : [],
   );

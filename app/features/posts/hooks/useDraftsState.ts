@@ -24,8 +24,11 @@ export function useDraftsState({ posts }: UseDraftsStateProps) {
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [selectedPosts, setSelectedPosts] = useState<Set<string>>(new Set());
   const [showAdvancedBulkResume, setShowAdvancedBulkResume] = useState(false);
-  const bulkDeleteFetcher = useFetcher();
-  const bulkResumeFetcher = useFetcher();
+  interface FetcherData {
+    success?: boolean;
+  }
+  const bulkDeleteFetcher = useFetcher<FetcherData>();
+  const bulkResumeFetcher = useFetcher<FetcherData>();
 
   // Sort posts
   const sortedPosts = [...posts].sort((a, b) => {
@@ -34,8 +37,9 @@ export function useDraftsState({ posts }: UseDraftsStateProps) {
       const dateB = new Date(b[sortConfig.key]).getTime();
       return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
     }
-    const aValue = a[sortConfig.key];
-    const bValue = b[sortConfig.key];
+    const aValue = a[sortConfig.key] as string | number | undefined;
+    const bValue = b[sortConfig.key] as string | number | undefined;
+    if (aValue === undefined || bValue === undefined) return 0;
     if (aValue < bValue)
       return sortConfig.direction === "asc" ? -1 : 1;
     if (aValue > bValue)

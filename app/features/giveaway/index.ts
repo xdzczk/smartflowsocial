@@ -17,18 +17,19 @@
 // ============================================================================
 
 export type {
-  GiveawayPost,
-  GiveawayFilter,
+  RelatedEvent,
+  GiveawayProfile,
+  GiveawayStats,
+  PrimalEvent,
 } from "./types";
 
 // ============================================================================
 // Giveaway Data
 // ============================================================================
 
-export {
-  getGiveawayData,
-  handleGiveawayAction,
-} from "./giveaway.server";
+// Note: getGiveawayData and handleGiveawayAction don't exist in giveaway.server.ts
+// They may need to be implemented or these exports should be removed
+// For now, we'll export loadGiveawayData which does exist
 
 // ============================================================================
 // Giveaway Loader

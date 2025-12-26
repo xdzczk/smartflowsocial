@@ -310,7 +310,6 @@ async function calculateNextScheduleTimeInternal({
       } catch (error) {
         logError(error instanceof Error ? error : new Error(String(error)), {
           userId,
-          userTimezone,
           hours,
           minutes,
           message: "Error in createSlotInUserTimezone",

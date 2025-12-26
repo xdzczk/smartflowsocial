@@ -15,7 +15,7 @@ export function postDataToCalendarPost(post: PostData): CalendarPost {
     ...post,
     scheduledFor: post.scheduledFor || null,
     postedAt: post.postedAt || null,
-    publishedAt: post.publishedAt || null,
+    publishedAt: ("publishedAt" in post ? post.publishedAt : null) || null,
     queueType: post.queueType || null,
     manual_override: post.manual_override ?? false,
   } as CalendarPost;
@@ -36,20 +36,20 @@ export function longFormPostDataToCalendarPost(post: LongFormPostData): Calendar
     draft: post.draft ?? false,
     status: post.status || "DRAFT",
     queueTypeId: post.queueTypeId || null,
-    templateId: post.templateId || null,
+    templateId: ("templateId" in post ? post.templateId : null) || null,
     createdAt: post.createdAt,
     updatedAt: post.updatedAt,
     // CalendarPost specific fields
     title: post.title || undefined,
     summary: post.summary || undefined,
     image: post.image || undefined,
-    publishedAt: post.publishedAt || null,
-    postedAt: post.publishedAt || null,
+    publishedAt: ("publishedAt" in post ? post.publishedAt : null) || null,
+    postedAt: ("publishedAt" in post ? post.publishedAt : null) || null,
     scheduledFor: post.scheduledFor || null,
     queueType: post.queueType || null,
     manual_override: false,
     isPast: false,
-  } as CalendarPost;
+  } as unknown as CalendarPost;
 }
 
 /**

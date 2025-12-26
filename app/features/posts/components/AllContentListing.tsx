@@ -63,7 +63,7 @@ export default function AllContentListing({
   onEditPost,
   onReschedulePost,
 }: AllContentListingProps) {
-  const deleteFetcher = useFetcher();
+  const deleteFetcher = useFetcher<{ success?: boolean; error?: string; needsSigning?: boolean; post?: PostData | LongFormPostData }>();
   const [sortConfig, setSortConfig] = useState({
     key:
       type === "posted"
@@ -98,8 +98,8 @@ export default function AllContentListing({
       aValue = new Date(a[sortConfig.key]).getTime();
       bValue = new Date(b[sortConfig.key]).getTime();
     } else {
-      aValue = a[sortConfig.key] || "";
-      bValue = b[sortConfig.key] || "";
+      aValue = (a[sortConfig.key as keyof CombinedContent] as string | number | Date | undefined) || "";
+      bValue = (b[sortConfig.key as keyof CombinedContent] as string | number | Date | undefined) || "";
     }
 
     if (sortConfig.direction === "asc") {
@@ -126,7 +126,7 @@ export default function AllContentListing({
         <ContentBulkActions
           type={type}
           selectedCount={selectedItems.size}
-          onBulkDelete={onBulkDelete}
+          onBulkDelete={onBulkDelete || (() => {})}
           onBulkRepost={onBulkRepost}
           onBulkScheduledRepost={onBulkScheduledRepost}
           onBulkQuote={onBulkQuote}
@@ -160,7 +160,7 @@ export default function AllContentListing({
                 onPostSelect={onPostSelect}
                 onEditPost={onEditPost}
                 onReschedulePost={onReschedulePost}
-                deleteFetcher={deleteFetcher}
+                deleteFetcher={deleteFetcher as PostFetcher}
                 individualRepostFetcher={individualRepostFetcher}
                 longformRepostFetcher={longformRepostFetcher}
                 longformQuoteFetcher={longformQuoteFetcher}

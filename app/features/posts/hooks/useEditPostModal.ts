@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { toast } from "react-hot-toast";
 
-import type { PostData, LongFormPostData, UserData, HashTagPreset, EditorJSInstance } from "~/features/posts/types";
+import type { PostData, LongFormPostData, UserData, HashTagPreset } from "~/features/posts/types";
 import type { EditorJSInstance as EditorJSInstanceType } from "~/features/posts/types/editorjs.types";
 import { resizeImage } from "~/features/upload/image-resize";
 import { uploadMultipleFiles } from "~/features/upload/upload.client";
@@ -26,16 +26,16 @@ export function useEditPostModal({
   isLongform,
 }: UseEditPostModalProps) {
   // Form fields for regular posts
-  const [caption, setCaption] = useState(post?.caption || "");
+  const [caption, setCaption] = useState("caption" in post ? (post.caption || "") : "");
   const [selectedQueueType, setSelectedQueueType] = useState(
     post?.queueType?.id || "",
   );
 
   // Form fields for longform posts
-  const [title, setTitle] = useState(post?.title || "");
-  const [summary, setSummary] = useState(post?.summary || "");
+  const [title, setTitle] = useState("title" in post ? (post.title || "") : "");
+  const [summary, setSummary] = useState("summary" in post ? (post.summary || "") : "");
   const [content, setContent] = useState("");
-  const [image, setImage] = useState(post?.image || "");
+  const [image, setImage] = useState("image" in post ? (post.image || "") : "");
 
   // Schedule fields
   const [scheduledFor, setScheduledFor] = useState<Date | null>(null);
@@ -62,13 +62,13 @@ export function useEditPostModal({
   // Initialize form fields from post
   useEffect(() => {
     if (post) {
-      if (isLongform) {
+      if (isLongform && "title" in post) {
         setTitle(post.title || "");
         setSummary(post.summary || "");
         setImage(post.image || "");
         setContent(post.content || "");
         setScheduledFor(post.publishedAt ? new Date(post.publishedAt) : null);
-      } else {
+      } else if (!isLongform && "caption" in post) {
         setCaption(post.caption || "");
         setSelectedQueueType(post.queueType?.id || "");
         setScheduledFor(
@@ -78,9 +78,9 @@ export function useEditPostModal({
         );
 
         // Parse existing images
-        if (post.fileUrl && Array.isArray(post.fileUrl)) {
+        if ("fileUrl" in post && post.fileUrl && Array.isArray(post.fileUrl)) {
           const urls = post.fileUrl
-            .map((url) => {
+            .map((url: string) => {
               if (typeof url === "string" && url.startsWith("[")) {
                 try {
                   const parsed = JSON.parse(url);

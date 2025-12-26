@@ -30,7 +30,13 @@ export default function ImagePost({
   queueTypes = [],
   onQueueTypeChange,
 }: ImagePostProps) {
-  const fetcher = useFetcher();
+  interface FetcherData {
+    success?: boolean;
+    fileUrls?: { fileUrl: string; scheduledFor: string; queueType: string }[];
+    error?: string;
+  }
+  
+  const fetcher = useFetcher<FetcherData>();
   const user = useOptionalUser();
 
   const scheduleIntervals = user?.scheduleInterval;
@@ -46,7 +52,7 @@ export default function ImagePost({
   const [selectedQueue, setSelectedQueue] = useState(getInitialQueue());
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = Array.from(e.target.files) as File[];
+    const selectedFiles = e.target.files ? Array.from(e.target.files) : [];
 
     // Process files to remove metadata for privacy
     try {
@@ -126,7 +132,7 @@ export default function ImagePost({
     }
 
     setTimeError("");
-    const form = e.target;
+    const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
     formData.set("_action", "upload-images-preview");
     formData.set("queueType", selectedQueue);
@@ -208,8 +214,9 @@ export default function ImagePost({
     }
 
     const now = new Date();
+    const intervalHoursNum = typeof intervalHours === "string" ? parseInt(intervalHours, 10) : intervalHours;
     const hoursLater = new Date(
-      now.getTime() + parseInt(intervalHours) * 60 * 60 * 1000,
+      now.getTime() + intervalHoursNum * 60 * 60 * 1000,
     );
 
     // Format the date in the user's timezone
@@ -240,9 +247,9 @@ export default function ImagePost({
   if (fetcher.data?.success && fetcher.data?.fileUrls) {
     toast.success("Images uploaded successfully!");
 
-    const preparedData = fetcher.data.fileUrls.map((url) => {
+    const preparedData: PreparedEventData[] = fetcher.data.fileUrls.map((url: { fileUrl: string; scheduledFor: string; queueType: string }) => {
       return {
-        content: url,
+        content: url.fileUrl,
         type: "image",
         queueType: url.queueType || selectedQueue, // Include queue type information
       };
@@ -258,7 +265,7 @@ export default function ImagePost({
     toast.error(fetcher.data.error);
   }
 
-  const isUploaded = fetcher.data?.success && fetcher.data?.fileUrls;
+  const isUploaded = Boolean(fetcher.data?.success && fetcher.data?.fileUrls);
 
   return (
     <fetcher.Form
@@ -384,9 +391,9 @@ export default function ImagePost({
                     <button
                       key={queueName}
                       type="button"
-                      onClick={() => setSelectedQueue(queueName)}
+                      onClick={() => setSelectedQueue(queueName ?? "")}
                       disabled={fetcher.state !== "idle" || isUploaded}
-                      className={`rounded-full px-4 py-2 text-sm ${getDynamicQueueStyle(queueColor, selectedQueue === queueName)} disabled:cursor-not-allowed disabled:opacity-50`}
+                      className={`rounded-full px-4 py-2 text-sm ${getDynamicQueueStyle(queueColor ?? null, selectedQueue === queueName)} disabled:cursor-not-allowed disabled:opacity-50`}
                       style={{
                         backgroundColor: queueColor || undefined,
                         borderColor: queueColor || undefined,

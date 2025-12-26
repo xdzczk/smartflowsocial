@@ -57,7 +57,7 @@ export default function BulkPostsActionButtons({
                 <div className="flex flex-wrap justify-center gap-2">
                     {queueTypes.map((queue) => {
                         const queueName =
-                            typeof queue === "string" ? queue : queue.name;
+                            typeof queue === "string" ? queue : (queue.name || "");
                         const queueColor =
                             typeof queue === "object" ? queue.color : null;
                         // Check if this queue is selected for all posts
@@ -69,10 +69,10 @@ export default function BulkPostsActionButtons({
                                 key={queueName}
                                 type="button"
                                 onClick={() => {
-                                    handleBulkQueueUpdate(queueName);
+                                    handleBulkQueueUpdate(queueName ?? "");
                                 }}
                                 disabled={isProcessing}
-                                className={`rounded-full px-4 py-2 text-sm ${getDynamicQueueStyle(queueColor, isAllSelected)} disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100`}
+                                className={`rounded-full px-4 py-2 text-sm ${getDynamicQueueStyle(queueColor ?? null, isAllSelected)} disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100`}
                                 style={{
                                     backgroundColor: queueColor || undefined,
                                     borderColor: queueColor || undefined,
@@ -90,7 +90,7 @@ export default function BulkPostsActionButtons({
 
             <div className="mx-auto mb-6 max-w-md">
                 <HashtagPresetToggle
-                    presets={hashTagPresets}
+                    presets={hashTagPresets.map(p => ({ id: p.id, name: p.name, tags: p.hashtags }))}
                     selectedPresetId={selectedHashtagPresetId}
                     onSelect={handleHashtagPresetSelect}
                     disabled={isProcessing}

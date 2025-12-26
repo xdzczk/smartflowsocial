@@ -80,22 +80,24 @@ export async function fetchUserProfile(pubkey: string): Promise<User | null> {
     }
 
     // Convert to User type
+    const profileTyped = profile as { name?: unknown; display_name?: unknown; about?: unknown; picture?: unknown; nip05?: unknown; lud16?: unknown };
+    const statsTyped = stats as { follows_count?: unknown; followers_count?: unknown; note_count?: unknown; reply_count?: unknown; time_joined?: unknown; total_zap_count?: unknown; total_satszapped?: unknown; media_count?: unknown };
     const user: User = {
       pubkey,
-      name: profile.name || undefined,
-      displayName: profile.display_name || undefined,
-      about: profile.about || undefined,
-      picture: profile.picture || undefined,
-      nip05: profile.nip05 || undefined,
-      lud16: profile.lud16 || undefined,
-      followsCount: stats.follows_count || 0,
-      followersCount: stats.followers_count || 0,
-      noteCount: stats.note_count || 0,
-      replyCount: stats.reply_count || 0,
-      timeJoined: stats.time_joined || 0,
-      zapCount: stats.total_zap_count || 0,
-      totalSatsZapped: stats.total_satszapped || 0,
-      mediaCount: stats.media_count || 0,
+      name: (profileTyped.name as string | undefined) || undefined,
+      displayName: (profileTyped.display_name as string | undefined) || undefined,
+      about: (profileTyped.about as string | undefined) || undefined,
+      picture: (profileTyped.picture as string | undefined) || undefined,
+      nip05: (profileTyped.nip05 as string | undefined) || undefined,
+      lud16: (profileTyped.lud16 as string | undefined) || undefined,
+      followsCount: (statsTyped.follows_count as number | undefined) || 0,
+      followersCount: (statsTyped.followers_count as number | undefined) || 0,
+      noteCount: (statsTyped.note_count as number | undefined) || 0,
+      replyCount: (statsTyped.reply_count as number | undefined) || 0,
+      timeJoined: (statsTyped.time_joined as number | undefined) || 0,
+      zapCount: (statsTyped.total_zap_count as number | undefined) || 0,
+      totalSatsZapped: (statsTyped.total_satszapped as number | undefined) || 0,
+      mediaCount: (statsTyped.media_count as number | undefined) || 0,
     };
 
     return user;
@@ -140,7 +142,11 @@ async function fetchPostStats(eventIds: string[]): Promise<Record<string, {
 
     // Fetch stats for each event ID
     const statsPromises = eventIds.map(async (eventId) => {
-      const response = await fetch(process.env.PRIMAL_CACHING_URL, {
+      const primalUrl = process.env.PRIMAL_CACHING_URL;
+      if (!primalUrl) {
+        throw new Error("PRIMAL_CACHING_URL environment variable is not set");
+      }
+      const response = await fetch(primalUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -299,13 +305,13 @@ async function processGiveawayParticipants(
       });
 
       // Find user profile event (kind 0)
-      const userProfile = userProfileResponse.find(
-        (data: PrimalEvent) => data[0] === "EVENT" && data[2].kind === 0,
+      const userProfile = (userProfileResponse as PrimalEvent[]).find(
+        (data: PrimalEvent) => Array.isArray(data) && data[0] === "EVENT" && data[2] && typeof data[2] === "object" && "kind" in data[2] && data[2].kind === 0,
       );
 
       // Find stats event (kind 10000105)
-      const statsEvent = userProfileResponse.find(
-        (data: PrimalEvent) => data[0] === "EVENT" && data[2].kind === 10000105,
+      const statsEvent = (userProfileResponse as PrimalEvent[]).find(
+        (data: PrimalEvent) => Array.isArray(data) && data[0] === "EVENT" && data[2] && typeof data[2] === "object" && "kind" in data[2] && data[2].kind === 10000105,
       );
 
       let lud16 = null;
@@ -313,18 +319,18 @@ async function processGiveawayParticipants(
 
       // Extract lud16 from profile
       if (userProfile && Array.isArray(userProfile) && userProfile[2]) {
-        const profileEvent = userProfile[2] as GiveawayProfile;
-        if (profileEvent.content) {
-          const profileContent = JSON.parse(profileEvent.content);
-          lud16 = profileContent.lud16;
+        const profileEvent = userProfile[2] as { content?: string };
+        if (profileEvent.content && typeof profileEvent.content === "string") {
+          const profileContent = JSON.parse(profileEvent.content) as { lud16?: string };
+          lud16 = profileContent.lud16 || null;
         }
       }
 
       // Extract zap stats
       if (statsEvent && Array.isArray(statsEvent) && statsEvent[2]) {
-        const statsEventData = statsEvent[2] as GiveawayStats;
-        if (statsEventData.content) {
-          const stats = JSON.parse(statsEventData.content);
+        const statsEventData = statsEvent[2] as { content?: string };
+        if (statsEventData.content && typeof statsEventData.content === "string") {
+          const stats = JSON.parse(statsEventData.content) as { total_zap_count?: number };
           totalZapped = stats.total_zap_count ?? 0;
         }
       }
@@ -453,10 +459,25 @@ export async function loadGiveawayData(
   }
 
   // Process and filter participants
+  if (!user) {
+    throw new Error("User not found");
+  }
+  
+  // Ensure user has required properties with safe defaults
+  const userWithDefaults = {
+    ...user,
+    id: user.id,
+    npub: user.npub || "",
+    filterMuted: user.filterMuted ?? false,
+    mutedList: user.mutedList && typeof user.mutedList === "object" && !Array.isArray(user.mutedList) && "npubs" in user.mutedList
+      ? (user.mutedList as { npubs?: unknown })
+      : { npubs: [] },
+  };
+  
   const processedEvents = await processGiveawayParticipants(
     relatedEvents,
     userId,
-    user,
+    userWithDefaults,
   );
 
   return {

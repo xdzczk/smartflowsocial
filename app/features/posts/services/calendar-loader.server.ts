@@ -4,6 +4,7 @@
  */
 
 import { combineContent } from "~/features/posts/combined.server";
+import type { PostData, LongFormPostData } from "~/features/posts/types";
 import {
   getScheduledLongFormPosts,
   getPastLongFormPosts,
@@ -17,7 +18,7 @@ import {
   getQueueTypes,
 } from "~/models/user.server";
 
-import { filterPostsArraysByQueueType } from "./post-filtering.server";
+import { filterPostsByQueueType } from "./post-filtering.server";
 
 /**
  * Load calendar data for main calendar route
@@ -48,38 +49,69 @@ export async function loadCalendarData(
   ]);
 
   // Filter posts by queue type if specific queue is selected
-  const {
-    scheduledPosts,
-    scheduledLongFormPosts,
-    pastPosts,
-    pastLongFormPosts,
-  } = filterPostsArraysByQueueType({
-    scheduledPosts: allScheduledPosts,
-    scheduledLongFormPosts: allScheduledLongFormPosts,
-    pastPosts: allPastPosts,
-    pastLongFormPosts: allPastLongFormPosts,
-    queueType,
+  const filteredScheduledPosts = filterPostsByQueueType(allScheduledPosts, queueType);
+  const filteredScheduledLongFormPosts = filterPostsByQueueType(allScheduledLongFormPosts as Array<{ queueType?: { name?: string | null } | null }>, queueType) as typeof allScheduledLongFormPosts;
+  const filteredPastPosts = filterPostsByQueueType(allPastPosts, queueType);
+  const filteredPastLongFormPosts = filterPostsByQueueType(allPastLongFormPosts as Array<{ queueType?: { name?: string | null } | null }>, queueType) as typeof allPastLongFormPosts;
+
+  // Convert PostWithQueueType[] to PostData[] for combineContent
+  const scheduledPostsData: PostData[] = filteredScheduledPosts.map((post) => {
+    const { queueType, ...rest } = post;
+    return {
+      ...rest,
+      queueType: queueType || undefined,
+      signedEvent: post.signedEvent as PostData["signedEvent"],
+      nostrEvent: post.nostrEvent as PostData["nostrEvent"],
+    } as PostData;
+  });
+  const pastPostsData: PostData[] = filteredPastPosts.map((post) => {
+    const { queueType, ...rest } = post;
+    return {
+      ...rest,
+      queueType: queueType || undefined,
+      signedEvent: post.signedEvent as PostData["signedEvent"],
+      nostrEvent: post.nostrEvent as PostData["nostrEvent"],
+    } as PostData;
+  });
+
+  // Convert LongFormPost[] to LongFormPostData[] for combineContent
+  const scheduledLongFormPostsData: LongFormPostData[] = filteredScheduledLongFormPosts.map((post) => {
+    const { queueType, ...rest } = post;
+    return {
+      ...rest,
+      queueType: queueType || undefined,
+      signedEvent: post.signedEvent as LongFormPostData["signedEvent"],
+      nostrEvent: post.nostrEvent as LongFormPostData["nostrEvent"],
+    } as LongFormPostData;
+  });
+  const pastLongFormPostsData: LongFormPostData[] = filteredPastLongFormPosts.map((post) => {
+    return {
+      ...post,
+      queueType: ("queueType" in post && post.queueType) || undefined,
+      signedEvent: post.signedEvent as LongFormPostData["signedEvent"],
+      nostrEvent: post.nostrEvent as LongFormPostData["nostrEvent"],
+    } as LongFormPostData;
   });
 
   // Combine posts and longform posts for the "All" tab
   const allContent = combineContent(
-    scheduledPosts,
-    scheduledLongFormPosts,
+    scheduledPostsData,
+    scheduledLongFormPostsData,
     "scheduledFor",
     "asc",
   );
   const allPastContent = combineContent(
-    pastPosts,
-    pastLongFormPosts,
+    pastPostsData,
+    pastLongFormPostsData,
     "postedAt",
     "desc",
   );
 
   return {
-    scheduledPosts,
-    scheduledLongFormPosts,
-    pastPosts,
-    pastLongFormPosts,
+    scheduledPosts: filteredScheduledPosts,
+    scheduledLongFormPosts: filteredScheduledLongFormPosts,
+    pastPosts: filteredPastPosts,
+    pastLongFormPosts: filteredPastLongFormPosts,
     allContent,
     allPastContent,
     user,
@@ -104,13 +136,7 @@ export async function loadCalendarQueueData(
   ]);
 
   // Filter posts by queue type if specific queue is selected
-  const { scheduledPosts } = filterPostsArraysByQueueType({
-    scheduledPosts: allScheduledPosts,
-    scheduledLongFormPosts: [],
-    pastPosts: [],
-    pastLongFormPosts: [],
-    queueType,
-  });
+  const scheduledPosts = filterPostsByQueueType(allScheduledPosts, queueType);
 
   return {
     scheduledPosts,

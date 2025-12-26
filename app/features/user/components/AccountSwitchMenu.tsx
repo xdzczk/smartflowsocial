@@ -12,7 +12,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "~/components/ui/dialog";
-import type { ProfileData } from "~/features/nostr/types";
+import type { NostrEvent, ProfileData } from "~/features/nostr/types";
 import { useSubscription } from "~/features/payments/types";
 import { hexToNpub } from "~/lib/nostr";
 import { useOptionalUser } from "~/lib/remix-utils";
@@ -116,7 +116,7 @@ export default function AccountSwitchMenu() {
               created_at: Math.floor(Date.now() / 1000),
               tags: [],
               content: contentSign,
-            } as NostrEventData;
+            } as NostrEvent;
             const signedEvent = await window.nostr.signEvent(event);
             if (signedEvent.pubkey !== childNpub) {
               // Silent no-op on mismatch
@@ -158,7 +158,7 @@ export default function AccountSwitchMenu() {
               created_at: Math.floor(Date.now() / 1000),
               tags: [],
               content: contentSign,
-            } as NostrEventData;
+            } as NostrEvent;
             const signedEvent = await window.nostr.signEvent(event);
             if (signedEvent.pubkey !== parentNpub) {
               // Silent no-op on mismatch

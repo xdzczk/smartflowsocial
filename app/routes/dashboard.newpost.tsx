@@ -68,10 +68,9 @@ export default function NewPost() {
           {showImagePreview ? (
             <NewPostImagesConfirmation
               preparedEvents={[preparedImageEvent]}
-              files={files}
               onCancel={() => setShowImagePreview(false)}
               postsCount={1}
-              selectedHashTagPresetId={selectedHashTagPresetId}
+              tags={selectedHashTagPresetId || ""}
             />
           ) : (
             <MediaPost

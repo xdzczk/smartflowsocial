@@ -125,7 +125,10 @@ export async function handleTemplatesAction(
     }
 
     const assets = await Promise.all(
-      uploadResults.map(async (uploadResult: { success: boolean; fileUrl?: string; file?: { url: string; mimeType?: string }; error?: string }, index: number) => {
+      uploadResults.map(async (uploadResult: { success: boolean; fileUrl?: string; file?: { url: string; mimeType?: string } | undefined; error?: string }, index: number) => {
+        if (!uploadResult.file) {
+          throw new Error("File upload failed");
+        }
         const fileUrl = uploadResult.file.url;
         const mimeType = uploadResult.file.mimeType || "";
 

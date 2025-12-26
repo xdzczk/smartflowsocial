@@ -96,9 +96,10 @@ export {
 // Long Form Posts
 // ============================================================================
 
-export {
-  getLongFormDashboardData,
-} from "./longform.server";
+// Note: getLongFormDashboardData is not exported from longform.server
+// export {
+//   getLongFormDashboardData,
+// } from "./longform.server";
 
 // ============================================================================
 // Post Statistics
@@ -123,7 +124,7 @@ export {
 
 export {
   filterPostsByQueueType,
-  filterMultiplePostArraysByQueueType,
+  filterPostsArraysByQueueType,
 } from "./services/post-filtering.server";
 
 // ============================================================================
@@ -147,12 +148,13 @@ export {
 // ============================================================================
 
 export {
-  getQueueTypeColors,
+  getQueueColor,
 } from "./queueColors";
 
-export type {
-  QueueTypeOption,
-} from "./queueTypes.client";
+// Note: QueueTypeOption is not exported from queueTypes.client
+// export type {
+//   QueueTypeOption,
+// } from "./queueTypes.client";
 
 // ============================================================================
 // Dashboard Services (Loaders)
@@ -182,9 +184,10 @@ export {
   handleDraftEditAction,
 } from "./services/draft-edit-action.server";
 
-export {
-  handleDraftSignAction,
-} from "./services/draft-sign.server";
+// Note: handleDraftSignAction is not exported from draft-sign.server
+// export {
+//   handleDraftSignAction,
+// } from "./services/draft-sign.server";
 
 // ============================================================================
 // Long Form Services
@@ -223,7 +226,7 @@ export {
 // ============================================================================
 
 export {
-  resolveQueueType,
+  resolveQueueTypeId,
 } from "./services/queue-type-resolver.server";
 
 // ============================================================================

@@ -4,6 +4,7 @@
  */
 
 import { combineContent } from "~/features/posts/combined.server";
+import type { PostData, LongFormPostData } from "~/features/posts/types";
 import {
   getDraftLongFormPosts,
 } from "~/models/longformpost.server";
@@ -35,8 +36,30 @@ export async function loadDraftsData(
       ? allLongformPosts
       : allLongformPosts.filter((post) => post.queueType?.name === queueType);
 
+  // Convert PostWithQueueType[] to PostData[] for combineContent
+  const postsData: PostData[] = posts.map((post) => {
+    const { queueType, ...rest } = post;
+    return {
+      ...rest,
+      queueType: queueType || undefined,
+      signedEvent: post.signedEvent as PostData["signedEvent"],
+      nostrEvent: post.nostrEvent as PostData["nostrEvent"],
+    } as PostData;
+  });
+
+  // Convert LongFormPost[] to LongFormPostData[] for combineContent
+  const longformPostsData: LongFormPostData[] = longformPosts.map((post) => {
+    const { queueType, ...rest } = post;
+    return {
+      ...rest,
+      queueType: queueType || undefined,
+      signedEvent: post.signedEvent as LongFormPostData["signedEvent"],
+      nostrEvent: post.nostrEvent as LongFormPostData["nostrEvent"],
+    } as LongFormPostData;
+  });
+
   // Combine posts and longform posts for the "All" tab
-  const allContent = combineContent(posts, longformPosts, "createdAt", "desc");
+  const allContent = combineContent(postsData, longformPostsData, "createdAt", "desc");
 
   return {
     posts,

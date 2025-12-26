@@ -31,7 +31,6 @@ export {
   PLAN_FEATURES,
   getUserPlanType,
   hasFeatureAccess,
-  getSubscriptionData,
 } from "./types";
 
 // ============================================================================
@@ -40,8 +39,12 @@ export {
 
 export {
   requireFeatureAccess,
-  isNewUserWithoutSubscription,
+  getSubscriptionData,
 } from "./subscriptions.server";
+
+export {
+  isNewUserWithoutSubscription,
+} from "./types";
 
 // ============================================================================
 // Plans Actions & Loaders
@@ -58,12 +61,12 @@ export {
 // ============================================================================
 // NWC (Nostr Wallet Connect)
 // ============================================================================
-
-export {
-  createInvoice,
-  checkPaymentStatus,
-  requestPayment,
-} from "./nwc.server";
+// Note: NWC functions are not yet implemented - these exports are commented out
+// export {
+//   createInvoice,
+//   checkPaymentStatus,
+//   requestPayment,
+// } from "./nwc.server";
 
 // ============================================================================
 // Bitcoin Rate

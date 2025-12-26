@@ -3,8 +3,8 @@
  * Handles signing and scheduling logic for draft posts
  */
 
-import type { NostrEvent as NostrEventType } from "~/features/nostr/types";
-import type { UserData, PostData, SignedEvent, NostrEvent } from "~/features/posts/types";
+import type { NostrEvent as NostrEventType, SignedEvent, NostrEvent } from "~/features/nostr/types";
+import type { UserData, PostData } from "~/features/posts/types";
 import { logError } from "~/lib/error-logger.server";
 import { signEventFn } from "~/lib/nostr";
 
@@ -57,8 +57,8 @@ async function getEffectiveHashtags(
         return data.hashtags || "";
       } else {
         // Fallback to user's default hashtags
-        const tags = user?.hashTags?.tags;
-        return Array.isArray(tags) ? tags.join(" ") : tags || "";
+        // Note: hashTags property doesn't exist on UserData, using empty string as fallback
+        return "";
       }
     } catch (error) {
       logError(error instanceof Error ? error : new Error(String(error)), {
@@ -67,8 +67,8 @@ async function getEffectiveHashtags(
         message: "Error fetching effective hashtags",
       });
       // Fallback to user's default hashtags
-      const tags = user?.hashTags?.tags;
-      return Array.isArray(tags) ? tags.join(" ") : tags || "";
+      // Note: hashTags property doesn't exist on UserData, using empty string as fallback
+      return "";
     }
   }
 }
@@ -148,7 +148,7 @@ export async function signDraftForScheduling(
     useHashtagPresets,
     selectedHashtags,
     selectedQueue,
-    currentUser?.id,
+    currentUser?.id || "",
     user,
   );
 

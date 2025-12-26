@@ -20,7 +20,12 @@ export function SimpleRescheduleModal({
   user,
   queueTypes = [],
 }: SimpleRescheduleModalProps) {
-  const fetcher = useFetcher();
+  interface FetcherData {
+    success?: boolean;
+    error?: string;
+    needsSigning?: boolean;
+  }
+  const fetcher = useFetcher<FetcherData>();
   const [isSigningEvent, setIsSigningEvent] = useState(false);
   const [signingError, setSigningError] = useState<string | null>(null);
   const [scheduledFor, setScheduledFor] = useState<Date | null>(null);
@@ -28,13 +33,13 @@ export function SimpleRescheduleModal({
   const [validationError, setValidationError] = useState<string | null>(null);
 
   // Determine if this is a longform post
-  const isLongform = post?.title !== undefined;
+  const isLongform = "title" in post && post.title !== undefined;
 
   useEffect(() => {
     if (post) {
-      if (isLongform) {
+      if (isLongform && "publishedAt" in post) {
         setScheduledFor(post.publishedAt ? new Date(post.publishedAt) : null);
-      } else {
+      } else if (!isLongform && "scheduledFor" in post) {
         setScheduledFor(
           post.scheduledFor
             ? new Date(parseInt(post.scheduledFor) * 1000)
@@ -164,7 +169,7 @@ export function SimpleRescheduleModal({
   };
 
   const getFirstImage = () => {
-    if (post?.fileUrl && post.fileUrl.length > 0) {
+    if (post && "fileUrl" in post && post.fileUrl && post.fileUrl.length > 0) {
       try {
         const firstFileUrl = post.fileUrl[0];
         if (typeof firstFileUrl === "string") {
@@ -253,10 +258,10 @@ export function SimpleRescheduleModal({
               ) : null}
 
               <div className="text-sm text-gray-600 dark:text-gray-300">
-                {isLongform
+                {isLongform && "title" in post
                   ? post.title || "Untitled Article"
-                  : post.caption || "No caption"}
-                {post.fileUrl && post.fileUrl.length > 0 ? (
+                  : "caption" in post ? (post.caption || "No caption") : "No caption"}
+                {"fileUrl" in post && post.fileUrl && post.fileUrl.length > 0 ? (
                   <span className="ml-2 text-xs text-gray-500">
                     ({post.fileUrl.length} file
                     {post.fileUrl.length > 1 ? "s" : ""})

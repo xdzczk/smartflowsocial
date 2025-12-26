@@ -149,8 +149,7 @@ export function ScheduledPostsTable({
                       src={getImageUrls(post.fileUrl)[0]}
                       alt="Post preview"
                       className="h-12 w-12 rounded object-cover"
-                      onClick={(e) => {
-                        e.stopPropagation();
+                      onClick={() => {
                         onMediaClick(getImageUrls(post.fileUrl)[0]);
                       }}
                       fallback={

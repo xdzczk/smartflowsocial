@@ -1,5 +1,5 @@
 import { useFetcher } from "@remix-run/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 
 import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
@@ -66,6 +66,7 @@ export default function MediaPost({
     selectedHashTagPresetId || null,
   );
   const [selectedHashtags, setSelectedHashtags] = useState("");
+  const [timeError, setTimeError] = useState<string | null>(null);
 
   // Use the shared scheduling hook
   const {
@@ -73,22 +74,20 @@ export default function MediaPost({
     setSelectedQueue,
     scheduledFor,
     setScheduledFor,
-    timeError,
-    setTimeError,
     calculateQueueScheduleTime,
     handleScheduleIntervalClick,
     scheduleIntervals,
   } = usePostScheduling({
     queueTypes,
-    scheduleIntervals: user?.scheduleInterval,
-    userTimezone: user?.timezone,
+    scheduleIntervals: user?.scheduleInterval as number[] | undefined,
+    userTimezone: user?.timezone || undefined,
     initialQueue: "unassigned",
     onQueueTypeChange,
     onTimeError: setTimeError,
   });
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = Array.from(e.target.files) as File[];
+    const selectedFiles = e.target.files ? Array.from(e.target.files) : [];
 
     // Use extracted utility for validation and processing
     const processedFiles = await validateAndProcessFiles(selectedFiles);
@@ -153,7 +152,7 @@ export default function MediaPost({
     setIsUploading(true);
 
     // Get form data
-    const form = e.target;
+    const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
     const caption = formData.get("caption") || "";
 
@@ -190,9 +189,14 @@ export default function MediaPost({
 
       toast.success("Media uploaded successfully!");
 
-      const preparedData = fileUrls.map((url) => {
+      const preparedData: PreparedEventData[] = fileUrls.map((url) => {
         return {
-          content: url,
+          content: {
+            fileUrl: url.fileUrl,
+            scheduledFor: url.scheduledFor,
+            caption: typeof url.caption === "string" ? url.caption : String(url.caption || ""),
+            queueType: url.queueType || selectedQueue,
+          },
           type: "media",
           queueType: url.queueType || selectedQueue,
         };
@@ -354,9 +358,9 @@ export default function MediaPost({
             useHashtagPresets={useHashtagPresets}
             onUseHashtagPresetsChange={setUseHashtagPresets}
             showQueuePreset={selectedQueue !== "unassigned"}
-            queueType={queueTypes.find(
+            queueType={(queueTypes.find(
               (q) => (typeof q === "string" ? q : q.name) === selectedQueue,
-            )}
+            ) || null) as QueueType | null | undefined}
           />
           <div className="mb-2 flex items-center gap-2">
             <input

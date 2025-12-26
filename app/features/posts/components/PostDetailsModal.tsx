@@ -38,6 +38,13 @@ export default function PostDetailsModal({
   const [isMediaOpen, setIsMediaOpen] = useState(false);
   const [activeMediaSrc, setActiveMediaSrc] = useState<string | null>(null);
 
+  // Type guard to check if post has queueType property
+  const hasQueueType = (p: Post | PostData | CombinedContent): p is PostData | CombinedContent => {
+    return "queueType" in p;
+  };
+
+  const queueType = hasQueueType(post) ? post.queueType : null;
+
   const formatScheduledDate = (scheduledFor: string | null | undefined) => {
     if (!scheduledFor) return "Not scheduled";
 
@@ -185,15 +192,15 @@ export default function PostDetailsModal({
                     </div>
                   ) : null}
 
-                  {post.queueType ? (
+                  {queueType ? (
                     <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
                       <h3 className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                         Queue Type
                       </h3>
                       <span
-                        className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium capitalize ${getQueueColor(post.queueType.name, post.queueType.color).bg} ${getQueueColor(post.queueType.name, post.queueType.color).text}`}
+                        className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium capitalize ${getQueueColor(queueType.name, queueType.color).bg} ${getQueueColor(queueType.name, queueType.color).text}`}
                       >
-                        {post.queueType.name}
+                        {queueType.name}
                       </span>
                     </div>
                   ) : null}
@@ -213,30 +220,30 @@ export default function PostDetailsModal({
                     </div>
                   ) : null}
 
-                  {post.queueType ? (
+                  {queueType ? (
                     <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
                       <h3 className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                         Queue Type
                       </h3>
                       <span
-                        className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium capitalize ${getQueueColor(post.queueType.name, post.queueType.color).bg} ${getQueueColor(post.queueType.name, post.queueType.color).text}`}
+                        className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium capitalize ${getQueueColor(queueType.name, queueType.color).bg} ${getQueueColor(queueType.name, queueType.color).text}`}
                       >
-                        {post.queueType.name}
+                        {queueType.name}
                       </span>
                     </div>
                   ) : null}
                 </>
               ) : null}
 
-              {type === "draft" && post.queueType ? (
+              {type === "draft" && queueType ? (
                 <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
                   <h3 className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                     Queue Type
                   </h3>
                   <span
-                    className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium capitalize ${getQueueColor(post.queueType.name, post.queueType.color).bg} ${getQueueColor(post.queueType.name, post.queueType.color).text}`}
+                    className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium capitalize ${getQueueColor(queueType.name, queueType.color).bg} ${getQueueColor(queueType.name, queueType.color).text}`}
                   >
-                    {post.queueType.name}
+                    {queueType.name}
                   </span>
                 </div>
               ) : null}
@@ -333,7 +340,7 @@ export default function PostDetailsModal({
 
         <div className="sticky bottom-0 border-t border-gray-200 bg-white/95 px-6 py-4 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-900/95">
           <div className="flex justify-end gap-3">
-            {type === "posted" && post.signedEvent?.id ? (
+            {type === "posted" && post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent && typeof post.signedEvent.id === "string" ? (
               <Link
                 to={`https://primal.net/e/${post.signedEvent.id}`}
                 target="_blank"

@@ -16,7 +16,8 @@
 
 export type {
   NostrEvent,
-  NostrProfile,
-  NostrRelay,
+  NostrProfileType,
+  ProfileData,
+  RelaysSettingsProps,
 } from "./types";
 

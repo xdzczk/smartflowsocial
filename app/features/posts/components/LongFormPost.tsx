@@ -158,9 +158,17 @@ export default function LongFormPost({
 
   const handleAssetBrowserSelect = (selectedAssets: Asset[]) => {
     if (showAssetBrowser === "cover") {
-      handleCoverImageAssets(selectedAssets);
+      handleCoverImageAssets(selectedAssets.map(asset => ({
+        assetType: asset.assetType,
+        fileUrl: asset.fileUrl || undefined,
+      })));
     } else {
-      insertAssetIntoEditor(selectedAssets);
+      insertAssetIntoEditor(selectedAssets.map(asset => ({
+        assetType: asset.assetType,
+        fileUrl: asset.fileUrl || undefined,
+        content: asset.content || undefined,
+        title: asset.title || undefined,
+      })));
     }
     setShowAssetBrowser("");
   };

@@ -39,8 +39,11 @@ export function useScheduledState({
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [postToEdit, setPostToEdit] = useState<EditablePost | null>(null);
   const [postToReschedule, setPostToReschedule] = useState<EditablePost | null>(null);
-  const bulkDeleteFetcher = useFetcher();
-  const deleteFetcher = useFetcher();
+  interface FetcherData {
+    success?: boolean;
+  }
+  const bulkDeleteFetcher = useFetcher<FetcherData>();
+  const deleteFetcher = useFetcher<FetcherData>();
 
   // Update countdowns
   useEffect(() => {
@@ -98,8 +101,9 @@ export function useScheduledState({
       const dateB = parseInt(bScheduledFor) * 1000;
       return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
     }
-    const aValue = (a as Record<string, unknown>)[sortConfig.key];
-    const bValue = (b as Record<string, unknown>)[sortConfig.key];
+    const aValue = (a as unknown as Record<string, unknown>)[sortConfig.key] as string | number | undefined;
+    const bValue = (b as unknown as Record<string, unknown>)[sortConfig.key] as string | number | undefined;
+    if (aValue === undefined || bValue === undefined) return 0;
     if (aValue < bValue)
       return sortConfig.direction === "asc" ? -1 : 1;
     if (aValue > bValue)
@@ -177,12 +181,12 @@ export function useScheduledState({
     setSelectedMedia(null);
   };
 
-  const handleEditPost = (post: Post) => {
+  const handleEditPost = (post: PostData) => {
     setPostToEdit(post);
     setShowEditModal(true);
   };
 
-  const handleReschedulePost = (post: Post) => {
+  const handleReschedulePost = (post: PostData) => {
     setPostToReschedule(post);
     setShowRescheduleModal(true);
   };

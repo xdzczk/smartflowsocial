@@ -11,34 +11,42 @@ export type { CombinedContent } from "~/features/posts/types";
 /**
  * Converts a Post to CombinedContent format
  */
+export function nullToUndefined<T>(value: T | null): T | undefined {
+  return value === null ? undefined : value;
+}
+
 export function postToCombinedContent(post: PostData): CombinedContent {
   return {
     id: post.id,
     type: "post",
-    caption: post.caption,
-    content: post.content,
+    caption: nullToUndefined(post.caption),
+    content: nullToUndefined(post.content),
     fileUrl: post.fileUrl,
-    scheduledFor: post.scheduledFor,
-    postedAt: post.postedAt,
+    scheduledFor: nullToUndefined(post.scheduledFor),
+    postedAt: nullToUndefined(post.postedAt),
     createdAt: post.createdAt,
     updatedAt: post.updatedAt,
     isScheduled: post.isScheduled,
     isPosted: post.isPosted,
     draft: post.draft,
     status: post.status,
-    queueType: post.queueType,
-    queueTypeId: post.queueTypeId,
+    queueType: post.queueType ? {
+      id: post.queueType.id,
+      name: post.queueType.name,
+      color: post.queueType.color || undefined,
+    } : undefined,
+    queueTypeId: nullToUndefined(post.queueTypeId),
     userId: post.userId,
     tags: post.tags,
-    signedEvent: post.signedEvent,
-    nostrEvent: post.nostrEvent,
-    nostrEventId: post.nostrEventId,
+    signedEvent: nullToUndefined(post.signedEvent),
+    nostrEvent: nullToUndefined(post.nostrEvent),
+    nostrEventId: nullToUndefined(post.nostrEventId),
     manual_override: post.manual_override,
     postType: post.postType,
     repost: post.repost,
     isQuotedPost: post.isQuotedPost,
     isRecyclable: post.isRecyclable,
-    templateId: post.templateId,
+    templateId: nullToUndefined(post.templateId),
     originalData: post,
   };
 }
@@ -52,13 +60,13 @@ export function longFormPostToCombinedContent(
   return {
     id: longFormPost.id,
     type: "longform",
-    title: longFormPost.title,
-    content: longFormPost.content,
-    summary: longFormPost.summary,
-    image: longFormPost.image,
-    scheduledFor: longFormPost.scheduledFor,
-    publishedAt: longFormPost.publishedAt,
-    postedAt: longFormPost.publishedAt, // Map publishedAt to postedAt for consistency
+    title: nullToUndefined(longFormPost.title),
+    content: nullToUndefined(longFormPost.content),
+    summary: nullToUndefined(longFormPost.summary),
+    image: nullToUndefined(longFormPost.image),
+    scheduledFor: nullToUndefined(longFormPost.scheduledFor),
+    publishedAt: nullToUndefined(longFormPost.publishedAt),
+    postedAt: nullToUndefined(longFormPost.publishedAt), // Map publishedAt to postedAt for consistency
     createdAt: longFormPost.createdAt,
     updatedAt: longFormPost.updatedAt,
     isScheduled: longFormPost.isScheduled,
@@ -66,13 +74,17 @@ export function longFormPostToCombinedContent(
     isPosted: longFormPost.isPublished, // Map isPublished to isPosted for consistency
     draft: longFormPost.draft,
     status: longFormPost.status,
-    queueType: longFormPost.queueType,
-    queueTypeId: longFormPost.queueTypeId,
+    queueType: longFormPost.queueType ? {
+      id: longFormPost.queueType.id,
+      name: longFormPost.queueType.name,
+      color: longFormPost.queueType.color || undefined,
+    } : undefined,
+    queueTypeId: nullToUndefined(longFormPost.queueTypeId),
     userId: longFormPost.userId,
     tags: longFormPost.tags,
-    signedEvent: longFormPost.signedEvent,
-    nostrEvent: longFormPost.nostrEvent,
-    nostrEventId: longFormPost.nostrEventId,
+    signedEvent: nullToUndefined(longFormPost.signedEvent),
+    nostrEvent: nullToUndefined(longFormPost.nostrEvent),
+    nostrEventId: nullToUndefined(longFormPost.nostrEventId),
     originalData: longFormPost,
   };
 }
@@ -108,8 +120,8 @@ export function combineContent(
       bValue = new Date(b[sortBy]).getTime();
     } else {
       // Handle other fields
-      aValue = a[sortBy] || "";
-      bValue = b[sortBy] || "";
+      aValue = (a[sortBy as keyof CombinedContent] as string | number | Date | undefined) || "";
+      bValue = (b[sortBy as keyof CombinedContent] as string | number | Date | undefined) || "";
     }
 
     if (sortDirection === "asc") {

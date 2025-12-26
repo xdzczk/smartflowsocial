@@ -54,9 +54,11 @@ export default function LongFormDetailsModal({
             const listClass =
               block.data.style === "ordered" ? "list-decimal" : "list-disc";
             html += `<${listType} class="${listClass} ml-6 mb-4 text-gray-700 dark:text-gray-300">`;
-            block.data.items?.forEach((item: string) => {
-              html += `<li class="mb-1">${item}</li>`;
-            });
+            if (Array.isArray(block.data.items)) {
+              block.data.items.forEach((item: string) => {
+                html += `<li class="mb-1">${item}</li>`;
+              });
+            }
             html += `</${listType}>`;
             break;
           }
@@ -69,22 +71,29 @@ export default function LongFormDetailsModal({
           case "code":
             html += `<pre class="bg-gray-900 dark:bg-gray-800 text-green-400 p-4 rounded-lg mb-4 overflow-x-auto"><code>${block.data.code}</code></pre>`;
             break;
-          case "linkTool":
+          case "linkTool": {
+            const link = typeof block.data.link === "string" ? block.data.link : "";
+            const meta = block.data.meta && typeof block.data.meta === "object" ? block.data.meta as { title?: string; description?: string } : null;
             html += `<div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4">
-              <a href="${block.data.link}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:underline">
-                <div class="font-semibold">${block.data.meta?.title || block.data.link}</div>
-                ${block.data.meta?.description ? `<div class="text-gray-600 dark:text-gray-400 text-sm mt-1">${block.data.meta.description}</div>` : ""}
+              <a href="${link}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:underline">
+                <div class="font-semibold">${meta?.title || link}</div>
+                ${meta?.description ? `<div class="text-gray-600 dark:text-gray-400 text-sm mt-1">${meta.description}</div>` : ""}
               </a>
             </div>`;
             break;
-          case "embed":
+          }
+          case "embed": {
+            const embed = typeof block.data.embed === "string" ? block.data.embed : "";
             html += `<div class="mb-4">
-              <iframe src="${block.data.embed}" class="w-full aspect-video rounded-lg" frameborder="0" allowfullscreen></iframe>
+              <iframe src="${embed}" class="w-full aspect-video rounded-lg" frameborder="0" allowfullscreen></iframe>
             </div>`;
             break;
+          }
           case "image": {
-            const imageUrl = block.data.file?.url || block.data.url;
-            const caption = block.data.caption || "";
+            const file = block.data.file && typeof block.data.file === "object" ? block.data.file as { url?: string } : null;
+            const url = typeof block.data.url === "string" ? block.data.url : "";
+            const imageUrl = file?.url || url;
+            const caption = typeof block.data.caption === "string" ? block.data.caption : "";
             if (imageUrl) {
               html += `<figure class="mb-6">
                 <img src="${imageUrl}" alt="${caption}" class="w-full rounded-lg shadow-sm" style="max-height: 500px; object-fit: contain;" />
@@ -94,13 +103,16 @@ export default function LongFormDetailsModal({
             break;
           }
           default:
-            if (block.data.text) {
+            if (typeof block.data.text === "string") {
               html += `<p class="mb-4 text-gray-700 dark:text-gray-300">${block.data.text}</p>`;
-            } else if (block.data.file?.url) {
-              // Handle any other block types that might have images
-              html += `<div class="mb-4">
-                <img src="${block.data.file.url}" alt="" class="w-full rounded-lg" style="max-height: 400px; object-fit: contain;" />
-              </div>`;
+            } else {
+              const file = block.data.file && typeof block.data.file === "object" ? block.data.file as { url?: string } : null;
+              if (file?.url) {
+                // Handle any other block types that might have images
+                html += `<div class="mb-4">
+                  <img src="${file.url}" alt="" class="w-full rounded-lg" style="max-height: 400px; object-fit: contain;" />
+                </div>`;
+              }
             }
         }
       });
@@ -168,16 +180,17 @@ export default function LongFormDetailsModal({
         const editorData = JSON.parse(content);
         editorData.blocks?.forEach((block: EditorJSBlock) => {
           if (block.type === "paragraph" || block.type === "header") {
-            const text = block.data.text?.replace(/<[^>]*>/g, "") || "";
+            const text = typeof block.data.text === "string" ? block.data.text.replace(/<[^>]*>/g, "") : "";
             wordCount += text
               .split(/\s+/)
-              .filter((word) => word.length > 0).length;
+              .filter((word: string) => word.length > 0).length;
           } else if (block.type === "list") {
-            block.data.items?.forEach((item: string) => {
-              const text = item.replace(/<[^>]*>/g, "");
+            const items = Array.isArray(block.data.items) ? block.data.items : [];
+            items.forEach((item: unknown) => {
+              const text = typeof item === "string" ? item.replace(/<[^>]*>/g, "") : "";
               wordCount += text
                 .split(/\s+/)
-                .filter((word) => word.length > 0).length;
+                .filter((word: string) => word.length > 0).length;
             });
           }
         });
@@ -290,14 +303,14 @@ export default function LongFormDetailsModal({
                 <span>
                   {formatDate(
                     type === "posted"
-                      ? post.publishedAt
+                      ? (post.publishedAt || undefined)
                       : type === "scheduled"
-                        ? post.scheduledFor
-                        : post.createdAt,
+                        ? (post.scheduledFor || undefined)
+                        : (post.createdAt || undefined),
                   )}
                 </span>
                 <span>•</span>
-                <span>{getReadingTime(post.content)}</span>
+                <span>{getReadingTime(post.content || undefined)}</span>
                 <span>•</span>
                 <span>via SmartFlow</span>
                 <div className="ml-auto">
@@ -397,10 +410,10 @@ export default function LongFormDetailsModal({
                     <p className="mt-1 text-sm text-gray-900 dark:text-white">
                       {formatDate(
                         type === "posted"
-                          ? post.publishedAt
+                          ? (post.publishedAt || undefined)
                           : type === "scheduled"
-                            ? post.scheduledFor
-                            : post.createdAt,
+                            ? (post.scheduledFor || undefined)
+                            : (post.createdAt || undefined),
                       )}
                     </p>
                   </div>
@@ -410,7 +423,7 @@ export default function LongFormDetailsModal({
                       Reading Time
                     </span>
                     <p className="mt-1 text-sm text-gray-900 dark:text-white">
-                      {getReadingTime(post.content)}
+                      {getReadingTime(post.content || undefined)}
                     </p>
                   </div>
 
@@ -466,9 +479,9 @@ export default function LongFormDetailsModal({
           <div className="flex items-center justify-between">
             <div className="flex gap-3">
               {type === "posted" &&
-                (post.nostrEventId || post.signedEvent?.id) ? (
+                (post.nostrEventId || (post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent ? (post.signedEvent as { id?: string }).id : undefined)) ? (
                 <Link
-                  to={`https://primal.net/a/${post.nostrEventId || post.signedEvent?.id}`}
+                  to={`https://primal.net/a/${post.nostrEventId || (post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent ? (post.signedEvent as { id?: string }).id : "")}`}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:bg-gray-700 dark:hover:bg-gray-600"

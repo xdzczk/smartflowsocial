@@ -3,7 +3,7 @@
  * Individual post card for bulk scheduling view
  * Extracted from dashboard.bulkposts.tsx
  */
-import type { BulkPostCardProps } from "~/components/types";
+import type { BulkPostCardProps } from "~/features/posts/types";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { getDynamicQueueStyle } from "~/features/posts/queueColors";
 import type { BulkPost, QueueType } from "~/features/posts/types";
@@ -204,15 +204,15 @@ export function BulkPostCard({
             </td>
             <td className="p-4">
                 <div className="flex flex-wrap gap-1">
-                    {queueTypes.map((queue) => {
-                        const queueName = typeof queue === "string" ? queue : queue.name;
+                    {queueTypes.map((queue: QueueType | string) => {
+                        const queueName = typeof queue === "string" ? queue : (queue.name || "");
                         const queueColor = typeof queue === "object" ? queue.color : null;
                         return (
                             <button
                                 key={queueName}
                                 type="button"
-                                onClick={() => onQueueTypeChange(index, queueName)}
-                                className={`rounded-full px-3 py-1 text-xs ${getDynamicQueueStyle(queueColor, post.queueType === queueName)}`}
+                                onClick={() => onQueueTypeChange(index, queueName ?? "")}
+                                className={`rounded-full px-3 py-1 text-xs ${getDynamicQueueStyle(queueColor ?? null, (post.queueType || null) === queueName)}`}
                                 style={{
                                     backgroundColor: queueColor || undefined,
                                     borderColor: queueColor || undefined,

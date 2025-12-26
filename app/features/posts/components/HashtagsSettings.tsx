@@ -18,11 +18,16 @@ interface HashtagsSettingsProps {
   showHashTagsInPosts: boolean;
 }
 
+interface FetcherData {
+  success?: boolean;
+  error?: string;
+}
+
 export function HashtagsSettings({
   tags,
   showHashTagsInPosts,
 }: HashtagsSettingsProps) {
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<FetcherData>();
   const [hashtags, setHashtags] = useState(tags);
   const [showHashTagsState, setShowHashTagsState] =
     useState(showHashTagsInPosts);

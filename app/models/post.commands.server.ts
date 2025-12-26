@@ -128,6 +128,7 @@ export async function reschedulePost({
   overrideQueue,
   signedEvent,
   nostrEvent,
+  queueTypeId,
 }: {
   id: string;
   userId: string;
@@ -135,6 +136,7 @@ export async function reschedulePost({
   overrideQueue: boolean;
   signedEvent?: SignedEvent;
   nostrEvent?: NostrEvent;
+  queueTypeId?: string | null;
 }): Promise<Post> {
   const updateData: Partial<Post> = {
     scheduledFor: newScheduledFor,

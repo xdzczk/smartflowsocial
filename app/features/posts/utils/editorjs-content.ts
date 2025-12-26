@@ -103,7 +103,7 @@ export async function insertAssetsIntoEditor(
     await editorRef.current.isReady;
 
     // Get current editor data and insert at current block position
-    const currentData = await editorRef.current.save();
+    const currentData = await editorRef.current.saver.save();
     const blocks = [...currentData.blocks];
 
     // Try to get current block index
@@ -201,7 +201,7 @@ export async function insertAssetsIntoEditor(
           });
         }
       }
-      const updatedData = await editorRef.current.save();
+      const updatedData = await editorRef.current.saver.save();
       onContentChange(JSON.stringify(updatedData));
     } catch (fallbackError) {
       const { handleAsyncError: handleFallbackError } = await import("~/lib/error-handler.client");
@@ -227,9 +227,11 @@ export function generateSummaryFromContent(content: string): string {
       if (block.type === "paragraph" || block.type === "header") {
         textContent += block.data.text + " ";
       } else if (block.type === "list") {
-        block.data.items?.forEach((item: string) => {
-          textContent += item + " ";
-        });
+        if (Array.isArray(block.data.items)) {
+          block.data.items.forEach((item: string) => {
+            textContent += item + " ";
+          });
+        }
       }
     });
 

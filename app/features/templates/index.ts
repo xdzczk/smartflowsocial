@@ -29,6 +29,6 @@ export {
 } from "./services/templates-loader.server";
 
 export {
-  handleTemplateAction,
+  handleTemplatesAction,
 } from "./services/templates-action.server";
 

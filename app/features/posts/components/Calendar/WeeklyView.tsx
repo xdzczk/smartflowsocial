@@ -1,20 +1,10 @@
 import { useState, useMemo } from "react";
 
-import type { PostData, QueueType, UserData } from "~/features/posts/types";
+import type { QueueType, UserData } from "~/features/posts/types";
 import { handleErrorSafely } from "~/lib/error-handler.client";
 
 import { PostBlock } from "./PostBlock";
-
-interface CalendarPost extends Omit<PostData, "scheduledFor" | "postedAt" | "publishedAt"> {
-  title?: string;
-  image?: string;
-  publishedAt?: Date | string | null;
-  postedAt?: Date | string | null;
-  scheduledFor?: string | null;
-  queueType?: QueueType | null;
-  manual_override?: boolean;
-  isPast?: boolean;
-}
+import type { CalendarPost } from "./PostBlock.types";
 
 interface WeeklyViewProps {
   scheduledPosts: CalendarPost[];
@@ -278,8 +268,8 @@ export function WeeklyView({
                         user={user}
                         queueTypes={queueTypes}
                         onEdit={onPostEdit}
-                        isLongform={isAll ? !!posts[0].title && posts[0].publishedAt : isLongform}
-                        isPast={posts[0].isPast || false}
+                        isLongform={isAll ? Boolean(posts[0].title && posts[0].publishedAt) : isLongform}
+                        isPast={typeof posts[0].isPast === "boolean" ? posts[0].isPast : false}
                       />
                     ) : posts.length <= 6 ? (
                       // 2-6 posts - dynamic equal width distribution with smaller labels
@@ -293,8 +283,8 @@ export function WeeklyView({
                               user={user}
                               queueTypes={queueTypes}
                               onEdit={onPostEdit}
-                              isLongform={isAll ? !!post.title && post.publishedAt : isLongform}
-                              isPast={post.isPast || false}
+                              isLongform={isAll ? Boolean(post.title && post.publishedAt) : isLongform}
+                              isPast={typeof post.isPast === "boolean" ? post.isPast : false}
                               multipleInCell={true}
                             />
                           </div>
@@ -312,8 +302,8 @@ export function WeeklyView({
                               user={user}
                               queueTypes={queueTypes}
                               onEdit={onPostEdit}
-                              isLongform={isAll ? !!post.title && post.publishedAt : isLongform}
-                              isPast={post.isPast || false}
+                              isLongform={isAll ? Boolean(post.title && post.publishedAt) : isLongform}
+                              isPast={typeof post.isPast === "boolean" ? post.isPast : false}
                               multipleInCell={true}
                             />
                           </div>

@@ -17,6 +17,6 @@
 // ============================================================================
 
 export {
-  handleSearchAction,
+  handleSearchEvent as handleSearchAction,
 } from "./services/search-action.server";
 

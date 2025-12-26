@@ -20,12 +20,17 @@ interface NWCSettingsProps {
   nwcLastUsed?: string | null;
 }
 
+interface FetcherData {
+  success?: boolean;
+  error?: string;
+}
+
 export function NWCSettings({
   nwcEnabled,
   maskedNwcString,
   nwcLastUsed,
 }: NWCSettingsProps) {
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<FetcherData>();
   const [nwcString, setNwcString] = useState("");
   const [enabled, setEnabled] = useState(nwcEnabled);
   const [showInput, setShowInput] = useState(false);

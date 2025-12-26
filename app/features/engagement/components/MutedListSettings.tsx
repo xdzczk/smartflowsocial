@@ -22,14 +22,25 @@ interface MutedListSettingsProps {
   hidePostsFromLowTrustUsers: boolean;
 }
 
+interface FetcherData {
+  success?: boolean;
+  error?: string;
+  filterMuted?: boolean;
+  hidePostsFromLowTrustUsers?: boolean;
+  mutedList?: {
+    npubs: string[];
+    lastSynced: string;
+  };
+}
+
 export function MutedListSettings({
   mutedList,
   filterMuted,
   hidePostsFromLowTrustUsers,
 }: MutedListSettingsProps) {
-  const syncFetcher = useFetcher();
-  const toggleFetcher = useFetcher();
-  const toggleLowTrustFetcher = useFetcher();
+  const syncFetcher = useFetcher<FetcherData>();
+  const toggleFetcher = useFetcher<FetcherData>();
+  const toggleLowTrustFetcher = useFetcher<FetcherData>();
 
   const [isFilterEnabled, setIsFilterEnabled] = useState(filterMuted);
   const [isHideLowTrustEnabled, setIsHideLowTrustEnabled] = useState(hidePostsFromLowTrustUsers);

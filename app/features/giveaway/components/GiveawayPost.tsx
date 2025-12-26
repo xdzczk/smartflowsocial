@@ -95,7 +95,7 @@ Enjoy your memes and have a nice day!
         <div className="mt-4">
           <textarea
             className="w-full rounded-lg border border-gray-300 p-3 text-gray-800 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-            rows="12"
+            rows={12}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
           ></textarea>

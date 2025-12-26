@@ -4,12 +4,30 @@ import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { signEventFn } from "~/lib/nostr";
 import { useOptionalUser } from "~/lib/remix-utils";
 
+interface PreparedEventData {
+  content: {
+    fileUrl: string;
+    scheduledFor: string;
+    caption: string;
+    queueType: string;
+  };
+  type: "media";
+  queueType: string;
+}
+
+interface NewPostImagesConfirmationProps {
+  preparedEvents: PreparedEventData[];
+  onCancel: () => void;
+  postsCount: number;
+  tags: string;
+}
+
 export default function NewPostImagesConfirmation({
   preparedEvents,
   onCancel,
   postsCount,
   tags,
-}) {
+}: NewPostImagesConfirmationProps) {
   const fetcher = useFetcher();
   const isSubmitting = fetcher.state !== "idle";
   const user = useOptionalUser();
@@ -22,7 +40,7 @@ export default function NewPostImagesConfirmation({
     ? preparedEvents[0]
     : preparedEvents;
 
-  const handleSignAndSubmit = async (isImmediate) => {
+  const handleSignAndSubmit = async (isImmediate: boolean) => {
     try {
       // Get effective hashtags based on queue type
       const queueType = events[0]?.queueType || "unassigned";
@@ -76,7 +94,7 @@ export default function NewPostImagesConfirmation({
             timeZone: userTimezone,
           });
           const userOffset =
-            (new Date(userDate) - new Date(scheduledForStr)) / 60000;
+            (new Date(userDate).getTime() - new Date(scheduledForStr).getTime()) / 60000;
 
           // Adjust the date by the offset
           utcDate.setMinutes(utcDate.getMinutes() - userOffset);
@@ -92,14 +110,14 @@ export default function NewPostImagesConfirmation({
 
       const tagArray = effectiveHashtags
         .split(" ")
-        .filter((tag) => tag.length > 0)
-        .map((tag) => ["t", tag.replace("#", "")]);
+        .filter((tag: string) => tag.length > 0)
+        .map((tag: string) => ["t", tag.replace("#", "")]);
 
       const eventData = {
         content:
           (events[0].content.caption + addTags || "") +
-          (events.map((event) => event.content.fileUrl).length > 0
-            ? " " + events.map((event) => event.content.fileUrl).join(" ")
+          (events.map((event: PreparedEventData) => event.content.fileUrl).length > 0
+            ? " " + events.map((event: PreparedEventData) => event.content.fileUrl).join(" ")
             : ""),
         created_at: scheduledForUnix,
         kind: 1,
@@ -114,7 +132,7 @@ export default function NewPostImagesConfirmation({
       formData.append("nostrEvent", JSON.stringify(nostrEvent));
       formData.append(
         "fileUrl",
-        JSON.stringify(events.map((event) => event.content.fileUrl)),
+        JSON.stringify(events.map((event: PreparedEventData) => event.content.fileUrl)),
       );
       formData.append("caption", events[0].content.caption || "");
       formData.append("scheduledFor", scheduledForUnix.toString());
@@ -178,7 +196,7 @@ export default function NewPostImagesConfirmation({
             {/* Media Grid */}
             <div className="p-4">
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-                {events.map((event, index) => (
+                {events.map((event: PreparedEventData, index: number) => (
                   <div
                     key={index}
                     className="relative overflow-hidden rounded-lg"
@@ -219,8 +237,8 @@ export default function NewPostImagesConfirmation({
                   <div className="flex flex-wrap gap-1">
                     {tags
                       .split(" ")
-                      .filter((tag) => tag.length > 0)
-                      .map((tag, tagIndex) => (
+                      .filter((tag: string) => tag.length > 0)
+                      .map((tag: string, tagIndex: number) => (
                         <span
                           key={tagIndex}
                           className="rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-600 dark:bg-blue-900 dark:text-blue-300"

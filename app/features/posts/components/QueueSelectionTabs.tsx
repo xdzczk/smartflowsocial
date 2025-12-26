@@ -49,7 +49,7 @@ export default function QueueSelectionTabs({
             // Use inline styles for custom colors
             return (
               <Link
-                key={queueType.id || queueName}
+                key={typeof queueType === "object" ? queueType.id || queueName : queueName}
                 to={`${basePath}/scheduled/${queueName}?tab=${currentTab}`}
                 prefetch="intent"
                 onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
@@ -66,7 +66,7 @@ export default function QueueSelectionTabs({
 
           return (
             <Link
-              key={queueType.id || queueName}
+              key={typeof queueType === "object" ? (queueType.id || queueName) : queueName}
               to={`${basePath}/scheduled/${queueName}?tab=${currentTab}`}
               prefetch="intent"
               onClick={() => setTimeout(() => revalidator.revalidate(), 0)}

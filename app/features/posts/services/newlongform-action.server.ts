@@ -91,9 +91,14 @@ async function getHashtagPresetTags(
     if (queueType !== "Unassigned") {
       const queueTypes = await getQueueTypes(userId);
       const selectedQueueType = queueTypes.find((qt) => qt.name === queueType);
-      if (selectedQueueType && selectedQueueType.hashTagPreset) {
-        hashTagPresetTags = selectedQueueType.hashTagPreset.tags || "";
-        hashTagPresetId = selectedQueueType.hashTagPreset.id;
+      if (selectedQueueType && "hashTagPreset" in selectedQueueType && selectedQueueType.hashTagPreset) {
+        const preset = selectedQueueType.hashTagPreset;
+        if (preset && typeof preset === "object" && "tags" in preset && typeof preset.tags === "string") {
+          hashTagPresetTags = preset.tags || "";
+        }
+        if (preset && typeof preset === "object" && "id" in preset && typeof preset.id === "string") {
+          hashTagPresetId = preset.id;
+        }
       }
     }
   }
@@ -396,7 +401,7 @@ async function handleScheduleLongform(
 
   if (signedEventJson?.tags) {
     const publishedAtTag = signedEventJson.tags.find(
-      (tag) => Array.isArray(tag) && tag[0] === "published_at",
+      (tag: unknown) => Array.isArray(tag) && tag[0] === "published_at",
     );
     if (publishedAtTag && publishedAtTag[1]) {
       scheduledForTimestamp = publishedAtTag[1].toString();
@@ -428,8 +433,12 @@ export async function handleNewLongFormAction(
   userId: string,
   request: Request,
 ): Promise<Response> {
-  const { userRelays, showHashTagsinPosts } = await getUserById(userId);
-  const sanitizedRelays = userRelays.map((relay) => relay.trim());
+  const user = await getUserById(userId);
+  if (!user) {
+    return new Response("User not found", { status: 404 });
+  }
+  const { userRelays, showHashTagsinPosts } = user;
+  const sanitizedRelays = userRelays.map((relay: string) => relay.trim());
 
   const contentType = request.headers.get("Content-Type") || "";
   let formData: FormData;

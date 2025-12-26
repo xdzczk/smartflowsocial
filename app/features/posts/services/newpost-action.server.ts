@@ -81,9 +81,14 @@ async function getHashtagPresetTags(
       selectedQueueType = queueTypes.find((qt) => qt.name === queueType);
     }
 
-    if (selectedQueueType && selectedQueueType.hashTagPreset) {
-      hashTagPresetTags = selectedQueueType.hashTagPreset.tags || "";
-      hashTagPresetId = selectedQueueType.hashTagPreset.id;
+    if (selectedQueueType && "hashTagPreset" in selectedQueueType && selectedQueueType.hashTagPreset) {
+      const preset = selectedQueueType.hashTagPreset;
+      if (preset && typeof preset === "object" && "tags" in preset && typeof preset.tags === "string") {
+        hashTagPresetTags = preset.tags || "";
+      }
+      if (preset && typeof preset === "object" && "id" in preset && typeof preset.id === "string") {
+        hashTagPresetId = preset.id;
+      }
     }
   }
 
@@ -180,8 +185,10 @@ async function handlePostOrScheduleText(
   action: "post-text" | "schedule-text",
 ): Promise<Response> {
   const content = formData.get("content") as string;
-  const signedEvent = JSON.parse(formData.get("signedEvent") as string);
-  const nostrEvent = JSON.parse(formData.get("nostrEvent") as string);
+  const signedEventRaw = JSON.parse(formData.get("signedEvent") as string);
+  const nostrEventRaw = JSON.parse(formData.get("nostrEvent") as string);
+  const signedEvent = signedEventRaw as SignedEvent;
+  const nostrEvent = nostrEventRaw as import("~/features/nostr/types").NostrEvent;
   const signedEventJson = signedEvent;
 
   if (action === "post-text") {
@@ -193,7 +200,8 @@ async function handlePostOrScheduleText(
       content: applyHashtags(content, hashTagPresetTags, showHashTagsinPosts),
       caption: applyHashtags(content, hashTagPresetTags, showHashTagsinPosts),
       postedAt: new Date(),
-      scheduledFor: signedEventJson.created_at,
+      fileUrl: [],
+      scheduledFor: String(signedEventJson.created_at),
       isScheduled: false,
       isPosted: true,
       signedEvent: signedEvent,
@@ -205,7 +213,7 @@ async function handlePostOrScheduleText(
       hashTagPresetId,
     });
 
-    await publishToNostr(sanitizedRelays, post.signedEvent);
+    await publishToNostr(sanitizedRelays, post.signedEvent as unknown as SignedEvent);
 
     return redirect("/dashboard/posted");
   } else {
@@ -217,7 +225,8 @@ async function handlePostOrScheduleText(
       userId,
       content: applyHashtags(content, hashTagPresetTags, showHashTagsinPosts),
       caption: applyHashtags(content, hashTagPresetTags, showHashTagsinPosts),
-      scheduledFor: signedEventJson.created_at,
+      fileUrl: [],
+      scheduledFor: String(signedEventJson.created_at),
       isScheduled: true,
       isPosted: false,
       signedEvent: signedEvent,
@@ -261,14 +270,19 @@ function handleUploadPreview(
     };
   }
 
-  const fileUrls = files.map((fileUrl) => ({
-    fileUrl,
-    scheduledFor,
-    caption,
-    queueType,
+  const fileUrls: Array<{
+    fileUrl: string;
+    scheduledFor: string | null;
+    caption: string | null;
+    queueType: string | null;
+  }> = files.map((fileUrl) => ({
+    fileUrl: String(fileUrl),
+    scheduledFor: scheduledFor ? String(scheduledFor) : null,
+    caption: caption ? String(caption) : null,
+    queueType: queueType ? String(queueType) : null,
   }));
 
-  return { success: true, fileUrls };
+  return { success: true, fileUrls: fileUrls.map((f) => f.fileUrl) };
 }
 
 /**
@@ -285,8 +299,10 @@ async function handlePostImages(
   hashTagPresetId: string | null,
   sanitizedRelays: string[],
 ): Promise<Response> {
-  const signedEvent = JSON.parse(formData.get("signedEvent") as string);
-  const nostrEvent = JSON.parse(formData.get("nostrEvent") as string);
+  const signedEventRaw = JSON.parse(formData.get("signedEvent") as string);
+  const nostrEventRaw = JSON.parse(formData.get("nostrEvent") as string);
+  const signedEvent = signedEventRaw as SignedEvent;
+  const nostrEvent = nostrEventRaw as import("~/features/nostr/types").NostrEvent;
   const fileUrl = formData.get("fileUrl") as string;
   const caption = formData.get("caption") as string;
 
@@ -303,7 +319,7 @@ async function handlePostImages(
     isScheduled: false,
     isPosted: true,
     fileUrl: JSON.parse(fileUrl),
-    scheduledFor: signedEvent.created_at,
+    scheduledFor: String(signedEvent.created_at),
     nostrEventId: signedEvent.id,
     nostrEvent,
     signedEvent,
@@ -314,7 +330,7 @@ async function handlePostImages(
     hashTagPresetId,
   });
 
-  await publishToNostr(sanitizedRelays, post.signedEvent);
+  await publishToNostr(sanitizedRelays, post.signedEvent as unknown as SignedEvent);
 
   return redirect("/dashboard/posted");
 }
@@ -413,8 +429,12 @@ export async function handleNewPostAction(
   userId: string,
   request: Request,
 ): Promise<Response> {
-  const { userRelays, showHashTagsinPosts } = await getUserById(userId);
-  const sanitizedRelays = userRelays.map((relay) => relay.trim());
+  const user = await getUserById(userId);
+  if (!user) {
+    return new Response("User not found", { status: 404 });
+  }
+  const { userRelays, showHashTagsinPosts } = user;
+  const sanitizedRelays = userRelays.map((relay: string) => relay.trim());
 
   // Check content type before parsing
   const contentType = request.headers.get("Content-Type") || "";

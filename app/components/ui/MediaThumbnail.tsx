@@ -88,7 +88,7 @@ const MediaThumbnail: React.FC<MediaThumbnailProps> = ({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (onClick && (e.key === "Enter" || e.key === " ")) {
       e.preventDefault();
-      onClick(e as unknown as React.MouseEvent);
+      onClick();
     }
   };
 

@@ -53,7 +53,7 @@ export async function handleUploadImagesPreview(formData: FormData) {
         const queueTypes = formData.getAll("queueTypes");
 
         const fileUrls = uploadResults.map((result: UploadResult, index: number) => ({
-            fileUrl: result.file?.url || result.url,
+            fileUrl: result.file?.url || "",
             scheduledFor: scheduledDates[index],
             queueType: queueTypes[index],
         }));
@@ -147,9 +147,10 @@ export async function handleSignAndSchedule(
             const fileUrl = fileUrls[index];
             const tags = signedEvent.tags.map((tagArray: string[]) => tagArray[1]);
             const queueType = (queueTypes[index] as string) || "unassigned";
+            const isRecyclableFlag = isRecyclableFlags[index];
             const isRecyclable =
-                isRecyclableFlags[index] === "true" ||
-                isRecyclableFlags[index] === true;
+                isRecyclableFlag === "true" ||
+                String(isRecyclableFlag).toLowerCase() === "true";
 
             // Enhanced detection for quote posts
             const hasEventTags = signedEvent.tags.some(
@@ -157,8 +158,7 @@ export async function handleSignAndSchedule(
             );
             const isQuotePost =
                 mode === "quote" ||
-                (signedEvent.kind === 1 &&
-                    (!!signedEvent.isQuotePost || hasEventTags));
+                (signedEvent.kind === 1 && hasEventTags);
             logInfo("Calculated isQuotePost", {
                 isQuotePost,
                 mode,
@@ -195,7 +195,7 @@ export async function handleSignAndSchedule(
             logInfo("Created post", {
                 postId: post?.id,
                 index,
-                queueType: post?.queueType,
+                queueTypeId: post?.queueTypeId,
                 userId,
             });
             return post;
@@ -254,9 +254,10 @@ export async function handleSaveAsDraft(
         fileUrls.map(async (fileUrl, index) => {
             const caption = captions[index];
             const queueType = (queueTypes[index] as string) || "unassigned";
+            const isRecyclableFlag = isRecyclableFlags[index];
             const isRecyclable =
-                isRecyclableFlags[index] === "true" ||
-                isRecyclableFlags[index] === true;
+                isRecyclableFlag === "true" ||
+                String(isRecyclableFlag).toLowerCase() === "true";
 
             // Determine post type based on file URL
             const isVideo = isVideoUrl(fileUrl);

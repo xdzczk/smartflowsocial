@@ -41,9 +41,13 @@ export function QueueTypesSettings({
   queueTypes,
   hashTagPresets,
 }: QueueTypesSettingsProps) {
-  const createFetcher = useFetcher();
-  const updateFetcher = useFetcher();
-  const deleteFetcher = useFetcher();
+  interface FetcherData {
+    success?: boolean;
+    error?: string;
+  }
+  const createFetcher = useFetcher<FetcherData>();
+  const updateFetcher = useFetcher<FetcherData>();
+  const deleteFetcher = useFetcher<FetcherData>();
 
   const [queueTypesState, setQueueTypesState] = useState(queueTypes || []);
   const [showDialog, setShowDialog] = useState(false);

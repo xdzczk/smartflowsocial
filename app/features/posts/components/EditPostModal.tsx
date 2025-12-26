@@ -17,6 +17,12 @@ interface EditPostModalProps {
   hashTagPresets?: HashTagPreset[];
 }
 
+interface FetcherData {
+  success?: boolean;
+  needsSigning?: boolean;
+  error?: string;
+}
+
 export function EditPostModal({
   post,
   onClose,
@@ -25,12 +31,12 @@ export function EditPostModal({
   queueTypes = [],
   hashTagPresets = [],
 }: EditPostModalProps) {
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<FetcherData>();
   const [isSigningEvent, setIsSigningEvent] = useState(false);
   const [signingError, setSigningError] = useState<string | null>(null);
 
   // Determine if this is a longform post
-  const isLongform = post?.title !== undefined;
+  const isLongform = "title" in post && post.title !== undefined;
 
   // Use custom hook for form state management
   const {

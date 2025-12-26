@@ -22,6 +22,8 @@ import type {
   PrimalEvent,
   ThreadViewData,
 } from "~/features/engagement/types";
+import type { PostData } from "~/features/posts/types";
+import type { SignedEvent } from "~/features/nostr/types";
 import { getPostedPosts } from "~/models/post.queries.server";
 import { getUserById } from "~/models/user.server";
 
@@ -73,22 +75,24 @@ async function fetchUserProfile(pubkey: string): Promise<User | null> {
     }
 
     // Convert to User type
+    const profileTyped = profile as EngagementProfile;
+    const statsTyped = stats as EngagementStats;
     const user: User = {
       pubkey,
-      name: profile.name || undefined,
-      displayName: profile.display_name || undefined,
-      about: profile.about || undefined,
-      picture: profile.picture || undefined,
-      nip05: profile.nip05 || undefined,
-      lud16: profile.lud16 || undefined,
-      followsCount: stats.follows_count || 0,
-      followersCount: stats.followers_count || 0,
-      noteCount: stats.note_count || 0,
-      replyCount: stats.reply_count || 0,
-      timeJoined: stats.time_joined || 0,
-      zapCount: stats.total_zap_count || 0,
-      totalSatsZapped: stats.total_satszapped || 0,
-      mediaCount: stats.media_count || 0,
+      name: (profileTyped.name as string | undefined) || undefined,
+      displayName: (profileTyped.display_name as string | undefined) || undefined,
+      about: (profileTyped.about as string | undefined) || undefined,
+      picture: (profileTyped.picture as string | undefined) || undefined,
+      nip05: (profileTyped.nip05 as string | undefined) || undefined,
+      lud16: (profileTyped.lud16 as string | undefined) || undefined,
+      followsCount: (statsTyped.follows_count as number | undefined) || 0,
+      followersCount: (statsTyped.followers_count as number | undefined) || 0,
+      noteCount: (statsTyped.note_count as number | undefined) || 0,
+      replyCount: (statsTyped.reply_count as number | undefined) || 0,
+      timeJoined: (statsTyped.time_joined as number | undefined) || 0,
+      zapCount: (statsTyped.total_zap_count as number | undefined) || 0,
+      totalSatsZapped: (statsTyped.total_satszapped as number | undefined) || 0,
+      mediaCount: (statsTyped.media_count as number | undefined) || 0,
     };
 
     return user;
@@ -127,7 +131,7 @@ async function processEventBatch(
     try {
       const threadViewData = await fetchThreadViewWithTimeout(eventId);
       const notifications = parseThreadViewNotifications(
-        threadViewData as ThreadViewData,
+        Array.isArray(threadViewData) ? threadViewData : [],
         eventId,
         userNpub,
       );
@@ -247,10 +251,25 @@ export async function loadEngagementFeedData(
   user.npub = user.npub || "";
   user.filterMuted = user.filterMuted ?? false;
   user.hidePostsFromLowTrustUsers = user.hidePostsFromLowTrustUsers ?? false;
-  user.mutedList = user.mutedList || { npubs: [] };
+  
+  // Type guard for mutedList
+  const mutedListData = user.mutedList && typeof user.mutedList === "object" && !Array.isArray(user.mutedList) && "npubs" in user.mutedList
+    ? (user.mutedList as { npubs?: unknown; lastSynced?: unknown })
+    : null;
+  if (!mutedListData || !Array.isArray(mutedListData.npubs)) {
+    user.mutedList = { npubs: [] } as unknown as typeof user.mutedList;
+  }
 
   // Get event IDs from signedEvent.id
-  const eventIds = posts.map((post) => post.signedEvent.id);
+  const eventIds = posts
+    .filter((post) => {
+      const se = post.signedEvent;
+      return se && typeof se === "object" && !Array.isArray(se) && "id" in se && typeof (se as { id: unknown }).id === "string";
+    })
+    .map((post) => {
+      const se = post.signedEvent as { id: string };
+      return se.id;
+    });
 
   let stats: Record<string, EventStats> = {};
   let allNotifications: Notification[] = [];
@@ -286,15 +305,18 @@ export async function loadEngagementFeedData(
     );
 
     // Filter out muted users if enabled
+    const mutedListTyped = user.mutedList && typeof user.mutedList === "object" && !Array.isArray(user.mutedList) && "npubs" in user.mutedList
+      ? (user.mutedList as { npubs?: unknown })
+      : null;
     if (
       user.filterMuted &&
-      user.mutedList?.npubs &&
-      Array.isArray(user.mutedList.npubs) &&
-      user.mutedList.npubs.length > 0
+      mutedListTyped &&
+      Array.isArray(mutedListTyped.npubs) &&
+      mutedListTyped.npubs.length > 0
     ) {
       allNotifications = filterMutedNotifications(
         allNotifications,
-        user.mutedList.npubs,
+        mutedListTyped.npubs as string[],
       );
     }
 
@@ -330,27 +352,43 @@ export async function loadEngagementFeedData(
   } catch (error) {
     console.error("📊 [SERVER] Error fetching stats:", error);
     // Gracefully handle errors
-    stats = posts.reduce((acc, post) => {
-      acc[post.signedEvent.id] = {
-        likes: 0,
-        replies: 0,
-        mentions: 0,
-        reposts: 0,
-        zaps: 0,
-        satszapped: 0,
-      };
-      return acc;
-    }, {} as Record<string, EventStats>);
+    stats = posts
+      .filter((post) => {
+        const se = post.signedEvent;
+        return se && typeof se === "object" && !Array.isArray(se) && "id" in se && typeof (se as { id: unknown }).id === "string";
+      })
+      .reduce((acc, post) => {
+        const se = post.signedEvent as { id: string };
+        acc[se.id] = {
+          likes: 0,
+          replies: 0,
+          mentions: 0,
+          reposts: 0,
+          zaps: 0,
+          satszapped: 0,
+        };
+        return acc;
+      }, {} as Record<string, EventStats>);
   }
 
   // Group notifications by type
   const groupedNotifications = groupNotificationsByType(allNotifications);
 
   // Group notifications by parent event - focus on replies only
+  // Convert PostWithQueueType[] to PostData[] for compatibility
+  const postsAsPostData: PostData[] = posts.map((post) => {
+    const { queueType, ...rest } = post;
+    return {
+      ...rest,
+      signedEvent: post.signedEvent as SignedEvent | null | undefined,
+      queueType: queueType || null,
+    } as PostData;
+  });
+  
   const groupedByParent = {
     replies: groupNotificationsByParent(
       groupedNotifications.replies,
-      posts,
+      postsAsPostData,
       [], // No longform posts in this feed
       stats,
     ),
@@ -358,12 +396,17 @@ export async function loadEngagementFeedData(
 
   // Filter posts to only show those with replies
   const postsWithReplies = posts.filter((post) => {
-    const postStats = stats[post.signedEvent.id];
+    const se = post.signedEvent;
+    if (!se || typeof se !== "object" || Array.isArray(se) || !("id" in se) || typeof (se as { id: unknown }).id !== "string") {
+      return false;
+    }
+    const eventId = (se as { id: string }).id;
+    const postStats = stats[eventId];
     return postStats && postStats.replies > 0;
   });
 
   // Fetch quote reposts using get_notifications
-  let quoteRepostNotifications: NotificationEvent[] = [];
+  let quoteRepostNotifications: Notification[] = [];
   let groupedQuoteReposts: GroupedNotification[] = [];
   try {
     const notificationsData = await connectToPrimalCache("get_notifications", {
@@ -373,7 +416,7 @@ export async function loadEngagementFeedData(
 
     // Extract quote reposts (kind 1 events with mention tags)
     if (Array.isArray(notificationsData)) {
-      const rawQuoteReposts = notificationsData
+      const rawQuoteReposts = (notificationsData as PrimalEvent[])
         .filter((item: PrimalEvent) => {
           if (
             Array.isArray(item) &&
@@ -381,19 +424,26 @@ export async function loadEngagementFeedData(
             item[2]?.kind === 1
           ) {
             const event = item[2];
+            
+            if (!event || typeof event !== "object" || Array.isArray(event)) {
+              return false;
+            }
 
+            const eventTyped = event as { id?: unknown; pubkey?: unknown; content?: unknown; kind?: unknown };
             if (
-              !event.id ||
-              !event.pubkey ||
-              typeof event.content !== "string"
+              !eventTyped.id ||
+              typeof eventTyped.id !== "string" ||
+              !eventTyped.pubkey ||
+              typeof eventTyped.pubkey !== "string" ||
+              typeof eventTyped.content !== "string"
             ) {
               return false;
             }
 
-            const tags = event.tags || [];
+            const tags = (eventTyped as { tags?: unknown }).tags as NostrTag[] || [];
 
             // Skip if it's the user's own post
-            if (event.pubkey === user.npub) {
+            if (eventTyped.pubkey === user.npub) {
               return false;
             }
 
@@ -424,7 +474,12 @@ export async function loadEngagementFeedData(
           }
           return false;
         })
-        .map((item: PrimalEvent) => item[2] as NotificationEvent); // Extract the event object
+        .map((item: PrimalEvent) => {
+          if (Array.isArray(item) && item[2]) {
+            return item[2] as NotificationEvent;
+          }
+          throw new Error("Invalid PrimalEvent structure");
+        }); // Extract the event object
 
       // Process quote reposts
       if (rawQuoteReposts.length > 0) {
@@ -434,15 +489,18 @@ export async function loadEngagementFeedData(
         );
 
         // Filter out muted users if enabled
+        const mutedListTyped2 = user.mutedList && typeof user.mutedList === "object" && !Array.isArray(user.mutedList) && "npubs" in user.mutedList
+          ? (user.mutedList as { npubs?: unknown })
+          : null;
         if (
           user.filterMuted &&
-          user.mutedList?.npubs &&
-          Array.isArray(user.mutedList.npubs) &&
-          user.mutedList.npubs.length > 0
+          mutedListTyped2 &&
+          Array.isArray(mutedListTyped2.npubs) &&
+          mutedListTyped2.npubs.length > 0
         ) {
           quoteRepostNotifications = filterMutedNotifications(
             quoteRepostNotifications,
-            user.mutedList.npubs,
+            mutedListTyped2.npubs as string[],
           );
         }
 
@@ -477,7 +535,7 @@ export async function loadEngagementFeedData(
         // Group quote reposts by parent post
         groupedQuoteReposts = groupNotificationsByParent(
           quoteRepostNotifications,
-          posts,
+          postsAsPostData,
           [], // No longform posts in this feed
           stats,
         );
@@ -514,4 +572,9 @@ export async function loadEngagementFeedData(
     trustScores: trustScores || {},
   };
 }
+
+/**
+ * Load engagement data (alias for loadEngagementFeedData)
+ */
+export const loadEngagementData = loadEngagementFeedData;
 

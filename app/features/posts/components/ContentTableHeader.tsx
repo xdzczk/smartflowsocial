@@ -37,7 +37,7 @@ export function ContentTableHeader({
               checked={
                 filteredContentLength > 0
                   ? selectedItemsSize === filteredContentLength
-                  : null
+                  : false
               }
               onChange={onToggleSelectAll}
               className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"

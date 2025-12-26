@@ -171,7 +171,7 @@ export default function PostedPostsTable({
 
                 <tbody>
                     {filteredPosts.map((post) => {
-                        const postStats = stats[post.signedEvent.id] || {
+                        const postStats = (post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent && typeof post.signedEvent.id === "string" ? stats[post.signedEvent.id] : null) || {
                             likes: 0,
                             replies: 0,
                             mentions: 0,
@@ -281,12 +281,12 @@ export default function PostedPostsTable({
                                 </td>
                                 <td className="p-3">
                                     <p className="font-medium">
-                                        {post.caption?.length > 21
+                                        {post.caption && post.caption.length > 21
                                             ? post.caption.substring(0, 21) + "..."
-                                            : post.caption}
+                                            : post.caption || ""}
                                     </p>
                                 </td>
-                                <td className="p-3">{formatDate(post.postedAt)}</td>
+                                <td className="p-3">{post.postedAt ? formatDate(post.postedAt) : "-"}</td>
                                 <td className="p-3">{postStats.likes}</td>
                                 <td className="p-3">{postStats.replies}</td>
                                 <td className="p-3">{postStats.mentions}</td>
@@ -320,7 +320,7 @@ export default function PostedPostsTable({
                                 <td className="p-3 text-center">
                                     <div className="flex items-center justify-center gap-2">
                                         <Link
-                                            to={`https://primal.net/e/${post.signedEvent.id}`}
+                                            to={`https://primal.net/e/${post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent && typeof post.signedEvent.id === "string" ? post.signedEvent.id : ""}`}
                                             target="_blank"
                                             rel="noreferrer"
                                             onClick={(e) => e.stopPropagation()}
@@ -328,7 +328,10 @@ export default function PostedPostsTable({
                                         >
                                             View Note
                                         </Link>
-                                        <individualRepostFetcher.Form
+                                        {(() => {
+                                          const fetcher: PostFetcher = individualRepostFetcher;
+                                          return (
+                                            <fetcher.Form
                                             method="post"
                                             onClick={(e) => e.stopPropagation()}
                                         >
@@ -345,22 +348,25 @@ export default function PostedPostsTable({
                                             <button
                                                 type="submit"
                                                 disabled={
-                                                    individualRepostFetcher.state !== "idle" ||
-                                                    individualRepostFetcher.formData?.get(
-                                                        "postId",
-                                                    ) === post.id
+                                                    fetcher.state !== "idle" ||
+                                                    (fetcher.formData ? (fetcher.formData.get("postId") as string | null) === post.id : false)
                                                 }
                                                 className="inline-flex items-center justify-center gap-2 rounded-lg border border-purple-200 bg-white px-2 py-1 text-sm font-semibold leading-5 text-purple-800 hover:border-purple-300 hover:text-purple-900 hover:shadow-sm focus:ring focus:ring-purple-300/25 active:border-purple-200 active:shadow-none disabled:opacity-50 dark:border-purple-700 dark:bg-gray-800 dark:text-purple-300 dark:hover:border-purple-600 dark:hover:text-purple-200 dark:focus:ring-purple-600/40 dark:active:border-purple-700"
                                             >
-                                                {individualRepostFetcher.state !== "idle" &&
-                                                    individualRepostFetcher.formData?.get(
+                                                {fetcher.state !== "idle" &&
+                                                    fetcher.formData?.get(
                                                         "postId",
                                                     ) === post.id
                                                     ? "Reposting..."
                                                     : "Repost"}
                                             </button>
-                                        </individualRepostFetcher.Form>
-                                        <individualRepostFetcher.Form
+                                        </fetcher.Form>
+                                          );
+                                        })()}
+                                        {(() => {
+                                          const fetcher = individualRepostFetcher;
+                                          return (
+                                            <fetcher.Form
                                             method="post"
                                             onClick={(e) => e.stopPropagation()}
                                         >
@@ -373,21 +379,21 @@ export default function PostedPostsTable({
                                             <button
                                                 type="submit"
                                                 disabled={
-                                                    individualRepostFetcher.state !== "idle" ||
-                                                    individualRepostFetcher.formData?.get(
-                                                        "postId",
-                                                    ) === post.id
+                                                    fetcher.state !== "idle" ||
+                                                    (fetcher.formData ? (fetcher.formData.get("postId") as string | null) === post.id : false)
                                                 }
                                                 className="inline-flex items-center justify-center gap-2 rounded-lg border border-green-200 bg-white px-2 py-1 text-sm font-semibold leading-5 text-green-800 hover:border-green-300 hover:text-green-900 hover:shadow-sm focus:ring focus:ring-green-300/25 active:border-green-200 active:shadow-none disabled:opacity-50 dark:border-green-700 dark:bg-gray-800 dark:text-green-300 dark:hover:border-green-600 dark:hover:text-green-200 dark:focus:ring-green-600/40 dark:active:border-green-700"
                                             >
-                                                {individualRepostFetcher.state !== "idle" &&
-                                                    individualRepostFetcher.formData?.get(
+                                                {fetcher.state !== "idle" &&
+                                                    fetcher.formData?.get(
                                                         "postId",
                                                     ) === post.id
                                                     ? "Quoting..."
                                                     : "Quote Post"}
                                             </button>
-                                        </individualRepostFetcher.Form>
+                                        </fetcher.Form>
+                                          );
+                                        })()}
                                         <deleteFetcher.Form
                                             method="post"
                                             onClick={(e) => e.stopPropagation()}

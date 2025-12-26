@@ -16,10 +16,15 @@ interface GiveawayBlacklistSettingsProps {
   giveawayBlacklist: string[];
 }
 
+interface FetcherData {
+  success?: boolean;
+  error?: string;
+}
+
 export function GiveawayBlacklistSettings({
   giveawayBlacklist,
 }: GiveawayBlacklistSettingsProps) {
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<FetcherData>();
   const [blacklistState, setBlacklistState] = useState(giveawayBlacklist || []);
 
   const isSubmitting = fetcher.state === "submitting";

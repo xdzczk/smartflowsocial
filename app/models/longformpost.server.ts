@@ -80,6 +80,7 @@ export async function createLongFormPost({
   nostrEvent,
   scheduledFor,
   queueTypeId,
+  hashTagPresetId,
 }: {
   userId: LongFormPost["userId"];
   title: LongFormPost["title"];
@@ -92,6 +93,7 @@ export async function createLongFormPost({
   nostrEvent?: LongFormPost["nostrEvent"];
   scheduledFor?: string | null;
   queueTypeId?: LongFormPost["queueTypeId"];
+  hashTagPresetId?: LongFormPost["hashTagPresetId"];
 }) {
   // Calculate status and related fields using business logic from feature layer
   // Convert Prisma JsonValue to SignedEvent type
@@ -129,6 +131,7 @@ export async function createLongFormPost({
       postedAt: isPublished ? new Date() : null,
       scheduledFor: finalScheduledFor,
       queueTypeId,
+      hashTagPresetId,
     },
   });
 }
@@ -146,6 +149,8 @@ export async function updateLongFormPost({
   nostrEvent,
   scheduledFor,
   queueTypeId,
+  publishedAt,
+  status,
 }: {
   id: LongFormPost["id"];
   userId: LongFormPost["userId"];
@@ -159,6 +164,9 @@ export async function updateLongFormPost({
   nostrEvent?: LongFormPost["nostrEvent"];
   scheduledFor?: string | null;
   queueTypeId?: LongFormPost["queueTypeId"];
+  publishedAt?: Date | null;
+  status?: LongFormPost["status"];
+  hashTagPresetId?: string | null;
 }) {
   // Extract published_at from NOSTR event tags if scheduledFor is not provided
   let finalScheduledFor = scheduledFor;
@@ -183,6 +191,7 @@ export async function updateLongFormPost({
   if (finalScheduledFor !== undefined)
     updateData.scheduledFor = finalScheduledFor;
   if (queueTypeId !== undefined) updateData.queueTypeId = queueTypeId;
+  if (hashTagPresetId !== undefined) updateData.hashTagPresetId = hashTagPresetId;
 
   if (signedEvent !== undefined) {
     updateData.signedEvent = signedEvent;

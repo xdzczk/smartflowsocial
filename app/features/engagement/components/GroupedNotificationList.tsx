@@ -3,14 +3,14 @@ import { nip19 } from "nostr-tools";
 import { useState } from "react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
-import type { GroupedNotifications, Notification } from "~/features/engagement/engagement.server";
+import type { Notification } from "~/features/engagement/engagement.server";
 import type { GroupedNotification } from "~/features/engagement/types";
 import { formatDate } from "~/lib/helpers";
 
 import { NotificationItem } from "./NotificationItem";
 
 interface GroupedNotificationListProps {
-  groupedNotifications: GroupedNotifications[];
+  groupedNotifications: GroupedNotification[];
   userTimezone?: string;
   userRelays?: string[];
   trustScores?: Record<string, number>;
@@ -71,7 +71,7 @@ function GroupedNotificationCard({
   userRelays,
   trustScores = {},
 }: {
-  group: GroupedNotifications;
+  group: GroupedNotification;
   userTimezone?: string;
   userRelays?: string[];
   trustScores?: Record<string, number>;
@@ -258,16 +258,11 @@ function GroupedNotificationCard({
           </div>
 
           <div className="max-h-[500px] divide-y divide-gray-200 overflow-y-auto dark:divide-gray-700">
-            {notifications.map((notification: GroupedNotification) => {
-              // Convert GroupedNotification to Notification format
-              const notificationData: Notification = {
-                ...notification.event,
-                eventId: notification.eventId,
-              } as Notification;
+            {notifications.map((notification: Notification) => {
               return (
                 <NotificationItem
-                  key={notification.eventId}
-                  notification={notificationData}
+                  key={notification.id}
+                  notification={notification}
                   userTimezone={userTimezone}
                   userRelays={userRelays}
                   trustScores={trustScores}

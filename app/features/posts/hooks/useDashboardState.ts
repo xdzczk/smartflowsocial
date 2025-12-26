@@ -1,6 +1,8 @@
 import { useFetcher } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
+import type { LongFormPostData } from "~/features/posts/types";
+
 interface Post {
   id: string;
   caption?: string | null;
@@ -36,7 +38,10 @@ export function useDashboardState({
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [postToEdit, setPostToEdit] = useState<Post | null>(null);
   const [postToReschedule, setPostToReschedule] = useState<Post | null>(null);
-  const bulkDeleteFetcher = useFetcher();
+  interface FetcherData {
+    success?: boolean;
+  }
+  const bulkDeleteFetcher = useFetcher<FetcherData>();
 
   // Update countdowns
   useEffect(() => {
@@ -91,8 +96,9 @@ export function useDashboardState({
       const dateB = parseInt(b[sortConfig.key]) * 1000;
       return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
     }
-    const aValue = a[sortConfig.key];
-    const bValue = b[sortConfig.key];
+    const aValue = a[sortConfig.key] as string | number | undefined;
+    const bValue = b[sortConfig.key] as string | number | undefined;
+    if (aValue === undefined || bValue === undefined) return 0;
     if (aValue < bValue)
       return sortConfig.direction === "asc" ? -1 : 1;
     if (aValue > bValue)

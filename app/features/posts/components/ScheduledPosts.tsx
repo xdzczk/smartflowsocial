@@ -1,9 +1,15 @@
 import { useLoaderData } from "@remix-run/react";
 import { useState } from "react";
 
+import type { PostData } from "~/features/posts/types";
+
+interface ScheduledPostsLoaderData {
+  scheduledPosts: PostData[];
+}
+
 export default function ScheduledPosts() {
-  const { scheduledPosts } = useLoaderData();
-  const [selectedPost, setSelectedPost] = useState(null);
+  const { scheduledPosts } = useLoaderData<ScheduledPostsLoaderData>();
+  const [selectedPost, setSelectedPost] = useState<PostData | null>(null);
 
   return (
     <>
@@ -138,7 +144,7 @@ export default function ScheduledPosts() {
                       <td className="p-3 text-center">
                         <button
                           type="button"
-                          onClick={() => setSelectedPost(post)}
+                          onClick={() => setSelectedPost(post as unknown as PostData)}
                           className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1 text-sm font-semibold leading-5 text-gray-800 hover:border-gray-300 hover:text-gray-900 hover:shadow-sm focus:ring focus:ring-gray-300/25 active:border-gray-200 active:shadow-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:border-gray-600 dark:hover:text-gray-200 dark:focus:ring-gray-600/40 dark:active:border-gray-700"
                         >
                           View
@@ -149,7 +155,7 @@ export default function ScheduledPosts() {
                 })
               ) : (
                 <tr>
-                  <td colSpan="5" className="p-4 text-center text-gray-500">
+                  <td colSpan={6} className="p-4 text-center text-gray-500">
                     No scheduled posts found
                   </td>
                 </tr>

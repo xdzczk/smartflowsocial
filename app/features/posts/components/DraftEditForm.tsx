@@ -25,7 +25,7 @@ interface DraftEditFormProps {
   onContentChange: (value: string) => void;
   onQueueChange: (queue: string) => void;
   onScheduledForChange: (value: string) => void;
-  onHashtagPresetSelect: (presetId: string, hashtags: string) => void;
+  onHashtagPresetSelect: (presetId: string | null, hashtags: string) => void;
   onUseHashtagPresetsChange: (value: boolean) => void;
   onResumeClick: () => void;
 }

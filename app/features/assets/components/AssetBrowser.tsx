@@ -184,7 +184,7 @@ export default function AssetBrowser({
                       <div className="mb-2 flex items-center gap-2">
                         {asset.assetType === "IMAGE" ? (
                           <img
-                            src={asset.fileUrl}
+                            src={asset.fileUrl ?? undefined}
                             alt={asset.title || "Asset"}
                             className="h-8 w-8 flex-shrink-0 rounded object-cover"
                           />

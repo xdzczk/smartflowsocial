@@ -3,6 +3,15 @@ import { useEffect } from "react";
 import { type BulkPost } from "~/features/posts/components/BulkPostCard";
 import { handleErrorSafely } from "~/lib/error-handler.client";
 
+interface RepostDataItem {
+    fileUrl?: string | string[];
+    caption?: string;
+    queueType?: string;
+    scheduledFor?: string;
+    isRecyclable?: boolean;
+    originalPostId?: string;
+}
+
 interface UseBulkPostsStateProps {
     mode: string | null;
     posts: BulkPost[];
@@ -19,15 +28,7 @@ export function useBulkPostsState({ mode, posts, setPosts }: UseBulkPostsStatePr
                     const parsedData = JSON.parse(repostData);
 
                     // Convert repost data to posts format with file objects from URLs
-                    interface RepostDataItem {
-                        fileUrl?: string | string[];
-                        caption?: string;
-                        queueType?: string;
-                        scheduledFor?: string;
-                        isRecyclable?: boolean;
-                        originalPostId?: string;
-                    }
-                    const repostPosts = parsedData.map((item: RepostDataItem) => {
+                    const repostPosts = parsedData.map((item: RepostDataItem, _index: number) => {
                         let fileUrl = item.fileUrl;
 
                         // Handle case where fileUrl might be a JSON string array
@@ -83,7 +84,7 @@ export function useBulkPostsState({ mode, posts, setPosts }: UseBulkPostsStatePr
                                     "Content-Type": "application/json",
                                 },
                                 body: JSON.stringify({
-                                    postIds: parsedData.map((item: RepostDataItem) => item.originalPostId).filter((id): id is string => id !== undefined),
+                                    postIds: parsedData.map((item: RepostDataItem) => item.originalPostId).filter((id: string | undefined): id is string => id !== undefined),
                                 }),
                             });
 

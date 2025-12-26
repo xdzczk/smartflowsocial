@@ -60,9 +60,18 @@ export function calculateLongFormStatus({
   // Calculate publishedAt based on scheduling
   let publishedAt: Date | null = null;
   if (isPublished) {
-    // For published posts, use the event's published_at if available, otherwise current time
-    publishedAt = signedEvent?.published_at
-      ? new Date(signedEvent.published_at * 1000)
+    // For published posts, extract published_at from tags if available, otherwise current time
+    let publishedAtTimestamp: number | null = null;
+    if (signedEvent?.tags) {
+      const publishedAtTag = signedEvent.tags.find(
+        (tag: unknown) => Array.isArray(tag) && tag[0] === "published_at",
+      );
+      if (publishedAtTag && Array.isArray(publishedAtTag) && publishedAtTag[1]) {
+        publishedAtTimestamp = typeof publishedAtTag[1] === "number" ? publishedAtTag[1] : parseInt(String(publishedAtTag[1]), 10);
+      }
+    }
+    publishedAt = publishedAtTimestamp
+      ? new Date(publishedAtTimestamp * 1000)
       : new Date();
   } else if (isScheduled && finalScheduledFor) {
     // For scheduled posts, set publishedAt to the scheduled time
@@ -75,7 +84,7 @@ export function calculateLongFormStatus({
     isDraft,
     publishedAt,
     nostrEventId,
-    finalScheduledFor,
+    finalScheduledFor: finalScheduledFor ?? null,
   };
 }
 

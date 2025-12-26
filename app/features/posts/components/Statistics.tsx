@@ -1,8 +1,10 @@
 import { useLoaderData, Link } from "@remix-run/react";
 
 import { Card, CardContent } from "~/components/ui/card";
+import type { PostStatistics } from "~/models/post.types";
+
 export default function Statistics() {
-  const { postStatistics } = useLoaderData();
+  const { postStatistics } = useLoaderData<{ postStatistics: PostStatistics }>();
 
   return (
     <>

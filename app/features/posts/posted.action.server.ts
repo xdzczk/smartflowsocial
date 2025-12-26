@@ -106,8 +106,12 @@ async function handleBulkQuote(formData: FormData, userId: string) {
         queueType: post.queueTypeId || "unassigned",
         scheduledFor: "",
         originalPostId: post.id,
-        originalEventId: post.signedEvent?.id,
-        originalEventPubkey: post.signedEvent?.pubkey,
+        originalEventId: post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent
+          ? (post.signedEvent.id as string)
+          : undefined,
+        originalEventPubkey: post.signedEvent && typeof post.signedEvent === "object" && "pubkey" in post.signedEvent
+          ? (post.signedEvent.pubkey as string)
+          : undefined,
         isQuotePost: true,
         originalCaption: post.caption || "",
     }));
@@ -131,15 +135,22 @@ async function handleRepost(formData: FormData, userId: string) {
         const originalPost = postsData[0];
         const originalEvent = originalPost.signedEvent;
 
+        if (!originalEvent || typeof originalEvent !== "object" || !("id" in originalEvent) || !("pubkey" in originalEvent)) {
+            return json({ error: "Invalid event data" }, { status: 400 });
+        }
+
+        const eventId = typeof originalEvent.id === "string" ? originalEvent.id : String(originalEvent.id);
+        const eventPubkey = typeof originalEvent.pubkey === "string" ? originalEvent.pubkey : String(originalEvent.pubkey);
+
         // Create kind 6 repost event structure according to NIP-18
         const kind6EventData = {
             kind: 6,
             content: "", // Empty content as recommended by NIP-18
             tags: [
                 // e tag with the id of the note being reposted and relay URL
-                ["e", originalEvent.id, "wss://relay.primal.net"],
+                ["e", eventId, "wss://relay.primal.net"],
                 // p tag with the pubkey of the event being reposted
-                ["p", originalEvent.pubkey],
+                ["p", eventPubkey],
             ],
             created_at: Math.floor(Date.now() / 1000),
         };
@@ -158,7 +169,7 @@ async function handleRepost(formData: FormData, userId: string) {
         return json(
             {
                 error: true,
-                message: error.message || "Failed to create repost",
+                message: error instanceof Error ? error.message : "Failed to create repost",
             },
             { status: 500 }
         );
@@ -181,6 +192,13 @@ async function handleQuote(formData: FormData, userId: string) {
         const originalPost = postsData[0];
         const originalEvent = originalPost.signedEvent;
 
+        if (!originalEvent || typeof originalEvent !== "object" || !("id" in originalEvent) || !("pubkey" in originalEvent)) {
+            return json({ error: "Invalid event data" }, { status: 400 });
+        }
+
+        const eventId = typeof originalEvent.id === "string" ? originalEvent.id : String(originalEvent.id);
+        const eventPubkey = typeof originalEvent.pubkey === "string" ? originalEvent.pubkey : String(originalEvent.pubkey);
+
         // Create quote post data for bulk posts page
         const quotePostData = {
             caption: "", // Empty caption - user can add content
@@ -188,8 +206,8 @@ async function handleQuote(formData: FormData, userId: string) {
             queueType: originalPost.queueTypeId || "unassigned",
             scheduledFor: "",
             originalPostId: originalPost.id,
-            originalEventId: originalEvent.id,
-            originalEventPubkey: originalEvent.pubkey,
+            originalEventId: eventId,
+            originalEventPubkey: eventPubkey,
             isQuotePost: true,
             originalCaption: originalPost.caption || "",
         };
@@ -204,7 +222,7 @@ async function handleQuote(formData: FormData, userId: string) {
         return json(
             {
                 error: true,
-                message: error.message || "Failed to create quote post",
+                message: error instanceof Error ? error.message : "Failed to create quote post",
             },
             { status: 500 }
         );
@@ -230,19 +248,24 @@ async function handleLongformRepost(formData: FormData, userId: string) {
         const originalPost = longformData[0];
         const originalEvent = originalPost.signedEvent;
 
-        if (!originalEvent || !originalEvent.id) {
+        if (!originalEvent || typeof originalEvent !== "object" || !("id" in originalEvent) || !("pubkey" in originalEvent)) {
             return json(
                 { error: "Longform post has no associated NOSTR event" },
                 { status: 400 }
             );
         }
 
+        const eventId = typeof originalEvent.id === "string" ? originalEvent.id : String(originalEvent.id);
+        const eventPubkey = typeof originalEvent.pubkey === "string" ? originalEvent.pubkey : String(originalEvent.pubkey);
+        const eventTags = Array.isArray(originalEvent.tags) ? originalEvent.tags : [];
+
         // Create naddr1 identifier for the longform post
         // For longform posts (kind 30023), we need to create an naddr from the event data
-        const dTag = originalEvent.tags?.find((tag: string[]) => tag[0] === "d")?.[1] || "";
+        const dTagMatch = eventTags.find((tag: unknown) => Array.isArray(tag) && tag[0] === "d");
+        const dTag = (Array.isArray(dTagMatch) && dTagMatch[1] ? String(dTagMatch[1]) : "") || "";
         const naddr = nip19.naddrEncode({
-            identifier: dTag,
-            pubkey: originalEvent.pubkey,
+            identifier: typeof dTag === "string" ? dTag : String(dTag),
+            pubkey: eventPubkey,
             kind: 30023,
             relays: ["wss://relay.primal.net"],
         });
@@ -255,11 +278,11 @@ async function handleLongformRepost(formData: FormData, userId: string) {
                 // Reference the original longform post
                 [
                     "a",
-                    `30023:${originalEvent.pubkey}:${dTag}`,
+                    `30023:${eventPubkey}:${dTag}`,
                     "wss://relay.primal.net",
                 ],
                 // p tag with the pubkey of the event being reposted
-                ["p", originalEvent.pubkey],
+                ["p", eventPubkey],
             ],
             created_at: Math.floor(Date.now() / 1000),
         };
@@ -279,7 +302,7 @@ async function handleLongformRepost(formData: FormData, userId: string) {
         return json(
             {
                 error: true,
-                message: error.message || "Failed to create longform repost",
+                message: error instanceof Error ? error.message : "Failed to create longform repost",
             },
             { status: 500 }
         );
@@ -305,18 +328,23 @@ async function handleLongformQuote(formData: FormData, userId: string) {
         const originalPost = longformData[0];
         const originalEvent = originalPost.signedEvent;
 
-        if (!originalEvent || !originalEvent.id) {
+        if (!originalEvent || typeof originalEvent !== "object" || !("id" in originalEvent) || !("pubkey" in originalEvent)) {
             return json(
                 { error: "Longform post has no associated NOSTR event" },
                 { status: 400 }
             );
         }
 
+        const eventId = typeof originalEvent.id === "string" ? originalEvent.id : String(originalEvent.id);
+        const eventPubkey = typeof originalEvent.pubkey === "string" ? originalEvent.pubkey : String(originalEvent.pubkey);
+        const eventTags = Array.isArray(originalEvent.tags) ? originalEvent.tags : [];
+
         // Create naddr1 identifier for the longform post
-        const dTag = originalEvent.tags?.find((tag: string[]) => tag[0] === "d")?.[1] || "";
+        const dTagMatch = eventTags.find((tag: unknown) => Array.isArray(tag) && tag[0] === "d");
+        const dTag = (Array.isArray(dTagMatch) && dTagMatch[1] ? String(dTagMatch[1]) : "") || "";
         const naddr = nip19.naddrEncode({
-            identifier: dTag,
-            pubkey: originalEvent.pubkey,
+            identifier: typeof dTag === "string" ? dTag : String(dTag),
+            pubkey: eventPubkey,
             kind: 30023,
             relays: ["wss://relay.primal.net"],
         });
@@ -328,8 +356,8 @@ async function handleLongformQuote(formData: FormData, userId: string) {
             queueType: originalPost.queueTypeId || "unassigned",
             scheduledFor: "",
             originalPostId: originalPost.id,
-            originalEventId: originalEvent.id,
-            originalEventPubkey: originalEvent.pubkey,
+            originalEventId: eventId,
+            originalEventPubkey: eventPubkey,
             isQuotePost: true,
             isLongformQuote: true,
             originalTitle: originalPost.title || "",
@@ -346,7 +374,7 @@ async function handleLongformQuote(formData: FormData, userId: string) {
         return json(
             {
                 error: true,
-                message: error.message || "Failed to create longform quote post",
+                message: error instanceof Error ? error.message : "Failed to create longform quote post",
             },
             { status: 500 }
         );

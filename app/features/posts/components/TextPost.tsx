@@ -10,10 +10,20 @@ import { Textarea } from "~/components/ui/textarea";
 import AssetBrowser from "~/features/assets/components/AssetBrowser";
 import type { Asset } from "~/features/assets/types";
 import { QueueSelector } from "~/features/posts/components/QueueSelector";
+import type { QueueType } from "~/features/posts/types";
 import { SchedulingSection } from "~/features/posts/components/SchedulingSection";
 import { usePostScheduling } from "~/features/posts/hooks/usePostScheduling";
 import { signEventFn } from "~/lib/nostr";
 import { useOptionalUser } from "~/lib/remix-utils";
+
+interface TextPostProps {
+  queueTypes?: (string | QueueType)[];
+  assets?: Asset[];
+  hashTagPresets?: { id: string; name: string; tags: string }[];
+  onQueueTypeChange?: (queueType: string) => void;
+  selectedHashTagPresetId?: string | null | undefined;
+  onHashtagPresetChange?: (presetId: string | null, hashtags: string) => void;
+}
 
 export default function TextPost({
   queueTypes = [],
@@ -22,17 +32,18 @@ export default function TextPost({
   onQueueTypeChange,
   selectedHashTagPresetId,
   onHashtagPresetChange,
-}) {
+}: TextPostProps) {
   const fetcher = useFetcher();
   const user = useOptionalUser();
-  const tags = user?.hashTags?.tags;
+  // Note: User doesn't have hashTags property - this would need to come from hashTagPresets relation
+  const tags: string[] = [];
   const [contentError, setContentError] = useState("");
   const [showAssetBrowser, setShowAssetBrowser] = useState(false);
   const [content, setContent] = useState("");
   const [isRecyclable, setIsRecyclable] = useState(false);
   const [useHashtagPresets, setUseHashtagPresets] = useState(false);
-  const [selectedHashtagPresetId, setSelectedHashtagPresetId] = useState(
-    selectedHashTagPresetId || null,
+  const [selectedHashtagPresetId, setSelectedHashtagPresetId] = useState<string | undefined>(
+    selectedHashTagPresetId ? selectedHashTagPresetId : undefined,
   );
   const [selectedHashtags, setSelectedHashtags] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -48,19 +59,20 @@ export default function TextPost({
     scheduleIntervals,
   } = usePostScheduling({
     queueTypes,
-    scheduleIntervals: user?.scheduleInterval,
-    userTimezone: user?.timezone,
+    scheduleIntervals: user?.scheduleInterval as number[] | undefined,
+    userTimezone: user?.timezone || undefined,
     initialQueue: "unassigned",
     onQueueTypeChange,
   });
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const form = e.target;
+    const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
     const contentValue = formData.get("content");
     const scheduledFor = formData.get("scheduledFor");
-    const submitType = e.nativeEvent.submitter.value;
+    const submitter = (e.nativeEvent as SubmitEvent).submitter as HTMLButtonElement;
+    const submitType = submitter?.value || "";
 
     // Ensure queueType is set from current state
     formData.set("queueType", selectedQueue);
@@ -77,7 +89,7 @@ export default function TextPost({
     // Check if content is empty (except for draft saves)
     if (
       submitType !== "draft-text" &&
-      (!contentValue || contentValue.trim() === "")
+      (!contentValue || (typeof contentValue === "string" && contentValue.trim() === ""))
     ) {
       setContentError("Post content cannot be empty");
       toast.error("Post content cannot be empty");
@@ -100,18 +112,20 @@ export default function TextPost({
       if (submitType === "post-text") {
         scheduledTime = Date.now();
       } else {
-        const scheduledForStr = scheduledFor;
+        const scheduledForStr = typeof scheduledFor === "string" ? scheduledFor : "";
 
         // Only convert timezone if not UTC/Etc/GMT
         if (userTimezone !== "UTC" && userTimezone !== "Etc/GMT") {
           const utcDate = new Date(scheduledForStr);
 
           // Get timezone offset in minutes between user timezone and UTC
-          const userDate = new Date(scheduledForStr).toLocaleString("en-US", {
+          const userDateStr = new Date(scheduledForStr).toLocaleString("en-US", {
             timeZone: userTimezone,
           });
+          const userDate = new Date(userDateStr);
+          const scheduledDate = new Date(scheduledForStr);
           const userOffset =
-            (new Date(userDate) - new Date(scheduledForStr)) / 60000;
+            (userDate.getTime() - scheduledDate.getTime()) / 60000;
 
           // Adjust the date by the offset
           utcDate.setMinutes(utcDate.getMinutes() - userOffset);
@@ -183,8 +197,8 @@ export default function TextPost({
         .map((tag) => ["t", tag.replace("#", "")]);
 
       const contentToSign = user?.showHashTagsinPosts
-        ? `${contentValue}\n${effectiveHashtags}`
-        : contentValue;
+        ? `${typeof contentValue === "string" ? contentValue : ""}\n${effectiveHashtags}`
+        : (typeof contentValue === "string" ? contentValue : "");
 
       const { nostrEvent, signedEvent } = await signEventFn({
         content: contentToSign,
@@ -213,7 +227,7 @@ export default function TextPost({
     presetId: string | null,
     hashtags: string,
   ) => {
-    setSelectedHashtagPresetId(presetId);
+    setSelectedHashtagPresetId(presetId ?? undefined);
     setSelectedHashtags(hashtags);
     if (onHashtagPresetChange) {
       onHashtagPresetChange(presetId, hashtags);
@@ -319,7 +333,7 @@ export default function TextPost({
             showQueuePreset={selectedQueue !== "unassigned"}
             queueType={queueTypes.find(
               (q) => (typeof q === "string" ? q : q.name) === selectedQueue,
-            )}
+            ) as QueueType | undefined}
           />
           <div className="flex items-center gap-2">
             <input

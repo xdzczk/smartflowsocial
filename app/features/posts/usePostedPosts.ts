@@ -29,12 +29,82 @@ export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps)
     const [selectedLongFormPost, setSelectedLongFormPost] = useState<LongFormPostData | null>(null);
     const [toast, setToast] = useState<ToastMessage | null>(null);
 
-    const deleteFetcher = useFetcher();
-    const bulkDeleteFetcher = useFetcher();
-    const repostFetcher = useFetcher();
-    const individualRepostFetcher = useFetcher();
-    const longformRepostFetcher = useFetcher();
-    const longformQuoteFetcher = useFetcher();
+    const deleteFetcher = useFetcher<{ success?: boolean; error?: string }>();
+    const bulkDeleteFetcher = useFetcher<{ success?: boolean; error?: string }>();
+    const repostFetcher = useFetcher<{
+        repostData?: PostData[];
+        scheduledRepostData?: PostData[];
+        quotePostData?: Array<{
+            caption: string;
+            fileUrl: string;
+            queueType: string;
+            scheduledFor: string;
+            originalPostId: string;
+            originalEventId?: string;
+            originalEventPubkey?: string;
+            isQuotePost?: boolean;
+            originalCaption?: string;
+        }>;
+        longformQuotePostData?: Array<{
+            caption: string;
+            fileUrl: string;
+            queueType: string;
+            scheduledFor: string;
+            originalPostId: string;
+            originalEventId?: string;
+            originalEventPubkey?: string;
+            isQuotePost?: boolean;
+            originalCaption?: string;
+        }>;
+    }>();
+    const individualRepostFetcher = useFetcher<{
+        repostEventData?: {
+            kind: number;
+            content: string;
+            tags: string[][];
+            created_at: number;
+        };
+        quotePostData?: Array<{
+            caption: string;
+            fileUrl: string;
+            queueType: string;
+            scheduledFor: string;
+            originalPostId: string;
+            originalEventId?: string;
+            originalEventPubkey?: string;
+            isQuotePost?: boolean;
+            originalCaption?: string;
+        }>;
+        originalPost?: PostData;
+        error?: string;
+        message?: string;
+    }>();
+    const longformRepostFetcher = useFetcher<{
+        longformRepostEventData?: {
+            kind: number;
+            content: string;
+            tags: string[][];
+            created_at: number;
+        };
+        originalPost?: LongFormPostData;
+        error?: string;
+        message?: string;
+    }>();
+    const longformQuoteFetcher = useFetcher<{
+        longformQuotePostData?: Array<{
+            caption: string;
+            fileUrl: string;
+            queueType: string;
+            scheduledFor: string;
+            originalPostId: string;
+            originalEventId?: string;
+            originalEventPubkey?: string;
+            isQuotePost?: boolean;
+            originalCaption?: string;
+        }>;
+        error?: string;
+        message?: string;
+    }>();
 
     const requestSort = (key: string) => {
         setSortConfig((current) => ({
@@ -349,7 +419,7 @@ export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps)
                         setToast({
                             type: "success",
                             message: "Article reposted successfully!",
-                            link: `https://primal.net/a/${originalPost.nostrEventId || originalPost.signedEvent?.id}`,
+                            link: `https://primal.net/a/${originalPost?.nostrEventId || originalPost?.signedEvent?.id || ""}`,
                             linkText: "View Original Article",
                         });
 
@@ -421,7 +491,7 @@ export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps)
                     const { signedEvent } = await signEventFn(eventData);
 
                     // Get user relays from user data
-                    const sanitizedRelays = user.relays || ["wss://relay.primal.net"];
+                    const sanitizedRelays = user.userRelays || ["wss://relay.primal.net"];
 
                     // Publish the signed event
                     const response = await fetch("/api/publish", {
@@ -489,7 +559,7 @@ export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps)
         if (individualRepostFetcher.data) {
             handleRepost();
         }
-    }, [individualRepostFetcher.data, user.relays]);
+    }, [individualRepostFetcher.data, user.userRelays]);
 
     return {
         currentTab,

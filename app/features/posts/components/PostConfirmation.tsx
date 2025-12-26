@@ -2,17 +2,23 @@ import { useFetcher } from "@remix-run/react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { getSelectedQueueStyle } from "~/features/posts/queueColors";
+import type { PreparedEvent } from "~/features/posts/types";
 import { logClientError } from "~/lib/error-handler.client";
 import { signEventFn } from "~/lib/nostr";
 
-export default function PostConfirmation({ preparedEvents, postsCount }) {
+interface PostConfirmationProps {
+  preparedEvents: PreparedEvent[];
+  postsCount: number;
+}
+
+export default function PostConfirmation({ preparedEvents, postsCount }: PostConfirmationProps) {
   const fetcher = useFetcher();
   const isSubmitting = fetcher.state !== "idle";
 
   const handleSignAndSubmit = async () => {
     try {
       const signed = await Promise.all(
-        preparedEvents.map(async (eventData, index) => {
+        preparedEvents.map(async (eventData: PreparedEvent, index: number) => {
           try {
             const { nostrEvent, signedEvent } = await signEventFn(
               eventData.events,

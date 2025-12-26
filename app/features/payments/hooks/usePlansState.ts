@@ -68,12 +68,26 @@ export function usePlansState({ user, actionData }: UsePlansStateProps) {
 
       // Handle paid plan invoice creation
       if (actionData.invoice && actionData.invoice !== "free_plan") {
-        setInvoiceData(actionData);
-        setShowInvoice(true);
-        // Set initial time remaining
-        setTimeRemaining(new Date(actionData.expiresAt).getTime() - Date.now());
-        // Start automatic payment status polling
-        startPaymentPolling(actionData.paymentId);
+        // Convert ActionData to InvoiceData (all required fields must be present)
+        if (actionData.paymentHash && actionData.amount !== undefined && actionData.amountUsd !== undefined && 
+            actionData.paymentId && actionData.expiresAt && actionData.planName && actionData.planId) {
+          const invoice: InvoiceData = {
+            invoice: actionData.invoice,
+            paymentHash: actionData.paymentHash,
+            amount: actionData.amount,
+            amountUsd: actionData.amountUsd,
+            paymentId: actionData.paymentId,
+            expiresAt: actionData.expiresAt,
+            planName: actionData.planName,
+            planId: actionData.planId,
+          };
+          setInvoiceData(invoice);
+          setShowInvoice(true);
+          // Set initial time remaining
+          setTimeRemaining(new Date(actionData.expiresAt).getTime() - Date.now());
+          // Start automatic payment status polling
+          startPaymentPolling(actionData.paymentId);
+        }
       }
     }
   }, [actionData, navigate, startPaymentPolling]);

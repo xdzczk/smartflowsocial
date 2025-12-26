@@ -55,9 +55,9 @@ export function QueueSelector({
               <button
                 key={queueName}
                 type="button"
-                onClick={() => onQueueChange(queueName)}
+                onClick={() => onQueueChange(queueName ?? "")}
                 disabled={disabled}
-                className={`rounded-full px-4 py-2 text-sm ${getDynamicQueueStyle(queueColor, selectedQueue === queueName)} disabled:cursor-not-allowed disabled:opacity-50`}
+                className={`rounded-full px-4 py-2 text-sm ${getDynamicQueueStyle(queueColor ?? null, selectedQueue === queueName)} disabled:cursor-not-allowed disabled:opacity-50`}
                 style={{
                   backgroundColor: queueColor || undefined,
                   borderColor: queueColor || undefined,

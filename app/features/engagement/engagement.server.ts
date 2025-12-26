@@ -1,9 +1,13 @@
 import type {
   EventStats,
+  GroupedNotification,
   GroupedNotifications,
   Notification,
   NotificationEvent,
   NotificationQuoteRepost,
+  NotificationReply,
+  NotificationZap,
+  NotificationMention,
   NostrTag,
   ParentPost,
   PrimalEvent,
@@ -11,6 +15,7 @@ import type {
 } from "~/features/engagement/types";
 import type { LongFormPostData, PostData } from "~/features/posts/types";
 import { logError } from "~/lib/error-logger.server";
+import { loadEngagementFeedData } from "./services/engagement-loader.server";
 
 // Re-export types for consumers
 export type {
@@ -119,9 +124,9 @@ export function parseThreadViewNotifications(
             content: event.content,
             createdAt: event.created_at,
             pubkey: event.pubkey,
-            authorName: profile?.display_name || profile?.name,
-            authorPicture: profile?.picture,
-            authorNip05: profile?.nip05,
+            authorName: (profile?.display_name || profile?.name) as string | undefined,
+            authorPicture: profile?.picture as string | null | undefined,
+            authorNip05: profile?.nip05 as string | undefined,
             originalEventId,
             stats,
           });
@@ -134,9 +139,9 @@ export function parseThreadViewNotifications(
             content: event.content,
             createdAt: event.created_at,
             pubkey: event.pubkey,
-            authorName: profile?.display_name || profile?.name,
-            authorPicture: profile?.picture,
-            authorNip05: profile?.nip05,
+            authorName: (profile?.display_name || profile?.name) as string | undefined,
+            authorPicture: profile?.picture as string | null | undefined,
+            authorNip05: profile?.nip05 as string | undefined,
             originalEventId,
             stats,
           });
@@ -152,9 +157,9 @@ export function parseThreadViewNotifications(
           content: event.content,
           createdAt: event.created_at,
           pubkey: event.pubkey,
-          authorName: profile?.display_name || profile?.name,
-          authorPicture: profile?.picture,
-          authorNip05: profile?.nip05,
+          authorName: (profile?.display_name || profile?.name) as string | undefined,
+          authorPicture: profile?.picture as string | null | undefined,
+          authorNip05: profile?.nip05 as string | undefined,
           originalEventId,
           stats,
         });
@@ -197,9 +202,13 @@ export function parseThreadViewNotifications(
             senderPubkey,
             receiverPubkey: userPubkey,
             amountSats,
-            senderName: profile?.display_name || profile?.name,
-            senderPicture: profile?.picture,
-            senderNip05: profile?.nip05,
+            senderName: (profile?.display_name || profile?.name) as string | undefined,
+            senderPicture: profile?.picture as string | null | undefined,
+            senderNip05: profile?.nip05 as string | undefined,
+            pubkey: senderPubkey, // For compatibility
+            authorName: (profile?.display_name || profile?.name) as string | undefined,
+            authorPicture: profile?.picture as string | null | undefined,
+            authorNip05: profile?.nip05 as string | undefined,
             originalEventId,
             stats,
           });
@@ -235,20 +244,21 @@ export function groupNotificationsByParent(
   posts: PostData[],
   longformPosts: LongFormPostData[],
   stats: Record<string, EventStats> = {},
-): GroupedNotifications[] {
+): GroupedNotification[] {
   // Create a map of event ID to post data
   const postMap = new Map<string, ParentPost>();
 
   // Add regular posts to map
   posts.forEach((post) => {
+    if (!post.signedEvent?.id) return;
     const eventId = post.signedEvent.id;
     postMap.set(eventId, {
       id: post.id,
       eventId,
       pubkey: post.signedEvent.pubkey,
-      caption: post.caption,
-      fileUrl: post.fileUrl,
-      postedAt: post.postedAt,
+      caption: post.caption ?? null,
+      fileUrl: Array.isArray(post.fileUrl) ? post.fileUrl[0] ?? null : post.fileUrl ?? null,
+      postedAt: post.postedAt ?? new Date(),
       isLongform: false,
       stats: stats[eventId],
     });
@@ -257,13 +267,21 @@ export function groupNotificationsByParent(
   // Add longform posts to map
   longformPosts.forEach((post) => {
     const eventId = post.signedEvent?.id || post.nostrEventId;
+    if (!eventId) return;
+    // Extract pubkey from signedEvent or nostrEvent
+    let pubkey = "";
+    if (post.signedEvent && typeof post.signedEvent === "object" && "pubkey" in post.signedEvent) {
+      pubkey = post.signedEvent.pubkey as string;
+    } else if (post.nostrEvent && typeof post.nostrEvent === "object" && "pubkey" in post.nostrEvent) {
+      pubkey = post.nostrEvent.pubkey as string;
+    }
     postMap.set(eventId, {
       id: post.id,
       eventId,
-      pubkey: post.signedEvent?.pubkey || post.pubkey,
-      title: post.title,
-      content: post.content,
-      postedAt: post.postedAt,
+      pubkey,
+      title: post.title ?? null,
+      content: post.content ?? null,
+      postedAt: post.postedAt ?? new Date(),
       isLongform: true,
       stats: stats[eventId],
     });
@@ -280,8 +298,8 @@ export function groupNotificationsByParent(
     groupedMap.get(parentId)!.push(notification);
   });
 
-  // Convert to array of GroupedNotifications
-  const result: GroupedNotifications[] = [];
+  // Convert to array of GroupedNotification
+  const result: GroupedNotification[] = [];
 
   groupedMap.forEach((notifs, parentEventId) => {
     const parentPost = postMap.get(parentEventId);
@@ -332,11 +350,11 @@ export async function processQuoteReposts(
         });
 
         // Find the profile event (kind 0)
-        const profileEvent = profileData?.find(
+        const profileEvent = (profileData as PrimalEvent[])?.find(
           (item: PrimalEvent) => Array.isArray(item) && item[0] === "EVENT" && item[2]?.kind === 0
         );
 
-        if (profileEvent && profileEvent[2]) {
+        if (profileEvent && Array.isArray(profileEvent) && profileEvent[2]) {
           const profile = JSON.parse(profileEvent[2].content);
           userProfiles.set(pubkey, profile);
         }
@@ -385,7 +403,7 @@ export async function processQuoteReposts(
         });
 
         // Find the stats event
-        const statsEvent = threadViewData?.find(
+        const statsEvent = (threadViewData as PrimalEvent[])?.find(
           (item: PrimalEvent) =>
             Array.isArray(item) &&
             item[0] === "EVENT" &&
@@ -393,7 +411,7 @@ export async function processQuoteReposts(
             item[2].content?.includes(event.id)
         );
 
-        if (statsEvent && statsEvent[2]) {
+        if (statsEvent && Array.isArray(statsEvent) && statsEvent[2]) {
           const content = JSON.parse(statsEvent[2].content);
           stats = {
             likes: content.likes || 0,
@@ -415,12 +433,12 @@ export async function processQuoteReposts(
         content: event.content,
         createdAt: event.created_at,
         pubkey: event.pubkey,
-        authorName: profile?.display_name || profile?.name,
-        authorPicture: profile?.picture,
-        authorNip05: profile?.nip05,
+        authorName: (profile?.display_name || profile?.name) as string | undefined,
+        authorPicture: profile?.picture as string | null | undefined,
+        authorNip05: profile?.nip05 as string | undefined,
         originalEventId,
         stats,
-      };
+      } as NotificationQuoteRepost;
     } catch (error) {
       logError(error instanceof Error ? error : new Error(String(error)), {
         eventId: event?.id,
@@ -434,8 +452,15 @@ export async function processQuoteReposts(
 
   // Filter out nulls and sort by created_at descending
   const validNotifications = results.filter(
-    (n): n is NotificationQuoteRepost => n !== null
+    (n): n is NotificationQuoteRepost => {
+      return n !== null && n !== undefined && typeof n === "object" && "type" in n && n.type === "quote";
+    }
   );
 
   return validNotifications.sort((a, b) => b.createdAt - a.createdAt);
 }
+
+/**
+ * Get engagement data (alias for loadEngagementFeedData)
+ */
+export const getEngagementData = loadEngagementFeedData;

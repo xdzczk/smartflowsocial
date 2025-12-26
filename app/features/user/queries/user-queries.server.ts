@@ -29,10 +29,14 @@ export async function getUsersByNpubs(
   npubs: string[],
 ): Promise<{ npub: string; nostrProfile: ProfileData | null }[]> {
   if (!npubs.length) return [];
-  return prisma.user.findMany({
+  const users = await prisma.user.findMany({
     where: { npub: { in: npubs } },
     select: { npub: true, nostrProfile: true },
   });
+  return users.map((user) => ({
+    npub: user.npub,
+    nostrProfile: user.nostrProfile ? (user.nostrProfile as ProfileData) : null,
+  }));
 }
 
 /**

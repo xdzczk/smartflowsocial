@@ -127,15 +127,15 @@ export function useRecyclablesState({
         "satszapped",
       ].includes(sortConfig.key)
     ) {
-      const aStats = stats[a.signedEvent.id] || {};
-      const bStats = stats[b.signedEvent.id] || {};
+      const aStats = (a.signedEvent?.id ? stats[a.signedEvent.id] : {}) || {};
+      const bStats = (b.signedEvent?.id ? stats[b.signedEvent.id] : {}) || {};
       const aValue = Number(aStats[sortConfig.key as keyof typeof aStats] ?? 0);
       const bValue = Number(bStats[sortConfig.key as keyof typeof bStats] ?? 0);
       return sortConfig.direction === "asc" ? aValue - bValue : bValue - aValue;
     }
 
-    const aValue = a[sortConfig.key as keyof Post];
-    const bValue = b[sortConfig.key as keyof Post];
+    const aValue = (a as Record<string, unknown>)[sortConfig.key] as string | number | undefined;
+    const bValue = (b as Record<string, unknown>)[sortConfig.key] as string | number | undefined;
     
     // Handle null/undefined values
     if (aValue == null && bValue == null) return 0;

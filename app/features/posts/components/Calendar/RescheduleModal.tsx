@@ -3,25 +3,12 @@ import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
-import type { PostData, QueueType, UserData } from "~/features/posts/types";
+import type { QueueType, UserData } from "~/features/posts/types";
 import { handleErrorSafely } from "~/lib/error-handler.client";
 import { isVideoFile } from "~/lib/helpers";
 import { signEventFn } from "~/lib/nostr";
 
-interface CalendarPost extends PostData {
-  title?: string;
-  image?: string;
-  publishedAt?: Date | string;
-  postedAt?: Date | string;
-  scheduledFor?: string;
-  queueType?: QueueType | null;
-  manual_override?: boolean;
-  postType?: string;
-  fileUrl?: string[];
-  caption?: string;
-  signedEvent?: unknown;
-  nostrEvent?: unknown;
-}
+import type { CalendarPost } from "./PostBlock.types";
 
 interface RescheduleData {
   post: CalendarPost;
@@ -47,7 +34,13 @@ export function RescheduleModal({
   user: userProp,
   queueTypes,
 }: RescheduleModalProps) {
-  const fetcher = useFetcher();
+  interface FetcherData {
+    success?: boolean;
+    needsSigning?: boolean;
+    error?: string;
+  }
+  
+  const fetcher = useFetcher<FetcherData>();
   const loaderData = useLoaderData<{ user?: UserData }>();
   const user = userProp || loaderData?.user;
   const [isSigningEvent, setIsSigningEvent] = useState(false);

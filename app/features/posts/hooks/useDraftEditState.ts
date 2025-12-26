@@ -2,7 +2,7 @@ import { useFetcher } from "@remix-run/react";
 import { useState, useEffect, useCallback } from "react";
 
 import { signDraftForScheduling } from "~/features/posts/services/draft-sign.server";
-import type { UserData, HashTagPreset } from "~/features/posts/types";
+import type { UserData, HashTagPreset, PostData } from "~/features/posts/types";
 import { useOptionalUser } from "~/lib/remix-utils";
 
 interface Post {
@@ -32,7 +32,7 @@ export function useDraftEditState({
   const [content, setContent] = useState(post.content || "");
   const [caption] = useState(post.caption || "");
   const [selectedQueue, setSelectedQueue] = useState(
-    post.queueType?.name || post.queueType || "unassigned",
+    (typeof post.queueType === "object" && post.queueType?.name) || (typeof post.queueType === "string" ? post.queueType : "unassigned"),
   );
   const [scheduledFor, setScheduledFor] = useState("");
   const [showResumeModal, setShowResumeModal] = useState(false);
@@ -83,6 +83,17 @@ export function useDraftEditState({
 
   const handleSignAndResume = async () => {
     try {
+      // Convert currentUser (User | null | undefined) to UserData | null
+      const currentUserData: UserData | null = currentUser ? {
+        id: currentUser.id,
+        npub: currentUser.npub,
+        timezone: currentUser.timezone || null,
+        scheduleInterval: currentUser.scheduleInterval ? currentUser.scheduleInterval.map(Number).filter(n => !isNaN(n)) : undefined,
+        userRelays: currentUser.userRelays,
+        showHashTagsinPosts: currentUser.showHashTagsinPosts,
+        isEnabled: currentUser.isEnabled,
+      } : null;
+      
       const result = await signDraftForScheduling({
         content,
         caption,
@@ -91,8 +102,8 @@ export function useDraftEditState({
         useHashtagPresets,
         selectedHashtags,
         user,
-        currentUser,
-        post,
+        currentUser: currentUserData,
+        post: post as unknown as PostData,
       });
 
       const formData = new FormData();

@@ -6,6 +6,7 @@
 import { nip19 } from "nostr-tools";
 
 import { connectToPrimalCache } from "~/features/cache/primalCache.server";
+import type { NostrEvent } from "~/features/nostr/types";
 
 /**
  * Decode event ID from various formats (nevent1, note1, hex)
@@ -69,16 +70,17 @@ async function fetchAuthorInfo(pubkey: string): Promise<{
     });
 
     const userMetadataEvent = userInfoResponses?.find(
-      (res) =>
+      (res): res is [string, string, NostrEvent] =>
         Array.isArray(res) &&
         res[0] === "EVENT" &&
-        res[2] &&
-        res[2].kind === 0 &&
-        res[2].pubkey === pubkey,
+        res[2] !== undefined &&
+        (res[2] as NostrEvent).kind === 0 &&
+        (res[2] as NostrEvent).pubkey === pubkey,
     );
 
     if (userMetadataEvent && userMetadataEvent[2]) {
-      const metadata = JSON.parse(userMetadataEvent[2].content);
+      const event = userMetadataEvent[2];
+      const metadata = JSON.parse(event.content);
       authorName = metadata.name || metadata.display_name || authorName;
       authorImage = metadata.picture || null;
     }
@@ -115,17 +117,18 @@ async function fetchEventStats(eventId: string): Promise<{
     });
 
     const statsEvent = threadResponses?.find(
-      (res) =>
+      (res): res is [string, string, NostrEvent] =>
         Array.isArray(res) &&
         res[0] === "EVENT" &&
-        res[2] &&
-        res[2].kind === 10000100 &&
-        res[2].content &&
-        res[2].content.includes(eventId),
+        res[2] !== undefined &&
+        (res[2] as NostrEvent).kind === 10000100 &&
+        (res[2] as NostrEvent).content &&
+        (res[2] as NostrEvent).content.includes(eventId),
     );
 
     if (statsEvent && statsEvent[2]) {
-      const content = JSON.parse(statsEvent[2].content);
+      const event = statsEvent[2];
+      const content = JSON.parse(event.content);
       stats = {
         likes: content.likes || 0,
         replies: content.replies || 0,
@@ -194,7 +197,7 @@ export async function handleSearchEvent(eventInput: string) {
   // Find the EVENT response
   const eventResponse = Array.isArray(responses)
     ? responses.find(
-        (res) => Array.isArray(res) && res[0] === "EVENT" && res[2],
+        (res): res is [string, string, NostrEvent] => Array.isArray(res) && res[0] === "EVENT" && res[2] !== undefined,
       )
     : null;
 

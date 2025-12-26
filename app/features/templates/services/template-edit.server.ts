@@ -106,7 +106,7 @@ export async function handleTemplateEditAction(
       return {
         caption: post.caption || "",
         fileUrl: post.fileUrl,
-        queueType: post.queueType || "unassigned",
+        queueType: post.queueTypeId || "unassigned",
         scheduledFor: scheduleDate
           .toLocaleString("en-US", {
             year: "numeric",
