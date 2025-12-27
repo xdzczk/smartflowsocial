@@ -320,7 +320,9 @@ describe("Helper Utilities", () => {
     });
 
     it("should return false for non-string input", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Testing edge case with invalid input type
       expect(isVideoFile(123 as any)).toBe(false);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Testing edge case with invalid input type
       expect(isVideoFile({} as any)).toBe(false);
     });
 

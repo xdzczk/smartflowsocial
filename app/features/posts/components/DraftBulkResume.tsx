@@ -20,7 +20,7 @@ export default function DraftBulkResume({
 }: DraftBulkResumeProps) {
   const fetcher = useFetcher();
   const user = useOptionalUser();
-  const scheduleIntervals = user?.scheduleInterval;
+  const scheduleIntervals = user && typeof user === "object" && "scheduleInterval" in user ? user.scheduleInterval : null;
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // State for bulk operations similar to bulkposts
@@ -36,14 +36,13 @@ export default function DraftBulkResume({
       localDate.setHours(
         localDate.getHours() + index * (Number(scheduleIntervals?.[0]) || 2),
       );
-
       return {
         id: draft.id,
-        content: draft.content || draft.caption,
+        content: draft.content ?? draft.caption,
         caption: draft.caption,
         fileUrl: draft.fileUrl,
         postType: draft.postType,
-        queueType: (draft.queueType?.name ?? draft.queueType) || "unassigned",
+        queueType: (draft.queueType?.name ?? draft.queueType) ?? "unassigned",
         scheduledFor: localDate
           .toLocaleString("en-US", {
             year: "numeric",
@@ -76,9 +75,10 @@ export default function DraftBulkResume({
       });
 
       if (response.ok) {
-        const data = (await response.json()) as { scheduledTime?: string };
-        const scheduledTime = data.scheduledTime;
-        if (!scheduledTime) return;
+        const dataRaw: unknown = await response.json();
+        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { scheduledTime?: unknown } : {};
+        const scheduledTime = typeof data.scheduledTime === "string" ? data.scheduledTime : undefined;
+        if (!scheduledTime) return "";
 
         // For bulk posts, add interval offset based on index
         if (baseIndex > 0) {
@@ -87,19 +87,20 @@ export default function DraftBulkResume({
             return name === queueTypeName;
           });
 
-          if (queueType && typeof queueType === "object") {
+          if (queueType && typeof queueType === "object" && "scheduleType" in queueType) {
             const baseDate = new Date(scheduledTime);
 
             if (queueType.scheduleType === "INTERVAL") {
-              const config = queueType.scheduleConfig;
+              const config = queueType && typeof queueType === "object" && "scheduleConfig" in queueType ? queueType.scheduleConfig : null;
               let intervalHours = 4; // default
 
               if (config && isIntervalScheduleConfig(config)) {
                 if (config.useGlobalInterval) {
-                  const userInterval = user?.scheduleInterval?.[0];
-                  intervalHours = typeof userInterval === "number" ? userInterval : (typeof userInterval === "string" ? Number(userInterval) : 4) || 4;
+                  const userIntervalRaw = user && typeof user === "object" && "scheduleInterval" in user && Array.isArray(user.scheduleInterval) && user.scheduleInterval.length > 0 ? user.scheduleInterval[0] : null;
+                  const userInterval = typeof userIntervalRaw === "number" ? userIntervalRaw : (typeof userIntervalRaw === "string" ? Number(userIntervalRaw) : null);
+                  intervalHours = (userInterval && !isNaN(userInterval)) ? userInterval : 4;
                 } else {
-                  intervalHours = config.intervalHours || 4;
+                  intervalHours = config.intervalHours ?? 4;
                 }
               }
 
@@ -107,8 +108,8 @@ export default function DraftBulkResume({
                 baseDate.getHours() + baseIndex * intervalHours,
               );
             } else if (queueType.scheduleType === "FIXED_SLOTS") {
-              const config = queueType.scheduleConfig;
-              const slots = (config && isFixedSlotsScheduleConfig(config)) ? config.slots || [] : [];
+              const config = queueType && typeof queueType === "object" && "scheduleConfig" in queueType ? queueType.scheduleConfig : null;
+              const slots = (config && isFixedSlotsScheduleConfig(config)) ? config.slots ?? [] : [];
 
               if (slots.length > 0) {
                 // Sort slots to ensure consistent ordering
@@ -296,7 +297,7 @@ export default function DraftBulkResume({
               }),
             });
             const data = (await response.json()) as { hashtags?: string };
-            tagsString = data.hashtags || "";
+            tagsString = data.hashtags ?? "";
           } catch (error) {
             const { handleErrorSafely } = await import("~/lib/error-handler.client");
             handleErrorSafely(error, {
@@ -314,8 +315,8 @@ export default function DraftBulkResume({
             .map((tag) => ["t", tag.replace("#", "")]);
 
           const contentToSign = user?.showHashTagsinPosts
-            ? `${post.content || ""}\n${tagsString}`
-            : (post.content || "");
+            ? `${post.content ?? ""}\n${tagsString}`
+            : (post.content ?? "");
 
           const { nostrEvent, signedEvent } = await signEventFn({
             content: contentToSign,
@@ -340,11 +341,11 @@ export default function DraftBulkResume({
       formData.append("_action", "bulkSignAndResume");
       signedPosts.forEach((post) => {
         formData.append("postIds", post.id);
-        formData.append("contents", post.content || "");
-        formData.append("captions", post.caption || "");
+        formData.append("contents", post.content ?? "");
+        formData.append("captions", post.caption ?? "");
         const queueTypeValue = typeof post.queueType === "string" ? post.queueType : (post.queueType?.name ?? "");
         formData.append("queueTypes", queueTypeValue);
-        formData.append("scheduledFors", post.scheduledFor || "");
+        formData.append("scheduledFors", post.scheduledFor ?? "");
         formData.append("signedEvents", post.signedEvent);
         formData.append("nostrEvents", post.nostrEvent);
       });
@@ -372,12 +373,14 @@ export default function DraftBulkResume({
     return fileUrl;
   };
 
-  interface FetcherData {
+  interface _FetcherData {
     success?: boolean;
   }
   
   useEffect(() => {
-    if ((fetcher.data as FetcherData | undefined)?.success) {
+    const dataRaw = fetcher.data;
+    const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown } : null;
+    if (data && typeof data.success === "boolean" && data.success) {
       onCancel(); // Close the modal and refresh
     }
   }, [fetcher.data, onCancel]);
@@ -430,12 +433,12 @@ export default function DraftBulkResume({
                   <button
                     key={queueName}
                     type="button"
-                    onClick={() => handleBulkQueueUpdate(queueName)}
+                    onClick={() => void handleBulkQueueUpdate(queueName)}
                     disabled={isSubmitting}
                     className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 ${getSelectedQueueStyle(queueName, false)}`}
                     style={{
-                      backgroundColor: queueColor || undefined,
-                      borderColor: queueColor || undefined,
+                      backgroundColor: queueColor ?? undefined,
+                      borderColor: queueColor ?? undefined,
                     }}
                   >
                     {queueName}
@@ -479,7 +482,7 @@ export default function DraftBulkResume({
                   <td className="p-4">
                     <div className="max-h-20 overflow-y-auto">
                       <p className="text-sm text-gray-700 dark:text-gray-300">
-                        {post.content?.substring(0, 150) || ""}
+                        {post.content?.substring(0, 150) ?? ""}
                         {(post.content?.length ?? 0) > 150 ? "..." : null}
                       </p>
                     </div>
@@ -495,9 +498,9 @@ export default function DraftBulkResume({
                           <button
                             key={queueName}
                             type="button"
-                            onClick={() =>
-                              handleQueueTypeChange(index, queueName)
-                            }
+                            onClick={() => {
+                              void handleQueueTypeChange(index, queueName);
+                            }}
                             disabled={isSubmitting}
                             className={`rounded-full px-3 py-1 text-xs font-medium transition-all duration-200 ${getSelectedQueueStyle(queueName, post.queueType === queueName)}`}
                             style={{
@@ -536,7 +539,7 @@ export default function DraftBulkResume({
             Cancel
           </button>
           <button
-            onClick={handleSignAndResume}
+            onClick={() => void handleSignAndResume()}
             disabled={isSubmitting}
             className="rounded-lg bg-gradient-to-r from-green-500 to-green-600 px-8 py-3 text-sm font-medium text-white shadow-lg transition-all hover:from-green-600 hover:to-green-700 hover:shadow-xl disabled:cursor-not-allowed disabled:from-green-300 disabled:to-green-400"
           >

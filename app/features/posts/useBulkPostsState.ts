@@ -17,14 +17,15 @@ interface UseBulkPostsStateProps {
     setPosts: (posts: BulkPost[]) => void;
 }
 
-export function useBulkPostsState({ mode, posts, setPosts }: UseBulkPostsStateProps) {
+export function useBulkPostsState({ mode, posts: _posts, setPosts }: UseBulkPostsStateProps) {
     // Load repost data from sessionStorage if in recycle mode
     useEffect(() => {
         if (mode === "recycle") {
             const repostData = sessionStorage.getItem("repostData");
             if (repostData) {
                 try {
-                    const parsedData = JSON.parse(repostData) as RepostDataItem[];
+                    const parsed: unknown = JSON.parse(repostData);
+                    const parsedData = Array.isArray(parsed) ? parsed as RepostDataItem[] : [];
 
                     // Convert repost data to posts format with file objects from URLs
                     const repostPosts = parsedData.map((item: RepostDataItem, _index: number) => {
@@ -37,7 +38,7 @@ export function useBulkPostsState({ mode, posts, setPosts }: UseBulkPostsStatePr
                                 if (Array.isArray(parsed) && parsed.length > 0) {
                                     fileUrl = parsed[0]; // Take first URL from array
                                 }
-                            } catch (e) {
+                            } catch (_e) {
                                 // If it's not JSON, keep as is
                             }
                         } else if (Array.isArray(fileUrl) && fileUrl.length > 0) {
@@ -46,12 +47,12 @@ export function useBulkPostsState({ mode, posts, setPosts }: UseBulkPostsStatePr
 
                         return {
                             file: null, // We'll handle URL-based files differently
-                            caption: item.caption,
-                            queueType: item.queueType,
-                            scheduledFor: item.scheduledFor,
-                            fileUrl: fileUrl, // Ensured to be a single URL string
+                            caption: item.caption ?? "",
+                            queueType: item.queueType ?? "unassigned",
+                            scheduledFor: item.scheduledFor ?? "",
+                            fileUrl: typeof fileUrl === "string" ? fileUrl : undefined, // Ensured to be a single URL string
                             isRepost: true, // Flag to indicate this is a repost
-                            isRecyclable: item.isRecyclable || false,
+                            isRecyclable: item.isRecyclable ?? false,
                             originalPostId: item.originalPostId, // Include original post ID for tracking
                         };
                     });
@@ -72,7 +73,8 @@ export function useBulkPostsState({ mode, posts, setPosts }: UseBulkPostsStatePr
             const scheduledRepostData = sessionStorage.getItem("scheduledRepostData");
             if (scheduledRepostData) {
                 try {
-                    const parsedData = JSON.parse(scheduledRepostData) as RepostDataItem[];
+                    const parsed: unknown = JSON.parse(scheduledRepostData);
+                    const parsedData = Array.isArray(parsed) ? parsed as RepostDataItem[] : [];
 
                     // We need to fetch the original posts to get their images
                     const fetchOriginalPosts = async () => {
@@ -88,7 +90,8 @@ export function useBulkPostsState({ mode, posts, setPosts }: UseBulkPostsStatePr
                             });
 
                             if (response.ok) {
-                                const originalPosts = (await response.json()) as OriginalPost[];
+                                const dataRaw: unknown = await response.json();
+                                const originalPosts = Array.isArray(dataRaw) ? dataRaw as OriginalPost[] : [];
                                 return originalPosts;
                             }
                         } catch (error) {
@@ -123,19 +126,24 @@ export function useBulkPostsState({ mode, posts, setPosts }: UseBulkPostsStatePr
                                     (p: OriginalPost) => p.id === item.originalPostId,
                                 );
 
+                                const originalFileUrl = originalPost?.fileUrl;
+                                const fileUrlString = Array.isArray(originalFileUrl) 
+                                    ? (originalFileUrl.length > 0 ? originalFileUrl[0] : undefined)
+                                    : originalFileUrl;
+
                                 return {
                                     file: null, // No file for kind 6 reposts
-                                    caption: item.caption, // Empty for kind 6
-                                    queueType: item.queueType,
-                                    scheduledFor: item.scheduledFor,
-                                    fileUrl: originalPost?.fileUrl || [], // Use original post's images for display
-                                    originalFileUrl: originalPost?.fileUrl || [], // Keep original file URLs for display
+                                    caption: item.caption ?? "", // Empty for kind 6
+                                    queueType: item.queueType ?? "unassigned",
+                                    scheduledFor: item.scheduledFor ?? "",
+                                    fileUrl: fileUrlString, // Use original post's images for display (single string)
+                                    originalFileUrl: originalFileUrl ?? [], // Keep original file URLs for display (can be array)
                                     isKind6Repost: true, // Flag to indicate this is a kind 6 repost
                                     originalPostId: item.originalPostId,
                                     originalEventId: item.originalEventId,
                                     originalEventPubkey: item.originalEventPubkey,
-                                    originalCaption: originalPost?.caption || "", // Store original caption for context
-                                    isRecyclable: item.isRecyclable || false,
+                                    originalCaption: originalPost?.caption ?? "", // Store original caption for context
+                                    isRecyclable: item.isRecyclable ?? false,
                                 };
                             });
 
@@ -162,7 +170,8 @@ export function useBulkPostsState({ mode, posts, setPosts }: UseBulkPostsStatePr
             const quotePostData = sessionStorage.getItem("quotePostData");
             if (quotePostData) {
                 try {
-                    const parsedData = JSON.parse(quotePostData) as QuotePostDataItem[];
+                    const parsed: unknown = JSON.parse(quotePostData);
+                    const parsedData = Array.isArray(parsed) ? parsed as QuotePostDataItem[] : [];
 
                     interface QuotePostDataItem {
                         fileUrl?: string | string[];
@@ -190,7 +199,7 @@ export function useBulkPostsState({ mode, posts, setPosts }: UseBulkPostsStatePr
                                 if (Array.isArray(parsed) && parsed.length > 0) {
                                     fileUrl = parsed[0]; // Take first URL from array
                                 }
-                            } catch (e) {
+                            } catch (_e) {
                                 // If it's not JSON, keep as is
                             }
                         } else if (Array.isArray(fileUrl) && fileUrl.length > 0) {
@@ -199,19 +208,19 @@ export function useBulkPostsState({ mode, posts, setPosts }: UseBulkPostsStatePr
 
                         return {
                             file: null, // We'll handle URL-based files differently
-                            caption: item.caption || "", // Start with empty caption for user to add content
-                            queueType: item.queueType,
-                            scheduledFor: item.scheduledFor,
-                            fileUrl: fileUrl, // Ensured to be a single URL string
+                            caption: item.caption ?? "", // Start with empty caption for user to add content
+                            queueType: item.queueType ?? "unassigned",
+                            scheduledFor: item.scheduledFor ?? "",
+                            fileUrl: typeof fileUrl === "string" ? fileUrl : undefined, // Ensured to be a single URL string
                             isQuotePost: true, // Flag to indicate this is a quote post
-                            isLongformQuote: item.isLongformQuote || false, // Preserve longform quote flag
-                            naddr: item.naddr || "", // Preserve naddr for longform quotes
+                            isLongformQuote: item.isLongformQuote ?? false, // Preserve longform quote flag
+                            naddr: item.naddr ?? "", // Preserve naddr for longform quotes
                             originalPostId: item.originalPostId,
                             originalEventId: item.originalEventId,
                             originalEventPubkey: item.originalEventPubkey,
-                            originalCaption: item.originalCaption || "",
-                            originalTitle: item.originalTitle || "", // Preserve original title for longform
-                            isRecyclable: item.isRecyclable || false,
+                            originalCaption: item.originalCaption ?? "",
+                            originalTitle: item.originalTitle ?? "", // Preserve original title for longform
+                            isRecyclable: item.isRecyclable ?? false,
                         };
                     });
 

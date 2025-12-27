@@ -226,10 +226,10 @@ export function expectPerformance(
   threshold: number,
   operation: string,
 ) {
-  expect(duration).toBeLessThan(
-    threshold,
-    `${operation} took ${duration.toFixed(2)}ms, exceeding threshold of ${threshold}ms`,
-  );
+  if (duration >= threshold) {
+    throw new Error(`${operation} took ${duration.toFixed(2)}ms, exceeding threshold of ${threshold}ms`);
+  }
+  expect(duration).toBeLessThan(threshold);
 }
 
 

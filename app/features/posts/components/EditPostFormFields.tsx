@@ -33,7 +33,7 @@ export function EditPostFormFields({
   useHashtagPresets,
   setUseHashtagPresets,
   selectedHashtagPresetId,
-  selectedHashtagPresetTags,
+  selectedHashtagPresetTags: _selectedHashtagPresetTags,
   onHashtagPresetSelect,
   manualHashtags,
   setManualHashtags,

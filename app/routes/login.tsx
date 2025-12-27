@@ -4,7 +4,7 @@ import type { LoaderFunctionArgs } from "@remix-run/node";
 import Footer from "~/components/layout/FrontendFooter";
 import Header from "~/components/layout/FrontendHeader";
 import { Card, CardContent } from "~/components/ui/card";
-import NostrAuthButton from "~/features/auth/components/NostrAuthButton";
+import { NostrAuthButton } from "~/features/auth";
 import { getUserId } from "~/features/auth/session.server";
 
 

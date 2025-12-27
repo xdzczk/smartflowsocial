@@ -7,7 +7,7 @@ import { getQueueColor } from "~/features/posts/queueColors";
 import {
   loadTemplateEditData,
   handleTemplateEditAction,
-} from "~/features/templates/services/template-edit.server";
+} from "~/features/templates";
 import { withErrorHandling, withActionErrorHandling } from "~/lib/error-handler.server";
 import { formatDate, getImageUrls } from "~/lib/helpers";
 
@@ -44,9 +44,7 @@ export default function EditTemplate() {
   const data = useLoaderData<LoaderData>();
   const template = data && typeof data === "object" && "template" in data && data.template && typeof data.template === "object" && !Array.isArray(data.template) ? data.template : null;
   
-  if (!template) {
-    return <div>Template not found</div>;
-  }
+  // All hooks must be called before any early returns
   const updateNameFetcher = useFetcher<{ success?: boolean }>();
   const removePostFetcher = useFetcher();
   const deleteTemplateFetcher = useFetcher();
@@ -62,6 +60,32 @@ export default function EditTemplate() {
   const templateNameValue = template && "name" in template && typeof template.name === "string" ? template.name : "";
   const [templateName, setTemplateName] = useState(templateNameValue);
   const [isEditingName, setIsEditingName] = useState(false);
+
+  // Handle successful name update
+  useEffect(() => {
+    const fetcherData = updateNameFetcher.data;
+    if (fetcherData && typeof fetcherData === "object" && !Array.isArray(fetcherData) && "success" in fetcherData && typeof fetcherData.success === "boolean" && fetcherData.success) {
+      setIsEditingName(false);
+    }
+  }, [updateNameFetcher.data]);
+
+  // Handle schedule data response
+  useEffect(() => {
+    const fetcherData = scheduleFetcher.data;
+    if (fetcherData && typeof fetcherData === "object" && !Array.isArray(fetcherData) && "scheduleData" in fetcherData && Array.isArray(fetcherData.scheduleData)) {
+      // Store schedule data in sessionStorage
+      sessionStorage.setItem(
+        "repostData",
+        JSON.stringify(fetcherData.scheduleData),
+      );
+      // Navigate to bulk posts page
+      window.location.href = "/dashboard/bulkposts?mode=repost";
+    }
+  }, [scheduleFetcher.data]);
+  
+  if (!template) {
+    return <div>Template not found</div>;
+  }
 
   const handleUpdateName = () => {
     if (!templateName.trim()) return;
@@ -102,26 +126,6 @@ export default function EditTemplate() {
 
     scheduleFetcher.submit(formData, { method: "post" });
   };
-
-  // Handle successful name update
-  useEffect(() => {
-    if (updateNameFetcher.data?.success) {
-      setIsEditingName(false);
-    }
-  }, [updateNameFetcher.data]);
-
-  // Handle schedule data response
-  useEffect(() => {
-    if (scheduleFetcher.data?.scheduleData) {
-      // Store schedule data in sessionStorage
-      sessionStorage.setItem(
-        "repostData",
-        JSON.stringify(scheduleFetcher.data.scheduleData),
-      );
-      // Navigate to bulk posts page
-      window.location.href = "/dashboard/bulkposts?mode=repost";
-    }
-  }, [scheduleFetcher.data]);
 
   return (
     <div className="p-6">
@@ -243,66 +247,85 @@ export default function EditTemplate() {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {Array.isArray(template.posts) ? template.posts.map((post: { id: string; fileUrl?: string[] | string; caption?: string; queueType?: { name?: string; color?: string | null } | null; postedAt?: string | Date | null; signedEvent?: { id?: string } | null }) => (
-            <div
-              key={post.id}
-              className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
-            >
-              <div className="mb-3">
-                {post.fileUrl && (Array.isArray(post.fileUrl) ? post.fileUrl.length > 0 : typeof post.fileUrl === "string" && post.fileUrl.length > 0) ? (
-                  <img
-                    src={getImageUrls(Array.isArray(post.fileUrl) ? post.fileUrl : [post.fileUrl])[0]}
-                    alt="Post preview"
-                    className="h-48 w-full rounded object-cover"
-                  />
-                ) : (
-                  <div className="flex h-48 w-full items-center justify-center rounded bg-gray-200 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-                    TEXT POST
-                  </div>
-                )}
-              </div>
-
-              <div className="mb-3">
-                <p className="line-clamp-3 text-sm text-gray-700 dark:text-gray-300">
-                  {typeof post.caption === "string" ? post.caption : ""}
-                </p>
-              </div>
-
-              <div className="mb-3 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {post.queueType ? (
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium capitalize ${getQueueColor(post.queueType?.name ?? "unassigned", post.queueType?.color).bg} ${getQueueColor(post.queueType?.name ?? "unassigned", post.queueType?.color).text}`}
-                    >
-                      {post.queueType?.name ?? "unassigned"}
-                    </span>
-                  ) : null}
+          {Array.isArray(template.posts) ? template.posts.map((post: unknown) => {
+            if (!post || typeof post !== "object" || !("id" in post)) {
+              return null;
+            }
+            const postId = typeof post.id === "string" ? post.id : String(post.id ?? "");
+            const postFileUrl = "fileUrl" in post ? post.fileUrl : null;
+            const postCaption = "caption" in post && typeof post.caption === "string" ? post.caption : "";
+            const postQueueType = "queueType" in post && post.queueType && typeof post.queueType === "object" && !Array.isArray(post.queueType) ? post.queueType : null;
+            const postPostedAt = "postedAt" in post ? post.postedAt : null;
+            const postSignedEvent = "signedEvent" in post && post.signedEvent && typeof post.signedEvent === "object" && !Array.isArray(post.signedEvent) ? post.signedEvent : null;
+            const signedEventId = postSignedEvent && "id" in postSignedEvent && typeof postSignedEvent.id === "string" ? postSignedEvent.id : "";
+            const queueTypeName = postQueueType && "name" in postQueueType && typeof postQueueType.name === "string" ? postQueueType.name : "unassigned";
+            const queueTypeColor = postQueueType && "color" in postQueueType && (typeof postQueueType.color === "string" || postQueueType.color === null) ? postQueueType.color : null;
+            
+            const hasFileUrl = postFileUrl && (Array.isArray(postFileUrl) ? postFileUrl.length > 0 : typeof postFileUrl === "string" && postFileUrl.length > 0);
+            const fileUrlArray = Array.isArray(postFileUrl) ? postFileUrl : (typeof postFileUrl === "string" ? [postFileUrl] : []);
+            const firstImageUrl = fileUrlArray.length > 0 ? getImageUrls(fileUrlArray)[0] : "";
+            
+            return (
+              <div
+                key={postId}
+                className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+              >
+                <div className="mb-3">
+                  {hasFileUrl && firstImageUrl ? (
+                    <img
+                      src={firstImageUrl}
+                      alt="Post preview"
+                      className="h-48 w-full rounded object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-48 w-full items-center justify-center rounded bg-gray-200 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                      TEXT POST
+                    </div>
+                  )}
                 </div>
-                <span className="text-xs text-gray-500 dark:text-gray-400">
-                  Posted{" "}
-                  {post.postedAt ? formatDate(post.postedAt) : "Not posted yet"}
-                </span>
-              </div>
 
-              <div className="flex items-center justify-between">
-                <Link
-                  to={`https://primal.net/e/${post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent && typeof post.signedEvent.id === "string" ? post.signedEvent.id : ""}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                >
-                  View Original
-                </Link>
-                <button
-                  onClick={() => handleRemovePost(typeof post.id === "string" ? post.id : "")}
-                  disabled={removePostFetcher.state !== "idle"}
-                  className="rounded-lg border border-red-300 px-2 py-1 text-xs text-red-700 hover:bg-red-50 disabled:opacity-50 dark:border-red-600 dark:text-red-400 dark:hover:bg-red-900/20"
-                >
-                  {removePostFetcher.state !== "idle" ? "..." : "Remove"}
-                </button>
+                <div className="mb-3">
+                  <p className="line-clamp-3 text-sm text-gray-700 dark:text-gray-300">
+                    {postCaption}
+                  </p>
+                </div>
+
+                <div className="mb-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {postQueueType ? (
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium capitalize ${getQueueColor(queueTypeName, queueTypeColor).bg} ${getQueueColor(queueTypeName, queueTypeColor).text}`}
+                      >
+                        {queueTypeName}
+                      </span>
+                    ) : null}
+                  </div>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    Posted{" "}
+                    {postPostedAt ? formatDate(postPostedAt as string | Date) : "Not posted yet"}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <Link
+                    to={`https://primal.net/e/${signedEventId}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                  >
+                    View Original
+                  </Link>
+                  <button
+                    onClick={() => handleRemovePost(postId)}
+                    disabled={removePostFetcher.state !== "idle"}
+                    className="rounded-lg border border-red-300 px-2 py-1 text-xs text-red-700 hover:bg-red-50 disabled:opacity-50 dark:border-red-600 dark:text-red-400 dark:hover:bg-red-900/20"
+                  >
+                    {removePostFetcher.state !== "idle" ? "..." : "Remove"}
+                  </button>
+                </div>
               </div>
-            </div>
-          )) : null}
+            );
+          }).filter((item): item is JSX.Element => item !== null) : null}
         </div>
       )}
     </div>

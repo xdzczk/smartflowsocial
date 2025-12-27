@@ -1,4 +1,5 @@
-import type { useFetcher } from "@remix-run/react";
+import type { FetcherWithComponents } from "@remix-run/react";
+import { useFetcher } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
 import type { PostData } from "~/features/posts/types";
@@ -44,7 +45,7 @@ interface RepostFetcherData {
   };
 }
 
-interface IndividualRepostFetcherData {
+export interface IndividualRepostFetcherData {
   repostEventData?: {
     kind: number;
     content: string;
@@ -71,10 +72,10 @@ interface UseRecyclablesStateProps {
   posts: Post[] | PostData[]; // Accept any post type from loader
   stats: Stats;
   user?: User | null;
-  repostFetcher: ReturnType<typeof useFetcher<RepostFetcherData>>;
+  repostFetcher: ReturnType<typeof useFetcher<RepostFetcherData>> | any;
   bulkDeleteFetcher: ReturnType<typeof useFetcher>;
   bulkRepostFetcher: ReturnType<typeof useFetcher>;
-  individualRepostFetcher: ReturnType<typeof useFetcher<IndividualRepostFetcherData>>;
+  individualRepostFetcher: FetcherWithComponents<IndividualRepostFetcherData>;
 }
 
 interface SortConfig {
@@ -111,8 +112,8 @@ export function useRecyclablesState({
   // Sort and filter posts
   const sortedPosts = [...posts].sort((a, b) => {
     if (sortConfig.key === "postedAt") {
-      const dateA = new Date(a[sortConfig.key] || 0).getTime();
-      const dateB = new Date(b[sortConfig.key] || 0).getTime();
+      const dateA = new Date(a[sortConfig.key] ?? 0).getTime();
+      const dateB = new Date(b[sortConfig.key] ?? 0).getTime();
       return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
     }
 
@@ -127,8 +128,10 @@ export function useRecyclablesState({
         "satszapped",
       ].includes(sortConfig.key)
     ) {
-      const aStats = (a.signedEvent?.id ? stats[a.signedEvent.id] : {}) || {};
-      const bStats = (b.signedEvent?.id ? stats[b.signedEvent.id] : {}) || {};
+      const aEventId = a.signedEvent && typeof a.signedEvent === "object" && "id" in a.signedEvent && typeof a.signedEvent.id === "string" ? a.signedEvent.id : null;
+      const bEventId = b.signedEvent && typeof b.signedEvent === "object" && "id" in b.signedEvent && typeof b.signedEvent.id === "string" ? b.signedEvent.id : null;
+      const aStats = (aEventId && typeof stats[aEventId] === "object" && stats[aEventId] !== null ? stats[aEventId] : {}) || {};
+      const bStats = (bEventId && typeof stats[bEventId] === "object" && stats[bEventId] !== null ? stats[bEventId] : {}) || {};
       const aValue = Number(aStats[sortConfig.key as keyof typeof aStats] ?? 0);
       const bValue = Number(bStats[sortConfig.key as keyof typeof bStats] ?? 0);
       return sortConfig.direction === "asc" ? aValue - bValue : bValue - aValue;
@@ -223,21 +226,23 @@ export function useRecyclablesState({
 
   // Handle bulk delete success
   useEffect(() => {
-    const data = bulkDeleteFetcher.data as { success?: boolean } | undefined;
-    if (data?.success) {
+    const dataRaw = bulkDeleteFetcher.data;
+    const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown } : null;
+    if (data && typeof data.success === "boolean" && data.success) {
       setSelectedPosts(new Set());
     }
   }, [bulkDeleteFetcher.data]);
 
   // Handle repost data and navigation
   useEffect(() => {
-    const fetcherData = repostFetcher.data as RepostFetcherData | undefined;
-    if (fetcherData?.repostData) {
-      const postsData = fetcherData.repostData;
+    const fetcherDataRaw = repostFetcher.data;
+    const fetcherData = fetcherDataRaw && typeof fetcherDataRaw === "object" && !Array.isArray(fetcherDataRaw) ? fetcherDataRaw as { repostData?: unknown; scheduledRepostData?: unknown; quotePostData?: unknown } : null;
+    if (fetcherData && "repostData" in fetcherData && Array.isArray(fetcherData.repostData)) {
+      const postsData = fetcherData.repostData as PostData[];
 
       // Prepare repost data with 1 hour default scheduling
       const now = new Date();
-      const userTimezone = user?.timezone ?? "UTC";
+      const userTimezone = user && typeof user === "object" && "timezone" in user && typeof user.timezone === "string" ? user.timezone : "UTC";
       const localDate = new Date(
         now.toLocaleString("en-US", { timeZone: userTimezone }),
       );
@@ -275,13 +280,13 @@ export function useRecyclablesState({
       setSelectedPosts(new Set());
     }
 
-    if (fetcherData?.scheduledRepostData) {
-      const postsData = fetcherData.scheduledRepostData;
+    if (fetcherData && "scheduledRepostData" in fetcherData && Array.isArray(fetcherData.scheduledRepostData)) {
+      const postsData = fetcherData.scheduledRepostData as PostData[];
 
       const now = new Date();
-      const userTimezone = user?.timezone ?? "UTC";
+      const userTimezoneForScheduled = user && typeof user === "object" && "timezone" in user && typeof user.timezone === "string" ? user.timezone : "UTC";
       const localDate = new Date(
-        now.toLocaleString("en-US", { timeZone: userTimezone }),
+        now.toLocaleString("en-US", { timeZone: userTimezoneForScheduled }),
       );
       localDate.setHours(localDate.getHours() + 1);
 
@@ -304,8 +309,8 @@ export function useRecyclablesState({
             })
             .replace(/(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+)/, "$3-$1-$2T$4:$5"),
           originalPostId: post.id,
-          originalEventId: post.signedEvent?.id,
-          originalEventPubkey: post.signedEvent?.pubkey,
+          originalEventId: post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent && typeof post.signedEvent.id === "string" ? post.signedEvent.id : undefined,
+          originalEventPubkey: post.signedEvent && typeof post.signedEvent === "object" && "pubkey" in post.signedEvent && typeof post.signedEvent.pubkey === "string" ? post.signedEvent.pubkey : undefined,
           isKind6Repost: true,
         };
       });
@@ -318,7 +323,7 @@ export function useRecyclablesState({
       setSelectedPosts(new Set());
     }
 
-    if (fetcherData?.quotePostData) {
+    if (fetcherData && "quotePostData" in fetcherData && fetcherData.quotePostData) {
       const quoteData = fetcherData.quotePostData;
       sessionStorage.setItem("quotePostData", JSON.stringify(quoteData));
       window.location.href = "/dashboard/bulkposts?mode=quote";
@@ -329,17 +334,27 @@ export function useRecyclablesState({
   // Handle individual repost actions
   useEffect(() => {
     const handleRepost = async () => {
-      const data = individualRepostFetcher.data as IndividualRepostFetcherData | undefined;
+      const dataRaw = individualRepostFetcher.data;
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { repostEventData?: unknown; quotePostData?: unknown; error?: unknown; message?: unknown } : null;
       
-      if (data?.repostEventData) {
+      if (data && "repostEventData" in data && data.repostEventData && typeof data.repostEventData === "object" && !Array.isArray(data.repostEventData)) {
         try {
-          const eventData = data.repostEventData;
+          const eventDataRaw = data.repostEventData as { kind?: unknown; content?: unknown; tags?: unknown; created_at?: unknown; pubkey?: unknown; [key: string]: unknown };
+          
+          // Convert to NostrEventData format expected by signEventFn
+          const eventData = {
+            kind: typeof eventDataRaw.kind === "number" ? eventDataRaw.kind : 1,
+            content: typeof eventDataRaw.content === "string" ? eventDataRaw.content : "",
+            tags: Array.isArray(eventDataRaw.tags) ? eventDataRaw.tags : [],
+            created_at: typeof eventDataRaw.created_at === "number" ? eventDataRaw.created_at : Math.floor(Date.now() / 1000),
+            pubkey: typeof eventDataRaw.pubkey === "string" ? eventDataRaw.pubkey : "",
+          };
 
           // Sign the event using client-side signing
           const { signedEvent } = await signEventFn(eventData);
 
           // Get user relays from user data
-          const sanitizedRelays = user?.relays || ["wss://relay.primal.net"];
+          const sanitizedRelays = user && typeof user === "object" && "relays" in user && Array.isArray(user.relays) ? user.relays : ["wss://relay.primal.net"];
 
           // Publish the signed event
           const response = await fetch("/api/publish", {
@@ -359,10 +374,13 @@ export function useRecyclablesState({
 
           // Add delay before showing success toast
           setTimeout(() => {
+            const tags = Array.isArray(eventData.tags) ? eventData.tags : [];
+            const eTag: unknown = tags.find((tag: unknown) => Array.isArray(tag) && tag[0] === "e");
+            const eventId = Array.isArray(eTag) && typeof eTag[1] === "string" ? eTag[1] : "";
             setToast({
               type: "success",
               message: "Post reposted successfully!",
-              link: `https://primal.net/e/${eventData.tags.find((tag: string[]) => tag[0] === "e")?.[1]}`,
+              link: eventId ? `https://primal.net/e/${eventId}` : undefined,
               linkText: "View Original Post",
             });
 
@@ -382,7 +400,7 @@ export function useRecyclablesState({
           // Hide toast after 5 seconds for errors
           setTimeout(() => setToast(null), 5000);
         }
-      } else if (data?.quotePostData) {
+      } else if (data && "quotePostData" in data && data.quotePostData) {
         // Handle individual quote post - redirect to bulk posts with single item
         const quoteData = data.quotePostData;
 
@@ -391,10 +409,11 @@ export function useRecyclablesState({
 
         // Navigate to bulk posts page with quote mode
         window.location.href = "/dashboard/bulkposts?mode=quote";
-      } else if (data?.error) {
+      } else if (data && "error" in data && data.error) {
+        const message = typeof data.message === "string" ? data.message : "Failed to create repost";
         setToast({
           type: "error",
-          message: data.message || "Failed to create repost",
+          message,
         });
 
         // Hide toast after 5 seconds for errors
@@ -403,7 +422,7 @@ export function useRecyclablesState({
     };
 
     if (individualRepostFetcher.data) {
-      handleRepost();
+      void handleRepost();
     }
   }, [individualRepostFetcher.data, user?.relays, individualRepostFetcher]);
 

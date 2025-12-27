@@ -18,11 +18,13 @@ import {
   handleQueueTypeChange as handleQueueTypeChangeHandler,
   handleBulkQueueUpdate as handleBulkQueueUpdateHandler,
 } from "~/features/posts/bulkposts.handlers";
-import BulkPostsActionButtons from "~/features/posts/components/BulkPostsActionButtons";
-import BulkPostsTable from "~/features/posts/components/BulkPostsTable";
-import BulkPostsUploadArea from "~/features/posts/components/BulkPostsUploadArea";
-import PostConfirmation from "~/features/posts/components/PostConfirmation";
-import { getBulkPostsDashboardData } from "~/features/posts/posts.server";
+import {
+  BulkPostsActionButtons,
+  BulkPostsTable,
+  BulkPostsUploadArea,
+  PostConfirmation,
+  getBulkPostsDashboardData,
+} from "~/features/posts";
 import { type BulkPost, type QueueType , type PreparedEvent } from "~/features/posts/types";
 import { useBulkPostEvents } from "~/features/posts/useBulkPostEvents";
 import { useBulkPostsState } from "~/features/posts/useBulkPostsState";
@@ -55,12 +57,16 @@ export async function loader({ request }: { request: Request }) {
 
 
 export default function BulkPosts() {
-  const { tags, queueTypes, hashTagPresets, mode } = useLoaderData<{
+  const data = useLoaderData<{
     tags: string[];
     queueTypes: QueueType[];
     hashTagPresets: { id: string; name: string; hashtags: string }[];
     mode: string | null;
   }>();
+  const tags = "tags" in data && Array.isArray(data.tags) ? data.tags : [];
+  const queueTypes = "queueTypes" in data && Array.isArray(data.queueTypes) ? data.queueTypes : [];
+  const hashTagPresets = "hashTagPresets" in data && Array.isArray(data.hashTagPresets) ? data.hashTagPresets : [];
+  const mode = "mode" in data ? data.mode : null;
   const [posts, setPosts] = useState<BulkPost[]>([]);
   const [displayedHashtags, setDisplayedHashtags] = useState<string | string[]>(tags);
   const [_selectedQueueType, setSelectedQueueType] = useState("unassigned");
@@ -132,7 +138,7 @@ export default function BulkPosts() {
   // Wrapper functions that delegate to extracted handlers
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const userDeps = user ? { id: user.id, timezone: user.timezone || undefined, scheduleInterval: scheduleIntervals } : null;
-    handleFileChangeHandler(e, {
+    void handleFileChangeHandler(e, {
       posts,
       setPosts,
       user: userDeps,
@@ -234,8 +240,11 @@ export default function BulkPosts() {
   useEffect(() => {
     return () => {
       previewData.forEach((data) => {
-        if (data && typeof data === "object" && "url" in data && typeof data.url === "string") {
-          URL.revokeObjectURL(data.url);
+        if (data && typeof data === "object" && data !== null && "url" in data) {
+          const url = data.url;
+          if (typeof url === "string") {
+            URL.revokeObjectURL(url);
+          }
         }
       });
     };
@@ -294,7 +303,7 @@ export default function BulkPosts() {
             selectedHashtagPresetId={selectedHashtagPresetId}
             useHashtagPresets={useHashtagPresets}
             handleScheduleIntervalClick={handleScheduleIntervalClick}
-            handleBulkQueueUpdate={handleBulkQueueUpdate}
+            handleBulkQueueUpdate={(queueType) => void handleBulkQueueUpdate(queueType)}
             handleHashtagPresetSelect={handleHashtagPresetSelect}
             setUseHashtagPresets={setUseHashtagPresets}
             handleBulkRecyclableToggle={handleBulkRecyclableToggle}
@@ -310,7 +319,7 @@ export default function BulkPosts() {
                 handleDateChange={handleDateChange}
                 handleIsRecyclableChange={handleIsRecyclableChange}
                 handleRemovePost={handleRemovePost}
-                handleQueueTypeChange={handleQueueTypeChange}
+                handleQueueTypeChange={(index, value) => void handleQueueTypeChange(index, value)}
                 handleMediaClick={handleMediaClick}
               />
 

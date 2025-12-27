@@ -15,7 +15,7 @@ interface MinimalPostBlockProps extends PostBlockBaseProps {
 
 export function MinimalPostBlock({
   post,
-  user,
+  user: _user,
   isLongform,
   isPast,
   isDragging,
@@ -49,7 +49,7 @@ export function MinimalPostBlock({
         } ${
           isDragging ? "opacity-50" : ""
         } ${queueColorStyle ? "" : getStatusColor(post, isLongform ?? false, isPast ?? false)}`}
-        style={queueColorStyle || {}}
+        style={queueColorStyle ?? {}}
         title={`${postPreview}\n${isPast ? "Posted" : isLongform ? "Published" : "Scheduled"} for ${displayTime.toLocaleString("en-US", { timeZone: userTimezone })}\n${isPast ? "Past post (view only)" : "Click to edit"}`}
       >
         <div className="flex flex-col items-center space-y-0.5">
@@ -104,7 +104,7 @@ export function MinimalPostBlock({
       } ${
         isDragging ? "opacity-50" : ""
       } ${queueColorStyle ? "" : getStatusColor(post, isLongform ?? false, isPast ?? false)}`}
-      style={queueColorStyle || {}}
+      style={queueColorStyle ?? {}}
       title={`${postPreview}\n${isPast ? "Posted" : isLongform ? "Published" : "Scheduled"} for ${displayTime.toLocaleString("en-US", { timeZone: userTimezone })}\n${isPast ? "Past post (view only)" : "Click to edit"}`}
     >
       <div className="flex items-center space-x-1">
@@ -133,6 +133,7 @@ export function MinimalPostBlock({
     </div>
   );
 }
+
 
 
 

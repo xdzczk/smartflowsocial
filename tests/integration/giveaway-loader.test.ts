@@ -5,6 +5,8 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
+import type { RelatedEvent } from "~/features/giveaway/types";
 // Mock global fetch
 global.fetch = vi.fn();
 
@@ -216,7 +218,8 @@ describe("Giveaway Loader", () => {
 
       // Should filter out blacklisted participants
       expect(result.relatedEvents.length).toBeLessThan(mockRelatedEvents.length);
-      expect(result.relatedEvents.find((e: any) => e.pubkey === "blacklisted-pubkey")).toBeUndefined();
+      const blacklistedEvent = result.relatedEvents.find((e: RelatedEvent) => e.pubkey === "blacklisted-pubkey");
+      expect(blacklistedEvent).toBeUndefined();
     });
 
     it("should filter participants by lud16 and totalZapped requirements", async () => {
@@ -286,7 +289,7 @@ describe("Giveaway Loader", () => {
       // The function filters participants based on lud16 and totalZapped
       // valid-pubkey has lud16 and totalZapped=10, invalid-pubkey has no lud16 and totalZapped=3
       expect(result.relatedEvents.length).toBeGreaterThanOrEqual(0);
-      const validEvent = result.relatedEvents.find((e: any) => e.pubkey === "valid-pubkey");
+      const validEvent = result.relatedEvents.find((e: RelatedEvent) => e.pubkey === "valid-pubkey");
       if (result.relatedEvents.length > 0) {
         expect(validEvent).toBeDefined();
       }
@@ -362,7 +365,7 @@ describe("Giveaway Loader", () => {
       // The function filters participants based on trust score
       // Low trust user has 50 followers (score < 40), high trust user has 200 followers (score >= 40)
       expect(result.relatedEvents.length).toBeGreaterThanOrEqual(0);
-      const highTrustEvent = result.relatedEvents.find((e: any) => e.pubkey === "high-trust-pubkey");
+      const highTrustEvent = result.relatedEvents.find((e: RelatedEvent) => e.pubkey === "high-trust-pubkey");
       if (result.relatedEvents.length > 0) {
         expect(highTrustEvent).toBeDefined();
       }

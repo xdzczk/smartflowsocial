@@ -1,7 +1,8 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
+import { json } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth/session.server";
-import { loadUploadProviderSettings } from "~/features/user/services/upload-provider.server";
+import { loadUploadProviderSettings } from "~/features/user";
 import {
   withActionErrorHandling,
   createSuccessResponse,
@@ -56,7 +57,7 @@ export const action = withActionErrorHandling(
     const mimeTypeTag = tags.find((tag: string[]) => Array.isArray(tag) && tag[0] === "m");
 
     assert(
-      urlTag && hashTag && sizeTag && urlTag[1] && hashTag[1] && sizeTag[1],
+      !!(urlTag && hashTag && sizeTag && urlTag[1] && hashTag[1] && sizeTag[1]),
       "Invalid Blossom upload data - missing required tags (url, x/ox, size)",
       {
         hasUrlTag: !!urlTag,
@@ -88,8 +89,6 @@ export const action = withActionErrorHandling(
     });
   },
 );
-
-import { json } from "@remix-run/node";
 
 // Handle preflight requests for CORS
 export async function loader() {

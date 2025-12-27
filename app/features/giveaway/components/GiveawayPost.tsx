@@ -75,7 +75,7 @@ Enjoy your memes and have a nice day!
   };
 
   const handleCopyToClipboard = () => {
-    navigator.clipboard.writeText(message);
+    void navigator.clipboard.writeText(message);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };

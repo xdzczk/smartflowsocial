@@ -110,7 +110,7 @@ export function HashtagPresetsSettings({
     setEditForm({
       name: preset.name,
       tags: preset.tags,
-      description: preset.description || "",
+      description: preset.description ?? "",
     });
     setIsEditDialogOpen(true);
   };

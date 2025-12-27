@@ -21,7 +21,7 @@ function getPrismaClient() {
 
   if (!isLocalHost) {
     if (databaseUrl.host.endsWith(".internal")) {
-      databaseUrl.host = `${FLY_REGION}.${databaseUrl.host}`;
+      databaseUrl.host = `${String(FLY_REGION ?? '')}.${databaseUrl.host}`;
     }
 
     if (!isReadReplicaRegion) {
@@ -116,7 +116,7 @@ function getPrismaClient() {
   });
   
   // connect eagerly
-  client.$connect();
+  void client.$connect();
 
   return client;
 }

@@ -23,9 +23,9 @@ export async function getRecyclableDashboardData({
   params: { queueType?: string };
   url: URL;
 }) {
-  const page = parseInt(url.searchParams.get("page") || "1");
+  const page = parseInt(url.searchParams.get("page") ?? "1");
   const limit = 50;
-  const queueType = params.queueType || "all";
+  const queueType = params.queueType ?? "all";
 
   const [{ posts, pagination }, userResult, queueTypesResult] = await Promise.all([
     getRecyclablePosts({
@@ -43,7 +43,7 @@ export async function getRecyclableDashboardData({
   }
 
   const user: UserWithHashTagPresets = userResult;
-  const queueTypes = queueTypesResult;
+  const queueTypes = Array.isArray(queueTypesResult) ? queueTypesResult : [];
 
   // Get event IDs from signedEvent.id
   const eventIds = posts
@@ -64,7 +64,9 @@ export async function getRecyclableDashboardData({
     pagination,
     stats,
     user,
-    queueTypes: queueTypes.filter((qt) => qt.isEnabled !== false),
+    queueTypes: queueTypes.filter((qt: unknown) => 
+      typeof qt === "object" && qt !== null && "isEnabled" in qt && qt.isEnabled !== false
+    ),
     selectedQueueType: queueType,
   };
 }
@@ -85,25 +87,57 @@ export async function handleRecyclablePostAction(
   }
 
   if (_action === "bulkDelete") {
-    const postIds = JSON.parse(formData.get("postIds") as string) as string[];
+    const postIdsValue = formData.get("postIds");
+    const postIdsStr = postIdsValue ? String(postIdsValue) : "[]";
+    let postIds: string[] = [];
+    try {
+      const parsed: unknown = JSON.parse(postIdsStr);
+      postIds = Array.isArray(parsed) ? parsed.filter((id: unknown): id is string => typeof id === "string") : [];
+    } catch {
+      postIds = [];
+    }
     await Promise.all(postIds.map((id: string) => deletePost({ id, userId })));
     return json({ success: true });
   }
 
   if (_action === "bulkRepost") {
-    const postIds = JSON.parse(formData.get("postIds") as string) as string[];
+    const postIdsValue = formData.get("postIds");
+    const postIdsStr = postIdsValue ? String(postIdsValue) : "[]";
+    let postIds: string[] = [];
+    try {
+      const parsed: unknown = JSON.parse(postIdsStr);
+      postIds = Array.isArray(parsed) ? parsed.filter((id: unknown): id is string => typeof id === "string") : [];
+    } catch {
+      postIds = [];
+    }
     const postsData = await getPostsByIds({ ids: postIds, userId });
     return json({ repostData: postsData });
   }
 
   if (_action === "bulkScheduledRepost") {
-    const postIds = JSON.parse(formData.get("postIds") as string) as string[];
+    const postIdsValue = formData.get("postIds");
+    const postIdsStr = postIdsValue ? String(postIdsValue) : "[]";
+    let postIds: string[] = [];
+    try {
+      const parsed: unknown = JSON.parse(postIdsStr);
+      postIds = Array.isArray(parsed) ? parsed.filter((id: unknown): id is string => typeof id === "string") : [];
+    } catch {
+      postIds = [];
+    }
     const postsData = await getPostsByIds({ ids: postIds, userId });
     return json({ scheduledRepostData: postsData });
   }
 
   if (_action === "bulkQuote") {
-    const postIds = JSON.parse(formData.get("postIds") as string) as string[];
+    const postIdsValue = formData.get("postIds");
+    const postIdsStr = postIdsValue ? String(postIdsValue) : "[]";
+    let postIds: string[] = [];
+    try {
+      const parsed: unknown = JSON.parse(postIdsStr);
+      postIds = Array.isArray(parsed) ? parsed.filter((id: unknown): id is string => typeof id === "string") : [];
+    } catch {
+      postIds = [];
+    }
     const postsData = await getPostsByIds({ ids: postIds, userId });
 
     // Transform posts data into quote post format
@@ -186,7 +220,7 @@ export async function handleRecyclablePostAction(
 
   if (_action === "quote") {
     try {
-      // Get the original post data
+      // Get the origin?? post data
       const postsData = await getPostsByIds({ ids: [postId], userId });
       if (!postsData || postsData.length === 0) {
         const { NotFoundError } = await import("~/lib/errors");
@@ -204,16 +238,21 @@ export async function handleRecyclablePostAction(
       const eventPubkey = typeof originalEvent.pubkey === "string" ? originalEvent.pubkey : String(originalEvent.pubkey);
 
       // Create quote post data for bulk posts page
+      const fileUrl = "fileUrl" in originalPost ? (Array.isArray(originalPost.fileUrl) ? originalPost.fileUrl[0] : typeof originalPost.fileUrl === "string" ? originalPost.fileUrl : "") : "";
+      const queueTypeName = originalPost.queueType && typeof originalPost.queueType === "object" && "name" in originalPost.queueType && typeof originalPost.queueType.name === "string" ? originalPost.queueType.name : "unassigned";
+      const caption = "caption" in originalPost && typeof originalPost.caption === "string" ? originalPost.caption : "";
+      const originalPostId = "id" in originalPost && typeof originalPost.id === "string" ? originalPost.id : "";
+      
       const quotePostData = {
         caption: "", // Empty caption - user can add content
-        fileUrl: originalPost.fileUrl || "",
-        queueType: originalPost.queueType?.name ?? "unassigned",
+        fileUrl,
+        queueType: queueTypeName,
         scheduledFor: "",
-        originalPostId: originalPost.id,
+        originalPostId: originalPostId,
         originalEventId: eventId,
         originalEventPubkey: eventPubkey,
         isQuotePost: true,
-        originalCaption: originalPost.caption || "",
+        originalCaption: caption,
       };
 
       return json({ quotePostData: [quotePostData] });

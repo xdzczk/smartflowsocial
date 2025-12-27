@@ -9,6 +9,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { combineContent } from "~/features/posts/combined.server";
 import { getPostStats } from "~/features/posts/stats.server";
+import type { PostData, LongFormPostData } from "~/features/posts/types";
 
 import { postFactory, longFormPostFactory } from "../factories";
 describe("Performance: combineContent()", () => {
@@ -17,7 +18,7 @@ describe("Performance: combineContent()", () => {
     const longforms = longFormPostFactory.many(50);
 
     const start = performance.now();
-    const result = combineContent(posts, longforms);
+    const result = combineContent(posts as PostData[], longforms as LongFormPostData[]);
     const duration = performance.now() - start;
 
     expect(result).toBeDefined();
@@ -29,7 +30,7 @@ describe("Performance: combineContent()", () => {
     const longforms = longFormPostFactory.many(500);
 
     const start = performance.now();
-    const result = combineContent(posts, longforms);
+    const result = combineContent(posts as PostData[], longforms as LongFormPostData[]);
     const duration = performance.now() - start;
 
     expect(result).toBeDefined();
@@ -41,7 +42,7 @@ describe("Performance: combineContent()", () => {
     const longforms = longFormPostFactory.many(1000);
 
     const start = performance.now();
-    const result = combineContent(posts, longforms);
+    const result = combineContent(posts as PostData[], longforms as LongFormPostData[]);
     const duration = performance.now() - start;
 
     expect(result).toBeDefined();
@@ -53,7 +54,7 @@ describe("Performance: combineContent()", () => {
     const longforms = longFormPostFactory.many(1000);
 
     const start = performance.now();
-    const result = combineContent(posts, longforms, "createdAt");
+    const result = combineContent(posts as PostData[], longforms as LongFormPostData[], "createdAt");
     const duration = performance.now() - start;
 
     expect(result).toBeDefined();
@@ -65,7 +66,7 @@ describe("Performance: combineContent()", () => {
     const longforms = longFormPostFactory.many(1000);
 
     const start = performance.now();
-    const result = combineContent(posts, longforms, "createdAt", "asc");
+    const result = combineContent(posts as PostData[], longforms as LongFormPostData[], "createdAt", "asc");
     const duration = performance.now() - start;
 
     expect(result).toBeDefined();

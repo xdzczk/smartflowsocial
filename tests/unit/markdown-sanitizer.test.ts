@@ -53,6 +53,7 @@ describe("Markdown Sanitization", () => {
     });
 
     it("should return empty string for non-string input", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Testing edge case with invalid input type
       const result = sanitizeMarkdown(123 as any);
 
       expect(result).toBe("");
@@ -283,18 +284,21 @@ describe("Markdown Sanitization", () => {
     });
 
     it("should return empty string for null input", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Testing edge case with invalid input type
       const result = extractPlainText(null as any);
 
       expect(result).toBe("");
     });
 
     it("should return empty string for undefined input", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Testing edge case with invalid input type
       const result = extractPlainText(undefined as any);
 
       expect(result).toBe("");
     });
 
     it("should return empty string for non-string input", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Testing edge case with invalid input type
       const result = extractPlainText(123 as any);
 
       expect(result).toBe("");

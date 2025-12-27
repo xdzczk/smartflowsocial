@@ -63,8 +63,8 @@ export class HashTagPresetFactory {
       id: this.options.id!,
       userId: this.options.userId!,
       name: this.options.name!,
-      tags: this.options.tags || "",
-      description: this.options.description || null,
+      tags: this.options.tags ?? "",
+      description: this.options.description ?? null,
       createdAt: this.options.createdAt || new Date(),
       updatedAt: this.options.updatedAt || new Date(),
     } as HashTagPreset;

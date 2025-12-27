@@ -47,7 +47,7 @@ export async function getEffectiveHashtags(
   // Return the hashtag preset tags assigned to this queue type
   // Use consistent unwrapped format to match other return statements
   return json({
-    hashtags: (queueType.hashTagPreset as { tags: string | null })?.tags || "",
+    hashtags: (queueType.hashTagPreset as { tags: string | null })?.tags ?? "",
   });
 }
 
@@ -71,6 +71,7 @@ export function parseEffectiveHashtagsRequest(body: unknown): {
     queueTypeId: requestBody.queueTypeId,
   };
 }
+
 
 
 

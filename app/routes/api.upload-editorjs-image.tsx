@@ -12,10 +12,9 @@ import {
   getImageInfo,
 } from "~/features/upload/image-resize.server";
 import { uploadEditorJSImage } from "~/features/upload/s3.server";
-import { loadUploadProviderSettings } from "~/features/user/services/upload-provider.server";
+import { loadUploadProviderSettings } from "~/features/user";
 import {
   withActionErrorHandling,
-  createSuccessResponse,
   assert,
 } from "~/lib/error-handler.server";
 import {

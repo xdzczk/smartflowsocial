@@ -62,7 +62,7 @@ export function useNewLongFormState({ userTags }: UseNewLongFormStateProps) {
 
       if (response.ok) {
         const data = (await response.json()) as { hashtags?: string };
-        setDisplayedHashtags(data.hashtags || userTags || "");
+        setDisplayedHashtags((data.hashtags ?? userTags) || "");
       } else {
         setDisplayedHashtags(userTags || "");
       }

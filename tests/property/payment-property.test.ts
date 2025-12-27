@@ -27,7 +27,7 @@ describe("Property-Based Tests: Payment Processing", () => {
         fc.property(
           fc.float({ min: Math.fround(0.01), max: Math.fround(10000) }), // USD amounts
           fc.float({ min: Math.fround(0.01), max: Math.fround(10000) }),
-          (usd1, usd2) => {
+          (usd1: number, usd2: number) => {
             if (usd1 < usd2) {
               const sats1 = Math.round((usd1 / 2500) * 100000000);
               const sats2 = Math.round((usd2 / 2500) * 100000000);
@@ -46,8 +46,8 @@ describe("Property-Based Tests: Payment Processing", () => {
       fc.assert(
         fc.property(
           fc.float({ min: Math.fround(0.01), max: Math.fround(10000) })
-            .filter(amount => Number.isFinite(amount) && amount > 0), // Filter out NaN, Infinity, and zero
-          (usdAmount) => {
+            .filter((amount: number) => Number.isFinite(amount) && amount > 0), // Filter out NaN, Infinity, and zero
+          (usdAmount: number) => {
             const sats = Math.round((usdAmount / 2500) * 100000000);
             const backToUsd = (sats / 100000000) * 2500;
             // Allow 1% rounding error
@@ -65,7 +65,7 @@ describe("Property-Based Tests: Payment Processing", () => {
       fc.assert(
         fc.property(
           fc.constant(0),
-          (usdAmount) => {
+          (usdAmount: number) => {
             const sats = Math.round((usdAmount / 2500) * 100000000);
             return sats === 0;
           },
@@ -79,7 +79,7 @@ describe("Property-Based Tests: Payment Processing", () => {
       fc.assert(
         fc.property(
           fc.float({ min: 0, max: Math.fround(10000) }),
-          (usdAmount) => {
+          (usdAmount: number) => {
             const sats = Math.round((usdAmount / 2500) * 100000000);
             return sats >= 0;
           },
@@ -94,7 +94,7 @@ describe("Property-Based Tests: Payment Processing", () => {
       fc.assert(
         fc.property(
           fc.integer({ min: 0, max: 1000000000 }), // Sat amounts
-          (sats) => {
+          (sats: number) => {
             return Number.isInteger(sats) && sats >= 0;
           },
         ),
@@ -106,7 +106,7 @@ describe("Property-Based Tests: Payment Processing", () => {
       fc.assert(
         fc.property(
           fc.float({ min: Math.fround(0.00000001), max: Math.fround(0.01) }), // Very small USD amounts
-          (usdAmount) => {
+          (usdAmount: number) => {
             const sats = Math.max(1, Math.round((usdAmount / 2500) * 100000000));
             return sats >= 1;
           },
@@ -119,7 +119,7 @@ describe("Property-Based Tests: Payment Processing", () => {
       fc.assert(
         fc.property(
           fc.integer({ min: 0, max: Math.floor(Number.MAX_SAFE_INTEGER / 2) }),
-          (sats) => {
+          (sats: number) => {
             // Should not throw or produce invalid values
             const isValid = Number.isFinite(sats) && sats >= 0;
             return isValid;
@@ -159,7 +159,7 @@ describe("Property-Based Tests: Payment Processing", () => {
         fc.property(
           fc.constantFrom("PENDING", "COMPLETED", "EXPIRED", "FAILED"),
           fc.constantFrom("PENDING", "COMPLETED", "EXPIRED", "FAILED"),
-          (from, to) => {
+          (from: string, to: string) => {
             const isValid = isValidTransition(from, to);
             
             // Property: The validation logic correctly implements the transition rules

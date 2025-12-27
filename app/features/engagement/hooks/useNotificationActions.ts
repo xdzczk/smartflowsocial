@@ -263,13 +263,13 @@ export function useNotificationActions({
             const data = await response.json() as { events?: NotificationEvent[]; metadata?: Record<string, unknown> };
 
             // Filter to only show direct replies
-            const directReplies = (data.events || []).filter((event: NotificationEvent) => {
+            const directReplies = (data.events ?? []).filter((event: NotificationEvent) => {
                 const eTags = event.tags?.filter((tag: NostrTag) => tag[0] === "e") || [];
                 return eTags.some((tag: NostrTag) => tag[1] === notification.eventId);
             });
 
             setChildReplies(directReplies);
-            setChildMetadata(data.metadata || {});
+            setChildMetadata(data.metadata ?? {});
         } catch (error) {
             const { handleAsyncErrorWithMessage } = await import("~/lib/error-handler.client");
             handleAsyncErrorWithMessage(

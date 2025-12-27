@@ -19,6 +19,8 @@
 export type {
   EngagementData,
   NotificationItem,
+  GroupedNotification,
+  EventStats,
 } from "./types";
 
 // ============================================================================
@@ -44,6 +46,7 @@ export {
 
 export {
   loadEngagementData,
+  loadEngagementFeedData,
 } from "./services/engagement-loader.server";
 
 // ============================================================================
@@ -54,6 +57,18 @@ export {
   calculateTrustScore,
 } from "./trustScore";
 
+// ============================================================================
+// Components (Public API)
+// ============================================================================
 
+export { MutedListSettings } from "./components/MutedListSettings";
+export { EngagementContent } from "./components/EngagementContent";
+export { EngagementHeader } from "./components/EngagementHeader";
+export { EngagementTabs } from "./components/EngagementTabs";
 
+// ============================================================================
+// Hooks (Public API)
+// ============================================================================
+
+export { useEngagementState } from "./hooks/useEngagementState";
 

@@ -39,3 +39,19 @@ export {
   loadGiveawayData,
 } from "./giveaway-loader.server";
 
+// ============================================================================
+// Components (Public API)
+// ============================================================================
+
+export { GiveawayBlacklistSettings } from "./components/GiveawayBlacklistSettings";
+export { GiveawayFilters } from "./components/GiveawayFilters";
+export { GiveawayQueueTabs } from "./components/GiveawayQueueTabs";
+export { default as GiveawayRandomizer } from "./components/GiveawayRandomizer";
+export { GiveawayTable } from "./components/GiveawayTable";
+
+// ============================================================================
+// Hooks (Public API)
+// ============================================================================
+
+export { useGiveawayState } from "./hooks/useGiveawayState";
+

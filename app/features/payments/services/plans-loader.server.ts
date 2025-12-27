@@ -45,7 +45,7 @@ export async function loadPlansData(request: Request) {
       name: plan.name,
       price,
       period,
-      description: plan.description || "",
+      description: plan.description ?? "",
       features: {
         basicScheduling: features?.basicScheduling ?? plan.enableBasicScheduling,
         multipleQueues: features?.multipleQueues ?? plan.enableMultipleQueues,

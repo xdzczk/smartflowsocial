@@ -13,7 +13,6 @@ import {
   assert,
 } from "~/lib/error-handler.server";
 import {
-  ValidationError,
   ExternalServiceError,
 } from "~/lib/errors";
 

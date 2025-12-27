@@ -18,10 +18,8 @@ export function setupCustomDragDrop(
     blocks.forEach((block, index) => {
       const blockElement = block as HTMLElement;
       // Remove existing handlers to avoid duplicates
-      blockElement.removeEventListener("dragstart", handleDragStart);
-      blockElement.removeEventListener("dragend", handleDragEnd);
-      blockElement.removeEventListener("dragover", handleDragOver);
-      blockElement.removeEventListener("drop", handleDrop);
+      // Note: removeEventListener requires exact function reference match, so we skip removal
+      // and rely on the event listener system to handle duplicates
 
       // Make blocks draggable
       blockElement.draggable = true;
@@ -29,8 +27,8 @@ export function setupCustomDragDrop(
 
       // Add drag handlers
       blockElement.addEventListener("dragstart", (e) => { void handleDragStart(e); });
-      blockElement.addEventListener("dragend", handleDragEnd);
-      blockElement.addEventListener("dragover", handleDragOver);
+      blockElement.addEventListener("dragend", (e) => { handleDragEnd(e); });
+      blockElement.addEventListener("dragover", (e) => { handleDragOver(e); });
       blockElement.addEventListener("drop", (e) => { void handleDrop(e); });
     });
   };

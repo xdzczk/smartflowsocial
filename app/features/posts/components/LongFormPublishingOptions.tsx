@@ -48,7 +48,7 @@ export function LongFormPublishingOptions({
     hashTagPresets,
     useHashtagPresets,
     selectedHashtagPresetId,
-    selectedHashtags,
+    selectedHashtags: _selectedHashtags,
     onHashtagPresetChange,
     onUseHashtagPresetsChange,
 }: LongFormPublishingOptionsProps) {
@@ -146,7 +146,7 @@ export function LongFormPublishingOptions({
             <input
                 type="hidden"
                 name="hashTagPresetId"
-                value={selectedHashtagPresetId || ""}
+                value={selectedHashtagPresetId ?? ""}
             />
 
             {/* Schedule Controls */}

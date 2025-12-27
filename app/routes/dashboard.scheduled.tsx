@@ -7,22 +7,31 @@ import {
 import MediaModal from "~/components/ui/MediaModal";
 import { requireUserId } from "~/features/auth/session.server";
 import { requireFeatureAccess, requireAnySubscription } from "~/features/payments/subscriptions.server";
-import AllContentListing from "~/features/posts/components/AllContentListing";
-import { BulkDeleteBar } from "~/features/posts/components/BulkDeleteBar";
-import { DashboardHeader } from "~/features/posts/components/DashboardHeader";
-import { EditPostModal } from "~/features/posts/components/EditPostModal";
-import LongFormDetailsModal from "~/features/posts/components/LongFormDetailsModal";
-import LongFormListing from "~/features/posts/components/LongFormListing";
-import PostDetailsModal from "~/features/posts/components/PostDetailsModal";
-import { PostsSearch } from "~/features/posts/components/PostsSearch";
-import PostTypeTabs from "~/features/posts/components/PostTypeTabs";
-import QueueSelectionTabs from "~/features/posts/components/QueueSelectionTabs";
-import { ScheduledPostsTable } from "~/features/posts/components/ScheduledPostsTable";
-import { SimpleRescheduleModal } from "~/features/posts/components/SimpleRescheduleModal";
-import { useScheduledState } from "~/features/posts/hooks/useScheduledState";
-import { handleScheduledAction } from "~/features/posts/services/scheduled-action.server";
-import { loadScheduledData } from "~/features/posts/services/scheduled-loader.server";
+import {
+  AllContentListing,
+  BulkDeleteBar,
+  DashboardHeader,
+  EditPostModal,
+  LongFormDetailsModal,
+  LongFormListing,
+  PostDetailsModal,
+  PostsSearch,
+  PostTypeTabs,
+  QueueSelectionTabs,
+  ScheduledPostsTable,
+  SimpleRescheduleModal,
+  useScheduledState,
+  handleScheduledAction,
+  loadScheduledData,
+  type PostData,
+  type LongFormPostData,
+  type CombinedContent,
+  type QueueType,
+  type UserData,
+  convertJsonValueToScheduleConfig,
+} from "~/features/posts";
 import { withErrorHandling, withActionErrorHandling } from "~/lib/error-handler.server";
+import type { LongFormPost } from "~/models/longformpost.server";
 
 async function loaderImpl({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
@@ -56,18 +65,45 @@ type LoaderData = Awaited<ReturnType<typeof loaderImpl>>;
 
 export default function ScheduledPosts() {
   const data = useLoaderData<LoaderData>();
-  const {
-    posts,
-    longformPosts,
-    allContent,
-    user,
-    queueTypes,
-    hashTagPresets,
-  } = data;
+  const postsRaw = "posts" in data && Array.isArray(data.posts) ? data.posts : [];
+  const longformPostsRaw = "longformPosts" in data && Array.isArray(data.longformPosts) ? data.longformPosts : [];
+  const allContentRaw = "allContent" in data && Array.isArray(data.allContent) ? data.allContent : [];
+  const user = "user" in data ? data.user : null;
+  const queueTypesRaw = "queueTypes" in data && Array.isArray(data.queueTypes) ? data.queueTypes : [];
+  const hashTagPresets = "hashTagPresets" in data && Array.isArray(data.hashTagPresets) ? data.hashTagPresets : [];
   const [searchParams] = useSearchParams();
 
   // Get current tab from URL params - default to "all"
   const currentTab = searchParams.get("tab") || "all";
+
+  // Type assertions for Remix JsonifyObject serialization
+  const posts: PostData[] = Array.isArray(postsRaw) ? postsRaw as unknown as PostData[] : [];
+  const longformPosts: LongFormPostData[] = Array.isArray(longformPostsRaw) ? longformPostsRaw as unknown as LongFormPostData[] : [];
+  const allContent: CombinedContent[] = Array.isArray(allContentRaw) ? allContentRaw as unknown as CombinedContent[] : [];
+  const queueTypes: QueueType[] = Array.isArray(queueTypesRaw) ? queueTypesRaw.map((qt: unknown) => {
+    if (qt && typeof qt === "object" && qt !== null && "id" in qt && "name" in qt) {
+      const q = qt as { id?: unknown; name?: unknown; color?: unknown; scheduleType?: unknown; scheduleConfig?: unknown; isEnabled?: unknown; userId?: unknown };
+      const id = typeof q.id === "string" ? q.id : String(q.id ?? "");
+      const name = typeof q.name === "string" ? q.name : String(q.name ?? "");
+      const color = q.color !== null && q.color !== undefined ? (typeof q.color === "string" ? q.color : String(q.color)) : null;
+      const scheduleType = typeof q.scheduleType === "string" && (q.scheduleType === "INTERVAL" || q.scheduleType === "FIXED_SLOTS") ? q.scheduleType : undefined;
+      const scheduleConfig = convertJsonValueToScheduleConfig(q.scheduleConfig);
+      const isEnabled = typeof q.isEnabled === "boolean" ? q.isEnabled : q.isEnabled !== false;
+      const userId = typeof q.userId === "string" ? q.userId : "";
+      const result: QueueType = {
+        id,
+        name,
+        color,
+        description: undefined,
+        scheduleType,
+        scheduleConfig,
+        isEnabled,
+        userId,
+      };
+      return result;
+    }
+    return null;
+  }).filter((qt): qt is QueueType => qt !== null) : [];
 
   const {
     sortConfig,
@@ -101,7 +137,7 @@ export default function ScheduledPosts() {
     handleModalSuccess,
   } = useScheduledState({
     scheduledPosts: posts,
-    userTimezone: user?.timezone,
+    userTimezone: user?.timezone ?? undefined,
     allContent,
     currentTab,
   });
@@ -142,12 +178,12 @@ export default function ScheduledPosts() {
           type="scheduled"
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
-          userTimezone={user?.timezone}
+          userTimezone={user?.timezone ?? undefined}
           onPostSelect={(content) => {
             if (content.type === "post") {
-              setSelectedPost(content.originalData as unknown as { id: string; content?: string; caption?: string; fileUrl?: string[]; queueType?: { name: string } | null; scheduledFor?: string; signedEvent?: unknown } | null);
+              setSelectedPost(content.originalData as PostData);
             } else {
-              setSelectedLongFormPost(content.originalData as unknown as { id: string; title?: string; content?: string; scheduledFor?: string; queueType?: { name: string } | null; signedEvent?: unknown } | null);
+              setSelectedLongFormPost(content.originalData as LongFormPostData);
             }
           }}
           selectedItems={selectedPosts}
@@ -156,8 +192,8 @@ export default function ScheduledPosts() {
           showBulkActions={true}
           onBulkDelete={handleBulkDelete}
           bulkDeleteState={bulkDeleteFetcher.state}
-          onEditPost={(post) => handleEditPost(post as unknown as { id: string; content?: string; caption?: string; fileUrl?: string[] } | null)}
-          onReschedulePost={(post) => handleReschedulePost(post as unknown as { id: string; scheduledFor?: string; fileUrl?: string[] } | null)}
+          onEditPost={handleEditPost}
+          onReschedulePost={handleReschedulePost}
         />
       ) : currentTab === "posts" ? (
         <div>
@@ -170,24 +206,38 @@ export default function ScheduledPosts() {
           />
 
           <ScheduledPostsTable
-            posts={filteredPosts as unknown as { id: string; caption?: string; fileUrl?: string[]; scheduledFor?: string; queueType?: string; signedEvent?: unknown; nostrEvent?: unknown; postType?: string }[]}
+            posts={filteredPosts.map((post): { id: string; caption?: string | null; scheduledFor: string; fileUrl?: string[] | null; queueType?: { name: string; color?: string | null } | null; repost?: boolean; isQuotedPost?: boolean; isPostSigned?: boolean } => ({
+              id: post.id,
+              caption: post.caption ?? null,
+              scheduledFor: (() => {
+                const scheduledForValue: unknown = post.scheduledFor;
+                if (typeof scheduledForValue === "string") return scheduledForValue;
+                if (scheduledForValue instanceof Date) return scheduledForValue.toISOString();
+                return "";
+              })(),
+              fileUrl: Array.isArray(post.fileUrl) ? post.fileUrl : post.fileUrl ? [post.fileUrl] : null,
+              queueType: post.queueType ? { name: post.queueType.name, color: post.queueType.color ?? null } : null,
+              repost: post.repost ?? false,
+              isQuotedPost: post.isQuotedPost ?? false,
+              isPostSigned: post.signedEvent ? true : false,
+            }))}
             sortConfig={sortConfig}
             onRequestSort={requestSort}
             selectedPosts={selectedPosts}
             onToggleSelection={togglePostSelection}
             onToggleSelectAll={toggleSelectAll}
             countdowns={countdowns}
-            userTimezone={user?.timezone}
-            onPostClick={(post) => setSelectedPost(post as unknown as { id: string; caption?: string; fileUrl?: string[]; scheduledFor?: string; signedEvent?: unknown } | null)}
-            onEditPost={(post) => handleEditPost(post as unknown as { id: string; content?: string; caption?: string; fileUrl?: string[] } | null)}
-            onReschedulePost={(post) => handleReschedulePost(post as unknown as { id: string; scheduledFor?: string; fileUrl?: string[] } | null)}
+            userTimezone={user?.timezone ?? undefined}
+            onPostClick={(post) => setSelectedPost(post as unknown as PostData)}
+            onEditPost={(post) => handleEditPost(post as PostData | LongFormPostData)}
+            onReschedulePost={(post) => handleReschedulePost(post as PostData | LongFormPostData)}
             onMediaClick={handleMediaClick}
             bulkDeleteState={bulkDeleteFetcher.state}
           />
 
           {selectedPost ? (
             <PostDetailsModal
-              post={selectedPost as unknown as { id: string; caption?: string; fileUrl?: string[]; scheduledFor?: string; signedEvent?: unknown; queueType?: { name: string } | null }}
+              post={selectedPost}
               onClose={() => setSelectedPost(null)}
               showSignedEvent={true}
               type="scheduled"
@@ -207,23 +257,23 @@ export default function ScheduledPosts() {
         </div>
       ) : (
         <LongFormListing
-          posts={longformPosts}
+          posts={longformPosts as unknown as LongFormPost[]}
           type="scheduled"
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
-          userTimezone={user?.timezone}
+          userTimezone={user?.timezone ?? undefined}
           onPostSelect={(post) => {
-            setSelectedLongFormPost(post as unknown as { id: string; title?: string; content?: string; scheduledFor?: string; queueType?: { name: string } | null; signedEvent?: unknown } | null);
+            setSelectedLongFormPost(post as unknown as LongFormPostData);
           }}
-          onEditPost={(post) => handleEditPost(post as unknown as { id: string; title?: string; content?: string } | null)}
-          onReschedulePost={(post) => handleReschedulePost(post as unknown as { id: string; scheduledFor?: string } | null)}
+          onEditPost={(post) => handleEditPost(post as PostData | LongFormPostData)}
+          onReschedulePost={(post) => handleReschedulePost(post as PostData | LongFormPostData)}
         />
       )}
 
       {/* Long Form Post Details Modal */}
       {selectedLongFormPost ? (
         <LongFormDetailsModal
-          post={selectedLongFormPost as unknown as { id: string; title?: string; content?: string; scheduledFor?: string; queueType?: { name: string } | null; signedEvent?: unknown }}
+          post={selectedLongFormPost as unknown as LongFormPost}
           onClose={() => setSelectedLongFormPost(null)}
           type="scheduled"
           showSignedEvent={true}
@@ -237,9 +287,9 @@ export default function ScheduledPosts() {
           post={postToEdit}
           onClose={handleCloseEditModal}
           onConfirm={handleModalSuccess}
-          user={user}
+          user={user ? (user as unknown as UserData) : undefined}
           queueTypes={queueTypes}
-          hashTagPresets={hashTagPresets}
+          hashTagPresets={Array.isArray(hashTagPresets) ? hashTagPresets as unknown as { id: string; name: string; tags: string; description?: string | null }[] : []}
         />
       ) : null}
 
@@ -249,7 +299,7 @@ export default function ScheduledPosts() {
           post={postToReschedule}
           onClose={handleCloseRescheduleModal}
           onConfirm={handleModalSuccess}
-          user={user}
+          user={user ? (user as unknown as UserData) : undefined}
           queueTypes={queueTypes}
         />
       ) : null}

@@ -6,8 +6,8 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
-import AssetBrowser from "~/features/assets/components/AssetBrowser";
-import type { Asset } from "~/features/assets/types";
+import { AssetBrowser, type Asset } from "~/features/assets";
+import type { EditorJSBlock } from "~/features/posts/types";
 import {
   signLongFormEvent,
   convertEditorJSToMarkdown,
@@ -77,7 +77,7 @@ export default function LongFormPost({
   onQueueTypeChange,
   onPreview,
   initialData = null,
-  isEditing = false,
+  isEditing: _isEditing = false,
   hashTagPresets = [],
   useHashtagPresets = false,
   selectedHashtagPresetId = null,
@@ -90,7 +90,7 @@ export default function LongFormPost({
   const [summary, setSummary] = useState(initialData?.summary ?? "");
   const [content, setContent] = useState(initialData?.content ?? "");
   const [customTags, setCustomTags] = useState(
-    initialData?.tags?.join(", ") || "",
+    initialData?.tags?.join(", ") ?? "",
   );
   const [showAssetBrowser, setShowAssetBrowser] = useState("");
 
@@ -160,14 +160,14 @@ export default function LongFormPost({
     if (showAssetBrowser === "cover") {
       handleCoverImageAssets(selectedAssets.map(asset => ({
         assetType: asset.assetType,
-        fileUrl: asset.fileUrl || undefined,
+        fileUrl: asset.fileUrl ?? undefined,
       })));
     } else {
       void insertAssetIntoEditor(selectedAssets.map(asset => ({
         assetType: asset.assetType,
-        fileUrl: asset.fileUrl || undefined,
-        content: asset.content || undefined,
-        title: asset.title || undefined,
+        fileUrl: asset.fileUrl ?? undefined,
+        content: asset.content ?? undefined,
+        title: asset.title ?? undefined,
       })));
     }
     setShowAssetBrowser("");
@@ -189,7 +189,7 @@ export default function LongFormPost({
       let markdownContent;
       try {
         const editorData = JSON.parse(content) as { blocks?: EditorJSBlock[] };
-        markdownContent = convertEditorJSToMarkdown(editorData);
+        markdownContent = convertEditorJSToMarkdown(editorData as { blocks: EditorJSBlock[] });
       } catch {
         markdownContent = content;
       }
@@ -346,7 +346,7 @@ export default function LongFormPost({
           uploadError={uploadError}
           uploadProvider={uploadProvider}
           uploadFetcherState={uploadFetcherState}
-          onImageUpload={handleImageUpload}
+          onImageUpload={(file) => void handleImageUpload(file)}
           onRemove={() => setImage("")}
           onOpenAssetBrowser={() => setShowAssetBrowser("cover")}
         />
@@ -448,12 +448,14 @@ export default function LongFormPost({
         <LongFormPublishingOptions
           queueTypes={queueTypes}
           selectedQueueType={selectedQueueType}
-          onQueueTypeChange={updateDisplayedHashtags}
+          onQueueTypeChange={(name) => void updateDisplayedHashtags(name)}
           scheduledFor={scheduledFor}
           onScheduledForChange={setScheduledFor}
           scheduleIntervals={scheduleIntervals}
-          onScheduleIntervalClick={handleScheduleIntervalClick}
-          onNextSlotClick={() => calculateQueueScheduleTime(selectedQueueType)}
+          onScheduleIntervalClick={(intervalHours) => void handleScheduleIntervalClick(intervalHours)}
+          onNextSlotClick={() => {
+            void calculateQueueScheduleTime(selectedQueueType);
+          }}
           hashTagPresets={hashTagPresets}
           useHashtagPresets={useHashtagPresets}
           selectedHashtagPresetId={selectedHashtagPresetId}
@@ -476,8 +478,8 @@ export default function LongFormPost({
               });
             }
           }}
-          onSchedule={() => handleSchedule("schedule")}
-          onPublish={() => handleSchedule("publish")}
+          onSchedule={() => void handleSchedule("schedule")}
+          onPublish={() => void handleSchedule("publish")}
         />
 
         {/* Asset Browser Modal */}

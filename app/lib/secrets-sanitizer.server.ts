@@ -49,7 +49,7 @@ export function sanitizeObject<T>(obj: T): T {
   }
 
   if (typeof obj === "object") {
-    const sanitized = {} as Record<string, unknown>;
+    const sanitized: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(obj)) {
       const lowerKey = key.toLowerCase();
       

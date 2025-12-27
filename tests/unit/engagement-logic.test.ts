@@ -9,7 +9,7 @@
 
 import { describe, it, expect } from "vitest";
 
-import { groupNotificationsByType } from "~/features/engagement/engagement.server";
+import { groupNotificationsByType, type Notification } from "~/features/engagement/engagement.server";
 import {
   calculateTrustScore,
   getTrustLevel,
@@ -26,7 +26,7 @@ describe("Engagement Logic Unit Tests", () => {
         { type: "reply", id: "1", content: "reply content", eventId: "e1", createdAt: 1000, pubkey: "p1", originalEventId: "o1" },
         { type: "mention", id: "2", content: "mention content", eventId: "e2", createdAt: 1000, pubkey: "p2", originalEventId: "o1" },
         { type: "zap", id: "3", content: "", eventId: "e3", createdAt: 1000, senderPubkey: "p3", receiverPubkey: "p4", amountSats: 100, originalEventId: "o1" },
-      ] as unknown as { type: string; id: string; [key: string]: unknown }[];
+      ] as Notification[];
 
       const grouped = groupNotificationsByType(notifications);
 
@@ -39,7 +39,7 @@ describe("Engagement Logic Unit Tests", () => {
       const notifications = [
         { type: "mention", id: "1", content: "tagged you", eventId: "e1", createdAt: 1000, pubkey: "p1", originalEventId: "o1" },
         { type: "mention", id: "2", content: "also tagged you", eventId: "e2", createdAt: 1000, pubkey: "p2", originalEventId: "o1" },
-      ] as unknown as { type: string; id: string; [key: string]: unknown }[];
+      ] as Notification[];
 
       const grouped = groupNotificationsByType(notifications);
 
@@ -50,7 +50,7 @@ describe("Engagement Logic Unit Tests", () => {
       const notifications = [
         { type: "zap", id: "1", content: "", eventId: "e1", createdAt: 1000, senderPubkey: "abc123", receiverPubkey: "p1", amountSats: 1000, originalEventId: "o1" },
         { type: "zap", id: "2", content: "", eventId: "e2", createdAt: 1000, senderPubkey: "def456", receiverPubkey: "p1", amountSats: 5000, originalEventId: "o1" },
-      ] as unknown as { type: string; id: string; [key: string]: unknown }[];
+      ] as Notification[];
 
       const grouped = groupNotificationsByType(notifications);
 
@@ -60,7 +60,7 @@ describe("Engagement Logic Unit Tests", () => {
     it("should correctly categorize quote reposts", () => {
       const notifications = [
         { type: "quote", id: "1", content: "quoted your post", eventId: "e1", createdAt: 1000, pubkey: "p1", originalEventId: "o1" },
-      ] as unknown as { type: string; id: string; [key: string]: unknown }[];
+      ] as Notification[];
 
       const grouped = groupNotificationsByType(notifications);
 

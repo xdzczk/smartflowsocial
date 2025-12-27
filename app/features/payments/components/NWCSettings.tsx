@@ -107,7 +107,7 @@ export function NWCSettings({
                     variant="ghost"
                     size="sm"
                     onClick={() => {
-                      navigator.clipboard.writeText(maskedNwcString);
+                      void navigator.clipboard.writeText(maskedNwcString);
                     }}
                     className="ml-2 h-6 px-2 text-xs"
                   >

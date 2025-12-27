@@ -5,7 +5,7 @@ This script automatically fixes common ESLint errors in the codebase.
 ## Usage
 
 ```bash
-npm run lint:fix
+pnpm lint:fix
 ```
 
 Or directly:
@@ -38,8 +38,24 @@ The script focuses on **safe, automatic fixes**. Some errors may require manual 
 After the script completes, check remaining errors:
 
 ```bash
-npm run lint
+pnpm lint
 ```
 
 The script will report how many errors and warnings remain.
+
+## Analysis Tools
+
+After running `pnpm lint`, you can analyze the results:
+
+```bash
+# See breakdown by location (production vs tests/scripts)
+node scripts/analyze-eslint-errors.js
+
+# See breakdown by error type (top issues)
+node scripts/analyze-error-types.js
+```
+
+## Fix Plan
+
+See [docs/eslint-fix-plan.md](../../docs/eslint-fix-plan.md) for a detailed prioritized fix plan for production code issues.
 

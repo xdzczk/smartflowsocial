@@ -27,7 +27,7 @@ describe("Rate Limiting", () => {
       ip: "127.0.0.1",
       socket: {
         remoteAddress: "127.0.0.1",
-      } as any,
+      } as { remoteAddress?: string },
       path: "/api/test",
       method: "GET",
     };

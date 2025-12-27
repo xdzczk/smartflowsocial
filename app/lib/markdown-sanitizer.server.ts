@@ -1,5 +1,5 @@
 import { marked } from "marked";
-const ALLOWED_TAGS = [
+const _ALLOWED_TAGS = [
   "p",
   "br",
   "strong",
@@ -100,7 +100,7 @@ export function sanitizeMarkdown(markdown: string): string {
   }
 
   // Type guard for marked return values
-  const ensureString = (value: unknown): string => {
+  const _ensureString = (value: unknown): string => {
     if (typeof value === "string") {
       return value;
     }
@@ -134,7 +134,7 @@ export function sanitizeMarkdown(markdown: string): string {
 
     html = html.replace(
       /<img\s+([^>]*?)src=["']([^"']*?)["']([^>]*?)>/gi,
-      (match, before, src, after) => {
+      (match, before, src, _after) => {
         const srcStr = typeof src === "string" ? src : String(src ?? "");
         const sanitizedSrc = sanitizeAttribute("img", "src", srcStr);
         if (!sanitizedSrc) {
@@ -152,7 +152,7 @@ export function sanitizeMarkdown(markdown: string): string {
       /<pre><code(?: class="language-([^"]*)")?>([\s\S]*?)<\/code><\/pre>/gi,
       (match, lang, code) => {
         const codeStr = typeof code === "string" ? code : String(code ?? "");
-        const langStr = typeof lang === "string" ? lang : String(lang ?? "");
+        const _langStr = typeof lang === "string" ? lang : String(lang ?? "");
         // Decode HTML entities that marked might have added, then escape properly
         const decodedCode = codeStr
           .replace(/&amp;/g, "&")
@@ -171,7 +171,7 @@ export function sanitizeMarkdown(markdown: string): string {
           .replace(/'/g, "&#39;");
 
         if (lang) {
-          const langStr = typeof lang === "string" ? lang : String(lang);
+          const langStr = typeof lang === "string" ? lang : String(lang as unknown);
           const sanitizedLang = langStr.replace(/[^a-zA-Z0-9-_]/g, "");
           return `<pre><code class="language-${sanitizedLang}">${escapedCode}</code></pre>`;
         }

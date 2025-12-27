@@ -1,12 +1,11 @@
 import { json } from "@remix-run/node";
 import type { ActionFunctionArgs } from "@remix-run/node";
 
-import { checkPaymentStatusById } from "~/features/payments/services/payment-status.server";
+import { checkPaymentStatusById } from "~/features/payments";
 import {
   withActionErrorHandling,
   assert,
 } from "~/lib/error-handler.server";
-import { ValidationError } from "~/lib/errors";
 
 export const action = withActionErrorHandling(
   async ({ request }: ActionFunctionArgs) => {

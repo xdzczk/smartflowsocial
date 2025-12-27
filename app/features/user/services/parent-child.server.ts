@@ -88,7 +88,7 @@ export async function searchUsersByProfileName(
         ? (u.nostrProfile as ProfileData)
         : null;
       const bits = extractProfileBits(profile);
-      const name = bits.name || bits.display_name || "";
+      const name = (bits.name ?? bits.display_name) ?? "";
       return {
         id: u.id,
         npub: u.npub,

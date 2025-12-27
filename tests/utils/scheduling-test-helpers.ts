@@ -16,10 +16,10 @@ export const BASE_TIME = new Date("2024-01-15T10:00:00Z"); // Monday, Jan 15, 20
  * Create a QueueType object for testing
  */
 export function createQueueType(overrides: Partial<QueueType> = {}): QueueType {
-  return {
+  const queueType: QueueType = {
     id: "queue-1",
     name: "posts",
-    scheduleType: "INTERVAL",
+    scheduleType: "INTERVAL" as QueueType["scheduleType"],
     scheduleConfig: { intervalHours: 6 },
     userId: TEST_USER_ID,
     isEnabled: true,
@@ -30,6 +30,7 @@ export function createQueueType(overrides: Partial<QueueType> = {}): QueueType {
     hashTagPresetId: null,
     ...overrides,
   };
+  return queueType;
 }
 
 /**
@@ -40,7 +41,7 @@ export function createIntervalQueueType(
   overrides: Partial<QueueType> = {},
 ): QueueType {
   return createQueueType({
-    scheduleType: "INTERVAL",
+    scheduleType: "INTERVAL" as QueueType["scheduleType"],
     scheduleConfig: { intervalHours },
     ...overrides,
   });

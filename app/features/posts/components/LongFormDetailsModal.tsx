@@ -132,7 +132,7 @@ export default function LongFormDetailsModal({
       });
 
       return (
-        html ||
+        html ??
         '<p class="text-gray-500 italic">Content could not be rendered</p>'
       );
     } catch (error) {
@@ -142,7 +142,7 @@ export default function LongFormDetailsModal({
       });
       // Try to display as plain text if JSON parsing fails
       const plainTextContent = content.replace(/<[^>]*>/g, "");
-      return `<p class="text-gray-700 dark:text-gray-300">${plainTextContent || "Content parsing failed"}</p>`;
+      return `<p class="text-gray-700 dark:text-gray-300">${plainTextContent ?? "Content parsing failed"}</p>`;
     }
   };
 
@@ -317,14 +317,14 @@ export default function LongFormDetailsModal({
                 <span>
                   {formatDate(
                     type === "posted"
-                      ? (post.publishedAt || undefined)
+                      ? (post.publishedAt ?? undefined)
                       : type === "scheduled"
-                        ? (post.scheduledFor || undefined)
+                        ? (post.scheduledFor ?? undefined)
                         : (post.createdAt || undefined),
                   )}
                 </span>
                 <span>•</span>
-                <span>{getReadingTime(post.content || undefined)}</span>
+                <span>{getReadingTime(post.content ?? undefined)}</span>
                 <span>•</span>
                 <span>via SmartFlow</span>
                 <div className="ml-auto">
@@ -346,7 +346,7 @@ export default function LongFormDetailsModal({
 
               {/* Title */}
               <h1 className="mb-6 text-3xl font-bold leading-tight text-gray-900 dark:text-white">
-                {post.title || "Untitled Article"}
+                {post.title ?? "Untitled Article"}
               </h1>
 
               {/* Cover Image */}
@@ -378,7 +378,7 @@ export default function LongFormDetailsModal({
                   color: "inherit",
                 }}
                 dangerouslySetInnerHTML={{
-                  __html: convertEditorJSToHTML(post.content || ""),
+                  __html: convertEditorJSToHTML(post.content ?? ""),
                 }}
               />
 
@@ -424,9 +424,9 @@ export default function LongFormDetailsModal({
                     <p className="mt-1 text-sm text-gray-900 dark:text-white">
                       {formatDate(
                         type === "posted"
-                          ? (post.publishedAt || undefined)
+                          ? (post.publishedAt ?? undefined)
                           : type === "scheduled"
-                            ? (post.scheduledFor || undefined)
+                            ? (post.scheduledFor ?? undefined)
                             : (post.createdAt || undefined),
                       )}
                     </p>
@@ -437,7 +437,7 @@ export default function LongFormDetailsModal({
                       Reading Time
                     </span>
                     <p className="mt-1 text-sm text-gray-900 dark:text-white">
-                      {getReadingTime(post.content || undefined)}
+                      {getReadingTime(post.content ?? undefined)}
                     </p>
                   </div>
 
@@ -493,9 +493,9 @@ export default function LongFormDetailsModal({
           <div className="flex items-center justify-between">
             <div className="flex gap-3">
               {type === "posted" &&
-                (post.nostrEventId || (post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent ? (post.signedEvent as { id?: string }).id : undefined)) ? (
+                (post.nostrEventId ?? (post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent ? (post.signedEvent as { id?: string }).id : undefined)) ? (
                 <Link
-                  to={`https://primal.net/a/${post.nostrEventId || (post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent ? (post.signedEvent as { id?: string }).id : "")}`}
+                  to={`https://primal.net/a/${String(post.nostrEventId ?? (post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent ? (post.signedEvent as { id?: string }).id : "") ?? '')}`}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:bg-gray-700 dark:hover:bg-gray-600"

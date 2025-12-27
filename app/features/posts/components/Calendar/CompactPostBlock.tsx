@@ -16,7 +16,7 @@ interface CompactPostBlockProps extends PostBlockBaseProps {
 
 export function CompactPostBlock({
   post,
-  user,
+  user: _user,
   isLongform,
   isPast,
   isDragging,
@@ -47,7 +47,7 @@ export function CompactPostBlock({
       } ${
         isDragging ? "rotate-2 opacity-50" : isPast ? "" : "hover:shadow-md"
       } ${queueColorStyle ? "" : getStatusColor(post, isLongform ?? false, isPast ?? false)} ${queueColorStyle ? "" : "border-current border-opacity-20"}`}
-      style={queueColorStyle || {}}
+      style={queueColorStyle ?? {}}
       title={`${postPreview}\n${isPast ? "Posted" : isLongform ? "Published" : "Scheduled"} for ${displayTime.toLocaleString("en-US", { timeZone: userTimezone })}\n${isPast ? "Past post (view only)" : "Click to edit"}`}
     >
       <div className="mb-1 flex items-start justify-between">
@@ -98,17 +98,17 @@ export function CompactPostBlock({
             />
             <PostBadges post={post} size="md" position="absolute-large" />
           </div>
-          {post.caption || (isLongform && post.summary) ? (
+          {post.caption ?? (isLongform && post.summary) ? (
             <p className="truncate-2-lines text-xs leading-relaxed text-gray-600 dark:text-gray-400">
               {isLongform
-                ? post.summary || postPreview
+                ? post.summary ?? postPreview
                 : postPreview}
             </p>
           ) : null}
         </div>
       ) : (
         <p className="truncate-2-lines text-xs leading-relaxed">
-          {isLongform ? post.summary || postPreview : postPreview}
+          {isLongform ? post.summary ?? postPreview : postPreview}
         </p>
       )}
     </div>

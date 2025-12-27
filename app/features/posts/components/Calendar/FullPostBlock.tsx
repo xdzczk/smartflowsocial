@@ -17,7 +17,7 @@ interface FullPostBlockProps extends PostBlockBaseProps {
 
 export function FullPostBlock({
   post,
-  user,
+  user: _user,
   isLongform,
   isPast,
   isDragging,
@@ -49,7 +49,7 @@ export function FullPostBlock({
       } ${
         isDragging ? "rotate-2 opacity-50" : isPast ? "" : "hover:shadow-lg"
       } ${queueColorStyle ? "" : getStatusColor(post, isLongform ?? false, isPast ?? false)} ${queueColorStyle ? "" : "border-current border-opacity-20"}`}
-      style={queueColorStyle || {}}
+      style={queueColorStyle ?? {}}
     >
       <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center space-x-2">
@@ -108,7 +108,7 @@ export function FullPostBlock({
       ) : null}
 
       <p className="text-sm text-gray-600 dark:text-gray-300">
-        {isLongform ? post.summary || postPreview : postPreview}
+        {isLongform ? post.summary ?? postPreview : postPreview}
       </p>
 
       {!isLongform &&

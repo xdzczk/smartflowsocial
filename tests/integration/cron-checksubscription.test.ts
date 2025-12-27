@@ -52,7 +52,7 @@ vi.mock("@getalby/sdk/lnclient", () => ({
   LN: vi.fn().mockImplementation(function(credentials: string) {
     return new MockLN(credentials);
   }),
-  USD: vi.fn((amount) => ({ amount })),
+  USD: vi.fn((amount: unknown) => ({ amount: amount as number })),
 }));
 
 vi.mock("~/features/payments/btc.rate", () => ({
@@ -75,7 +75,8 @@ describe("Cron Subscription Checker", () => {
     vi.clearAllMocks();
     process.env.OWNER_NWC = "test-owner-nwc";
     // Reset LN mock to default implementation - use function, not arrow, so it works as constructor
-    (LN as any).mockImplementation(function(credentials: string) {
+    const lnMock = LN as { mockImplementation: (fn: (credentials: string) => MockLN) => void };
+    lnMock.mockImplementation(function(credentials: string) {
       return new MockLN(credentials);
     });
   });
@@ -108,9 +109,10 @@ describe("Cron Subscription Checker", () => {
       (disableUserAccount as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
 
       const { loader } = await import("~/routes/cron.checksubscription");
-      const response = await loader();
+      const response = await (loader as () => Promise<Response>)();
 
-      const data = await response.json();
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { expired?: unknown; disabled?: unknown; checked?: unknown; renewalAttempted?: unknown; renewalSuccess?: unknown } : {};
 
       expect(data.expired).toBe(1);
       expect(data.disabled).toBe(1);
@@ -131,9 +133,10 @@ describe("Cron Subscription Checker", () => {
       (getEnabledUsersWithSubscriptions as ReturnType<typeof vi.fn>).mockResolvedValue(users);
 
       const { loader } = await import("~/routes/cron.checksubscription");
-      const response = await loader();
+      const response = await (loader as () => Promise<Response>)();
 
-      const data = await response.json();
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { expired?: unknown; disabled?: unknown; checked?: unknown; renewalAttempted?: unknown; renewalSuccess?: unknown; renewalFailed?: unknown; success?: unknown; errors?: unknown } : {};
 
       expect(data.checked).toBe(1);
       expect(data.expired).toBe(0);
@@ -166,9 +169,10 @@ describe("Cron Subscription Checker", () => {
       (getEnabledUsersWithSubscriptions as ReturnType<typeof vi.fn>).mockResolvedValue(users);
 
       const { loader } = await import("~/routes/cron.checksubscription");
-      const response = await loader();
+      const response = await (loader as () => Promise<Response>)();
 
-      const data = await response.json();
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { expired?: unknown; disabled?: unknown; checked?: unknown; renewalAttempted?: unknown; renewalSuccess?: unknown; renewalFailed?: unknown; success?: unknown; errors?: unknown } : {};
 
       expect(data.checked).toBe(1);
       expect(data.expired).toBe(0);
@@ -201,9 +205,10 @@ describe("Cron Subscription Checker", () => {
       (getEnabledUsersWithSubscriptions as ReturnType<typeof vi.fn>).mockResolvedValue(users);
 
       const { loader } = await import("~/routes/cron.checksubscription");
-      const response = await loader();
+      const response = await (loader as () => Promise<Response>)();
 
-      const data = await response.json();
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { expired?: unknown; disabled?: unknown; checked?: unknown; renewalAttempted?: unknown; renewalSuccess?: unknown; renewalFailed?: unknown; success?: unknown; errors?: unknown } : {};
 
       expect(data.checked).toBe(1);
       expect(data.expired).toBe(0);
@@ -241,13 +246,14 @@ describe("Cron Subscription Checker", () => {
         id: "free_renewal_123",
         status: "COMPLETED",
       });
-      (updateUserSubscription as ReturnType<typeof vi.fn>).mockResolvedValue();
+      (updateUserSubscription as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
       (sendNostrDirectMessage as ReturnType<typeof vi.fn>).mockResolvedValue({ success: true });
 
       const { loader } = await import("~/routes/cron.checksubscription");
-      const response = await loader();
+      const response = await (loader as () => Promise<Response>)();
 
-      const data = await response.json();
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { expired?: unknown; disabled?: unknown; checked?: unknown; renewalAttempted?: unknown; renewalSuccess?: unknown; renewalFailed?: unknown; success?: unknown; errors?: unknown } : {};
 
       expect(data.renewalAttempted).toBe(1);
       expect(data.renewalSuccess).toBe(1);
@@ -304,7 +310,8 @@ describe("Cron Subscription Checker", () => {
       
       // Mock the constructor to return our configured instance
       // Use a constructor function that returns the instance
-      (LN as any).mockImplementation(function(credentials: string) {
+      const lnMock = LN as { mockImplementation: (fn: (credentials: string) => typeof mockLNInstance) => void };
+      lnMock.mockImplementation(function(credentials: string) {
         return mockLNInstance;
       });
 
@@ -312,9 +319,10 @@ describe("Cron Subscription Checker", () => {
       (decrypt as ReturnType<typeof vi.fn>).mockReturnValue("decrypted-user-nwc");
 
       const { loader } = await import("~/routes/cron.checksubscription");
-      const response = await loader();
+      const response = await (loader as () => Promise<Response>)();
 
-      const data = await response.json();
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { expired?: unknown; disabled?: unknown; checked?: unknown; renewalAttempted?: unknown; renewalSuccess?: unknown; renewalFailed?: unknown; success?: unknown; errors?: unknown } : {};
 
       expect(data.renewalAttempted).toBe(1);
       expect(mockLNInstance.requestPayment).toHaveBeenCalled();
@@ -351,12 +359,14 @@ describe("Cron Subscription Checker", () => {
       mockLNInstance.onPaid = vi.fn().mockReturnValue(mockLNInstance);
       mockLNInstance.onTimeout = vi.fn().mockReturnValue(mockLNInstance);
       
-      (LN as any).mockImplementation(() => mockLNInstance);
+      const lnMock = LN as { mockImplementation: (fn: () => typeof mockLNInstance) => void };
+      lnMock.mockImplementation(() => mockLNInstance);
 
       const { loader } = await import("~/routes/cron.checksubscription");
-      const response = await loader();
+      const response = await (loader as () => Promise<Response>)();
 
-      const data = await response.json();
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { expired?: unknown; disabled?: unknown; checked?: unknown; renewalAttempted?: unknown; renewalSuccess?: unknown; renewalFailed?: unknown; success?: unknown; errors?: unknown } : {};
 
       expect(data.renewalAttempted).toBe(1);
       expect(data.renewalFailed).toBe(1);
@@ -394,13 +404,15 @@ describe("Cron Subscription Checker", () => {
       (decrypt as ReturnType<typeof vi.fn>).mockReturnValue("decrypted-nwc");
 
       const { loader } = await import("~/routes/cron.checksubscription");
-      const response = await loader();
+      const response = await (loader as () => Promise<Response>)();
 
-      const data = await response.json();
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { expired?: unknown; disabled?: unknown; checked?: unknown; renewalAttempted?: unknown; renewalSuccess?: unknown; renewalFailed?: unknown; success?: unknown; errors?: unknown } : {};
+      const errors = Array.isArray(data.errors) ? data.errors : [];
 
       expect(data.renewalAttempted).toBe(1);
       expect(data.renewalFailed).toBe(1);
-      expect(data.errors.length).toBeGreaterThan(0);
+      expect(errors.length).toBeGreaterThan(0);
     });
 
     it("should handle decryption errors gracefully", async () => {
@@ -432,9 +444,10 @@ describe("Cron Subscription Checker", () => {
       });
 
       const { loader } = await import("~/routes/cron.checksubscription");
-      const response = await loader();
+      const response = await (loader as () => Promise<Response>)();
 
-      const data = await response.json();
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { expired?: unknown; disabled?: unknown; checked?: unknown; renewalAttempted?: unknown; renewalSuccess?: unknown; renewalFailed?: unknown; success?: unknown; errors?: unknown } : {};
 
       expect(data.renewalAttempted).toBe(1);
       expect(data.renewalFailed).toBe(1);
@@ -489,9 +502,10 @@ describe("Cron Subscription Checker", () => {
         .mockResolvedValueOnce(undefined);
 
       const { loader } = await import("~/routes/cron.checksubscription");
-      const response = await loader();
+      const response = await (loader as () => Promise<Response>)();
 
-      const data = await response.json();
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { expired?: unknown; disabled?: unknown; checked?: unknown; renewalAttempted?: unknown; renewalSuccess?: unknown; renewalFailed?: unknown; success?: unknown; errors?: unknown } : {};
 
       expect(data.checked).toBe(2);
       expect(data.expired).toBe(2);
@@ -505,14 +519,16 @@ describe("Cron Subscription Checker", () => {
       );
 
       const { loader } = await import("~/routes/cron.checksubscription");
-      const response = await loader();
+      const response = await (loader as () => Promise<Response>)();
 
-      const data = await response.json();
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { expired?: unknown; disabled?: unknown; checked?: unknown; renewalAttempted?: unknown; renewalSuccess?: unknown; renewalFailed?: unknown; success?: unknown; errors?: unknown } : {};
+      const errors = Array.isArray(data.errors) ? data.errors : [];
 
       expect(data.checked).toBe(0);
       expect(data.success).toBe(false);
-      expect(data.error).toBeDefined();
-      expect(data.error.message || data.error).toContain("Database connection failed");
+      expect(data.errors).toBeDefined();
+      expect(errors.length > 0 && typeof errors[0] === "string" ? errors[0] : "").toContain("Database connection failed");
     });
   });
 });

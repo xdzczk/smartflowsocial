@@ -184,7 +184,7 @@ export default function AssetBrowser({
                         {asset.assetType === "IMAGE" ? (
                           <img
                             src={asset.fileUrl ?? undefined}
-                            alt={asset.title || "Asset"}
+                            alt={asset.title ?? "Asset"}
                             className="h-8 w-8 flex-shrink-0 rounded object-cover"
                           />
                         ) : (
@@ -205,7 +205,7 @@ export default function AssetBrowser({
                       </div>
 
                       <h3 className="truncate font-medium text-gray-900 dark:text-gray-100">
-                        {asset.title || "Untitled"}
+                        {asset.title ?? "Untitled"}
                       </h3>
 
                       {asset.assetType === "TEXT" && asset.content ? (

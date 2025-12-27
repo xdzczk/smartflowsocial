@@ -243,7 +243,7 @@ export const ErrorCodes = {
   DATABASE_ERROR: "DATABASE_ERROR",
   INTERNAL_ERROR: "INTERNAL_ERROR",
   UNKNOWN_ERROR: "UNKNOWN_ERROR",
-} as const;
+};
 
 export type ErrorCode = typeof ErrorCodes[keyof typeof ErrorCodes];
 

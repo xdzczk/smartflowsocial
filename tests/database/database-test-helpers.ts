@@ -4,9 +4,9 @@
  * Utilities for writing database-integrated tests
  */
 
-import { createMinimalFixtures, createCompleteFixtures } from "./fixtures";
 import { describe, it, beforeEach, afterEach, beforeAll, afterAll } from "vitest";
 
+import { createMinimalFixtures, createCompleteFixtures } from "./fixtures";
 import type { TestFixtures } from "./fixtures";
 import type { getTestPrisma } from "./test-db";
 import {
@@ -55,7 +55,7 @@ export function describeDatabase(
     teardown?: () => Promise<void>;
   },
 ): void {
-  const testDatabaseUrl = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL;
+  const testDatabaseUrl = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL;
   const shouldSkip = !testDatabaseUrl || process.env.SKIP_DATABASE_TESTS === "true";
 
   // Skip the entire suite if database is not configured

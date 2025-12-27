@@ -102,3 +102,31 @@ export {
   disableUserAccount,
 } from "./queries/user-queries.server";
 
+// ============================================================================
+// API Services
+// ============================================================================
+
+export {
+  loadChildrenData,
+  handleChildrenApiError,
+} from "./services/children-api.server";
+
+export {
+  loadParentData,
+  handleParentApiError,
+} from "./services/parent-api.server";
+
+export {
+  loadDashboardData,
+  handleDashboardAction,
+} from "./services/dashboard.server";
+
+export {
+  loadUploadProviderSettings,
+} from "./services/upload-provider.server";
+
+// ============================================================================
+// Components (Public API)
+// ============================================================================
+
+export { AccountsSettings } from "./components/AccountsSettings";

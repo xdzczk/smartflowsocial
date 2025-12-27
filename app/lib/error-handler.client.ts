@@ -47,7 +47,7 @@ export function logClientError(
     console[level === "error" ? "error" : level === "warning" ? "warn" : "info"](
       `${emoji} [CLIENT ${level.toUpperCase()}]`,
       errorMessage,
-      context || "",
+      context ?? "",
     );
     if (errorStack && level === "error") {
       console.error("Stack:", errorStack);

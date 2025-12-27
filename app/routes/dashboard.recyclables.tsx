@@ -6,18 +6,20 @@ import {
   requireFeatureAccess,
   requireAnySubscription,
 } from "~/features/payments/subscriptions.server";
-import PostDetailsModal from "~/features/posts/components/PostDetailsModal";
-import { RecyclablesBulkActions } from "~/features/posts/components/RecyclablesBulkActions";
-import { RecyclablesPagination } from "~/features/posts/components/RecyclablesPagination";
-import { RecyclablesQueueTabs } from "~/features/posts/components/RecyclablesQueueTabs";
-import { RecyclablesSearch } from "~/features/posts/components/RecyclablesSearch";
-import { RecyclablesTable } from "~/features/posts/components/RecyclablesTable";
-import { RecyclablesToast } from "~/features/posts/components/RecyclablesToast";
-import { useRecyclablesState } from "~/features/posts/hooks/useRecyclablesState";
 import {
+  PostDetailsModal,
+  RecyclablesBulkActions,
+  RecyclablesPagination,
+  RecyclablesQueueTabs,
+  RecyclablesSearch,
+  RecyclablesTable,
+  RecyclablesToast,
+  useRecyclablesState,
   getRecyclableDashboardData,
   handleRecyclablePostAction,
-} from "~/features/posts/posts.server";
+} from "~/features/posts";
+import type { PostData } from "~/features/posts/types";
+import type { IndividualRepostFetcherData } from "~/features/posts/hooks/useRecyclablesState";
 import { withErrorHandling, withActionErrorHandling } from "~/lib/error-handler.server";
 
 async function loaderImpl({ request, params }: LoaderFunctionArgs) {
@@ -54,14 +56,53 @@ interface RepostFetcherData {
 
 export default function RecyclablesPosts() {
   const data = useLoaderData<LoaderData>();
-  const { posts, pagination, stats, user, queueTypes } = data;
+  const posts = "posts" in data && Array.isArray(data.posts) ? data.posts : [];
+  const pagination = "pagination" in data ? data.pagination : undefined;
+  const stats = "stats" in data ? data.stats : undefined;
+  const user = "user" in data ? data.user : null;
+  const queueTypes = "queueTypes" in data && Array.isArray(data.queueTypes) ? data.queueTypes : [];
   const params = useParams();
 
   const deleteFetcher = useFetcher();
   const bulkDeleteFetcher = useFetcher();
   const repostFetcher = useFetcher<RepostFetcherData>();
-  const individualRepostFetcher = useFetcher<RepostFetcherData>();
+  const individualRepostFetcher = useFetcher<IndividualRepostFetcherData>();
 
+  // Type assertions for posts - ensure they match Post[] | PostData[]
+  const typedPosts: (PostData[] | Array<{ id: string; caption?: string | null; postedAt: Date | null; fileUrl: string[]; signedEvent: { id: string }; queueType?: { name: string; color?: string | null } | null; status?: string; [key: string]: unknown }>) = Array.isArray(posts) ? posts.map((post: unknown) => {
+    const p = post as { id: string; createdAt?: string | Date; postedAt?: string | Date | null; [key: string]: unknown };
+    return {
+      ...p,
+      createdAt: p.createdAt instanceof Date ? p.createdAt : typeof p.createdAt === "string" ? new Date(p.createdAt) : new Date(),
+      postedAt: p.postedAt instanceof Date ? p.postedAt : typeof p.postedAt === "string" ? new Date(p.postedAt) : p.postedAt === null ? null : null,
+    } as PostData;
+  }) : [];
+  
+  // Type assertions for stats - ensure it matches Stats type
+  const typedStats: Record<string, {
+    likes?: number;
+    replies?: number;
+    mentions?: number;
+    reposts?: number;
+    zaps?: number;
+    satszapped?: number;
+  }> = stats && typeof stats === "object" && !Array.isArray(stats) ? stats as Record<string, {
+    likes?: number;
+    replies?: number;
+    mentions?: number;
+    reposts?: number;
+    zaps?: number;
+    satszapped?: number;
+  }> : {};
+  
+  // Type assertion for pagination
+  const typedPagination = pagination && typeof pagination === "object" && !Array.isArray(pagination) && "total" in pagination && "pages" in pagination && "currentPage" in pagination && "limit" in pagination ? {
+    total: typeof pagination.total === "number" ? pagination.total : 0,
+    pages: typeof pagination.pages === "number" ? pagination.pages : 0,
+    currentPage: typeof pagination.currentPage === "number" ? pagination.currentPage : 1,
+    limit: typeof pagination.limit === "number" ? pagination.limit : 50,
+  } : { total: 0, pages: 0, currentPage: 1, limit: 50 };
+  
   const {
     sortConfig,
     searchTerm,
@@ -80,9 +121,9 @@ export default function RecyclablesPosts() {
     handleBulkQuote,
     setToast,
   } = useRecyclablesState({
-    posts,
-    stats,
-    user,
+    posts: typedPosts,
+    stats: typedStats,
+    user: user || null,
     repostFetcher,
     bulkDeleteFetcher,
     bulkRepostFetcher: repostFetcher,
@@ -119,12 +160,33 @@ export default function RecyclablesPosts() {
       />
 
       <RecyclablesTable
-        posts={filteredPosts as unknown as { id: string; caption?: string; fileUrl?: string[]; postedAt?: Date | string; signedEvent?: unknown }[]}
-        stats={stats}
+        posts={filteredPosts.map((post): { id: string; caption?: string | null; postedAt: Date | null; fileUrl: string[]; signedEvent: { id: string }; queueType?: { name: string; color?: string | null } | null; status?: string } => ({
+          id: post.id,
+          caption: post.caption ?? null,
+          postedAt: post.postedAt instanceof Date ? post.postedAt : typeof post.postedAt === "string" ? new Date(post.postedAt) : post.postedAt === null ? null : null,
+          fileUrl: Array.isArray(post.fileUrl) ? post.fileUrl : post.fileUrl ? [post.fileUrl] : [],
+          signedEvent: post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent ? { id: String(post.signedEvent.id) } : { id: "" },
+          queueType: post.queueType ? { name: post.queueType.name, color: post.queueType.color ?? null } : null,
+          status: typeof post.status === "string" ? post.status : undefined,
+        }))}
+        stats={typedStats}
         sortConfig={sortConfig}
         selectedPosts={selectedPosts}
         onRequestSort={requestSort}
-        onPostClick={(post) => setSelectedPost(post as unknown as { id: string; caption?: string; fileUrl?: string[]; signedEvent?: unknown } | null)}
+        onPostClick={(post) => {
+          // Find the original PostData from typedPosts array
+          const originalPostData = typedPosts.find(p => p.id === post.id);
+          if (originalPostData) {
+            // Convert to the Post format expected by useRecyclablesState
+            // useRecyclablesState expects Post with postedAt: Date | null, fileUrl: string[], signedEvent: { id: string }
+            setSelectedPost({
+              ...originalPostData,
+              postedAt: originalPostData.postedAt instanceof Date ? originalPostData.postedAt : typeof originalPostData.postedAt === "string" ? new Date(originalPostData.postedAt) : null,
+              fileUrl: Array.isArray(originalPostData.fileUrl) ? originalPostData.fileUrl : typeof originalPostData.fileUrl === "string" ? [originalPostData.fileUrl] : [],
+              signedEvent: originalPostData.signedEvent && typeof originalPostData.signedEvent === "object" && "id" in originalPostData.signedEvent ? { id: String(originalPostData.signedEvent.id) } : { id: "" },
+            });
+          }
+        }}
         onToggleSelect={togglePostSelection}
         onToggleSelectAll={toggleSelectAll}
         deleteFetcher={deleteFetcher}
@@ -132,12 +194,24 @@ export default function RecyclablesPosts() {
         bulkDeleteFetcher={bulkDeleteFetcher}
       />
 
-      <RecyclablesPagination pagination={pagination} />
+      <RecyclablesPagination pagination={typedPagination} />
 
       {selectedPost ? (
         <PostDetailsModal
-              post={selectedPost as unknown as { id: string; caption?: string; fileUrl?: string[]; signedEvent?: unknown; queueType?: { name: string } | null }}
-          stats={stats[((selectedPost && typeof selectedPost === "object" && "signedEvent" in selectedPost && selectedPost.signedEvent && typeof selectedPost.signedEvent === "object" && "id" in selectedPost.signedEvent) ? String((selectedPost.signedEvent as { id?: string }).id) : "") || ""]}
+              post={selectedPost as unknown as PostData}
+          stats={(() => {
+            const eventId = (selectedPost && typeof selectedPost === "object" && "signedEvent" in selectedPost && selectedPost.signedEvent && typeof selectedPost.signedEvent === "object" && "id" in selectedPost.signedEvent) ? String((selectedPost.signedEvent as { id?: string }).id) : "";
+            const statsEntry = typedStats[eventId];
+            // Ensure all required properties are present with defaults
+            return statsEntry ? {
+              likes: statsEntry.likes ?? 0,
+              replies: statsEntry.replies ?? 0,
+              mentions: statsEntry.mentions ?? 0,
+              reposts: statsEntry.reposts ?? 0,
+              zaps: statsEntry.zaps ?? 0,
+              satszapped: statsEntry.satszapped ?? 0,
+            } : undefined;
+          })()}
           onClose={() => setSelectedPost(null)}
           showStats={true}
           showSignedEvent={true}

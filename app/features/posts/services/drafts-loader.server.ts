@@ -5,6 +5,7 @@
 
 import { combineContent } from "~/features/posts/combined.server";
 import type { PostData, LongFormPostData } from "~/features/posts/types";
+import { convertPrismaQueueTypeToQueueType } from "~/features/posts/types";
 import {
   getDraftLongFormPosts,
 } from "~/models/longformpost.server";
@@ -39,23 +40,29 @@ export async function loadDraftsData(
   // Convert PostWithQueueType[] to PostData[] for combineContent
   const postsData: PostData[] = posts.map((post) => {
     const { queueType, ...rest } = post;
-    return {
+    const signedEventValue: PostData["signedEvent"] = post.signedEvent as PostData["signedEvent"];
+    const nostrEventValue: PostData["nostrEvent"] = post.nostrEvent as PostData["nostrEvent"];
+    const result: PostData = {
       ...rest,
-      queueType: queueType || undefined,
-      signedEvent: post.signedEvent as PostData["signedEvent"],
-      nostrEvent: post.nostrEvent as PostData["nostrEvent"],
-    } as PostData;
+      queueType: convertPrismaQueueTypeToQueueType(queueType),
+      signedEvent: signedEventValue,
+      nostrEvent: nostrEventValue,
+    };
+    return result;
   });
 
   // Convert LongFormPost[] to LongFormPostData[] for combineContent
   const longformPostsData: LongFormPostData[] = longformPosts.map((post) => {
     const { queueType, ...rest } = post;
-    return {
+    const signedEventValue: LongFormPostData["signedEvent"] = post.signedEvent as LongFormPostData["signedEvent"];
+    const nostrEventValue: LongFormPostData["nostrEvent"] = post.nostrEvent as LongFormPostData["nostrEvent"];
+    const result: LongFormPostData = {
       ...rest,
-      queueType: queueType || undefined,
-      signedEvent: post.signedEvent as LongFormPostData["signedEvent"],
-      nostrEvent: post.nostrEvent as LongFormPostData["nostrEvent"],
-    } as LongFormPostData;
+      queueType: convertPrismaQueueTypeToQueueType(queueType),
+      signedEvent: signedEventValue,
+      nostrEvent: nostrEventValue,
+    };
+    return result;
   });
 
   // Combine posts and longform posts for the "All" tab

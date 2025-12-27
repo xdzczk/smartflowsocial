@@ -63,6 +63,59 @@ export function isFixedSlotsScheduleConfig(
 }
 
 /**
+ * Converts JsonValue to ScheduleConfig
+ */
+export function convertJsonValueToScheduleConfig(
+    config: unknown
+): ScheduleConfig | undefined {
+    if (config === null || config === undefined) {
+        return undefined;
+    }
+    
+    if (typeof config !== "object") {
+        return undefined;
+    }
+    
+    const cfg = config as Record<string, unknown>;
+    
+    // Check if it's a FixedSlotsScheduleConfig
+    if (Array.isArray(cfg.slots)) {
+        return { slots: cfg.slots as string[] };
+    }
+    
+    // Check if it's an IntervalScheduleConfig
+    if ("useGlobalInterval" in cfg || "intervalHours" in cfg) {
+        return {
+            useGlobalInterval: cfg.useGlobalInterval as boolean | undefined,
+            intervalHours: cfg.intervalHours as number | undefined,
+        };
+    }
+    
+    return undefined;
+}
+
+/**
+ * Convert Prisma QueueType (with JsonValue scheduleConfig) to features QueueType (with ScheduleConfig)
+ */
+export function convertPrismaQueueTypeToQueueType(
+  prismaQueueType: { scheduleConfig: unknown } & { id: string; name: string; color?: string | null; description?: string | null; scheduleType?: string | null; isEnabled?: boolean | null; userId: string } | null | undefined
+): QueueType | undefined {
+  if (!prismaQueueType) {
+    return undefined;
+  }
+  return {
+    id: prismaQueueType.id,
+    name: prismaQueueType.name,
+    color: prismaQueueType.color ?? undefined,
+    description: prismaQueueType.description ?? undefined,
+    scheduleType: prismaQueueType.scheduleType as "INTERVAL" | "FIXED_SLOTS" | undefined,
+    scheduleConfig: convertJsonValueToScheduleConfig(prismaQueueType.scheduleConfig),
+    isEnabled: prismaQueueType.isEnabled ?? undefined,
+    userId: prismaQueueType.userId,
+  };
+}
+
+/**
  * Queue type with scheduling configuration
  */
 export interface QueueType {

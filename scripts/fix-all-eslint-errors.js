@@ -37,7 +37,7 @@ function getFilesWithErrors() {
   log('\n📋 Analyzing error distribution...', 'cyan');
   
   try {
-    const output = execSync('npm run lint 2>&1', {
+    const output = execSync('pnpm lint 2>&1', {
       cwd: PROJECT_ROOT,
       encoding: 'utf8',
     });
@@ -299,7 +299,7 @@ function main() {
   // Step 1: Run ESLint --fix globally
   log('\n🔧 Step 1: Running ESLint auto-fix...', 'cyan');
   try {
-    execSync('npm run lint -- --fix', {
+    execSync('pnpm lint -- --fix', {
       cwd: PROJECT_ROOT,
       stdio: 'inherit',
     });
@@ -338,7 +338,7 @@ function main() {
       
       // Re-run ESLint --fix after each batch
       try {
-        execSync('npm run lint -- --fix', {
+        execSync('pnpm lint -- --fix', {
           cwd: PROJECT_ROOT,
           stdio: 'ignore',
         });
@@ -353,7 +353,7 @@ function main() {
   // Step 3: Count remaining errors
   log('\n📊 Step 3: Counting remaining errors...', 'cyan');
   try {
-    const output = execSync('npm run lint 2>&1', {
+    const output = execSync('pnpm lint 2>&1', {
       cwd: PROJECT_ROOT,
       encoding: 'utf8',
     });
@@ -399,5 +399,6 @@ if (require.main === module) {
 }
 
 module.exports = { main };
+
 
 

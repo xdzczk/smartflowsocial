@@ -68,7 +68,8 @@ describe("Settings Action Handler", () => {
         });
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
-        const data = await result.json();
+        const dataRaw: unknown = await result.json();
+        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
 
         expect(updateUserTimezone).toHaveBeenCalledWith(
           TEST_USER_ID,
@@ -88,7 +89,8 @@ describe("Settings Action Handler", () => {
         });
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
-        const data = await result.json();
+        const dataRaw: unknown = await result.json();
+        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
 
         expect(updateUserRelays).toHaveBeenCalledWith(TEST_USER_ID, [
           "wss://relay1.com",
@@ -107,7 +109,8 @@ describe("Settings Action Handler", () => {
         });
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
-        const data = await result.json();
+        const dataRaw: unknown = await result.json();
+        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
 
         expect(updateUserRelays).toHaveBeenCalledWith(TEST_USER_ID, [
           "wss://relay1.com",
@@ -128,7 +131,8 @@ describe("Settings Action Handler", () => {
         });
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
-        const data = await result.json();
+        const dataRaw: unknown = await result.json();
+        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
 
         expect(updateGiveawayBlacklist).toHaveBeenCalledWith(TEST_USER_ID, [
           "npub1abc123",
@@ -145,7 +149,8 @@ describe("Settings Action Handler", () => {
         });
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
-        const data = await result.json();
+        const dataRaw: unknown = await result.json();
+        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
 
         expect(updateGiveawayBlacklist).not.toHaveBeenCalled();
         expect(result.status).toBe(400);
@@ -165,7 +170,8 @@ describe("Settings Action Handler", () => {
         });
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
-        const data = await result.json();
+        const dataRaw: unknown = await result.json();
+        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
 
         expect(updateScheduleInterval).toHaveBeenCalledWith(TEST_USER_ID, [
           "2",
@@ -183,7 +189,8 @@ describe("Settings Action Handler", () => {
         });
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
-        const data = await result.json();
+        const dataRaw: unknown = await result.json();
+        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
 
         expect(updateScheduleInterval).not.toHaveBeenCalled();
         expect(result.status).toBe(400);
@@ -207,7 +214,8 @@ describe("Settings Action Handler", () => {
         });
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
-        const data = await result.json();
+        const dataRaw: unknown = await result.json();
+        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
 
         expect(createHashTagPreset).toHaveBeenCalledWith(
           TEST_USER_ID,
@@ -226,7 +234,8 @@ describe("Settings Action Handler", () => {
         });
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
-        const data = await result.json();
+        const dataRaw: unknown = await result.json();
+        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
 
         expect(createHashTagPreset).not.toHaveBeenCalled();
         expect(result.status).toBe(400);
@@ -245,7 +254,8 @@ describe("Settings Action Handler", () => {
         });
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
-        const data = await result.json();
+        const dataRaw: unknown = await result.json();
+        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
 
         expect(createHashTagPreset).toHaveBeenCalledWith(
           TEST_USER_ID,
@@ -270,7 +280,8 @@ describe("Settings Action Handler", () => {
         });
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
-        const data = await result.json();
+        const dataRaw: unknown = await result.json();
+        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
 
         expect(updateHashTagPreset).toHaveBeenCalledWith(
           TEST_USER_ID,
@@ -291,7 +302,8 @@ describe("Settings Action Handler", () => {
         });
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
-        const data = await result.json();
+        const dataRaw: unknown = await result.json();
+        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
 
         expect(updateHashTagPreset).not.toHaveBeenCalled();
         expect(result.status).toBe(400);
@@ -311,7 +323,8 @@ describe("Settings Action Handler", () => {
         });
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
-        const data = await result.json();
+        const dataRaw: unknown = await result.json();
+        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
 
         expect(deleteHashTagPreset).toHaveBeenCalledWith(TEST_USER_ID, "preset-123");
         expect(data).toEqual({ success: true });
@@ -323,7 +336,8 @@ describe("Settings Action Handler", () => {
         });
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
-        const data = await result.json();
+        const dataRaw: unknown = await result.json();
+        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
 
         expect(deleteHashTagPreset).not.toHaveBeenCalled();
         expect(result.status).toBe(400);
@@ -350,7 +364,8 @@ describe("Settings Action Handler", () => {
         });
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
-        const data = await result.json();
+        const dataRaw: unknown = await result.json();
+        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
 
         expect(hashTagPresetExistsForUser).toHaveBeenCalledWith(
           TEST_USER_ID,
@@ -380,7 +395,8 @@ describe("Settings Action Handler", () => {
         });
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
-        const data = await result.json();
+        const dataRaw: unknown = await result.json();
+        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
 
         expect(updateQueueType).toHaveBeenCalledWith(TEST_USER_ID, {
           name: "Daily Queue",
@@ -409,7 +425,8 @@ describe("Settings Action Handler", () => {
         });
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
-        const data = await result.json();
+        const dataRaw: unknown = await result.json();
+        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
 
         expect(updateQueueType).not.toHaveBeenCalled();
         expect(result.status).toBe(403);
@@ -432,7 +449,8 @@ describe("Settings Action Handler", () => {
         });
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
-        const data = await result.json();
+        const dataRaw: unknown = await result.json();
+        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
 
         expect(updateQueueType).not.toHaveBeenCalled();
         expect(result.status).toBe(400);
@@ -452,7 +470,8 @@ describe("Settings Action Handler", () => {
         });
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
-        const data = await result.json();
+        const dataRaw: unknown = await result.json();
+        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
 
         expect(deleteQueueType).toHaveBeenCalledWith(TEST_USER_ID, "queue-123");
         expect(data).toEqual({ success: true });

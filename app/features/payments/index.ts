@@ -39,6 +39,7 @@ export {
 
 export {
   requireFeatureAccess,
+  requireAnySubscription,
   getSubscriptionData,
 } from "./subscriptions.server";
 
@@ -76,3 +77,28 @@ export {
   getBitcoinRate,
 } from "./btc.rate";
 
+// ============================================================================
+// Payment Status
+// ============================================================================
+
+export { checkPaymentStatusById } from "./services/payment-status.server";
+
+export { checkAndRenewSubscriptions } from "./services/subscription-renewal.server";
+
+// ============================================================================
+// Components (Public API)
+// ============================================================================
+
+export { NWCSettings } from "./components/NWCSettings";
+export { SubscriptionSettings } from "./components/SubscriptionSettings";
+export { ErrorMessage } from "./components/ErrorMessage";
+export { FeatureComparisonTable } from "./components/FeatureComparisonTable";
+export { InvoiceModal } from "./components/InvoiceModal";
+export { PaymentSuccessModal } from "./components/PaymentSuccessModal";
+export { PricingCard } from "./components/PricingCard";
+
+// ============================================================================
+// Hooks (Public API)
+// ============================================================================
+
+export { usePlansState } from "./hooks/usePlansState";

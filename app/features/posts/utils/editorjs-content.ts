@@ -60,7 +60,7 @@ export async function loadEditorJSContent(
       parsedContent = convertMarkdownToEditorJS(content);
     }
 
-    await editorRef.current.render(parsedContent);
+    await editorRef.current.render({ blocks: (parsedContent.blocks ?? []) as EditorJSBlock[], time: parsedContent.time, version: parsedContent.version });
     onContentChange(JSON.stringify(parsedContent));
   } catch (error) {
     const { handleAsyncError } = await import("~/lib/error-handler.client");
@@ -185,15 +185,12 @@ export async function insertAssetsIntoEditor(
         if (asset.assetType === "TEXT") {
           const textContent = asset.content || asset.title || "";
           if (textContent) {
-            const insertResult = editorRef.current.blocks.insert("paragraph", {
+            editorRef.current.blocks.insert("paragraph", {
               text: textContent,
             });
-            if (insertResult && typeof insertResult === "object" && "then" in insertResult) {
-              await insertResult;
-            }
           }
         } else if (asset.assetType === "IMAGE") {
-          const insertResult = editorRef.current.blocks.insert("image", {
+          editorRef.current.blocks.insert("image", {
             file: {
               url: asset.fileUrl,
             },
@@ -202,13 +199,11 @@ export async function insertAssetsIntoEditor(
             withBackground: false,
             stretched: false,
           });
-          if (insertResult && typeof insertResult === "object" && "then" in insertResult) {
-            await insertResult;
-          }
         }
       }
       const saveResult = editorRef.current.saver.save();
-      const updatedData = saveResult && typeof saveResult === "object" && "then" in saveResult ? await saveResult : saveResult;
+      const isPromise = saveResult !== null && saveResult !== undefined && typeof saveResult === "object" && "then" in saveResult && typeof (saveResult as { then?: unknown }).then === "function";
+      const updatedData = isPromise ? await (saveResult as Promise<unknown>) : (saveResult as unknown);
       onContentChange(JSON.stringify(updatedData));
     } catch (fallbackError) {
       const { handleAsyncError: handleFallbackError } = await import("~/lib/error-handler.client");
@@ -227,14 +222,14 @@ export function generateSummaryFromContent(content: string): string {
   if (!content) return "";
 
   try {
-    const parsed = JSON.parse(content);
+    const parsed: unknown = JSON.parse(content);
     const editorData = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as { blocks?: EditorJSBlock[] } : { blocks: [] };
     let textContent = "";
 
     if (Array.isArray(editorData.blocks)) {
-      editorData.blocks.forEach((block: EditorJSBlock) => {
+      (editorData.blocks).forEach((block: EditorJSBlock) => {
         if (block.type === "paragraph" || block.type === "header") {
-          const textValue = block.data && typeof block.data === "object" && "text" in block.data && typeof block.data.text === "string" ? block.data.text : "";
+          const textValue = block.data && typeof block.data === "object" && "text" in block.data && typeof (block.data as { text?: unknown }).text === "string" ? (block.data as { text: string }).text : "";
           textContent += textValue + " ";
         } else if (block.type === "list") {
           if (Array.isArray(block.data.items)) {

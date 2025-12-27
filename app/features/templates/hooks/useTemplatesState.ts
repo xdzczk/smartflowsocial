@@ -1,10 +1,9 @@
 import { useFetcher, useLocation } from "@remix-run/react";
 import { useState, useEffect, useRef } from "react";
 
-import type { Asset, AssetFetcher } from "~/features/assets/types";
+import { type Asset, type AssetFetcher } from "~/features/assets";
 import type { Template, ScheduleData, TemplateFetcher } from "~/features/templates/types";
-import { resizeImage } from "~/features/upload/image-resize";
-import { uploadFile, uploadMultipleFiles } from "~/features/upload/upload.client";
+import { resizeImageClient, uploadFile, uploadMultipleFiles } from "~/features/upload";
 
 interface UseTemplatesStateProps {
   searchTerm: string;
@@ -38,8 +37,10 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
     void (async () => {
       try {
         const res = await fetch("/api/user-upload-provider");
-        const data = (await res.json()) as { provider?: string };
-        setUploadProvider(data.provider);
+        const dataRaw: unknown = await res.json();
+        const data = typeof dataRaw === "object" && dataRaw !== null && !Array.isArray(dataRaw) ? dataRaw as { provider?: unknown } : {};
+        const provider = typeof data.provider === "string" ? data.provider : null;
+        setUploadProvider(provider);
       } catch (err) {
         console.error("Failed to get upload provider:", err);
       }
@@ -51,10 +52,12 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
 
   // Handle schedule data response
   useEffect(() => {
-    if (scheduleFetcher.data?.scheduleData) {
+    const fetcherData = scheduleFetcher.data;
+    const scheduleData = fetcherData && typeof fetcherData === "object" && fetcherData !== null && "scheduleData" in fetcherData ? fetcherData.scheduleData : undefined;
+    if (scheduleData && Array.isArray(scheduleData)) {
       sessionStorage.setItem(
         "repostData",
-        JSON.stringify(scheduleFetcher.data.scheduleData),
+        JSON.stringify(scheduleData),
       );
       window.location.href = "/dashboard/bulkposts?mode=recycle";
     }
@@ -62,14 +65,16 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
 
   // Handle successful asset creation
   useEffect(() => {
-    if (assetFetcher.data?.success) {
-      if (assetFetcher.data.asset) {
+    const fetcherData = assetFetcher.data;
+    if (fetcherData && typeof fetcherData === "object" && fetcherData !== null && "success" in fetcherData && fetcherData.success) {
+      if ("asset" in fetcherData && fetcherData.asset && typeof fetcherData.asset === "object" && "assetType" in fetcherData.asset) {
+        const assetType = typeof fetcherData.asset.assetType === "string" ? fetcherData.asset.assetType : "asset";
         setToastMessage(
-          `${assetFetcher.data.asset.assetType.toLowerCase()} asset created successfully!`,
+          `${assetType.toLowerCase()} asset created successfully!`,
         );
-      } else if (assetFetcher.data.assets) {
+      } else if ("assets" in fetcherData && Array.isArray(fetcherData.assets)) {
         setToastMessage(
-          `${assetFetcher.data.assets.length} image assets uploaded successfully!`,
+          `${fetcherData.assets.length} image assets uploaded successfully!`,
         );
       } else {
         setToastMessage("Asset created successfully!");
@@ -89,7 +94,7 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
     }
   }, [assetFetcher.data]);
 
-  // Asset management handlers
+  // Asset management ha??lers
   const handleAssetSelect = (assetId: string) => {
     setSelectedAssets((prev) =>
       prev.includes(assetId)
@@ -173,8 +178,8 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
     window.location.href = url.toString();
   };
 
-  const handleDeleteAsset = (e: React.MouseEvent<HTMLButtonElement>, assetId: string) => {
-    if (!confirm("Are you sure you want to delete this asset?")) {
+  const handleDeleteAsset = (e: React.MouseEvent<HTMLButtonElement>, _assetId: string) => {
+    if (!confirm("Are you sure you want to dele?? this asset?")) {
       e.preventDefault();
     }
   };
@@ -199,7 +204,7 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
       }
 
       const processedFile = file.type.startsWith("image/")
-        ? await resizeImage(file)
+        ? await resizeImageClient(file)
         : file;
 
       const uploadResult = await uploadFile(processedFile);
@@ -281,7 +286,7 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
         const processedFiles = await Promise.all(
           selectedFiles.map(async (file) => {
             if (file.type.startsWith("image/")) {
-              return await resizeImage(file);
+              return await resizeImageClient(file);
             }
             return file;
           }),

@@ -9,6 +9,16 @@
 
 import { json } from "@remix-run/node";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
+type LoaderData = {
+  selectedQueueType?: unknown;
+  scheduledPosts?: unknown;
+  scheduleIntervals?: unknown;
+  user?: unknown;
+  queueTypes?: unknown;
+  error?: { message?: string };
+};
+
 // Mock client-side dependencies FIRST (before route import)
 vi.mock("~/lib/error-handler.client", () => ({
   handleErrorSafely: vi.fn(),
@@ -88,8 +98,9 @@ describe("Calendar Loader Integration", () => {
   describe("Calendar Loader", () => {
     it("should load calendar data for authenticated user", async () => {
       const request = new Request("http://localhost:3000/dashboard/calendar");
-      const response = await loader({ request, params: {} });
-      const data = await response.json();
+      const response = await loader({ request, params: {} } as { request: Request; params: Record<string, string> });
+      const dataRaw: unknown = await response.json();
+      const data: LoaderData = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as LoaderData : {};
 
       expect(response.status).toBe(200);
       expect(requireUserId).toHaveBeenCalledWith(request);
@@ -115,11 +126,14 @@ describe("Calendar Loader Integration", () => {
       const response = await loader({ 
         request, 
         params: { queueType: "posts" } 
-      });
-      const data = await response.json();
+      } as { request: Request; params: { queueType: string } });
+      const dataRaw: unknown = await response.json();
+      const data: LoaderData = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as LoaderData : {};
+      const selectedQueueType = typeof data.selectedQueueType === "string" ? data.selectedQueueType : "";
+      const scheduledPosts = Array.isArray(data.scheduledPosts) ? data.scheduledPosts : [];
 
-      expect(data.selectedQueueType).toBe("posts");
-      expect(data.scheduledPosts).toHaveLength(2);
+      expect(selectedQueueType).toBe("posts");
+      expect(scheduledPosts).toHaveLength(2);
     });
 
     it("should filter posts by queue type when specified", async () => {
@@ -135,13 +149,19 @@ describe("Calendar Loader Integration", () => {
       const response = await loader({ 
         request, 
         params: { queueType: "posts" } 
-      });
-      const data = await response.json();
+      } as { request: Request; params: { queueType: string } });
+      const dataRaw: unknown = await response.json();
+      const data: LoaderData = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as LoaderData : {};
+      const scheduledPosts = Array.isArray(data.scheduledPosts) ? data.scheduledPosts : [];
 
       // Should filter to only posts with queueType "posts"
-      const filteredPosts = data.scheduledPosts.filter(
-        (post: any) => post.queueType?.name === "posts"
-      );
+      const filteredPosts = scheduledPosts.filter((post: unknown) => {
+        if (post && typeof post === "object" && !Array.isArray(post)) {
+          const p = post as { queueType?: { name?: string } };
+          return p.queueType?.name === "posts";
+        }
+        return false;
+      });
       expect(filteredPosts.length).toBeGreaterThan(0);
     });
 
@@ -157,11 +177,14 @@ describe("Calendar Loader Integration", () => {
       const response = await loader({ 
         request, 
         params: { queueType: "all" } 
-      });
-      const data = await response.json();
+      } as { request: Request; params: { queueType: string } });
+      const dataRaw: unknown = await response.json();
+      const data: LoaderData = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as LoaderData : {};
+      const selectedQueueType = typeof data.selectedQueueType === "string" ? data.selectedQueueType : "";
+      const scheduledPosts = Array.isArray(data.scheduledPosts) ? data.scheduledPosts : [];
 
-      expect(data.selectedQueueType).toBe("all");
-      expect(data.scheduledPosts).toHaveLength(2);
+      expect(selectedQueueType).toBe("all");
+      expect(scheduledPosts).toHaveLength(2);
     });
 
     it("should include schedule intervals from user", async () => {
@@ -174,27 +197,37 @@ describe("Calendar Loader Integration", () => {
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(userWithIntervals);
 
       const request = new Request("http://localhost:3000/dashboard/calendar");
-      const response = await loader({ request, params: {} });
-      const data = await response.json();
+      const response = await loader({ request, params: {} } as { request: Request; params: Record<string, string> });
+      const dataRaw: unknown = await response.json();
+      const data: LoaderData = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as LoaderData : {};
+      const scheduleIntervals = Array.isArray(data.scheduleIntervals) ? data.scheduleIntervals : [];
+      const user = data.user && typeof data.user === "object" && !Array.isArray(data.user) ? data.user as { timezone?: string } : {};
 
-      expect(data.scheduleIntervals).toEqual(["08:00", "12:00", "16:00", "20:00"]);
-      expect(data.user).toHaveProperty("timezone", "America/New_York");
+      expect(scheduleIntervals).toEqual(["08:00", "12:00", "16:00", "20:00"]);
+      expect(user).toHaveProperty("timezone", "America/New_York");
     });
 
     it("should filter queue types to only enabled ones", async () => {
-      const queueTypes = [
+      const mockQueueTypes = [
         { id: "1", name: "Default", isEnabled: true },
         { id: "2", name: "Disabled", isEnabled: false },
         { id: "3", name: "Marketing", isEnabled: true },
       ];
 
-      (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(queueTypes);
+      (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueTypes);
 
       const request = new Request("http://localhost:3000/dashboard/calendar");
-      const response = await loader({ request, params: {} });
-      const data = await response.json();
-
-      const enabledQueueTypes = data.queueTypes.filter((qt: any) => qt.isEnabled !== false);
+      const response = await loader({ request, params: {} } as { request: Request; params: Record<string, string> });
+      const dataRaw: unknown = await response.json();
+      const data: LoaderData = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as LoaderData : {};
+      const queueTypes = Array.isArray(data.queueTypes) ? data.queueTypes : [];
+      const enabledQueueTypes = queueTypes.filter((qt: unknown) => {
+        if (qt && typeof qt === "object" && !Array.isArray(qt)) {
+          const q = qt as { isEnabled?: boolean };
+          return q.isEnabled !== false;
+        }
+        return false;
+      });
       expect(enabledQueueTypes.length).toBeGreaterThan(0);
     });
   });
@@ -206,12 +239,15 @@ describe("Calendar Loader Integration", () => {
       );
 
       const request = new Request("http://localhost:3000/dashboard/calendar");
-      const response = await loader({ request, params: {} });
-      const data = await response.json();
+      const response = await loader({ request, params: {} } as { request: Request; params: Record<string, string> });
+      const dataRaw: unknown = await response.json();
+      const data: LoaderData = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as LoaderData : {};
+      const error = data.error && typeof data.error === "object" && !Array.isArray(data.error) ? data.error as { message?: string } : {};
       
       expect(response.status).toBe(500);
       expect(data.error).toBeDefined();
-      expect(data.error.message).toContain("Authentication required");
+      const errorMessage = typeof error.message === "string" ? error.message : "";
+      expect(errorMessage).toContain("Authentication required");
     });
 
     it("should handle data loading errors", async () => {
@@ -220,12 +256,15 @@ describe("Calendar Loader Integration", () => {
       );
 
       const request = new Request("http://localhost:3000/dashboard/calendar");
-      const response = await loader({ request, params: {} });
-      const data = await response.json();
+      const response = await loader({ request, params: {} } as { request: Request; params: Record<string, string> });
+      const dataRaw: unknown = await response.json();
+      const data: LoaderData = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as LoaderData : {};
+      const error = data.error && typeof data.error === "object" && !Array.isArray(data.error) ? data.error as { message?: string } : {};
       
       expect(response.status).toBe(500);
       expect(data.error).toBeDefined();
-      expect(data.error.message).toContain("Database error");
+      const errorMessage = typeof error.message === "string" ? error.message : "";
+      expect(errorMessage).toContain("Database error");
     });
   });
 });

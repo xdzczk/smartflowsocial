@@ -55,16 +55,25 @@ export async function getUserById(
 
   // Include blastrRelay if user has Premium or Founder plan with ACTIVE status
   if (
-    subscription?.status === "ACTIVE" &&
-    subscription?.Plan?.name &&
+    subscription &&
+    typeof subscription === "object" &&
+    "status" in subscription &&
+    subscription.status === "ACTIVE" &&
+    "Plan" in subscription &&
+    subscription.Plan &&
+    typeof subscription.Plan === "object" &&
+    "name" in subscription.Plan &&
+    subscription.Plan.name &&
+    typeof subscription.Plan.name === "string" &&
     (subscription.Plan.name.toLowerCase() === "premium" ||
       subscription.Plan.name.toLowerCase() === "founder")
   ) {
     // Add blastrRelay if not already present
-    if (!user.userRelays.includes(blastrRelay)) {
+    const userRelays = user && typeof user === "object" && "userRelays" in user && Array.isArray(user.userRelays) ? user.userRelays : [];
+    if (!userRelays.includes(blastrRelay)) {
       return {
         ...user,
-        userRelays: [...user.userRelays, blastrRelay],
+        userRelays: [...userRelays, blastrRelay],
       };
     }
   }

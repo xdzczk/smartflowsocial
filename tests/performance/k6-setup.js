@@ -14,7 +14,7 @@ export const responseTime = new Trend("response_time");
 export const requestCount = new Counter("requests");
 
 // Test configuration
-// eslint-disable-next-line no-undef
+ 
 export const BASE_URL = __ENV.BASE_URL || "http://localhost:3000";
 
 // Helper function to create authenticated session

@@ -20,7 +20,10 @@ vi.mock("~/features/upload/s3.server", () => ({
 
 vi.mock("~/lib/markdown-sanitizer.server", () => ({
   sanitizeMarkdown: vi.fn((content) => `Sanitized: ${content}`),
-  generateSummary: vi.fn((content) => `Summary of ${content.substring(0, 50)}`),
+  generateSummary: vi.fn((content: string) => {
+    const contentStr = typeof content === "string" ? content : String(content);
+    return `Summary of ${contentStr.substring(0, 50)}`;
+  }),
 }));
 
 vi.mock("~/models/longformpost.server", () => ({
@@ -44,7 +47,7 @@ vi.mock("@remix-run/node", async () => {
     ...actual,
     unstable_composeUploadHandlers: vi.fn((...handlers) => {
       // Return a handler that processes files through the first handler
-      return async (part) => {
+      return async (part: { filename?: string; name?: string; data: AsyncIterable<Uint8Array> }) => {
         if (part.filename) {
           // It's a file - process through the first handler (S3 upload handler)
           const firstHandler = handlers[0];
@@ -57,17 +60,18 @@ vi.mock("@remix-run/node", async () => {
       };
     }),
     unstable_createMemoryUploadHandler: vi.fn(() => vi.fn()),
-    unstable_parseMultipartFormData: vi.fn(async (request, uploadHandler) => {
+    unstable_parseMultipartFormData: vi.fn(async (request: { url?: string; formData?: () => Promise<FormData> }, _uploadHandler: unknown) => {
       // Try to get FormData from store first (set by test using request URL as key)
-      const storedFormData = formDataStore.get(request.url);
+      const url = request && typeof request === "object" && "url" in request && typeof request.url === "string" ? request.url : String(request?.url ?? "");
+      const storedFormData = formDataStore.get(url);
       if (storedFormData) {
-        formDataStore.delete(request.url); // Clean up after use
+        formDataStore.delete(url); // Clean up after use
         return storedFormData;
       }
       
       // Fallback: try to parse from request
       try {
-        const formData = await request.formData();
+        const formData = request && typeof request === "object" && "formData" in request && typeof request.formData === "function" ? await request.formData() : new FormData();
         return formData;
       } catch (error) {
         // If parsing fails, return empty FormData
@@ -116,7 +120,8 @@ describe("Longform Edit Action Handler", () => {
       });
 
       const response = await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
-      const data = await response.json();
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
 
       expect(data).toEqual({
         success: true,
@@ -143,10 +148,12 @@ describe("Longform Edit Action Handler", () => {
       });
 
       const response = await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
-      const data = await response.json();
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
+      const success = typeof data.success === "boolean" ? data.success : data.success === true || data.success === 1;
 
       expect(uploadBufferToS3).toHaveBeenCalled();
-      expect(data.success).toBe(true);
+      expect(success).toBe(true);
     });
   });
 
@@ -200,10 +207,12 @@ describe("Longform Edit Action Handler", () => {
       });
 
       const response = await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
-      const data = await response.json();
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
+      const error = typeof data.error === "string" ? data.error : "";
 
       expect(response.status).toBe(400);
-      expect(data.error).toBe("Title is required");
+      expect(error).toBe("Title is required");
     });
 
     it("should require content", async () => {
@@ -220,10 +229,12 @@ describe("Longform Edit Action Handler", () => {
       });
 
       const response = await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
-      const data = await response.json();
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
+      const error = typeof data.error === "string" ? data.error : "";
 
       expect(response.status).toBe(400);
-      expect(data.error).toBe("Content is required");
+      expect(error).toBe("Content is required");
     });
   });
 
@@ -298,10 +309,12 @@ describe("Longform Edit Action Handler", () => {
       });
 
       const response = await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
-      const data = await response.json();
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
+      const error = typeof data.error === "string" ? data.error : "";
 
       expect(response.status).toBe(400);
-      expect(data.error).toBe("Summary is required for publishing");
+      expect(error).toBe("Summary is required for publishing");
     });
 
     it("should require cover image for publishing", async () => {
@@ -321,10 +334,12 @@ describe("Longform Edit Action Handler", () => {
       });
 
       const response = await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
-      const data = await response.json();
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
+      const error = typeof data.error === "string" ? data.error : "";
 
       expect(response.status).toBe(400);
-      expect(data.error).toBe("Cover image is required for publishing");
+      expect(error).toBe("Cover image is required for publishing");
     });
 
     it("should add hashtags to content when enabled", async () => {
@@ -419,7 +434,8 @@ describe("Longform Edit Action Handler", () => {
       });
 
       const response = await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
-      const data = await response.json();
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
 
       expect(response.status).toBe(400);
       expect(data.error).toBeDefined();

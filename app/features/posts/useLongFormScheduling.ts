@@ -19,7 +19,7 @@ interface UseLongFormSchedulingOptions {
 
 export function useLongFormScheduling({
     queueTypes,
-    scheduleIntervals,
+    scheduleIntervals: _scheduleIntervals,
     userTags,
     userTimezone,
     initialQueueType = "Unassigned",
@@ -55,7 +55,7 @@ export function useLongFormScheduling({
 
             if (response.ok) {
                 const data: unknown = await response.json();
-                const scheduledTime = data && typeof data === "object" && !Array.isArray(data) && "scheduledTime" in data && typeof data.scheduledTime === "string" ? data.scheduledTime : "";
+                const scheduledTime = data && typeof data === "object" && !Array.isArray(data) && "scheduledTime" in data && typeof (data as { scheduledTime?: unknown }).scheduledTime === "string" ? (data as { scheduledTime: string }).scheduledTime : "";
                 setScheduledFor(scheduledTime);
             }
         } catch (error) {
@@ -96,7 +96,7 @@ export function useLongFormScheduling({
 
             if (response.ok) {
                 const data: unknown = await response.json();
-                const hashtags = data && typeof data === "object" && !Array.isArray(data) && "hashtags" in data && typeof data.hashtags === "string" ? data.hashtags : userTags;
+                const hashtags = data && typeof data === "object" && !Array.isArray(data) && "hashtags" in data && typeof (data as { hashtags?: unknown }).hashtags === "string" ? (data as { hashtags: string }).hashtags : userTags;
                 setDisplayedHashtags(hashtags);
                 if (onQueueTypeChange) onQueueTypeChange(queueTypeName);
             } else {

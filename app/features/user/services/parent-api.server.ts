@@ -15,9 +15,9 @@ function extractProfileBits(nostrProfile: ProfileData | null | undefined) {
   }
   try {
     if (typeof nostrProfile === "string") {
-      const pParsed = JSON.parse(nostrProfile);
+      const pParsed: unknown = JSON.parse(nostrProfile);
       if (pParsed && typeof pParsed === "object" && !Array.isArray(pParsed)) {
-        const p = pParsed as { name?: string; display_name?: string; picture?: string };
+        const p = pParsed as unknown as { name?: string; display_name?: string; picture?: string };
         return { 
           name: typeof p.name === "string" ? p.name : undefined, 
           display_name: typeof p.display_name === "string" ? p.display_name : undefined, 

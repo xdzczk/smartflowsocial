@@ -1,6 +1,6 @@
 import { type FetcherWithComponents } from "@remix-run/react";
 import { nip19 } from "nostr-tools";
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback } from "react";
 
 import { type ToastMessage } from "~/components/types";
 import { type BulkPost , type PreparedEvent } from "~/features/posts/types";
@@ -36,7 +36,7 @@ export function useBulkPostEvents({
     setPreparedEvents,
     setShowConfirmation,
     setIsPreviewSubmitting,
-    setIsProcessing,
+    setIsProcessing: _setIsProcessing,
 }: UseBulkPostEventsProps) {
     const isWaitingForUpload = useRef(false);
 
@@ -111,20 +111,24 @@ export function useBulkPostEvents({
                                 queueTypeName: post.queueType,
                             }),
                         });
-                        const data = (await res.json()) as { hashtags?: string };
-                        effectiveHashtags = data.hashtags || tags;
+                        const dataRaw: unknown = await res.json();
+                        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { hashtags?: unknown } : {};
+                        const hashtags = typeof data.hashtags === "string" ? data.hashtags : null;
+                        effectiveHashtags = hashtags || tags.join(" ");
                     } catch {
-                        effectiveHashtags = tags;
+                        effectiveHashtags = tags.join(" ");
                     }
                 }
 
                 const tagsString = effectiveHashtags || "";
-                const addTags = user?.showHashTagsinPosts ? `${tagsString}` : "";
+                const addTags = user && typeof user === "object" && "showHashTagsinPosts" in user && user.showHashTagsinPosts ? `${tagsString}` : "";
 
                 // Build content array, filtering out null/undefined/empty values
-                const fileUrls = fetcher.data?.fileUrls;
-                const fileUrlItem = fileUrls && Array.isArray(fileUrls) && fileUrls[index] ? fileUrls[index] : null;
-                const fileUrl = fileUrlItem && typeof fileUrlItem === "object" && "fileUrl" in fileUrlItem && typeof fileUrlItem.fileUrl === "string" ? fileUrlItem.fileUrl : "";
+                const fetcherDataRaw = fetcher.data;
+                const fetcherData = fetcherDataRaw && typeof fetcherDataRaw === "object" && !Array.isArray(fetcherDataRaw) ? fetcherDataRaw as { fileUrls?: unknown } : null;
+                const fileUrls = fetcherData && "fileUrls" in fetcherData && Array.isArray(fetcherData.fileUrls) ? fetcherData.fileUrls : null;
+                const fileUrlItem = fileUrls?.[index] && typeof fileUrls[index] === "object" && fileUrls[index] !== null && !Array.isArray(fileUrls[index]) ? fileUrls[index] as { fileUrl?: unknown; scheduledFor?: unknown } : null;
+                const fileUrl = fileUrlItem && "fileUrl" in fileUrlItem && typeof fileUrlItem.fileUrl === "string" ? fileUrlItem.fileUrl : "";
                 
                 const contentParts = [
                     fileUrl,
@@ -140,8 +144,8 @@ export function useBulkPostEvents({
                     .filter((tag: string) => tag.length > 0)
                     .map((tag: string) => ["t", tag.replace("#", "")]);
 
-                const userTimezone = user?.timezone ?? "UTC";
-                const scheduledForValue = fileUrlItem && typeof fileUrlItem === "object" && "scheduledFor" in fileUrlItem && typeof fileUrlItem.scheduledFor === "string" ? fileUrlItem.scheduledFor : "";
+                const userTimezone = user && typeof user === "object" && "timezone" in user && typeof user.timezone === "string" ? user.timezone : "UTC";
+                const scheduledForValue = fileUrlItem && "scheduledFor" in fileUrlItem && typeof fileUrlItem.scheduledFor === "string" ? fileUrlItem.scheduledFor : "";
                 const userTimezoneDateStr = scheduledForValue;
                 let scheduledTime;
 
@@ -183,7 +187,7 @@ export function useBulkPostEvents({
                                 if (Array.isArray(parsed) && parsed.length > 0) {
                                     displayFileUrl = parsed[0];
                                 }
-                            } catch (e) {
+                            } catch (_e) {
                                 // If parsing fails, use as is
                                 displayFileUrl = post.originalFileUrl;
                             }
@@ -199,7 +203,7 @@ export function useBulkPostEvents({
 
                     return {
                         fileUrl: displayFileUrl, // Use original file URL for display
-                        scheduledFor: Math.floor(scheduledTime / 1000),
+                        scheduledFor: Math.floor((post.scheduledFor ? new Date(post.scheduledFor).getTime() : Date.now()) / 1000),
                         caption: "", // No caption for kind 6 reposts
                         queueType: post?.queueType ?? "unassigned",
                         isRecyclable: post?.isRecyclable ?? false,
@@ -378,9 +382,9 @@ export function useBulkPostEvents({
                                 post.originalFileUrl.startsWith("[")
                             ) {
                                 try {
-                                    const parsed = JSON.parse(post.originalFileUrl);
+                                    const parsed: unknown = JSON.parse(post.originalFileUrl);
                                     if (Array.isArray(parsed) && parsed.length > 0) {
-                                        fileUrl = parsed[0];
+                                        fileUrl = typeof (parsed as unknown[])[0] === "string" ? (parsed as string[])[0] : "";
                                     }
                                 } catch (_e) {
                                     // If parsing fails, use as is
@@ -393,8 +397,8 @@ export function useBulkPostEvents({
                     } else {
                         // For regular reposts and quote posts, use the fileUrl
                         fileUrl = Array.isArray(post.fileUrl)
-                            ? post.fileUrl[0]
-                            : post.fileUrl as string;
+                            ? (typeof post.fileUrl[0] === "string" ? post.fileUrl[0] : "")
+                            : (typeof post.fileUrl === "string" ? post.fileUrl : "");
                     }
 
                     return {
@@ -406,7 +410,8 @@ export function useBulkPostEvents({
                 });
 
                 // Simulate the fetcher response
-                fetcher.data = { fileUrls: fakeFileUrls };
+                // Note: Direct assignment to fetcher.data is not recommended, but this is a workaround for repost flow
+                (fetcher as { data?: unknown }).data = { fileUrls: fakeFileUrls };
 
                 // Trigger the event creation manually
                 const customEvent = new CustomEvent("repostEventsPrepared");
@@ -521,7 +526,9 @@ export function useBulkPostEvents({
     useEffect(() => {
         const handleRepostEventsPrepared = () => {
             // Manually trigger the event creation logic
-            if (fetcher.data?.fileUrls) {
+            const fetcherDataRaw = fetcher.data;
+            const fetcherData = fetcherDataRaw && typeof fetcherDataRaw === "object" && !Array.isArray(fetcherDataRaw) ? fetcherDataRaw as { fileUrls?: unknown } : null;
+            if (fetcherData && "fileUrls" in fetcherData && Array.isArray(fetcherData.fileUrls)) {
                 void processEvents();
             }
         };
@@ -541,13 +548,17 @@ export function useBulkPostEvents({
 
     // Watch for upload completion
     useEffect(() => {
+        const fetcherDataRaw = fetcher.data;
+        const fetcherData = fetcherDataRaw && typeof fetcherDataRaw === "object" && !Array.isArray(fetcherDataRaw) ? fetcherDataRaw as { fileUrls?: unknown } : null;
         if (
             isWaitingForUpload.current &&
             fetcher.state === "idle" &&
-            fetcher.data?.fileUrls
+            fetcherData &&
+            "fileUrls" in fetcherData &&
+            Array.isArray(fetcherData.fileUrls)
         ) {
             isWaitingForUpload.current = false;
-            processEvents();
+            void processEvents();
         }
     }, [fetcher.state, fetcher.data, processEvents]);
 

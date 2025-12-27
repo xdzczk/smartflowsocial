@@ -57,7 +57,7 @@ export function ChildRepliesPanel({
                                             replyAuthorName;
                             replyAuthorPicture = (profile as { picture?: string | null })?.picture ?? null;
                         }
-                    } catch (e) {
+                    } catch (_e) {
                         // Ignore parsing errors
                     }
                 }

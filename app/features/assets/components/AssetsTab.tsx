@@ -197,8 +197,8 @@ export function AssetsTab({
                                         {asset.assetType === "IMAGE" ||
                                             asset.assetType === "VIDEO" ? (
                                             <MediaThumbnail
-                                                src={asset.fileUrl || ""}
-                                                alt={asset.title || "Asset"}
+                                                src={asset.fileUrl ?? ""}
+                                                alt={asset.title ?? "Asset"}
                                                 className="h-12 w-12 rounded object-cover"
                                             />
                                         ) : (
@@ -209,7 +209,7 @@ export function AssetsTab({
                                     </td>
                                     <td className="p-3">
                                         <p className="font-medium">
-                                            {asset.title || "Untitled"}
+                                            {asset.title ?? "Untitled"}
                                         </p>
                                     </td>
                                     <td className="p-3">

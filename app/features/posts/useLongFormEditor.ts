@@ -22,7 +22,7 @@ interface UseLongFormEditorOptions {
 
 export function useLongFormEditor({
     uploadProvider,
-    initialContent,
+    initialContent: _initialContent,
     onContentChange,
 }: UseLongFormEditorOptions) {
     const editorRef = useRef<EditorJSInstance | null>(null);
@@ -50,8 +50,8 @@ export function useLongFormEditor({
                 if (existingEditor) {
                     // If there's already EditorJS content, don't reinitialize
                     const hasEditorContent =
-                        existingEditor.querySelector(".codex-editor") ||
-                        existingEditor.querySelector(".ce-block") ||
+                        (existingEditor.querySelector(".codex-editor") ??
+                        existingEditor.querySelector(".ce-block")) ??
                         existingEditor.innerHTML.trim().length > 0;
 
                     if (hasEditorContent) {
@@ -81,7 +81,7 @@ export function useLongFormEditor({
                     window.EditorJSInstances.forEach((instance) => {
                         try {
                             if (instance.destroy) instance.destroy();
-                        } catch (e) {
+                        } catch (_e) {
                             /* ignore cleanup errors */
                         }
                     });
@@ -101,9 +101,9 @@ export function useLongFormEditor({
                 const editorInstance = new EditorJS({
                     holder: "editorjs",
                     minHeight: 300,
-                    tools: tools as unknown as Record<string, { class: unknown; config?: Record<string, unknown>; inlineToolbar?: boolean }>,
+                    tools: tools as unknown as Record<string, unknown>,
                     data: undefined, // Initial data will be loaded separately
-                    onChange: (async (api: EditorJSAPI) => {
+                    onChange: async (api: EditorJSAPI) => {
                         try {
                             const outputData = await api.saver.save();
                             onContentChange(JSON.stringify(outputData));
@@ -114,8 +114,8 @@ export function useLongFormEditor({
                                 action: "onChange",
                             });
                         }
-                    }) as unknown as (api: EditorJSAPI) => void,
-                }) as EditorJSInstance;
+                    },
+                } as any) as EditorJSInstance;
 
                 // Store the editor reference and add to global tracking
                 editorRef.current = editorInstance;
@@ -124,6 +124,7 @@ export function useLongFormEditor({
                 // Initialize custom drag and drop functionality after editor is ready
                 void (async () => {
                     try {
+                        if (!editorRef.current) return;
                         await editorRef.current.isReady;
                         if (!editorRef.current) return;
                         const editorElement = document.getElementById("editorjs");

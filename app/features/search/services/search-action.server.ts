@@ -6,7 +6,7 @@
 import { nip19 } from "nostr-tools";
 
 import { connectToPrimalCache } from "~/features/cache/primalCache.server";
-import type { NostrEvent, SignedEvent } from "~/features/nostr/types";
+import type { NostrEvent } from "~/features/nostr/types";
 /**
  * Extended NostrEvent with pubkey and id (from Primal cache)
  */
@@ -28,7 +28,7 @@ function decodeEventId(eventInput: string): string {
       if (decoded.type === "nevent" && decoded.data) {
         return decoded.data.id;
       }
-    } catch (e) {
+    } catch (_e) {
       throw new Error("Invalid nevent1 format");
     }
   } else if (eventId.startsWith("nostr:nevent1")) {
@@ -37,7 +37,7 @@ function decodeEventId(eventInput: string): string {
       if (decoded.type === "nevent" && decoded.data) {
         return decoded.data.id;
       }
-    } catch (e) {
+    } catch (_e) {
       throw new Error("Invalid nevent1 format");
     }
   } else if (eventId.startsWith("note1")) {
@@ -46,7 +46,7 @@ function decodeEventId(eventInput: string): string {
       if (decoded.type === "note") {
         return decoded.data;
       }
-    } catch (e) {
+    } catch (_e) {
       throw new Error("Invalid note1 format");
     }
   }
@@ -88,8 +88,8 @@ async function fetchAuthorInfo(pubkey: string): Promise<{
     if (userMetadataEvent?.[2]) {
       const event = userMetadataEvent[2];
       const metadata = JSON.parse(event.content) as { name?: string; display_name?: string; picture?: string };
-      authorName = metadata.name || metadata.display_name || authorName;
-      authorImage = metadata.picture || null;
+      authorName = metadata.name ?? metadata.display_name ?? authorName;
+      authorImage = metadata.picture ?? null;
     }
   } catch (error) {
     console.error("[Search] Error fetching author info:", error);
@@ -144,12 +144,12 @@ async function fetchEventStats(eventId: string): Promise<{
         satszapped?: number;
       };
       stats = {
-        likes: content.likes || 0,
-        replies: content.replies || 0,
-        mentions: content.mentions || 0,
-        reposts: content.reposts || 0,
-        zaps: content.zaps || 0,
-        satszapped: content.satszapped || 0,
+        likes: content.likes ?? 0,
+        replies: content.replies ?? 0,
+        mentions: content.mentions ?? 0,
+        reposts: content.reposts ?? 0,
+        zaps: content.zaps ?? 0,
+        satszapped: content.satszapped ?? 0,
       };
     }
   } catch (error) {
@@ -169,7 +169,7 @@ async function fetchEventStats(eventId: string): Promise<{
  */
 function extractMediaUrls(content: string): string[] {
   const urlRegex = /(https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp|mp4|webm|mov))/gi;
-  return content.match(urlRegex) || [];
+  return content.match(urlRegex) ?? [];
 }
 
 /**

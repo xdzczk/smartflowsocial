@@ -56,13 +56,13 @@ export async function calculateQueueScheduleTime(
   const nextScheduleTime = await calculateNextScheduleTime({
     queueType: selectedQueue,
     userId,
-    userTimezone: userTimezone || "UTC",
+    userTimezone: userTimezone ?? "UTC",
   });
 
   // Format for datetime-local input in user's timezone
   const formattedTime = formatScheduleTimeForInput(
     nextScheduleTime,
-    userTimezone || "UTC",
+    userTimezone ?? "UTC",
   );
 
   return createSuccessResponse({ scheduledTime: formattedTime });
@@ -88,6 +88,7 @@ export function parseQueueScheduleRequest(body: unknown): {
     queueTypeId: requestBody.queueTypeId,
   };
 }
+
 
 
 

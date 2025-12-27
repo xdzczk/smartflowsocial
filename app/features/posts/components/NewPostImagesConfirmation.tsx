@@ -60,7 +60,7 @@ export default function NewPostImagesConfirmation({
 
         if (response.ok) {
           const data = (await response.json()) as { hashtags?: string };
-          effectiveHashtags = data.hashtags || "";
+          effectiveHashtags = data.hashtags ?? "";
         } else {
           // Fallback to user's default hashtags
           effectiveHashtags = Array.isArray(tags) ? tags.join(" ") : tags || "";
@@ -336,14 +336,14 @@ export default function NewPostImagesConfirmation({
             💾 Save as Draft
           </button>
           <button
-            onClick={() => handleSignAndSubmit(true)}
+            onClick={() => void handleSignAndSubmit(true)}
             className="rounded-lg bg-gradient-to-r from-green-500 to-green-600 px-6 py-3 text-sm font-medium text-white shadow-lg transition-all hover:from-green-600 hover:to-green-700 hover:shadow-xl disabled:cursor-not-allowed disabled:from-green-300 disabled:to-green-400"
             disabled={isSubmitting}
           >
             🚀 Post Now
           </button>
           <button
-            onClick={() => handleSignAndSubmit(false)}
+            onClick={() => void handleSignAndSubmit(false)}
             className="rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 px-8 py-3 text-sm font-medium text-white shadow-lg transition-all hover:from-blue-600 hover:to-blue-700 hover:shadow-xl disabled:cursor-not-allowed disabled:from-blue-300 disabled:to-blue-400"
             disabled={isSubmitting}
           >

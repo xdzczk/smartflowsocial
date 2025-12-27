@@ -41,9 +41,10 @@ function isVideoFile(fileUrl: string | string[]): boolean {
       const lower = firstUrl.toLowerCase();
       return videoExtensions.some((ext) => lower.includes(ext));
     }
-  } catch (e) {
+  } catch (_e) {
     // If parsing fails, try direct string
-    const lower = (fileUrl || "").toString().toLowerCase();
+    const fileUrlStr = typeof fileUrl === "string" ? fileUrl : fileUrl[0] ?? "";
+    const lower = fileUrlStr.toLowerCase();
     return videoExtensions.some((ext) => lower.includes(ext));
   }
 
@@ -66,7 +67,7 @@ async function getHashtagPresetTags(
   if (useHashtagPresets && manualHashTagPresetId) {
     // Use manually selected hashtag preset
     const preset = await getHashTagPresetById(userId, manualHashTagPresetId);
-    hashTagPresetTags = preset?.tags ?? "";
+    hashTagPresetTags = (preset && typeof preset === "object" && "tags" in preset && typeof preset.tags === "string") ? preset.tags : "";
     hashTagPresetId = manualHashTagPresetId;
   } else if (!useHashtagPresets && queueType !== "unassigned") {
     // Use queue type's default hashtag preset
@@ -81,7 +82,7 @@ async function getHashtagPresetTags(
       selectedQueueType = queueTypes.find((qt) => qt.name === queueType);
     }
 
-    if (selectedQueueType && "hashTagPreset" in selectedQueueType && selectedQueueType.hashTagPreset) {
+    if (selectedQueueType && typeof selectedQueueType === "object" && "hashTagPreset" in selectedQueueType && selectedQueueType.hashTagPreset) {
       const preset = selectedQueueType.hashTagPreset;
       if (preset && typeof preset === "object" && "tags" in preset && typeof preset.tags === "string") {
         hashTagPresetTags = preset.tags || "";
@@ -146,7 +147,8 @@ async function handleDraftText(
   isRecyclable: boolean,
   hashTagPresetId: string | null,
 ): Promise<Response> {
-  const content = formData.get("content") as string;
+  const contentValue = formData.get("content");
+  const content = contentValue ? String(contentValue) : "";
 
   // Resolve queue type ID in feature layer (business logic)
   const resolvedQueueTypeId = await resolveQueueTypeId(userId, queueTypeId, queueType);
@@ -184,11 +186,25 @@ async function handlePostOrScheduleText(
   sanitizedRelays: string[],
   action: "post-text" | "schedule-text",
 ): Promise<Response> {
-  const content = formData.get("content") as string;
-  const signedEventRaw = JSON.parse(formData.get("signedEvent") as string) as SignedEvent;
-  const nostrEventRaw = JSON.parse(formData.get("nostrEvent") as string) as import("~/features/nostr/types").NostrEvent;
-  const signedEvent = signedEventRaw;
-  const nostrEvent = nostrEventRaw;
+  const contentValue = formData.get("content");
+  const signedEventValue = formData.get("signedEvent");
+  const nostrEventValue = formData.get("nostrEvent");
+  
+  const content = contentValue ? String(contentValue) : "";
+  const signedEventStr = signedEventValue ? String(signedEventValue) : "";
+  const nostrEventStr = nostrEventValue ? String(nostrEventValue) : "";
+  
+  let signedEventRaw: SignedEvent;
+  let nostrEventRaw: import("~/features/nostr/types").NostrEvent;
+  try {
+    signedEventRaw = JSON.parse(signedEventStr) as SignedEvent;
+    nostrEventRaw = JSON.parse(nostrEventStr) as import("~/features/nostr/types").NostrEvent;
+  } catch {
+    throw new Error("Invalid signedEvent or nostrEvent format");
+  }
+  
+  const signedEvent: SignedEvent = signedEventRaw;
+  const nostrEvent: import("~/features/nostr/types").NostrEvent = nostrEventRaw;
   const signedEventJson = signedEvent;
 
   if (action === "post-text") {
@@ -249,14 +265,19 @@ function handleUploadPreview(
   formData: FormData,
 ): { success: boolean; fileUrls?: string[]; error?: string } {
   const files = formData.getAll("files");
-  const scheduledFor = formData.get("scheduledFor");
-  const caption = formData.get("caption");
-  const queueType = formData.get("queueType");
+  const scheduledForValue = formData.get("scheduledFor");
+  const captionValue = formData.get("caption");
+  const queueTypeValue = formData.get("queueType");
+  
+  const scheduledFor = scheduledForValue ? String(scheduledForValue) : null;
+  const caption = captionValue ? String(captionValue) : null;
+  const queueType = queueTypeValue ? String(queueTypeValue) : null;
 
   // Validate files are not empty and are valid URLs
   const hasValidFiles = files.some((file) => {
     try {
-      new URL(file as string); // Check if valid URL
+      const fileStr = typeof file === "string" ? file : file instanceof File ? file.name : String(file);
+      new URL(fileStr); // Check if valid URL
       return true;
     } catch {
       return false;
@@ -275,12 +296,15 @@ function handleUploadPreview(
     scheduledFor: string | null;
     caption: string | null;
     queueType: string | null;
-  }[] = files.map((fileUrl) => ({
-    fileUrl: String(fileUrl),
-    scheduledFor: scheduledFor ? String(scheduledFor) : null,
-    caption: caption ? String(caption) : null,
-    queueType: queueType ? String(queueType) : null,
-  }));
+  }[] = files.map((fileUrl) => {
+    const fileUrlStr = typeof fileUrl === "string" ? fileUrl : fileUrl instanceof File ? fileUrl.name : String(fileUrl);
+    return {
+      fileUrl: fileUrlStr,
+      scheduledFor,
+      caption,
+      queueType,
+    };
+  });
 
   return { success: true, fileUrls: fileUrls.map((f) => f.fileUrl) };
 }
@@ -299,12 +323,27 @@ async function handlePostImages(
   hashTagPresetId: string | null,
   sanitizedRelays: string[],
 ): Promise<Response> {
-  const signedEventRaw = JSON.parse(formData.get("signedEvent") as string) as SignedEvent;
-  const nostrEventRaw = JSON.parse(formData.get("nostrEvent") as string) as import("~/features/nostr/types").NostrEvent;
-  const signedEvent = signedEventRaw;
-  const nostrEvent = nostrEventRaw;
-  const fileUrl = formData.get("fileUrl") as string;
-  const caption = formData.get("caption") as string;
+  const signedEventValue = formData.get("signedEvent");
+  const nostrEventValue = formData.get("nostrEvent");
+  const fileUrlValue = formData.get("fileUrl");
+  const captionValue = formData.get("caption");
+  
+  const signedEventStr = signedEventValue ? String(signedEventValue) : "";
+  const nostrEventStr = nostrEventValue ? String(nostrEventValue) : "";
+  const fileUrl = fileUrlValue ? String(fileUrlValue) : "";
+  const caption = captionValue ? String(captionValue) : "";
+  
+  let signedEventRaw: SignedEvent;
+  let nostrEventRaw: import("~/features/nostr/types").NostrEvent;
+  try {
+    signedEventRaw = JSON.parse(signedEventStr) as SignedEvent;
+    nostrEventRaw = JSON.parse(nostrEventStr) as import("~/features/nostr/types").NostrEvent;
+  } catch {
+    throw new Error("Invalid signedEvent or nostrEvent format");
+  }
+  
+  const signedEvent: SignedEvent = signedEventRaw;
+  const nostrEvent: import("~/features/nostr/types").NostrEvent = nostrEventRaw;
 
   const isVideo = isVideoFile(fileUrl);
 
@@ -348,10 +387,24 @@ async function handleScheduleImages(
   isRecyclable: boolean,
   hashTagPresetId: string | null,
 ): Promise<Response> {
-  const signedEvent = JSON.parse(formData.get("signedEvent") as string) as SignedEvent;
-  const nostrEvent = JSON.parse(formData.get("nostrEvent") as string) as import("~/features/nostr/types").NostrEvent;
-  const fileUrl = formData.get("fileUrl") as string;
-  const caption = formData.get("caption") as string;
+  const signedEventValue = formData.get("signedEvent");
+  const nostrEventValue = formData.get("nostrEvent");
+  const fileUrlValue = formData.get("fileUrl");
+  const captionValue = formData.get("caption");
+  
+  const signedEventStr = signedEventValue ? String(signedEventValue) : "";
+  const nostrEventStr = nostrEventValue ? String(nostrEventValue) : "";
+  const fileUrl = fileUrlValue ? String(fileUrlValue) : "";
+  const caption = captionValue ? String(captionValue) : "";
+  
+  let signedEvent: SignedEvent;
+  let nostrEvent: import("~/features/nostr/types").NostrEvent;
+  try {
+    signedEvent = JSON.parse(signedEventStr) as SignedEvent;
+    nostrEvent = JSON.parse(nostrEventStr) as import("~/features/nostr/types").NostrEvent;
+  } catch {
+    throw new Error("Invalid signedEvent or nostrEvent format");
+  }
 
   const isVideo = isVideoFile(fileUrl);
 
@@ -450,26 +503,37 @@ export async function handleNewPostAction(
     formData = await request.formData();
   }
 
-  const _action = formData.get("_action") as string;
-  const caption = formData.get("caption") as string;
-  const scheduledFor = formData.get("scheduledFor");
-  const queueType = (formData.get("queueType") as string) || "unassigned";
-  const queueTypeId = (formData.get("queueTypeId") as string) || null;
-  const isRecyclable = formData.get("isRecyclable") === "on";
-  const useHashtagPresets = formData.get("useHashtagPresets") === "on";
-  const manualHashTagPresetId = useHashtagPresets
-    ? ((formData.get("hashTagPresetId") as string) || null)
+  const _actionValue = formData.get("_action");
+  const captionValue = formData.get("caption");
+  const scheduledForValue = formData.get("scheduledFor");
+  
+  const _action = _actionValue ? String(_actionValue) : "";
+  const _caption = captionValue ? String(captionValue) : "";
+  const _scheduledFor = scheduledForValue ? String(scheduledForValue) : null;
+  const queueTypeValue = formData.get("queueType");
+  const queueTypeIdValue = formData.get("queueTypeId");
+  const isRecyclableValue = formData.get("isRecyclable");
+  const useHashtagPresetsValue = formData.get("useHashtagPresets");
+  const hashTagPresetIdValue = formData.get("hashTagPresetId");
+  
+  const queueType = (queueTypeValue ? String(queueTypeValue) : null) || "unassigned";
+  const queueTypeId = queueTypeIdValue ? String(queueTypeIdValue) : null;
+  const isRecyclable = isRecyclableValue === "on" || isRecyclableValue === "true";
+  const useHashtagPresets = useHashtagPresetsValue === "on" || useHashtagPresetsValue === "true";
+  const manualHashTagPresetId = useHashtagPresets && hashTagPresetIdValue
+    ? String(hashTagPresetIdValue)
     : null;
 
   // Get hashtag preset tags
-  const { tags: hashTagPresetTags, presetId: hashTagPresetId } =
-    await getHashtagPresetTags(
+  const hashtagResult = await getHashtagPresetTags(
       userId,
       useHashtagPresets,
       manualHashTagPresetId,
       queueType,
       queueTypeId,
     );
+  const hashTagPresetTags = typeof hashtagResult === "object" && hashtagResult !== null && "tags" in hashtagResult && typeof hashtagResult.tags === "string" ? hashtagResult.tags : "";
+  const hashTagPresetId = typeof hashtagResult === "object" && hashtagResult !== null && "presetId" in hashtagResult ? (hashtagResult.presetId) : manualHashTagPresetId;
 
   // Handle different actions
   if (_action === "draft-text") {

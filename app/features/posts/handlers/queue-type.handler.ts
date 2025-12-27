@@ -4,7 +4,7 @@
  * Handles queue type changes for individual and bulk posts
  */
 
-import type { BulkPost, BulkPostsHandlerDeps, QueueType } from "~/features/posts/types";
+import type { BulkPostsHandlerDeps } from "~/features/posts/types";
 import {
   isIntervalScheduleConfig,
   isFixedSlotsScheduleConfig,
@@ -182,7 +182,7 @@ export async function handleBulkQueueUpdate(
       if (response.ok) {
         const responseData = (await response.json()) as { scheduledTime?: string };
         const { scheduledTime } = responseData;
-        baseTime = scheduledTime;
+        baseTime = scheduledTime ?? null;
       }
     }
   }

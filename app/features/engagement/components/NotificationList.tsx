@@ -89,7 +89,7 @@ function ReplyNotification({
   userTimezone?: string;
 }) {
   const displayName =
-    notification.authorName ||
+    notification.authorName ??
     notification.pubkey.substring(0, 8) + "..." + notification.pubkey.slice(-4);
 
   return (
@@ -246,7 +246,7 @@ function MentionNotification({
   userTimezone?: string;
 }) {
   const displayName =
-    notification.authorName ||
+    notification.authorName ??
     notification.pubkey.substring(0, 8) + "..." + notification.pubkey.slice(-4);
 
   return (

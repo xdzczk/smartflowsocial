@@ -16,10 +16,10 @@ import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
 vi.mock("bullmq", () => {
   class MockWorker {
     queueName: string;
-    process: any;
+    process: ((job: import("bullmq").Job) => Promise<unknown>) | undefined;
     close: ReturnType<typeof vi.fn>;
     
-    constructor(queueName: string, processor: any, options?: any) {
+    constructor(queueName: string, processor: ((job: import("bullmq").Job) => Promise<unknown>) | undefined, options?: unknown) {
       this.queueName = queueName;
       // Store the processor function so tests can call it
       this.process = processor;
@@ -82,8 +82,12 @@ import { getUserById } from "~/models/user.server";
 import { TEST_USER_ID, createMockPost } from "../utils/test-helpers";
 
 // Import workers after mocks are set up
-let scheduledPostsWorker: any;
-let scheduledLongFormPostsWorker: any;
+interface MockWorkerType {
+  process?: (job: Job) => Promise<unknown>;
+  close: ReturnType<typeof vi.fn>;
+}
+let scheduledPostsWorker: MockWorkerType | undefined;
+let scheduledLongFormPostsWorker: MockWorkerType | undefined;
 
 beforeAll(async () => {
   const module = await import("~/features/posts/queues.server");
@@ -120,17 +124,21 @@ describe("Queue Worker Edge Cases", () => {
         new Error("Database connection lost"),
       );
 
-      const mockJob = {
-        data: {
-          postId: TEST_POST_ID,
-          userId: TEST_USER_ID,
-          signedEvent: TEST_SIGNED_EVENT,
-        },
-      } as Job;
+      const mockJobData = {
+        postId: TEST_POST_ID,
+        userId: TEST_USER_ID,
+        signedEvent: TEST_SIGNED_EVENT,
+      };
+      const mockJob: Job = {
+        data: mockJobData,
+      } as unknown as Job;
 
       // Worker processor function should throw error (BullMQ will handle retry)
       // The processor is the function passed to Worker constructor
-      const processor = (scheduledPostsWorker).process;
+      if (!scheduledPostsWorker?.process) {
+        throw new Error("scheduledPostsWorker.process is not defined");
+      }
+      const processor = scheduledPostsWorker.process;
       await expect(
         processor(mockJob),
       ).rejects.toThrow("Database connection lost");
@@ -146,16 +154,20 @@ describe("Queue Worker Edge Cases", () => {
       (updatePostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
-      const mockJob = {
-        data: {
-          postId: TEST_POST_ID,
-          userId: TEST_USER_ID,
-          signedEvent: TEST_SIGNED_EVENT,
-        },
-      } as Job;
+      const mockJobData = {
+        postId: TEST_POST_ID,
+        userId: TEST_USER_ID,
+        signedEvent: TEST_SIGNED_EVENT,
+      };
+      const mockJob: Job = {
+        data: mockJobData,
+      } as unknown as Job;
 
+      if (!scheduledPostsWorker?.process) {
+        throw new Error("scheduledPostsWorker.process is not defined");
+      }
       await expect(
-        (scheduledPostsWorker).process(mockJob),
+        scheduledPostsWorker.process(mockJob),
       ).rejects.toThrow(`User ${TEST_USER_ID} not found`);
     });
 
@@ -177,16 +189,20 @@ describe("Queue Worker Edge Cases", () => {
         statusText: "Internal Server Error",
       });
 
-      const mockJob = {
-        data: {
-          postId: TEST_POST_ID,
-          userId: TEST_USER_ID,
-          signedEvent: TEST_SIGNED_EVENT,
-        },
-      } as Job;
+      const mockJobData = {
+        postId: TEST_POST_ID,
+        userId: TEST_USER_ID,
+        signedEvent: TEST_SIGNED_EVENT,
+      };
+      const mockJob: Job = {
+        data: mockJobData,
+      } as unknown as Job;
 
+      if (!scheduledPostsWorker?.process) {
+        throw new Error("scheduledPostsWorker.process is not defined");
+      }
       await expect(
-        (scheduledPostsWorker).process(mockJob),
+        scheduledPostsWorker.process(mockJob),
       ).rejects.toThrow("Failed to post to nostr publisher");
 
       // Post should still be marked as posted (idempotency prevents duplicate)
@@ -211,16 +227,20 @@ describe("Queue Worker Edge Cases", () => {
         });
       });
 
-      const mockJob = {
-        data: {
-          postId: TEST_POST_ID,
-          userId: TEST_USER_ID,
-          signedEvent: TEST_SIGNED_EVENT,
-        },
-      } as Job;
+      const mockJobData = {
+        postId: TEST_POST_ID,
+        userId: TEST_USER_ID,
+        signedEvent: TEST_SIGNED_EVENT,
+      };
+      const mockJob: Job = {
+        data: mockJobData,
+      } as unknown as Job;
 
+      if (!scheduledPostsWorker?.process) {
+        throw new Error("scheduledPostsWorker.process is not defined");
+      }
       await expect(
-        (scheduledPostsWorker).process(mockJob),
+        scheduledPostsWorker.process(mockJob),
       ).rejects.toThrow("Network timeout");
     });
   });
@@ -233,15 +253,19 @@ describe("Queue Worker Edge Cases", () => {
         nostrEventId: "event-123",
       });
 
-      const mockJob = {
-        data: {
-          postId: TEST_POST_ID,
-          userId: TEST_USER_ID,
-          signedEvent: TEST_SIGNED_EVENT,
-        },
-      } as Job;
+      const mockJobData = {
+        postId: TEST_POST_ID,
+        userId: TEST_USER_ID,
+        signedEvent: TEST_SIGNED_EVENT,
+      };
+      const mockJob: Job = {
+        data: mockJobData,
+      } as unknown as Job;
 
-      const result = await (scheduledPostsWorker).process(mockJob);
+      if (!scheduledPostsWorker?.process) {
+        throw new Error("scheduledPostsWorker.process is not defined");
+      }
+      const result = await scheduledPostsWorker.process(mockJob);
 
       expect(result).toEqual({
         success: true,
@@ -271,17 +295,21 @@ describe("Queue Worker Edge Cases", () => {
         new Error("Post already posted"), // Simulate unique constraint violation
       );
 
-      const mockJob = {
-        data: {
-          postId: TEST_POST_ID,
-          userId: TEST_USER_ID,
-          signedEvent: TEST_SIGNED_EVENT,
-        },
-      } as Job;
+      const mockJobData = {
+        postId: TEST_POST_ID,
+        userId: TEST_USER_ID,
+        signedEvent: TEST_SIGNED_EVENT,
+      };
+      const mockJob: Job = {
+        data: mockJobData,
+      } as unknown as Job;
 
       // Should handle gracefully (idempotency check should catch this)
+      if (!scheduledPostsWorker?.process) {
+        throw new Error("scheduledPostsWorker.process is not defined");
+      }
       await expect(
-        (scheduledPostsWorker).process(mockJob),
+        scheduledPostsWorker.process(mockJob),
       ).rejects.toThrow();
     });
   });
@@ -304,19 +332,23 @@ describe("Queue Worker Edge Cases", () => {
         status: 200,
       });
 
-      const mockJob = {
-        data: {
-          postId: TEST_POST_ID,
-          userId: TEST_USER_ID,
-          signedEvent: TEST_SIGNED_EVENT,
-        },
-      } as Job;
+      const mockJobData = {
+        postId: TEST_POST_ID,
+        userId: TEST_USER_ID,
+        signedEvent: TEST_SIGNED_EVENT,
+      };
+      const mockJob: Job = {
+        data: mockJobData,
+      } as unknown as Job;
 
       // Simulate concurrent processing
+      if (!scheduledPostsWorker?.process) {
+        throw new Error("scheduledPostsWorker.process is not defined");
+      }
       const promises = [
-        (scheduledPostsWorker).process(mockJob),
-        (scheduledPostsWorker).process(mockJob),
-        (scheduledPostsWorker).process(mockJob),
+        scheduledPostsWorker.process(mockJob),
+        scheduledPostsWorker.process(mockJob),
+        scheduledPostsWorker.process(mockJob),
       ];
 
       const results = await Promise.allSettled(promises);
@@ -333,16 +365,20 @@ describe("Queue Worker Edge Cases", () => {
         null,
       );
 
-      const mockJob = {
-        data: {
-          postId: "longform-123",
-          userId: TEST_USER_ID,
-          signedEvent: TEST_SIGNED_EVENT,
-        },
-      } as Job;
+      const mockJobData = {
+        postId: "longform-123",
+        userId: TEST_USER_ID,
+        signedEvent: TEST_SIGNED_EVENT,
+      };
+      const mockJob: Job = {
+        data: mockJobData,
+      } as unknown as Job;
 
+      if (!scheduledLongFormPostsWorker?.process) {
+        throw new Error("scheduledLongFormPostsWorker.process is not defined");
+      }
       await expect(
-        (scheduledLongFormPostsWorker).process(mockJob),
+        scheduledLongFormPostsWorker.process(mockJob),
       ).rejects.toThrow("Longform post longform-123 not found");
     });
 
@@ -353,13 +389,14 @@ describe("Queue Worker Edge Cases", () => {
         nostrEventId: "event-123",
       });
 
-      const mockJob = {
-        data: {
-          postId: "longform-123",
-          userId: TEST_USER_ID,
-          signedEvent: TEST_SIGNED_EVENT,
-        },
-      } as Job;
+      const mockJobData = {
+        postId: "longform-123",
+        userId: TEST_USER_ID,
+        signedEvent: TEST_SIGNED_EVENT,
+      };
+      const mockJob: Job = {
+        data: mockJobData,
+      } as unknown as Job;
 
       const result = await (scheduledLongFormPostsWorker).process(mockJob);
 
@@ -373,13 +410,14 @@ describe("Queue Worker Edge Cases", () => {
 
   describe("Invalid Job Data", () => {
     it("should handle missing postId in job data", async () => {
-      const mockJob = {
-        data: {
-          userId: TEST_USER_ID,
-          signedEvent: TEST_SIGNED_EVENT,
-          // Missing postId
-        },
-      } as Job;
+      const mockJobData = {
+        userId: TEST_USER_ID,
+        signedEvent: TEST_SIGNED_EVENT,
+        // Missing postId
+      };
+      const mockJob: Job = {
+        data: mockJobData,
+      } as unknown as Job;
 
       // Mock Prisma to return null (post not found)
       (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
@@ -390,13 +428,14 @@ describe("Queue Worker Edge Cases", () => {
     });
 
     it("should handle missing signedEvent in job data", async () => {
-      const mockJob = {
-        data: {
-          postId: "post-123",
-          userId: TEST_USER_ID,
-          // Missing signedEvent
-        },
-      } as Job;
+      const mockJobData = {
+        postId: "post-123",
+        userId: TEST_USER_ID,
+        // Missing signedEvent
+      };
+      const mockJob: Job = {
+        data: mockJobData,
+      } as unknown as Job;
 
       // Mock Prisma post.findUnique to return existing post
       (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({

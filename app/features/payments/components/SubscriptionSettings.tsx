@@ -186,13 +186,13 @@ export function SubscriptionSettings({
               </div>
 
               {/* Next Billing Date - Combined logic for current period end and next payment due */}
-              {(subscription.currentPeriodEnd || subscription.nextPaymentDue) &&
+              {(subscription.currentPeriodEnd ?? subscription.nextPaymentDue) &&
                 !subscription.plan?.enableLifetimeAccess ? <div className="flex items-center gap-3 rounded-lg border p-4">
                 <CreditCard className="h-5 w-5 text-blue-500" />
                 <div>
                   <p className="font-medium">Next Billing Date</p>
                   <p className="text-sm text-muted-foreground">
-                    {formatDate(subscription.currentPeriodEnd || subscription.nextPaymentDue)}
+                    {formatDate(subscription.currentPeriodEnd ?? subscription.nextPaymentDue)}
                   </p>
                 </div>
               </div> : null}
@@ -235,7 +235,7 @@ export function SubscriptionSettings({
                           <div className="flex items-center gap-2 mb-1">
                             <Receipt className="h-4 w-4 text-green-600" />
                             <p className="font-medium text-sm">
-                              {payment.description || payment.planName || "Payment"}
+                              {(payment.description ?? payment.planName) ?? "Payment"}
                             </p>
                           </div>
                           <p className="text-xs text-muted-foreground mb-2">
@@ -248,7 +248,7 @@ export function SubscriptionSettings({
                               Hash: {payment.paymentHash.slice(0, 16)}...{payment.paymentHash.slice(-8)}
                             </p>
                             <button
-                              onClick={() => copyToClipboard(payment.paymentHash, payment.id)}
+                              onClick={() => void copyToClipboard(payment.paymentHash, payment.id)}
                               className="inline-flex items-center justify-center rounded p-1 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                               title="Copy payment hash"
                             >

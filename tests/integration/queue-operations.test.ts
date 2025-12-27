@@ -32,7 +32,7 @@ describe("Queue Operations", () => {
   describe("Post Job Operations", () => {
     it("should enqueue post job with scheduled timestamp", async () => {
       const scheduledFor = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
-      const mockSignedEvent = { id: "event-123", kind: 1 };
+      const mockSignedEvent: { id: string; kind: number } = { id: "event-123", kind: 1 };
 
       (queueClient.enqueue as ReturnType<typeof vi.fn>).mockResolvedValue({
         success: true,
@@ -54,7 +54,7 @@ describe("Queue Operations", () => {
     });
 
     it("should enqueue post job with immediate processing (delay: 0)", async () => {
-      const mockSignedEvent = { id: "event-123", kind: 1 };
+      const mockSignedEvent: { id: string; kind: number } = { id: "event-123", kind: 1 };
 
       (queueClient.enqueue as ReturnType<typeof vi.fn>).mockResolvedValue({
         success: true,
@@ -76,7 +76,7 @@ describe("Queue Operations", () => {
     });
 
     it("should throw error when enqueue fails", async () => {
-      const mockSignedEvent = { id: "event-123", kind: 1 };
+      const mockSignedEvent: { id: string; kind: number } = { id: "event-123", kind: 1 };
 
       (queueClient.enqueue as ReturnType<typeof vi.fn>).mockResolvedValue({
         success: false,
@@ -113,7 +113,7 @@ describe("Queue Operations", () => {
   describe("Longform Post Job Operations", () => {
     it("should enqueue longform post job with scheduled timestamp", async () => {
       const scheduledFor = Math.floor(Date.now() / 1000) + 3600;
-      const mockSignedEvent = { id: "event-123", kind: 30023 };
+      const mockSignedEvent: Partial<SignedEvent> = { id: "event-123", kind: 30023, pubkey: "test-pubkey", created_at: Date.now(), tags: [], content: "", sig: "test-sig" };
 
       (queueClient.enqueue as ReturnType<typeof vi.fn>).mockResolvedValue({
         success: true,
@@ -140,7 +140,7 @@ describe("Queue Operations", () => {
     });
 
     it("should enqueue longform post job with immediate processing", async () => {
-      const mockSignedEvent = { id: "event-123", kind: 30023 };
+      const mockSignedEvent: Partial<SignedEvent> = { id: "event-123", kind: 30023, pubkey: "test-pubkey", created_at: Date.now(), tags: [], content: "", sig: "test-sig" };
 
       (queueClient.enqueue as ReturnType<typeof vi.fn>).mockResolvedValue({
         success: true,
@@ -162,7 +162,7 @@ describe("Queue Operations", () => {
     });
 
     it("should throw error when longform enqueue fails", async () => {
-      const mockSignedEvent = { id: "event-123", kind: 30023 };
+      const mockSignedEvent: Partial<SignedEvent> = { id: "event-123", kind: 30023, pubkey: "test-pubkey", created_at: Date.now(), tags: [], content: "", sig: "test-sig" };
 
       (queueClient.enqueue as ReturnType<typeof vi.fn>).mockResolvedValue({
         success: false,

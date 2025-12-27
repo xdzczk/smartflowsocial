@@ -87,6 +87,10 @@ describe("Database Failure Edge Cases", () => {
           userId: TEST_USER_ID,
           content: "Test",
           postType: "TEXT",
+          fileUrl: [],
+          tags: [],
+          isScheduled: false,
+          isPosted: false,
         }),
       ).rejects.toThrow("Database unavailable");
     });
@@ -149,10 +153,13 @@ describe("Database Failure Edge Cases", () => {
 
       await expect(
         createPost({
-          id: TEST_POST_ID, // Duplicate ID
           userId: TEST_USER_ID,
           content: "Test",
           postType: "TEXT",
+          fileUrl: [],
+          tags: [],
+          isScheduled: false,
+          isPosted: false,
         }),
       ).rejects.toThrow("Unique constraint violation");
     });
@@ -167,6 +174,10 @@ describe("Database Failure Edge Cases", () => {
           userId: "non-existent-user",
           content: "Test",
           postType: "TEXT",
+          fileUrl: [],
+          tags: [],
+          isScheduled: false,
+          isPosted: false,
         }),
       ).rejects.toThrow("Foreign key constraint violation");
     });

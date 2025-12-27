@@ -47,14 +47,14 @@ export function useScheduledState({
   // Update countdowns
   useEffect(() => {
     const updateCountdowns = () => {
-      const tz = userTimezone || "UTC";
+      const tz = userTimezone ?? "UTC";
       const now = new Date(
         new Date().toLocaleString("en-US", { timeZone: tz }),
       ).getTime();
       const newCountdowns: Record<string, string> = {};
 
       scheduledPosts.forEach((post) => {
-        const scheduledFor = typeof post.scheduledFor === "string" ? post.scheduledFor : String(post.scheduledFor || "0");
+        const scheduledFor = typeof post.scheduledFor === "string" ? post.scheduledFor : String(post.scheduledFor ?? "0");
         const utcTime = parseInt(scheduledFor) * 1000;
         const userTime = new Date(utcTime).toLocaleString("en-US", {
           timeZone: tz,
@@ -86,7 +86,9 @@ export function useScheduledState({
 
   // Clear selected posts after bulk delete
   useEffect(() => {
-    if (bulkDeleteFetcher.data?.success) {
+    const dataRaw = bulkDeleteFetcher.data;
+    const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown } : null;
+    if (data && typeof data.success === "boolean" && data.success) {
       setSelectedPosts(new Set());
     }
   }, [bulkDeleteFetcher.data]);
@@ -180,12 +182,12 @@ export function useScheduledState({
     setSelectedMedia(null);
   };
 
-  const handleEditPost = (post: PostData) => {
+  const handleEditPost = (post: EditablePost) => {
     setPostToEdit(post);
     setShowEditModal(true);
   };
 
-  const handleReschedulePost = (post: PostData) => {
+  const handleReschedulePost = (post: EditablePost) => {
     setPostToReschedule(post);
     setShowRescheduleModal(true);
   };

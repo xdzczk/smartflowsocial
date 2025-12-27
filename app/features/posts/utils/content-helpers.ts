@@ -26,20 +26,20 @@ export function getImageUrls(fileUrl: string[] | undefined): string[] {
 
 export function getContentTitle(item: CombinedContent): string {
   if (item.type === "longform") {
-    return item.title || "Untitled Article";
+    return item.title ?? "Untitled Article";
   }
   return item.caption?.length && item.caption.length > 50
     ? item.caption.substring(0, 50) + "..."
-    : item.caption || "No caption";
+    : item.caption ?? "No caption";
 }
 
 export function getContentPreview(item: CombinedContent): string | null {
   if (item.type === "longform") {
     return (
-      item.summary ||
+      (item.summary ??
       (item.content?.length && item.content.length > 100
         ? item.content.substring(0, 100) + "..."
-        : item.content) ||
+        : item.content)) ??
       "No content"
     );
   }
@@ -50,7 +50,7 @@ export function getStatusColor(item: CombinedContent): string {
   if (item.draft) {
     return "bg-orange-100 text-orange-900 dark:border-orange-900/75 dark:bg-orange-700/10 dark:text-orange-200";
   }
-  if (item.isPosted || item.isPublished) {
+  if (item.isPosted ?? item.isPublished) {
     return "bg-green-100 text-green-900 dark:border-green-900/75 dark:bg-green-700/10 dark:text-green-200";
   }
   if (item.isScheduled) {
@@ -61,7 +61,7 @@ export function getStatusColor(item: CombinedContent): string {
 
 export function getStatusText(item: CombinedContent): string {
   if (item.draft) return "Draft";
-  if (item.isPosted || item.isPublished) return "Posted";
+  if (item.isPosted ?? item.isPublished) return "Posted";
   if (item.isScheduled) return "Scheduled";
   return "Unknown";
 }
@@ -81,7 +81,7 @@ export function formatDate(
   }
 
   return dateObj.toLocaleString("en-US", {
-    timeZone: userTimezone || "UTC",
+    timeZone: userTimezone ?? "UTC",
     month: "2-digit",
     day: "2-digit",
     year: "numeric",
@@ -121,7 +121,7 @@ export function getContentTypeBadge(item: CombinedContent): {
 } {
   // Check for kind property in signedEvent or originalData.signedEvent
   const kind =
-    item.signedEvent?.kind ||
+    item.signedEvent?.kind ??
     item.originalData?.signedEvent?.kind;
 
   if (kind === 6) {

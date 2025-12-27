@@ -127,16 +127,19 @@ describe("XSS Prevention: Markdown Sanitization", () => {
 
 describe("XSS Prevention: Input Validation", () => {
   it("should reject null input", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Testing edge case with invalid input type
     const sanitized = sanitizeMarkdown(null as any);
     expect(sanitized).toBe("");
   });
 
   it("should reject undefined input", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Testing edge case with invalid input type
     const sanitized = sanitizeMarkdown(undefined as any);
     expect(sanitized).toBe("");
   });
 
   it("should reject non-string input", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Testing edge case with invalid input type
     const sanitized = sanitizeMarkdown(123 as any);
     expect(sanitized).toBe("");
   });

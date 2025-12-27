@@ -39,10 +39,11 @@ export function formatScheduleTimeForInput(
     });
 
     const parts = formatter.formatToParts(date);
+    const initialParts: Record<string, string> = {};
     const partsObj = parts.reduce((acc, part) => {
       acc[part.type] = part.value;
       return acc;
-    }, {} as Record<string, string>);
+    }, initialParts);
 
     // Format for datetime-local input: YYYY-MM-DDTHH:MM
     const result = `${partsObj.year}-${partsObj.month}-${partsObj.day}T${partsObj.hour}:${partsObj.minute}`;

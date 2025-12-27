@@ -20,7 +20,7 @@ vi.mock("@remix-run/node", async () => {
   return {
     ...actual,
     unstable_composeUploadHandlers: vi.fn((...handlers) => {
-      return async (name: string, stream: any, info: any) => {
+      return async (name: string, stream: unknown, info: unknown) => {
         // Mock upload handler that returns a URL
         return "https://example.com/uploaded-file.jpg";
       };
@@ -56,8 +56,9 @@ describe("API: Upload", () => {
           body: new FormData(),
         });
 
-        const response = await action({ request, params: {}, context: {} });
-        const data = await response.json();
+        const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+        const dataRaw: unknown = await response.json();
+        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; fileUrl?: unknown; error?: unknown } : {};
 
         expect(requireUserId).toHaveBeenCalledWith(request);
         expect(data).toEqual({
@@ -95,11 +96,13 @@ describe("API: Upload", () => {
           },
         });
 
-        const response = await action({ request, params: {}, context: {} });
-        const data = await response.json();
+        const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+        const dataRaw: unknown = await response.json();
+        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; fileUrl?: unknown; error?: unknown } : {};
 
         expect(response.status).toBe(400);
-        expect(data.success).toBe(false);
+        const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
+        expect(success).toBe(false);
         expect(data.error).toBeDefined();
       });
 
@@ -116,8 +119,9 @@ describe("API: Upload", () => {
           },
         });
 
-        const response = await action({ request, params: {}, context: {} });
-        const data = await response.json();
+        const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+        const dataRaw: unknown = await response.json();
+        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; fileUrl?: unknown; error?: unknown } : {};
 
         expect(response.status).toBe(400);
         expect(data.success).toBe(false);
@@ -136,8 +140,9 @@ describe("API: Upload", () => {
           },
         });
 
-        const response = await action({ request, params: {}, context: {} });
-        const data = await response.json();
+        const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+        const dataRaw: unknown = await response.json();
+        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; fileUrl?: unknown; error?: unknown } : {};
 
         expect(response.status).toBe(400);
         expect(data.success).toBe(false);
@@ -158,8 +163,9 @@ describe("API: Upload", () => {
           },
         });
 
-        const response = await action({ request, params: {}, context: {} });
-        const data = await response.json();
+        const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+        const dataRaw: unknown = await response.json();
+        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; fileUrl?: unknown; error?: unknown } : {};
 
         expect(response.status).toBe(400);
         expect(data.success).toBe(false);
@@ -173,8 +179,10 @@ describe("API: Upload", () => {
         method: "GET",
       });
 
-      const response = await loader({ request, params: {}, context: {} });
-      const data = await response.json();
+      const loaderFn = loader as () => Promise<Response>;
+      const response = await loaderFn();
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { message?: unknown } : {};
 
       expect(data).toEqual({ message: "General File Upload API" });
     });

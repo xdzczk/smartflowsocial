@@ -114,8 +114,8 @@ export function getUserPlanType(
   }
 
   // Check both plan name and planId for better matching
-  const planName = subscription.Plan?.name?.toLowerCase() || "";
-  const planId = subscription.planId?.toLowerCase() || "";
+  const planName = subscription.Plan?.name?.toLowerCase() ?? "";
+  const planId = subscription.planId?.toLowerCase() ?? "";
 
   // Check planId first (more reliable), then plan name
   if (planId === "basic" || planName.includes("basic")) {
@@ -167,11 +167,11 @@ export function useSubscription(): SubscriptionData | null {
   }
 
   if (foundUser || foundSub) {
-    return {
-      user: foundUser || null,
-      currentSubscription: foundSub || null,
+  return {
+      user: foundUser ?? null,
+      currentSubscription: foundSub ?? null,
     };
-  }
+}
 
   return null;
 }

@@ -1,7 +1,6 @@
 import type {
   EventStats,
   GroupedNotification,
-  GroupedNotifications,
   Notification,
   NotificationEvent,
   NotificationQuoteRepost,
@@ -66,12 +65,12 @@ export function parseThreadViewNotifications(
         };
         if (statsData.event_id) {
           eventStats.set(statsData.event_id, {
-            likes: statsData.likes || 0,
-            replies: statsData.replies || 0,
-            mentions: statsData.mentions || 0,
-            reposts: statsData.reposts || 0,
-            zaps: statsData.zaps || 0,
-            satszapped: statsData.satszapped || 0,
+            likes: statsData.likes ?? 0,
+            replies: statsData.replies ?? 0,
+            mentions: statsData.mentions ?? 0,
+            reposts: statsData.reposts ?? 0,
+            zaps: statsData.zaps ?? 0,
+            satszapped: statsData.satszapped ?? 0,
           });
         }
       } catch {
@@ -89,8 +88,8 @@ export function parseThreadViewNotifications(
     // Replies and Mentions (kind 1 events that reference the original event)
     if (event.kind === 1 && event.id && event.id !== originalEventId) {
       // Check if this event replies to or mentions the original event
-      const eTags = (event.tags?.filter((tag: string[]) => tag[0] === "e") || []);
-      const pTags = (event.tags?.filter((tag: string[]) => tag[0] === "p") || []);
+      const eTags = (event.tags?.filter((tag: string[]) => tag[0] === "e") ?? []);
+      const pTags = (event.tags?.filter((tag: string[]) => tag[0] === "p") ?? []);
 
       const targetETag = eTags.find((tag: string[]) => tag[1] === originalEventId);
       const referencesOriginal = !!targetETag;
@@ -105,7 +104,7 @@ export function parseThreadViewNotifications(
         const marker = targetETag?.[3] as string | undefined;
 
         // Check if it's a quote post (has nostr:nevent or nostr:note in content)
-        const eventContent = event.content || "";
+        const eventContent = event.content ?? "";
         const hasNostrReference =
           eventContent.includes("nostr:nevent") ||
           eventContent.includes("nostr:note") ||
@@ -158,7 +157,7 @@ export function parseThreadViewNotifications(
           type: "mention",
           id: event.id,
           eventId: event.id,
-          content: event.content || "",
+          content: event.content ?? "",
           createdAt: event.created_at,
           pubkey: event.pubkey,
           authorName: (profile?.display_name ?? profile?.name),
@@ -178,7 +177,7 @@ export function parseThreadViewNotifications(
         if (!descTag?.[1] || typeof descTag[1] !== "string") continue;
 
         const zapRequest = JSON.parse(descTag[1]) as { tags?: string[][]; pubkey?: string; content?: string };
-        const eTags = (event.tags || []).filter((tag: string[]) => tag[0] === "e");
+        const eTags = (event.tags ?? []).filter((tag: string[]) => tag[0] === "e");
 
         // Check if this zap is for our original event
         const zapForOriginal = eTags.some(
@@ -193,7 +192,7 @@ export function parseThreadViewNotifications(
           const amountMsats = amountTag?.[1] ? parseInt(amountTag[1], 10) : 0;
           const amountSats = Math.floor(amountMsats / 1000);
 
-          const senderPubkey = zapRequest.pubkey || event.pubkey || "";
+          const senderPubkey = (zapRequest.pubkey ?? event.pubkey) ?? "";
           const profile = senderPubkey ? userProfiles.get(senderPubkey) : undefined;
           const stats = eventStats.get(event.id);
 
@@ -201,7 +200,7 @@ export function parseThreadViewNotifications(
             type: "zap",
             id: event.id,
             eventId: event.id,
-            content: event.content || zapRequest.content || "",
+            content: (event.content ?? zapRequest.content) ?? "",
             createdAt: event.created_at,
             senderPubkey,
             receiverPubkey: userPubkey,
@@ -389,7 +388,7 @@ export async function processQuoteReposts(
   const quotePromises = quoteRepostEvents.map(async (event) => {
     try {
       // Extract the quoted event ID from the "e" tags with "mention" marker
-      const eTags = event.tags?.filter((tag: NostrTag) => tag[0] === "e") || [];
+      const eTags = event.tags?.filter((tag: NostrTag) => tag[0] === "e") ?? [];
       const quotedEventTag = eTags.find((tag: NostrTag) => tag[3] === "mention");
 
       if (!quotedEventTag?.[1]) {
@@ -451,7 +450,7 @@ export async function processQuoteReposts(
             }
           }
         }
-      } catch (error) {
+      } catch (_error) {
         // Silently handle errors for stats
       }
 

@@ -127,7 +127,7 @@ async function createImageUploadHandler(uploadProvider: string | null) {
         } else {
           const { logClientError } = await import("~/lib/error-handler.client");
           logClientError(
-            new Error(uploadResult.error || "Blossom upload failed"),
+            new Error(uploadResult.error ?? "Blossom upload failed"),
             {
               component: "useLongFormEditor",
               action: "uploadImage",
@@ -135,7 +135,7 @@ async function createImageUploadHandler(uploadProvider: string | null) {
             },
             "warning",
           );
-          throw new Error(uploadResult.error || "Blossom upload failed");
+          throw new Error(uploadResult.error ?? "Blossom upload failed");
         }
       } else {
         // Use server-side upload for S3
@@ -197,17 +197,17 @@ async function createImageUploadHandler(uploadProvider: string | null) {
             success: 1,
             file: {
               url: result.file.url,
-              size: result.file.size || file.size,
-              name: result.file.name || file.name,
+              size: result.file.size ?? file.size,
+              name: result.file.name ?? file.name,
               extension:
-                result.file.extension ||
+                result.file.extension ??
                 file.name.split(".").pop(),
             },
           };
         } else {
           const { logClientError } = await import("~/lib/error-handler.client");
           logClientError(
-            new Error(result.error || "Upload failed"),
+            new Error(result.error ?? "Upload failed"),
             {
               component: "useLongFormEditor",
               action: "uploadImage",
@@ -215,7 +215,7 @@ async function createImageUploadHandler(uploadProvider: string | null) {
             },
             "warning",
           );
-          throw new Error(result.error || "Upload failed");
+          throw new Error(result.error ?? "Upload failed");
         }
       }
     } catch (error) {

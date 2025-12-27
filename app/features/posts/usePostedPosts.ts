@@ -12,12 +12,12 @@ interface UsePostedPostsProps {
     posts: PostData[];
 }
 
-export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps) {
-    const revalidator = useRevalidator();
+export function usePostedPosts({ user, allContent, posts: _posts }: UsePostedPostsProps) {
+    const _revalidator = useRevalidator();
     const [searchParams] = useSearchParams();
 
     // Get current tab from URL params - default to "all"
-    const currentTab = searchParams.get("tab") || "all";
+    const currentTab = searchParams.get("tab") ?? "all";
 
     const [sortConfig, setSortConfig] = useState({
         key: "postedAt",
@@ -277,14 +277,14 @@ export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps)
                 scheduleDate.setHours(scheduleDate.getHours() + index);
 
                 return {
-                    caption: post.caption || "",
+                    caption: post.caption ?? "",
                     fileUrl:
                         post.fileUrl &&
                             Array.isArray(post.fileUrl) &&
                             post.fileUrl.length > 0
                             ? post.fileUrl[0]
                             : "",
-                    queueType: post.queueType || "unassigned",
+                    queueType: post.queueType ?? "unassigned",
                     scheduledFor: scheduleDate
                         .toLocaleString("en-US", {
                             year: "numeric",
@@ -326,7 +326,7 @@ export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps)
                 return {
                     caption: "", // Empty content for kind 6 reposts
                     fileUrl: "", // No file URL for kind 6 reposts
-                    queueType: post.queueType || "unassigned",
+                    queueType: post.queueType ?? "unassigned",
                     scheduledFor: scheduleDate
                         .toLocaleString("en-US", {
                             year: "numeric",
@@ -396,7 +396,7 @@ export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps)
                     const { signedEvent } = await signEventFn(eventData);
 
                     // Get user relays from user data
-                    const sanitizedRelays = user.userRelays || ["wss://relay.primal.net"];
+                    const sanitizedRelays = user.userRelays ?? ["wss://relay.primal.net"];
 
                     // Publish the signed event
                     const response = await fetch("/api/publish", {
@@ -419,7 +419,7 @@ export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps)
                         setToast({
                             type: "success",
                             message: "Article reposted successfully!",
-                            link: `https://primal.net/a/${originalPost?.nostrEventId || originalPost?.signedEvent?.id || ""}`,
+                            link: `https://primal.net/a/${(originalPost?.nostrEventId ?? originalPost?.signedEvent?.id) ?? ""}`,
                             linkText: "View Original Article",
                         });
 
@@ -434,7 +434,7 @@ export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps)
                     }, false); // Don't show toast, we set toast state instead
                     setToast({
                         type: "error",
-                        message: getErrorMessage(error) || "Failed to sign or publish longform repost",
+                        message: getErrorMessage(error) ?? "Failed to sign or publish longform repost",
                     });
 
                     // Hide toast after 5 seconds for errors
@@ -444,7 +444,7 @@ export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps)
                 setToast({
                     type: "error",
                     message:
-                        longformRepostFetcher.data.message ||
+                        longformRepostFetcher.data.message ??
                         "Failed to create longform repost",
                 });
 
@@ -454,7 +454,7 @@ export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps)
         };
 
         if (longformRepostFetcher.data) {
-            handleLongformRepost();
+            void handleLongformRepost();
         }
     }, [longformRepostFetcher.data, user]);
 
@@ -472,7 +472,7 @@ export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps)
             setToast({
                 type: "error",
                 message:
-                    longformQuoteFetcher.data.message ||
+                    longformQuoteFetcher.data.message ??
                     "Failed to create longform quote post",
             });
 
@@ -491,7 +491,7 @@ export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps)
                     const { signedEvent } = await signEventFn(eventData);
 
                     // Get user relays from user data
-                    const sanitizedRelays = user.userRelays || ["wss://relay.primal.net"];
+                    const sanitizedRelays = user.userRelays ?? ["wss://relay.primal.net"];
 
                     // Publish the signed event
                     const response = await fetch("/api/publish", {
@@ -514,7 +514,7 @@ export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps)
                         setToast({
                             type: "success",
                             message: "Post reposted successfully!",
-                            link: `https://primal.net/e/${eventData.tags.find((tag: string[]) => tag[0] === "e")?.[1]}`,
+                            link: `https://primal.net/e/${String(eventData.tags.find((tag: string[]) => tag[0] === "e")?.[1] ?? '')}`,
                             linkText: "View Original Post",
                         });
 
@@ -557,7 +557,7 @@ export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps)
         };
 
         if (individualRepostFetcher.data) {
-            handleRepost();
+            void handleRepost();
         }
     }, [individualRepostFetcher.data, user.userRelays]);
 

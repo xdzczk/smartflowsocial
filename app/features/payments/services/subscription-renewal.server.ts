@@ -151,7 +151,7 @@ export async function checkAndRenewSubscriptions(): Promise<{
       success: false,
       timestamp: new Date().toISOString(),
       ...results,
-      errors: [...results.errors, typeof errorResponse.error === "string" ? errorResponse.error : errorResponse.error.message || String(errorResponse.error)],
+      errors: [...results.errors, typeof errorResponse.error === "string" ? errorResponse.error : errorResponse.error.message ?? String(errorResponse.error)],
     };
   }
 }
@@ -174,7 +174,7 @@ async function attemptRenewal(
   const decryptedNwc = decrypt(user.encryptedNwc);
 
   // Get user's current plan
-  const planId = subscription.planId || subscription.plan;
+  const planId = subscription.planId ?? subscription.plan;
   if (!planId) {
     throw new Error("No plan ID found for subscription");
   }
@@ -233,13 +233,13 @@ async function attemptRenewal(
 
   // Extract invoice, paymentHash and amount from the request object structure
   // Cast to unknown then to Record to access properties that may exist on ReceiveInvoice
-  const requestAny: Record<string, unknown> = invoiceRequest && typeof invoiceRequest === "object" && !Array.isArray(invoiceRequest) ? invoiceRequest as Record<string, unknown> : {};
+  const requestAny: Record<string, unknown> = invoiceRequest && typeof invoiceRequest === "object" && !Array.isArray(invoiceRequest) ? invoiceRequest as unknown as Record<string, unknown> : {};
   const invoiceValue = requestAny.invoice;
   const invoiceString =
     typeof invoiceValue === "string"
       ? invoiceValue
-      : (invoiceValue && typeof invoiceValue === "object" && !Array.isArray(invoiceValue) && "paymentRequest" in invoiceValue && typeof invoiceValue.paymentRequest === "string"
-          ? invoiceValue.paymentRequest
+      : (invoiceValue && typeof invoiceValue === "object" && !Array.isArray(invoiceValue) && "paymentRequest" in invoiceValue && typeof (invoiceValue as { paymentRequest?: unknown }).paymentRequest === "string"
+          ? (invoiceValue as { paymentRequest: string }).paymentRequest
           : "");
   const invoiceObj = invoiceValue && typeof invoiceValue === "object" && !Array.isArray(invoiceValue) ? invoiceValue as Record<string, unknown> : null;
   const paymentHashString =
@@ -315,7 +315,7 @@ async function attemptRenewal(
       {
         invoiceString,
         paymentHashString,
-        requestStructure: Object.keys(invoiceRequest),
+        requestStructure: Object.keys(invoiceRequest as unknown as Record<string, unknown>),
       },
     );
     throw new Error(
@@ -337,8 +337,8 @@ async function attemptRenewal(
   const paymentResultObj = paymentResult && typeof paymentResult === "object" && !Array.isArray(paymentResult) ? paymentResult as Record<string, unknown> : {};
   const preimageValue = paymentResultObj.preimage;
   const paymentHash =
-    (typeof preimageValue === "string" ? preimageValue : null) ||
-    paymentHashString ||
+    (typeof preimageValue === "string" ? preimageValue : null) ??
+    paymentHashString ??
     `payment_${Date.now()}`;
 
   // Create payment record

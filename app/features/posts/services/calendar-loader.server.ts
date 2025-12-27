@@ -4,7 +4,8 @@
  */
 
 import { combineContent } from "~/features/posts/combined.server";
-import type { PostData, LongFormPostData } from "~/features/posts/types";
+import type { PostData, LongFormPostData, QueueType } from "~/features/posts/types";
+import { convertJsonValueToScheduleConfig } from "~/features/posts/types";
 import {
   getScheduledLongFormPosts,
   getPastLongFormPosts,
@@ -57,21 +58,51 @@ export async function loadCalendarData(
   // Convert PostWithQueueType[] to PostData[] for combineContent
   const scheduledPostsData: PostData[] = filteredScheduledPosts.map((post) => {
     const { queueType, ...rest } = post;
+    const convertedQueueType: QueueType | undefined = queueType ? ((): QueueType => {
+      const scheduleTypeValue: "INTERVAL" | "FIXED_SLOTS" | undefined = queueType.scheduleType as "INTERVAL" | "FIXED_SLOTS" | undefined;
+      return {
+        id: queueType.id,
+        name: queueType.name,
+        color: queueType.color,
+        description: queueType.description,
+        scheduleType: scheduleTypeValue,
+        scheduleConfig: convertJsonValueToScheduleConfig(queueType.scheduleConfig),
+        isEnabled: queueType.isEnabled,
+        userId: queueType.userId,
+      };
+    })() : undefined;
+    const signedEventValue: PostData["signedEvent"] = post.signedEvent as PostData["signedEvent"];
+    const nostrEventValue: PostData["nostrEvent"] = post.nostrEvent as PostData["nostrEvent"];
     const result: PostData = {
       ...rest,
-      queueType: queueType || undefined,
-      signedEvent: post.signedEvent as PostData["signedEvent"],
-      nostrEvent: post.nostrEvent as PostData["nostrEvent"],
+      queueType: convertedQueueType,
+      signedEvent: signedEventValue,
+      nostrEvent: nostrEventValue,
     };
     return result;
   });
   const pastPostsData: PostData[] = filteredPastPosts.map((post) => {
     const { queueType, ...rest } = post;
+    const convertedQueueType: QueueType | undefined = queueType ? ((): QueueType => {
+      const scheduleTypeValue: "INTERVAL" | "FIXED_SLOTS" | undefined = queueType.scheduleType as "INTERVAL" | "FIXED_SLOTS" | undefined;
+      return {
+        id: queueType.id,
+        name: queueType.name,
+        color: queueType.color,
+        description: queueType.description,
+        scheduleType: scheduleTypeValue,
+        scheduleConfig: convertJsonValueToScheduleConfig(queueType.scheduleConfig),
+        isEnabled: queueType.isEnabled,
+        userId: queueType.userId,
+      };
+    })() : undefined;
+    const signedEventValue: PostData["signedEvent"] = post.signedEvent as PostData["signedEvent"];
+    const nostrEventValue: PostData["nostrEvent"] = post.nostrEvent as PostData["nostrEvent"];
     const result: PostData = {
       ...rest,
-      queueType: queueType || undefined,
-      signedEvent: post.signedEvent as PostData["signedEvent"],
-      nostrEvent: post.nostrEvent as PostData["nostrEvent"],
+      queueType: convertedQueueType,
+      signedEvent: signedEventValue,
+      nostrEvent: nostrEventValue,
     };
     return result;
   });
@@ -79,18 +110,52 @@ export async function loadCalendarData(
   // Convert LongFormPost[] to LongFormPostData[] for combineContent
   const scheduledLongFormPostsData: LongFormPostData[] = filteredScheduledLongFormPosts.map((post) => {
     const { queueType, ...rest } = post;
+    const convertedQueueType: QueueType | undefined = queueType ? ((): QueueType => {
+      const scheduleTypeValue: "INTERVAL" | "FIXED_SLOTS" | undefined = queueType.scheduleType as "INTERVAL" | "FIXED_SLOTS" | undefined;
+      return {
+        id: queueType.id,
+        name: queueType.name,
+        color: queueType.color,
+        description: queueType.description,
+        scheduleType: scheduleTypeValue,
+        scheduleConfig: convertJsonValueToScheduleConfig(queueType.scheduleConfig),
+        isEnabled: queueType.isEnabled,
+        userId: queueType.userId,
+      };
+    })() : undefined;
+    const signedEventValue: LongFormPostData["signedEvent"] = post.signedEvent as LongFormPostData["signedEvent"];
+    const nostrEventValue: LongFormPostData["nostrEvent"] = post.nostrEvent as LongFormPostData["nostrEvent"];
     const result: LongFormPostData = {
       ...rest,
-      queueType: queueType || undefined,
-      signedEvent: post.signedEvent as LongFormPostData["signedEvent"],
-      nostrEvent: post.nostrEvent as LongFormPostData["nostrEvent"],
+      queueType: convertedQueueType,
+      signedEvent: signedEventValue,
+      nostrEvent: nostrEventValue,
     };
     return result;
   });
   const pastLongFormPostsData: LongFormPostData[] = filteredPastLongFormPosts.map((post) => {
+    const convertedQueueType: QueueType | undefined = ("queueType" in post && post.queueType && typeof post.queueType === "object" && "id" in post.queueType && "name" in post.queueType) ? ((): QueueType => {
+      const idValue: string = post.queueType.id as string;
+      const nameValue: string = post.queueType.name as string;
+      const colorValue: string | null | undefined = ("color" in post.queueType ? post.queueType.color : undefined) as string | null | undefined;
+      const descriptionValue: string | null | undefined = ("description" in post.queueType ? post.queueType.description : undefined) as string | null | undefined;
+      const scheduleTypeValue: "INTERVAL" | "FIXED_SLOTS" | undefined = ("scheduleType" in post.queueType ? post.queueType.scheduleType : undefined) as "INTERVAL" | "FIXED_SLOTS" | undefined;
+      const isEnabledValue: boolean | undefined = ("isEnabled" in post.queueType ? post.queueType.isEnabled : undefined) as boolean | undefined;
+      const userIdValue: string | undefined = ("userId" in post.queueType ? post.queueType.userId : undefined) as string | undefined;
+      return {
+        id: idValue,
+        name: nameValue,
+        color: colorValue,
+        description: descriptionValue,
+        scheduleType: scheduleTypeValue,
+        scheduleConfig: convertJsonValueToScheduleConfig("scheduleConfig" in post.queueType ? post.queueType.scheduleConfig : undefined),
+        isEnabled: isEnabledValue,
+        userId: userIdValue,
+      };
+    })() : undefined;
     const result: LongFormPostData = {
       ...post,
-      queueType: ("queueType" in post && post.queueType) || undefined,
+      queueType: convertedQueueType,
       signedEvent: post.signedEvent as LongFormPostData["signedEvent"],
       nostrEvent: post.nostrEvent as LongFormPostData["nostrEvent"],
     };

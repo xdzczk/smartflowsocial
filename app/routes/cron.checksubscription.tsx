@@ -1,11 +1,14 @@
-if (process.env.NODE_ENV !== "development") {
+// Polyfill WebSocket for @getalby/sdk in Node.js (production only)
+// Using ws package instead of deprecated websocket-polyfill
+if (process.env.NODE_ENV !== "development" && typeof globalThis !== "undefined" && globalThis.WebSocket === undefined) {
    
-  require("websocket-polyfill");
+  const { WebSocket } = require("ws") as { WebSocket: typeof globalThis.WebSocket };
+  globalThis.WebSocket = WebSocket;
 }
 
 import { json } from "@remix-run/node";
 
-import { checkAndRenewSubscriptions } from "~/features/payments/services/subscription-renewal.server";
+import { checkAndRenewSubscriptions } from "~/features/payments";
 /**
  * Cron job to check user subscriptions and handle renewals
  * This should be called periodically (e.g., daily) to:

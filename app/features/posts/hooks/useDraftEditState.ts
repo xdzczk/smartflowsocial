@@ -29,9 +29,9 @@ export function useDraftEditState({
 }: UseDraftEditStateProps) {
   const fetcher = useFetcher();
   const currentUser = useOptionalUser();
-  const [content, setContent] = useState(post.content || "");
-  const [caption] = useState(post.caption || "");
-  const [selectedQueue, setSelectedQueue] = useState(
+  const [content, setContent] = useState(post.content ?? "");
+  const [caption] = useState(post.caption ?? "");
+  const [selectedQueue, setSelectedQueue] = useState<string>(
     (typeof post.queueType === "object" && post.queueType?.name) || (typeof post.queueType === "string" ? post.queueType : "unassigned"),
   );
   const [scheduledFor, setScheduledFor] = useState("");
@@ -40,7 +40,7 @@ export function useDraftEditState({
     !!post.hashTagPresetId,
   );
   const [selectedHashtagPresetId, setSelectedHashtagPresetId] = useState(
-    post.hashTagPresetId || null,
+    post.hashTagPresetId ?? null,
   );
   const [selectedHashtags, setSelectedHashtags] = useState("");
 
@@ -90,7 +90,7 @@ export function useDraftEditState({
       const currentUserData: UserData | null = currentUser ? {
         id: currentUser.id,
         npub: currentUser.npub,
-        timezone: currentUser.timezone || null,
+        timezone: currentUser.timezone ?? null,
         scheduleInterval: currentUser.scheduleInterval ? currentUser.scheduleInterval.map(Number).filter(n => !isNaN(n)) : undefined,
         userRelays: currentUser.userRelays,
         showHashTagsinPosts: currentUser.showHashTagsinPosts,

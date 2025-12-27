@@ -77,8 +77,13 @@ export const meta = () => [
   { name: "viewport", content: "width=device-width, initial-scale=1" },
 ];
 
+type LoaderData = Awaited<ReturnType<typeof loader>>;
+
 export default function App() {
-  const { ENV } = useLoaderData<typeof loader>();
+  const loaderData = useLoaderData<LoaderData>();
+  const ENV = loaderData && typeof loaderData === "object" && "ENV" in loaderData && loaderData.ENV && typeof loaderData.ENV === "object" 
+    ? loaderData.ENV as { SENTRY_DSN: string | null; NODE_ENV: string }
+    : { SENTRY_DSN: null, NODE_ENV: "development" };
 
   return (
     <html lang="en" className="h-full">

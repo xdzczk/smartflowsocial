@@ -22,7 +22,7 @@ describe("Property-Based Tests: Encryption", () => {
       fc.assert(
         fc.property(
           fc.string(), // Any string, including empty, unicode, special chars
-          (plaintext) => {
+          (plaintext: string) => {
             try {
               const encrypted = encrypt(plaintext);
               const decrypted = decrypt(encrypted);
@@ -40,7 +40,7 @@ describe("Property-Based Tests: Encryption", () => {
       fc.assert(
         fc.property(
           fc.constant(""),
-          (plaintext) => {
+          (plaintext: string) => {
             const encrypted = encrypt(plaintext);
             const decrypted = decrypt(encrypted);
             return decrypted === plaintext;
@@ -53,7 +53,7 @@ describe("Property-Based Tests: Encryption", () => {
       fc.assert(
         fc.property(
           fc.string({ minLength: 0, maxLength: 10000 }),
-          (plaintext) => {
+          (plaintext: string) => {
             const encrypted = encrypt(plaintext);
             const decrypted = decrypt(encrypted);
             return decrypted === plaintext;
@@ -67,7 +67,7 @@ describe("Property-Based Tests: Encryption", () => {
       fc.assert(
         fc.property(
           fc.fullUnicodeString({ minLength: 0, maxLength: 1000 }),
-          (plaintext) => {
+          (plaintext: string) => {
             const encrypted = encrypt(plaintext);
             const decrypted = decrypt(encrypted);
             return decrypted === plaintext;
@@ -83,7 +83,7 @@ describe("Property-Based Tests: Encryption", () => {
       fc.assert(
         fc.property(
           fc.string({ minLength: 1, maxLength: 100 }),
-          (plaintext) => {
+          (plaintext: string) => {
             const encrypted1 = encrypt(plaintext);
             const encrypted2 = encrypt(plaintext);
             // Should be different (very high probability)
@@ -101,7 +101,7 @@ describe("Property-Based Tests: Encryption", () => {
         fc.property(
           fc.string({ minLength: 1, maxLength: 100 }),
           fc.integer({ min: 0, max: 100 }),
-          (plaintext, tamperIndex) => {
+          (plaintext: string, tamperIndex: number) => {
             const encrypted = encrypt(plaintext);
             const encryptedBuffer = Buffer.from(encrypted, "base64");
             
@@ -131,7 +131,7 @@ describe("Property-Based Tests: Encryption", () => {
       fc.assert(
         fc.property(
           fc.string({ minLength: 0, maxLength: 1000 }),
-          (plaintext) => {
+          (plaintext: string) => {
             const encrypted = encrypt(plaintext);
             // Check if valid base64
             try {
@@ -150,7 +150,7 @@ describe("Property-Based Tests: Encryption", () => {
       fc.assert(
         fc.property(
           fc.string({ minLength: 0, maxLength: 100 }),
-          (plaintext) => {
+          (plaintext: string) => {
             const encrypted = encrypt(plaintext);
             // Encrypted should be longer (base64 encoding + overhead)
             return encrypted.length >= plaintext.length;

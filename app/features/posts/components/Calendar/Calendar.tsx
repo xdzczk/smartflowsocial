@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 
-import type { PostData, LongFormPostData, QueueType, UserData } from "~/features/posts/types";
+import type { QueueType, UserData } from "~/features/posts/types";
 
 import { MonthlyView } from "./MonthlyView";
 import type { CalendarPost } from "./PostBlock.types";

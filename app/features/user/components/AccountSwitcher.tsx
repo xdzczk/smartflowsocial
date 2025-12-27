@@ -80,7 +80,7 @@ export default function AccountSwitcher() {
       document.dispatchEvent(new CustomEvent("nlLaunch", { detail: "switch" }));
     } catch (e) {
        
-      const { handleErrorSafely } = require("~/lib/error-handler.client") as { handleErrorSafely: (error: unknown, context: { component: string; action: string }) => void };
+      const { handleErrorSafely } = require("~/lib/error-handler.client") as unknown as { handleErrorSafely: (error: unknown, context: { component: string; action: string }) => void };
       handleErrorSafely(e, {
         component: "AccountSwitcher",
         action: "handleAccountSwitch",
@@ -92,7 +92,7 @@ export default function AccountSwitcher() {
     <div className="flex items-center">
       <Select onValueChange={(value) => { void handleSwitch(value); }}>
         <SelectTrigger className="h-9 w-[220px] bg-white dark:bg-gray-900 text-sm">
-          <SelectValue placeholder="Switch account" />
+          <SelectValue />
         </SelectTrigger>
         <SelectContent>
           {children.map((c) => {

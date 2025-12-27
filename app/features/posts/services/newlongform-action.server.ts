@@ -40,9 +40,9 @@ function parseTags(formData: FormData): string[] {
       ?.toString()
       .split(",")
       .map((tag) => tag.trim())
-      .filter(Boolean) || [];
+      .filter(Boolean) ?? [];
 
-  const customTags = formData.get("customTags")?.toString() || "";
+  const customTags = formData.get("customTags")?.toString() ?? "";
 
   // If there are custom tags input separately, parse and combine them
   if (customTags) {
@@ -94,7 +94,7 @@ async function getHashtagPresetTags(
       if (selectedQueueType && "hashTagPreset" in selectedQueueType && selectedQueueType.hashTagPreset) {
         const preset = selectedQueueType.hashTagPreset;
         if (preset && typeof preset === "object" && "tags" in preset && typeof preset.tags === "string") {
-          hashTagPresetTags = preset.tags || "";
+          hashTagPresetTags = preset.tags ?? "";
         }
         if (preset && typeof preset === "object" && "id" in preset && typeof preset.id === "string") {
           hashTagPresetId = preset.id;
@@ -113,7 +113,8 @@ async function handleImageUpload(
   userId: string,
   formData: FormData,
 ): Promise<Response> {
-  const imageFile = formData.get("imageFile");
+  const imageFileRaw = formData.get("imageFile");
+  const imageFile = imageFileRaw;
 
   // If it's already a URL string, return it
   if (
@@ -178,9 +179,9 @@ async function handleSaveDraft(
   queueType: string,
   hashTagPresetId: string | null,
 ): Promise<Response> {
-  const title = formData.get("title")?.toString() || "";
-  const editorContent = formData.get("content")?.toString() || "";
-  const image = formData.get("image")?.toString() || undefined;
+  const title = formData.get("title")?.toString() ?? "";
+  const editorContent = formData.get("content")?.toString() ?? "";
+  const image = formData.get("image")?.toString() ?? undefined;
   const summary = formData.get("summary")?.toString();
   const tags = parseTags(formData);
 
@@ -198,13 +199,13 @@ async function handleSaveDraft(
   let markdownContent;
   try {
     const editorData = JSON.parse(editorContent) as { blocks?: { type: string; data: Record<string, unknown> }[]; time?: number; version?: string };
-    markdownContent = convertEditorJSToMarkdown(editorData);
+    markdownContent = convertEditorJSToMarkdown({ blocks: editorData.blocks ?? [], time: editorData.time, version: editorData.version });
   } catch {
     markdownContent = editorContent;
   }
 
   const sanitizedContent = sanitizeMarkdown(markdownContent);
-  const finalSummary = summary || generateSummary(sanitizedContent);
+  const finalSummary = summary ?? generateSummary(sanitizedContent);
 
   await createLongFormPost({
     userId,
@@ -233,9 +234,9 @@ async function handlePublish(
   showHashTagsinPosts: boolean,
   sanitizedRelays: string[],
 ): Promise<Response> {
-  const title = formData.get("title")?.toString() || "";
-  const editorContent = formData.get("content")?.toString() || "";
-  const image = formData.get("image")?.toString() || undefined;
+  const title = formData.get("title")?.toString() ?? "";
+  const editorContent = formData.get("content")?.toString() ?? "";
+  const image = formData.get("image")?.toString() ?? undefined;
   const summary = formData.get("summary")?.toString();
   const tags = parseTags(formData);
   const signedEvent = formData.get("signedEvent");
@@ -276,13 +277,13 @@ async function handlePublish(
   let markdownContent;
   try {
     const editorData = JSON.parse(editorContent) as { blocks?: { type: string; data: Record<string, unknown> }[]; time?: number; version?: string };
-    markdownContent = convertEditorJSToMarkdown(editorData);
+    markdownContent = convertEditorJSToMarkdown({ blocks: editorData.blocks ?? [], time: editorData.time, version: editorData.version });
   } catch {
     markdownContent = editorContent;
   }
 
   const sanitizedContent = sanitizeMarkdown(markdownContent);
-  const finalSummary = summary || generateSummary(sanitizedContent);
+  const finalSummary = summary ?? generateSummary(sanitizedContent);
 
   // Add hashtags to content if user has enabled it
   const contentWithHashtags =
@@ -336,9 +337,9 @@ async function handleScheduleLongform(
   hashTagPresetTags: string,
   showHashTagsinPosts: boolean,
 ): Promise<Response> {
-  const title = formData.get("title")?.toString() || "";
-  const editorContent = formData.get("content")?.toString() || "";
-  const image = formData.get("image")?.toString() || undefined;
+  const title = formData.get("title")?.toString() ?? "";
+  const editorContent = formData.get("content")?.toString() ?? "";
+  const image = formData.get("image")?.toString() ?? undefined;
   const summary = formData.get("summary")?.toString();
   const tags = parseTags(formData);
   const signedEvent = formData.get("signedEvent");
@@ -379,13 +380,13 @@ async function handleScheduleLongform(
   let markdownContent;
   try {
     const editorData = JSON.parse(editorContent) as { blocks?: { type: string; data: Record<string, unknown> }[]; time?: number; version?: string };
-    markdownContent = convertEditorJSToMarkdown(editorData);
+    markdownContent = convertEditorJSToMarkdown({ blocks: editorData.blocks ?? [], time: editorData.time, version: editorData.version });
   } catch {
     markdownContent = editorContent;
   }
 
   const sanitizedContent = sanitizeMarkdown(markdownContent);
-  const finalSummary = summary || generateSummary(sanitizedContent);
+  const finalSummary = summary ?? generateSummary(sanitizedContent);
 
   // Add hashtags to content if user has enabled it
   const contentWithHashtags =
@@ -440,7 +441,7 @@ export async function handleNewLongFormAction(
   const { userRelays, showHashTagsinPosts } = user;
   const sanitizedRelays = userRelays.map((relay: string) => relay.trim());
 
-  const contentType = request.headers.get("Content-Type") || "";
+  const contentType = request.headers.get("Content-Type") ?? "";
   let formData: FormData;
 
   if (contentType.includes("multipart/form-data")) {
@@ -454,10 +455,10 @@ export async function handleNewLongFormAction(
   }
 
   const _action = formData.get("_action") as string;
-  const queueType = (formData.get("queueType") as string) || "Unassigned";
+  const queueType = (formData.get("queueType") as string) ?? "Unassigned";
   const useHashtagPresets = formData.get("useHashtagPresets") === "on";
   const manualHashTagPresetId = useHashtagPresets
-    ? ((formData.get("hashTagPresetId") as string) || null)
+    ? ((formData.get("hashTagPresetId") as string) ?? null)
     : null;
 
   // Handle upload-image action first, before any validation

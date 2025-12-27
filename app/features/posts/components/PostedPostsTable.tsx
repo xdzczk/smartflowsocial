@@ -1,4 +1,4 @@
-import { Link, type FetcherWithComponents } from "@remix-run/react";
+import { Link } from "@remix-run/react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { getQueueColor } from "~/features/posts/queueColors";
@@ -175,7 +175,7 @@ export default function PostedPostsTable({
 
                 <tbody>
                     {filteredPosts.map((post) => {
-                        const postStats = (post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent && typeof post.signedEvent.id === "string" ? stats[post.signedEvent.id] : null) || {
+                        const postStats = (post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent && typeof post.signedEvent.id === "string" ? stats[post.signedEvent.id] : null) ?? {
                             likes: 0,
                             replies: 0,
                             mentions: 0,
@@ -287,7 +287,7 @@ export default function PostedPostsTable({
                                     <p className="font-medium">
                                         {post.caption && post.caption.length > 21
                                             ? post.caption.substring(0, 21) + "..."
-                                            : post.caption || ""}
+                                            : post.caption ?? ""}
                                     </p>
                                 </td>
                                 <td className="p-3">{post.postedAt ? formatDate(post.postedAt) : "-"}</td>

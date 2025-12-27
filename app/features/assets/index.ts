@@ -18,6 +18,7 @@
 export type {
   Asset,
   AssetUploadOptions,
+  AssetFetcher,
 } from "./types";
 
 // ============================================================================
@@ -32,6 +33,12 @@ export {
   useAssetUpload,
 } from "./useAssetUpload";
 
+// ============================================================================
+// Components (Public API)
+// ============================================================================
 
-
+export { AssetPagination } from "./components/AssetPagination";
+export { AssetsTab } from "./components/AssetsTab";
+export { UploadTab } from "./components/UploadTab";
+export { default as AssetBrowser } from "./components/AssetBrowser";
 

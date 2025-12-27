@@ -38,7 +38,7 @@ export async function handleFileChange(
     setProcessingProgress,
     setFirstItemTimeManuallyChanged,
   } = deps;
-  const selectedFiles = Array.from(e.target.files || []);
+  const selectedFiles = Array.from(e.target.files ?? []);
 
   // Check total size
   const totalSize = selectedFiles.reduce((sum, file) => sum + file.size, 0);
@@ -121,7 +121,7 @@ export async function handleFileChange(
 
     // Add index+4 hours to schedule 4 post per hour (default)
     localDate.setHours(
-      localDate.getHours() + (index + Number(scheduleIntervals?.[0] || 4)),
+      localDate.getHours() + (index + Number(scheduleIntervals?.[0] ?? 4)),
     );
 
     return {

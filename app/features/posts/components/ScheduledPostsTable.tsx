@@ -51,7 +51,7 @@ export function ScheduledPostsTable({
   const deleteFetcher = useFetcher();
 
   const formatDate = (unixTimestamp: string) => {
-    const tz = userTimezone || "UTC";
+    const tz = userTimezone ?? "UTC";
     const date = new Date(parseInt(unixTimestamp) * 1000);
     return date.toLocaleString("en-US", {
       timeZone: tz,

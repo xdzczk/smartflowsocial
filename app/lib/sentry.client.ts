@@ -40,7 +40,7 @@ export function initSentry(): void {
           replaysSessionSampleRate: isProduction ? 0.1 : 1.0,
           replaysOnErrorSampleRate: 1.0, // Always capture replays on errors
           // Filter out noise
-          beforeSend(event, hint) {
+          beforeSend(event, _hint) {
             // Don't send events for browser extensions, etc.
             if (event.exception?.values?.[0]?.value?.includes("Non-Error promise rejection")) {
               return null;

@@ -45,7 +45,7 @@ export async function updateDisplayedHashtags(
 
     if (response.ok) {
       const data = (await response.json()) as { hashtags?: string | string[] };
-      setDisplayedHashtags(data.hashtags || tags);
+      setDisplayedHashtags(data.hashtags ?? tags);
     } else {
       setDisplayedHashtags(tags);
     }

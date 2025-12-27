@@ -21,8 +21,8 @@ export interface LongFormPostFactoryOptions {
   isPublished?: boolean;
   draft?: boolean;
   status?: Status;
-  signedEvent?: any;
-  nostrEvent?: any;
+  signedEvent?: import("~/features/nostr/types").SignedEvent;
+  nostrEvent?: import("~/features/nostr/types").NostrEvent;
   queueTypeId?: string | null;
   tags?: string[];
   hashTagPresetId?: string | null;
@@ -115,8 +115,8 @@ export class LongFormPostFactory {
     this.options.draft = false;
     this.options.isScheduled = false;
     this.options.status = "ACTIVE";
-    this.options.publishedAt = publishedAt || new Date();
-    this.options.postedAt = publishedAt || new Date();
+    this.options.publishedAt = publishedAt ?? new Date();
+    this.options.postedAt = publishedAt ?? new Date();
     this.options.nostrEventId = `event-${Date.now()}`;
     return this;
   }
@@ -136,12 +136,12 @@ export class LongFormPostFactory {
     return this;
   }
 
-  withSignedEvent(signedEvent: any): this {
+  withSignedEvent(signedEvent: import("~/features/nostr/types").SignedEvent): this {
     this.options.signedEvent = signedEvent;
     return this;
   }
 
-  withNostrEvent(nostrEvent: any): this {
+  withNostrEvent(nostrEvent: import("~/features/nostr/types").NostrEvent): this {
     this.options.nostrEvent = nostrEvent;
     this.options.nostrEventId = nostrEvent?.id ?? null;
     return this;
@@ -156,25 +156,25 @@ export class LongFormPostFactory {
     return {
       id: this.options.id!,
       userId: this.options.userId!,
-      title: this.options.title || null,
-      summary: this.options.summary || null,
-      content: this.options.content || null,
-      image: this.options.image || null,
-      scheduledFor: this.options.scheduledFor || null,
-      isScheduled: this.options.isScheduled || false,
-      postedAt: this.options.postedAt || null,
-      publishedAt: this.options.publishedAt || null,
-      isPublished: this.options.isPublished || false,
-      draft: this.options.draft || false,
-      status: this.options.status || "DRAFT",
-      signedEvent: this.options.signedEvent || null,
-      nostrEvent: this.options.nostrEvent || null,
-      queueTypeId: this.options.queueTypeId || null,
-      tags: this.options.tags || [],
-      hashTagPresetId: this.options.hashTagPresetId || null,
-      nostrEventId: this.options.nostrEventId || null,
-      createdAt: this.options.createdAt || new Date(),
-      updatedAt: this.options.updatedAt || new Date(),
+      title: this.options.title ?? null,
+      summary: this.options.summary ?? null,
+      content: this.options.content ?? null,
+      image: this.options.image ?? null,
+      scheduledFor: this.options.scheduledFor ?? null,
+      isScheduled: this.options.isScheduled ?? false,
+      postedAt: this.options.postedAt ?? null,
+      publishedAt: this.options.publishedAt ?? null,
+      isPublished: this.options.isPublished ?? false,
+      draft: this.options.draft ?? false,
+      status: this.options.status ?? "DRAFT",
+      signedEvent: this.options.signedEvent ?? null,
+      nostrEvent: this.options.nostrEvent ?? null,
+      queueTypeId: this.options.queueTypeId ?? null,
+      tags: this.options.tags ?? [],
+      hashTagPresetId: this.options.hashTagPresetId ?? null,
+      nostrEventId: this.options.nostrEventId ?? null,
+      createdAt: this.options.createdAt ?? new Date(),
+      updatedAt: this.options.updatedAt ?? new Date(),
     } as LongFormPost;
   }
 }

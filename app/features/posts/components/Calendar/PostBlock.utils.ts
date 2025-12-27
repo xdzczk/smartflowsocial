@@ -33,7 +33,7 @@ export function getPostPreview(post: CalendarPost, isLongform: boolean): string 
 
 export function getFirstImage(post: CalendarPost, isLongform: boolean): string | null {
   if (isLongform) {
-    return post.image || null;
+    return post.image ?? null;
   }
 
   if (post.fileUrl && post.fileUrl.length > 0) {
@@ -113,7 +113,7 @@ export function getQueueColorStyle(
   if (post.queueType && queueTypes && Array.isArray(queueTypes)) {
     const queueTypeData = queueTypes.find(
       (qt) =>
-        (qt.id && post.queueType?.id && qt.id === post.queueType.id) ||
+        (qt.id && post.queueType?.id && qt.id === post.queueType.id) ??
         (qt.name && post.queueType?.name && qt.name === post.queueType.name),
     );
     if (queueTypeData?.color) {

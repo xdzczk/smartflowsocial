@@ -4,6 +4,8 @@
  * Utility script to seed the test database with initial data
  */
 
+import type { Prisma } from "@prisma/client";
+
 import { createCompleteFixtures, fixtures } from "./fixtures";
 import { getTestPrisma, setupTestDatabase } from "./test-db";
 async function seedTestDatabase() {
@@ -30,31 +32,31 @@ async function seedTestDatabase() {
     // Apply fixtures
     if (testFixtures.users) {
       for (const user of testFixtures.users) {
-        await prisma.user.create({ data: user as any });
+        await prisma.user.create({ data: user as Prisma.UserCreateInput });
       }
     }
 
     if (testFixtures.queueTypes) {
       for (const queueType of testFixtures.queueTypes) {
-        await prisma.queueType.create({ data: queueType as any });
+        await prisma.queueType.create({ data: queueType as Prisma.QueueTypeCreateInput });
       }
     }
 
     if (testFixtures.hashTagPresets) {
       for (const preset of testFixtures.hashTagPresets) {
-        await prisma.hashTagPreset.create({ data: preset as any });
+        await prisma.hashTagPreset.create({ data: preset as Prisma.HashTagPresetCreateInput });
       }
     }
 
     if (testFixtures.posts) {
       for (const post of testFixtures.posts) {
-        await prisma.post.create({ data: post as any });
+        await prisma.post.create({ data: post as Prisma.PostCreateInput });
       }
     }
 
     if (testFixtures.longFormPosts) {
       for (const longform of testFixtures.longFormPosts) {
-        await prisma.longFormPost.create({ data: longform as any });
+        await prisma.longFormPost.create({ data: longform as Prisma.LongFormPostCreateInput });
       }
     }
 

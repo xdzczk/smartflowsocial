@@ -12,7 +12,7 @@ export interface QueueTypeFactoryOptions {
   userId?: string;
   name?: string;
   scheduleType?: ScheduleType;
-  scheduleConfig?: any;
+  scheduleConfig?: Record<string, unknown> | null;
   isEnabled?: boolean;
   color?: string | null;
   description?: string | null;
@@ -113,11 +113,11 @@ export class QueueTypeFactory {
       scheduleType: this.options.scheduleType || "INTERVAL",
       scheduleConfig: this.options.scheduleConfig || { intervalHours: 4 },
       isEnabled: this.options.isEnabled ?? true,
-      color: this.options.color || null,
-      description: this.options.description || null,
-      lastPostTime: this.options.lastPostTime || null,
-      isDefault: this.options.isDefault || false,
-      hashTagPresetId: this.options.hashTagPresetId || null,
+      color: this.options.color ?? null,
+      description: this.options.description ?? null,
+      lastPostTime: this.options.lastPostTime ?? null,
+      isDefault: this.options.isDefault ?? false,
+      hashTagPresetId: this.options.hashTagPresetId ?? null,
       createdAt: this.options.createdAt || new Date(),
       updatedAt: this.options.updatedAt || new Date(),
     } as QueueType;

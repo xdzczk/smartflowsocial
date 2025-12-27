@@ -32,7 +32,8 @@ interface UploadResult {
  */
 export async function handleUploadImagesPreview(formData: FormData) {
     try {
-        const uploadResultsStr = formData.get("uploadResults") as string;
+        const uploadResultsStrRaw = formData.get("uploadResults");
+        const uploadResultsStr = typeof uploadResultsStrRaw === "string" ? uploadResultsStrRaw : null;
         if (!uploadResultsStr) {
             const { ValidationError } = await import("~/lib/errors");
             throw new ValidationError("Missing uploadResults");
@@ -42,7 +43,7 @@ export async function handleUploadImagesPreview(formData: FormData) {
         try {
             const parsed: unknown = JSON.parse(uploadResultsStr);
             if (Array.isArray(parsed)) {
-                uploadResults = parsed as UploadResult[];
+                uploadResults = parsed as unknown as UploadResult[];
             } else {
                 throw new Error("uploadResults must be an array");
             }
@@ -86,7 +87,7 @@ export async function handleSignAndSchedule(
                 .map((event) => {
                     const parsed: unknown = typeof event === "string" ? JSON.parse(event) : null;
                     if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-                        return parsed as SignedEvent;
+                        return parsed as unknown as SignedEvent;
                     }
                     throw new Error("Invalid signed event format");
                 });
@@ -104,7 +105,7 @@ export async function handleSignAndSchedule(
                 .map((event) => {
                     const parsed: unknown = typeof event === "string" ? JSON.parse(event) : null;
                     if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-                        return parsed as NostrEvent;
+                        return parsed as unknown as NostrEvent;
                     }
                     throw new Error("Invalid nostr event format");
                 });
@@ -138,7 +139,12 @@ export async function handleSignAndSchedule(
 
         let fileUrls: string[];
         try {
-            fileUrls = formData.getAll("fileUrl").map((url) => JSON.parse(url as string) as string[]).flat();
+            const fileUrlValues = formData.getAll("fileUrl");
+            fileUrls = fileUrlValues.map((url) => {
+                const urlStr = typeof url === "string" ? url : String(url);
+                const parsed: unknown = JSON.parse(urlStr);
+                return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
+            }).flat();
         } catch (parseError) {
             const { ValidationError } = await import("~/lib/errors");
             throw new ValidationError("Invalid fileUrl JSON format", {
@@ -253,8 +259,8 @@ export async function handleSaveAsDraft(
             const fileUrlsRaw = formData.getAll("fileUrl");
             fileUrls = fileUrlsRaw.map((url) => {
                 const parsed: unknown = typeof url === "string" ? JSON.parse(url) : null;
-                if (Array.isArray(parsed)) {
-                    return parsed as string[];
+                    if (Array.isArray(parsed)) {
+                        return parsed as unknown as string[];
                 }
                 return [];
             }).flat();

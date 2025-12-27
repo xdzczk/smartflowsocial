@@ -2,7 +2,6 @@ import type { QueueType } from "@prisma/client";
 
 import type {
   QueueType as TypedQueueType,
-  ScheduleConfig,
 } from "~/features/posts/types";
 import {
   isIntervalScheduleConfig,
@@ -39,10 +38,11 @@ export async function calculateNextScheduleTime({
     });
     // Validate that result is a valid Date object
     if (!result || !(result instanceof Date) || isNaN(result.getTime())) {
+      const queueTypeId = queueType && typeof queueType === "object" && "id" in queueType && typeof queueType.id === "string" ? queueType.id : undefined;
       logError(new Error("Invalid date returned from calculateNextScheduleTimeInternal"), {
         userId,
-        queueTypeId: queueType?.id,
-        result: String(result),
+        queueTypeId,
+        result: result ? String(result) : "null",
       });
       return fallbackDate;
     }
@@ -99,8 +99,9 @@ async function calculateNextScheduleTimeInternal({
       return new Date(now.getTime() + 1000);
     }
 
-    if (queueType.scheduleType === "INTERVAL") {
-      const config = queueType.scheduleConfig;
+    const scheduleType = queueType && typeof queueType === "object" && "scheduleType" in queueType ? queueType.scheduleType : null;
+    if (scheduleType === "INTERVAL") {
+      const config = queueType && typeof queueType === "object" && "scheduleConfig" in queueType ? queueType.scheduleConfig : null;
 
       // Handle missing scheduleConfig
       if (!config || !isIntervalScheduleConfig(config)) {
@@ -130,7 +131,7 @@ async function calculateNextScheduleTimeInternal({
 
       // Use global interval if configured
       if (config.useGlobalInterval) {
-        let scheduleIntervals;
+        let scheduleIntervals: unknown = null;
         try {
           scheduleIntervals = await getScheduleInterval(userId);
         } catch (error) {
@@ -141,7 +142,9 @@ async function calculateNextScheduleTimeInternal({
           scheduleIntervals = null;
         }
         // Convert string to number if needed (scheduleIntervals is array of strings)
-        const interval = scheduleIntervals?.[0] ? Number(scheduleIntervals[0]) : 4; // Default to 4 hours
+        const intervalsArray = Array.isArray(scheduleIntervals) ? scheduleIntervals : null;
+        const firstInterval: unknown = intervalsArray && intervalsArray.length > 0 ? intervalsArray[0] : null;
+        const interval = firstInterval ? Number(firstInterval) : 4; // Default to 4 hours
 
         if (lastPostTime && lastPostTime instanceof Date && !isNaN(lastPostTime.getTime())) {
           // Add interval to last post time using milliseconds to avoid date calculation issues
@@ -159,7 +162,7 @@ async function calculateNextScheduleTimeInternal({
         }
       } else {
         // Use queue-specific interval
-        const intervalHours = typeof config.intervalHours === "number" 
+        const intervalHours = config && typeof config === "object" && "intervalHours" in config && typeof config.intervalHours === "number"
           ? config.intervalHours 
           : 4;
 
@@ -184,9 +187,9 @@ async function calculateNextScheduleTimeInternal({
           return new Date(now.getTime() + 1000);
         }
       }
-    } else if (queueType.scheduleType === "FIXED_SLOTS") {
-      const config = queueType.scheduleConfig;
-      const slots = config && isFixedSlotsScheduleConfig(config)
+    } else if (scheduleType === "FIXED_SLOTS") {
+      const config = queueType && typeof queueType === "object" && "scheduleConfig" in queueType ? queueType.scheduleConfig : null;
+      const slots = config && isFixedSlotsScheduleConfig(config) && typeof config === "object" && "slots" in config && Array.isArray(config.slots)
         ? config.slots
         : [];
 
@@ -197,25 +200,26 @@ async function calculateNextScheduleTimeInternal({
 
       // Sort slots to ensure consistent ordering
       const sortedSlots = slots
-      .map((slot: string) => {
+      .map((slot: unknown) => {
+        const slotStr = typeof slot === "string" ? slot : String(slot);
         try {
-          if (typeof slot !== "string" || !slot.includes(":")) {
+          if (!slotStr.includes(":")) {
             return null;
           }
-          const parts = slot.split(":");
+          const parts = slotStr.split(":");
           if (parts.length !== 2) {
             return null;
           }
           const hours = Number(parts[0]);
           const minutes = Number(parts[1]);
-          if (isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+          if (isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 23 || (minutes ?? 0) < 0 || minutes > 59) {
             return null;
           }
-          return { slot, hours, minutes, totalMinutes: hours * 60 + minutes };
+          return { slot: slotStr, hours, minutes, totalMinutes: hours * 60 + minutes };
         } catch (error) {
           logError(error instanceof Error ? error : new Error(String(error)), {
             userId,
-            slot: String(slot),
+            slot: slotStr,
             message: "Error parsing slot",
           });
           return null;
@@ -254,7 +258,7 @@ async function calculateNextScheduleTimeInternal({
 
         // Create a datetime string representing the desired time in user's timezone
         const timeStr = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
-        const dateTimeStr = `${userDateStr}T${timeStr}`;
+        const _dateTimeStr = `${userDateStr}T${timeStr}`;
 
         // Simpler and more reliable approach using inverse timezone conversion
 

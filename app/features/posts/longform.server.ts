@@ -35,13 +35,13 @@ export function createLongFormEvent({
     } else {
       // Assume hex string
       privateKeyBytes = new Uint8Array(
-        privateKey.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) || []
+        privateKey.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) ?? []
       );
     }
   } catch {
     // Fallback: treat as hex string
     privateKeyBytes = new Uint8Array(
-      privateKey.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) || []
+      privateKey.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) ?? []
     );
   }
   
@@ -189,7 +189,7 @@ export function convertEditorJSToMarkdown(editorData: EditorJSOutput): string {
           ? block.data.file as { url?: string }
           : { url: undefined };
         const url = typeof block.data.url === "string" ? block.data.url : undefined;
-        const imageUrl = file.url || url;
+        const imageUrl = file.url ?? url;
         const caption = typeof block.data.caption === "string" ? block.data.caption : undefined;
         if (imageUrl) {
           if (caption?.trim()) {
@@ -234,7 +234,7 @@ export function convertMarkdownToEditorJS(markdown: string): EditorJSOutput {
 
     // Headers
     if (line.startsWith("#")) {
-      const level = line.match(/^#+/)?.[0].length || 1;
+      const level = line.match(/^#+/)?.[0].length ?? 1;
       const text = line.replace(/^#+\s*/, "");
       blocks.push({
         id: generateBlockId(),

@@ -8,6 +8,8 @@ import { Queue } from "bullmq";
 import type { Job } from "bullmq";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+import type { SignedEvent } from "~/features/nostr/types";
+
 // Mock queue operations - use vi.hoisted to ensure mocks are available
 const { mockQueue, MockQueue } = vi.hoisted(() => {
   const mockQueue = {
@@ -38,7 +40,7 @@ vi.mock("bullmq", () => ({
 vi.mock("ioredis", () => {
   class RedisMock {
     quit = vi.fn();
-    constructor(url?: string, options?: any) {
+    constructor(url?: string, options?: unknown) {
       // Constructor implementation
     }
   }
@@ -60,22 +62,22 @@ describe("Queue Client", () => {
 
   describe("Enqueue Operations", () => {
     it("should enqueue job with delay option", async () => {
-      const mockJob: Job = {
+      const mockJob = {
         id: "job-123",
-      };
+      } satisfies Partial<Job> as Job;
 
       mockQueue.add.mockResolvedValue(mockJob);
 
       const result = await queueClient.enqueue(
         "scheduled-posts",
         "publish-post",
-        { postId: "post-123", userId: "user-123", signedEvent: {} },
+        { postId: "post-123", userId: "user-123", signedEvent: { id: "event-123", pubkey: "test-pubkey", created_at: Date.now(), kind: 1, tags: [], content: "", sig: "test-sig" } satisfies Partial<SignedEvent> as SignedEvent },
         { delay: 5000 },
       );
 
       expect(mockQueue.add).toHaveBeenCalledWith(
         "publish-post",
-        { postId: "post-123", userId: "user-123", signedEvent: {} },
+        { postId: "post-123", userId: "user-123", signedEvent: { id: "event-123", pubkey: "test-pubkey", created_at: Date.now(), kind: 1, tags: [], content: "", sig: "test-sig" } satisfies Partial<SignedEvent> as SignedEvent },
         { delay: 5000 },
       );
       expect(result).toEqual({
@@ -85,9 +87,9 @@ describe("Queue Client", () => {
     });
 
     it("should enqueue job with scheduledFor option", async () => {
-      const mockJob: Job = {
+      const mockJob = {
         id: "job-123",
-      };
+      } satisfies Partial<Job> as Job;
 
       const scheduledFor = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
       mockQueue.add.mockResolvedValue(mockJob);
@@ -95,7 +97,7 @@ describe("Queue Client", () => {
       const result = await queueClient.enqueue(
         "scheduled-posts",
         "publish-post",
-        { postId: "post-123", userId: "user-123", signedEvent: {} },
+        { postId: "post-123", userId: "user-123", signedEvent: { id: "event-123", pubkey: "test-pubkey", created_at: Date.now(), kind: 1, tags: [], content: "", sig: "test-sig" } satisfies Partial<SignedEvent> as SignedEvent },
         { scheduledFor },
       );
 
@@ -110,7 +112,7 @@ describe("Queue Client", () => {
       const result = await queueClient.enqueue(
         "scheduled-posts",
         "publish-post",
-        { postId: "post-123", userId: "user-123", signedEvent: {} },
+        { postId: "post-123", userId: "user-123", signedEvent: { id: "event-123", pubkey: "test-pubkey", created_at: Date.now(), kind: 1, tags: [], content: "", sig: "test-sig" } satisfies Partial<SignedEvent> as SignedEvent },
         { scheduledFor: pastTime },
       );
 
@@ -124,7 +126,7 @@ describe("Queue Client", () => {
       const result = await queueClient.enqueue(
         "scheduled-posts",
         "publish-post",
-        { postId: "post-123", userId: "user-123", signedEvent: {} },
+        { postId: "post-123", userId: "user-123", signedEvent: { id: "event-123", pubkey: "test-pubkey", created_at: Date.now(), kind: 1, tags: [], content: "", sig: "test-sig" } satisfies Partial<SignedEvent> as SignedEvent },
       );
 
       expect(result.success).toBe(false);
@@ -225,10 +227,10 @@ describe("Queue Client", () => {
 
   describe("Remove Job Operations", () => {
     it("should remove job by ID", async () => {
-      const mockJob: unknown = {
+      const mockJob = {
         id: "job-123",
         remove: vi.fn().mockResolvedValue(undefined),
-      } as Job;
+      } satisfies Partial<Job> as Job;
 
       mockQueue.getJob.mockResolvedValue(mockJob);
 

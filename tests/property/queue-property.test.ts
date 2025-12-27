@@ -54,7 +54,7 @@ describe("Property-Based Tests: Queue Operations", () => {
         fc.asyncProperty(
           fc.string({ minLength: 1, maxLength: 50 }), // postId
           fc.string({ minLength: 1, maxLength: 50 }), // userId
-          async (postId, userId) => {
+          async (postId: string, userId: string) => {
             // Simulate processing same job multiple times
             const results = await Promise.all([
               processJob(postId, userId),
@@ -108,7 +108,7 @@ describe("Property-Based Tests: Queue Operations", () => {
               content: fc.string(),
             }),
           }),
-          (jobData) => {
+          (jobData: { postId: string; userId: string; signedEvent: { id: string; kind: number; content: string } }) => {
             // Job data should remain unchanged
             const serialized = JSON.stringify(jobData);
             const deserialized = JSON.parse(serialized);
@@ -124,19 +124,19 @@ describe("Property-Based Tests: Queue Operations", () => {
         fc.property(
           fc.record({
             postId: fc.oneof(
-              fc.string().filter(s => s.trim().length > 0), // Non-empty, non-whitespace strings
+              fc.string().filter((s: string) => s.trim().length > 0), // Non-empty, non-whitespace strings
               fc.constant(null),
               fc.constant(undefined),
               fc.constant(""), // Explicitly allow empty strings
             ),
             userId: fc.oneof(
-              fc.string().filter(s => s.trim().length > 0), // Non-empty, non-whitespace strings
+              fc.string().filter((s: string) => s.trim().length > 0), // Non-empty, non-whitespace strings
               fc.constant(null),
               fc.constant(undefined),
               fc.constant(""), // Explicitly allow empty strings
             ),
           }),
-          (jobData) => {
+          (jobData: { postId: string | null | undefined; userId: string | null | undefined }) => {
             // Validate required fields - both must be present and non-empty for valid job data
             const hasPostId = jobData.postId != null 
               && typeof jobData.postId === "string" 
@@ -166,7 +166,7 @@ describe("Property-Based Tests: Queue Operations", () => {
         fc.property(
           fc.date({ min: new Date("2020-01-01"), max: new Date("2030-12-31") }),
           fc.integer({ min: 0, max: 86400 * 365 }), // Delay in seconds (up to 1 year)
-          (baseTime, delaySeconds) => {
+          (baseTime: Date, delaySeconds: number) => {
             const scheduledTime = new Date(baseTime.getTime() + delaySeconds * 1000);
             return scheduledTime >= baseTime;
           },
@@ -180,7 +180,7 @@ describe("Property-Based Tests: Queue Operations", () => {
         fc.property(
           fc.date({ min: new Date(), max: new Date("2030-12-31") }),
           fc.date({ min: new Date(), max: new Date("2030-12-31") }),
-          (time1, time2) => {
+          (time1: Date, time2: Date) => {
             if (time1 < time2) {
               // Earlier time should have earlier timestamp
               return time1.getTime() < time2.getTime();

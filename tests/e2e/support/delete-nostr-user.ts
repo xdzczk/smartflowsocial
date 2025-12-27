@@ -17,14 +17,14 @@ async function deleteNostrUser(npub: string) {
 
     try {
         await prisma.user.delete({ where: { npub } });
-        // eslint-disable-next-line no-console
+         
         console.log("User deleted successfully");
     } catch (error) {
         if (
             error instanceof PrismaClientKnownRequestError &&
             error.code === "P2025"
         ) {
-            // eslint-disable-next-line no-console
+             
             console.log("User not found, so no need to delete");
         } else {
             throw error;

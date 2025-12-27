@@ -1,11 +1,11 @@
 import { useFetcher } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
-import { EditLongFormFormFields } from "~/features/posts/components/EditLongFormFormFields";
-import { EditorJSStyles } from "~/features/posts/components/EditorJSStyles";
-import { EditPostFormFields } from "~/features/posts/components/EditPostFormFields";
+import { EditLongFormFormFields } from "./EditLongFormFormFields";
+import { EditorJSStyles } from "./EditorJSStyles";
+import { EditPostFormFields } from "./EditPostFormFields";
 import { useEditPostModal } from "~/features/posts/hooks/useEditPostModal";
-import type { PostData, LongFormPostData, QueueType, HashTagPreset, UserData, PostFetcher } from "~/features/posts/types";
+import type { PostData, LongFormPostData, QueueType, HashTagPreset, UserData } from "~/features/posts/types";
 import { prepareEditPostSubmission } from "~/features/posts/utils/editPostSubmit.client";
 interface EditPostModalProps {
   post: PostData | LongFormPostData;
@@ -48,7 +48,7 @@ export function EditPostModal({
     summary,
     setSummary,
     content,
-    setContent,
+    setContent: _setContent,
     image,
     setImage,
     scheduledFor,
@@ -78,14 +78,16 @@ export function EditPostModal({
 
 
   useEffect(() => {
-    if (fetcher.data?.success) {
-      if (fetcher.data.needsSigning) {
+    const dataRaw = fetcher.data;
+    const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; needsSigning?: unknown; error?: unknown } : null;
+    if (data && typeof data.success === "boolean" && data.success) {
+      if (data.needsSigning && typeof data.needsSigning === "boolean" && data.needsSigning) {
         return; // Keep modal open for re-signing
       }
       onConfirm();
     }
-    if (fetcher.data?.error) {
-      setSigningError(fetcher.data.error);
+    if (data && "error" in data && typeof data.error === "string") {
+      setSigningError(data.error);
     }
   }, [fetcher.data, onConfirm]);
 
@@ -181,7 +183,7 @@ export function EditPostModal({
                   setCaption={setCaption}
                   existingImages={existingImages}
                   newFiles={newFiles}
-                  onFileChange={handleFileChange}
+                  onFileChange={(e) => void handleFileChange(e)}
                   onRemoveExistingImage={removeExistingImage}
                   onRemoveNewFile={removeNewFile}
                   hashTagPresets={hashTagPresets}
@@ -260,7 +262,7 @@ export function EditPostModal({
                 Cancel
               </button>
               <button
-                onClick={handleSubmit}
+                onClick={() => void handleSubmit()}
                 disabled={
                   fetcher.state === "submitting" ||
                   isSigningEvent ||

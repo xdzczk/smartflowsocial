@@ -5,19 +5,33 @@ import { RelaysSettings } from "~/components/settings/RelaysSettings";
 import { TimezoneSettings } from "~/components/settings/TimezoneSettings";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { requireUserId } from "~/features/auth/session.server";
-import { MutedListSettings } from "~/features/engagement/components/MutedListSettings";
-import { GiveawayBlacklistSettings } from "~/features/giveaway/components/GiveawayBlacklistSettings";
-import { NWCSettings } from "~/features/payments/components/NWCSettings";
-import { SubscriptionSettings } from "~/features/payments/components/SubscriptionSettings";
-import { requireFeatureAccess, requireAnySubscription } from "~/features/payments/subscriptions.server";
-import { HashtagPresetsSettings } from "~/features/posts/components/HashtagPresetsSettings";
-import { QueueTypesSettings } from "~/features/posts/components/QueueTypesSettings";
-import { ScheduleIntervalsSettings } from "~/features/posts/components/ScheduleIntervalsSettings";
+import {
+  MutedListSettings,
+} from "~/features/engagement";
+import {
+  GiveawayBlacklistSettings,
+} from "~/features/giveaway";
+import {
+  NWCSettings,
+  SubscriptionSettings,
+  requireFeatureAccess,
+  requireAnySubscription,
+} from "~/features/payments";
+import {
+  HashtagPresetsSettings,
+  QueueTypesSettings,
+  ScheduleIntervalsSettings,
+  type HashTagPreset,
+  type QueueType,
+  convertJsonValueToScheduleConfig,
+} from "~/features/posts";
 import { handleSettingsAction } from "~/features/settings/settings-actions.server";
 import { loadSettingsData } from "~/features/settings/settings-loader.server";
-import { BlossomMediaMirrorsSettings } from "~/features/upload/components/BlossomMediaMirrorsSettings";
-import { UploadProviderSettings } from "~/features/upload/components/UploadProviderSettings";
-import { AccountsSettings } from "~/features/user/components/AccountsSettings";
+import {
+  BlossomMediaMirrorsSettings,
+  UploadProviderSettings,
+} from "~/features/upload";
+import { AccountsSettings } from "~/features/user";
 export async function loader({ request }: { request: Request }) {
   const userId = await requireUserId(request);
 
@@ -56,30 +70,104 @@ export async function action({ request }: { request: Request }) {
   }
 }
 
+type QueueTypeSettings = QueueType & {
+  isDefault: boolean;
+  hashTagPreset?: {
+    id: string;
+    name: string;
+    tags: string;
+    description?: string;
+  } | null;
+  hashTagPresetId?: string;
+};
+
 export default function Settings() {
+  const data = useLoaderData<typeof loader>();
   const {
     timezone,
     relays,
     giveawayBlacklist,
     scheduleIntervals,
-    queueTypes,
+    queueTypes: queueTypesRaw,
     uploadProvider,
     enableMirrorBlossom,
     mirrorUploadUrls,
-    hashTagPresets,
+    hashTagPresets: hashTagPresetsRaw,
     nwcEnabled,
     maskedNwcString,
     nwcLastUsed,
-    subscription,
-    availablePlans,
-    paymentHistory,
+    subscription: subscriptionRaw,
+    availablePlans: availablePlansRaw,
+    paymentHistory: paymentHistoryRaw,
     isChild,
     hasAccountsAccess,
     accounts,
-    mutedList,
+    mutedList: mutedListRaw,
     filterMuted,
     hidePostsFromLowTrustUsers,
-  } = useLoaderData<typeof loader>();
+  } = data;
+
+  // Type assertions for Remix JsonifyObject serialization
+  const queueTypes: QueueTypeSettings[] = Array.isArray(queueTypesRaw) ? queueTypesRaw.map((qt: unknown) => {
+    if (qt && typeof qt === "object" && "id" in qt && "name" in qt) {
+      const q = qt as { id: string; name: string; color?: string | null; scheduleType?: string; scheduleConfig?: unknown; isEnabled?: boolean; hashTagPresetId?: string; isDefault?: boolean; hashTagPreset?: { id: string; name: string; tags: string; description?: string } | null };
+      const result: QueueTypeSettings = {
+        id: q.id,
+        name: q.name,
+        color: q.color,
+        description: undefined,
+        scheduleType: q.scheduleType as "INTERVAL" | "FIXED_SLOTS" | undefined,
+        scheduleConfig: convertJsonValueToScheduleConfig(q.scheduleConfig),
+        isEnabled: q.isEnabled,
+        isDefault: q.isDefault ?? false,
+        hashTagPresetId: q.hashTagPresetId,
+        hashTagPreset: q.hashTagPreset,
+      };
+      return result;
+    }
+    return null;
+  }).filter((qt): qt is QueueTypeSettings => qt !== null) : [];
+  const hashTagPresets: HashTagPreset[] = Array.isArray(hashTagPresetsRaw) ? hashTagPresetsRaw
+    .filter((preset: unknown): preset is { id: string; name: string; tags: string; description?: unknown; createdAt?: unknown; updatedAt?: unknown; userId?: unknown } => 
+      typeof preset === "object" && preset !== null && "id" in preset && "name" in preset && "tags" in preset &&
+      typeof (preset as { id: unknown; name: unknown; tags: unknown }).id === "string" &&
+      typeof (preset as { id: unknown; name: unknown; tags: unknown }).name === "string" &&
+      typeof (preset as { id: unknown; name: unknown; tags: unknown }).tags === "string"
+    )
+    .map((preset) => ({
+      id: preset.id,
+      name: preset.name,
+      tags: preset.tags,
+      description: preset.description === null ? null : typeof preset.description === "string" ? preset.description : undefined,
+      userId: typeof preset.userId === "string" ? preset.userId : undefined,
+      createdAt: (() => {
+        const createdAtValue: unknown = preset.createdAt;
+        if (createdAtValue === null || createdAtValue === undefined) return undefined;
+        if (createdAtValue instanceof Date) return createdAtValue;
+        if (typeof createdAtValue === "string") return new Date(createdAtValue);
+        return undefined;
+      })(),
+      updatedAt: (() => {
+        const updatedAtValue: unknown = preset.updatedAt;
+        if (updatedAtValue === null || updatedAtValue === undefined) return undefined;
+        if (updatedAtValue instanceof Date) return updatedAtValue;
+        if (typeof updatedAtValue === "string") return new Date(updatedAtValue);
+        return undefined;
+      })(),
+    })) : [];
+  const subscription = subscriptionRaw && typeof subscriptionRaw === "object" ? subscriptionRaw as unknown as { id: string; planId: string | null; status: string; currentPeriodEnd: Date | string | null } | null : null;
+  const availablePlans = Array.isArray(availablePlansRaw) ? availablePlansRaw as unknown as { id: string; name: string; price: number }[] : [];
+  const paymentHistory = Array.isArray(paymentHistoryRaw) ? paymentHistoryRaw.map((p: unknown) => {
+    const ph = p as { id: string; amount: number; createdAt: Date | string };
+    return {
+      ...ph,
+      createdAt: ph.createdAt instanceof Date ? ph.createdAt : new Date(ph.createdAt),
+    };
+  }) : [];
+  const mutedList = mutedListRaw && typeof mutedListRaw === "object" && !Array.isArray(mutedListRaw) ? {
+    npubs: Array.isArray(mutedListRaw.npubs) ? mutedListRaw.npubs as string[] : [],
+    lastSynced: typeof mutedListRaw.lastSynced === "string" ? mutedListRaw.lastSynced : new Date().toISOString(),
+  } : { npubs: [], lastSynced: new Date().toISOString() };
 
   // Get tab from URL search params
   const searchParams = new URLSearchParams(
@@ -123,10 +211,17 @@ export default function Settings() {
 
         <TabsContent value="content" className="mt-6 space-y-6">
           <div className="grid gap-6 md:grid-cols-1">
-            <HashtagPresetsSettings presets={Array.isArray(hashTagPresets) ? hashTagPresets as unknown as { id: string; name: string; tags: string; description?: string | null }[] : []} />
+            <HashtagPresetsSettings presets={hashTagPresets.map((p) => ({
+              id: p.id,
+              name: p.name,
+              tags: p.tags,
+              description: p.description ?? null,
+              createdAt: p.createdAt instanceof Date ? p.createdAt.toISOString() : typeof p.createdAt === "string" ? p.createdAt : new Date().toISOString(),
+              updatedAt: p.updatedAt instanceof Date ? p.updatedAt.toISOString() : typeof p.updatedAt === "string" ? p.updatedAt : new Date().toISOString(),
+            }))} />
             <QueueTypesSettings
-              queueTypes={Array.isArray(queueTypes) ? queueTypes as unknown as { id: string; name: string; color?: string | null; scheduleType?: string; scheduleConfig?: unknown; isEnabled?: boolean; hashTagPresetId?: string }[] : []}
-              hashTagPresets={Array.isArray(hashTagPresets) ? hashTagPresets as unknown as { id: string; name: string; tags: string; description?: string | null }[] : []}
+              queueTypes={queueTypes}
+              hashTagPresets={hashTagPresets.map((p) => ({ id: p.id, name: p.name, tags: p.tags, description: p.description ?? undefined }))}
             />
           </div>
         </TabsContent>
@@ -136,7 +231,7 @@ export default function Settings() {
             <RelaysSettings relays={relays} />
             <GiveawayBlacklistSettings giveawayBlacklist={giveawayBlacklist} />
             <MutedListSettings
-              mutedList={mutedList && typeof mutedList === "object" ? mutedList as unknown as { npubs?: string[]; lastSynced?: string } : { npubs: [] }}
+              mutedList={mutedList}
               filterMuted={filterMuted}
               hidePostsFromLowTrustUsers={hidePostsFromLowTrustUsers}
             />
@@ -157,9 +252,9 @@ export default function Settings() {
           <TabsContent value="subscription" className="mt-6 space-y-6">
             <div className="grid gap-6 md:grid-cols-1">
               <SubscriptionSettings
-                subscription={subscription && typeof subscription === "object" ? subscription as unknown as { id?: string; planId?: string; status?: string; currentPeriodEnd?: Date | string } : null}
-                availablePlans={Array.isArray(availablePlans) ? availablePlans as unknown as { id: string; name: string; price: number }[] : []}
-                paymentHistory={Array.isArray(paymentHistory) ? paymentHistory as unknown as { id: string; amount: number; createdAt: Date | string }[] : []}
+                subscription={subscription as unknown as { id: string; planId: string | null; status: string; startDate: Date; currentPeriodEnd: Date | null; nextPaymentDue: Date | null; cancelAtPeriodEnd: boolean; plan: { id: string; name: string; price: number; enableLifetimeAccess: boolean } | null } | null}
+                availablePlans={availablePlans as unknown as { id: string; name: string; price: number; enableLifetimeAccess: boolean }[]}
+                paymentHistory={paymentHistory as unknown as { id: string; amount: number; amountUsd: number | null; description: string | null; paidAt: Date | null; paymentMethod: string | null; paymentHash: string; planName?: string; planPrice?: number }[]}
               />
               <NWCSettings
                 nwcEnabled={nwcEnabled}

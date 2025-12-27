@@ -19,7 +19,7 @@ export async function handleDraftEditAction(
     const queueTypeId = formData.get("queueTypeId");
     const useHashtagPresets = formData.get("useHashtagPresets") === "on";
     const hashTagPresetId = useHashtagPresets
-      ? formData.get("hashTagPresetId") || null
+      ? formData.get("hashTagPresetId") ?? null
       : null;
 
     // Resolve queue type ID in feature layer (business logic)
@@ -53,7 +53,7 @@ export async function handleDraftEditAction(
     const nostrEvent = formData.get("nostrEvent");
     const useHashtagPresets = formData.get("useHashtagPresets") === "on";
     const hashTagPresetId = useHashtagPresets
-      ? formData.get("hashTagPresetId") || null
+      ? formData.get("hashTagPresetId") ?? null
       : null;
 
     // Ensure the post is signed before resuming

@@ -96,14 +96,14 @@ async function uploadFileToS3(file: File): Promise<UploadResult> {
         url: result.fileUrl,
         size: file.size,
         name: file.name,
-        extension: file.name.split(".").pop() || "",
+        extension: file.name.split(".").pop() ?? "",
         provider: "S3" as const,
       },
     };
   } else {
     return {
       success: false,
-      error: result.error || "S3 upload failed",
+      error: result.error ?? "S3 upload failed",
     };
   }
 }
@@ -186,7 +186,13 @@ async function uploadFileToBlossom(
     if (result.success && result.file) {
       return {
         success: true,
-        file: result.file,
+        file: {
+          url: result.file.url,
+          size: file.size,
+          name: file.name,
+          extension: file.name.split(".").pop() || "",
+          provider: "BLOSSOM_PRIMAL" as const,
+        },
       };
     } else {
       return {

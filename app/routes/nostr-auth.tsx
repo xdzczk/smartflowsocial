@@ -1,6 +1,6 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
 
-import { authenticateNostrUser } from "~/features/auth/services/nostr-auth.server";
+import { authenticateNostrUser } from "~/features/auth";
 import { withActionErrorHandling } from "~/lib/error-handler.server";
 import { safeRedirect } from "~/lib/remix-utils";
 

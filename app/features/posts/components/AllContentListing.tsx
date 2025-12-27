@@ -64,14 +64,17 @@ export default function AllContentListing({
   onReschedulePost,
 }: AllContentListingProps) {
   const deleteFetcher = useFetcher<{ success?: boolean; error?: string; needsSigning?: boolean; post?: PostData | LongFormPostData }>();
-  const [sortConfig, setSortConfig] = useState({
+  const [sortConfig, setSortConfig] = useState<{
+    key: string;
+    direction: "asc" | "desc";
+  }>({
     key:
       type === "posted"
         ? "postedAt"
         : type === "scheduled"
           ? "scheduledFor"
           : "createdAt",
-    direction: "desc" as "asc" | "desc",
+    direction: "desc",
   });
 
   const requestSort = (key: string) => {
@@ -83,30 +86,41 @@ export default function AllContentListing({
   };
 
   const sortedContent = [...content].sort((a, b) => {
-    let aValue, bValue;
+    let aValue: number | string;
+    let bValue: number | string;
 
     if (sortConfig.key === "scheduledFor") {
-      aValue = a.scheduledFor ? parseInt(a.scheduledFor) * 1000 : 0;
-      bValue = b.scheduledFor ? parseInt(b.scheduledFor) * 1000 : 0;
+      const aScheduled = a.scheduledFor;
+      const bScheduled = b.scheduledFor;
+      aValue = aScheduled && typeof aScheduled === "string" ? parseInt(aScheduled, 10) * 1000 : 0;
+      bValue = bScheduled && typeof bScheduled === "string" ? parseInt(bScheduled, 10) * 1000 : 0;
     } else if (sortConfig.key === "postedAt") {
-      aValue = a.postedAt ? new Date(a.postedAt).getTime() : 0;
-      bValue = b.postedAt ? new Date(b.postedAt).getTime() : 0;
+      const aPosted = a.postedAt;
+      const bPosted = b.postedAt;
+      aValue = aPosted ? new Date(aPosted).getTime() : 0;
+      bValue = bPosted ? new Date(bPosted).getTime() : 0;
     } else if (
       sortConfig.key === "createdAt" ||
       sortConfig.key === "updatedAt"
     ) {
-      aValue = new Date(a[sortConfig.key]).getTime();
-      bValue = new Date(b[sortConfig.key]).getTime();
+      const aKey = a[sortConfig.key];
+      const bKey = b[sortConfig.key];
+      aValue = aKey ? new Date(aKey).getTime() : 0;
+      bValue = bKey ? new Date(bKey).getTime() : 0;
     } else {
-      aValue = (a[sortConfig.key as keyof CombinedContent] as string | number | Date | undefined) || "";
-      bValue = (b[sortConfig.key as keyof CombinedContent] as string | number | Date | undefined) || "";
+      const aKey = a[sortConfig.key as keyof CombinedContent];
+      const bKey = b[sortConfig.key as keyof CombinedContent];
+      aValue = aKey ? (typeof aKey === "string" ? aKey : String(aKey)) : "";
+      bValue = bKey ? (typeof bKey === "string" ? bKey : String(bKey)) : "";
     }
-
-    if (sortConfig.direction === "asc") {
-      return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
-    } else {
-      return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+    
+    if (aValue < bValue) {
+      return sortConfig.direction === "asc" ? -1 : 1;
     }
+    if (aValue > bValue) {
+      return sortConfig.direction === "asc" ? 1 : -1;
+    }
+    return 0;
   });
 
   const filteredContent = sortedContent.filter(
@@ -126,7 +140,7 @@ export default function AllContentListing({
         <ContentBulkActions
           type={type}
           selectedCount={selectedItems.size}
-          onBulkDelete={onBulkDelete || (() => {})}
+          onBulkDelete={onBulkDelete ?? (() => {})}
           onBulkRepost={onBulkRepost}
           onBulkScheduledRepost={onBulkScheduledRepost}
           onBulkQuote={onBulkQuote}
@@ -160,7 +174,7 @@ export default function AllContentListing({
                 onPostSelect={onPostSelect}
                 onEditPost={onEditPost}
                 onReschedulePost={onReschedulePost}
-                deleteFetcher={deleteFetcher as PostFetcher}
+                deleteFetcher={deleteFetcher as unknown as PostFetcher}
                 individualRepostFetcher={individualRepostFetcher}
                 longformRepostFetcher={longformRepostFetcher}
                 longformQuoteFetcher={longformQuoteFetcher}

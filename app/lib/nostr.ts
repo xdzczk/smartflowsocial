@@ -14,7 +14,7 @@ import type { EditorJSBlock, EditorJSOutput } from "~/features/posts/types/edito
 export function hexToNpub(hex: string): string | null {
   try {
     return nip19.npubEncode(hex);
-  } catch (error) {
+  } catch (_error) {
     // This is a utility function, errors are expected and handled gracefully
     // No need to log conversion errors as they're not critical
     return null;
@@ -28,7 +28,7 @@ export function npubToHex(npub: string): string | null {
     }
     const { data } = nip19.decode(npub);
     return data as string;
-  } catch (error) {
+  } catch (_error) {
     // This is a utility function, errors are expected and handled gracefully
     // No need to log conversion errors as they're not critical
     return null;
@@ -48,8 +48,8 @@ export const signEventFn = async (
         const nostrEvent: NostrEvent = {
           content: eventData.content,
           created_at: eventData.created_at,
-          kind: eventData.kind || 1,
-          tags: eventData.tags || [],
+          kind: eventData.kind ?? 1,
+          tags: eventData.tags ?? [],
         };
 
         const signResult = await window.nostr.signEvent(nostrEvent);
@@ -308,7 +308,7 @@ export function convertEditorJSToMarkdown(editorData: EditorJSOutput | string | 
         const file = data.file && typeof data.file === "object" ? data.file as Record<string, unknown> : null;
         const fileUrl = file && typeof file.url === "string" ? file.url : null;
         const url = typeof data.url === "string" ? data.url : null;
-        const imageUrl = fileUrl || url;
+        const imageUrl = fileUrl ?? url;
         const caption = typeof data.caption === "string" ? data.caption : "";
         if (imageUrl) {
           if (caption && caption.trim()) {
@@ -352,7 +352,7 @@ export function convertMarkdownToEditorJS(markdown: string): EditorJSOutput {
 
     // Headers
     if (line.startsWith("#")) {
-      const level = line.match(/^#+/)?.[0].length || 1;
+      const level = line.match(/^#+/)?.[0].length ?? 1;
       const text = line.replace(/^#+\s*/, "");
       blocks.push({
         id: generateBlockId(),

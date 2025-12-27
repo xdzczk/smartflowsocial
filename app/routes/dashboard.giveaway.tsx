@@ -1,15 +1,23 @@
-import { json, type LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useParams } from "@remix-run/react";
 
 import { requireUserId } from "~/features/auth/session.server";
-import { GiveawayFilters } from "~/features/giveaway/components/GiveawayFilters";
-import { GiveawayQueueTabs } from "~/features/giveaway/components/GiveawayQueueTabs";
-import GiveawayRandomizer from "~/features/giveaway/components/GiveawayRandomizer";
-import { GiveawayTable } from "~/features/giveaway/components/GiveawayTable";
-import { loadGiveawayData } from "~/features/giveaway/giveaway-loader.server";
-import { useGiveawayState } from "~/features/giveaway/hooks/useGiveawayState";
-import { requireFeatureAccess, requireAnySubscription } from "~/features/payments/subscriptions.server";
-import PostDetailsModal from "~/features/posts/components/PostDetailsModal";
+import {
+  GiveawayFilters,
+  GiveawayQueueTabs,
+  GiveawayRandomizer,
+  GiveawayTable,
+  loadGiveawayData,
+  useGiveawayState,
+} from "~/features/giveaway";
+import {
+  requireFeatureAccess,
+  requireAnySubscription,
+} from "~/features/payments";
+import {
+  PostDetailsModal,
+  type PostData,
+} from "~/features/posts";
 import { withErrorHandling } from "~/lib/error-handler.server";
 async function loaderImpl({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
@@ -33,7 +41,7 @@ type LoaderData = Awaited<ReturnType<typeof loaderImpl>>;
 
 export default function PostedPosts() {
   const data = useLoaderData<LoaderData>();
-  const { posts, stats, relatedEvents, user, queueTypes, selectedQueueType } = data;
+  const { posts, stats, relatedEvents, user, queueTypes } = data;
   const params = useParams();
 
   const {
@@ -47,7 +55,19 @@ export default function PostedPosts() {
     setSelectedPost,
     setDateRange,
     clearFilters,
-  } = useGiveawayState({ posts });
+  } = useGiveawayState({ 
+    posts: posts.map((post) => ({
+      ...post,
+      postedAt: (() => {
+        const postedAtValue: unknown = post.postedAt;
+        if (postedAtValue === null || postedAtValue === undefined) return null;
+        if (postedAtValue instanceof Date) return postedAtValue;
+        if (typeof postedAtValue === "string") return new Date(postedAtValue);
+        return null;
+      })(),
+      totalEngagement: typeof post.totalEngagement === "number" ? post.totalEngagement : 0,
+    }))
+  });
 
   return (
     <div>
@@ -67,15 +87,32 @@ export default function PostedPosts() {
       />
 
       <GiveawayTable
-        posts={filteredPosts as unknown as { id: string; caption?: string; fileUrl?: string[]; signedEvent?: unknown }[]}
+        posts={filteredPosts as unknown as Parameters<typeof GiveawayTable>[0]["posts"]}
         sortConfig={sortConfig}
         onRequestSort={requestSort}
-        onPostClick={(post) => setSelectedPost(post as unknown as { id: string; caption?: string; fileUrl?: string[]; signedEvent?: unknown } | null)}
+        onPostClick={(post) => {
+          // Find the original PostData from posts array
+          const originalPostData = posts.find(p => p.id === post.id);
+          if (originalPostData) {
+            // Convert to the Post format expected by useGiveawayState
+            setSelectedPost({
+              ...originalPostData,
+              postedAt: (() => {
+                const postedAtValue: unknown = originalPostData.postedAt;
+                if (postedAtValue === null || postedAtValue === undefined) return null;
+                if (postedAtValue instanceof Date) return postedAtValue;
+                if (typeof postedAtValue === "string") return new Date(postedAtValue);
+                return null;
+              })(),
+              totalEngagement: typeof originalPostData.totalEngagement === "number" ? originalPostData.totalEngagement : 0,
+            });
+          }
+        }}
       />
 
       {selectedPost ? (
         <PostDetailsModal
-          post={selectedPost as unknown as { id: string; caption?: string; fileUrl?: string[]; signedEvent?: unknown; queueType?: { name: string } | null }}
+          post={selectedPost as unknown as PostData}
           stats={selectedPost && typeof selectedPost === "object" && "signedEvent" in selectedPost && selectedPost.signedEvent && typeof selectedPost.signedEvent === "object" && "id" in selectedPost.signedEvent && typeof selectedPost.signedEvent.id === "string" && stats && typeof stats === "object" && !Array.isArray(stats) ? stats[selectedPost.signedEvent.id] : undefined}
           onClose={() => setSelectedPost(null)}
           showStats={true}

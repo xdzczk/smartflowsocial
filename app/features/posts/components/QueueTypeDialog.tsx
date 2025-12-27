@@ -21,7 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Textarea } from "~/components/ui/textarea";
 import type { QueueType } from "~/features/posts/types";
 import { isIntervalScheduleConfig, isFixedSlotsScheduleConfig } from "~/features/posts/types";
 
@@ -71,8 +70,8 @@ export function QueueTypeDialog({
 
   useEffect(() => {
     if (queueType) {
-      setScheduleType(queueType.scheduleType || "INTERVAL");
-      setHashTagPresetId(queueType.hashTagPresetId || "none");
+      setScheduleType(queueType.scheduleType ?? "INTERVAL");
+      setHashTagPresetId(queueType.hashTagPresetId ?? "none");
     } else {
       setScheduleType("INTERVAL");
       setHashTagPresetId("none");
@@ -80,12 +79,16 @@ export function QueueTypeDialog({
   }, [queueType]);
 
   useEffect(() => {
-    if (fetcher.data?.success) {
-      const action = isEditing ? "updated" : "created";
-      toast.success(`Queue type ${action} successfully!`);
-    }
-    if (fetcher.data?.error) {
-      toast.error(fetcher.data.error);
+    const fetcherData = fetcher.data;
+    if (fetcherData && typeof fetcherData === "object" && !Array.isArray(fetcherData)) {
+      const data = fetcherData as FetcherData;
+      if (typeof data.success === "boolean" && data.success) {
+        const action = isEditing ? "updated" : "created";
+        toast.success(`Queue type ${action} successfully!`);
+      }
+      if (typeof data.error === "string") {
+        toast.error(data.error);
+      }
     }
   }, [fetcher.data, isEditing]);
 

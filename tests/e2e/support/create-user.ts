@@ -35,7 +35,7 @@ async function createAndLogin(email: string) {
   const parsedCookie = parse(cookieValue);
   // we log it like this so our cypress command can parse it out and set it as
   // the cookie value.
-  // eslint-disable-next-line no-console
+   
   console.log(
     `
 <cookie>

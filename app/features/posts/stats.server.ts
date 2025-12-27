@@ -39,56 +39,76 @@ export async function getPostStats(eventIds: string[]): Promise<Record<string, P
                 throw new Error("Failed to fetch stats");
             }
 
-            const data = await response.json() as [string, unknown, { kind?: number; content?: string }][];
+            const dataRaw: unknown = await response.json();
+            const data: unknown[] = Array.isArray(dataRaw) ? dataRaw : [];
             // Find the stats event in the response array
             // The stats event has kind 10000100 and contains engagement metrics
-            const statsEvent = data.find(
-                (event: [string, unknown, { kind?: number; content?: string }]) => {
-                    if (event[0] !== "EVENT" || !event[2]) return false;
-                    const eventData = event[2];
+            const statsEvent: unknown = data.find(
+                (event: unknown) => {
+                    if (!Array.isArray(event) || event.length < 3 || event[0] !== "EVENT") return false;
+                    const eventDataRaw: unknown = event[2];
+                    const eventData: unknown = eventDataRaw;
                     if (!eventData || typeof eventData !== "object" || Array.isArray(eventData)) return false;
-                    const eventTyped = eventData as { kind?: number; content?: string };
-                    return eventTyped.kind === 10000100 &&
+                    const eventTyped = eventData as { kind?: unknown; content?: unknown };
+                    return typeof eventTyped.kind === "number" && eventTyped.kind === 10000100 &&
                         eventTyped.content &&
                         typeof eventTyped.content === "string" &&
                         eventTyped.content.includes(eventId);
                 },
             );
 
-            if (statsEvent?.[2] && typeof statsEvent[2] === "object" && !Array.isArray(statsEvent[2])) {
-                const eventData = statsEvent[2] as { kind?: number; content?: string };
+            if (Array.isArray(statsEvent) && statsEvent[2] && typeof statsEvent[2] === "object" && !Array.isArray(statsEvent[2])) {
+                const eventData = statsEvent[2] as { kind?: unknown; content?: unknown };
                 if (eventData.content && typeof eventData.content === "string") {
-                    const content = JSON.parse(eventData.content) as {
+                    let content: {
                         likes?: number;
                         replies?: number;
                         mentions?: number;
                         reposts?: number;
                         zaps?: number;
                         satszapped?: number;
-                    };
+                        } = {};
+                    try {
+                        const parsed: unknown = JSON.parse(eventData.content ?? "");
+                        if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+                            const parsedObj = parsed as Record<string, unknown>;
+                            content = {
+                                likes: typeof parsedObj.likes === "number" ? parsedObj.likes : undefined,
+                                replies: typeof parsedObj.replies === "number" ? parsedObj.replies : undefined,
+                                mentions: typeof parsedObj.mentions === "number" ? parsedObj.mentions : undefined,
+                                reposts: typeof parsedObj.reposts === "number" ? parsedObj.reposts : undefined,
+                                zaps: typeof parsedObj.zaps === "number" ? parsedObj.zaps : undefined,
+                                satszapped: typeof parsedObj.satszapped === "number" ? parsedObj.satszapped : undefined,
+                            };
+                        }
+                    } catch {
+                        // If parsing fails, use empty content
+                    }
                     return {
                         [eventId]: {
-                            likes: content.likes || 0,
-                            replies: content.replies || 0,
-                            mentions: content.mentions || 0,
-                            reposts: content.reposts || 0,
-                            zaps: content.zaps || 0,
-                            satszapped: content.satszapped || 0,
+                            likes: content.likes ?? 0,
+                            replies: content.replies ?? 0,
+                            mentions: content.mentions ?? 0,
+                            reposts: content.reposts ?? 0,
+                            zaps: content.zaps ?? 0,
+                            satszapped: content.satszapped ?? 0,
                         },
                     };
                 }
             }
 
-            return {
-                [eventId]: {
-                    likes: 0,
-                    replies: 0,
-                    mentions: 0,
-                    reposts: 0,
-                    zaps: 0,
-                    satszapped: 0,
-                },
+            const statsValue: PostStats = {
+                likes: 0,
+                replies: 0,
+                mentions: 0,
+                reposts: 0,
+                zaps: 0,
+                satszapped: 0,
             };
+            const result: Record<string, PostStats> = {
+                [eventId]: statsValue,
+            };
+            return result;
         });
 
         const statsResults = await Promise.all(statsPromises);
@@ -97,6 +117,7 @@ export async function getPostStats(eventIds: string[]): Promise<Record<string, P
     } catch (error) {
         console.error("Error fetching stats:", error);
         // Initialize empty stats object with 0 values for each post
+        const emptyStats: Record<string, PostStats> = {};
         stats = eventIds.reduce((acc, eventId) => {
             acc[eventId] = {
                 likes: 0,
@@ -107,7 +128,7 @@ export async function getPostStats(eventIds: string[]): Promise<Record<string, P
                 satszapped: 0,
             };
             return acc;
-        }, {} as Record<string, PostStats>);
+        }, emptyStats);
     }
 
     return stats;

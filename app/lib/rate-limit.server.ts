@@ -10,7 +10,6 @@ import rateLimit from "express-rate-limit";
 import { RateLimiterRedis } from "rate-limiter-flexible";
 
 import { redis } from "~/infra/queue/queue-client.server";
-import { RateLimitError } from "~/lib/errors";
 
 /**
  * General API rate limiter
@@ -145,7 +144,7 @@ export function createIPRateLimiter(
       return next();
     }
 
-    const ip = req.ip || req.socket.remoteAddress || "unknown";
+    const ip = (req.ip ?? req.socket.remoteAddress) ?? "unknown";
 
     try {
       const ipLimiter = new RateLimiterRedis({
@@ -179,7 +178,7 @@ export function createIPRateLimiter(
  * Helper to get rate limit info for a user
  * Useful for displaying rate limit status to users
  */
-export function getRateLimitInfo(userId: string): Promise<{
+export async function getRateLimitInfo(userId: string): Promise<{
   remaining: number;
   resetTime: number;
 } | null> {

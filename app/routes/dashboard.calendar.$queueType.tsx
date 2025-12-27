@@ -7,11 +7,16 @@ import {
 } from "@remix-run/react";
 
 import { requireUserId } from "~/features/auth/session.server";
-import { Calendar } from "~/features/posts/components/Calendar/Calendar";
-import { getQueueColor } from "~/features/posts/queueColors";
-import { handleCalendarAction } from "~/features/posts/services/calendar-action.server";
-import { loadCalendarQueueData } from "~/features/posts/services/calendar-loader.server";
-import { postsToCalendarPosts } from "~/features/posts/utils/calendar-post-converter";
+import {
+  Calendar,
+  getQueueColor,
+  handleCalendarAction,
+  loadCalendarQueueData,
+  type PostData,
+  type UserData,
+  type QueueType,
+  postsToCalendarPosts,
+} from "~/features/posts";
 import { withErrorHandling, withActionErrorHandling } from "~/lib/error-handler.server";
 
 async function loaderImpl({ request, params }: LoaderFunctionArgs) {
@@ -36,7 +41,7 @@ export default function CalendarQueueRoute() {
   const {
     scheduledPosts,
     user,
-    scheduleIntervals,
+    scheduleIntervals: _scheduleIntervals,
     queueTypes,
     selectedQueueType,
   } = data;
@@ -123,9 +128,9 @@ export default function CalendarQueueRoute() {
       </div>
 
       <Calendar
-        scheduledPosts={postsToCalendarPosts(scheduledPosts)}
-        user={user}
-        queueTypes={queueTypes}
+        scheduledPosts={postsToCalendarPosts(scheduledPosts as unknown as PostData[])}
+        user={user ? (user as unknown as UserData) : undefined}
+        queueTypes={queueTypes as unknown as QueueType[]}
       />
     </div>
   );

@@ -33,7 +33,7 @@ export function QueueTypeCard({
         return "Uses global schedule intervals";
       }
       if (isIntervalScheduleConfig(queueType.scheduleConfig)) {
-        return `Every ${queueType.scheduleConfig.intervalHours} hours`;
+        return `Every ${String(queueType.scheduleConfig.intervalHours ?? 0)} hours`;
       }
       return "Invalid interval configuration";
     } else {
@@ -51,7 +51,7 @@ export function QueueTypeCard({
           <div className="flex items-center space-x-3">
             <div
               className="h-4 w-4 rounded-full"
-              style={{ backgroundColor: queueType.color || "#6B7280" }}
+              style={{ backgroundColor: queueType.color ?? "#6B7280" }}
             />
             <div className="space-y-1">
               <div className="flex items-center space-x-2">

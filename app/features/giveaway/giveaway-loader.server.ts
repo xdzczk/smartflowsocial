@@ -39,7 +39,7 @@ export async function fetchUserProfile(pubkey: string): Promise<User | null> {
 
     for (const item of profileData) {
       if (!Array.isArray(item) || item[0] !== "EVENT" || !item[2]) continue;
-      const eventData = item[2];
+      const eventData: unknown = item[2] as unknown;
       if (!eventData || typeof eventData !== "object" || Array.isArray(eventData)) continue;
       const event = eventData as { kind?: number; content?: string };
       if (!event) continue;
@@ -86,20 +86,20 @@ export async function fetchUserProfile(pubkey: string): Promise<User | null> {
     const statsTyped = stats as { follows_count?: unknown; followers_count?: unknown; note_count?: unknown; reply_count?: unknown; time_joined?: unknown; total_zap_count?: unknown; total_satszapped?: unknown; media_count?: unknown };
     const user: User = {
       pubkey,
-      name: (profileTyped.name as string | undefined) || undefined,
-      displayName: (profileTyped.display_name as string | undefined) || undefined,
-      about: (profileTyped.about as string | undefined) || undefined,
-      picture: (profileTyped.picture as string | undefined) || undefined,
-      nip05: (profileTyped.nip05 as string | undefined) || undefined,
-      lud16: (profileTyped.lud16 as string | undefined) || undefined,
-      followsCount: (statsTyped.follows_count as number | undefined) || 0,
-      followersCount: (statsTyped.followers_count as number | undefined) || 0,
-      noteCount: (statsTyped.note_count as number | undefined) || 0,
-      replyCount: (statsTyped.reply_count as number | undefined) || 0,
-      timeJoined: (statsTyped.time_joined as number | undefined) || 0,
-      zapCount: (statsTyped.total_zap_count as number | undefined) || 0,
-      totalSatsZapped: (statsTyped.total_satszapped as number | undefined) || 0,
-      mediaCount: (statsTyped.media_count as number | undefined) || 0,
+      name: (profileTyped.name as string | undefined) ?? undefined,
+      displayName: (profileTyped.display_name as string | undefined) ?? undefined,
+      about: (profileTyped.about as string | undefined) ?? undefined,
+      picture: (profileTyped.picture as string | undefined) ?? undefined,
+      nip05: (profileTyped.nip05 as string | undefined) ?? undefined,
+      lud16: (profileTyped.lud16 as string | undefined) ?? undefined,
+      followsCount: (statsTyped.follows_count as number | undefined) ?? 0,
+      followersCount: (statsTyped.followers_count as number | undefined) ?? 0,
+      noteCount: (statsTyped.note_count as number | undefined) ?? 0,
+      replyCount: (statsTyped.reply_count as number | undefined) ?? 0,
+      timeJoined: (statsTyped.time_joined as number | undefined) ?? 0,
+      zapCount: (statsTyped.total_zap_count as number | undefined) ?? 0,
+      totalSatsZapped: (statsTyped.total_satszapped as number | undefined) ?? 0,
+      mediaCount: (statsTyped.media_count as number | undefined) ?? 0,
     };
 
     return user;
@@ -194,12 +194,12 @@ async function fetchPostStats(eventIds: string[]): Promise<Record<string, {
           };
           return {
             [eventId]: {
-              likes: content.likes || 0,
-              replies: content.replies || 0,
-              mentions: content.mentions || 0,
-              reposts: content.reposts || 0,
-              zaps: content.zaps || 0,
-              satszapped: content.satszapped || 0,
+              likes: content.likes ?? 0,
+              replies: content.replies ?? 0,
+              mentions: content.mentions ?? 0,
+              reposts: content.reposts ?? 0,
+              zaps: content.zaps ?? 0,
+              satszapped: content.satszapped ?? 0,
             },
           };
         }
@@ -250,14 +250,14 @@ async function fetchPostStats(eventIds: string[]): Promise<Record<string, {
         satszapped: 0,
       };
       return acc;
-    }, {} as Record<string, {
+    }, ((): Record<string, {
       likes: number;
       replies: number;
       mentions: number;
       reposts: number;
       zaps: number;
       satszapped: number;
-    }>);
+    }> => ({}))());
   }
 }
 
@@ -287,7 +287,7 @@ async function processGiveawayParticipants(
   const blacklistedPubkeys = await getGiveawayBlacklist(userId);
   const blacklistedSet = new Set(
     blacklistedPubkeys.map((pubkey) => {
-      return convertToHex(pubkey) || pubkey;
+      return convertToHex(pubkey) ?? pubkey;
     }),
   );
 
@@ -350,7 +350,7 @@ async function processGiveawayParticipants(
         const profileEvent = userProfile[2] as { content?: string };
         if (profileEvent.content && typeof profileEvent.content === "string") {
           const profileContent = JSON.parse(profileEvent.content) as { lud16?: string };
-          lud16 = profileContent.lud16 || null;
+          lud16 = profileContent.lud16 ?? null;
         }
       }
 
@@ -368,7 +368,7 @@ async function processGiveawayParticipants(
         return event;
       }
       return null;
-    } catch (error) {
+    } catch (_error) {
       return null;
     }
   });
@@ -434,7 +434,7 @@ export async function loadGiveawayData(
     const eventId = post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent
       ? (post.signedEvent as { id: string }).id
       : null;
-    const postStats = eventId ? (stats[eventId] || {
+    const postStats = eventId ? (stats[eventId] ?? {
       likes: 0,
       replies: 0,
       mentions: 0,
@@ -495,7 +495,7 @@ export async function loadGiveawayData(
   const userWithDefaults = {
     ...user,
     id: user.id,
-    npub: user.npub || "",
+    npub: user.npub ?? "",
     filterMuted: user.filterMuted ?? false,
     mutedList: user.mutedList && typeof user.mutedList === "object" && !Array.isArray(user.mutedList) && "npubs" in user.mutedList
       ? { npubs: Array.isArray((user.mutedList as { npubs?: unknown }).npubs) ? (user.mutedList as { npubs?: unknown }).npubs as string[] : [] }

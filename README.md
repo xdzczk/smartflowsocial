@@ -105,6 +105,7 @@ SmartFlowSocial is a **self-hosted, professional-grade social media management p
 ### Prerequisites
 
 - **Node.js** 20.0.0 or higher
+- **pnpm** (install with: `npm install -g pnpm`)
 - **PostgreSQL** database
 - **Redis** (for queue processing)
 - **Nostr Browser Extension** (Alby, nos2x, or Amber)
@@ -117,22 +118,22 @@ git clone https://github.com/xdzczk/SmartFlowSocial.git
 cd SmartFlowSocial
 
 # 2. Install dependencies
-npm install
+pnpm install
 
 # 3. Set up environment
 cp example.env .env
 # Edit .env with your configuration
 
 # 4. Start services (Docker)
-npm run docker  # Starts PostgreSQL and Redis
+pnpm docker  # Starts PostgreSQL and Redis
 
 # 5. Set up database
-npx prisma generate
-npx prisma db push
-npm run db:seed
+pnpm exec prisma generate
+pnpm exec prisma db push
+pnpm db:seed
 
 # 6. Start development server
-npm run dev
+pnpm dev
 ```
 
 **That's it!** Open [http://localhost:3000](http://localhost:3000) and start managing your Nostr presence.
@@ -150,7 +151,7 @@ cp example.env .env
 # Edit .env
 
 # Run migrations
-docker-compose exec app npx prisma migrate deploy
+docker-compose exec app pnpm exec prisma migrate deploy
 
 # Access at http://localhost:3000
 ```
@@ -347,18 +348,18 @@ SmartFlowSocial has comprehensive test coverage:
 
 ```bash
 # Run all tests
-npm test
+pnpm test
 
 # Run specific test suites
-npm run test:unit          # Unit tests
-npm run test:integration   # Integration tests
-npm run test:e2e          # End-to-end tests (Cypress)
-npm run test:property     # Property-based tests
-npm run test:security     # Security tests
-npm run test:performance  # Performance tests
+pnpm test:unit          # Unit tests
+pnpm test:integration   # Integration tests
+pnpm test:e2e          # End-to-end tests (Cypress)
+pnpm test:property     # Property-based tests
+pnpm test:security     # Security tests
+pnpm test:performance  # Performance tests
 
 # With coverage
-npm run test:coverage
+pnpm test:coverage
 ```
 
 **Coverage**: 70%+ with comprehensive test suites
@@ -371,17 +372,17 @@ See [Testing Guide](./docs/testing.md) for detailed information.
 
 | Script | Description |
 |--------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Build for production |
-| `npm start` | Start production server |
-| `npm run start:worker` | Start background worker |
-| `npm run lint` | Run ESLint |
-| `npm run format` | Format code with Prettier |
-| `npm test` | Run all tests |
-| `npm run test:coverage` | Run tests with coverage |
-| `npm run db:seed` | Seed database |
-| `npm run docker` | Start PostgreSQL/Redis via Docker |
-| `npm run precheck` | Run lint, tests, and type check |
+| `pnpm dev` | Start development server |
+| `pnpm build` | Build for production |
+| `pnpm start` | Start production server |
+| `pnpm start:worker` | Start background worker |
+| `pnpm lint` | Run ESLint |
+| `pnpm format` | Format code with Prettier |
+| `pnpm test` | Run all tests |
+| `pnpm test:coverage` | Run tests with coverage |
+| `pnpm db:seed` | Seed database |
+| `pnpm docker` | Start PostgreSQL/Redis via Docker |
+| `pnpm precheck` | Run lint, tests, and type check |
 
 ---
 
@@ -428,7 +429,7 @@ We welcome contributions! Here's how you can help:
 1. **Fork the repository**
 2. **Create a feature branch** (`git checkout -b feature/amazing-feature`)
 3. **Make your changes**
-4. **Run tests** (`npm test`)
+4. **Run tests** (`pnpm test`)
 5. **Commit your changes** (`git commit -m 'feat: add amazing feature'`)
 6. **Push to the branch** (`git push origin feature/amazing-feature`)
 7. **Open a Pull Request**

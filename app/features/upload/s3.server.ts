@@ -31,7 +31,7 @@ const uploadStreamToS3 = async (
     const command = new PutObjectCommand(params);
     await s3Client.send(command);
     // Construct the URL manually since v3 doesn't return Location
-    return `https://${process.env.STORAGE_BUCKET}.s3.${process.env.STORAGE_REGION}.amazonaws.com/${key}`;
+    return `https://${String(process.env.STORAGE_BUCKET ?? '')}.s3.${String(process.env.STORAGE_REGION ?? '')}.amazonaws.com/${key}`;
   } catch (error) {
     logError(error instanceof Error ? error : new Error(String(error)), {
       key,
@@ -44,7 +44,7 @@ const uploadStreamToS3 = async (
 
 export function createUploadHandler(userId: string) {
   return composeUploadHandlers(
-    async ({ name, filename, contentType, data }) => {
+    async ({ name: _name, filename, contentType: _contentType, data }) => {
       // if (name !== "STLFileURL" && name !== "additionalFilesURLs") {
       //   return undefined;
       // }
@@ -99,14 +99,14 @@ export async function uploadBufferToS3(
   // Generate filename if not provided
   let finalFilename: string;
   if (filename) {
-    const ext = filename.split(".").pop()?.toLowerCase() || "jpg";
+    const ext = filename.split(".").pop()?.toLowerCase() ?? "jpg";
     finalFilename = `${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`;
   } else {
     finalFilename = `${Date.now()}-${Math.random().toString(36).substring(2)}.jpg`;
   }
 
   // Use custom key or generate default one
-  const key = customKey || `clients/${userId}/${finalFilename}`;
+  const key = customKey ?? `clients/${userId}/${finalFilename}`;
 
   try {
     const s3Client = createS3Client();
@@ -153,7 +153,7 @@ export async function uploadEditorJSImage(
 ): Promise<string> {
   try {
     // Generate a unique filename with timestamp and random string
-    const ext = filename.split(".").pop()?.toLowerCase() || "jpg";
+    const ext = filename.split(".").pop()?.toLowerCase() ?? "jpg";
     const uniqueFilename = `editorjs-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
     const key = `clients/${userId}/editorjs/${uniqueFilename}`;
 

@@ -67,7 +67,7 @@ function formatNpubShort(hexOrNpub?: string): string {
   if (!hexOrNpub) return "";
   const np = hexOrNpub.startsWith("npub")
     ? hexOrNpub
-    : hexToNpub(hexOrNpub) || hexOrNpub;
+    : hexToNpub(hexOrNpub) ?? hexOrNpub;
   if (!np) return "";
   if (np.length <= 20) return np; // already short
   return `${np.slice(0, 8)}...${np.slice(-8)}`;
@@ -117,28 +117,30 @@ export default function AccountSwitchMenu() {
       await init({
         methods: ["connect", "extension"],
         noBanner: true,
-        onAuth: async () => {
-          if (window.nostr) {
-            const contentSign = `Switch account ${Math.random().toString(36).slice(2, 12)}`;
-            const event: NostrEvent = {
-              kind: 27235,
-              created_at: Math.floor(Date.now() / 1000),
-              tags: [],
-              content: contentSign,
-            };
-            const signedEvent = await window.nostr.signEvent(event);
-            if (signedEvent.pubkey !== childNpub) {
-              // Silent no-op on mismatch
-              return;
+        onAuth: () => {
+          void (async () => {
+            if (window.nostr) {
+              const contentSign = `Switch account ${Math.random().toString(36).slice(2, 12)}`;
+              const event: NostrEvent = {
+                kind: 27235,
+                created_at: Math.floor(Date.now() / 1000),
+                tags: [],
+                content: contentSign,
+              };
+              const signedEvent = await window.nostr.signEvent(event);
+              if (signedEvent.pubkey !== childNpub) {
+                // Silent no-op on mismatch
+                return;
+              }
+              const formData = new FormData();
+              formData.append("pubkey", signedEvent.pubkey);
+              formData.append("signature", signedEvent.sig);
+              formData.append("event", JSON.stringify(signedEvent));
+              formData.append("contentSign", contentSign);
+              formData.append("redirectTo", "/dashboard");
+              fetcher.submit(formData, { method: "post", action: "/nostr-auth" });
             }
-            const formData = new FormData();
-            formData.append("pubkey", signedEvent.pubkey);
-            formData.append("signature", signedEvent.sig);
-            formData.append("event", JSON.stringify(signedEvent));
-            formData.append("contentSign", contentSign);
-            formData.append("redirectTo", "/dashboard");
-            fetcher.submit(formData, { method: "post", action: "/nostr-auth" });
-          }
+          })();
         },
       });
       document.dispatchEvent(new CustomEvent("nlLaunch", { detail: "switch" }));
@@ -159,28 +161,30 @@ export default function AccountSwitchMenu() {
       await init({
         methods: ["connect", "extension"],
         noBanner: true,
-        onAuth: async () => {
-          if (window.nostr) {
-            const contentSign = `Switch parent ${Math.random().toString(36).slice(2, 12)}`;
-            const event: NostrEvent = {
-              kind: 27235,
-              created_at: Math.floor(Date.now() / 1000),
-              tags: [],
-              content: contentSign,
-            };
-            const signedEvent = await window.nostr.signEvent(event);
-            if (signedEvent.pubkey !== parentNpub) {
-              // Silent no-op on mismatch
-              return;
+        onAuth: () => {
+          void (async () => {
+            if (window.nostr) {
+              const contentSign = `Switch parent ${Math.random().toString(36).slice(2, 12)}`;
+              const event: NostrEvent = {
+                kind: 27235,
+                created_at: Math.floor(Date.now() / 1000),
+                tags: [],
+                content: contentSign,
+              };
+              const signedEvent = await window.nostr.signEvent(event);
+              if (signedEvent.pubkey !== parentNpub) {
+                // Silent no-op on mismatch
+                return;
+              }
+              const formData = new FormData();
+              formData.append("pubkey", signedEvent.pubkey);
+              formData.append("signature", signedEvent.sig);
+              formData.append("event", JSON.stringify(signedEvent));
+              formData.append("contentSign", contentSign);
+              formData.append("redirectTo", "/dashboard");
+              fetcher.submit(formData, { method: "post", action: "/nostr-auth" });
             }
-            const formData = new FormData();
-            formData.append("pubkey", signedEvent.pubkey);
-            formData.append("signature", signedEvent.sig);
-            formData.append("event", JSON.stringify(signedEvent));
-            formData.append("contentSign", contentSign);
-            formData.append("redirectTo", "/dashboard");
-            fetcher.submit(formData, { method: "post", action: "/nostr-auth" });
-          }
+          })();
         },
       });
       document.dispatchEvent(new CustomEvent("nlLaunch", { detail: "switch" }));
@@ -244,8 +248,7 @@ export default function AccountSwitchMenu() {
                 ) : (
                   children.map((c) => {
                     const label =
-                      c.name ||
-                      c.displayName ||
+                      (c.name ?? c.displayName) ??
                       `${c.npub.slice(0, 8)}...${c.npub.slice(-8)}`;
                     return (
                       <div

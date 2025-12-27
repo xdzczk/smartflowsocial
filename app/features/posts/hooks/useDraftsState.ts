@@ -91,7 +91,13 @@ export function useDraftsState({ posts }: UseDraftsStateProps) {
 
   // Clear selected posts after bulk operations
   useEffect(() => {
-    if (bulkDeleteFetcher.data?.success ?? bulkResumeFetcher.data?.success) {
+    const deleteDataRaw = bulkDeleteFetcher.data;
+    const resumeDataRaw = bulkResumeFetcher.data;
+    const deleteData = deleteDataRaw && typeof deleteDataRaw === "object" && !Array.isArray(deleteDataRaw) ? deleteDataRaw as { success?: unknown } : null;
+    const resumeData = resumeDataRaw && typeof resumeDataRaw === "object" && !Array.isArray(resumeDataRaw) ? resumeDataRaw as { success?: unknown } : null;
+    const deleteSuccess = deleteData && typeof deleteData.success === "boolean" && deleteData.success;
+    const resumeSuccess = resumeData && typeof resumeData.success === "boolean" && resumeData.success;
+    if (deleteSuccess || resumeSuccess) {
       setSelectedPosts(new Set());
       setShowAdvancedBulkResume(false);
     }

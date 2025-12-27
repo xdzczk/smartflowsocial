@@ -90,7 +90,7 @@ export default function ScheduledPosts() {
                     try {
                       const parsed = JSON.parse(post.fileUrl[0]) as string[];
                       firstImage = parsed[0];
-                    } catch (error) {
+                    } catch (_error) {
                       firstImage = post.fileUrl[0];
                     }
                   }
@@ -105,7 +105,7 @@ export default function ScheduledPosts() {
                           {firstImage ? (
                             <img
                               src={firstImage}
-                              alt={post.caption || "Post media"}
+                              alt={post.caption ?? "Post media"}
                               className="h-full w-full object-cover"
                             />
                           ) : (
@@ -119,7 +119,7 @@ export default function ScheduledPosts() {
                       </td>
                       <td className="p-3">
                         <p className="font-medium">
-                          {post.caption || "No caption"}
+                          {post.caption ?? "No caption"}
                         </p>
                       </td>
                       <td className="p-3 text-gray-500 dark:text-gray-400">
@@ -198,14 +198,14 @@ export default function ScheduledPosts() {
                     try {
                       const parsed = JSON.parse(selectedPost.fileUrl[0]) as string[];
                       modalImage = parsed[0];
-                    } catch (error) {
+                    } catch (_error) {
                       modalImage = selectedPost.fileUrl[0];
                     }
                   }
                   return modalImage ? (
                     <img
                       src={modalImage}
-                      alt={selectedPost.caption || "Post media"}
+                      alt={selectedPost.caption ?? "Post media"}
                       className="mx-auto max-h-96 rounded-lg object-contain"
                     />
                   ) : (
@@ -221,7 +221,7 @@ export default function ScheduledPosts() {
               <div className="space-y-3">
                 <div>
                   <span className="font-semibold">Caption:</span>
-                  <p className="mt-1">{selectedPost.caption || "No caption"}</p>
+                  <p className="mt-1">{selectedPost.caption ?? "No caption"}</p>
                 </div>
                 <div>
                   <span className="font-semibold">Type:</span>

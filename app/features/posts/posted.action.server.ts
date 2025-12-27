@@ -26,7 +26,11 @@ interface MixedContentItem {
  * Handle delete post action
  */
 async function handleDelete(formData: FormData, userId: string) {
-    const postId = formData.get("postId") as string;
+    const postIdRaw = formData.get("postId");
+    const postId = typeof postIdRaw === "string" ? postIdRaw : "";
+    if (!postId) {
+        throw new Error("Post ID is required");
+    }
     await deletePost({ id: postId, userId });
     return json({ success: true });
 }
@@ -35,7 +39,11 @@ async function handleDelete(formData: FormData, userId: string) {
  * Handle delete longform post action
  */
 async function handleDeleteLongForm(formData: FormData, userId: string) {
-    const postId = formData.get("postId") as string;
+    const postIdRaw = formData.get("postId");
+    const postId = typeof postIdRaw === "string" ? postIdRaw : "";
+    if (!postId) {
+        throw new Error("Post ID is required");
+    }
     await deleteLongFormPost({ id: postId, userId });
     return json({ success: true });
 }
@@ -58,7 +66,7 @@ async function handleBulkDelete(formData: FormData, userId: string) {
  */
 async function handleBulkDeleteLongForm(formData: FormData, userId: string) {
     const postIdsRaw = formData.get("postIds");
-    const postIds = typeof postIdsRaw === "string" ? JSON.parse(postIdsRaw) as string[] : [];
+    const postIds = typeof postIdsRaw === "string" ? JSON.parse(postIdsRaw) as unknown as string[] : [];
     if (!Array.isArray(postIds)) {
       throw new Error("Invalid postIds format");
     }
@@ -71,7 +79,7 @@ async function handleBulkDeleteLongForm(formData: FormData, userId: string) {
  */
 async function handleBulkDeleteMixed(formData: FormData, userId: string) {
     const itemDataRaw = formData.get("itemData");
-    const itemDataParsed = typeof itemDataRaw === "string" ? JSON.parse(itemDataRaw) : null;
+    const itemDataParsed: unknown = typeof itemDataRaw === "string" ? JSON.parse(itemDataRaw) : null;
     if (!Array.isArray(itemDataParsed)) {
       throw new Error("Invalid itemData format");
     }
@@ -118,7 +126,7 @@ async function handleBulkScheduledRepost(formData: FormData, userId: string) {
  */
 async function handleBulkQuote(formData: FormData, userId: string) {
     const postIdsRaw = formData.get("postIds");
-    const postIds = typeof postIdsRaw === "string" ? JSON.parse(postIdsRaw) as string[] : [];
+    const postIds = typeof postIdsRaw === "string" ? JSON.parse(postIdsRaw) as unknown as string[] : [];
     if (!Array.isArray(postIds)) {
       throw new Error("Invalid postIds format");
     }
@@ -247,7 +255,7 @@ async function handleQuote(formData: FormData, userId: string) {
         const quotePostData = {
             caption: "", // Empty caption - user can add content
             fileUrl: originalPost.fileUrl || "",
-            queueType: originalPost.queueTypeId || "unassigned",
+            queueType: (originalPost.queueTypeId ?? "") || "unassigned",
             scheduledFor: "",
             originalPostId: originalPost.id,
             originalEventId: eventId,
@@ -299,7 +307,7 @@ async function handleLongformRepost(formData: FormData, userId: string) {
             );
         }
 
-        const eventId = typeof originalEvent.id === "string" ? originalEvent.id : String(originalEvent.id);
+        const _eventId = typeof originalEvent.id === "string" ? originalEvent.id : String(originalEvent.id);
         const eventPubkey = typeof originalEvent.pubkey === "string" ? originalEvent.pubkey : String(originalEvent.pubkey);
         const eventTags = Array.isArray(originalEvent.tags) ? originalEvent.tags : [];
 
@@ -393,7 +401,7 @@ async function handleLongformQuote(formData: FormData, userId: string) {
             relays: ["wss://relay.primal.net"],
         });
 
-        // Create quote post data for bulk posts page with naddr reference
+        // Create quot??post data for bulk posts page with naddr reference
         const quotePostData = {
             caption: `nostr:${naddr}`, // Include naddr reference for quote post
             fileUrl: "", // No file URL for text-based quote

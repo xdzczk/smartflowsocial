@@ -1,13 +1,15 @@
 import { json, type ActionFunctionArgs, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useFetcher } from "@remix-run/react";
 
-import { SearchForm } from "~/features/search/components/SearchForm";
-import { SearchResult } from "~/features/search/components/SearchResult";
-import { SearchToast } from "~/features/search/components/SearchToast";
-import { handleSearchEvent } from "~/features/search/services/search-action.server";
-import { loadSearchData } from "~/features/search/services/search-loader.server";
 import { requireUserId } from "~/features/auth/session.server";
-import { useSearchState } from "~/features/search/hooks/useSearchState";
+import {
+  SearchForm,
+  SearchResult,
+  SearchToast,
+  useSearchState,
+  handleSearchAction,
+  loadSearchData,
+} from "~/features/search";
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   const data = await loadSearchData(userId);
@@ -21,7 +23,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     if (_action === "searchEvent") {
       const eventInput = formData.get("eventInput") as string;
-      const result = await handleSearchEvent(eventInput);
+      const result = await handleSearchAction(eventInput);
       return json(result);
     }
 
@@ -92,6 +94,16 @@ export default function SearchPosts() {
                   authorName: "",
                   authorImage: null,
                   mediaUrls: [],
+                } satisfies {
+                  id: string;
+                  pubkey: string;
+                  created_at: number;
+                  kind: number;
+                  content: string;
+                  tags: string[][];
+                  authorName: string;
+                  authorImage: string | null;
+                  mediaUrls: string[];
                 } as {
                   id: string;
                   pubkey: string;

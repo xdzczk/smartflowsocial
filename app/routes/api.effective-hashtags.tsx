@@ -1,11 +1,10 @@
-import { json } from "@remix-run/node";
 import type { ActionFunctionArgs } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth/session.server";
 import {
   getEffectiveHashtags,
   parseEffectiveHashtagsRequest,
-} from "~/features/posts/services/effective-hashtags.server";
+} from "~/features/posts";
 import {
   withActionErrorHandling,
 } from "~/lib/error-handler.server";
@@ -19,7 +18,8 @@ export const action = withActionErrorHandling(
 
     let requestBody: unknown;
     try {
-      requestBody = await request.json() as unknown;
+      const jsonResult: unknown = await request.json();
+      requestBody = jsonResult;
     } catch (error) {
       throw new ValidationError("Invalid JSON in request body", {
         originalError: error instanceof Error ? error.message : String(error),

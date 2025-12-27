@@ -4,6 +4,7 @@ import tsconfigPaths from "vite-tsconfig-paths";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
+  // @ts-expect-error - tsconfigPaths plugin type mismatch
   plugins: [tsconfigPaths()],
   test: {
     // Test environment - use 'node' for server-side tests, 'jsdom' for React components
@@ -42,6 +43,7 @@ export default defineConfig({
       // Report uncovered lines
       reportOnFailure: true,
       // Include all files (even those with no tests)
+      // @ts-expect-error - all property type mismatch
       all: true,
       // Skip full coverage for files that are hard to test
       skipFull: false,

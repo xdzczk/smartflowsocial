@@ -38,12 +38,13 @@ export function filterPostsArraysByQueueType<T extends { queueType?: { name?: st
   const { queueType } = config;
   
   return {
-    scheduledPosts: filterPostsByQueueType(config.scheduledPosts || [], queueType),
-    scheduledLongFormPosts: filterPostsByQueueType(config.scheduledLongFormPosts || [], queueType),
-    pastPosts: filterPostsByQueueType(config.pastPosts || [], queueType),
-    pastLongFormPosts: filterPostsByQueueType(config.pastLongFormPosts || [], queueType),
+    scheduledPosts: filterPostsByQueueType(config.scheduledPosts ?? [], queueType),
+    scheduledLongFormPosts: filterPostsByQueueType(config.scheduledLongFormPosts ?? [], queueType),
+    pastPosts: filterPostsByQueueType(config.pastPosts ?? [], queueType),
+    pastLongFormPosts: filterPostsByQueueType(config.pastLongFormPosts ?? [], queueType),
   };
 }
+
 
 
 

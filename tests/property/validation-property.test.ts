@@ -14,11 +14,11 @@ describe("Property-Based Tests: Data Validation", () => {
     it("should preserve valid strings after sanitization", () => {
       fc.assert(
         fc.property(
-          fc.string({ minLength: 0, maxLength: 1000 }).filter((s) => {
+          fc.string({ minLength: 0, maxLength: 1000 }).filter((s: string) => {
             // Valid strings: no control characters except newlines/tabs
             return !/[^\x20-\x7E\n\t]/.test(s);
           }),
-          (validString) => {
+          (validString: string) => {
             // Sanitization should preserve valid strings
             const sanitized = validString.trim();
             return sanitized === validString.trim();
@@ -32,7 +32,7 @@ describe("Property-Based Tests: Data Validation", () => {
       fc.assert(
         fc.property(
           fc.string({ minLength: 1, maxLength: 100 }),
-          (input) => {
+          (input: string) => {
             // After sanitization, should not contain script tags
             const sanitized = input.replace(/<script[^>]*>.*?<\/script>/gi, "");
             return !sanitized.includes("<script");
@@ -48,7 +48,7 @@ describe("Property-Based Tests: Data Validation", () => {
       fc.assert(
         fc.property(
           fc.webUrl(),
-          (url) => {
+          (url: string) => {
             try {
               new URL(url);
               return true;
@@ -64,7 +64,7 @@ describe("Property-Based Tests: Data Validation", () => {
     it("should reject malformed URLs", () => {
       fc.assert(
         fc.property(
-          fc.string({ minLength: 1, maxLength: 200 }).filter((s) => {
+          fc.string({ minLength: 1, maxLength: 200 }).filter((s: string) => {
             try {
               new URL(s);
               return false; // Valid URL, skip
@@ -72,7 +72,7 @@ describe("Property-Based Tests: Data Validation", () => {
               return true; // Invalid URL, test it
             }
           }),
-          (invalidUrl) => {
+          (invalidUrl: string) => {
             try {
               new URL(invalidUrl);
               return false; // Should have thrown
@@ -93,7 +93,7 @@ describe("Property-Based Tests: Data Validation", () => {
       fc.assert(
         fc.property(
           fc.emailAddress(),
-          (email) => {
+          (email: string) => {
             return emailRegex.test(email);
           },
         ),
@@ -107,7 +107,7 @@ describe("Property-Based Tests: Data Validation", () => {
       fc.assert(
         fc.property(
           fc.integer({ min: 1, max: 1000000 }),
-          (num) => {
+          (num: number) => {
             return Number.isInteger(num) && num > 0;
           },
         ),
@@ -119,7 +119,7 @@ describe("Property-Based Tests: Data Validation", () => {
       fc.assert(
         fc.property(
           fc.integer({ min: 0, max: 1000000 }),
-          (num) => {
+          (num: number) => {
             return num >= 0;
           },
         ),
@@ -133,7 +133,7 @@ describe("Property-Based Tests: Data Validation", () => {
       fc.assert(
         fc.property(
           fc.array(fc.string(), { minLength: 0, maxLength: 100 }),
-          (arr) => {
+          (arr: string[]) => {
             return arr.length >= 0 && arr.length <= 100;
           },
         ),
@@ -145,7 +145,7 @@ describe("Property-Based Tests: Data Validation", () => {
       fc.assert(
         fc.property(
           fc.uniqueArray(fc.string(), { minLength: 0, maxLength: 50 }),
-          (arr) => {
+          (arr: string[]) => {
             const unique = new Set(arr);
             return unique.size === arr.length;
           },
@@ -160,7 +160,7 @@ describe("Property-Based Tests: Data Validation", () => {
       fc.assert(
         fc.property(
           fc.date({ min: new Date("2000-01-01"), max: new Date("2100-12-31") }),
-          (date) => {
+          (date: Date) => {
             return (
               date >= new Date("2000-01-01") &&
               date <= new Date("2100-12-31") &&
@@ -176,7 +176,7 @@ describe("Property-Based Tests: Data Validation", () => {
       fc.assert(
         fc.property(
           fc.date({ min: new Date() }),
-          (date) => {
+          (date: Date) => {
             return date >= new Date() && !isNaN(date.getTime());
           },
         ),
@@ -190,7 +190,7 @@ describe("Property-Based Tests: Data Validation", () => {
       fc.assert(
         fc.property(
           fc.string({ minLength: 0, maxLength: 100 }),
-          (input) => {
+          (input: string) => {
             const normalized1 = input.trim().toLowerCase();
             const normalized2 = normalized1.trim().toLowerCase();
             return normalized1 === normalized2;

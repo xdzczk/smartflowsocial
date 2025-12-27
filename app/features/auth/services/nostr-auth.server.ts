@@ -50,7 +50,7 @@ export async function authenticateNostrUser(
 
   // Verify the signature
   const isValid = validateEvent(parsedEvent);
-  const createdAt = new Date((parsedEvent.created_at || 0) * 1000);
+  const createdAt = new Date((parsedEvent.created_at ?? 0) * 1000);
   const sixHoursAgo = new Date(Date.now() - 1000 * 60 * 60 * 6);
 
   if (
@@ -61,14 +61,14 @@ export async function authenticateNostrUser(
   ) {
     // The signature is valid, so this is the real user
     // You can now create a session or token for the user
-    let user = await getUserByNpub(parsedEvent.pubkey || "");
+    let user = await getUserByNpub(parsedEvent.pubkey ?? "");
     const { nostrProfile } = await getCompleteProfile({
-      npub: parsedEvent.pubkey || "",
+      npub: parsedEvent.pubkey ?? "",
     });
 
     if (!user) {
       user = await createUser(
-        parsedEvent.pubkey || "",
+        parsedEvent.pubkey ?? "",
         JSON.stringify(nostrProfile),
       );
     }
@@ -77,7 +77,7 @@ export async function authenticateNostrUser(
     if (user.updatedAt < twelveHoursAgo) {
       await updateUserProfile({
         nostrProfile: JSON.stringify(nostrProfile),
-        npub: parsedEvent.pubkey || "",
+        npub: parsedEvent.pubkey ?? "",
       });
     }
     

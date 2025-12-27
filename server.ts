@@ -3,7 +3,6 @@ import fs from "node:fs";
 import path from "node:path";
 import url from "node:url";
 
-import prom from "@isaacs/express-prometheus-middleware";
 import { createRequestHandler } from "@remix-run/express";
 import type { ServerBuild } from "@remix-run/node";
 import { broadcastDevReady, installGlobals } from "@remix-run/node";
@@ -12,6 +11,7 @@ import type { RequestHandler } from "express";
 import express from "express";
 import helmet from "helmet";
 import morgan from "morgan";
+import * as promClient from "prom-client";
 import sourceMapSupport from "source-map-support";
 
 import {
@@ -20,12 +20,28 @@ import {
   authLimiter,
 } from "./app/lib/rate-limit.server";
 
-sourceMapSupport.install();
+// Install source map support
+// Only install in production or when explicitly enabled to avoid missing map file errors in dev
+if (process.env.NODE_ENV === "production" || process.env.ENABLE_SOURCE_MAPS === "true") {
+  try {
+    (sourceMapSupport as { install: (options: { handleUncaughtExceptions: boolean; environment: string }) => void }).install({
+      handleUncaughtExceptions: false,
+      environment: "node",
+    });
+  } catch (error) {
+    // If source map support fails to install, log but don't crash
+    console.warn("[Source Maps] Failed to install source map support:", error);
+  }
+}
 installGlobals();
 
 // Ensure Web Crypto API exists for server-side code that expects browser crypto
-if (!(globalThis as any).crypto?.getRandomValues) {
-  (globalThis as any).crypto = nodeWebcrypto as any;
+interface GlobalWithCrypto {
+  crypto?: Crypto;
+}
+const globalWithCrypto = globalThis as unknown as GlobalWithCrypto;
+if (!globalWithCrypto.crypto?.getRandomValues) {
+  globalWithCrypto.crypto = nodeWebcrypto as Crypto;
 }
 
 /**
@@ -122,7 +138,7 @@ function validateEnvironment(): void {
 // Validate environment before starting
 validateEnvironment();
 
-run();
+void run();
 
 async function run() {
   const BUILD_PATH = path.resolve("build/index.js");
@@ -143,13 +159,17 @@ async function run() {
   // Import query metrics to register them
   await import("./app/lib/query-metrics.server");
   
-  app.use(
-    prom({
-      metricsPath: "/metrics",
-      collectDefaultMetrics: true,
-      metricsApp,
-    }),
-  );
+  // Collect default metrics (CPU, memory, process info, etc.)
+  promClient.collectDefaultMetrics();
+  
+  // Expose Prometheus metrics endpoint
+  metricsApp.get("/metrics", (req, res) => {
+    void (async () => {
+      res.set("Content-Type", promClient.register.contentType);
+      const metrics = await promClient.register.metrics();
+      res.end(metrics);
+    })();
+  });
 
   app.use((req, res, next) => {
     // helpful headers:
@@ -251,6 +271,7 @@ async function run() {
       referrerPolicy: {
         policy: "strict-origin-when-cross-origin",
       },
+      // @ts-expect-error - permissionsPolicy may not be in helmet types but is valid
       permissionsPolicy: {
         features: {
           geolocation: ["'none'"],
@@ -320,7 +341,7 @@ async function run() {
     console.log(`✅ app ready: http://localhost:${port}`);
 
     if (process.env.NODE_ENV === "development") {
-      broadcastDevReady(initialBuild);
+      void broadcastDevReady(initialBuild);
     }
   });
 
@@ -355,21 +376,22 @@ async function run() {
       // 1. re-import the server build
       build = await reimportServer();
       // 2. tell Remix that this app server is now up-to-date and ready
-      broadcastDevReady(build);
+      void broadcastDevReady(build);
     }
     const chokidar = await import("chokidar");
     chokidar
       .watch(VERSION_PATH, { ignoreInitial: true })
-      .on("add", handleServerUpdate)
-      .on("change", handleServerUpdate);
+      .on("add", () => { void handleServerUpdate(); })
+      .on("change", () => { void handleServerUpdate(); });
 
     // wrap request handler to make sure its recreated with the latest build for every request
-    return async (req, res, next) => {
+    return (req, res, next) => {
       try {
-        return createRequestHandler({
+        const handler = createRequestHandler({
           build,
           mode: "development",
-        })(req, res, next);
+        });
+        void handler(req, res, next);
       } catch (error) {
         next(error);
       }

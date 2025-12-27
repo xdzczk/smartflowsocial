@@ -19,7 +19,7 @@ export function validateNpub(npub: string): boolean {
   try {
     const { type } = nip19.decode(npub);
     return type === "npub";
-  } catch (e) {
+  } catch (_e) {
     return false;
   }
 }
@@ -85,11 +85,11 @@ export function processPrimalData(data: PrimalEvent[]): {
   return {
     profile: {
       ...profile,
-      followers_count: stats.followers_count || 0,
-      following_count: stats.follows_count || 0,
-      posts_count: stats.note_count || 0,
-      zaps_count: stats.total_zap_count || 0,
-      total_satszapped: stats.total_satszapped || 0,
+      followers_count: stats.followers_count ?? 0,
+      following_count: stats.follows_count ?? 0,
+      posts_count: stats.note_count ?? 0,
+      zaps_count: stats.total_zap_count ?? 0,
+      total_satszapped: stats.total_satszapped ?? 0,
       media,
     },
   };
@@ -102,7 +102,14 @@ export async function getCompleteProfile({
   
   // If no data returned, return empty profile
   if (!primalData || primalData.length === 0) {
-    const emptyProfile: ProcessedProfile = {};
+    const emptyProfile: ProcessedProfile = {
+      followers_count: 0,
+      following_count: 0,
+      posts_count: 0,
+      zaps_count: 0,
+      total_satszapped: 0,
+      media: {},
+    };
     return {
       nostrProfile: emptyProfile,
       lud16: undefined,

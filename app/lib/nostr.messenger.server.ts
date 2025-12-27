@@ -1,5 +1,3 @@
-/* eslint-env node */
-
 import { nip04, finalizeEvent, nip19 } from "nostr-tools";
 
 import { logWarning, logError } from "~/lib/error-logger.server";
@@ -123,7 +121,7 @@ export async function sendNostrDirectMessage(
       let errorText = "";
       try {
         errorText = await response.text();
-      } catch (err) {
+      } catch (_err) {
         // ignore
       }
       return {

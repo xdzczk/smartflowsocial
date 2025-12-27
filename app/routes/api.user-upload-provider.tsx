@@ -1,7 +1,7 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth/session.server";
-import { loadUploadProviderSettings } from "~/features/user/services/upload-provider.server";
+import { loadUploadProviderSettings } from "~/features/user";
 import {
   withErrorHandling,
 } from "~/lib/error-handler.server";

@@ -5,14 +5,17 @@ import {
   useActionData,
 } from "@remix-run/react";
 
+import type { Asset } from "~/features/assets/types";
 import { requireUserId } from "~/features/auth/session.server";
-import { ErrorMessage } from "~/features/posts/components/ErrorMessage";
-import { LongFormEditHeader } from "~/features/posts/components/LongFormEditHeader";
-import LongFormPost from "~/features/posts/components/LongFormPost";
-import LongFormPreviewModal from "~/features/posts/components/LongFormPreviewModal";
-import { useLongFormEditState } from "~/features/posts/hooks/useLongFormEditState";
-import { handleLongFormEditAction } from "~/features/posts/services/longform-edit-action.server";
-import { loadLongFormEditData } from "~/features/posts/services/longform-edit-loader.server";
+import {
+  ErrorMessage,
+  LongFormEditHeader,
+  LongFormPost,
+  LongFormPreviewModal,
+  useLongFormEditState,
+  handleLongFormEditAction,
+  loadLongFormEditData,
+} from "~/features/posts";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
@@ -47,24 +50,36 @@ type ActionData = Awaited<ReturnType<typeof action>>;
 
 export default function EditLongFormPost() {
   const loaderData = useLoaderData<LoaderData>();
-  const {
-    post,
-    userId,
-    tags: userTags,
-    scheduleIntervals: scheduleIntervalsRaw,
-    queueTypes,
-    assets: assetsRaw,
-    userTimezone,
-    hashtagPresets,
-  } = loaderData;
+  // Type assertions for Remix JsonifyObject serialization
+  const post = loaderData && typeof loaderData === "object" && loaderData !== null && "post" in loaderData ? loaderData.post : null;
+  const _userId = loaderData && typeof loaderData === "object" && loaderData !== null && "userId" in loaderData ? (typeof loaderData.userId === "string" ? loaderData.userId : String(loaderData.userId ?? "")) : "";
+  const userTags = loaderData && typeof loaderData === "object" && loaderData !== null && "tags" in loaderData ? (typeof loaderData.tags === "string" ? loaderData.tags : String(loaderData.tags ?? "")) : "";
+  const scheduleIntervalsRaw = loaderData && typeof loaderData === "object" && loaderData !== null && "scheduleIntervals" in loaderData ? loaderData.scheduleIntervals : null;
+  const queueTypesRaw = loaderData && typeof loaderData === "object" && loaderData !== null && "queueTypes" in loaderData && Array.isArray(loaderData.queueTypes) ? loaderData.queueTypes : [];
+  const assetsRaw = loaderData && typeof loaderData === "object" && loaderData !== null && "assets" in loaderData && Array.isArray(loaderData.assets) ? (loaderData.assets as unknown[]) : [];
+  const _userTimezone = loaderData && typeof loaderData === "object" && loaderData !== null && "userTimezone" in loaderData ? (typeof loaderData.userTimezone === "string" ? loaderData.userTimezone : String(loaderData.userTimezone ?? "Etc/GMT")) : "Etc/GMT";
+  const hashtagPresetsRaw = loaderData && typeof loaderData === "object" && loaderData !== null && "hashtagPresets" in loaderData && Array.isArray(loaderData.hashtagPresets) ? loaderData.hashtagPresets : [];
   const actionData = useActionData<ActionData>();
 
   // Type assertions for Remix JsonifyObject serialization
   const scheduleIntervals = Array.isArray(scheduleIntervalsRaw) 
-    ? scheduleIntervalsRaw.map(s => typeof s === "string" ? parseInt(s, 10) : s).filter((n): n is number => !isNaN(n))
+    ? scheduleIntervalsRaw.map((s: unknown) => typeof s === "string" ? parseInt(s, 10) : typeof s === "number" ? s : null).filter((n): n is number => n !== null && !isNaN(n))
     : [];
-  const assets = Array.isArray(assetsRaw) ? assetsRaw as unknown as { id: string; fileUrl?: string; title?: string; content?: string; assetType: string }[] : [];
-  const typedPost = post && typeof post === "object" ? post as unknown as { id: string; title?: string; summary?: string; content?: string; image?: string; queueType?: { name: string } | null } : null;
+  const assets = assetsRaw.filter((asset: unknown): asset is Asset => 
+    typeof asset === "object" && asset !== null && "id" in asset && typeof (asset as { id: unknown }).id === "string"
+  );
+  const typedPost = post && typeof post === "object" && post !== null && "id" in post && typeof (post as { id: unknown }).id === "string" ? post as { id: string; title?: string; summary?: string; content?: string; image?: string; queueType?: { name: string } | null } : null;
+  const queueTypes = queueTypesRaw.filter((qt: unknown): qt is { id: string; name: string; color?: string | null; scheduleType?: string; scheduleConfig?: unknown; isEnabled?: boolean } => 
+    typeof qt === "object" && qt !== null && "id" in qt && "name" in qt &&
+    typeof (qt as { id: unknown; name: unknown }).id === "string" &&
+    typeof (qt as { id: unknown; name: unknown }).name === "string"
+  );
+  const hashtagPresets = hashtagPresetsRaw.filter((preset: unknown): preset is { id: string; name: string; tags: string; description?: string | null } => 
+    typeof preset === "object" && preset !== null && "id" in preset && "name" in preset && "tags" in preset &&
+    typeof (preset as { id: unknown; name: unknown; tags: unknown }).id === "string" &&
+    typeof (preset as { id: unknown; name: unknown; tags: unknown }).name === "string" &&
+    typeof (preset as { id: unknown; name: unknown; tags: unknown }).tags === "string"
+  );
 
   const {
     displayedHashtags,
@@ -84,19 +99,19 @@ export default function EditLongFormPost() {
     <div className="p-6">
       <LongFormEditHeader displayedHashtags={displayedHashtags} />
 
-      <ErrorMessage error={actionData?.error} success={actionData?.success} />
+      <ErrorMessage error={actionData && typeof actionData === "object" && "error" in actionData ? actionData.error as string | undefined : undefined} success={actionData && typeof actionData === "object" && "success" in actionData ? (actionData.success as boolean | undefined) : undefined} />
 
       <Form method="post" encType="multipart/form-data">
         <LongFormPost
-          queueTypes={Array.isArray(queueTypes) ? queueTypes as unknown as { id: string; name: string; color?: string | null; scheduleType?: string; scheduleConfig?: unknown; isEnabled?: boolean }[] : []}
+          queueTypes={queueTypes}
           scheduleIntervals={scheduleIntervals}
           userTags={userTags}
           assets={assets}
-          onQueueTypeChange={updateDisplayedHashtags}
+          onQueueTypeChange={(name) => void updateDisplayedHashtags(name)}
           onPreview={handlePreview}
-          initialData={typedPost}
+          initialData={typedPost ? { title: typedPost.title, summary: typedPost.summary, content: typedPost.content, image: typedPost.image, queueType: typedPost.queueType || undefined } as unknown as { title?: string; summary?: string; content?: string; image?: string; queueType?: { name: string } } : null}
           isEditing={true}
-          hashTagPresets={Array.isArray(hashtagPresets) ? hashtagPresets as unknown as { id: string; name: string; tags: string; description?: string | null }[] : []}
+          hashTagPresets={hashtagPresets}
           useHashtagPresets={useHashtagPresets}
           selectedHashtagPresetId={selectedHashtagPresetId}
           selectedHashtags={selectedHashtags}

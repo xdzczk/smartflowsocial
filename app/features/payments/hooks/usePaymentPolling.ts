@@ -75,13 +75,14 @@ export function usePaymentPolling({
     // Reset the stopping ref
     shouldStopPolling.current = false;
     setIsPolling(true);
-    const interval = setInterval(async () => {
+    const interval = setInterval(() => {
       if (shouldStopPolling.current) {
         clearInterval(interval);
         return;
       }
 
-      try {
+      void (async () => {
+        try {
         const formData = new FormData();
         formData.append("paymentId", paymentId);
 
@@ -120,9 +121,10 @@ export function usePaymentPolling({
             navigate("/dashboard", { replace: true });
           }, 2000);
         }
-      } catch (_error) {
-        // Silently handle polling errors
-      }
+        } catch (_error) {
+          // Silently handle polling errors
+        }
+      })();
     }, 5000); // Poll every 5 seconds
 
     setPollingInterval(interval);

@@ -166,7 +166,7 @@ async function createNostrUserAndLogin(npub: string) {
     const parsedCookie = parse(cookieValue);
 
     // Log the cookie in a parseable format
-    // eslint-disable-next-line no-console
+     
     console.log(
         `
 <cookie>

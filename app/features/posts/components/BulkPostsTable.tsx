@@ -75,7 +75,7 @@ export default function BulkPostsTable({
                                                     ) {
                                                         originalImageUrl = parsed[0];
                                                     }
-                                                } catch (e) {
+                                                } catch (_e) {
                                                     // If parsing fails, use as is
                                                 }
                                             }
@@ -120,9 +120,9 @@ export default function BulkPostsTable({
                                         if (post.fileUrl && post.fileUrl.trim() !== "") {
                                             let fileUrl = "";
                                             if (Array.isArray(post.fileUrl)) {
-                                                fileUrl = post.fileUrl[0];
+                                                fileUrl = typeof post.fileUrl[0] === "string" ? post.fileUrl[0] : "";
                                             } else {
-                                                fileUrl = post.fileUrl;
+                                                fileUrl = typeof post.fileUrl === "string" ? post.fileUrl : "";
                                             }
 
                                             return (
@@ -163,9 +163,9 @@ export default function BulkPostsTable({
                                     } else if (post.isRepost && post.fileUrl) {
                                         // Handle repost fileUrl which should now be a single URL string
                                         if (Array.isArray(post.fileUrl)) {
-                                            imageUrl = post.fileUrl[0];
+                                            imageUrl = typeof post.fileUrl[0] === "string" ? post.fileUrl[0] : "";
                                         } else {
-                                            imageUrl = post.fileUrl;
+                                            imageUrl = typeof post.fileUrl === "string" ? post.fileUrl : "";
                                         }
                                     } else if (post.file) {
                                         // Handle regular file uploads - use previewData which includes type info

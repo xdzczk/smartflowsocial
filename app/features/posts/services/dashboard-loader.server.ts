@@ -5,6 +5,7 @@
 
 import { combineContent } from "~/features/posts/combined.server";
 import type { PostData, LongFormPostData } from "~/features/posts/types";
+import { convertPrismaQueueTypeToQueueType } from "~/features/posts/types";
 import {
   getScheduledLongFormPosts,
 } from "~/models/longformpost.server";
@@ -49,23 +50,31 @@ export async function loadDashboardData(
   // Convert PostWithQueueType[] to PostData[] for combineContent
   const scheduledPostsData: PostData[] = scheduledPosts.map((post) => {
     const { queueType, ...rest } = post;
-    return {
+    const signedEventValue: PostData["signedEvent"] = post.signedEvent as PostData["signedEvent"];
+    const nostrEventValue: PostData["nostrEvent"] = post.nostrEvent as PostData["nostrEvent"];
+    const convertedQueueType = convertPrismaQueueTypeToQueueType(queueType);
+    const result: PostData = {
       ...rest,
-      queueType: queueType || undefined,
-      signedEvent: post.signedEvent as PostData["signedEvent"],
-      nostrEvent: post.nostrEvent as PostData["nostrEvent"],
-    } as PostData;
+      queueType: convertedQueueType,
+      signedEvent: signedEventValue,
+      nostrEvent: nostrEventValue,
+    };
+    return result;
   });
 
   // Convert LongFormPost[] to LongFormPostData[] for combineContent
   const longformPostsData: LongFormPostData[] = longformPosts.map((post) => {
     const { queueType, ...rest } = post;
-    return {
+    const signedEventValue: LongFormPostData["signedEvent"] = post.signedEvent as LongFormPostData["signedEvent"];
+    const nostrEventValue: LongFormPostData["nostrEvent"] = post.nostrEvent as LongFormPostData["nostrEvent"];
+    const convertedQueueType = convertPrismaQueueTypeToQueueType(queueType);
+    const result: LongFormPostData = {
       ...rest,
-      queueType: queueType || undefined,
-      signedEvent: post.signedEvent as LongFormPostData["signedEvent"],
-      nostrEvent: post.nostrEvent as LongFormPostData["nostrEvent"],
-    } as LongFormPostData;
+      queueType: convertedQueueType,
+      signedEvent: signedEventValue,
+      nostrEvent: nostrEventValue,
+    };
+    return result;
   });
 
   // Combine posts and longform posts for the "All" tab

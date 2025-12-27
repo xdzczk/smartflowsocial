@@ -48,7 +48,7 @@ export default function PostDetailsModal({
     if (!scheduledFor) return "Not scheduled";
 
     // Use the same logic as the table formatDate function
-    const timezone = userTimezone || "UTC";
+    const timezone = userTimezone ?? "UTC";
     const date = new Date(parseInt(scheduledFor) * 1000);
 
     return date.toLocaleString("en-US", {
@@ -373,7 +373,7 @@ export default function PostDetailsModal({
 
       {/* Media full-screen modal */}
       <MediaModal
-        src={activeMediaSrc || ""}
+        src={activeMediaSrc ?? ""}
         isOpen={Boolean(isMediaOpen && activeMediaSrc)}
         onClose={() => setIsMediaOpen(false)}
       />

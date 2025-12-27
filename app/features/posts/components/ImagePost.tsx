@@ -39,7 +39,7 @@ export default function ImagePost({
   const fetcher = useFetcher<FetcherData>();
   const user = useOptionalUser();
 
-  const scheduleIntervals = user?.scheduleInterval;
+  const scheduleIntervals = user && typeof user === "object" && "scheduleInterval" in user ? user.scheduleInterval : null;
   const [scheduledFor, setScheduledFor] = useState("");
   const [timeError, setTimeError] = useState("");
   const [isRecyclable, setIsRecyclable] = useState(false);
@@ -65,7 +65,7 @@ export default function ImagePost({
         }),
       );
       setFiles((prev: File[]) => [...prev, ...processedFiles]);
-    } catch (error) {
+    } catch (error: unknown) {
       const { handleAsyncErrorWithMessage } = await import("~/lib/error-handler.client");
       handleAsyncErrorWithMessage(
         error,
@@ -100,7 +100,7 @@ export default function ImagePost({
           imageFiles.map(async (file) => await resizeImage(file)),
         );
         setFiles((prev: File[]) => [...prev, ...processedFiles]);
-      } catch (error) {
+      } catch (error: unknown) {
         const { handleAsyncErrorWithMessage } = await import("~/lib/error-handler.client");
         handleAsyncErrorWithMessage(
           error,
@@ -162,10 +162,16 @@ export default function ImagePost({
     }
 
     // Find the queue type object to get its ID
-    const selectedQueueType = queueTypes.find(qt => 
-      (typeof qt === "string" ? qt : qt.name) === queueTypeName
-    );
-    const queueTypeId = typeof selectedQueueType === "object" ? selectedQueueType.id : null;
+    const selectedQueueType = queueTypes.find(qt => {
+      if (typeof qt === "string") {
+        return qt === queueTypeName;
+      }
+      if (qt && typeof qt === "object" && "name" in qt && typeof qt.name === "string") {
+        return qt.name === queueTypeName;
+      }
+      return false;
+    });
+    const queueTypeId = selectedQueueType && typeof selectedQueueType === "object" && "id" in selectedQueueType && typeof selectedQueueType.id === "string" ? selectedQueueType.id : null;
 
     try {
       const response = await fetch("/api/queue-schedule", {
@@ -176,22 +182,23 @@ export default function ImagePost({
         body: JSON.stringify({
           queueTypeId,
           queueTypeName, // Keep for backward compatibility
-          userId: user?.id,
+          userId: user && typeof user === "object" && "id" in user && typeof user.id === "string" ? user.id : undefined,
         }),
       });
 
       if (response.ok) {
-        const data = (await response.json()) as { scheduledTime?: string };
-        const scheduledTime = data.scheduledTime;
+        const dataRaw: unknown = await response.json();
+        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { scheduledTime?: unknown } : {};
+        const scheduledTime = typeof data.scheduledTime === "string" ? data.scheduledTime : undefined;
         if (scheduledTime) {
           setScheduledFor(scheduledTime);
         }
         setTimeError("");
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error calculating schedule time:", error);
     }
-  }, [queueTypes, user?.id]);
+  }, [queueTypes, user && typeof user === "object" && "id" in user && typeof user.id === "string" ? user.id : undefined]);
 
   useEffect(() => {
     if (selectedQueue !== "unassigned") {
@@ -205,12 +212,18 @@ export default function ImagePost({
 
   const handleScheduleIntervalClick = (intervalHours: string | number) => {
     // Find the currently selected queue type
-    const selectedQueueType = queueTypes.find(qt => 
-      (typeof qt === "string" ? qt : qt.name) === selectedQueue
-    );
+    const selectedQueueType = queueTypes.find(qt => {
+      if (typeof qt === "string") {
+        return qt === selectedQueue;
+      }
+      if (qt && typeof qt === "object" && "name" in qt && typeof qt.name === "string") {
+        return qt.name === selectedQueue;
+      }
+      return false;
+    });
     
     // If this is a fixed slot queue, use the API to get the next scheduled time instead
-    if (selectedQueueType && typeof selectedQueueType === "object" && selectedQueueType.scheduleType === "FIXED_SLOTS") {
+    if (selectedQueueType && typeof selectedQueueType === "object" && "scheduleType" in selectedQueueType && selectedQueueType.scheduleType === "FIXED_SLOTS") {
       // For fixed slot queues, recalculate the schedule time instead of adding hours
       void calculateQueueScheduleTime(selectedQueue);
       return;
@@ -223,7 +236,7 @@ export default function ImagePost({
     );
 
     // Format the date in the user's timezone
-    const userTimezone = user?.timezone ?? "UTC";
+    const userTimezone = user && typeof user === "object" && "timezone" in user && typeof user.timezone === "string" ? user.timezone : "UTC";
     const formattedDate = hoursLater.toLocaleString("en-US", {
       timeZone: userTimezone,
       year: "numeric",
@@ -247,14 +260,23 @@ export default function ImagePost({
   };
 
   // Handle fetcher success data
-  if (fetcher.data?.success && fetcher.data?.fileUrls) {
+  const fetcherDataRaw = fetcher.data;
+  const fetcherData = fetcherDataRaw && typeof fetcherDataRaw === "object" && !Array.isArray(fetcherDataRaw) ? fetcherDataRaw as { success?: unknown; fileUrls?: unknown; error?: unknown } : null;
+  const isSuccess = fetcherData && typeof fetcherData.success === "boolean" && fetcherData.success;
+  const fileUrls = fetcherData && "fileUrls" in fetcherData && Array.isArray(fetcherData.fileUrls) ? fetcherData.fileUrls : null;
+  const error = fetcherData && typeof fetcherData.error === "string" ? fetcherData.error : null;
+
+  if (isSuccess && fileUrls) {
     toast.success("Images uploaded successfully!");
 
-    const preparedData: PreparedEventData[] = fetcher.data.fileUrls.map((url: { fileUrl: string; scheduledFor: string; queueType: string }) => {
+    const preparedData: PreparedEventData[] = fileUrls.map((url: unknown) => {
+      const urlObj = url && typeof url === "object" && !Array.isArray(url) ? url as { fileUrl?: unknown; scheduledFor?: unknown; queueType?: unknown } : {};
+      const fileUrl = typeof urlObj.fileUrl === "string" ? urlObj.fileUrl : "";
+      const queueType = typeof urlObj.queueType === "string" ? urlObj.queueType : selectedQueue;
       return {
-        content: url.fileUrl,
+        content: fileUrl,
         type: "image",
-        queueType: url.queueType || selectedQueue, // Include queue type information
+        queueType, // Include queue type information
       };
     });
 
@@ -264,18 +286,18 @@ export default function ImagePost({
   }
 
   // Add error handling
-  if (fetcher.data?.success === false && fetcher.data?.error) {
-    toast.error(fetcher.data.error);
+  if (fetcherData && typeof fetcherData.success === "boolean" && !fetcherData.success && error) {
+    toast.error(error);
   }
 
-  const isUploaded = Boolean(fetcher.data?.success && fetcher.data?.fileUrls);
+  const isUploaded = Boolean(isSuccess && fileUrls);
 
   return (
     <fetcher.Form
       method="post"
       className="w-full"
       encType="multipart/form-data"
-      onSubmit={handleImagePreview}
+      onSubmit={(e) => { void handleImagePreview(e); }}
     >
       <input type="hidden" name="_action" value="upload-images-preview" />
       <label
@@ -398,8 +420,8 @@ export default function ImagePost({
                       disabled={fetcher.state !== "idle" || isUploaded}
                       className={`rounded-full px-4 py-2 text-sm ${getDynamicQueueStyle(queueColor ?? null, selectedQueue === queueName)} disabled:cursor-not-allowed disabled:opacity-50`}
                       style={{
-                        backgroundColor: queueColor || undefined,
-                        borderColor: queueColor || undefined,
+                        backgroundColor: queueColor ?? undefined,
+                        borderColor: queueColor ?? undefined,
                       }}
                     >
                       {queueName}
@@ -445,12 +467,18 @@ export default function ImagePost({
           <div className="flex flex-wrap gap-2">
             {(() => {
               // Find the currently selected queue type
-              const selectedQueueType = queueTypes.find(qt => 
-                (typeof qt === "string" ? qt : qt.name) === selectedQueue
-              );
+              const selectedQueueType = queueTypes.find(qt => {
+                if (typeof qt === "string") {
+                  return qt === selectedQueue;
+                }
+                if (qt && typeof qt === "object" && "name" in qt && typeof qt.name === "string") {
+                  return qt.name === selectedQueue;
+                }
+                return false;
+              });
               
               // For fixed slot queues, show a different UI
-              if (selectedQueueType && typeof selectedQueueType === "object" && selectedQueueType.scheduleType === "FIXED_SLOTS") {
+              if (selectedQueueType && typeof selectedQueueType === "object" && "scheduleType" in selectedQueueType && selectedQueueType.scheduleType === "FIXED_SLOTS") {
                 return (
                   <button
                     type="button"
@@ -464,21 +492,25 @@ export default function ImagePost({
               }
               
               // For interval-based queues, show the hour buttons
-              return scheduleIntervals
-                ? scheduleIntervals.map((interval) => (
+              if (scheduleIntervals && Array.isArray(scheduleIntervals)) {
+                return scheduleIntervals.map((interval: unknown) => {
+                  const intervalValue = typeof interval === "string" ? interval : (typeof interval === "number" ? String(interval) : "");
+                  if (!intervalValue) return null;
+                  return (
                     <button
-                      key={interval}
+                      key={intervalValue}
                       type="button"
-                      onClick={() => handleScheduleIntervalClick(interval)}
+                      onClick={() => handleScheduleIntervalClick(intervalValue)}
                       className="rounded-md bg-gray-100 px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                       disabled={fetcher.state !== "idle" || isUploaded}
                     >
-                      +{interval}h
+                      +{intervalValue}h
                     </button>
-                  ))
-                : null;
-            })()
-            }
+                  );
+                }).filter((button): button is JSX.Element => button !== null);
+              }
+              return null;
+            })()}
           </div>
         </div>
         <button

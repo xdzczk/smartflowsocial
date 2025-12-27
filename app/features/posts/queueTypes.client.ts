@@ -22,7 +22,7 @@ export function findQueueTypeId(queueTypes: QueueType[], queueTypeName: string):
 /**
  * Calculate the next schedule time for a queue using the ID-based API
  */
-export function calculateQueueScheduleTime(
+export async function calculateQueueScheduleTime(
   queueTypes: QueueType[], 
   queueTypeName: string, 
   userId?: string
@@ -49,7 +49,7 @@ export function calculateQueueScheduleTime(
     if (response.ok) {
       const data = (await response.json()) as { scheduledTime?: string };
       const scheduledTime = data.scheduledTime;
-      return scheduledTime;
+      return scheduledTime ?? null;
     } else {
       const errorData = (await response.json()) as { error?: { message?: string }; message?: string };
       const { logClientError } = await import("~/lib/error-handler.client");
@@ -76,7 +76,7 @@ export function calculateQueueScheduleTime(
 /**
  * Fetch effective hashtags for a queue using the ID-based API
  */
-export function fetchEffectiveHashtags(
+export async function fetchEffectiveHashtags(
   queueTypes: QueueType[], 
   queueTypeName: string, 
   userId?: string
@@ -102,7 +102,7 @@ export function fetchEffectiveHashtags(
 
     if (response.ok) {
       const data = (await response.json()) as { hashtags?: string; effectiveHashtags?: string[] };
-      return data.hashtags || "";
+      return data.hashtags ?? data.effectiveHashtags?.join(" ") ?? "";
     } else {
       const { logClientError } = await import("~/lib/error-handler.client");
       logClientError(

@@ -20,7 +20,7 @@ export function getTestPrisma(): PrismaClient {
     return testPrisma;
   }
 
-  const testDatabaseUrl = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL;
+  const testDatabaseUrl = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL;
   
   if (!testDatabaseUrl) {
     throw new Error(
@@ -87,7 +87,7 @@ export async function withTransaction<T>(
  * Uses `db push` for test databases as it doesn't require migrations
  */
 export function setupTestDatabase(): Promise<void> {
-  const testDatabaseUrl = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL;
+  const testDatabaseUrl = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL;
   
   if (!testDatabaseUrl) {
     throw new Error("TEST_DATABASE_URL or DATABASE_URL must be set");
@@ -131,7 +131,7 @@ export async function teardownTestDatabase(): Promise<void> {
  * Drops all data and re-runs migrations
  * WARNING: Destructive operation - only use in test environments
  */
-export async function resetTestDatabase(): Promise<void> {
+export function resetTestDatabase(): Promise<void> {
   const prisma = getTestPrisma();
   
   // Get all model names from Prisma schema
@@ -151,7 +151,11 @@ export async function resetTestDatabase(): Promise<void> {
   // Delete in reverse order of dependencies
   for (const modelName of modelNames.reverse()) {
     try {
-      await (prisma as any)[modelName.toLowerCase()].deleteMany({});
+      const modelKey = modelName.toLowerCase() as keyof PrismaClient;
+      const model = prisma[modelKey] as { deleteMany: (args: {}) => Promise<unknown> } | undefined;
+      if (model && typeof model.deleteMany === "function") {
+        await model.deleteMany({});
+      }
     } catch (error) {
       // Ignore errors for models that don't exist or have dependencies
       console.warn(`Could not delete ${modelName}:`, error);
@@ -162,7 +166,18 @@ export async function resetTestDatabase(): Promise<void> {
 /**
  * Seed test database with fixtures
  */
-export async function seedTestDatabase(fixtures?: any): Promise<void> {
+interface TestFixtures {
+  users?: Array<{ id?: string; [key: string]: unknown }>;
+  queueTypes?: Array<{ id?: string; [key: string]: unknown }>;
+  hashTagPresets?: Array<{ id?: string; [key: string]: unknown }>;
+  posts?: Array<{ id?: string; [key: string]: unknown }>;
+  longFormPosts?: Array<{ id?: string; [key: string]: unknown }>;
+  payments?: Array<{ id?: string; [key: string]: unknown }>;
+  plans?: Array<{ id?: string; [key: string]: unknown }>;
+  [key: string]: unknown;
+}
+
+export async function seedTestDatabase(fixtures?: TestFixtures): Promise<void> {
   const prisma = getTestPrisma();
   
   if (fixtures) {
@@ -172,7 +187,7 @@ export async function seedTestDatabase(fixtures?: any): Promise<void> {
     // Use default seed
     try {
       execSync("npm run db:seed", {
-        env: { ...process.env, DATABASE_URL: process.env.TEST_DATABASE_URL || process.env.DATABASE_URL },
+        env: { ...process.env, DATABASE_URL: process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL },
         stdio: "inherit",
       });
     } catch (error) {
@@ -185,103 +200,110 @@ export async function seedTestDatabase(fixtures?: any): Promise<void> {
  * Apply fixtures to database
  * Uses upsert to handle existing records (idempotent)
  */
-async function applyFixtures(prisma: PrismaClient, fixtures: any): Promise<void> {
+async function applyFixtures(prisma: PrismaClient, fixtures: TestFixtures): Promise<void> {
   // Apply fixtures in dependency order
-  if (fixtures.users) {
+  if (fixtures.users && Array.isArray(fixtures.users)) {
     for (const user of fixtures.users) {
       // Use upsert to handle existing records
-      if (user.id) {
+      const userId = user && typeof user === "object" && "id" in user && typeof user.id === "string" ? user.id : undefined;
+      if (userId) {
         await prisma.user.upsert({
-          where: { id: user.id },
-          update: user,
-          create: user,
+          where: { id: userId },
+          update: user as { id: string; [key: string]: unknown },
+          create: user as { id: string; [key: string]: unknown },
         });
       } else {
-        await prisma.user.create({ data: user });
+        await prisma.user.create({ data: user as { [key: string]: unknown } });
       }
     }
   }
   
-  if (fixtures.queueTypes) {
+  if (fixtures.queueTypes && Array.isArray(fixtures.queueTypes)) {
     for (const queueType of fixtures.queueTypes) {
-      if (queueType.id) {
+      const queueTypeId = queueType && typeof queueType === "object" && "id" in queueType && typeof queueType.id === "string" ? queueType.id : undefined;
+      if (queueTypeId) {
         await prisma.queueType.upsert({
-          where: { id: queueType.id },
-          update: queueType,
-          create: queueType,
+          where: { id: queueTypeId },
+          update: queueType as { id: string; [key: string]: unknown },
+          create: queueType as { id: string; [key: string]: unknown },
         });
       } else {
-        await prisma.queueType.create({ data: queueType });
+        await prisma.queueType.create({ data: queueType as { [key: string]: unknown } });
       }
     }
   }
   
-  if (fixtures.hashTagPresets) {
+  if (fixtures.hashTagPresets && Array.isArray(fixtures.hashTagPresets)) {
     for (const preset of fixtures.hashTagPresets) {
-      if (preset.id) {
+      const presetId = preset && typeof preset === "object" && "id" in preset && typeof preset.id === "string" ? preset.id : undefined;
+      if (presetId) {
         await prisma.hashTagPreset.upsert({
-          where: { id: preset.id },
-          update: preset,
-          create: preset,
+          where: { id: presetId },
+          update: preset as { id: string; [key: string]: unknown },
+          create: preset as { id: string; [key: string]: unknown },
         });
       } else {
-        await prisma.hashTagPreset.create({ data: preset });
+        await prisma.hashTagPreset.create({ data: preset as { [key: string]: unknown } });
       }
     }
   }
   
-  if (fixtures.posts) {
+  if (fixtures.posts && Array.isArray(fixtures.posts)) {
     for (const post of fixtures.posts) {
-      if (post.id) {
+      const postId = post && typeof post === "object" && "id" in post && typeof post.id === "string" ? post.id : undefined;
+      if (postId) {
         await prisma.post.upsert({
-          where: { id: post.id },
-          update: post,
-          create: post,
+          where: { id: postId },
+          update: post as { id: string; [key: string]: unknown },
+          create: post as { id: string; [key: string]: unknown },
         });
       } else {
-        await prisma.post.create({ data: post });
+        await prisma.post.create({ data: post as { [key: string]: unknown } });
       }
     }
   }
   
-  if (fixtures.longFormPosts) {
+  if (fixtures.longFormPosts && Array.isArray(fixtures.longFormPosts)) {
     for (const longform of fixtures.longFormPosts) {
-      if (longform.id) {
+      const longformId = longform && typeof longform === "object" && "id" in longform && typeof longform.id === "string" ? longform.id : undefined;
+      if (longformId) {
         await prisma.longFormPost.upsert({
-          where: { id: longform.id },
-          update: longform,
-          create: longform,
+          where: { id: longformId },
+          update: longform as { id: string; [key: string]: unknown },
+          create: longform as { id: string; [key: string]: unknown },
         });
       } else {
-        await prisma.longFormPost.create({ data: longform });
+        await prisma.longFormPost.create({ data: longform as { [key: string]: unknown } });
       }
     }
   }
   
-  if (fixtures.payments) {
+  if (fixtures.payments && Array.isArray(fixtures.payments)) {
     for (const payment of fixtures.payments) {
-      if (payment.id) {
+      const paymentId = payment && typeof payment === "object" && "id" in payment && typeof payment.id === "string" ? payment.id : undefined;
+      if (paymentId) {
         await prisma.payment.upsert({
-          where: { id: payment.id },
-          update: payment,
-          create: payment,
+          where: { id: paymentId },
+          update: payment as { id: string; [key: string]: unknown },
+          create: payment as { id: string; [key: string]: unknown },
         });
       } else {
-        await prisma.payment.create({ data: payment });
+        await prisma.payment.create({ data: payment as { [key: string]: unknown } });
       }
     }
   }
   
-  if (fixtures.plans) {
+  if (fixtures.plans && Array.isArray(fixtures.plans)) {
     for (const plan of fixtures.plans) {
-      if (plan.id) {
+      const planId = plan && typeof plan === "object" && "id" in plan && typeof plan.id === "string" ? plan.id : undefined;
+      if (planId) {
         await prisma.plan.upsert({
-          where: { id: plan.id },
-          update: plan,
-          create: plan,
+          where: { id: planId },
+          update: plan as { id: string; [key: string]: unknown },
+          create: plan as { id: string; [key: string]: unknown },
         });
       } else {
-        await prisma.plan.create({ data: plan });
+        await prisma.plan.create({ data: plan as { [key: string]: unknown } });
       }
     }
   }
@@ -298,7 +320,7 @@ export async function useTestDatabase<T>(
   testFn: (prisma: PrismaClient) => Promise<T>,
   options?: {
     useTransaction?: boolean;
-    fixtures?: any;
+    fixtures?: import("./fixtures").TestFixtures;
     cleanup?: boolean;
   },
 ): Promise<T> {

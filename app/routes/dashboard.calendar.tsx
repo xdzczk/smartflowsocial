@@ -1,4 +1,3 @@
-import { json } from "@remix-run/node";
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
 import {
   useLoaderData,
@@ -10,11 +9,20 @@ import {
 
 import { requireUserId } from "~/features/auth/session.server";
 import { requireFeatureAccess, requireAnySubscription } from "~/features/payments/subscriptions.server";
-import { Calendar } from "~/features/posts/components/Calendar/Calendar";
-import { getQueueColor } from "~/features/posts/queueColors";
-import { handleCalendarAction } from "~/features/posts/services/calendar-action.server";
-import { loadCalendarData } from "~/features/posts/services/calendar-loader.server";
-import { mixedPostsToCalendarPosts, postsToCalendarPosts, longFormPostsToCalendarPosts } from "~/features/posts/utils/calendar-post-converter";
+import {
+  Calendar,
+  getQueueColor,
+  handleCalendarAction,
+  loadCalendarData,
+  type PostData,
+  type LongFormPostData,
+  type QueueType,
+  type UserData,
+  convertJsonValueToScheduleConfig,
+  mixedPostsToCalendarPosts,
+  postsToCalendarPosts,
+  longFormPostsToCalendarPosts,
+} from "~/features/posts";
 import { withErrorHandling, withActionErrorHandling } from "~/lib/error-handler.server";
 
 async function loaderImpl({ request, params }: LoaderFunctionArgs) {
@@ -43,17 +51,39 @@ type LoaderData = Awaited<ReturnType<typeof loaderImpl>>;
 export default function CalendarRoute() {
   const data = useLoaderData<LoaderData>();
   const {
-    scheduledPosts,
-    scheduledLongFormPosts,
-    pastPosts,
-    pastLongFormPosts,
+    scheduledPosts: scheduledPostsRaw,
+    scheduledLongFormPosts: scheduledLongFormPostsRaw,
+    pastPosts: pastPostsRaw,
+    pastLongFormPosts: pastLongFormPostsRaw,
     allContent,
-    allPastContent,
-    user,
-    scheduleIntervals,
-    queueTypes,
-    selectedQueueType,
+    user: userRaw,
+    queueTypes: queueTypesRaw,
+    selectedQueueType: _selectedQueueType,
   } = data;
+
+  // Type assertions for Remix JsonifyObject serialization
+  const scheduledPosts: PostData[] = Array.isArray(scheduledPostsRaw) ? scheduledPostsRaw as unknown as PostData[] : [];
+  const scheduledLongFormPosts: LongFormPostData[] = Array.isArray(scheduledLongFormPostsRaw) ? scheduledLongFormPostsRaw as unknown as LongFormPostData[] : [];
+  const pastPosts: PostData[] = Array.isArray(pastPostsRaw) ? pastPostsRaw as unknown as PostData[] : [];
+  const pastLongFormPosts: LongFormPostData[] = Array.isArray(pastLongFormPostsRaw) ? pastLongFormPostsRaw as unknown as LongFormPostData[] : [];
+  const user: UserData | null | undefined = userRaw ? (userRaw as unknown as UserData) : null;
+  const queueTypes: QueueType[] = Array.isArray(queueTypesRaw) ? queueTypesRaw.map((qt: unknown) => {
+    if (qt && typeof qt === "object" && "id" in qt && "name" in qt) {
+      const q = qt as { id: string; name: string; color?: string | null; scheduleType?: string; scheduleConfig?: unknown; isEnabled?: boolean; userId?: string };
+      const result: QueueType = {
+        id: q.id,
+        name: q.name,
+        color: q.color,
+        description: undefined,
+        scheduleType: q.scheduleType as "INTERVAL" | "FIXED_SLOTS" | undefined,
+        scheduleConfig: convertJsonValueToScheduleConfig(q.scheduleConfig),
+        isEnabled: q.isEnabled,
+        userId: q.userId,
+      };
+      return result;
+    }
+    return null;
+  }).filter((qt): qt is QueueType => qt !== null) : [];
   const params = useParams();
   const revalidator = useRevalidator();
   const [searchParams] = useSearchParams();

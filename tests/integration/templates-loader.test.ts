@@ -112,7 +112,7 @@ describe("Templates Loader", () => {
     });
 
     it("should handle pagination correctly", async () => {
-      const mockTemplates = [];
+      const mockTemplates: unknown[] = [];
       const mockUser = { id: TEST_USER_ID };
       const mockAssetsData = {
         assets: [],
@@ -138,7 +138,7 @@ describe("Templates Loader", () => {
     });
 
     it("should handle custom limit", async () => {
-      const mockTemplates = [];
+      const mockTemplates: unknown[] = [];
       const mockUser = { id: TEST_USER_ID };
       const mockAssetsData = {
         assets: [],
@@ -204,7 +204,7 @@ describe("Templates Loader", () => {
     });
 
     it("should use default parameters when not provided", async () => {
-      const mockTemplates = [];
+      const mockTemplates: unknown[] = [];
       const mockUser = { id: TEST_USER_ID };
       const mockAssetsData = {
         assets: [],

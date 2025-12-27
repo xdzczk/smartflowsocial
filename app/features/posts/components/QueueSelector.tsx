@@ -58,8 +58,8 @@ export function QueueSelector({
                 disabled={disabled}
                 className={`rounded-full px-4 py-2 text-sm ${getDynamicQueueStyle(queueColor ?? null, selectedQueue === queueName)} disabled:cursor-not-allowed disabled:opacity-50`}
                 style={{
-                  backgroundColor: queueColor || undefined,
-                  borderColor: queueColor || undefined,
+                  backgroundColor: queueColor ?? undefined,
+                  borderColor: queueColor ?? undefined,
                 }}
               >
                 {queueName}

@@ -9,11 +9,15 @@ import { getQueueTypes, getUserHashTagPresets, getUserHashTags } from "~/models/
  * Get bulk posts dashboard data
  */
 export async function getBulkPostsDashboardData(userId: string) {
-  const [tags, queueTypes, hashTagPresets] = await Promise.all([
+  const [tagsRaw, queueTypesRaw, hashTagPresetsRaw] = await Promise.all([
     getUserHashTags(userId),
     getQueueTypes(userId),
     getUserHashTagPresets(userId),
   ]);
+
+  const tags = typeof tagsRaw === "string" ? tagsRaw : tagsRaw ? String(tagsRaw) : "";
+  const queueTypes = Array.isArray(queueTypesRaw) ? queueTypesRaw : [];
+  const hashTagPresets = Array.isArray(hashTagPresetsRaw) ? hashTagPresetsRaw : [];
 
   // Split tags string into array and sort alphabetically
   const tagsArray = tags
@@ -25,7 +29,9 @@ export async function getBulkPostsDashboardData(userId: string) {
 
   return {
     tags: tagsArray,
-    queueTypes: queueTypes.filter((qt) => qt.isEnabled !== false),
+    queueTypes: queueTypes.filter((qt: unknown) => 
+      typeof qt === "object" && qt !== null && "isEnabled" in qt && qt.isEnabled !== false
+    ),
     hashTagPresets,
     mode,
   };

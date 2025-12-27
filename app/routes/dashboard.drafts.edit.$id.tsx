@@ -2,12 +2,19 @@ import { json, redirect, type LoaderFunctionArgs, type ActionFunctionArgs } from
 import { useLoaderData, Link } from "@remix-run/react";
 
 import { requireUserId } from "~/features/auth/session.server";
-import { DraftEditForm } from "~/features/posts/components/DraftEditForm";
-import { DraftPreview } from "~/features/posts/components/DraftPreview";
-import { ResumeModal } from "~/features/posts/components/ResumeModal";
-import { useDraftEditState } from "~/features/posts/hooks/useDraftEditState";
-import { handleDraftEditAction } from "~/features/posts/services/draft-edit-action.server";
-import { loadDraftEditData } from "~/features/posts/services/draft-edit-loader.server";
+import {
+  DraftEditForm,
+  DraftPreview,
+  ResumeModal,
+  useDraftEditState,
+  handleDraftEditAction,
+  loadDraftEditData,
+  convertJsonValueToScheduleConfig,
+  type PostData,
+  type UserData,
+  type QueueType,
+  type HashTagPreset,
+} from "~/features/posts";
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   const postId = params.id!;
@@ -40,14 +47,49 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function EditDraft() {
   const loaderData = useLoaderData<typeof loader>();
-  const { post, user, queueTypes, hashTagPresets } = loaderData;
+  // Type assertions for Remix JsonifyObject serialization
+  const postRaw = loaderData && typeof loaderData === "object" && loaderData !== null && "post" in loaderData ? loaderData.post : null;
+  const userRaw = loaderData && typeof loaderData === "object" && loaderData !== null && "user" in loaderData ? loaderData.user : null;
+  const queueTypesRaw = loaderData && typeof loaderData === "object" && loaderData !== null && "queueTypes" in loaderData && Array.isArray(loaderData.queueTypes) ? loaderData.queueTypes : [];
+  const hashTagPresetsRaw = loaderData && typeof loaderData === "object" && loaderData !== null && "hashTagPresets" in loaderData && Array.isArray(loaderData.hashTagPresets) ? loaderData.hashTagPresets : [];
 
   // Type assertions for Remix JsonifyObject serialization
-  const typedPost = post && typeof post === "object" ? post as unknown as { id: string; content?: string; caption?: string; fileUrl?: string[]; queueType?: string; scheduledFor?: string } : null;
-  const typedUser = user && typeof user === "object" ? user as unknown as { id: string; timezone?: string; scheduleInterval?: number[]; showHashTagsinPosts?: boolean } : null;
-  const typedQueueTypes = Array.isArray(queueTypes) ? queueTypes as unknown as { id: string; name: string; color?: string | null; scheduleType?: string; scheduleConfig?: unknown; isEnabled?: boolean }[] : [];
-  const typedHashTagPresets = Array.isArray(hashTagPresets) ? hashTagPresets as unknown as { id: string; name: string; tags: string; description?: string | null }[] : [];
+  const typedPost = postRaw && typeof postRaw === "object" && postRaw !== null ? postRaw as unknown as PostData : null;
+  const typedUser = userRaw && typeof userRaw === "object" && userRaw !== null ? userRaw as unknown as UserData : null;
+  const typedQueueTypes: QueueType[] = queueTypesRaw
+    .filter((qt: unknown): qt is { id: string; name: string; scheduleConfig?: unknown; [key: string]: unknown } => 
+      typeof qt === "object" && qt !== null && "id" in qt && "name" in qt &&
+      typeof (qt as { id: unknown; name: unknown }).id === "string" &&
+      typeof (qt as { id: unknown; name: unknown }).name === "string"
+    )
+    .map((qt) => ({
+      id: qt.id,
+      name: qt.name,
+      color: typeof qt.color === "string" ? qt.color : undefined,
+      description: typeof qt.description === "string" ? qt.description : undefined,
+      scheduleType: (typeof qt.scheduleType === "string" && (qt.scheduleType === "INTERVAL" || qt.scheduleType === "FIXED_SLOTS")) ? qt.scheduleType : undefined,
+      scheduleConfig: convertJsonValueToScheduleConfig(qt.scheduleConfig),
+      isEnabled: typeof qt.isEnabled === "boolean" ? qt.isEnabled : undefined,
+      userId: typeof qt.userId === "string" ? qt.userId : undefined,
+    }));
+  const typedHashTagPresets: HashTagPreset[] = hashTagPresetsRaw
+    .filter((preset: unknown): preset is { id: string; name: string; tags: string; description?: string | null; createdAt?: unknown; updatedAt?: unknown; userId?: unknown } => 
+      typeof preset === "object" && preset !== null && "id" in preset && "name" in preset && "tags" in preset &&
+      typeof (preset as { id: unknown; name: unknown; tags: unknown }).id === "string" &&
+      typeof (preset as { id: unknown; name: unknown; tags: unknown }).name === "string" &&
+      typeof (preset as { id: unknown; name: unknown; tags: unknown }).tags === "string"
+    )
+    .map((preset) => ({
+      id: preset.id,
+      name: preset.name,
+      tags: preset.tags,
+      description: preset.description ?? undefined,
+      userId: typeof preset.userId === "string" ? preset.userId : undefined,
+      createdAt: typeof preset.createdAt === "string" ? new Date(preset.createdAt) : undefined,
+      updatedAt: typeof preset.updatedAt === "string" ? new Date(preset.updatedAt) : undefined,
+    }));
 
+  // All hooks must be called before any early returns
   const {
     content,
     selectedQueue,
@@ -56,7 +98,7 @@ export default function EditDraft() {
     useHashtagPresets,
     selectedHashtagPresetId,
     isSubmitting,
-    fetcher,
+    fetcher: _fetcher,
     setContent,
     setSelectedQueue,
     setScheduledFor,
@@ -65,7 +107,29 @@ export default function EditDraft() {
     handleResumeClick,
     handleSignAndResume,
     handleHashtagPresetSelect,
-  } = useDraftEditState({ post: typedPost, user: typedUser, hashTagPresets: typedHashTagPresets });
+  } = useDraftEditState({ 
+    post: typedPost ? {
+      content: typedPost.content ?? null,
+      caption: typedPost.caption ?? null,
+      queueType: typedPost.queueType ? { name: typedPost.queueType.name } : null,
+      hashTagPresetId: typedPost.hashTagPresetId ?? null,
+      fileUrl: typedPost.fileUrl ?? null,
+    } : {
+      content: null,
+      caption: null,
+      queueType: null,
+      hashTagPresetId: null,
+      fileUrl: null,
+    }, 
+    user: typedUser ?? {
+      id: "",
+    }, 
+    hashTagPresets: typedHashTagPresets 
+  });
+
+  if (!typedPost || !typedUser) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="p-6">
@@ -102,7 +166,7 @@ export default function EditDraft() {
           onContentChange={setContent}
           onQueueChange={setSelectedQueue}
           onScheduledForChange={setScheduledFor}
-          onHashtagPresetSelect={(presetId, hashtags) => handleHashtagPresetSelect(presetId || "", hashtags)}
+          onHashtagPresetSelect={(presetId, _hashtags) => handleHashtagPresetSelect(presetId || "", _hashtags || "")}
           onUseHashtagPresetsChange={setUseHashtagPresets}
           onResumeClick={handleResumeClick}
         />
@@ -113,10 +177,10 @@ export default function EditDraft() {
         selectedQueue={selectedQueue}
         scheduledFor={scheduledFor}
         content={content}
-        caption={post.caption || ""}
+        caption={typedPost.caption || ""}
         isSubmitting={isSubmitting}
         onClose={() => setShowResumeModal(false)}
-        onConfirm={handleSignAndResume}
+        onConfirm={() => void handleSignAndResume()}
       />
     </div>
   );

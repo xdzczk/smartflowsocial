@@ -50,7 +50,7 @@ export function useCoverImageUpload({
                     setImage(uploadResult.file.url);
                     setUploadError("");
                 } else {
-                    setUploadError(uploadResult.error || "Upload failed");
+                    setUploadError(uploadResult.error ?? "Upload failed");
                 }
             } else {
                 // Use server-side upload for S3

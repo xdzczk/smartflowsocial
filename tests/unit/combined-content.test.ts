@@ -13,7 +13,7 @@ import {
   combineContent,
   filterCombinedContent,
 } from "~/features/posts/combined.server";
-import type { CombinedContent } from "~/features/posts/types";
+import type { CombinedContent, PostData, LongFormPostData } from "~/features/posts/types";
 
 describe("Content Combining Logic", () => {
   describe("postToCombinedContent", () => {
@@ -45,7 +45,7 @@ describe("Content Combining Logic", () => {
         templateId: null,
       };
 
-      const result = postToCombinedContent(post);
+      const result = postToCombinedContent(post as unknown as PostData);
 
       expect(result).toEqual({
         id: "post-1",
@@ -85,7 +85,7 @@ describe("Content Combining Logic", () => {
         updatedAt: new Date(),
       };
 
-      const result = postToCombinedContent(post);
+      const result = postToCombinedContent(post as unknown as PostData);
 
       expect(result.id).toBe("post-2");
       expect(result.type).toBe("post");
@@ -119,7 +119,7 @@ describe("Content Combining Logic", () => {
         nostrEventId: "nostr-2",
       };
 
-      const result = longFormPostToCombinedContent(longFormPost);
+      const result = longFormPostToCombinedContent(longFormPost as unknown as LongFormPostData);
 
       expect(result).toEqual({
         id: "longform-1",
@@ -157,7 +157,7 @@ describe("Content Combining Logic", () => {
         updatedAt: new Date(),
       };
 
-      const result = longFormPostToCombinedContent(longFormPost);
+      const result = longFormPostToCombinedContent(longFormPost as unknown as LongFormPostData);
 
       expect(result.isPosted).toBe(false);
       expect(result.isPublished).toBe(false);
@@ -187,7 +187,7 @@ describe("Content Combining Logic", () => {
         },
       ];
 
-      const result = combineContent(posts, longFormPosts, "createdAt", "desc");
+      const result = combineContent(posts as unknown as PostData[], longFormPosts as unknown as LongFormPostData[], "createdAt", "desc");
 
       expect(result).toHaveLength(3);
       expect(result[0].id).toBe("post-2"); // Most recent first (desc)
@@ -207,7 +207,7 @@ describe("Content Combining Logic", () => {
         },
       ];
 
-      const result = combineContent(posts, [], "createdAt", "asc");
+      const result = combineContent(posts as unknown as PostData[], [], "createdAt", "asc");
 
       expect(result[0].id).toBe("post-2"); // Oldest first
       expect(result[1].id).toBe("post-1");
@@ -227,7 +227,7 @@ describe("Content Combining Logic", () => {
         },
       ];
 
-      const result = combineContent(posts, [], "scheduledFor", "asc");
+      const result = combineContent(posts as unknown as PostData[], [], "scheduledFor", "asc");
 
       expect(result[0].id).toBe("post-2"); // Earlier scheduled time first
       expect(result[1].id).toBe("post-1");
@@ -247,7 +247,7 @@ describe("Content Combining Logic", () => {
         },
       ];
 
-      const result = combineContent(posts, [], "postedAt", "desc");
+      const result = combineContent(posts as unknown as PostData[], [], "postedAt", "desc");
 
       expect(result[0].id).toBe("post-1"); // Most recent posted first
       expect(result[1].id).toBe("post-2");
@@ -267,7 +267,7 @@ describe("Content Combining Logic", () => {
         },
       ];
 
-      const result = combineContent(posts, [], "createdAt", "desc");
+      const result = combineContent(posts as import("~/features/posts/types").PostData[], [], "createdAt", "desc");
 
       expect(result).toHaveLength(1);
       expect(result[0].type).toBe("post");
@@ -281,7 +281,7 @@ describe("Content Combining Logic", () => {
         },
       ];
 
-      const result = combineContent([], longFormPosts, "createdAt", "desc");
+      const result = combineContent([], longFormPosts as unknown as LongFormPostData[], "createdAt", "desc");
 
       expect(result).toHaveLength(1);
       expect(result[0].type).toBe("longform");
@@ -299,7 +299,7 @@ describe("Content Combining Logic", () => {
         },
       ];
 
-      const result = combineContent(posts, [], "createdAt", "desc");
+      const result = combineContent(posts as import("~/features/posts/types").PostData[], [], "createdAt", "desc");
 
       expect(result).toHaveLength(2);
       // Items with missing fields should be sorted to end
@@ -319,7 +319,7 @@ describe("Content Combining Logic", () => {
         },
       ];
 
-      const result = combineContent(posts, [], "scheduledFor", "asc");
+      const result = combineContent(posts as unknown as PostData[], [], "scheduledFor", "asc");
 
       expect(result[0].id).toBe("post-2");
       expect(result[1].id).toBe("post-1");
@@ -339,7 +339,7 @@ describe("Content Combining Logic", () => {
         },
       ];
 
-      const result = combineContent(posts, [], "scheduledFor", "asc");
+      const result = combineContent(posts as unknown as PostData[], [], "scheduledFor", "asc");
 
       expect(result).toHaveLength(2);
       // Posts with null scheduledFor should be sorted to end
@@ -354,13 +354,13 @@ describe("Content Combining Logic", () => {
           type: "post",
           caption: "Test post about cats",
           originalData: {},
-        } as CombinedContent,
+        } as unknown as CombinedContent,
         {
           id: "post-2",
           type: "post",
           caption: "Dogs are great",
           originalData: {},
-        } as CombinedContent,
+        } as unknown as CombinedContent,
       ];
 
       const result = filterCombinedContent(content, "cats");
@@ -376,13 +376,13 @@ describe("Content Combining Logic", () => {
           type: "longform",
           title: "Article about JavaScript",
           originalData: {},
-        } as CombinedContent,
+        } as unknown as CombinedContent,
         {
           id: "longform-2",
           type: "longform",
           title: "Python tutorial",
           originalData: {},
-        } as CombinedContent,
+        } as unknown as CombinedContent,
       ];
 
       const result = filterCombinedContent(content, "JavaScript");
@@ -398,13 +398,13 @@ describe("Content Combining Logic", () => {
           type: "post",
           content: "This is about React",
           originalData: {},
-        } as CombinedContent,
+        } as unknown as CombinedContent,
         {
           id: "post-2",
           type: "post",
           content: "Vue.js is great",
           originalData: {},
-        } as CombinedContent,
+        } as unknown as CombinedContent,
       ];
 
       const result = filterCombinedContent(content, "React");
@@ -420,7 +420,7 @@ describe("Content Combining Logic", () => {
           type: "longform",
           summary: "This article covers TypeScript",
           originalData: {},
-        } as CombinedContent,
+        } as unknown as CombinedContent,
       ];
 
       const result = filterCombinedContent(content, "TypeScript");
@@ -435,7 +435,7 @@ describe("Content Combining Logic", () => {
           type: "post",
           caption: "Test Post",
           originalData: {},
-        } as CombinedContent,
+        } as unknown as CombinedContent,
       ];
 
       const result = filterCombinedContent(content, "test");
@@ -450,7 +450,7 @@ describe("Content Combining Logic", () => {
           type: "post",
           caption: "Test",
           originalData: {},
-        } as CombinedContent,
+        } as unknown as CombinedContent,
       ];
 
       const result = filterCombinedContent(content, "");
@@ -465,7 +465,7 @@ describe("Content Combining Logic", () => {
           type: "post",
           caption: "Test",
           originalData: {},
-        } as CombinedContent,
+        } as unknown as CombinedContent,
       ];
 
       const result = filterCombinedContent(content, "");
@@ -480,7 +480,7 @@ describe("Content Combining Logic", () => {
           type: "post",
           caption: "JavaScript tutorial",
           originalData: {},
-        } as CombinedContent,
+        } as unknown as CombinedContent,
       ];
 
       const result = filterCombinedContent(content, "script");
@@ -496,13 +496,13 @@ describe("Content Combining Logic", () => {
           caption: null,
           content: null,
           originalData: {},
-        } as CombinedContent,
+        } as unknown as CombinedContent,
         {
           id: "post-2",
           type: "post",
           caption: "Valid post",
           originalData: {},
-        } as CombinedContent,
+        } as unknown as CombinedContent,
       ];
 
       const result = filterCombinedContent(content, "valid");

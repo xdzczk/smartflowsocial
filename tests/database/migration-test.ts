@@ -19,7 +19,7 @@ describe("Database Migrations", () => {
   });
 
   it("should run migrations successfully", async () => {
-    const testDatabaseUrl = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL;
+    const testDatabaseUrl = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL;
     
     if (!testDatabaseUrl) {
       throw new Error("TEST_DATABASE_URL or DATABASE_URL must be set");
@@ -58,7 +58,11 @@ describe("Database Migrations", () => {
     for (const table of tables) {
       try {
         // Try to query the table (this will fail if table doesn't exist)
-        await (prisma as any)[table].findMany({ take: 1 });
+        const prismaModel = prisma[table as keyof typeof prisma] as { findMany: (args: { take: number }) => Promise<unknown[]> } | undefined;
+        if (!prismaModel || typeof prismaModel.findMany !== "function") {
+          throw new Error(`Table ${table} does not exist or is not accessible`);
+        }
+        await prismaModel.findMany({ take: 1 });
       } catch (error) {
         throw new Error(`Table ${table} does not exist or is not accessible`);
       }

@@ -17,12 +17,12 @@ export interface UserFactoryOptions {
   uploadProvider?: UploadProvider;
   showHashTagsinPosts?: boolean;
   scheduleInterval?: string[];
-  nostrProfile?: any;
+  nostrProfile?: string | Record<string, unknown> | null;
   enableMirrorBlossom?: boolean;
   mirrorUploadUrls?: string[];
   encryptedNwc?: string | null;
   nwcEnabled?: boolean;
-  mutedList?: any;
+  mutedList?: Record<string, unknown> | null;
   filterMuted?: boolean;
   hidePostsFromLowTrustUsers?: boolean;
   isChild?: boolean;
@@ -111,7 +111,7 @@ export class UserFactory {
     return this;
   }
 
-  withNostrProfile(profile: any): this {
+  withNostrProfile(profile: string | Record<string, unknown> | null): this {
     this.options.nostrProfile = profile;
     return this;
   }
@@ -141,7 +141,7 @@ export class UserFactory {
 
   withNwc(enabled = true, encryptedNwc?: string): this {
     this.options.nwcEnabled = enabled;
-    this.options.encryptedNwc = encryptedNwc || null;
+    this.options.encryptedNwc = encryptedNwc ?? null;
     return this;
   }
 
@@ -150,27 +150,27 @@ export class UserFactory {
       id: this.options.id!,
       npub: this.options.npub!,
       isEnabled: this.options.isEnabled ?? true,
-      timezone: this.options.timezone || null,
-      userRelays: this.options.userRelays || [],
-      giveawayBlackListed: this.options.giveawayBlackListed || [],
-      uploadProvider: this.options.uploadProvider || "S3",
-      showHashTagsinPosts: this.options.showHashTagsinPosts || false,
-      scheduleInterval: this.options.scheduleInterval || [],
-      nostrProfile: this.options.nostrProfile || null,
-      enableMirrorBlossom: this.options.enableMirrorBlossom || false,
-      mirrorUploadUrls: this.options.mirrorUploadUrls || [],
-      encryptedNwc: this.options.encryptedNwc || null,
-      nwcEnabled: this.options.nwcEnabled || false,
+      timezone: this.options.timezone ?? null,
+      userRelays: this.options.userRelays ?? [],
+      giveawayBlackListed: this.options.giveawayBlackListed ?? [],
+      uploadProvider: this.options.uploadProvider ?? "S3",
+      showHashTagsinPosts: this.options.showHashTagsinPosts ?? false,
+      scheduleInterval: this.options.scheduleInterval ?? [],
+      nostrProfile: this.options.nostrProfile ?? null,
+      enableMirrorBlossom: this.options.enableMirrorBlossom ?? false,
+      mirrorUploadUrls: this.options.mirrorUploadUrls ?? [],
+      encryptedNwc: this.options.encryptedNwc ?? null,
+      nwcEnabled: this.options.nwcEnabled ?? false,
       nwcLastUsed: null,
-      mutedList: this.options.mutedList || { npubs: [] },
-      filterMuted: this.options.filterMuted || false,
+      mutedList: this.options.mutedList ?? { npubs: [] },
+      filterMuted: this.options.filterMuted ?? false,
       hidePostsFromLowTrustUsers:
-        this.options.hidePostsFromLowTrustUsers || false,
-      isChild: this.options.isChild || false,
-      parentNpub: this.options.parentNpub || null,
-      pendingParentRequests: this.options.pendingParentRequests || [],
-      createdAt: this.options.createdAt || new Date(),
-      updatedAt: this.options.updatedAt || new Date(),
+        this.options.hidePostsFromLowTrustUsers ?? false,
+      isChild: this.options.isChild ?? false,
+      parentNpub: this.options.parentNpub ?? null,
+      pendingParentRequests: this.options.pendingParentRequests ?? [],
+      createdAt: this.options.createdAt ?? new Date(),
+      updatedAt: this.options.updatedAt ?? new Date(),
     } as User;
   }
 }

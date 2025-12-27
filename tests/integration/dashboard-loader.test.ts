@@ -54,8 +54,14 @@ describe("Dashboard Loader Integration", () => {
   describe("Dashboard Index Loader", () => {
     it("should load dashboard data for authenticated user", async () => {
       const request = new Request("http://localhost:3000/dashboard");
-      const response = await loader({ request, params: {} });
-      const data = await response.json();
+      interface LoaderArgs {
+        request: Request;
+        params: Record<string, string | undefined>;
+        context: Record<string, unknown>;
+      }
+      const response = await loader({ request, params: {} } as LoaderArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
 
       expect(response.status).toBe(200);
       expect(requireUserId).toHaveBeenCalledWith(request);
@@ -73,8 +79,9 @@ describe("Dashboard Loader Integration", () => {
       const response = await loader({ 
         request, 
         params: { queueType: "posts" } 
-      });
-      const data = await response.json();
+      } as LoaderArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
 
       expect(loadDashboardData).toHaveBeenCalledWith("user-123", "posts");
       expect(data).toBeDefined();
@@ -82,18 +89,32 @@ describe("Dashboard Loader Integration", () => {
 
     it("should handle planActivated query parameter", async () => {
       const request = new Request("http://localhost:3000/dashboard?planActivated=true");
-      const response = await loader({ request, params: {} });
-      const data = await response.json();
+      interface LoaderArgs {
+        request: Request;
+        params: Record<string, string | undefined>;
+        context: Record<string, unknown>;
+      }
+      const response = await loader({ request, params: {} } as LoaderArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
 
-      expect(data.planActivated).toBe("true");
+      const planActivated = typeof data.planActivated === "string" ? data.planActivated : "";
+      expect(planActivated).toBe("true");
     });
 
     it("should handle successMessage query parameter", async () => {
       const request = new Request("http://localhost:3000/dashboard?message=success");
-      const response = await loader({ request, params: {} });
-      const data = await response.json();
+      interface LoaderArgs {
+        request: Request;
+        params: Record<string, string | undefined>;
+        context: Record<string, unknown>;
+      }
+      const response = await loader({ request, params: {} } as LoaderArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
 
-      expect(data.successMessage).toBe("success");
+      const successMessage = typeof data.successMessage === "string" ? data.successMessage : "";
+      expect(successMessage).toBe("success");
     });
 
     it("should return proper data structure", async () => {
@@ -109,20 +130,30 @@ describe("Dashboard Loader Integration", () => {
       (loadDashboardData as ReturnType<typeof vi.fn>).mockResolvedValue(mockData);
 
       const request = new Request("http://localhost:3000/dashboard");
-      const response = await loader({ request, params: {} });
-      const data = await response.json();
+      interface LoaderArgs {
+        request: Request;
+        params: Record<string, string | undefined>;
+        context: Record<string, unknown>;
+      }
+      const response = await loader({ request, params: {} } as LoaderArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
 
-      expect(data.scheduledPosts).toHaveLength(1);
-      expect(data.scheduledPosts[0]).toHaveProperty("id", "1");
-      expect(data.user).toHaveProperty("timezone", "America/New_York");
-      expect(data.queueTypes).toHaveLength(1);
+      const scheduledPosts = Array.isArray(data.scheduledPosts) ? data.scheduledPosts : [];
+      expect(scheduledPosts).toHaveLength(1);
+      const firstPost = scheduledPosts[0] && typeof scheduledPosts[0] === "object" && !Array.isArray(scheduledPosts[0]) ? scheduledPosts[0] as { id?: unknown } : {};
+      expect(firstPost).toHaveProperty("id", "1");
+      const user = data.user && typeof data.user === "object" && !Array.isArray(data.user) ? data.user as { timezone?: unknown } : {};
+      expect(user).toHaveProperty("timezone", "America/New_York");
+      const queueTypes = Array.isArray(data.queueTypes) ? data.queueTypes : [];
+      expect(queueTypes).toHaveLength(1);
     });
   });
 
   describe("Dashboard Queue Filtering", () => {
     it("should handle 'all' queue type", async () => {
       const request = new Request("http://localhost:3000/dashboard?tab=all");
-      const response = await loader({ request, params: {} });
+      const response = await loader({ request, params: {} } as LoaderArgs);
       
       expect(response.status).toBe(200);
       expect(loadDashboardData).toHaveBeenCalledWith("user-123", "all");
@@ -133,7 +164,7 @@ describe("Dashboard Loader Integration", () => {
       const response = await loader({ 
         request, 
         params: { queueType: "posts" } 
-      });
+      } as LoaderArgs);
       
       expect(response.status).toBe(200);
       expect(loadDashboardData).toHaveBeenCalledWith("user-123", "posts");
@@ -144,7 +175,7 @@ describe("Dashboard Loader Integration", () => {
       const response = await loader({ 
         request, 
         params: { queueType: "longform" } 
-      });
+      } as LoaderArgs);
       
       expect(response.status).toBe(200);
       expect(loadDashboardData).toHaveBeenCalledWith("user-123", "longform");
@@ -159,7 +190,7 @@ describe("Dashboard Loader Integration", () => {
 
       const request = new Request("http://localhost:3000/dashboard");
       
-      await expect(loader({ request, params: {} })).rejects.toThrow(
+      await expect(loader({ request, params: {} } as LoaderArgs)).rejects.toThrow(
         "Authentication required"
       );
     });
@@ -171,7 +202,7 @@ describe("Dashboard Loader Integration", () => {
 
       const request = new Request("http://localhost:3000/dashboard");
       
-      await expect(loader({ request, params: {} })).rejects.toThrow(
+      await expect(loader({ request, params: {} } as LoaderArgs)).rejects.toThrow(
         "Feature access denied"
       );
     });
@@ -183,7 +214,7 @@ describe("Dashboard Loader Integration", () => {
 
       const request = new Request("http://localhost:3000/dashboard");
       
-      await expect(loader({ request, params: {} })).rejects.toThrow(
+      await expect(loader({ request, params: {} } as LoaderArgs)).rejects.toThrow(
         "Database error"
       );
     });

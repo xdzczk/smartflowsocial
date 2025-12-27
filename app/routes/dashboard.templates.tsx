@@ -1,18 +1,27 @@
 import { json, type LoaderFunctionArgs, type ActionFunctionArgs } from "@remix-run/node";
 import { useLoaderData, Outlet } from "@remix-run/react";
 
-import { AssetPagination } from "~/features/assets/components/AssetPagination";
-import { AssetsTab } from "~/features/assets/components/AssetsTab";
-import { UploadTab } from "~/features/assets/components/UploadTab";
+import {
+  AssetPagination,
+  AssetsTab,
+  UploadTab,
+  type Asset,
+} from "~/features/assets";
 import { requireUserId } from "~/features/auth/session.server";
-import { requireFeatureAccess, requireAnySubscription } from "~/features/payments/subscriptions.server";
-import { TemplateDetailsModal } from "~/features/templates/components/TemplateDetailsModal";
-import { TemplatesHeader } from "~/features/templates/components/TemplatesHeader";
-import { TemplatesTabs } from "~/features/templates/components/TemplatesTabs";
-import { ToastNotification } from "~/features/templates/components/ToastNotification";
-import { useTemplatesState } from "~/features/templates/hooks/useTemplatesState";
-import { handleTemplatesAction } from "~/features/templates/services/templates-action.server";
-import { loadTemplatesData } from "~/features/templates/services/templates-loader.server";
+import {
+  requireFeatureAccess,
+  requireAnySubscription,
+} from "~/features/payments";
+import {
+  TemplateDetailsModal,
+  TemplatesHeader,
+  TemplatesTabs,
+  ToastNotification,
+  useTemplatesState,
+  handleTemplatesAction,
+  loadTemplatesData,
+} from "~/features/templates";
+import type { Template } from "~/features/templates/types";
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
 
@@ -48,13 +57,12 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function Templates() {
-  const {
-    assets,
-    totalCount,
-    totalPages,
-    currentPage,
-    searchTerm,
-  } = useLoaderData<typeof loader>();
+  const loaderData = useLoaderData<typeof loader>();
+  const assets = "assets" in loaderData && Array.isArray(loaderData.assets) ? loaderData.assets : [];
+  const totalCount = "totalCount" in loaderData && typeof loaderData.totalCount === "number" ? loaderData.totalCount : 0;
+  const totalPages = "totalPages" in loaderData && typeof loaderData.totalPages === "number" ? loaderData.totalPages : 0;
+  const currentPage = "currentPage" in loaderData && typeof loaderData.currentPage === "number" ? loaderData.currentPage : 1;
+  const searchTerm = "searchTerm" in loaderData && typeof loaderData.searchTerm === "string" ? loaderData.searchTerm : "";
 
   const {
     selectedTemplate,
@@ -101,17 +109,40 @@ export default function Templates() {
           {activeTab === "assets" ? (
             <>
               <AssetsTab
-                assets={Array.isArray(assets) ? assets as unknown as { id: string; fileUrl?: string; title?: string; content?: string; assetType: string }[] : []}
+                assets={Array.isArray(assets) ? assets
+                  .filter((asset: unknown): asset is { id: string; title?: unknown; content?: unknown; fileUrl?: unknown; tags?: unknown; assetType?: unknown; createdAt?: unknown; updatedAt?: unknown } => 
+                    typeof asset === "object" && asset !== null && "id" in asset && typeof (asset as { id: unknown }).id === "string"
+                  )
+                  .map((asset) => ({
+                    id: asset.id,
+                    assetType: typeof asset.assetType === "string" ? asset.assetType : "IMAGE",
+                    fileUrl: typeof asset.fileUrl === "string" ? asset.fileUrl : undefined,
+                    content: typeof asset.content === "string" ? asset.content : asset.content === null ? null : undefined,
+                    title: typeof asset.title === "string" ? asset.title : asset.title === null ? null : undefined,
+                    tags: Array.isArray(asset.tags) ? asset.tags.filter((tag): tag is string => typeof tag === "string") : [],
+                    createdAt: (() => {
+                      const createdAtValue: unknown = asset.createdAt;
+                      if (createdAtValue instanceof Date) return createdAtValue.toISOString();
+                      if (typeof createdAtValue === "string") return createdAtValue;
+                      return new Date().toISOString();
+                    })(),
+                    updatedAt: (() => {
+                      const updatedAtValue: unknown = asset.updatedAt;
+                      if (updatedAtValue instanceof Date) return updatedAtValue.toISOString();
+                      if (typeof updatedAtValue === "string") return updatedAtValue;
+                      return new Date().toISOString();
+                    })(),
+                  })) : []}
                 selectedAssets={selectedAssets}
                 searchInput={searchInput}
                 onSearchInputChange={setSearchInput}
                 onSearch={handleSearch}
                 onAssetSelect={handleAssetSelect}
-                onSelectAllAssets={() => handleSelectAllAssets(Array.isArray(assets) ? assets as unknown as { id: string; fileUrl?: string; title?: string; content?: string; assetType: string }[] : [])}
-                onBulkPostAssets={() => handleBulkPostAssets(Array.isArray(assets) ? assets as unknown as { id: string; fileUrl?: string; title?: string; content?: string; assetType: string }[] : [])}
+                onSelectAllAssets={() => handleSelectAllAssets(Array.isArray(assets) ? assets as unknown as Asset[] : [])}
+                onBulkPostAssets={() => handleBulkPostAssets(Array.isArray(assets) ? assets as unknown as Asset[] : [])}
                 onBulkDeleteAssets={handleBulkDeleteAssets}
                 deleteFetcherState={deleteFetcher.state}
-                deleteFetcherForm={deleteFetcher.Form as unknown as React.ComponentType<{ method?: string; children: React.ReactNode; onClick?: (e: React.MouseEvent) => void }>}
+                deleteFetcherForm={deleteFetcher.Form as unknown as React.ComponentType<{ children: React.ReactNode; method: string; className?: string }>}
                 onDeleteAsset={handleDeleteAsset}
               />
               <AssetPagination
@@ -126,16 +157,16 @@ export default function Templates() {
               textAssetFormRef={textAssetFormRef}
               imageAssetFormRef={imageAssetFormRef}
               assetFetcher={{
-                Form: assetFetcher.Form as unknown as React.ComponentType<{ method?: string; children: React.ReactNode; onClick?: (e: React.MouseEvent) => void }>,
+                Form: assetFetcher.Form as unknown as React.ComponentType<{ children: React.ReactNode; method: string; className?: string }>,
                 state: assetFetcher.state,
               }}
               uploadProvider={uploadProvider}
               bulkUploadFiles={bulkUploadFiles}
               singleFileUploading={singleFileUploading}
               bulkFileUploading={bulkFileUploading}
-              onSingleFileUpload={handleSingleFileUpload}
-              onBulkFileUpload={handleBulkFileUpload}
-              onBulkFileChange={handleBulkFileChange}
+              onSingleFileUpload={(e, form) => void handleSingleFileUpload(e, form)}
+              onBulkFileUpload={() => void handleBulkFileUpload()}
+              onBulkFileChange={(e) => void handleBulkFileChange(e)}
             />
           )}
 
@@ -152,7 +183,13 @@ export default function Templates() {
           {/* Template Details Modal */}
           {selectedTemplate ? (
             <TemplateDetailsModal
-              template={selectedTemplate && typeof selectedTemplate === "object" ? selectedTemplate as unknown as { id: string; name?: string; content?: string; description?: string } : null}
+              template={{
+                id: selectedTemplate.id,
+                name: selectedTemplate.name ?? "",
+                text: null,
+                imageUrl: null,
+                createdAt: selectedTemplate.createdAt instanceof Date ? selectedTemplate.createdAt : new Date(selectedTemplate.createdAt),
+              }}
               onClose={() => setSelectedTemplate(null)}
             />
           ) : null}

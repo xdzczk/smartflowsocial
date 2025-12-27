@@ -67,7 +67,7 @@ function findTsFiles(dir, fileList = []) {
 function runEslintFix() {
   log('\n🔧 Running ESLint auto-fix...', 'cyan');
   try {
-    execSync('npm run lint -- --fix', {
+    execSync('pnpm lint -- --fix', {
       cwd: PROJECT_ROOT,
       stdio: 'inherit',
     });
@@ -356,7 +356,7 @@ function applyCustomFixesToAll() {
 function countRemainingErrors() {
   log('\n📊 Counting remaining errors...', 'cyan');
   try {
-    const output = execSync('npm run lint 2>&1', {
+    const output = execSync('pnpm lint 2>&1', {
       cwd: PROJECT_ROOT,
       encoding: 'utf8',
     });
@@ -410,7 +410,7 @@ function main() {
     log('🎉 All errors fixed!', 'green');
   } else {
     log(`⚠️  ${counts.errors} errors remaining (these may require manual fixes)`, 'yellow');
-    log('💡 Run "npm run lint" to see details', 'blue');
+    log('💡 Run "pnpm lint" to see details', 'blue');
   }
 
   process.exit(counts.errors > 0 ? 1 : 0);

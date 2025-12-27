@@ -22,7 +22,8 @@ import type {
   PrimalEvent,
 } from "~/features/engagement/types";
 import type { SignedEvent } from "~/features/nostr/types";
-import type { PostData } from "~/features/posts/types";
+import type { PostData, QueueType } from "~/features/posts/types";
+import { convertJsonValueToScheduleConfig } from "~/features/posts/types";
 import type { UserWithHashTagPresets } from "~/features/user";
 import { getPostedPosts } from "~/models/post.queries.server";
 import { getUserById } from "~/models/user.server";
@@ -44,7 +45,7 @@ async function fetchUserProfile(pubkey: string): Promise<User | null> {
 
     for (const item of profileData) {
       if (!Array.isArray(item) || item[0] !== "EVENT" || !item[2]) continue;
-      const rawEventData: unknown = item[2];
+      const rawEventData: unknown = item[2] as unknown;
       if (!rawEventData || typeof rawEventData !== "object" || Array.isArray(rawEventData)) continue;
       const event: { kind?: number; content?: string } = rawEventData as { kind?: number; content?: string };
 
@@ -190,7 +191,7 @@ async function processEventBatch(
         stats: eventStats,
         notifications,
       };
-    } catch (error) {
+    } catch (_error) {
       return {
         eventId,
         stats: {
@@ -311,12 +312,13 @@ export async function loadEngagementFeedData(
     const results = allBatchResults.flat();
 
     // Combine stats and notifications
+    const initialStats: Record<string, EventStats> = {};
     stats = results.reduce((acc, result) => {
       if (result && result.eventId && result.stats) {
         acc[result.eventId] = result.stats;
       }
       return acc;
-    }, {} as Record<string, EventStats>);
+    }, initialStats);
 
     allNotifications = results.flatMap((result) =>
       result && Array.isArray(result.notifications) ? result.notifications : [],
@@ -374,7 +376,7 @@ export async function loadEngagementFeedData(
         const se = post.signedEvent;
         if (se && typeof se === "object" && !Array.isArray(se) && "id" in se && typeof se.id === "string") {
           const result: Record<string, EventStats> = acc;
-          result[se.id] = {
+          const eventStats: EventStats = {
             likes: 0,
             replies: 0,
             mentions: 0,
@@ -382,10 +384,11 @@ export async function loadEngagementFeedData(
             zaps: 0,
             satszapped: 0,
           };
+          result[se.id] = eventStats;
           return result;
         }
         return acc;
-      }, {} as Record<string, EventStats>);
+      }, ((): Record<string, EventStats> => ({}))());
   }
 
   // Group notifications by type
@@ -395,11 +398,21 @@ export async function loadEngagementFeedData(
   // Convert PostWithQueueType[] to PostData[] for compatibility
   const postsAsPostData: PostData[] = posts.map((post) => {
     const { queueType, ...rest } = post;
+    const convertedQueueType: QueueType | null = queueType ? {
+      id: queueType.id,
+      name: queueType.name,
+      color: queueType.color,
+      description: queueType.description,
+      scheduleType: queueType.scheduleType as "INTERVAL" | "FIXED_SLOTS" | undefined,
+      scheduleConfig: convertJsonValueToScheduleConfig(queueType.scheduleConfig),
+      isEnabled: queueType.isEnabled,
+      userId: queueType.userId,
+    } : null;
     const result: PostData = {
       ...rest,
       signedEvent: post.signedEvent as SignedEvent | null | undefined,
-      queueType: queueType || null,
-    };
+      queueType: convertedQueueType,
+    } as PostData;
     return result;
   });
   

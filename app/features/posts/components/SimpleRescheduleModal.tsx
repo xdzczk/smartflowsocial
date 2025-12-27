@@ -259,8 +259,8 @@ export function SimpleRescheduleModal({
 
               <div className="text-sm text-gray-600 dark:text-gray-300">
                 {isLongform && "title" in post
-                  ? post.title || "Untitled Article"
-                  : "caption" in post ? (post.caption || "No caption") : "No caption"}
+                  ? post.title ?? "Untitled Article"
+                  : "caption" in post ? (post.caption ?? "No caption") : "No caption"}
                 {"fileUrl" in post && post.fileUrl && post.fileUrl.length > 0 ? (
                   <span className="ml-2 text-xs text-gray-500">
                     ({post.fileUrl.length} file
@@ -384,7 +384,7 @@ export function SimpleRescheduleModal({
               Cancel
             </button>
             <button
-              onClick={handleSubmit}
+              onClick={() => void handleSubmit()}
               disabled={
                 fetcher.state === "submitting" ||
                 isSigningEvent ||

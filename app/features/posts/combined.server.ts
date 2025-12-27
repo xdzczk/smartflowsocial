@@ -11,7 +11,7 @@ export type { CombinedContent } from "~/features/posts/types";
  * Converts a Post to CombinedContent format
  */
 export function nullToUndefined<T>(value: T | null): T | undefined {
-  return value === null ? undefined : value;
+  return value ?? undefined;
 }
 
 export function postToCombinedContent(post: PostData): CombinedContent {
@@ -29,10 +29,10 @@ export function postToCombinedContent(post: PostData): CombinedContent {
     isPosted: post.isPosted,
     draft: post.draft,
     status: post.status,
-    queueType: post.queueType ? {
-      id: post.queueType.id,
-      name: post.queueType.name,
-      color: post.queueType.color || undefined,
+    queueType: post.queueType && typeof post.queueType === "object" && "id" in post.queueType && "name" in post.queueType ? {
+      id: typeof post.queueType.id === "string" ? post.queueType.id : String(post.queueType.id ?? ""),
+      name: typeof post.queueType.name === "string" ? post.queueType.name : String(post.queueType.name ?? ""),
+      color: "color" in post.queueType && post.queueType.color ? (typeof post.queueType.color === "string" ? post.queueType.color : String(post.queueType.color)) : undefined,
     } : undefined,
     queueTypeId: nullToUndefined(post.queueTypeId),
     userId: post.userId,
@@ -76,7 +76,7 @@ export function longFormPostToCombinedContent(
     queueType: longFormPost.queueType ? {
       id: longFormPost.queueType.id,
       name: longFormPost.queueType.name,
-      color: longFormPost.queueType.color || undefined,
+      color: longFormPost.queueType.color ?? undefined,
     } : undefined,
     queueTypeId: nullToUndefined(longFormPost.queueTypeId),
     userId: longFormPost.userId,
@@ -103,24 +103,27 @@ export function combineContent(
 
   // Sort the combined array
   return combined.sort((a, b) => {
-    let aValue, bValue;
+    let aValue = 0;
+    let bValue = 0;
 
     if (sortBy === "scheduledFor") {
       // Handle Unix timestamps for scheduledFor
-      aValue = a.scheduledFor ? parseInt(a.scheduledFor) * 1000 : 0;
-      bValue = b.scheduledFor ? parseInt(b.scheduledFor) * 1000 : 0;
+      const aScheduled = a.scheduledFor;
+      const bScheduled = b.scheduledFor;
+      aValue = aScheduled ? (typeof aScheduled === "string" ? parseInt(aScheduled, 10) : typeof aScheduled === "number" ? aScheduled : 0) * 1000 : 0;
+      bValue = bScheduled ? (typeof bScheduled === "string" ? parseInt(bScheduled, 10) : typeof bScheduled === "number" ? bScheduled : 0) * 1000 : 0;
     } else if (sortBy === "postedAt" || sortBy === "publishedAt") {
       // Handle dates for postedAt/publishedAt
-      aValue = a.postedAt ? new Date(a.postedAt).getTime() : 0;
-      bValue = b.postedAt ? new Date(b.postedAt).getTime() : 0;
+      const aPosted = a.postedAt;
+      const bPosted = b.postedAt;
+      aValue = aPosted ? new Date(aPosted).getTime() : 0;
+      bValue = bPosted ? new Date(bPosted).getTime() : 0;
     } else if (sortBy === "createdAt" || sortBy === "updatedAt") {
       // Handle dates for createdAt/updatedAt
-      aValue = new Date(a[sortBy]).getTime();
-      bValue = new Date(b[sortBy]).getTime();
-    } else {
-      // Handle other fields
-      aValue = (a[sortBy as keyof CombinedContent] as string | number | Date | undefined) || "";
-      bValue = (b[sortBy as keyof CombinedContent] as string | number | Date | undefined) || "";
+      const aDate = a[sortBy];
+      const bDate = b[sortBy];
+      aValue = aDate ? new Date(aDate).getTime() : 0;
+      bValue = bDate ? new Date(bDate).getTime() : 0;
     }
 
     if (sortDirection === "asc") {

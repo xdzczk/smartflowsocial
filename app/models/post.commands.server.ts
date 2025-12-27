@@ -56,11 +56,11 @@ export function createPost(data: CreatePostData): Promise<Post> {
       isScheduled,
       isPosted,
       tags,
-      manual_override: manual_override || false,
-      draft: draft || false,
-      repost: repost || false,
-      isQuotedPost: isQuotedPost || false,
-      isRecyclable: isRecyclable || false,
+      manual_override: manual_override ?? false,
+      draft: draft ?? false,
+      repost: repost ?? false,
+      isQuotedPost: isQuotedPost ?? false,
+      isRecyclable: isRecyclable ?? false,
       user: {
         connect: {
           id: userId,

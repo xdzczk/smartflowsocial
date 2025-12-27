@@ -50,8 +50,14 @@ describe("API: Parent", () => {
 
       const request = new Request("http://localhost:3000/api/parent");
 
-      const response = await loader({ request, params: {}, context: {} });
-      const data = await response.json();
+      interface LoaderArgs {
+        request: Request;
+        params: Record<string, string | undefined>;
+        context: Record<string, unknown>;
+      }
+      const response = await loader({ request, params: {} } as LoaderArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { parent?: { npub?: string; name?: string; displayName?: string; picture?: string } | null } : {};
 
       expect(requireUserId).toHaveBeenCalledWith(request);
       expect(getUserBasicInfo).toHaveBeenCalledWith(TEST_USER_ID);
@@ -88,11 +94,17 @@ describe("API: Parent", () => {
 
       const request = new Request("http://localhost:3000/api/parent");
 
-      const response = await loader({ request, params: {}, context: {} });
-      const data = await response.json();
+      interface LoaderArgs {
+        request: Request;
+        params: Record<string, string | undefined>;
+        context: Record<string, unknown>;
+      }
+      const response = await loader({ request, params: {} } as LoaderArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { parent?: { npub?: string; name?: string; displayName?: string; picture?: string } | null } : {};
 
-      expect(data.parent.name).toBe("Parent User");
-      expect(data.parent.displayName).toBe("Parent Display");
+      expect(data.parent?.name).toBe("Parent User");
+      expect(data.parent?.displayName).toBe("Parent Display");
     });
 
     it("should handle parent with missing profile data", async () => {
@@ -113,8 +125,14 @@ describe("API: Parent", () => {
 
       const request = new Request("http://localhost:3000/api/parent");
 
-      const response = await loader({ request, params: {}, context: {} });
-      const data = await response.json();
+      interface LoaderArgs {
+        request: Request;
+        params: Record<string, string | undefined>;
+        context: Record<string, unknown>;
+      }
+      const response = await loader({ request, params: {} } as LoaderArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { parent?: { npub?: string; name?: string; displayName?: string; picture?: string } | null } : {};
 
       expect(data.parent).toEqual({
         npub: "npub-parent",
@@ -135,8 +153,14 @@ describe("API: Parent", () => {
 
       const request = new Request("http://localhost:3000/api/parent");
 
-      const response = await loader({ request, params: {}, context: {} });
-      const data = await response.json();
+      interface LoaderArgs {
+        request: Request;
+        params: Record<string, string | undefined>;
+        context: Record<string, unknown>;
+      }
+      const response = await loader({ request, params: {} } as LoaderArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { parent?: { npub?: string; name?: string; displayName?: string; picture?: string } | null } : {};
 
       expect(data).toEqual({ parent: null });
       expect(getUserByNpubWithProfile).not.toHaveBeenCalled();
@@ -152,8 +176,14 @@ describe("API: Parent", () => {
 
       const request = new Request("http://localhost:3000/api/parent");
 
-      const response = await loader({ request, params: {}, context: {} });
-      const data = await response.json();
+      interface LoaderArgs {
+        request: Request;
+        params: Record<string, string | undefined>;
+        context: Record<string, unknown>;
+      }
+      const response = await loader({ request, params: {} } as LoaderArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { parent?: { npub?: string; name?: string; displayName?: string; picture?: string } | null } : {};
 
       expect(data).toEqual({ parent: null });
       expect(getUserByNpubWithProfile).not.toHaveBeenCalled();
@@ -172,8 +202,14 @@ describe("API: Parent", () => {
 
       const request = new Request("http://localhost:3000/api/parent");
 
-      const response = await loader({ request, params: {}, context: {} });
-      const data = await response.json();
+      interface LoaderArgs {
+        request: Request;
+        params: Record<string, string | undefined>;
+        context: Record<string, unknown>;
+      }
+      const response = await loader({ request, params: {} } as LoaderArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { parent?: { npub?: string; name?: string; displayName?: string; picture?: string } | null } : {};
 
       expect(data).toEqual({ parent: null });
     });
@@ -214,8 +250,14 @@ describe("API: Parent", () => {
 
       const request = new Request("http://localhost:3000/api/parent");
 
-      const response = await loader({ request, params: {}, context: {} });
-      const data = await response.json();
+      interface LoaderArgs {
+        request: Request;
+        params: Record<string, string | undefined>;
+        context: Record<string, unknown>;
+      }
+      const response = await loader({ request, params: {} } as LoaderArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { parent?: { npub?: string; name?: string; displayName?: string; picture?: string } | null } : {};
 
       // Should return null parent on error
       expect(data).toEqual({ parent: null });
@@ -239,11 +281,18 @@ describe("API: Parent", () => {
 
       const request = new Request("http://localhost:3000/api/parent");
 
-      const response = await loader({ request, params: {}, context: {} });
-      const data = await response.json();
+      interface LoaderArgs {
+        request: Request;
+        params: Record<string, string | undefined>;
+        context: Record<string, unknown>;
+      }
+      const response = await loader({ request, params: {} } as LoaderArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { parent?: { npub?: string; name?: string; displayName?: string; picture?: string } | null } : {};
 
       // Should handle parse error gracefully
-      expect(data.parent.name).toBeUndefined();
+      const parent = data.parent && typeof data.parent === "object" && !Array.isArray(data.parent) ? data.parent as { name?: string; displayName?: string; picture?: string; npub?: string } : null;
+      expect(parent?.name).toBeUndefined();
     });
   });
 });

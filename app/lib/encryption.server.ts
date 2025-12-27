@@ -55,10 +55,10 @@ export function encrypt(text: string): string {
     ]);
     
     return combined.toString('base64');
-  } catch (error) {
+  } catch (_error) {
     // Use safe logging to prevent sensitive data in logs
      
-    const { safeConsoleError } = require("./secrets-sanitizer.server") as { safeConsoleError: (message: string) => void };
+    const { safeConsoleError } = require("./secrets-sanitizer.server") as unknown as { safeConsoleError: (message: string) => void };
     safeConsoleError("Encryption failed");
     throw new Error('Failed to encrypt data');
   }
@@ -131,10 +131,10 @@ export function decrypt(encryptedData: string): string {
       
       return decrypted;
     }
-  } catch (error) {
+  } catch (_error) {
     // Use safe logging to prevent sensitive data in logs
      
-    const { safeConsoleError } = require("./secrets-sanitizer.server") as { safeConsoleError: (message: string) => void };
+    const { safeConsoleError } = require("./secrets-sanitizer.server") as unknown as { safeConsoleError: (message: string) => void };
     safeConsoleError("Decryption failed");
     throw new Error('Failed to decrypt data');
   }

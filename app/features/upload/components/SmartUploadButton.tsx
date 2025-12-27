@@ -67,7 +67,7 @@ export function SmartUploadButton({
 
     if (!response.ok) {
       const error = (await response.json()) as { error?: string };
-      throw new Error(error.error || "Upload failed");
+      throw new Error(error.error ?? "Upload failed");
     }
 
     const result = (await response.json()) as { fileUrl?: string };
@@ -78,8 +78,8 @@ export function SmartUploadButton({
   };
 
   const uploadToBlossom = useCallback(async (
-    file: File,
-    provider: "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR",
+    _file: File,
+    _provider: "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR",
   ): Promise<string> => {
     try {
       // Check if NOSTR extension is available
@@ -160,10 +160,10 @@ export function SmartUploadButton({
 
       if (multiple) {
         // Handle multiple files
-        Array.from(files).forEach((file) => handleFileUpload(file));
+        Array.from(files).forEach((file) => void handleFileUpload(file));
       } else {
         // Handle single file
-        handleFileUpload(files[0]);
+        void handleFileUpload(files[0]);
       }
     },
     [handleFileUpload, multiple],

@@ -172,12 +172,12 @@ export default function TextPost({
 
           if (response.ok) {
             const data = (await response.json()) as { hashtags?: string };
-            effectiveHashtags = data.hashtags || "";
+            effectiveHashtags = data.hashtags ?? "";
           } else {
             // Fallback to user's default hashtags
             effectiveHashtags = Array.isArray(tags)
               ? tags.join(" ")
-              : tags || "";
+              : tags ?? "";
           }
         } catch (error) {
           const { handleErrorSafely } = await import("~/lib/error-handler.client");
@@ -240,12 +240,12 @@ export default function TextPost({
 
     selectedAssets.forEach((asset) => {
       if (asset.assetType === "TEXT") {
-        const textContent = asset.content || asset.title || "";
+        const textContent = (asset.content ?? asset.title) ?? "";
         if (textContent) {
           textAssets.push(textContent);
         }
       } else if (asset.assetType === "IMAGE") {
-        const imageUrl = asset.fileUrl || "";
+        const imageUrl = asset.fileUrl ?? "";
         if (imageUrl) {
           imageAssets.push(imageUrl);
         }
@@ -267,7 +267,7 @@ export default function TextPost({
   };
 
   return (
-    <fetcher.Form method="post" className="w-full" onSubmit={handleSubmit}>
+    <fetcher.Form method="post" className="w-full" onSubmit={(e) => void handleSubmit(e)}>
       <div className="relative">
         <Textarea
           ref={textareaRef}
@@ -358,7 +358,7 @@ export default function TextPost({
                 type="datetime-local"
                 id="scheduledFor"
                 name="scheduledFor"
-                value={scheduledFor || ""}
+                value={scheduledFor ?? ""}
                 onChange={(e) => {
                   setScheduledFor(e.target.value);
                 }}
@@ -394,8 +394,10 @@ export default function TextPost({
               scheduleIntervals={scheduleIntervals}
               queueTypes={queueTypes}
               selectedQueue={selectedQueue}
-              onScheduleIntervalClick={handleScheduleIntervalClick}
-              onCalculateNextSlot={() => calculateQueueScheduleTime(selectedQueue)}
+              onScheduleIntervalClick={(intervalHours) => void handleScheduleIntervalClick(intervalHours)}
+              onCalculateNextSlot={() => {
+                void calculateQueueScheduleTime(selectedQueue);
+              }}
               disabled={fetcher.state !== "idle"}
               showTimeInput={false}
             />

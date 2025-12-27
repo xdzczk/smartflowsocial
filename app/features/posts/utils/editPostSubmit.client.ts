@@ -3,7 +3,7 @@
  * Extracted from EditPostModal for better separation of concerns
  */
 
-import type { PostData, LongFormPostData, UserData, QueueType, HashTagPreset } from "~/features/posts/types";
+import type { PostData, LongFormPostData, UserData } from "~/features/posts/types";
 import { uploadMultipleFiles } from "~/features/upload/upload.client";
 import { signEventFn } from "~/lib/nostr";
 
@@ -68,11 +68,11 @@ export async function prepareEditPostSubmission({
 
   if (isLongform) {
     // Create longform event content (NIP-23)
-    eventContent = content || "";
+    eventContent = content ?? "";
     eventTags = [
       ["d", post.id], // identifier tag
-      ["title", title || ""],
-      ["summary", summary || ""],
+      ["title", title ?? ""],
+      ["summary", summary ?? ""],
     ];
     if (image) {
       eventTags.push(["image", image]);
@@ -86,7 +86,7 @@ export async function prepareEditPostSubmission({
     }
 
     // Create post content with images below text
-    eventContent = caption || "";
+    eventContent = caption ?? "";
 
     // Add image URLs to content (below the text)
     if (allImageUrls.length > 0) {
@@ -140,12 +140,12 @@ export async function prepareEditPostSubmission({
   }
 
   if (isLongform) {
-    formData.append("title", title || "");
-    formData.append("summary", summary || "");
-    formData.append("content", content || "");
-    formData.append("image", image || "");
+    formData.append("title", title ?? "");
+    formData.append("summary", summary ?? "");
+    formData.append("content", content ?? "");
+    formData.append("image", image ?? "");
   } else {
-    formData.append("caption", caption || "");
+    formData.append("caption", caption ?? "");
     formData.append("fileUrl", JSON.stringify(allImageUrls));
     formData.append("hashtags", finalHashtags);
     if (selectedQueueType) {

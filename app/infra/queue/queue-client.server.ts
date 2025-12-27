@@ -3,7 +3,7 @@
  * This is the concrete implementation of the QueueClient interface
  */
 
-import { Queue, Job } from "bullmq";
+import { Queue } from "bullmq";
 import Redis from "ioredis";
 
 import { logError } from "~/lib/error-logger.server";
@@ -40,7 +40,11 @@ function getQueue(queueName: QueueType): Queue {
     });
     queues.set(queueName, queue);
   }
-  return queues.get(queueName)!;
+  const existingQueue = queues.get(queueName);
+  if (!existingQueue) {
+    throw new Error(`Queue ${queueName} not found`);
+  }
+  return existingQueue;
 }
 
 /**
@@ -96,9 +100,10 @@ class BullMQClient implements QueueClient {
       const queue = getQueue(queueName);
       const jobs = await queue.getJobs(["waiting", "delayed"]);
       const job = jobs.find((j) => {
-        const jobData = j.data;
+        const jobData: unknown = j.data;
         if (jobData && typeof jobData === "object" && !Array.isArray(jobData) && dataKey in jobData) {
-          return String(jobData[dataKey as keyof typeof jobData]) === dataValue;
+          const dataValueInJob = (jobData as Record<string, unknown>)[dataKey];
+          return String(dataValueInJob) === dataValue;
         }
         return false;
       });
@@ -127,11 +132,14 @@ class BullMQClient implements QueueClient {
       // BullMQ's getJobs accepts an array of status strings
       const jobs = await queue.getJobs(statuses);
       
-      return jobs.map((job) => ({
-        id: job.id!,
-        data: job.data,
-        status: (job.opts.delay && job.opts.delay > 0 ? "delayed" : "waiting") as JobStatus,
-      }));
+      return jobs.map((job) => {
+        const jobId: unknown = job.id;
+        const jobData: unknown = job.data;
+        const id = typeof jobId === "string" ? jobId : String(jobId ?? "");
+        const data: PostJobData | LongFormPostJobData = jobData as PostJobData | LongFormPostJobData;
+        const status: JobStatus = (job.opts.delay && job.opts.delay > 0 ? "delayed" : "waiting") as JobStatus;
+        return { id, data, status };
+      });
     } catch (error) {
       logError(error instanceof Error ? error : new Error(String(error)), {
         queueName,

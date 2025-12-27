@@ -59,7 +59,7 @@ describe("Query Batching", () => {
     });
 
     it("should filter out null values", async () => {
-      const result = await batchLoadQueueTypes([null, undefined, "valid-id"]);
+      const result = await batchLoadQueueTypes([null, null, "valid-id"]);
       // Should only process valid-id
       expect(typeof batchLoadQueueTypes).toBe("function");
     });

@@ -49,7 +49,7 @@ export function useAssetUpload({
             const uploadResult = await uploadFile(processedFile);
 
             if (!uploadResult.success) {
-                throw new Error(uploadResult.error || "Upload failed");
+                throw new Error(uploadResult.error ?? "Upload failed");
             }
 
             // Submit to server with upload result

@@ -100,7 +100,9 @@ describe("New Post Action Handler", () => {
       expect(createPost).toHaveBeenCalledWith(
         expect.objectContaining({
           userId: TEST_USER_ID,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           content: expect.stringContaining("This is a draft post"),
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           caption: expect.stringContaining("This is a draft post"),
           fileUrl: [],
           isScheduled: false,
@@ -136,6 +138,7 @@ describe("New Post Action Handler", () => {
 
       expect(createPost).toHaveBeenCalledWith(
         expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           content: expect.stringContaining("#custom #tags"),
         }),
       );
@@ -183,6 +186,7 @@ describe("New Post Action Handler", () => {
       expect(getQueueTypes).toHaveBeenCalledWith(TEST_USER_ID);
       expect(createPost).toHaveBeenCalledWith(
         expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           content: expect.stringContaining("#default #tags"),
         }),
       );
@@ -211,6 +215,7 @@ describe("New Post Action Handler", () => {
       expect(createPost).toHaveBeenCalledWith(
         expect.objectContaining({
           userId: TEST_USER_ID,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           content: expect.stringContaining("This is a published post"),
           isScheduled: false,
           isPosted: true,
@@ -222,6 +227,7 @@ describe("New Post Action Handler", () => {
         "https://api.nostr-publisher.com/publish",
         expect.objectContaining({
           method: "POST",
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           body: expect.stringContaining("event-123"),
         }),
       );
@@ -252,9 +258,11 @@ describe("New Post Action Handler", () => {
       expect(createPost).toHaveBeenCalledWith(
         expect.objectContaining({
           userId: TEST_USER_ID,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           content: expect.stringContaining("This is a scheduled post"),
           isScheduled: true,
           isPosted: false,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           scheduledFor: expect.any(Number),
         }),
       );
@@ -281,7 +289,8 @@ describe("New Post Action Handler", () => {
       });
 
       const result = await handleNewPostAction(TEST_USER_ID, request);
-      const data = await result.json();
+      const dataRaw: unknown = await result.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; fileUrls?: unknown[]; error?: unknown } : {};
 
       // handleUploadPreview returns Response.json with success and fileUrls
       expect(result.status).toBe(200);
@@ -305,11 +314,13 @@ describe("New Post Action Handler", () => {
       });
 
       const result = await handleNewPostAction(TEST_USER_ID, request);
-      const data = await result.json();
+      const dataRaw: unknown = await result.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; fileUrls?: unknown; error?: unknown } : {};
 
       expect(result.status).toBe(400);
       expect(data).toEqual({
         success: false,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         error: expect.any(String),
       });
     });
@@ -335,6 +346,7 @@ describe("New Post Action Handler", () => {
       expect(createPost).toHaveBeenCalledWith(
         expect.objectContaining({
           userId: TEST_USER_ID,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           fileUrl: expect.arrayContaining(["https://example.com/image.jpg"]),
           postType: "IMAGE",
           draft: true,
@@ -446,7 +458,8 @@ describe("New Post Action Handler", () => {
       });
 
       const result = await handleNewPostAction(TEST_USER_ID, request);
-      const data = await result.json();
+      const dataRaw: unknown = await result.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; fileUrls?: unknown; error?: unknown } : {};
 
       expect(result.status).toBe(200);
       expect(data).toEqual({ success: false });

@@ -4,10 +4,8 @@ import { toast } from "react-hot-toast";
 import type { PostData, LongFormPostData, UserData, HashTagPreset } from "~/features/posts/types";
 import type { EditorJSInstance as EditorJSInstanceType, EditorJSAPI } from "~/features/posts/types/editorjs.types";
 import { resizeImage } from "~/features/upload/image-resize";
-import { uploadMultipleFiles } from "~/features/upload/upload.client";
 import { logClientError } from "~/lib/error-handler.client";
 import {
-  signEventFn,
   convertEditorJSToMarkdown,
   convertMarkdownToEditorJS,
 } from "~/lib/nostr";
@@ -26,16 +24,19 @@ export function useEditPostModal({
   isLongform,
 }: UseEditPostModalProps) {
   // Form fields for regular posts
-  const [caption, setCaption] = useState("caption" in post ? (post.caption || "") : "");
-  const [selectedQueueType, setSelectedQueueType] = useState(
-    post?.queueType?.id ?? "",
-  );
+  const captionValue = post && typeof post === "object" && "caption" in post && typeof post.caption === "string" ? post.caption : "";
+  const [caption, setCaption] = useState(captionValue);
+  const queueTypeId = post && typeof post === "object" && "queueType" in post && post.queueType && typeof post.queueType === "object" && "id" in post.queueType && typeof post.queueType.id === "string" ? post.queueType.id : "";
+  const [selectedQueueType, setSelectedQueueType] = useState(queueTypeId);
 
   // Form fields for longform posts
-  const [title, setTitle] = useState("title" in post ? (post.title || "") : "");
-  const [summary, setSummary] = useState("summary" in post ? (post.summary || "") : "");
+  const titleValue = post && typeof post === "object" && "title" in post && typeof post.title === "string" ? post.title : "";
+  const [title, setTitle] = useState(titleValue);
+  const summaryValue = post && typeof post === "object" && "summary" in post && typeof post.summary === "string" ? post.summary : "";
+  const [summary, setSummary] = useState(summaryValue);
   const [content, setContent] = useState("");
-  const [image, setImage] = useState("image" in post ? (post.image || "") : "");
+  const imageValue = post && typeof post === "object" && "image" in post && typeof post.image === "string" ? post.image : "";
+  const [image, setImage] = useState(imageValue);
 
   // Schedule fields
   const [scheduledFor, setScheduledFor] = useState<Date | null>(null);
@@ -62,56 +63,67 @@ export function useEditPostModal({
   // Initialize form fields from post
   useEffect(() => {
     if (post) {
-      if (isLongform && "title" in post) {
-        setTitle(post.title || "");
-        setSummary(post.summary || "");
-        setImage(post.image || "");
-        setContent(post.content || "");
-        setScheduledFor(post.publishedAt ? new Date(post.publishedAt) : null);
-      } else if (!isLongform && "caption" in post) {
-        setCaption(post.caption || "");
-        setSelectedQueueType(post.queueType?.id ?? "");
+      if (isLongform && post && typeof post === "object" && "title" in post) {
+        const postTitle = typeof post.title === "string" ? post.title : "";
+        const postSummary = typeof post.summary === "string" ? post.summary : "";
+        const postImage = typeof post.image === "string" ? post.image : "";
+        const postContent = typeof post.content === "string" ? post.content : "";
+        setTitle(postTitle);
+        setSummary(postSummary);
+        setImage(postImage);
+        setContent(postContent);
+        const publishedAt = post && typeof post === "object" && "publishedAt" in post ? post.publishedAt : null;
+        setScheduledFor(publishedAt ? new Date(publishedAt) : null);
+      } else if (!isLongform && post && typeof post === "object" && "caption" in post) {
+        const postCaption = typeof post.caption === "string" ? post.caption : "";
+        setCaption(postCaption);
+        const queueType = post && typeof post === "object" && "queueType" in post && post.queueType && typeof post.queueType === "object" && "id" in post.queueType && typeof post.queueType.id === "string" ? post.queueType.id : "";
+        setSelectedQueueType(queueType);
+        const scheduledForValue = post && typeof post === "object" && "scheduledFor" in post ? (post as { scheduledFor?: unknown }).scheduledFor : null;
         setScheduledFor(
-          post.scheduledFor
-            ? new Date(parseInt(post.scheduledFor) * 1000)
+          scheduledForValue && typeof scheduledForValue === "string"
+            ? new Date(parseInt(scheduledForValue, 10) * 1000)
             : null,
         );
 
         // Parse existing images
-        if ("fileUrl" in post && post.fileUrl && Array.isArray(post.fileUrl)) {
-          const urls = post.fileUrl
-            .map((url: string) => {
+        const fileUrl = post && typeof post === "object" && "fileUrl" in post ? post.fileUrl : null;
+        if (fileUrl && Array.isArray(fileUrl)) {
+          const urls = fileUrl
+            .map((url: unknown) => {
               if (typeof url === "string" && url.startsWith("[")) {
                 try {
-                  const parsed = JSON.parse(url);
-                  return Array.isArray(parsed) ? parsed : [url];
+                  const parsed: unknown = JSON.parse(url);
+                  return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [url];
                 } catch {
                   return [url];
                 }
               }
-              return Array.isArray(url) ? url : [url];
+              return Array.isArray(url) ? url.filter((item): item is string => typeof item === "string") : (typeof url === "string" ? [url] : []);
             })
             .flat();
           setExistingImages(
-            urls.filter((url) => typeof url === "string" && url.length > 0),
+            urls.filter((url): url is string => typeof url === "string" && url.length > 0),
           );
         }
 
         // Parse existing hashtags
-        const existingHashtags = post.hashtags || "";
+        const existingHashtags = post && typeof post === "object" && "hashtags" in post && typeof post.hashtags === "string" ? post.hashtags : "";
         if (existingHashtags) {
           setManualHashtags(existingHashtags);
         }
 
         // Check if post uses hashtag preset
-        if (post.hashTagPresetId && hashTagPresets.length > 0) {
+        const hashTagPresetId = post && typeof post === "object" && "hashTagPresetId" in post && typeof post.hashTagPresetId === "string" ? post.hashTagPresetId : null;
+        if (hashTagPresetId && hashTagPresets.length > 0) {
           const preset = hashTagPresets.find(
-            (p) => p.id === post.hashTagPresetId,
+            (p) => p.id === hashTagPresetId,
           );
           if (preset) {
             setUseHashtagPresets(true);
             setSelectedHashtagPresetId(preset.id);
-            setSelectedHashtagPresetTags(preset.tags || "");
+            const presetTags = typeof preset.tags === "string" ? preset.tags : "";
+            setSelectedHashtagPresetTags(presetTags);
           }
         }
       }
@@ -133,124 +145,127 @@ export function useEditPostModal({
         try {
           const EditorJS = (await import("@editorjs/editorjs")).default;
 
-          const editorInstance = new EditorJS({
-            holder: "longform-editorjs",
-            minHeight: 300,
-            tools: {
-              header: {
-                class: (await import("@editorjs/header")).default as unknown as new (config?: { placeholder?: string; levels?: number[]; defaultLevel?: number }) => unknown,
-                config: {
-                  placeholder: "Enter a header",
-                  levels: [2, 3, 4],
-                  defaultLevel: 3,
+          const toolsConfig = {
+            header: {
+              class: (await import("@editorjs/header")).default,
+              config: {
+                placeholder: "Enter a header",
+                levels: [2, 3, 4],
+                defaultLevel: 3,
+              },
+            },
+            list: {
+              class: (await import("@editorjs/list")).default,
+              inlineToolbar: true,
+            },
+            quote: {
+              class: (await import("@editorjs/quote")).default,
+              inlineToolbar: true,
+              config: {
+                quotePlaceholder: "Enter a quote",
+                captionPlaceholder: "Quote's author",
+              },
+            },
+            code: {
+              class: (await import("@editorjs/code")).default,
+              config: {
+                placeholder: "Enter code here...",
+              },
+            },
+            inlineCode: {
+              class: (await import("@editorjs/inline-code")).default,
+            },
+            linkTool: {
+              class: (await import("@editorjs/link")).default,
+              config: {
+                endpoint: "/api/link-preview",
+              },
+            },
+            embed: {
+              class: (await import("@editorjs/embed")).default,
+              config: {
+                services: {
+                  youtube: true,
+                  twitter: true,
                 },
               },
-              list: {
-                class: (await import("@editorjs/list")).default,
-                inlineToolbar: true,
-              },
-              quote: {
-                class: (await import("@editorjs/quote")).default,
-                inlineToolbar: true,
-                config: {
-                  quotePlaceholder: "Enter a quote",
-                  captionPlaceholder: "Quote's author",
-                },
-              },
-              code: {
-                class: (await import("@editorjs/code")).default,
-                config: {
-                  placeholder: "Enter code here...",
-                },
-              },
-              inlineCode: {
-                class: (await import("@editorjs/inline-code")).default,
-              },
-              linkTool: {
-                class: (await import("@editorjs/link")).default as unknown as new (config?: { endpoint?: string }) => unknown,
-                config: {
-                  endpoint: "/api/link-preview",
-                },
-              },
-              embed: {
-                class: (await import("@editorjs/embed")).default as unknown as new (config?: { services?: Record<string, boolean> }) => unknown,
-                config: {
-                  services: {
-                    youtube: true,
-                    twitter: true,
-                  },
-                },
-              },
-              image: {
-                class: (await import("@editorjs/image")).default,
-                config: {
-                  buttonContent: "Select Image",
-                  captionPlaceholder: "",
-                  withBorder: false,
-                  withBackground: false,
-                  stretched: false,
-                  uploader: {
-                    uploadByFile: async (file: File) => {
-                      try {
-                        const formData = new FormData();
-                        formData.append("image", file);
+            },
+            image: {
+              class: (await import("@editorjs/image")).default,
+              config: {
+                buttonContent: "Select Image",
+                captionPlaceholder: "",
+                withBorder: false,
+                withBackground: false,
+                stretched: false,
+                uploader: {
+                  uploadByFile: async (file: File) => {
+                    try {
+                      const formData = new FormData();
+                      formData.append("image", file);
 
-                        const response = await fetch(
-                          "/api/upload-editorjs-image",
-                          {
-                            method: "POST",
-                            body: formData,
-                          },
-                        );
+                      const response = await fetch(
+                        "/api/upload-editorjs-image",
+                        {
+                          method: "POST",
+                          body: formData,
+                        },
+                      );
 
-                        if (!response.ok) {
-                          throw new Error(`Server error: ${response.status}`);
-                        }
-
-                        const result = (await response.json()) as {
-                          success?: number;
-                          file?: { url?: string };
-                          error?: string;
-                        };
-
-                        if (result.success === 1 && result.file?.url) {
-                          return {
-                            success: 1,
-                            file: {
-                              url: result.file.url,
-                            },
-                          };
-                        } else {
-                          throw new Error(result.error || "Upload failed");
-                        }
-                      } catch (error) {
-                        const { handleAsyncError } = await import("~/lib/error-handler.client");
-                        handleAsyncError(error, {
-                          component: "EditPostModal",
-                          action: "uploadImage",
-                        }, false);
-                        throw error;
+                      if (!response.ok) {
+                        throw new Error(`Server error: ${response.status}`);
                       }
-                    },
+
+                      const resultRaw: unknown = await response.json();
+                      const result = resultRaw && typeof resultRaw === "object" && !Array.isArray(resultRaw) ? resultRaw as { success?: unknown; file?: unknown; error?: unknown } : {};
+                      const success = typeof result.success === "number" ? result.success : undefined;
+                      const fileResult = result.file && typeof result.file === "object" && !Array.isArray(result.file) ? result.file as { url?: unknown } : undefined;
+                      const fileUrl = fileResult && typeof fileResult.url === "string" ? fileResult.url : undefined;
+                      const error = typeof result.error === "string" ? result.error : undefined;
+
+                      if (success === 1 && fileUrl) {
+                        return {
+                          success: 1,
+                          file: {
+                            url: fileUrl,
+                          },
+                        };
+                      } else {
+                        throw new Error(error ?? "Upload failed");
+                      }
+                    } catch (error: unknown) {
+                      const { handleAsyncError } = await import("~/lib/error-handler.client");
+                      handleAsyncError(error, {
+                        component: "EditPostModal",
+                        action: "uploadImage",
+                      }, false);
+                      throw error;
+                    }
                   },
                 },
               },
             },
-            onChange: (async (api: EditorJSAPI) => {
+          };
+
+          const editorInstance = new EditorJS({
+            holder: "longform-editorjs",
+            minHeight: 300,
+            tools: toolsConfig as unknown as Record<string, unknown>,
+            onChange: async (api: EditorJSAPI) => {
               try {
                 const outputData = await api.saver.save();
                 const markdownContent = convertEditorJSToMarkdown(outputData);
                 setContent(markdownContent);
-              } catch (error) {
+              } catch (error: unknown) {
                 console.error("Editor save error:", error);
               }
-            }),
-          });
+            },
+          } as any);
 
           editorRef.current = editorInstance;
           await editorRef.current.isReady;
           setEditorReady(true);
-        } catch (error) {
+        } catch (error: unknown) {
           console.error("Error loading EditorJS:", error);
           editorInitialized.current = false;
         }
@@ -294,7 +309,7 @@ export function useEditPostModal({
         await editorRef.current.isReady;
         const editorJSData = convertMarkdownToEditorJS(content);
         await editorRef.current.render(editorJSData);
-      } catch (error) {
+      } catch (error: unknown) {
         console.error("Error loading initial content into EditorJS:", error);
       }
     };
@@ -306,7 +321,7 @@ export function useEditPostModal({
   }, [isLongform, editorReady, content]);
 
   const formatDateTimeForInput = (date: Date) => {
-    const userTimezone = user?.timezone ?? "UTC";
+    const userTimezone = user && typeof user === "object" && "timezone" in user && typeof user.timezone === "string" ? user.timezone : "UTC";
     const dateInUserTz = new Date(
       date.toLocaleString("en-US", { timeZone: userTimezone }),
     );
@@ -319,7 +334,7 @@ export function useEditPostModal({
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = Array.from(e.target.files || []);
+    const selectedFiles = Array.from(e.target.files ?? []);
     if (selectedFiles.length === 0) return;
 
     try {
@@ -332,7 +347,7 @@ export function useEditPostModal({
         }),
       );
       setNewFiles((prev) => [...prev, ...processedFiles]);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error processing files:", error);
       toast.error("Error processing files");
     }

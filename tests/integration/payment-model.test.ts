@@ -117,8 +117,9 @@ describe("Payment Model Functions", () => {
       return await callback(tx);
     });
     // Reset LN to default implementation - use function, not arrow, so it works as constructor
-    (LN as any).mockImplementation(function(credentials: string) {
-      return new MockLN(credentials);
+    const lnMock = LN as { mockImplementation: (fn: (credentials: string) => MockLN) => void };
+    lnMock.mockImplementation(function(_credentials: string) {
+      return new MockLN(_credentials);
     });
   });
 
@@ -232,18 +233,26 @@ describe("Payment Model Functions", () => {
       const mockLNInstance = new MockLN("test-nwc-credentials");
       // requestPayment must return an object with onPaid and onTimeout methods
       // Create object first, then add methods that reference it
-      const mockRequest: any = {
+      interface MockRequest {
+        invoice: string;
+        paymentHash: string;
+        amount: number;
+        onPaid: ReturnType<typeof vi.fn>;
+        onTimeout: ReturnType<typeof vi.fn>;
+      }
+      const mockRequest: MockRequest = {
         invoice: mockInvoice,
         paymentHash: mockPaymentHash,
         amount: mockAmountSats,
+        onPaid: vi.fn().mockReturnValue(mockRequest as unknown as MockRequest),
+        onTimeout: vi.fn().mockReturnValue(mockRequest as unknown as MockRequest),
       };
-      mockRequest.onPaid = vi.fn().mockReturnValue(mockRequest);
-      mockRequest.onTimeout = vi.fn().mockReturnValue(mockRequest);
       mockLNInstance.requestPayment = vi.fn().mockResolvedValue(mockRequest);
       
       // Override the constructor to return our configured instance
       // Use a constructor function that returns the instance
-      (LN as any).mockImplementation(function(credentials: string) {
+      const lnMock = LN as { mockImplementation: (fn: (credentials: string) => MockLN) => void };
+      lnMock.mockImplementation(function(_credentials: string) {
         return mockLNInstance;
       });
       process.env.OWNER_NWC = "test-nwc-credentials";
@@ -303,7 +312,8 @@ describe("Payment Model Functions", () => {
       const mockLNInstance = new MockLN("test-nwc-credentials");
       mockLNInstance.requestPayment = vi.fn().mockRejectedValue(new Error("Network error"));
       
-      (LN as any).mockImplementation(function(credentials: string) {
+      const lnMock = LN as { mockImplementation: (fn: (credentials: string) => MockLN) => void };
+      lnMock.mockImplementation(function(_credentials: string) {
         return mockLNInstance;
       });
       process.env.OWNER_NWC = "test-nwc-credentials";
@@ -330,15 +340,23 @@ describe("Payment Model Functions", () => {
 
       const mockLNInstance = new MockLN("test-nwc-credentials");
       // Create object first, then add methods that reference it
-      const mockRequest: any = {
+      interface MockRequestPartial {
+        invoice?: string;
+        paymentHash?: string;
+        amount: number;
+        onPaid: ReturnType<typeof vi.fn>;
+        onTimeout: ReturnType<typeof vi.fn>;
+      }
+      const mockRequest: MockRequestPartial = {
         // Missing invoice and paymentHash
         amount: 25000,
+        onPaid: vi.fn().mockReturnValue(mockRequest as unknown as MockRequestPartial),
+        onTimeout: vi.fn().mockReturnValue(mockRequest as unknown as MockRequestPartial),
       };
-      mockRequest.onPaid = vi.fn().mockReturnValue(mockRequest);
-      mockRequest.onTimeout = vi.fn().mockReturnValue(mockRequest);
       mockLNInstance.requestPayment = vi.fn().mockResolvedValue(mockRequest);
       
-      (LN as any).mockImplementation(function(credentials: string) {
+      const lnMock = LN as { mockImplementation: (fn: (credentials: string) => MockLN) => void };
+      lnMock.mockImplementation(function(_credentials: string) {
         return mockLNInstance;
       });
       process.env.OWNER_NWC = "test-nwc-credentials";

@@ -23,7 +23,7 @@ export function PaymentSuccessModal({
             Payment Successful!
           </h3>
           <p className="text-gray-600 dark:text-gray-300">
-            {message || "Your plan has been activated successfully!"}
+            {message ?? "Your plan has been activated successfully!"}
           </p>
           <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
             Redirecting...
@@ -33,6 +33,7 @@ export function PaymentSuccessModal({
     </div>
   );
 }
+
 
 
 

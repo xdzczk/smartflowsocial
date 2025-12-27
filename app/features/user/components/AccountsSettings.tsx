@@ -96,7 +96,7 @@ export function AccountsSettings({
   }, [q, fetcher]);
 
   const onRequestChild = (childNpub: string) => {
-    const np = (childNpub || "").trim();
+    const np = (childNpub ?? "").trim();
     fetcher.submit(
       { _action: "request_child", childNpub: np },
       { method: "post", action: "/dashboard/settings" },
@@ -104,8 +104,8 @@ export function AccountsSettings({
   };
 
   // Submission state feedback
-  const submittingAction = (fetcher.formData?.get("_action") as string) || undefined;
-  const submittingChildNpub = (fetcher.formData?.get("childNpub") as string) || undefined;
+  const submittingAction = (fetcher.formData?.get("_action") as string) ?? undefined;
+  const submittingChildNpub = (fetcher.formData?.get("childNpub") as string) ?? undefined;
   const isUnlinking = submittingAction === "unlink_parent" && fetcher.state !== "idle";
 
   React.useEffect(() => {
@@ -118,7 +118,7 @@ export function AccountsSettings({
     }
   }, [fetcher.state, fetcher.data, submittingAction, revalidator]);
 
-  const renderAccountRow = (npub: string, nostrProfile?: ProfileData | null) => {
+  const _renderAccountRow = (npub: string, nostrProfile?: ProfileData | null) => {
     const bits = extractProfileBits(nostrProfile);
     return (
       <div
@@ -130,13 +130,13 @@ export function AccountsSettings({
             {bits.picture ? (
               <AvatarImage
                 src={bits.picture}
-                alt={bits.name || bits.display_name || npub}
+                alt={(bits.name ?? bits.display_name) ?? npub}
               />
             ) : null}
           </Avatar>
           <div className="min-w-0">
             <div className="truncate font-medium">
-              {bits.name || bits.display_name || npub}
+              {(bits.name ?? bits.display_name) ?? npub}
             </div>
             <div className="truncate text-xs text-muted-foreground">{npub}</div>
           </div>
@@ -145,12 +145,12 @@ export function AccountsSettings({
     );
   };
 
-  const results = fetcher.data?.results || [];
+  const results = fetcher.data?.results ?? [];
 
   if (isChild) {
     const bits = extractProfileBits(parentUser?.nostrProfile);
     const parentName =
-      bits.name || bits.display_name || (parentUser?.npub ?? "Parent");
+      (bits.name ?? bits.display_name) ?? (parentUser?.npub ?? "Parent");
     return (
       <Card className="p-4">
         <div className="mb-4">
@@ -225,14 +225,14 @@ export function AccountsSettings({
                 const disabled =
                   isSubmittingThis ||
                   r.npub === parentNpub ||
-                  (r.pendingParentRequests || []).includes(parentNpub || "") ||
+                  (r.pendingParentRequests ?? []).includes(parentNpub ?? "") ||
                   r.parentNpub === parentNpub ||
                   r.isChild === true;
                 const label = isSubmittingThis
                   ? "Requesting..."
                   : r.npub === parentNpub
                     ? "This is you"
-                    : (r.pendingParentRequests || []).includes(parentNpub || "")
+                    : (r.pendingParentRequests ?? []).includes(parentNpub ?? "")
                     ? "Requested"
                     : r.parentNpub
                     ? "Has a parent"
@@ -245,11 +245,11 @@ export function AccountsSettings({
                     <div className="flex items-center gap-3 min-w-0">
                       <Avatar className="h-8 w-8">
                         {r.profilePicture ? (
-                          <AvatarImage src={r.profilePicture} alt={r.profileName || r.profileDisplayName || r.npub} />
+                          <AvatarImage src={r.profilePicture} alt={(r.profileName ?? r.profileDisplayName) ?? r.npub} />
                         ) : null}
                       </Avatar>
                       <div className="min-w-0">
-                        <div className="font-medium truncate">{r.profileName || r.profileDisplayName || r.npub}</div>
+                        <div className="font-medium truncate">{(r.profileName ?? r.profileDisplayName) ?? r.npub}</div>
                         <div className="text-xs text-muted-foreground truncate">{r.npub}</div>
                       </div>
                     </div>
@@ -274,7 +274,7 @@ export function AccountsSettings({
             {confirmedChildren?.length === 0 ? (
               <div className="p-3 text-sm text-muted-foreground">No confirmed children</div>
             ) : (
-              (confirmedChildren || []).map((u) => {
+              (confirmedChildren ?? []).map((u) => {
                 const bits = extractProfileBits(u.nostrProfile);
                 const removingThis =
                   submittingAction === "unlink_child" &&
@@ -285,11 +285,11 @@ export function AccountsSettings({
                     <div className="flex items-center gap-3 min-w-0">
                       <Avatar className="h-8 w-8">
                         {bits.picture ? (
-                          <AvatarImage src={bits.picture} alt={bits.name || bits.display_name || u.npub} />
+                          <AvatarImage src={bits.picture} alt={(bits.name ?? bits.display_name) ?? u.npub} />
                         ) : null}
                       </Avatar>
                       <div className="min-w-0">
-                        <div className="font-medium truncate">{bits.name || bits.display_name || u.npub}</div>
+                        <div className="font-medium truncate">{(bits.name ?? bits.display_name) ?? u.npub}</div>
                         <div className="text-xs text-muted-foreground truncate">{u.npub}</div>
                       </div>
                     </div>
@@ -318,7 +318,7 @@ export function AccountsSettings({
             {pendingChildren?.length === 0 ? (
               <div className="p-3 text-sm text-muted-foreground">No pending requests</div>
             ) : (
-              (pendingChildren || []).map((u) => {
+              (pendingChildren ?? []).map((u) => {
                 const bits = extractProfileBits(u.nostrProfile);
                 const cancelingThis =
                   submittingAction === "cancel_child_request" &&
@@ -329,11 +329,11 @@ export function AccountsSettings({
                     <div className="flex items-center gap-3 min-w-0">
                       <Avatar className="h-8 w-8">
                         {bits.picture ? (
-                          <AvatarImage src={bits.picture} alt={bits.name || bits.display_name || u.npub} />
+                          <AvatarImage src={bits.picture} alt={(bits.name ?? bits.display_name) ?? u.npub} />
                         ) : null}
                       </Avatar>
                       <div className="min-w-0">
-                        <div className="font-medium truncate">{bits.name || bits.display_name || u.npub}</div>
+                        <div className="font-medium truncate">{(bits.name ?? bits.display_name) ?? u.npub}</div>
                         <div className="text-xs text-muted-foreground truncate">{u.npub}</div>
                       </div>
                     </div>

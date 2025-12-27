@@ -3,15 +3,26 @@ import { Link, useLoaderData, useParams } from "@remix-run/react";
 import Toast from "~/components/ui/Toast";
 import { requireUserId } from "~/features/auth/session.server";
 import { requireAnySubscription } from "~/features/payments/subscriptions.server";
-import AllContentListing from "~/features/posts/components/AllContentListing";
-import LongFormDetailsModal from "~/features/posts/components/LongFormDetailsModal";
-import LongFormListing from "~/features/posts/components/LongFormListing";
-import PostDetailsModal from "~/features/posts/components/PostDetailsModal";
-import PostedPostsTable from "~/features/posts/components/PostedPostsTable";
-import PostedPostsTabs from "~/features/posts/components/PostedPostsTabs";
-import { getPostedDashboardData } from "~/features/posts/posts.server";
-import { usePostedPosts } from "~/features/posts/usePostedPosts";
+import {
+  AllContentListing,
+  LongFormDetailsModal,
+  LongFormListing,
+  PostDetailsModal,
+  PostedPostsTable,
+  PostedPostsTabs,
+  getPostedDashboardData,
+  type PostData,
+  type LongFormPostData,
+  type CombinedContent,
+  type QueueType,
+  type PostFetcher,
+  convertJsonValueToScheduleConfig,
+  usePostedPosts,
+} from "~/features/posts";
+import type { PostStats } from "~/features/posts/stats.server";
 import { withErrorHandling } from "~/lib/error-handler.server";
+import type { LongFormPost } from "~/models/longformpost.server";
+import type { User } from "~/models/user.server";
 // Re-export action from server module
 export { postedPostsAction as action } from "~/features/posts/posted.action.server";
 
@@ -34,37 +45,72 @@ type LoaderData = Awaited<ReturnType<typeof loaderImpl>>;
 export default function PostedPosts() {
   const data = useLoaderData<LoaderData>();
 
-  // Transform serialized dates back to Date objects
-  const posts = data.posts.map((post) => ({
-    ...post,
-    createdAt: new Date(post.createdAt),
-    updatedAt: new Date(post.updatedAt),
-    postedAt: post.postedAt ? new Date(post.postedAt) : null,
-    // scheduledFor might be a string in DB, but if it needs to be Date, convert here.
-    // Based on models/post.types.ts - scheduledFor is stored as string in DB.
-  }));
+  // Type assertions for Remix JsonifyObject serialization
+  const postsRaw = "posts" in data && Array.isArray(data.posts) ? data.posts : [];
+  const longformPostsRaw = "longformPosts" in data && Array.isArray(data.longformPosts) ? data.longformPosts : [];
+  const allContentRaw = "allContent" in data && Array.isArray(data.allContent) ? data.allContent : [];
+  const userRaw = "user" in data ? data.user : null;
+  const queueTypesRaw = "queueTypes" in data && Array.isArray(data.queueTypes) ? data.queueTypes : [];
 
-  const longformPosts = data.longformPosts.map((post) => ({
-    ...post,
-    createdAt: new Date(post.createdAt),
-    updatedAt: new Date(post.updatedAt),
-    publishedAt: post.publishedAt ? new Date(post.publishedAt) : undefined,
-  }));
+  // Transform serialized dates back to Date objects and assert types
+  const posts: PostData[] = Array.isArray(postsRaw) ? postsRaw.map((post: unknown) => {
+    const p = post as { createdAt: string | Date; updatedAt: string | Date; postedAt?: string | Date | null; [key: string]: unknown };
+    const result = {
+      ...p,
+      createdAt: (p.createdAt && typeof p.createdAt === "object" && p.createdAt instanceof Date) ? p.createdAt : new Date(p.createdAt as string),
+      updatedAt: (p.updatedAt && typeof p.updatedAt === "object" && p.updatedAt instanceof Date) ? p.updatedAt : new Date(p.updatedAt as string),
+      postedAt: p.postedAt ? ((p.postedAt && typeof p.postedAt === "object" && p.postedAt instanceof Date) ? p.postedAt : new Date(p.postedAt as string)) : null,
+    } as PostData;
+    return result;
+  }) : [];
 
-  const {
-    allContent,
-    pagination,
-    stats,
-    user,
+  const longformPosts: LongFormPostData[] = Array.isArray(longformPostsRaw) ? longformPostsRaw.map((post: unknown) => {
+    const p = post as { createdAt: string | Date; updatedAt: string | Date; publishedAt?: string | Date | null; [key: string]: unknown };
+    const result = {
+      ...p,
+      createdAt: p.createdAt instanceof Date ? p.createdAt : new Date(p.createdAt),
+      updatedAt: p.updatedAt instanceof Date ? p.updatedAt : new Date(p.updatedAt),
+      publishedAt: p.publishedAt ? (p.publishedAt instanceof Date ? p.publishedAt : new Date(p.publishedAt)) : null,
+    } as LongFormPostData;
+    return result;
+  }) : [];
 
-  } = data;
+  const allContent: CombinedContent[] = Array.isArray(allContentRaw) ? allContentRaw as unknown as CombinedContent[] : [];
+  const user: User | null = userRaw ? (userRaw as unknown as User) : null;
+  const queueTypes: QueueType[] = Array.isArray(queueTypesRaw) ? queueTypesRaw.map((qt: unknown) => {
+    if (typeof qt !== "object" || qt === null) {
+      throw new Error("Invalid queue type");
+    }
+    const q = qt as { id?: unknown; name?: unknown; color?: unknown; scheduleType?: unknown; scheduleConfig?: unknown; isEnabled?: unknown; userId?: unknown; createdAt?: unknown; updatedAt?: unknown };
+    const id = typeof q.id === "string" ? q.id : String(q.id ?? "");
+    const name = typeof q.name === "string" ? q.name : String(q.name ?? "");
+    const color = q.color !== null && q.color !== undefined ? (typeof q.color === "string" ? q.color : String(q.color)) : null;
+    const scheduleType = typeof q.scheduleType === "string" && (q.scheduleType === "INTERVAL" || q.scheduleType === "FIXED_SLOTS") ? q.scheduleType : undefined;
+    const scheduleConfig = convertJsonValueToScheduleConfig(q.scheduleConfig);
+    const isEnabled = typeof q.isEnabled === "boolean" ? q.isEnabled : q.isEnabled !== false;
+    const userId = typeof q.userId === "string" ? q.userId : "";
+    const result: QueueType = {
+      id,
+      name,
+      color,
+      description: undefined,
+      scheduleType,
+      scheduleConfig,
+      isEnabled,
+      userId,
+    };
+    return result;
+  }) : [];
 
-  const queueTypes = data.queueTypes.map((qt) => ({
-    ...qt,
-    createdAt: new Date(qt.createdAt),
-    updatedAt: new Date(qt.updatedAt),
-    color: qt.color ?? undefined,
-  }));
+  const paginationRaw = "pagination" in data ? data.pagination : undefined;
+  const pagination = paginationRaw && typeof paginationRaw === "object" && !Array.isArray(paginationRaw) && "total" in paginationRaw && "pages" in paginationRaw && "currentPage" in paginationRaw && "limit" in paginationRaw ? {
+    total: typeof paginationRaw.total === "number" ? paginationRaw.total : 0,
+    pages: typeof paginationRaw.pages === "number" ? paginationRaw.pages : 0,
+    currentPage: typeof paginationRaw.currentPage === "number" ? paginationRaw.currentPage : 1,
+    limit: typeof paginationRaw.limit === "number" ? paginationRaw.limit : 50,
+  } : { total: 0, pages: 0, currentPage: 1, limit: 50 };
+  const statsRaw = "stats" in data ? data.stats : undefined;
+  const stats: Record<string, PostStats> = statsRaw && typeof statsRaw === "object" && !Array.isArray(statsRaw) ? statsRaw as Record<string, PostStats> : {};
 
   const params = useParams();
 
@@ -93,12 +139,33 @@ export default function PostedPosts() {
     handleBulkRepost,
     handleBulkScheduledRepost,
     handleBulkQuote,
-  } = usePostedPosts({ user, allContent, posts });
+  } = usePostedPosts({ 
+    user: (() => {
+      if (user) return user;
+      // Create a minimal User object with required properties
+      return {
+        id: "",
+        npub: "",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        isEnabled: true,
+        timezone: null,
+        userRelays: [],
+        giveawayBlackListed: [],
+        uploadProvider: "S3" as const,
+        scheduleInterval: [],
+        pendingChildRequests: [],
+        pendingParentRequests: [],
+      } as unknown as User;
+    })(), 
+    allContent, 
+    posts 
+  });
 
   const sortedPosts = [...posts].sort((a, b) => {
     if (sortConfig.key === "postedAt") {
-      const dateA = new Date(a[sortConfig.key]).getTime();
-      const dateB = new Date(b[sortConfig.key]).getTime();
+      const dateA = (a.postedAt instanceof Date ? a.postedAt : a.postedAt ? new Date(a.postedAt) : new Date(0)).getTime();
+      const dateB = (b.postedAt instanceof Date ? b.postedAt : b.postedAt ? new Date(b.postedAt) : new Date(0)).getTime();
       return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
     }
 
@@ -115,17 +182,20 @@ export default function PostedPosts() {
     ) {
       const aEventId = a.signedEvent && typeof a.signedEvent === "object" && "id" in a.signedEvent && typeof a.signedEvent.id === "string" ? a.signedEvent.id : "";
       const bEventId = b.signedEvent && typeof b.signedEvent === "object" && "id" in b.signedEvent && typeof b.signedEvent.id === "string" ? b.signedEvent.id : "";
-      const aStats = aEventId && stats && typeof stats === "object" && !Array.isArray(stats) && aEventId in stats ? stats[aEventId] as Record<string, unknown> : {};
-      const bStats = bEventId && stats && typeof stats === "object" && !Array.isArray(stats) && bEventId in stats ? stats[bEventId] as Record<string, unknown> : {};
+      const aStats = aEventId && stats && typeof stats === "object" && !Array.isArray(stats) && aEventId in stats ? stats[aEventId] as unknown as Record<string, unknown> : {};
+      const bStats = bEventId && stats && typeof stats === "object" && !Array.isArray(stats) && bEventId in stats ? stats[bEventId] as unknown as Record<string, unknown> : {};
       const sortKey = sortConfig.key;
       const aValue = (typeof sortKey === "string" && sortKey in aStats && typeof aStats[sortKey] === "number" ? aStats[sortKey] : 0);
       const bValue = (typeof sortKey === "string" && sortKey in bStats && typeof bStats[sortKey] === "number" ? bStats[sortKey] : 0);
       return sortConfig.direction === "asc" ? aValue - bValue : bValue - aValue;
     }
 
-    if (a[sortConfig.key] < b[sortConfig.key])
+    // Type-safe property access
+    const aValue = (a as unknown as Record<string, unknown>)[sortConfig.key];
+    const bValue = (b as unknown as Record<string, unknown>)[sortConfig.key];
+    if ((aValue as number | string) < (bValue as number | string))
       return sortConfig.direction === "asc" ? -1 : 1;
-    if (a[sortConfig.key] > b[sortConfig.key])
+    if ((aValue as number | string) > (bValue as number | string))
       return sortConfig.direction === "asc" ? 1 : -1;
     return 0;
   });
@@ -144,7 +214,7 @@ export default function PostedPosts() {
 
       <PostedPostsTabs
         currentTab={currentTab}
-        queueTypes={queueTypes}
+        queueTypes={queueTypes.map(qt => ({ name: qt.name, color: qt.color ?? undefined }))}
         allContentLength={allContent.length}
         postsLength={filteredPosts.length}
         longformPostsLength={longformPosts.length}
@@ -157,28 +227,18 @@ export default function PostedPosts() {
           type="posted"
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
-          userTimezone={user?.timezone}
+          userTimezone={user?.timezone ?? undefined}
           onPostSelect={(content) => {
             // Handle selection based on content type
             if (content.type === "post") {
-              const postData = content.originalData;
-              if (postData && typeof postData === "object" && "id" in postData) {
-                setSelectedPost(postData as { id: string; content?: string; caption?: string; fileUrl?: string[]; queueType?: { name: string } | null; signedEvent?: unknown });
-              } else {
-                setSelectedPost(null);
-              }
+              setSelectedPost(content.originalData as PostData);
             } else {
-              const longformData = content.originalData;
-              if (longformData && typeof longformData === "object" && "id" in longformData) {
-                setSelectedLongFormPost(longformData as { id: string; title?: string; content?: string; queueType?: { name: string } | null; signedEvent?: unknown });
-              } else {
-                setSelectedLongFormPost(null);
-              }
+              setSelectedLongFormPost(content.originalData as LongFormPostData);
             }
           }}
           selectedItems={selectedPosts}
           onToggleSelection={togglePostSelection}
-          onToggleSelectAll={() => toggleSelectAll(filteredPosts)}
+          onToggleSelectAll={() => toggleSelectAll(filteredPosts as PostData[] | CombinedContent[])}
           showBulkActions={true}
           onBulkDelete={handleBulkDelete}
           bulkDeleteState={bulkDeleteFetcher.state}
@@ -189,7 +249,7 @@ export default function PostedPosts() {
           onBulkRepost={handleBulkRepost}
           onBulkScheduledRepost={handleBulkScheduledRepost}
           onBulkQuote={handleBulkQuote}
-          repostFetcher={repostFetcher}
+          repostFetcher={repostFetcher as PostFetcher}
         />
       ) : currentTab === "posts" ? (
         <div>
@@ -314,11 +374,11 @@ export default function PostedPosts() {
             selectedPosts={selectedPosts}
             stats={stats}
             sortConfig={sortConfig}
-            toggleSelectAll={() => toggleSelectAll(filteredPosts)}
+            toggleSelectAll={() => toggleSelectAll(filteredPosts as PostData[] | CombinedContent[])}
             togglePostSelection={togglePostSelection}
             requestSort={requestSort}
             setSelectedPost={setSelectedPost}
-            individualRepostFetcher={individualRepostFetcher}
+            individualRepostFetcher={individualRepostFetcher as unknown as typeof individualRepostFetcher}
             deleteFetcher={deleteFetcher}
             bulkDeleteFetcher={bulkDeleteFetcher}
           />
@@ -363,26 +423,22 @@ export default function PostedPosts() {
               showStats={true}
               showSignedEvent={true}
               type="posted"
-              userTimezone={user?.timezone}
+              userTimezone={user?.timezone ?? undefined}
             />
           ) : null}
         </div>
       ) : (
         /* Longform Posts Content */
         <LongFormListing
-          posts={longformPosts}
+          posts={longformPosts as unknown as LongFormPost[]}
           type="posted"
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
-          userTimezone={user?.timezone}
+          userTimezone={user?.timezone ?? undefined}
           longformRepostFetcher={longformRepostFetcher}
           longformQuoteFetcher={longformQuoteFetcher}
           onPostSelect={(post) => {
-            if (post && typeof post === "object" && "id" in post) {
-              setSelectedLongFormPost(post as { id: string; title?: string; content?: string; queueType?: { name: string } | null; signedEvent?: unknown });
-            } else {
-              setSelectedLongFormPost(null);
-            }
+            setSelectedLongFormPost(post as unknown as LongFormPostData);
           }}
         />
       )}
@@ -390,11 +446,11 @@ export default function PostedPosts() {
       {/* Long Form Post Details Modal */}
       {selectedLongFormPost ? (
         <LongFormDetailsModal
-          post={selectedLongFormPost}
+          post={selectedLongFormPost as unknown as LongFormPost}
           onClose={() => setSelectedLongFormPost(null)}
           type="posted"
           showSignedEvent={true}
-          userTimezone={user?.timezone}
+          userTimezone={user?.timezone ?? undefined}
         />
       ) : null}
 

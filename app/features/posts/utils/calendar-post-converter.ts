@@ -10,45 +10,53 @@ import type { PostData, LongFormPostData } from "~/features/posts/types";
  * Convert PostData to CalendarPost
  */
 export function postDataToCalendarPost(post: PostData): CalendarPost {
-  return {
+  const publishedAtValue = "publishedAt" in post && post.publishedAt 
+    ? (post.publishedAt instanceof Date ? post.publishedAt : typeof post.publishedAt === "string" ? post.publishedAt : null)
+    : null;
+  const result: CalendarPost = {
     ...post,
-    scheduledFor: post.scheduledFor || null,
-    postedAt: post.postedAt || null,
-    publishedAt: ("publishedAt" in post ? post.publishedAt : null) || null,
-    queueType: post.queueType || null,
+    scheduledFor: post.scheduledFor ?? null,
+    postedAt: post.postedAt ?? null,
+    publishedAt: publishedAtValue,
+    queueType: post.queueType ?? null,
     manual_override: post.manual_override ?? false,
-  } as CalendarPost;
+  };
+  return result;
 }
 
 /**
  * Convert LongFormPostData to CalendarPost
  */
 export function longFormPostDataToCalendarPost(post: LongFormPostData): CalendarPost {
-  return {
-    id: post.id,
-    userId: post.userId,
-    caption: post.content || null,
-    fileUrl: null,
-    hashtags: post.tags?.join(" ") || null,
+  const publishedAtValue = "publishedAt" in post && post.publishedAt 
+    ? (post.publishedAt instanceof Date ? post.publishedAt : typeof post.publishedAt === "string" ? post.publishedAt : null)
+    : null;
+  const templateIdValue = "templateId" in post && post.templateId 
+    ? (typeof post.templateId === "string" ? post.templateId : null)
+    : null;
+  const hashtagsValue = post.tags && Array.isArray(post.tags) ? post.tags.join(" ") : undefined;
+  const result: CalendarPost = {
+    ...post,
+    // Override specific fields for CalendarPost
+    caption: post.content ?? null,
+    fileUrl: [],
+    hashtags: hashtagsValue,
     isScheduled: post.isScheduled ?? false,
     isPosted: post.isPublished ?? false,
-    draft: post.draft ?? false,
-    status: post.status || "DRAFT",
-    queueTypeId: post.queueTypeId || null,
-    templateId: ("templateId" in post ? post.templateId : null) || null,
-    createdAt: post.createdAt,
-    updatedAt: post.updatedAt,
+    templateId: templateIdValue,
+    isRecyclable: ("isRecyclable" in post && typeof post.isRecyclable === "boolean") ? post.isRecyclable : false,
     // CalendarPost specific fields
-    title: post.title || undefined,
-    summary: post.summary || undefined,
-    image: post.image || undefined,
-    publishedAt: ("publishedAt" in post ? post.publishedAt : null) || null,
-    postedAt: ("publishedAt" in post ? post.publishedAt : null) || null,
-    scheduledFor: post.scheduledFor || null,
-    queueType: post.queueType || null,
+    title: post.title ?? undefined,
+    summary: post.summary ?? undefined,
+    image: post.image ?? undefined,
+    publishedAt: publishedAtValue,
+    postedAt: publishedAtValue,
+    scheduledFor: post.scheduledFor ?? null,
+    queueType: post.queueType ?? null,
     manual_override: false,
     isPast: false,
-  } as unknown as CalendarPost;
+  };
+  return result;
 }
 
 /**

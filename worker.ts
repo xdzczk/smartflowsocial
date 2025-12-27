@@ -1,7 +1,7 @@
 import { webcrypto as nodeWebcrypto } from "node:crypto";
 // Ensure Web Crypto API exists for server-side code that expects browser crypto
-if (!(globalThis as any).crypto?.getRandomValues) {
-  (globalThis as any).crypto = nodeWebcrypto as any;
+if (!((globalThis as { crypto?: Crypto }).crypto?.getRandomValues)) {
+  ((globalThis as { crypto: Crypto })).crypto = nodeWebcrypto as Crypto;
 }
 
 // Import and initialize the queue workers
@@ -17,16 +17,16 @@ console.log("Workers initialized:", {
 });
 
 // Keep the process alive
-process.on("SIGTERM", async () => {
+process.on("SIGTERM", () => {
   console.log("Worker shutting down...");
-  await scheduledPostsWorker.close();
-  await postCheckerWorker.close();
+  void scheduledPostsWorker.close();
+  void postCheckerWorker.close();
   process.exit(0);
 });
 
-process.on("SIGINT", async () => {
+process.on("SIGINT", () => {
   console.log("Worker shutting down...");
-  await scheduledPostsWorker.close();
-  await postCheckerWorker.close();
+  void scheduledPostsWorker.close();
+  void postCheckerWorker.close();
   process.exit(0);
 });

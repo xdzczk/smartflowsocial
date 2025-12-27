@@ -1,6 +1,3 @@
-import { useState } from "react";
-
-import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import type { EditorJSBlock } from "~/features/posts/types/editorjs.types";
 import { handleErrorSafely } from "~/lib/error-handler.client";

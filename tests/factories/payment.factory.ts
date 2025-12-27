@@ -66,7 +66,7 @@ export class PaymentFactory {
 
   withAmount(amount: number, amountUsd?: number): this {
     this.options.amount = amount;
-    this.options.amountUsd = amountUsd || null;
+    this.options.amountUsd = amountUsd ?? null;
     return this;
   }
 
@@ -89,7 +89,7 @@ export class PaymentFactory {
 
   asPaid(paidAt?: Date): this {
     this.options.status = "COMPLETED";
-    this.options.paidAt = paidAt || new Date();
+    this.options.paidAt = paidAt ?? new Date();
     this.options.failedAt = null;
     this.options.preimage = `preimage-${Math.random().toString(36).substring(7)}`;
     return this;
@@ -97,8 +97,8 @@ export class PaymentFactory {
 
   asFailed(failureReason?: string, failedAt?: Date): this {
     this.options.status = "FAILED";
-    this.options.failedAt = failedAt || new Date();
-    this.options.failureReason = failureReason || "Payment failed";
+    this.options.failedAt = failedAt ?? new Date();
+    this.options.failureReason = failureReason ?? "Payment failed";
     this.options.paidAt = null;
     return this;
   }
@@ -122,21 +122,21 @@ export class PaymentFactory {
     return {
       id: this.options.id!,
       userId: this.options.userId!,
-      amount: this.options.amount || 0,
-      amountUsd: this.options.amountUsd || null,
-      invoice: this.options.invoice || "",
-      paymentHash: this.options.paymentHash || "",
-      preimage: this.options.preimage || null,
-      status: this.options.status || "PENDING",
-      description: this.options.description || null,
-      subscriptionId: this.options.subscriptionId || null,
-      expiresAt: this.options.expiresAt || null,
-      paidAt: this.options.paidAt || null,
-      failedAt: this.options.failedAt || null,
-      failureReason: this.options.failureReason || null,
-      paymentMethod: this.options.paymentMethod || null,
-      createdAt: this.options.createdAt || new Date(),
-      updatedAt: this.options.updatedAt || new Date(),
+      amount: this.options.amount ?? 0,
+      amountUsd: this.options.amountUsd ?? null,
+      invoice: this.options.invoice ?? "",
+      paymentHash: this.options.paymentHash ?? "",
+      preimage: this.options.preimage ?? null,
+      status: this.options.status ?? "PENDING",
+      description: this.options.description ?? null,
+      subscriptionId: this.options.subscriptionId ?? null,
+      expiresAt: this.options.expiresAt ?? null,
+      paidAt: this.options.paidAt ?? null,
+      failedAt: this.options.failedAt ?? null,
+      failureReason: this.options.failureReason ?? null,
+      paymentMethod: this.options.paymentMethod ?? null,
+      createdAt: this.options.createdAt ?? new Date(),
+      updatedAt: this.options.updatedAt ?? new Date(),
     } as Payment;
   }
 }

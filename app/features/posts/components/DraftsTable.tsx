@@ -136,7 +136,7 @@ export function DraftsTable({
                 )}
               </td>
               <td className="p-3">
-                <p className="font-medium">{post.caption || "—"}</p>
+                <p className="font-medium">{post.caption ?? "—"}</p>
               </td>
               <td className="p-3">{formatDate(post.createdAt)}</td>
               <td className="p-3 text-center">

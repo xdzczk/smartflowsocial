@@ -1,4 +1,4 @@
-import WebSocket from "ws";
+import { WebSocket } from "ws";
 
 type CacheParams = Record<string, unknown>;
 type CacheResponse = unknown[];
@@ -32,7 +32,12 @@ async function tryConnectToCache(
 ): Promise<CacheResponse> {
   return new Promise((resolve, reject) => {
     let resolved = false;
-    const ws: WebSocket = new WebSocket(endpoint);
+    const ws = new WebSocket(endpoint) as unknown as WebSocket & {
+      onopen: (() => void) | null;
+      onmessage: ((event: { data: { toString(): string } }) => void) | null;
+      onerror: ((ev: Event) => void) | null;
+      onclose: (() => void) | null;
+    };
     const requestId = Math.random().toString(36).substring(2, 12);
     const responses: unknown[] = [];
 
@@ -191,7 +196,10 @@ async function tryConnectToCache(
       }
     };
 
-    ws.onerror = (error: Error) => {
+    ws.onerror = (ev: Event) => {
+      const error = ev instanceof ErrorEvent && ev.error instanceof Error 
+        ? ev.error 
+        : new Error("WebSocket error");
       console.error(`[WS] WebSocket error on ${endpoint}:`, error);
       ws.close();
       if (!resolved) {

@@ -68,7 +68,7 @@ export function NotificationItem({
     });
 
     const displayName =
-        notification.authorName ||
+        notification.authorName ??
         notification.pubkey.substring(0, 8) + "..." + notification.pubkey.slice(-4);
 
     // Get trust score for this user

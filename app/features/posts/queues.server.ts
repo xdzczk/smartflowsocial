@@ -58,8 +58,8 @@ function toSignedEvent(value: Prisma.JsonValue | null | undefined): SignedEvent 
 }
 
 // Get queue instances using the abstraction
-const scheduledPostsQueue = getQueueInstance("scheduled-posts");
-const scheduledLongFormPostsQueue = getQueueInstance("scheduled-longform-posts");
+const _scheduledPostsQueue = getQueueInstance("scheduled-posts");
+const _scheduledLongFormPostsQueue = getQueueInstance("scheduled-longform-posts");
 const postCheckerQueue = getQueueInstance("post-checker");
 
 // Worker to process scheduled posts
@@ -100,7 +100,12 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
       if (!user) {
         throw new Error(`User ${userId} not found`);
       }
-      const sanitizedRelays = (user.userRelays || []).map((relay: string) => relay.trim());
+      const userRelays = user && typeof user === "object" && "userRelays" in user ? user.userRelays : null;
+      const relaysArray = Array.isArray(userRelays) ? userRelays : [];
+      const sanitizedRelays = relaysArray.map((relay: unknown) => {
+        const relayStr = typeof relay === "string" ? relay : String(relay);
+        return relayStr.trim();
+      });
 
       // Post to nostr publisher endpoint
       const response = await fetch(process.env.NOSTR_PUBLISHER_URL!, {
@@ -174,7 +179,12 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
       if (!user) {
         throw new Error(`User ${userId} not found`);
       }
-      const sanitizedRelays = (user.userRelays || []).map((relay: string) => relay.trim());
+      const userRelays = user && typeof user === "object" && "userRelays" in user ? user.userRelays : null;
+      const relaysArray = Array.isArray(userRelays) ? userRelays : [];
+      const sanitizedRelays = relaysArray.map((relay: unknown) => {
+        const relayStr = typeof relay === "string" ? relay : String(relay);
+        return relayStr.trim();
+      });
 
       // Post to nostr publisher endpoint
       const response = await fetch(process.env.NOSTR_PUBLISHER_URL!, {
@@ -223,12 +233,19 @@ export const postCheckerWorker = new Worker(
 
       // Process regular posts
       for (const post of posts) {
-        if (!post.userId || !post.signedEvent || !post.scheduledFor) continue;
+        if (!post || typeof post !== "object") continue;
+        const postId = "id" in post && typeof post.id === "string" ? post.id : null;
+        const postUserId = "userId" in post && typeof post.userId === "string" ? post.userId : null;
+        const postSignedEvent = "signedEvent" in post ? post.signedEvent : null;
+        const postScheduledFor = "scheduledFor" in post && typeof post.scheduledFor === "string" ? post.scheduledFor : null;
         
-        const signedEvent = toSignedEvent(post.signedEvent);
+        if (!postUserId || !postSignedEvent || !postScheduledFor || !postId) continue;
+        
+        const signedEvent = toSignedEvent(postSignedEvent);
         if (!signedEvent) continue;
         
-        const scheduledTime = parseInt(post.scheduledFor, 10);
+        const scheduledTime = parseInt(postScheduledFor, 10);
+        if (isNaN(scheduledTime)) continue;
         const timeDiff = scheduledTime - now;
 
         if (timeDiff <= 1) {
@@ -236,8 +253,8 @@ export const postCheckerWorker = new Worker(
           const { enqueuePostJob } = await import("~/infra/queue");
           // Use 0 for immediate processing when timeDiff <= 1
           await enqueuePostJob(
-            post.id,
-            post.userId,
+            postId,
+            postUserId,
             signedEvent,
             timeDiff <= 0 ? 0 : scheduledTime,
           );
@@ -246,12 +263,19 @@ export const postCheckerWorker = new Worker(
 
       // Process longform posts
       for (const longformPost of longformPosts) {
-        if (!longformPost.userId || !longformPost.signedEvent || !longformPost.scheduledFor) continue;
+        if (!longformPost || typeof longformPost !== "object") continue;
+        const longformPostId = "id" in longformPost && typeof longformPost.id === "string" ? longformPost.id : null;
+        const longformPostUserId = "userId" in longformPost && typeof longformPost.userId === "string" ? longformPost.userId : null;
+        const longformPostSignedEvent = "signedEvent" in longformPost ? longformPost.signedEvent : null;
+        const longformPostScheduledFor = "scheduledFor" in longformPost && typeof longformPost.scheduledFor === "string" ? longformPost.scheduledFor : null;
         
-        const signedEvent = toSignedEvent(longformPost.signedEvent);
+        if (!longformPostUserId || !longformPostSignedEvent || !longformPostScheduledFor || !longformPostId) continue;
+        
+        const signedEvent = toSignedEvent(longformPostSignedEvent);
         if (!signedEvent) continue;
         
-        const scheduledTime = parseInt(longformPost.scheduledFor, 10);
+        const scheduledTime = parseInt(longformPostScheduledFor, 10);
+        if (isNaN(scheduledTime)) continue;
         const timeDiff = scheduledTime - now;
 
         if (timeDiff <= 1) {
@@ -259,8 +283,8 @@ export const postCheckerWorker = new Worker(
           const { enqueueLongFormPostJob } = await import("~/infra/queue");
           // Use 0 for immediate processing when timeDiff <= 1
           await enqueueLongFormPostJob(
-            longformPost.id,
-            longformPost.userId,
+            longformPostId,
+            longformPostUserId,
             signedEvent,
             timeDiff <= 0 ? 0 : scheduledTime,
           );
@@ -307,18 +331,22 @@ void (async () => {
 })();
 
 // Graceful shutdown
-process.on("SIGTERM", async () => {
-  await scheduledPostsWorker.close();
-  await scheduledLongFormPostsWorker.close();
-  await postCheckerWorker.close();
-  await closeAllQueues();
+process.on("SIGTERM", () => {
+  void (async () => {
+    await scheduledPostsWorker.close();
+    await scheduledLongFormPostsWorker.close();
+    await postCheckerWorker.close();
+    await closeAllQueues();
+  })();
 });
 
-process.on("SIGINT", async () => {
-  await scheduledPostsWorker.close();
-  await scheduledLongFormPostsWorker.close();
-  await postCheckerWorker.close();
-  await closeAllQueues();
+process.on("SIGINT", () => {
+  void (async () => {
+    await scheduledPostsWorker.close();
+    await scheduledLongFormPostsWorker.close();
+    await postCheckerWorker.close();
+    await closeAllQueues();
+  })();
 });
 
 // Re-export queue operations for backward compatibility during migration

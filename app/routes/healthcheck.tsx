@@ -4,7 +4,7 @@ import type { LoaderFunctionArgs } from "@remix-run/node";
 import {
   performHealthCheck,
   handleHealthCheckError,
-} from "~/features/infra/services/healthcheck.server";
+} from "~/features/infra";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {

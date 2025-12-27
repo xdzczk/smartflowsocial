@@ -1,4 +1,3 @@
-import { useFetcher } from "@remix-run/react";
 import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 
@@ -9,7 +8,6 @@ import { usePostScheduling } from "~/features/posts/hooks/usePostScheduling";
 import type { QueueType, HashTagPreset } from "~/features/posts/types";
 import {
   validateAndProcessFiles,
-  isAcceptableFile,
 } from "~/features/posts/utils/file-processing.client";
 import { uploadMultipleFiles } from "~/features/upload/upload.client";
 import { useOptionalUser } from "~/lib/remix-utils";
@@ -58,15 +56,14 @@ export default function MediaPost({
   selectedHashTagPresetId,
   onHashtagPresetChange,
 }: MediaPostProps) {
-  const fetcher = useFetcher();
   const user = useOptionalUser();
 
   const [isRecyclable, setIsRecyclable] = useState(false);
   const [useHashtagPresets, setUseHashtagPresets] = useState(false);
   const [selectedHashtagPresetId, setSelectedHashtagPresetId] = useState(
-    selectedHashTagPresetId || null,
+    selectedHashTagPresetId ?? null,
   );
-  const [selectedHashtags, setSelectedHashtags] = useState("");
+  const [_selectedHashtags, setSelectedHashtags] = useState("");
   const [timeError, setTimeError] = useState<string | null>(null);
 
   // Use the shared scheduling hook
@@ -125,11 +122,11 @@ export default function MediaPost({
       try {
         const res = await fetch("/api/user-upload-provider");
         const data: unknown = await res.json();
-        const provider = data && typeof data === "object" && !Array.isArray(data) && "provider" in data && typeof data.provider === "string" ? data.provider : undefined;
+        const provider = data && typeof data === "object" && !Array.isArray(data) && "provider" in data && typeof data.provider === "string" ? data.provider : null;
         setUploadProvider(provider);
       } catch (err) {
          
-        const { handleErrorSafely } = require("~/lib/error-handler.client") as { handleErrorSafely: (error: unknown, context: { component: string; action: string }) => void };
+        const { handleErrorSafely } = require("~/lib/error-handler.client") as unknown as { handleErrorSafely: (error: unknown, context: { component: string; action: string }) => void };
         handleErrorSafely(err, {
           component: "MediaPost",
           action: "fetchUploadProvider",
@@ -159,7 +156,7 @@ export default function MediaPost({
     // Get form data
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
-    const caption = formData.get("caption") || "";
+    const caption = formData.get("caption") ?? "";
 
     try {
       // Use the new upload utility that handles both S3 and Blossom
@@ -199,11 +196,11 @@ export default function MediaPost({
           content: {
             fileUrl: url.fileUrl,
             scheduledFor: url.scheduledFor,
-            caption: typeof url.caption === "string" ? url.caption : String(url.caption || ""),
-            queueType: url.queueType || selectedQueue,
+            caption: typeof url.caption === "string" ? url.caption : String(url.caption ?? ""),
+            queueType: url.queueType ?? selectedQueue,
           },
           type: "media",
-          queueType: url.queueType || selectedQueue,
+          queueType: url.queueType ?? selectedQueue,
         };
       });
 
@@ -213,7 +210,7 @@ export default function MediaPost({
       setIsUploading(false);
     } catch (error) {
       const { handleAsyncError, getErrorMessage } = await import("~/lib/error-handler.client");
-      const errorMessage = getErrorMessage(error) || "Unknown error";
+      const errorMessage = getErrorMessage(error) ?? "Unknown error";
       handleAsyncError(error, {
         component: "MediaPost",
         action: "handleImagePreview",
@@ -237,7 +234,7 @@ export default function MediaPost({
   const isUploaded = false; // Removed old fetcher logic
 
   return (
-    <form className="w-full" onSubmit={handleImagePreview}>
+    <form className="w-full" onSubmit={(e) => void handleImagePreview(e)}>
       <input type="hidden" name="_action" value="upload-media-preview" />
       <label
         className={`block ${isUploaded ? "cursor-not-allowed" : "cursor-pointer"}`}
@@ -248,12 +245,12 @@ export default function MediaPost({
           className="hidden"
           accept="image/*,video/*"
           multiple
-          onChange={handleFileChange}
+          onChange={(e) => void handleFileChange(e)}
           disabled={isUploading || isUploaded}
         />
         <div
           className={`rounded-lg border-2 border-dashed border-gray-300 p-12 text-center ${!isUploaded && "hover:border-gray-400"}`}
-          onDrop={!isUploaded ? handleDrop : undefined}
+          onDrop={!isUploaded ? ((e) => void handleDrop(e)) : undefined}
           onDragOver={!isUploaded ? handleDragOver : undefined}
         >
           {files.length > 0 ? (
@@ -365,7 +362,7 @@ export default function MediaPost({
             showQueuePreset={selectedQueue !== "unassigned"}
             queueType={(queueTypes.find(
               (q) => (typeof q === "string" ? q : q.name) === selectedQueue,
-            ) || null) as QueueType | null | undefined}
+            ) ?? null) as QueueType | null | undefined}
           />
           <div className="mb-2 flex items-center gap-2">
             <input
@@ -390,8 +387,10 @@ export default function MediaPost({
             scheduleIntervals={scheduleIntervals}
             queueTypes={queueTypes}
             selectedQueue={selectedQueue}
-            onScheduleIntervalClick={handleScheduleIntervalClick}
-            onCalculateNextSlot={() => calculateQueueScheduleTime(selectedQueue)}
+            onScheduleIntervalClick={(intervalHours) => void handleScheduleIntervalClick(intervalHours)}
+            onCalculateNextSlot={() => {
+              void calculateQueueScheduleTime(selectedQueue);
+            }}
             disabled={isUploading || isUploaded}
             showTimeInput={true}
           />

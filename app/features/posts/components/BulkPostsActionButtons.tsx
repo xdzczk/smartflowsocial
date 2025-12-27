@@ -74,8 +74,8 @@ export default function BulkPostsActionButtons({
                                 disabled={isProcessing}
                                 className={`rounded-full px-4 py-2 text-sm ${getDynamicQueueStyle(queueColor ?? null, isAllSelected)} disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100`}
                                 style={{
-                                    backgroundColor: queueColor || undefined,
-                                    borderColor: queueColor || undefined,
+                                    backgroundColor: queueColor ?? undefined,
+                                    borderColor: queueColor ?? undefined,
                                 }}
                             >
                                 {queueName}

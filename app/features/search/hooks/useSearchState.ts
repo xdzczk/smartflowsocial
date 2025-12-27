@@ -68,7 +68,7 @@ export function useSearchState({ user, fetcherData }: UseSearchStateProps) {
     const quotePostData = [
       {
         caption: "", // Empty caption - user can add content
-        fileUrl: searchResult.mediaUrls?.[0] || "",
+        fileUrl: searchResult.mediaUrls?.[0] ?? "",
         queueType: "unassigned",
         scheduledFor: "",
         originalPostId: null, // No local post ID for external events
@@ -117,7 +117,7 @@ export function useSearchState({ user, fetcherData }: UseSearchStateProps) {
         originalEventId: searchResult.id,
         originalEventPubkey: searchResult.pubkey,
         isKind6Repost: true,
-        originalFileUrl: searchResult.mediaUrls || [],
+        originalFileUrl: searchResult.mediaUrls ?? [],
         originalCaption: searchResult.content || "",
         isRecyclable: false,
       },

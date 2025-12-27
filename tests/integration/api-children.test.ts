@@ -70,8 +70,14 @@ describe("API: Children", () => {
 
       const request = new Request("http://localhost:3000/api/children");
 
-      const response = await loader({ request, params: {}, context: {} });
-      const data = await response.json();
+      interface LoaderArgs {
+        request: Request;
+        params: Record<string, string | undefined>;
+        context: Record<string, unknown>;
+      }
+      const response = await loader({ request, params: {}, context: {} } as LoaderArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
 
       expect(requireUserId).toHaveBeenCalledWith(request);
       expect(getUserBasicInfo).toHaveBeenCalledWith(TEST_USER_ID);
@@ -113,8 +119,14 @@ describe("API: Children", () => {
 
       const request = new Request("http://localhost:3000/api/children");
 
-      const response = await loader({ request, params: {}, context: {} });
-      const data = await response.json();
+      interface LoaderArgs {
+        request: Request;
+        params: Record<string, string | undefined>;
+        context: Record<string, unknown>;
+      }
+      const response = await loader({ request, params: {}, context: {} } as LoaderArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
 
       expect(data.children).toEqual([]);
     });
@@ -137,8 +149,14 @@ describe("API: Children", () => {
 
       const request = new Request("http://localhost:3000/api/children");
 
-      const response = await loader({ request, params: {}, context: {} });
-      const data = await response.json();
+      interface LoaderArgs {
+        request: Request;
+        params: Record<string, string | undefined>;
+        context: Record<string, unknown>;
+      }
+      const response = await loader({ request, params: {}, context: {} } as LoaderArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
 
       expect(data.children).toEqual([]);
     });
@@ -168,8 +186,14 @@ describe("API: Children", () => {
 
       const request = new Request("http://localhost:3000/api/children");
 
-      const response = await loader({ request, params: {}, context: {} });
-      const data = await response.json();
+      interface LoaderArgs {
+        request: Request;
+        params: Record<string, string | undefined>;
+        context: Record<string, unknown>;
+      }
+      const response = await loader({ request, params: {}, context: {} } as LoaderArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
 
       expect(data.children).toEqual([
         {
@@ -210,8 +234,14 @@ describe("API: Children", () => {
 
       const request = new Request("http://localhost:3000/api/children");
 
-      const response = await loader({ request, params: {}, context: {} });
-      const data = await response.json();
+      interface LoaderArgs {
+        request: Request;
+        params: Record<string, string | undefined>;
+        context: Record<string, unknown>;
+      }
+      const response = await loader({ request, params: {}, context: {} } as LoaderArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
 
       expect(data.children[0].name).toBe("Child 1");
       expect(data.children[0].displayName).toBe("Child One");
@@ -228,8 +258,14 @@ describe("API: Children", () => {
 
       const request = new Request("http://localhost:3000/api/children");
 
-      const response = await loader({ request, params: {}, context: {} });
-      const data = await response.json();
+      interface LoaderArgs {
+        request: Request;
+        params: Record<string, string | undefined>;
+        context: Record<string, unknown>;
+      }
+      const response = await loader({ request, params: {}, context: {} } as LoaderArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
 
       expect(data).toEqual({ children: [] });
       expect(getUserSubscription).not.toHaveBeenCalled();
@@ -244,8 +280,14 @@ describe("API: Children", () => {
 
       const request = new Request("http://localhost:3000/api/children");
 
-      const response = await loader({ request, params: {}, context: {} });
-      const data = await response.json();
+      interface LoaderArgs {
+        request: Request;
+        params: Record<string, string | undefined>;
+        context: Record<string, unknown>;
+      }
+      const response = await loader({ request, params: {}, context: {} } as LoaderArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
 
       expect(data).toEqual({ children: [] });
       expect(getUserSubscription).not.toHaveBeenCalled();
@@ -268,8 +310,14 @@ describe("API: Children", () => {
 
       const request = new Request("http://localhost:3000/api/children");
 
-      const response = await loader({ request, params: {}, context: {} });
-      const data = await response.json();
+      interface LoaderArgs {
+        request: Request;
+        params: Record<string, string | undefined>;
+        context: Record<string, unknown>;
+      }
+      const response = await loader({ request, params: {}, context: {} } as LoaderArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
 
       expect(data).toEqual({ children: [] });
       expect(getConfirmedChildrenForParent).not.toHaveBeenCalled();
@@ -287,8 +335,14 @@ describe("API: Children", () => {
 
       const request = new Request("http://localhost:3000/api/children");
 
-      const response = await loader({ request, params: {}, context: {} });
-      const data = await response.json();
+      interface LoaderArgs {
+        request: Request;
+        params: Record<string, string | undefined>;
+        context: Record<string, unknown>;
+      }
+      const response = await loader({ request, params: {}, context: {} } as LoaderArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
 
       expect(data).toEqual({ children: [] });
     });
@@ -329,8 +383,14 @@ describe("API: Children", () => {
 
       const request = new Request("http://localhost:3000/api/children");
 
-      const response = await loader({ request, params: {}, context: {} });
-      const data = await response.json();
+      interface LoaderArgs {
+        request: Request;
+        params: Record<string, string | undefined>;
+        context: Record<string, unknown>;
+      }
+      const response = await loader({ request, params: {}, context: {} } as LoaderArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
 
       // Should return empty array on error
       expect(data).toEqual({ children: [] });
@@ -361,11 +421,19 @@ describe("API: Children", () => {
 
       const request = new Request("http://localhost:3000/api/children");
 
-      const response = await loader({ request, params: {}, context: {} });
-      const data = await response.json();
+      interface LoaderArgs {
+        request: Request;
+        params: Record<string, string | undefined>;
+        context: Record<string, unknown>;
+      }
+      const response = await loader({ request, params: {}, context: {} } as LoaderArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
 
       // Should handle parse error gracefully
-      expect(data.children[0].name).toBeUndefined();
+      const children = Array.isArray(data.children) ? data.children : [];
+      const firstChild = children[0] && typeof children[0] === "object" && !Array.isArray(children[0]) ? children[0] as { name?: string; displayName?: string; npub?: string; picture?: string } : {};
+      expect(firstChild.name).toBeUndefined();
     });
   });
 });

@@ -157,7 +157,7 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
             fc.constant(null),
           ), // lastPostTime or null
           fc.constantFrom("UTC", "America/New_York", "Europe/London", "Asia/Tokyo"), // timezone
-          async (intervalHours, lastPostTime, timezone) => {
+          async (intervalHours: number, lastPostTime: Date | null, timezone: string) => {
             try {
               // Reset mocks for this test run to ensure clean state
               vi.clearAllMocks();
@@ -215,7 +215,7 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
             fc.date({ min: new Date("2020-01-01"), max: new Date() }), // Past or present date
             fc.constant(null),
           ),
-          async (intervalHours, lastPostTime) => {
+          async (intervalHours: number, lastPostTime: Date | null) => {
             try {
               // Reset mocks for this test run to ensure clean state
               vi.clearAllMocks();
@@ -264,7 +264,7 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
       fc.assert(
         fc.asyncProperty(
           fc.integer({ min: 1, max: 168 }), // 1 hour to 1 week
-          async (intervalHours) => {
+          async (intervalHours: number) => {
             try {
               // Reset mocks for this test run to ensure clean state
               vi.clearAllMocks();
@@ -332,7 +332,7 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
             { minLength: 1, maxLength: 10 },
           ),
           fc.constantFrom("UTC", "America/New_York", "Europe/London"),
-          async (slots, timezone) => {
+          async (slots: [number, number][], timezone: string) => {
             try {
               // Reset mocks for this test run
               vi.clearAllMocks();
@@ -406,7 +406,7 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
             ),
             { minLength: 1, maxLength: 5 },
           ),
-          async (slots) => {
+          async (slots: [number, number][]) => {
             try {
               // Reset mocks for this test run to ensure clean state
               vi.clearAllMocks();
@@ -471,7 +471,7 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
       fc.assert(
         fc.asyncProperty(
           fc.constantFrom("UTC", "America/New_York", "Europe/London", "Asia/Tokyo", "Australia/Sydney"),
-          async (timezone) => {
+          async (timezone: string) => {
             try {
               // Reset mocks for this test run to ensure clean state
               vi.clearAllMocks();
@@ -568,7 +568,7 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
       fc.assert(
         fc.asyncProperty(
           fc.constant([]),
-          async (slots) => {
+          async (slots: [number, number][]) => {
             try {
               // Reset mocks for this test run to ensure clean state
               vi.clearAllMocks();
@@ -576,13 +576,25 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
               (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(["4"]);
               (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
               
+              // Convert slots to string format (e.g., "09:00")
+              const slotStrings = slots.map(
+                (slot) => `${String(slot[0]).padStart(2, '0')}:${String(slot[1]).padStart(2, '0')}`
+              );
+              
               const queueType = {
                 id: "queue-1",
                 name: "test-queue",
                 scheduleType: "FIXED_SLOTS" as const,
                 scheduleConfig: {
-                  slots,
+                  slots: slotStrings,
                 },
+                userId: TEST_USER_ID,
+                isEnabled: true,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                color: null,
+                description: null,
+                hashTagPresetId: null,
               };
 
               const result = await calculateNextScheduleTime({
@@ -619,7 +631,7 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
       fc.assert(
         fc.asyncProperty(
           fc.integer({ min: 1, max: 8760 }), // Up to 1 year
-          async (intervalHours) => {
+          async (intervalHours: number) => {
             try {
               // Reset mocks for this test run to ensure clean state
               vi.clearAllMocks();

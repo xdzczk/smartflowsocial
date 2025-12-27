@@ -42,7 +42,7 @@ export function initSentry(): void {
       // Enable profiling in production (optional)
       profilesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
       // Filter out health checks and other noise
-      beforeSend(event: unknown, hint: unknown) {
+      beforeSend(event: unknown, _hint: unknown) {
         // Don't send events for health checks
         const sentryEvent = event as { request?: { url?: string } };
         if (sentryEvent.request?.url?.includes("/health")) {

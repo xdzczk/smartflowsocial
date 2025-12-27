@@ -1,5 +1,4 @@
 import { useFetcher, Link } from "@remix-run/react";
-import type { FetcherWithComponents } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
 import type { PostFetcher } from "~/features/posts/types";
@@ -85,7 +84,7 @@ export default function LongFormListing({
 
   const filteredPosts = sortedPosts.filter(
     (post) =>
-      post.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      post.title?.toLowerCase().includes(searchTerm.toLowerCase()) ??
       post.summary?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
@@ -257,7 +256,7 @@ export default function LongFormListing({
     }
   }, [bulkDeleteFetcher.data]);
 
-  const getStatusBadge = (post: LongFormPost) => {
+  const getStatusBadge = (_post: LongFormPost) => {
     if (type === "draft") {
       return (
         <div className="inline-flex rounded-full border border-transparent bg-orange-100 px-2 py-1 text-xs font-semibold leading-4 text-orange-900 dark:border-orange-900/75 dark:bg-orange-700/10 dark:text-orange-200">
@@ -462,28 +461,28 @@ export default function LongFormListing({
                   <p className="font-medium">
                     {post.title && post.title.length > 40
                       ? post.title.substring(0, 40) + "..."
-                      : post.title || "Untitled"}
+                      : post.title ?? "Untitled"}
                   </p>
                 </td>
                 <td className="max-w-xs p-3">
                   <p className="line-clamp-2 text-sm text-gray-600 dark:text-gray-400">
                     {post.summary && post.summary.length > 60
                       ? post.summary.substring(0, 60) + "..."
-                      : post.summary || "No summary"}
+                      : post.summary ?? "No summary"}
                   </p>
                 </td>
                 <td className="p-3">
                   {formatDate(
                     type === "posted"
-                      ? (post.publishedAt || undefined)
+                      ? (post.publishedAt ?? undefined)
                       : type === "scheduled"
-                        ? (post.scheduledFor || undefined)
+                        ? (post.scheduledFor ?? undefined)
                         : (post.createdAt || undefined),
                   )}
                 </td>
                 <td className="p-3 text-center">
                   <span className="text-sm text-gray-500 dark:text-gray-400">
-                    {getReadingTime(post.content || undefined)}
+                    {getReadingTime(post.content ?? undefined)}
                   </span>
                 </td>
                 {type === "scheduled" ? (
@@ -530,10 +529,10 @@ export default function LongFormListing({
                       </>
                     ) : null}
                     {type === "posted" &&
-                    (post.nostrEventId || (post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent ? (post.signedEvent as { id?: string }).id : undefined)) ? (
+                    (post.nostrEventId ?? (post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent ? (post.signedEvent as { id?: string }).id : undefined)) ? (
                       <>
                         <Link
-                          to={`https://primal.net/a/${post.nostrEventId || (post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent ? (post.signedEvent as { id?: string }).id : "")}`}
+                          to={`https://primal.net/a/${String(post.nostrEventId ?? (post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent ? (post.signedEvent as { id?: string }).id : "") ?? '')}`}
                           target="_blank"
                           rel="noreferrer"
                           onClick={(e) => e.stopPropagation()}

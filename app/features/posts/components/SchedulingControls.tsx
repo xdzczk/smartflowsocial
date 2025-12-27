@@ -85,7 +85,7 @@ export default function SchedulingControls({
     }
   }, [selectedQueueType, calculateQueueScheduleTime]);
 
-  const handleScheduleIntervalClick = (intervalHours: string) => {
+  const _handleScheduleIntervalClick = (intervalHours: string) => {
     const now = new Date();
     const hoursLater = new Date(
       now.getTime() + parseInt(intervalHours) * 60 * 60 * 1000,

@@ -55,8 +55,8 @@ export function QueueTypesSettings({
     null,
   );
 
-  const isCreating = createFetcher.state === "submitting";
-  const isUpdating = updateFetcher.state === "submitting";
+  const _isCreating = createFetcher.state === "submitting";
+  const _isUpdating = updateFetcher.state === "submitting";
   const isDeleting = deleteFetcher.state === "submitting";
 
   useEffect(() => {

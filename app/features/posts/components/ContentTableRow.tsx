@@ -5,12 +5,8 @@ import type {
   CombinedContent,
   LongFormPostData,
   PostData,
- PostFetcher } from "~/features/posts/types";
-
-// Helper to safely access formData from a fetcher
-function getFetcherFormData(fetcher: PostFetcher | undefined): FormData | null | undefined {
-  return (fetcher as { formData?: FormData | null })?.formData;
-}
+  PostFetcher,
+} from "~/features/posts/types";
 import {
   formatDate,
   getContentPreview,
@@ -21,6 +17,11 @@ import {
   getStatusColor,
   getStatusText,
 } from "~/features/posts/utils/content-helpers";
+
+// Helper to safely access formData from a fetcher
+function getFetcherFormData(fetcher: PostFetcher | undefined): FormData | null | undefined {
+  return (fetcher as { formData?: FormData | null })?.formData;
+}
 
 interface ContentTableRowProps {
   item: CombinedContent;
@@ -215,7 +216,7 @@ function ContentRowActions({
           (item.originalData?.nostrEventId ||
             item.originalData?.signedEvent?.id) ? (
             <Link
-              to={`https://primal.net/a/${item.originalData.nostrEventId || item.originalData.signedEvent?.id}`}
+              to={`https://primal.net/a/${item.originalData.nostrEventId ?? (item.originalData.signedEvent?.id ?? "")}`}
               target="_blank"
               rel="noreferrer"
               onClick={(e) => e.stopPropagation()}

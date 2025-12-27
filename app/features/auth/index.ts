@@ -30,3 +30,14 @@ export {
   updateUserProfile,
 } from "~/features/user";
 
+// ============================================================================
+// Nostr Authentication
+// ============================================================================
+
+export { authenticateNostrUser } from "./services/nostr-auth.server";
+
+// ============================================================================
+// Components (Public API)
+// ============================================================================
+
+export { default as NostrAuthButton } from "./components/NostrAuthButton";

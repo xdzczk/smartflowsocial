@@ -126,7 +126,7 @@ export function usePlansState({ user, actionData }: UsePlansStateProps) {
 
   // Function to copy invoice to clipboard
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
+    void navigator.clipboard.writeText(text);
   };
 
   return {

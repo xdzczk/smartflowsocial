@@ -23,7 +23,7 @@ export async function createAsset({
       title,
       content,
       fileUrl,
-      tags: tags || [],
+      tags: tags ?? [],
       assetType,
     },
   });

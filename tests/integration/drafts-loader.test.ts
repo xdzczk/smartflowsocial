@@ -57,8 +57,9 @@ describe("Drafts Loader Integration", () => {
   describe("Drafts Loader", () => {
     it("should load drafts data for authenticated user", async () => {
       const request = new Request("http://localhost:3000/dashboard/drafts");
-      const response = await loader({ request, params: {} });
-      const data = await response.json();
+      const response = await loader({ request, params: {} } as { request: Request; params: Record<string, string> });
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
 
       expect(response.status).toBe(200);
       expect(requireUserId).toHaveBeenCalledWith(request);
@@ -89,12 +90,15 @@ describe("Drafts Loader Integration", () => {
       const response = await loader({ 
         request, 
         params: { queueType: "posts" } 
-      });
-      const data = await response.json();
+      } as { request: Request; params: { queueType: string } });
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
 
       expect(loadDraftsData).toHaveBeenCalledWith("user-123", "posts");
-      expect(data.selectedQueueType).toBe("posts");
-      expect(data.posts).toHaveLength(1);
+      const selectedQueueType = typeof data.selectedQueueType === "string" ? data.selectedQueueType : "";
+      const posts = Array.isArray(data.posts) ? data.posts : [];
+      expect(selectedQueueType).toBe("posts");
+      expect(posts).toHaveLength(1);
     });
 
     it("should return proper data structure with drafts", async () => {
@@ -122,13 +126,18 @@ describe("Drafts Loader Integration", () => {
       (loadDraftsData as ReturnType<typeof vi.fn>).mockResolvedValue(mockData);
 
       const request = new Request("http://localhost:3000/dashboard/drafts");
-      const response = await loader({ request, params: {} });
-      const data = await response.json();
+      const response = await loader({ request, params: {} } as { request: Request; params: Record<string, string> });
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
 
-      expect(data.posts).toHaveLength(2);
-      expect(data.longformPosts).toHaveLength(1);
-      expect(data.allContent).toHaveLength(3);
-      expect(data.user).toHaveProperty("timezone", "America/New_York");
+      const posts = Array.isArray(data.posts) ? data.posts : [];
+      const longformPosts = Array.isArray(data.longformPosts) ? data.longformPosts : [];
+      const allContent = Array.isArray(data.allContent) ? data.allContent : [];
+      const user = data.user && typeof data.user === "object" && !Array.isArray(data.user) ? data.user as { timezone?: string } : {};
+      expect(posts).toHaveLength(2);
+      expect(longformPosts).toHaveLength(1);
+      expect(allContent).toHaveLength(3);
+      expect(user).toHaveProperty("timezone", "America/New_York");
     });
   });
 
@@ -139,12 +148,15 @@ describe("Drafts Loader Integration", () => {
       );
 
       const request = new Request("http://localhost:3000/dashboard/drafts");
-      const response = await loader({ request, params: {} });
-      const data = await response.json();
+      const response = await loader({ request, params: {} } as { request: Request; params: Record<string, string> });
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
       
       expect(response.status).toBe(500);
       expect(data.error).toBeDefined();
-      expect(data.error.message).toContain("Authentication required");
+      const error = data.error && typeof data.error === "object" && !Array.isArray(data.error) ? data.error as { message?: string } : {};
+      const errorMessage = typeof error.message === "string" ? error.message : "";
+      expect(errorMessage).toContain("Authentication required");
     });
 
     it("should handle subscription requirement errors", async () => {
@@ -153,12 +165,15 @@ describe("Drafts Loader Integration", () => {
       );
 
       const request = new Request("http://localhost:3000/dashboard/drafts");
-      const response = await loader({ request, params: {} });
-      const data = await response.json();
+      const response = await loader({ request, params: {} } as { request: Request; params: Record<string, string> });
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
       
       expect(response.status).toBe(500);
       expect(data.error).toBeDefined();
-      expect(data.error.message).toContain("Subscription required");
+      const error = data.error && typeof data.error === "object" && !Array.isArray(data.error) ? data.error as { message?: string } : {};
+      const errorMessage = typeof error.message === "string" ? error.message : "";
+      expect(errorMessage).toContain("Subscription required");
     });
 
     it("should handle feature access errors", async () => {
@@ -167,12 +182,15 @@ describe("Drafts Loader Integration", () => {
       );
 
       const request = new Request("http://localhost:3000/dashboard/drafts");
-      const response = await loader({ request, params: {} });
-      const data = await response.json();
+      const response = await loader({ request, params: {} } as { request: Request; params: Record<string, string> });
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
       
       expect(response.status).toBe(500);
       expect(data.error).toBeDefined();
-      expect(data.error.message).toContain("Feature access denied");
+      const error = data.error && typeof data.error === "object" && !Array.isArray(data.error) ? data.error as { message?: string } : {};
+      const errorMessage = typeof error.message === "string" ? error.message : "";
+      expect(errorMessage).toContain("Feature access denied");
     });
   });
 });

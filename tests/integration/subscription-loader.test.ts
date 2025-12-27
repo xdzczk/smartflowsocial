@@ -71,8 +71,9 @@ describe("Subscription/Billing Loader Integration", () => {
   describe("Subscription Settings Loader", () => {
     it("should load subscription settings data for authenticated user", async () => {
       const request = new Request("http://localhost:3000/dashboard/settings?tab=subscription");
-      const response = await loader({ request });
-      const data = await response.json();
+      const response = await loader({ request } as { request: Request; params?: Record<string, string>; context?: Record<string, unknown> });
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
 
       expect(response.status).toBe(200);
       expect(requireUserId).toHaveBeenCalledWith(request);
@@ -125,8 +126,9 @@ describe("Subscription/Billing Loader Integration", () => {
       (loadSettingsData as ReturnType<typeof vi.fn>).mockResolvedValue(mockData);
 
       const request = new Request("http://localhost:3000/dashboard/settings?tab=subscription");
-      const response = await loader({ request });
-      const data = await response.json();
+      const response = await loader({ request } as { request: Request; params?: Record<string, string>; context?: Record<string, unknown> });
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
 
       expect(data.subscription).toHaveProperty("status", "ACTIVE");
       expect(data.subscription).toHaveProperty("planId", "premium");
@@ -165,8 +167,9 @@ describe("Subscription/Billing Loader Integration", () => {
       (loadSettingsData as ReturnType<typeof vi.fn>).mockResolvedValue(mockData);
 
       const request = new Request("http://localhost:3000/dashboard/settings?tab=subscription");
-      const response = await loader({ request });
-      const data = await response.json();
+      const response = await loader({ request } as { request: Request; params?: Record<string, string>; context?: Record<string, unknown> });
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
 
       expect(data.subscription).toBeNull();
       expect(data.availablePlans).toHaveLength(2);
@@ -212,8 +215,9 @@ describe("Subscription/Billing Loader Integration", () => {
       (loadSettingsData as ReturnType<typeof vi.fn>).mockResolvedValue(mockData);
 
       const request = new Request("http://localhost:3000/dashboard/settings?tab=subscription");
-      const response = await loader({ request });
-      const data = await response.json();
+      const response = await loader({ request } as { request: Request; params?: Record<string, string>; context?: Record<string, unknown> });
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
 
       expect(data.subscription).toHaveProperty("status", "EXPIRED");
     });
@@ -258,8 +262,9 @@ describe("Subscription/Billing Loader Integration", () => {
       (loadSettingsData as ReturnType<typeof vi.fn>).mockResolvedValue(mockData);
 
       const request = new Request("http://localhost:3000/dashboard/settings?tab=subscription");
-      const response = await loader({ request });
-      const data = await response.json();
+      const response = await loader({ request } as { request: Request; params?: Record<string, string>; context?: Record<string, unknown> });
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
 
       expect(data.paymentHistory).toHaveLength(3);
       expect(data.paymentHistory[0]).toHaveProperty("amount", 2000);

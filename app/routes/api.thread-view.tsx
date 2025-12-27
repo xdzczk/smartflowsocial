@@ -6,7 +6,6 @@ import {
   assert,
 } from "~/lib/error-handler.server";
 import {
-  ValidationError,
   ExternalServiceError,
 } from "~/lib/errors";
 
@@ -48,7 +47,7 @@ export const loader = withErrorHandling(
     if (Array.isArray(threadViewData)) {
       for (const item of threadViewData) {
         if (!Array.isArray(item) || item[0] !== "EVENT" || !item[2]) continue;
-        const eventData = item[2];
+        const eventData: unknown = item[2] as unknown;
         if (!eventData || typeof eventData !== "object" || Array.isArray(eventData)) continue;
         const event = eventData as { kind?: number; pubkey?: string; content?: string; id?: string; tags?: string[][]; created_at?: number };
 

@@ -56,7 +56,7 @@ export default function PostConfirmation({ preparedEvents, postsCount }: PostCon
           "isRecyclable",
           data.isRecyclable ? "true" : "false",
         );
-        finalFormData.append("originalPostId", data.originalPostId || "");
+        finalFormData.append("originalPostId", data.originalPostId ?? "");
       });
       finalFormData.append("_action", "sign_and_schedule");
 
@@ -88,7 +88,7 @@ export default function PostConfirmation({ preparedEvents, postsCount }: PostCon
         "isRecyclable",
         eventData.isRecyclable ? "true" : "false",
       );
-      finalFormData.append("originalPostId", eventData.originalPostId || "");
+      finalFormData.append("originalPostId", eventData.originalPostId ?? "");
     });
     finalFormData.append("_action", "save_as_draft");
 
@@ -314,7 +314,7 @@ export default function PostConfirmation({ preparedEvents, postsCount }: PostCon
             💾 Save as Draft
           </button>
           <button
-            onClick={handleSignAndSubmit}
+            onClick={() => void handleSignAndSubmit()}
             className="rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 px-8 py-3 text-sm font-medium text-white shadow-lg transition-all hover:from-blue-600 hover:to-blue-700 hover:shadow-xl disabled:cursor-not-allowed disabled:from-blue-300 disabled:to-blue-400"
             disabled={isSubmitting}
           >

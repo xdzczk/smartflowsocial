@@ -8,6 +8,7 @@ import { json } from "@remix-run/node";
 
 import { combineContent } from "~/features/posts/combined.server";
 import type { PostData, LongFormPostData } from "~/features/posts/types";
+import { convertPrismaQueueTypeToQueueType } from "~/features/posts/types";
 import {
   enqueuePostJob as schedulePost,
   cancelPostJob as cancelScheduledPost,
@@ -44,7 +45,7 @@ export async function getScheduledDashboardData({
   userId: string;
   queueType: string;
 }) {
-  const [posts, allLongformPosts, user, queueTypes, hashTagPresets] =
+  const [posts, allLongformPosts, user, queueTypesRaw, hashTagPresetsRaw] =
     await Promise.all([
       getScheduledPosts({ userId, queueType }),
       getScheduledLongFormPosts({ userId }),
@@ -52,6 +53,9 @@ export async function getScheduledDashboardData({
       getQueueTypes(userId),
       getUserHashTagPresets(userId),
     ]);
+  
+  const queueTypes = Array.isArray(queueTypesRaw) ? queueTypesRaw : [];
+  const hashTagPresets = Array.isArray(hashTagPresetsRaw) ? hashTagPresetsRaw : [];
 
   // Filter longform posts by queue type if specific queue is selected
   const longformPosts =
@@ -62,22 +66,28 @@ export async function getScheduledDashboardData({
   // Convert PostWithQueueType[] to PostData[] for combineContent
   const postsData: PostData[] = posts.map((post) => {
     const { queueType, ...rest } = post;
-    return {
+    const signedEventValue: PostData["signedEvent"] = post.signedEvent as PostData["signedEvent"];
+    const nostrEventValue: PostData["nostrEvent"] = post.nostrEvent as PostData["nostrEvent"];
+    const postData: PostData = {
       ...rest,
-      queueType: queueType || undefined,
-      signedEvent: post.signedEvent as PostData["signedEvent"],
-      nostrEvent: post.nostrEvent as PostData["nostrEvent"],
-    } as PostData;
+      queueType: convertPrismaQueueTypeToQueueType(queueType),
+      signedEvent: signedEventValue,
+      nostrEvent: nostrEventValue,
+    };
+    return postData;
   });
 
   // Convert LongFormPost[] to LongFormPostData[] for combineContent
   const longformPostsData: LongFormPostData[] = longformPosts.map((post) => {
-    return {
+    const signedEventValue: LongFormPostData["signedEvent"] = post.signedEvent as LongFormPostData["signedEvent"];
+    const nostrEventValue: LongFormPostData["nostrEvent"] = post.nostrEvent as LongFormPostData["nostrEvent"];
+    const longformPostData: LongFormPostData = {
       ...post,
-      queueType: ("queueType" in post && post.queueType) || undefined,
-      signedEvent: post.signedEvent as LongFormPostData["signedEvent"],
-      nostrEvent: post.nostrEvent as LongFormPostData["nostrEvent"],
-    } as LongFormPostData;
+      queueType: convertPrismaQueueTypeToQueueType("queueType" in post ? post.queueType : undefined),
+      signedEvent: signedEventValue,
+      nostrEvent: nostrEventValue,
+    };
+    return longformPostData;
   });
 
   // Combine posts and longform posts for the "All" tab
@@ -93,7 +103,9 @@ export async function getScheduledDashboardData({
     longformPosts,
     allContent,
     user,
-    queueTypes: queueTypes.filter((qt) => qt.isEnabled !== false),
+    queueTypes: queueTypes.filter((qt: unknown) => 
+      typeof qt === "object" && qt !== null && "isEnabled" in qt && qt.isEnabled !== false
+    ),
     selectedQueueType: queueType,
     hashTagPresets,
   };
@@ -120,13 +132,29 @@ export async function handleScheduledPostAction(
   }
 
   if (_action === "bulkDelete") {
-    const postIds = JSON.parse(formData.get("postIds") as string) as string[];
+    const postIdsValue = formData.get("postIds");
+    const postIdsStr = postIdsValue ? String(postIdsValue) : "[]";
+    let postIds: string[] = [];
+    try {
+      const parsed: unknown = JSON.parse(postIdsStr);
+      postIds = Array.isArray(parsed) ? parsed.filter((id: unknown): id is string => typeof id === "string") : [];
+    } catch {
+      postIds = [];
+    }
     await Promise.all(postIds.map((id: string) => deletePost({ id, userId })));
     return json({ success: true });
   }
 
   if (_action === "bulkDeleteLongForm") {
-    const postIds = JSON.parse(formData.get("postIds") as string) as string[];
+    const postIdsValue = formData.get("postIds");
+    const postIdsStr = postIdsValue ? String(postIdsValue) : "[]";
+    let postIds: string[] = [];
+    try {
+      const parsed: unknown = JSON.parse(postIdsStr);
+      postIds = Array.isArray(parsed) ? parsed.filter((id: unknown): id is string => typeof id === "string") : [];
+    } catch {
+      postIds = [];
+    }
     await Promise.all(
       postIds.map((id: string) => deleteLongFormPost({ id, userId })),
     );
@@ -134,7 +162,21 @@ export async function handleScheduledPostAction(
   }
 
   if (_action === "bulkDeleteMixed") {
-    const itemData = JSON.parse(formData.get("itemData") as string) as { id: string; type: string }[];
+    const itemDataValue = formData.get("itemData");
+    const itemDataStr = itemDataValue ? String(itemDataValue) : "[]";
+    let itemData: { id: string; type: string }[] = [];
+    try {
+      const parsed: unknown = JSON.parse(itemDataStr);
+      if (Array.isArray(parsed)) {
+        itemData = parsed.filter((item: unknown): item is { id: string; type: string } => 
+          typeof item === "object" && item !== null && "id" in item && "type" in item &&
+          typeof (item as { id: unknown; type: unknown }).id === "string" &&
+          typeof (item as { id: unknown; type: unknown }).type === "string"
+        );
+      }
+    } catch {
+      itemData = [];
+    }
     const promises = itemData.map((item: { id: string; type: string }) => {
       if (item.type === "post") {
         return deletePost({ id: item.id, userId });
@@ -169,8 +211,10 @@ export async function handleScheduledPostAction(
     let parsedNostrEvent = null;
     if (signedEventStr && nostrEventStr) {
       try {
-        parsedSignedEvent = JSON.parse(signedEventStr) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][]; sig: string };
-        parsedNostrEvent = JSON.parse(nostrEventStr) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][] };
+        const parsedSigned: unknown = JSON.parse(signedEventStr);
+        const parsedNostr: unknown = JSON.parse(nostrEventStr);
+        parsedSignedEvent = typeof parsedSigned === "object" && parsedSigned !== null ? parsedSigned as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][]; sig: string } : null;
+        parsedNostrEvent = typeof parsedNostr === "object" && parsedNostr !== null ? parsedNostr as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][] } : null;
       } catch (e) {
         logError(e instanceof Error ? e : new Error(String(e)), {
           userId,
@@ -186,8 +230,8 @@ export async function handleScheduledPostAction(
       newScheduledFor: newTime,
       overrideQueue,
       queueTypeId,
-      signedEvent: parsedSignedEvent || undefined,
-      nostrEvent: parsedNostrEvent || undefined,
+      signedEvent: parsedSignedEvent ?? undefined,
+      nostrEvent: parsedNostrEvent ?? undefined,
     });
 
     if (parsedSignedEvent && parsedNostrEvent) {
@@ -217,8 +261,10 @@ export async function handleScheduledPostAction(
     let parsedNostrEvent = null;
     if (signedEventStr && nostrEventStr) {
       try {
-        parsedSignedEvent = JSON.parse(signedEventStr) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][]; sig: string };
-        parsedNostrEvent = JSON.parse(nostrEventStr) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][] };
+        const parsedSigned: unknown = JSON.parse(signedEventStr);
+        const parsedNostr: unknown = JSON.parse(nostrEventStr);
+        parsedSignedEvent = typeof parsedSigned === "object" && parsedSigned !== null ? parsedSigned as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][]; sig: string } : null;
+        parsedNostrEvent = typeof parsedNostr === "object" && parsedNostr !== null ? parsedNostr as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][] } : null;
       } catch (e) {
         logError(e instanceof Error ? e : new Error(String(e)), {
           userId,
@@ -233,8 +279,8 @@ export async function handleScheduledPostAction(
       userId,
       publishedAt: new Date(parseInt(newTime) * 1000),
       status: "SCHEDULED",
-      signedEvent: parsedSignedEvent || undefined,
-      nostrEvent: parsedNostrEvent || undefined,
+      signedEvent: parsedSignedEvent ?? undefined,
+      nostrEvent: parsedNostrEvent ?? undefined,
     });
 
     return json({
@@ -251,10 +297,10 @@ export async function handleScheduledPostAction(
     const hashtags = (formData.get("hashtags") ?? "") as string;
     const signedEventStr = formData.get("signedEvent") as string;
     const nostrEventStr = formData.get("nostrEvent") as string;
-    const queueTypeId = (formData.get("queueTypeId") as string) || null;
-    const scheduledFor = (formData.get("scheduledFor") as string) || null;
+    const queueTypeId = (formData.get("queueTypeId") as string) ?? null;
+    const scheduledFor = (formData.get("scheduledFor") as string) ?? null;
     const hashTagPresetId =
-      (formData.get("hashTagPresetId") as string) || null;
+      (formData.get("hashTagPresetId") as string) ?? null;
 
     if (!postId) {
       return json({ error: "Missing postId" }, { status: 400 });
@@ -264,8 +310,10 @@ export async function handleScheduledPostAction(
     let parsedNostrEvent = null;
     if (signedEventStr && nostrEventStr) {
       try {
-        parsedSignedEvent = JSON.parse(signedEventStr) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][]; sig: string };
-        parsedNostrEvent = JSON.parse(nostrEventStr) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][] };
+        const parsedSigned: unknown = JSON.parse(signedEventStr);
+        const parsedNostr: unknown = JSON.parse(nostrEventStr);
+        parsedSignedEvent = typeof parsedSigned === "object" && parsedSigned !== null ? parsedSigned as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][]; sig: string } : null;
+        parsedNostrEvent = typeof parsedNostr === "object" && parsedNostr !== null ? parsedNostr as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][] } : null;
       } catch (e) {
         logError(e instanceof Error ? e : new Error(String(e)), {
           userId,
@@ -278,7 +326,8 @@ export async function handleScheduledPostAction(
     let parsedFileUrl: string[] = [];
     if (fileUrl) {
       try {
-        parsedFileUrl = JSON.parse(fileUrl) as string[];
+        const parsed: unknown = JSON.parse(fileUrl);
+        parsedFileUrl = Array.isArray(parsed) ? parsed.filter((item: unknown): item is string => typeof item === "string") : [];
       } catch (e) {
         logError(e instanceof Error ? e : new Error(String(e)), {
           userId,
@@ -332,7 +381,7 @@ export async function handleScheduledPostAction(
     const image = (formData.get("image") ?? "") as string;
     const signedEventStr = formData.get("signedEvent") as string;
     const nostrEventStr = formData.get("nostrEvent") as string;
-    const scheduledFor = (formData.get("scheduledFor") as string) || null;
+    const scheduledFor = (formData.get("scheduledFor") as string) ?? null;
 
     if (!postId) {
       return json({ error: "Missing postId" }, { status: 400 });
@@ -342,8 +391,10 @@ export async function handleScheduledPostAction(
     let parsedNostrEvent = null;
     if (signedEventStr && nostrEventStr) {
       try {
-        parsedSignedEvent = JSON.parse(signedEventStr) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][]; sig: string };
-        parsedNostrEvent = JSON.parse(nostrEventStr) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][] };
+        const parsedSigned: unknown = JSON.parse(signedEventStr);
+        const parsedNostr: unknown = JSON.parse(nostrEventStr);
+        parsedSignedEvent = typeof parsedSigned === "object" && parsedSigned !== null ? parsedSigned as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][]; sig: string } : null;
+        parsedNostrEvent = typeof parsedNostr === "object" && parsedNostr !== null ? parsedNostr as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][] } : null;
       } catch (e) {
         logError(e instanceof Error ? e : new Error(String(e)), {
           userId,
@@ -364,8 +415,8 @@ export async function handleScheduledPostAction(
         ? new Date(Number(scheduledFor) * 1000)
         : undefined,
       status: "SCHEDULED",
-      signedEvent: parsedSignedEvent || undefined,
-      nostrEvent: parsedNostrEvent || undefined,
+      signedEvent: parsedSignedEvent ?? undefined,
+      nostrEvent: parsedNostrEvent ?? undefined,
     });
 
     return json({

@@ -17,7 +17,7 @@ interface SubmitOptions {
 export function useBlossomAwareUpload() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [response, setResponse] = useState(null);
+  const [response, setResponse] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
@@ -80,11 +80,11 @@ export function useBlossomAwareUpload() {
       );
     }
 
-    let uploadUrl: string;
+    let _uploadUrl: string;
     if (provider === "BLOSSOM_PRIMAL") {
-      uploadUrl = "https://blossom.primal.net/upload";
+      _uploadUrl = "https://blossom.primal.net/upload";
     } else if (provider === "BLOSSOM_BLOSSTR") {
-      uploadUrl = "https://blosstr.com/upload";
+      _uploadUrl = "https://blosstr.com/upload";
     } else {
       throw new Error("Invalid blossom provider");
     }

@@ -118,6 +118,11 @@ describeDatabase("Database Integration Example", () => {
         userId: user.id!,
         content: "Test post",
         queueTypeId: queue.id!,
+        fileUrl: [],
+        tags: [],
+        isScheduled: false,
+        isPosted: false,
+        postType: "TEXT",
       });
 
       expect(post).toBeDefined();

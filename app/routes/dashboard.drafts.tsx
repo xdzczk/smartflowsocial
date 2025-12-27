@@ -4,25 +4,33 @@ import {
   useParams,
   Outlet,
   useSearchParams,
-  useRevalidator,
 } from "@remix-run/react";
 
 import { requireUserId } from "~/features/auth/session.server";
 import { requireFeatureAccess, requireAnySubscription } from "~/features/payments/subscriptions.server";
-import AllContentListing from "~/features/posts/components/AllContentListing";
-import DraftBulkResume from "~/features/posts/components/DraftBulkResume";
-import { DraftsBulkActions } from "~/features/posts/components/DraftsBulkActions";
-import { DraftsHeader } from "~/features/posts/components/DraftsHeader";
-import { DraftsPostTypeTabs } from "~/features/posts/components/DraftsPostTypeTabs";
-import { DraftsTable } from "~/features/posts/components/DraftsTable";
-import LongFormListing from "~/features/posts/components/LongFormListing";
-import PostDetailsModal from "~/features/posts/components/PostDetailsModal";
-import { PostsSearch } from "~/features/posts/components/PostsSearch";
-import QueueSelectionTabs from "~/features/posts/components/QueueSelectionTabs";
-import { useDraftsState } from "~/features/posts/hooks/useDraftsState";
-import { handleDraftsAction } from "~/features/posts/services/drafts-action.server";
-import { loadDraftsData } from "~/features/posts/services/drafts-loader.server";
+import {
+  AllContentListing,
+  DraftBulkResume,
+  DraftsBulkActions,
+  DraftsHeader,
+  DraftsPostTypeTabs,
+  DraftsTable,
+  LongFormListing,
+  PostDetailsModal,
+  PostsSearch,
+  QueueSelectionTabs,
+  useDraftsState,
+  handleDraftsAction,
+  loadDraftsData,
+  type PostData,
+  type LongFormPostData,
+  type CombinedContent,
+  type QueueType,
+  type UserData,
+  convertJsonValueToScheduleConfig,
+} from "~/features/posts";
 import { withErrorHandling, withActionErrorHandling } from "~/lib/error-handler.server";
+import type { LongFormPost } from "~/models/longformpost.server";
 
 async function loaderImpl({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
@@ -56,17 +64,52 @@ type LoaderData = Awaited<ReturnType<typeof loaderImpl>>;
 
 export default function DraftPosts() {
   const data = useLoaderData<LoaderData>();
-  const {
-    posts,
-    longformPosts,
-    allContent,
-    user,
-    queueTypes,
-    selectedQueueType,
-  } = data;
+  const postsRaw = "posts" in data && Array.isArray(data.posts) ? data.posts : [];
+  const longformPostsRaw = "longformPosts" in data && Array.isArray(data.longformPosts) ? data.longformPosts : [];
+  const allContentRaw = "allContent" in data && Array.isArray(data.allContent) ? data.allContent : [];
+  const userRaw = "user" in data ? data.user : null;
+  const queueTypesRaw = "queueTypes" in data && Array.isArray(data.queueTypes) ? data.queueTypes : [];
+
+  // Type assertions for Remix JsonifyObject serialization
+  const posts: PostData[] = Array.isArray(postsRaw) ? postsRaw as unknown as PostData[] : [];
+  const longformPosts: LongFormPostData[] = Array.isArray(longformPostsRaw) ? longformPostsRaw as unknown as LongFormPostData[] : [];
+  const allContent: CombinedContent[] = Array.isArray(allContentRaw) ? allContentRaw as unknown as CombinedContent[] : [];
+  const user: UserData | null | undefined = userRaw ? (userRaw as unknown as UserData) : null;
+
+  // Conversion function: PostData -> Post (for useDraftsState hook)
+  // useDraftsState expects Post with createdAt: string
+  const convertPostDataToDraftsPost = (postData: PostData): { id: string; caption?: string | null; createdAt: string; [key: string]: unknown } => {
+    return {
+      ...postData,
+      createdAt: postData.createdAt instanceof Date ? postData.createdAt.toISOString() : typeof postData.createdAt === "string" ? postData.createdAt : new Date().toISOString(),
+    };
+  };
+  const queueTypes: QueueType[] = Array.isArray(queueTypesRaw) ? queueTypesRaw.map((qt: unknown) => {
+    if (qt && typeof qt === "object" && qt !== null && "id" in qt && "name" in qt) {
+      const q = qt as { id?: unknown; name?: unknown; color?: unknown; scheduleType?: unknown; scheduleConfig?: unknown; isEnabled?: unknown; userId?: unknown };
+      const id = typeof q.id === "string" ? q.id : String(q.id ?? "");
+      const name = typeof q.name === "string" ? q.name : String(q.name ?? "");
+      const color = q.color !== null && q.color !== undefined ? (typeof q.color === "string" ? q.color : String(q.color)) : null;
+      const scheduleType = typeof q.scheduleType === "string" && (q.scheduleType === "INTERVAL" || q.scheduleType === "FIXED_SLOTS") ? q.scheduleType : undefined;
+      const scheduleConfig = convertJsonValueToScheduleConfig(q.scheduleConfig);
+      const isEnabled = typeof q.isEnabled === "boolean" ? q.isEnabled : q.isEnabled !== false;
+      const userId = typeof q.userId === "string" ? q.userId : "";
+      const result: QueueType = {
+        id,
+        name,
+        color,
+        description: undefined,
+        scheduleType,
+        scheduleConfig,
+        isEnabled,
+        userId,
+      };
+      return result;
+    }
+    return null;
+  }).filter((qt): qt is QueueType => qt !== null) : [];
   const params = useParams();
   const [searchParams] = useSearchParams();
-  const revalidator = useRevalidator();
 
   // Check if we're on a child route (like edit)
   const isChildRoute = params.id;
@@ -90,7 +133,9 @@ export default function DraftPosts() {
     toggleSelectAll,
     handleBulkDelete,
     setShowAdvancedBulkResume,
-  } = useDraftsState({ posts });
+  } = useDraftsState({ 
+    posts: posts.map(convertPostDataToDraftsPost)
+  });
 
   // If we're on a child route, render the child component
   if (isChildRoute) {
@@ -133,10 +178,11 @@ export default function DraftPosts() {
           type="draft"
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
-          userTimezone={user?.timezone}
+          userTimezone={user?.timezone ?? undefined}
           onPostSelect={(content) => {
             if (content.type === "post") {
-              setSelectedPost(content.originalData as unknown as { id: string; content?: string; caption?: string; fileUrl?: string[]; queueType?: { name: string } | null } | null);
+              const postData = content.originalData as PostData;
+              setSelectedPost(convertPostDataToDraftsPost(postData));
             }
           }}
           selectedItems={selectedPosts}
@@ -165,18 +211,30 @@ export default function DraftPosts() {
             selectedPosts={selectedPosts}
             onToggleSelection={togglePostSelection}
             onToggleSelectAll={toggleSelectAll}
-            onPostClick={(post) => setSelectedPost(post as unknown as { id: string; content?: string; caption?: string; fileUrl?: string[]; queueType?: { name: string } | null } | null)}
+            onPostClick={(post) => {
+              // Find the original PostData from posts array
+              const originalPostData = posts.find(p => p.id === post.id);
+              if (originalPostData) {
+                setSelectedPost(convertPostDataToDraftsPost(originalPostData));
+              }
+            }}
             bulkDeleteState={bulkDeleteFetcher.state}
           />
 
-          {selectedPost ? (
-            <PostDetailsModal
-              post={selectedPost as unknown as { id: string; content?: string; caption?: string; fileUrl?: string[]; queueType?: { name: string } | null }}
-              onClose={() => setSelectedPost(null)}
-              type="draft"
-              userTimezone={user?.timezone ?? undefined}
-            />
-          ) : null}
+          {selectedPost ? (() => {
+            const postData = posts.find(p => p.id === selectedPost.id) as PostData | undefined;
+            const combinedContent = allContent.find(c => c.id === selectedPost.id) as CombinedContent | undefined;
+            const fallbackPost = selectedPost as unknown as PostData | CombinedContent;
+            const postToShow = postData ?? combinedContent ?? fallbackPost;
+            return postToShow ? (
+              <PostDetailsModal
+                post={postToShow}
+                onClose={() => setSelectedPost(null)}
+                type="draft"
+                userTimezone={user?.timezone ?? undefined}
+              />
+            ) : null;
+          })() : null}
 
           {/* Bulk Edit */}
           {showAdvancedBulkResume ? (
@@ -184,8 +242,8 @@ export default function DraftPosts() {
               <DraftBulkResume
                 selectedDrafts={filteredPosts.filter((post) =>
                   selectedPosts.has(post.id),
-                ) as unknown as { id: string; content?: string; caption?: string; fileUrl?: string[]; queueType?: string; scheduledFor?: string }[]}
-                queueTypes={Array.isArray(queueTypes) ? queueTypes as unknown as { id: string; name: string; color?: string | null; scheduleType?: string; scheduleConfig?: unknown; isEnabled?: boolean }[] : []}
+                ) as unknown as PostData[]}
+                queueTypes={queueTypes}
                 onCancel={() => setShowAdvancedBulkResume(false)}
               />
             </div>
@@ -193,11 +251,11 @@ export default function DraftPosts() {
         </div>
       ) : (
         <LongFormListing
-          posts={longformPosts}
+          posts={longformPosts as unknown as LongFormPost[]}
           type="draft"
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
-          userTimezone={user?.timezone}
+          userTimezone={user?.timezone ?? undefined}
           onPostSelect={(_post) => {
             // TODO: Add longform post detail modal here if needed
           }}

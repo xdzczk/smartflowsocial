@@ -287,14 +287,14 @@ describe("Statistics Service", () => {
       global.AbortController = vi.fn(() => ({
         abort: abortSpy,
         signal: {} as AbortSignal,
-      })) as any;
+      })) as typeof AbortController;
 
       // Mock setTimeout to trigger timeout immediately
       const originalSetTimeout = global.setTimeout;
-      global.setTimeout = vi.fn((callback: any) => {
+      global.setTimeout = vi.fn((callback: () => void) => {
         callback();
-        return 123 as any;
-      }) as any;
+        return 123 as ReturnType<typeof setTimeout>;
+      }) as typeof setTimeout;
 
       (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(
         () =>

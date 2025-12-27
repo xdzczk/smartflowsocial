@@ -32,3 +32,22 @@ export {
   handleTemplatesAction,
 } from "./services/templates-action.server";
 
+export {
+  loadTemplateEditData,
+  handleTemplateEditAction,
+} from "./services/template-edit.server";
+
+// ============================================================================
+// Components (Public API)
+// ============================================================================
+
+export { TemplateDetailsModal } from "./components/TemplateDetailsModal";
+export { TemplatesHeader } from "./components/TemplatesHeader";
+export { TemplatesTabs } from "./components/TemplatesTabs";
+export { ToastNotification } from "./components/ToastNotification";
+
+// ============================================================================
+// Hooks (Public API)
+// ============================================================================
+
+export { useTemplatesState } from "./hooks/useTemplatesState";

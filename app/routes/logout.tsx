@@ -19,7 +19,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 export const loader = async ({ request: _request }: LoaderFunctionArgs) => {
   try {
     return redirect("/");
-  } catch (error) {
+  } catch (_error) {
     // For logout loader, errors are non-critical - just redirect
     return redirect("/");
   }

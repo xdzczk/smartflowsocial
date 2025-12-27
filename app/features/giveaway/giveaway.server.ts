@@ -68,7 +68,7 @@ export const fetchGiveawayParticipants = async (
                 (tag: string[]) => Array.isArray(tag) && tag[0] === "description",
               ) : undefined;
               if (descriptionTag && Array.isArray(descriptionTag) && descriptionTag[1] && typeof descriptionTag[1] === "string") {
-                const zapRequestParsed = JSON.parse(descriptionTag[1]);
+                const zapRequestParsed: unknown = JSON.parse(descriptionTag[1]);
                 if (zapRequestParsed && typeof zapRequestParsed === "object" && !Array.isArray(zapRequestParsed) && "tags" in zapRequestParsed) {
                   const zapRequest = zapRequestParsed as { tags?: string[][] };
                   const amountTag = Array.isArray(zapRequest.tags) ? zapRequest.tags.find(
@@ -100,7 +100,7 @@ export const fetchGiveawayParticipants = async (
           // Extract stats from kind 10000100
           if (event.kind === 10000100 && event.content && typeof event.content === "string") {
             try {
-              const statsContentParsed = JSON.parse(event.content);
+              const statsContentParsed: unknown = JSON.parse(event.content);
               if (statsContentParsed && typeof statsContentParsed === "object" && !Array.isArray(statsContentParsed)) {
                 const statsContent = statsContentParsed as { event_id?: string; likes?: number; reposts?: number; zaps?: number };
                 if (statsContent.event_id === eventId) {

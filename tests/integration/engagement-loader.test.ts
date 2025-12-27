@@ -118,7 +118,7 @@ describe("Engagement Loader", () => {
       expect(result).toHaveProperty("groupedNotifications");
       expect(result).toHaveProperty("trustScores");
       expect(result.posts).toHaveLength(1); // Only post-1 has replies > 0
-      expect(result.posts[0].signedEvent.id).toBe("event-1");
+      expect(result.posts[0]?.signedEvent && typeof result.posts[0].signedEvent === "object" && "id" in result.posts[0].signedEvent ? result.posts[0].signedEvent.id : null).toBe("event-1");
     });
 
     it("should filter posts to only show those with replies", async () => {
@@ -155,7 +155,7 @@ describe("Engagement Loader", () => {
       // Mock thread_view calls - the implementation calls connectToPrimalCache("thread_view", ...) for each event
       // The implementation processes events in batches, so we need to mock for each event ID
       (connectToPrimalCache as ReturnType<typeof vi.fn>)
-        .mockImplementation((method: string, params: any) => {
+        .mockImplementation((method: string, params: Record<string, unknown>) => {
           if (method === "thread_view") {
             // Return stats based on event_id
             if (params.event_id === "event-1") {
@@ -187,7 +187,7 @@ describe("Engagement Loader", () => {
       // The function filters posts to only show those with replies > 0
       // event-1 has replies: 2, event-2 has replies: 0
       expect(result.posts).toHaveLength(1);
-      expect(result.posts[0].signedEvent.id).toBe("event-1");
+      expect(result.posts[0]?.signedEvent && typeof result.posts[0].signedEvent === "object" && "id" in result.posts[0].signedEvent ? result.posts[0].signedEvent.id : null).toBe("event-1");
     });
 
     it("should filter muted users when filterMuted is enabled", async () => {

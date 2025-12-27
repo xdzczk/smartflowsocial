@@ -39,13 +39,14 @@ SmartFlowSocial is built with **Remix**, a full-stack web framework. Follow thes
 ### Prerequisites
 
 - **Node.js**: Version 20.0.0 or higher
+- **pnpm**: Install with `pnpm install -g pnpm`
 - **PostgreSQL**: Database server (local or remote)
 - **Git**: For version control
 
 ### 1. Install Dependencies
 
 ```bash
-npm install
+ppnpm install
 ```
 
 ### 2. Set Up Environment Variables
@@ -73,17 +74,17 @@ STORAGE_BUCKET=your_s3_bucket
 
 ```bash
 # Generate Prisma client
-npx prisma generate
+pnpm exec prisma generate
 
 # Run database push command
-npx prisma db push
+pnpm exec prisma db push
 
 ```
 
 ### 4. Start Development Server
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 The application will be available at [http://localhost:3000](http://localhost:3000).
@@ -93,7 +94,7 @@ The application will be available at [http://localhost:3000](http://localhost:30
 For a quick setup with PostgreSQL:
 
 ```bash
-npm run docker
+pnpm docker
 ```
 
 This starts a PostgreSQL container using the provided `docker-compose.yml`.
@@ -114,8 +115,8 @@ To ensure a consistent and maintainable codebase, please follow these coding sta
 ### 2. **Code Style**
 
 - Use **ESLint** and **Prettier** for code formatting
-- Run `npm run lint` to check for issues
-- Run `npm run format` to auto-format code
+- Run `pnpm lint` to check for issues
+- Run `pnpm format` to auto-format code
 - Follow the existing code style patterns
 
 ### 3. **Naming Conventions**
@@ -476,7 +477,7 @@ Use appropriate labels to categorize issues:
    ```bash
    git clone https://github.com/xdzczk/SmartFlowSocial.git
    cd SmartFlowSocial
-   npm install
+   pnpm install
    ```
 
 2. **Configure Environment:**
@@ -488,7 +489,7 @@ Use appropriate labels to categorize issues:
 3. **Start Services:**
    ```bash
    # Start PostgreSQL and Redis with Docker
-   npm run docker
+   pnpm docker
    
    # Or use existing services
    # Set DATABASE_URL and REDIS_URL in .env
@@ -496,23 +497,23 @@ Use appropriate labels to categorize issues:
 
 4. **Setup Database:**
    ```bash
-   npx prisma generate
-   npx prisma db push
-   npm run db:seed
+   pnpm exec prisma generate
+   pnpm exec prisma db push
+   pnpm db:seed
    ```
 
 5. **Start Development Server:**
    ```bash
    # Terminal 1: Main application
-   npm run dev
+   pnpm dev
    
    # Terminal 2: Worker process (optional, for testing scheduled posts)
-   npm run start:worker
+   pnpm start:worker
    ```
 
 6. **Verify Setup:**
    - Application: http://localhost:3000
-   - Prisma Studio: `npx prisma studio` (http://localhost:5555)
+   - Prisma Studio: `pnpm exec prisma studio` (http://localhost:5555)
    - Health check: http://localhost:3000/healthcheck
 
 ### Development Process
@@ -530,17 +531,17 @@ Use appropriate labels to categorize issues:
 3. **Test Locally:**
    ```bash
    # Run linter
-   npm run lint
+   pnpm lint
    
    # Run type check
-   npx tsc --noEmit
+   pnpm exec tsc --noEmit
    
    # Run tests
-   npm test
+   pnpm test
    
    # Run specific test suite
-   npm run test:unit
-   npm run test:integration
+   pnpm test:unit
+   pnpm test:integration
    ```
 
 4. **Commit Changes:**
@@ -564,12 +565,12 @@ Use appropriate labels to categorize issues:
 **Creating Migrations:**
 ```bash
 # Make changes to schema.prisma
-npx prisma migrate dev --name descriptive-migration-name
+pnpm exec prisma migrate dev --name descriptive-migration-name
 
 # Review generated migration
 # Test migration
-npx prisma migrate reset  # Development only
-npx prisma migrate deploy # Production
+pnpm exec prisma migrate reset  # Development only
+pnpm exec prisma migrate deploy # Production
 ```
 
 **Best Practices:**
@@ -586,16 +587,16 @@ npx prisma migrate deploy # Production
 **Running Tests:**
 ```bash
 # All tests
-npm test
+pnpm test
 
 # Watch mode (recommended during development)
-npm run test:unit -- --watch
+pnpm test:unit -- --watch
 
 # Specific test file
-npm test tests/unit/your-test.test.ts
+pnpm test tests/unit/your-test.test.ts
 
 # With coverage
-npm run test:coverage
+pnpm test:coverage
 ```
 
 **Writing Tests:**
@@ -677,7 +678,7 @@ async function action({ request }: ActionFunctionArgs) {
 **Performance Testing:**
 ```bash
 # Run performance tests
-npm run test:performance
+pnpm test:performance
 ```
 
 ### 6. **Security**
@@ -708,7 +709,7 @@ node --inspect server.ts
 pm2 monit
 
 # Database queries
-npx prisma studio
+pnpm exec prisma studio
 
 # Redis inspection
 redis-cli -u $REDIS_URL

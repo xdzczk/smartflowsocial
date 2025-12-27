@@ -35,7 +35,7 @@ describe("Property-Based Tests: Date Formatting", () => {
         fc.property(
           fc.date({ min: new Date("2000-01-01"), max: new Date("2100-12-31") }),
           fc.constantFrom(...validTimezones),
-          (date, timezone) => {
+          (date: Date, timezone: string) => {
             const formatted = formatScheduleTimeForInput(date, timezone);
             // Should match YYYY-MM-DDTHH:mm format
             const regex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
@@ -51,7 +51,7 @@ describe("Property-Based Tests: Date Formatting", () => {
         fc.property(
           fc.date({ min: new Date("2000-01-01"), max: new Date("2100-12-31") }),
           fc.constantFrom(...validTimezones),
-          (date, timezone) => {
+          (date: Date, timezone: string) => {
             const formatted1 = formatScheduleTimeForInput(date, timezone);
             const formatted2 = formatScheduleTimeForInput(date, timezone);
             return formatted1 === formatted2;
@@ -66,7 +66,7 @@ describe("Property-Based Tests: Date Formatting", () => {
         fc.property(
           fc.date({ min: new Date("2000-01-01"), max: new Date("2100-12-31") }),
           fc.constantFrom(...validTimezones),
-          (date, timezone) => {
+          (date: Date, timezone: string) => {
             try {
               const formatted = formatScheduleTimeForInput(date, timezone);
               return formatted.length > 0 && !formatted.includes("NaN");
@@ -85,7 +85,7 @@ describe("Property-Based Tests: Date Formatting", () => {
           fc.date({ min: new Date("2000-01-01"), max: new Date("2100-12-31") }),
           fc.integer({ min: 1, max: 86400 * 365 }), // Seconds to add (up to 1 year)
           fc.constantFrom(...validTimezones),
-          (date, secondsToAdd, timezone) => {
+          (date: Date, secondsToAdd: number, timezone: string) => {
             const laterDate = new Date(date.getTime() + secondsToAdd * 1000);
             const formatted1 = formatScheduleTimeForInput(date, timezone);
             const formatted2 = formatScheduleTimeForInput(laterDate, timezone);
@@ -101,7 +101,7 @@ describe("Property-Based Tests: Date Formatting", () => {
       fc.assert(
         fc.property(
           fc.date({ min: new Date("2000-01-01"), max: new Date("2100-12-31") }),
-          (date) => {
+          (date: Date) => {
             const formatted = formatScheduleTimeForInput(date, "UTC");
             // Should match UTC date components
             const year = date.getUTCFullYear();
@@ -122,9 +122,9 @@ describe("Property-Based Tests: Date Formatting", () => {
         fc.property(
           fc.oneof(
             fc.date({ min: new Date("2000-01-01"), max: new Date("2100-12-31") }),
-            fc.date({ min: new Date("2000-01-01"), max: new Date("2100-12-31") }).map((d) => d.toISOString()),
+            fc.date({ min: new Date("2000-01-01"), max: new Date("2100-12-31") }).map((d: Date) => d.toISOString()),
           ),
-          (dateInput) => {
+          (dateInput: Date | string) => {
             try {
               const formatted = formatDate(dateInput);
               return typeof formatted === "string" && formatted.length > 0;
@@ -141,7 +141,7 @@ describe("Property-Based Tests: Date Formatting", () => {
       fc.assert(
         fc.property(
           fc.date({ min: new Date("2000-01-01"), max: new Date("2100-12-31") }),
-          (date) => {
+          (date: Date) => {
             const formattedFromDate = formatDate(date);
             const formattedFromString = formatDate(date.toISOString());
             // Should produce similar formatted output (may differ slightly due to timezone)
@@ -156,7 +156,7 @@ describe("Property-Based Tests: Date Formatting", () => {
       fc.assert(
         fc.property(
           fc.date({ min: new Date("2000-01-01"), max: new Date("2100-12-31") }),
-          (date) => {
+          (date: Date) => {
             const formatted1 = formatDate(date);
             const formatted2 = formatDate(date);
             // Should be identical
@@ -174,7 +174,7 @@ describe("Property-Based Tests: Date Formatting", () => {
         fc.property(
           fc.integer({ min: 946684800, max: 4102444800 }), // 2000-01-01 to 2100-01-01 in seconds
           fc.constantFrom(...validTimezones),
-          (unixTimestamp, timezone) => {
+          (unixTimestamp: number, timezone: string) => {
             try {
               const formatted = formatDateWithTimezone(
                 unixTimestamp.toString(),
@@ -196,7 +196,7 @@ describe("Property-Based Tests: Date Formatting", () => {
         fc.property(
           fc.date({ min: new Date("2000-01-01"), max: new Date("2100-12-31") }),
           fc.constantFrom(...validTimezones),
-          (date, timezone) => {
+          (date: Date, timezone: string) => {
             try {
               const formatted = formatDateWithTimezone(date, false, timezone);
               return formatted !== "-" && formatted.length > 0;
@@ -213,7 +213,8 @@ describe("Property-Based Tests: Date Formatting", () => {
       fc.assert(
         fc.property(
           fc.constantFrom(undefined, null),
-          (dateInput) => {
+          (dateInput: undefined | null) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Testing edge case with null/undefined input
             const formatted = formatDateWithTimezone(dateInput as any, false);
             return formatted === "-";
           },
@@ -227,7 +228,7 @@ describe("Property-Based Tests: Date Formatting", () => {
           fc.date({ min: new Date("2000-01-01"), max: new Date("2100-12-31") }),
           fc.constantFrom(...validTimezones),
           fc.constantFrom(...validTimezones),
-          (date, tz1, tz2) => {
+          (date: Date, tz1: string, tz2: string) => {
             try {
               const formatted1 = formatDateWithTimezone(date, false, tz1);
               const formatted2 = formatDateWithTimezone(date, false, tz2);
@@ -257,7 +258,7 @@ describe("Property-Based Tests: Date Formatting", () => {
             new Date("2024-02-29"), // Leap year
           ),
           fc.constantFrom(...validTimezones),
-          (date, timezone) => {
+          (date: Date, timezone: string) => {
             try {
               const formatted = formatScheduleTimeForInput(date, timezone);
               return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(formatted);
@@ -278,7 +279,7 @@ describe("Property-Based Tests: Date Formatting", () => {
             new Date("2099-12-31T23:59:59Z"),
           ),
           fc.constantFrom(...validTimezones),
-          (date, timezone) => {
+          (date: Date, timezone: string) => {
             try {
               const formatted = formatScheduleTimeForInput(date, timezone);
               return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(formatted);
@@ -301,7 +302,7 @@ describe("Property-Based Tests: Date Formatting", () => {
             new Date("2023-11-05T06:00:00Z"), // DST end
           ),
           fc.constantFrom("America/New_York", "America/Los_Angeles", "Europe/London"),
-          (date, timezone) => {
+          (date: Date, timezone: string) => {
             try {
               const formatted = formatScheduleTimeForInput(date, timezone);
               return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(formatted);

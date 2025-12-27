@@ -84,7 +84,8 @@ describe("Bulk Posts Action Handler", () => {
       });
 
       const result = await bulkPostsAction({ request });
-      const data = await result.json();
+      const dataRaw: unknown = await result.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
 
       expect(data.success).toBe(true);
       expect(data.fileUrls).toHaveLength(2);

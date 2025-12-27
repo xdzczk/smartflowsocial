@@ -82,7 +82,7 @@ export function usePostScheduling({
       selectedQueueType.scheduleType === "FIXED_SLOTS"
     ) {
       // For fixed slot queues, recalculate the schedule time instead of adding hours
-      calculateQueueScheduleTime(selectedQueue);
+      void calculateQueueScheduleTime(selectedQueue);
       return;
     }
 

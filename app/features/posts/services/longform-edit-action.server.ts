@@ -35,15 +35,16 @@ import {
  * Parse and combine tags from form data
  */
 function parseTags(formData: FormData): string[] {
+  const tagsRaw = formData.get("tags");
+  const tagsStr = typeof tagsRaw === "string" ? tagsRaw : "";
   const tags =
-    formData
-      .get("tags")
-      ?.toString()
+    tagsStr
       .split(",")
-      .map((tag) => tag.trim())
-      .filter(Boolean) || [];
+      .map((tag: string) => tag.trim())
+      .filter(Boolean);
 
-  const customTags = formData.get("customTags")?.toString() || "";
+  const customTagsRaw = formData.get("customTags");
+  const customTags = typeof customTagsRaw === "string" ? customTagsRaw : "";
 
   // If there are custom tags input separately, parse and combine them
   if (customTags) {
@@ -53,10 +54,10 @@ function parseTags(formData: FormData): string[] {
       .filter(Boolean);
 
     // Add custom tags to the existing tags array and deduplicate
-    const allTags = [...tags, ...customTagsList];
+    const allTags: string[] = [...tags, ...customTagsList];
     const uniqueTags = allTags.filter(
-      (tag, index) =>
-        allTags.findIndex((t) => t.toLowerCase() === tag.toLowerCase()) ===
+      (tag: string, index: number) =>
+        allTags.findIndex((t: string) => t.toLowerCase() === tag.toLowerCase()) ===
         index,
     );
     return uniqueTags;
@@ -97,7 +98,8 @@ async function handleImageUpload(
   userId: string,
   formData: FormData,
 ): Promise<Response> {
-  const imageFile = formData.get("imageFile");
+  const imageFileRaw = formData.get("imageFile");
+  const imageFile = imageFileRaw;
 
   // If it's already a URL string, return it
   if (
@@ -166,9 +168,9 @@ async function handleSaveDraft(
   queueType: string,
   hashTagPresetId: string | null,
 ): Promise<Response> {
-  const title = formData.get("title")?.toString() || "";
-  const editorContent = formData.get("content")?.toString() || "";
-  const image = formData.get("image")?.toString() || undefined;
+  const title = formData.get("title")?.toString() ?? "";
+  const editorContent = formData.get("content")?.toString() ?? "";
+  const image = formData.get("image")?.toString() ?? undefined;
   const summary = formData.get("summary")?.toString();
   const tags = parseTags(formData);
 
@@ -190,13 +192,13 @@ async function handleSaveDraft(
   let markdownContent;
   try {
     const editorData = JSON.parse(editorContent) as { blocks?: { type: string; data: Record<string, unknown> }[]; time?: number; version?: string };
-    markdownContent = convertEditorJSToMarkdown(editorData);
+    markdownContent = convertEditorJSToMarkdown({ blocks: editorData.blocks ?? [], time: editorData.time, version: editorData.version });
   } catch {
     markdownContent = editorContent;
   }
 
   const sanitizedContent = sanitizeMarkdown(markdownContent);
-  const finalSummary = summary || generateSummary(sanitizedContent);
+  const finalSummary = summary ?? generateSummary(sanitizedContent);
 
   await updateLongFormPost({
     id: postId,
@@ -227,9 +229,9 @@ async function handlePublish(
   showHashTagsinPosts: boolean,
   sanitizedRelays: string[],
 ): Promise<Response> {
-  const title = formData.get("title")?.toString() || "";
-  const editorContent = formData.get("content")?.toString() || "";
-  const image = formData.get("image")?.toString() || undefined;
+  const title = formData.get("title")?.toString() ?? "";
+  const editorContent = formData.get("content")?.toString() ?? "";
+  const image = formData.get("image")?.toString() ?? undefined;
   const summary = formData.get("summary")?.toString();
   const tags = parseTags(formData);
   const signedEvent = formData.get("signedEvent");
@@ -274,13 +276,13 @@ async function handlePublish(
   let markdownContent;
   try {
     const editorData = JSON.parse(editorContent) as { blocks?: { type: string; data: Record<string, unknown> }[]; time?: number; version?: string };
-    markdownContent = convertEditorJSToMarkdown(editorData);
+    markdownContent = convertEditorJSToMarkdown({ blocks: editorData.blocks ?? [], time: editorData.time, version: editorData.version });
   } catch {
     markdownContent = editorContent;
   }
 
   const sanitizedContent = sanitizeMarkdown(markdownContent);
-  const finalSummary = summary || generateSummary(sanitizedContent);
+  const finalSummary = summary ?? generateSummary(sanitizedContent);
 
   // Add hashtags to content if user has enabled it
   const contentWithHashtags = showHashTagsinPosts
@@ -324,7 +326,7 @@ async function handlePublish(
 }
 
 /**
- * Handle schedule longform action
+ * Handle sched??e longform action
  */
 async function handleScheduleLongform(
   postId: string,
@@ -335,9 +337,9 @@ async function handleScheduleLongform(
   effectiveHashtags: string,
   showHashTagsinPosts: boolean,
 ): Promise<Response> {
-  const title = formData.get("title")?.toString() || "";
-  const editorContent = formData.get("content")?.toString() || "";
-  const image = formData.get("image")?.toString() || undefined;
+  const title = formData.get("title")?.toString() ?? "";
+  const editorContent = formData.get("content")?.toString() ?? "";
+  const image = formData.get("image")?.toString() ?? undefined;
   const summary = formData.get("summary")?.toString();
   const tags = parseTags(formData);
   const signedEvent = formData.get("signedEvent");
@@ -382,13 +384,13 @@ async function handleScheduleLongform(
   let markdownContent;
   try {
     const editorData = JSON.parse(editorContent) as { blocks?: { type: string; data: Record<string, unknown> }[]; time?: number; version?: string };
-    markdownContent = convertEditorJSToMarkdown(editorData);
+    markdownContent = convertEditorJSToMarkdown({ blocks: editorData.blocks ?? [], time: editorData.time, version: editorData.version });
   } catch {
     markdownContent = editorContent;
   }
 
   const sanitizedContent = sanitizeMarkdown(markdownContent);
-  const finalSummary = summary || generateSummary(sanitizedContent);
+  const finalSummary = summary ?? generateSummary(sanitizedContent);
 
   // Add hashtags to content if user has enabled it
   const contentWithHashtags = showHashTagsinPosts
@@ -432,8 +434,7 @@ async function handleScheduleLongform(
 /**
  * Main action handler for longform edit page
  */
-export async function handleLongFormEditAction(
-  userId: string,
+export async function handleLongFormEditAction(userId: string,
   postId: string,
   request: Request,
 ): Promise<Response> {
@@ -444,7 +445,7 @@ export async function handleLongFormEditAction(
   const { userRelays, showHashTagsinPosts } = user;
   const sanitizedRelays = userRelays.map((relay: string) => relay.trim());
 
-  const contentType = request.headers.get("Content-Type") || "";
+  const contentType = request.headers.get("Content-Type") ?? "";
   let formData: FormData;
 
   if (contentType.includes("multipart/form-data")) {
@@ -458,10 +459,10 @@ export async function handleLongFormEditAction(
   }
 
   const _action = formData.get("_action") as string;
-  const queueType = (formData.get("queueType") as string) || "unassigned";
+  const queueType = (formData.get("queueType") as string) ?? "unassigned";
   const useHashtagPresets = formData.get("useHashtagPresets") === "true";
   const hashTagPresetId =
-    (formData.get("hashTagPresetId")?.toString() || null);
+    (formData.get("hashTagPresetId")?.toString() ?? null);
 
   // Handle upload-image action first, before any validation
   if (_action === "upload-image") {

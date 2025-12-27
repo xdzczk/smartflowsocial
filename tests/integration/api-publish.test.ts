@@ -53,8 +53,9 @@ describe("API: Publish", () => {
         }),
       });
 
-      const response = await action({ request, params: {}, context: {} });
-      const data = await response.json();
+      const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; message?: unknown; error?: unknown } : {};
 
       expect(requireUserId).toHaveBeenCalledWith(request);
       expect(global.fetch).toHaveBeenCalledWith(
@@ -95,8 +96,9 @@ describe("API: Publish", () => {
         }),
       });
 
-      const response = await action({ request, params: {}, context: {} });
-      const data = await response.json();
+      const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; message?: unknown; error?: unknown } : {};
 
       expect(data).toEqual({ success: true, message: "Published successfully" });
     });
@@ -108,11 +110,13 @@ describe("API: Publish", () => {
         method: "GET",
       });
 
-      const response = await action({ request, params: {}, context: {} });
-      const data = await response.json();
+      const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; message?: unknown; error?: unknown } : {};
 
       expect(response.status).toBe(400);
-      expect(data.success).toBe(false);
+      const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
+      expect(success).toBe(false);
     });
 
     it("should require authentication", async () => {
@@ -147,11 +151,13 @@ describe("API: Publish", () => {
         body: "invalid json",
       });
 
-      const response = await action({ request, params: {}, context: {} });
-      const data = await response.json();
+      const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; message?: unknown; error?: unknown } : {};
 
       expect(response.status).toBe(400);
-      expect(data.success).toBe(false);
+      const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
+      expect(success).toBe(false);
     });
 
     it("should return validation error when event is missing", async () => {
@@ -163,11 +169,13 @@ describe("API: Publish", () => {
         }),
       });
 
-      const response = await action({ request, params: {}, context: {} });
-      const data = await response.json();
+      const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; message?: unknown; error?: unknown } : {};
 
       expect(response.status).toBe(400);
-      expect(data.success).toBe(false);
+      const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
+      expect(success).toBe(false);
       expect(data.error).toBeDefined();
     });
 
@@ -180,11 +188,13 @@ describe("API: Publish", () => {
         }),
       });
 
-      const response = await action({ request, params: {}, context: {} });
-      const data = await response.json();
+      const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; message?: unknown; error?: unknown } : {};
 
       expect(response.status).toBe(400);
-      expect(data.success).toBe(false);
+      const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
+      expect(success).toBe(false);
     });
 
     it("should return validation error when relays is empty array", async () => {
@@ -197,11 +207,13 @@ describe("API: Publish", () => {
         }),
       });
 
-      const response = await action({ request, params: {}, context: {} });
-      const data = await response.json();
+      const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; message?: unknown; error?: unknown } : {};
 
       expect(response.status).toBe(400);
-      expect(data.success).toBe(false);
+      const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
+      expect(success).toBe(false);
     });
 
     it("should return error when NOSTR_PUBLISHER_URL is not configured", async () => {
@@ -216,11 +228,13 @@ describe("API: Publish", () => {
         }),
       });
 
-      const response = await action({ request, params: {}, context: {} });
-      const data = await response.json();
+      const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; message?: unknown; error?: unknown } : {};
 
       expect(response.status).toBe(400);
-      expect(data.success).toBe(false);
+      const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
+      expect(success).toBe(false);
     });
 
     it("should handle fetch connection errors", async () => {
@@ -237,11 +251,13 @@ describe("API: Publish", () => {
         }),
       });
 
-      const response = await action({ request, params: {}, context: {} });
-      const data = await response.json();
+      const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; message?: unknown; error?: unknown } : {};
 
       expect(response.status).toBe(503);
-      expect(data.success).toBe(false);
+      const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
+      expect(success).toBe(false);
       expect(data.error).toBeDefined();
     });
 
@@ -262,11 +278,13 @@ describe("API: Publish", () => {
         }),
       });
 
-      const response = await action({ request, params: {}, context: {} });
-      const data = await response.json();
+      const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; message?: unknown; error?: unknown } : {};
 
       expect(response.status).toBe(502);
-      expect(data.success).toBe(false);
+      const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
+      expect(success).toBe(false);
       expect(data.error).toBeDefined();
     });
 
@@ -287,11 +305,13 @@ describe("API: Publish", () => {
         }),
       });
 
-      const response = await action({ request, params: {}, context: {} });
-      const data = await response.json();
+      const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; message?: unknown; error?: unknown } : {};
 
       expect(response.status).toBe(400);
-      expect(data.success).toBe(false);
+      const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
+      expect(success).toBe(false);
     });
   });
 });

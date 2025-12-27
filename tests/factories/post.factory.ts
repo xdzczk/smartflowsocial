@@ -23,8 +23,8 @@ export interface PostFactoryOptions {
   isRecyclable?: boolean;
   draft?: boolean;
   status?: Status;
-  signedEvent?: any;
-  nostrEvent?: any;
+  signedEvent?: import("~/features/nostr/types").SignedEvent;
+  nostrEvent?: import("~/features/nostr/types").NostrEvent;
   queueTypeId?: string | null;
   tags?: string[];
   hashTagPresetId?: string | null;
@@ -134,7 +134,7 @@ export class PostFactory {
     this.options.isPosted = true;
     this.options.draft = false;
     this.options.isScheduled = false;
-    this.options.postedAt = postedAt || new Date();
+    this.options.postedAt = postedAt ?? new Date();
     this.options.nostrEventId = `event-${Date.now()}`;
     return this;
   }
@@ -169,12 +169,12 @@ export class PostFactory {
     return this;
   }
 
-  withSignedEvent(signedEvent: any): this {
+  withSignedEvent(signedEvent: import("~/features/nostr/types").SignedEvent): this {
     this.options.signedEvent = signedEvent;
     return this;
   }
 
-  withNostrEvent(nostrEvent: any): this {
+  withNostrEvent(nostrEvent: import("~/features/nostr/types").NostrEvent): this {
     this.options.nostrEvent = nostrEvent;
     this.options.nostrEventId = nostrEvent?.id ?? null;
     return this;
@@ -189,29 +189,29 @@ export class PostFactory {
     return {
       id: this.options.id!,
       userId: this.options.userId!,
-      caption: this.options.caption || null,
-      content: this.options.content || null,
-      fileUrl: this.options.fileUrl || [],
-      scheduledFor: this.options.scheduledFor || null,
-      postedAt: this.options.postedAt || null,
-      isPosted: this.options.isPosted || false,
-      isScheduled: this.options.isScheduled || false,
-      postType: this.options.postType || "IMAGE",
-      repost: this.options.repost || false,
-      isQuotedPost: this.options.isQuotedPost || false,
-      isRecyclable: this.options.isRecyclable || false,
-      createdAt: this.options.createdAt || new Date(),
-      updatedAt: this.options.updatedAt || new Date(),
-      draft: this.options.draft || false,
-      status: this.options.status || "ACTIVE",
-      signedEvent: this.options.signedEvent || null,
-      nostrEvent: this.options.nostrEvent || null,
-      queueTypeId: this.options.queueTypeId || null,
-      tags: this.options.tags || [],
-      hashTagPresetId: this.options.hashTagPresetId || null,
-      templateId: this.options.templateId || null,
-      nostrEventId: this.options.nostrEventId || null,
-      manual_override: this.options.manual_override || false,
+      caption: this.options.caption ?? null,
+      content: this.options.content ?? null,
+      fileUrl: this.options.fileUrl ?? [],
+      scheduledFor: this.options.scheduledFor ?? null,
+      postedAt: this.options.postedAt ?? null,
+      isPosted: this.options.isPosted ?? false,
+      isScheduled: this.options.isScheduled ?? false,
+      postType: this.options.postType ?? "IMAGE",
+      repost: this.options.repost ?? false,
+      isQuotedPost: this.options.isQuotedPost ?? false,
+      isRecyclable: this.options.isRecyclable ?? false,
+      createdAt: this.options.createdAt ?? new Date(),
+      updatedAt: this.options.updatedAt ?? new Date(),
+      draft: this.options.draft ?? false,
+      status: this.options.status ?? "ACTIVE",
+      signedEvent: this.options.signedEvent ?? null,
+      nostrEvent: this.options.nostrEvent ?? null,
+      queueTypeId: this.options.queueTypeId ?? null,
+      tags: this.options.tags ?? [],
+      hashTagPresetId: this.options.hashTagPresetId ?? null,
+      templateId: this.options.templateId ?? null,
+      nostrEventId: this.options.nostrEventId ?? null,
+      manual_override: this.options.manual_override ?? false,
     } as Post;
   }
 }

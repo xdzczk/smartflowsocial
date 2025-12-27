@@ -1,6 +1,9 @@
-if (process.env.NODE_ENV !== "development") {
+// Polyfill WebSocket for @getalby/sdk in Node.js (production only)
+// Using ws package instead of deprecated websocket-polyfill
+if (process.env.NODE_ENV !== "development" && typeof globalThis !== "undefined" && globalThis.WebSocket === undefined) {
    
-  require("websocket-polyfill");
+  const { WebSocket } = require("ws") as { WebSocket: typeof globalThis.WebSocket };
+  globalThis.WebSocket = WebSocket;
 }
 
 import { LN, USD } from "@getalby/sdk/lnclient";
@@ -90,8 +93,8 @@ export async function createPlanInvoice({
     const invoiceString =
       typeof invoiceValue === "string"
         ? invoiceValue
-        : (invoiceValue && typeof invoiceValue === "object" && !Array.isArray(invoiceValue) && "paymentRequest" in invoiceValue && typeof invoiceValue.paymentRequest === "string"
-            ? invoiceValue.paymentRequest
+        : (invoiceValue && typeof invoiceValue === "object" && !Array.isArray(invoiceValue) && "paymentRequest" in invoiceValue && typeof (invoiceValue as { paymentRequest?: unknown }).paymentRequest === "string"
+            ? (invoiceValue as { paymentRequest: string }).paymentRequest
             : "");
     const invoiceObj = invoiceValue && typeof invoiceValue === "object" && !Array.isArray(invoiceValue) ? invoiceValue as Record<string, unknown> : null;
     const paymentHashValue = requestRecord.paymentHash;
@@ -109,7 +112,7 @@ export async function createPlanInvoice({
       amountSats = amountValue;
     } else if (invoiceObj && "satoshi" in invoiceObj) {
       amountSats = Number(invoiceObj.satoshi) || 0;
-    } else if (requestAny.satoshi && typeof requestAny.satoshi === "number") {
+    } else if (requestAny && typeof requestAny === "object" && "satoshi" in requestAny && typeof requestAny.satoshi === "number") {
       amountSats = requestAny.satoshi;
     } else {
       // Parse the Lightning invoice to get the exact amount

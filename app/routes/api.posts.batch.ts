@@ -4,7 +4,7 @@ import { requireUserId } from "~/features/auth/session.server";
 import {
   getBatchPosts,
   parseBatchPostsRequest,
-} from "~/features/posts/services/batch-posts.server";
+} from "~/features/posts";
 import {
   withActionErrorHandling,
   assert,

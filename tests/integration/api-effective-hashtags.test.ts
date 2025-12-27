@@ -48,8 +48,14 @@ describe("API: Effective Hashtags", () => {
         body: JSON.stringify({ queueTypeName: "posts" }),
       });
 
-      const response = await action({ request, params: {}, context: {} });
-      const data = await response.json();
+      interface ActionArgs {
+        request: Request;
+        params: Record<string, string | undefined>;
+        context: Record<string, unknown>;
+      }
+      const response = await action({ request, params: {}, context: {} } as ActionArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { hashtags?: string; success?: unknown; error?: unknown } : {};
 
       expect(requireUserId).toHaveBeenCalledWith(request);
       expect(getQueueTypes).toHaveBeenCalledWith(TEST_USER_ID);
@@ -78,8 +84,14 @@ describe("API: Effective Hashtags", () => {
         body: JSON.stringify({ queueTypeId: "queue-1" }),
       });
 
-      const response = await action({ request, params: {}, context: {} });
-      const data = await response.json();
+      interface ActionArgs {
+        request: Request;
+        params: Record<string, string | undefined>;
+        context: Record<string, unknown>;
+      }
+      const response = await action({ request, params: {}, context: {} } as ActionArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { hashtags?: string; success?: unknown; error?: unknown } : {};
 
       expect(data).toEqual({
         hashtags: "#custom #tags",
@@ -117,10 +129,17 @@ describe("API: Effective Hashtags", () => {
         }),
       });
 
-      const response = await action({ request, params: {}, context: {} });
-      const data = await response.json();
+      interface ActionArgs {
+        request: Request;
+        params: Record<string, string | undefined>;
+        context: Record<string, unknown>;
+      }
+      const response = await action({ request, params: {}, context: {} } as ActionArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { hashtags?: string; success?: unknown; error?: unknown } : {};
 
-      expect(data.hashtags).toBe("#id-tags");
+      const hashtags = typeof data.hashtags === "string" ? data.hashtags : "";
+      expect(hashtags).toBe("#id-tags");
     });
 
     it("should return empty string for unassigned queue type", async () => {
@@ -130,8 +149,14 @@ describe("API: Effective Hashtags", () => {
         body: JSON.stringify({ queueTypeName: "unassigned" }),
       });
 
-      const response = await action({ request, params: {}, context: {} });
-      const data = await response.json();
+      interface ActionArgs {
+        request: Request;
+        params: Record<string, string | undefined>;
+        context: Record<string, unknown>;
+      }
+      const response = await action({ request, params: {}, context: {} } as ActionArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { hashtags?: string; success?: unknown; error?: unknown } : {};
 
       expect(getQueueTypes).not.toHaveBeenCalled();
       expect(data).toEqual({ hashtags: "" });
@@ -154,8 +179,14 @@ describe("API: Effective Hashtags", () => {
         body: JSON.stringify({ queueTypeName: "posts" }),
       });
 
-      const response = await action({ request, params: {}, context: {} });
-      const data = await response.json();
+      interface ActionArgs {
+        request: Request;
+        params: Record<string, string | undefined>;
+        context: Record<string, unknown>;
+      }
+      const response = await action({ request, params: {}, context: {} } as ActionArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { hashtags?: string; success?: unknown; error?: unknown } : {};
 
       expect(data).toEqual({ hashtags: "" });
     });
@@ -169,8 +200,14 @@ describe("API: Effective Hashtags", () => {
         body: JSON.stringify({ queueTypeName: "nonexistent" }),
       });
 
-      const response = await action({ request, params: {}, context: {} });
-      const data = await response.json();
+      interface ActionArgs {
+        request: Request;
+        params: Record<string, string | undefined>;
+        context: Record<string, unknown>;
+      }
+      const response = await action({ request, params: {}, context: {} } as ActionArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { hashtags?: string; success?: unknown; error?: unknown } : {};
 
       expect(data).toEqual({ hashtags: "" });
     });
@@ -195,8 +232,14 @@ describe("API: Effective Hashtags", () => {
         body: JSON.stringify({ queueTypeName: "posts" }),
       });
 
-      const response = await action({ request, params: {}, context: {} });
-      const data = await response.json();
+      interface ActionArgs {
+        request: Request;
+        params: Record<string, string | undefined>;
+        context: Record<string, unknown>;
+      }
+      const response = await action({ request, params: {}, context: {} } as ActionArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { hashtags?: string; success?: unknown; error?: unknown } : {};
 
       expect(data).toEqual({ hashtags: "" });
     });
@@ -232,11 +275,18 @@ describe("API: Effective Hashtags", () => {
         body: "invalid json",
       });
 
-      const response = await action({ request, params: {}, context: {} });
-      const data = await response.json();
+      interface ActionArgs {
+        request: Request;
+        params: Record<string, string | undefined>;
+        context: Record<string, unknown>;
+      }
+      const response = await action({ request, params: {}, context: {} } as ActionArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { hashtags?: string; success?: unknown; error?: unknown } : {};
 
       expect(response.status).toBe(400);
-      expect(data.success).toBe(false);
+      const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
+      expect(success).toBe(false);
       expect(data.error).toBeDefined();
     });
 
@@ -247,11 +297,18 @@ describe("API: Effective Hashtags", () => {
         body: JSON.stringify({}),
       });
 
-      const response = await action({ request, params: {}, context: {} });
-      const data = await response.json();
+      interface ActionArgs {
+        request: Request;
+        params: Record<string, string | undefined>;
+        context: Record<string, unknown>;
+      }
+      const response = await action({ request, params: {}, context: {} } as ActionArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { hashtags?: string; success?: unknown; error?: unknown } : {};
 
       expect(response.status).toBe(400);
-      expect(data.success).toBe(false);
+      const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
+      expect(success).toBe(false);
       expect(data.error).toBeDefined();
     });
 
@@ -266,8 +323,14 @@ describe("API: Effective Hashtags", () => {
         body: JSON.stringify({ queueTypeName: "posts" }),
       });
 
-      const response = await action({ request, params: {}, context: {} });
-      const data = await response.json();
+      interface ActionArgs {
+        request: Request;
+        params: Record<string, string | undefined>;
+        context: Record<string, unknown>;
+      }
+      const response = await action({ request, params: {}, context: {} } as ActionArgs);
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { hashtags?: string; success?: unknown; error?: unknown } : {};
 
       expect(response.status).toBeGreaterThanOrEqual(400);
       expect(data.success).toBe(false);

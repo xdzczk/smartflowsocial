@@ -13,7 +13,7 @@ interface ThumbnailPostBlockProps extends PostBlockBaseProps {
 
 export function ThumbnailPostBlock({
   post,
-  user,
+  user: _user,
   isLongform,
   isPast,
   isDragging,
@@ -43,7 +43,7 @@ export function ThumbnailPostBlock({
       } ${
         isDragging ? "opacity-50" : ""
       } ${queueColorStyle ? "" : getStatusColor(post, isLongform ?? false, isPast ?? false)}`}
-      style={queueColorStyle || {}}
+      style={queueColorStyle ?? {}}
       title={`${postPreview}\n${isPast ? "Posted" : isLongform ? "Published" : "Scheduled"} for ${displayTime.toLocaleString("en-US", { timeZone: userTimezone })}\n${isPast ? "Past post (view only)" : "Click to edit"}`}
     >
       {firstImage ? (
@@ -69,6 +69,7 @@ export function ThumbnailPostBlock({
     </div>
   );
 }
+
 
 
 

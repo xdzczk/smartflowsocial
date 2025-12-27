@@ -433,6 +433,7 @@ describe("Scheduling Algorithms", () => {
       const queueType = createQueueType({
         id: "queue-1",
         name: "posts",
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Testing edge case with invalid scheduleType
         scheduleType: "INVALID" as any,
         scheduleConfig: {},
       });
@@ -453,6 +454,7 @@ describe("Scheduling Algorithms", () => {
       const queueType = createIntervalQueueType(4, {
         id: "queue-1",
         name: "posts",
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Testing edge case with null scheduleConfig
         scheduleConfig: null as any,
       });
 

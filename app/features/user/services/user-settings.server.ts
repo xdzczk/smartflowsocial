@@ -68,7 +68,7 @@ export async function getUserRelays(userId: string): Promise<string[]> {
     },
   });
 
-  const userRelays = user?.userRelays || [];
+  const userRelays = user?.userRelays ?? [];
 
   // Check if user has Premium or Founder subscription
   const subscription = await prisma.subscription.findUnique({
@@ -123,7 +123,7 @@ export async function getGiveawayBlacklist(userId: string): Promise<string[]> {
       giveawayBlackListed: true,
     },
   });
-  return user?.giveawayBlackListed || [];
+  return user?.giveawayBlackListed ?? [];
 }
 
 /**
@@ -155,7 +155,7 @@ export async function getScheduleInterval(userId: string): Promise<string[]> {
       scheduleInterval: true,
     },
   });
-  return user?.scheduleInterval || [];
+  return user?.scheduleInterval ?? [];
 }
 
 /**
@@ -249,7 +249,7 @@ export async function getUserMirrorUploadUrls(
       mirrorUploadUrls: true,
     },
   });
-  return user?.mirrorUploadUrls || [];
+  return user?.mirrorUploadUrls ?? [];
 }
 
 /**

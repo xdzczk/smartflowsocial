@@ -58,13 +58,13 @@ export async function handleTemplatesAction(
   ) {
     const title = formData.get("title") as string;
     const uploadResultRaw = formData.get("uploadResult");
-    const uploadResultParsed = typeof uploadResultRaw === "string" ? JSON.parse(uploadResultRaw) : null;
+    const uploadResultParsed: unknown = typeof uploadResultRaw === "string" ? JSON.parse(uploadResultRaw) : null;
     
     if (!uploadResultParsed || typeof uploadResultParsed !== "object" || Array.isArray(uploadResultParsed)) {
       return { error: "Invalid upload result format" };
     }
     
-    const uploadResult = uploadResultParsed as { success?: unknown; file?: { url?: string; mimeType?: string } };
+    const uploadResult = uploadResultParsed as unknown as { success?: unknown; file?: { url?: string; mimeType?: string } };
     
     const tagsString = formData.get("tags") as string;
     const tags = tagsString
@@ -120,13 +120,13 @@ export async function handleTemplatesAction(
     _action === "bulk_create_media_assets"
   ) {
     const uploadResultsRaw = formData.get("uploadResults");
-    const uploadResultsParsed = typeof uploadResultsRaw === "string" ? JSON.parse(uploadResultsRaw) : null;
+    const uploadResultsParsed: unknown = typeof uploadResultsRaw === "string" ? JSON.parse(uploadResultsRaw) : null;
     
     if (!Array.isArray(uploadResultsParsed)) {
       return { error: "Invalid upload results format" };
     }
     
-    const uploadResults = uploadResultsParsed as { success?: unknown; file?: { url?: string; mimeType?: string } | undefined; error?: string }[];
+    const uploadResults = uploadResultsParsed as unknown as { success?: unknown; file?: { url?: string; mimeType?: string } | undefined; error?: string }[];
     const titles = formData.getAll("titles") as string[];
     const tagsInputs = formData.getAll("tags") as string[];
 

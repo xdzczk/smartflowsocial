@@ -9,7 +9,7 @@ import Footer from "~/components/layout/DashboardFooter";
 import Header from "~/components/layout/DashboardHeader";
 import { requireUser } from "~/features/auth/session.server";
 import { requireActiveSubscription } from "~/features/payments/subscriptions.server";
-import { loadDashboardData, handleDashboardAction } from "~/features/user/services/dashboard.server";
+import { loadDashboardData, handleDashboardAction } from "~/features/user";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const user = await requireUser(request);

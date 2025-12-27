@@ -128,7 +128,7 @@ export function logError(
     extra: {
       ...sanitizedLogEntry,
       // Include sanitized context
-      context: sanitizedLogEntry.request || sanitizedLogEntry.user || {},
+      context: (sanitizedLogEntry.request ?? sanitizedLogEntry.user) ?? {},
     },
     user: context.userId ? { id: context.userId } : undefined,
     level: logEntry.error.isOperational ? "warning" : "error",

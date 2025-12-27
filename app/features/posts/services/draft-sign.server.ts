@@ -3,7 +3,7 @@
  * Handles signing and scheduling logic for draft posts
  */
 
-import type { NostrEvent as NostrEventType, SignedEvent, NostrEvent } from "~/features/nostr/types";
+import type { NostrEvent as NostrEventType, SignedEvent } from "~/features/nostr/types";
 import type { UserData, PostData } from "~/features/posts/types";
 import { logError } from "~/lib/error-logger.server";
 import { signEventFn } from "~/lib/nostr";
@@ -53,8 +53,10 @@ async function getEffectiveHashtags(
       });
 
       if (response.ok) {
-        const data = await response.json() as { hashtags?: string };
-        return data.hashtags || "";
+        const dataRaw: unknown = await response.json();
+        const data = (dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)) ? dataRaw as { hashtags?: unknown } : {};
+        const hashtags = typeof data.hashtags === "string" ? data.hashtags : null;
+        return hashtags || "";
       } else {
         // Fallback to user's default hashtags
         // Note: hashTags property doesn't exist on UserData, using empty string as fallback
@@ -82,7 +84,8 @@ function getImageUrls(fileUrl: string[] | null | undefined): string[] {
   // Handle case where fileUrl is an array of JSON strings
   if (typeof fileUrl[0] === "string" && fileUrl[0].startsWith("[")) {
     try {
-      return JSON.parse(fileUrl[0]) as string[];
+      const parsed: unknown = JSON.parse(fileUrl[0]);
+      return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
     } catch (e) {
       logError(e instanceof Error ? e : new Error(String(e)), {
         fileUrl: fileUrl[0],
@@ -140,7 +143,7 @@ export async function signDraftForScheduling(
     post,
   } = params;
 
-  const userTimezone = currentUser?.timezone ?? "UTC";
+  const userTimezone = currentUser && typeof currentUser === "object" && "timezone" in currentUser && typeof currentUser.timezone === "string" ? currentUser.timezone : "UTC";
   const scheduledForUnix = calculateScheduledTime(scheduledFor, userTimezone);
 
   // Get effective hashtags

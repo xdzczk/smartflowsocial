@@ -119,7 +119,7 @@ export async function createLongFormPost({
       summary,
       content,
       image,
-      tags: tags || [],
+      tags: tags ?? [],
       isPublished,
       isScheduled,
       draft: isDraft,
@@ -149,8 +149,8 @@ export async function updateLongFormPost({
   nostrEvent,
   scheduledFor,
   queueTypeId,
-  publishedAt,
-  status,
+  publishedAt: _publishedAt,
+  status: _status,
 }: {
   id: LongFormPost["id"];
   userId: LongFormPost["userId"];
@@ -208,7 +208,7 @@ export async function updateLongFormPost({
   if (nostrEvent !== undefined) updateData.nostrEvent = nostrEvent as Prisma.InputJsonValue;
 
   if (isPublished !== undefined || finalScheduledFor !== undefined) {
-    const finalIsPublished = isPublished !== undefined ? isPublished : false;
+    const finalIsPublished = isPublished ?? false;
     const isScheduled = Boolean(finalScheduledFor && !finalIsPublished);
     const isDraft = !finalIsPublished && !isScheduled;
 

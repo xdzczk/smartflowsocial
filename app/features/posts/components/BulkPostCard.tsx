@@ -190,7 +190,7 @@ export function BulkPostCard({
                                     : "Write your caption..."
                         }
                     />
-                    {(post.isKind6Repost || post.isQuotePost) && post.originalCaption ? (
+                    {(post.isKind6Repost ?? post.isQuotePost) && post.originalCaption ? (
                         <div className="rounded border bg-gray-50 p-2 text-xs text-gray-500 dark:bg-gray-800 dark:text-gray-400">
                             <strong>Original:</strong>{" "}
                             {post.originalCaption.length > 100
@@ -212,8 +212,8 @@ export function BulkPostCard({
                                 onClick={() => onQueueTypeChange(index, queueName ?? "")}
                                 className={`rounded-full px-3 py-1 text-xs ${getDynamicQueueStyle(queueColor ?? null, (post.queueType || null) === queueName)}`}
                                 style={{
-                                    backgroundColor: queueColor || undefined,
-                                    borderColor: queueColor || undefined,
+                                    backgroundColor: queueColor ?? undefined,
+                                    borderColor: queueColor ?? undefined,
                                 }}
                             >
                                 {queueName}

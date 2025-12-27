@@ -164,7 +164,7 @@ function main() {
   // Run ESLint --fix
   console.log('🔧 Running ESLint --fix...\n');
   try {
-    execSync('npm run lint -- --fix', {
+    execSync('pnpm lint -- --fix', {
       cwd: PROJECT_ROOT,
       stdio: 'inherit',
     });
@@ -178,5 +178,6 @@ if (require.main === module) {
 }
 
 module.exports = { main, processFile };
+
 
 

@@ -15,7 +15,7 @@ describe("Property-Based Tests: Helpers", () => {
         fc.property(
           fc.date({ min: new Date("2000-01-01"), max: new Date("2100-12-31") }),
           fc.date({ min: new Date("2000-01-01"), max: new Date("2100-12-31") }),
-          (scheduledDate, currentTime) => {
+          (scheduledDate: Date, currentTime: Date) => {
             const result = getTimeRemaining(scheduledDate, currentTime);
             return typeof result === "string" && result.length > 0;
           },
@@ -28,7 +28,7 @@ describe("Property-Based Tests: Helpers", () => {
       fc.assert(
         fc.property(
           fc.date({ min: new Date() }),
-          (futureDate) => {
+          (futureDate: Date) => {
             const result = getTimeRemaining(futureDate, new Date());
             // Should contain at least one time unit (d, h, m, or s)
             return /[\d]+[dhms]/.test(result);
@@ -42,7 +42,7 @@ describe("Property-Based Tests: Helpers", () => {
       fc.assert(
         fc.property(
           fc.date({ min: new Date("2000-01-01"), max: new Date("2100-12-31") }),
-          (date) => {
+          (date: Date) => {
             const dateObj = new Date(date);
             const dateStr = dateObj.toISOString();
             const result1 = getTimeRemaining(dateObj);
@@ -59,7 +59,7 @@ describe("Property-Based Tests: Helpers", () => {
       fc.assert(
         fc.property(
           fc.date({ min: new Date() }),
-          (futureDate) => {
+          (futureDate: Date) => {
             const result = getTimeRemaining(futureDate, new Date());
             // Should match format: "Xd Xh" or "Xh Xm" or "Xm Xs" or "Xs"
             return /^(\d+d \d+h|\d+h \d+m|\d+m \d+s|\d+s)$/.test(result);
@@ -75,7 +75,7 @@ describe("Property-Based Tests: Helpers", () => {
       fc.assert(
         fc.property(
           fc.date({ min: new Date("1900-01-01"), max: new Date("2100-12-31") }),
-          (date) => {
+          (date: Date) => {
             const result = formatDate(date);
             return typeof result === "string" && result.length > 0;
           },
@@ -88,7 +88,7 @@ describe("Property-Based Tests: Helpers", () => {
       fc.assert(
         fc.property(
           fc.date({ min: new Date("1900-01-01"), max: new Date("2100-12-31") }),
-          (date) => {
+          (date: Date) => {
             const dateObj = new Date(date);
             const dateStr = dateObj.toISOString();
             const result1 = formatDate(dateObj);
@@ -105,7 +105,7 @@ describe("Property-Based Tests: Helpers", () => {
       fc.assert(
         fc.property(
           fc.date({ min: new Date("1900-01-01"), max: new Date("2100-12-31") }),
-          (date) => {
+          (date: Date) => {
             const result = formatDate(date);
             // Should contain date pattern (MM/DD/YYYY)
             return /\d{2}\/\d{2}\/\d{4}/.test(result);
@@ -121,7 +121,7 @@ describe("Property-Based Tests: Helpers", () => {
       fc.assert(
         fc.property(
           fc.array(fc.string()),
-          (urls) => {
+          (urls: string[]) => {
             const result = getImageUrls(urls);
             return Array.isArray(result);
           },
@@ -134,7 +134,7 @@ describe("Property-Based Tests: Helpers", () => {
       fc.assert(
         fc.property(
           fc.constant([]),
-          (urls) => {
+          (urls: string[]) => {
             const result = getImageUrls(urls);
             return Array.isArray(result) && result.length === 0;
           },
@@ -146,7 +146,7 @@ describe("Property-Based Tests: Helpers", () => {
       fc.assert(
         fc.property(
           fc.array(fc.webUrl(), { minLength: 1, maxLength: 10 }),
-          (urls) => {
+          (urls: string[]) => {
             const result = getImageUrls(urls);
             // Should return array of same length (if not JSON string)
             return Array.isArray(result);
@@ -160,7 +160,7 @@ describe("Property-Based Tests: Helpers", () => {
       fc.assert(
         fc.property(
           fc.array(fc.webUrl(), { minLength: 1, maxLength: 5 }),
-          (urls) => {
+          (urls: string[]) => {
             const jsonString = JSON.stringify(urls);
             const result = getImageUrls([jsonString]);
             return Array.isArray(result) && result.length === urls.length;
@@ -176,7 +176,7 @@ describe("Property-Based Tests: Helpers", () => {
       fc.assert(
         fc.property(
           fc.string(),
-          (url) => {
+          (url: string) => {
             const result = isVideoFile(url);
             return typeof result === "boolean";
           },
@@ -192,7 +192,7 @@ describe("Property-Based Tests: Helpers", () => {
         fc.property(
           fc.webUrl(),
           fc.constantFrom(...videoExtensions),
-          (baseUrl, ext) => {
+          (baseUrl: string, ext: string) => {
             const url = baseUrl + ext;
             return isVideoFile(url) === true;
           },
@@ -208,7 +208,7 @@ describe("Property-Based Tests: Helpers", () => {
         fc.property(
           fc.webUrl(),
           fc.constantFrom(...nonVideoExtensions),
-          (baseUrl, ext) => {
+          (baseUrl: string, ext: string) => {
             const url = baseUrl + ext;
             return isVideoFile(url) === false;
           },
@@ -222,7 +222,7 @@ describe("Property-Based Tests: Helpers", () => {
         fc.property(
           fc.webUrl(),
           fc.constantFrom(".MP4", ".Mov", ".WEBM", ".mp4", ".mov", ".webm"),
-          (baseUrl, ext) => {
+          (baseUrl: string, ext: string) => {
             const url1 = baseUrl + ext.toLowerCase();
             const url2 = baseUrl + ext.toUpperCase();
             const url3 = baseUrl + ext;
@@ -241,9 +241,9 @@ describe("Property-Based Tests: Helpers", () => {
       fc.assert(
         fc.property(
           fc.oneof(fc.integer(), fc.float(), fc.boolean(), fc.constant(null), fc.constant(undefined)),
-          (input) => {
-            // @ts-expect-error - Testing invalid input types
-            return isVideoFile(input) === false;
+          (input: number | boolean | null | undefined) => {
+            // Testing invalid input types - function should handle gracefully
+            return isVideoFile(input as unknown as string) === false;
           },
         ),
         { numRuns: 50 },

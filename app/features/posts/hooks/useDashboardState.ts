@@ -38,7 +38,7 @@ export function useDashboardState({
   // Update countdowns
   useEffect(() => {
     const updateCountdowns = () => {
-      const tz = userTimezone || "UTC";
+      const tz = userTimezone ?? "UTC";
       const now = new Date(
         new Date().toLocaleString("en-US", { timeZone: tz }),
       ).getTime();
@@ -78,7 +78,9 @@ export function useDashboardState({
 
   // Clear selected posts after bulk delete
   useEffect(() => {
-    if (bulkDeleteFetcher.data?.success) {
+    const dataRaw = bulkDeleteFetcher.data;
+    const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown } : null;
+    if (data && typeof data.success === "boolean" && data.success) {
       setSelectedPosts(new Set());
     }
   }, [bulkDeleteFetcher.data]);

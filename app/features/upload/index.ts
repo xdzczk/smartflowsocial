@@ -49,6 +49,7 @@ export {
 
 export {
   uploadFile,
+  uploadMultipleFiles,
 } from "./upload.client";
 
 // ============================================================================
@@ -59,4 +60,10 @@ export {
   useBlossomAwareUpload,
 } from "./useBlossomAwareUpload";
 
+// ============================================================================
+// Components (Public API)
+// ============================================================================
+
+export { BlossomMediaMirrorsSettings } from "./components/BlossomMediaMirrorsSettings";
+export { UploadProviderSettings } from "./components/UploadProviderSettings";
 

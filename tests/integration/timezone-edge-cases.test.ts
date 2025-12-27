@@ -88,6 +88,7 @@ describe("Timezone Edge Cases", () => {
       const result = await calculateNextScheduleTime({
         queueType,
         userId: TEST_USER_ID,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Testing edge case with null timezone
         userTimezone: null as any,
       });
 

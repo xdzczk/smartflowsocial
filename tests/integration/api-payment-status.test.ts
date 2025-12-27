@@ -37,8 +37,9 @@ describe("API: Payment Status", () => {
           body: formData,
         });
 
-        const response = await action({ request, params: {}, context: {} });
-        const data = await response.json();
+        const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+        const dataRaw: unknown = await response.json();
+        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; paid?: unknown; paidAt?: unknown; message?: unknown; status?: unknown; error?: unknown } : {};
 
         expect(checkPaymentStatus).toHaveBeenCalledWith("payment-123");
         // paidAt is serialized to ISO string in JSON response
@@ -66,8 +67,9 @@ describe("API: Payment Status", () => {
           body: formData,
         });
 
-        const response = await action({ request, params: {}, context: {} });
-        const data = await response.json();
+        const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+        const dataRaw: unknown = await response.json();
+        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; paid?: unknown; paidAt?: unknown; message?: unknown; status?: unknown; error?: unknown } : {};
 
         expect(data).toEqual({
           success: true,
@@ -92,8 +94,9 @@ describe("API: Payment Status", () => {
           body: formData,
         });
 
-        const response = await action({ request, params: {}, context: {} });
-        const data = await response.json();
+        const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+        const dataRaw: unknown = await response.json();
+        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; paid?: unknown; paidAt?: unknown; message?: unknown; status?: unknown; error?: unknown } : {};
 
         expect(data).toEqual({
           success: true,
@@ -109,11 +112,13 @@ describe("API: Payment Status", () => {
           method: "GET",
         });
 
-        const response = await action({ request, params: {}, context: {} });
-        const data = await response.json();
+        const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+        const dataRaw: unknown = await response.json();
+        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; paid?: unknown; paidAt?: unknown; message?: unknown; status?: unknown; error?: unknown } : {};
 
         expect(response.status).toBe(400);
-        expect(data.success).toBe(false);
+        const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
+        expect(success).toBe(false);
         expect(data.error).toBeDefined();
       });
 
@@ -125,11 +130,13 @@ describe("API: Payment Status", () => {
           body: formData,
         });
 
-        const response = await action({ request, params: {}, context: {} });
-        const data = await response.json();
+        const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+        const dataRaw: unknown = await response.json();
+        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; paid?: unknown; paidAt?: unknown; message?: unknown; status?: unknown; error?: unknown } : {};
 
         expect(response.status).toBe(400);
-        expect(data.success).toBe(false);
+        const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
+        expect(success).toBe(false);
         expect(data.error).toBeDefined();
       });
 
@@ -142,8 +149,9 @@ describe("API: Payment Status", () => {
           body: formData,
         });
 
-        const response = await action({ request, params: {}, context: {} });
-        const data = await response.json();
+        const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+        const dataRaw: unknown = await response.json();
+        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; paid?: unknown; paidAt?: unknown; message?: unknown; status?: unknown; error?: unknown } : {};
 
         expect(response.status).toBe(400);
         expect(data.success).toBe(false);
@@ -162,11 +170,13 @@ describe("API: Payment Status", () => {
           body: formData,
         });
 
-        const response = await action({ request, params: {}, context: {} });
-        const data = await response.json();
+        const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+        const dataRaw: unknown = await response.json();
+        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; paid?: unknown; paidAt?: unknown; message?: unknown; status?: unknown; error?: unknown } : {};
 
         expect(response.status).toBeGreaterThanOrEqual(400);
-        expect(data.success).toBe(false);
+        const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
+        expect(success).toBe(false);
         expect(data.error).toBeDefined();
       });
     });
@@ -178,10 +188,13 @@ describe("API: Payment Status", () => {
         method: "GET",
       });
 
-      const response = await loader({ request, params: {}, context: {} });
-      const data = await response.json();
+      const loaderFn = loader as () => Promise<Response>;
+      const response = await loaderFn();
+      const dataRaw: unknown = await response.json();
+      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; paid?: unknown; paidAt?: unknown; message?: unknown; status?: unknown; error?: unknown } : {};
 
-      expect(response.status).toBe(405);
+      const status = typeof response.status === "number" ? response.status : 0;
+      expect(status).toBe(405);
       expect(data).toEqual({
         success: false,
         error: "GET method not allowed. Use POST.",

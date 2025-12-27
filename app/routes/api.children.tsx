@@ -1,11 +1,10 @@
-import { json } from "@remix-run/node";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth/session.server";
 import {
   loadChildrenData,
   handleChildrenApiError,
-} from "~/features/user/services/children-api.server";
+} from "~/features/user";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   try {

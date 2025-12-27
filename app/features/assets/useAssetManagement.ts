@@ -47,7 +47,7 @@ export function useAssetManagement({
 
         // Convert assets to repost format
         const assetData = selectedAssetData.map((asset) => ({
-            caption: asset.assetType === "TEXT" ? asset.content : asset.title || "",
+            caption: asset.assetType === "TEXT" ? asset.content : asset.title ?? "",
             fileUrl:
                 asset.assetType === "IMAGE" || asset.assetType === "VIDEO"
                     ? asset.fileUrl

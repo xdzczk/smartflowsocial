@@ -61,8 +61,8 @@ export function MutedListSettings({
       : isHideLowTrustEnabled;
 
   const mutedCount =
-    syncFetcher.data?.mutedList?.npubs?.length ||
-    mutedList?.npubs?.length ||
+    (syncFetcher.data?.mutedList?.npubs?.length ??
+    mutedList?.npubs?.length) ??
     0;
 
   const lastSyncedDate = syncFetcher.data?.mutedList?.lastSynced
