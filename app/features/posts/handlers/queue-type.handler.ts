@@ -16,7 +16,7 @@ import { updateDisplayedHashtags } from "./hashtag.handler";
 /**
  * Handle queue type change for a single post
  */
-export function handleQueueTypeChange(
+export async function handleQueueTypeChange(
   index: number,
   value: string,
   deps: Pick<
@@ -115,7 +115,7 @@ export function handleQueueTypeChange(
 /**
  * Handle bulk queue update for all posts
  */
-export function handleBulkQueueUpdate(
+export async function handleBulkQueueUpdate(
   queueType: string,
   deps: Pick<
     BulkPostsHandlerDeps,

@@ -14,7 +14,7 @@ import type { PostJobData, LongFormPostJobData } from "./queue-types";
  * @param signedEvent - The signed Nostr event
  * @param scheduledFor - Unix timestamp (in seconds) when the post should be published, or 0 for immediate
  */
-export function enqueuePostJob(
+export async function enqueuePostJob(
   postId: string,
   userId: string,
   signedEvent: SignedEvent,
@@ -53,7 +53,7 @@ export function cancelPostJob(postId: string): Promise<boolean> {
  * @param signedEvent - The signed Nostr event
  * @param scheduledFor - Unix timestamp (in seconds) when the post should be published, or 0 for immediate
  */
-export function enqueueLongFormPostJob(
+export async function enqueueLongFormPostJob(
   postId: string,
   userId: string,
   signedEvent: SignedEvent,

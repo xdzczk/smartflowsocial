@@ -16,7 +16,7 @@ const MAX_TOTAL_SIZE = 100 * 1024 * 1024; // 100MB total
 /**
  * Handle file selection and processing for bulk uploads
  */
-export function handleFileChange(
+export async function handleFileChange(
   e: React.ChangeEvent<HTMLInputElement>,
   deps: Pick<
     BulkPostsHandlerDeps,
@@ -147,6 +147,7 @@ export function handleFileChange(
   // Reset flag when new files are uploaded
   setFirstItemTimeManuallyChanged(false);
 }
+
 
 
 

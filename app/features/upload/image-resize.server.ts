@@ -3,7 +3,7 @@ import sharp from "sharp";
  * Server-side image processing using Sharp
  * Optimizes images for web use while removing metadata
  */
-export function processImageForWeb(
+export async function processImageForWeb(
   buffer: Buffer,
   options: {
     maxWidth?: number;

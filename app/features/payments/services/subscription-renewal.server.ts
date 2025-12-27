@@ -33,7 +33,7 @@ interface RenewalResults {
 /**
  * Check and renew subscriptions for all users
  */
-export function checkAndRenewSubscriptions(): Promise<{
+export async function checkAndRenewSubscriptions(): Promise<{
   success: boolean;
   timestamp: string;
 } & RenewalResults> {

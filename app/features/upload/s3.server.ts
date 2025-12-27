@@ -90,7 +90,7 @@ export function createUploadHandler(userId: string) {
 }
 
 // Upload a buffer directly to S3 (useful for processed files)
-export function uploadBufferToS3(
+export async function uploadBufferToS3(
   buffer: Buffer,
   userId: string,
   filename?: string,
@@ -146,7 +146,7 @@ export function createS3Client() {
 }
 
 // Specialized function for EditorJS image uploads
-export function uploadEditorJSImage(
+export async function uploadEditorJSImage(
   buffer: Buffer,
   userId: string,
   filename: string,

@@ -43,7 +43,7 @@ export default function DraftBulkResume({
         caption: draft.caption,
         fileUrl: draft.fileUrl,
         postType: draft.postType,
-        queueType: draft.queueType?.name ?? draft.queueType || "unassigned",
+        queueType: (draft.queueType?.name ?? draft.queueType) || "unassigned",
         scheduledFor: localDate
           .toLocaleString("en-US", {
             year: "numeric",

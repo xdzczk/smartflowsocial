@@ -232,7 +232,7 @@ export function getUserFriendlyMessage(error: AppError): string {
 /**
  * Error codes enum for type safety
  */
-export const ErrorCodes: const = {
+export const ErrorCodes = {
   VALIDATION_ERROR: "VALIDATION_ERROR",
   AUTHENTICATION_ERROR: "AUTHENTICATION_ERROR",
   AUTHORIZATION_ERROR: "AUTHORIZATION_ERROR",
@@ -243,9 +243,10 @@ export const ErrorCodes: const = {
   DATABASE_ERROR: "DATABASE_ERROR",
   INTERNAL_ERROR: "INTERNAL_ERROR",
   UNKNOWN_ERROR: "UNKNOWN_ERROR",
-};
+} as const;
 
 export type ErrorCode = typeof ErrorCodes[keyof typeof ErrorCodes];
+
 
 
 

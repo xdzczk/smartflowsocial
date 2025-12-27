@@ -12,7 +12,7 @@ import { prisma } from "~/lib/prisma.server";
  * Updates user's NWC (Nostr Wallet Connect) connection string
  * Validates and encrypts the NWC string before storing
  */
-export function updateUserNWC(
+export async function updateUserNWC(
   userId: string,
   nwcString: string,
   enabled = true,

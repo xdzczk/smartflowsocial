@@ -5,7 +5,7 @@ import { prisma } from "~/lib/prisma.server";
 /**
  * Creates default queue types for a new user
  */
-export function createDefaultQueueTypes(userId: string): Promise<void> {
+export async function createDefaultQueueTypes(userId: string): Promise<void> {
   const defaultQueueTypes = [
     {
       name: "Unassigned",

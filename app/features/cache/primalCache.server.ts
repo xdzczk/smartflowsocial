@@ -5,7 +5,7 @@ type CacheResponse = unknown[];
 /**
  * Fetches data from the Primal cache REST API
  */
-export function fetchFromCache(
+export async function fetchFromCache(
   requestType: string,
   params: CacheParams,
   retries = 2,

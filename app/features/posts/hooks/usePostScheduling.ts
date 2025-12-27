@@ -92,7 +92,7 @@ export function usePostScheduling({
     );
 
     // Format the date in the user's timezone
-    const effectiveTimezone = userTimezone || user?.timezone ?? "UTC";
+    const effectiveTimezone = userTimezone || (user?.timezone ?? "UTC");
     const formattedDate = hoursLater.toLocaleString("en-US", {
       timeZone: effectiveTimezone,
       year: "numeric",

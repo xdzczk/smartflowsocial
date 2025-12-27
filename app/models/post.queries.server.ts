@@ -96,7 +96,7 @@ export function getCronDueScheduledPosts(): Promise<Post[]> {
   });
 }
 
-export function getPostedPosts({
+export async function getPostedPosts({
   userId,
   page = 1,
   limit = 50,
@@ -149,7 +149,7 @@ export function getPostedPosts({
   };
 }
 
-export function getRecentPostedPosts({
+export async function getRecentPostedPosts({
   userId,
   days,
   queueType,
@@ -305,7 +305,7 @@ export function getPostsByIds({
   });
 }
 
-export function getRecyclablePosts({
+export async function getRecyclablePosts({
   userId,
   page = 1,
   limit = 50,

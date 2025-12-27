@@ -125,7 +125,7 @@ function calculateScheduledTime(
 /**
  * Sign and prepare draft for scheduling
  */
-export function signDraftForScheduling(
+export async function signDraftForScheduling(
   params: SignDraftParams,
 ): Promise<{ signedEvent: SignedEvent; nostrEvent: NostrEventType; scheduledForUnix: number }> {
   const {

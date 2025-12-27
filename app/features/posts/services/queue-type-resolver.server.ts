@@ -13,7 +13,7 @@ import { prisma } from "~/lib/prisma.server";
  * If queueType (name) is provided, looks up the ID.
  * Returns null if queueType is "unassigned" or not found.
  */
-export function resolveQueueTypeId(
+export async function resolveQueueTypeId(
   userId: string,
   queueTypeId?: string | null,
   queueType?: string | null,
@@ -41,6 +41,7 @@ export function resolveQueueTypeId(
 
   return queueTypeRecord?.id ?? null;
 }
+
 
 
 

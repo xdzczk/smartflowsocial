@@ -14,7 +14,7 @@ interface SendNostrDirectMessageResult {
   error?: string;
 }
 
-export function sendNostrDirectMessage(
+export async function sendNostrDirectMessage(
   receiverPubkey: string,
   content: string,
 ): Promise<SendNostrDirectMessageResult | false> {

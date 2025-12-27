@@ -150,7 +150,7 @@ export function AccountsSettings({
   if (isChild) {
     const bits = extractProfileBits(parentUser?.nostrProfile);
     const parentName =
-      bits.name || bits.display_name || parentUser?.npub ?? "Parent";
+      bits.name || bits.display_name || (parentUser?.npub ?? "Parent");
     return (
       <Card className="p-4">
         <div className="mb-4">

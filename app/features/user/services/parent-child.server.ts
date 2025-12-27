@@ -118,7 +118,7 @@ export async function searchUsersByProfileName(
 /**
  * Requests to link a child account to a parent account
  */
-export function requestChildLink(
+export async function requestChildLink(
   parentHex: string,
   childHex: string,
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
@@ -172,7 +172,7 @@ export function requestChildLink(
 /**
  * Cancels a pending child link request
  */
-export function cancelChildLinkRequest(
+export async function cancelChildLinkRequest(
   parentHex: string,
   childHex: string,
 ): Promise<{ ok: true } | { ok: false; reason: string }> {

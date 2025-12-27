@@ -124,7 +124,7 @@ export async function processMediaFiles(
  * Validate and process files for upload
  * Returns processed files or shows errors
  */
-export function validateAndProcessFiles(
+export async function validateAndProcessFiles(
   files: File[],
 ): Promise<File[] | null> {
   // Filter acceptable file types
@@ -150,6 +150,7 @@ export function validateAndProcessFiles(
   const { processed } = await processMediaFiles(validFiles);
   return processed;
 }
+
 
 
 
