@@ -236,14 +236,15 @@ export function generateSummaryFromContent(content: string): string {
         if (block.type === "paragraph" || block.type === "header") {
           const textValue = block.data && typeof block.data === "object" && "text" in block.data && typeof block.data.text === "string" ? block.data.text : "";
           textContent += textValue + " ";
-      } else if (block.type === "list") {
-        if (Array.isArray(block.data.items)) {
-          block.data.items.forEach((item: string) => {
-            textContent += item + " ";
-          });
+        } else if (block.type === "list") {
+          if (Array.isArray(block.data.items)) {
+            block.data.items.forEach((item: string) => {
+              textContent += item + " ";
+            });
+          }
         }
-      }
-    });
+      });
+    }
 
     const plainText = textContent.replace(/<[^>]*>/g, "").trim();
     const generatedSummary =

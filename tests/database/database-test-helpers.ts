@@ -7,9 +7,8 @@
 import { createMinimalFixtures, createCompleteFixtures } from "./fixtures";
 import { describe, it, beforeEach, afterEach, beforeAll, afterAll } from "vitest";
 
-import type {
 import type { TestFixtures } from "./fixtures";
-  getTestPrisma} from "./test-db";
+import type { getTestPrisma } from "./test-db";
 import {
   setupTestDatabase,
   teardownTestDatabase,

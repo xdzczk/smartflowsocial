@@ -69,8 +69,53 @@ export default function SearchPosts() {
 
       {searchResult ? (
         <SearchResult
-          result={searchResult && typeof searchResult === "object" ? searchResult as unknown as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][]; authorName: string; authorImage: string | null; mediaUrls: string[] } : { id: ""; pubkey: ""; created_at: 0; kind: 0; content: ""; tags: []; authorName: ""; authorImage: null; mediaUrls: [] }}
-          stats={searchStats && typeof searchStats === "object" ? searchStats as unknown as { likes: number; replies: number; mentions: number; reposts: number; zaps: number; satszapped: number } | null : null}
+          result={
+            searchResult && typeof searchResult === "object"
+              ? (searchResult as unknown as {
+                  id: string;
+                  pubkey: string;
+                  created_at: number;
+                  kind: number;
+                  content: string;
+                  tags: string[][];
+                  authorName: string;
+                  authorImage: string | null;
+                  mediaUrls: string[];
+                })
+              : ({
+                  id: "",
+                  pubkey: "",
+                  created_at: 0,
+                  kind: 0,
+                  content: "",
+                  tags: [],
+                  authorName: "",
+                  authorImage: null,
+                  mediaUrls: [],
+                } as {
+                  id: string;
+                  pubkey: string;
+                  created_at: number;
+                  kind: number;
+                  content: string;
+                  tags: string[][];
+                  authorName: string;
+                  authorImage: string | null;
+                  mediaUrls: string[];
+                })
+          }
+          stats={
+            searchStats && typeof searchStats === "object"
+              ? (searchStats as unknown as {
+                  likes: number;
+                  replies: number;
+                  mentions: number;
+                  reposts: number;
+                  zaps: number;
+                  satszapped: number;
+                })
+              : null
+          }
           onClear={clearSearch}
           onScheduleQuote={handleScheduleQuote}
           onScheduleRepost={handleScheduleRepost}

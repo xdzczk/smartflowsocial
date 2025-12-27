@@ -106,8 +106,9 @@ export const fetchGiveawayParticipants = async (
                 if (statsContent.event_id === eventId) {
                   aggregatedStats.likes += typeof statsContent.likes === "number" ? statsContent.likes : 0;
                   aggregatedStats.reposts += typeof statsContent.reposts === "number" ? statsContent.reposts : 0;
-                aggregatedStats.zaps += statsContent.zaps || 0;
-                // Don't add satszapped here as we already calculated it from actual zap events
+                  aggregatedStats.zaps += statsContent.zaps || 0;
+                  // Don't add satszapped here as we already calculated it from actual zap events
+                }
               }
             } catch (_e) {
               // Error parsing stats - skip
