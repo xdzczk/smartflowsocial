@@ -26,7 +26,7 @@ export const apiLimiter = rateLimit({
     res.status(429).json({
       error: "Rate limit exceeded",
       message: "Too many requests, please try again later.",
-      retryAfter: Math.ceil((req.rateLimit?.resetTime || Date.now() + 15 * 60 * 1000 - Date.now()) / 1000),
+      retryAfter: Math.ceil((req.rateLimit?.resetTime ?? Date.now() + 15 * 60 * 1000 - Date.now()) / 1000),
     });
   },
 });
@@ -45,7 +45,7 @@ export const strictLimiter = rateLimit({
     res.status(429).json({
       error: "Rate limit exceeded",
       message: "Rate limit exceeded for this endpoint. Please try again later.",
-      retryAfter: Math.ceil((req.rateLimit?.resetTime || Date.now() + 15 * 60 * 1000 - Date.now()) / 1000),
+      retryAfter: Math.ceil((req.rateLimit?.resetTime ?? Date.now() + 15 * 60 * 1000 - Date.now()) / 1000),
     });
   },
 });
@@ -64,7 +64,7 @@ export const authLimiter = rateLimit({
     res.status(429).json({
       error: "Rate limit exceeded",
       message: "Too many authentication attempts, please try again later.",
-      retryAfter: Math.ceil((req.rateLimit?.resetTime || Date.now() + 15 * 60 * 1000 - Date.now()) / 1000),
+      retryAfter: Math.ceil((req.rateLimit?.resetTime ?? Date.now() + 15 * 60 * 1000 - Date.now()) / 1000),
     });
   },
 });
@@ -179,7 +179,7 @@ export function createIPRateLimiter(
  * Helper to get rate limit info for a user
  * Useful for displaying rate limit status to users
  */
-export async function getRateLimitInfo(userId: string): Promise<{
+export function getRateLimitInfo(userId: string): Promise<{
   remaining: number;
   resetTime: number;
 } | null> {

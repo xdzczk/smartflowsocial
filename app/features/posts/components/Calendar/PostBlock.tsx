@@ -62,7 +62,7 @@ export function PostBlock({
     }
   };
 
-  const userTimezone = user?.timezone || "Etc/UTC";
+  const userTimezone = user?.timezone ?? "Etc/UTC";
   const displayTime = getDisplayTime(post, isLongform, isPast);
   const timeString = displayTime.toLocaleTimeString("en-US", {
     hour: "2-digit",

@@ -1,17 +1,9 @@
 import { useFetcher } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
-import type { LongFormPostData } from "~/features/posts/types";
-
-interface Post {
-  id: string;
-  caption?: string | null;
-  scheduledFor: string;
-  [key: string]: unknown;
-}
-
+import type { PostData, LongFormPostData } from "~/features/posts/types";
 interface UseDashboardStateProps {
-  scheduledPosts: Post[];
+  scheduledPosts: PostData[];
   userTimezone?: string | null;
 }
 
@@ -28,7 +20,7 @@ export function useDashboardState({
   });
   const [searchTerm, setSearchTerm] = useState("");
   const [countdowns, setCountdowns] = useState<Record<string, string>>({});
-  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [selectedPost, setSelectedPost] = useState<PostData | null>(null);
   const [selectedPosts, setSelectedPosts] = useState<Set<string>>(new Set());
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
   const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
@@ -36,8 +28,8 @@ export function useDashboardState({
   const [selectedLongFormPost, setSelectedLongFormPost] = useState<LongFormPostData | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
-  const [postToEdit, setPostToEdit] = useState<Post | null>(null);
-  const [postToReschedule, setPostToReschedule] = useState<Post | null>(null);
+  const [postToEdit, setPostToEdit] = useState<PostData | LongFormPostData | null>(null);
+  const [postToReschedule, setPostToReschedule] = useState<PostData | LongFormPostData | null>(null);
   interface FetcherData {
     success?: boolean;
   }
@@ -53,7 +45,9 @@ export function useDashboardState({
       const newCountdowns: Record<string, string> = {};
 
       scheduledPosts.forEach((post) => {
-        const utcTime = parseInt(post.scheduledFor) * 1000;
+        const scheduledFor = post.scheduledFor;
+        const scheduledForValue = typeof scheduledFor === "string" || typeof scheduledFor === "number" ? scheduledFor : "0";
+        const utcTime = parseInt(String(scheduledForValue || 0)) * 1000;
         const userTime = new Date(utcTime).toLocaleString("en-US", {
           timeZone: tz,
         });
@@ -92,12 +86,18 @@ export function useDashboardState({
   // Sort posts
   const sortedPosts = [...scheduledPosts].sort((a, b) => {
     if (sortConfig.key === "scheduledFor") {
-      const dateA = parseInt(a[sortConfig.key]) * 1000;
-      const dateB = parseInt(b[sortConfig.key]) * 1000;
+      const aScheduled = a.scheduledFor;
+      const bScheduled = b.scheduledFor;
+      const aValue = typeof aScheduled === "string" || typeof aScheduled === "number" ? aScheduled : "0";
+      const bValue = typeof bScheduled === "string" || typeof bScheduled === "number" ? bScheduled : "0";
+      const dateA = parseInt(String(aValue)) * 1000;
+      const dateB = parseInt(String(bValue)) * 1000;
       return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
     }
-    const aValue = a[sortConfig.key] as string | number | undefined;
-    const bValue = b[sortConfig.key] as string | number | undefined;
+    // For other keys, access safely
+    const key = sortConfig.key as keyof PostData;
+    const aValue = a[key] as string | number | undefined;
+    const bValue = b[key] as string | number | undefined;
     if (aValue === undefined || bValue === undefined) return 0;
     if (aValue < bValue)
       return sortConfig.direction === "asc" ? -1 : 1;
@@ -159,12 +159,12 @@ export function useDashboardState({
     setSelectedMedia(null);
   };
 
-  const handleEditPost = (post: Post) => {
+  const handleEditPost = (post: PostData | LongFormPostData) => {
     setPostToEdit(post);
     setShowEditModal(true);
   };
 
-  const handleReschedulePost = (post: Post) => {
+  const handleReschedulePost = (post: PostData | LongFormPostData) => {
     setPostToReschedule(post);
     setShowRescheduleModal(true);
   };

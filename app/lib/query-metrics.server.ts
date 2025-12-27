@@ -9,7 +9,6 @@
 import * as promClient from "prom-client";
 
 import { singleton } from "./singleton.server";
-
 /**
  * Get or create a metric, handling hot-reloads gracefully
  */

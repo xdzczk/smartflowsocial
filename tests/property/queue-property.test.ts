@@ -9,7 +9,6 @@
 
 import fc from "fast-check";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-
 // Mock dependencies
 vi.mock("~/lib/prisma.server", () => ({
   prisma: {

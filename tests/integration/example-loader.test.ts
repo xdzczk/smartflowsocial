@@ -12,7 +12,6 @@
 
 import { json } from "@remix-run/node";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-
 // Example: Testing a simple loader function directly
 // This approach tests the loader logic without the full Remix request/response cycle
 

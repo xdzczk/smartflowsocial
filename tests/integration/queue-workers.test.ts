@@ -4,7 +4,7 @@
  * Tests the workers in app/features/posts/queues.server.ts
  */
 
-import { Job } from "bullmq";
+import type { Job } from "bullmq";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock global fetch

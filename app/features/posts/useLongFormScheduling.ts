@@ -1,5 +1,4 @@
 import { useState, useCallback } from "react";
-
 interface QueueType {
     id?: string;
     name: string;
@@ -55,7 +54,8 @@ export function useLongFormScheduling({
             });
 
             if (response.ok) {
-                const { scheduledTime } = await response.json();
+                const data: unknown = await response.json();
+                const scheduledTime = data && typeof data === "object" && !Array.isArray(data) && "scheduledTime" in data && typeof data.scheduledTime === "string" ? data.scheduledTime : "";
                 setScheduledFor(scheduledTime);
             }
         } catch (error) {
@@ -95,8 +95,9 @@ export function useLongFormScheduling({
             });
 
             if (response.ok) {
-                const data = await response.json();
-                setDisplayedHashtags(data.hashtags || userTags);
+                const data: unknown = await response.json();
+                const hashtags = data && typeof data === "object" && !Array.isArray(data) && "hashtags" in data && typeof data.hashtags === "string" ? data.hashtags : userTags;
+                setDisplayedHashtags(hashtags);
                 if (onQueueTypeChange) onQueueTypeChange(queueTypeName);
             } else {
                 setDisplayedHashtags(userTags);
@@ -120,7 +121,7 @@ export function useLongFormScheduling({
         // If this is a fixed slot queue, use the API to get the next scheduled time instead
         if (currentQueueType && typeof currentQueueType === "object" && currentQueueType.scheduleType === "FIXED_SLOTS") {
             // For fixed slot queues, recalculate the schedule time instead of adding hours
-            calculateQueueScheduleTime((currentQueueType as QueueType).name);
+            void calculateQueueScheduleTime((currentQueueType).name);
             return;
         }
 

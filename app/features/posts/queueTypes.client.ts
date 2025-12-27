@@ -22,7 +22,7 @@ export function findQueueTypeId(queueTypes: QueueType[], queueTypeName: string):
 /**
  * Calculate the next schedule time for a queue using the ID-based API
  */
-export async function calculateQueueScheduleTime(
+export function calculateQueueScheduleTime(
   queueTypes: QueueType[], 
   queueTypeName: string, 
   userId?: string
@@ -47,13 +47,14 @@ export async function calculateQueueScheduleTime(
     });
 
     if (response.ok) {
-      const { scheduledTime } = await response.json();
+      const data = (await response.json()) as { scheduledTime?: string };
+      const scheduledTime = data.scheduledTime;
       return scheduledTime;
     } else {
-      const errorData = await response.json();
+      const errorData = (await response.json()) as { error?: { message?: string }; message?: string };
       const { logClientError } = await import("~/lib/error-handler.client");
       logClientError(
-        new Error(errorData?.error?.message || 'Unknown error'),
+        new Error(errorData?.error?.message ?? errorData?.message ?? 'Unknown error'),
         {
           component: "queueTypes.client",
           action: "calculateQueueScheduleTime",
@@ -75,7 +76,7 @@ export async function calculateQueueScheduleTime(
 /**
  * Fetch effective hashtags for a queue using the ID-based API
  */
-export async function fetchEffectiveHashtags(
+export function fetchEffectiveHashtags(
   queueTypes: QueueType[], 
   queueTypeName: string, 
   userId?: string
@@ -100,7 +101,7 @@ export async function fetchEffectiveHashtags(
     });
 
     if (response.ok) {
-      const data = await response.json();
+      const data = (await response.json()) as { hashtags?: string; effectiveHashtags?: string[] };
       return data.hashtags || "";
     } else {
       const { logClientError } = await import("~/lib/error-handler.client");

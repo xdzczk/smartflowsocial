@@ -44,7 +44,11 @@ async function handleDeleteLongForm(formData: FormData, userId: string) {
  * Handle bulk delete posts action
  */
 async function handleBulkDelete(formData: FormData, userId: string) {
-    const postIds = JSON.parse(formData.get("postIds") as string);
+    const postIdsRaw = formData.get("postIds");
+    const postIds = typeof postIdsRaw === "string" ? JSON.parse(postIdsRaw) as string[] : [];
+    if (!Array.isArray(postIds)) {
+      throw new Error("Invalid postIds format");
+    }
     await Promise.all(postIds.map((id: string) => deletePost({ id, userId })));
     return json({ success: true });
 }
@@ -53,7 +57,11 @@ async function handleBulkDelete(formData: FormData, userId: string) {
  * Handle bulk delete longform posts action
  */
 async function handleBulkDeleteLongForm(formData: FormData, userId: string) {
-    const postIds = JSON.parse(formData.get("postIds") as string);
+    const postIdsRaw = formData.get("postIds");
+    const postIds = typeof postIdsRaw === "string" ? JSON.parse(postIdsRaw) as string[] : [];
+    if (!Array.isArray(postIds)) {
+      throw new Error("Invalid postIds format");
+    }
     await Promise.all(postIds.map((id: string) => deleteLongFormPost({ id, userId })));
     return json({ success: true });
 }
@@ -62,7 +70,12 @@ async function handleBulkDeleteLongForm(formData: FormData, userId: string) {
  * Handle bulk delete mixed content (posts and longform posts)
  */
 async function handleBulkDeleteMixed(formData: FormData, userId: string) {
-    const itemData: MixedContentItem[] = JSON.parse(formData.get("itemData") as string);
+    const itemDataRaw = formData.get("itemData");
+    const itemDataParsed = typeof itemDataRaw === "string" ? JSON.parse(itemDataRaw) : null;
+    if (!Array.isArray(itemDataParsed)) {
+      throw new Error("Invalid itemData format");
+    }
+    const itemData = itemDataParsed as MixedContentItem[];
     const promises = itemData.map((item) => {
         if (item.type === "post") {
             return deletePost({ id: item.id, userId });
@@ -78,7 +91,11 @@ async function handleBulkDeleteMixed(formData: FormData, userId: string) {
  * Handle bulk repost action
  */
 async function handleBulkRepost(formData: FormData, userId: string) {
-    const postIds = JSON.parse(formData.get("postIds") as string);
+    const postIdsRaw = formData.get("postIds");
+    const postIds = typeof postIdsRaw === "string" ? JSON.parse(postIdsRaw) as string[] : [];
+    if (!Array.isArray(postIds)) {
+      throw new Error("Invalid postIds format");
+    }
     const postsData = await getPostsByIds({ ids: postIds, userId });
     return json({ repostData: postsData });
 }
@@ -87,7 +104,11 @@ async function handleBulkRepost(formData: FormData, userId: string) {
  * Handle bulk scheduled repost action
  */
 async function handleBulkScheduledRepost(formData: FormData, userId: string) {
-    const postIds = JSON.parse(formData.get("postIds") as string);
+    const postIdsRaw = formData.get("postIds");
+    const postIds = typeof postIdsRaw === "string" ? JSON.parse(postIdsRaw) as string[] : [];
+    if (!Array.isArray(postIds)) {
+      throw new Error("Invalid postIds format");
+    }
     const postsData = await getPostsByIds({ ids: postIds, userId });
     return json({ scheduledRepostData: postsData });
 }
@@ -96,25 +117,44 @@ async function handleBulkScheduledRepost(formData: FormData, userId: string) {
  * Handle bulk quote action
  */
 async function handleBulkQuote(formData: FormData, userId: string) {
-    const postIds = JSON.parse(formData.get("postIds") as string);
+    const postIdsRaw = formData.get("postIds");
+    const postIds = typeof postIdsRaw === "string" ? JSON.parse(postIdsRaw) as string[] : [];
+    if (!Array.isArray(postIds)) {
+      throw new Error("Invalid postIds format");
+    }
     const postsData = await getPostsByIds({ ids: postIds, userId });
 
     // Transform posts data into quote post format
-    const quotePostsData = postsData.map((post) => ({
+    const quotePostsData = postsData.map((post) => {
+      const signedEvent = post.signedEvent;
+      let eventId: string | undefined;
+      let eventPubkey: string | undefined;
+      
+      if (signedEvent && typeof signedEvent === "object" && !Array.isArray(signedEvent)) {
+        if ("id" in signedEvent && typeof signedEvent.id === "string") {
+          eventId = signedEvent.id;
+        }
+        if ("pubkey" in signedEvent && typeof signedEvent.pubkey === "string") {
+          eventPubkey = signedEvent.pubkey;
+        }
+      }
+      
+      const fileUrl = Array.isArray(post.fileUrl) ? post.fileUrl[0] ?? "" : typeof post.fileUrl === "string" ? post.fileUrl : "";
+      const caption = typeof post.caption === "string" ? post.caption : "";
+      const queueTypeId = typeof post.queueTypeId === "string" ? post.queueTypeId : null;
+      
+      return {
         caption: "", // Empty caption - user can add content
-        fileUrl: post.fileUrl || "",
-        queueType: post.queueTypeId || "unassigned",
+        fileUrl,
+        queueType: queueTypeId ?? "unassigned",
         scheduledFor: "",
         originalPostId: post.id,
-        originalEventId: post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent
-          ? (post.signedEvent.id as string)
-          : undefined,
-        originalEventPubkey: post.signedEvent && typeof post.signedEvent === "object" && "pubkey" in post.signedEvent
-          ? (post.signedEvent.pubkey as string)
-          : undefined,
+        originalEventId: eventId,
+        originalEventPubkey: eventPubkey,
         isQuotePost: true,
-        originalCaption: post.caption || "",
-    }));
+        originalCaption: caption,
+      };
+    });
 
     return json({ quotePostData: quotePostsData });
 }
@@ -135,12 +175,14 @@ async function handleRepost(formData: FormData, userId: string) {
         const originalPost = postsData[0];
         const originalEvent = originalPost.signedEvent;
 
-        if (!originalEvent || typeof originalEvent !== "object" || !("id" in originalEvent) || !("pubkey" in originalEvent)) {
+        if (!originalEvent || typeof originalEvent !== "object" || Array.isArray(originalEvent) || !("id" in originalEvent) || !("pubkey" in originalEvent)) {
             return json({ error: "Invalid event data" }, { status: 400 });
         }
 
-        const eventId = typeof originalEvent.id === "string" ? originalEvent.id : String(originalEvent.id);
-        const eventPubkey = typeof originalEvent.pubkey === "string" ? originalEvent.pubkey : String(originalEvent.pubkey);
+        const eventIdValue = originalEvent.id;
+        const eventPubkeyValue = originalEvent.pubkey;
+        const eventId = typeof eventIdValue === "string" ? eventIdValue : String(eventIdValue);
+        const eventPubkey = typeof eventPubkeyValue === "string" ? eventPubkeyValue : String(eventPubkeyValue);
 
         // Create kind 6 repost event structure according to NIP-18
         const kind6EventData = {
@@ -192,12 +234,14 @@ async function handleQuote(formData: FormData, userId: string) {
         const originalPost = postsData[0];
         const originalEvent = originalPost.signedEvent;
 
-        if (!originalEvent || typeof originalEvent !== "object" || !("id" in originalEvent) || !("pubkey" in originalEvent)) {
+        if (!originalEvent || typeof originalEvent !== "object" || Array.isArray(originalEvent) || !("id" in originalEvent) || !("pubkey" in originalEvent)) {
             return json({ error: "Invalid event data" }, { status: 400 });
         }
 
-        const eventId = typeof originalEvent.id === "string" ? originalEvent.id : String(originalEvent.id);
-        const eventPubkey = typeof originalEvent.pubkey === "string" ? originalEvent.pubkey : String(originalEvent.pubkey);
+        const eventIdValue = originalEvent.id;
+        const eventPubkeyValue = originalEvent.pubkey;
+        const eventId = typeof eventIdValue === "string" ? eventIdValue : String(eventIdValue);
+        const eventPubkey = typeof eventPubkeyValue === "string" ? eventPubkeyValue : String(eventPubkeyValue);
 
         // Create quote post data for bulk posts page
         const quotePostData = {

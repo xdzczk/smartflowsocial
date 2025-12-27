@@ -66,22 +66,30 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function DashboardIndex() {
+  const loaderData = useLoaderData<typeof loader>();
   const {
-    scheduledPosts,
-    longformPosts,
-    allContent,
+    scheduledPosts: scheduledPostsRaw,
+    longformPosts: longformPostsRaw,
+    allContent: allContentRaw,
     user,
-    queueTypes,
+    queueTypes: queueTypesRaw,
     hashTagPresets,
     planActivated,
     successMessage,
-  } = useLoaderData<typeof loader>();
+  } = loaderData;
   const [searchParams] = useSearchParams();
 
   // Get current tab from URL params - default to "all"
   const currentTab = searchParams.get("tab") || "all";
 
   const [showSuccessMessage, setShowSuccessMessage] = useState(!!planActivated);
+
+  // Type assertions for Remix JsonifyObject serialization
+  // Remix serializes Date objects to strings, so we need to assert these types
+  const scheduledPosts = Array.isArray(scheduledPostsRaw) ? scheduledPostsRaw as unknown as { id: string; caption?: string; scheduledFor?: string; fileUrl?: string[]; queueType?: { name: string } | null }[] : [];
+  const longformPosts = Array.isArray(longformPostsRaw) ? longformPostsRaw as unknown as { id: string; title?: string; scheduledFor?: string; queueType?: { name: string } | null }[] : [];
+  const allContent = Array.isArray(allContentRaw) ? allContentRaw as unknown as { id: string; type: string; title?: string; caption?: string }[] : [];
+  const queueTypes = Array.isArray(queueTypesRaw) ? queueTypesRaw as unknown as { id: string; name: string; color?: string | null; scheduleType?: string; scheduleConfig?: unknown; isEnabled?: boolean }[] : [];
 
   const {
     sortConfig,
@@ -173,12 +181,12 @@ export default function DashboardIndex() {
           type="scheduled"
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
-          userTimezone={user?.timezone}
+          userTimezone={user?.timezone ?? undefined}
           onPostSelect={(content) => {
             if (content.type === "post") {
-              setSelectedPost(content.originalData);
+              setSelectedPost(content.originalData as unknown as { id: string; content?: string; caption?: string; fileUrl?: string[]; queueType?: { name: string } | null; signedEvent?: unknown } | null);
             } else {
-              setSelectedLongFormPost(content.originalData);
+              setSelectedLongFormPost(content.originalData as unknown as { id: string; title?: string; content?: string; queueType?: { name: string } | null; signedEvent?: unknown } | null);
             }
           }}
           selectedItems={selectedPosts}
@@ -208,10 +216,10 @@ export default function DashboardIndex() {
             onToggleSelection={togglePostSelection}
             onToggleSelectAll={toggleSelectAll}
             countdowns={countdowns}
-            userTimezone={user?.timezone}
-            onPostClick={setSelectedPost}
-            onEditPost={handleEditPost}
-            onReschedulePost={handleReschedulePost}
+            userTimezone={user?.timezone ?? undefined}
+            onPostClick={(post) => setSelectedPost(post as unknown as { id: string; caption?: string; fileUrl?: string[]; scheduledFor?: string; signedEvent?: unknown } | null)}
+            onEditPost={(post) => handleEditPost(post as unknown as { id: string; content?: string; caption?: string; fileUrl?: string[] } | null)}
+            onReschedulePost={(post) => handleReschedulePost(post as unknown as { id: string; scheduledFor?: string; fileUrl?: string[] } | null)}
             onMediaClick={handleMediaClick}
             bulkDeleteState={bulkDeleteFetcher.state}
           />
@@ -222,7 +230,7 @@ export default function DashboardIndex() {
               onClose={() => setSelectedPost(null)}
               showSignedEvent={true}
               type="scheduled"
-              userTimezone={user?.timezone || undefined}
+              userTimezone={user?.timezone ?? undefined}
             />
           ) : null}
 
@@ -242,45 +250,45 @@ export default function DashboardIndex() {
           type="scheduled"
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
-          userTimezone={user?.timezone}
+          userTimezone={user?.timezone ?? undefined}
           onPostSelect={(post) => {
-            setSelectedLongFormPost(post);
+            setSelectedLongFormPost(post as unknown as { id: string; title?: string; content?: string; scheduledFor?: string; queueType?: { name: string } | null; signedEvent?: unknown } | null);
           }}
-          onEditPost={handleEditPost}
-          onReschedulePost={handleReschedulePost}
+          onEditPost={(post) => handleEditPost(post as unknown as { id: string; title?: string; content?: string } | null)}
+          onReschedulePost={(post) => handleReschedulePost(post as unknown as { id: string; scheduledFor?: string } | null)}
         />
       )}
 
       {/* Long Form Post Details Modal */}
       {selectedLongFormPost ? (
         <LongFormDetailsModal
-          post={selectedLongFormPost}
+          post={selectedLongFormPost as unknown as { id: string; title?: string; content?: string; scheduledFor?: string; queueType?: { name: string } | null; signedEvent?: unknown }}
           onClose={() => setSelectedLongFormPost(null)}
           type="scheduled"
           showSignedEvent={true}
-          userTimezone={user?.timezone || undefined}
+          userTimezone={user?.timezone ?? undefined}
         />
       ) : null}
 
       {/* Edit Post Modal */}
       {showEditModal && postToEdit ? (
         <EditPostModal
-          post={postToEdit}
+          post={postToEdit && typeof postToEdit === "object" ? postToEdit as unknown as { id: string; content?: string; caption?: string; fileUrl?: string[]; queueType?: string } : null}
           onClose={handleCloseEditModal}
           onConfirm={handleModalSuccess}
-          user={user}
+          user={user && typeof user === "object" ? user as unknown as { id: string; timezone?: string; scheduleInterval?: number[]; showHashTagsinPosts?: boolean } : null}
           queueTypes={queueTypes}
-          hashTagPresets={hashTagPresets}
+          hashTagPresets={Array.isArray(hashTagPresets) ? hashTagPresets as unknown as { id: string; name: string; tags: string; description?: string | null }[] : []}
         />
       ) : null}
 
       {/* Reschedule Post Modal */}
       {showRescheduleModal && postToReschedule ? (
         <SimpleRescheduleModal
-          post={postToReschedule}
+          post={postToReschedule && typeof postToReschedule === "object" ? postToReschedule as unknown as { id: string; scheduledFor?: string; fileUrl?: string[]; queueType?: string; signedEvent?: unknown; nostrEvent?: unknown } : null}
           onClose={handleCloseRescheduleModal}
           onConfirm={handleModalSuccess}
-          user={user}
+          user={user && typeof user === "object" ? user as unknown as { id: string; timezone?: string; scheduleInterval?: number[] } : null}
           queueTypes={queueTypes}
         />
       ) : null}

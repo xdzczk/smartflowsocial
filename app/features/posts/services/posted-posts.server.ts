@@ -10,7 +10,6 @@ import type { PostData, LongFormPostData } from "~/features/posts/types";
 import { getPublishedLongFormPosts } from "~/models/longformpost.server";
 import { getPostedPosts } from "~/models/post.queries.server";
 import { getUserById, getQueueTypes } from "~/models/user.server";
-
 /**
  * Get posted posts dashboard data
  */

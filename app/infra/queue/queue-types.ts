@@ -4,7 +4,6 @@
  */
 
 import type { SignedEvent } from "~/features/nostr/types";
-
 /**
  * Job data for scheduled posts
  */

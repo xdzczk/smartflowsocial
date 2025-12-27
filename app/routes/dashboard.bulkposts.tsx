@@ -66,10 +66,15 @@ export default function BulkPosts() {
   const [_selectedQueueType, setSelectedQueueType] = useState("unassigned");
   const fetcher = useFetcher<{ success?: boolean; fileUrls?: { fileUrl: string; scheduledFor: string; queueType: string }[] }>();
   const isSubmitting = fetcher.state !== "idle";
-  const user = useOptionalUser();
-  const scheduleIntervals = user?.scheduleInterval;
+  const userOptional = useOptionalUser();
+  const user = userOptional || null;
+  const scheduleIntervals = user?.scheduleInterval 
+    ? (Array.isArray(user.scheduleInterval) 
+        ? user.scheduleInterval.map(s => typeof s === "string" ? parseInt(s, 10) : s).filter((n): n is number => !isNaN(n)) 
+        : []) 
+    : undefined;
 
-  const [preparedEvents, setPreparedEvents] = useState<PreparedEvent[] | null>(null);
+  const [preparedEvents, setPreparedEvents] = useState<PreparedEvent[]>([]);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingProgress, setProcessingProgress] = useState({
@@ -107,12 +112,15 @@ export default function BulkPosts() {
 
   // Fetch upload provider on component mount
   useEffect(() => {
-    fetch("/api/user-upload-provider")
+    void fetch("/api/user-upload-provider")
       .then((res) => res.json())
-      .then((data) => setUploadProvider(data.provider))
-      .catch((err) => {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const { handleErrorSafely } = require("~/lib/error-handler.client");
+      .then((data: unknown) => {
+        const provider = data && typeof data === "object" && !Array.isArray(data) && "provider" in data && typeof (data as { provider?: unknown }).provider === "string" ? (data as { provider: string }).provider : null;
+        setUploadProvider(provider);
+      })
+      .catch((err: unknown) => {
+         
+        const { handleErrorSafely } = require("~/lib/error-handler.client") as { handleErrorSafely: (error: unknown, context: { component: string; action: string }) => void };
         handleErrorSafely(err, {
           component: "BulkPosts",
           action: "fetchUploadProvider",
@@ -123,10 +131,11 @@ export default function BulkPosts() {
 
   // Wrapper functions that delegate to extracted handlers
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const userDeps = user ? { id: user.id, timezone: user.timezone || undefined, scheduleInterval: scheduleIntervals } : null;
     handleFileChangeHandler(e, {
       posts,
       setPosts,
-      user,
+      user: userDeps,
       scheduleIntervals,
       setIsProcessing,
       setProcessingProgress,
@@ -169,12 +178,13 @@ export default function BulkPosts() {
   };
 
   const handleQueueTypeChange = async (index: number, value: string) => {
+    const userDeps = user ? { id: user.id, timezone: user.timezone || undefined, scheduleInterval: scheduleIntervals } : null;
     await handleQueueTypeChangeHandler(index, value, {
       posts,
       setPosts,
       queueTypes,
       tags,
-      user,
+      user: userDeps,
       setDisplayedHashtags,
       setSelectedQueueType,
     });
@@ -189,12 +199,13 @@ export default function BulkPosts() {
   };
 
   const handleBulkQueueUpdate = async (queueType: string) => {
+    const userDeps = user ? { id: user.id, timezone: user.timezone || undefined, scheduleInterval: scheduleIntervals } : null;
     await handleBulkQueueUpdateHandler(queueType, {
       posts,
       setPosts,
       queueTypes,
       tags,
-      user,
+      user: userDeps,
       setDisplayedHashtags,
       setSelectedQueueType,
       firstItemTimeManuallyChanged,
@@ -208,7 +219,7 @@ export default function BulkPosts() {
 
   // Memoize preview URLs and file types to prevent recreation on every render
   const previewData = useMemo(() => {
-    const data = new Map();
+    const data = new Map<number, { url: string; isVideo: boolean; file: File }>();
     posts.forEach((post, index) => {
       if (post.file) {
         const url = URL.createObjectURL(post.file);
@@ -222,7 +233,11 @@ export default function BulkPosts() {
   // Cleanup URLs when component unmounts or posts change
   useEffect(() => {
     return () => {
-      previewData.forEach((data) => URL.revokeObjectURL(data.url));
+      previewData.forEach((data) => {
+        if (data && typeof data === "object" && "url" in data && typeof data.url === "string") {
+          URL.revokeObjectURL(data.url);
+        }
+      });
     };
   }, [previewData]);
 
@@ -257,7 +272,7 @@ export default function BulkPosts() {
 
       {!showConfirmation ? (
         <fetcher.Form
-          onSubmit={prepareEvents}
+          onSubmit={(e) => { void prepareEvents(e); }}
           className="w-full"
           encType="multipart/form-data"
         >
@@ -355,8 +370,7 @@ export default function BulkPosts() {
         </fetcher.Form>
       ) : (
         <PostConfirmation
-          preparedEvents={preparedEvents}
-          onCancel={() => setShowConfirmation(false)}
+          preparedEvents={preparedEvents || []}
           postsCount={posts.length}
         />
       )}

@@ -15,7 +15,7 @@ import { prisma } from "~/lib/prisma.server";
  */
 export async function batchLoadUsers(
   userIds: string[],
-): Promise<Map<string, User>> {
+): Promise<Map<string, Pick<User, "id" | "npub" | "timezone" | "isEnabled" | "createdAt" | "updatedAt">>> {
   if (userIds.length === 0) {
     return new Map();
   }
@@ -131,6 +131,8 @@ export async function batchLoadPostRelations(ids: {
     templates,
   };
 }
+
+
 
 
 

@@ -1,11 +1,13 @@
 import { Link } from "@remix-run/react";
 
 import type {
+  Notification,
+} from "~/features/engagement/engagement.server";
+import type {
   NotificationReply,
   NotificationZap,
   NotificationMention,
-  Notification,
-} from "~/features/engagement/engagement.server";
+} from "~/features/engagement/types";
 import { formatDate } from "~/lib/helpers";
 
 interface NotificationListProps {
@@ -144,7 +146,7 @@ function ReplyNotification({
               {formatDate(new Date(notification.createdAt * 1000).toISOString())}
             </span>
             <Link
-              to={`https://primal.net/e/${notification.eventId}`}
+              to={`https://primal.net/e/${String(notification.eventId)}`}
               target="_blank"
               rel="noreferrer"
               className="text-blue-600 hover:underline dark:text-blue-400"
@@ -166,7 +168,7 @@ function ZapNotification({
   userTimezone?: string;
 }) {
   const displayName =
-    notification.senderName ||
+    notification.senderName ??
     notification.senderPubkey.substring(0, 8) +
     "..." +
     notification.senderPubkey.slice(-4);
@@ -222,7 +224,7 @@ function ZapNotification({
               {formatDate(new Date(notification.createdAt * 1000).toISOString())}
             </span>
             <Link
-              to={`https://primal.net/e/${notification.originalEventId}`}
+              to={`https://primal.net/e/${String(notification.originalEventId)}`}
               target="_blank"
               rel="noreferrer"
               className="text-blue-600 hover:underline dark:text-blue-400"
@@ -301,7 +303,7 @@ function MentionNotification({
               {formatDate(new Date(notification.createdAt * 1000).toISOString())}
             </span>
             <Link
-              to={`https://primal.net/e/${notification.eventId}`}
+              to={`https://primal.net/e/${String(notification.eventId)}`}
               target="_blank"
               rel="noreferrer"
               className="text-blue-600 hover:underline dark:text-blue-400"

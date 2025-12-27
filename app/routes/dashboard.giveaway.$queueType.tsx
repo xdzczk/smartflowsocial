@@ -12,7 +12,7 @@ import { requireFeatureAccess, requireAnySubscription } from "~/features/payment
 import PostDetailsModal from "~/features/posts/components/PostDetailsModal";
 import { withErrorHandling } from "~/lib/error-handler.server";
 
-export const loader = withErrorHandling(async ({ request, params }: LoaderFunctionArgs) => {
+async function loaderImpl({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
 
   // Require that the user has at least a subscription record
@@ -26,11 +26,15 @@ export const loader = withErrorHandling(async ({ request, params }: LoaderFuncti
 
   const data = await loadGiveawayData(userId, queueType, days);
   return data;
-});
+}
+
+export const loader = withErrorHandling(loaderImpl);
+
+type LoaderData = Awaited<ReturnType<typeof loaderImpl>>;
 
 export default function GiveawayQueueRoute() {
-  const { posts, stats, relatedEvents, user, queueTypes, selectedQueueType } =
-    useLoaderData<typeof loader>();
+  const data = useLoaderData<LoaderData>();
+  const { posts, stats, relatedEvents, user, queueTypes, selectedQueueType } = data;
   const params = useParams();
 
   const {
@@ -81,21 +85,21 @@ export default function GiveawayQueueRoute() {
       </div>
 
       <GiveawayTable
-        posts={filteredPosts}
+        posts={filteredPosts as unknown as { id: string; caption?: string; fileUrl?: string[]; signedEvent?: unknown }[]}
         sortConfig={sortConfig}
         onRequestSort={requestSort}
-        onPostClick={setSelectedPost}
+        onPostClick={(post) => setSelectedPost(post as unknown as { id: string; caption?: string; fileUrl?: string[]; signedEvent?: unknown } | null)}
       />
 
       {selectedPost ? (
         <PostDetailsModal
-              post={selectedPost}
-          stats={stats[selectedPost.signedEvent?.id || ""]}
+          post={selectedPost as unknown as { id: string; caption?: string; fileUrl?: string[]; signedEvent?: unknown; queueType?: { name: string } | null }}
+          stats={selectedPost && typeof selectedPost === "object" && "signedEvent" in selectedPost && selectedPost.signedEvent && typeof selectedPost.signedEvent === "object" && "id" in selectedPost.signedEvent && typeof selectedPost.signedEvent.id === "string" ? stats[selectedPost.signedEvent.id] : undefined}
           onClose={() => setSelectedPost(null)}
           showStats={true}
           showSignedEvent={true}
           type="posted"
-          userTimezone={user?.timezone || undefined}
+          userTimezone={user?.timezone ?? undefined}
         />
       ) : null}
     </div>

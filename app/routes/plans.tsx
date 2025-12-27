@@ -1,5 +1,5 @@
-import type { ActionFunctionArgs, MetaFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
+import type { ActionFunctionArgs, MetaFunction } from "@remix-run/node";
 import { useActionData, useLoaderData, useNavigation } from "@remix-run/react";
 
 import Footer from "~/components/layout/FrontendFooter";
@@ -59,7 +59,7 @@ export default function Plans() {
     isPolling,
     handlePlanSelection,
     copyToClipboard,
-  } = usePlansState({ user, actionData });
+  } = usePlansState({ user, actionData: actionData && typeof actionData === "object" ? actionData as unknown as { success?: boolean; paid?: boolean; invoice?: string; paymentHash?: string; amount?: number; amountUsd?: number; paymentId?: string; expiresAt?: string; planName?: string; planId?: string; error?: string; message?: string; redirect?: string } : undefined });
 
   return (
     <>
@@ -125,7 +125,7 @@ export default function Plans() {
       {/* Payment Success Message */}
       <PaymentSuccessModal
         isOpen={paymentComplete}
-        message={actionData?.message}
+        message={(actionData && typeof actionData === "object" && "message" in actionData) ? String(actionData.message) : undefined}
       />
 
       {/* Invoice Modal */}
@@ -140,7 +140,7 @@ export default function Plans() {
       ) : null}
 
       {/* Error Message */}
-      <ErrorMessage message={actionData?.error} />
+      <ErrorMessage message={(actionData && typeof actionData === "object" && "error" in actionData) ? String(actionData.error) : undefined} />
 
       <Footer />
     </>

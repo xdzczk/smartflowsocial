@@ -1,6 +1,5 @@
 import { useNavigation } from "@remix-run/react";
 import { useState } from "react";
-
 interface UseLongFormEditStateProps {
   userTags: string;
   hashtagPresets: { id: string; tags: string }[];
@@ -47,7 +46,7 @@ export function useLongFormEditState({
   const handleHashtagPresetChange = (presetId: string) => {
     setSelectedHashtagPresetId(presetId);
     const preset = hashtagPresets.find((p) => p.id === presetId);
-    const tags = preset?.tags || "";
+    const tags = preset?.tags ?? "";
     setSelectedHashtags(tags);
     if (useHashtagPresets) {
       setDisplayedHashtags(tags);
@@ -78,7 +77,7 @@ export function useLongFormEditState({
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data = (await response.json()) as { hashtags?: string };
         setDisplayedHashtags(data.hashtags || userTags || "");
       } else {
         setDisplayedHashtags(userTags || "");
@@ -114,6 +113,8 @@ export function useLongFormEditState({
     handlePreview,
   };
 }
+
+
 
 
 

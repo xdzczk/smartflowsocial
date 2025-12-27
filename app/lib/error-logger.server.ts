@@ -8,7 +8,6 @@ import { recordErrorMetric } from "./error-metrics.server";
 import type { AppError } from "./errors";
 import { sanitizeError, sanitizeObject } from "./secrets-sanitizer.server";
 import { captureException } from "./sentry.server";
-
 export type LogLevel = "error" | "warn" | "info" | "debug";
 
 export interface LogContext {

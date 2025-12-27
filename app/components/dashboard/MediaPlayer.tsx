@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
-
+import { useState, useRef, useEffect } from "react";
+import type React from "react";
 interface MediaPlayerProps {
   src: string;
   alt?: string;

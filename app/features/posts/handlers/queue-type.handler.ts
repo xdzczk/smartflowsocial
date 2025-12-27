@@ -16,7 +16,7 @@ import { updateDisplayedHashtags } from "./hashtag.handler";
 /**
  * Handle queue type change for a single post
  */
-export async function handleQueueTypeChange(
+export function handleQueueTypeChange(
   index: number,
   value: string,
   deps: Pick<
@@ -67,7 +67,7 @@ export async function handleQueueTypeChange(
       });
 
       if (response.ok) {
-        const responseData = await response.json();
+        const responseData = (await response.json()) as { scheduledTime?: string };
         const { scheduledTime } = responseData;
         if (scheduledTime) {
           updatedPosts[index].scheduledFor = scheduledTime;
@@ -115,7 +115,7 @@ export async function handleQueueTypeChange(
 /**
  * Handle bulk queue update for all posts
  */
-export async function handleBulkQueueUpdate(
+export function handleBulkQueueUpdate(
   queueType: string,
   deps: Pick<
     BulkPostsHandlerDeps,
@@ -180,7 +180,7 @@ export async function handleBulkQueueUpdate(
       });
 
       if (response.ok) {
-        const responseData = await response.json();
+        const responseData = (await response.json()) as { scheduledTime?: string };
         const { scheduledTime } = responseData;
         baseTime = scheduledTime;
       }
@@ -190,7 +190,7 @@ export async function handleBulkQueueUpdate(
   // Find the queue type configuration for bulk scheduling
   const queueTypeConfig = queueTypes.find(
     (qt) => qt.name === queueType,
-  ) as QueueType | undefined;
+  );
 
   const updatedPosts = posts.map((post, index) => {
     let scheduledFor = post.scheduledFor;
@@ -299,4 +299,6 @@ export async function handleBulkQueueUpdate(
 
   setPosts(updatedPosts);
 }
+
+
 

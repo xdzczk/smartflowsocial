@@ -1,5 +1,4 @@
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
-
 interface UploadTabProps {
     textAssetFormRef: React.RefObject<HTMLFormElement>;
     imageAssetFormRef: React.RefObject<HTMLFormElement>;

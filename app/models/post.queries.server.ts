@@ -5,7 +5,7 @@
  * All functions in this file perform SELECT operations only.
  */
 
-import type { Prisma , Post } from "@prisma/client";
+import type { Prisma, Post } from "@prisma/client";
 
 import { logError } from "~/lib/error-logger.server";
 import { prisma } from "~/lib/prisma.server";
@@ -16,7 +16,7 @@ import type {
   PostStatistics,
 } from "./post.types";
 
-export async function getScheduledPosts({
+export function getScheduledPosts({
   userId,
   queueType,
 }: {
@@ -50,7 +50,7 @@ export async function getScheduledPosts({
   });
 }
 
-export async function getDraftPosts({
+export function getDraftPosts({
   userId,
   queueType,
 }: {
@@ -83,7 +83,7 @@ export async function getDraftPosts({
   });
 }
 
-export async function getCronDueScheduledPosts(): Promise<Post[]> {
+export function getCronDueScheduledPosts(): Promise<Post[]> {
   const now = Math.floor(Date.now() / 1000).toString();
   return prisma.post.findMany({
     where: {
@@ -96,7 +96,7 @@ export async function getCronDueScheduledPosts(): Promise<Post[]> {
   });
 }
 
-export async function getPostedPosts({
+export function getPostedPosts({
   userId,
   page = 1,
   limit = 50,
@@ -149,7 +149,7 @@ export async function getPostedPosts({
   };
 }
 
-export async function getRecentPostedPosts({
+export function getRecentPostedPosts({
   userId,
   days,
   queueType,
@@ -221,7 +221,7 @@ export async function getPostStatistics({
   };
 }
 
-export async function getPastPosts({
+export function getPastPosts({
   userId,
   startDate,
   endDate,
@@ -263,7 +263,7 @@ export async function getPastPosts({
   });
 }
 
-export async function getPostById({
+export function getPostById({
   id,
   userId,
 }: {
@@ -283,7 +283,7 @@ export async function getPostById({
   });
 }
 
-export async function getPostsByIds({
+export function getPostsByIds({
   ids,
   userId,
 }: {
@@ -305,7 +305,7 @@ export async function getPostsByIds({
   });
 }
 
-export async function getRecyclablePosts({
+export function getRecyclablePosts({
   userId,
   page = 1,
   limit = 50,
@@ -453,11 +453,13 @@ export async function getLastPostTimeForQueue({
     return parsedDate;
   } catch (error) {
     logError(error instanceof Error ? error : new Error(String(error)), {
-      postId: lastPost.id,
-      scheduledFor: String(lastPost.scheduledFor),
+      postId: "id" in lastPost ? String(lastPost.id) : "unknown",
+      scheduledFor: "scheduledFor" in lastPost ? String(lastPost.scheduledFor) : "unknown",
       message: "Error parsing scheduledFor",
     });
     return null;
   }
 }
+
+
 

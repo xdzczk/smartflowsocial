@@ -5,7 +5,6 @@
  */
 
 import type { BulkPost } from "~/features/posts/types";
-
 /**
  * Apply schedule interval to all posts
  */
@@ -49,4 +48,6 @@ export function handleScheduleIntervalClick(
 
   setPosts(updatedPosts);
 }
+
+
 

@@ -1,6 +1,5 @@
 import { getDynamicQueueStyle } from "~/features/posts/queueColors";
 import type { QueueType } from "~/features/posts/types";
-
 interface QueueSelectorProps {
   queueTypes: (string | QueueType)[];
   selectedQueue: string;

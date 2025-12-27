@@ -9,7 +9,6 @@
 
 import { json } from "@remix-run/node";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-
 // Mock client-side dependencies FIRST (before route import)
 vi.mock("~/lib/error-handler.client", () => ({
   handleErrorSafely: vi.fn(),

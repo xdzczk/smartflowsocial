@@ -73,14 +73,14 @@ export function processPrimalData(data: PrimalEvent[]): {
 
   // Parse profile content
   const profile: ProfileData = profileEvent
-    ? JSON.parse(profileEvent[2].content)
+    ? (JSON.parse(profileEvent[2].content) as ProfileData)
     : {};
 
   // Parse stats content
-  const stats: StatsData = statsEvent ? JSON.parse(statsEvent[2].content) : {};
+  const stats: StatsData = statsEvent ? (JSON.parse(statsEvent[2].content) as StatsData) : {};
 
   // Parse media content
-  const media: MediaData = mediaEvent ? JSON.parse(mediaEvent[2].content) : {};
+  const media: MediaData = mediaEvent ? (JSON.parse(mediaEvent[2].content) as MediaData) : {};
 
   return {
     profile: {
@@ -102,8 +102,9 @@ export async function getCompleteProfile({
   
   // If no data returned, return empty profile
   if (!primalData || primalData.length === 0) {
+    const emptyProfile: ProcessedProfile = {};
     return {
-      nostrProfile: {} as ProcessedProfile,
+      nostrProfile: emptyProfile,
       lud16: undefined,
     };
   }

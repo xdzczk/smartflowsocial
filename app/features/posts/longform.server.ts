@@ -28,7 +28,7 @@ export function createLongFormEvent({
     if (privateKey.startsWith("nsec")) {
       const decoded = nip19.decode(privateKey);
       if (decoded.type === "nsec") {
-        privateKeyBytes = decoded.data as Uint8Array;
+        privateKeyBytes = decoded.data;
       } else {
         throw new Error("Invalid nsec format");
       }
@@ -99,7 +99,7 @@ export function generateArticleIdentifier(title: string): string {
 }
 
 export function convertEditorJSToMarkdown(editorData: EditorJSOutput): string {
-  if (!editorData || !editorData.blocks) {
+  if (!editorData?.blocks) {
     return "";
   }
 
@@ -114,9 +114,12 @@ export function convertEditorJSToMarkdown(editorData: EditorJSOutput): string {
         break;
       }
 
-      case "paragraph":
-        markdown += `${block.data.text}\n\n`;
+      case "paragraph": {
+        const textValue = block.data.text;
+        const text = typeof textValue === "string" ? textValue : "";
+        markdown += `${text}\n\n`;
         break;
+      }
 
       case "list":
         if (Array.isArray(block.data.items)) {
@@ -133,19 +136,27 @@ export function convertEditorJSToMarkdown(editorData: EditorJSOutput): string {
         markdown += "\n";
         break;
 
-      case "quote":
-        markdown += `> ${block.data.text}\n`;
-        if (block.data.caption) {
-          markdown += `> \n> — ${block.data.caption}\n`;
+      case "quote": {
+        const textValue = block.data.text;
+        const text = typeof textValue === "string" ? textValue : "";
+        const captionValue = block.data.caption;
+        const caption = typeof captionValue === "string" ? captionValue : "";
+        markdown += `> ${text}\n`;
+        if (caption) {
+          markdown += `> \n> — ${caption}\n`;
         }
         markdown += "\n";
         break;
+      }
 
-      case "code":
+      case "code": {
+        const codeValue = block.data.code;
+        const code = typeof codeValue === "string" ? codeValue : "";
         markdown += "```\n";
-        markdown += block.data.code;
+        markdown += code;
         markdown += "\n```\n\n";
         break;
+      }
 
       case "linkTool": {
         const link = typeof block.data.link === "string" ? block.data.link : "";
@@ -161,7 +172,10 @@ export function convertEditorJSToMarkdown(editorData: EditorJSOutput): string {
       }
 
       case "embed": {
-        const { service, source } = block.data;
+        const serviceValue = block.data.service;
+        const sourceValue = block.data.source;
+        const service = typeof serviceValue === "string" ? serviceValue : "";
+        const source = typeof sourceValue === "string" ? sourceValue : "";
         if (service === "youtube") {
           markdown += `[![YouTube Video](https://img.youtube.com/vi/${source}/0.jpg)](${source})\n\n`;
         } else {
@@ -178,7 +192,7 @@ export function convertEditorJSToMarkdown(editorData: EditorJSOutput): string {
         const imageUrl = file.url || url;
         const caption = typeof block.data.caption === "string" ? block.data.caption : undefined;
         if (imageUrl) {
-          if (caption && caption.trim()) {
+          if (caption?.trim()) {
             markdown += `![${caption}](${imageUrl})\n\n`;
           } else {
             markdown += `![](${imageUrl})\n\n`;
@@ -187,10 +201,14 @@ export function convertEditorJSToMarkdown(editorData: EditorJSOutput): string {
         break;
       }
 
-      default:
-        if (block.data.text) {
-          markdown += `${block.data.text}\n\n`;
+      default: {
+        const textValue = block.data.text;
+        const text = typeof textValue === "string" ? textValue : "";
+        if (text) {
+          markdown += `${text}\n\n`;
         }
+        break;
+      }
     }
   });
 

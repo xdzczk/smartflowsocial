@@ -24,7 +24,7 @@ export async function loadDraftEditData(
     getUserHashTagPresets(userId),
   ]);
 
-  if (!post || !post.draft) {
+  if (!post?.draft) {
     throw new Response("Draft not found", { status: 404 });
   }
 

@@ -9,13 +9,7 @@ import type {
 } from "~/features/nostr/types";
 import type { EditorJSBlock, EditorJSOutput } from "~/features/posts/types/editorjs.types";
 
-declare global {
-  interface Window {
-    nostr?: {
-      signEvent: (event: NostrEvent) => Promise<SignedEvent | string>;
-    };
-  }
-}
+// This file uses a compatible nostr type - see upload.client.ts for the primary declaration
 
 export function hexToNpub(hex: string): string | null {
   try {
@@ -62,8 +56,8 @@ export const signEventFn = async (
 
         // Handle different return types from different extensions
         const signedEvent: SignedEvent = {
-          id: signResult?.id || "unknown",
-          pubkey: signResult?.pubkey || "unknown",
+          id: signResult?.id ?? "unknown",
+          pubkey: signResult?.pubkey ?? "unknown",
           created_at: nostrEvent.created_at,
           kind: nostrEvent.kind,
           tags: nostrEvent.tags,
@@ -71,7 +65,7 @@ export const signEventFn = async (
           sig:
             typeof signResult === "string"
               ? signResult
-              : signResult?.sig || "unknown",
+              : signResult?.sig ?? "unknown",
         };
 
         return { nostrEvent, signedEvent };
@@ -164,8 +158,8 @@ export const signLongFormEvent = async (
 
         // Handle different return types from different extensions
         const signedEvent: SignedEvent = {
-          id: signResult?.id || "unknown",
-          pubkey: signResult?.pubkey || "unknown",
+          id: signResult?.id ?? "unknown",
+          pubkey: signResult?.pubkey ?? "unknown",
           created_at: nostrEvent.created_at,
           kind: nostrEvent.kind,
           tags: nostrEvent.tags,
@@ -173,7 +167,7 @@ export const signLongFormEvent = async (
           sig:
             typeof signResult === "string"
               ? signResult
-              : signResult?.sig || "unknown",
+              : signResult?.sig ?? "unknown",
         };
 
         return { nostrEvent, signedEvent };
@@ -220,22 +214,22 @@ export function convertEditorJSToMarkdown(editorData: EditorJSOutput | string | 
   let parsedData: EditorJSOutput | null = null;
   if (typeof editorData === "string") {
     try {
-      parsedData = JSON.parse(editorData);
+      parsedData = JSON.parse(editorData) as EditorJSOutput;
     } catch {
       return "";
     }
   } else if (editorData && typeof editorData === "object") {
-    parsedData = editorData as EditorJSOutput;
+    parsedData = editorData;
   }
 
-  if (!parsedData || !parsedData.blocks || !Array.isArray(parsedData.blocks)) {
+  if (!parsedData?.blocks || !Array.isArray(parsedData.blocks)) {
     return "";
   }
 
   let markdown = "";
 
   parsedData.blocks.forEach((block: EditorJSBlock) => {
-    const data = block.data as Record<string, unknown>;
+    const data = block.data;
     
     switch (block.type) {
       case "header": {

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { toast } from "react-hot-toast";
 
 import type { PostData, LongFormPostData, UserData, HashTagPreset } from "~/features/posts/types";
-import type { EditorJSInstance as EditorJSInstanceType } from "~/features/posts/types/editorjs.types";
+import type { EditorJSInstance as EditorJSInstanceType, EditorJSAPI } from "~/features/posts/types/editorjs.types";
 import { resizeImage } from "~/features/upload/image-resize";
 import { uploadMultipleFiles } from "~/features/upload/upload.client";
 import { logClientError } from "~/lib/error-handler.client";
@@ -28,7 +28,7 @@ export function useEditPostModal({
   // Form fields for regular posts
   const [caption, setCaption] = useState("caption" in post ? (post.caption || "") : "");
   const [selectedQueueType, setSelectedQueueType] = useState(
-    post?.queueType?.id || "",
+    post?.queueType?.id ?? "",
   );
 
   // Form fields for longform posts
@@ -70,7 +70,7 @@ export function useEditPostModal({
         setScheduledFor(post.publishedAt ? new Date(post.publishedAt) : null);
       } else if (!isLongform && "caption" in post) {
         setCaption(post.caption || "");
-        setSelectedQueueType(post.queueType?.id || "");
+        setSelectedQueueType(post.queueType?.id ?? "");
         setScheduledFor(
           post.scheduledFor
             ? new Date(parseInt(post.scheduledFor) * 1000)
@@ -138,7 +138,7 @@ export function useEditPostModal({
             minHeight: 300,
             tools: {
               header: {
-                class: (await import("@editorjs/header")).default,
+                class: (await import("@editorjs/header")).default as unknown as new (config?: { placeholder?: string; levels?: number[]; defaultLevel?: number }) => unknown,
                 config: {
                   placeholder: "Enter a header",
                   levels: [2, 3, 4],
@@ -167,13 +167,13 @@ export function useEditPostModal({
                 class: (await import("@editorjs/inline-code")).default,
               },
               linkTool: {
-                class: (await import("@editorjs/link")).default,
+                class: (await import("@editorjs/link")).default as unknown as new (config?: { endpoint?: string }) => unknown,
                 config: {
                   endpoint: "/api/link-preview",
                 },
               },
               embed: {
-                class: (await import("@editorjs/embed")).default,
+                class: (await import("@editorjs/embed")).default as unknown as new (config?: { services?: Record<string, boolean> }) => unknown,
                 config: {
                   services: {
                     youtube: true,
@@ -207,7 +207,11 @@ export function useEditPostModal({
                           throw new Error(`Server error: ${response.status}`);
                         }
 
-                        const result = await response.json();
+                        const result = (await response.json()) as {
+                          success?: number;
+                          file?: { url?: string };
+                          error?: string;
+                        };
 
                         if (result.success === 1 && result.file?.url) {
                           return {
@@ -232,7 +236,7 @@ export function useEditPostModal({
                 },
               },
             },
-            onChange: async (api) => {
+            onChange: (async (api: EditorJSAPI) => {
               try {
                 const outputData = await api.saver.save();
                 const markdownContent = convertEditorJSToMarkdown(outputData);
@@ -240,7 +244,7 @@ export function useEditPostModal({
               } catch (error) {
                 console.error("Editor save error:", error);
               }
-            },
+            }),
           });
 
           editorRef.current = editorInstance;
@@ -253,7 +257,7 @@ export function useEditPostModal({
       }
     };
 
-    loadEditor();
+    void loadEditor();
 
     return () => {
       if (editorRef.current) {
@@ -285,6 +289,7 @@ export function useEditPostModal({
     if (!isLongform || !editorReady || !editorRef.current || !content) return;
 
     const loadInitialContent = async () => {
+      if (!editorRef.current) return;
       try {
         await editorRef.current.isReady;
         const editorJSData = convertMarkdownToEditorJS(content);
@@ -294,12 +299,14 @@ export function useEditPostModal({
       }
     };
 
-    const timeoutId = setTimeout(loadInitialContent, 100);
+    const timeoutId = setTimeout(() => {
+      void loadInitialContent();
+    }, 100);
     return () => clearTimeout(timeoutId);
   }, [isLongform, editorReady, content]);
 
   const formatDateTimeForInput = (date: Date) => {
-    const userTimezone = user?.timezone || "UTC";
+    const userTimezone = user?.timezone ?? "UTC";
     const dateInUserTz = new Date(
       date.toLocaleString("en-US", { timeZone: userTimezone }),
     );

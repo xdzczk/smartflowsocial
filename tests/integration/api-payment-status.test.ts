@@ -6,7 +6,6 @@
 
 import { json } from "@remix-run/node";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-
 // Mock dependencies
 vi.mock("~/models/payment.server", () => ({
   checkPaymentStatus: vi.fn(),

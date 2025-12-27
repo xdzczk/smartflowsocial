@@ -3,7 +3,6 @@
  * Reusable notification component for success/error messages
  */
 import { type ToastMessage } from "~/components/types";
-
 interface ToastProps {
     toast: ToastMessage;
     onClose: () => void;

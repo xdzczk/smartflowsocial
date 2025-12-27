@@ -1,5 +1,4 @@
 import { TEST_NPUB } from "../support/nostr-test-keys";
-
 describe("Queues Loader Integration", () => {
     beforeEach(() => {
         cy.loginNostr({ npub: TEST_NPUB });

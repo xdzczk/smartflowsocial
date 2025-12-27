@@ -63,7 +63,7 @@ export function QueueTypeDialog({
     "INTERVAL",
   );
   const [hashTagPresetId, setHashTagPresetId] = useState<string>(
-    queueType?.hashTagPresetId || "none",
+    queueType?.hashTagPresetId ?? "none",
   );
 
   const isEditing = !!queueType;
@@ -123,7 +123,7 @@ export function QueueTypeDialog({
             <Input
               id="name"
               name="name"
-              defaultValue={queueType?.name || ""}
+              defaultValue={queueType?.name ?? ""}
               placeholder="e.g., Tech News"
               required
             />
@@ -134,7 +134,7 @@ export function QueueTypeDialog({
             <Input
               id="description"
               name="description"
-              defaultValue={queueType?.description || ""}
+              defaultValue={queueType?.description ?? ""}
               placeholder="Optional description"
             />
           </div>
@@ -145,7 +145,7 @@ export function QueueTypeDialog({
               id="color"
               name="color"
               type="color"
-              defaultValue={queueType?.color || "#3B82F6"}
+              defaultValue={queueType?.color ?? "#3B82F6"}
               className="h-10 w-full"
             />
           </div>

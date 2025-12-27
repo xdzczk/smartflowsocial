@@ -1,7 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 
 import { Button } from "~/components/ui/button";
-
 interface SmartUploadButtonProps {
   onUploadStart?: () => void;
   onUploadProgress?: (progress: number) => void;
@@ -37,7 +36,7 @@ export function SmartUploadButton({
     try {
       const response = await fetch("/api/user-upload-provider");
       if (!response.ok) throw new Error("Failed to check provider");
-      const data = await response.json();
+      const data = await response.json() as { provider?: string };
 
       // Handle legacy BLOSSOM value as BLOSSOM_PRIMAL
       if (data.provider === "BLOSSOM" || data.provider === "BLOSSOM_PRIMAL") {
@@ -67,11 +66,14 @@ export function SmartUploadButton({
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = (await response.json()) as { error?: string };
       throw new Error(error.error || "Upload failed");
     }
 
-    const result = await response.json();
+    const result = (await response.json()) as { fileUrl?: string };
+    if (!result.fileUrl) {
+      throw new Error("Upload failed: No file URL returned");
+    }
     return result.fileUrl;
   };
 

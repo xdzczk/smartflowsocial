@@ -19,8 +19,20 @@ export function initSentry(): void {
 
   try {
     // Dynamic import to avoid bundling Sentry in production if not configured
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const Sentry = require("@sentry/remix");
+     
+    const Sentry = require("@sentry/remix") as {
+      init: (options: {
+        dsn?: string;
+        environment?: string;
+        tracesSampleRate?: number;
+        profilesSampleRate?: number;
+        beforeSend?: (event: unknown, hint: unknown) => unknown;
+        integrations?: unknown[];
+      }) => void;
+      captureException: (error: Error, options?: unknown) => void;
+      captureMessage: (message: string, level?: string) => void;
+      setUser: (user: { id?: string; email?: string }) => void;
+    };
     
     Sentry.init({
       dsn: process.env.SENTRY_DSN,
@@ -30,9 +42,10 @@ export function initSentry(): void {
       // Enable profiling in production (optional)
       profilesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
       // Filter out health checks and other noise
-      beforeSend(event, hint) {
+      beforeSend(event: unknown, hint: unknown) {
         // Don't send events for health checks
-        if (event.request?.url?.includes("/health")) {
+        const sentryEvent = event as { request?: { url?: string } };
+        if (sentryEvent.request?.url?.includes("/health")) {
           return null;
         }
         return event;
@@ -76,14 +89,16 @@ export function captureException(
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const Sentry = require("@sentry/remix");
+     
+    const Sentry = require("@sentry/remix") as {
+      captureException: (error: Error, options?: unknown) => void;
+    };
     
     Sentry.captureException(error, {
       tags: context?.tags,
       extra: context?.extra,
       user: context?.user,
-      level: context?.level || "error",
+      level: context?.level ?? "error",
     });
   } catch (err) {
     // Fail silently - don't break the app if Sentry fails
@@ -108,8 +123,10 @@ export function captureMessage(
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const Sentry = require("@sentry/remix");
+     
+    const Sentry = require("@sentry/remix") as {
+      captureMessage: (message: string, options?: unknown) => void;
+    };
     
     Sentry.captureMessage(message, {
       level,
@@ -131,8 +148,10 @@ export function setUser(user: { id?: string; email?: string; username?: string }
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const Sentry = require("@sentry/remix");
+     
+    const Sentry = require("@sentry/remix") as {
+      setUser: (user: { id?: string; email?: string; username?: string }) => void;
+    };
     Sentry.setUser(user);
   } catch (err) {
     // Fail silently
@@ -149,8 +168,10 @@ export function clearUser(): void {
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const Sentry = require("@sentry/remix");
+     
+    const Sentry = require("@sentry/remix") as {
+      setUser: (user: null) => void;
+    };
     Sentry.setUser(null);
   } catch (err) {
     // Fail silently

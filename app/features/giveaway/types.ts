@@ -4,7 +4,6 @@
  */
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
-
 /**
  * Nostr event tag structure
  */

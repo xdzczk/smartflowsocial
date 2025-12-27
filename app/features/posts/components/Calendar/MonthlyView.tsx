@@ -70,7 +70,7 @@ export function MonthlyView({
   // Group posts by date
   const postsByDate = useMemo(() => {
     const grouped: PostsByDate = {};
-    const userTimezone = user?.timezone || "Etc/UTC";
+    const userTimezone = user?.timezone ?? "Etc/UTC";
 
     // Process scheduled posts
     scheduledPosts.forEach((post) => {
@@ -131,7 +131,7 @@ export function MonthlyView({
     e.preventDefault();
 
     const postData = JSON.parse(e.dataTransfer.getData("text/plain")) as CalendarPost;
-    const userTimezone = user?.timezone || "Etc/UTC";
+    const userTimezone = user?.timezone ?? "Etc/UTC";
 
     // For monthly view, we'll set time to 9:00 AM by default in user's timezone
     const year = date.getFullYear();

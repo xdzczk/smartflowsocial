@@ -1,5 +1,4 @@
 import { nip19 } from "nostr-tools";
-
 export function convertToHex(key: string): string | null {
   try {
     const { data } = nip19.decode(key);

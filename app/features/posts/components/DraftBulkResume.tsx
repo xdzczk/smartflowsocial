@@ -2,8 +2,8 @@ import { useFetcher } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
 import { getSelectedQueueStyle } from "~/features/posts/queueColors";
-import type { QueueType, PostData } from "~/features/posts/types";
 import { isIntervalScheduleConfig, isFixedSlotsScheduleConfig } from "~/features/posts/types";
+import type { QueueType, PostData } from "~/features/posts/types";
 import { signEventFn } from "~/lib/nostr";
 import { useOptionalUser } from "~/lib/remix-utils";
 
@@ -27,7 +27,7 @@ export default function DraftBulkResume({
   const [posts, setPosts] = useState(
     selectedDrafts.map((draft, index) => {
       const now = new Date();
-      const userTimezone = user?.timezone || "UTC";
+      const userTimezone = user?.timezone ?? "UTC";
       const localDate = new Date(
         now.toLocaleString("en-US", { timeZone: userTimezone }),
       );
@@ -43,7 +43,7 @@ export default function DraftBulkResume({
         caption: draft.caption,
         fileUrl: draft.fileUrl,
         postType: draft.postType,
-        queueType: draft.queueType?.name || draft.queueType || "unassigned",
+        queueType: draft.queueType?.name ?? draft.queueType || "unassigned",
         scheduledFor: localDate
           .toLocaleString("en-US", {
             year: "numeric",
@@ -76,7 +76,9 @@ export default function DraftBulkResume({
       });
 
       if (response.ok) {
-        const { scheduledTime } = await response.json();
+        const data = (await response.json()) as { scheduledTime?: string };
+        const scheduledTime = data.scheduledTime;
+        if (!scheduledTime) return;
 
         // For bulk posts, add interval offset based on index
         if (baseIndex > 0) {
@@ -258,7 +260,7 @@ export default function DraftBulkResume({
     try {
       const signedPosts = await Promise.all(
         posts.map(async (post) => {
-          const userTimezone = user?.timezone || "UTC";
+          const userTimezone = user?.timezone ?? "UTC";
           let scheduledTime;
 
           if (userTimezone !== "UTC" && userTimezone !== "Etc/GMT") {
@@ -293,7 +295,7 @@ export default function DraftBulkResume({
                 queueTypeName: post.queueType,
               }),
             });
-            const data = await response.json();
+            const data = (await response.json()) as { hashtags?: string };
             tagsString = data.hashtags || "";
           } catch (error) {
             const { handleErrorSafely } = await import("~/lib/error-handler.client");
@@ -340,7 +342,7 @@ export default function DraftBulkResume({
         formData.append("postIds", post.id);
         formData.append("contents", post.content || "");
         formData.append("captions", post.caption || "");
-        const queueTypeValue = typeof post.queueType === "string" ? post.queueType : (post.queueType?.name || "");
+        const queueTypeValue = typeof post.queueType === "string" ? post.queueType : (post.queueType?.name ?? "");
         formData.append("queueTypes", queueTypeValue);
         formData.append("scheduledFors", post.scheduledFor || "");
         formData.append("signedEvents", post.signedEvent);
@@ -360,7 +362,7 @@ export default function DraftBulkResume({
 
     if (typeof fileUrl[0] === "string" && fileUrl[0].startsWith("[")) {
       try {
-        return JSON.parse(fileUrl[0]);
+        return JSON.parse(fileUrl[0]) as string[];
       } catch (e) {
         console.error("Error parsing fileUrl:", e);
         return [];
@@ -478,7 +480,7 @@ export default function DraftBulkResume({
                     <div className="max-h-20 overflow-y-auto">
                       <p className="text-sm text-gray-700 dark:text-gray-300">
                         {post.content?.substring(0, 150) || ""}
-                        {(post.content?.length || 0) > 150 ? "..." : null}
+                        {(post.content?.length ?? 0) > 150 ? "..." : null}
                       </p>
                     </div>
                   </td>

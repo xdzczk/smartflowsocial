@@ -11,7 +11,6 @@ import { combineContent } from "~/features/posts/combined.server";
 import { getPostStats } from "~/features/posts/stats.server";
 
 import { postFactory, longFormPostFactory } from "../factories";
-
 describe("Performance: combineContent()", () => {
   it("should handle small arrays (< 100 items) in < 50ms", () => {
     const posts = postFactory.many(50);

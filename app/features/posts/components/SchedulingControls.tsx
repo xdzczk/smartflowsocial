@@ -63,9 +63,12 @@ export default function SchedulingControls({
       });
 
       if (response.ok) {
-        const { scheduledTime } = await response.json();
-        setLocalScheduledFor(scheduledTime);
-        onScheduleChange(scheduledTime);
+        const data = (await response.json()) as { scheduledTime?: string };
+        const scheduledTime = data.scheduledTime;
+        if (scheduledTime) {
+          setLocalScheduledFor(scheduledTime);
+          onScheduleChange(scheduledTime);
+        }
       }
     } catch (error) {
       const { handleErrorSafely } = await import("~/lib/error-handler.client");
@@ -78,7 +81,7 @@ export default function SchedulingControls({
 
   useEffect(() => {
     if (selectedQueueType !== "unassigned") {
-      calculateQueueScheduleTime(selectedQueueType);
+      void calculateQueueScheduleTime(selectedQueueType);
     }
   }, [selectedQueueType, calculateQueueScheduleTime]);
 

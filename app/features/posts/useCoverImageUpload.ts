@@ -2,7 +2,6 @@ import { useFetcher } from "@remix-run/react";
 import { useState, useCallback } from "react";
 
 import { resizeImage } from "~/features/upload/image-resize";
-
 interface UseCoverImageUploadOptions {
     uploadProvider: string | null;
     initialImage?: string;

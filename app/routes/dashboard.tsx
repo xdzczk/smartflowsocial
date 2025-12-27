@@ -18,7 +18,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const subscriptionData = await requireActiveSubscription(user.id);
 
   // Pending parent link requests for this user (as child)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const pendingParentNpubs: string[] =
     (user as unknown as { pendingParentRequests?: string[] }).pendingParentRequests || [];
   
@@ -44,8 +44,8 @@ function ProfileBits({ nostrProfile }: { nostrProfile: unknown }) {
   try {
     const p =
       typeof nostrProfile === "string"
-        ? JSON.parse(nostrProfile)
-        : nostrProfile;
+        ? (JSON.parse(nostrProfile) as { name?: string; display_name?: string })
+        : (nostrProfile as { name?: string; display_name?: string } | undefined);
     name = p?.name;
     display_name = p?.display_name;
   } catch { /* ignore parse errors */ }

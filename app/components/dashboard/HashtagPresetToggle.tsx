@@ -50,7 +50,7 @@ export function HashtagPresetToggle({
       onSelect(null, "");
     } else {
       const preset = presets.find((p) => p.id === value);
-      onSelect(preset?.id || null, preset?.tags || "");
+      onSelect(preset?.id ?? null, preset?.tags ?? "");
     }
   };
 

@@ -11,7 +11,7 @@ export function getImageUrls(fileUrl: string[] | undefined): string[] {
 
   if (typeof fileUrl[0] === "string" && fileUrl[0].startsWith("[")) {
     try {
-      return JSON.parse(fileUrl[0]);
+      return JSON.parse(fileUrl[0]) as string[];
     } catch (e) {
       handleErrorSafely(e, {
         component: "AllContentListing",
@@ -94,7 +94,7 @@ export function formatDate(
 export function getQueueTypeDisplay(
   queueType: CombinedContent["queueType"],
 ): { className: string; style?: React.CSSProperties; name: string } {
-  const name = queueType?.name || "unassigned";
+  const name = queueType?.name ?? "unassigned";
 
   if (queueType?.color) {
     return {

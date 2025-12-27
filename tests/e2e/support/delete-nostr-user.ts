@@ -5,7 +5,6 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import { installGlobals } from "@remix-run/node";
-
 installGlobals();
 
 // Create a fresh Prisma client for the script

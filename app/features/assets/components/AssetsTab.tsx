@@ -1,6 +1,5 @@
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { formatDate } from "~/lib/helpers";
-
 interface Asset {
     id: string;
     assetType: string;

@@ -176,7 +176,7 @@ export class PostFactory {
 
   withNostrEvent(nostrEvent: any): this {
     this.options.nostrEvent = nostrEvent;
-    this.options.nostrEventId = nostrEvent?.id || null;
+    this.options.nostrEventId = nostrEvent?.id ?? null;
     return this;
   }
 
@@ -278,6 +278,8 @@ export const postFactory = {
     );
   },
 };
+
+
 
 
 

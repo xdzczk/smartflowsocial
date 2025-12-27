@@ -101,9 +101,9 @@ export function useLongFormEditor({
                 const editorInstance = new EditorJS({
                     holder: "editorjs",
                     minHeight: 300,
-                    tools,
+                    tools: tools as unknown as Record<string, { class: unknown; config?: Record<string, unknown>; inlineToolbar?: boolean }>,
                     data: undefined, // Initial data will be loaded separately
-                    onChange: async (api: EditorJSAPI) => {
+                    onChange: (async (api: EditorJSAPI) => {
                         try {
                             const outputData = await api.saver.save();
                             onContentChange(JSON.stringify(outputData));
@@ -114,27 +114,40 @@ export function useLongFormEditor({
                                 action: "onChange",
                             });
                         }
-                    },
+                    }) as unknown as (api: EditorJSAPI) => void,
                 }) as EditorJSInstance;
 
                 // Store the editor reference and add to global tracking
                 editorRef.current = editorInstance;
-                window.EditorJSInstances!.push(editorInstance);
+                window.EditorJSInstances.push(editorInstance);
 
                 // Initialize custom drag and drop functionality after editor is ready
-                editorRef.current.isReady.then(() => {
-                    const editorElement = document.getElementById("editorjs");
-                    if (editorElement) {
-                        const dragObserver = setupCustomDragDrop(
-                            editorRef,
-                            editorElement,
-                            onContentChange,
-                            disableCaptionsFn,
+                void (async () => {
+                    try {
+                        await editorRef.current.isReady;
+                        if (!editorRef.current) return;
+                        const editorElement = document.getElementById("editorjs");
+                        if (editorElement) {
+                            const dragObserver = setupCustomDragDrop(
+                                editorRef as unknown as React.RefObject<EditorJSInstance>,
+                                editorElement,
+                                onContentChange,
+                                disableCaptionsFn,
+                            );
+                            editorRef.current._dragObserver = dragObserver;
+                        }
+                        setEditorReady(true);
+                    } catch (error) {
+                        logClientError(
+                            error instanceof Error ? error : new Error(String(error)),
+                            {
+                                component: "useLongFormEditor",
+                                action: "initializeDragDrop",
+                            },
+                            "warning",
                         );
-                        editorRef.current._dragObserver = dragObserver;
                     }
-                    setEditorReady(true);
-                });
+                })();
 
                 // Run caption disabling immediately and on editor changes
                 setTimeout(disableCaptionsFn, 100);
@@ -148,7 +161,7 @@ export function useLongFormEditor({
             }
         };
 
-        loadEditor();
+        void loadEditor();
 
         return () => {
             if (editorRef.current) {

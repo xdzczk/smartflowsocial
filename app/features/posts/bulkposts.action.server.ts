@@ -10,7 +10,6 @@ import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolve
 import { logInfo } from "~/lib/error-logger.server";
 import { createPost, updatePost } from "~/models/post.commands.server";
 import { isVideoUrl } from "~/utils/media-helpers";
-
 /**
  * Upload result from client-side upload system
  */
@@ -41,7 +40,12 @@ export async function handleUploadImagesPreview(formData: FormData) {
 
         let uploadResults: UploadResult[];
         try {
-            uploadResults = JSON.parse(uploadResultsStr);
+            const parsed: unknown = JSON.parse(uploadResultsStr);
+            if (Array.isArray(parsed)) {
+                uploadResults = parsed as UploadResult[];
+            } else {
+                throw new Error("uploadResults must be an array");
+            }
         } catch (parseError) {
             const { ValidationError } = await import("~/lib/errors");
             throw new ValidationError("Invalid uploadResults JSON format", {
@@ -53,7 +57,7 @@ export async function handleUploadImagesPreview(formData: FormData) {
         const queueTypes = formData.getAll("queueTypes");
 
         const fileUrls = uploadResults.map((result: UploadResult, index: number) => ({
-            fileUrl: result.file?.url || "",
+            fileUrl: result.file?.url ?? "",
             scheduledFor: scheduledDates[index],
             queueType: queueTypes[index],
         }));
@@ -77,9 +81,15 @@ export async function handleSignAndSchedule(
         // Parse signed events with error handling
         let signedEvents: SignedEvent[];
         try {
-            signedEvents = formData
-                .getAll("signedEvents")
-                .map((event) => JSON.parse(event as string));
+            const signedEventsRaw = formData.getAll("signedEvents");
+            signedEvents = signedEventsRaw
+                .map((event) => {
+                    const parsed: unknown = typeof event === "string" ? JSON.parse(event) : null;
+                    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+                        return parsed as SignedEvent;
+                    }
+                    throw new Error("Invalid signed event format");
+                });
         } catch (parseError) {
             const { ValidationError } = await import("~/lib/errors");
             throw new ValidationError("Invalid signedEvents JSON format", {
@@ -89,9 +99,15 @@ export async function handleSignAndSchedule(
 
         let nostrEvents: NostrEvent[];
         try {
-            nostrEvents = formData
-                .getAll("nostrEvent")
-                .map((event) => JSON.parse(event as string));
+            const nostrEventsRaw = formData.getAll("nostrEvent");
+            nostrEvents = nostrEventsRaw
+                .map((event) => {
+                    const parsed: unknown = typeof event === "string" ? JSON.parse(event) : null;
+                    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+                        return parsed as NostrEvent;
+                    }
+                    throw new Error("Invalid nostr event format");
+                });
         } catch (parseError) {
             const { ValidationError } = await import("~/lib/errors");
             throw new ValidationError("Invalid nostrEvent JSON format", {
@@ -101,9 +117,18 @@ export async function handleSignAndSchedule(
 
         let captions: string[];
         try {
-            captions = formData
-                .getAll("caption")
-                .map((caption) => JSON.parse(caption as string));
+            const captionsRaw = formData.getAll("caption");
+            captions = captionsRaw
+                .map((caption) => {
+                    const parsed: unknown = typeof caption === "string" ? JSON.parse(caption) : null;
+                    if (typeof parsed === "string") {
+                        return parsed;
+                    }
+                    if (Array.isArray(parsed)) {
+                        return parsed.join(" ");
+                    }
+                    return String(parsed ?? "");
+                });
         } catch (parseError) {
             const { ValidationError } = await import("~/lib/errors");
             throw new ValidationError("Invalid caption JSON format", {
@@ -113,7 +138,7 @@ export async function handleSignAndSchedule(
 
         let fileUrls: string[];
         try {
-            fileUrls = formData.getAll("fileUrl").map((url) => JSON.parse(url as string));
+            fileUrls = formData.getAll("fileUrl").map((url) => JSON.parse(url as string) as string[]).flat();
         } catch (parseError) {
             const { ValidationError } = await import("~/lib/errors");
             throw new ValidationError("Invalid fileUrl JSON format", {
@@ -225,7 +250,14 @@ export async function handleSaveAsDraft(
     try {
         let fileUrls: string[];
         try {
-            fileUrls = formData.getAll("fileUrl").map((url) => JSON.parse(url as string));
+            const fileUrlsRaw = formData.getAll("fileUrl");
+            fileUrls = fileUrlsRaw.map((url) => {
+                const parsed: unknown = typeof url === "string" ? JSON.parse(url) : null;
+                if (Array.isArray(parsed)) {
+                    return parsed as string[];
+                }
+                return [];
+            }).flat();
         } catch (parseError) {
             const { ValidationError } = await import("~/lib/errors");
             throw new ValidationError("Invalid fileUrl JSON format", {
@@ -235,9 +267,18 @@ export async function handleSaveAsDraft(
 
         let captions: string[];
         try {
-            captions = formData
-                .getAll("caption")
-                .map((caption) => JSON.parse(caption as string));
+            const captionsRaw = formData.getAll("caption");
+            captions = captionsRaw
+                .map((caption) => {
+                    const parsed: unknown = typeof caption === "string" ? JSON.parse(caption) : null;
+                    if (typeof parsed === "string") {
+                        return parsed;
+                    }
+                    if (Array.isArray(parsed)) {
+                        return parsed.join(" ");
+                    }
+                    return String(parsed ?? "");
+                });
         } catch (parseError) {
             const { ValidationError } = await import("~/lib/errors");
             throw new ValidationError("Invalid caption JSON format", {

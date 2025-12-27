@@ -6,7 +6,6 @@ import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import type { ProfileData } from "~/features/nostr/types";
-
 interface AccountInfo {
   npub: string;
   nostrProfile?: ProfileData | null;
@@ -32,7 +31,7 @@ function extractProfileBits(nostrProfile: ProfileData | null | undefined) {
     } as const;
   try {
     if (typeof nostrProfile === "string") {
-      const p = JSON.parse(nostrProfile);
+      const p = JSON.parse(nostrProfile) as { name?: string; display_name?: string; picture?: string };
       return {
         name: p?.name,
         display_name: p?.display_name,
@@ -151,7 +150,7 @@ export function AccountsSettings({
   if (isChild) {
     const bits = extractProfileBits(parentUser?.nostrProfile);
     const parentName =
-      bits.name || bits.display_name || parentUser?.npub || "Parent";
+      bits.name || bits.display_name || parentUser?.npub ?? "Parent";
     return (
       <Card className="p-4">
         <div className="mb-4">
@@ -272,7 +271,7 @@ export function AccountsSettings({
         <div>
           <h3 className="mb-2 text-sm font-medium">Confirmed children</h3>
           <div className="divide-y rounded-md border">
-            {confirmedChildren && confirmedChildren.length === 0 ? (
+            {confirmedChildren?.length === 0 ? (
               <div className="p-3 text-sm text-muted-foreground">No confirmed children</div>
             ) : (
               (confirmedChildren || []).map((u) => {
@@ -316,7 +315,7 @@ export function AccountsSettings({
         <div>
           <h3 className="mb-2 text-sm font-medium">Pending requests</h3>
           <div className="divide-y rounded-md border">
-            {pendingChildren && pendingChildren.length === 0 ? (
+            {pendingChildren?.length === 0 ? (
               <div className="p-3 text-sm text-muted-foreground">No pending requests</div>
             ) : (
               (pendingChildren || []).map((u) => {

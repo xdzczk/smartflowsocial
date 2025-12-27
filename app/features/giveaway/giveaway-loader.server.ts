@@ -3,8 +3,8 @@
  * Centralized data fetching and processing for giveaway page
  */
 
-import type { User } from "~/features/engagement/trustScore";
 import { calculateTrustScore } from "~/features/engagement/trustScore";
+import type { User } from "~/features/engagement/trustScore";
 import { convertToHex } from "~/lib/helpers";
 import { connectToPrimalCache } from "~/lib/nostrwebsocket.server";
 import { getRecentPostedPosts } from "~/models/post.queries.server";
@@ -38,8 +38,10 @@ export async function fetchUserProfile(pubkey: string): Promise<User | null> {
     let statsEvent = null;
 
     for (const item of profileData) {
-      if (!Array.isArray(item) || item[0] !== "EVENT") continue;
-      const event = item[2];
+      if (!Array.isArray(item) || item[0] !== "EVENT" || !item[2]) continue;
+      const eventData = item[2];
+      if (!eventData || typeof eventData !== "object" || Array.isArray(eventData)) continue;
+      const event = eventData as { kind?: number; content?: string };
       if (!event) continue;
 
       if (event.kind === 0) {
@@ -51,9 +53,9 @@ export async function fetchUserProfile(pubkey: string): Promise<User | null> {
 
     // Parse profile data
     let profile: GiveawayProfile = {};
-    if (profileEvent && profileEvent.content) {
+    if (profileEvent?.content) {
       try {
-        profile = JSON.parse(profileEvent.content);
+        profile = JSON.parse(profileEvent.content) as GiveawayProfile;
       } catch (e) {
         // Log but continue with empty profile
         const { logWarning } = await import("~/lib/error-logger.server");
@@ -66,9 +68,9 @@ export async function fetchUserProfile(pubkey: string): Promise<User | null> {
 
     // Parse stats data
     let stats: GiveawayStats = {};
-    if (statsEvent && statsEvent.content) {
+    if (statsEvent?.content) {
       try {
-        stats = JSON.parse(statsEvent.content);
+        stats = JSON.parse(statsEvent.content) as GiveawayStats;
       } catch (e) {
         // Log but continue with empty stats
         const { logWarning } = await import("~/lib/error-logger.server");
@@ -164,29 +166,43 @@ async function fetchPostStats(eventIds: string[]): Promise<Record<string, {
         throw new Error("Failed to fetch stats");
       }
 
-      const data = await response.json();
+      const data = await response.json() as PrimalEvent[];
       // Find the stats event in the response array
       const statsEvent = data.find(
-        (event: PrimalEvent) =>
-          event[0] === "EVENT" &&
-          event[2] &&
-          event[2].kind === 10000100 &&
-          event[2].content &&
-          event[2].content.includes(eventId),
+        (event: PrimalEvent) => {
+          if (!Array.isArray(event) || event[0] !== "EVENT" || !event[2]) return false;
+          const eventData = event[2];
+          if (!eventData || typeof eventData !== "object" || Array.isArray(eventData)) return false;
+          const eventTyped = eventData as { kind?: number; content?: string };
+          return eventTyped.kind === 10000100 &&
+            eventTyped.content &&
+            typeof eventTyped.content === "string" &&
+            eventTyped.content.includes(eventId);
+        },
       );
 
-      if (statsEvent) {
-        const content = JSON.parse(statsEvent[2].content);
-        return {
-          [eventId]: {
-            likes: content.likes || 0,
-            replies: content.replies || 0,
-            mentions: content.mentions || 0,
-            reposts: content.reposts || 0,
-            zaps: content.zaps || 0,
-            satszapped: content.satszapped || 0,
-          },
-        };
+      if (statsEvent && Array.isArray(statsEvent) && statsEvent[2] && typeof statsEvent[2] === "object" && !Array.isArray(statsEvent[2])) {
+        const eventData = statsEvent[2] as { kind?: number; content?: string };
+        if (eventData.content && typeof eventData.content === "string") {
+          const content = JSON.parse(eventData.content) as {
+            likes?: number;
+            replies?: number;
+            mentions?: number;
+            reposts?: number;
+            zaps?: number;
+            satszapped?: number;
+          };
+          return {
+            [eventId]: {
+              likes: content.likes || 0,
+              replies: content.replies || 0,
+              mentions: content.mentions || 0,
+              reposts: content.reposts || 0,
+              zaps: content.zaps || 0,
+              satszapped: content.satszapped || 0,
+            },
+          };
+        }
       }
 
       return {
@@ -306,12 +322,24 @@ async function processGiveawayParticipants(
 
       // Find user profile event (kind 0)
       const userProfile = (userProfileResponse as PrimalEvent[]).find(
-        (data: PrimalEvent) => Array.isArray(data) && data[0] === "EVENT" && data[2] && typeof data[2] === "object" && "kind" in data[2] && data[2].kind === 0,
+        (data: PrimalEvent) => {
+          if (!Array.isArray(data) || data[0] !== "EVENT" || !data[2]) return false;
+          const eventData = data[2];
+          if (!eventData || typeof eventData !== "object" || Array.isArray(eventData)) return false;
+          const eventTyped = eventData as { kind?: number };
+          return eventTyped.kind === 0;
+        },
       );
 
       // Find stats event (kind 10000105)
       const statsEvent = (userProfileResponse as PrimalEvent[]).find(
-        (data: PrimalEvent) => Array.isArray(data) && data[0] === "EVENT" && data[2] && typeof data[2] === "object" && "kind" in data[2] && data[2].kind === 10000105,
+        (data: PrimalEvent) => {
+          if (!Array.isArray(data) || data[0] !== "EVENT" || !data[2]) return false;
+          const eventData = data[2];
+          if (!eventData || typeof eventData !== "object" || Array.isArray(eventData)) return false;
+          const eventTyped = eventData as { kind?: number };
+          return eventTyped.kind === 10000105;
+        },
       );
 
       let lud16 = null;
@@ -470,7 +498,7 @@ export async function loadGiveawayData(
     npub: user.npub || "",
     filterMuted: user.filterMuted ?? false,
     mutedList: user.mutedList && typeof user.mutedList === "object" && !Array.isArray(user.mutedList) && "npubs" in user.mutedList
-      ? (user.mutedList as { npubs?: unknown })
+      ? { npubs: Array.isArray((user.mutedList as { npubs?: unknown }).npubs) ? (user.mutedList as { npubs?: unknown }).npubs as string[] : [] }
       : { npubs: [] },
   };
   

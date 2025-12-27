@@ -8,7 +8,6 @@ import { nip19 } from "nostr-tools";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { convertToHex, convertHexToNpub } from "~/lib/nostr-conversion";
-
 // Mock nostr-tools
 vi.mock("nostr-tools", () => ({
   nip19: {

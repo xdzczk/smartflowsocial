@@ -20,10 +20,10 @@ import type {
   NostrTag,
   NotificationEvent,
   PrimalEvent,
-  ThreadViewData,
 } from "~/features/engagement/types";
-import type { PostData } from "~/features/posts/types";
 import type { SignedEvent } from "~/features/nostr/types";
+import type { PostData } from "~/features/posts/types";
+import type { UserWithHashTagPresets } from "~/features/user";
 import { getPostedPosts } from "~/models/post.queries.server";
 import { getUserById } from "~/models/user.server";
 
@@ -43,9 +43,10 @@ async function fetchUserProfile(pubkey: string): Promise<User | null> {
     let statsEvent = null;
 
     for (const item of profileData) {
-      if (!Array.isArray(item) || item[0] !== "EVENT") continue;
-      const event = item[2];
-      if (!event) continue;
+      if (!Array.isArray(item) || item[0] !== "EVENT" || !item[2]) continue;
+      const rawEventData: unknown = item[2];
+      if (!rawEventData || typeof rawEventData !== "object" || Array.isArray(rawEventData)) continue;
+      const event: { kind?: number; content?: string } = rawEventData as { kind?: number; content?: string };
 
       if (event.kind === 0) {
         profileEvent = event;
@@ -56,9 +57,9 @@ async function fetchUserProfile(pubkey: string): Promise<User | null> {
 
     // Parse profile data
     let profile: EngagementProfile = {};
-    if (profileEvent && profileEvent.content) {
+    if (profileEvent?.content) {
       try {
-        profile = JSON.parse(profileEvent.content);
+        profile = JSON.parse(profileEvent.content) as EngagementProfile;
       } catch (e) {
         console.error("Failed to parse profile content:", e);
       }
@@ -66,33 +67,33 @@ async function fetchUserProfile(pubkey: string): Promise<User | null> {
 
     // Parse stats data
     let stats: EngagementStats = {};
-    if (statsEvent && statsEvent.content) {
+    if (statsEvent?.content) {
       try {
-        stats = JSON.parse(statsEvent.content);
+        stats = JSON.parse(statsEvent.content) as EngagementStats;
       } catch (e) {
         console.error("Failed to parse stats content:", e);
       }
     }
 
     // Convert to User type
-    const profileTyped = profile as EngagementProfile;
-    const statsTyped = stats as EngagementStats;
+    const profileTyped = profile;
+    const statsTyped = stats;
     const user: User = {
       pubkey,
-      name: (profileTyped.name as string | undefined) || undefined,
-      displayName: (profileTyped.display_name as string | undefined) || undefined,
-      about: (profileTyped.about as string | undefined) || undefined,
-      picture: (profileTyped.picture as string | undefined) || undefined,
-      nip05: (profileTyped.nip05 as string | undefined) || undefined,
-      lud16: (profileTyped.lud16 as string | undefined) || undefined,
-      followsCount: (statsTyped.follows_count as number | undefined) || 0,
-      followersCount: (statsTyped.followers_count as number | undefined) || 0,
-      noteCount: (statsTyped.note_count as number | undefined) || 0,
-      replyCount: (statsTyped.reply_count as number | undefined) || 0,
-      timeJoined: (statsTyped.time_joined as number | undefined) || 0,
-      zapCount: (statsTyped.total_zap_count as number | undefined) || 0,
-      totalSatsZapped: (statsTyped.total_satszapped as number | undefined) || 0,
-      mediaCount: (statsTyped.media_count as number | undefined) || 0,
+      name: (profileTyped.name) ?? undefined,
+      displayName: (profileTyped.display_name) ?? undefined,
+      about: (profileTyped.about as string | undefined) ?? undefined,
+      picture: (profileTyped.picture) ?? undefined,
+      nip05: (profileTyped.nip05 as string | undefined) ?? undefined,
+      lud16: (profileTyped.lud16 as string | undefined) ?? undefined,
+      followsCount: (statsTyped.follows_count) ?? 0,
+      followersCount: (statsTyped.followers_count) ?? 0,
+      noteCount: (statsTyped.note_count) ?? 0,
+      replyCount: (statsTyped.reply_count as number | undefined) ?? 0,
+      timeJoined: (statsTyped.time_joined as number | undefined) ?? 0,
+      zapCount: (statsTyped.total_zap_count) ?? 0,
+      totalSatsZapped: (statsTyped.total_satszapped) ?? 0,
+      mediaCount: (statsTyped.media_count as number | undefined) ?? 0,
     };
 
     return user;
@@ -137,13 +138,16 @@ async function processEventBatch(
       );
 
       const statsEvent = (threadViewData as PrimalEvent[]).find(
-        (event: PrimalEvent) =>
-          Array.isArray(event) &&
-          event[0] === "EVENT" &&
-          event[2] &&
-          event[2].kind === 10000100 &&
-          event[2].content &&
-          event[2].content.includes(eventId),
+        (event: PrimalEvent) => {
+          if (!Array.isArray(event) || event[0] !== "EVENT" || !event[2]) return false;
+          const eventData = event[2];
+          if (typeof eventData !== "object" || Array.isArray(eventData)) return false;
+          const eventTyped = eventData as { kind?: number; content?: string };
+          return eventTyped.kind === 10000100 &&
+            eventTyped.content &&
+            typeof eventTyped.content === "string" &&
+            eventTyped.content.includes(eventId);
+        },
       );
 
       let eventStats = {
@@ -155,16 +159,30 @@ async function processEventBatch(
         satszapped: 0,
       };
 
-      if (statsEvent) {
-        const content = JSON.parse(statsEvent[2].content);
-        eventStats = {
-          likes: content.likes || 0,
-          replies: content.replies || 0,
-          mentions: content.mentions || 0,
-          reposts: content.reposts || 0,
-          zaps: content.zaps || 0,
-          satszapped: content.satszapped || 0,
-        };
+      if (statsEvent && Array.isArray(statsEvent) && statsEvent[2]) {
+        const eventData = statsEvent[2] as { kind?: number; content?: string };
+        if (eventData.content) {
+          try {
+            const content = JSON.parse(eventData.content) as {
+              likes?: number;
+              replies?: number;
+              mentions?: number;
+              reposts?: number;
+              zaps?: number;
+              satszapped?: number;
+            };
+            eventStats = {
+              likes: content.likes ?? 0,
+              replies: content.replies ?? 0,
+              mentions: content.mentions ?? 0,
+              reposts: content.reposts ?? 0,
+              zaps: content.zaps ?? 0,
+              satszapped: content.satszapped ?? 0,
+            };
+          } catch {
+            // Ignore parse errors
+          }
+        }
       }
 
       return {
@@ -232,7 +250,7 @@ export async function loadEngagementFeedData(
   page = 1,
   limit = 50,
 ) {
-  const [{ posts }, user] = await Promise.all([
+  const [{ posts }, userResult] = await Promise.all([
     getPostedPosts({
       userId,
       page,
@@ -243,22 +261,22 @@ export async function loadEngagementFeedData(
   ]);
 
   // Validate user data
-  if (!user) {
+  if (!userResult) {
     throw new Error("User not found");
   }
 
+  const user: UserWithHashTagPresets = userResult;
+
   // Ensure user has required properties with safe defaults
-  user.npub = user.npub || "";
-  user.filterMuted = user.filterMuted ?? false;
-  user.hidePostsFromLowTrustUsers = user.hidePostsFromLowTrustUsers ?? false;
+  const userNpub = user.npub ?? "";
+  const userFilterMuted = user.filterMuted ?? false;
+  const userHidePostsFromLowTrustUsers = user.hidePostsFromLowTrustUsers ?? false;
   
   // Type guard for mutedList
   const mutedListData = user.mutedList && typeof user.mutedList === "object" && !Array.isArray(user.mutedList) && "npubs" in user.mutedList
     ? (user.mutedList as { npubs?: unknown; lastSynced?: unknown })
     : null;
-  if (!mutedListData || !Array.isArray(mutedListData.npubs)) {
-    user.mutedList = { npubs: [] } as unknown as typeof user.mutedList;
-  }
+  const mutedNpubs = mutedListData && Array.isArray(mutedListData.npubs) ? mutedListData.npubs as string[] : [];
 
   // Get event IDs from signedEvent.id
   const eventIds = posts
@@ -286,7 +304,7 @@ export async function loadEngagementFeedData(
 
     // Process batches in parallel
     const batchPromises = batches.map((batchIds) =>
-      processEventBatch(batchIds, user.npub),
+      processEventBatch(batchIds, userNpub),
     );
 
     const allBatchResults = await Promise.all(batchPromises);
@@ -305,18 +323,13 @@ export async function loadEngagementFeedData(
     );
 
     // Filter out muted users if enabled
-    const mutedListTyped = user.mutedList && typeof user.mutedList === "object" && !Array.isArray(user.mutedList) && "npubs" in user.mutedList
-      ? (user.mutedList as { npubs?: unknown })
-      : null;
     if (
-      user.filterMuted &&
-      mutedListTyped &&
-      Array.isArray(mutedListTyped.npubs) &&
-      mutedListTyped.npubs.length > 0
+      userFilterMuted &&
+      mutedNpubs.length > 0
     ) {
       allNotifications = filterMutedNotifications(
         allNotifications,
-        mutedListTyped.npubs as string[],
+        mutedNpubs,
       );
     }
 
@@ -343,7 +356,7 @@ export async function loadEngagementFeedData(
     await Promise.all(profilePromises);
 
     // Filter out low trust users if enabled
-    if (user.hidePostsFromLowTrustUsers) {
+    if (userHidePostsFromLowTrustUsers) {
       allNotifications = filterLowTrustNotifications(
         allNotifications,
         trustScoresMap,
@@ -358,15 +371,19 @@ export async function loadEngagementFeedData(
         return se && typeof se === "object" && !Array.isArray(se) && "id" in se && typeof (se as { id: unknown }).id === "string";
       })
       .reduce((acc, post) => {
-        const se = post.signedEvent as { id: string };
-        acc[se.id] = {
-          likes: 0,
-          replies: 0,
-          mentions: 0,
-          reposts: 0,
-          zaps: 0,
-          satszapped: 0,
-        };
+        const se = post.signedEvent;
+        if (se && typeof se === "object" && !Array.isArray(se) && "id" in se && typeof se.id === "string") {
+          const result: Record<string, EventStats> = acc;
+          result[se.id] = {
+            likes: 0,
+            replies: 0,
+            mentions: 0,
+            reposts: 0,
+            zaps: 0,
+            satszapped: 0,
+          };
+          return result;
+        }
         return acc;
       }, {} as Record<string, EventStats>);
   }
@@ -378,11 +395,12 @@ export async function loadEngagementFeedData(
   // Convert PostWithQueueType[] to PostData[] for compatibility
   const postsAsPostData: PostData[] = posts.map((post) => {
     const { queueType, ...rest } = post;
-    return {
+    const result: PostData = {
       ...rest,
       signedEvent: post.signedEvent as SignedEvent | null | undefined,
       queueType: queueType || null,
-    } as PostData;
+    };
+    return result;
   });
   
   const groupedByParent = {
@@ -410,7 +428,7 @@ export async function loadEngagementFeedData(
   let groupedQuoteReposts: GroupedNotification[] = [];
   try {
     const notificationsData = await connectToPrimalCache("get_notifications", {
-      pubkey: user.npub,
+      pubkey: userNpub,
       limit: 100,
     });
 
@@ -421,15 +439,19 @@ export async function loadEngagementFeedData(
           if (
             Array.isArray(item) &&
             item[0] === "EVENT" &&
-            item[2]?.kind === 1
+            item[2] &&
+            typeof item[2] === "object" &&
+            !Array.isArray(item[2]) &&
+            "kind" in item[2] &&
+            (item[2] as { kind?: unknown }).kind === 1
           ) {
-            const event = item[2];
+            const event = item[2] as { id?: unknown; pubkey?: unknown; content?: unknown; kind?: unknown; tags?: unknown };
             
             if (!event || typeof event !== "object" || Array.isArray(event)) {
               return false;
             }
 
-            const eventTyped = event as { id?: unknown; pubkey?: unknown; content?: unknown; kind?: unknown };
+            const eventTyped = event;
             if (
               !eventTyped.id ||
               typeof eventTyped.id !== "string" ||
@@ -443,7 +465,7 @@ export async function loadEngagementFeedData(
             const tags = (eventTyped as { tags?: unknown }).tags as NostrTag[] || [];
 
             // Skip if it's the user's own post
-            if (eventTyped.pubkey === user.npub) {
+            if (eventTyped.pubkey === userNpub) {
               return false;
             }
 
@@ -468,7 +490,7 @@ export async function loadEngagementFeedData(
               (tag: NostrTag) =>
                 tag[0] === "p" && (tag[3] === "mention" || tag[3] === ""),
             )?.[1];
-            const isMentioningUser = mentionedUserPubkey === user.npub;
+            const isMentioningUser = mentionedUserPubkey === userNpub;
 
             return isMentioningUser;
           }
@@ -489,18 +511,13 @@ export async function loadEngagementFeedData(
         );
 
         // Filter out muted users if enabled
-        const mutedListTyped2 = user.mutedList && typeof user.mutedList === "object" && !Array.isArray(user.mutedList) && "npubs" in user.mutedList
-          ? (user.mutedList as { npubs?: unknown })
-          : null;
         if (
-          user.filterMuted &&
-          mutedListTyped2 &&
-          Array.isArray(mutedListTyped2.npubs) &&
-          mutedListTyped2.npubs.length > 0
+          userFilterMuted &&
+          mutedNpubs.length > 0
         ) {
           quoteRepostNotifications = filterMutedNotifications(
             quoteRepostNotifications,
-            mutedListTyped2.npubs as string[],
+            mutedNpubs,
           );
         }
 
@@ -525,7 +542,7 @@ export async function loadEngagementFeedData(
         await Promise.all(quoteProfilePromises);
 
         // Filter out low trust users from quote reposts if enabled
-        if (user.hidePostsFromLowTrustUsers) {
+        if (userHidePostsFromLowTrustUsers) {
           quoteRepostNotifications = filterLowTrustNotifications(
             quoteRepostNotifications,
             trustScoresMap,

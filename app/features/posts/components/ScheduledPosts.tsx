@@ -2,7 +2,6 @@ import { useLoaderData } from "@remix-run/react";
 import { useState } from "react";
 
 import type { PostData } from "~/features/posts/types";
-
 interface ScheduledPostsLoaderData {
   scheduledPosts: PostData[];
 }
@@ -86,10 +85,11 @@ export default function ScheduledPosts() {
               {scheduledPosts && scheduledPosts.length > 0 ? (
                 scheduledPosts.map((post) => {
                   // Safely parse the fileUrl and get the first image if it exists
-                  let firstImage;
+                  let firstImage: string | undefined;
                   if (post.fileUrl && post.fileUrl.length > 0) {
                     try {
-                      firstImage = JSON.parse(post.fileUrl[0])[0];
+                      const parsed = JSON.parse(post.fileUrl[0]) as string[];
+                      firstImage = parsed[0];
                     } catch (error) {
                       firstImage = post.fileUrl[0];
                     }
@@ -193,10 +193,11 @@ export default function ScheduledPosts() {
 
               <div className="mb-4">
                 {(() => {
-                  let modalImage;
+                  let modalImage: string | undefined;
                   if (selectedPost.fileUrl && selectedPost.fileUrl.length > 0) {
                     try {
-                      modalImage = JSON.parse(selectedPost.fileUrl[0])[0];
+                      const parsed = JSON.parse(selectedPost.fileUrl[0]) as string[];
+                      modalImage = parsed[0];
                     } catch (error) {
                       modalImage = selectedPost.fileUrl[0];
                     }

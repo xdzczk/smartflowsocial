@@ -7,7 +7,6 @@ import type { Template as PrismaTemplate } from "@prisma/client";
 import type { FetcherWithComponents } from "@remix-run/react";
 
 import type { Asset } from "~/features/assets/types";
-
 /**
  * Template data structure
  */

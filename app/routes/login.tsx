@@ -1,4 +1,5 @@
 import { json, redirect } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "@remix-run/node";
 
 import Footer from "~/components/layout/FrontendFooter";
 import Header from "~/components/layout/FrontendHeader";
@@ -6,7 +7,9 @@ import { Card, CardContent } from "~/components/ui/card";
 import NostrAuthButton from "~/features/auth/components/NostrAuthButton";
 import { getUserId } from "~/features/auth/session.server";
 
-export const loader = async ({ request }) => {
+
+
+export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
     const userId = await getUserId(request);
     if (userId) return redirect("/dashboard");

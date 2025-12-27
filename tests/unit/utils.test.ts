@@ -7,7 +7,6 @@
 import { describe, it, expect } from "vitest";
 
 import { cn } from "~/lib/utils";
-
 describe("Utility Functions", () => {
   describe("cn (className utility)", () => {
     it("should merge class names", () => {
@@ -102,6 +101,8 @@ describe("Utility Functions", () => {
     });
   });
 });
+
+
 
 
 

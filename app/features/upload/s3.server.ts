@@ -55,7 +55,7 @@ export function createUploadHandler(userId: string) {
       }
 
       try {
-        const ext = filename.split(".").pop()?.toLowerCase();
+        const ext = filename.split(".").pop()?.toLowerCase() ?? "";
         const uniqueFilename = `${uuidv4()}.${ext}`;
         const key = `clients/${userId}/${uniqueFilename}`;
 
@@ -90,25 +90,25 @@ export function createUploadHandler(userId: string) {
 }
 
 // Upload a buffer directly to S3 (useful for processed files)
-export async function uploadBufferToS3(
+export function uploadBufferToS3(
   buffer: Buffer,
   userId: string,
   filename?: string,
   customKey?: string,
 ): Promise<string> {
+  // Generate filename if not provided
+  let finalFilename: string;
+  if (filename) {
+    const ext = filename.split(".").pop()?.toLowerCase() || "jpg";
+    finalFilename = `${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`;
+  } else {
+    finalFilename = `${Date.now()}-${Math.random().toString(36).substring(2)}.jpg`;
+  }
+
+  // Use custom key or generate default one
+  const key = customKey || `clients/${userId}/${finalFilename}`;
+
   try {
-    // Generate filename if not provided
-    let finalFilename: string;
-    if (filename) {
-      const ext = filename.split(".").pop()?.toLowerCase() || "jpg";
-      finalFilename = `${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`;
-    } else {
-      finalFilename = `${Date.now()}-${Math.random().toString(36).substring(2)}.jpg`;
-    }
-
-    // Use custom key or generate default one
-    const key = customKey || `clients/${userId}/${finalFilename}`;
-
     const s3Client = createS3Client();
 
     const command = new PutObjectCommand({
@@ -120,7 +120,9 @@ export async function uploadBufferToS3(
     await s3Client.send(command);
 
     // Return the full URL
-    return `https://${process.env.STORAGE_BUCKET}.s3.${process.env.STORAGE_REGION}.amazonaws.com/${key}`;
+    const bucket = process.env.STORAGE_BUCKET ?? "";
+    const region = process.env.STORAGE_REGION ?? "";
+    return `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
   } catch (error) {
     logError(error instanceof Error ? error : new Error(String(error)), {
       userId,
@@ -144,7 +146,7 @@ export function createS3Client() {
 }
 
 // Specialized function for EditorJS image uploads
-export async function uploadEditorJSImage(
+export function uploadEditorJSImage(
   buffer: Buffer,
   userId: string,
   filename: string,
@@ -169,7 +171,9 @@ export async function uploadEditorJSImage(
     await s3Client.send(command);
 
     // Return the full URL
-    const imageUrl = `https://${process.env.STORAGE_BUCKET}.s3.${process.env.STORAGE_REGION}.amazonaws.com/${key}`;
+    const bucket = process.env.STORAGE_BUCKET ?? "";
+    const region = process.env.STORAGE_REGION ?? "";
+    const imageUrl = `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
 
     return imageUrl;
   } catch (error) {

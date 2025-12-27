@@ -4,7 +4,6 @@
  */
 
 import { getUserById } from "~/models/user.server";
-
 /**
  * Load search page data
  */
@@ -12,6 +11,8 @@ export async function loadSearchData(userId: string) {
   const user = await getUserById(userId);
   return { user };
 }
+
+
 
 
 

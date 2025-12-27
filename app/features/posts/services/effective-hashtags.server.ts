@@ -7,7 +7,6 @@ import { json } from "@remix-run/node";
 
 import { ValidationError } from "~/lib/errors";
 import { getQueueTypes } from "~/models/user.server";
-
 /**
  * Get effective hashtags for a queue type
  * Returns the hashtag preset assigned to the queue type, or empty if none assigned
@@ -72,4 +71,6 @@ export function parseEffectiveHashtagsRequest(body: unknown): {
     queueTypeId: requestBody.queueTypeId,
   };
 }
+
+
 

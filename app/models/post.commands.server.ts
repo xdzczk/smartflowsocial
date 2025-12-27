@@ -5,13 +5,12 @@
  * All functions in this file perform INSERT, UPDATE, or DELETE operations.
  */
 
-import type { Prisma , Post } from "@prisma/client";
+import { Prisma, type Post } from "@prisma/client";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 import { prisma } from "~/lib/prisma.server";
 
 import type { CreatePostData } from "./post.types";
-
 /**
  * Create a new post in the database
  * 
@@ -19,7 +18,7 @@ import type { CreatePostData } from "./post.types";
  * resolve queueTypeId in the feature layer before calling this function.
  * Use resolveQueueTypeId() from app/features/posts/services/queue-type-resolver.server.ts
  */
-export async function createPost(data: CreatePostData): Promise<Post> {
+export function createPost(data: CreatePostData): Promise<Post> {
   const {
     userId,
     content,
@@ -85,7 +84,7 @@ export async function createPost(data: CreatePostData): Promise<Post> {
   });
 }
 
-export async function deletePost({
+export function deletePost({
   id,
   userId,
 }: {
@@ -100,7 +99,7 @@ export async function deletePost({
   });
 }
 
-export async function updatePostStatus({
+export function updatePostStatus({
   id,
   userId,
   isPosted,
@@ -121,7 +120,7 @@ export async function updatePostStatus({
   });
 }
 
-export async function reschedulePost({
+export function reschedulePost({
   id,
   userId,
   newScheduledFor,
@@ -138,7 +137,7 @@ export async function reschedulePost({
   nostrEvent?: NostrEvent;
   queueTypeId?: string | null;
 }): Promise<Post> {
-  const updateData: Partial<Post> = {
+  const updateData: Prisma.PostUpdateInput = {
     scheduledFor: newScheduledFor,
     manual_override: overrideQueue,
     updatedAt: new Date(),
@@ -146,14 +145,30 @@ export async function reschedulePost({
 
   // If new signed events are provided, update them, otherwise clear them
   if (signedEvent && nostrEvent) {
-    updateData.signedEvent = signedEvent;
-    updateData.nostrEvent = nostrEvent;
+    // Prisma expects InputJsonValue for these fields
+    updateData.signedEvent = signedEvent as unknown as Prisma.InputJsonValue;
+    updateData.nostrEvent = nostrEvent as unknown as Prisma.InputJsonValue;
     updateData.nostrEventId = signedEvent.id;
   } else {
     // Clear signed event since timing changed - needs re-signing
-    updateData.signedEvent = null;
-    updateData.nostrEvent = null;
+    updateData.signedEvent = Prisma.DbNull;
+    updateData.nostrEvent = Prisma.DbNull;
     updateData.nostrEventId = null;
+  }
+
+  // Handle queueTypeId connection/disconnection
+  if (queueTypeId !== undefined) {
+    if (queueTypeId) {
+      updateData.queueType = {
+        connect: {
+          id: queueTypeId,
+        },
+      };
+    } else {
+      updateData.queueType = {
+        disconnect: true,
+      };
+    }
   }
 
   return prisma.post.update({
@@ -165,7 +180,7 @@ export async function reschedulePost({
   });
 }
 
-export async function updatePost({
+export function updatePost({
   id,
   userId,
   data,
@@ -176,15 +191,41 @@ export async function updatePost({
 }): Promise<Post> {
   // Prepare the update data
   const updateData: Prisma.PostUpdateInput = {
-    ...data,
-    scheduledFor: data.scheduledFor?.toString(),
     updatedAt: new Date(),
   };
 
+  // Only include defined fields
+  if (data.scheduledFor !== undefined) updateData.scheduledFor = data.scheduledFor.toString();
+  if (data.userId !== undefined) updateData.user = { connect: { id: data.userId } };
+  if (data.content !== undefined) updateData.content = data.content;
+  if (data.postedAt !== undefined) updateData.postedAt = data.postedAt;
+  if (data.fileUrl !== undefined) updateData.fileUrl = data.fileUrl;
+  if (data.nostrEventId !== undefined) updateData.nostrEventId = data.nostrEventId;
+  if (data.signedEvent !== undefined) updateData.signedEvent = data.signedEvent as unknown as Prisma.InputJsonValue;
+  if (data.nostrEvent !== undefined) updateData.nostrEvent = data.nostrEvent as unknown as Prisma.InputJsonValue;
+  if (data.tags !== undefined) updateData.tags = data.tags;
+  // Note: status, isPublished, isScheduled, draft are Prisma Post model fields, not in CreatePostData
+  // They should be set via separate update calls if needed
+  if (data.draft !== undefined) updateData.draft = data.draft;
+  if (data.isScheduled !== undefined) updateData.isScheduled = data.isScheduled;
+  // templateId is not in CreatePostData, handle separately if needed
+  if ("templateId" in data && data.templateId !== undefined) {
+    if (data.templateId === null) {
+      updateData.template = { disconnect: true };
+    } else {
+      updateData.template = { connect: { id: String(data.templateId) } };
+    }
+  }
+  if (data.hashTagPresetId !== undefined) {
+    if (data.hashTagPresetId === null) {
+      updateData.hashTagPreset = { disconnect: true };
+    } else {
+      updateData.hashTagPreset = { connect: { id: data.hashTagPresetId } };
+    }
+  }
+
   // Handle queueTypeId connection/disconnection
   if (data.queueTypeId !== undefined) {
-    delete updateData.queueTypeId; // Remove queueTypeId from updateData (Prisma expects connect/disconnect)
-
     if (data.queueTypeId) {
       updateData.queueType = {
         connect: {

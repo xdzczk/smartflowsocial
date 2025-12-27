@@ -64,12 +64,13 @@ export function SubscriptionSettings({
       setCopiedHash(hashId);
       setTimeout(() => setCopiedHash(null), 2000);
     } catch (err) {
-      import("~/lib/error-handler.client").then(({ handleErrorSafely }) => {
+      void (async () => {
+        const { handleErrorSafely } = await import("~/lib/error-handler.client");
         handleErrorSafely(err, {
           component: "SubscriptionSettings",
           action: "copyToClipboard",
         });
-      });
+      })();
     }
   };
 
@@ -137,7 +138,7 @@ export function SubscriptionSettings({
                   <div>
                     <h3 className="font-medium">Current Plan</h3>
                     <p className="text-2xl font-bold">
-                      {subscription.plan?.name || "Unknown Plan"}
+                      {subscription.plan?.name ?? "Unknown Plan"}
                     </p>
                     <div className="mt-1 flex items-center gap-2">
                       <span

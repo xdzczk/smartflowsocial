@@ -1,17 +1,20 @@
 import { json } from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { validateEvent } from "nostr-tools";
 
 import Footer from "~/components/layout/FrontendFooter";
 import Header from "~/components/layout/FrontendHeader";
 import { getUserId } from "~/features/auth/session.server";
 
-export const loader = async ({ request }) => {
+
+
+export const loader = async ({ request }: LoaderFunctionArgs) => {
   const userId = await getUserId(request);
   if (userId) return json({});
   return json({});
 };
 
-export async function action({ request }) {
+export async function action({ request }: ActionFunctionArgs) {
   try {
     const formData = await request.formData();
     const event = formData.get("event");
@@ -24,7 +27,7 @@ export async function action({ request }) {
     // Parse the event JSON
     let parsedEvent: { id?: string; pubkey?: string; sig?: string; [key: string]: unknown };
     try {
-      parsedEvent = JSON.parse(event);
+      parsedEvent = JSON.parse(event) as typeof parsedEvent;
     } catch (parseError) {
       const { ValidationError } = await import("~/lib/errors");
       throw new ValidationError("Invalid event JSON format", {

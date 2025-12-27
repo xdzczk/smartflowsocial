@@ -6,7 +6,6 @@
 
 import { redirect } from "@remix-run/node";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-
 // Mock global fetch
 global.fetch = vi.fn();
 

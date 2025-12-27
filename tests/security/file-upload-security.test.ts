@@ -5,7 +5,6 @@
  */
 
 import { describe, it, expect } from "vitest";
-
 describe("File Upload Security: File Type Validation", () => {
   it("should validate MIME types", () => {
     // File uploads should validate MIME types
@@ -140,6 +139,8 @@ describe("File Upload Security: Image Validation", () => {
     expect(true).toBe(true); // Documentation test
   });
 });
+
+
 
 
 

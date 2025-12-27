@@ -5,7 +5,6 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-
 // Mock dependencies
 vi.mock("~/models/asset.server", () => ({
   getAssets: vi.fn(),
@@ -225,6 +224,8 @@ describe("Templates Loader", () => {
     });
   });
 });
+
+
 
 
 

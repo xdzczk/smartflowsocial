@@ -1,5 +1,4 @@
 import { formatDate } from "~/lib/helpers";
-
 interface Template {
     id: string;
     name: string;

@@ -7,8 +7,8 @@ import type { Notification } from "~/features/engagement/engagement.server";
 import type { GroupedNotification } from "~/features/engagement/types";
 import { formatDate } from "~/lib/helpers";
 
-import { NotificationItem } from "./NotificationItem";
 
+import { NotificationItem } from "./NotificationItem";
 interface GroupedNotificationListProps {
   groupedNotifications: GroupedNotification[];
   userTimezone?: string;
@@ -185,7 +185,9 @@ function GroupedNotificationCard({
                   View original post →
                 </Link>
                 <button
-                  onClick={copyParentNevent}
+                  onClick={() => {
+                    void copyParentNevent();
+                  }}
                   className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700"
                 >
                   <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

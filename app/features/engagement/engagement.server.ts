@@ -5,9 +5,6 @@ import type {
   Notification,
   NotificationEvent,
   NotificationQuoteRepost,
-  NotificationReply,
-  NotificationZap,
-  NotificationMention,
   NostrTag,
   ParentPost,
   PrimalEvent,
@@ -15,18 +12,16 @@ import type {
 } from "~/features/engagement/types";
 import type { LongFormPostData, PostData } from "~/features/posts/types";
 import { logError } from "~/lib/error-logger.server";
+
 import { loadEngagementFeedData } from "./services/engagement-loader.server";
 
 // Re-export types for consumers
 export type {
   EventStats,
-  NotificationReply,
-  NotificationZap,
-  NotificationMention,
-  NotificationQuoteRepost,
-  Notification,
-  ParentPost,
   GroupedNotifications,
+  Notification,
+  NotificationQuoteRepost,
+  ParentPost,
 } from "~/features/engagement/types";
 
 /**
@@ -44,23 +39,31 @@ export function parseThreadViewNotifications(
   // First pass: collect all user profiles (kind 0) and stats (kind 10000100)
   for (const item of threadViewResponse) {
     if (!Array.isArray(item) || item[0] !== "EVENT") continue;
-    const event = item[2];
+    const event = item[2] as { kind?: number; content?: string; pubkey?: string; id?: string; tags?: string[][]; created_at?: number } | undefined;
     if (!event) continue;
 
     // Collect user profiles (kind 0)
-    if (event.kind === 0) {
+    if (event.kind === 0 && event.content && event.pubkey) {
       try {
-        const profile = JSON.parse(event.content);
-        userProfiles.set(event.pubkey, profile);
+        const profile = JSON.parse(event.content) as Record<string, unknown>;
+        userProfiles.set(event.pubkey, profile as UserProfile);
       } catch {
         // Ignore parse errors
       }
     }
 
     // Collect event stats (kind 10000100)
-    if (event.kind === 10000100) {
+    if (event.kind === 10000100 && event.content) {
       try {
-        const statsData = JSON.parse(event.content);
+        const statsData = JSON.parse(event.content) as {
+          event_id?: string;
+          likes?: number;
+          replies?: number;
+          mentions?: number;
+          reposts?: number;
+          zaps?: number;
+          satszapped?: number;
+        };
         if (statsData.event_id) {
           eventStats.set(statsData.event_id, {
             likes: statsData.likes || 0,
@@ -80,32 +83,33 @@ export function parseThreadViewNotifications(
   // Second pass: collect notifications
   for (const item of threadViewResponse) {
     if (!Array.isArray(item) || item[0] !== "EVENT") continue;
-    const event = item[2];
+    const event = item[2] as { kind?: number; content?: string; pubkey?: string; id?: string; tags?: string[][]; created_at?: number } | undefined;
     if (!event) continue;
 
     // Replies and Mentions (kind 1 events that reference the original event)
-    if (event.kind === 1 && event.id !== originalEventId) {
+    if (event.kind === 1 && event.id && event.id !== originalEventId) {
       // Check if this event replies to or mentions the original event
-      const eTags = event.tags?.filter((tag: string[]) => tag[0] === "e") || [];
-      const pTags = event.tags?.filter((tag: string[]) => tag[0] === "p") || [];
+      const eTags = (event.tags?.filter((tag: string[]) => tag[0] === "e") || []);
+      const pTags = (event.tags?.filter((tag: string[]) => tag[0] === "p") || []);
 
       const targetETag = eTags.find((tag: string[]) => tag[1] === originalEventId);
       const referencesOriginal = !!targetETag;
       const mentionsUser = pTags.some((tag: string[]) => tag[1] === userPubkey);
 
-      if (referencesOriginal && event.pubkey !== userPubkey) {
+      if (referencesOriginal && event.pubkey && event.pubkey !== userPubkey) {
         const profile = userProfiles.get(event.pubkey);
         const stats = eventStats.get(event.id);
 
         // Determine if this is a reply or a mention/quote
         // The 4th element (index 3) in the e tag is the marker
-        const marker = targetETag[3];
+        const marker = targetETag?.[3] as string | undefined;
 
         // Check if it's a quote post (has nostr:nevent or nostr:note in content)
+        const eventContent = event.content || "";
         const hasNostrReference =
-          event.content?.includes("nostr:nevent") ||
-          event.content?.includes("nostr:note") ||
-          event.content?.includes("nostr:naddr");
+          eventContent.includes("nostr:nevent") ||
+          eventContent.includes("nostr:note") ||
+          eventContent.includes("nostr:naddr");
 
         // It's a mention/quote if:
         // - marker is 'mention' OR marker is undefined/empty AND has nostr reference
@@ -115,38 +119,38 @@ export function parseThreadViewNotifications(
           hasNostrReference;
         const isReply = marker === "reply" || marker === "root";
 
-        if (isQuote && !isReply) {
+        if (isQuote && !isReply && event.id && event.pubkey && event.created_at !== undefined) {
           // This is a quote post/mention
           notifications.push({
             type: "mention",
             id: event.id,
             eventId: event.id,
-            content: event.content,
+            content: eventContent,
             createdAt: event.created_at,
             pubkey: event.pubkey,
-            authorName: (profile?.display_name || profile?.name) as string | undefined,
+            authorName: (profile?.display_name ?? profile?.name),
             authorPicture: profile?.picture as string | null | undefined,
             authorNip05: profile?.nip05 as string | undefined,
             originalEventId,
             stats,
           });
-        } else {
+        } else if (event.id && event.pubkey && event.created_at !== undefined) {
           // This is a regular reply (has reply/root marker, or no nostr reference)
           notifications.push({
             type: "reply",
             id: event.id,
             eventId: event.id,
-            content: event.content,
+            content: eventContent,
             createdAt: event.created_at,
             pubkey: event.pubkey,
-            authorName: (profile?.display_name || profile?.name) as string | undefined,
+            authorName: (profile?.display_name ?? profile?.name),
             authorPicture: profile?.picture as string | null | undefined,
             authorNip05: profile?.nip05 as string | undefined,
             originalEventId,
             stats,
           });
         }
-      } else if (mentionsUser && !referencesOriginal && event.pubkey !== userPubkey) {
+      } else if (mentionsUser && !referencesOriginal && event.pubkey && event.pubkey !== userPubkey && event.id && event.created_at !== undefined) {
         // This is a mention via p tag (user was tagged but not replying to their post)
         const profile = userProfiles.get(event.pubkey);
         const stats = eventStats.get(event.id);
@@ -154,10 +158,10 @@ export function parseThreadViewNotifications(
           type: "mention",
           id: event.id,
           eventId: event.id,
-          content: event.content,
+          content: event.content || "",
           createdAt: event.created_at,
           pubkey: event.pubkey,
-          authorName: (profile?.display_name || profile?.name) as string | undefined,
+          authorName: (profile?.display_name ?? profile?.name),
           authorPicture: profile?.picture as string | null | undefined,
           authorNip05: profile?.nip05 as string | undefined,
           originalEventId,
@@ -167,14 +171,14 @@ export function parseThreadViewNotifications(
     }
 
     // Zaps (kind 9735)
-    if (event.kind === 9735) {
+    if (event.kind === 9735 && event.tags && event.id && event.created_at !== undefined) {
       try {
         // Parse the description tag to get zap request details
         const descTag = event.tags?.find((tag: string[]) => tag[0] === "description");
-        if (!descTag || !descTag[1]) continue;
+        if (!descTag?.[1] || typeof descTag[1] !== "string") continue;
 
-        const zapRequest = JSON.parse(descTag[1]);
-        const eTags = event.tags?.filter((tag: string[]) => tag[0] === "e") || [];
+        const zapRequest = JSON.parse(descTag[1]) as { tags?: string[][]; pubkey?: string; content?: string };
+        const eTags = (event.tags || []).filter((tag: string[]) => tag[0] === "e");
 
         // Check if this zap is for our original event
         const zapForOriginal = eTags.some(
@@ -186,11 +190,11 @@ export function parseThreadViewNotifications(
           const amountTag = zapRequest.tags?.find(
             (tag: string[]) => tag[0] === "amount",
           );
-          const amountMsats = amountTag ? parseInt(amountTag[1], 10) : 0;
+          const amountMsats = amountTag?.[1] ? parseInt(amountTag[1], 10) : 0;
           const amountSats = Math.floor(amountMsats / 1000);
 
-          const senderPubkey = zapRequest.pubkey || event.pubkey;
-          const profile = userProfiles.get(senderPubkey);
+          const senderPubkey = zapRequest.pubkey || event.pubkey || "";
+          const profile = senderPubkey ? userProfiles.get(senderPubkey) : undefined;
           const stats = eventStats.get(event.id);
 
           notifications.push({
@@ -202,11 +206,11 @@ export function parseThreadViewNotifications(
             senderPubkey,
             receiverPubkey: userPubkey,
             amountSats,
-            senderName: (profile?.display_name || profile?.name) as string | undefined,
+            senderName: (profile?.display_name ?? profile?.name),
             senderPicture: profile?.picture as string | null | undefined,
             senderNip05: profile?.nip05 as string | undefined,
             pubkey: senderPubkey, // For compatibility
-            authorName: (profile?.display_name || profile?.name) as string | undefined,
+            authorName: (profile?.display_name ?? profile?.name),
             authorPicture: profile?.picture as string | null | undefined,
             authorNip05: profile?.nip05 as string | undefined,
             originalEventId,
@@ -266,12 +270,12 @@ export function groupNotificationsByParent(
 
   // Add longform posts to map
   longformPosts.forEach((post) => {
-    const eventId = post.signedEvent?.id || post.nostrEventId;
+    const eventId = post.signedEvent?.id ?? post.nostrEventId;
     if (!eventId) return;
     // Extract pubkey from signedEvent or nostrEvent
     let pubkey = "";
     if (post.signedEvent && typeof post.signedEvent === "object" && "pubkey" in post.signedEvent) {
-      pubkey = post.signedEvent.pubkey as string;
+      pubkey = post.signedEvent.pubkey;
     } else if (post.nostrEvent && typeof post.nostrEvent === "object" && "pubkey" in post.nostrEvent) {
       pubkey = post.nostrEvent.pubkey as string;
     }
@@ -351,12 +355,20 @@ export async function processQuoteReposts(
 
         // Find the profile event (kind 0)
         const profileEvent = (profileData as PrimalEvent[])?.find(
-          (item: PrimalEvent) => Array.isArray(item) && item[0] === "EVENT" && item[2]?.kind === 0
+          (item: PrimalEvent) => {
+            if (!Array.isArray(item) || item[0] !== "EVENT" || !item[2]) return false;
+            const eventData = item[2];
+            if (typeof eventData !== "object" || Array.isArray(eventData)) return false;
+            return "kind" in eventData && (eventData as { kind?: unknown }).kind === 0;
+          }
         );
 
-        if (profileEvent && Array.isArray(profileEvent) && profileEvent[2]) {
-          const profile = JSON.parse(profileEvent[2].content);
-          userProfiles.set(pubkey, profile);
+        if (profileEvent && Array.isArray(profileEvent) && profileEvent[2] && typeof profileEvent[2] === "object" && !Array.isArray(profileEvent[2])) {
+          const eventData = profileEvent[2] as { content?: string };
+          if (eventData.content && typeof eventData.content === "string") {
+            const profile = JSON.parse(eventData.content) as UserProfile;
+            userProfiles.set(pubkey, profile);
+          }
         }
       } catch (error) {
         logError(error instanceof Error ? error : new Error(String(error)), {
@@ -380,7 +392,7 @@ export async function processQuoteReposts(
       const eTags = event.tags?.filter((tag: NostrTag) => tag[0] === "e") || [];
       const quotedEventTag = eTags.find((tag: NostrTag) => tag[3] === "mention");
 
-      if (!quotedEventTag || !quotedEventTag[1]) {
+      if (!quotedEventTag?.[1]) {
         return null;
       }
 
@@ -404,41 +416,59 @@ export async function processQuoteReposts(
 
         // Find the stats event
         const statsEvent = (threadViewData as PrimalEvent[])?.find(
-          (item: PrimalEvent) =>
-            Array.isArray(item) &&
-            item[0] === "EVENT" &&
-            item[2]?.kind === 10000100 &&
-            item[2].content?.includes(event.id)
+          (item: PrimalEvent) => {
+            if (!Array.isArray(item) || item[0] !== "EVENT" || !item[2]) return false;
+            const eventData = item[2] as { kind?: number; content?: string };
+            return eventData.kind === 10000100 &&
+              eventData.content &&
+              typeof eventData.content === "string" &&
+              eventData.content.includes(event.id);
+          }
         );
 
         if (statsEvent && Array.isArray(statsEvent) && statsEvent[2]) {
-          const content = JSON.parse(statsEvent[2].content);
-          stats = {
-            likes: content.likes || 0,
-            replies: content.replies || 0,
-            mentions: content.mentions || 0,
-            reposts: content.reposts || 0,
-            zaps: content.zaps || 0,
-            satszapped: content.satszapped || 0,
-          };
+          const eventData = statsEvent[2] as { kind?: number; content?: string };
+          if (eventData.content) {
+            try {
+              const content = JSON.parse(eventData.content) as {
+                likes?: number;
+                replies?: number;
+                mentions?: number;
+                reposts?: number;
+                zaps?: number;
+                satszapped?: number;
+              };
+              stats = {
+                likes: content.likes ?? 0,
+                replies: content.replies ?? 0,
+                mentions: content.mentions ?? 0,
+                reposts: content.reposts ?? 0,
+                zaps: content.zaps ?? 0,
+                satszapped: content.satszapped ?? 0,
+              };
+            } catch {
+              // Ignore parse errors
+            }
+          }
         }
       } catch (error) {
         // Silently handle errors for stats
       }
 
-      return {
-        type: "quote" as const,
+      const result: NotificationQuoteRepost = {
+        type: "quote",
         id: event.id,
         eventId: event.id,
         content: event.content,
         createdAt: event.created_at,
         pubkey: event.pubkey,
-        authorName: (profile?.display_name || profile?.name) as string | undefined,
+        authorName: (profile?.display_name ?? profile?.name),
         authorPicture: profile?.picture as string | null | undefined,
         authorNip05: profile?.nip05 as string | undefined,
         originalEventId,
         stats,
-      } as NotificationQuoteRepost;
+      };
+      return result;
     } catch (error) {
       logError(error instanceof Error ? error : new Error(String(error)), {
         eventId: event?.id,

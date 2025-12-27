@@ -10,7 +10,6 @@
 
 import { json } from "@remix-run/node";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-
 // Mock all dependencies
 vi.mock("~/models/user.server", () => ({
   updateUserTimezone: vi.fn(),

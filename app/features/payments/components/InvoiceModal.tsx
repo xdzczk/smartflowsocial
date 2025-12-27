@@ -3,7 +3,6 @@
  */
 
 import { Loader2 } from "lucide-react";
-
 interface InvoiceModalProps {
   isOpen: boolean;
   invoiceData: {

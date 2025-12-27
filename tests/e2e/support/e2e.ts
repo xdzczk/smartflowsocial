@@ -1,6 +1,6 @@
-import "@testing-library/cypress/add-commands";
 import { registerCommands } from "./commands";
 
+import "@testing-library/cypress/add-commands";
 registerCommands();
 
 Cypress.on("uncaught:exception", (err) => {

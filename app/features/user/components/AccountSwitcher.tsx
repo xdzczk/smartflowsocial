@@ -20,8 +20,8 @@ export default function AccountSwitcher() {
   const fetcher = useFetcher<{ children: ChildAccount[] }>();
   const [children, setChildren] = React.useState<ChildAccount[]>([]);
 
-  const planId = (subscription?.currentSubscription?.planId || "").toLowerCase();
-  const planName = (subscription?.currentSubscription?.Plan?.name || "").toLowerCase();
+  const planId = (subscription?.currentSubscription?.planId ?? "").toLowerCase();
+  const planName = (subscription?.currentSubscription?.Plan?.name ?? "").toLowerCase();
   const hasAccountsAccess = planId === "premium" || planName === "premium" || planName === "founder";
   const isChild = !!user?.isChild;
 
@@ -46,39 +46,41 @@ export default function AccountSwitcher() {
       await init({
         methods: ["connect", "extension"],
         noBanner: true,
-        onAuth: async () => {
-          if (window.nostr) {
-            const randomKeys = () => Math.random().toString(36).slice(2, 12);
-            const contentSign = `Switch account ${randomKeys()}`;
-            const event: NostrEventData = {
-              kind: 27235,
-              created_at: Math.floor(Date.now() / 1000),
-              tags: [],
-              content: contentSign,
-            };
+        onAuth: () => {
+          void (async () => {
+            if (window.nostr) {
+              const randomKeys = () => Math.random().toString(36).slice(2, 12);
+              const contentSign = `Switch account ${randomKeys()}`;
+              const event: NostrEventData = {
+                kind: 27235,
+                created_at: Math.floor(Date.now() / 1000),
+                tags: [],
+                content: contentSign,
+              };
 
-            const signedEvent = await window.nostr.signEvent(event);
-            if (signedEvent.pubkey !== childNpub) {
-              alert("Please sign with the selected child's keys in your Nostr extension.");
-              return;
+              const signedEvent = await window.nostr.signEvent(event);
+              if (signedEvent.pubkey !== childNpub) {
+                alert("Please sign with the selected child's keys in your Nostr extension.");
+                return;
+              }
+
+              const formData = new FormData();
+              formData.append("pubkey", signedEvent.pubkey);
+              formData.append("signature", signedEvent.sig);
+              formData.append("event", JSON.stringify(signedEvent));
+              formData.append("contentSign", contentSign);
+              formData.append("redirectTo", "/dashboard");
+
+              fetcher.submit(formData, { method: "post", action: "/nostr-auth" });
             }
-
-            const formData = new FormData();
-            formData.append("pubkey", signedEvent.pubkey);
-            formData.append("signature", signedEvent.sig);
-            formData.append("event", JSON.stringify(signedEvent));
-            formData.append("contentSign", contentSign);
-            formData.append("redirectTo", "/dashboard");
-
-            fetcher.submit(formData, { method: "post", action: "/nostr-auth" });
-          }
+          })();
         },
       });
 
       document.dispatchEvent(new CustomEvent("nlLaunch", { detail: "switch" }));
     } catch (e) {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { handleErrorSafely } = require("~/lib/error-handler.client");
+       
+      const { handleErrorSafely } = require("~/lib/error-handler.client") as { handleErrorSafely: (error: unknown, context: { component: string; action: string }) => void };
       handleErrorSafely(e, {
         component: "AccountSwitcher",
         action: "handleAccountSwitch",
@@ -88,7 +90,7 @@ export default function AccountSwitcher() {
 
   return (
     <div className="flex items-center">
-      <Select onValueChange={(value) => handleSwitch(value)}>
+      <Select onValueChange={(value) => { void handleSwitch(value); }}>
         <SelectTrigger className="h-9 w-[220px] bg-white dark:bg-gray-900 text-sm">
           <SelectValue placeholder="Switch account" />
         </SelectTrigger>

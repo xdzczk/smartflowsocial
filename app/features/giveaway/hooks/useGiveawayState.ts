@@ -1,5 +1,4 @@
 import { useState } from "react";
-
 interface Post {
   id: string;
   caption?: string | null;

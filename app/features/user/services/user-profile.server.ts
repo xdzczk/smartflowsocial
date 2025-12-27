@@ -15,7 +15,7 @@ interface UpdateUserProfileParams {
 /**
  * Updates a user's Nostr profile data
  */
-export async function updateUserProfile({
+export function updateUserProfile({
   nostrProfile,
   npub,
 }: UpdateUserProfileParams): Promise<User> {
@@ -75,14 +75,14 @@ export async function getUserById(
 /**
  * Gets a user by their Nostr public key (npub)
  */
-export async function getUserByNpub(npub: string): Promise<User | null> {
+export function getUserByNpub(npub: string): Promise<User | null> {
   return prisma.user.findUnique({ where: { npub } });
 }
 
 /**
  * Creates a new user or updates existing user's profile
  */
-export async function createUser(
+export function createUser(
   npub: string,
   nostrProfile: string,
 ): Promise<User> {
@@ -95,6 +95,8 @@ export async function createUser(
     },
   });
 }
+
+
 
 
 

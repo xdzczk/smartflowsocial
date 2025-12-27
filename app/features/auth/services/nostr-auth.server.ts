@@ -39,7 +39,7 @@ export async function authenticateNostrUser(
     [key: string]: unknown;
   };
   try {
-    parsedEvent = JSON.parse(event);
+    parsedEvent = JSON.parse(event) as typeof parsedEvent;
   } catch (parseError) {
     throw new ValidationError("Invalid event JSON format", {
       error: parseError instanceof Error ? parseError.message : String(parseError),

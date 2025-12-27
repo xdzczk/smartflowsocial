@@ -8,7 +8,6 @@ import { ResumeModal } from "~/features/posts/components/ResumeModal";
 import { useDraftEditState } from "~/features/posts/hooks/useDraftEditState";
 import { handleDraftEditAction } from "~/features/posts/services/draft-edit-action.server";
 import { loadDraftEditData } from "~/features/posts/services/draft-edit-loader.server";
-
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   const postId = params.id!;
@@ -40,7 +39,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function EditDraft() {
-  const { post, user, queueTypes, hashTagPresets } = useLoaderData<typeof loader>();
+  const loaderData = useLoaderData<typeof loader>();
+  const { post, user, queueTypes, hashTagPresets } = loaderData;
+
+  // Type assertions for Remix JsonifyObject serialization
+  const typedPost = post && typeof post === "object" ? post as unknown as { id: string; content?: string; caption?: string; fileUrl?: string[]; queueType?: string; scheduledFor?: string } : null;
+  const typedUser = user && typeof user === "object" ? user as unknown as { id: string; timezone?: string; scheduleInterval?: number[]; showHashTagsinPosts?: boolean } : null;
+  const typedQueueTypes = Array.isArray(queueTypes) ? queueTypes as unknown as { id: string; name: string; color?: string | null; scheduleType?: string; scheduleConfig?: unknown; isEnabled?: boolean }[] : [];
+  const typedHashTagPresets = Array.isArray(hashTagPresets) ? hashTagPresets as unknown as { id: string; name: string; tags: string; description?: string | null }[] : [];
 
   const {
     content,
@@ -59,7 +65,7 @@ export default function EditDraft() {
     handleResumeClick,
     handleSignAndResume,
     handleHashtagPresetSelect,
-  } = useDraftEditState({ post, user, hashTagPresets });
+  } = useDraftEditState({ post: typedPost, user: typedUser, hashTagPresets: typedHashTagPresets });
 
   return (
     <div className="p-6">
@@ -77,26 +83,26 @@ export default function EditDraft() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <DraftPreview
-          post={post}
+          post={typedPost}
           selectedQueue={selectedQueue}
-          queueTypes={queueTypes}
+          queueTypes={typedQueueTypes}
         />
 
         <DraftEditForm
-          post={post}
+          post={typedPost}
           content={content}
-          caption={post.caption || ""}
+          caption={typedPost.caption || ""}
           selectedQueue={selectedQueue}
           scheduledFor={scheduledFor}
           useHashtagPresets={useHashtagPresets}
           selectedHashtagPresetId={selectedHashtagPresetId}
-          queueTypes={queueTypes}
-          hashTagPresets={hashTagPresets}
+          queueTypes={typedQueueTypes}
+          hashTagPresets={typedHashTagPresets}
           isSubmitting={isSubmitting}
           onContentChange={setContent}
           onQueueChange={setSelectedQueue}
           onScheduledForChange={setScheduledFor}
-          onHashtagPresetSelect={handleHashtagPresetSelect}
+          onHashtagPresetSelect={(presetId, hashtags) => handleHashtagPresetSelect(presetId || "", hashtags)}
           onUseHashtagPresetsChange={setUseHashtagPresets}
           onResumeClick={handleResumeClick}
         />

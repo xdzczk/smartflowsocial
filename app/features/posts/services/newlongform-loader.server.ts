@@ -39,7 +39,7 @@ export async function loadNewLongFormData(userId: string) {
     queueTypes,
     hashTagPresets,
     assets: assetsData.assets,
-    userTimezone: user?.timezone || "Etc/GMT",
+    userTimezone: user?.timezone ?? "Etc/GMT",
     uploadProvider,
   };
 }

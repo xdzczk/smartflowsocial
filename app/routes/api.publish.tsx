@@ -1,5 +1,5 @@
-import type { ActionFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
+import type { ActionFunctionArgs } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth/session.server";
 import {
@@ -27,7 +27,7 @@ export const action = withActionErrorHandling(
     // Parse and validate request body
     let body: { relays?: unknown; event?: unknown };
     try {
-      body = await request.json();
+      body = await request.json() as { relays?: unknown; event?: unknown };
     } catch (error) {
       throw new ValidationError("Invalid JSON in request body", {
         originalError: error instanceof Error ? error.message : String(error),
@@ -99,7 +99,7 @@ export const action = withActionErrorHandling(
 
     try {
       if (contentType && contentType.includes("application/json")) {
-        result = await publishResponse.json();
+        result = (await publishResponse.json()) as unknown;
       } else {
         result = await publishResponse.text();
       }

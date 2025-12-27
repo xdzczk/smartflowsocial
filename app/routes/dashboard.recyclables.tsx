@@ -20,7 +20,7 @@ import {
 } from "~/features/posts/posts.server";
 import { withErrorHandling, withActionErrorHandling } from "~/lib/error-handler.server";
 
-export const loader = withErrorHandling(async ({ request, params }: LoaderFunctionArgs) => {
+async function loaderImpl({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
 
   // Require that the user has at least a subscription record
@@ -33,7 +33,9 @@ export const loader = withErrorHandling(async ({ request, params }: LoaderFuncti
   const data = await getRecyclableDashboardData({ userId, params, url });
 
   return data;
-});
+}
+
+export const loader = withErrorHandling(loaderImpl);
 
 export const action = withActionErrorHandling(async ({ request }: ActionFunctionArgs) => {
   const userId = await requireUserId(request);
@@ -42,15 +44,23 @@ export const action = withActionErrorHandling(async ({ request }: ActionFunction
   return handleRecyclablePostAction(formData, userId);
 });
 
+type LoaderData = Awaited<ReturnType<typeof loaderImpl>>;
+
+interface RepostFetcherData {
+  repostData?: unknown;
+  scheduledRepostData?: unknown;
+  quotePostData?: unknown;
+}
+
 export default function RecyclablesPosts() {
-  const { posts, pagination, stats, user, queueTypes } =
-    useLoaderData<typeof loader>();
+  const data = useLoaderData<LoaderData>();
+  const { posts, pagination, stats, user, queueTypes } = data;
   const params = useParams();
 
   const deleteFetcher = useFetcher();
   const bulkDeleteFetcher = useFetcher();
-  const repostFetcher = useFetcher();
-  const individualRepostFetcher = useFetcher();
+  const repostFetcher = useFetcher<RepostFetcherData>();
+  const individualRepostFetcher = useFetcher<RepostFetcherData>();
 
   const {
     sortConfig,
@@ -109,12 +119,12 @@ export default function RecyclablesPosts() {
       />
 
       <RecyclablesTable
-        posts={filteredPosts}
+        posts={filteredPosts as unknown as { id: string; caption?: string; fileUrl?: string[]; postedAt?: Date | string; signedEvent?: unknown }[]}
         stats={stats}
         sortConfig={sortConfig}
         selectedPosts={selectedPosts}
         onRequestSort={requestSort}
-        onPostClick={setSelectedPost}
+        onPostClick={(post) => setSelectedPost(post as unknown as { id: string; caption?: string; fileUrl?: string[]; signedEvent?: unknown } | null)}
         onToggleSelect={togglePostSelection}
         onToggleSelectAll={toggleSelectAll}
         deleteFetcher={deleteFetcher}
@@ -126,13 +136,13 @@ export default function RecyclablesPosts() {
 
       {selectedPost ? (
         <PostDetailsModal
-              post={selectedPost}
-          stats={stats[selectedPost.signedEvent.id]}
+              post={selectedPost as unknown as { id: string; caption?: string; fileUrl?: string[]; signedEvent?: unknown; queueType?: { name: string } | null }}
+          stats={stats[((selectedPost && typeof selectedPost === "object" && "signedEvent" in selectedPost && selectedPost.signedEvent && typeof selectedPost.signedEvent === "object" && "id" in selectedPost.signedEvent) ? String((selectedPost.signedEvent as { id?: string }).id) : "") || ""]}
           onClose={() => setSelectedPost(null)}
           showStats={true}
           showSignedEvent={true}
           type="posted"
-          userTimezone={user?.timezone || undefined}
+          userTimezone={user?.timezone ?? undefined}
         />
       ) : null}
 

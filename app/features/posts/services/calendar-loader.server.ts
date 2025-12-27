@@ -50,47 +50,51 @@ export async function loadCalendarData(
 
   // Filter posts by queue type if specific queue is selected
   const filteredScheduledPosts = filterPostsByQueueType(allScheduledPosts, queueType);
-  const filteredScheduledLongFormPosts = filterPostsByQueueType(allScheduledLongFormPosts as Array<{ queueType?: { name?: string | null } | null }>, queueType) as typeof allScheduledLongFormPosts;
+  const filteredScheduledLongFormPosts = filterPostsByQueueType(allScheduledLongFormPosts as { queueType?: { name?: string | null } | null }[], queueType) as typeof allScheduledLongFormPosts;
   const filteredPastPosts = filterPostsByQueueType(allPastPosts, queueType);
-  const filteredPastLongFormPosts = filterPostsByQueueType(allPastLongFormPosts as Array<{ queueType?: { name?: string | null } | null }>, queueType) as typeof allPastLongFormPosts;
+  const filteredPastLongFormPosts = filterPostsByQueueType(allPastLongFormPosts as { queueType?: { name?: string | null } | null }[], queueType) as typeof allPastLongFormPosts;
 
   // Convert PostWithQueueType[] to PostData[] for combineContent
   const scheduledPostsData: PostData[] = filteredScheduledPosts.map((post) => {
     const { queueType, ...rest } = post;
-    return {
+    const result: PostData = {
       ...rest,
       queueType: queueType || undefined,
       signedEvent: post.signedEvent as PostData["signedEvent"],
       nostrEvent: post.nostrEvent as PostData["nostrEvent"],
-    } as PostData;
+    };
+    return result;
   });
   const pastPostsData: PostData[] = filteredPastPosts.map((post) => {
     const { queueType, ...rest } = post;
-    return {
+    const result: PostData = {
       ...rest,
       queueType: queueType || undefined,
       signedEvent: post.signedEvent as PostData["signedEvent"],
       nostrEvent: post.nostrEvent as PostData["nostrEvent"],
-    } as PostData;
+    };
+    return result;
   });
 
   // Convert LongFormPost[] to LongFormPostData[] for combineContent
   const scheduledLongFormPostsData: LongFormPostData[] = filteredScheduledLongFormPosts.map((post) => {
     const { queueType, ...rest } = post;
-    return {
+    const result: LongFormPostData = {
       ...rest,
       queueType: queueType || undefined,
       signedEvent: post.signedEvent as LongFormPostData["signedEvent"],
       nostrEvent: post.nostrEvent as LongFormPostData["nostrEvent"],
-    } as LongFormPostData;
+    };
+    return result;
   });
   const pastLongFormPostsData: LongFormPostData[] = filteredPastLongFormPosts.map((post) => {
-    return {
+    const result: LongFormPostData = {
       ...post,
       queueType: ("queueType" in post && post.queueType) || undefined,
       signedEvent: post.signedEvent as LongFormPostData["signedEvent"],
       nostrEvent: post.nostrEvent as LongFormPostData["nostrEvent"],
-    } as LongFormPostData;
+    };
+    return result;
   });
 
   // Combine posts and longform posts for the "All" tab

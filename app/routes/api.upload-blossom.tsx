@@ -30,7 +30,7 @@ export const action = withActionErrorHandling(
     // Parse the incoming data from client-side Blossom upload
     let data: { tags?: unknown; fileName?: string };
     try {
-      data = await request.json();
+      data = await request.json() as { tags?: unknown; fileName?: string };
     } catch (error) {
       throw new ValidationError("Invalid JSON in request body", {
         originalError: error instanceof Error ? error.message : String(error),
@@ -38,25 +38,25 @@ export const action = withActionErrorHandling(
     }
 
     // The BlossomUploader returns the tags array directly, not wrapped in an object
-    const tags = data.tags || data;
+    const tags = (Array.isArray(data.tags) ? data.tags : Array.isArray(data) ? data : []) as string[][];
 
     assert(
-      Array.isArray(tags),
+      Array.isArray(tags) && tags.length > 0,
       "Invalid Blossom upload data - tags must be an array",
       { tagsType: typeof tags, isArray: Array.isArray(tags) },
     );
 
     // Extract relevant information from the Blossom tags
     // Expected format: [['url', 'https://...'], ['x', 'hash'], ['size', '123'], ['m', 'image/jpeg']]
-    const urlTag = tags.find((tag: string[]) => tag[0] === "url");
+    const urlTag = tags.find((tag: string[]) => Array.isArray(tag) && tag[0] === "url");
     const hashTag = tags.find(
-      (tag: string[]) => tag[0] === "x" || tag[0] === "ox",
+      (tag: string[]) => Array.isArray(tag) && (tag[0] === "x" || tag[0] === "ox"),
     );
-    const sizeTag = tags.find((tag: string[]) => tag[0] === "size");
-    const mimeTypeTag = tags.find((tag: string[]) => tag[0] === "m");
+    const sizeTag = tags.find((tag: string[]) => Array.isArray(tag) && tag[0] === "size");
+    const mimeTypeTag = tags.find((tag: string[]) => Array.isArray(tag) && tag[0] === "m");
 
     assert(
-      urlTag && hashTag && sizeTag,
+      urlTag && hashTag && sizeTag && urlTag[1] && hashTag[1] && sizeTag[1],
       "Invalid Blossom upload data - missing required tags (url, x/ox, size)",
       {
         hasUrlTag: !!urlTag,
@@ -66,11 +66,11 @@ export const action = withActionErrorHandling(
       },
     );
 
-    const fileUrl = urlTag[1] as string;
-    const sha256 = hashTag[1] as string;
-    const fileSize = parseInt(sizeTag[1] as string, 10);
-    const mimeType = mimeTypeTag
-      ? (mimeTypeTag[1] as string)
+    const fileUrl = urlTag[1];
+    const sha256 = hashTag[1];
+    const fileSize = parseInt(sizeTag[1], 10);
+    const mimeType = mimeTypeTag?.[1]
+      ? (mimeTypeTag[1])
       : "application/octet-stream";
 
     // Return success response with processed data
@@ -88,6 +88,8 @@ export const action = withActionErrorHandling(
     });
   },
 );
+
+import { json } from "@remix-run/node";
 
 // Handle preflight requests for CORS
 export async function loader() {

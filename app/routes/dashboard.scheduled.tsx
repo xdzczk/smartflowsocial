@@ -24,7 +24,7 @@ import { handleScheduledAction } from "~/features/posts/services/scheduled-actio
 import { loadScheduledData } from "~/features/posts/services/scheduled-loader.server";
 import { withErrorHandling, withActionErrorHandling } from "~/lib/error-handler.server";
 
-export const loader = withErrorHandling(async ({ request, params }: LoaderFunctionArgs) => {
+async function loaderImpl({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
 
   // Require that the user has at least a subscription record
@@ -36,7 +36,9 @@ export const loader = withErrorHandling(async ({ request, params }: LoaderFuncti
 
   const data = await loadScheduledData(userId, queueType);
   return data;
-});
+}
+
+export const loader = withErrorHandling(loaderImpl);
 
 export const action = withActionErrorHandling(async ({ request }: ActionFunctionArgs) => {
   const userId = await requireUserId(request);
@@ -50,7 +52,10 @@ export const action = withActionErrorHandling(async ({ request }: ActionFunction
   return json(result);
 });
 
+type LoaderData = Awaited<ReturnType<typeof loaderImpl>>;
+
 export default function ScheduledPosts() {
+  const data = useLoaderData<LoaderData>();
   const {
     posts,
     longformPosts,
@@ -58,7 +63,7 @@ export default function ScheduledPosts() {
     user,
     queueTypes,
     hashTagPresets,
-  } = useLoaderData<typeof loader>();
+  } = data;
   const [searchParams] = useSearchParams();
 
   // Get current tab from URL params - default to "all"
@@ -140,9 +145,9 @@ export default function ScheduledPosts() {
           userTimezone={user?.timezone}
           onPostSelect={(content) => {
             if (content.type === "post") {
-              setSelectedPost(content.originalData);
+              setSelectedPost(content.originalData as unknown as { id: string; content?: string; caption?: string; fileUrl?: string[]; queueType?: { name: string } | null; scheduledFor?: string; signedEvent?: unknown } | null);
             } else {
-              setSelectedLongFormPost(content.originalData);
+              setSelectedLongFormPost(content.originalData as unknown as { id: string; title?: string; content?: string; scheduledFor?: string; queueType?: { name: string } | null; signedEvent?: unknown } | null);
             }
           }}
           selectedItems={selectedPosts}
@@ -151,8 +156,8 @@ export default function ScheduledPosts() {
           showBulkActions={true}
           onBulkDelete={handleBulkDelete}
           bulkDeleteState={bulkDeleteFetcher.state}
-          onEditPost={handleEditPost}
-          onReschedulePost={handleReschedulePost}
+          onEditPost={(post) => handleEditPost(post as unknown as { id: string; content?: string; caption?: string; fileUrl?: string[] } | null)}
+          onReschedulePost={(post) => handleReschedulePost(post as unknown as { id: string; scheduledFor?: string; fileUrl?: string[] } | null)}
         />
       ) : currentTab === "posts" ? (
         <div>
@@ -165,7 +170,7 @@ export default function ScheduledPosts() {
           />
 
           <ScheduledPostsTable
-            posts={filteredPosts}
+            posts={filteredPosts as unknown as { id: string; caption?: string; fileUrl?: string[]; scheduledFor?: string; queueType?: string; signedEvent?: unknown; nostrEvent?: unknown; postType?: string }[]}
             sortConfig={sortConfig}
             onRequestSort={requestSort}
             selectedPosts={selectedPosts}
@@ -173,20 +178,20 @@ export default function ScheduledPosts() {
             onToggleSelectAll={toggleSelectAll}
             countdowns={countdowns}
             userTimezone={user?.timezone}
-            onPostClick={setSelectedPost}
-            onEditPost={handleEditPost}
-            onReschedulePost={handleReschedulePost}
+            onPostClick={(post) => setSelectedPost(post as unknown as { id: string; caption?: string; fileUrl?: string[]; scheduledFor?: string; signedEvent?: unknown } | null)}
+            onEditPost={(post) => handleEditPost(post as unknown as { id: string; content?: string; caption?: string; fileUrl?: string[] } | null)}
+            onReschedulePost={(post) => handleReschedulePost(post as unknown as { id: string; scheduledFor?: string; fileUrl?: string[] } | null)}
             onMediaClick={handleMediaClick}
             bulkDeleteState={bulkDeleteFetcher.state}
           />
 
           {selectedPost ? (
             <PostDetailsModal
-              post={selectedPost}
+              post={selectedPost as unknown as { id: string; caption?: string; fileUrl?: string[]; scheduledFor?: string; signedEvent?: unknown; queueType?: { name: string } | null }}
               onClose={() => setSelectedPost(null)}
               showSignedEvent={true}
               type="scheduled"
-              userTimezone={user?.timezone || undefined}
+              userTimezone={user?.timezone ?? undefined}
             />
           ) : null}
 
@@ -208,21 +213,21 @@ export default function ScheduledPosts() {
           onSearchChange={setSearchTerm}
           userTimezone={user?.timezone}
           onPostSelect={(post) => {
-            setSelectedLongFormPost(post);
+            setSelectedLongFormPost(post as unknown as { id: string; title?: string; content?: string; scheduledFor?: string; queueType?: { name: string } | null; signedEvent?: unknown } | null);
           }}
-          onEditPost={handleEditPost}
-          onReschedulePost={handleReschedulePost}
+          onEditPost={(post) => handleEditPost(post as unknown as { id: string; title?: string; content?: string } | null)}
+          onReschedulePost={(post) => handleReschedulePost(post as unknown as { id: string; scheduledFor?: string } | null)}
         />
       )}
 
       {/* Long Form Post Details Modal */}
       {selectedLongFormPost ? (
         <LongFormDetailsModal
-          post={selectedLongFormPost}
+          post={selectedLongFormPost as unknown as { id: string; title?: string; content?: string; scheduledFor?: string; queueType?: { name: string } | null; signedEvent?: unknown }}
           onClose={() => setSelectedLongFormPost(null)}
           type="scheduled"
           showSignedEvent={true}
-          userTimezone={user?.timezone || undefined}
+          userTimezone={user?.timezone ?? undefined}
         />
       ) : null}
 

@@ -18,7 +18,6 @@ import { loadSettingsData } from "~/features/settings/settings-loader.server";
 import { BlossomMediaMirrorsSettings } from "~/features/upload/components/BlossomMediaMirrorsSettings";
 import { UploadProviderSettings } from "~/features/upload/components/UploadProviderSettings";
 import { AccountsSettings } from "~/features/user/components/AccountsSettings";
-
 export async function loader({ request }: { request: Request }) {
   const userId = await requireUserId(request);
 
@@ -124,10 +123,10 @@ export default function Settings() {
 
         <TabsContent value="content" className="mt-6 space-y-6">
           <div className="grid gap-6 md:grid-cols-1">
-            <HashtagPresetsSettings presets={hashTagPresets} />
+            <HashtagPresetsSettings presets={Array.isArray(hashTagPresets) ? hashTagPresets as unknown as { id: string; name: string; tags: string; description?: string | null }[] : []} />
             <QueueTypesSettings
-              queueTypes={queueTypes}
-              hashTagPresets={hashTagPresets}
+              queueTypes={Array.isArray(queueTypes) ? queueTypes as unknown as { id: string; name: string; color?: string | null; scheduleType?: string; scheduleConfig?: unknown; isEnabled?: boolean; hashTagPresetId?: string }[] : []}
+              hashTagPresets={Array.isArray(hashTagPresets) ? hashTagPresets as unknown as { id: string; name: string; tags: string; description?: string | null }[] : []}
             />
           </div>
         </TabsContent>
@@ -137,7 +136,7 @@ export default function Settings() {
             <RelaysSettings relays={relays} />
             <GiveawayBlacklistSettings giveawayBlacklist={giveawayBlacklist} />
             <MutedListSettings
-              mutedList={mutedList}
+              mutedList={mutedList && typeof mutedList === "object" ? mutedList as unknown as { npubs?: string[]; lastSynced?: string } : { npubs: [] }}
               filterMuted={filterMuted}
               hidePostsFromLowTrustUsers={hidePostsFromLowTrustUsers}
             />
@@ -158,9 +157,9 @@ export default function Settings() {
           <TabsContent value="subscription" className="mt-6 space-y-6">
             <div className="grid gap-6 md:grid-cols-1">
               <SubscriptionSettings
-                subscription={subscription}
-                availablePlans={availablePlans}
-                paymentHistory={paymentHistory}
+                subscription={subscription && typeof subscription === "object" ? subscription as unknown as { id?: string; planId?: string; status?: string; currentPeriodEnd?: Date | string } : null}
+                availablePlans={Array.isArray(availablePlans) ? availablePlans as unknown as { id: string; name: string; price: number }[] : []}
+                paymentHistory={Array.isArray(paymentHistory) ? paymentHistory as unknown as { id: string; amount: number; createdAt: Date | string }[] : []}
               />
               <NWCSettings
                 nwcEnabled={nwcEnabled}

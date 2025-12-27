@@ -7,7 +7,6 @@ import { EditPostFormFields } from "~/features/posts/components/EditPostFormFiel
 import { useEditPostModal } from "~/features/posts/hooks/useEditPostModal";
 import type { PostData, LongFormPostData, QueueType, HashTagPreset, UserData, PostFetcher } from "~/features/posts/types";
 import { prepareEditPostSubmission } from "~/features/posts/utils/editPostSubmit.client";
-
 interface EditPostModalProps {
   post: PostData | LongFormPostData;
   onClose: () => void;
@@ -243,10 +242,10 @@ export function EditPostModal({
               </div>
 
               {/* Error display */}
-              {fetcher.data?.error || signingError ? (
+              {fetcher.data?.error ?? signingError ? (
                 <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
                   <div className="text-sm text-red-800 dark:text-red-200">
-                    {fetcher.data?.error || signingError}
+                    {fetcher.data?.error ?? signingError}
                   </div>
                 </div>
               ) : null}

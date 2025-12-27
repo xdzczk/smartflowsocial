@@ -49,7 +49,7 @@ export function sanitizeObject<T>(obj: T): T {
   }
 
   if (typeof obj === "object") {
-    const sanitized = {} as T;
+    const sanitized = {} as Record<string, unknown>;
     for (const [key, value] of Object.entries(obj)) {
       const lowerKey = key.toLowerCase();
       
@@ -62,12 +62,12 @@ export function sanitizeObject<T>(obj: T): T {
         lowerKey.includes("key") ||
         lowerKey.includes("encrypted")
       ) {
-        (sanitized as any)[key] = "[REDACTED]";
+        sanitized[key] = "[REDACTED]";
       } else {
-        (sanitized as any)[key] = sanitizeObject(value);
+        sanitized[key] = sanitizeObject(value);
       }
     }
-    return sanitized;
+    return sanitized as T;
   }
 
   return obj;
@@ -136,6 +136,8 @@ export function safeConsoleLog(
 
   console.log(sanitizedMessage, ...sanitizedArgs);
 }
+
+
 
 
 

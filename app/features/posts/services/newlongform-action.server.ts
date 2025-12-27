@@ -81,7 +81,7 @@ async function getHashtagPresetTags(
     if (manualHashTagPresetId) {
       // Use manually selected hashtag preset
       const preset = await getHashTagPresetById(userId, manualHashTagPresetId);
-      hashTagPresetTags = preset?.tags || "";
+      hashTagPresetTags = preset?.tags ?? "";
       hashTagPresetId = manualHashTagPresetId;
     }
     // If useHashtagPresets is true but no manual preset selected, use no hashtags
@@ -132,7 +132,7 @@ async function handleImageUpload(
     imageFile.constructor.name === "File"
   ) {
     try {
-      const file = imageFile as File;
+      const file = imageFile;
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
       const imageUrl = await uploadBufferToS3(buffer, userId, file.name);
@@ -145,7 +145,7 @@ async function handleImageUpload(
         500,
         {
           service: "S3",
-          fileName: (imageFile as File).name,
+          fileName: (imageFile).name,
           originalError: error instanceof Error ? error.message : String(error),
         },
       );
@@ -197,7 +197,7 @@ async function handleSaveDraft(
 
   let markdownContent;
   try {
-    const editorData = JSON.parse(editorContent);
+    const editorData = JSON.parse(editorContent) as { blocks?: { type: string; data: Record<string, unknown> }[]; time?: number; version?: string };
     markdownContent = convertEditorJSToMarkdown(editorData);
   } catch {
     markdownContent = editorContent;
@@ -252,14 +252,14 @@ async function handlePublish(
     return Response.json({ error: "Content is required" }, { status: 400 });
   }
 
-  if (!summary || !summary.trim()) {
+  if (!summary?.trim()) {
     return Response.json(
       { error: "Summary is required for publishing" },
       { status: 400 },
     );
   }
 
-  if (!image || !image.trim()) {
+  if (!image?.trim()) {
     return Response.json(
       { error: "Cover image is required for publishing" },
       { status: 400 },
@@ -275,7 +275,7 @@ async function handlePublish(
 
   let markdownContent;
   try {
-    const editorData = JSON.parse(editorContent);
+    const editorData = JSON.parse(editorContent) as { blocks?: { type: string; data: Record<string, unknown> }[]; time?: number; version?: string };
     markdownContent = convertEditorJSToMarkdown(editorData);
   } catch {
     markdownContent = editorContent;
@@ -290,8 +290,8 @@ async function handlePublish(
       ? `${sanitizedContent}\\n\\n${hashTagPresetTags}`
       : sanitizedContent;
 
-  const signedEventJson = JSON.parse(signedEvent.toString());
-  const nostrEventJson = JSON.parse(nostrEvent.toString());
+  const signedEventJson = JSON.parse(signedEvent.toString()) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][]; sig: string };
+  const nostrEventJson = JSON.parse(nostrEvent.toString()) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][] };
 
   await createLongFormPost({
     userId,
@@ -355,14 +355,14 @@ async function handleScheduleLongform(
     return Response.json({ error: "Content is required" }, { status: 400 });
   }
 
-  if (!summary || !summary.trim()) {
+  if (!summary?.trim()) {
     return Response.json(
       { error: "Summary is required for publishing" },
       { status: 400 },
     );
   }
 
-  if (!image || !image.trim()) {
+  if (!image?.trim()) {
     return Response.json(
       { error: "Cover image is required for publishing" },
       { status: 400 },
@@ -378,7 +378,7 @@ async function handleScheduleLongform(
 
   let markdownContent;
   try {
-    const editorData = JSON.parse(editorContent);
+    const editorData = JSON.parse(editorContent) as { blocks?: { type: string; data: Record<string, unknown> }[]; time?: number; version?: string };
     markdownContent = convertEditorJSToMarkdown(editorData);
   } catch {
     markdownContent = editorContent;
@@ -393,8 +393,8 @@ async function handleScheduleLongform(
       ? `${sanitizedContent}\\n\\n${hashTagPresetTags}`
       : sanitizedContent;
 
-  const signedEventJson = JSON.parse(signedEvent.toString());
-  const nostrEventJson = JSON.parse(nostrEvent.toString());
+  const signedEventJson = JSON.parse(signedEvent.toString()) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][]; sig: string };
+  const nostrEventJson = JSON.parse(nostrEvent.toString()) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][] };
 
   // Extract published_at from NOSTR event tags for scheduling
   let scheduledForTimestamp: string | null = null;
@@ -403,7 +403,7 @@ async function handleScheduleLongform(
     const publishedAtTag = signedEventJson.tags.find(
       (tag: unknown) => Array.isArray(tag) && tag[0] === "published_at",
     );
-    if (publishedAtTag && publishedAtTag[1]) {
+    if (publishedAtTag?.[1]) {
       scheduledForTimestamp = publishedAtTag[1].toString();
     }
   }

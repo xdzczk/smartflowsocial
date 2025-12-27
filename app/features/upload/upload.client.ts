@@ -1,6 +1,5 @@
 // Type declaration for window.nostr
 import type { NostrEventData, SignedEvent } from "~/features/nostr/types";
-
 declare global {
   interface Window {
     nostr?: {
@@ -36,11 +35,14 @@ export async function uploadFile(file: File): Promise<UploadResult> {
       throw new Error("Failed to get upload provider");
     }
 
-    const {
-      provider: uploadProvider,
-      enableMirrorBlossom,
-      mirrorUploadUrls,
-    } = await response.json();
+    const data = (await response.json()) as {
+      provider?: string;
+      enableMirrorBlossom?: boolean;
+      mirrorUploadUrls?: string[];
+    };
+    const uploadProvider = data.provider;
+    const enableMirrorBlossom = data.enableMirrorBlossom;
+    const mirrorUploadUrls = data.mirrorUploadUrls;
 
     if (
       uploadProvider === "BLOSSOM_PRIMAL" ||
@@ -81,7 +83,11 @@ async function uploadFileToS3(file: File): Promise<UploadResult> {
     body: formData,
   });
 
-  const result = await response.json();
+  const result = (await response.json()) as {
+    success?: boolean;
+    fileUrl?: string;
+    error?: string;
+  };
 
   if (result.success && result.fileUrl) {
     return {
@@ -171,7 +177,11 @@ async function uploadFileToBlossom(
       }),
     });
 
-    const result = await response.json();
+    const result = (await response.json()) as {
+      success?: boolean;
+      file?: { url: string };
+      error?: string;
+    };
 
     if (result.success && result.file) {
       return {
@@ -224,7 +234,11 @@ export async function uploadEditorJSImage(
       body: formData,
     });
 
-    const result = await response.json();
+    const result = (await response.json()) as {
+      success?: number;
+      file?: { url: string };
+      error?: { message?: string };
+    };
 
     if (result.success === 1 && result.file) {
       return {
@@ -236,7 +250,7 @@ export async function uploadEditorJSImage(
     } else {
       const { logClientError } = await import("~/lib/error-handler.client");
       logClientError(
-        new Error(result.error?.message || "EditorJS upload failed"),
+        new Error(result.error?.message ?? "EditorJS upload failed"),
         {
           component: "upload.client",
           action: "uploadEditorJSImage",

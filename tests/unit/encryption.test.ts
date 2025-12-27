@@ -4,7 +4,6 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-
 // Mock secrets-sanitizer before importing encryption
 // This is required because encryption.server.ts uses require() for this module
 // The require() uses a relative path "./secrets-sanitizer.server" which vitest

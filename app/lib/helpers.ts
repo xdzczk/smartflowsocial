@@ -1,5 +1,4 @@
 import { nip19 } from "nostr-tools";
-
 export const getTimeRemaining = (
   scheduledDate: string | Date,
   currentTime: Date = new Date(),
@@ -46,7 +45,7 @@ export const getImageUrls = (fileUrl: string[]): string[] => {
   // Handle case where fileUrl is an array of JSON strings
   if (typeof fileUrl[0] === "string" && fileUrl[0].startsWith("[")) {
     try {
-      return JSON.parse(fileUrl[0]);
+      return JSON.parse(fileUrl[0]) as string[];
     } catch (e) {
       console.error("Error parsing fileUrl:", e);
       return [];

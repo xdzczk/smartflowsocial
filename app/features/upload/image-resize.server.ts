@@ -1,10 +1,9 @@
 import sharp from "sharp";
-
 /**
  * Server-side image processing using Sharp
  * Optimizes images for web use while removing metadata
  */
-export async function processImageForWeb(
+export function processImageForWeb(
   buffer: Buffer,
   options: {
     maxWidth?: number;
@@ -23,7 +22,7 @@ export async function processImageForWeb(
   try {
     let sharpInstance = sharp(buffer)
       // Remove all metadata (EXIF, IPTC, XMP) for privacy
-      .withMetadata(false)
+      .withMetadata({})
       // Resize if larger than max dimensions
       .resize(maxWidth, maxHeight, {
         fit: "inside",
@@ -60,7 +59,8 @@ export async function processImageForWeb(
     return processedBuffer;
   } catch (error) {
     console.error("Sharp image processing error:", error);
-    throw new Error(`Image processing failed: ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(`Image processing failed: ${errorMessage}`);
   }
 }
 
@@ -80,7 +80,8 @@ export async function getImageInfo(buffer: Buffer) {
     };
   } catch (error) {
     console.error("Error getting image info:", error);
-    throw new Error(`Failed to read image metadata: ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to read image metadata: ${errorMessage}`);
   }
 }
 

@@ -1,12 +1,11 @@
 import { logError } from "~/lib/error-logger.server";
-
 type CacheParams = Record<string, unknown>;
 type CacheResponse = unknown[];
 
 /**
  * Fetches data from the Primal cache REST API
  */
-export async function fetchFromCache(
+export function fetchFromCache(
   requestType: string,
   params: CacheParams,
   retries = 2,
@@ -42,7 +41,7 @@ export async function fetchFromCache(
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as CacheResponse;
 
       return data;
     } catch (error) {

@@ -2,7 +2,6 @@ import { Link } from "@remix-run/react";
 import { Lock, X } from "lucide-react";
 
 import { getMinimumPlanForFeature, type FeatureName } from "~/features/payments/types";
-
 interface UpgradePromptProps {
   isOpen: boolean;
   onClose: () => void;

@@ -5,7 +5,7 @@ import { prisma } from "~/lib/prisma.server";
 /**
  * Creates default queue types for a new user
  */
-export async function createDefaultQueueTypes(userId: string): Promise<void> {
+export function createDefaultQueueTypes(userId: string): Promise<void> {
   const defaultQueueTypes = [
     {
       name: "Unassigned",
@@ -36,7 +36,7 @@ export async function createDefaultQueueTypes(userId: string): Promise<void> {
 /**
  * Updates or creates a queue type
  */
-export async function updateQueueType(
+export function updateQueueType(
   userId: string,
   queueTypeData: {
     id?: string;
@@ -54,7 +54,7 @@ export async function updateQueueType(
     const updateData: Prisma.QueueTypeUpdateInput = {
       name: queueTypeData.name.trim(),
       scheduleType: queueTypeData.scheduleType,
-      scheduleConfig: queueTypeData.scheduleConfig,
+      scheduleConfig: queueTypeData.scheduleConfig as Prisma.InputJsonValue,
       color: queueTypeData.color,
       description: queueTypeData.description,
       isEnabled: queueTypeData.isEnabled ?? true,
@@ -79,15 +79,21 @@ export async function updateQueueType(
   } else {
     // Create new queue type
     const createData: Prisma.QueueTypeCreateInput = {
-      userId: userId,
+      user: { connect: { id: userId } },
       name: queueTypeData.name.trim(),
       scheduleType: queueTypeData.scheduleType,
-      scheduleConfig: queueTypeData.scheduleConfig,
+      scheduleConfig: queueTypeData.scheduleConfig as Prisma.InputJsonValue,
       color: queueTypeData.color,
       description: queueTypeData.description,
       isEnabled: queueTypeData.isEnabled ?? true,
-      hashTagPresetId: queueTypeData.hashTagPresetId,
     };
+    
+    // Handle hashtag preset relationship
+    if (queueTypeData.hashTagPresetId) {
+      createData.hashTagPreset = {
+        connect: { id: queueTypeData.hashTagPresetId },
+      };
+    }
 
     return prisma.queueType.create({
       data: createData,
@@ -144,7 +150,7 @@ export async function getQueueType(userId: string): Promise<string[]> {
 /**
  * Gets a queue type by ID for a specific user
  */
-export async function getQueueTypeByIdForUser(
+export function getQueueTypeByIdForUser(
   userId: string,
   queueTypeId: string,
 ): Promise<QueueType | null> {
@@ -159,7 +165,7 @@ export async function getQueueTypeByIdForUser(
 /**
  * Gets a queue type by name for a specific user
  */
-export async function getQueueTypeByNameForUser(
+export function getQueueTypeByNameForUser(
   userId: string,
   queueTypeName: string,
 ): Promise<{ id: string } | null> {

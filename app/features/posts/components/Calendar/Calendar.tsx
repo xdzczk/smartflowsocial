@@ -7,6 +7,7 @@ import type { CalendarPost } from "./PostBlock.types";
 import { RescheduleModal } from "./RescheduleModal";
 import { WeeklyView } from "./WeeklyView";
 
+
 interface RescheduleData {
   post: CalendarPost;
   newDateTime: Date;
@@ -48,7 +49,7 @@ export function Calendar({
         post,
         newDateTime,
         wasAutoScheduled,
-        queueName: postIsLongform ? null : post.queueType?.name || null,
+        queueName: postIsLongform ? null : post.queueType?.name ?? null,
         isEdit: false,
         isLongform: postIsLongform,
       });
@@ -71,7 +72,7 @@ export function Calendar({
         post,
         newDateTime: currentDateTime,
         wasAutoScheduled,
-        queueName: postIsLongform ? null : post.queueType?.name || null,
+        queueName: postIsLongform ? null : post.queueType?.name ?? null,
         isEdit: true,
         isLongform: postIsLongform,
       });
@@ -116,11 +117,11 @@ export function Calendar({
 
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
               {view === "week"
-                ? `Week of ${currentDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: user?.timezone || "Etc/UTC" })}`
+                ? `Week of ${currentDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: user?.timezone ?? "Etc/UTC" })}`
                 : currentDate.toLocaleDateString("en-US", {
                     month: "long",
                     year: "numeric",
-                    timeZone: user?.timezone || "Etc/UTC",
+                    timeZone: user?.timezone ?? "Etc/UTC",
                   })}
             </h2>
 

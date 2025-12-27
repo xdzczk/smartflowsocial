@@ -34,7 +34,7 @@ export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps)
     const repostFetcher = useFetcher<{
         repostData?: PostData[];
         scheduledRepostData?: PostData[];
-        quotePostData?: Array<{
+        quotePostData?: {
             caption: string;
             fileUrl: string;
             queueType: string;
@@ -44,8 +44,8 @@ export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps)
             originalEventPubkey?: string;
             isQuotePost?: boolean;
             originalCaption?: string;
-        }>;
-        longformQuotePostData?: Array<{
+        }[];
+        longformQuotePostData?: {
             caption: string;
             fileUrl: string;
             queueType: string;
@@ -55,7 +55,7 @@ export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps)
             originalEventPubkey?: string;
             isQuotePost?: boolean;
             originalCaption?: string;
-        }>;
+        }[];
     }>();
     const individualRepostFetcher = useFetcher<{
         repostEventData?: {
@@ -64,7 +64,7 @@ export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps)
             tags: string[][];
             created_at: number;
         };
-        quotePostData?: Array<{
+        quotePostData?: {
             caption: string;
             fileUrl: string;
             queueType: string;
@@ -74,7 +74,7 @@ export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps)
             originalEventPubkey?: string;
             isQuotePost?: boolean;
             originalCaption?: string;
-        }>;
+        }[];
         originalPost?: PostData;
         error?: string;
         message?: string;
@@ -91,7 +91,7 @@ export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps)
         message?: string;
     }>();
     const longformQuoteFetcher = useFetcher<{
-        longformQuotePostData?: Array<{
+        longformQuotePostData?: {
             caption: string;
             fileUrl: string;
             queueType: string;
@@ -101,7 +101,7 @@ export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps)
             originalEventPubkey?: string;
             isQuotePost?: boolean;
             originalCaption?: string;
-        }>;
+        }[];
         error?: string;
         message?: string;
     }>();
@@ -266,13 +266,13 @@ export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps)
 
             // Prepare repost data with 1 hour default scheduling
             const now = new Date();
-            const userTimezone = user?.timezone || "UTC";
+            const userTimezone = user?.timezone ?? "UTC";
             const localDate = new Date(
                 now.toLocaleString("en-US", { timeZone: userTimezone }),
             );
             localDate.setHours(localDate.getHours() + 1);
 
-            const repostData = postsData.map((post: PostData, index: number) => {
+            const repostData = postsData.map((post, index: number) => {
                 const scheduleDate = new Date(localDate);
                 scheduleDate.setHours(scheduleDate.getHours() + index);
 
@@ -313,13 +313,13 @@ export function usePostedPosts({ user, allContent, posts }: UsePostedPostsProps)
 
             // Prepare scheduled repost data with 1 hour default scheduling
             const now = new Date();
-            const userTimezone = user?.timezone || "UTC";
+            const userTimezone = user?.timezone ?? "UTC";
             const localDate = new Date(
                 now.toLocaleString("en-US", { timeZone: userTimezone }),
             );
             localDate.setHours(localDate.getHours() + 1);
 
-            const scheduledRepostData = postsData.map((post: PostData, index: number) => {
+            const scheduledRepostData = postsData.map((post, index: number) => {
                 const scheduleDate = new Date(localDate);
                 scheduleDate.setHours(scheduleDate.getHours() + index);
 

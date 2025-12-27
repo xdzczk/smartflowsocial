@@ -1,5 +1,4 @@
 import { marked } from "marked";
-
 const ALLOWED_TAGS = [
   "p",
   "br",
@@ -49,7 +48,7 @@ function sanitizeAttribute(
   attrValue: string,
 ): string | null {
   const allowedAttrs = ALLOWED_ATTRIBUTES[tagName];
-  if (!allowedAttrs || !allowedAttrs.includes(attrName)) {
+  if (!allowedAttrs?.includes(attrName)) {
     return null;
   }
 
@@ -100,32 +99,44 @@ export function sanitizeMarkdown(markdown: string): string {
     return "";
   }
 
+  // Type guard for marked return values
+  const ensureString = (value: unknown): string => {
+    if (typeof value === "string") {
+      return value;
+    }
+    return String(value ?? "");
+  };
+
   try {
     // Parse markdown to HTML
-    let html = marked(markdown, {
+    const htmlResult = marked(markdown, {
       gfm: true,
       breaks: false,
       pedantic: false,
       smartLists: true,
       smartypants: false,
-    }) as string;
+    });
+    let html = typeof htmlResult === "string" ? htmlResult : String(htmlResult ?? "");
 
     // Sanitize links and images by processing the HTML
     html = html.replace(
       /<a\s+([^>]*?)href=["']([^"']*?)["']([^>]*?)>(.*?)<\/a>/gi,
       (match, before, href, after, text) => {
-        const sanitizedHref = sanitizeAttribute("a", "href", href);
+        const hrefStr = typeof href === "string" ? href : String(href ?? "");
+        const textStr = typeof text === "string" ? text : String(text ?? "");
+        const sanitizedHref = sanitizeAttribute("a", "href", hrefStr);
         if (!sanitizedHref) {
-          return text; // Return just the text if href is invalid
+          return textStr; // Return just the text if href is invalid
         }
-        return `<a href="${sanitizedHref}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+        return `<a href="${sanitizedHref}" target="_blank" rel="noopener noreferrer">${textStr}</a>`;
       }
     );
 
     html = html.replace(
       /<img\s+([^>]*?)src=["']([^"']*?)["']([^>]*?)>/gi,
       (match, before, src, after) => {
-        const sanitizedSrc = sanitizeAttribute("img", "src", src);
+        const srcStr = typeof src === "string" ? src : String(src ?? "");
+        const sanitizedSrc = sanitizeAttribute("img", "src", srcStr);
         if (!sanitizedSrc) {
           return ""; // Remove image if src is invalid
         }
@@ -140,8 +151,10 @@ export function sanitizeMarkdown(markdown: string): string {
     html = html.replace(
       /<pre><code(?: class="language-([^"]*)")?>([\s\S]*?)<\/code><\/pre>/gi,
       (match, lang, code) => {
+        const codeStr = typeof code === "string" ? code : String(code ?? "");
+        const langStr = typeof lang === "string" ? lang : String(lang ?? "");
         // Decode HTML entities that marked might have added, then escape properly
-        const decodedCode = code
+        const decodedCode = codeStr
           .replace(/&amp;/g, "&")
           .replace(/&lt;/g, "<")
           .replace(/&gt;/g, ">")
@@ -158,7 +171,8 @@ export function sanitizeMarkdown(markdown: string): string {
           .replace(/'/g, "&#39;");
 
         if (lang) {
-          const sanitizedLang = lang.replace(/[^a-zA-Z0-9-_]/g, "");
+          const langStr = typeof lang === "string" ? lang : String(lang);
+          const sanitizedLang = langStr.replace(/[^a-zA-Z0-9-_]/g, "");
           return `<pre><code class="language-${sanitizedLang}">${escapedCode}</code></pre>`;
         }
 

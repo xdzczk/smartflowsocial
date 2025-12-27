@@ -15,7 +15,6 @@ import { handleNWCAction } from "./actions/nwc-actions.server";
 import { handleQueueTypeAction } from "./actions/queue-types-actions.server";
 import { handleStorageSettingsAction } from "./actions/storage-settings-actions.server";
 import { handleSubscriptionAction } from "./actions/subscription-actions.server";
-
 /**
  * Main settings action handler
  * Routes actions to appropriate handlers

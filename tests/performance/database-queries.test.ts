@@ -5,7 +5,6 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
-
 // Mock Prisma to prevent $use middleware errors
 vi.mock("~/lib/prisma.server", () => ({
   prisma: {

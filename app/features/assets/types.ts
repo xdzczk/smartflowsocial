@@ -5,7 +5,6 @@
 
 import type { AssetType } from "@prisma/client";
 import type { FetcherWithComponents } from "@remix-run/react";
-
 /**
  * Asset data structure
  * Note: We don't extend PrismaAsset directly to avoid type conflicts with content field

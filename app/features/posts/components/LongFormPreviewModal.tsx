@@ -34,7 +34,7 @@ export default function LongFormPreviewModal({
     }
 
     try {
-      const editorData = JSON.parse(content);
+      const editorData = JSON.parse(content) as { blocks?: EditorJSBlock[] };
 
       if (!editorData.blocks || !Array.isArray(editorData.blocks)) {
         return '<p class="text-gray-500 italic">No content blocks found</p>';
@@ -45,13 +45,20 @@ export default function LongFormPreviewModal({
       editorData.blocks.forEach((block: EditorJSBlock) => {
         switch (block.type) {
           case "header": {
-            const level = block.data.level || 3;
-            html += `<h${level} class="text-${level === 2 ? "2xl" : level === 3 ? "xl" : "lg"} font-bold mb-4 text-gray-900 dark:text-white">${block.data.text}</h${level}>`;
+            const levelValue = block.data.level;
+            const level = typeof levelValue === "number" ? levelValue : 3;
+            const levelStr = String(level);
+            const textValue = block.data.text;
+            const text = typeof textValue === "string" ? textValue : "";
+            html += `<h${levelStr} class="text-${level === 2 ? "2xl" : level === 3 ? "xl" : "lg"} font-bold mb-4 text-gray-900 dark:text-white">${text}</h${levelStr}>`;
             break;
           }
-          case "paragraph":
-            html += `<p class="mb-4 text-gray-700 dark:text-gray-300 leading-relaxed">${block.data.text}</p>`;
+          case "paragraph": {
+            const textValue = block.data.text;
+            const text = typeof textValue === "string" ? textValue : "";
+            html += `<p class="mb-4 text-gray-700 dark:text-gray-300 leading-relaxed">${text}</p>`;
             break;
+          }
           case "list": {
             const listType = block.data.style === "ordered" ? "ol" : "ul";
             const listClass =
@@ -85,7 +92,7 @@ export default function LongFormPreviewModal({
             const meta = block.data.meta && typeof block.data.meta === "object" ? block.data.meta as { title?: string; description?: string } : null;
             html += `<div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4">
               <a href="${link}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:underline">
-                <div class="font-semibold">${meta?.title || link}</div>
+                <div class="font-semibold">${meta?.title ?? link}</div>
                 ${meta?.description ? `<div class="text-gray-600 dark:text-gray-400 text-sm mt-1">${meta.description}</div>` : ""}
               </a>
             </div>`;
@@ -101,7 +108,7 @@ export default function LongFormPreviewModal({
           case "image": {
             const file = block.data.file && typeof block.data.file === "object" ? block.data.file as { url?: string } : null;
             const url = typeof block.data.url === "string" ? block.data.url : "";
-            const imageUrl = file?.url || url;
+            const imageUrl = file?.url ?? url;
             const caption = typeof block.data.caption === "string" ? block.data.caption : "";
             if (imageUrl) {
               html += `<figure class="mb-6">

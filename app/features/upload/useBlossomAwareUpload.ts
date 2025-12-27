@@ -1,7 +1,6 @@
 import { useNavigate } from "@remix-run/react";
 import { useState, useCallback } from "react";
 import { toast } from "react-hot-toast";
-
 interface UploadProvider {
   provider: "S3" | "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR";
   isUsingBlossom: boolean;
@@ -26,7 +25,11 @@ export function useBlossomAwareUpload() {
     try {
       const response = await fetch("/api/user-upload-provider");
       if (!response.ok) throw new Error("Failed to check provider");
-      const data = await response.json();
+      const data = (await response.json()) as {
+        provider?: string;
+        enableMirrorBlossom?: boolean;
+        mirrorUploadUrls?: string[];
+      };
 
       const {
         provider,
@@ -132,7 +135,8 @@ export function useBlossomAwareUpload() {
             toast.success("Upload authorized!", { id: "blossom-auth" });
             setUploadProgress(60);
           } catch (authError: unknown) {
-            toast.error("Failed to authorize upload: " + authError.message, {
+            const errorMessage = authError instanceof Error ? authError.message : String(authError);
+            toast.error("Failed to authorize upload: " + errorMessage, {
               id: "blossom-auth",
             });
             throw authError;
@@ -157,9 +161,9 @@ export function useBlossomAwareUpload() {
         setUploadProgress(90);
 
         if (!fetchResponse.ok) {
-          let errorData;
+          let errorData: { error?: string };
           try {
-            errorData = await fetchResponse.json();
+            errorData = (await fetchResponse.json()) as { error?: string };
           } catch {
             // If response is not JSON, try to get text
             const errorText = await fetchResponse
@@ -179,7 +183,7 @@ export function useBlossomAwareUpload() {
 
         try {
           // Try to parse as JSON first
-          result = JSON.parse(responseText);
+          result = JSON.parse(responseText) as Record<string, unknown>;
         } catch (_parseError: unknown) {
           // If response is HTML (redirect or error page), handle gracefully
           if (
@@ -207,7 +211,7 @@ export function useBlossomAwareUpload() {
             const parseError = _parseError as Error;
             throw new Error(
               "Invalid response format: " +
-              (parseError?.message || "Unknown error") +
+              (parseError?.message ?? "Unknown error") +
               ". Response: " +
               responseText.substring(0, 100),
             );

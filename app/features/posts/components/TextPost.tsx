@@ -10,12 +10,11 @@ import { Textarea } from "~/components/ui/textarea";
 import AssetBrowser from "~/features/assets/components/AssetBrowser";
 import type { Asset } from "~/features/assets/types";
 import { QueueSelector } from "~/features/posts/components/QueueSelector";
-import type { QueueType } from "~/features/posts/types";
 import { SchedulingSection } from "~/features/posts/components/SchedulingSection";
 import { usePostScheduling } from "~/features/posts/hooks/usePostScheduling";
+import type { QueueType } from "~/features/posts/types";
 import { signEventFn } from "~/lib/nostr";
 import { useOptionalUser } from "~/lib/remix-utils";
-
 interface TextPostProps {
   queueTypes?: (string | QueueType)[];
   assets?: Asset[];
@@ -60,7 +59,7 @@ export default function TextPost({
   } = usePostScheduling({
     queueTypes,
     scheduleIntervals: user?.scheduleInterval as number[] | undefined,
-    userTimezone: user?.timezone || undefined,
+    userTimezone: user?.timezone ?? undefined,
     initialQueue: "unassigned",
     onQueueTypeChange,
   });
@@ -72,7 +71,7 @@ export default function TextPost({
     const contentValue = formData.get("content");
     const scheduledFor = formData.get("scheduledFor");
     const submitter = (e.nativeEvent as SubmitEvent).submitter as HTMLButtonElement;
-    const submitType = submitter?.value || "";
+    const submitType = submitter?.value ?? "";
 
     // Ensure queueType is set from current state
     formData.set("queueType", selectedQueue);
@@ -106,7 +105,7 @@ export default function TextPost({
         return;
       }
 
-      const userTimezone = user?.timezone || "UTC";
+      const userTimezone = user?.timezone ?? "UTC";
       let scheduledTime;
 
       if (submitType === "post-text") {
@@ -172,7 +171,7 @@ export default function TextPost({
           });
 
           if (response.ok) {
-            const data = await response.json();
+            const data = (await response.json()) as { hashtags?: string };
             effectiveHashtags = data.hashtags || "";
           } else {
             // Fallback to user's default hashtags

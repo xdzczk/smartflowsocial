@@ -5,7 +5,6 @@
  */
 
 import { getQueueTypes, getUserHashTagPresets, getUserHashTags } from "~/models/user.server";
-
 /**
  * Get bulk posts dashboard data
  */
@@ -31,4 +30,6 @@ export async function getBulkPostsDashboardData(userId: string) {
     mode,
   };
 }
+
+
 

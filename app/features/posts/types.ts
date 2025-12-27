@@ -7,7 +7,6 @@ import type { Post, LongFormPost, QueueType as PrismaQueueType, HashTagPreset as
 import type { FetcherWithComponents } from "@remix-run/react";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
-
 /**
  * Schedule configuration for INTERVAL schedule type
  */

@@ -5,7 +5,6 @@
  */
 
 import type { BulkPost } from "~/features/posts/types";
-
 /**
  * Handle recyclable checkbox change for a post
  */
@@ -40,4 +39,6 @@ export function handleBulkRecyclableToggle(
 
   setPosts(updatedPosts);
 }
+
+
 

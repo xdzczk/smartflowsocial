@@ -10,7 +10,6 @@ import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { getSelectedQueueStyle } from "~/features/posts/queueColors";
 import type { PostData, QueueType, HashTagPreset } from "~/features/posts/types";
-
 interface DraftEditFormProps {
   post: PostData;
   content: string;

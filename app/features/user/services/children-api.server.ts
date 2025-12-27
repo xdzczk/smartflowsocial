@@ -10,14 +10,13 @@ import { logError } from "~/lib/error-logger.server";
 import { normalizeError } from "~/lib/errors";
 import { getUserSubscription } from "~/models/payment.server";
 import { getConfirmedChildrenForParent, getUserBasicInfo } from "~/models/user.server";
-
 function extractProfileBits(nostrProfile: ProfileData | null | undefined) {
   if (!nostrProfile) {
     return { name: undefined, display_name: undefined, picture: undefined } as const;
   }
   try {
     if (typeof nostrProfile === "string") {
-      const p = JSON.parse(nostrProfile);
+      const p = JSON.parse(nostrProfile) as { name?: string; display_name?: string; picture?: string };
       return { name: p?.name, display_name: p?.display_name, picture: p?.picture } as const;
     }
     if (typeof nostrProfile === "object") {
@@ -49,8 +48,8 @@ export async function loadChildrenData(userId: string) {
 
   // Check subscription plan is Premium or Founder
   const sub = await getUserSubscription(userId);
-  const planId = (sub?.planId || "").toLowerCase();
-  const planName = (sub?.Plan?.name || "").toLowerCase();
+  const planId = (sub?.planId ?? "").toLowerCase();
+  const planName = (sub?.Plan?.name ?? "").toLowerCase();
   const hasAccountsAccess = planId === "premium" || planName === "premium" || planName === "founder";
   
   if (!hasAccountsAccess) {
@@ -59,7 +58,10 @@ export async function loadChildrenData(userId: string) {
 
   const confirmed = await getConfirmedChildrenForParent(me.npub);
   const children = confirmed.map((c) => {
-    const bits = extractProfileBits(c.nostrProfile);
+    const profile = c.nostrProfile && typeof c.nostrProfile === "object" && !Array.isArray(c.nostrProfile)
+      ? (c.nostrProfile as ProfileData)
+      : null;
+    const bits = extractProfileBits(profile);
     return {
       npub: c.npub,
       name: bits.name,
@@ -85,4 +87,6 @@ export function handleChildrenApiError(error: unknown, requestUrl: string) {
   logError(normalizeError(error), { path: requestUrl });
   return json({ children: [] });
 }
+
+
 

@@ -3,7 +3,6 @@
  */
 
 import { Badge } from "~/components/ui/badge";
-
 interface NewPostHeaderProps {
   selectedHashtags: string;
 }
@@ -35,6 +34,8 @@ export function NewPostHeader({ selectedHashtags }: NewPostHeaderProps) {
     </>
   );
 }
+
+
 
 
 

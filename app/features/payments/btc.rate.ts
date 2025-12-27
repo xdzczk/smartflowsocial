@@ -1,5 +1,4 @@
 import axios from "axios";
-
 // Function to get Bitcoin rate in USD
 export async function getBitcoinRate(dollarAmount: number): Promise<number> {
   try {

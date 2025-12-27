@@ -9,19 +9,29 @@ import type { ProfileData } from "~/features/nostr/types";
 import { logError } from "~/lib/error-logger.server";
 import { normalizeError } from "~/lib/errors";
 import { getUserBasicInfo, getUserByNpubWithProfile } from "~/models/user.server";
-
 function extractProfileBits(nostrProfile: ProfileData | null | undefined) {
   if (!nostrProfile) {
     return { name: undefined, display_name: undefined, picture: undefined } as const;
   }
   try {
     if (typeof nostrProfile === "string") {
-      const p = JSON.parse(nostrProfile);
-      return { name: p?.name, display_name: p?.display_name, picture: p?.picture } as const;
+      const pParsed = JSON.parse(nostrProfile);
+      if (pParsed && typeof pParsed === "object" && !Array.isArray(pParsed)) {
+        const p = pParsed as { name?: string; display_name?: string; picture?: string };
+        return { 
+          name: typeof p.name === "string" ? p.name : undefined, 
+          display_name: typeof p.display_name === "string" ? p.display_name : undefined, 
+          picture: typeof p.picture === "string" ? p.picture : undefined 
+        } as const;
+      }
     }
-    if (typeof nostrProfile === "object") {
-      const p = nostrProfile;
-      return { name: p?.name, display_name: p?.display_name, picture: p?.picture } as const;
+    if (typeof nostrProfile === "object" && !Array.isArray(nostrProfile)) {
+      const p = nostrProfile as { name?: string; display_name?: string; picture?: string };
+      return { 
+        name: typeof p.name === "string" ? p.name : undefined, 
+        display_name: typeof p.display_name === "string" ? p.display_name : undefined, 
+        picture: typeof p.picture === "string" ? p.picture : undefined 
+      } as const;
     }
   } catch {
     // Silently ignore parse errors - return defaults
@@ -71,4 +81,6 @@ export function handleParentApiError(error: unknown, requestUrl: string) {
   logError(normalizeError(error), { path: requestUrl });
   return json({ parent: null });
 }
+
+
 

@@ -1,5 +1,4 @@
 import { TEST_NPUB } from "../support/nostr-test-keys";
-
 describe("Calendar View", () => {
     beforeEach(() => {
         cy.loginNostr({ npub: TEST_NPUB });

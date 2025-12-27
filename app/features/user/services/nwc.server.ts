@@ -12,7 +12,7 @@ import { prisma } from "~/lib/prisma.server";
  * Updates user's NWC (Nostr Wallet Connect) connection string
  * Validates and encrypts the NWC string before storing
  */
-export async function updateUserNWC(
+export function updateUserNWC(
   userId: string,
   nwcString: string,
   enabled = true,
@@ -62,7 +62,7 @@ export async function updateUserNWCEnabled(
 /**
  * Clears user's NWC connection string
  */
-export async function clearUserNWC(userId: string): Promise<User> {
+export function clearUserNWC(userId: string): Promise<User> {
   return prisma.user.update({
     where: {
       id: userId,
@@ -144,7 +144,7 @@ export async function getDecryptedUserNWC(
     return decrypt(user.encryptedNwc);
   } catch (error) {
     // Use safe logging to prevent NWC strings from appearing in logs
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+     
     const { safeConsoleError } = require("~/lib/secrets-sanitizer.server");
     safeConsoleError("Failed to decrypt NWC string for user", userId);
     return null;

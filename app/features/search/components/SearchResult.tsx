@@ -3,7 +3,6 @@
  */
 
 import { formatDate } from "~/lib/helpers";
-
 interface SearchResultData {
   id: string;
   pubkey: string;

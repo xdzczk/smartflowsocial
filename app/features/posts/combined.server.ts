@@ -4,7 +4,6 @@
  */
 
 import type { CombinedContent, PostData, LongFormPostData } from "~/features/posts/types";
-
 // Re-export the type
 export type { CombinedContent } from "~/features/posts/types";
 

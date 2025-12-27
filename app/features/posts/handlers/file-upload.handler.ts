@@ -8,7 +8,6 @@ import type { BulkPostsHandlerDeps } from "~/features/posts/types";
 import { resizeImage } from "~/features/upload/image-resize";
 import { logClientError } from "~/lib/error-handler.client";
 import { isVideoFile } from "~/utils/media-helpers";
-
 // File size limits
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB for images
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB for videos
@@ -17,7 +16,7 @@ const MAX_TOTAL_SIZE = 100 * 1024 * 1024; // 100MB total
 /**
  * Handle file selection and processing for bulk uploads
  */
-export async function handleFileChange(
+export function handleFileChange(
   e: React.ChangeEvent<HTMLInputElement>,
   deps: Pick<
     BulkPostsHandlerDeps,
@@ -148,4 +147,6 @@ export async function handleFileChange(
   // Reset flag when new files are uploaded
   setFirstItemTimeManuallyChanged(false);
 }
+
+
 

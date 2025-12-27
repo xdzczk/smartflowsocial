@@ -4,7 +4,7 @@
  */
 
 import type { ProfileData } from "~/features/nostr/types";
-import type { HashTagPreset, QueueType } from "~/features/posts/types";
+import type { HashTagPreset, QueueType, ScheduleConfig } from "~/features/posts/types";
 import {
   getAllPlans,
   getUserPaymentHistory,
@@ -117,7 +117,7 @@ export interface SettingsLoaderData {
 export async function loadSettingsData(userId: string): Promise<SettingsLoaderData> {
   // Get subscription and plan name for gating Accounts tab
   const currentSub = await getUserSubscription(userId);
-  const planName = currentSub?.Plan?.name || null;
+  const planName = currentSub?.Plan?.name ?? null;
 
   const userRecord = await getUserBasicInfo(userId);
   const myNpub = userRecord?.npub as string;
@@ -166,8 +166,12 @@ export async function loadSettingsData(userId: string): Promise<SettingsLoaderDa
       : null;
     accounts = {
       isChild: true,
-      parentNpub: parentUser?.npub || null,
-      parentUser,
+      parentNpub: parentUser?.npub ?? null,
+      parentUser: parentUser ? {
+        ...parentUser,
+        id: parentUser.npub, // Add required id field
+        nostrProfile: parentUser.nostrProfile,
+      } : null,
       confirmedChildren: [],
       pendingChildren: [],
     };
@@ -199,7 +203,18 @@ export async function loadSettingsData(userId: string): Promise<SettingsLoaderDa
     showHashTagsInPosts,
     giveawayBlacklist,
     scheduleIntervals,
-    queueTypes: queueTypes as unknown as typeof queueTypes,
+    queueTypes: queueTypes.map((qt) => ({
+      id: qt.id,
+      name: qt.name,
+      color: qt.color,
+      description: qt.description,
+      scheduleType: qt.scheduleType,
+      scheduleConfig: qt.scheduleConfig && typeof qt.scheduleConfig === "object" && !Array.isArray(qt.scheduleConfig)
+        ? (qt.scheduleConfig as ScheduleConfig)
+        : undefined,
+      isEnabled: qt.isEnabled,
+      userId: qt.userId,
+    })),
     uploadProvider,
     enableMirrorBlossom,
     mirrorUploadUrls,

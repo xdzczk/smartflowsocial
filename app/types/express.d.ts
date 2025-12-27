@@ -15,6 +15,16 @@ declare global {
         id: string;
         [key: string]: unknown;
       };
+      /**
+       * Rate limit information from express-rate-limit middleware
+       */
+      rateLimit?: {
+        limit?: number;
+        current?: number;
+        remaining?: number;
+        resetTime?: number;
+        totalHits?: number;
+      };
     }
   }
 }

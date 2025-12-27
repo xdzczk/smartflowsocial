@@ -5,7 +5,6 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-
 // Mock dependencies
 vi.mock("~/models/user.server", () => ({
   getUserById: vi.fn(),
@@ -86,6 +85,8 @@ describe("Search Loader", () => {
     });
   });
 });
+
+
 
 
 

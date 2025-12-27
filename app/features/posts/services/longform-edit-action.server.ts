@@ -79,7 +79,7 @@ async function getEffectiveHashtagsForPost(
     if (hashTagPresetId) {
       // Use manually selected hashtag preset
       const selectedPreset = await getHashTagPresetById(userId, hashTagPresetId);
-      return selectedPreset?.tags || "";
+      return selectedPreset?.tags ?? "";
     }
     // If useHashtagPresets is true but no manual preset selected, use no hashtags
     // This ensures manual hashtag preset selection overrides queue defaults
@@ -116,7 +116,7 @@ async function handleImageUpload(
   ) {
     try {
       // Process the file upload using shared S3 function
-      const file = imageFile as File;
+      const file = imageFile;
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
@@ -127,7 +127,7 @@ async function handleImageUpload(
     } catch (error) {
       logError(error instanceof Error ? error : new Error(String(error)), {
         userId,
-        fileName: (imageFile as File).name,
+        fileName: (imageFile).name,
         message: "S3 upload error",
       });
       return Response.json(
@@ -176,7 +176,7 @@ async function handleSaveDraft(
   let queueTypeId = null;
   if (queueType && queueType !== "unassigned") {
     const queueTypeRecord = await getQueueTypeByNameForUser(userId, queueType);
-    queueTypeId = queueTypeRecord?.id || null;
+    queueTypeId = queueTypeRecord?.id ?? null;
   }
 
   if (!title.trim()) {
@@ -189,7 +189,7 @@ async function handleSaveDraft(
 
   let markdownContent;
   try {
-    const editorData = JSON.parse(editorContent);
+    const editorData = JSON.parse(editorContent) as { blocks?: { type: string; data: Record<string, unknown> }[]; time?: number; version?: string };
     markdownContent = convertEditorJSToMarkdown(editorData);
   } catch {
     markdownContent = editorContent;
@@ -239,7 +239,7 @@ async function handlePublish(
   let queueTypeId = null;
   if (queueType && queueType !== "unassigned") {
     const queueTypeRecord = await getQueueTypeByNameForUser(userId, queueType);
-    queueTypeId = queueTypeRecord?.id || null;
+    queueTypeId = queueTypeRecord?.id ?? null;
   }
 
   if (!title.trim()) {
@@ -250,14 +250,14 @@ async function handlePublish(
     return Response.json({ error: "Content is required" }, { status: 400 });
   }
 
-  if (!summary || !summary.trim()) {
+  if (!summary?.trim()) {
     return Response.json(
       { error: "Summary is required for publishing" },
       { status: 400 },
     );
   }
 
-  if (!image || !image.trim()) {
+  if (!image?.trim()) {
     return Response.json(
       { error: "Cover image is required for publishing" },
       { status: 400 },
@@ -273,7 +273,7 @@ async function handlePublish(
 
   let markdownContent;
   try {
-    const editorData = JSON.parse(editorContent);
+    const editorData = JSON.parse(editorContent) as { blocks?: { type: string; data: Record<string, unknown> }[]; time?: number; version?: string };
     markdownContent = convertEditorJSToMarkdown(editorData);
   } catch {
     markdownContent = editorContent;
@@ -287,8 +287,8 @@ async function handlePublish(
     ? `${sanitizedContent}\\n\\n${effectiveHashtags}`
     : sanitizedContent;
 
-  const signedEventJson = JSON.parse(signedEvent.toString());
-  const nostrEventJson = JSON.parse(nostrEvent.toString());
+  const signedEventJson = JSON.parse(signedEvent.toString()) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][]; sig: string };
+  const nostrEventJson = JSON.parse(nostrEvent.toString()) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][] };
 
   await updateLongFormPost({
     id: postId,
@@ -347,7 +347,7 @@ async function handleScheduleLongform(
   let queueTypeId = null;
   if (queueType && queueType !== "unassigned") {
     const queueTypeRecord = await getQueueTypeByNameForUser(userId, queueType);
-    queueTypeId = queueTypeRecord?.id || null;
+    queueTypeId = queueTypeRecord?.id ?? null;
   }
 
   if (!title.trim()) {
@@ -358,14 +358,14 @@ async function handleScheduleLongform(
     return Response.json({ error: "Content is required" }, { status: 400 });
   }
 
-  if (!summary || !summary.trim()) {
+  if (!summary?.trim()) {
     return Response.json(
       { error: "Summary is required for publishing" },
       { status: 400 },
     );
   }
 
-  if (!image || !image.trim()) {
+  if (!image?.trim()) {
     return Response.json(
       { error: "Cover image is required for publishing" },
       { status: 400 },
@@ -381,7 +381,7 @@ async function handleScheduleLongform(
 
   let markdownContent;
   try {
-    const editorData = JSON.parse(editorContent);
+    const editorData = JSON.parse(editorContent) as { blocks?: { type: string; data: Record<string, unknown> }[]; time?: number; version?: string };
     markdownContent = convertEditorJSToMarkdown(editorData);
   } catch {
     markdownContent = editorContent;
@@ -395,8 +395,8 @@ async function handleScheduleLongform(
     ? `${sanitizedContent}\\n\\n${effectiveHashtags}`
     : sanitizedContent;
 
-  const signedEventJson = JSON.parse(signedEvent.toString());
-  const nostrEventJson = JSON.parse(nostrEvent.toString());
+  const signedEventJson = JSON.parse(signedEvent.toString()) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][]; sig: string };
+  const nostrEventJson = JSON.parse(nostrEvent.toString()) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][] };
 
   // Extract published_at from NOSTR event tags for scheduling
   let scheduledForTimestamp: string | null = null;
@@ -405,7 +405,7 @@ async function handleScheduleLongform(
     const publishedAtTag = signedEventJson.tags.find(
       (tag: unknown) => Array.isArray(tag) && tag[0] === "published_at",
     );
-    if (publishedAtTag && publishedAtTag[1]) {
+    if (publishedAtTag?.[1]) {
       scheduledForTimestamp = publishedAtTag[1].toString();
     }
   }
@@ -461,7 +461,7 @@ export async function handleLongFormEditAction(
   const queueType = (formData.get("queueType") as string) || "unassigned";
   const useHashtagPresets = formData.get("useHashtagPresets") === "true";
   const hashTagPresetId =
-    (formData.get("hashTagPresetId")?.toString() || null) as string | null;
+    (formData.get("hashTagPresetId")?.toString() || null);
 
   // Handle upload-image action first, before any validation
   if (_action === "upload-image") {

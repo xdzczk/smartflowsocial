@@ -27,7 +27,7 @@ export async function requireFeatureAccess(
   ]);
 
   // Check if user exists and is enabled
-  if (!user || !user.isEnabled) {
+  if (!user?.isEnabled) {
     throw redirect(redirectTo);
   }
 
@@ -73,7 +73,7 @@ export async function checkNewUserAccess(
   ]);
 
   // Check if user exists and is enabled
-  if (!user || !user.isEnabled) {
+  if (!user?.isEnabled) {
     throw redirect(redirectTo);
   }
 
@@ -116,7 +116,7 @@ export async function requireSubscriptionForDashboardChild(
   const subscriptionData = await getSubscriptionData(userId);
 
   // Check if user exists and is enabled
-  if (!subscriptionData.user || !subscriptionData.user.isEnabled) {
+  if (!subscriptionData.user?.isEnabled) {
     throw redirect(redirectTo);
   }
 
@@ -149,7 +149,7 @@ export async function requireAnySubscription(
   ]);
 
   // Check if user exists and is enabled
-  if (!user || !user.isEnabled) {
+  if (!user?.isEnabled) {
     throw redirect(redirectTo);
   }
 
@@ -176,7 +176,7 @@ export async function requireActiveSubscription(
   ]);
 
   // Check if user exists and is enabled
-  if (!user || !user.isEnabled) {
+  if (!user?.isEnabled) {
     throw redirect(redirectTo);
   }
 
@@ -198,8 +198,7 @@ export async function requireActiveSubscription(
   };
 
   if (
-    !subscriptionData.currentSubscription ||
-    subscriptionData.currentSubscription.status !== "ACTIVE"
+    subscriptionData.currentSubscription?.status !== "ACTIVE"
   ) {
     throw redirect(redirectTo);
   }

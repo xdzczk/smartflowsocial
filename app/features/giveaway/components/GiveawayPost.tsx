@@ -2,7 +2,6 @@ import { nip19 } from "nostr-tools";
 import { useState } from "react";
 
 import { handleErrorSafely } from "~/lib/error-handler.client";
-
 interface RandomUser {
   pubkey: string;
 }
@@ -24,8 +23,7 @@ const GiveawayPost = ({ randomUsers }: GiveawayPostProps) => {
   // Generate the giveaway message based on random users
   const generateMessage = () => {
     if (
-      !randomUsers ||
-      !randomUsers.reposters ||
+      !randomUsers?.reposters ||
       !randomUsers.likers ||
       !randomUsers.commenters
     ) {

@@ -1,5 +1,4 @@
 import { useState, useCallback } from "react";
-
 interface Asset {
     id: string;
     assetType: string;

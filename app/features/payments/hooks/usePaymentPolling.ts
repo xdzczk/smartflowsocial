@@ -1,6 +1,5 @@
 import { useNavigate } from "@remix-run/react";
 import { useEffect, useRef, useState } from "react";
-
 interface UsePaymentPollingProps {
   paymentId: string | null;
   onPaymentComplete: () => void;
@@ -36,9 +35,9 @@ export function usePaymentPolling({
       }
 
       const responseText = await response.text();
-      let data;
+      let data: { success?: boolean; paid?: boolean };
       try {
-        data = JSON.parse(responseText);
+        data = JSON.parse(responseText) as { success?: boolean; paid?: boolean };
       } catch (_parseError) {
         return;
       }
@@ -96,9 +95,9 @@ export function usePaymentPolling({
         }
 
         const responseText = await response.text();
-        let data;
+        let data: { success?: boolean; paid?: boolean };
         try {
-          data = JSON.parse(responseText);
+          data = JSON.parse(responseText) as { success?: boolean; paid?: boolean };
         } catch (_parseError) {
           return;
         }

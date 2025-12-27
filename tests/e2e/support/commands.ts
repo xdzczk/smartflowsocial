@@ -2,7 +2,6 @@ import { faker } from "@faker-js/faker";
 
 import { signEvent, type SignedEvent } from "./nostr-signer";
 import { TEST_NPUB } from "./nostr-test-keys";
-
 // Available test files in tests/e2e/memes_test_files/
 export const TEST_FILES = [
   "3cecbbd43d51b4eb9f16f6229efcb5d8037e350150b55b4ae0a3277176b1db40.jpg",
@@ -15,7 +14,7 @@ export type TestSubscriptionStatus = "FREE" | "ACTIVE" | "EXPIRED" | "CANCELED" 
 
 
 declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
+   
   namespace Cypress {
     interface Chainable {
       /**

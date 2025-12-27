@@ -8,7 +8,6 @@ import { toast } from "react-hot-toast";
 
 import type { ErrorResponse } from "./error-handler.server";
 import { captureException } from "./sentry.client";
-
 export type ClientErrorLevel = "error" | "warning" | "info";
 
 export interface ClientErrorContext {
@@ -57,12 +56,15 @@ export function logClientError(
 
   // Send to Sentry if configured
   if (error instanceof Error) {
+    const tags: Record<string, string> = { level };
+    if (context?.component) {
+      tags.component = context.component;
+    }
+    if (context?.action) {
+      tags.action = context.action;
+    }
     captureException(error, {
-      tags: {
-        level,
-        component: context?.component,
-        action: context?.action,
-      },
+      tags,
       extra: context,
       user: context?.userId ? { id: context.userId } : undefined,
       level: level === "error" ? "error" : level === "warning" ? "warning" : "info",

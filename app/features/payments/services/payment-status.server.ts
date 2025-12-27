@@ -7,7 +7,6 @@ import { json } from "@remix-run/node";
 
 import { DatabaseError } from "~/lib/errors";
 import { checkPaymentStatus } from "~/models/payment.server";
-
 /**
  * Check payment status by payment ID
  */

@@ -12,7 +12,6 @@ import { getLastPostTimeForQueue } from "~/models/post.queries.server";
 import { getScheduleInterval } from "~/models/user.server";
 
 import { TEST_USER_ID } from "../utils/test-helpers";
-
 // Mock dependencies
 vi.mock("~/models/post.queries.server", () => ({
   getLastPostTimeForQueue: vi.fn(),

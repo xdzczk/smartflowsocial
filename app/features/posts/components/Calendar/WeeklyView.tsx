@@ -67,7 +67,7 @@ export function WeeklyView({
   // Group posts by date and time
   const postsGrid = useMemo(() => {
     const grid: PostsGrid = {};
-    const userTimezone = user?.timezone || "Etc/UTC";
+    const userTimezone = user?.timezone ?? "Etc/UTC";
 
     // Initialize grid with user timezone date keys
     weekDays.forEach((day) => {
@@ -152,7 +152,7 @@ export function WeeklyView({
     const [hours, minutes] = time.split(":").map(Number);
 
     // Create the datetime that represents the intended time in the user's timezone
-    const userTimezone = user?.timezone || "Etc/UTC";
+    const userTimezone = user?.timezone ?? "Etc/UTC";
 
     // Create an ISO string that represents the local time in the user's timezone
     const isoString = `${date}T${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:00`;
@@ -207,7 +207,7 @@ export function WeeklyView({
               <div className="text-sm font-medium text-gray-900 dark:text-white">
                 {day.toLocaleDateString("en-US", {
                   weekday: "short",
-                  timeZone: user?.timezone || "Etc/UTC",
+                  timeZone: user?.timezone ?? "Etc/UTC",
                 })}
               </div>
               <div
@@ -328,7 +328,7 @@ export function WeeklyView({
 }
 
 function CurrentTimeIndicator({ user, weekDays }: CurrentTimeIndicatorProps) {
-  const userTimezone = user?.timezone || "Etc/UTC";
+  const userTimezone = user?.timezone ?? "Etc/UTC";
   const now = new Date();
   const nowInUserTz = new Date(
     now.toLocaleString("en-US", { timeZone: userTimezone }),

@@ -1,4 +1,4 @@
-import { useFetcher } from "@remix-run/react";
+import type { useFetcher } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
 import type { PostData } from "~/features/posts/types";
@@ -237,7 +237,7 @@ export function useRecyclablesState({
 
       // Prepare repost data with 1 hour default scheduling
       const now = new Date();
-      const userTimezone = user?.timezone || "UTC";
+      const userTimezone = user?.timezone ?? "UTC";
       const localDate = new Date(
         now.toLocaleString("en-US", { timeZone: userTimezone }),
       );
@@ -279,7 +279,7 @@ export function useRecyclablesState({
       const postsData = fetcherData.scheduledRepostData;
 
       const now = new Date();
-      const userTimezone = user?.timezone || "UTC";
+      const userTimezone = user?.timezone ?? "UTC";
       const localDate = new Date(
         now.toLocaleString("en-US", { timeZone: userTimezone }),
       );

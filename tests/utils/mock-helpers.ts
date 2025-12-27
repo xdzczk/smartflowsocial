@@ -6,7 +6,6 @@
  */
 
 import { vi } from "vitest";
-
 /**
  * Common test IDs
  */
@@ -73,7 +72,7 @@ export function setupUserMocks(mocks: {
 
   // Default mock responses
   if (!getUserById.mock.calls.length) {
-    (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
+    (getUserById).mockResolvedValue({
       id: TEST_USER_ID,
       userRelays: ["wss://relay1.com", "wss://relay2.com"],
       showHashTagsinPosts: true,
@@ -81,7 +80,7 @@ export function setupUserMocks(mocks: {
   }
 
   if (!getQueueTypes.mock.calls.length) {
-    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([
+    (getQueueTypes).mockResolvedValue([
       {
         id: TEST_QUEUE_TYPE_ID,
         name: "posts",
@@ -91,7 +90,7 @@ export function setupUserMocks(mocks: {
   }
 
   if (!getHashTagPresetById.mock.calls.length) {
-    (getHashTagPresetById as ReturnType<typeof vi.fn>).mockResolvedValue({
+    (getHashTagPresetById).mockResolvedValue({
       id: "preset-1",
       tags: "#custom #tags",
     });
@@ -116,7 +115,7 @@ export function setupPostMocks(mocks: {
 
   // Default mock responses
   if (!createPost.mock.calls.length) {
-    (createPost as ReturnType<typeof vi.fn>).mockResolvedValue({
+    (createPost).mockResolvedValue({
       id: TEST_POST_ID,
       signedEvent: { id: "event-123" },
     });

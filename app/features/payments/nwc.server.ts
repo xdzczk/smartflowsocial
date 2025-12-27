@@ -7,7 +7,7 @@ export interface NwcSettings {
   [key: string]: unknown;
 }
 
-export async function getNwcSettings(_userId: string) {
+export function getNwcSettings(_userId: string) {
     // Logic to get NWC settings for a user
     // This is a placeholder since I haven't seen existing NWC logic yet,
     // but the user requested this file. I'll implement basic stubs or
@@ -15,7 +15,7 @@ export async function getNwcSettings(_userId: string) {
     return null;
 }
 
-export async function saveNwcSettings(_userId: string, _settings: NwcSettings) {
+export function saveNwcSettings(_userId: string, _settings: NwcSettings) {
     // Logic to save NWC settings
     return null;
 }

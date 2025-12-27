@@ -1,5 +1,4 @@
 import { Link } from "@remix-run/react";
-
 export interface NotificationStats {
     likes?: number;
     replies?: number;

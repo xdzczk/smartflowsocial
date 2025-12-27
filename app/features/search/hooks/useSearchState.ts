@@ -1,6 +1,5 @@
 import { useFetcher } from "@remix-run/react";
 import { useEffect, useState } from "react";
-
 interface User {
   timezone?: string | null;
 }
@@ -93,7 +92,7 @@ export function useSearchState({ user, fetcherData }: UseSearchStateProps) {
 
     // Prepare scheduled repost data (kind 6)
     const now = new Date();
-    const userTimezone = user?.timezone || "UTC";
+    const userTimezone = user?.timezone ?? "UTC";
     const localDate = new Date(
       now.toLocaleString("en-US", { timeZone: userTimezone })
     );

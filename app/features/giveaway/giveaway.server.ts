@@ -1,6 +1,5 @@
 import { connectToPrimalCache } from "~/features/cache/primalCache.server";
 import type { RelatedEvent, PrimalEvent } from "~/features/giveaway/types";
-
 /**
  * Fetches all engagement events for giveaway participation
  * Uses a hybrid approach:
@@ -64,17 +63,23 @@ export const fetchGiveawayParticipants = async (
 
             // Extract zap amount for stats
             try {
-              const descriptionTag = event.tags?.find(
-                (tag: string[]) => tag[0] === "description",
-              );
-              if (descriptionTag && descriptionTag[1]) {
-                const zapRequest = JSON.parse(descriptionTag[1]);
-                const amountTag = zapRequest.tags?.find(
-                  (tag: string[]) => tag[0] === "amount",
-                );
-                if (amountTag && amountTag[1]) {
-                  aggregatedStats.satszapped +=
-                    parseInt(amountTag[1], 10) / 1000 || 0; // Convert millisats to sats
+              const tags = event.tags;
+              const descriptionTag = Array.isArray(tags) ? tags.find(
+                (tag: string[]) => Array.isArray(tag) && tag[0] === "description",
+              ) : undefined;
+              if (descriptionTag && Array.isArray(descriptionTag) && descriptionTag[1] && typeof descriptionTag[1] === "string") {
+                const zapRequestParsed = JSON.parse(descriptionTag[1]);
+                if (zapRequestParsed && typeof zapRequestParsed === "object" && !Array.isArray(zapRequestParsed) && "tags" in zapRequestParsed) {
+                  const zapRequest = zapRequestParsed as { tags?: string[][] };
+                  const amountTag = Array.isArray(zapRequest.tags) ? zapRequest.tags.find(
+                    (tag: string[]) => Array.isArray(tag) && tag[0] === "amount",
+                  ) : undefined;
+                  if (amountTag && Array.isArray(amountTag) && amountTag[1] && typeof amountTag[1] === "string") {
+                    const amount = parseInt(amountTag[1], 10);
+                    if (!isNaN(amount)) {
+                      aggregatedStats.satszapped += amount / 1000 || 0; // Convert millisats to sats
+                    }
+                  }
                 }
               }
             } catch (_e) {
@@ -93,12 +98,14 @@ export const fetchGiveawayParticipants = async (
           }
 
           // Extract stats from kind 10000100
-          if (event.kind === 10000100 && event.content) {
+          if (event.kind === 10000100 && event.content && typeof event.content === "string") {
             try {
-              const statsContent = JSON.parse(event.content);
-              if (statsContent.event_id === eventId) {
-                aggregatedStats.likes += statsContent.likes || 0;
-                aggregatedStats.reposts += statsContent.reposts || 0;
+              const statsContentParsed = JSON.parse(event.content);
+              if (statsContentParsed && typeof statsContentParsed === "object" && !Array.isArray(statsContentParsed)) {
+                const statsContent = statsContentParsed as { event_id?: string; likes?: number; reposts?: number; zaps?: number };
+                if (statsContent.event_id === eventId) {
+                  aggregatedStats.likes += typeof statsContent.likes === "number" ? statsContent.likes : 0;
+                  aggregatedStats.reposts += typeof statsContent.reposts === "number" ? statsContent.reposts : 0;
                 aggregatedStats.zaps += statsContent.zaps || 0;
                 // Don't add satszapped here as we already calculated it from actual zap events
               }

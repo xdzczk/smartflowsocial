@@ -9,7 +9,6 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-
 // Mock Primal cache before any imports - use vi.hoisted to allow per-test configuration
 const { mockConnectToPrimalCache } = vi.hoisted(() => {
   const mockConnectToPrimalCache = vi.fn();

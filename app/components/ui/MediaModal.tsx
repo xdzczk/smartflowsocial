@@ -1,8 +1,8 @@
 import { XMarkIcon } from "@heroicons/react/20/solid";
-import React, { useEffect } from "react";
+import { useEffect } from "react";
+import type React from "react";
 
 import MediaPlayer from "./MediaPlayer";
-
 interface MediaModalProps {
   src: string;
   alt?: string;

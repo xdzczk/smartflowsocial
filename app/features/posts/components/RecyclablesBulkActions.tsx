@@ -1,5 +1,4 @@
-import { useFetcher } from "@remix-run/react";
-
+import type { useFetcher } from "@remix-run/react";
 interface RecyclablesBulkActionsProps {
   selectedCount: number;
   onBulkRepost: () => void;
@@ -109,6 +108,8 @@ export function RecyclablesBulkActions({
     </div>
   );
 }
+
+
 
 
 

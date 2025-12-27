@@ -4,12 +4,13 @@
  * Utilities for writing database-integrated tests
  */
 
+import { createMinimalFixtures, createCompleteFixtures } from "./fixtures";
 import { describe, it, beforeEach, afterEach, beforeAll, afterAll } from "vitest";
 
+import type {
 import type { TestFixtures } from "./fixtures";
-import { createMinimalFixtures, createCompleteFixtures } from "./fixtures";
+  getTestPrisma} from "./test-db";
 import {
-  getTestPrisma,
   setupTestDatabase,
   teardownTestDatabase,
   useTestDatabase,

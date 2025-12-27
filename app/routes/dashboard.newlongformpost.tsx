@@ -30,18 +30,40 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 }
 
+type LoaderData = Awaited<ReturnType<typeof loader>>;
+type ActionData = Awaited<ReturnType<typeof action>>;
+
 export default function NewLongFormPost() {
+  const loaderData = useLoaderData<LoaderData>();
   const {
     userId,
     tags: userTags,
-    scheduleIntervals,
+    scheduleIntervals: scheduleIntervalsRaw,
     queueTypes,
     hashTagPresets,
-    assets,
+    assets: assetsRaw,
     userTimezone,
     uploadProvider,
-  } = useLoaderData<typeof loader>();
-  const actionData = useActionData<typeof action>();
+  } = loaderData;
+  const actionData = useActionData<ActionData>();
+
+  // Type assertions for Remix JsonifyObject serialization
+  const scheduleIntervals = Array.isArray(scheduleIntervalsRaw) 
+    ? scheduleIntervalsRaw.map((s: unknown) => {
+        if (typeof s === "string") {
+          const parsed = parseInt(s, 10);
+          return isNaN(parsed) ? null : parsed;
+        }
+        if (typeof s === "number") {
+          return s;
+        }
+        return null;
+      }).filter((n): n is number => n !== null)
+    : [];
+  const assets = Array.isArray(assetsRaw) ? assetsRaw as unknown as { id: string; fileUrl?: string; title?: string; content?: string; assetType: string }[] : [];
+
+  // Type guard for userTags
+  const safeUserTags = typeof userTags === "string" ? userTags : "";
 
   const {
     displayedHashtags,
@@ -55,7 +77,7 @@ export default function NewLongFormPost() {
     updateDisplayedHashtags,
     handleUseHashtagPresetsChange,
     handlePreview,
-  } = useNewLongFormState({ userTags });
+  } = useNewLongFormState({ userTags: safeUserTags });
 
   return (
     <div className="p-6">
@@ -65,10 +87,10 @@ export default function NewLongFormPost() {
 
       <Form method="post" encType="multipart/form-data">
         <LongFormPost
-          queueTypes={queueTypes}
+          queueTypes={Array.isArray(queueTypes) ? queueTypes as unknown as { id: string; name: string; color?: string | null; scheduleType?: string; scheduleConfig?: unknown; isEnabled?: boolean }[] : []}
           scheduleIntervals={scheduleIntervals}
-          userTags={userTags}
-          hashTagPresets={hashTagPresets}
+          userTags={safeUserTags}
+          hashTagPresets={Array.isArray(hashTagPresets) ? hashTagPresets as unknown as { id: string; name: string; tags: string; description?: string | null }[] : []}
           assets={assets}
           uploadProvider={uploadProvider}
           userTimezone={userTimezone}

@@ -47,11 +47,12 @@ export async function handlePlansAction(
     } catch (error) {
       const { handleActionError } = await import("~/lib/error-handler.server");
       // For payment polling, we want to return error info, not throw
-      const errorResponse = await handleActionError(error);
-      const errorData = await errorResponse.json();
+      const errorResponse = handleActionError(error);
+      const errorData: unknown = errorResponse instanceof Response ? await errorResponse.json() : null;
+      const errorMessage = errorData && typeof errorData === "object" && !Array.isArray(errorData) && "message" in errorData && typeof errorData.message === "string" ? errorData.message : "Failed to check payment status";
       return {
         success: false,
-        error: errorData.message || "Failed to check payment status",
+        error: errorMessage,
       };
     }
   }

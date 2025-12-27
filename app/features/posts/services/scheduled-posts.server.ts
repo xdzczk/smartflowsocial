@@ -120,13 +120,13 @@ export async function handleScheduledPostAction(
   }
 
   if (_action === "bulkDelete") {
-    const postIds = JSON.parse(formData.get("postIds") as string);
+    const postIds = JSON.parse(formData.get("postIds") as string) as string[];
     await Promise.all(postIds.map((id: string) => deletePost({ id, userId })));
     return json({ success: true });
   }
 
   if (_action === "bulkDeleteLongForm") {
-    const postIds = JSON.parse(formData.get("postIds") as string);
+    const postIds = JSON.parse(formData.get("postIds") as string) as string[];
     await Promise.all(
       postIds.map((id: string) => deleteLongFormPost({ id, userId })),
     );
@@ -134,7 +134,7 @@ export async function handleScheduledPostAction(
   }
 
   if (_action === "bulkDeleteMixed") {
-    const itemData = JSON.parse(formData.get("itemData") as string);
+    const itemData = JSON.parse(formData.get("itemData") as string) as { id: string; type: string }[];
     const promises = itemData.map((item: { id: string; type: string }) => {
       if (item.type === "post") {
         return deletePost({ id: item.id, userId });
@@ -169,8 +169,8 @@ export async function handleScheduledPostAction(
     let parsedNostrEvent = null;
     if (signedEventStr && nostrEventStr) {
       try {
-        parsedSignedEvent = JSON.parse(signedEventStr);
-        parsedNostrEvent = JSON.parse(nostrEventStr);
+        parsedSignedEvent = JSON.parse(signedEventStr) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][]; sig: string };
+        parsedNostrEvent = JSON.parse(nostrEventStr) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][] };
       } catch (e) {
         logError(e instanceof Error ? e : new Error(String(e)), {
           userId,
@@ -217,8 +217,8 @@ export async function handleScheduledPostAction(
     let parsedNostrEvent = null;
     if (signedEventStr && nostrEventStr) {
       try {
-        parsedSignedEvent = JSON.parse(signedEventStr);
-        parsedNostrEvent = JSON.parse(nostrEventStr);
+        parsedSignedEvent = JSON.parse(signedEventStr) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][]; sig: string };
+        parsedNostrEvent = JSON.parse(nostrEventStr) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][] };
       } catch (e) {
         logError(e instanceof Error ? e : new Error(String(e)), {
           userId,
@@ -264,8 +264,8 @@ export async function handleScheduledPostAction(
     let parsedNostrEvent = null;
     if (signedEventStr && nostrEventStr) {
       try {
-        parsedSignedEvent = JSON.parse(signedEventStr);
-        parsedNostrEvent = JSON.parse(nostrEventStr);
+        parsedSignedEvent = JSON.parse(signedEventStr) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][]; sig: string };
+        parsedNostrEvent = JSON.parse(nostrEventStr) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][] };
       } catch (e) {
         logError(e instanceof Error ? e : new Error(String(e)), {
           userId,
@@ -275,10 +275,10 @@ export async function handleScheduledPostAction(
       }
     }
 
-    let parsedFileUrl = [];
+    let parsedFileUrl: string[] = [];
     if (fileUrl) {
       try {
-        parsedFileUrl = JSON.parse(fileUrl);
+        parsedFileUrl = JSON.parse(fileUrl) as string[];
       } catch (e) {
         logError(e instanceof Error ? e : new Error(String(e)), {
           userId,
@@ -342,8 +342,8 @@ export async function handleScheduledPostAction(
     let parsedNostrEvent = null;
     if (signedEventStr && nostrEventStr) {
       try {
-        parsedSignedEvent = JSON.parse(signedEventStr);
-        parsedNostrEvent = JSON.parse(nostrEventStr);
+        parsedSignedEvent = JSON.parse(signedEventStr) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][]; sig: string };
+        parsedNostrEvent = JSON.parse(nostrEventStr) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][] };
       } catch (e) {
         logError(e instanceof Error ? e : new Error(String(e)), {
           userId,

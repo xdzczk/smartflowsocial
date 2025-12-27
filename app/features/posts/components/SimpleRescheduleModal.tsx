@@ -45,7 +45,7 @@ export function SimpleRescheduleModal({
             ? new Date(parseInt(post.scheduledFor) * 1000)
             : null,
         );
-        setSelectedQueueType(post.queueType?.id || "");
+        setSelectedQueueType(post.queueType?.id ?? "");
       }
     }
   }, [post, isLongform]);
@@ -63,7 +63,7 @@ export function SimpleRescheduleModal({
   }, [fetcher.data, onConfirm]);
 
   const formatDateTimeForInput = (date: Date) => {
-    const userTimezone = user?.timezone || "UTC";
+    const userTimezone = user?.timezone ?? "UTC";
     const dateInUserTz = new Date(
       date.toLocaleString("en-US", { timeZone: userTimezone }),
     );
@@ -82,7 +82,7 @@ export function SimpleRescheduleModal({
     }
 
     const now = new Date();
-    const userTimezone = user?.timezone || "UTC";
+    const userTimezone = user?.timezone ?? "UTC";
     const nowInUserTz = new Date(
       now.toLocaleString("en-US", { timeZone: userTimezone }),
     );
@@ -174,7 +174,7 @@ export function SimpleRescheduleModal({
         const firstFileUrl = post.fileUrl[0];
         if (typeof firstFileUrl === "string") {
           try {
-            const parsed = JSON.parse(firstFileUrl);
+            const parsed = JSON.parse(firstFileUrl) as string[] | string;
             return Array.isArray(parsed) ? parsed[0] : firstFileUrl;
           } catch {
             return firstFileUrl;
@@ -193,7 +193,7 @@ export function SimpleRescheduleModal({
   };
 
   const formatDateTime = (date: Date) => {
-    const userTimezone = user?.timezone || "UTC";
+    const userTimezone = user?.timezone ?? "UTC";
     return date.toLocaleDateString("en-US", {
       weekday: "long",
       month: "long",
@@ -366,10 +366,10 @@ export function SimpleRescheduleModal({
             ) : null}
 
             {/* Error display */}
-            {fetcher.data?.error || signingError ? (
+            {fetcher.data?.error ?? signingError ? (
               <div className="rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
                 <div className="text-sm text-red-800 dark:text-red-200">
-                  {fetcher.data?.error || signingError}
+                  {fetcher.data?.error ?? signingError}
                 </div>
               </div>
             ) : null}

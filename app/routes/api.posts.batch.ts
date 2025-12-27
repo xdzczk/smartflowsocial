@@ -21,7 +21,7 @@ export const action = withActionErrorHandling(
 
     let body: unknown;
     try {
-      body = await request.json();
+      body = await request.json() as unknown;
     } catch (error) {
       throw new ValidationError("Invalid JSON in request body", {
         originalError: error instanceof Error ? error.message : String(error),

@@ -3,7 +3,6 @@
  */
 
 import { Badge } from "~/components/ui/badge";
-
 interface LongFormEditHeaderProps {
   displayedHashtags: string;
 }
@@ -35,6 +34,8 @@ export function LongFormEditHeader({
     </>
   );
 }
+
+
 
 
 

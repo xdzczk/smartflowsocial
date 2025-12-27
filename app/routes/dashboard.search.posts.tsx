@@ -1,14 +1,13 @@
 import { json, type ActionFunctionArgs, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useFetcher } from "@remix-run/react";
 
-import { requireUserId } from "~/features/auth/session.server";
 import { SearchForm } from "~/features/search/components/SearchForm";
 import { SearchResult } from "~/features/search/components/SearchResult";
 import { SearchToast } from "~/features/search/components/SearchToast";
-import { useSearchState } from "~/features/search/hooks/useSearchState";
 import { handleSearchEvent } from "~/features/search/services/search-action.server";
 import { loadSearchData } from "~/features/search/services/search-loader.server";
-
+import { requireUserId } from "~/features/auth/session.server";
+import { useSearchState } from "~/features/search/hooks/useSearchState";
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   const data = await loadSearchData(userId);
@@ -50,7 +49,7 @@ export default function SearchPosts() {
     handleScheduleQuote,
     handleScheduleRepost,
     clearSearch,
-  } = useSearchState({ user, fetcherData: fetcher.data });
+  } = useSearchState({ user, fetcherData: (fetcher.data && typeof fetcher.data === "object" ? fetcher.data as unknown as { event?: { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][]; mediaUrls?: string[] }; stats?: { likes: number; replies: number; mentions: number; reposts: number; zaps: number; satszapped: number }; error?: string } : null) });
 
   return (
     <div className="p-6">
@@ -70,8 +69,8 @@ export default function SearchPosts() {
 
       {searchResult ? (
         <SearchResult
-          result={searchResult}
-          stats={searchStats}
+          result={searchResult && typeof searchResult === "object" ? searchResult as unknown as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][]; authorName: string; authorImage: string | null; mediaUrls: string[] } : { id: ""; pubkey: ""; created_at: 0; kind: 0; content: ""; tags: []; authorName: ""; authorImage: null; mediaUrls: [] }}
+          stats={searchStats && typeof searchStats === "object" ? searchStats as unknown as { likes: number; replies: number; mentions: number; reposts: number; zaps: number; satszapped: number } | null : null}
           onClear={clearSearch}
           onScheduleQuote={handleScheduleQuote}
           onScheduleRepost={handleScheduleRepost}

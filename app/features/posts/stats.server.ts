@@ -39,30 +39,44 @@ export async function getPostStats(eventIds: string[]): Promise<Record<string, P
                 throw new Error("Failed to fetch stats");
             }
 
-            const data = await response.json();
+            const data = await response.json() as [string, unknown, { kind?: number; content?: string }][];
             // Find the stats event in the response array
             // The stats event has kind 10000100 and contains engagement metrics
             const statsEvent = data.find(
-                (event: [string, unknown, { kind: number; content: string }]) =>
-                    event[0] === "EVENT" &&
-                    event[2] &&
-                    event[2].kind === 10000100 &&
-                    event[2].content &&
-                    event[2].content.includes(eventId),
+                (event: [string, unknown, { kind?: number; content?: string }]) => {
+                    if (event[0] !== "EVENT" || !event[2]) return false;
+                    const eventData = event[2];
+                    if (!eventData || typeof eventData !== "object" || Array.isArray(eventData)) return false;
+                    const eventTyped = eventData as { kind?: number; content?: string };
+                    return eventTyped.kind === 10000100 &&
+                        eventTyped.content &&
+                        typeof eventTyped.content === "string" &&
+                        eventTyped.content.includes(eventId);
+                },
             );
 
-            if (statsEvent) {
-                const content = JSON.parse(statsEvent[2].content);
-                return {
-                    [eventId]: {
-                        likes: content.likes || 0,
-                        replies: content.replies || 0,
-                        mentions: content.mentions || 0,
-                        reposts: content.reposts || 0,
-                        zaps: content.zaps || 0,
-                        satszapped: content.satszapped || 0,
-                    },
-                };
+            if (statsEvent?.[2] && typeof statsEvent[2] === "object" && !Array.isArray(statsEvent[2])) {
+                const eventData = statsEvent[2] as { kind?: number; content?: string };
+                if (eventData.content && typeof eventData.content === "string") {
+                    const content = JSON.parse(eventData.content) as {
+                        likes?: number;
+                        replies?: number;
+                        mentions?: number;
+                        reposts?: number;
+                        zaps?: number;
+                        satszapped?: number;
+                    };
+                    return {
+                        [eventId]: {
+                            likes: content.likes || 0,
+                            replies: content.replies || 0,
+                            mentions: content.mentions || 0,
+                            reposts: content.reposts || 0,
+                            zaps: content.zaps || 0,
+                            satszapped: content.satszapped || 0,
+                        },
+                    };
+                }
             }
 
             return {

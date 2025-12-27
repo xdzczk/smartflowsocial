@@ -1,4 +1,4 @@
-import { AssetType } from "@prisma/client";
+import type { AssetType, Prisma } from "@prisma/client";
 
 import { prisma } from "~/lib/prisma.server";
 
@@ -147,19 +147,19 @@ export async function searchAssets({
   const searchWords = searchTerm.toLowerCase().split(" ").filter(Boolean);
   const skip = (page - 1) * limit;
 
-  const whereClause = {
+  const whereClause: Prisma.AssetWhereInput = {
     userId,
     OR: [
       {
         title: {
           contains: searchTerm,
-          mode: "insensitive",
+          mode: "insensitive" as Prisma.QueryMode,
         },
       },
       {
         content: {
           contains: searchTerm,
-          mode: "insensitive",
+          mode: "insensitive" as Prisma.QueryMode,
         },
       },
       {

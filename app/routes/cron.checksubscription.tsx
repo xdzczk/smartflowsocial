@@ -1,12 +1,11 @@
 if (process.env.NODE_ENV !== "development") {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+   
   require("websocket-polyfill");
 }
 
 import { json } from "@remix-run/node";
 
 import { checkAndRenewSubscriptions } from "~/features/payments/services/subscription-renewal.server";
-
 /**
  * Cron job to check user subscriptions and handle renewals
  * This should be called periodically (e.g., daily) to:

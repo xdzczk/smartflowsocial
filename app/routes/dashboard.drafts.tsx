@@ -24,7 +24,7 @@ import { handleDraftsAction } from "~/features/posts/services/drafts-action.serv
 import { loadDraftsData } from "~/features/posts/services/drafts-loader.server";
 import { withErrorHandling, withActionErrorHandling } from "~/lib/error-handler.server";
 
-export const loader = withErrorHandling(async ({ request, params }: LoaderFunctionArgs) => {
+async function loaderImpl({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
 
   // Require that the user has at least a subscription record
@@ -36,7 +36,9 @@ export const loader = withErrorHandling(async ({ request, params }: LoaderFuncti
 
   const data = await loadDraftsData(userId, queueType);
   return data;
-});
+}
+
+export const loader = withErrorHandling(loaderImpl);
 
 export const action = withActionErrorHandling(async ({ request }: ActionFunctionArgs) => {
   const userId = await requireUserId(request);
@@ -50,7 +52,10 @@ export const action = withActionErrorHandling(async ({ request }: ActionFunction
   return json(result);
 });
 
+type LoaderData = Awaited<ReturnType<typeof loaderImpl>>;
+
 export default function DraftPosts() {
+  const data = useLoaderData<LoaderData>();
   const {
     posts,
     longformPosts,
@@ -58,7 +63,7 @@ export default function DraftPosts() {
     user,
     queueTypes,
     selectedQueueType,
-  } = useLoaderData<typeof loader>();
+  } = data;
   const params = useParams();
   const [searchParams] = useSearchParams();
   const revalidator = useRevalidator();
@@ -131,7 +136,7 @@ export default function DraftPosts() {
           userTimezone={user?.timezone}
           onPostSelect={(content) => {
             if (content.type === "post") {
-              setSelectedPost(content.originalData);
+              setSelectedPost(content.originalData as unknown as { id: string; content?: string; caption?: string; fileUrl?: string[]; queueType?: { name: string } | null } | null);
             }
           }}
           selectedItems={selectedPosts}
@@ -160,16 +165,16 @@ export default function DraftPosts() {
             selectedPosts={selectedPosts}
             onToggleSelection={togglePostSelection}
             onToggleSelectAll={toggleSelectAll}
-            onPostClick={setSelectedPost}
+            onPostClick={(post) => setSelectedPost(post as unknown as { id: string; content?: string; caption?: string; fileUrl?: string[]; queueType?: { name: string } | null } | null)}
             bulkDeleteState={bulkDeleteFetcher.state}
           />
 
           {selectedPost ? (
             <PostDetailsModal
-              post={selectedPost}
+              post={selectedPost as unknown as { id: string; content?: string; caption?: string; fileUrl?: string[]; queueType?: { name: string } | null }}
               onClose={() => setSelectedPost(null)}
               type="draft"
-              userTimezone={user?.timezone || undefined}
+              userTimezone={user?.timezone ?? undefined}
             />
           ) : null}
 
@@ -179,8 +184,8 @@ export default function DraftPosts() {
               <DraftBulkResume
                 selectedDrafts={filteredPosts.filter((post) =>
                   selectedPosts.has(post.id),
-                )}
-                queueTypes={queueTypes}
+                ) as unknown as { id: string; content?: string; caption?: string; fileUrl?: string[]; queueType?: string; scheduledFor?: string }[]}
+                queueTypes={Array.isArray(queueTypes) ? queueTypes as unknown as { id: string; name: string; color?: string | null; scheduleType?: string; scheduleConfig?: unknown; isEnabled?: boolean }[] : []}
                 onCancel={() => setShowAdvancedBulkResume(false)}
               />
             </div>

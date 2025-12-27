@@ -1,5 +1,4 @@
 import { useMatches } from "@remix-run/react";
-
 // Define feature permissions for each plan type
 export const PLAN_FEATURES = {
   free: {
@@ -85,7 +84,7 @@ export const PLAN_FEATURES = {
 } as const;
 
 export type PlanType = keyof typeof PLAN_FEATURES;
-export type FeatureName = keyof typeof PLAN_FEATURES.free | keyof typeof PLAN_FEATURES.basic;
+export type FeatureName = keyof typeof PLAN_FEATURES.free  ;
 
 export interface UserSubscription {
   planId: string;
@@ -110,7 +109,7 @@ export interface SubscriptionData {
 export function getUserPlanType(
   subscription: UserSubscription | null,
 ): PlanType {
-  if (!subscription || subscription.status !== "ACTIVE") {
+  if (subscription?.status !== "ACTIVE") {
     return "free";
   }
 
@@ -183,7 +182,7 @@ export function useSubscription(): SubscriptionData | null {
 export function useFeatureAccess(feature: FeatureName): boolean {
   const subscriptionData = useSubscription();
   return hasFeatureAccess(
-    subscriptionData?.currentSubscription || null,
+    subscriptionData?.currentSubscription ?? null,
     feature,
   );
 }
@@ -202,7 +201,7 @@ export function useHasAnySubscription(): boolean {
  */
 export function usePlanType(): PlanType {
   const subscriptionData = useSubscription();
-  return getUserPlanType(subscriptionData?.currentSubscription || null);
+  return getUserPlanType(subscriptionData?.currentSubscription ?? null);
 }
 
 /**
@@ -232,8 +231,7 @@ export function isNewUserWithoutSubscription(
 
   // User exists but has no active subscription
   return (
-    !subscriptionData.currentSubscription ||
-    subscriptionData.currentSubscription.status !== "ACTIVE"
+    subscriptionData.currentSubscription?.status !== "ACTIVE"
   );
 }
 

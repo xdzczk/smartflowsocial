@@ -19,7 +19,7 @@ function extractProfileBits(nostrProfile: ProfileData | null | undefined): {
   if (!nostrProfile) return {};
   try {
     if (typeof nostrProfile === "string") {
-      const parsed = JSON.parse(nostrProfile);
+      const parsed = JSON.parse(nostrProfile) as { name?: string; display_name?: string; picture?: string };
       return {
         name: parsed?.name,
         display_name: parsed?.display_name,
@@ -84,10 +84,18 @@ export async function searchUsersByProfileName(
   const lowered = trimmed.toLowerCase();
   const filtered = fetched
     .map((u) => {
-      const bits = extractProfileBits(u.nostrProfile);
+      const profile = u.nostrProfile && typeof u.nostrProfile === "object" && !Array.isArray(u.nostrProfile)
+        ? (u.nostrProfile as ProfileData)
+        : null;
+      const bits = extractProfileBits(profile);
       const name = bits.name || bits.display_name || "";
       return {
-        ...u,
+        id: u.id,
+        npub: u.npub,
+        nostrProfile: profile,
+        isChild: u.isChild ?? false,
+        parentNpub: u.parentNpub,
+        pendingParentRequests: u.pendingParentRequests ?? [],
         profileName: bits.name,
         profileDisplayName: bits.display_name,
         profilePicture: bits.picture,
@@ -100,13 +108,17 @@ export async function searchUsersByProfileName(
     .slice(0, limit)
     .map(({ _match, ...rest }) => rest);
 
-  return filtered;
+  return filtered as (MinimalUser & {
+    profileName?: string;
+    profileDisplayName?: string;
+    profilePicture?: string;
+  })[];
 }
 
 /**
  * Requests to link a child account to a parent account
  */
-export async function requestChildLink(
+export function requestChildLink(
   parentHex: string,
   childHex: string,
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
@@ -160,7 +172,7 @@ export async function requestChildLink(
 /**
  * Cancels a pending child link request
  */
-export async function cancelChildLinkRequest(
+export function cancelChildLinkRequest(
   parentHex: string,
   childHex: string,
 ): Promise<{ ok: true } | { ok: false; reason: string }> {

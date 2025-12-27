@@ -7,7 +7,8 @@
  */
 
 import type { Prisma } from "@prisma/client";
-import { Worker, Job } from "bullmq";
+import { Worker } from "bullmq";
+import type { Job } from "bullmq";
 
 import type { SignedEvent } from "~/features/nostr/types";
 import {
@@ -295,11 +296,15 @@ async function startPostChecker() {
 }
 
 // Initialize the post checker
-startPostChecker().catch((error) => {
-  logError(error instanceof Error ? error : new Error(String(error)), {
-    message: "Error starting post checker",
-  });
-});
+void (async () => {
+  try {
+    await startPostChecker();
+  } catch (error) {
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "Error starting post checker",
+    });
+  }
+})();
 
 // Graceful shutdown
 process.on("SIGTERM", async () => {

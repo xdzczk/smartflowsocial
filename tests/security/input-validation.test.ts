@@ -8,7 +8,6 @@ import { describe, it, expect } from "vitest";
 
 import { ValidationError } from "~/lib/errors";
 import { sanitizeMarkdown } from "~/lib/markdown-sanitizer.server";
-
 describe("Input Validation: Required Fields", () => {
   it("should reject missing required fields", () => {
     // This test documents that required fields should be validated
@@ -171,6 +170,8 @@ describe("Input Validation: URL Validation", () => {
     expect(true).toBe(true); // Documentation test
   });
 });
+
+
 
 
 

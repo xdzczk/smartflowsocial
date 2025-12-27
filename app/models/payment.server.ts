@@ -1,5 +1,5 @@
 if (process.env.NODE_ENV !== "development") {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+   
   require("websocket-polyfill");
 }
 
@@ -83,34 +83,47 @@ export async function createPlanInvoice({
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes from now
 
     // Store payment record in database
-    // Extract invoice, paymentHash and amount from the request object structure
+    // Extract invoice, paymentHash and amount from the request
+    const requestAny: unknown = request;
+    const requestRecord = requestAny && typeof requestAny === "object" && !Array.isArray(requestAny) ? requestAny as Record<string, unknown> : {};
+    const invoiceValue = requestRecord.invoice;
     const invoiceString =
-      typeof request.invoice === "string"
-        ? request.invoice
-        : request.invoice?.paymentRequest || "";
+      typeof invoiceValue === "string"
+        ? invoiceValue
+        : (invoiceValue && typeof invoiceValue === "object" && !Array.isArray(invoiceValue) && "paymentRequest" in invoiceValue && typeof invoiceValue.paymentRequest === "string"
+            ? invoiceValue.paymentRequest
+            : "");
+    const invoiceObj = invoiceValue && typeof invoiceValue === "object" && !Array.isArray(invoiceValue) ? invoiceValue as Record<string, unknown> : null;
+    const paymentHashValue = requestRecord.paymentHash;
     const paymentHashString =
-      typeof request.paymentHash === "string"
-        ? request.paymentHash
-        : request.invoice?.paymentHash || "";
+      typeof paymentHashValue === "string"
+        ? paymentHashValue
+        : (invoiceObj && "paymentHash" in invoiceObj
+            ? String(invoiceObj.paymentHash)
+            : "");
 
     // Extract amount in sats - try multiple possible locations
     let amountSats = 0;
-    if (request.amount) {
-      amountSats = request.amount;
-    } else if (request.invoice?.satoshi) {
-      amountSats = request.invoice.satoshi;
-    } else if (request.satoshi) {
-      amountSats = request.satoshi;
+    const amountValue = requestRecord.amount;
+    if (amountValue && typeof amountValue === "number") {
+      amountSats = amountValue;
+    } else if (invoiceObj && "satoshi" in invoiceObj) {
+      amountSats = Number(invoiceObj.satoshi) || 0;
+    } else if (requestAny.satoshi && typeof requestAny.satoshi === "number") {
+      amountSats = requestAny.satoshi;
     } else {
       // Parse the Lightning invoice to get the exact amount
       // Lightning invoices encode the amount in the invoice string
       try {
+        if (typeof invoiceString !== "string") {
+          throw new Error("Invoice string is not a string");
+        }
         const invoiceStr = invoiceString.toLowerCase();
         if (invoiceStr.startsWith("lnbc")) {
           // Extract amount from Lightning invoice - amounts are encoded after 'lnbc'
           const amountMatch = invoiceStr.match(/lnbc([0-9]+)([munp]?)/);
-          if (amountMatch) {
-            const baseAmount = parseInt(amountMatch[1]);
+          if (amountMatch && amountMatch[1]) {
+            const baseAmount = parseInt(amountMatch[1], 10);
             const unit = amountMatch[2];
 
             // Convert to satoshis based on unit
@@ -180,12 +193,12 @@ export async function createPlanInvoice({
     });
 
     // Set up payment completion handler
-    const giveAccess = async () => {
-      await handlePaymentCompleted(paymentId, userId, planId);
+    const giveAccess = () => {
+      void handlePaymentCompleted(paymentId, userId, planId);
     };
 
-    const showTimeout = async () => {
-      await handlePaymentTimeout(paymentId);
+    const showTimeout = () => {
+      void handlePaymentTimeout(paymentId);
     };
 
     request
@@ -290,7 +303,7 @@ export async function updateUserSubscription(
       where: { id: paymentId },
       select: { amount: true },
     });
-    satsAmount = payment?.amount || 0;
+    satsAmount = payment?.amount ?? 0;
   }
 
   const now = new Date();

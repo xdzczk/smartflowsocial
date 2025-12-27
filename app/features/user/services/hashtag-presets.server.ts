@@ -5,7 +5,7 @@ import { prisma } from "~/lib/prisma.server";
 /**
  * Creates a new hashtag preset for a user
  */
-export async function createHashTagPreset(
+export function createHashTagPreset(
   userId: string,
   name: string,
   tags: string,
@@ -24,7 +24,7 @@ export async function createHashTagPreset(
 /**
  * Updates an existing hashtag preset
  */
-export async function updateHashTagPreset(
+export function updateHashTagPreset(
   userId: string,
   id: string,
   name: string,
@@ -62,7 +62,7 @@ export async function deleteHashTagPreset(
 /**
  * Gets all hashtag presets for a user
  */
-export async function getUserHashTagPresets(
+export function getUserHashTagPresets(
   userId: string,
 ): Promise<HashTagPreset[]> {
   return prisma.hashTagPreset.findMany({
@@ -78,7 +78,7 @@ export async function getUserHashTagPresets(
 /**
  * Gets a specific hashtag preset by ID
  */
-export async function getHashTagPresetById(
+export function getHashTagPresetById(
   userId: string,
   id: string,
 ): Promise<HashTagPreset | null> {
@@ -148,7 +148,7 @@ export async function updateUserHashTags(
 /**
  * Updates user's hashtag settings
  */
-export async function updateUserHashTagsAndSettings(
+export function updateUserHashTagsAndSettings(
   userId: string,
   showHashTagsInPosts: boolean,
 ): Promise<User> {
@@ -175,7 +175,7 @@ export async function getUserHashTags(userId: string): Promise<string> {
       name: "Default",
     },
   });
-  return defaultPreset?.tags || "";
+  return defaultPreset?.tags ?? "";
 }
 
 /**
@@ -190,13 +190,13 @@ export async function getShowHashTagsInPosts(userId: string): Promise<boolean> {
       showHashTagsinPosts: true,
     },
   });
-  return user?.showHashTagsinPosts || false;
+  return user?.showHashTagsinPosts ?? false;
 }
 
 /**
  * Updates whether user wants to show hashtags in posts
  */
-export async function updateShowHashTagsInPosts(
+export function updateShowHashTagsInPosts(
   userId: string,
   showHashTags: boolean,
 ): Promise<User> {
@@ -238,6 +238,8 @@ export async function getEffectiveHashtags(
   // Otherwise, return empty string (no default hashtags)
   return "";
 }
+
+
 
 
 

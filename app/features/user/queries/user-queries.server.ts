@@ -45,10 +45,17 @@ export async function getUsersByNpubs(
 export async function getUserByNpubWithProfile(
   npub: string,
 ): Promise<{ npub: string; nostrProfile: ProfileData | null } | null> {
-  return prisma.user.findUnique({
+  const user = await prisma.user.findUnique({
     where: { npub },
     select: { npub: true, nostrProfile: true },
   });
+  if (!user) return null;
+  return {
+    npub: user.npub,
+    nostrProfile: user.nostrProfile && typeof user.nostrProfile === "object" && !Array.isArray(user.nostrProfile)
+      ? (user.nostrProfile as ProfileData)
+      : null,
+  };
 }
 
 /**
@@ -59,13 +66,13 @@ export async function getUserIdByNpub(npub: string): Promise<string | null> {
     where: { npub },
     select: { id: true },
   });
-  return user?.id || null;
+  return user?.id ?? null;
 }
 
 /**
  * Counts total users in the database (used for healthcheck)
  */
-export async function countUsers(): Promise<number> {
+export function countUsers(): Promise<number> {
   return prisma.user.count();
 }
 

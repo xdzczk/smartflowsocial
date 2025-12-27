@@ -6,7 +6,6 @@
  */
 
 import type { QueueType } from "@prisma/client";
-
 /**
  * Test constants for scheduling tests
  */

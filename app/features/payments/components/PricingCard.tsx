@@ -4,7 +4,6 @@
 
 import { Form } from "@remix-run/react";
 import { Loader2 } from "lucide-react";
-
 interface Plan {
   id: string;
   name: string;
@@ -94,6 +93,8 @@ export function PricingCard({
     </div>
   );
 }
+
+
 
 
 

@@ -3,7 +3,6 @@
  */
 
 import { Check, X } from "lucide-react";
-
 interface Plan {
   id: string;
   name: string;
@@ -36,7 +35,7 @@ function renderFeatureValue(
   feature: { key: string; label: string },
   plan: Plan,
 ) {
-  const value = plan.features[feature.key as keyof typeof plan.features];
+  const value = plan.features[feature.key];
 
   if (typeof value === "boolean") {
     return value ? (
@@ -101,6 +100,8 @@ export function FeatureComparisonTable({
     </div>
   );
 }
+
+
 
 
 

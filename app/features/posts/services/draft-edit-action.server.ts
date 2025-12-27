@@ -5,7 +5,6 @@
 
 import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
 import { updatePost } from "~/models/post.commands.server";
-
 export async function handleDraftEditAction(
   formData: FormData,
   userId: string,
@@ -82,8 +81,8 @@ export async function handleDraftEditAction(
         caption: caption as string,
         queueTypeId: resolvedQueueTypeId,
         scheduledFor: scheduledFor as string,
-        signedEvent: JSON.parse(signedEvent as string),
-        nostrEvent: JSON.parse(nostrEvent as string),
+        signedEvent: JSON.parse(signedEvent as string) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][]; sig: string },
+        nostrEvent: JSON.parse(nostrEvent as string) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][] },
         draft: false,
         isScheduled: true,
         isPosted: false,

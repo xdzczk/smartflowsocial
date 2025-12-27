@@ -8,7 +8,6 @@ import fc from "fast-check";
 import { describe, it, expect } from "vitest";
 
 import { getTimeRemaining, formatDate, getImageUrls, isVideoFile } from "~/lib/helpers";
-
 describe("Property-Based Tests: Helpers", () => {
   describe("getTimeRemaining", () => {
     it("should always return a non-empty string for valid date inputs", () => {
@@ -252,6 +251,8 @@ describe("Property-Based Tests: Helpers", () => {
     });
   });
 });
+
+
 
 
 

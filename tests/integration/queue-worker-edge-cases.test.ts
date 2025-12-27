@@ -130,7 +130,7 @@ describe("Queue Worker Edge Cases", () => {
 
       // Worker processor function should throw error (BullMQ will handle retry)
       // The processor is the function passed to Worker constructor
-      const processor = (scheduledPostsWorker as any).process;
+      const processor = (scheduledPostsWorker).process;
       await expect(
         processor(mockJob),
       ).rejects.toThrow("Database connection lost");
@@ -155,7 +155,7 @@ describe("Queue Worker Edge Cases", () => {
       } as Job;
 
       await expect(
-        (scheduledPostsWorker as any).process(mockJob),
+        (scheduledPostsWorker).process(mockJob),
       ).rejects.toThrow(`User ${TEST_USER_ID} not found`);
     });
 
@@ -186,7 +186,7 @@ describe("Queue Worker Edge Cases", () => {
       } as Job;
 
       await expect(
-        (scheduledPostsWorker as any).process(mockJob),
+        (scheduledPostsWorker).process(mockJob),
       ).rejects.toThrow("Failed to post to nostr publisher");
 
       // Post should still be marked as posted (idempotency prevents duplicate)
@@ -220,7 +220,7 @@ describe("Queue Worker Edge Cases", () => {
       } as Job;
 
       await expect(
-        (scheduledPostsWorker as any).process(mockJob),
+        (scheduledPostsWorker).process(mockJob),
       ).rejects.toThrow("Network timeout");
     });
   });
@@ -241,7 +241,7 @@ describe("Queue Worker Edge Cases", () => {
         },
       } as Job;
 
-      const result = await (scheduledPostsWorker as any).process(mockJob);
+      const result = await (scheduledPostsWorker).process(mockJob);
 
       expect(result).toEqual({
         success: true,
@@ -281,7 +281,7 @@ describe("Queue Worker Edge Cases", () => {
 
       // Should handle gracefully (idempotency check should catch this)
       await expect(
-        (scheduledPostsWorker as any).process(mockJob),
+        (scheduledPostsWorker).process(mockJob),
       ).rejects.toThrow();
     });
   });
@@ -314,9 +314,9 @@ describe("Queue Worker Edge Cases", () => {
 
       // Simulate concurrent processing
       const promises = [
-        (scheduledPostsWorker as any).process(mockJob),
-        (scheduledPostsWorker as any).process(mockJob),
-        (scheduledPostsWorker as any).process(mockJob),
+        (scheduledPostsWorker).process(mockJob),
+        (scheduledPostsWorker).process(mockJob),
+        (scheduledPostsWorker).process(mockJob),
       ];
 
       const results = await Promise.allSettled(promises);
@@ -342,7 +342,7 @@ describe("Queue Worker Edge Cases", () => {
       } as Job;
 
       await expect(
-        (scheduledLongFormPostsWorker as any).process(mockJob),
+        (scheduledLongFormPostsWorker).process(mockJob),
       ).rejects.toThrow("Longform post longform-123 not found");
     });
 
@@ -361,7 +361,7 @@ describe("Queue Worker Edge Cases", () => {
         },
       } as Job;
 
-      const result = await (scheduledLongFormPostsWorker as any).process(mockJob);
+      const result = await (scheduledLongFormPostsWorker).process(mockJob);
 
       expect(result).toEqual({
         success: true,
@@ -385,7 +385,7 @@ describe("Queue Worker Edge Cases", () => {
       (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
       await expect(
-        (scheduledPostsWorker as any).process(mockJob),
+        (scheduledPostsWorker).process(mockJob),
       ).rejects.toThrow();
     });
 
@@ -416,7 +416,7 @@ describe("Queue Worker Edge Cases", () => {
       );
 
       await expect(
-        (scheduledPostsWorker as any).process(mockJob),
+        (scheduledPostsWorker).process(mockJob),
       ).rejects.toThrow();
     });
   });

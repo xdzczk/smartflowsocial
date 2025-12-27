@@ -119,11 +119,14 @@ export default function PostConfirmation({ preparedEvents, postsCount }: PostCon
         {/* Posts Grid */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {preparedEvents?.map((eventData, index) => {
-            // Check if this is a repost (kind 6)
-            const isRepost = eventData.events.kind === 6;
+            // Extract events data with type safety
+            const eventsData = eventData.events;
+            const eventsKind = typeof eventsData === "object" && eventsData !== null && "kind" in eventsData ? (eventsData as { kind?: unknown }).kind : undefined;
+            const isRepost = eventsKind === 6;
 
             // Debug logging for reposts
             if (isRepost) {
+              const eventsTags = typeof eventsData === "object" && eventsData !== null && "tags" in eventsData ? (eventsData as { tags?: unknown }).tags : undefined;
               logClientError(
                 `Repost ${index + 1} data`,
                 {
@@ -132,8 +135,8 @@ export default function PostConfirmation({ preparedEvents, postsCount }: PostCon
                   index: index + 1,
                   fileUrl: eventData.fileUrl,
                   caption: eventData.caption,
-                  kind: eventData.events.kind,
-                  tags: eventData.events.tags,
+                  kind: eventsKind,
+                  tags: eventsTags,
                 },
                 "info",
               );
@@ -153,11 +156,12 @@ export default function PostConfirmation({ preparedEvents, postsCount }: PostCon
               tags = "";
             } else {
               // For regular posts, parse content assuming format: "caption mediaUrl1 mediaUrl2 ..."
+              const eventsContent = typeof eventsData === "object" && eventsData !== null && "content" in eventsData ? (eventsData as { content?: unknown }).content : undefined;
               if (
-                eventData.events.content &&
-                typeof eventData.events.content === "string"
+                eventsContent &&
+                typeof eventsContent === "string"
               ) {
-                const contentParts = eventData.events.content.split(" ");
+                const contentParts = eventsContent.split(" ");
                 const mediaUrls = contentParts.filter(
                   (part) =>
                     part &&
@@ -180,8 +184,12 @@ export default function PostConfirmation({ preparedEvents, postsCount }: PostCon
                 caption = eventData.caption || "";
                 mediaUrl = eventData.fileUrl || "";
               }
-              tags = eventData.events.tags.map((tag) => `#${tag[1]}`).join(" ");
+              const eventsTags = typeof eventsData === "object" && eventsData !== null && "tags" in eventsData ? (eventsData as { tags?: unknown }).tags : undefined;
+              tags = (Array.isArray(eventsTags) ? eventsTags : []).map((tag) => Array.isArray(tag) && tag[1] && typeof tag[1] === "string" ? `#${tag[1]}` : "").filter((t) => t !== "").join(" ");
             }
+
+            // Extract eventsTags for use in JSX
+            const eventsTagsForDisplay = typeof eventsData === "object" && eventsData !== null && "tags" in eventsData ? (eventsData as { tags?: unknown }).tags : undefined;
 
             return (
               <div
@@ -249,16 +257,19 @@ export default function PostConfirmation({ preparedEvents, postsCount }: PostCon
                         Tags
                       </h4>
                       <div className="flex flex-wrap gap-1">
-                        {eventData.events.tags
-                          .filter((tag) => tag[0] === "t") // Only show hashtag tags
-                          .map((tag, tagIndex) => (
-                            <span
-                              key={tagIndex}
-                              className="rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-600 dark:bg-blue-900 dark:text-blue-300"
-                            >
-                              #{tag[1]}
-                            </span>
-                          ))}
+                        {(Array.isArray(eventsTagsForDisplay) ? eventsTagsForDisplay : [])
+                          .filter((tag) => Array.isArray(tag) && tag[0] === "t") // Only show hashtag tags
+                          .map((tag, tagIndex) => {
+                            const tagValue = Array.isArray(tag) && tag[1] && typeof tag[1] === "string" ? tag[1] : "";
+                            return (
+                              <span
+                                key={tagIndex}
+                                className="rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-600 dark:bg-blue-900 dark:text-blue-300"
+                              >
+                                #{tagValue}
+                              </span>
+                            );
+                          })}
                       </div>
                     </div>
                   ) : null}
@@ -270,7 +281,7 @@ export default function PostConfirmation({ preparedEvents, postsCount }: PostCon
                     </h4>
                     <p className="text-sm font-semibold text-gray-900 dark:text-white">
                       {new Date(
-                        eventData.events.created_at * 1000,
+                        (typeof eventsData === "object" && eventsData !== null && "created_at" in eventsData && typeof (eventsData as { created_at?: unknown }).created_at === "number" ? (eventsData as { created_at: number }).created_at : 0) * 1000,
                       ).toLocaleDateString("en-US", {
                         weekday: "short",
                         month: "short",

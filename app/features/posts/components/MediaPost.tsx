@@ -32,6 +32,7 @@ interface MediaPostProps {
   setPreparedImageEvent: (data: PreparedEventData[]) => void;
   queueTypes?: (string | QueueType)[];
   hashTagPresets?: HashTagPreset[];
+  selectedQueueType?: string;
   onQueueTypeChange?: (queueType: string) => void;
   selectedHashTagPresetId?: string | null;
   onHashtagPresetChange?: (presetId: string | null, hashtags: string) => void;
@@ -80,7 +81,7 @@ export default function MediaPost({
   } = usePostScheduling({
     queueTypes,
     scheduleIntervals: user?.scheduleInterval as number[] | undefined,
-    userTimezone: user?.timezone || undefined,
+    userTimezone: user?.timezone ?? undefined,
     initialQueue: "unassigned",
     onQueueTypeChange,
     onTimeError: setTimeError,
@@ -99,7 +100,7 @@ export default function MediaPost({
 
   const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    const droppedFiles = Array.from(e.dataTransfer.files) as File[];
+    const droppedFiles = Array.from(e.dataTransfer.files);
     
     if (droppedFiles.length > 0) {
       // Use extracted utility for validation and processing
@@ -120,17 +121,21 @@ export default function MediaPost({
 
   // Fetch upload provider on component mount
   useEffect(() => {
-    fetch("/api/user-upload-provider")
-      .then((res) => res.json())
-      .then((data) => setUploadProvider(data.provider))
-      .catch((err) => {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const { handleErrorSafely } = require("~/lib/error-handler.client");
+    void (async () => {
+      try {
+        const res = await fetch("/api/user-upload-provider");
+        const data: unknown = await res.json();
+        const provider = data && typeof data === "object" && !Array.isArray(data) && "provider" in data && typeof data.provider === "string" ? data.provider : undefined;
+        setUploadProvider(provider);
+      } catch (err) {
+         
+        const { handleErrorSafely } = require("~/lib/error-handler.client") as { handleErrorSafely: (error: unknown, context: { component: string; action: string }) => void };
         handleErrorSafely(err, {
           component: "MediaPost",
           action: "fetchUploadProvider",
         });
-      });
+      }
+    })();
   }, []);
 
   const handleImagePreview = async (e: React.FormEvent<HTMLFormElement>) => {

@@ -5,7 +5,6 @@
  */
 
 import { describe, it, expect } from "vitest";
-
 describe("Security Headers", () => {
   describe("Required Headers", () => {
     it("should have X-Content-Type-Options header", () => {

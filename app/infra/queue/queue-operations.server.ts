@@ -7,7 +7,6 @@ import type { SignedEvent } from "~/features/nostr/types";
 
 import { queueClient } from "./queue-client.server";
 import type { PostJobData, LongFormPostJobData } from "./queue-types";
-
 /**
  * Schedule a regular post to be published
  * @param postId - The post ID
@@ -15,7 +14,7 @@ import type { PostJobData, LongFormPostJobData } from "./queue-types";
  * @param signedEvent - The signed Nostr event
  * @param scheduledFor - Unix timestamp (in seconds) when the post should be published, or 0 for immediate
  */
-export async function enqueuePostJob(
+export function enqueuePostJob(
   postId: string,
   userId: string,
   signedEvent: SignedEvent,
@@ -43,7 +42,7 @@ export async function enqueuePostJob(
  * @param postId - The post ID to cancel
  * @returns true if the job was found and cancelled, false otherwise
  */
-export async function cancelPostJob(postId: string): Promise<boolean> {
+export function cancelPostJob(postId: string): Promise<boolean> {
   return queueClient.cancelByData("scheduled-posts", "postId", postId);
 }
 
@@ -54,7 +53,7 @@ export async function cancelPostJob(postId: string): Promise<boolean> {
  * @param signedEvent - The signed Nostr event
  * @param scheduledFor - Unix timestamp (in seconds) when the post should be published, or 0 for immediate
  */
-export async function enqueueLongFormPostJob(
+export function enqueueLongFormPostJob(
   postId: string,
   userId: string,
   signedEvent: SignedEvent,
@@ -82,7 +81,7 @@ export async function enqueueLongFormPostJob(
  * @param postId - The longform post ID to cancel
  * @returns true if the job was found and cancelled, false otherwise
  */
-export async function cancelLongFormPostJob(postId: string): Promise<boolean> {
+export function cancelLongFormPostJob(postId: string): Promise<boolean> {
   return queueClient.cancelByData("scheduled-longform-posts", "postId", postId);
 }
 
@@ -91,10 +90,10 @@ export async function cancelLongFormPostJob(postId: string): Promise<boolean> {
  * @param delay - Delay in milliseconds before processing
  */
 export async function enqueuePostCheckerJob(delay = 0): Promise<void> {
-  const result = await queueClient.enqueue(
+  const result = await queueClient.enqueue<PostJobData>(
     "post-checker",
     "check-due-posts",
-    {},
+    { postId: "", userId: "", signedEvent: { id: "", pubkey: "", created_at: 0, kind: 0, tags: [], content: "", sig: "" } },
     { delay },
   );
 

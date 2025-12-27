@@ -23,7 +23,7 @@ export async function handleAccountsAction(
 ) {
   const me = await getUserBasicInfo(userId);
   const sub = await getUserSubscription(userId);
-  const planName = sub?.Plan?.name || "";
+  const planName = sub?.Plan?.name ?? "";
 
   // Check access for account management actions
   const requiresPremium = ["search_accounts", "request_child", "cancel_child_request", "unlink_child"].includes(action);
@@ -121,7 +121,7 @@ export async function handleAccountsAction(
     if (!/^[0-9a-fA-F]{64}$/.test(childNpub)) {
       return json({ error: "Invalid child hex pubkey" }, { status: 400 });
     }
-    if (!me?.npub || me.isChild) {
+    if (!me?.npub ?? me.isChild) {
       return json(
         { error: "Only a parent account can unlink a child." },
         { status: 403 },

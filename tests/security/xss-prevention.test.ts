@@ -7,7 +7,6 @@
 import { describe, it, expect } from "vitest";
 
 import { sanitizeMarkdown } from "~/lib/markdown-sanitizer.server";
-
 describe("XSS Prevention: Markdown Sanitization", () => {
   it("should remove script tags", () => {
     const malicious = "<script>alert('XSS')</script>Hello";
@@ -147,6 +146,8 @@ describe("XSS Prevention: Input Validation", () => {
     expect(sanitized).toBe("");
   });
 });
+
+
 
 
 

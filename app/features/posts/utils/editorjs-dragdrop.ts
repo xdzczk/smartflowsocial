@@ -2,14 +2,7 @@
  * EditorJS drag and drop functionality
  */
 
-import type { EditorJSBlock } from "~/features/posts/types/editorjs.types";
-
-interface EditorJSInstance {
-  save: () => Promise<{ blocks: EditorJSBlock[] }>;
-  render: (data: { blocks: EditorJSBlock[] }) => Promise<void>;
-  _dragObserver?: MutationObserver;
-}
-
+import type { EditorJSBlock, EditorJSInstance } from "~/features/posts/types/editorjs.types";
 export function setupCustomDragDrop(
   editorRef: React.RefObject<EditorJSInstance>,
   editorElement: HTMLElement,
@@ -35,10 +28,10 @@ export function setupCustomDragDrop(
       blockElement.dataset.blockIndex = String(index);
 
       // Add drag handlers
-      blockElement.addEventListener("dragstart", handleDragStart);
+      blockElement.addEventListener("dragstart", (e) => { void handleDragStart(e); });
       blockElement.addEventListener("dragend", handleDragEnd);
       blockElement.addEventListener("dragover", handleDragOver);
-      blockElement.addEventListener("drop", handleDrop);
+      blockElement.addEventListener("drop", (e) => { void handleDrop(e); });
     });
   };
 
@@ -49,7 +42,7 @@ export function setupCustomDragDrop(
 
     // Get block data using EditorJS API
     try {
-      const currentData = await editorRef.current!.save();
+      const currentData = await editorRef.current!.saver.save();
       draggedBlockData = currentData.blocks[draggedBlockIndex];
 
       dragEvent.dataTransfer!.effectAllowed = "move";
@@ -108,7 +101,7 @@ export function setupCustomDragDrop(
 
     try {
       // Get current editor data
-      const currentData = await editorRef.current!.save();
+      const currentData = await editorRef.current!.saver.save();
       const blocks = [...currentData.blocks];
 
       // Remove the dragged block from its original position

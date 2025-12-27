@@ -1,7 +1,6 @@
 import { handleErrorSafely } from "~/lib/error-handler.client";
 
 import type { CalendarPost, QueueColorStyle, QueueType } from "./PostBlock.types";
-
 export function getPostPreview(post: CalendarPost, isLongform: boolean): string {
   if (isLongform) {
     if (post.title) {
@@ -44,7 +43,7 @@ export function getFirstImage(post: CalendarPost, isLongform: boolean): string |
       if (typeof firstFileUrl === "string") {
         // Try to parse as JSON array first
         try {
-          const parsed = JSON.parse(firstFileUrl);
+          const parsed = JSON.parse(firstFileUrl) as string[] | string;
           const url = Array.isArray(parsed) ? parsed[0] : firstFileUrl;
           return url;
         } catch {
@@ -153,6 +152,8 @@ export function getDisplayTime(
       : new Date(Number(post.scheduledFor) * 1000);
   }
 }
+
+
 
 
 

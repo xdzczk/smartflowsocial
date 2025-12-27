@@ -53,7 +53,7 @@ async function getEffectiveHashtags(
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as { hashtags?: string };
         return data.hashtags || "";
       } else {
         // Fallback to user's default hashtags
@@ -82,7 +82,7 @@ function getImageUrls(fileUrl: string[] | null | undefined): string[] {
   // Handle case where fileUrl is an array of JSON strings
   if (typeof fileUrl[0] === "string" && fileUrl[0].startsWith("[")) {
     try {
-      return JSON.parse(fileUrl[0]);
+      return JSON.parse(fileUrl[0]) as string[];
     } catch (e) {
       logError(e instanceof Error ? e : new Error(String(e)), {
         fileUrl: fileUrl[0],
@@ -125,7 +125,7 @@ function calculateScheduledTime(
 /**
  * Sign and prepare draft for scheduling
  */
-export async function signDraftForScheduling(
+export function signDraftForScheduling(
   params: SignDraftParams,
 ): Promise<{ signedEvent: SignedEvent; nostrEvent: NostrEventType; scheduledForUnix: number }> {
   const {
@@ -140,7 +140,7 @@ export async function signDraftForScheduling(
     post,
   } = params;
 
-  const userTimezone = currentUser?.timezone || "UTC";
+  const userTimezone = currentUser?.timezone ?? "UTC";
   const scheduledForUnix = calculateScheduledTime(scheduledFor, userTimezone);
 
   // Get effective hashtags
@@ -148,7 +148,7 @@ export async function signDraftForScheduling(
     useHashtagPresets,
     selectedHashtags,
     selectedQueue,
-    currentUser?.id || "",
+    currentUser?.id ?? "",
     user,
   );
 

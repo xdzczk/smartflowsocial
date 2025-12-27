@@ -7,10 +7,13 @@ import { type BulkPost , type PreparedEvent } from "~/features/posts/types";
 import { uploadMultipleFiles } from "~/features/upload/upload.client";
 import { logClientError } from "~/lib/error-handler.client";
 import { type User } from "~/models/user.server";
+interface FetcherData {
+    fileUrls?: { fileUrl: string; scheduledFor: string }[];
+}
 
 interface UseBulkPostEventsProps {
     posts: BulkPost[];
-    fetcher: FetcherWithComponents<any>;
+    fetcher: FetcherWithComponents<FetcherData>;
     user: User | null;
     tags: string[];
     useHashtagPresets: boolean;
@@ -49,7 +52,7 @@ export function useBulkPostEvents({
 
             // Check if schedule time is in the future
             if (post.scheduledFor) {
-                const userTimezone = user?.timezone || "UTC";
+                const userTimezone = user?.timezone ?? "UTC";
 
                 // The scheduledFor value is in user's timezone (from datetime-local input)
                 // We need to compare it with current time in the same user timezone
@@ -97,27 +100,34 @@ export function useBulkPostEvents({
                     effectiveHashtags = selectedHashtags;
                 } else {
                     // Use queue type's default hashtags
-                    effectiveHashtags = await fetch("/api/effective-hashtags", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({
-                            userId: user?.id,
-                            queueTypeName: post.queueType,
-                        }),
-                    })
-                        .then((res) => res.json())
-                        .then((data) => data.hashtags)
-                        .catch(() => tags);
+                    try {
+                        const res = await fetch("/api/effective-hashtags", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({
+                                userId: user?.id,
+                                queueTypeName: post.queueType,
+                            }),
+                        });
+                        const data = (await res.json()) as { hashtags?: string };
+                        effectiveHashtags = data.hashtags || tags;
+                    } catch {
+                        effectiveHashtags = tags;
+                    }
                 }
 
                 const tagsString = effectiveHashtags || "";
                 const addTags = user?.showHashTagsinPosts ? `${tagsString}` : "";
 
                 // Build content array, filtering out null/undefined/empty values
+                const fileUrls = fetcher.data?.fileUrls;
+                const fileUrlItem = fileUrls && Array.isArray(fileUrls) && fileUrls[index] ? fileUrls[index] : null;
+                const fileUrl = fileUrlItem && typeof fileUrlItem === "object" && "fileUrl" in fileUrlItem && typeof fileUrlItem.fileUrl === "string" ? fileUrlItem.fileUrl : "";
+                
                 const contentParts = [
-                    fetcher.data.fileUrls[index].fileUrl,
+                    fileUrl,
                     post.caption,
                     addTags,
                 ].filter((part) => part != null && part !== ""); // Filter out null, undefined, and empty strings
@@ -125,13 +135,14 @@ export function useBulkPostEvents({
                 const content = contentParts.join("\n");
 
                 // Convert space-separated tags string into array of ["t", tag] pairs
-                const tagArray = tagsString
+                const tagArray: string[][] = tagsString
                     .split(" ")
                     .filter((tag: string) => tag.length > 0)
                     .map((tag: string) => ["t", tag.replace("#", "")]);
 
-                const userTimezone = user?.timezone || "UTC";
-                const userTimezoneDateStr = fetcher.data.fileUrls[index].scheduledFor;
+                const userTimezone = user?.timezone ?? "UTC";
+                const scheduledForValue = fileUrlItem && typeof fileUrlItem === "object" && "scheduledFor" in fileUrlItem && typeof fileUrlItem.scheduledFor === "string" ? fileUrlItem.scheduledFor : "";
+                const userTimezoneDateStr = scheduledForValue;
                 let scheduledTime;
 
                 // Only convert timezone if not UTC/Etc/GMT
@@ -168,7 +179,7 @@ export function useBulkPostEvents({
                             post.originalFileUrl.startsWith("[")
                         ) {
                             try {
-                                const parsed = JSON.parse(post.originalFileUrl);
+                                const parsed = JSON.parse(post.originalFileUrl) as string[];
                                 if (Array.isArray(parsed) && parsed.length > 0) {
                                     displayFileUrl = parsed[0];
                                 }
@@ -190,8 +201,8 @@ export function useBulkPostEvents({
                         fileUrl: displayFileUrl, // Use original file URL for display
                         scheduledFor: Math.floor(scheduledTime / 1000),
                         caption: "", // No caption for kind 6 reposts
-                        queueType: post?.queueType || "unassigned",
-                        isRecyclable: post?.isRecyclable || false,
+                        queueType: post?.queueType ?? "unassigned",
+                        isRecyclable: post?.isRecyclable ?? false,
                         originalPostId: post.originalPostId,
                         originalEventId: post.originalEventId,
                         originalEventPubkey: post.originalEventPubkey,
@@ -200,8 +211,8 @@ export function useBulkPostEvents({
                             created_at: Math.floor(scheduledTime / 1000),
                             kind: 6, // Kind 6 for reposts
                             tags: [
-                                ["e", post.originalEventId, "wss://relay.primal.net"],
-                                ["p", post.originalEventPubkey],
+                                ["e", post.originalEventId || "", "wss://relay.primal.net"],
+                                ["p", post.originalEventPubkey || ""],
                             ],
                         },
                     };
@@ -251,7 +262,7 @@ export function useBulkPostEvents({
                         quoteTags = [
                             ...tagArray, // Hashtag tags
                             ...(aTag ? [aTag] : []), // 'a' tag for longform reference if available
-                            ["p", post.originalEventPubkey, "", "mention"], // Reference to quoted author
+                            ["p", post.originalEventPubkey || "", "", "mention"], // Reference to quoted author
                         ];
                     } else {
                         // Create nevent1 format for regular quoted events
@@ -273,17 +284,17 @@ export function useBulkPostEvents({
                         // Include hashtag t tags plus e and p tags for quote posts
                         quoteTags = [
                             ...tagArray, // Hashtag tags
-                            ["e", post.originalEventId, "wss://relay.primal.net", "mention"], // Reference to quoted event
-                            ["p", post.originalEventPubkey, "", "mention"], // Reference to quoted author
+                            ["e", post.originalEventId || "", "wss://relay.primal.net", "mention"], // Reference to quoted event
+                            ["p", post.originalEventPubkey || "", "", "mention"], // Reference to quoted author
                         ];
                     }
 
                     return {
-                        fileUrl: fetcher.data.fileUrls[index].fileUrl,
+                        fileUrl,
                         scheduledFor: Math.floor(scheduledTime / 1000),
-                        caption: post?.caption || "",
-                        queueType: post?.queueType || "unassigned",
-                        isRecyclable: post?.isRecyclable || false,
+                        caption: post?.caption ?? "",
+                        queueType: post?.queueType ?? "unassigned",
+                        isRecyclable: post?.isRecyclable ?? false,
                         originalPostId: post.originalPostId,
                         originalEventId: post.originalEventId,
                         originalEventPubkey: post.originalEventPubkey,
@@ -297,11 +308,11 @@ export function useBulkPostEvents({
                     };
                 } else {
                     return {
-                        fileUrl: fetcher.data.fileUrls[index].fileUrl,
+                        fileUrl,
                         scheduledFor: Math.floor(scheduledTime / 1000),
-                        caption: post?.caption || "",
-                        queueType: post?.queueType || "unassigned",
-                        isRecyclable: post?.isRecyclable || false,
+                        caption: post?.caption ?? "",
+                        queueType: post?.queueType ?? "unassigned",
+                        isRecyclable: post?.isRecyclable ?? false,
                         originalPostId: post?.originalPostId,
                         events: {
                             content,
@@ -376,7 +387,7 @@ export function useBulkPostEvents({
                                     fileUrl = post.originalFileUrl;
                                 }
                             } else {
-                                fileUrl = post.originalFileUrl as string;
+                                fileUrl = post.originalFileUrl;
                             }
                         }
                     } else {
@@ -409,7 +420,6 @@ export function useBulkPostEvents({
                 if (filesToUpload.length > 0) {
                     try {
                         // Upload all files using the new upload system
-                        // @ts-expect-error - uploadMultipleFiles may have type issues
                         const uploadResults = await uploadMultipleFiles(filesToUpload);
 
                         // Check for failed uploads
@@ -509,10 +519,10 @@ export function useBulkPostEvents({
 
     // Add event listener for repost events
     useEffect(() => {
-        const handleRepostEventsPrepared = async () => {
+        const handleRepostEventsPrepared = () => {
             // Manually trigger the event creation logic
             if (fetcher.data?.fileUrls) {
-                await processEvents();
+                void processEvents();
             }
         };
 

@@ -7,7 +7,6 @@
 
 import { json } from "@remix-run/node";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-
 // Mock dependencies
 vi.mock("~/models/post.commands.server", () => ({
   deletePost: vi.fn(),

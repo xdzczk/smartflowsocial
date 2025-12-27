@@ -9,7 +9,6 @@ import { toast } from "react-hot-toast";
 
 import { resizeImage } from "~/features/upload/image-resize";
 import { logClientError } from "~/lib/error-handler.client";
-
 // File size limits
 export const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB for images
 export const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB for videos
@@ -125,7 +124,7 @@ export async function processMediaFiles(
  * Validate and process files for upload
  * Returns processed files or shows errors
  */
-export async function validateAndProcessFiles(
+export function validateAndProcessFiles(
   files: File[],
 ): Promise<File[] | null> {
   // Filter acceptable file types
@@ -151,4 +150,6 @@ export async function validateAndProcessFiles(
   const { processed } = await processMediaFiles(validFiles);
   return processed;
 }
+
+
 

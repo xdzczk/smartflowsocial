@@ -83,7 +83,7 @@ export default function ImagePost({
 
   const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    const droppedFiles = Array.from(e.dataTransfer.files) as File[];
+    const droppedFiles = Array.from(e.dataTransfer.files);
     if (droppedFiles.length > 0) {
       // Check if files are images
       const imageFiles = droppedFiles.filter((file) =>
@@ -121,7 +121,7 @@ export default function ImagePost({
     e.preventDefault();
   };
 
-  const handleImagePreview = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleImagePreview = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     // Check if scheduledFor is empty
@@ -181,8 +181,11 @@ export default function ImagePost({
       });
 
       if (response.ok) {
-        const { scheduledTime } = await response.json();
-        setScheduledFor(scheduledTime);
+        const data = (await response.json()) as { scheduledTime?: string };
+        const scheduledTime = data.scheduledTime;
+        if (scheduledTime) {
+          setScheduledFor(scheduledTime);
+        }
         setTimeError("");
       }
     } catch (error) {
@@ -192,7 +195,7 @@ export default function ImagePost({
 
   useEffect(() => {
     if (selectedQueue !== "unassigned") {
-      calculateQueueScheduleTime(selectedQueue);
+      void calculateQueueScheduleTime(selectedQueue);
     }
     // Notify parent component of queue type change
     if (onQueueTypeChange) {
@@ -209,7 +212,7 @@ export default function ImagePost({
     // If this is a fixed slot queue, use the API to get the next scheduled time instead
     if (selectedQueueType && typeof selectedQueueType === "object" && selectedQueueType.scheduleType === "FIXED_SLOTS") {
       // For fixed slot queues, recalculate the schedule time instead of adding hours
-      calculateQueueScheduleTime(selectedQueue);
+      void calculateQueueScheduleTime(selectedQueue);
       return;
     }
 
@@ -220,7 +223,7 @@ export default function ImagePost({
     );
 
     // Format the date in the user's timezone
-    const userTimezone = user?.timezone || "UTC";
+    const userTimezone = user?.timezone ?? "UTC";
     const formattedDate = hoursLater.toLocaleString("en-US", {
       timeZone: userTimezone,
       year: "numeric",
@@ -284,12 +287,12 @@ export default function ImagePost({
           className="hidden"
           accept="image/*"
           multiple
-          onChange={handleFileChange}
+          onChange={(e) => { void handleFileChange(e); }}
           disabled={fetcher.state !== "idle" || isUploaded}
         />
         <div
           className={`rounded-lg border-2 border-dashed border-gray-300 p-12 text-center ${!isUploaded && "hover:border-gray-400"}`}
-          onDrop={!isUploaded ? handleDrop : undefined}
+          onDrop={!isUploaded ? (e) => { void handleDrop(e); } : undefined}
           onDragOver={!isUploaded ? handleDragOver : undefined}
         >
           {files.length > 0 ? (
@@ -451,7 +454,7 @@ export default function ImagePost({
                 return (
                   <button
                     type="button"
-                    onClick={() => calculateQueueScheduleTime(selectedQueue)}
+                    onClick={() => { void calculateQueueScheduleTime(selectedQueue); }}
                     className="rounded-md bg-blue-100 px-2.5 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-200 dark:bg-blue-800 dark:text-blue-300 dark:hover:bg-blue-700"
                     disabled={fetcher.state !== "idle" || isUploaded}
                   >

@@ -5,21 +5,22 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { handleAsyncError } from "~/lib/error-handler.client";
 import { useOptionalUser } from "~/lib/remix-utils";
-
 export default function NostrAuthButton() {
   const user = useOptionalUser();
   const fetcher = useFetcher();
   const location = useLocation();
 
-  const handleNostrLogin = useCallback(async () => {
-    try {
-      // Load and initialize nostr-login when button is clicked
-      const { init } = await import("nostr-login");
-      
-      init({
-        methods: ["connect", "extension"],
-        noBanner: true,
-        onAuth: async () => {
+  const handleNostrLogin = useCallback(() => {
+    void (async () => {
+      try {
+        // Load and initialize nostr-login when button is clicked
+        const { init } = await import("nostr-login");
+        
+        await init({
+          methods: ["connect", "extension"],
+          noBanner: true,
+          onAuth: () => {
+            void (async () => {
           try {
             if (!window.nostr) {
               throw new Error("Nostr extension not found. Please install a Nostr extension like Alby or nos2x.");
@@ -52,34 +53,36 @@ export default function NostrAuthButton() {
             formData.append("event", JSON.stringify(signedEvent));
             formData.append("contentSign", contentSign);
             
-            // Submit auth request
-            fetcher.submit(formData, {
-              method: "post",
-              action: "/nostr-auth",
-            });
-          } catch (authError) {
-            handleAsyncError(authError, {
-              component: "NostrAuthButton",
-              action: "onAuth",
-            }, true);
-          }
+              // Submit auth request
+              fetcher.submit(formData, {
+                method: "post",
+                action: "/nostr-auth",
+              });
+            } catch (authError) {
+              handleAsyncError(authError, {
+                component: "NostrAuthButton",
+                action: "onAuth",
+              }, true);
+            }
+          })();
         },
       });
 
-      // Trigger the login modal
-      document.dispatchEvent(
-        new CustomEvent("nlLaunch", { detail: "welcome" }),
-      );
-    } catch (error) {
-      // Log and handle error
-      handleAsyncError(error, {
-        component: "NostrAuthButton",
-        action: "handleNostrLogin",
-      }, true);
-    }
+        // Trigger the login modal
+        document.dispatchEvent(
+          new CustomEvent("nlLaunch", { detail: "welcome" }),
+        );
+      } catch (error) {
+        // Log and handle error
+        handleAsyncError(error, {
+          component: "NostrAuthButton",
+          action: "handleNostrLogin",
+        }, true);
+      }
+    })();
   }, [fetcher]);
 
-  const handleLogout = useCallback(async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleLogout = useCallback((event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     // Dispatch nostr logout event
     document.dispatchEvent(new Event("nlLogout"));
@@ -104,18 +107,18 @@ export default function NostrAuthButton() {
               />
               <AvatarFallback>
                 {typeof user.nostrProfile === 'object' && user.nostrProfile !== null
-                  ? (('name' in user.nostrProfile && user.nostrProfile.name ? String(user.nostrProfile.name)[0] : null) ||
-                     ('display_name' in user.nostrProfile && user.nostrProfile.display_name ? String(user.nostrProfile.display_name)[0] : null) ||
+                  ? (('name' in user.nostrProfile && user.nostrProfile.name ? String(user.nostrProfile.name)[0] : null) ??
+                     ('display_name' in user.nostrProfile && user.nostrProfile.display_name ? String(user.nostrProfile.display_name)[0] : null) ??
                      "U")
                   : "U"}
               </AvatarFallback>
             </Avatar>
             <span className="hidden sm:inline">
               {typeof user.nostrProfile === 'object' && user.nostrProfile !== null
-                ? (('name' in user.nostrProfile && user.nostrProfile.name ? String(user.nostrProfile.name) : null) ||
-                   ('display_name' in user.nostrProfile && user.nostrProfile.display_name ? String(user.nostrProfile.display_name) : null) ||
-                   `${(user.npub || "").slice(0, 12)}...${(user.npub || "").slice(-8)}`)
-                : `${(user.npub || "").slice(0, 12)}...${(user.npub || "").slice(-8)}`}
+                ? (('name' in user.nostrProfile && user.nostrProfile.name ? String(user.nostrProfile.name) : null) ??
+                   ('display_name' in user.nostrProfile && user.nostrProfile.display_name ? String(user.nostrProfile.display_name) : null) ??
+                   `${(user.npub ?? "").slice(0, 12)}...${(user.npub ?? "").slice(-8)}`)
+                : `${(user.npub ?? "").slice(0, 12)}...${(user.npub ?? "").slice(-8)}`}
             </span>
             {location.pathname === "/" ? (
               <Button variant="outline" size="sm" asChild>

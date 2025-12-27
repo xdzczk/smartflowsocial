@@ -8,7 +8,6 @@ import fc from "fast-check";
 import { describe, it, expect } from "vitest";
 
 import { convertToHex, convertHexToNpub } from "~/lib/nostr-conversion";
-
 describe("Property-Based Tests: Nostr Conversion", () => {
   describe("convertToHex", () => {
     it("should return null or string for any input", () => {

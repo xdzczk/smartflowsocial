@@ -1,6 +1,5 @@
 import { PlayIcon } from "@heroicons/react/20/solid";
 import React from "react";
-
 interface MediaThumbnailProps {
   src: string | undefined | null;
   alt?: string;
@@ -120,7 +119,7 @@ const MediaThumbnail: React.FC<MediaThumbnailProps> = ({
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
     >
-      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
+      { }
       <video
         src={src}
         className="h-full w-full object-cover"

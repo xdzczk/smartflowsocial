@@ -32,7 +32,7 @@ async function tryConnectToCache(
 ): Promise<CacheResponse> {
   return new Promise((resolve, reject) => {
     let resolved = false;
-    const ws = new WebSocket(endpoint);
+    const ws: WebSocket = new WebSocket(endpoint);
     const requestId = Math.random().toString(36).substring(2, 12);
     const responses: unknown[] = [];
 
@@ -176,11 +176,12 @@ async function tryConnectToCache(
       }
     };
 
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data.toString());
-      responses.push(data);
+    ws.onmessage = (event: { data: { toString(): string } }) => {
+      const data = JSON.parse(event.data.toString()) as unknown;
+      const dataArray = Array.isArray(data) ? data : [];
+      responses.push(dataArray);
 
-      if (data[0] === "EOSE") {
+      if (dataArray[0] === "EOSE") {
         ws.send(JSON.stringify(["CLOSE", requestId]));
         ws.close();
         if (!resolved) {
@@ -190,7 +191,7 @@ async function tryConnectToCache(
       }
     };
 
-    ws.onerror = (error) => {
+    ws.onerror = (error: Error) => {
       console.error(`[WS] WebSocket error on ${endpoint}:`, error);
       ws.close();
       if (!resolved) {

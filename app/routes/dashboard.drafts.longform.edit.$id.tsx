@@ -42,18 +42,29 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 }
 
+type LoaderData = Awaited<ReturnType<typeof loader>>;
+type ActionData = Awaited<ReturnType<typeof action>>;
+
 export default function EditLongFormPost() {
+  const loaderData = useLoaderData<LoaderData>();
   const {
     post,
     userId,
     tags: userTags,
-    scheduleIntervals,
+    scheduleIntervals: scheduleIntervalsRaw,
     queueTypes,
-    assets,
+    assets: assetsRaw,
     userTimezone,
     hashtagPresets,
-  } = useLoaderData<typeof loader>();
-  const actionData = useActionData<typeof action>();
+  } = loaderData;
+  const actionData = useActionData<ActionData>();
+
+  // Type assertions for Remix JsonifyObject serialization
+  const scheduleIntervals = Array.isArray(scheduleIntervalsRaw) 
+    ? scheduleIntervalsRaw.map(s => typeof s === "string" ? parseInt(s, 10) : s).filter((n): n is number => !isNaN(n))
+    : [];
+  const assets = Array.isArray(assetsRaw) ? assetsRaw as unknown as { id: string; fileUrl?: string; title?: string; content?: string; assetType: string }[] : [];
+  const typedPost = post && typeof post === "object" ? post as unknown as { id: string; title?: string; summary?: string; content?: string; image?: string; queueType?: { name: string } | null } : null;
 
   const {
     displayedHashtags,
@@ -77,20 +88,20 @@ export default function EditLongFormPost() {
 
       <Form method="post" encType="multipart/form-data">
         <LongFormPost
-          queueTypes={queueTypes}
+          queueTypes={Array.isArray(queueTypes) ? queueTypes as unknown as { id: string; name: string; color?: string | null; scheduleType?: string; scheduleConfig?: unknown; isEnabled?: boolean }[] : []}
           scheduleIntervals={scheduleIntervals}
           userTags={userTags}
           assets={assets}
           onQueueTypeChange={updateDisplayedHashtags}
           onPreview={handlePreview}
-          initialData={post}
+          initialData={typedPost}
           isEditing={true}
-          hashTagPresets={hashtagPresets}
+          hashTagPresets={Array.isArray(hashtagPresets) ? hashtagPresets as unknown as { id: string; name: string; tags: string; description?: string | null }[] : []}
           useHashtagPresets={useHashtagPresets}
           selectedHashtagPresetId={selectedHashtagPresetId}
           selectedHashtags={selectedHashtags}
           onUseHashtagPresetsChange={handleHashtagPresetToggle}
-          onHashtagPresetChange={handleHashtagPresetChange}
+          onHashtagPresetChange={(presetId) => handleHashtagPresetChange(presetId || "")}
         />
       </Form>
 

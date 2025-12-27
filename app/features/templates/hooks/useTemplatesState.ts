@@ -31,14 +31,19 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
 
   const deleteFetcher = useFetcher();
   const scheduleFetcher: TemplateFetcher = useFetcher<{ scheduleData?: ScheduleData[] }>();
-  const assetFetcher: AssetFetcher = useFetcher<{ success?: boolean; asset?: Asset; assets?: Asset[] }>();
+  const assetFetcher = useFetcher<{ success?: boolean; asset?: Asset; assets?: Asset[] }>() as AssetFetcher;
 
   // Fetch upload provider on component mount
   useEffect(() => {
-    fetch("/api/user-upload-provider")
-      .then((res) => res.json())
-      .then((data) => setUploadProvider(data.provider))
-      .catch((err) => console.error("Failed to get upload provider:", err));
+    void (async () => {
+      try {
+        const res = await fetch("/api/user-upload-provider");
+        const data = (await res.json()) as { provider?: string };
+        setUploadProvider(data.provider);
+      } catch (err) {
+        console.error("Failed to get upload provider:", err);
+      }
+    })();
   }, []);
 
   // Check if we're on a child route (edit page)

@@ -1,5 +1,4 @@
 import { Link, useParams } from "@remix-run/react";
-
 interface Pagination {
   currentPage: number;
   limit: number;
@@ -58,6 +57,8 @@ export function RecyclablesPagination({
     </div>
   );
 }
+
+
 
 
 

@@ -52,8 +52,11 @@ export function usePostScheduling({
       });
 
       if (response.ok) {
-        const { scheduledTime } = await response.json();
-        setScheduledFor(scheduledTime);
+        const data = (await response.json()) as { scheduledTime?: string };
+        const scheduledTime = data.scheduledTime;
+        if (scheduledTime) {
+          setScheduledFor(scheduledTime);
+        }
         setTimeError("");
         if (onTimeError) {
           onTimeError("");
@@ -89,7 +92,7 @@ export function usePostScheduling({
     );
 
     // Format the date in the user's timezone
-    const effectiveTimezone = userTimezone || user?.timezone || "UTC";
+    const effectiveTimezone = userTimezone || user?.timezone ?? "UTC";
     const formattedDate = hoursLater.toLocaleString("en-US", {
       timeZone: effectiveTimezone,
       year: "numeric",
@@ -118,7 +121,7 @@ export function usePostScheduling({
   // Calculate schedule time when queue changes
   useEffect(() => {
     if (selectedQueue !== "unassigned") {
-      calculateQueueScheduleTime(selectedQueue);
+      void calculateQueueScheduleTime(selectedQueue);
     }
     // Notify parent component of queue type change
     if (onQueueTypeChange) {

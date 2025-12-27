@@ -59,7 +59,7 @@ export default function BulkPostsTable({
                                             if (Array.isArray(post.originalFileUrl)) {
                                                 originalImageUrl = post.originalFileUrl[0];
                                             } else {
-                                                originalImageUrl = post.originalFileUrl as string;
+                                                originalImageUrl = post.originalFileUrl;
                                             }
 
                                             // Handle case where fileUrl might be a JSON string array
@@ -68,7 +68,7 @@ export default function BulkPostsTable({
                                                 originalImageUrl.startsWith("[")
                                             ) {
                                                 try {
-                                                    const parsed = JSON.parse(originalImageUrl);
+                                                    const parsed = JSON.parse(originalImageUrl) as string[];
                                                     if (
                                                         Array.isArray(parsed) &&
                                                         parsed.length > 0

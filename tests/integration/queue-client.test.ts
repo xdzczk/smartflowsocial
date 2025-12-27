@@ -4,7 +4,8 @@
  * Tests the queue client in app/infra/queue/queue-client.server.ts
  */
 
-import { Queue, Job } from "bullmq";
+import { Queue } from "bullmq";
+import type { Job } from "bullmq";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock queue operations - use vi.hoisted to ensure mocks are available
@@ -59,9 +60,9 @@ describe("Queue Client", () => {
 
   describe("Enqueue Operations", () => {
     it("should enqueue job with delay option", async () => {
-      const mockJob = {
+      const mockJob: Job = {
         id: "job-123",
-      } as Job;
+      };
 
       mockQueue.add.mockResolvedValue(mockJob);
 
@@ -84,9 +85,9 @@ describe("Queue Client", () => {
     });
 
     it("should enqueue job with scheduledFor option", async () => {
-      const mockJob = {
+      const mockJob: Job = {
         id: "job-123",
-      } as Job;
+      };
 
       const scheduledFor = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
       mockQueue.add.mockResolvedValue(mockJob);
@@ -224,10 +225,10 @@ describe("Queue Client", () => {
 
   describe("Remove Job Operations", () => {
     it("should remove job by ID", async () => {
-      const mockJob = {
+      const mockJob: unknown = {
         id: "job-123",
         remove: vi.fn().mockResolvedValue(undefined),
-      } as unknown as Job;
+      } as Job;
 
       mockQueue.getJob.mockResolvedValue(mockJob);
 

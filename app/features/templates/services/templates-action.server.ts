@@ -57,7 +57,15 @@ export async function handleTemplatesAction(
     _action === "create_media_asset"
   ) {
     const title = formData.get("title") as string;
-    const uploadResult = JSON.parse(formData.get("uploadResult") as string);
+    const uploadResultRaw = formData.get("uploadResult");
+    const uploadResultParsed = typeof uploadResultRaw === "string" ? JSON.parse(uploadResultRaw) : null;
+    
+    if (!uploadResultParsed || typeof uploadResultParsed !== "object" || Array.isArray(uploadResultParsed)) {
+      return { error: "Invalid upload result format" };
+    }
+    
+    const uploadResult = uploadResultParsed as { success?: unknown; file?: { url?: string; mimeType?: string } };
+    
     const tagsString = formData.get("tags") as string;
     const tags = tagsString
       ? tagsString
@@ -66,15 +74,18 @@ export async function handleTemplatesAction(
           .filter(Boolean)
       : [];
 
-    if (!uploadResult || !uploadResult.success || !uploadResult.file?.url) {
+    if (!uploadResult.success || !uploadResult.file?.url) {
       return { error: "No file uploaded or upload failed" };
     }
 
     const fileUrl = uploadResult.file.url;
+    if (typeof fileUrl !== "string") {
+      return { error: "Invalid file URL" };
+    }
 
     // Determine asset type based on file URL extension or mime type
     let assetType: typeof AssetType.IMAGE | typeof AssetType.VIDEO = AssetType.IMAGE;
-    const mimeType = uploadResult.file.mimeType || "";
+    const mimeType = typeof uploadResult.file.mimeType === "string" ? uploadResult.file.mimeType : "";
     const lower = fileUrl.toLowerCase();
     const videoExtensions = [
       ".mp4",
@@ -108,29 +119,39 @@ export async function handleTemplatesAction(
     _action === "bulk_create_image_assets" ||
     _action === "bulk_create_media_assets"
   ) {
-    const uploadResults = JSON.parse(formData.get("uploadResults") as string);
+    const uploadResultsRaw = formData.get("uploadResults");
+    const uploadResultsParsed = typeof uploadResultsRaw === "string" ? JSON.parse(uploadResultsRaw) : null;
+    
+    if (!Array.isArray(uploadResultsParsed)) {
+      return { error: "Invalid upload results format" };
+    }
+    
+    const uploadResults = uploadResultsParsed as { success?: unknown; file?: { url?: string; mimeType?: string } | undefined; error?: string }[];
     const titles = formData.getAll("titles") as string[];
     const tagsInputs = formData.getAll("tags") as string[];
 
-    if (!uploadResults || uploadResults.length === 0) {
+    if (uploadResults.length === 0) {
       return { error: "No files uploaded" };
     }
 
     // Check for failed uploads
     const failedUploads = uploadResults.filter(
-      (result: { success: boolean; error?: string }) => !result.success,
+      (result) => !result.success,
     );
     if (failedUploads.length > 0) {
       return { error: "Some uploads failed" };
     }
 
     const assets = await Promise.all(
-      uploadResults.map(async (uploadResult: { success: boolean; fileUrl?: string; file?: { url: string; mimeType?: string } | undefined; error?: string }, index: number) => {
-        if (!uploadResult.file) {
+      uploadResults.map(async (uploadResult, index: number) => {
+        if (!uploadResult.file?.url) {
           throw new Error("File upload failed");
         }
         const fileUrl = uploadResult.file.url;
-        const mimeType = uploadResult.file.mimeType || "";
+        if (typeof fileUrl !== "string") {
+          throw new Error("Invalid file URL");
+        }
+        const mimeType = typeof uploadResult.file.mimeType === "string" ? uploadResult.file.mimeType : "";
 
         // Determine asset type based on file URL extension or mime type
         let assetType: typeof AssetType.IMAGE | typeof AssetType.VIDEO = AssetType.IMAGE;

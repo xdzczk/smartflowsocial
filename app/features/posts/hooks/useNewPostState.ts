@@ -1,7 +1,6 @@
 import { useState } from "react";
 
 import type { PreparedEvent } from "~/features/posts/types";
-
 /**
  * Custom hook for managing new post state
  */
@@ -19,7 +18,7 @@ export function useNewPostState() {
     setSelectedQueueType(queueTypeName);
   };
 
-  const handleHashtagPresetSelect = (presetId: string, hashtags: string) => {
+  const handleHashtagPresetSelect = (presetId: string | null, hashtags: string) => {
     setSelectedHashTagPresetId(presetId);
     setSelectedHashtags(hashtags);
   };

@@ -6,7 +6,6 @@
 
 import type { CalendarPost } from "~/features/posts/components/Calendar/PostBlock.types";
 import type { PostData, LongFormPostData } from "~/features/posts/types";
-
 /**
  * Convert PostData to CalendarPost
  */

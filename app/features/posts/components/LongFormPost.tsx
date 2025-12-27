@@ -86,9 +86,9 @@ export default function LongFormPost({
   onHashtagPresetChange,
 }: LongFormPostProps) {
   const fetcher = useFetcher();
-  const [title, setTitle] = useState(initialData?.title || "");
-  const [summary, setSummary] = useState(initialData?.summary || "");
-  const [content, setContent] = useState(initialData?.content || "");
+  const [title, setTitle] = useState(initialData?.title ?? "");
+  const [summary, setSummary] = useState(initialData?.summary ?? "");
+  const [content, setContent] = useState(initialData?.content ?? "");
   const [customTags, setCustomTags] = useState(
     initialData?.tags?.join(", ") || "",
   );
@@ -116,7 +116,7 @@ export default function LongFormPost({
     handleFetcherStateChange,
   } = useCoverImageUpload({
     uploadProvider,
-    initialImage: initialData?.image || "",
+    initialImage: initialData?.image ?? "",
   });
 
   const {
@@ -132,7 +132,7 @@ export default function LongFormPost({
     scheduleIntervals,
     userTags,
     userTimezone,
-    initialQueueType: initialData?.queueType?.name || "Unassigned",
+    initialQueueType: initialData?.queueType?.name ?? "Unassigned",
     onQueueTypeChange,
   });
 
@@ -150,7 +150,7 @@ export default function LongFormPost({
   useEffect(() => {
     if (editorReady && initialData?.content) {
       const timeoutId = setTimeout(() => {
-        loadInitialData(initialData.content!);
+        void loadInitialData(initialData.content!);
       }, 100);
       return () => clearTimeout(timeoutId);
     }
@@ -163,7 +163,7 @@ export default function LongFormPost({
         fileUrl: asset.fileUrl || undefined,
       })));
     } else {
-      insertAssetIntoEditor(selectedAssets.map(asset => ({
+      void insertAssetIntoEditor(selectedAssets.map(asset => ({
         assetType: asset.assetType,
         fileUrl: asset.fileUrl || undefined,
         content: asset.content || undefined,
@@ -188,7 +188,7 @@ export default function LongFormPost({
     try {
       let markdownContent;
       try {
-        const editorData = JSON.parse(content);
+        const editorData = JSON.parse(content) as { blocks?: EditorJSBlock[] };
         markdownContent = convertEditorJSToMarkdown(editorData);
       } catch {
         markdownContent = content;

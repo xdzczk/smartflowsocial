@@ -6,7 +6,6 @@ import { Button } from "~/components/ui/button";
 import type { EditorJSBlock } from "~/features/posts/types/editorjs.types";
 import { handleErrorSafely } from "~/lib/error-handler.client";
 import type { LongFormPost } from "~/models/longformpost.server";
-
 interface LongFormDetailsModalProps {
   post: LongFormPost;
   onClose: () => void;
@@ -31,7 +30,7 @@ export default function LongFormDetailsModal({
     }
 
     try {
-      const editorData = JSON.parse(content);
+      const editorData = JSON.parse(content) as { blocks?: EditorJSBlock[] };
 
       if (!editorData.blocks || !Array.isArray(editorData.blocks)) {
         return '<p class="text-gray-500 italic">No content blocks found</p>';
@@ -42,13 +41,20 @@ export default function LongFormDetailsModal({
       editorData.blocks.forEach((block: EditorJSBlock) => {
         switch (block.type) {
           case "header": {
-            const level = block.data.level || 3;
-            html += `<h${level} class="text-${level === 2 ? "2xl" : level === 3 ? "xl" : "lg"} font-bold mb-4 text-gray-900 dark:text-white">${block.data.text}</h${level}>`;
+            const levelValue = block.data.level;
+            const level = typeof levelValue === "number" ? levelValue : 3;
+            const levelStr = String(level);
+            const textValue = block.data.text;
+            const text = typeof textValue === "string" ? textValue : "";
+            html += `<h${levelStr} class="text-${level === 2 ? "2xl" : level === 3 ? "xl" : "lg"} font-bold mb-4 text-gray-900 dark:text-white">${text}</h${levelStr}>`;
             break;
           }
-          case "paragraph":
-            html += `<p class="mb-4 text-gray-700 dark:text-gray-300 leading-relaxed">${block.data.text}</p>`;
+          case "paragraph": {
+            const textValue = block.data.text;
+            const text = typeof textValue === "string" ? textValue : "";
+            html += `<p class="mb-4 text-gray-700 dark:text-gray-300 leading-relaxed">${text}</p>`;
             break;
+          }
           case "list": {
             const listType = block.data.style === "ordered" ? "ol" : "ul";
             const listClass =
@@ -62,21 +68,29 @@ export default function LongFormDetailsModal({
             html += `</${listType}>`;
             break;
           }
-          case "quote":
+          case "quote": {
+            const textValue = block.data.text;
+            const text = typeof textValue === "string" ? textValue : "";
+            const captionValue = block.data.caption;
+            const caption = typeof captionValue === "string" ? captionValue : "";
             html += `<blockquote class="border-l-4 border-blue-500 pl-4 py-2 mb-4 italic text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded-r">
-              <p>${block.data.text}</p>
-              ${block.data.caption ? `<footer class="text-sm mt-2">— ${block.data.caption}</footer>` : ""}
+              <p>${text}</p>
+              ${caption ? `<footer class="text-sm mt-2">— ${caption}</footer>` : ""}
             </blockquote>`;
             break;
-          case "code":
-            html += `<pre class="bg-gray-900 dark:bg-gray-800 text-green-400 p-4 rounded-lg mb-4 overflow-x-auto"><code>${block.data.code}</code></pre>`;
+          }
+          case "code": {
+            const codeValue = block.data.code;
+            const code = typeof codeValue === "string" ? codeValue : "";
+            html += `<pre class="bg-gray-900 dark:bg-gray-800 text-green-400 p-4 rounded-lg mb-4 overflow-x-auto"><code>${code}</code></pre>`;
             break;
+          }
           case "linkTool": {
             const link = typeof block.data.link === "string" ? block.data.link : "";
             const meta = block.data.meta && typeof block.data.meta === "object" ? block.data.meta as { title?: string; description?: string } : null;
             html += `<div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4">
               <a href="${link}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:underline">
-                <div class="font-semibold">${meta?.title || link}</div>
+                <div class="font-semibold">${meta?.title ?? link}</div>
                 ${meta?.description ? `<div class="text-gray-600 dark:text-gray-400 text-sm mt-1">${meta.description}</div>` : ""}
               </a>
             </div>`;
@@ -92,7 +106,7 @@ export default function LongFormDetailsModal({
           case "image": {
             const file = block.data.file && typeof block.data.file === "object" ? block.data.file as { url?: string } : null;
             const url = typeof block.data.url === "string" ? block.data.url : "";
-            const imageUrl = file?.url || url;
+            const imageUrl = file?.url ?? url;
             const caption = typeof block.data.caption === "string" ? block.data.caption : "";
             if (imageUrl) {
               html += `<figure class="mb-6">
@@ -177,7 +191,7 @@ export default function LongFormDetailsModal({
 
       // If it's JSON (EditorJS format), extract text from blocks
       if (content.startsWith("{")) {
-        const editorData = JSON.parse(content);
+        const editorData = JSON.parse(content) as { blocks?: EditorJSBlock[] };
         editorData.blocks?.forEach((block: EditorJSBlock) => {
           if (block.type === "paragraph" || block.type === "header") {
             const text = typeof block.data.text === "string" ? block.data.text.replace(/<[^>]*>/g, "") : "";

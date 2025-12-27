@@ -1,5 +1,5 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
-import {
+import { json ,
   unstable_composeUploadHandlers as composeUploadHandlers,
   unstable_createMemoryUploadHandler as createMemoryUploadHandler,
   unstable_parseMultipartFormData as parseMultipartFormData,
@@ -164,9 +164,11 @@ export const action = withActionErrorHandling(
       });
     }
 
+    // Check if it's a File object
+    const isFile = typeof imageFile === "object" && imageFile !== null && "name" in imageFile && "size" in imageFile;
     throw new ValidationError("Invalid file format", {
       fileType: typeof imageFile,
-      isFile: imageFile instanceof File,
+      isFile,
     });
   },
 );

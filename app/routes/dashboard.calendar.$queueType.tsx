@@ -14,12 +14,14 @@ import { loadCalendarQueueData } from "~/features/posts/services/calendar-loader
 import { postsToCalendarPosts } from "~/features/posts/utils/calendar-post-converter";
 import { withErrorHandling, withActionErrorHandling } from "~/lib/error-handler.server";
 
-export const loader = withErrorHandling(async ({ request, params }: LoaderFunctionArgs) => {
+async function loaderImpl({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   const queueType = params.queueType || "all";
 
   return loadCalendarQueueData(userId, queueType);
-});
+}
+
+export const loader = withErrorHandling(loaderImpl);
 
 export const action = withActionErrorHandling(async ({ request }: ActionFunctionArgs) => {
   const userId = await requireUserId(request);
@@ -27,14 +29,17 @@ export const action = withActionErrorHandling(async ({ request }: ActionFunction
   return handleCalendarAction(formData, userId);
 });
 
+type LoaderData = Awaited<ReturnType<typeof loaderImpl>>;
+
 export default function CalendarQueueRoute() {
+  const data = useLoaderData<LoaderData>();
   const {
     scheduledPosts,
     user,
     scheduleIntervals,
     queueTypes,
     selectedQueueType,
-  } = useLoaderData<typeof loader>();
+  } = data;
   const params = useParams();
   const revalidator = useRevalidator();
 
@@ -65,13 +70,14 @@ export default function CalendarQueueRoute() {
           >
             All Queues
           </Link>
-          {queueTypes.map((queueType) => {
+          {queueTypes.map((queueType: string | { name: string; id?: string; color?: string | null }) => {
             const queueName =
               typeof queueType === "string" ? queueType : queueType.name;
             const queueColor =
               typeof queueType === "object" ? queueType.color : null;
             const colors = getQueueColor(queueName, queueColor);
             const isSelected = params.queueType === queueName;
+            const queueId = typeof queueType === "object" && queueType.id ? queueType.id : queueName;
 
             const baseClasses =
               "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium capitalize";
@@ -82,7 +88,7 @@ export default function CalendarQueueRoute() {
               // Use inline styles for custom colors
               return (
                 <Link
-                  key={queueType.id}
+                  key={queueId}
                   to={`/dashboard/calendar/${queueName}`}
                   prefetch="intent"
                   onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
@@ -99,7 +105,7 @@ export default function CalendarQueueRoute() {
 
             return (
               <Link
-                key={queueType.id}
+                key={queueId}
                 to={`/dashboard/calendar/${queueName}`}
                 prefetch="intent"
                 onClick={() => setTimeout(() => revalidator.revalidate(), 0)}

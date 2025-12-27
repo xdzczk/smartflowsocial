@@ -1,6 +1,6 @@
 /* eslint-env node */
 
-import { nip04, finalizeEvent } from "nostr-tools";
+import { nip04, finalizeEvent, nip19 } from "nostr-tools";
 
 import { logWarning, logError } from "~/lib/error-logger.server";
 
@@ -9,12 +9,12 @@ import { relaysArray } from "./relays";
 
 interface SendNostrDirectMessageResult {
   success: boolean;
-  event?: any;
+  event?: unknown;
   status?: number;
   error?: string;
 }
 
-export async function sendNostrDirectMessage(
+export function sendNostrDirectMessage(
   receiverPubkey: string,
   content: string,
 ): Promise<SendNostrDirectMessageResult | false> {
@@ -22,13 +22,43 @@ export async function sendNostrDirectMessage(
     if (!content) {
       return false;
     }
-    const nsecHex: string | null = convertToHex(process.env.NOSTR_NSEC);
+    const nsecEnv = process.env.NOSTR_NSEC;
+    if (!nsecEnv) {
+      return {
+        success: false,
+        error: "NOSTR_NSEC is not set.",
+      };
+    }
+    const nsecHex: string | null = convertToHex(nsecEnv);
 
     if (!nsecHex) {
       return {
         success: false,
-        error: "NOSTR_NSEC is not set or could not be converted to hex.",
+        error: "NOSTR_NSEC could not be converted to hex.",
       };
+    }
+
+    // Convert hex string to Uint8Array for finalizeEvent
+    let privateKeyBytes: Uint8Array;
+    try {
+      if (nsecEnv.startsWith("nsec")) {
+        const decoded = nip19.decode(nsecEnv);
+        if (decoded.type === "nsec") {
+          privateKeyBytes = decoded.data;
+        } else {
+          throw new Error("Invalid nsec format");
+        }
+      } else {
+        // Assume hex string
+        privateKeyBytes = new Uint8Array(
+          nsecHex.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) || []
+        );
+      }
+    } catch {
+      // Fallback: treat as hex string
+      privateKeyBytes = new Uint8Array(
+        nsecHex.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) || []
+      );
     }
 
     // Ensure receiver pubkey is hex. Convert if an npub/bech32 is provided.
@@ -66,7 +96,7 @@ export async function sendNostrDirectMessage(
     };
 
     // Sign the event
-    const signedEvent = finalizeEvent(eventTemplate, nsecHex);
+    const signedEvent = finalizeEvent(eventTemplate, privateKeyBytes);
 
     // Send the event to the publisher
     const publisherUrl = process.env.NOSTR_PUBLISHER_URL;
@@ -105,14 +135,15 @@ export async function sendNostrDirectMessage(
     }
 
     return { success: true, event: signedEvent };
-  } catch (error: any) {
+  } catch (error: unknown) {
     logError(error instanceof Error ? error : new Error(String(error)), {
       receiverPubkey,
       message: "Error sending Nostr direct message",
     });
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return {
       success: false,
-      error: error?.message || String(error),
+      error: errorMessage,
     };
   }
 }

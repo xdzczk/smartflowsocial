@@ -4,7 +4,6 @@
  */
 
 import type { ProfileData } from "~/features/nostr/types";
-
 /**
  * Parameters for updating user profile
  */

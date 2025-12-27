@@ -1,6 +1,5 @@
 import { PlayIcon } from "@heroicons/react/20/solid";
 import React, { useState } from "react";
-
 interface MediaPlayerProps {
   src: string;
   alt?: string;
@@ -38,7 +37,9 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   const handleVideoClick = (event: React.MouseEvent<HTMLVideoElement>) => {
     const video = event.currentTarget;
     if (video.paused) {
-      video.play();
+      void video.play().catch(() => {
+        // Handle play() rejection silently
+      });
       setIsPlaying(true);
     } else {
       video.pause();

@@ -1,5 +1,4 @@
 import { Form, useNavigation } from "@remix-run/react";
-
 interface UploadProviderSettingsProps {
   uploadProvider: string;
 }

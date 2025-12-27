@@ -1,5 +1,4 @@
 import type { CalendarPost } from "./PostBlock.types";
-
 interface PostBadgesProps {
   post: CalendarPost;
   size?: "xs" | "sm" | "md";

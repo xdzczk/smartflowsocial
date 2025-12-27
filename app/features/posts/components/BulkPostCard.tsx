@@ -3,11 +3,9 @@
  * Individual post card for bulk scheduling view
  * Extracted from dashboard.bulkposts.tsx
  */
-import type { BulkPostCardProps } from "~/features/posts/types";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { getDynamicQueueStyle } from "~/features/posts/queueColors";
-import type { BulkPost, QueueType } from "~/features/posts/types";
-
+import type { BulkPostCardProps , BulkPost, QueueType } from "~/features/posts/types";
 // Re-export types for consumers
 export type { BulkPost, QueueType };
 
@@ -22,7 +20,7 @@ function getDisplayImageUrl(post: BulkPost): string | null {
             // Handle case where fileUrl might be a JSON string array
             if (typeof originalImageUrl === "string" && originalImageUrl.startsWith("[")) {
                 try {
-                    const parsed = JSON.parse(originalImageUrl);
+                    const parsed = JSON.parse(originalImageUrl) as string[];
                     if (Array.isArray(parsed) && parsed.length > 0) {
                         originalImageUrl = parsed[0];
                     }

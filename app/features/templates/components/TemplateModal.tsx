@@ -1,6 +1,5 @@
 import { useFetcher } from "@remix-run/react";
 import { useState } from "react";
-
 interface TemplateModalProps {
   selectedPostsCount: number;
   selectedPostIds: string[];

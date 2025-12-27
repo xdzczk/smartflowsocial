@@ -10,7 +10,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prisma } from "~/lib/prisma.server";
 import { getPostById } from "~/models/post.queries.server";
 import { getUserById } from "~/models/user.server";
-
 // Mock Prisma client
 vi.mock("~/lib/prisma.server", () => ({
   prisma: {

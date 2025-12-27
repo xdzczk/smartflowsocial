@@ -33,7 +33,7 @@ interface RenewalResults {
 /**
  * Check and renew subscriptions for all users
  */
-export async function checkAndRenewSubscriptions(): Promise<{
+export function checkAndRenewSubscriptions(): Promise<{
   success: boolean;
   timestamp: string;
 } & RenewalResults> {
@@ -80,7 +80,17 @@ export async function checkAndRenewSubscriptions(): Promise<{
             results.renewalAttempted++;
 
             try {
-              await attemptRenewal(user, subscription);
+              if (!user.encryptedNwc) {
+                throw new Error("User NWC credentials not available");
+              }
+              await attemptRenewal({ ...user, encryptedNwc: user.encryptedNwc }, {
+                planId: subscription.planId,
+                plan: subscription.plan,
+                Plan: subscription.Plan ? {
+                  name: subscription.Plan.name,
+                  price: String(subscription.Plan.price),
+                } : null,
+              });
               results.renewalSuccess++;
             } catch (renewalError: unknown) {
               results.renewalFailed++;
@@ -96,7 +106,7 @@ export async function checkAndRenewSubscriptions(): Promise<{
               results.disabled++;
 
               // Send failure notification
-              const planName = subscription.Plan?.name || "subscription";
+              const planName = subscription.Plan?.name ?? "subscription";
               await sendRenewalNotification(
                 user.npub,
                 false,
@@ -110,7 +120,7 @@ export async function checkAndRenewSubscriptions(): Promise<{
             results.disabled++;
 
             // Send notification about expiration
-            const planName = subscription.Plan?.name || "subscription";
+            const planName = subscription.Plan?.name ?? "subscription";
             await sendRenewalNotification(
               user.npub,
               false,
@@ -150,7 +160,7 @@ export async function checkAndRenewSubscriptions(): Promise<{
  * Attempt to renew a user's subscription
  */
 async function attemptRenewal(
-  user: { id: string; npub: string; encryptedNwc: string },
+  user: { id: string; npub: string; encryptedNwc: string | null },
   subscription: {
     planId: string | null;
     plan: string | null;
@@ -158,6 +168,9 @@ async function attemptRenewal(
   },
 ): Promise<void> {
   // Decrypt user's NWC credentials
+  if (!user.encryptedNwc) {
+    throw new Error("User NWC credentials not available");
+  }
   const decryptedNwc = decrypt(user.encryptedNwc);
 
   // Get user's current plan
@@ -219,34 +232,45 @@ async function attemptRenewal(
   }
 
   // Extract invoice, paymentHash and amount from the request object structure
+  // Cast to unknown then to Record to access properties that may exist on ReceiveInvoice
+  const requestAny: Record<string, unknown> = invoiceRequest && typeof invoiceRequest === "object" && !Array.isArray(invoiceRequest) ? invoiceRequest as Record<string, unknown> : {};
+  const invoiceValue = requestAny.invoice;
   const invoiceString =
-    typeof invoiceRequest.invoice === "string"
-      ? invoiceRequest.invoice
-      : invoiceRequest.invoice?.paymentRequest || "";
+    typeof invoiceValue === "string"
+      ? invoiceValue
+      : (invoiceValue && typeof invoiceValue === "object" && !Array.isArray(invoiceValue) && "paymentRequest" in invoiceValue && typeof invoiceValue.paymentRequest === "string"
+          ? invoiceValue.paymentRequest
+          : "");
+  const invoiceObj = invoiceValue && typeof invoiceValue === "object" && !Array.isArray(invoiceValue) ? invoiceValue as Record<string, unknown> : null;
   const paymentHashString =
-    typeof invoiceRequest.paymentHash === "string"
-      ? invoiceRequest.paymentHash
-      : invoiceRequest.invoice?.paymentHash || "";
+    typeof requestAny.paymentHash === "string"
+      ? requestAny.paymentHash
+      : (invoiceObj && "paymentHash" in invoiceObj
+          ? String(invoiceObj.paymentHash)
+          : "");
 
   // Extract amount in sats - try multiple possible locations
   let amountSats = 0;
-  if (invoiceRequest.amount) {
-    amountSats = invoiceRequest.amount;
-  } else if (invoiceRequest.invoice?.satoshi) {
-    amountSats = invoiceRequest.invoice.satoshi;
-  } else if (invoiceRequest.satoshi) {
-    amountSats = invoiceRequest.satoshi;
+  if (requestAny.amount && typeof requestAny.amount === "number") {
+    amountSats = requestAny.amount;
+  } else if (invoiceObj && "satoshi" in invoiceObj) {
+    amountSats = Number(invoiceObj.satoshi) || 0;
+  } else if (requestAny.satoshi && typeof requestAny.satoshi === "number") {
+    amountSats = requestAny.satoshi;
   } else {
     // Parse the Lightning invoice to get the exact amount
     try {
+      if (typeof invoiceString !== "string") {
+        throw new Error("Invoice string is not a string");
+      }
       const invoiceStr = invoiceString.toLowerCase();
       if (invoiceStr.startsWith("lnbc")) {
         // Extract amount from Lightning invoice - amounts are encoded after 'lnbc'
         const amountMatch = invoiceStr.match(
           /lnbc([0-9]+)([munp]?)/,
         );
-        if (amountMatch) {
-          const baseAmount = parseInt(amountMatch[1]);
+        if (amountMatch && amountMatch[1]) {
+          const baseAmount = parseInt(amountMatch[1], 10);
           const unit = amountMatch[2];
 
           // Convert to satoshis based on unit
@@ -310,8 +334,10 @@ async function attemptRenewal(
   });
 
   // Extract payment hash from result
+  const paymentResultObj = paymentResult && typeof paymentResult === "object" && !Array.isArray(paymentResult) ? paymentResult as Record<string, unknown> : {};
+  const preimageValue = paymentResultObj.preimage;
   const paymentHash =
-    paymentResult.preimage ||
+    (typeof preimageValue === "string" ? preimageValue : null) ||
     paymentHashString ||
     `payment_${Date.now()}`;
 

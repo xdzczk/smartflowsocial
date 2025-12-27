@@ -1,6 +1,5 @@
 import { useNavigation } from "@remix-run/react";
 import { useState } from "react";
-
 interface UseNewLongFormStateProps {
   userTags: string;
 }
@@ -62,7 +61,7 @@ export function useNewLongFormState({ userTags }: UseNewLongFormStateProps) {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data = (await response.json()) as { hashtags?: string };
         setDisplayedHashtags(data.hashtags || userTags || "");
       } else {
         setDisplayedHashtags(userTags || "");
@@ -109,6 +108,8 @@ export function useNewLongFormState({ userTags }: UseNewLongFormStateProps) {
     handlePreview,
   };
 }
+
+
 
 
 

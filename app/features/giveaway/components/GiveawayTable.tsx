@@ -3,7 +3,6 @@ import { Link } from "@remix-run/react";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { getQueueColor } from "~/features/posts/queueColors";
 import { formatDate, getImageUrls } from "~/lib/helpers";
-
 interface Post {
   id: string;
   caption?: string | null;
@@ -222,13 +221,13 @@ export function GiveawayTable({
                         color: post.queueType.color,
                       }}
                     >
-                      {post.queueType?.name || "unassigned"}
+                      {post.queueType?.name ?? "unassigned"}
                     </span>
                   ) : (
                     <span
-                      className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium capitalize ${getQueueColor(post.queueType?.name || "unassigned").bg} ${getQueueColor(post.queueType?.name || "unassigned").text}`}
+                      className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium capitalize ${getQueueColor(post.queueType?.name ?? "unassigned").bg} ${getQueueColor(post.queueType?.name ?? "unassigned").text}`}
                     >
-                      {post.queueType?.name || "unassigned"}
+                      {post.queueType?.name ?? "unassigned"}
                     </span>
                   )}
                 </td>

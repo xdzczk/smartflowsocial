@@ -14,17 +14,16 @@ import {
   handleLoaderError,
   handleActionError,
   createSuccessResponse,
-  assert as assertHandler,
+  assert,
+  assertExists,
+  assertAuthenticated,
+  assertAuthorized,
 } from "./error-handler.server";
 import {
   ValidationError,
   NotFoundError,
   AuthenticationError,
   AuthorizationError,
-  assert,
-  assertExists,
-  assertAuthenticated,
-  assertAuthorized,
   ExternalServiceError,
 } from "./errors";
 
@@ -115,13 +114,14 @@ export async function assertionExample({
   assertAuthenticated(userId, "You must be logged in");
 
   const resource = await getResource(params.id);
-  assertExists(resource, "Resource not found", { id: params.id });
+  assertExists(resource, "Resource not found", { id: params.id || "" });
 
   const hasPermission = await checkPermission(userId, resource);
+  const resourceId = resource && typeof resource === "object" && resource !== null && "id" in resource ? String((resource as { id: unknown }).id) : "";
   assertAuthorized(
     hasPermission,
     "You don't have permission to access this resource",
-    { userId, resourceId: resource.id },
+    { userId, resourceId },
   );
 
   return json({ resource });
@@ -151,7 +151,8 @@ export async function specificErrorsExample({
     throw new NotFoundError("Post not found", { postId });
   }
 
-  if (post.userId !== userId) {
+  const postUserId = post && typeof post === "object" && post !== null && "userId" in post ? (post as { userId: unknown }).userId : undefined;
+  if (postUserId && typeof postUserId === "string" && postUserId !== userId) {
     throw new AuthorizationError(
       "You don't have permission to edit this post",
       { postId, userId },

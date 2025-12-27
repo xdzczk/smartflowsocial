@@ -35,7 +35,7 @@ function isVideoFile(fileUrl: string | string[]): boolean {
   ];
 
   try {
-    const urls = typeof fileUrl === "string" ? JSON.parse(fileUrl) : fileUrl;
+    const urls = typeof fileUrl === "string" ? JSON.parse(fileUrl) as string[] : fileUrl;
     if (Array.isArray(urls) && urls.length > 0) {
       const firstUrl = urls[0];
       const lower = firstUrl.toLowerCase();
@@ -66,7 +66,7 @@ async function getHashtagPresetTags(
   if (useHashtagPresets && manualHashTagPresetId) {
     // Use manually selected hashtag preset
     const preset = await getHashTagPresetById(userId, manualHashTagPresetId);
-    hashTagPresetTags = preset?.tags || "";
+    hashTagPresetTags = preset?.tags ?? "";
     hashTagPresetId = manualHashTagPresetId;
   } else if (!useHashtagPresets && queueType !== "unassigned") {
     // Use queue type's default hashtag preset
@@ -185,10 +185,10 @@ async function handlePostOrScheduleText(
   action: "post-text" | "schedule-text",
 ): Promise<Response> {
   const content = formData.get("content") as string;
-  const signedEventRaw = JSON.parse(formData.get("signedEvent") as string);
-  const nostrEventRaw = JSON.parse(formData.get("nostrEvent") as string);
-  const signedEvent = signedEventRaw as SignedEvent;
-  const nostrEvent = nostrEventRaw as import("~/features/nostr/types").NostrEvent;
+  const signedEventRaw = JSON.parse(formData.get("signedEvent") as string) as SignedEvent;
+  const nostrEventRaw = JSON.parse(formData.get("nostrEvent") as string) as import("~/features/nostr/types").NostrEvent;
+  const signedEvent = signedEventRaw;
+  const nostrEvent = nostrEventRaw;
   const signedEventJson = signedEvent;
 
   if (action === "post-text") {
@@ -270,12 +270,12 @@ function handleUploadPreview(
     };
   }
 
-  const fileUrls: Array<{
+  const fileUrls: {
     fileUrl: string;
     scheduledFor: string | null;
     caption: string | null;
     queueType: string | null;
-  }> = files.map((fileUrl) => ({
+  }[] = files.map((fileUrl) => ({
     fileUrl: String(fileUrl),
     scheduledFor: scheduledFor ? String(scheduledFor) : null,
     caption: caption ? String(caption) : null,
@@ -299,10 +299,10 @@ async function handlePostImages(
   hashTagPresetId: string | null,
   sanitizedRelays: string[],
 ): Promise<Response> {
-  const signedEventRaw = JSON.parse(formData.get("signedEvent") as string);
-  const nostrEventRaw = JSON.parse(formData.get("nostrEvent") as string);
-  const signedEvent = signedEventRaw as SignedEvent;
-  const nostrEvent = nostrEventRaw as import("~/features/nostr/types").NostrEvent;
+  const signedEventRaw = JSON.parse(formData.get("signedEvent") as string) as SignedEvent;
+  const nostrEventRaw = JSON.parse(formData.get("nostrEvent") as string) as import("~/features/nostr/types").NostrEvent;
+  const signedEvent = signedEventRaw;
+  const nostrEvent = nostrEventRaw;
   const fileUrl = formData.get("fileUrl") as string;
   const caption = formData.get("caption") as string;
 
@@ -318,7 +318,7 @@ async function handlePostImages(
     postedAt: new Date(),
     isScheduled: false,
     isPosted: true,
-    fileUrl: JSON.parse(fileUrl),
+    fileUrl: JSON.parse(fileUrl) as string[],
     scheduledFor: String(signedEvent.created_at),
     nostrEventId: signedEvent.id,
     nostrEvent,
@@ -348,8 +348,8 @@ async function handleScheduleImages(
   isRecyclable: boolean,
   hashTagPresetId: string | null,
 ): Promise<Response> {
-  const signedEvent = JSON.parse(formData.get("signedEvent") as string);
-  const nostrEvent = JSON.parse(formData.get("nostrEvent") as string);
+  const signedEvent = JSON.parse(formData.get("signedEvent") as string) as SignedEvent;
+  const nostrEvent = JSON.parse(formData.get("nostrEvent") as string) as import("~/features/nostr/types").NostrEvent;
   const fileUrl = formData.get("fileUrl") as string;
   const caption = formData.get("caption") as string;
 
@@ -362,8 +362,8 @@ async function handleScheduleImages(
     userId,
     content: applyHashtags(caption, hashTagPresetTags, showHashTagsinPosts),
     caption: applyHashtags(caption, hashTagPresetTags, showHashTagsinPosts),
-    fileUrl: JSON.parse(fileUrl),
-    scheduledFor: signedEvent.created_at,
+    fileUrl: JSON.parse(fileUrl) as string[],
+    scheduledFor: String(signedEvent.created_at),
     isScheduled: true,
     isPosted: false,
     signedEvent: signedEvent,
@@ -408,7 +408,7 @@ async function handleDraftImages(
     userId,
     content: applyHashtags(caption, hashTagPresetTags, showHashTagsinPosts),
     caption: applyHashtags(caption, hashTagPresetTags, showHashTagsinPosts),
-    fileUrl: JSON.parse(fileUrl),
+    fileUrl: JSON.parse(fileUrl) as string[],
     isScheduled: false,
     isPosted: false,
     postType,
@@ -496,7 +496,7 @@ export async function handleNewPostAction(
       isRecyclable,
       hashTagPresetId,
       sanitizedRelays,
-      _action as "post-text" | "schedule-text",
+      _action,
     );
   }
 

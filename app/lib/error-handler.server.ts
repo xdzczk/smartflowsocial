@@ -6,19 +6,18 @@
  */
 
 import { json, type ActionFunctionArgs, type LoaderFunctionArgs } from "@remix-run/node";
-
 import { logError } from "./error-logger.server";
-import type {
+
+import type { ErrorCode } from "./errors";
+
+import {
   AuthenticationError,
   AuthorizationError,
-  ErrorCode,
-  NotFoundError,
-  ValidationError,
-} from "./errors";
-import {
   getUserFriendlyMessage,
   isAppError,
   normalizeError,
+  NotFoundError,
+  ValidationError,
 } from "./errors";
 
 /**
@@ -158,9 +157,10 @@ export function handleLoaderError(
   defaultData: unknown,
 ): Response {
   const [errorResponse, statusCode] = createErrorResponse(error);
+  const defaultDataObj = defaultData && typeof defaultData === "object" ? defaultData : {};
   return json(
     {
-      ...defaultData,
+      ...defaultDataObj,
       error: errorResponse.error,
     },
     { status: statusCode },

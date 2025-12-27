@@ -1,5 +1,4 @@
 import crypto from 'crypto';
-
 // Encryption version constants
 const VERSION_LEGACY_CBC = 0x01; // Legacy AES-256-CBC (no version byte in old format)
 const VERSION_GCM = 0x02; // New AES-256-GCM
@@ -58,8 +57,8 @@ export function encrypt(text: string): string {
     return combined.toString('base64');
   } catch (error) {
     // Use safe logging to prevent sensitive data in logs
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { safeConsoleError } = require("./secrets-sanitizer.server");
+     
+    const { safeConsoleError } = require("./secrets-sanitizer.server") as { safeConsoleError: (message: string) => void };
     safeConsoleError("Encryption failed");
     throw new Error('Failed to encrypt data');
   }
@@ -134,8 +133,8 @@ export function decrypt(encryptedData: string): string {
     }
   } catch (error) {
     // Use safe logging to prevent sensitive data in logs
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { safeConsoleError } = require("./secrets-sanitizer.server");
+     
+    const { safeConsoleError } = require("./secrets-sanitizer.server") as { safeConsoleError: (message: string) => void };
     safeConsoleError("Decryption failed");
     throw new Error('Failed to decrypt data');
   }

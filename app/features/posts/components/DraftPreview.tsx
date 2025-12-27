@@ -4,7 +4,6 @@
 
 import { getSelectedQueueStyle } from "~/features/posts/queueColors";
 import type { PostData, QueueType } from "~/features/posts/types";
-
 interface DraftPreviewProps {
   post: PostData;
   selectedQueue: string;
@@ -21,7 +20,7 @@ export function DraftPreview({
 
     if (typeof fileUrl[0] === "string" && fileUrl[0].startsWith("[")) {
       try {
-        return JSON.parse(fileUrl[0]);
+        return JSON.parse(fileUrl[0]) as string[];
       } catch (e) {
         console.error("Error parsing fileUrl:", e);
         return [];

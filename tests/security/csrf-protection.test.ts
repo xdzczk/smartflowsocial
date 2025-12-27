@@ -5,7 +5,6 @@
  */
 
 import { describe, it, expect } from "vitest";
-
 describe("CSRF Protection: Remix Built-in Protection", () => {
   it("should use Remix's built-in CSRF protection", () => {
     // Remix provides built-in CSRF protection for form submissions
@@ -75,6 +74,8 @@ describe("CSRF Protection: Form Submissions", () => {
     expect(true).toBe(true); // Documentation test
   });
 });
+
+
 
 
 

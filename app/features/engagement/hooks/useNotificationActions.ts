@@ -260,7 +260,7 @@ export function useNotificationActions({
             const response = await fetch(`/api/thread-view?event_id=${notification.eventId}`);
             if (!response.ok) throw new Error("Failed to fetch replies");
 
-            const data = await response.json();
+            const data = await response.json() as { events?: NotificationEvent[]; metadata?: Record<string, unknown> };
 
             // Filter to only show direct replies
             const directReplies = (data.events || []).filter((event: NotificationEvent) => {
@@ -290,7 +290,7 @@ export function useNotificationActions({
     // Auto-fetch child replies when expanded
     useEffect(() => {
         if (showChildReplies && childReplies.length === 0) {
-            fetchChildReplies();
+            void fetchChildReplies();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [showChildReplies]);

@@ -11,7 +11,6 @@ import { installGlobals } from "@remix-run/node";
 import { parse } from "cookie";
 
 import { sessionStorage } from "../../../app/features/auth/session.server";
-
 installGlobals();
 
 // Create a fresh Prisma client for the script
@@ -103,7 +102,7 @@ async function createNostrUserAndLogin(npub: string) {
             where: { userId: currentUser.id },
         });
 
-        if (!existingSubscription || existingSubscription.status !== "ACTIVE") {
+        if (existingSubscription?.status !== "ACTIVE") {
             // Create or update subscription to be active
             const now = new Date();
             const thirtyDaysFromNow = new Date(

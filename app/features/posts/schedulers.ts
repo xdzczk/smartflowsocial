@@ -90,7 +90,7 @@ async function calculateNextScheduleTimeInternal({
     }
 
     // Validate queueType structure
-    if (!queueType || !queueType.scheduleType) {
+    if (!queueType?.scheduleType) {
       logError(new Error("Invalid queueType"), {
         userId,
         queueType: String(queueType),

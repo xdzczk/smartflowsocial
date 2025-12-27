@@ -2,12 +2,12 @@
  * EditorJS content loading and manipulation utilities
  */
 
-import React from "react";
+
+import type React from "react";
 
 import type { EditorJSInstance, EditorJSBlock } from "~/features/posts/types/editorjs.types";
 import { handleErrorSafely, logClientError } from "~/lib/error-handler.client";
 import { convertMarkdownToEditorJS } from "~/lib/nostr";
-
 /**
  * Load initial content into EditorJS
  */
@@ -26,7 +26,7 @@ export async function loadEditorJSContent(
     // Try to parse as JSON first (for legacy EditorJS format)
     if (content.trim().startsWith("{")) {
       try {
-        parsedContent = JSON.parse(content);
+        parsedContent = JSON.parse(content) as { blocks?: unknown[]; time?: number; version?: string };
         // Validate it has EditorJS structure
         if (
           !parsedContent.blocks ||
@@ -185,12 +185,15 @@ export async function insertAssetsIntoEditor(
         if (asset.assetType === "TEXT") {
           const textContent = asset.content || asset.title || "";
           if (textContent) {
-            await editorRef.current.blocks.insert("paragraph", {
+            const insertResult = editorRef.current.blocks.insert("paragraph", {
               text: textContent,
             });
+            if (insertResult && typeof insertResult === "object" && "then" in insertResult) {
+              await insertResult;
+            }
           }
         } else if (asset.assetType === "IMAGE") {
-          await editorRef.current.blocks.insert("image", {
+          const insertResult = editorRef.current.blocks.insert("image", {
             file: {
               url: asset.fileUrl,
             },
@@ -199,9 +202,13 @@ export async function insertAssetsIntoEditor(
             withBackground: false,
             stretched: false,
           });
+          if (insertResult && typeof insertResult === "object" && "then" in insertResult) {
+            await insertResult;
+          }
         }
       }
-      const updatedData = await editorRef.current.saver.save();
+      const saveResult = editorRef.current.saver.save();
+      const updatedData = saveResult && typeof saveResult === "object" && "then" in saveResult ? await saveResult : saveResult;
       onContentChange(JSON.stringify(updatedData));
     } catch (fallbackError) {
       const { handleAsyncError: handleFallbackError } = await import("~/lib/error-handler.client");
@@ -220,12 +227,15 @@ export function generateSummaryFromContent(content: string): string {
   if (!content) return "";
 
   try {
-    const editorData = JSON.parse(content);
+    const parsed = JSON.parse(content);
+    const editorData = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as { blocks?: EditorJSBlock[] } : { blocks: [] };
     let textContent = "";
 
-    editorData.blocks?.forEach((block: EditorJSBlock) => {
-      if (block.type === "paragraph" || block.type === "header") {
-        textContent += block.data.text + " ";
+    if (Array.isArray(editorData.blocks)) {
+      editorData.blocks.forEach((block: EditorJSBlock) => {
+        if (block.type === "paragraph" || block.type === "header") {
+          const textValue = block.data && typeof block.data === "object" && "text" in block.data && typeof block.data.text === "string" ? block.data.text : "";
+          textContent += textValue + " ";
       } else if (block.type === "list") {
         if (Array.isArray(block.data.items)) {
           block.data.items.forEach((item: string) => {

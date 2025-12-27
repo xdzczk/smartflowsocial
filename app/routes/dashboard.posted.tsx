@@ -12,11 +12,10 @@ import PostedPostsTabs from "~/features/posts/components/PostedPostsTabs";
 import { getPostedDashboardData } from "~/features/posts/posts.server";
 import { usePostedPosts } from "~/features/posts/usePostedPosts";
 import { withErrorHandling } from "~/lib/error-handler.server";
-
 // Re-export action from server module
 export { postedPostsAction as action } from "~/features/posts/posted.action.server";
 
-export const loader = withErrorHandling(async ({ request, params }: { request: Request; params: { queueType?: string } }) => {
+async function loaderImpl({ request, params }: { request: Request; params: { queueType?: string } }) {
   const userId = await requireUserId(request);
   // Require that the user has at least a subscription record
   await requireAnySubscription(userId);
@@ -26,13 +25,17 @@ export const loader = withErrorHandling(async ({ request, params }: { request: R
   const data = await getPostedDashboardData({ userId, params, url });
 
   return data;
-});
+}
+
+export const loader = withErrorHandling(loaderImpl);
+
+type LoaderData = Awaited<ReturnType<typeof loaderImpl>>;
 
 export default function PostedPosts() {
-  const data = useLoaderData<typeof loader>();
+  const data = useLoaderData<LoaderData>();
 
   // Transform serialized dates back to Date objects
-  const posts = data.posts.map((post: typeof data.posts[0]) => ({
+  const posts = data.posts.map((post) => ({
     ...post,
     createdAt: new Date(post.createdAt),
     updatedAt: new Date(post.updatedAt),
@@ -41,7 +44,7 @@ export default function PostedPosts() {
     // Based on models/post.types.ts - scheduledFor is stored as string in DB.
   }));
 
-  const longformPosts = data.longformPosts.map((post: typeof data.longformPosts[0]) => ({
+  const longformPosts = data.longformPosts.map((post) => ({
     ...post,
     createdAt: new Date(post.createdAt),
     updatedAt: new Date(post.updatedAt),
@@ -56,11 +59,11 @@ export default function PostedPosts() {
 
   } = data;
 
-  const queueTypes = data.queueTypes.map((qt: typeof data.queueTypes[0]) => ({
+  const queueTypes = data.queueTypes.map((qt) => ({
     ...qt,
     createdAt: new Date(qt.createdAt),
     updatedAt: new Date(qt.updatedAt),
-    color: qt.color || undefined,
+    color: qt.color ?? undefined,
   }));
 
   const params = useParams();
@@ -110,10 +113,13 @@ export default function PostedPosts() {
         "satszapped",
       ].includes(sortConfig.key)
     ) {
-      const aStats = stats[a.signedEvent.id] || {};
-      const bStats = stats[b.signedEvent.id] || {};
-      const aValue = aStats[sortConfig.key] || 0;
-      const bValue = bStats[sortConfig.key] || 0;
+      const aEventId = a.signedEvent && typeof a.signedEvent === "object" && "id" in a.signedEvent && typeof a.signedEvent.id === "string" ? a.signedEvent.id : "";
+      const bEventId = b.signedEvent && typeof b.signedEvent === "object" && "id" in b.signedEvent && typeof b.signedEvent.id === "string" ? b.signedEvent.id : "";
+      const aStats = aEventId && stats && typeof stats === "object" && !Array.isArray(stats) && aEventId in stats ? stats[aEventId] as Record<string, unknown> : {};
+      const bStats = bEventId && stats && typeof stats === "object" && !Array.isArray(stats) && bEventId in stats ? stats[bEventId] as Record<string, unknown> : {};
+      const sortKey = sortConfig.key;
+      const aValue = (typeof sortKey === "string" && sortKey in aStats && typeof aStats[sortKey] === "number" ? aStats[sortKey] : 0);
+      const bValue = (typeof sortKey === "string" && sortKey in bStats && typeof bStats[sortKey] === "number" ? bStats[sortKey] : 0);
       return sortConfig.direction === "asc" ? aValue - bValue : bValue - aValue;
     }
 
@@ -155,9 +161,19 @@ export default function PostedPosts() {
           onPostSelect={(content) => {
             // Handle selection based on content type
             if (content.type === "post") {
-              setSelectedPost(content.originalData);
+              const postData = content.originalData;
+              if (postData && typeof postData === "object" && "id" in postData) {
+                setSelectedPost(postData as { id: string; content?: string; caption?: string; fileUrl?: string[]; queueType?: { name: string } | null; signedEvent?: unknown });
+              } else {
+                setSelectedPost(null);
+              }
             } else {
-              setSelectedLongFormPost(content.originalData);
+              const longformData = content.originalData;
+              if (longformData && typeof longformData === "object" && "id" in longformData) {
+                setSelectedLongFormPost(longformData as { id: string; title?: string; content?: string; queueType?: { name: string } | null; signedEvent?: unknown });
+              } else {
+                setSelectedLongFormPost(null);
+              }
             }
           }}
           selectedItems={selectedPosts}
@@ -342,7 +358,7 @@ export default function PostedPosts() {
           {selectedPost ? (
             <PostDetailsModal
               post={selectedPost}
-              stats={stats[selectedPost.signedEvent.id]}
+              stats={selectedPost && typeof selectedPost === "object" && "signedEvent" in selectedPost && selectedPost.signedEvent && typeof selectedPost.signedEvent === "object" && "id" in selectedPost.signedEvent && typeof selectedPost.signedEvent.id === "string" ? stats[selectedPost.signedEvent.id] : undefined}
               onClose={() => setSelectedPost(null)}
               showStats={true}
               showSignedEvent={true}
@@ -362,7 +378,11 @@ export default function PostedPosts() {
           longformRepostFetcher={longformRepostFetcher}
           longformQuoteFetcher={longformQuoteFetcher}
           onPostSelect={(post) => {
-            setSelectedLongFormPost(post);
+            if (post && typeof post === "object" && "id" in post) {
+              setSelectedLongFormPost(post as { id: string; title?: string; content?: string; queueType?: { name: string } | null; signedEvent?: unknown });
+            } else {
+              setSelectedLongFormPost(null);
+            }
           }}
         />
       )}

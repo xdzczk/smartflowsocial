@@ -66,7 +66,7 @@ export interface PrimalEvent {
     [2]: {
         kind: number;
         content: string;
-        [key: string]: any;
+        [key: string]: unknown;
     };
 }
 
@@ -82,7 +82,7 @@ export interface ProfileData {
     website?: string;
     nip05?: string;
     lud16?: string;
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 /**
@@ -94,13 +94,13 @@ export interface StatsData {
     note_count?: number;
     total_zap_count?: number;
     total_satszapped?: number;
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 /**
  * Media data record
  */
-export type MediaData = Record<string, any>;
+export type MediaData = Record<string, unknown>;
 
 /**
  * Processed profile with stats

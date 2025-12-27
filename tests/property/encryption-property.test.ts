@@ -11,7 +11,6 @@ import fc from "fast-check";
 import { describe, it, expect, beforeEach } from "vitest";
 
 import { encrypt, decrypt } from "~/lib/encryption.server";
-
 describe("Property-Based Tests: Encryption", () => {
   beforeEach(() => {
     // Ensure SESSION_SECRET is set for tests
@@ -162,6 +161,8 @@ describe("Property-Based Tests: Encryption", () => {
     });
   });
 });
+
+
 
 
 

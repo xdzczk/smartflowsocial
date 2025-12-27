@@ -47,7 +47,7 @@ function getQueue(queueName: QueueType): Queue {
  * BullMQ implementation of QueueClient
  */
 class BullMQClient implements QueueClient {
-  async enqueue<T = any>(
+  async enqueue<T = unknown>(
     queueName: QueueType,
     jobName: string,
     data: T,
@@ -78,23 +78,30 @@ class BullMQClient implements QueueClient {
         success: true,
         jobId: job.id,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to enqueue job";
       return {
         success: false,
-        error: error.message || "Failed to enqueue job",
+        error: errorMessage,
       };
     }
   }
 
   async cancelByData(
     queueName: QueueType,
-    dataKey: keyof any,
+    dataKey: string,
     dataValue: string,
   ): Promise<boolean> {
     try {
       const queue = getQueue(queueName);
       const jobs = await queue.getJobs(["waiting", "delayed"]);
-      const job = jobs.find((j) => j.data[dataKey] === dataValue);
+      const job = jobs.find((j) => {
+        const jobData = j.data;
+        if (jobData && typeof jobData === "object" && !Array.isArray(jobData) && dataKey in jobData) {
+          return String(jobData[dataKey as keyof typeof jobData]) === dataValue;
+        }
+        return false;
+      });
 
       if (job) {
         await job.remove();
@@ -118,7 +125,7 @@ class BullMQClient implements QueueClient {
     try {
       const queue = getQueue(queueName);
       // BullMQ's getJobs accepts an array of status strings
-      const jobs = await queue.getJobs(statuses as JobStatus[]);
+      const jobs = await queue.getJobs(statuses);
       
       return jobs.map((job) => ({
         id: job.id!,

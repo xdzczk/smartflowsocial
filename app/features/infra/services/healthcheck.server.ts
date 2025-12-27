@@ -6,7 +6,6 @@
 import { logError } from "~/lib/error-logger.server";
 import { DatabaseError, ExternalServiceError, ValidationError } from "~/lib/errors";
 import { countUsers } from "~/models/user.server";
-
 /**
  * Perform health check
  * Verifies database connectivity and HTTP service availability
@@ -22,9 +21,10 @@ export async function performHealthCheck(host: string | null) {
   // and make a HEAD request to ourselves, then we're good.
   await Promise.all([
     countUsers(),
-    fetch(url.toString(), { method: "HEAD" }).then((r) => {
+    (async () => {
+      const r = await fetch(url.toString(), { method: "HEAD" });
       if (!r.ok) return Promise.reject(r);
-    }),
+    })(),
   ]);
   
   return new Response("OK");

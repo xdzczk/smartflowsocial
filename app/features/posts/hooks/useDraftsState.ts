@@ -1,6 +1,5 @@
 import { useFetcher } from "@remix-run/react";
 import { useState, useEffect } from "react";
-
 interface Post {
   id: string;
   caption?: string | null;
@@ -92,7 +91,7 @@ export function useDraftsState({ posts }: UseDraftsStateProps) {
 
   // Clear selected posts after bulk operations
   useEffect(() => {
-    if (bulkDeleteFetcher.data?.success || bulkResumeFetcher.data?.success) {
+    if (bulkDeleteFetcher.data?.success ?? bulkResumeFetcher.data?.success) {
       setSelectedPosts(new Set());
       setShowAdvancedBulkResume(false);
     }

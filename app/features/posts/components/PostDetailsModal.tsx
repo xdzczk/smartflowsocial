@@ -7,7 +7,6 @@ import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { getQueueColor } from "~/features/posts/queueColors";
 import type { CombinedContent, PostData } from "~/features/posts/types";
 import { formatDate, getImageUrls } from "~/lib/helpers";
-
 interface PostDetailsModalProps {
   post: Post | PostData | CombinedContent;
   stats?: {

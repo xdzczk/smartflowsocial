@@ -5,7 +5,6 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-
 // Mock dependencies
 vi.mock("~/infra/queue/queue-client.server", () => ({
   queueClient: {

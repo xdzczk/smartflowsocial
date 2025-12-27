@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import type { Asset } from "~/features/assets/types";
-
 interface AssetBrowserProps {
   assets: Asset[];
   onAssetsSelected: (selectedAssets: Asset[]) => void;

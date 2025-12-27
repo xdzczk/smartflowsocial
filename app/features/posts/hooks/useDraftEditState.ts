@@ -73,8 +73,11 @@ export function useDraftEditState({
       });
 
       if (response.ok) {
-        const { scheduledTime } = await response.json();
-        setScheduledFor(scheduledTime);
+        const data = (await response.json()) as { scheduledTime?: string };
+        const scheduledTime = data.scheduledTime;
+        if (scheduledTime) {
+          setScheduledFor(scheduledTime);
+        }
       }
     } catch (error) {
       console.error("Error calculating schedule time:", error);
@@ -136,7 +139,7 @@ export function useDraftEditState({
 
   useEffect(() => {
     if (selectedQueue !== "unassigned") {
-      calculateQueueScheduleTime(selectedQueue);
+      void calculateQueueScheduleTime(selectedQueue);
     } else {
       setScheduledFor("");
     }

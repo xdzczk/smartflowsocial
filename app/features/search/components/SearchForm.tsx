@@ -3,7 +3,6 @@
  */
 
 import { useFetcher } from "@remix-run/react";
-
 interface SearchFormProps {
   eventInput: string;
   onInputChange: (value: string) => void;
@@ -90,6 +89,8 @@ export function SearchForm({
     </div>
   );
 }
+
+
 
 
 

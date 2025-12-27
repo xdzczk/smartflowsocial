@@ -11,7 +11,7 @@ import {
 import { withErrorHandling, withActionErrorHandling } from "~/lib/error-handler.server";
 import { formatDate, getImageUrls } from "~/lib/helpers";
 
-export const loader = withErrorHandling(async ({ request, params }: LoaderFunctionArgs) => {
+async function loaderImpl({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   const templateId = params.id;
 
@@ -21,7 +21,9 @@ export const loader = withErrorHandling(async ({ request, params }: LoaderFuncti
   }
 
   return loadTemplateEditData(templateId, userId);
-});
+}
+
+export const loader = withErrorHandling(loaderImpl);
 
 export const action = withActionErrorHandling(async ({ request, params }: ActionFunctionArgs) => {
   const userId = await requireUserId(request);
@@ -36,8 +38,15 @@ export const action = withActionErrorHandling(async ({ request, params }: Action
   return handleTemplateEditAction(formData, templateId, userId);
 });
 
+type LoaderData = Awaited<ReturnType<typeof loaderImpl>>;
+
 export default function EditTemplate() {
-  const { template } = useLoaderData<typeof loader>();
+  const data = useLoaderData<LoaderData>();
+  const template = data && typeof data === "object" && "template" in data && data.template && typeof data.template === "object" && !Array.isArray(data.template) ? data.template : null;
+  
+  if (!template) {
+    return <div>Template not found</div>;
+  }
   const updateNameFetcher = useFetcher<{ success?: boolean }>();
   const removePostFetcher = useFetcher();
   const deleteTemplateFetcher = useFetcher();
@@ -50,7 +59,8 @@ export default function EditTemplate() {
     }[];
   }>();
 
-  const [templateName, setTemplateName] = useState(template.name || "");
+  const templateNameValue = template && "name" in template && typeof template.name === "string" ? template.name : "";
+  const [templateName, setTemplateName] = useState(templateNameValue);
   const [isEditingName, setIsEditingName] = useState(false);
 
   const handleUpdateName = () => {
@@ -128,7 +138,7 @@ export default function EditTemplate() {
           <button
             onClick={handleScheduleTemplate}
             disabled={
-              scheduleFetcher.state !== "idle" || template.posts.length === 0
+              scheduleFetcher.state !== "idle" || !Array.isArray(template.posts) || template.posts.length === 0
             }
             className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:bg-blue-300"
           >
@@ -169,7 +179,7 @@ export default function EditTemplate() {
               <button
                 onClick={() => {
                   setIsEditingName(false);
-                  setTemplateName(template.name || "");
+                  setTemplateName(templateNameValue);
                 }}
                 className="rounded-lg border border-gray-300 px-3 py-1 text-sm hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700"
               >
@@ -178,7 +188,7 @@ export default function EditTemplate() {
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold">{template.name}</h1>
+              <h1 className="text-2xl font-bold">{templateNameValue}</h1>
               <button
                 onClick={() => setIsEditingName(true)}
                 className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
@@ -201,13 +211,13 @@ export default function EditTemplate() {
           )}
         </div>
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          {template.posts.length} post
-          {template.posts.length !== 1 ? "s" : ""} • Created{" "}
-          {formatDate(template.createdAt)}
+          {Array.isArray(template.posts) ? template.posts.length : 0} post
+          {Array.isArray(template.posts) && template.posts.length !== 1 ? "s" : ""} • Created{" "}
+          {template && "createdAt" in template && template.createdAt ? formatDate(template.createdAt as string | Date) : "Unknown"}
         </p>
       </div>
 
-      {template.posts.length === 0 ? (
+      {!Array.isArray(template.posts) || template.posts.length === 0 ? (
         <div className="py-12 text-center">
           <div className="mx-auto max-w-md">
             <svg
@@ -233,15 +243,15 @@ export default function EditTemplate() {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {template.posts.map((post) => (
+          {Array.isArray(template.posts) ? template.posts.map((post: { id: string; fileUrl?: string[] | string; caption?: string; queueType?: { name?: string; color?: string | null } | null; postedAt?: string | Date | null; signedEvent?: { id?: string } | null }) => (
             <div
               key={post.id}
               className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
             >
               <div className="mb-3">
-                {post.fileUrl && post.fileUrl.length > 0 ? (
+                {post.fileUrl && (Array.isArray(post.fileUrl) ? post.fileUrl.length > 0 : typeof post.fileUrl === "string" && post.fileUrl.length > 0) ? (
                   <img
-                    src={getImageUrls(post.fileUrl)[0]}
+                    src={getImageUrls(Array.isArray(post.fileUrl) ? post.fileUrl : [post.fileUrl])[0]}
                     alt="Post preview"
                     className="h-48 w-full rounded object-cover"
                   />
@@ -254,7 +264,7 @@ export default function EditTemplate() {
 
               <div className="mb-3">
                 <p className="line-clamp-3 text-sm text-gray-700 dark:text-gray-300">
-                  {post.caption}
+                  {typeof post.caption === "string" ? post.caption : ""}
                 </p>
               </div>
 
@@ -262,9 +272,9 @@ export default function EditTemplate() {
                 <div className="flex items-center gap-2">
                   {post.queueType ? (
                     <span
-                      className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium capitalize ${getQueueColor(post.queueType?.name || "unassigned", post.queueType?.color).bg} ${getQueueColor(post.queueType?.name || "unassigned", post.queueType?.color).text}`}
+                      className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium capitalize ${getQueueColor(post.queueType?.name ?? "unassigned", post.queueType?.color).bg} ${getQueueColor(post.queueType?.name ?? "unassigned", post.queueType?.color).text}`}
                     >
-                      {post.queueType?.name || "unassigned"}
+                      {post.queueType?.name ?? "unassigned"}
                     </span>
                   ) : null}
                 </div>
@@ -276,7 +286,7 @@ export default function EditTemplate() {
 
               <div className="flex items-center justify-between">
                 <Link
-                  to={`https://primal.net/e/${typeof post.signedEvent === "object" && post.signedEvent?.id ? post.signedEvent.id : ""}`}
+                  to={`https://primal.net/e/${post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent && typeof post.signedEvent.id === "string" ? post.signedEvent.id : ""}`}
                   target="_blank"
                   rel="noreferrer"
                   className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
@@ -284,7 +294,7 @@ export default function EditTemplate() {
                   View Original
                 </Link>
                 <button
-                  onClick={() => handleRemovePost(post.id)}
+                  onClick={() => handleRemovePost(typeof post.id === "string" ? post.id : "")}
                   disabled={removePostFetcher.state !== "idle"}
                   className="rounded-lg border border-red-300 px-2 py-1 text-xs text-red-700 hover:bg-red-50 disabled:opacity-50 dark:border-red-600 dark:text-red-400 dark:hover:bg-red-900/20"
                 >
@@ -292,7 +302,7 @@ export default function EditTemplate() {
                 </button>
               </div>
             </div>
-          ))}
+          )) : null}
         </div>
       )}
     </div>

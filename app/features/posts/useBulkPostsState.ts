@@ -2,7 +2,6 @@ import { useEffect } from "react";
 
 import { type BulkPost } from "~/features/posts/components/BulkPostCard";
 import { handleErrorSafely } from "~/lib/error-handler.client";
-
 interface RepostDataItem {
     fileUrl?: string | string[];
     caption?: string;
@@ -25,7 +24,7 @@ export function useBulkPostsState({ mode, posts, setPosts }: UseBulkPostsStatePr
             const repostData = sessionStorage.getItem("repostData");
             if (repostData) {
                 try {
-                    const parsedData = JSON.parse(repostData);
+                    const parsedData = JSON.parse(repostData) as RepostDataItem[];
 
                     // Convert repost data to posts format with file objects from URLs
                     const repostPosts = parsedData.map((item: RepostDataItem, _index: number) => {
@@ -34,7 +33,7 @@ export function useBulkPostsState({ mode, posts, setPosts }: UseBulkPostsStatePr
                         // Handle case where fileUrl might be a JSON string array
                         if (typeof fileUrl === "string") {
                             try {
-                                const parsed = JSON.parse(fileUrl);
+                                const parsed = JSON.parse(fileUrl) as string[];
                                 if (Array.isArray(parsed) && parsed.length > 0) {
                                     fileUrl = parsed[0]; // Take first URL from array
                                 }
@@ -73,7 +72,7 @@ export function useBulkPostsState({ mode, posts, setPosts }: UseBulkPostsStatePr
             const scheduledRepostData = sessionStorage.getItem("scheduledRepostData");
             if (scheduledRepostData) {
                 try {
-                    const parsedData = JSON.parse(scheduledRepostData);
+                    const parsedData = JSON.parse(scheduledRepostData) as RepostDataItem[];
 
                     // We need to fetch the original posts to get their images
                     const fetchOriginalPosts = async () => {
@@ -89,7 +88,7 @@ export function useBulkPostsState({ mode, posts, setPosts }: UseBulkPostsStatePr
                             });
 
                             if (response.ok) {
-                                const originalPosts = await response.json();
+                                const originalPosts = (await response.json()) as OriginalPost[];
                                 return originalPosts;
                             }
                         } catch (error) {
@@ -116,30 +115,38 @@ export function useBulkPostsState({ mode, posts, setPosts }: UseBulkPostsStatePr
                         caption?: string;
                     }
                     // Fetch original posts and merge with repost data
-                    fetchOriginalPosts().then((originalPosts: OriginalPost[]) => {
-                        const repostPosts = parsedData.map((item: ScheduledRepostDataItem) => {
-                            const originalPost = originalPosts.find(
-                                (p: OriginalPost) => p.id === item.originalPostId,
-                            );
+                    void (async () => {
+                        try {
+                            const originalPosts = await fetchOriginalPosts();
+                            const repostPosts = parsedData.map((item: ScheduledRepostDataItem) => {
+                                const originalPost = originalPosts.find(
+                                    (p: OriginalPost) => p.id === item.originalPostId,
+                                );
 
-                            return {
-                                file: null, // No file for kind 6 reposts
-                                caption: item.caption, // Empty for kind 6
-                                queueType: item.queueType,
-                                scheduledFor: item.scheduledFor,
-                                fileUrl: originalPost?.fileUrl || [], // Use original post's images for display
-                                originalFileUrl: originalPost?.fileUrl || [], // Keep original file URLs for display
-                                isKind6Repost: true, // Flag to indicate this is a kind 6 repost
-                                originalPostId: item.originalPostId,
-                                originalEventId: item.originalEventId,
-                                originalEventPubkey: item.originalEventPubkey,
-                                originalCaption: originalPost?.caption || "", // Store original caption for context
-                                isRecyclable: item.isRecyclable || false,
-                            };
-                        });
+                                return {
+                                    file: null, // No file for kind 6 reposts
+                                    caption: item.caption, // Empty for kind 6
+                                    queueType: item.queueType,
+                                    scheduledFor: item.scheduledFor,
+                                    fileUrl: originalPost?.fileUrl || [], // Use original post's images for display
+                                    originalFileUrl: originalPost?.fileUrl || [], // Keep original file URLs for display
+                                    isKind6Repost: true, // Flag to indicate this is a kind 6 repost
+                                    originalPostId: item.originalPostId,
+                                    originalEventId: item.originalEventId,
+                                    originalEventPubkey: item.originalEventPubkey,
+                                    originalCaption: originalPost?.caption || "", // Store original caption for context
+                                    isRecyclable: item.isRecyclable || false,
+                                };
+                            });
 
-                        setPosts(repostPosts);
-                    });
+                            setPosts(repostPosts);
+                        } catch (error) {
+                            handleErrorSafely(error, {
+                                component: "useBulkPostsState",
+                                action: "fetchOriginalPosts",
+                            });
+                        }
+                    })();
 
                     // Clear sessionStorage after loading
                     sessionStorage.removeItem("scheduledRepostData");
@@ -155,7 +162,7 @@ export function useBulkPostsState({ mode, posts, setPosts }: UseBulkPostsStatePr
             const quotePostData = sessionStorage.getItem("quotePostData");
             if (quotePostData) {
                 try {
-                    const parsedData = JSON.parse(quotePostData);
+                    const parsedData = JSON.parse(quotePostData) as QuotePostDataItem[];
 
                     interface QuotePostDataItem {
                         fileUrl?: string | string[];
@@ -179,7 +186,7 @@ export function useBulkPostsState({ mode, posts, setPosts }: UseBulkPostsStatePr
                         // Handle case where fileUrl might be a JSON string array
                         if (typeof fileUrl === "string") {
                             try {
-                                const parsed = JSON.parse(fileUrl);
+                                const parsed = JSON.parse(fileUrl) as string[];
                                 if (Array.isArray(parsed) && parsed.length > 0) {
                                     fileUrl = parsed[0]; // Take first URL from array
                                 }

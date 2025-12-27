@@ -1,6 +1,6 @@
 import { webcrypto as nodeWebcrypto } from "node:crypto";
 // Ensure Web Crypto API exists for server-side code that expects browser crypto
-if (!(globalThis as any).crypto || !(globalThis as any).crypto.getRandomValues) {
+if (!(globalThis as any).crypto?.getRandomValues) {
   (globalThis as any).crypto = nodeWebcrypto as any;
 }
 

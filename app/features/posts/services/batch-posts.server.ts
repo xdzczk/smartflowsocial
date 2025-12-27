@@ -6,7 +6,6 @@
 import { createSuccessResponse } from "~/lib/error-handler.server";
 import { ValidationError, DatabaseError } from "~/lib/errors";
 import { getPostsByIds } from "~/models/post.queries.server";
-
 /**
  * Get posts by IDs in batch
  */

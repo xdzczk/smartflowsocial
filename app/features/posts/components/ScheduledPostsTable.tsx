@@ -6,7 +6,6 @@ import { useFetcher } from "@remix-run/react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { getQueueColor } from "~/features/posts/queueColors";
-
 interface Post {
   id: string;
   caption?: string | null;
@@ -70,7 +69,7 @@ export function ScheduledPostsTable({
 
     if (typeof fileUrl[0] === "string" && fileUrl[0].startsWith("[")) {
       try {
-        return JSON.parse(fileUrl[0]);
+        return JSON.parse(fileUrl[0]) as string[];
       } catch (e) {
         console.error("Error parsing fileUrl:", e);
         return [];
@@ -230,13 +229,13 @@ export function ScheduledPostsTable({
                       borderColor: post.queueType.color,
                     }}
                   >
-                    {post.queueType?.name || "unassigned"}
+                    {post.queueType?.name ?? "unassigned"}
                   </div>
                 ) : (
                   <div
-                    className={`inline-flex rounded-full border-2 px-3 py-1 text-xs font-semibold leading-4 ${getQueueColor(post.queueType?.name || "unassigned").bg} ${getQueueColor(post.queueType?.name || "unassigned").text} ${getQueueColor(post.queueType?.name || "unassigned").border} shadow-sm`}
+                    className={`inline-flex rounded-full border-2 px-3 py-1 text-xs font-semibold leading-4 ${getQueueColor(post.queueType?.name ?? "unassigned").bg} ${getQueueColor(post.queueType?.name ?? "unassigned").text} ${getQueueColor(post.queueType?.name ?? "unassigned").border} shadow-sm`}
                   >
-                    {post.queueType?.name || "unassigned"}
+                    {post.queueType?.name ?? "unassigned"}
                   </div>
                 )}
               </td>

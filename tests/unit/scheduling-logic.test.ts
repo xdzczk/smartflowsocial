@@ -8,7 +8,6 @@
 import { describe, it, expect } from "vitest";
 
 import { formatScheduleTimeForInput } from "~/lib/schedule-formatting";
-
 describe("Scheduling Logic Unit Tests", () => {
   describe("formatScheduleTimeForInput - UTC Formatting", () => {
     it("should format UTC date correctly for datetime-local input", () => {

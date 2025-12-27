@@ -1,7 +1,6 @@
 import { formatDate } from "~/lib/helpers";
 
 import type { ChildReply } from "../hooks/useNotificationActions";
-
 interface ChildRepliesPanelProps {
     isLoading: boolean;
     replies: ChildReply[];
@@ -44,19 +43,19 @@ export function ChildRepliesPanel({
 
                 if (replyMetadata) {
                     try {
-                        const metadataContent = replyMetadata && typeof replyMetadata === "object" && "content" in replyMetadata
-                            ? replyMetadata.content
+                        const metadataContent = replyMetadata && typeof replyMetadata === "object" && !Array.isArray(replyMetadata) && "content" in replyMetadata
+                            ? (replyMetadata as { content?: unknown }).content
                             : null;
                         const profile = typeof metadataContent === "string"
-                            ? JSON.parse(metadataContent)
-                            : metadataContent && typeof metadataContent === "object"
-                                ? metadataContent
+                            ? (JSON.parse(metadataContent) as Record<string, unknown>)
+                            : metadataContent && typeof metadataContent === "object" && !Array.isArray(metadataContent)
+                                ? metadataContent as Record<string, unknown>
                                 : null;
                         if (profile && typeof profile === "object") {
-                            replyAuthorName = (profile as { display_name?: string; name?: string })?.display_name || 
-                                            (profile as { name?: string })?.name || 
+                            replyAuthorName = (profile as { display_name?: string; name?: string })?.display_name ?? 
+                                            (profile as { name?: string })?.name ?? 
                                             replyAuthorName;
-                            replyAuthorPicture = (profile as { picture?: string | null })?.picture || null;
+                            replyAuthorPicture = (profile as { picture?: string | null })?.picture ?? null;
                         }
                     } catch (e) {
                         // Ignore parsing errors

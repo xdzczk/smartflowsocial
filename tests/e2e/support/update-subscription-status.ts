@@ -6,7 +6,6 @@
 
 import { PrismaClient, SubscriptionStatus } from "@prisma/client";
 import { installGlobals } from "@remix-run/node";
-
 installGlobals();
 
 const prisma = new PrismaClient();

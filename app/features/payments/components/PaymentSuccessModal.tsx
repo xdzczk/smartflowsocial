@@ -3,7 +3,6 @@
  */
 
 import { Check } from "lucide-react";
-
 interface PaymentSuccessModalProps {
   isOpen: boolean;
   message?: string;
@@ -34,6 +33,8 @@ export function PaymentSuccessModal({
     </div>
   );
 }
+
+
 
 
 

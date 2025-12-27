@@ -1,5 +1,4 @@
 import { Button } from "~/components/ui/button";
-
 interface LongFormActionButtonsProps {
     fetcherState: "idle" | "submitting" | "loading";
     isFormValid: boolean;

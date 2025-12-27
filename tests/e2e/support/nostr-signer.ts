@@ -34,7 +34,7 @@ function decodeNsec(nsec: string): Uint8Array {
     if (decoded.type !== "nsec") {
         throw new Error("Invalid nsec format");
     }
-    return decoded.data as Uint8Array;
+    return decoded.data;
 }
 
 /**

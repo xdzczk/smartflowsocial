@@ -11,7 +11,6 @@
 
 import { LN, USD } from "@getalby/sdk/lnclient";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-
 // Mock Prisma - use vi.hoisted to allow top-level variables in mocks
 const { mockPrisma } = vi.hoisted(() => {
   const mockPrisma = {

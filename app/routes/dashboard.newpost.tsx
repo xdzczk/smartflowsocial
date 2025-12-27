@@ -10,7 +10,6 @@ import TextPost from "~/features/posts/components/TextPost";
 import { useNewPostState } from "~/features/posts/hooks/useNewPostState";
 import { handleNewPostAction } from "~/features/posts/services/newpost-action.server";
 import { loadNewPostData } from "~/features/posts/services/newpost-loader.server";
-
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   const data = await loadNewPostData(userId);
@@ -28,7 +27,13 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewPost() {
-  const { queueTypes, hashTagPresets, assets } = useLoaderData<typeof loader>();
+  const loaderData = useLoaderData<typeof loader>();
+  const { queueTypes, hashTagPresets, assets } = loaderData;
+
+  // Type assertions for Remix JsonifyObject serialization
+  const typedQueueTypes = Array.isArray(queueTypes) ? queueTypes as unknown as { id: string; name: string; color?: string | null; scheduleType?: string; scheduleConfig?: unknown; isEnabled?: boolean }[] : [];
+  const typedHashTagPresets = Array.isArray(hashTagPresets) ? hashTagPresets as unknown as { id: string; name: string; tags: string; description?: string | null }[] : [];
+  const typedAssets = Array.isArray(assets) ? assets as unknown as { id: string; fileUrl?: string; title?: string; content?: string; assetType: string }[] : [];
 
   const {
     files,
@@ -55,19 +60,18 @@ export default function NewPost() {
         </TabsList>
         <TabsContent value="text">
           <TextPost
-            queueTypes={queueTypes}
-            assets={assets}
-            hashTagPresets={hashTagPresets}
-            selectedQueueType={selectedQueueType}
+            queueTypes={typedQueueTypes}
+            assets={typedAssets}
+            hashTagPresets={typedHashTagPresets}
             onQueueTypeChange={handleQueueTypeChange}
             selectedHashTagPresetId={selectedHashTagPresetId}
-            onHashtagPresetChange={handleHashtagPresetSelect}
+            onHashtagPresetChange={(presetId, hashtags) => handleHashtagPresetSelect(presetId || "", hashtags)}
           />
         </TabsContent>
         <TabsContent value="media">
           {showImagePreview ? (
             <NewPostImagesConfirmation
-              preparedEvents={[preparedImageEvent]}
+              preparedEvents={preparedImageEvent ? [preparedImageEvent as unknown as { content: { fileUrl: string; scheduledFor: string; caption: string; queueType: string }; type: "media"; queueType: string }] : []}
               onCancel={() => setShowImagePreview(false)}
               postsCount={1}
               tags={selectedHashTagPresetId || ""}
@@ -77,9 +81,9 @@ export default function NewPost() {
               files={files}
               setFiles={setFiles}
               setShowImagePreview={setShowImagePreview}
-              setPreparedImageEvent={setPreparedImageEvent}
-              queueTypes={queueTypes}
-              hashTagPresets={hashTagPresets}
+              setPreparedImageEvent={(data) => setPreparedImageEvent(data && data.length > 0 ? (data[0] as unknown as { content: { fileUrl: string; scheduledFor: string; caption: string; queueType: string }; type: "media"; queueType: string } | null) : null)}
+              queueTypes={typedQueueTypes}
+              hashTagPresets={typedHashTagPresets}
               selectedQueueType={selectedQueueType}
               onQueueTypeChange={handleQueueTypeChange}
               selectedHashTagPresetId={selectedHashTagPresetId}

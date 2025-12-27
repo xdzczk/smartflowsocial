@@ -6,7 +6,14 @@
 import { nip19 } from "nostr-tools";
 
 import { connectToPrimalCache } from "~/features/cache/primalCache.server";
-import type { NostrEvent } from "~/features/nostr/types";
+import type { NostrEvent, SignedEvent } from "~/features/nostr/types";
+/**
+ * Extended NostrEvent with pubkey and id (from Primal cache)
+ */
+type NostrEventWithMetadata = NostrEvent & {
+  pubkey?: string;
+  id?: string;
+};
 
 /**
  * Decode event ID from various formats (nevent1, note1, hex)
@@ -70,17 +77,17 @@ async function fetchAuthorInfo(pubkey: string): Promise<{
     });
 
     const userMetadataEvent = userInfoResponses?.find(
-      (res): res is [string, string, NostrEvent] =>
+      (res): res is [string, string, NostrEventWithMetadata] =>
         Array.isArray(res) &&
         res[0] === "EVENT" &&
         res[2] !== undefined &&
-        (res[2] as NostrEvent).kind === 0 &&
-        (res[2] as NostrEvent).pubkey === pubkey,
+        (res[2] as NostrEventWithMetadata).kind === 0 &&
+        (res[2] as NostrEventWithMetadata).pubkey === pubkey,
     );
 
-    if (userMetadataEvent && userMetadataEvent[2]) {
+    if (userMetadataEvent?.[2]) {
       const event = userMetadataEvent[2];
-      const metadata = JSON.parse(event.content);
+      const metadata = JSON.parse(event.content) as { name?: string; display_name?: string; picture?: string };
       authorName = metadata.name || metadata.display_name || authorName;
       authorImage = metadata.picture || null;
     }
@@ -117,18 +124,25 @@ async function fetchEventStats(eventId: string): Promise<{
     });
 
     const statsEvent = threadResponses?.find(
-      (res): res is [string, string, NostrEvent] =>
+      (res): res is [string, string, NostrEventWithMetadata] =>
         Array.isArray(res) &&
         res[0] === "EVENT" &&
         res[2] !== undefined &&
-        (res[2] as NostrEvent).kind === 10000100 &&
-        (res[2] as NostrEvent).content &&
-        (res[2] as NostrEvent).content.includes(eventId),
+        (res[2] as NostrEventWithMetadata).kind === 10000100 &&
+        typeof (res[2] as NostrEventWithMetadata).content === "string" &&
+        (res[2] as NostrEventWithMetadata).content.includes(eventId),
     );
 
-    if (statsEvent && statsEvent[2]) {
+    if (statsEvent?.[2]) {
       const event = statsEvent[2];
-      const content = JSON.parse(event.content);
+      const content = JSON.parse(event.content) as {
+        likes?: number;
+        replies?: number;
+        mentions?: number;
+        reposts?: number;
+        zaps?: number;
+        satszapped?: number;
+      };
       stats = {
         likes: content.likes || 0,
         replies: content.replies || 0,
@@ -197,11 +211,11 @@ export async function handleSearchEvent(eventInput: string) {
   // Find the EVENT response
   const eventResponse = Array.isArray(responses)
     ? responses.find(
-        (res): res is [string, string, NostrEvent] => Array.isArray(res) && res[0] === "EVENT" && res[2] !== undefined,
+        (res): res is [string, string, NostrEventWithMetadata] => Array.isArray(res) && res[0] === "EVENT" && res[2] !== undefined,
       )
     : null;
 
-  if (!eventResponse || !eventResponse[2]) {
+  if (!eventResponse?.[2]) {
     const { NotFoundError } = await import("~/lib/errors");
     throw new NotFoundError(
       "Event not found. Please check the event ID and try again.",
@@ -210,25 +224,34 @@ export async function handleSearchEvent(eventInput: string) {
   }
 
   const event = eventResponse[2];
+  if (!event) {
+    const { NotFoundError } = await import("~/lib/errors");
+    throw new NotFoundError(
+      "Event not found. Please check the event ID and try again.",
+      { eventId },
+    );
+  }
 
   // Fetch author profile info and stats in parallel
+  const eventPubkey = typeof event.pubkey === "string" ? event.pubkey : "";
+  const eventContent = typeof event.content === "string" ? event.content : "";
   const [authorInfo, stats] = await Promise.all([
-    fetchAuthorInfo(event.pubkey),
+    fetchAuthorInfo(eventPubkey),
     fetchEventStats(eventId),
   ]);
 
   // Extract media URLs from content
-  const mediaUrls = extractMediaUrls(event.content);
+  const mediaUrls = extractMediaUrls(eventContent);
 
   return {
     success: true,
     event: {
-      id: event.id,
-      pubkey: event.pubkey,
-      created_at: event.created_at,
-      kind: event.kind,
-      content: event.content,
-      tags: event.tags,
+      id: (typeof event.id === "string" ? event.id : eventId),
+      pubkey: eventPubkey,
+      created_at: typeof event.created_at === "number" ? event.created_at : 0,
+      kind: typeof event.kind === "number" ? event.kind : 1,
+      content: eventContent,
+      tags: Array.isArray(event.tags) ? event.tags : [],
       authorName: authorInfo.name,
       authorImage: authorInfo.image,
       mediaUrls,

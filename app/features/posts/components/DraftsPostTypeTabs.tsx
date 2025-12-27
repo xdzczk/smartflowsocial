@@ -1,5 +1,4 @@
 import { Link } from "@remix-run/react";
-
 interface DraftsPostTypeTabsProps {
   currentTab: string;
   allContentCount: number;
@@ -59,6 +58,8 @@ export function DraftsPostTypeTabs({
     </div>
   );
 }
+
+
 
 
 

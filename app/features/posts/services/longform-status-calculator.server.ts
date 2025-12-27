@@ -6,7 +6,6 @@
  */
 
 import type { SignedEvent } from "~/features/nostr/types";
-
 export type LongFormStatus = "DRAFT" | "ACTIVE" | "SCHEDULED";
 
 export interface LongFormStatusCalculation {
@@ -36,7 +35,7 @@ export function calculateLongFormStatus({
     const publishedAtTag = signedEvent.tags.find(
       (tag) => Array.isArray(tag) && tag[0] === "published_at",
     );
-    if (publishedAtTag && publishedAtTag[1]) {
+    if (publishedAtTag?.[1]) {
       finalScheduledFor = publishedAtTag[1].toString();
     }
   }
@@ -55,7 +54,7 @@ export function calculateLongFormStatus({
   }
 
   // Extract nostrEventId from signedEvent if available
-  const nostrEventId = signedEvent?.id || null;
+  const nostrEventId = signedEvent?.id ?? null;
 
   // Calculate publishedAt based on scheduling
   let publishedAt: Date | null = null;

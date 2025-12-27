@@ -6,7 +6,6 @@ import type { RelatedEvent } from "~/features/giveaway/types";
 import { handleErrorSafely } from "~/lib/error-handler.client";
 
 import GiveawayPost from "./GiveawayPost";
-
 interface GiveawayRandomizerProps {
   relatedEvents: RelatedEvent[];
 }

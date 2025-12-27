@@ -4,10 +4,11 @@ import type { MutedListData } from "~/features/engagement/types";
 import { prisma } from "~/lib/prisma.server";
 import { blastrRelay } from "~/lib/relays";
 
+
 /**
  * Updates user's timezone
  */
-export async function updateUserTimezone(
+export function updateUserTimezone(
   userId: string,
   timezone: string,
 ): Promise<User> {
@@ -33,14 +34,14 @@ export async function getUserTimezone(userId: string): Promise<string | null> {
       timezone: true,
     },
   });
-  return user?.timezone || null;
+  return user?.timezone ?? null;
 }
 
 /**
  * Updates user's Nostr relays
  * Note: Premium/Founder users automatically get blastrRelay added via getUserRelays
  */
-export async function updateUserRelays(
+export function updateUserRelays(
   userId: string,
   relays: string[],
 ): Promise<User> {
@@ -96,7 +97,7 @@ export async function getUserRelays(userId: string): Promise<string[]> {
 /**
  * Updates user's giveaway blacklist
  */
-export async function updateGiveawayBlacklist(
+export function updateGiveawayBlacklist(
   userId: string,
   blacklistedItems: string[],
 ): Promise<User> {
@@ -128,7 +129,7 @@ export async function getGiveawayBlacklist(userId: string): Promise<string[]> {
 /**
  * Updates user's schedule intervals
  */
-export async function updateScheduleInterval(
+export function updateScheduleInterval(
   userId: string,
   intervals: string[],
 ): Promise<User> {
@@ -160,7 +161,7 @@ export async function getScheduleInterval(userId: string): Promise<string[]> {
 /**
  * Updates user's upload provider
  */
-export async function updateUserUploadProvider(
+export function updateUserUploadProvider(
   userId: string,
   uploadProvider: UploadProvider,
 ): Promise<User> {
@@ -191,9 +192,10 @@ export async function getUserUploadProvider(
   });
 
   // Handle legacy BLOSSOM value by converting to BLOSSOM_PRIMAL
-  const provider = user?.uploadProvider || "S3";
-  // Check for legacy string value (not in enum)
-  if (provider === "BLOSSOM" || (provider as string) === "BLOSSOM") {
+  const provider = user?.uploadProvider ?? "S3";
+  // Check for legacy string value (not in enum) - compare as string
+  const providerStr = String(provider);
+  if (providerStr === "BLOSSOM") {
     return "BLOSSOM_PRIMAL";
   }
   return provider;
@@ -213,13 +215,13 @@ export async function getUserEnableMirrorBlossom(
       enableMirrorBlossom: true,
     },
   });
-  return user?.enableMirrorBlossom || false;
+  return user?.enableMirrorBlossom ?? false;
 }
 
 /**
  * Updates whether user has mirror Blossom enabled
  */
-export async function updateUserEnableMirrorBlossom(
+export function updateUserEnableMirrorBlossom(
   userId: string,
   enableMirrorBlossom: boolean,
 ): Promise<User> {
@@ -253,7 +255,7 @@ export async function getUserMirrorUploadUrls(
 /**
  * Updates user's mirror upload URLs
  */
-export async function updateUserMirrorUploadUrls(
+export function updateUserMirrorUploadUrls(
   userId: string,
   mirrorUrls: string[],
 ): Promise<User> {
@@ -270,7 +272,7 @@ export async function updateUserMirrorUploadUrls(
 /**
  * Updates user's muted list
  */
-export async function updateUserMutedList(
+export function updateUserMutedList(
   userId: string,
   mutedList: { npubs: string[]; lastSynced: string },
 ): Promise<User> {
@@ -299,7 +301,7 @@ export async function getUserMutedList(userId: string): Promise<{
   }
 
   // Handle JSON parsing - mutedList is stored as Json in Prisma
-  const mutedList = user.mutedList as MutedListData | null;
+  const mutedList = user.mutedList as unknown as MutedListData | null;
   if (!mutedList || typeof mutedList !== "object") {
     return null;
   }
@@ -315,7 +317,7 @@ export async function getUserMutedList(userId: string): Promise<{
 /**
  * Updates the filterMuted setting
  */
-export async function updateUserFilterMuted(
+export function updateUserFilterMuted(
   userId: string,
   filterMuted: boolean,
 ): Promise<User> {
@@ -335,13 +337,13 @@ export async function getUserFilterMuted(userId: string): Promise<boolean> {
     where: { id: userId },
     select: { filterMuted: true },
   });
-  return user?.filterMuted || false;
+  return user?.filterMuted ?? false;
 }
 
 /**
  * Updates the hidePostsFromLowTrustUsers setting
  */
-export async function updateUserHidePostsFromLowTrustUsers(
+export function updateUserHidePostsFromLowTrustUsers(
   userId: string,
   hidePostsFromLowTrustUsers: boolean,
 ): Promise<User> {
@@ -361,6 +363,6 @@ export async function getUserHidePostsFromLowTrustUsers(userId: string): Promise
     where: { id: userId },
     select: { hidePostsFromLowTrustUsers: true },
   });
-  return user?.hidePostsFromLowTrustUsers || false;
+  return user?.hidePostsFromLowTrustUsers ?? false;
 }
 

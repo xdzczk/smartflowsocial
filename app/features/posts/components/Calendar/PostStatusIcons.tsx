@@ -1,5 +1,4 @@
 import type { CalendarPost } from "./PostBlock.types";
-
 interface PostStatusIconsProps {
   post: CalendarPost;
   isLongform: boolean;
@@ -60,6 +59,8 @@ export function PostStatusBadges({ post, isLongform }: PostStatusIconsProps) {
     </div>
   );
 }
+
+
 
 
 

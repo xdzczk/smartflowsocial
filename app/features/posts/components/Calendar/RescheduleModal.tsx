@@ -9,7 +9,6 @@ import { isVideoFile } from "~/lib/helpers";
 import { signEventFn } from "~/lib/nostr";
 
 import type { CalendarPost } from "./PostBlock.types";
-
 interface RescheduleData {
   post: CalendarPost;
   newDateTime: Date;
@@ -68,7 +67,7 @@ export function RescheduleModal({
     if (data) {
       setEditableDateTime(data.newDateTime);
       setValidationError(null);
-      setSelectedQueueType(data.post.queueType?.id || null);
+      setSelectedQueueType(data.post.queueType?.id ?? null);
     }
   }, [data]);
 
@@ -86,7 +85,7 @@ export function RescheduleModal({
         const firstFileUrl = post.fileUrl[0];
         if (typeof firstFileUrl === "string") {
           try {
-            const parsed = JSON.parse(firstFileUrl);
+            const parsed = JSON.parse(firstFileUrl) as string[] | string;
             return Array.isArray(parsed) ? parsed[0] : firstFileUrl;
           } catch {
             return firstFileUrl;
@@ -105,7 +104,7 @@ export function RescheduleModal({
   };
 
   const formatDateTime = (date: Date): string => {
-    const userTimezone = user?.timezone || "Etc/UTC";
+    const userTimezone = user?.timezone ?? "Etc/UTC";
     return date.toLocaleDateString("en-US", {
       weekday: "long",
       month: "long",
@@ -119,7 +118,7 @@ export function RescheduleModal({
   const validateDateTime = (dateTime: Date | null): boolean => {
     if (!dateTime) return false;
     const now = new Date();
-    const userTimezone = user?.timezone || "Etc/UTC";
+    const userTimezone = user?.timezone ?? "Etc/UTC";
     const nowInUserTz = new Date(
       now.toLocaleString("en-US", { timeZone: userTimezone }),
     );
@@ -140,7 +139,7 @@ export function RescheduleModal({
   };
 
   const formatDateTimeForInput = (date: Date): string => {
-    const userTimezone = user?.timezone || "Etc/UTC";
+    const userTimezone = user?.timezone ?? "Etc/UTC";
     // Create date string in format needed for datetime-local input
     const dateInUserTz = new Date(
       date.toLocaleString("en-US", { timeZone: userTimezone }),
@@ -253,7 +252,7 @@ export function RescheduleModal({
                 <div className="mb-2">
                   <div className="post-thumbnail h-20 w-full overflow-hidden rounded-md">
                     <MediaThumbnail
-                      src={getFirstMedia()!}
+                      src={getFirstMedia()}
                       alt="Post preview"
                       className="h-full w-full rounded-md"
                       forceType={
@@ -400,10 +399,10 @@ export function RescheduleModal({
             ) : null}
 
             {/* Error display */}
-            {fetcher.data?.error || signingError ? (
+            {fetcher.data?.error ?? signingError ? (
               <div className="rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
                 <div className="text-sm text-red-800 dark:text-red-200">
-                  {fetcher.data?.error || signingError}
+                  {fetcher.data?.error ?? signingError}
                 </div>
               </div>
             ) : null}

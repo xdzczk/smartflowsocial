@@ -7,7 +7,6 @@
 
 import { json, redirect } from "@remix-run/node";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-
 // Mock dependencies
 vi.mock("~/features/auth/session.server", () => ({
   requireUserId: vi.fn(),

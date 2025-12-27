@@ -1,5 +1,4 @@
 import { TEST_NPUB } from "./support/nostr-test-keys";
-
 describe("Nostr Authentication", () => {
     afterEach(() => {
         cy.cleanupNostrUser();

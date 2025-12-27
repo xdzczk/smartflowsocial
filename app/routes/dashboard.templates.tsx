@@ -13,7 +13,6 @@ import { ToastNotification } from "~/features/templates/components/ToastNotifica
 import { useTemplatesState } from "~/features/templates/hooks/useTemplatesState";
 import { handleTemplatesAction } from "~/features/templates/services/templates-action.server";
 import { loadTemplatesData } from "~/features/templates/services/templates-loader.server";
-
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
 
@@ -102,17 +101,17 @@ export default function Templates() {
           {activeTab === "assets" ? (
             <>
               <AssetsTab
-                assets={assets}
+                assets={Array.isArray(assets) ? assets as unknown as { id: string; fileUrl?: string; title?: string; content?: string; assetType: string }[] : []}
                 selectedAssets={selectedAssets}
                 searchInput={searchInput}
                 onSearchInputChange={setSearchInput}
                 onSearch={handleSearch}
                 onAssetSelect={handleAssetSelect}
-                onSelectAllAssets={() => handleSelectAllAssets(assets)}
-                onBulkPostAssets={() => handleBulkPostAssets(assets)}
+                onSelectAllAssets={() => handleSelectAllAssets(Array.isArray(assets) ? assets as unknown as { id: string; fileUrl?: string; title?: string; content?: string; assetType: string }[] : [])}
+                onBulkPostAssets={() => handleBulkPostAssets(Array.isArray(assets) ? assets as unknown as { id: string; fileUrl?: string; title?: string; content?: string; assetType: string }[] : [])}
                 onBulkDeleteAssets={handleBulkDeleteAssets}
                 deleteFetcherState={deleteFetcher.state}
-                deleteFetcherForm={deleteFetcher.Form}
+                deleteFetcherForm={deleteFetcher.Form as unknown as React.ComponentType<{ method?: string; children: React.ReactNode; onClick?: (e: React.MouseEvent) => void }>}
                 onDeleteAsset={handleDeleteAsset}
               />
               <AssetPagination
@@ -127,7 +126,7 @@ export default function Templates() {
               textAssetFormRef={textAssetFormRef}
               imageAssetFormRef={imageAssetFormRef}
               assetFetcher={{
-                Form: assetFetcher.Form,
+                Form: assetFetcher.Form as unknown as React.ComponentType<{ method?: string; children: React.ReactNode; onClick?: (e: React.MouseEvent) => void }>,
                 state: assetFetcher.state,
               }}
               uploadProvider={uploadProvider}
@@ -153,7 +152,7 @@ export default function Templates() {
           {/* Template Details Modal */}
           {selectedTemplate ? (
             <TemplateDetailsModal
-              template={selectedTemplate}
+              template={selectedTemplate && typeof selectedTemplate === "object" ? selectedTemplate as unknown as { id: string; name?: string; content?: string; description?: string } : null}
               onClose={() => setSelectedTemplate(null)}
             />
           ) : null}

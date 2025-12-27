@@ -1,5 +1,4 @@
 import imageCompression from "browser-image-compression";
-
 /**
  * Completely strips all metadata (EXIF, IPTC, XMP) from images and resizes them
  * for better performance and enhanced user privacy.
@@ -47,7 +46,7 @@ export async function resizeImage(
 
     return newFile;
   } catch (error) {
-    // eslint-disable-next-line no-console
+     
     console.error("Error processing image:", error);
     throw error;
   }

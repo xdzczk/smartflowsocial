@@ -7,6 +7,7 @@ import { getPostPreview, getFirstImage, getStatusColor, getDisplayTime } from ".
 import { PostIcon } from "./PostIcon";
 import { PostStatusBadges } from "./PostStatusIcons";
 
+
 interface FullPostBlockProps extends PostBlockBaseProps {
   queueColorStyle: QueueColorStyle | null;
   userTimezone: string;

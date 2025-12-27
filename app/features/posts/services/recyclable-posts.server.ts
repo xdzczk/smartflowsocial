@@ -7,10 +7,10 @@
 import { json } from "@remix-run/node";
 
 import { getPostStats } from "~/features/posts/stats.server";
+import type { UserWithHashTagPresets } from "~/features/user";
 import { deletePost } from "~/models/post.commands.server";
 import { getRecyclablePosts, getPostsByIds } from "~/models/post.queries.server";
 import { getUserById, getQueueTypes } from "~/models/user.server";
-
 /**
  * Get recyclable posts dashboard data
  */
@@ -27,7 +27,7 @@ export async function getRecyclableDashboardData({
   const limit = 50;
   const queueType = params.queueType || "all";
 
-  const [{ posts, pagination }, user, queueTypes] = await Promise.all([
+  const [{ posts, pagination }, userResult, queueTypesResult] = await Promise.all([
     getRecyclablePosts({
       userId,
       page,
@@ -38,14 +38,23 @@ export async function getRecyclableDashboardData({
     getQueueTypes(userId),
   ]);
 
+  if (!userResult) {
+    throw new Error("User not found");
+  }
+
+  const user: UserWithHashTagPresets = userResult;
+  const queueTypes = queueTypesResult;
+
   // Get event IDs from signedEvent.id
-  const eventIds = posts.map((post) => {
-    const signedEvent = post.signedEvent;
-    if (signedEvent && typeof signedEvent === "object" && "id" in signedEvent && typeof signedEvent.id === "string") {
-      return signedEvent.id;
-    }
-    return "";
-  }).filter((id) => id !== "");
+  const eventIds = posts
+    .map((post) => {
+      const signedEvent = post.signedEvent;
+      if (signedEvent && typeof signedEvent === "object" && "id" in signedEvent && typeof signedEvent.id === "string") {
+        return signedEvent.id;
+      }
+      return "";
+    })
+    .filter((id) => id !== "");
 
   // Use the extracted stats fetching logic
   const stats = await getPostStats(eventIds);
@@ -76,42 +85,56 @@ export async function handleRecyclablePostAction(
   }
 
   if (_action === "bulkDelete") {
-    const postIds = JSON.parse(formData.get("postIds") as string);
+    const postIds = JSON.parse(formData.get("postIds") as string) as string[];
     await Promise.all(postIds.map((id: string) => deletePost({ id, userId })));
     return json({ success: true });
   }
 
   if (_action === "bulkRepost") {
-    const postIds = JSON.parse(formData.get("postIds") as string);
+    const postIds = JSON.parse(formData.get("postIds") as string) as string[];
     const postsData = await getPostsByIds({ ids: postIds, userId });
     return json({ repostData: postsData });
   }
 
   if (_action === "bulkScheduledRepost") {
-    const postIds = JSON.parse(formData.get("postIds") as string);
+    const postIds = JSON.parse(formData.get("postIds") as string) as string[];
     const postsData = await getPostsByIds({ ids: postIds, userId });
     return json({ scheduledRepostData: postsData });
   }
 
   if (_action === "bulkQuote") {
-    const postIds = JSON.parse(formData.get("postIds") as string);
+    const postIds = JSON.parse(formData.get("postIds") as string) as string[];
     const postsData = await getPostsByIds({ ids: postIds, userId });
 
     // Transform posts data into quote post format
     const quotePostsData = postsData.map((post) => {
       const signedEvent = post.signedEvent;
-      const eventId = signedEvent && typeof signedEvent === "object" && "id" in signedEvent && typeof signedEvent.id === "string" ? signedEvent.id : "";
-      const eventPubkey = signedEvent && typeof signedEvent === "object" && "pubkey" in signedEvent && typeof signedEvent.pubkey === "string" ? signedEvent.pubkey : "";
+      let eventId = "";
+      let eventPubkey = "";
+      
+      if (signedEvent && typeof signedEvent === "object" && !Array.isArray(signedEvent)) {
+        if ("id" in signedEvent && typeof signedEvent.id === "string") {
+          eventId = signedEvent.id;
+        }
+        if ("pubkey" in signedEvent && typeof signedEvent.pubkey === "string") {
+          eventPubkey = signedEvent.pubkey;
+        }
+      }
+      
+      const fileUrl = Array.isArray(post.fileUrl) ? post.fileUrl : typeof post.fileUrl === "string" ? [post.fileUrl] : [];
+      const caption = typeof post.caption === "string" ? post.caption : "";
+      const queueTypeName = post.queueType && typeof post.queueType === "object" && "name" in post.queueType && typeof post.queueType.name === "string" ? post.queueType.name : "unassigned";
+      
       return {
         caption: "", // Empty caption - user can add content
-        fileUrl: post.fileUrl || "",
-        queueType: post.queueType?.name || "unassigned",
+        fileUrl: fileUrl.length > 0 ? fileUrl[0] ?? "" : "",
+        queueType: queueTypeName,
         scheduledFor: "",
         originalPostId: post.id,
         originalEventId: eventId,
         originalEventPubkey: eventPubkey,
         isQuotePost: true,
-        originalCaption: post.caption || "",
+        originalCaption: caption,
       };
     });
 
@@ -184,7 +207,7 @@ export async function handleRecyclablePostAction(
       const quotePostData = {
         caption: "", // Empty caption - user can add content
         fileUrl: originalPost.fileUrl || "",
-        queueType: originalPost.queueType?.name || "unassigned",
+        queueType: originalPost.queueType?.name ?? "unassigned",
         scheduledFor: "",
         originalPostId: originalPost.id,
         originalEventId: eventId,

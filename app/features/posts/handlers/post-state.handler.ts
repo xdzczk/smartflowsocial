@@ -5,7 +5,6 @@
  */
 
 import type { BulkPost } from "~/features/posts/types";
-
 /**
  * Handle caption change for a post
  */
@@ -80,4 +79,6 @@ export function handleRemovePost(
 ): void {
   setPosts(posts.filter((_, i) => i !== index));
 }
+
+
 

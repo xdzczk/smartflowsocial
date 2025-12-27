@@ -2,7 +2,6 @@ import { useFetcher } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
 import type { CombinedContent, LongFormPostData, PostData } from "~/features/posts/types";
-
 // Union type for posts that can be edited/rescheduled
 type EditablePost = PostData | LongFormPostData;
 

@@ -7,7 +7,6 @@
 import { describe, it, expect } from "vitest";
 
 import { timeZonesList } from "~/lib/date";
-
 describe("Date Utilities", () => {
   describe("timeZonesList", () => {
     it("should be an array", () => {

@@ -1,5 +1,4 @@
 import type { PostFetcher } from "~/features/posts/types";
-
 interface ContentBulkActionsProps {
   type: "scheduled" | "draft" | "posted";
   selectedCount: number;

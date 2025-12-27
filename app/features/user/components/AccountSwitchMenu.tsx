@@ -32,11 +32,16 @@ interface ChildAccount {
 
 function displayLabel(user: UserWithProfile | null | undefined): string {
   try {
-    const p =
-      typeof user?.nostrProfile === "string"
-        ? JSON.parse(user.nostrProfile)
-        : user?.nostrProfile;
-    return p?.name || p?.display_name || formatNpubShort(user?.npub);
+    let p: ProfileData | null | undefined;
+    if (typeof user?.nostrProfile === "string") {
+      const parsed: unknown = JSON.parse(user.nostrProfile);
+      p = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as ProfileData : null;
+    } else {
+      p = user?.nostrProfile;
+    }
+    const name = p && typeof p === "object" && "name" in p && typeof p.name === "string" ? p.name : undefined;
+    const displayName = p && typeof p === "object" && "display_name" in p && typeof p.display_name === "string" ? p.display_name : undefined;
+    return name ?? displayName ?? formatNpubShort(user?.npub);
   } catch {
     return formatNpubShort(user?.npub);
   }
@@ -44,11 +49,15 @@ function displayLabel(user: UserWithProfile | null | undefined): string {
 
 function displayPicture(user: UserWithProfile | null | undefined): string | undefined {
   try {
-    const p =
-      typeof user?.nostrProfile === "string"
-        ? JSON.parse(user.nostrProfile)
-        : user?.nostrProfile;
-    return p?.picture || undefined;
+    let p: ProfileData | null | undefined;
+    if (typeof user?.nostrProfile === "string") {
+      const parsed: unknown = JSON.parse(user.nostrProfile);
+      p = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as ProfileData : null;
+    } else {
+      p = user?.nostrProfile;
+    }
+    const picture = p && typeof p === "object" && "picture" in p && typeof p.picture === "string" ? p.picture : undefined;
+    return picture ?? undefined;
   } catch {
     return undefined;
   }
@@ -111,12 +120,12 @@ export default function AccountSwitchMenu() {
         onAuth: async () => {
           if (window.nostr) {
             const contentSign = `Switch account ${Math.random().toString(36).slice(2, 12)}`;
-            const event = {
+            const event: NostrEvent = {
               kind: 27235,
               created_at: Math.floor(Date.now() / 1000),
               tags: [],
               content: contentSign,
-            } as NostrEvent;
+            };
             const signedEvent = await window.nostr.signEvent(event);
             if (signedEvent.pubkey !== childNpub) {
               // Silent no-op on mismatch
@@ -134,8 +143,8 @@ export default function AccountSwitchMenu() {
       });
       document.dispatchEvent(new CustomEvent("nlLaunch", { detail: "switch" }));
     } catch (e) {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { handleErrorSafely } = require("~/lib/error-handler.client");
+       
+      const { handleErrorSafely } = require("~/lib/error-handler.client") as { handleErrorSafely: (error: unknown, context: { component: string; action: string }) => void };
       handleErrorSafely(e, {
         component: "AccountSwitchMenu",
         action: "onSwitchAccount",
@@ -153,12 +162,12 @@ export default function AccountSwitchMenu() {
         onAuth: async () => {
           if (window.nostr) {
             const contentSign = `Switch parent ${Math.random().toString(36).slice(2, 12)}`;
-            const event = {
+            const event: NostrEvent = {
               kind: 27235,
               created_at: Math.floor(Date.now() / 1000),
               tags: [],
               content: contentSign,
-            } as NostrEvent;
+            };
             const signedEvent = await window.nostr.signEvent(event);
             if (signedEvent.pubkey !== parentNpub) {
               // Silent no-op on mismatch
@@ -176,8 +185,8 @@ export default function AccountSwitchMenu() {
       });
       document.dispatchEvent(new CustomEvent("nlLaunch", { detail: "switch" }));
     } catch (e) {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { handleErrorSafely } = require("~/lib/error-handler.client");
+       
+      const { handleErrorSafely } = require("~/lib/error-handler.client") as { handleErrorSafely: (error: unknown, context: { component: string; action: string }) => void };
       handleErrorSafely(e, {
         component: "AccountSwitchMenu",
         action: "onSwitchParent",
@@ -260,7 +269,7 @@ export default function AccountSwitchMenu() {
                         </div>
                         <Button
                           size="sm"
-                          onClick={() => onSwitch(c.npub)}
+                          onClick={() => { void onSwitch(c.npub); }}
                           disabled={fetcher.state !== "idle"}
                         >
                           {fetcher.state !== "idle" ? "Switching..." : "Switch"}
@@ -284,7 +293,7 @@ export default function AccountSwitchMenu() {
                 </div>
                 <Button
                   size="sm"
-                  onClick={onSwitchParent}
+                  onClick={() => { void onSwitchParent(); }}
                   disabled={fetcher.state !== "idle"}
                 >
                   {fetcher.state !== "idle"

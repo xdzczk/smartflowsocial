@@ -3,7 +3,6 @@ import { useFetcher } from "@remix-run/react";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { signEventFn } from "~/lib/nostr";
 import { useOptionalUser } from "~/lib/remix-utils";
-
 interface PreparedEventData {
   content: {
     fileUrl: string;
@@ -36,14 +35,15 @@ export default function NewPostImagesConfirmation({
   const addTags = user?.showHashTagsinPosts ? `\n${tags || ""}` : "";
 
   // Flatten the array structure if needed
-  const events = Array.isArray(preparedEvents[0])
-    ? preparedEvents[0]
+  const events: PreparedEventData[] = Array.isArray(preparedEvents[0])
+    ? (preparedEvents[0] as PreparedEventData[])
     : preparedEvents;
 
   const handleSignAndSubmit = async (isImmediate: boolean) => {
     try {
       // Get effective hashtags based on queue type
-      const queueType = events[0]?.queueType || "unassigned";
+      const firstEvent = events[0];
+      const queueType = firstEvent && typeof firstEvent === "object" && "queueType" in firstEvent && typeof firstEvent.queueType === "string" ? firstEvent.queueType : "unassigned";
       let effectiveHashtags = "";
 
       try {
@@ -59,7 +59,7 @@ export default function NewPostImagesConfirmation({
         });
 
         if (response.ok) {
-          const data = await response.json();
+          const data = (await response.json()) as { hashtags?: string };
           effectiveHashtags = data.hashtags || "";
         } else {
           // Fallback to user's default hashtags
@@ -77,13 +77,23 @@ export default function NewPostImagesConfirmation({
 
       const addTags = user?.showHashTagsinPosts ? `\n${effectiveHashtags}` : "";
 
-      const userTimezone = user?.timezone || "UTC";
+      const userTimezone = user?.timezone ?? "UTC";
       let scheduledTime;
 
       if (isImmediate) {
         scheduledTime = Date.now();
       } else {
-        const scheduledForStr = events[0].content.scheduledFor;
+        const firstEvent = events[0];
+        let scheduledForStr = "";
+        if (firstEvent && typeof firstEvent === "object" && "content" in firstEvent) {
+          const content = firstEvent.content;
+          if (content && typeof content === "object" && !Array.isArray(content) && "scheduledFor" in content) {
+            const scheduledFor = content.scheduledFor;
+            if (typeof scheduledFor === "string") {
+              scheduledForStr = scheduledFor;
+            }
+          }
+        }
 
         // Only convert timezone if not UTC/Etc/GMT
         if (userTimezone !== "UTC" && userTimezone !== "Etc/GMT") {
@@ -113,12 +123,22 @@ export default function NewPostImagesConfirmation({
         .filter((tag: string) => tag.length > 0)
         .map((tag: string) => ["t", tag.replace("#", "")]);
 
+      const firstEventContent = events[0]?.content;
+      const firstCaption = firstEventContent && typeof firstEventContent === "object" && "caption" in firstEventContent && typeof firstEventContent.caption === "string" ? firstEventContent.caption : "";
+      const fileUrls = events
+        .map((event) => {
+          const content = event.content;
+          if (content && typeof content === "object" && "fileUrl" in content && typeof content.fileUrl === "string") {
+            return content.fileUrl;
+          }
+          return "";
+        })
+        .filter((url) => url !== "");
+      
       const eventData = {
         content:
-          (events[0].content.caption + addTags || "") +
-          (events.map((event: PreparedEventData) => event.content.fileUrl).length > 0
-            ? " " + events.map((event: PreparedEventData) => event.content.fileUrl).join(" ")
-            : ""),
+          (firstCaption + addTags || "") +
+          (fileUrls.length > 0 ? " " + fileUrls.join(" ") : ""),
         created_at: scheduledForUnix,
         kind: 1,
         tags: tagArray,
@@ -130,13 +150,22 @@ export default function NewPostImagesConfirmation({
       formData.append("_action", isImmediate ? "post-media" : "schedule-media");
       formData.append("signedEvent", JSON.stringify(signedEvent));
       formData.append("nostrEvent", JSON.stringify(nostrEvent));
-      formData.append(
-        "fileUrl",
-        JSON.stringify(events.map((event: PreparedEventData) => event.content.fileUrl)),
-      );
-      formData.append("caption", events[0].content.caption || "");
+      const fileUrlsForForm = events
+        .map((event) => {
+          const content = event.content;
+          if (content && typeof content === "object" && "fileUrl" in content && typeof content.fileUrl === "string") {
+            return content.fileUrl;
+          }
+          return "";
+        })
+        .filter((url) => url !== "");
+      const captionForForm = firstEventContent && typeof firstEventContent === "object" && "caption" in firstEventContent && typeof firstEventContent.caption === "string" ? firstEventContent.caption : "";
+      const queueTypeForForm = firstEventContent && typeof firstEventContent === "object" && "queueType" in firstEventContent && typeof firstEventContent.queueType === "string" ? firstEventContent.queueType : "unassigned";
+      
+      formData.append("fileUrl", JSON.stringify(fileUrlsForForm));
+      formData.append("caption", captionForForm);
       formData.append("scheduledFor", scheduledForUnix.toString());
-      formData.append("queueType", events[0].content.queueType || "unassigned");
+      formData.append("queueType", queueTypeForForm);
 
       fetcher.submit(formData, {
         method: "post",
@@ -154,12 +183,21 @@ export default function NewPostImagesConfirmation({
   const handleSaveAsDraft = () => {
     const formData = new FormData();
     formData.append("_action", "draft-media");
-    formData.append(
-      "fileUrl",
-      JSON.stringify(events.map((event) => event.content.fileUrl)),
-    );
-    formData.append("caption", events[0].content.caption || "");
-    formData.append("queueType", events[0].content.queueType || "unassigned");
+    const draftFileUrls = events
+      .map((event) => {
+        const content = event.content;
+        if (content && typeof content === "object" && "fileUrl" in content && typeof content.fileUrl === "string") {
+          return content.fileUrl;
+        }
+        return "";
+      })
+      .filter((url) => url !== "");
+    const draftFirstEvent = events[0];
+    const draftCaption = draftFirstEvent && typeof draftFirstEvent === "object" && "content" in draftFirstEvent && typeof draftFirstEvent.content === "object" && draftFirstEvent.content !== null && "caption" in draftFirstEvent.content && typeof draftFirstEvent.content.caption === "string" ? draftFirstEvent.content.caption : "";
+    const draftQueueType = draftFirstEvent && typeof draftFirstEvent === "object" && "content" in draftFirstEvent && typeof draftFirstEvent.content === "object" && draftFirstEvent.content !== null && "queueType" in draftFirstEvent.content && typeof draftFirstEvent.content.queueType === "string" ? draftFirstEvent.content.queueType : "unassigned";
+    formData.append("fileUrl", JSON.stringify(draftFileUrls));
+    formData.append("caption", draftCaption);
+    formData.append("queueType", draftQueueType);
 
     fetcher.submit(formData, {
       method: "post",
@@ -196,37 +234,46 @@ export default function NewPostImagesConfirmation({
             {/* Media Grid */}
             <div className="p-4">
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-                {events.map((event: PreparedEventData, index: number) => (
-                  <div
-                    key={index}
-                    className="relative overflow-hidden rounded-lg"
-                  >
-                    <MediaThumbnail
-                      src={event.content.fileUrl}
-                      alt={`Preview ${index + 1}`}
-                      className="h-32 w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                  </div>
-                ))}
+                {events.map((event: PreparedEventData, index: number) => {
+                  const content = event.content;
+                  const fileUrl = content && typeof content === "object" && "fileUrl" in content && typeof content.fileUrl === "string" ? content.fileUrl : "";
+                  return (
+                    <div
+                      key={index}
+                      className="relative overflow-hidden rounded-lg"
+                    >
+                      <MediaThumbnail
+                        src={fileUrl}
+                        alt={`Preview ${index + 1}`}
+                        className="h-32 w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
             {/* Content */}
             <div className="space-y-4 p-4">
               {/* Caption */}
-              {events[0]?.content.caption ? (
-                <div>
-                  <h4 className="mb-2 text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Caption
-                  </h4>
-                  <div className="max-h-20 overflow-y-auto rounded-lg bg-gray-50 p-3 dark:bg-gray-700">
-                    <p className="whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300">
-                      {events[0].content.caption + addTags}
-                    </p>
+              {(() => {
+                const firstEvent = events[0];
+                const firstContent = firstEvent?.content;
+                const caption = firstContent && typeof firstContent === "object" && "caption" in firstContent && typeof firstContent.caption === "string" ? firstContent.caption : "";
+                return caption ? (
+                  <div>
+                    <h4 className="mb-2 text-sm font-medium text-gray-500 dark:text-gray-400">
+                      Caption
+                    </h4>
+                    <div className="max-h-20 overflow-y-auto rounded-lg bg-gray-50 p-3 dark:bg-gray-700">
+                      <p className="whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300">
+                        {caption + addTags}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ) : null}
+                ) : null;
+              })()}
 
               {/* Tags */}
               {tags ? (

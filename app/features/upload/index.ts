@@ -17,7 +17,6 @@
 
 export type {
   UploadResult,
-  UploadOptions,
 } from "./types";
 
 // ============================================================================
@@ -35,11 +34,13 @@ export {
 // ============================================================================
 
 export {
-  resizeImage,
+  processImageForWeb,
+  getImageInfo,
+  validateImageBuffer,
 } from "./image-resize.server";
 
 export {
-  resizeImageClient,
+  resizeImage as resizeImageClient,
 } from "./image-resize";
 
 // ============================================================================
@@ -47,8 +48,7 @@ export {
 // ============================================================================
 
 export {
-  uploadFileToS3,
-  uploadFileToBlossom,
+  uploadFile,
 } from "./upload.client";
 
 // ============================================================================
@@ -58,4 +58,5 @@ export {
 export {
   useBlossomAwareUpload,
 } from "./useBlossomAwareUpload";
+
 

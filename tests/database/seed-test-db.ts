@@ -6,7 +6,6 @@
 
 import { createCompleteFixtures, fixtures } from "./fixtures";
 import { getTestPrisma, setupTestDatabase } from "./test-db";
-
 async function seedTestDatabase() {
   try {
     // Setup database (run migrations)
@@ -75,6 +74,8 @@ if (require.main === module) {
 }
 
 export { seedTestDatabase };
+
+
 
 
 

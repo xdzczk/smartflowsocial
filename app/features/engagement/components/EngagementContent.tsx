@@ -4,7 +4,6 @@
 
 import GroupedNotificationList from "~/features/engagement/components/GroupedNotificationList";
 import type { GroupedNotification } from "~/features/engagement/types";
-
 interface EngagementContentProps {
   activeTab: "all" | "replies" | "quotes";
   groupedNotifications: {

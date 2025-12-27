@@ -138,11 +138,17 @@ export function NotificationItem({
                         stats={stats}
                         isReposting={actions.isReposting}
                         showChildReplies={actions.showChildReplies}
-                        onLike={actions.handleLike}
+                        onLike={() => {
+                            void actions.handleLike();
+                        }}
                         onToggleReply={() => actions.setShowReplyInput(!actions.showReplyInput)}
-                        onRepost={actions.handleRepost}
+                        onRepost={() => {
+                            void actions.handleRepost();
+                        }}
                         onToggleQuote={() => actions.setShowQuoteInput(!actions.showQuoteInput)}
-                        onCopyNevent={actions.copyNevent}
+                        onCopyNevent={() => {
+                            void actions.copyNevent();
+                        }}
                         onToggleChildReplies={() => actions.setShowChildReplies(!actions.showChildReplies)}
                     />
 
@@ -152,7 +158,9 @@ export function NotificationItem({
                             replyContent={actions.replyContent}
                             isReplying={actions.isReplying}
                             onContentChange={actions.setReplyContent}
-                            onSubmit={actions.handleReply}
+                            onSubmit={() => {
+                                void actions.handleReply();
+                            }}
                             onCancel={() => {
                                 actions.setShowReplyInput(false);
                                 actions.setReplyContent("");
@@ -164,10 +172,12 @@ export function NotificationItem({
                     {actions.showQuoteInput ? (
                         <QuoteInputPanel
                             quoteContent={actions.quoteContent}
-                            originalContent={notification.content || ""}
+                            originalContent={notification.content ?? ""}
                             isQuoting={actions.isQuoting}
                             onContentChange={actions.setQuoteContent}
-                            onSubmit={actions.handleQuote}
+                            onSubmit={() => {
+                                void actions.handleQuote();
+                            }}
                             onCancel={() => {
                                 actions.setShowQuoteInput(false);
                                 actions.setQuoteContent("");

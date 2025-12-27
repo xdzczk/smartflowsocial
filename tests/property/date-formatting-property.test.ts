@@ -14,7 +14,6 @@ import { describe, it, expect } from "vitest";
 import { formatDate as formatDateWithTimezone } from "~/features/posts/utils/content-helpers";
 import { formatDate } from "~/lib/helpers";
 import { formatScheduleTimeForInput } from "~/lib/schedule-formatting";
-
 // Valid IANA timezone identifiers
 const validTimezones = [
   "UTC",
@@ -127,7 +126,7 @@ describe("Property-Based Tests: Date Formatting", () => {
           ),
           (dateInput) => {
             try {
-              const formatted = formatDate(dateInput as Date | string);
+              const formatted = formatDate(dateInput);
               return typeof formatted === "string" && formatted.length > 0;
             } catch {
               return false;
@@ -315,6 +314,8 @@ describe("Property-Based Tests: Date Formatting", () => {
     });
   });
 });
+
+
 
 
 

@@ -1,7 +1,6 @@
 import { Link } from "@remix-run/react";
 
 import NostrAuthButton from "~/features/auth/components/NostrAuthButton";
-
 export default function Header() {
   return (
     <header

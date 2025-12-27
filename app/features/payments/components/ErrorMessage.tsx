@@ -3,7 +3,6 @@
  */
 
 import { X } from "lucide-react";
-
 interface ErrorMessageProps {
   message: string;
 }
@@ -23,6 +22,8 @@ export function ErrorMessage({ message }: ErrorMessageProps) {
     </div>
   );
 }
+
+
 
 
 

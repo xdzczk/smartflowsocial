@@ -27,13 +27,13 @@ export async function handleDraftsAction(
   }
 
   if (_action === "bulkDelete") {
-    const postIds = JSON.parse(formData.get("postIds") as string);
+    const postIds = JSON.parse(formData.get("postIds") as string) as string[];
     await Promise.all(postIds.map((id: string) => deletePost({ id, userId })));
     return { success: true };
   }
 
   if (_action === "bulkDeleteLongForm") {
-    const postIds = JSON.parse(formData.get("postIds") as string);
+    const postIds = JSON.parse(formData.get("postIds") as string) as string[];
     await Promise.all(postIds.map((id: string) => deleteLongFormPost({ id, userId })));
     return { success: true };
   }
@@ -65,8 +65,8 @@ export async function handleDraftsAction(
             caption: captions[index] as string,
             queueTypeId: resolvedQueueTypeId,
             scheduledFor: scheduledFors[index] as string,
-            signedEvent: JSON.parse(signedEvents[index] as string),
-            nostrEvent: JSON.parse(nostrEvents[index] as string),
+            signedEvent: JSON.parse(signedEvents[index] as string) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][]; sig: string },
+            nostrEvent: JSON.parse(nostrEvents[index] as string) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][] },
             draft: false,
             isScheduled: true,
             isPosted: false,

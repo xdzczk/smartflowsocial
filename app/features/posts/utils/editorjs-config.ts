@@ -3,7 +3,6 @@
  */
 
 import { logClientError } from "~/lib/error-handler.client";
-
 export async function createEditorJSToolsConfig(uploadProvider: string | null) {
   const Header = (await import("@editorjs/header")).default;
   const List = (await import("@editorjs/list")).default;
@@ -16,7 +15,7 @@ export async function createEditorJSToolsConfig(uploadProvider: string | null) {
 
   return {
     header: {
-      class: Header,
+      class: Header as unknown as new (config?: { placeholder?: string; levels?: number[]; defaultLevel?: number }) => unknown,
       config: {
         placeholder: "Enter a header",
         levels: [2, 3, 4],
@@ -167,7 +166,11 @@ async function createImageUploadHandler(uploadProvider: string | null) {
           throw new Error(`Server error: ${response.status}`);
         }
 
-        const result = await response.json();
+        const result = (await response.json()) as {
+          success?: number;
+          file?: { url?: string; size?: number; name?: string; extension?: string };
+          error?: string;
+        };
         logClientError(
           "S3 EditorJS upload response",
           {

@@ -47,18 +47,19 @@ export const loader = withErrorHandling(
 
     if (Array.isArray(threadViewData)) {
       for (const item of threadViewData) {
-        if (Array.isArray(item) && item[0] === "EVENT" && item[2]) {
-          const event = item[2] as { kind?: number; pubkey?: string };
+        if (!Array.isArray(item) || item[0] !== "EVENT" || !item[2]) continue;
+        const eventData = item[2];
+        if (!eventData || typeof eventData !== "object" || Array.isArray(eventData)) continue;
+        const event = eventData as { kind?: number; pubkey?: string; content?: string; id?: string; tags?: string[][]; created_at?: number };
 
-          // Add to events array if it's a regular event (not metadata)
-          if (event.kind !== 0 && event.kind !== 10000100) {
-            events.push(event);
-          }
+        // Add to events array if it's a regular event (not metadata)
+        if (event.kind !== 0 && event.kind !== 10000100) {
+          events.push(event);
+        }
 
-          // Extract user metadata (kind 0 events)
-          if (event.kind === 0 && event.pubkey) {
-            metadata[event.pubkey] = event;
-          }
+        // Extract user metadata (kind 0 events)
+        if (event.kind === 0 && event.pubkey && typeof event.pubkey === "string") {
+          metadata[event.pubkey] = event;
         }
       }
     }

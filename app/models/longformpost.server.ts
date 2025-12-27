@@ -123,8 +123,8 @@ export async function createLongFormPost({
       isPublished,
       isScheduled,
       draft: isDraft,
-      signedEvent,
-      nostrEvent,
+      signedEvent: signedEvent as Prisma.InputJsonValue,
+      nostrEvent: nostrEvent as Prisma.InputJsonValue,
       nostrEventId,
       status,
       publishedAt,
@@ -170,12 +170,15 @@ export async function updateLongFormPost({
 }) {
   // Extract published_at from NOSTR event tags if scheduledFor is not provided
   let finalScheduledFor = scheduledFor;
-  if (scheduledFor === undefined && !isPublished && signedEvent?.tags) {
-    const publishedAtTag = signedEvent.tags.find(
-      (tag) => Array.isArray(tag) && tag[0] === "published_at",
-    );
-    if (publishedAtTag && publishedAtTag[1]) {
-      finalScheduledFor = publishedAtTag[1].toString();
+  if (scheduledFor === undefined && !isPublished && signedEvent && typeof signedEvent === "object" && "tags" in signedEvent) {
+    const tags = signedEvent.tags;
+    if (Array.isArray(tags)) {
+      const publishedAtTag = tags.find(
+        (tag: unknown) => Array.isArray(tag) && tag[0] === "published_at",
+      );
+      if (publishedAtTag && Array.isArray(publishedAtTag) && publishedAtTag[1]) {
+        finalScheduledFor = String(publishedAtTag[1]);
+      }
     }
   }
 
@@ -190,14 +193,19 @@ export async function updateLongFormPost({
   if (tags !== undefined) updateData.tags = tags;
   if (finalScheduledFor !== undefined)
     updateData.scheduledFor = finalScheduledFor;
-  if (queueTypeId !== undefined) updateData.queueTypeId = queueTypeId;
-  if (hashTagPresetId !== undefined) updateData.hashTagPresetId = hashTagPresetId;
+  if (queueTypeId !== undefined) {
+    if (queueTypeId === null) {
+      updateData.queueType = { disconnect: true };
+    } else {
+      updateData.queueType = { connect: { id: queueTypeId } };
+    }
+  }
 
   if (signedEvent !== undefined) {
-    updateData.signedEvent = signedEvent;
-    updateData.nostrEventId = signedEvent?.id || null;
+    updateData.signedEvent = signedEvent as Prisma.InputJsonValue;
+    updateData.nostrEventId = (signedEvent && typeof signedEvent === "object" && "id" in signedEvent) ? String(signedEvent.id) : null;
   }
-  if (nostrEvent !== undefined) updateData.nostrEvent = nostrEvent;
+  if (nostrEvent !== undefined) updateData.nostrEvent = nostrEvent as Prisma.InputJsonValue;
 
   if (isPublished !== undefined || finalScheduledFor !== undefined) {
     const finalIsPublished = isPublished !== undefined ? isPublished : false;
@@ -210,9 +218,10 @@ export async function updateLongFormPost({
 
     if (finalIsPublished) {
       updateData.status = "ACTIVE";
-      updateData.publishedAt = signedEvent?.published_at
-        ? new Date(signedEvent.published_at * 1000)
-        : new Date();
+      const publishedAt = signedEvent && typeof signedEvent === "object" && "published_at" in signedEvent && typeof signedEvent.published_at === "number"
+        ? signedEvent.published_at
+        : undefined;
+      updateData.publishedAt = publishedAt ? new Date(publishedAt * 1000) : new Date();
       updateData.postedAt = new Date();
     } else if (isScheduled && finalScheduledFor) {
       updateData.status = "SCHEDULED";
@@ -323,9 +332,9 @@ export async function publishLongFormPost({
       isPublished: true,
       status: "ACTIVE",
       publishedAt: new Date(),
-      signedEvent,
-      nostrEvent,
-      nostrEventId: signedEvent?.id,
+      signedEvent: signedEvent as Prisma.InputJsonValue,
+      nostrEvent: nostrEvent as Prisma.InputJsonValue,
+      nostrEventId: signedEvent && typeof signedEvent === "object" && "id" in signedEvent && typeof signedEvent.id === "string" ? signedEvent.id : null,
     },
   });
 }
@@ -409,7 +418,7 @@ export async function getLongFormPostsByIds({
   });
 }
 
-export async function getCronDueScheduledLongFormPosts(): Promise<
+export function getCronDueScheduledLongFormPosts(): Promise<
   LongFormPost[]
 > {
   const now = Math.floor(Date.now() / 1000).toString();
@@ -425,7 +434,7 @@ export async function getCronDueScheduledLongFormPosts(): Promise<
   });
 }
 
-export async function updateLongFormPostStatus({
+export function updateLongFormPostStatus({
   id,
   userId,
   isPublished,
@@ -447,7 +456,7 @@ export async function updateLongFormPostStatus({
   });
 }
 
-export async function getPastLongFormPosts({
+export function getPastLongFormPosts({
   userId,
   startDate,
   endDate,
