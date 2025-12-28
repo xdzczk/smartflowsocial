@@ -5,7 +5,7 @@
  * common setup patterns and test data factories.
  */
 
-import type { QueueType } from "@prisma/client";
+import type { QueueType, $Enums } from "@prisma/client";
 /**
  * Test constants for scheduling tests
  */
@@ -16,10 +16,10 @@ export const BASE_TIME = new Date("2024-01-15T10:00:00Z"); // Monday, Jan 15, 20
  * Create a QueueType object for testing
  */
 export function createQueueType(overrides: Partial<QueueType> = {}): QueueType {
-  const queueType: QueueType = {
+  const queueType = {
     id: "queue-1",
     name: "posts",
-    scheduleType: "INTERVAL" as QueueType["scheduleType"],
+    scheduleType: "INTERVAL" as $Enums.ScheduleType,
     scheduleConfig: { intervalHours: 6 },
     userId: TEST_USER_ID,
     isEnabled: true,
@@ -29,7 +29,7 @@ export function createQueueType(overrides: Partial<QueueType> = {}): QueueType {
     description: null,
     hashTagPresetId: null,
     ...overrides,
-  };
+  } as QueueType;
   return queueType;
 }
 
@@ -41,7 +41,7 @@ export function createIntervalQueueType(
   overrides: Partial<QueueType> = {},
 ): QueueType {
   return createQueueType({
-    scheduleType: "INTERVAL" as QueueType["scheduleType"],
+    scheduleType: "INTERVAL" as $Enums.ScheduleType,
     scheduleConfig: { intervalHours },
     ...overrides,
   });

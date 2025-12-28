@@ -75,7 +75,7 @@ describe("Cron Subscription Checker", () => {
     vi.clearAllMocks();
     process.env.OWNER_NWC = "test-owner-nwc";
     // Reset LN mock to default implementation - use function, not arrow, so it works as constructor
-    const lnMock = LN as { mockImplementation: (fn: (credentials: string) => MockLN) => void };
+    const lnMock = LN as unknown as { mockImplementation: (fn: (credentials: string) => InstanceType<typeof MockLN>) => void };
     lnMock.mockImplementation(function(credentials: string) {
       return new MockLN(credentials);
     });
@@ -310,7 +310,7 @@ describe("Cron Subscription Checker", () => {
       
       // Mock the constructor to return our configured instance
       // Use a constructor function that returns the instance
-      const lnMock = LN as { mockImplementation: (fn: (credentials: string) => typeof mockLNInstance) => void };
+      const lnMock = LN as unknown as { mockImplementation: (fn: (credentials: string) => typeof mockLNInstance) => void };
       lnMock.mockImplementation(function(credentials: string) {
         return mockLNInstance;
       });
@@ -359,7 +359,7 @@ describe("Cron Subscription Checker", () => {
       mockLNInstance.onPaid = vi.fn().mockReturnValue(mockLNInstance);
       mockLNInstance.onTimeout = vi.fn().mockReturnValue(mockLNInstance);
       
-      const lnMock = LN as { mockImplementation: (fn: () => typeof mockLNInstance) => void };
+      const lnMock = LN as unknown as { mockImplementation: (fn: () => typeof mockLNInstance) => void };
       lnMock.mockImplementation(() => mockLNInstance);
 
       const { loader } = await import("~/routes/cron.checksubscription");

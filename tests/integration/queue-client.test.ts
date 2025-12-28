@@ -230,7 +230,7 @@ describe("Queue Client", () => {
       const mockJob = {
         id: "job-123",
         remove: vi.fn().mockResolvedValue(undefined),
-      } satisfies Partial<Job> as Job;
+      } as unknown as Job;
 
       mockQueue.getJob.mockResolvedValue(mockJob);
 

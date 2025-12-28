@@ -27,7 +27,7 @@ describe("Rate Limiting", () => {
       ip: "127.0.0.1",
       socket: {
         remoteAddress: "127.0.0.1",
-      } as { remoteAddress?: string },
+      } as unknown as import("net").Socket,
       path: "/api/test",
       method: "GET",
     };

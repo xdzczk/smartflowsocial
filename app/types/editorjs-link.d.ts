@@ -10,3 +10,4 @@ declare module "@editorjs/link" {
 
 
 
+

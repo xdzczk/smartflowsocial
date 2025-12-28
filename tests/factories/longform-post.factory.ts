@@ -49,8 +49,8 @@ export class LongFormPostFactory {
       isPublished: false,
       draft: true,
       status: "DRAFT",
-      signedEvent: null,
-      nostrEvent: null,
+      signedEvent: undefined,
+      nostrEvent: undefined,
       queueTypeId: null,
       tags: [],
       hashTagPresetId: null,
@@ -143,7 +143,8 @@ export class LongFormPostFactory {
 
   withNostrEvent(nostrEvent: import("~/features/nostr/types").NostrEvent): this {
     this.options.nostrEvent = nostrEvent;
-    this.options.nostrEventId = nostrEvent?.id ?? null;
+    // NostrEvent doesn't have an id property, so we can't set nostrEventId from it
+    // nostrEventId should be set separately if needed
     return this;
   }
 

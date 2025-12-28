@@ -7,7 +7,7 @@
 
 import { execSync } from "child_process";
 
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 let testPrisma: PrismaClient | null = null;
 let transactionClient: PrismaClient | null = null;
 
@@ -86,7 +86,7 @@ export async function withTransaction<T>(
  * Syncs schema and seeds test data
  * Uses `db push` for test databases as it doesn't require migrations
  */
-export function setupTestDatabase(): Promise<void> {
+export async function setupTestDatabase(): Promise<void> {
   const testDatabaseUrl = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL;
   
   if (!testDatabaseUrl) {
@@ -131,7 +131,7 @@ export async function teardownTestDatabase(): Promise<void> {
  * Drops all data and re-runs migrations
  * WARNING: Destructive operation - only use in test environments
  */
-export function resetTestDatabase(): Promise<void> {
+export async function resetTestDatabase(): Promise<void> {
   const prisma = getTestPrisma();
   
   // Get all model names from Prisma schema
@@ -200,7 +200,7 @@ export async function seedTestDatabase(fixtures?: TestFixtures): Promise<void> {
  * Apply fixtures to database
  * Uses upsert to handle existing records (idempotent)
  */
-async function applyFixtures(prisma: PrismaClient, fixtures: TestFixtures): Promise<void> {
+async function applyFixtures(prisma: PrismaClient, fixtures: TestFixtures | import("./fixtures").TestFixtures): Promise<void> {
   // Apply fixtures in dependency order
   if (fixtures.users && Array.isArray(fixtures.users)) {
     for (const user of fixtures.users) {
@@ -209,11 +209,11 @@ async function applyFixtures(prisma: PrismaClient, fixtures: TestFixtures): Prom
       if (userId) {
         await prisma.user.upsert({
           where: { id: userId },
-          update: user as { id: string; [key: string]: unknown },
-          create: user as { id: string; [key: string]: unknown },
+          update: user as unknown as Prisma.UserUpdateInput,
+          create: user as unknown as Prisma.UserCreateInput,
         });
       } else {
-        await prisma.user.create({ data: user as { [key: string]: unknown } });
+        await prisma.user.create({ data: user as unknown as Prisma.UserCreateInput });
       }
     }
   }
@@ -224,11 +224,11 @@ async function applyFixtures(prisma: PrismaClient, fixtures: TestFixtures): Prom
       if (queueTypeId) {
         await prisma.queueType.upsert({
           where: { id: queueTypeId },
-          update: queueType as { id: string; [key: string]: unknown },
-          create: queueType as { id: string; [key: string]: unknown },
+          update: queueType as unknown as Prisma.QueueTypeUpdateInput,
+          create: queueType as unknown as Prisma.QueueTypeCreateInput,
         });
       } else {
-        await prisma.queueType.create({ data: queueType as { [key: string]: unknown } });
+        await prisma.queueType.create({ data: queueType as unknown as Prisma.QueueTypeCreateInput });
       }
     }
   }
@@ -239,11 +239,11 @@ async function applyFixtures(prisma: PrismaClient, fixtures: TestFixtures): Prom
       if (presetId) {
         await prisma.hashTagPreset.upsert({
           where: { id: presetId },
-          update: preset as { id: string; [key: string]: unknown },
-          create: preset as { id: string; [key: string]: unknown },
+          update: preset as unknown as Prisma.HashTagPresetUpdateInput,
+          create: preset as unknown as Prisma.HashTagPresetCreateInput,
         });
       } else {
-        await prisma.hashTagPreset.create({ data: preset as { [key: string]: unknown } });
+        await prisma.hashTagPreset.create({ data: preset as unknown as Prisma.HashTagPresetCreateInput });
       }
     }
   }
@@ -254,11 +254,11 @@ async function applyFixtures(prisma: PrismaClient, fixtures: TestFixtures): Prom
       if (postId) {
         await prisma.post.upsert({
           where: { id: postId },
-          update: post as { id: string; [key: string]: unknown },
-          create: post as { id: string; [key: string]: unknown },
+          update: post as unknown as Prisma.PostUpdateInput,
+          create: post as unknown as Prisma.PostCreateInput,
         });
       } else {
-        await prisma.post.create({ data: post as { [key: string]: unknown } });
+        await prisma.post.create({ data: post as unknown as Prisma.PostCreateInput });
       }
     }
   }
@@ -269,11 +269,11 @@ async function applyFixtures(prisma: PrismaClient, fixtures: TestFixtures): Prom
       if (longformId) {
         await prisma.longFormPost.upsert({
           where: { id: longformId },
-          update: longform as { id: string; [key: string]: unknown },
-          create: longform as { id: string; [key: string]: unknown },
+          update: longform as unknown as Prisma.LongFormPostUpdateInput,
+          create: longform as unknown as Prisma.LongFormPostCreateInput,
         });
       } else {
-        await prisma.longFormPost.create({ data: longform as { [key: string]: unknown } });
+        await prisma.longFormPost.create({ data: longform as unknown as Prisma.LongFormPostCreateInput });
       }
     }
   }
@@ -284,11 +284,11 @@ async function applyFixtures(prisma: PrismaClient, fixtures: TestFixtures): Prom
       if (paymentId) {
         await prisma.payment.upsert({
           where: { id: paymentId },
-          update: payment as { id: string; [key: string]: unknown },
-          create: payment as { id: string; [key: string]: unknown },
+          update: payment as unknown as Prisma.PaymentUpdateInput,
+          create: payment as unknown as Prisma.PaymentCreateInput,
         });
       } else {
-        await prisma.payment.create({ data: payment as { [key: string]: unknown } });
+        await prisma.payment.create({ data: payment as unknown as Prisma.PaymentCreateInput });
       }
     }
   }
@@ -299,11 +299,11 @@ async function applyFixtures(prisma: PrismaClient, fixtures: TestFixtures): Prom
       if (planId) {
         await prisma.plan.upsert({
           where: { id: planId },
-          update: plan as { id: string; [key: string]: unknown },
-          create: plan as { id: string; [key: string]: unknown },
+          update: plan as unknown as Prisma.PlanUpdateInput,
+          create: plan as unknown as Prisma.PlanCreateInput,
         });
       } else {
-        await prisma.plan.create({ data: plan as { [key: string]: unknown } });
+        await prisma.plan.create({ data: plan as unknown as Prisma.PlanCreateInput });
       }
     }
   }

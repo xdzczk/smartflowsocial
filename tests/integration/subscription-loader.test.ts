@@ -133,7 +133,8 @@ describe("Subscription/Billing Loader Integration", () => {
       expect(data.subscription).toHaveProperty("status", "ACTIVE");
       expect(data.subscription).toHaveProperty("planId", "premium");
       expect(data.availablePlans).toHaveLength(2);
-      expect(data.paymentHistory).toHaveLength(1);
+      const paymentHistory = data.paymentHistory as Array<unknown>;
+      expect(paymentHistory).toHaveLength(1);
     });
 
     it("should handle free plan users (no subscription)", async () => {
@@ -173,7 +174,8 @@ describe("Subscription/Billing Loader Integration", () => {
 
       expect(data.subscription).toBeNull();
       expect(data.availablePlans).toHaveLength(2);
-      expect(data.paymentHistory).toHaveLength(0);
+      const paymentHistory = data.paymentHistory as Array<unknown>;
+      expect(paymentHistory).toHaveLength(0);
     });
 
     it("should handle expired subscription", async () => {
@@ -266,8 +268,9 @@ describe("Subscription/Billing Loader Integration", () => {
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
 
-      expect(data.paymentHistory).toHaveLength(3);
-      expect(data.paymentHistory[0]).toHaveProperty("amount", 2000);
+      const paymentHistory = data.paymentHistory as Array<{ amount: number; [key: string]: unknown }>;
+      expect(paymentHistory).toHaveLength(3);
+      expect(paymentHistory[0]).toHaveProperty("amount", 2000);
     });
   });
 

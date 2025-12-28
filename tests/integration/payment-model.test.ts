@@ -24,6 +24,14 @@ import {
 // createPlanInvoice and updateUserSubscription will be dynamically imported
 // to ensure they use mocked prisma
 
+interface MockRequest {
+  invoice: string;
+  paymentHash: string;
+  amount: number;
+  onPaid: ReturnType<typeof vi.fn>;
+  onTimeout: ReturnType<typeof vi.fn>;
+}
+
 // Mock Prisma - use vi.hoisted to allow top-level variables in mocks
 const { mockPrisma } = vi.hoisted(() => {
   const mockPrisma = {
@@ -117,7 +125,7 @@ describe("Payment Model Functions", () => {
       return await callback(tx);
     });
     // Reset LN to default implementation - use function, not arrow, so it works as constructor
-    const lnMock = LN as { mockImplementation: (fn: (credentials: string) => MockLN) => void };
+    const lnMock = LN as unknown as { mockImplementation: (fn: (credentials: string) => InstanceType<typeof MockLN>) => void };
     lnMock.mockImplementation(function(_credentials: string) {
       return new MockLN(_credentials);
     });
@@ -233,25 +241,20 @@ describe("Payment Model Functions", () => {
       const mockLNInstance = new MockLN("test-nwc-credentials");
       // requestPayment must return an object with onPaid and onTimeout methods
       // Create object first, then add methods that reference it
-      interface MockRequest {
-        invoice: string;
-        paymentHash: string;
-        amount: number;
-        onPaid: ReturnType<typeof vi.fn>;
-        onTimeout: ReturnType<typeof vi.fn>;
-      }
       const mockRequest: MockRequest = {
         invoice: mockInvoice,
         paymentHash: mockPaymentHash,
         amount: mockAmountSats,
-        onPaid: vi.fn().mockReturnValue(mockRequest as unknown as MockRequest),
-        onTimeout: vi.fn().mockReturnValue(mockRequest as unknown as MockRequest),
+        onPaid: vi.fn(),
+        onTimeout: vi.fn(),
       };
+      mockRequest.onPaid = vi.fn().mockReturnValue(mockRequest);
+      mockRequest.onTimeout = vi.fn().mockReturnValue(mockRequest);
       mockLNInstance.requestPayment = vi.fn().mockResolvedValue(mockRequest);
       
       // Override the constructor to return our configured instance
       // Use a constructor function that returns the instance
-      const lnMock = LN as { mockImplementation: (fn: (credentials: string) => MockLN) => void };
+      const lnMock = LN as unknown as { mockImplementation: (fn: (credentials: string) => InstanceType<typeof MockLN>) => void };
       lnMock.mockImplementation(function(_credentials: string) {
         return mockLNInstance;
       });
@@ -312,7 +315,7 @@ describe("Payment Model Functions", () => {
       const mockLNInstance = new MockLN("test-nwc-credentials");
       mockLNInstance.requestPayment = vi.fn().mockRejectedValue(new Error("Network error"));
       
-      const lnMock = LN as { mockImplementation: (fn: (credentials: string) => MockLN) => void };
+      const lnMock = LN as unknown as { mockImplementation: (fn: (credentials: string) => InstanceType<typeof MockLN>) => void };
       lnMock.mockImplementation(function(_credentials: string) {
         return mockLNInstance;
       });
@@ -350,12 +353,15 @@ describe("Payment Model Functions", () => {
       const mockRequest: MockRequestPartial = {
         // Missing invoice and paymentHash
         amount: 25000,
-        onPaid: vi.fn().mockReturnValue(mockRequest as unknown as MockRequestPartial),
-        onTimeout: vi.fn().mockReturnValue(mockRequest as unknown as MockRequestPartial),
+        onPaid: vi.fn(),
+        onTimeout: vi.fn(),
       };
+      // Set return values after object is created
+      mockRequest.onPaid = vi.fn().mockReturnValue(mockRequest);
+      mockRequest.onTimeout = vi.fn().mockReturnValue(mockRequest);
       mockLNInstance.requestPayment = vi.fn().mockResolvedValue(mockRequest);
       
-      const lnMock = LN as { mockImplementation: (fn: (credentials: string) => MockLN) => void };
+      const lnMock = LN as unknown as { mockImplementation: (fn: (credentials: string) => InstanceType<typeof MockLN>) => void };
       lnMock.mockImplementation(function(_credentials: string) {
         return mockLNInstance;
       });

@@ -88,8 +88,9 @@ describe("Bulk Posts Action Handler", () => {
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
 
       expect(data.success).toBe(true);
-      expect(data.fileUrls).toHaveLength(2);
-      expect(data.fileUrls[0]).toMatchObject({
+      const fileUrls = Array.isArray(data.fileUrls) ? data.fileUrls : [];
+      expect(fileUrls).toHaveLength(2);
+      expect(fileUrls[0]).toMatchObject({
         fileUrl: "https://example.com/image1.jpg",
         scheduledFor: "2024-01-15T10:00:00",
         queueType: "posts",

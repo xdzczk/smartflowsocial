@@ -8,6 +8,7 @@
  */
 
 import { json } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "@remix-run/node";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock Prisma to prevent $use errors
 vi.mock("~/lib/prisma.server", () => ({
@@ -57,7 +58,7 @@ describe("Drafts Loader Integration", () => {
   describe("Drafts Loader", () => {
     it("should load drafts data for authenticated user", async () => {
       const request = new Request("http://localhost:3000/dashboard/drafts");
-      const response = await loader({ request, params: {} } as { request: Request; params: Record<string, string> });
+      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
 
@@ -90,7 +91,7 @@ describe("Drafts Loader Integration", () => {
       const response = await loader({ 
         request, 
         params: { queueType: "posts" } 
-      } as { request: Request; params: { queueType: string } });
+      } as unknown as LoaderFunctionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
 
@@ -126,7 +127,7 @@ describe("Drafts Loader Integration", () => {
       (loadDraftsData as ReturnType<typeof vi.fn>).mockResolvedValue(mockData);
 
       const request = new Request("http://localhost:3000/dashboard/drafts");
-      const response = await loader({ request, params: {} } as { request: Request; params: Record<string, string> });
+      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
 
@@ -148,7 +149,7 @@ describe("Drafts Loader Integration", () => {
       );
 
       const request = new Request("http://localhost:3000/dashboard/drafts");
-      const response = await loader({ request, params: {} } as { request: Request; params: Record<string, string> });
+      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
       
@@ -165,7 +166,7 @@ describe("Drafts Loader Integration", () => {
       );
 
       const request = new Request("http://localhost:3000/dashboard/drafts");
-      const response = await loader({ request, params: {} } as { request: Request; params: Record<string, string> });
+      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
       
@@ -182,7 +183,7 @@ describe("Drafts Loader Integration", () => {
       );
 
       const request = new Request("http://localhost:3000/dashboard/drafts");
-      const response = await loader({ request, params: {} } as { request: Request; params: Record<string, string> });
+      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
       

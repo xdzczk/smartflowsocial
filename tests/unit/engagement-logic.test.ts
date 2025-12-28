@@ -68,7 +68,7 @@ describe("Engagement Logic Unit Tests", () => {
     });
 
     it("should handle empty notifications array", () => {
-      const notifications: { type: string; id: string; [key: string]: unknown }[] = [];
+      const notifications: Notification[] = [];
 
       const grouped = groupNotificationsByType(notifications);
 

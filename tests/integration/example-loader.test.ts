@@ -49,8 +49,9 @@ describe("Example Loader Integration Tests", () => {
     // Assert the response
     expect(response.status).toBe(200);
     expect(data.query).toBe("hello");
-    expect(data.results).toHaveLength(1);
-    expect(data.results[0]).toBe("Result for hello");
+    const results = Array.isArray(data.results) ? data.results : [];
+    expect(results).toHaveLength(1);
+    expect(results[0]).toBe("Result for hello");
   });
 
   it("should demonstrate testing with RemixStub", async () => {

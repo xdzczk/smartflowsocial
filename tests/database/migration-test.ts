@@ -58,7 +58,7 @@ describe("Database Migrations", () => {
     for (const table of tables) {
       try {
         // Try to query the table (this will fail if table doesn't exist)
-        const prismaModel = prisma[table as keyof typeof prisma] as { findMany: (args: { take: number }) => Promise<unknown[]> } | undefined;
+        const prismaModel = prisma[table as keyof typeof prisma] as unknown as { findMany: (args: { take: number }) => Promise<unknown[]> } | undefined;
         if (!prismaModel || typeof prismaModel.findMany !== "function") {
           throw new Error(`Table ${table} does not exist or is not accessible`);
         }

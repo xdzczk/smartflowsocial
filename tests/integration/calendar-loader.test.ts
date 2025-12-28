@@ -8,6 +8,7 @@
  */
 
 import { json } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "@remix-run/node";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 type LoaderData = {
@@ -98,7 +99,7 @@ describe("Calendar Loader Integration", () => {
   describe("Calendar Loader", () => {
     it("should load calendar data for authenticated user", async () => {
       const request = new Request("http://localhost:3000/dashboard/calendar");
-      const response = await loader({ request, params: {} } as { request: Request; params: Record<string, string> });
+      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
       const dataRaw: unknown = await response.json();
       const data: LoaderData = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as LoaderData : {};
 
@@ -126,7 +127,7 @@ describe("Calendar Loader Integration", () => {
       const response = await loader({ 
         request, 
         params: { queueType: "posts" } 
-      } as { request: Request; params: { queueType: string } });
+      } as unknown as LoaderFunctionArgs);
       const dataRaw: unknown = await response.json();
       const data: LoaderData = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as LoaderData : {};
       const selectedQueueType = typeof data.selectedQueueType === "string" ? data.selectedQueueType : "";
@@ -149,7 +150,7 @@ describe("Calendar Loader Integration", () => {
       const response = await loader({ 
         request, 
         params: { queueType: "posts" } 
-      } as { request: Request; params: { queueType: string } });
+      } as unknown as LoaderFunctionArgs);
       const dataRaw: unknown = await response.json();
       const data: LoaderData = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as LoaderData : {};
       const scheduledPosts = Array.isArray(data.scheduledPosts) ? data.scheduledPosts : [];
@@ -177,7 +178,7 @@ describe("Calendar Loader Integration", () => {
       const response = await loader({ 
         request, 
         params: { queueType: "all" } 
-      } as { request: Request; params: { queueType: string } });
+      } as unknown as LoaderFunctionArgs);
       const dataRaw: unknown = await response.json();
       const data: LoaderData = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as LoaderData : {};
       const selectedQueueType = typeof data.selectedQueueType === "string" ? data.selectedQueueType : "";
@@ -197,7 +198,7 @@ describe("Calendar Loader Integration", () => {
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(userWithIntervals);
 
       const request = new Request("http://localhost:3000/dashboard/calendar");
-      const response = await loader({ request, params: {} } as { request: Request; params: Record<string, string> });
+      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
       const dataRaw: unknown = await response.json();
       const data: LoaderData = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as LoaderData : {};
       const scheduleIntervals = Array.isArray(data.scheduleIntervals) ? data.scheduleIntervals : [];
@@ -217,7 +218,7 @@ describe("Calendar Loader Integration", () => {
       (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueTypes);
 
       const request = new Request("http://localhost:3000/dashboard/calendar");
-      const response = await loader({ request, params: {} } as { request: Request; params: Record<string, string> });
+      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
       const dataRaw: unknown = await response.json();
       const data: LoaderData = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as LoaderData : {};
       const queueTypes = Array.isArray(data.queueTypes) ? data.queueTypes : [];
@@ -239,7 +240,7 @@ describe("Calendar Loader Integration", () => {
       );
 
       const request = new Request("http://localhost:3000/dashboard/calendar");
-      const response = await loader({ request, params: {} } as { request: Request; params: Record<string, string> });
+      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
       const dataRaw: unknown = await response.json();
       const data: LoaderData = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as LoaderData : {};
       const error = data.error && typeof data.error === "object" && !Array.isArray(data.error) ? data.error as { message?: string } : {};
@@ -256,7 +257,7 @@ describe("Calendar Loader Integration", () => {
       );
 
       const request = new Request("http://localhost:3000/dashboard/calendar");
-      const response = await loader({ request, params: {} } as { request: Request; params: Record<string, string> });
+      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
       const dataRaw: unknown = await response.json();
       const data: LoaderData = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as LoaderData : {};
       const error = data.error && typeof data.error === "object" && !Array.isArray(data.error) ? data.error as { message?: string } : {};

@@ -243,9 +243,9 @@ describe("API: Children", () => {
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
 
-      expect(data.children[0].name).toBe("Child 1");
-      expect(data.children[0].displayName).toBe("Child One");
-      expect(data.children[0].picture).toBe("https://example.com/pic.jpg");
+      expect(data.children?.[0]?.name).toBe("Child 1");
+      expect(data.children?.[0]?.displayName).toBe("Child One");
+      expect(data.children?.[0]?.picture).toBe("https://example.com/pic.jpg");
     });
   });
 

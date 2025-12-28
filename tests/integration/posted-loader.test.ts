@@ -8,6 +8,7 @@
  */
 
 import { json } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "@remix-run/node";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock Prisma to prevent $use errors
 vi.mock("~/lib/prisma.server", () => ({
@@ -54,7 +55,7 @@ describe("Posted Posts Loader Integration", () => {
   describe("Posted Posts Loader", () => {
     it("should load posted posts data for authenticated user", async () => {
       const request = new Request("http://localhost:3000/dashboard/posted");
-      const response = await loader({ request, params: {} } as { request: Request; params: Record<string, string> });
+      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
 
@@ -84,8 +85,9 @@ describe("Posted Posts Loader Integration", () => {
       const request = new Request("http://localhost:3000/dashboard/posted");
       const response = await loader({ 
         request, 
-        params: { queueType: "posts" } 
-      } as { request: Request; params: { queueType: string } });
+        params: { queueType: "posts" },
+        context: {}
+      } as unknown as LoaderFunctionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
 
@@ -124,7 +126,7 @@ describe("Posted Posts Loader Integration", () => {
       (getPostedDashboardData as ReturnType<typeof vi.fn>).mockResolvedValue(mockData);
 
       const request = new Request("http://localhost:3000/dashboard/posted");
-      const response = await loader({ request, params: {} } as { request: Request; params: Record<string, string> });
+      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
 
@@ -141,12 +143,7 @@ describe("Posted Posts Loader Integration", () => {
     it("should pass URL object to getPostedDashboardData", async () => {
       const request = new Request("http://localhost:3000/dashboard/posted?page=2&limit=10");
       
-      interface LoaderArgs {
-        request: Request;
-        params: Record<string, string | undefined>;
-        context: Record<string, unknown>;
-      }
-      await loader({ request, params: {} } as LoaderArgs);
+      await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
 
       expect(getPostedDashboardData).toHaveBeenCalledWith({
         userId: "user-123",
@@ -165,7 +162,7 @@ describe("Posted Posts Loader Integration", () => {
       );
 
       const request = new Request("http://localhost:3000/dashboard/posted");
-      const response = await loader({ request, params: {} } as { request: Request; params: Record<string, string> });
+      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
       
@@ -182,7 +179,7 @@ describe("Posted Posts Loader Integration", () => {
       );
 
       const request = new Request("http://localhost:3000/dashboard/posted");
-      const response = await loader({ request, params: {} } as { request: Request; params: Record<string, string> });
+      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
       
@@ -199,7 +196,7 @@ describe("Posted Posts Loader Integration", () => {
       );
 
       const request = new Request("http://localhost:3000/dashboard/posted");
-      const response = await loader({ request, params: {} } as { request: Request; params: Record<string, string> });
+      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
       

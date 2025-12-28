@@ -35,6 +35,7 @@ const { mockPrisma } = vi.hoisted(() => {
         payment: mockPrisma.payment,
         subscription: mockPrisma.subscription,
         user: mockPrisma.user,
+        $transaction: mockPrisma.$transaction,
       };
       return await callback(tx);
     }),
@@ -81,6 +82,14 @@ import { getBitcoinRate } from "~/features/payments/btc.rate";
 import { createPlanInvoice } from "~/models/payment.server";
 // handlePaymentCompleted and updateUserSubscription will be dynamically imported
 
+interface MockRequest {
+  invoice: string;
+  paymentHash: string;
+  amount: number;
+  onPaid: ReturnType<typeof vi.fn>;
+  onTimeout: ReturnType<typeof vi.fn>;
+}
+
 describe("Payment Processing Edge Cases", () => {
   const TEST_USER_ID = "user-123";
   const TEST_PLAN_ID = "plan-123";
@@ -97,11 +106,12 @@ describe("Payment Processing Edge Cases", () => {
         payment: mockPrisma.payment,
         subscription: mockPrisma.subscription,
         user: mockPrisma.user,
+        $transaction: mockPrisma.$transaction,
       };
       return await callback(tx);
     });
     // Reset LN to default implementation - use function, not arrow, so it works as constructor
-    const lnMock = LN as { mockImplementation: (fn: (credentials: string) => MockLN) => void };
+    const lnMock = LN as unknown as { mockImplementation: (fn: (credentials: string) => InstanceType<typeof MockLN>) => void };
     lnMock.mockImplementation(function(credentials: string) {
       return new MockLN(credentials);
     });
@@ -123,7 +133,7 @@ describe("Payment Processing Edge Cases", () => {
       
       // Mock the constructor to return our configured instance
       // Use a constructor function that returns the instance
-      const lnMock = LN as { mockImplementation: (fn: (credentials: string) => typeof mockLNInstance) => void };
+      const lnMock = LN as unknown as { mockImplementation: (fn: (credentials: string) => typeof mockLNInstance) => void };
       lnMock.mockImplementation(function(_credentials: string) {
         return mockLNInstance;
       });
@@ -157,7 +167,7 @@ describe("Payment Processing Edge Cases", () => {
       
       // Mock the constructor to return our configured instance
       // Use a constructor function that returns the instance
-      const lnMock = LN as { mockImplementation: (fn: (credentials: string) => typeof mockLNInstance) => void };
+      const lnMock = LN as unknown as { mockImplementation: (fn: (credentials: string) => typeof mockLNInstance) => void };
       lnMock.mockImplementation(function(_credentials: string) {
         return mockLNInstance;
       });
@@ -225,13 +235,6 @@ describe("Payment Processing Edge Cases", () => {
 
       const mockLNInstance = new MockLN("test-nwc");
       // Create object first, then add methods that reference it
-      interface MockRequest {
-        invoice: string;
-        paymentHash: string;
-        amount: number;
-        onPaid: ReturnType<typeof vi.fn>;
-        onTimeout: ReturnType<typeof vi.fn>;
-      }
       const mockRequest: MockRequest = {
         invoice: mockInvoice,
         paymentHash: mockPaymentHash,
@@ -255,7 +258,7 @@ describe("Payment Processing Edge Cases", () => {
       
       // Mock the constructor to return our configured instance
       // Use a constructor function that returns the instance
-      const lnMock = LN as { mockImplementation: (fn: (credentials: string) => typeof mockLNInstance) => void };
+      const lnMock = LN as unknown as { mockImplementation: (fn: (credentials: string) => typeof mockLNInstance) => void };
       lnMock.mockImplementation(function(_credentials: string) {
         return mockLNInstance;
       });
@@ -305,6 +308,8 @@ describe("Payment Processing Edge Cases", () => {
       const mockRequest: MockRequestPartial = {
         invoice: mockInvoice,
         paymentHash: mockPaymentHash,
+        onPaid: vi.fn(),
+        onTimeout: vi.fn(),
         // Missing amount field
       };
       mockRequest.onPaid = vi.fn().mockReturnValue(mockRequest);
@@ -313,7 +318,7 @@ describe("Payment Processing Edge Cases", () => {
       
       // Mock the constructor to return our configured instance
       // Use a constructor function that returns the instance
-      const lnMock = LN as { mockImplementation: (fn: (credentials: string) => typeof mockLNInstance) => void };
+      const lnMock = LN as unknown as { mockImplementation: (fn: (credentials: string) => typeof mockLNInstance) => void };
       lnMock.mockImplementation(function(_credentials: string) {
         return mockLNInstance;
       });
@@ -374,7 +379,7 @@ describe("Payment Processing Edge Cases", () => {
       
       // Mock the constructor to return our configured instance
       // Use a constructor function that returns the instance
-      const lnMock = LN as { mockImplementation: (fn: (credentials: string) => typeof mockLNInstance) => void };
+      const lnMock = LN as unknown as { mockImplementation: (fn: (credentials: string) => typeof mockLNInstance) => void };
       lnMock.mockImplementation(function(_credentials: string) {
         return mockLNInstance;
       });
@@ -424,7 +429,7 @@ describe("Payment Processing Edge Cases", () => {
       
       // Mock the constructor to return our configured instance
       // Use a constructor function that returns the instance
-      const lnMock = LN as { mockImplementation: (fn: (credentials: string) => typeof mockLNInstance) => void };
+      const lnMock = LN as unknown as { mockImplementation: (fn: (credentials: string) => typeof mockLNInstance) => void };
       lnMock.mockImplementation(function(_credentials: string) {
         return mockLNInstance;
       });
@@ -479,7 +484,7 @@ describe("Payment Processing Edge Cases", () => {
       
       // Mock the constructor to return our configured instance
       // Use a constructor function that returns the instance
-      const lnMock = LN as { mockImplementation: (fn: (credentials: string) => typeof mockLNInstance) => void };
+      const lnMock = LN as unknown as { mockImplementation: (fn: (credentials: string) => typeof mockLNInstance) => void };
       lnMock.mockImplementation(function(_credentials: string) {
         return mockLNInstance;
       });
@@ -613,7 +618,7 @@ describe("Payment Processing Edge Cases", () => {
       
       // Mock the constructor to return our configured instance
       // Use a constructor function that returns the instance
-      const lnMock = LN as { mockImplementation: (fn: (credentials: string) => typeof mockLNInstance) => void };
+      const lnMock = LN as unknown as { mockImplementation: (fn: (credentials: string) => typeof mockLNInstance) => void };
       lnMock.mockImplementation(function(_credentials: string) {
         return mockLNInstance;
       });
@@ -661,7 +666,7 @@ describe("Payment Processing Edge Cases", () => {
       
       // Mock the constructor to return our configured instance
       // Use a constructor function that returns the instance
-      const lnMock = LN as { mockImplementation: (fn: (credentials: string) => typeof mockLNInstance) => void };
+      const lnMock = LN as unknown as { mockImplementation: (fn: (credentials: string) => typeof mockLNInstance) => void };
       lnMock.mockImplementation(function(_credentials: string) {
         return mockLNInstance;
       });

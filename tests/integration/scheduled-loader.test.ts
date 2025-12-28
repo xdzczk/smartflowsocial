@@ -8,6 +8,7 @@
  */
 
 import { json } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "@remix-run/node";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock Prisma to prevent $use errors
 vi.mock("~/lib/prisma.server", () => ({
@@ -57,7 +58,7 @@ describe("Scheduled Posts Loader Integration", () => {
   describe("Scheduled Posts Loader", () => {
     it("should load scheduled posts data for authenticated user", async () => {
       const request = new Request("http://localhost:3000/dashboard/scheduled");
-      const response = await loader({ request, params: {} } as { request: Request; params: Record<string, string> });
+      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
 
@@ -90,7 +91,7 @@ describe("Scheduled Posts Loader Integration", () => {
       const response = await loader({ 
         request, 
         params: { queueType: "posts" } 
-      } as { request: Request; params: { queueType: string } });
+      } as unknown as LoaderFunctionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
 
@@ -122,7 +123,7 @@ describe("Scheduled Posts Loader Integration", () => {
       (loadScheduledData as ReturnType<typeof vi.fn>).mockResolvedValue(mockData);
 
       const request = new Request("http://localhost:3000/dashboard/scheduled");
-      const response = await loader({ request, params: {} } as { request: Request; params: Record<string, string> });
+      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
 
@@ -150,14 +151,17 @@ describe("Scheduled Posts Loader Integration", () => {
       (loadScheduledData as ReturnType<typeof vi.fn>).mockResolvedValue(mockData);
 
       const request = new Request("http://localhost:3000/dashboard/scheduled");
-      const response = await loader({ request, params: {} } as { request: Request; params: Record<string, string> });
+      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
 
       // The loadScheduledData function should already filter, but we verify the structure
-      expect(data.queueTypes).toBeDefined();
-      expect(Array.isArray(data.queueTypes)).toBe(true);
-      expect(data.queueTypes.length).toBeGreaterThanOrEqual(0);
+      const queueTypes = data.queueTypes;
+      expect(queueTypes).toBeDefined();
+      expect(Array.isArray(queueTypes)).toBe(true);
+      if (Array.isArray(queueTypes)) {
+        expect(queueTypes.length).toBeGreaterThanOrEqual(0);
+      }
     });
   });
 
@@ -168,7 +172,7 @@ describe("Scheduled Posts Loader Integration", () => {
       );
 
       const request = new Request("http://localhost:3000/dashboard/scheduled");
-      const response = await loader({ request, params: {} } as { request: Request; params: Record<string, string> });
+      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
       
@@ -184,7 +188,7 @@ describe("Scheduled Posts Loader Integration", () => {
       );
 
       const request = new Request("http://localhost:3000/dashboard/scheduled");
-      const response = await loader({ request, params: {} } as { request: Request; params: Record<string, string> });
+      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
       
@@ -200,7 +204,7 @@ describe("Scheduled Posts Loader Integration", () => {
       );
 
       const request = new Request("http://localhost:3000/dashboard/scheduled");
-      const response = await loader({ request, params: {} } as { request: Request; params: Record<string, string> });
+      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
       
@@ -216,7 +220,7 @@ describe("Scheduled Posts Loader Integration", () => {
       );
 
       const request = new Request("http://localhost:3000/dashboard/scheduled");
-      const response = await loader({ request, params: {} } as { request: Request; params: Record<string, string> });
+      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
       

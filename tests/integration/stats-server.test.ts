@@ -293,8 +293,8 @@ describe("Statistics Service", () => {
       const originalSetTimeout = global.setTimeout;
       global.setTimeout = vi.fn((callback: () => void) => {
         callback();
-        return 123 as ReturnType<typeof setTimeout>;
-      }) as typeof setTimeout;
+        return 123 as unknown as ReturnType<typeof setTimeout>;
+      }) as unknown as typeof setTimeout;
 
       (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(
         () =>

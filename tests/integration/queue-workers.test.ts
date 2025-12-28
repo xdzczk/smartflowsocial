@@ -106,9 +106,9 @@ describe("Queue Workers", () => {
     
     // Dynamically import workers after mocks
     const module = await import("~/features/posts/queues.server");
-    scheduledPostsWorker = module.scheduledPostsWorker;
-    scheduledLongFormPostsWorker = module.scheduledLongFormPostsWorker;
-    postCheckerWorker = module.postCheckerWorker;
+    scheduledPostsWorker = module.scheduledPostsWorker as unknown as MockWorkerType;
+    scheduledLongFormPostsWorker = module.scheduledLongFormPostsWorker as unknown as MockWorkerType;
+    postCheckerWorker = module.postCheckerWorker as unknown as MockWorkerType;
   });
 
   describe("Scheduled Posts Worker", () => {
@@ -194,6 +194,9 @@ describe("Queue Workers", () => {
         status: 200,
       });
 
+      if (!scheduledPostsWorker?.process) {
+        throw new Error("scheduledPostsWorker.process is not defined");
+      }
       await scheduledPostsWorker.process(mockJob);
 
       expect(global.fetch).toHaveBeenCalledWith(
@@ -226,6 +229,9 @@ describe("Queue Workers", () => {
 
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
+      if (!scheduledPostsWorker?.process) {
+        throw new Error("scheduledPostsWorker.process is not defined");
+      }
       await expect(scheduledPostsWorker.process(mockJob)).rejects.toThrow(
         `User ${TEST_USER_ID} not found`,
       );
@@ -253,6 +259,9 @@ describe("Queue Workers", () => {
         status: 200,
       });
 
+      if (!scheduledPostsWorker?.process) {
+        throw new Error("scheduledPostsWorker.process is not defined");
+      }
       await scheduledPostsWorker.process(mockJob);
 
       expect(global.fetch).toHaveBeenCalledWith(
@@ -296,6 +305,9 @@ describe("Queue Workers", () => {
         statusText: "Internal Server Error",
       });
 
+      if (!scheduledPostsWorker?.process) {
+        throw new Error("scheduledPostsWorker.process is not defined");
+      }
       await expect(scheduledPostsWorker.process(mockJob)).rejects.toThrow(
         "Failed to post to nostr publisher",
       );
@@ -322,6 +334,9 @@ describe("Queue Workers", () => {
         new Error("Network error"),
       );
 
+      if (!scheduledPostsWorker?.process) {
+        throw new Error("scheduledPostsWorker.process is not defined");
+      }
       await expect(scheduledPostsWorker.process(mockJob)).rejects.toThrow("Network error");
     });
   });
@@ -385,6 +400,9 @@ describe("Queue Workers", () => {
 
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
+      if (!scheduledLongFormPostsWorker?.process) {
+        throw new Error("scheduledLongFormPostsWorker.process is not defined");
+      }
       await expect(scheduledLongFormPostsWorker.process(mockJob)).rejects.toThrow(
         `User ${TEST_USER_ID} not found`,
       );
@@ -420,6 +438,9 @@ describe("Queue Workers", () => {
         statusText: "Internal Server Error",
       });
 
+      if (!scheduledLongFormPostsWorker?.process) {
+        throw new Error("scheduledLongFormPostsWorker.process is not defined");
+      }
       await expect(scheduledLongFormPostsWorker.process(mockJob)).rejects.toThrow(
         "Failed to post longform to nostr publisher",
       );
@@ -457,7 +478,7 @@ describe("Queue Workers", () => {
       if (!postCheckerWorker?.process) {
         throw new Error("postCheckerWorker.process is not defined");
       }
-      const result = await postCheckerWorker.process({} as unknown as Job);
+      const result = await postCheckerWorker.process({} as unknown as Job) as { processed: number };
 
       expect(getCronDueScheduledPosts).toHaveBeenCalled();
       expect(getCronDueScheduledLongFormPosts).toHaveBeenCalled();
@@ -495,7 +516,8 @@ describe("Queue Workers", () => {
       const result = await postCheckerWorker.process({} as unknown as Job);
 
       // Should skip posts with missing fields
-      expect(result.processed).toBe(3); // All counted, but none scheduled
+      const typedResult = result as { processed: number };
+      expect(typedResult.processed).toBe(3); // All counted, but none scheduled
     });
 
     it("should handle longform posts", async () => {
@@ -520,7 +542,7 @@ describe("Queue Workers", () => {
       if (!postCheckerWorker?.process) {
         throw new Error("postCheckerWorker.process is not defined");
       }
-      const result = await postCheckerWorker.process({} as unknown as Job);
+      const result = await postCheckerWorker.process({} as unknown as Job) as { processed: number };
 
       expect(result.processed).toBe(1);
     });
@@ -544,7 +566,7 @@ describe("Queue Workers", () => {
       if (!postCheckerWorker?.process) {
         throw new Error("postCheckerWorker.process is not defined");
       }
-      const result = await postCheckerWorker.process({} as unknown as Job);
+      const result = await postCheckerWorker.process({} as unknown as Job) as { processed: number };
 
       expect(result.processed).toBe(1);
     });
@@ -568,7 +590,7 @@ describe("Queue Workers", () => {
       if (!postCheckerWorker?.process) {
         throw new Error("postCheckerWorker.process is not defined");
       }
-      const result = await postCheckerWorker.process({} as unknown as Job);
+      const result = await postCheckerWorker.process({} as unknown as Job) as { processed: number };
 
       expect(result.processed).toBe(0);
     });

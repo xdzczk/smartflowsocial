@@ -8,6 +8,7 @@
  */
 
 import { json } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "@remix-run/node";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock Prisma to prevent $use errors
 vi.mock("~/lib/prisma.server", () => ({
@@ -54,12 +55,7 @@ describe("Dashboard Loader Integration", () => {
   describe("Dashboard Index Loader", () => {
     it("should load dashboard data for authenticated user", async () => {
       const request = new Request("http://localhost:3000/dashboard");
-      interface LoaderArgs {
-        request: Request;
-        params: Record<string, string | undefined>;
-        context: Record<string, unknown>;
-      }
-      const response = await loader({ request, params: {} } as LoaderArgs);
+      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
 
@@ -79,7 +75,7 @@ describe("Dashboard Loader Integration", () => {
       const response = await loader({ 
         request, 
         params: { queueType: "posts" } 
-      } as LoaderArgs);
+      } as unknown as LoaderFunctionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
 
@@ -89,12 +85,7 @@ describe("Dashboard Loader Integration", () => {
 
     it("should handle planActivated query parameter", async () => {
       const request = new Request("http://localhost:3000/dashboard?planActivated=true");
-      interface LoaderArgs {
-        request: Request;
-        params: Record<string, string | undefined>;
-        context: Record<string, unknown>;
-      }
-      const response = await loader({ request, params: {} } as LoaderArgs);
+      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
 
@@ -104,12 +95,7 @@ describe("Dashboard Loader Integration", () => {
 
     it("should handle successMessage query parameter", async () => {
       const request = new Request("http://localhost:3000/dashboard?message=success");
-      interface LoaderArgs {
-        request: Request;
-        params: Record<string, string | undefined>;
-        context: Record<string, unknown>;
-      }
-      const response = await loader({ request, params: {} } as LoaderArgs);
+      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
 
@@ -130,12 +116,7 @@ describe("Dashboard Loader Integration", () => {
       (loadDashboardData as ReturnType<typeof vi.fn>).mockResolvedValue(mockData);
 
       const request = new Request("http://localhost:3000/dashboard");
-      interface LoaderArgs {
-        request: Request;
-        params: Record<string, string | undefined>;
-        context: Record<string, unknown>;
-      }
-      const response = await loader({ request, params: {} } as LoaderArgs);
+      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
 
@@ -153,7 +134,7 @@ describe("Dashboard Loader Integration", () => {
   describe("Dashboard Queue Filtering", () => {
     it("should handle 'all' queue type", async () => {
       const request = new Request("http://localhost:3000/dashboard?tab=all");
-      const response = await loader({ request, params: {} } as LoaderArgs);
+      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
       
       expect(response.status).toBe(200);
       expect(loadDashboardData).toHaveBeenCalledWith("user-123", "all");
@@ -164,7 +145,7 @@ describe("Dashboard Loader Integration", () => {
       const response = await loader({ 
         request, 
         params: { queueType: "posts" } 
-      } as LoaderArgs);
+      } as unknown as LoaderFunctionArgs);
       
       expect(response.status).toBe(200);
       expect(loadDashboardData).toHaveBeenCalledWith("user-123", "posts");
@@ -175,7 +156,7 @@ describe("Dashboard Loader Integration", () => {
       const response = await loader({ 
         request, 
         params: { queueType: "longform" } 
-      } as LoaderArgs);
+      } as unknown as LoaderFunctionArgs);
       
       expect(response.status).toBe(200);
       expect(loadDashboardData).toHaveBeenCalledWith("user-123", "longform");
@@ -190,7 +171,7 @@ describe("Dashboard Loader Integration", () => {
 
       const request = new Request("http://localhost:3000/dashboard");
       
-      await expect(loader({ request, params: {} } as LoaderArgs)).rejects.toThrow(
+      await expect(loader({ request, params: {}, context: {} } as LoaderFunctionArgs)).rejects.toThrow(
         "Authentication required"
       );
     });
@@ -202,7 +183,7 @@ describe("Dashboard Loader Integration", () => {
 
       const request = new Request("http://localhost:3000/dashboard");
       
-      await expect(loader({ request, params: {} } as LoaderArgs)).rejects.toThrow(
+      await expect(loader({ request, params: {}, context: {} } as LoaderFunctionArgs)).rejects.toThrow(
         "Feature access denied"
       );
     });
@@ -214,7 +195,7 @@ describe("Dashboard Loader Integration", () => {
 
       const request = new Request("http://localhost:3000/dashboard");
       
-      await expect(loader({ request, params: {} } as LoaderArgs)).rejects.toThrow(
+      await expect(loader({ request, params: {}, context: {} } as LoaderFunctionArgs)).rejects.toThrow(
         "Database error"
       );
     });

@@ -91,8 +91,8 @@ let scheduledLongFormPostsWorker: MockWorkerType | undefined;
 
 beforeAll(async () => {
   const module = await import("~/features/posts/queues.server");
-  scheduledPostsWorker = module.scheduledPostsWorker;
-  scheduledLongFormPostsWorker = module.scheduledLongFormPostsWorker;
+  scheduledPostsWorker = module.scheduledPostsWorker as unknown as MockWorkerType;
+  scheduledLongFormPostsWorker = module.scheduledLongFormPostsWorker as unknown as MockWorkerType;
 });
 
 describe("Queue Worker Edge Cases", () => {
@@ -398,7 +398,10 @@ describe("Queue Worker Edge Cases", () => {
         data: mockJobData,
       } as unknown as Job;
 
-      const result = await (scheduledLongFormPostsWorker).process(mockJob);
+      if (!scheduledLongFormPostsWorker?.process) {
+        throw new Error("scheduledLongFormPostsWorker.process is not defined");
+      }
+      const result = await scheduledLongFormPostsWorker.process(mockJob);
 
       expect(result).toEqual({
         success: true,
@@ -422,8 +425,11 @@ describe("Queue Worker Edge Cases", () => {
       // Mock Prisma to return null (post not found)
       (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
+      if (!scheduledPostsWorker?.process) {
+        throw new Error("scheduledPostsWorker.process is not defined");
+      }
       await expect(
-        (scheduledPostsWorker).process(mockJob),
+        scheduledPostsWorker.process(mockJob),
       ).rejects.toThrow();
     });
 
@@ -454,8 +460,11 @@ describe("Queue Worker Edge Cases", () => {
         new Error("Cannot stringify undefined"),
       );
 
+      if (!scheduledPostsWorker?.process) {
+        throw new Error("scheduledPostsWorker.process is not defined");
+      }
       await expect(
-        (scheduledPostsWorker).process(mockJob),
+        scheduledPostsWorker.process(mockJob),
       ).rejects.toThrow();
     });
   });
