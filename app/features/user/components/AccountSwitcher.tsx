@@ -51,10 +51,10 @@ export default function AccountSwitcher() {
             if (window.nostr) {
               const randomKeys = () => Math.random().toString(36).slice(2, 12);
               const contentSign = `Switch account ${randomKeys()}`;
-              const event: NostrEventData = {
+              const event = {
                 kind: 27235,
                 created_at: Math.floor(Date.now() / 1000),
-                tags: [],
+                tags: [] as string[][],
                 content: contentSign,
               };
 

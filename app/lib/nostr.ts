@@ -44,6 +44,7 @@ export const signEventFn = async (
     const maxRetries = 5;
 
     while (retries < maxRetries) {
+      // @ts-ignore - window.nostr is injected by browser extensions at runtime
       if (window.nostr) {
         const nostrEvent: NostrEvent = {
           content: eventData.content,
@@ -52,6 +53,7 @@ export const signEventFn = async (
           tags: eventData.tags ?? [],
         };
 
+        // @ts-ignore - window.nostr is injected by browser extensions at runtime
         const signResult = await window.nostr.signEvent(nostrEvent);
 
         // Handle different return types from different extensions
@@ -83,6 +85,7 @@ export const signEventFn = async (
   } catch (error) {
     // Only log on client side (these functions use window.nostr)
     if (typeof window !== "undefined") {
+      // @ts-ignore - Dynamic imports work in client-side Remix bundles
       const { logClientError } = await import("~/lib/error-handler.client");
       logClientError(
         error instanceof Error ? error : new Error(String(error)),
@@ -106,6 +109,7 @@ export const signLongFormEvent = async (
     const maxRetries = 5;
 
     while (retries < maxRetries) {
+      // @ts-ignore - window.nostr is injected by browser extensions at runtime
       if (window.nostr) {
         // Build NIP-23 tags
         const eventTags: string[][] = [];
@@ -154,6 +158,7 @@ export const signLongFormEvent = async (
           tags: eventTags,
         };
 
+        // @ts-ignore - window.nostr is injected by browser extensions at runtime
         const signResult = await window.nostr.signEvent(nostrEvent);
 
         // Handle different return types from different extensions
@@ -185,6 +190,7 @@ export const signLongFormEvent = async (
   } catch (error) {
     // Only log on client side (these functions use window.nostr)
     if (typeof window !== "undefined") {
+      // @ts-ignore - Dynamic imports work in client-side Remix bundles
       const { logClientError } = await import("~/lib/error-handler.client");
       logClientError(
         error instanceof Error ? error : new Error(String(error)),

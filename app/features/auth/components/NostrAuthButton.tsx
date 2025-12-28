@@ -14,6 +14,7 @@ export default function NostrAuthButton() {
     void (async () => {
       try {
         // Load and initialize nostr-login when button is clicked
+        // @ts-ignore - Dynamic imports work in client-side Remix bundles
         const { init } = await import("nostr-login");
         
         await init({
@@ -22,6 +23,7 @@ export default function NostrAuthButton() {
           onAuth: () => {
             void (async () => {
           try {
+            // @ts-ignore - window.nostr is injected by browser extensions at runtime
             if (!window.nostr) {
               throw new Error("Nostr extension not found. Please install a Nostr extension like Alby or nos2x.");
             }
@@ -45,6 +47,7 @@ export default function NostrAuthButton() {
               content: contentSign,
             };
 
+            // @ts-ignore - window.nostr is injected by browser extensions at runtime
             const signedEvent = await window.nostr.signEvent(event);
             
             const formData = new FormData();

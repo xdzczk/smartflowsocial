@@ -1,6 +1,6 @@
-// Use this to delete a user by their email
+// Use this to delete a user by their npub
 // Simply call this with:
-// npx tsx ./tests/e2e/support/delete-user.ts username@example.com
+// npx tsx ./tests/e2e/support/delete-user.ts npub1xxx
 // and that user will get deleted
 
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
@@ -9,16 +9,13 @@ import { installGlobals } from "@remix-run/node";
 import { prisma } from "~/lib/prisma.server";
 installGlobals();
 
-async function deleteUser(email: string) {
-  if (!email) {
-    throw new Error("email required for login");
-  }
-  if (!email.endsWith("@example.com")) {
-    throw new Error("All test emails must end in @example.com");
+async function deleteUser(npub: string) {
+  if (!npub) {
+    throw new Error("npub required for deletion");
   }
 
   try {
-    await prisma.user.delete({ where: { email } });
+    await prisma.user.delete({ where: { npub } });
   } catch (error) {
     if (
       error instanceof PrismaClientKnownRequestError &&

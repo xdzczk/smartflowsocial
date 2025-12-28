@@ -1,13 +1,4 @@
-// Type declaration for window.nostr
-import type { NostrEventData, SignedEvent } from "~/features/nostr/types";
-declare global {
-  interface Window {
-    nostr?: {
-      getPublicKey(): Promise<string>;
-      signEvent(event: NostrEventData): Promise<SignedEvent>;
-    };
-  }
-}
+// Type declaration for window.nostr is in app/types/window.d.ts
 
 interface UploadResult {
   success: boolean;

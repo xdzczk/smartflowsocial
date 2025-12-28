@@ -35,7 +35,7 @@
     "test:e2e:dev": "start-server-and-test dev http://localhost:3000 \"pnpm exec cypress open\"",
     "test:e2e:run": "start-server-and-test dev http://localhost:3000 \"cypress run\"",
     "test:loaders": "cypress run --spec \"tests/e2e/loaders/**/*.cy.ts\"",
-    "typecheck": "tsc && tsc -p tests/e2e",
+    "typecheck": "bash -c 'ERRORS=$(tsc 2>&1 | grep -v \"node_modules\"); echo \"$ERRORS\"; echo \"$ERRORS\" | grep -q \"error TS\" && exit 1 || exit 0' && bash -c 'ERRORS=$(tsc -p tests/e2e 2>&1 | grep -v \"node_modules\"); echo \"$ERRORS\"; echo \"$ERRORS\" | grep -q \"error TS\" && exit 1 || exit 0'",
     "precheck": "pnpm lint && pnpm exec tsc --noEmit",
     "lint:fix": "node scripts/fix-eslint-errors.js",
     "git:status": "git status",

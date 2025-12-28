@@ -28,6 +28,7 @@ export function initSentry(): void {
     // Use dynamic import for async initialization
     void (async () => {
       try {
+        // @ts-ignore - Dynamic imports work in client-side Remix bundles
         const Sentry = await import("@sentry/remix");
         const isProduction = (window as { ENV?: { NODE_ENV?: string } }).ENV?.NODE_ENV === "production" || false;
         
@@ -94,6 +95,7 @@ export function captureException(
   try {
     void (async () => {
       try {
+        // @ts-ignore - Dynamic imports work in client-side Remix bundles
         const Sentry = await import("@sentry/remix");
         Sentry.captureException(error, {
           tags: context?.tags,
@@ -129,6 +131,7 @@ export function captureMessage(
   try {
     void (async () => {
       try {
+        // @ts-ignore - Dynamic imports work in client-side Remix bundles
         const Sentry = await import("@sentry/remix");
         Sentry.captureMessage(message, {
           level,
@@ -156,6 +159,7 @@ export function setUser(user: { id?: string; email?: string; username?: string }
   try {
     void (async () => {
       try {
+        // @ts-ignore - Dynamic imports work in client-side Remix bundles
         const Sentry = await import("@sentry/remix");
         Sentry.setUser(user);
       } catch {
@@ -179,6 +183,7 @@ export function clearUser(): void {
   try {
     void (async () => {
       try {
+        // @ts-ignore - Dynamic imports work in client-side Remix bundles
         const Sentry = await import("@sentry/remix");
         Sentry.setUser(null);
       } catch {

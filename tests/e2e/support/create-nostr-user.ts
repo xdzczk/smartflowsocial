@@ -33,7 +33,7 @@ async function createNostrUserAndLogin(npub: string) {
         
         // Create user if it doesn't exist
         if (!currentUser) {
-            currentUser = await tx.user.create({
+            await tx.user.create({
                 data: {
                     npub,
                     timezone: "UTC",
@@ -43,12 +43,25 @@ async function createNostrUserAndLogin(npub: string) {
         } else {
             // Ensure user is enabled
             if (!currentUser.isEnabled) {
-                currentUser = await tx.user.update({
+                await tx.user.update({
                     where: { id: currentUser.id },
                     data: { isEnabled: true },
                 });
             }
         }
+        
+        // Fetch user with subscription to ensure type compatibility
+        const userWithSub = await tx.user.findUnique({
+            where: { npub },
+            include: { Subscription: true },
+        });
+        
+        if (!userWithSub) {
+            throw new Error("Failed to create or retrieve user");
+        }
+        
+        // Use the fetched user for the rest of the transaction
+        currentUser = userWithSub;
 
         // Find or create the premium plan for full feature access during testing
         let plan = await tx.plan.findFirst({
@@ -136,7 +149,7 @@ async function createNostrUserAndLogin(npub: string) {
                     },
                 });
             }
-        } else if (existingSubscription.planId !== plan.id) {
+        } else if (existingSubscription && existingSubscription.planId !== plan.id) {
             // Update subscription to use the premium plan
             await tx.subscription.update({
                 where: { id: existingSubscription.id },
@@ -145,14 +158,24 @@ async function createNostrUserAndLogin(npub: string) {
         }
 
         // Return user with subscription
-        return tx.user.findUnique({
+        const userWithSubscription = await tx.user.findUnique({
             where: { id: currentUser.id },
             include: { Subscription: true },
         });
+        
+        if (!userWithSubscription) {
+            throw new Error("Failed to retrieve user with subscription");
+        }
+        
+        return userWithSubscription;
     });
 
     if (!user) {
         throw new Error("Failed to create user");
+    }
+    
+    if (!user.Subscription) {
+        throw new Error("Failed to create user subscription");
     }
 
     // Create session directly without redirect

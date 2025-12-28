@@ -1,6 +1,6 @@
 {
-  "exclude": ["./tests/e2e", "./cypress.config.ts"],
-  "include": ["remix.env.d.ts", "**/*.ts", "**/*.tsx"],
+  "exclude": ["./tests/e2e", "./cypress.config.ts", "./node_modules", "**/node_modules/**"],
+  "include": ["remix.env.d.ts", "app/**/*.ts", "app/**/*.tsx", "app/types/**/*.d.ts", "app/types/**/*.ts", "server.ts", "worker.ts", "prisma/**/*.ts", "tests/**/*.ts", "tests/**/*.tsx"],
   "compilerOptions": {
     "lib": ["DOM", "DOM.Iterable", "ES2020"],
     "isolatedModules": true,
