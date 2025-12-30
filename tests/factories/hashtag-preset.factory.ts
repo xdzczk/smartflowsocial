@@ -59,15 +59,16 @@ export class HashTagPresetFactory {
   }
 
   build(): HashTagPreset {
-    return {
+    const preset: HashTagPreset = {
       id: this.options.id!,
       userId: this.options.userId!,
       name: this.options.name!,
       tags: this.options.tags ?? "",
       description: this.options.description ?? null,
-      createdAt: this.options.createdAt || new Date(),
-      updatedAt: this.options.updatedAt || new Date(),
-    } as HashTagPreset;
+      createdAt: this.options.createdAt ?? new Date(),
+      updatedAt: this.options.updatedAt ?? new Date(),
+    };
+    return preset;
   }
 }
 

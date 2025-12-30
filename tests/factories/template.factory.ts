@@ -45,13 +45,14 @@ export class TemplateFactory {
   }
 
   build(): Template {
-    return {
+    const template: Template = {
       id: this.options.id!,
       userId: this.options.userId!,
       name: this.options.name ?? null,
-      createdAt: this.options.createdAt || new Date(),
-      updatedAt: this.options.updatedAt || new Date(),
-    } as Template;
+      createdAt: this.options.createdAt ?? new Date(),
+      updatedAt: this.options.updatedAt ?? new Date(),
+    };
+    return template;
   }
 }
 

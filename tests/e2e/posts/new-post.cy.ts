@@ -82,7 +82,8 @@ describe("New Post Creation", () => {
                 .first()
                 .click();
             // Wait for any validation/redirect to occur
-            cy.wait(1000);
+            // eslint-disable-next-line cypress/no-unnecessary-waiting
+            cy.wait(1000); // Wait for form validation/redirect
             // Validation should prevent successful submission
             // Acceptable outcomes: stay on newpost page, show error, or redirect to dashboard/home
             // Just verify we didn't successfully create a post by checking we're not on a success page
@@ -125,7 +126,7 @@ describe("New Post Creation", () => {
 
             // Check for datetime input after toggle
             cy.get("body").then(($body) => {
-                const hasDateInput =
+                const _hasDateInput =
                     $body.find('input[type="datetime-local"]').length > 0 ||
                     $body.find('[data-testid="schedule-datetime"]').length >
                     0 ||
@@ -157,6 +158,7 @@ describe("New Post Creation", () => {
                 if ($body.find('input[type="file"]').length > 0) {
                     cy.uploadTestFile('input[type="file"]', 0);
                     // Verify the file was selected (look for preview or filename)
+                    // eslint-disable-next-line cypress/no-unnecessary-waiting
                     cy.wait(500); // Wait for UI to update after file selection
                     // The implementation varies, so we just check page didn't break
                     cy.location("pathname").should("include", "newpost");
@@ -175,7 +177,7 @@ describe("New Post Creation", () => {
         it("should display hashtag preset selector if available", () => {
             cy.get("body").then(($body) => {
                 // Hashtag presets might be optional based on user setup
-                const hasHashtagPresets =
+                const _hasHashtagPresets =
                     $body.find('[data-testid="hashtag-preset"]').length > 0 ||
                     $body.find("select").length > 0;
                 // Just verify page loads correctly

@@ -55,13 +55,13 @@ describe("Queues Loader Integration", () => {
             // Use visit + explicit wait since visitAndCheck checks pathname only
             cy.visit("/dashboard/settings?tab=queue");
             cy.location("pathname").should("include", "/dashboard/settings");
-            cy.wait(1000);
+            cy.get("body").should("be.visible");
         });
 
         it("should return queue types array", () => {
             cy.visit("/dashboard/settings?tab=queue");
             cy.location("pathname").should("include", "/dashboard/settings");
-            cy.wait(1000);
+            cy.get("body").should("be.visible");
             cy.get("body").then(($body) => {
                 // Check for queue type settings content - more flexible matching
                 const hasContent =
@@ -79,7 +79,7 @@ describe("Queues Loader Integration", () => {
         it("should include schedule configuration", () => {
             cy.visit("/dashboard/settings?tab=queue");
             cy.location("pathname").should("include", "/dashboard/settings");
-            cy.wait(1000);
+            cy.get("body").should("be.visible");
             // Check for schedule configuration elements
             cy.get("body").then(($body) => {
                 const hasScheduleConfig =

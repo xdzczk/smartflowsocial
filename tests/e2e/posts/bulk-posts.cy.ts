@@ -59,7 +59,7 @@ describe("Bulk Posts Upload", () => {
                     const acceptsMultiple =
                         fileInput.attr("multiple") !== undefined ||
                         fileInput.attr("accept")?.includes("image");
-                    expect(acceptsMultiple || true).to.be.true;
+                    expect(acceptsMultiple ?? true).to.be.true;
                 }
             });
         });
@@ -70,7 +70,8 @@ describe("Bulk Posts Upload", () => {
                 if ($body.find('input[type="file"]').length > 0) {
                     cy.uploadTestFile('input[type="file"]', [0, 1, 2]);
                     // Wait for UI to update after file selection
-                    cy.wait(500);
+                    // eslint-disable-next-line cypress/no-unnecessary-waiting
+                    cy.wait(500); // Wait for UI to update after file selection
                     // Verify page didn't break and files were accepted
                     cy.location("pathname").should("include", "bulkposts");
                 } else {
@@ -87,7 +88,7 @@ describe("Bulk Posts Upload", () => {
 
         it("should display start date/time picker", () => {
             cy.get("body").then(($body) => {
-                const hasDatePicker =
+                const _hasDatePicker =
                     $body.find('input[type="datetime-local"]').length > 0 ||
                     $body.find('input[type="date"]').length > 0 ||
                     $body.find('[data-testid="start-datetime"]').length > 0;
@@ -98,7 +99,7 @@ describe("Bulk Posts Upload", () => {
 
         it("should display interval selector", () => {
             cy.get("body").then(($body) => {
-                const hasIntervalSelector =
+                const _hasIntervalSelector =
                     $body.find("select").length > 0 ||
                     $body.find('[data-testid="interval-select"]').length > 0 ||
                     $body.find('input[type="number"]').length > 0;
@@ -114,7 +115,7 @@ describe("Bulk Posts Upload", () => {
 
         it("should display preview button when ready", () => {
             cy.get("body").then(($body) => {
-                const hasPreviewButton =
+                const _hasPreviewButton =
                     $body.find('button:contains("Preview")').length > 0 ||
                     $body.find('[data-testid="preview-button"]').length > 0;
                 // Preview might not be available until files are uploaded
@@ -125,7 +126,7 @@ describe("Bulk Posts Upload", () => {
         it("should display table or grid for images", () => {
             cy.get("body").then(($body) => {
                 // Look for table, grid, or list structure for uploaded images
-                const hasImageContainer =
+                const _hasImageContainer =
                     $body.find("table").length > 0 ||
                     $body.find('[role="grid"]').length > 0 ||
                     $body.find(".grid, .image-grid").length > 0 ||
@@ -145,7 +146,7 @@ describe("Bulk Posts Upload", () => {
             // This will show after files are uploaded
             cy.get("body").then(($body) => {
                 // Look for any caption-related inputs (jQuery doesn't support `i` flag)
-                const hasCaptionInputs =
+                const _hasCaptionInputs =
                     $body.find('[data-testid="caption-input"]').length > 0 ||
                     $body.find('textarea[placeholder*="caption"], textarea[placeholder*="Caption"]').length > 0 ||
                     $body.find('input[placeholder*="caption"], input[placeholder*="Caption"]').length > 0;
@@ -162,7 +163,7 @@ describe("Bulk Posts Upload", () => {
 
         it("should display schedule button", () => {
             cy.get("body").then(($body) => {
-                const hasScheduleButton =
+                const _hasScheduleButton =
                     $body.find('button:contains("Schedule")').length > 0 ||
                     $body.find('button:contains("Sign")').length > 0 ||
                     $body.find('[data-testid="schedule-button"]').length > 0 ||
@@ -180,7 +181,7 @@ describe("Bulk Posts Upload", () => {
 
         it("should display queue type selector", () => {
             cy.get("body").then(($body) => {
-                const hasQueueSelector =
+                const _hasQueueSelector =
                     $body.find("select").length > 0 ||
                     $body.find('[data-testid="queue-type-select"]').length >
                     0 ||

@@ -12,13 +12,13 @@ describe("Billing/Subscription Loader Integration", () => {
         it("should load subscription settings tab without errors", () => {
             cy.visit("/dashboard/settings?tab=subscription");
             cy.location("pathname").should("include", "/dashboard/settings");
-            cy.wait(1000);
+            cy.get("body").should("be.visible");
         });
 
         it("should display subscription section content", () => {
             cy.visit("/dashboard/settings?tab=subscription");
             cy.location("pathname").should("include", "/dashboard/settings");
-            cy.wait(1000);
+            cy.get("body").should("be.visible");
             cy.get("body").then(($body) => {
                 // Check for subscription-related content
                 const hasSubscriptionContent =
@@ -33,7 +33,7 @@ describe("Billing/Subscription Loader Integration", () => {
         it("should display current plan indicator", () => {
             cy.visit("/dashboard/settings?tab=subscription");
             cy.location("pathname").should("include", "/dashboard/settings");
-            cy.wait(1000);
+            cy.get("body").should("be.visible");
             cy.get("body").then(($body) => {
                 // Check for plan state indicators
                 const hasPlanInfo =
@@ -53,7 +53,7 @@ describe("Billing/Subscription Loader Integration", () => {
         it("should load subscription status", () => {
             cy.visit("/dashboard/settings?tab=subscription");
             cy.location("pathname").should("include", "/dashboard/settings");
-            cy.wait(1000);
+            cy.get("body").should("be.visible");
             cy.get("body").then(($body) => {
                 // Check for subscription status elements
                 const hasStatusInfo =
@@ -68,7 +68,7 @@ describe("Billing/Subscription Loader Integration", () => {
         it("should display available plans", () => {
             cy.visit("/dashboard/settings?tab=subscription");
             cy.location("pathname").should("include", "/dashboard/settings");
-            cy.wait(1000);
+            cy.get("body").should("be.visible");
             cy.get("body").then(($body) => {
                 // Check for available plans display
                 const hasPlansDisplay =
@@ -83,7 +83,7 @@ describe("Billing/Subscription Loader Integration", () => {
         it("should have payment history section if applicable", () => {
             cy.visit("/dashboard/settings?tab=subscription");
             cy.location("pathname").should("include", "/dashboard/settings");
-            cy.wait(1000);
+            cy.get("body").should("be.visible");
             cy.get("body").then(($body) => {
                 // Check for payment history or no payments yet
                 const hasPaymentSection =
@@ -100,7 +100,7 @@ describe("Billing/Subscription Loader Integration", () => {
         it("should display plan features or limits", () => {
             cy.visit("/dashboard/settings?tab=subscription");
             cy.location("pathname").should("include", "/dashboard/settings");
-            cy.wait(1000);
+            cy.get("body").should("be.visible");
             cy.get("body").then(($body) => {
                 // Check for plan features or subscription details
                 const hasFeatureInfo =
@@ -116,7 +116,7 @@ describe("Billing/Subscription Loader Integration", () => {
         it("should show subscription period info if premium", () => {
             cy.visit("/dashboard/settings?tab=subscription");
             cy.location("pathname").should("include", "/dashboard/settings");
-            cy.wait(1000);
+            cy.get("body").should("be.visible");
             // This test checks for period info - may not apply to free/testing users
             cy.get("body").then(($body) => {
                 // Just verify the page loaded correctly
@@ -143,14 +143,14 @@ describe("Billing/Subscription Loader Integration", () => {
             cy.visit("/dashboard/settings?tab=subscription");
             // Free users should be redirected to /plans
             cy.location("pathname").should("include", "/plans");
-            cy.wait(1000);
-            cy.get("body").should("exist");
+            cy.get("body").should("be.visible");
         });
 
         it("should show upgrade prompts on plans page for free users", () => {
             cy.visit("/dashboard/settings?tab=subscription");
             cy.location("pathname").should("include", "/plans");
-            cy.wait(1500);
+            // eslint-disable-next-line cypress/no-unnecessary-waiting
+            cy.wait(1500); // Wait for plans page to fully load with pricing data
             cy.get("body").then(($body) => {
                 // Check for upgrade-related content or plan selection
                 const hasUpgradeContent =
@@ -169,7 +169,8 @@ describe("Billing/Subscription Loader Integration", () => {
         it("should display pricing options on plans page", () => {
             cy.visit("/dashboard/settings?tab=subscription");
             cy.location("pathname").should("include", "/plans");
-            cy.wait(1500);
+            // eslint-disable-next-line cypress/no-unnecessary-waiting
+            cy.wait(1500); // Wait for plans page to fully load with pricing data
             cy.get("body").then(($body) => {
                 // Check for pricing or plan options
                 const hasPricingOptions =
@@ -187,7 +188,8 @@ describe("Billing/Subscription Loader Integration", () => {
         it("should show free tier limitation messaging", () => {
             cy.visit("/dashboard/settings?tab=subscription");
             cy.location("pathname").should("include", "/plans");
-            cy.wait(1500);
+            // eslint-disable-next-line cypress/no-unnecessary-waiting
+            cy.wait(1500); // Wait for plans page to fully load with pricing data
             cy.get("body").then(($body) => {
                 // Check for free plan indicators or upgrade prompts
                 const hasFreePlanIndicator =
@@ -210,14 +212,14 @@ describe("Billing/Subscription Loader Integration", () => {
         it("should load subscription page for active users without errors", () => {
             cy.visit("/dashboard/settings?tab=subscription");
             cy.location("pathname").should("include", "/dashboard/settings");
-            cy.wait(1000);
-            cy.get("body").should("exist");
+            cy.get("body").should("be.visible");
         });
 
         it("should display active subscription status", () => {
             cy.visit("/dashboard/settings?tab=subscription");
             cy.location("pathname").should("include", "/dashboard/settings");
-            cy.wait(1500);
+            // eslint-disable-next-line cypress/no-unnecessary-waiting
+            cy.wait(1500); // Wait for subscription data to load
             cy.get("body").then(($body) => {
                 // Check for active subscription indicators
                 const hasActiveStatus =
@@ -234,7 +236,8 @@ describe("Billing/Subscription Loader Integration", () => {
         it("should show current plan details for active subscribers", () => {
             cy.visit("/dashboard/settings?tab=subscription");
             cy.location("pathname").should("include", "/dashboard/settings");
-            cy.wait(1500);
+            // eslint-disable-next-line cypress/no-unnecessary-waiting
+            cy.wait(1500); // Wait for subscription data to load
             cy.get("body").then(($body) => {
                 // Check for plan details (name, features, or benefits)
                 const hasPlanDetails =
@@ -250,7 +253,8 @@ describe("Billing/Subscription Loader Integration", () => {
         it("should display subscription period information", () => {
             cy.visit("/dashboard/settings?tab=subscription");
             cy.location("pathname").should("include", "/dashboard/settings");
-            cy.wait(1500);
+            // eslint-disable-next-line cypress/no-unnecessary-waiting
+            cy.wait(1500); // Wait for subscription data to load
             cy.get("body").then(($body) => {
                 // Check for renewal/expiration date or period info
                 const hasPeriodInfo =
@@ -268,7 +272,8 @@ describe("Billing/Subscription Loader Integration", () => {
         it("should not show upgrade prompts prominently for active users", () => {
             cy.visit("/dashboard/settings?tab=subscription");
             cy.location("pathname").should("include", "/dashboard/settings");
-            cy.wait(1500);
+            // eslint-disable-next-line cypress/no-unnecessary-waiting
+            cy.wait(1500); // Wait for subscription data to load
             // Page should focus on current subscription, not aggressively push upgrades
             cy.get("body").then(($body) => {
                 const hasActiveSubscriptionFocus =
@@ -291,14 +296,14 @@ describe("Billing/Subscription Loader Integration", () => {
             cy.visit("/dashboard/settings?tab=subscription");
             // Expired users should be redirected to renew
             cy.location("pathname").should("include", "/plans");
-            cy.wait(1000);
-            cy.get("body").should("exist");
+            cy.get("body").should("be.visible");
         });
 
         it("should show renewal options on plans page for expired users", () => {
             cy.visit("/dashboard/settings?tab=subscription");
             cy.location("pathname").should("include", "/plans");
-            cy.wait(1500);
+            // eslint-disable-next-line cypress/no-unnecessary-waiting
+            cy.wait(1500); // Wait for plans page to fully load with pricing data
             cy.get("body").then(($body) => {
                 // Check for renewal or resubscribe options
                 const hasRenewalPrompt =
@@ -316,7 +321,8 @@ describe("Billing/Subscription Loader Integration", () => {
         it("should display pricing options for expired users", () => {
             cy.visit("/dashboard/settings?tab=subscription");
             cy.location("pathname").should("include", "/plans");
-            cy.wait(1500);
+            // eslint-disable-next-line cypress/no-unnecessary-waiting
+            cy.wait(1500); // Wait for plans page to fully load with pricing data
             cy.get("body").then(($body) => {
                 // Check for plan/pricing display
                 const hasPricingOptions =
@@ -339,14 +345,14 @@ describe("Billing/Subscription Loader Integration", () => {
         it("should redirect canceled users to plans page", () => {
             cy.visit("/dashboard/settings?tab=subscription");
             cy.location("pathname").should("include", "/plans");
-            cy.wait(1000);
-            cy.get("body").should("exist");
+            cy.get("body").should("be.visible");
         });
 
         it("should offer resubscribe options on plans page", () => {
             cy.visit("/dashboard/settings?tab=subscription");
             cy.location("pathname").should("include", "/plans");
-            cy.wait(1500);
+            // eslint-disable-next-line cypress/no-unnecessary-waiting
+            cy.wait(1500); // Wait for plans page to fully load with pricing data
             cy.get("body").then(($body) => {
                 // Check for resubscribe or reactivate options
                 const hasResubscribeOption =
@@ -370,14 +376,14 @@ describe("Billing/Subscription Loader Integration", () => {
         it("should redirect past due users to plans page", () => {
             cy.visit("/dashboard/settings?tab=subscription");
             cy.location("pathname").should("include", "/plans");
-            cy.wait(1000);
-            cy.get("body").should("exist");
+            cy.get("body").should("be.visible");
         });
 
         it("should show payment/renewal options on plans page", () => {
             cy.visit("/dashboard/settings?tab=subscription");
             cy.location("pathname").should("include", "/plans");
-            cy.wait(1500);
+            // eslint-disable-next-line cypress/no-unnecessary-waiting
+            cy.wait(1500); // Wait for plans page to fully load with pricing data
             cy.get("body").then(($body) => {
                 // Check for payment or renewal options
                 const hasPaymentOptions =

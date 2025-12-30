@@ -3,6 +3,8 @@
  * Uses builder pattern for flexible test data creation
  */
 
+import { Decimal } from "@prisma/client/runtime/library";
+
 import type { Payment, PaymentStatus } from "@prisma/client";
 
 import { TEST_USER_ID } from "../utils/test-helpers";
@@ -119,11 +121,14 @@ export class PaymentFactory {
   }
 
   build(): Payment {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     return {
       id: this.options.id!,
       userId: this.options.userId!,
       amount: this.options.amount ?? 0,
-      amountUsd: this.options.amountUsd ?? null,
+      amountUsd: this.options.amountUsd !== null && this.options.amountUsd !== undefined
+        ? new Decimal(this.options.amountUsd)
+        : null,
       invoice: this.options.invoice ?? "",
       paymentHash: this.options.paymentHash ?? "",
       preimage: this.options.preimage ?? null,

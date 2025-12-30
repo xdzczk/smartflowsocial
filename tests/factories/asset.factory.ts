@@ -85,17 +85,18 @@ export class AssetFactory {
   }
 
   build(): Asset {
-    return {
+    const asset: Asset = {
       id: this.options.id!,
       userId: this.options.userId!,
       title: this.options.title ?? null,
       content: this.options.content ?? null,
       fileUrl: this.options.fileUrl ?? null,
       tags: this.options.tags ?? [],
-      assetType: this.options.assetType || "TEXT",
-      createdAt: this.options.createdAt || new Date(),
-      updatedAt: this.options.updatedAt || new Date(),
-    } as Asset;
+      assetType: this.options.assetType ?? "TEXT",
+      createdAt: this.options.createdAt ?? new Date(),
+      updatedAt: this.options.updatedAt ?? new Date(),
+    };
+    return asset;
   }
 }
 

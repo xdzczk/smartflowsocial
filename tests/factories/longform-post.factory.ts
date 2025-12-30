@@ -3,7 +3,9 @@
  * Uses builder pattern for flexible test data creation
  */
 
-import type { LongFormPost, Status } from "@prisma/client";
+import type { LongFormPost, Status, Prisma } from "@prisma/client";
+
+import type { NostrEvent, SignedEvent } from "~/features/nostr/types";
 
 import { TEST_USER_ID } from "../utils/test-helpers";
 
@@ -21,8 +23,8 @@ export interface LongFormPostFactoryOptions {
   isPublished?: boolean;
   draft?: boolean;
   status?: Status;
-  signedEvent?: import("~/features/nostr/types").SignedEvent;
-  nostrEvent?: import("~/features/nostr/types").NostrEvent;
+  signedEvent?: SignedEvent;
+  nostrEvent?: NostrEvent;
   queueTypeId?: string | null;
   tags?: string[];
   hashTagPresetId?: string | null;
@@ -136,12 +138,12 @@ export class LongFormPostFactory {
     return this;
   }
 
-  withSignedEvent(signedEvent: import("~/features/nostr/types").SignedEvent): this {
+  withSignedEvent(signedEvent: SignedEvent): this {
     this.options.signedEvent = signedEvent;
     return this;
   }
 
-  withNostrEvent(nostrEvent: import("~/features/nostr/types").NostrEvent): this {
+  withNostrEvent(nostrEvent: NostrEvent): this {
     this.options.nostrEvent = nostrEvent;
     // NostrEvent doesn't have an id property, so we can't set nostrEventId from it
     // nostrEventId should be set separately if needed
@@ -154,6 +156,7 @@ export class LongFormPostFactory {
   }
 
   build(): LongFormPost {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     return {
       id: this.options.id!,
       userId: this.options.userId!,
@@ -168,8 +171,8 @@ export class LongFormPostFactory {
       isPublished: this.options.isPublished ?? false,
       draft: this.options.draft ?? false,
       status: this.options.status ?? "DRAFT",
-      signedEvent: this.options.signedEvent ?? null,
-      nostrEvent: this.options.nostrEvent ?? null,
+      signedEvent: (this.options.signedEvent ?? null) as unknown as Prisma.JsonValue,
+      nostrEvent: (this.options.nostrEvent ?? null) as unknown as Prisma.JsonValue,
       queueTypeId: this.options.queueTypeId ?? null,
       tags: this.options.tags ?? [],
       hashTagPresetId: this.options.hashTagPresetId ?? null,

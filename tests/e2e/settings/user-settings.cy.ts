@@ -49,7 +49,7 @@ describe("User Settings", () => {
 
         it("should display timezone selector", () => {
             cy.get("body").then(($body) => {
-                const hasTimezoneSelector =
+                const _hasTimezoneSelector =
                     $body.find('[data-testid="timezone-select"]').length > 0 ||
                     $body.find("select").filter((_, el) =>
                         el.innerHTML.toLowerCase().includes("timezone"),
@@ -68,7 +68,7 @@ describe("User Settings", () => {
 
         it("should display mute settings toggle", () => {
             cy.get("body").then(($body) => {
-                const hasMuteSettings =
+                const _hasMuteSettings =
                     $body.find('[data-testid="mute-toggle"]').length > 0 ||
                     $body.find('input[type="checkbox"]').length > 0 ||
                     $body.text().toLowerCase().includes("mute") ||
@@ -79,7 +79,7 @@ describe("User Settings", () => {
 
         it("should display trust score filter settings", () => {
             cy.get("body").then(($body) => {
-                const hasTrustSettings =
+                const _hasTrustSettings =
                     $body.find('[data-testid="trust-filter"]').length > 0 ||
                     $body.text().toLowerCase().includes("trust");
                 cy.location("pathname").should("include", "settings");
@@ -94,7 +94,7 @@ describe("User Settings", () => {
 
         it("should display schedule interval setting", () => {
             cy.get("body").then(($body) => {
-                const hasIntervalSetting =
+                const _hasIntervalSetting =
                     $body.find('[data-testid="schedule-interval"]').length >
                     0 ||
                     $body.find('input[type="number"]').length > 0 ||
@@ -113,7 +113,7 @@ describe("User Settings", () => {
 
         it("should display NWC connection settings", () => {
             cy.get("body").then(($body) => {
-                const hasNwcSettings =
+                const _hasNwcSettings =
                     $body.find('[data-testid="nwc-settings"]').length > 0 ||
                     $body.text().toLowerCase().includes("nwc") ||
                     $body.text().toLowerCase().includes("wallet") ||
@@ -124,7 +124,7 @@ describe("User Settings", () => {
 
         it("should display NWC connection status", () => {
             cy.get("body").then(($body) => {
-                const hasNwcStatus =
+                const _hasNwcStatus =
                     $body.find('[data-testid="nwc-status"]').length > 0 ||
                     $body.text().toLowerCase().includes("connected") ||
                     $body.text().toLowerCase().includes("connect");
@@ -140,7 +140,7 @@ describe("User Settings", () => {
 
         it("should display subscription information", () => {
             cy.get("body").then(($body) => {
-                const hasSubscriptionInfo =
+                const _hasSubscriptionInfo =
                     $body.find('[data-testid="subscription-info"]').length >
                     0 ||
                     $body.text().toLowerCase().includes("plan") ||
@@ -157,7 +157,7 @@ describe("User Settings", () => {
 
         it("should display save button", () => {
             cy.get("body").then(($body) => {
-                const hasSaveButton =
+                const _hasSaveButton =
                     $body.find('button[type="submit"]').length > 0 ||
                     $body.find('button:contains("Save")').length > 0 ||
                     $body.find('[data-testid="save-settings"]').length > 0;

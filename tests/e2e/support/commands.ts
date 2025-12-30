@@ -174,7 +174,7 @@ function cleanupNostrUser({ npub }: { npub?: string } = {}) {
     // Use cy.state to check aliases
     cy.wrap(null).then(() => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const aliases = (cy as any).state("aliases") || {};
+      const aliases = (cy as any).state("aliases") ?? {};
       if (aliases.user) {
         cy.get("@user", { log: false }).then((user) => {
           const userNpub = (user as { npub?: string }).npub;

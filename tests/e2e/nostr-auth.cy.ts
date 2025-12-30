@@ -48,7 +48,8 @@ describe("Nostr Authentication", () => {
         });
 
         // Wait for navigation and then check cookie is cleared
-        cy.wait(1000);
+        // eslint-disable-next-line cypress/no-unnecessary-waiting
+        cy.wait(1000); // Wait for logout/navigation to complete
         cy.getCookie("__session").should("not.exist");
     });
 });

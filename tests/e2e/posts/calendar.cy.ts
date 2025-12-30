@@ -41,7 +41,7 @@ describe("Calendar View", () => {
 
         it("should display week or month view toggle", () => {
             cy.get("body").then(($body) => {
-                const hasViewToggle =
+                const _hasViewToggle =
                     $body.find('button:contains("Week")').length > 0 ||
                     $body.find('button:contains("Month")').length > 0 ||
                     $body.find('[data-testid="view-toggle"]').length > 0 ||
@@ -85,7 +85,7 @@ describe("Calendar View", () => {
 
         it("should display current time indicator", () => {
             cy.get("body").then(($body) => {
-                const hasTimeIndicator =
+                const _hasTimeIndicator =
                     $body.find('[data-testid="current-time"]').length > 0 ||
                     $body.find(".current-time, .now-indicator").length > 0;
                 // Current time indicator might be conditionally rendered
@@ -101,7 +101,7 @@ describe("Calendar View", () => {
 
         it("should display posts on calendar if any exist", () => {
             cy.get("body").then(($body) => {
-                const hasPosts =
+                const _hasPosts =
                     $body.find('[data-testid="calendar-post"]').length > 0 ||
                     $body.find(".post-block, .event-block").length > 0 ||
                     $body.find('[draggable="true"]').length > 0;
@@ -134,7 +134,7 @@ describe("Calendar View", () => {
 
         it("should display today button", () => {
             cy.get("body").then(($body) => {
-                const hasTodayButton =
+                const _hasTodayButton =
                     $body.find('button:contains("Today")').length > 0 ||
                     $body.find('[data-testid="today-button"]').length > 0;
                 // Today button might be present
@@ -150,7 +150,7 @@ describe("Calendar View", () => {
 
         it("should have draggable post elements if posts exist", () => {
             cy.get("body").then(($body) => {
-                const hasDraggable =
+                const _hasDraggable =
                     $body.find('[draggable="true"]').length > 0 ||
                     $body.find('[data-testid="draggable-post"]').length > 0;
                 // Draggable elements present if posts exist
@@ -166,7 +166,7 @@ describe("Calendar View", () => {
 
         it("should display queue type filter/tabs", () => {
             cy.get("body").then(($body) => {
-                const hasQueueFilter =
+                const _hasQueueFilter =
                     $body.find("select").length > 0 ||
                     $body.find('[role="tablist"]').length > 0 ||
                     $body.find('[data-testid="queue-filter"]').length > 0 ||

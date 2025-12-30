@@ -63,9 +63,9 @@ export function signEvent(eventData: {
     const secretKey = getTestSecretKey();
 
     const eventTemplate: EventTemplate = {
-        kind: eventData.kind || 1,
-        created_at: eventData.created_at || Math.floor(Date.now() / 1000),
-        tags: eventData.tags || [],
+        kind: eventData.kind ?? 1,
+        created_at: eventData.created_at ?? Math.floor(Date.now() / 1000),
+        tags: eventData.tags ?? [],
         content: eventData.content,
     };
 

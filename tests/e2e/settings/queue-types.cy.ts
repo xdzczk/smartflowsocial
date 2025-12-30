@@ -66,7 +66,7 @@ describe("Queue Types Management", () => {
 
         it("should display schedule type or interval options", () => {
             cy.get("body").then(($body) => {
-                const hasScheduleOptions =
+                const _hasScheduleOptions =
                     $body.text().toLowerCase().includes("interval") ||
                     $body.text().toLowerCase().includes("fixed slots") ||
                     $body.text().toLowerCase().includes("schedule") ||
@@ -106,7 +106,7 @@ describe("Queue Types Management", () => {
 
         it("should display queue or schedule configuration", () => {
             cy.get("body").then(($body) => {
-                const hasConfig =
+                const _hasConfig =
                     $body.find('[data-testid="default-queue"]').length > 0 ||
                     $body.text().toLowerCase().includes("default") ||
                     $body.text().toLowerCase().includes("queue") ||

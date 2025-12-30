@@ -3,7 +3,7 @@
  * Uses builder pattern for flexible test data creation
  */
 
-import type { QueueType, ScheduleType } from "@prisma/client";
+import type { Prisma, QueueType, ScheduleType } from "@prisma/client";
 
 import { TEST_USER_ID } from "../utils/test-helpers";
 
@@ -106,20 +106,21 @@ export class QueueTypeFactory {
   }
 
   build(): QueueType {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     return {
       id: this.options.id!,
       userId: this.options.userId!,
       name: this.options.name!,
-      scheduleType: this.options.scheduleType || "INTERVAL",
-      scheduleConfig: this.options.scheduleConfig || { intervalHours: 4 },
+      scheduleType: this.options.scheduleType ?? "INTERVAL",
+      scheduleConfig: (this.options.scheduleConfig ?? { intervalHours: 4 }) as unknown as Prisma.JsonValue,
       isEnabled: this.options.isEnabled ?? true,
       color: this.options.color ?? null,
       description: this.options.description ?? null,
       lastPostTime: this.options.lastPostTime ?? null,
       isDefault: this.options.isDefault ?? false,
       hashTagPresetId: this.options.hashTagPresetId ?? null,
-      createdAt: this.options.createdAt || new Date(),
-      updatedAt: this.options.updatedAt || new Date(),
+      createdAt: this.options.createdAt ?? new Date(),
+      updatedAt: this.options.updatedAt ?? new Date(),
     } as QueueType;
   }
 }

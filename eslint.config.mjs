@@ -396,6 +396,7 @@ export default (async () => {
   // JavaScript test files (no TypeScript type-aware rules)
   {
     files: ["**/*.test.{js,jsx}", "tests/**/*.{js,jsx}"],
+    ignores: ["scripts/**"],
     plugins: {
       "@typescript-eslint": tseslintPlugin,
       jest,
@@ -591,6 +592,8 @@ export default (async () => {
       "import/order": "warn",
       "import/no-restricted-paths": "off",
       "no-restricted-imports": "off",
+      "jest/valid-title": "off",
+      "jest/valid-describe-callback": "off",
     },
   },
 
@@ -600,6 +603,7 @@ export default (async () => {
     plugins: {
       "@typescript-eslint": tseslintPlugin,
       import: importPlugin,
+      jest,
     },
     languageOptions: {
       parser: tseslintParser,
@@ -619,6 +623,9 @@ export default (async () => {
       "@typescript-eslint/no-unsafe-call": "warn",
       "@typescript-eslint/no-floating-promises": "warn",
       "@typescript-eslint/await-thenable": "warn",
+      "jest/valid-title": "off",
+      "jest/valid-describe-callback": "off",
+      "no-console": "off",
       "@typescript-eslint/no-misused-promises": "warn",
       "@typescript-eslint/no-unnecessary-type-assertion": "warn",
       "@typescript-eslint/consistent-type-assertions": "warn",
@@ -631,7 +638,6 @@ export default (async () => {
           allowNullish: true,
         },
       ],
-      "no-console": "off",
       "no-undef": "off",
       "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
       "import/order": "warn",

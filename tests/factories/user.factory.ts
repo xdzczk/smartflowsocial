@@ -3,7 +3,7 @@
  * Uses builder pattern for flexible test data creation
  */
 
-import type { User, UploadProvider } from "@prisma/client";
+import type { Prisma, UploadProvider, User } from "@prisma/client";
 
 import { TEST_USER_ID } from "../utils/test-helpers";
 
@@ -146,6 +146,7 @@ export class UserFactory {
   }
 
   build(): User {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     return {
       id: this.options.id!,
       npub: this.options.npub!,
@@ -156,13 +157,13 @@ export class UserFactory {
       uploadProvider: this.options.uploadProvider ?? "S3",
       showHashTagsinPosts: this.options.showHashTagsinPosts ?? false,
       scheduleInterval: this.options.scheduleInterval ?? [],
-      nostrProfile: this.options.nostrProfile ?? null,
+      nostrProfile: (this.options.nostrProfile ?? null) as unknown as Prisma.JsonValue,
       enableMirrorBlossom: this.options.enableMirrorBlossom ?? false,
       mirrorUploadUrls: this.options.mirrorUploadUrls ?? [],
       encryptedNwc: this.options.encryptedNwc ?? null,
       nwcEnabled: this.options.nwcEnabled ?? false,
       nwcLastUsed: null,
-      mutedList: this.options.mutedList ?? { npubs: [] },
+      mutedList: (this.options.mutedList ?? { npubs: [] }) as unknown as Prisma.JsonValue,
       filterMuted: this.options.filterMuted ?? false,
       hidePostsFromLowTrustUsers:
         this.options.hidePostsFromLowTrustUsers ?? false,

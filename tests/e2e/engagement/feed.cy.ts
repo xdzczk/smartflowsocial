@@ -76,7 +76,7 @@ describe("Engagement Feed", () => {
 
         it("should display like count if available", () => {
             cy.get("body").then(($body) => {
-                const hasLikes =
+                const _hasLikes =
                     $body.find('[data-testid="like-count"]').length > 0 ||
                     $body.text().toLowerCase().includes("like");
                 // Might not have likes on all posts
@@ -86,7 +86,7 @@ describe("Engagement Feed", () => {
 
         it("should display reply count if available", () => {
             cy.get("body").then(($body) => {
-                const hasReplies =
+                const _hasReplies =
                     $body.find('[data-testid="reply-count"]').length > 0 ||
                     $body.text().toLowerCase().includes("repl");
                 cy.location("pathname").should("include", "engagement");
@@ -95,7 +95,7 @@ describe("Engagement Feed", () => {
 
         it("should display zap count if available", () => {
             cy.get("body").then(($body) => {
-                const hasZaps =
+                const _hasZaps =
                     $body.find('[data-testid="zap-count"]').length > 0 ||
                     $body.text().toLowerCase().includes("zap") ||
                     $body.text().toLowerCase().includes("sats");
@@ -111,7 +111,7 @@ describe("Engagement Feed", () => {
 
         it("should display notification type tabs or filters", () => {
             cy.get("body").then(($body) => {
-                const hasFilters =
+                const _hasFilters =
                     $body.find('[role="tablist"]').length > 0 ||
                     $body.find('[data-testid="notification-tabs"]').length >
                     0 ||
@@ -132,7 +132,7 @@ describe("Engagement Feed", () => {
 
         it("should display notifications section", () => {
             cy.get("body").then(($body) => {
-                const hasNotifications =
+                const _hasNotifications =
                     $body.find('[data-testid="notifications"]').length > 0 ||
                     $body.find(".notifications").length > 0 ||
                     $body.text().toLowerCase().includes("notification") ||
@@ -168,7 +168,7 @@ describe("Engagement Feed", () => {
 
         it("should group notifications by parent post if available", () => {
             cy.get("body").then(($body) => {
-                const hasGroupedNotifications =
+                const _hasGroupedNotifications =
                     $body.find('[data-testid="notification-group"]').length >
                     0 ||
                     $body.find(".grouped-notifications").length > 0;
@@ -185,7 +185,7 @@ describe("Engagement Feed", () => {
 
         it("should display filter/mute controls if available", () => {
             cy.get("body").then(($body) => {
-                const hasFilterControls =
+                const _hasFilterControls =
                     $body.find('[data-testid="filter-controls"]').length > 0 ||
                     $body.find('button:contains("Filter")').length > 0 ||
                     $body.find('[data-testid="mute-toggle"]').length > 0;

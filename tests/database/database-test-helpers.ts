@@ -4,7 +4,7 @@
  * Utilities for writing database-integrated tests
  */
 
-import { describe, it, beforeEach, afterEach, beforeAll, afterAll } from "vitest";
+import { beforeAll, afterAll } from "vitest";
 
 import { createMinimalFixtures, createCompleteFixtures } from "./fixtures";
 import type { TestFixtures } from "./fixtures";
@@ -13,7 +13,6 @@ import {
   setupTestDatabase,
   teardownTestDatabase,
   useTestDatabase,
-  resetTestDatabase,
 } from "./test-db";
 
 /**
@@ -61,6 +60,7 @@ export function describeDatabase(
   // Skip the entire suite if database is not configured
   // This prevents beforeAll from failing and marking the suite as failed
   if (shouldSkip) {
+    // eslint-disable-next-line jest/valid-describe-callback, jest/valid-title
     describe.skip(name, fn);
     return;
   }
