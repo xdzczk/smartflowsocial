@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
 
-import type { QueueType, UserData } from "~/features/posts/types";
 import { handleErrorSafely } from "~/lib/error-handler.client";
+
+import type { QueueType, UserData } from "../../types";
 
 import { PostBlock } from "./PostBlock";
 import type { CalendarPost } from "./PostBlock.types";
@@ -251,6 +252,8 @@ export function WeeklyView({
                 return (
                   <div
                     key={`${dateKey}-${time}`}
+                    role="gridcell"
+                    tabIndex={-1}
                     className={`relative min-w-0 flex-1 border-r border-gray-100 p-1 last:border-r-0 dark:border-gray-800 overflow-visible ${
                       isDragOver
                         ? "bg-blue-100 dark:bg-blue-900/30"

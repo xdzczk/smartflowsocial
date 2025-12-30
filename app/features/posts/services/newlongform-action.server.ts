@@ -10,10 +10,6 @@ import { redirect ,
 } from "@remix-run/node";
 
 import {
-  convertEditorJSToMarkdown,
-} from "~/features/posts/longform.server";
-import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
-import {
   createUploadHandler,
   uploadBufferToS3,
 } from "~/features/upload/s3.server";
@@ -29,6 +25,12 @@ import {
   getQueueTypes,
   getHashTagPresetById,
 } from "~/models/user.server";
+
+import {
+  convertEditorJSToMarkdown,
+} from "../longform.server";
+
+import { resolveQueueTypeId } from "./queue-type-resolver.server";
 
 /**
  * Parse and combine tags from form data

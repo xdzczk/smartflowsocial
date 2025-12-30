@@ -51,7 +51,7 @@ export default function Toast({ toast, onClose }: ToastProps) {
                                 rel="noopener noreferrer"
                                 className="mt-1 block text-sm underline hover:no-underline"
                             >
-                                {toast.linkText || "View"}
+                                {toast.linkText ?? "View"}
                             </a> : null}
                     </div>
                     <button

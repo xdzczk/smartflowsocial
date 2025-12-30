@@ -85,7 +85,7 @@ async function getHashtagPresetTags(
     if (selectedQueueType && typeof selectedQueueType === "object" && "hashTagPreset" in selectedQueueType && selectedQueueType.hashTagPreset) {
       const preset = selectedQueueType.hashTagPreset;
       if (preset && typeof preset === "object" && "tags" in preset && typeof preset.tags === "string") {
-        hashTagPresetTags = preset.tags || "";
+        hashTagPresetTags = preset.tags ?? "";
       }
       if (preset && typeof preset === "object" && "id" in preset && typeof preset.id === "string") {
         hashTagPresetId = preset.id;
@@ -490,7 +490,7 @@ export async function handleNewPostAction(
   const sanitizedRelays = userRelays.map((relay: string) => relay.trim());
 
   // Check content type before parsing
-  const contentType = request.headers.get("Content-Type") || "";
+  const contentType = request.headers.get("Content-Type") ?? "";
 
   let formData: FormData;
   if (contentType.includes("multipart/form-data")) {
@@ -516,7 +516,7 @@ export async function handleNewPostAction(
   const useHashtagPresetsValue = formData.get("useHashtagPresets");
   const hashTagPresetIdValue = formData.get("hashTagPresetId");
   
-  const queueType = (queueTypeValue ? String(queueTypeValue) : null) || "unassigned";
+  const queueType = (queueTypeValue ? String(queueTypeValue) : null) ?? "unassigned";
   const queueTypeId = queueTypeIdValue ? String(queueTypeIdValue) : null;
   const isRecyclable = isRecyclableValue === "on" || isRecyclableValue === "true";
   const useHashtagPresets = useHashtagPresetsValue === "on" || useHashtagPresetsValue === "true";

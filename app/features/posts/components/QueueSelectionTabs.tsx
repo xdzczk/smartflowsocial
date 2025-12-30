@@ -1,7 +1,7 @@
 import { Link, useParams, useRevalidator } from "@remix-run/react";
 
-import { getQueueColor } from "~/features/posts/queueColors";
-import type { QueueType } from "~/features/posts/types";
+import { getQueueColor } from "../queueColors";
+import type { QueueType } from "../types";
 interface QueueSelectionTabsProps {
   currentTab: string;
   queueTypes: (QueueType | string)[];
@@ -71,7 +71,7 @@ export default function QueueSelectionTabs({
               onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
               className={`${baseClasses} ${
                 isSelected
-                  ? `${colors.border?.replace("border-", "border-b-") || "border-b-blue-500"} ${colors.text || "text-blue-600"}`
+                  ? `${colors.border?.replace("border-", "border-b-") || "border-b-blue-500"} ${colors.text ?? "text-blue-600"}`
                   : unselectedClasses
               }`}
             >

@@ -5,8 +5,8 @@ import { useState, useEffect, useMemo } from "react";
 import { type ToastMessage } from "~/components/types";
 import MediaModal from "~/components/ui/MediaModal";
 import Toast from "~/components/ui/Toast";
-import { requireUserId } from "~/features/auth/session.server";
-import { requireFeatureAccess } from "~/features/payments/subscriptions.server";
+import { requireUserId } from "~/features/auth";
+import { requireFeatureAccess } from "~/features/payments";
 import {
   BulkPostsActionButtons,
   BulkPostsTable,
@@ -14,6 +14,7 @@ import {
   PostConfirmation,
   getBulkPostsDashboardData,
 } from "~/features/posts";
+import type { BulkPost, QueueType, PreparedEvent } from "~/features/posts";
 import {
   handleFileChange as handleFileChangeHandler,
   handleCaptionChange as handleCaptionChangeHandler,
@@ -25,7 +26,6 @@ import {
   handleQueueTypeChange as handleQueueTypeChangeHandler,
   handleBulkQueueUpdate as handleBulkQueueUpdateHandler,
 } from "~/features/posts/bulkposts.handlers";
-import { type BulkPost, type QueueType , type PreparedEvent } from "~/features/posts/types";
 import { useBulkPostEvents } from "~/features/posts/useBulkPostEvents";
 import { useBulkPostsState } from "~/features/posts/useBulkPostsState";
 import { useOptionalUser } from "~/lib/remix-utils";

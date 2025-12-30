@@ -7,8 +7,8 @@ import { Outlet, useLoaderData, Link, Form, useNavigation } from "@remix-run/rea
 
 import Footer from "~/components/layout/DashboardFooter";
 import Header from "~/components/layout/DashboardHeader";
-import { requireUser } from "~/features/auth/session.server";
-import { requireActiveSubscription } from "~/features/payments/subscriptions.server";
+import { requireUser } from "~/features/auth";
+import { requireActiveSubscription } from "~/features/payments";
 import { loadDashboardData, handleDashboardAction } from "~/features/user";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {

@@ -382,7 +382,7 @@ export function convertMarkdownToEditorJS(markdown: string): EditorJSOutput {
             file: {
               url: url,
             },
-            caption: caption || "",
+            caption: caption ?? "",
             withBorder: false,
             withBackground: false,
             stretched: false,

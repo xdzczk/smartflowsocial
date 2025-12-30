@@ -3,9 +3,6 @@
  * Centralized data fetching for drafts page
  */
 
-import { combineContent } from "~/features/posts/combined.server";
-import type { PostData, LongFormPostData } from "~/features/posts/types";
-import { convertPrismaQueueTypeToQueueType } from "~/features/posts/types";
 import {
   getDraftLongFormPosts,
 } from "~/models/longformpost.server";
@@ -16,6 +13,10 @@ import {
   getUserById,
   getQueueTypes,
 } from "~/models/user.server";
+
+import { combineContent } from "../combined.server";
+import type { PostData, LongFormPostData } from "../types";
+import { convertPrismaQueueTypeToQueueType } from "../types";
 
 /**
  * Load drafts data

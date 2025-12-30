@@ -2,7 +2,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, Link, useFetcher } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
-import { requireUserId } from "~/features/auth/session.server";
+import { requireUserId } from "~/features/auth";
 import { getQueueColor } from "~/features/posts/queueColors";
 import {
   loadTemplateEditData,

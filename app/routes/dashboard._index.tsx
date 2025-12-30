@@ -6,8 +6,8 @@ import {
 import { useState, useEffect } from "react";
 
 import MediaModal from "~/components/ui/MediaModal";
-import { requireUserId } from "~/features/auth/session.server";
-import { requireFeatureAccess } from "~/features/payments/subscriptions.server";
+import { requireUserId } from "~/features/auth";
+import { requireFeatureAccess } from "~/features/payments";
 import {
   AllContentListing,
   BulkDeleteBar,

@@ -2,7 +2,8 @@ import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle"
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { getDynamicQueueStyle } from "~/features/posts/queueColors";
+
+import { getDynamicQueueStyle } from "../queueColors";
 interface QueueType {
     id?: string;
     name: string;
@@ -162,7 +163,7 @@ export function LongFormPublishingOptions({
                         type="datetime-local"
                         id="scheduledFor"
                         name="scheduledFor"
-                        value={scheduledFor || ""}
+                        value={scheduledFor ?? ""}
                         onChange={(e) => onScheduledForChange(e.target.value)}
                         className="flex-1 bg-white dark:bg-gray-900"
                         placeholder="Select date and time"

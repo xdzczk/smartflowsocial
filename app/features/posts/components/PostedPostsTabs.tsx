@@ -1,6 +1,6 @@
 import { Link, useParams, useRevalidator } from "@remix-run/react";
 
-import { getQueueColor } from "~/features/posts/queueColors";
+import { getQueueColor } from "../queueColors";
 interface QueueType {
     name: string;
     color?: string;

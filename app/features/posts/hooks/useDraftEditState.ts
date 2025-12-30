@@ -1,9 +1,10 @@
 import { useFetcher } from "@remix-run/react";
 import { useState, useEffect, useCallback } from "react";
 
-import { signDraftForScheduling } from "~/features/posts/services/draft-sign.server";
-import type { UserData, HashTagPreset, PostData } from "~/features/posts/types";
 import { useOptionalUser } from "~/lib/remix-utils";
+
+import { signDraftForScheduling } from "../services/draft-sign.server";
+import type { UserData, HashTagPreset, PostData } from "../types";
 
 interface Post {
   content?: string | null;
@@ -32,6 +33,7 @@ export function useDraftEditState({
   const [content, setContent] = useState(post.content ?? "");
   const [caption] = useState(post.caption ?? "");
   const [selectedQueue, setSelectedQueue] = useState<string>(
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- Boolean OR for fallback logic; ?? would be incorrect here
     (typeof post.queueType === "object" && post.queueType?.name) || (typeof post.queueType === "string" ? post.queueType : "unassigned"),
   );
   const [scheduledFor, setScheduledFor] = useState("");
@@ -150,7 +152,7 @@ export function useDraftEditState({
     if (post.hashTagPresetId && hashTagPresets.length > 0) {
       const preset = hashTagPresets.find((p) => p.id === post.hashTagPresetId);
       if (preset) {
-        setSelectedHashtags(preset.tags || "");
+        setSelectedHashtags(preset.tags ?? "");
       }
     }
   }, [post.hashTagPresetId, hashTagPresets]);

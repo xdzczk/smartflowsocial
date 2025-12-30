@@ -123,8 +123,8 @@ export async function requestChildLink(
   childHex: string,
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
   // Directly use 64-char hex keys, no normalization or conversion.
-  const parent = (parentHex || "").trim();
-  const child = (childHex || "").trim();
+  const parent = (parentHex ?? "").trim();
+  const child = (childHex ?? "").trim();
 
   if (!/^[0-9a-fA-F]{64}$/.test(parent) || !/^[0-9a-fA-F]{64}$/.test(child)) {
     logWarning("[requestChildLink] Invalid hex key(s)", { parent, child });
@@ -176,8 +176,8 @@ export async function cancelChildLinkRequest(
   parentHex: string,
   childHex: string,
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
-  const parent = (parentHex || "").trim();
-  const child = (childHex || "").trim();
+  const parent = (parentHex ?? "").trim();
+  const child = (childHex ?? "").trim();
 
   if (!/^[0-9a-fA-F]{64}$/.test(parent) || !/^[0-9a-fA-F]{64}$/.test(child)) {
     return Promise.resolve({ ok: false, reason: "Invalid hex public key provided." });

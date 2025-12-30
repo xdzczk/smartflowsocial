@@ -5,10 +5,6 @@
 
 import { json } from "@remix-run/node";
 
-import {
-  calculateNextScheduleTime,
-  formatScheduleTimeForInput,
-} from "~/features/posts/schedulers";
 import { createSuccessResponse } from "~/lib/error-handler.server";
 import { NotFoundError, ValidationError } from "~/lib/errors";
 import {
@@ -16,6 +12,11 @@ import {
   getUserTimezone,
   getQueueTypeByIdForUser,
 } from "~/models/user.server";
+
+import {
+  calculateNextScheduleTime,
+  formatScheduleTimeForInput,
+} from "../schedulers";
 
 /**
  * Calculate next schedule time for a queue type
@@ -88,6 +89,7 @@ export function parseQueueScheduleRequest(body: unknown): {
     queueTypeId: requestBody.queueTypeId,
   };
 }
+
 
 
 

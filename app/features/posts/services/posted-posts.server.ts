@@ -4,13 +4,14 @@
  * Handles posted posts data loading
  */
 
-import { combineContent } from "~/features/posts/combined.server";
-import { getPostStats } from "~/features/posts/stats.server";
-import type { PostData, LongFormPostData } from "~/features/posts/types";
-import { convertPrismaQueueTypeToQueueType } from "~/features/posts/types";
 import { getUserById, getQueueTypes } from "~/features/user";
 import { getPublishedLongFormPosts } from "~/models/longformpost.server";
 import { getPostedPosts } from "~/models/post.queries.server";
+
+import { combineContent } from "../combined.server";
+import { getPostStats } from "../stats.server";
+import type { PostData, LongFormPostData } from "../types";
+import { convertPrismaQueueTypeToQueueType } from "../types";
 /**
  * Get posted posts dashboard data
  */

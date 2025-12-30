@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 
-import type { QueueType } from "~/features/posts/types";
 import { useOptionalUser } from "~/lib/remix-utils";
+
+import type { QueueType } from "../types";
 
 interface UsePostSchedulingProps {
   queueTypes: (string | QueueType)[];

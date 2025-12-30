@@ -5,8 +5,8 @@ import {
 } from "@remix-run/react";
 
 import MediaModal from "~/components/ui/MediaModal";
-import { requireUserId } from "~/features/auth/session.server";
-import { requireFeatureAccess, requireAnySubscription } from "~/features/payments/subscriptions.server";
+import { requireUserId } from "~/features/auth";
+import { requireFeatureAccess, requireAnySubscription } from "~/features/payments";
 import {
   AllContentListing,
   BulkDeleteBar,

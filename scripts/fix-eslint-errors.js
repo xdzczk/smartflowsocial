@@ -99,10 +99,10 @@ function fixNullishCoalescing(content) {
     // Fix: (something?.prop || fallback) -> (something?.prop ?? fallback)
     if (line.includes('?.') && line.includes('||')) {
       const newLine = line.replace(
-        /(\w+(?:\?\.\w+)+)\s*\|\|\s*([\w'"\[\]{}()]+)/g,
+        /(\w+(?:\?\.\w+)+)\s*\|\|\s*([\w'"[\]{}()]+)/g,
         (match, left, right) => {
           // Only if right is a simple value
-          if (/^[\w'"\[\]{}()]+$/.test(right) && !right.includes('(') && !right.includes('[')) {
+          if (/^[\w'"[\]{}()]+$/.test(right) && !right.includes('(') && !right.includes('[')) {
             modified = true;
             fixes++;
             return `${left} ?? ${right}`;
@@ -117,9 +117,9 @@ function fixNullishCoalescing(content) {
     // Only for simple cases like: (user?.name || "Unknown")
     if (line.match(/\([^)]+\?\.[^)]+\)\s*\|\|/)) {
       const newLine = line.replace(
-        /\(([^)]+)\?\.[^)]+\)\s*\|\|\s*([\w'"\[\]{}]+)/g,
+        /\(([^)]+)\?\.[^)]+\)\s*\|\|\s*([\w'"[\]{}]+)/g,
         (match, prefix, right) => {
-          if (/^[\w'"\[\]{}]+$/.test(right)) {
+          if (/^[\w'"[\]{}]+$/.test(right)) {
             modified = true;
             fixes++;
             return `(${prefix}?.${match.split('?.')[1].split(')')[0]}) ?? ${right}`;

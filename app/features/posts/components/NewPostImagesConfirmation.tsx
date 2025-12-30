@@ -32,7 +32,7 @@ export default function NewPostImagesConfirmation({
   const user = useOptionalUser();
 
   // Calculate addTags for display
-  const addTags = user?.showHashTagsinPosts ? `\n${tags || ""}` : "";
+  const addTags = user?.showHashTagsinPosts ? `\n${tags ?? ""}` : "";
 
   // Flatten the array structure if needed
   const events: PreparedEventData[] = Array.isArray(preparedEvents[0])
@@ -63,7 +63,7 @@ export default function NewPostImagesConfirmation({
           effectiveHashtags = data.hashtags ?? "";
         } else {
           // Fallback to user's default hashtags
-          effectiveHashtags = Array.isArray(tags) ? tags.join(" ") : tags || "";
+          effectiveHashtags = Array.isArray(tags) ? tags.join(" ") : tags ?? "";
         }
       } catch (error) {
         const { handleErrorSafely } = await import("~/lib/error-handler.client");
@@ -72,7 +72,7 @@ export default function NewPostImagesConfirmation({
           action: "fetchEffectiveHashtags",
         });
         // Fallback to user's default hashtags
-        effectiveHashtags = Array.isArray(tags) ? tags.join(" ") : tags || "";
+        effectiveHashtags = Array.isArray(tags) ? tags.join(" ") : tags ?? "";
       }
 
       const addTags = user?.showHashTagsinPosts ? `\n${effectiveHashtags}` : "";

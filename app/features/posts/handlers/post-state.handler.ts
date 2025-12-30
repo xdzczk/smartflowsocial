@@ -4,7 +4,7 @@
  * Handles individual post state changes (caption, date, removal)
  */
 
-import type { BulkPost } from "~/features/posts/types";
+import type { BulkPost } from "../types";
 /**
  * Handle caption change for a post
  */
@@ -79,6 +79,7 @@ export function handleRemovePost(
 ): void {
   setPosts(posts.filter((_, i) => i !== index));
 }
+
 
 
 

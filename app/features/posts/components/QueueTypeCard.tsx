@@ -4,8 +4,9 @@ import { Edit, Trash2 } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
-import { isIntervalScheduleConfig, isFixedSlotsScheduleConfig } from "~/features/posts/types";
-import type { QueueType } from "~/features/posts/types";
+
+import { isIntervalScheduleConfig, isFixedSlotsScheduleConfig } from "../types";
+import type { QueueType } from "../types";
 interface QueueTypeCardProps {
   queueType: QueueType & { isDefault?: boolean; hashTagPreset?: { id: string; name: string } | null };
   onEdit: (queueType: QueueType) => void;

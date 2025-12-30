@@ -5,7 +5,7 @@ import { json ,
   unstable_parseMultipartFormData as parseMultipartFormData,
 } from "@remix-run/node";
 
-import { requireUserId } from "~/features/auth/session.server";
+import { requireUserId } from "~/features/auth";
 import {
   processImageForWeb,
   validateImageBuffer,

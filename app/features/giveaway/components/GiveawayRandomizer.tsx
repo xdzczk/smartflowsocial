@@ -2,8 +2,9 @@ import { nip19 } from "nostr-tools";
 import { useEffect, useState } from "react";
 
 import ZapButton from "~/components/dashboard/ZapButton";
-import type { RelatedEvent } from "~/features/giveaway/types";
 import { handleErrorSafely } from "~/lib/error-handler.client";
+
+import type { RelatedEvent } from "../types";
 
 import GiveawayPost from "./GiveawayPost";
 interface GiveawayRandomizerProps {

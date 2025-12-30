@@ -148,7 +148,7 @@ export function recordQueryMetrics(
   
   // Record errors
   if (!success && error) {
-    const errorType = error.constructor.name || "UnknownError";
+    const errorType = error.constructor.name ?? "UnknownError";
     queryErrorCounter.inc({
       model,
       action,

@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 
-import { type BulkPost } from "~/features/posts/components/BulkPostCard";
 import { handleErrorSafely } from "~/lib/error-handler.client";
+
+import { type BulkPost } from "./components/BulkPostCard";
 interface RepostDataItem {
     fileUrl?: string | string[];
     caption?: string;

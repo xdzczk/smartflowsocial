@@ -6,7 +6,7 @@ import {
   useRevalidator,
 } from "@remix-run/react";
 
-import { requireUserId } from "~/features/auth/session.server";
+import { requireUserId } from "~/features/auth";
 import {
   Calendar,
   getQueueColor,
@@ -21,7 +21,7 @@ import { withErrorHandling, withActionErrorHandling } from "~/lib/error-handler.
 
 async function loaderImpl({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
-  const queueType = params.queueType || "all";
+  const queueType = params.queueType ?? "all";
 
   return loadCalendarQueueData(userId, queueType);
 }

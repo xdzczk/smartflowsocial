@@ -1,16 +1,17 @@
 import { useFetcher } from "@remix-run/react";
 import { useState } from "react";
 
-import { ContentBulkActions } from "~/features/posts/components/ContentBulkActions";
-import { ContentSearchBar } from "~/features/posts/components/ContentSearchBar";
-import { ContentTableHeader } from "~/features/posts/components/ContentTableHeader";
-import { ContentTableRow } from "~/features/posts/components/ContentTableRow";
 import type {
   CombinedContent,
   LongFormPostData,
   PostData,
   PostFetcher,
-} from "~/features/posts/types";
+} from "../types";
+
+import { ContentBulkActions } from "./ContentBulkActions";
+import { ContentSearchBar } from "./ContentSearchBar";
+import { ContentTableHeader } from "./ContentTableHeader";
+import { ContentTableRow } from "./ContentTableRow";
 
 interface AllContentListingProps {
   content: CombinedContent[];
@@ -125,8 +126,11 @@ export default function AllContentListing({
 
   const filteredContent = sortedContent.filter(
     (item) =>
+      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- Boolean OR for filter logic
       item.caption?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- Boolean OR for filter logic
       item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- Boolean OR for filter logic
       item.content?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.summary?.toLowerCase().includes(searchTerm.toLowerCase()),
   );

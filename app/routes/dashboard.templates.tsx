@@ -7,7 +7,7 @@ import {
   UploadTab,
   type Asset,
 } from "~/features/assets";
-import { requireUserId } from "~/features/auth/session.server";
+import { requireUserId } from "~/features/auth";
 import {
   requireFeatureAccess,
   requireAnySubscription,
@@ -21,7 +21,6 @@ import {
   handleTemplatesAction,
   loadTemplatesData,
 } from "~/features/templates";
-import type { Template } from "~/features/templates/types";
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
 

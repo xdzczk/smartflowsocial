@@ -8,8 +8,8 @@
  *   import { getUserPlanType, hasFeatureAccess, requireFeatureAccess } from "~/features/payments";
  * 
  * Do NOT import from internal paths like:
- *   import { ... } from "~/features/payments/services/..."  // ❌ Bad
- *   import { ... } from "~/features/payments/hooks/..."      // ❌ Bad
+ *   import { ... } from "./services/..."  // ❌ Bad
+ *   import { ... } from "./hooks/..."      // ❌ Bad
  */
 
 // ============================================================================
@@ -40,6 +40,7 @@ export {
 export {
   requireFeatureAccess,
   requireAnySubscription,
+  requireActiveSubscription,
   getSubscriptionData,
 } from "./subscriptions.server";
 

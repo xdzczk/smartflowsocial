@@ -1,4 +1,4 @@
-import type { TrustScoreUser as User } from "~/features/engagement/types";
+import type { TrustScoreUser as User } from "./types";
 // Re-export the User type
 export type { TrustScoreUser as User } from "~/features/engagement/types";
 

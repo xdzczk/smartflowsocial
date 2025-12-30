@@ -2,7 +2,7 @@
  * EditorJS drag and drop functionality
  */
 
-import type { EditorJSBlock, EditorJSInstance } from "~/features/posts/types/editorjs.types";
+import type { EditorJSBlock, EditorJSInstance } from "../types/editorjs.types";
 export function setupCustomDragDrop(
   editorRef: React.RefObject<EditorJSInstance>,
   editorElement: HTMLElement,

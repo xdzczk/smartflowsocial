@@ -8,8 +8,8 @@
  *   import { loadGiveawayData, handleGiveawayAction } from "~/features/giveaway";
  * 
  * Do NOT import from internal paths like:
- *   import { ... } from "~/features/giveaway/hooks/..."  // ❌ Bad
- *   import { ... } from "~/features/giveaway/components/..."  // ❌ Bad
+ *   import { ... } from "./hooks/..."  // ❌ Bad
+ *   import { ... } from "./components/..."  // ❌ Bad
  */
 
 // ============================================================================

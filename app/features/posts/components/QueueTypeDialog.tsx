@@ -21,8 +21,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import type { QueueType } from "~/features/posts/types";
-import { isIntervalScheduleConfig, isFixedSlotsScheduleConfig } from "~/features/posts/types";
+
+import type { QueueType } from "../types";
+import { isIntervalScheduleConfig, isFixedSlotsScheduleConfig } from "../types";
 
 interface QueueTypeDialogQueueType extends QueueType {
   isDefault?: boolean;
@@ -238,7 +239,7 @@ export function QueueTypeDialog({
                   type="number"
                   min="1"
                   max="168"
-                  defaultValue={queueType?.scheduleConfig && isIntervalScheduleConfig(queueType.scheduleConfig) ? (queueType.scheduleConfig.intervalHours || 4) : 4}
+                  defaultValue={queueType?.scheduleConfig && isIntervalScheduleConfig(queueType.scheduleConfig) ? (queueType.scheduleConfig.intervalHours ?? 4) : 4}
                 />
               </div>
             </div>

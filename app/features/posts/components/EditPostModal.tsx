@@ -1,9 +1,9 @@
 import { useFetcher } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
-import { useEditPostModal } from "~/features/posts/hooks/useEditPostModal";
-import type { PostData, LongFormPostData, QueueType, HashTagPreset, UserData } from "~/features/posts/types";
-import { prepareEditPostSubmission } from "~/features/posts/utils/editPostSubmit.client";
+import { useEditPostModal } from "../hooks/useEditPostModal";
+import type { PostData, LongFormPostData, QueueType, HashTagPreset, UserData } from "../types";
+import { prepareEditPostSubmission } from "../utils/editPostSubmit.client";
 
 import { EditLongFormFormFields } from "./EditLongFormFormFields";
 import { EditorJSStyles } from "./EditorJSStyles";

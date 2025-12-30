@@ -1,5 +1,6 @@
 import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
-import type { QueueType, HashTagPreset } from "~/features/posts/types";
+
+import type { QueueType, HashTagPreset } from "../types";
 interface EditPostFormFieldsProps {
   caption: string;
   setCaption: (value: string) => void;

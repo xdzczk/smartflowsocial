@@ -2,7 +2,8 @@ import { useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import type { Asset } from "~/features/assets/types";
+
+import type { Asset } from "../types";
 interface AssetBrowserProps {
   assets: Asset[];
   onAssetsSelected: (selectedAssets: Asset[]) => void;
@@ -20,7 +21,9 @@ export default function AssetBrowser({
   const filteredAssets = assets.filter((asset) => {
     const searchLower = searchTerm.toLowerCase();
     return (
+      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- Boolean OR for filter logic
       asset.title?.toLowerCase().includes(searchLower) ||
+      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- Boolean OR for filter logic
       asset.content?.toLowerCase().includes(searchLower) ||
       asset.tags?.some((tag) => tag.toLowerCase().includes(searchLower))
     );

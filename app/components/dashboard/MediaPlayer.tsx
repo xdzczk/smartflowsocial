@@ -150,6 +150,7 @@ export default function MediaPlayer({
 
   // Default to image
   return (
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- onLoad/onError are lifecycle events, not interactive handlers
     <img
       src={src}
       alt={alt}
@@ -183,12 +184,12 @@ export function MediaThumbnail({
   };
 
   return (
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- onClick is optional, role and tabIndex are conditionally set
     <div 
       className="group relative cursor-pointer" 
       onClick={onClick}
       onKeyDown={onClick ? handleKeyDown : undefined}
-      role={onClick ? "button" : undefined}
-      tabIndex={onClick ? 0 : undefined}
+      {...(onClick && { role: "button", tabIndex: 0 })}
     >
       <MediaPlayer
         src={src}

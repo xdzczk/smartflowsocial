@@ -61,7 +61,7 @@ function getPrismaClient() {
             
             // Record metrics
             recordQueryMetrics(
-              model || "unknown",
+              model ?? "unknown",
               operation,
               duration,
               true,
@@ -89,7 +89,7 @@ function getPrismaClient() {
             
             // Record error metrics
             recordQueryMetrics(
-              model || "unknown",
+              model ?? "unknown",
               operation,
               duration,
               false,

@@ -1,10 +1,11 @@
-import type {
-    Notification,
-} from "~/features/engagement/engagement.server";
-import { getTrustLevel, getTrustScoreBadgeColor } from "~/features/engagement/trustScore";
 import { formatDate } from "~/lib/helpers";
 
+import type {
+    Notification,
+} from "../engagement.server";
 import { useNotificationActions } from "../hooks/useNotificationActions";
+import { getTrustLevel, getTrustScoreBadgeColor } from "../trustScore";
+
 
 import { ChildRepliesPanel } from "./ChildRepliesPanel";
 import { NotificationActionButtons, type NotificationStats } from "./NotificationActionButtons";

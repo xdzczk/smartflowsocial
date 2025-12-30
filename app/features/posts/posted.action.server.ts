@@ -254,14 +254,14 @@ async function handleQuote(formData: FormData, userId: string) {
         // Create quote post data for bulk posts page
         const quotePostData = {
             caption: "", // Empty caption - user can add content
-            fileUrl: originalPost.fileUrl || "",
+            fileUrl: originalPost.fileUrl ?? "",
             queueType: (originalPost.queueTypeId ?? "") || "unassigned",
             scheduledFor: "",
             originalPostId: originalPost.id,
             originalEventId: eventId,
             originalEventPubkey: eventPubkey,
             isQuotePost: true,
-            originalCaption: originalPost.caption || "",
+            originalCaption: originalPost.caption ?? "",
         };
 
         return json({ quotePostData: [quotePostData] });
@@ -405,14 +405,14 @@ async function handleLongformQuote(formData: FormData, userId: string) {
         const quotePostData = {
             caption: `nostr:${naddr}`, // Include naddr reference for quote post
             fileUrl: "", // No file URL for text-based quote
-            queueType: originalPost.queueTypeId || "unassigned",
+            queueType: originalPost.queueTypeId ?? "unassigned",
             scheduledFor: "",
             originalPostId: originalPost.id,
             originalEventId: eventId,
             originalEventPubkey: eventPubkey,
             isQuotePost: true,
             isLongformQuote: true,
-            originalTitle: originalPost.title || "",
+            originalTitle: originalPost.title ?? "",
             naddr: naddr,
         };
 

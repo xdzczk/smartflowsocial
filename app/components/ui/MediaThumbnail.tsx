@@ -112,12 +112,12 @@ const MediaThumbnail: React.FC<MediaThumbnailProps> = ({
 
   // Render video thumbnail with play button overlay
   return (
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- onClick is optional, role and tabIndex are conditionally set
     <div
       className={`relative ${className} ${onClick ? "cursor-pointer hover:opacity-75" : ""}`}
       onClick={onClick}
       onKeyDown={onClick ? handleKeyDown : undefined}
-      role={onClick ? "button" : undefined}
-      tabIndex={onClick ? 0 : undefined}
+      {...(onClick && { role: "button", tabIndex: 0 })}
     >
       { }
       <video

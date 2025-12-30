@@ -13,7 +13,7 @@ import {
   unstable_parseMultipartFormData as parseMultipartFormData,
 } from "@remix-run/node";
 
-import { requireUserId } from "~/features/auth/session.server";
+import { requireUserId } from "~/features/auth";
 import { createUploadHandler } from "~/features/upload/s3.server";
 import {
   withActionErrorHandling,

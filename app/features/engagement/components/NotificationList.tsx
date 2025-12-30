@@ -1,14 +1,15 @@
 import { Link } from "@remix-run/react";
 
+import { formatDate } from "~/lib/helpers";
+
 import type {
   Notification,
-} from "~/features/engagement/engagement.server";
+} from "../engagement.server";
 import type {
   NotificationReply,
   NotificationZap,
   NotificationMention,
-} from "~/features/engagement/types";
-import { formatDate } from "~/lib/helpers";
+} from "../types";
 
 interface NotificationListProps {
   notifications: Notification[];

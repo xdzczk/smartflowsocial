@@ -1,9 +1,10 @@
 import { useFetcher } from "@remix-run/react";
 import { useCallback, useRef, useState } from "react";
 
-import type { Asset } from "~/features/assets/types";
 import { resizeImage } from "~/features/upload/image-resize";
 import { uploadFile, uploadMultipleFiles } from "~/features/upload/upload.client";
+
+import type { Asset } from "./types";
 
 interface UseAssetUploadOptions {
     onSuccess: (message: string) => void;

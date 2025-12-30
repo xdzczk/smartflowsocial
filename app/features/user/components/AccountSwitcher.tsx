@@ -3,7 +3,6 @@ import * as React from "react";
 
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
-import type { NostrEventData } from "~/features/nostr/types";
 import { useSubscription } from "~/features/payments/types";
 import { useOptionalUser } from "~/lib/remix-utils";
 

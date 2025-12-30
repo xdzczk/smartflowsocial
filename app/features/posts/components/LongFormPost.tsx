@@ -7,13 +7,13 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { AssetBrowser, type Asset } from "~/features/assets";
-import type { EditorJSBlock } from "~/features/posts/types";
 import {
   signLongFormEvent,
   convertEditorJSToMarkdown,
   generateArticleIdentifier,
 } from "~/lib/nostr";
 
+import type { EditorJSBlock } from "../types";
 import { useCoverImageUpload } from "../useCoverImageUpload";
 import { useLongFormEditor } from "../useLongFormEditor";
 import { useLongFormScheduling } from "../useLongFormScheduling";
@@ -215,7 +215,7 @@ export default function LongFormPost({
         // If useHashtagPresets is true but no manual preset selected, use no hashtags
       } else {
         // Manual hashtag presets are disabled, use displayed hashtags (queue defaults)
-        effectiveHashtags = displayedHashtags || "";
+        effectiveHashtags = displayedHashtags ?? "";
       }
 
       const hashtagsFromQueue = effectiveHashtags
@@ -280,7 +280,7 @@ export default function LongFormPost({
         const input = document.createElement("input");
         input.type = "hidden";
         input.name = name;
-        input.value = value || "";
+        input.value = value ?? "";
         form.appendChild(input);
       });
 
@@ -460,8 +460,8 @@ export default function LongFormPost({
           useHashtagPresets={useHashtagPresets}
           selectedHashtagPresetId={selectedHashtagPresetId}
           selectedHashtags={selectedHashtags}
-          onHashtagPresetChange={onHashtagPresetChange || ((_id, _tags) => { void _id; void _tags; })}
-          onUseHashtagPresetsChange={onUseHashtagPresetsChange || (() => { void 0; })}
+          onHashtagPresetChange={onHashtagPresetChange ?? ((_id, _tags) => { void _id; void _tags; })}
+          onUseHashtagPresetsChange={onUseHashtagPresetsChange ?? (() => { void 0; })}
         />
 
         <LongFormActionButtons

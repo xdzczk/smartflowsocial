@@ -1,5 +1,6 @@
 import { connectToPrimalCache } from "~/features/cache/primalCache.server";
-import type { MutedListData, PrimalEvent } from "~/features/engagement/types";
+
+import type { MutedListData, PrimalEvent } from "./types";
 // Re-export the type
 export type { MutedListData } from "~/features/engagement/types";
 

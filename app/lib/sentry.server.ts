@@ -36,7 +36,7 @@ export function initSentry(): void {
     
     Sentry.init({
       dsn: process.env.SENTRY_DSN,
-      environment: process.env.NODE_ENV || "development",
+      environment: process.env.NODE_ENV ?? "development",
       // Adjust traces sample rate based on environment
       tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
       // Enable profiling in production (optional)

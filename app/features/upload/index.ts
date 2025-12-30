@@ -8,7 +8,7 @@
  *   import { uploadFileToS3, uploadFileToBlossom } from "~/features/upload";
  * 
  * Do NOT import from internal paths like:
- *   import { ... } from "~/features/upload/components/..."  // ❌ Bad
+ *   import { ... } from "./components/..."  // ❌ Bad
  */
 
 // ============================================================================

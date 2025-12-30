@@ -3,8 +3,9 @@
  * Centralized action processing for draft edit page
  */
 
-import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
 import { updatePost } from "~/models/post.commands.server";
+
+import { resolveQueueTypeId } from "./queue-type-resolver.server";
 export async function handleDraftEditAction(
   formData: FormData,
   userId: string,

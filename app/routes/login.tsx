@@ -5,7 +5,7 @@ import Footer from "~/components/layout/FrontendFooter";
 import Header from "~/components/layout/FrontendHeader";
 import { Card, CardContent } from "~/components/ui/card";
 import { NostrAuthButton } from "~/features/auth";
-import { getUserId } from "~/features/auth/session.server";
+import { getUserId } from "~/features/auth";
 
 
 

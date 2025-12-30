@@ -2,10 +2,11 @@ import { useFetcher } from "@remix-run/react";
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "react-hot-toast";
 
-import { getDynamicQueueStyle } from "~/features/posts/queueColors";
-import type { QueueType } from "~/features/posts/types";
 import { resizeImage } from "~/features/upload/image-resize";
 import { useOptionalUser } from "~/lib/remix-utils";
+
+import { getDynamicQueueStyle } from "../queueColors";
+import type { QueueType } from "../types";
 
 interface PreparedEventData {
   content: string;
@@ -198,7 +199,7 @@ export default function ImagePost({
     } catch (error: unknown) {
       console.error("Error calculating schedule time:", error);
     }
-  }, [queueTypes, user && typeof user === "object" && "id" in user && typeof user.id === "string" ? user.id : undefined]);
+  }, [queueTypes, user]);
 
   useEffect(() => {
     if (selectedQueue !== "unassigned") {

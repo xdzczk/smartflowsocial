@@ -1,6 +1,8 @@
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
-import type { BulkPost, QueueType } from "~/features/posts/components/BulkPostCard";
-import { getDynamicQueueStyle } from "~/features/posts/queueColors";
+
+import { getDynamicQueueStyle } from "../queueColors";
+
+import type { BulkPost, QueueType } from "./BulkPostCard";
 
 interface BulkPostsTableProps {
     posts: BulkPost[];

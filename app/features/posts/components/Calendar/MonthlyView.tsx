@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 
-import type { QueueType, UserData } from "~/features/posts/types";
 import { handleErrorSafely } from "~/lib/error-handler.client";
+
+import type { QueueType, UserData } from "../../types";
 
 import { PostBlock } from "./PostBlock";
 import type { CalendarPost } from "./PostBlock.types";
@@ -198,6 +199,8 @@ export function MonthlyView({
           return (
             <div
               key={index}
+              role="gridcell"
+              tabIndex={-1}
               className={`flex min-h-[120px] flex-col border-b border-r border-gray-200 p-2 last:border-r-0 dark:border-gray-700 ${
                 dayInfo.isCurrentMonth
                   ? "bg-white dark:bg-gray-800"

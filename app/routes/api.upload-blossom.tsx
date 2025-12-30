@@ -1,7 +1,7 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 
-import { requireUserId } from "~/features/auth/session.server";
+import { requireUserId } from "~/features/auth";
 import { loadUploadProviderSettings } from "~/features/user";
 import {
   withActionErrorHandling,
@@ -70,6 +70,7 @@ export const action = withActionErrorHandling(
     const fileUrl = urlTag[1];
     const sha256 = hashTag[1];
     const fileSize = parseInt(sizeTag[1], 10);
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- Ternary preserves empty strings; ?? would incorrectly treat "" as falsy
     const mimeType = mimeTypeTag?.[1]
       ? (mimeTypeTag[1])
       : "application/octet-stream";

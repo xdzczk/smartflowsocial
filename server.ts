@@ -336,7 +336,7 @@ async function run() {
 
   app.all("*", remixHandler);
 
-  const port = process.env.PORT || 3000;
+  const port = parseInt(process.env.PORT ?? "3000", 10);
   app.listen(port, () => {
     console.log(`✅ app ready: http://localhost:${port}`);
 
@@ -345,7 +345,7 @@ async function run() {
     }
   });
 
-  const metricsPort = process.env.METRICS_PORT || 3010;
+  const metricsPort = parseInt(process.env.METRICS_PORT ?? "3010", 10);
 
   metricsApp.listen(metricsPort, () => {
     console.log(`✅ metrics ready: http://localhost:${metricsPort}/metrics`);

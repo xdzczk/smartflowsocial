@@ -4,9 +4,10 @@
  */
 
 import type { NostrEvent as NostrEventType, SignedEvent } from "~/features/nostr/types";
-import type { UserData, PostData } from "~/features/posts/types";
 import { logError } from "~/lib/error-logger.server";
 import { signEventFn } from "~/lib/nostr";
+
+import type { UserData, PostData } from "../types";
 
 interface SignDraftParams {
   content: string;
@@ -56,7 +57,7 @@ async function getEffectiveHashtags(
         const dataRaw: unknown = await response.json();
         const data = (dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)) ? dataRaw as { hashtags?: unknown } : {};
         const hashtags = typeof data.hashtags === "string" ? data.hashtags : null;
-        return hashtags || "";
+        return hashtags ?? "";
       } else {
         // Fallback to user's default hashtags
         // Note: hashTags property doesn't exist on UserData, using empty string as fallback

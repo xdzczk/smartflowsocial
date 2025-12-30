@@ -1,7 +1,7 @@
 import { json, redirect, type LoaderFunctionArgs, type ActionFunctionArgs } from "@remix-run/node";
 import { useLoaderData, Link } from "@remix-run/react";
 
-import { requireUserId } from "~/features/auth/session.server";
+import { requireUserId } from "~/features/auth";
 import {
   DraftEditForm,
   DraftPreview,
@@ -177,7 +177,7 @@ export default function EditDraft() {
         selectedQueue={selectedQueue}
         scheduledFor={scheduledFor}
         content={content}
-        caption={typedPost.caption || ""}
+        caption={typedPost.caption ?? ""}
         isSubmitting={isSubmitting}
         onClose={() => setShowResumeModal(false)}
         onConfirm={() => void handleSignAndResume()}

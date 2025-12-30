@@ -199,7 +199,7 @@ export function normalizeError(error: unknown): AppError {
 
     // Generic error
     return new AppError(
-      error.message || "An unexpected error occurred",
+      error.message ?? "An unexpected error occurred",
       500,
       "INTERNAL_ERROR",
       false,

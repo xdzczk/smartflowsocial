@@ -1,7 +1,7 @@
 import { useLoaderData } from "@remix-run/react";
 import { useState } from "react";
 
-import type { PostData } from "~/features/posts/types";
+import type { PostData } from "../types";
 interface ScheduledPostsLoaderData {
   scheduledPosts: PostData[];
 }

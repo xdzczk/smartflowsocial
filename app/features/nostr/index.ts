@@ -7,7 +7,7 @@
  *   import type { NostrEvent, NostrProfile } from "~/features/nostr";
  * 
  * Do NOT import from internal paths:
- *   import { ... } from "~/features/nostr/types"  // ❌ Bad - use this module instead
+ *   import { ... } from "./types"  // ❌ Bad - use this module instead
  */
 
 // ============================================================================

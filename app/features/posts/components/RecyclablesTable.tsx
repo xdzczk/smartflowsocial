@@ -1,8 +1,9 @@
 import { Link } from "@remix-run/react";
 import type { useFetcher } from "@remix-run/react";
 
-import { getQueueColor } from "~/features/posts/queueColors";
 import { formatDate, getImageUrls } from "~/lib/helpers";
+
+import { getQueueColor } from "../queueColors";
 
 interface Post {
   id: string;

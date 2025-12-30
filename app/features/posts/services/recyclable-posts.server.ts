@@ -6,11 +6,12 @@
 
 import { json } from "@remix-run/node";
 
-import { getPostStats } from "~/features/posts/stats.server";
 import type { UserWithHashTagPresets } from "~/features/user";
 import { getUserById, getQueueTypes } from "~/features/user";
 import { deletePost } from "~/models/post.commands.server";
 import { getRecyclablePosts, getPostsByIds } from "~/models/post.queries.server";
+
+import { getPostStats } from "../stats.server";
 /**
  * Get recyclable posts dashboard data
  */

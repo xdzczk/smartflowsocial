@@ -1,13 +1,14 @@
 import { redirect } from "@remix-run/node";
 
+import { prisma } from "~/lib/prisma.server";
+import { getUserSubscription } from "~/models/payment.server";
+
 import {
   hasFeatureAccess,
   isNewUserWithoutSubscription,
   type FeatureName,
   type SubscriptionData,
-} from "~/features/payments/types";
-import { prisma } from "~/lib/prisma.server";
-import { getUserSubscription } from "~/models/payment.server";
+} from "./types";
 
 /**
  * Check if a user has access to a specific feature and redirect if not

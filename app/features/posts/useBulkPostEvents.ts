@@ -3,10 +3,11 @@ import { nip19 } from "nostr-tools";
 import { useEffect, useRef, useCallback } from "react";
 
 import { type ToastMessage } from "~/components/types";
-import { type BulkPost , type PreparedEvent } from "~/features/posts/types";
 import { uploadMultipleFiles } from "~/features/upload/upload.client";
 import type { User } from "~/features/user";
 import { logClientError } from "~/lib/error-handler.client";
+
+import { type BulkPost , type PreparedEvent } from "./types";
 interface FetcherData {
     fileUrls?: { fileUrl: string; scheduledFor: string }[];
 }

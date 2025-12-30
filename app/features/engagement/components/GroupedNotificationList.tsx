@@ -3,9 +3,10 @@ import { nip19 } from "nostr-tools";
 import { useState } from "react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
-import type { Notification } from "~/features/engagement/engagement.server";
-import type { GroupedNotification } from "~/features/engagement/types";
 import { formatDate } from "~/lib/helpers";
+
+import type { Notification } from "../engagement.server";
+import type { GroupedNotification } from "../types";
 
 
 import { NotificationItem } from "./NotificationItem";

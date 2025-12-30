@@ -1,18 +1,19 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
-import type { EditorJSInstance, EditorJSAPI } from "~/features/posts/types/editorjs.types";
+import { logClientError } from "~/lib/error-handler.client";
+
+import type { EditorJSInstance, EditorJSAPI } from "./types/editorjs.types";
 import {
   disableCaptions,
   setupCaptionObserver,
-} from "~/features/posts/utils/editorjs-captions";
-import { createEditorJSToolsConfig } from "~/features/posts/utils/editorjs-config";
+} from "./utils/editorjs-captions";
+import { createEditorJSToolsConfig } from "./utils/editorjs-config";
 import {
   loadEditorJSContent,
   insertAssetsIntoEditor,
   generateSummaryFromContent as generateSummary,
-} from "~/features/posts/utils/editorjs-content";
-import { setupCustomDragDrop } from "~/features/posts/utils/editorjs-dragdrop";
-import { logClientError } from "~/lib/error-handler.client";
+} from "./utils/editorjs-content";
+import { setupCustomDragDrop } from "./utils/editorjs-dragdrop";
 
 interface UseLongFormEditorOptions {
     uploadProvider: string | null;

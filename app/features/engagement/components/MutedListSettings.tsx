@@ -51,14 +51,10 @@ export function MutedListSettings({
 
   // Update local state when fetcher data changes
   const actualFilterState =
-    toggleFetcher.data?.filterMuted !== undefined
-      ? toggleFetcher.data.filterMuted
-      : isFilterEnabled;
+    toggleFetcher.data?.filterMuted ?? isFilterEnabled;
 
   const actualLowTrustState =
-    toggleLowTrustFetcher.data?.hidePostsFromLowTrustUsers !== undefined
-      ? toggleLowTrustFetcher.data.hidePostsFromLowTrustUsers
-      : isHideLowTrustEnabled;
+    toggleLowTrustFetcher.data?.hidePostsFromLowTrustUsers ?? isHideLowTrustEnabled;
 
   const mutedCount =
     (syncFetcher.data?.mutedList?.npubs?.length ??

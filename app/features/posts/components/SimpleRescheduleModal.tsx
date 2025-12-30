@@ -1,9 +1,10 @@
 import { useFetcher } from "@remix-run/react";
 import { useEffect, useState } from "react";
 
-import type { PostData, LongFormPostData, UserData, QueueType } from "~/features/posts/types";
 import { handleErrorSafely } from "~/lib/error-handler.client";
 import { signEventFn } from "~/lib/nostr";
+
+import type { PostData, LongFormPostData, UserData, QueueType } from "../types";
 
 interface SimpleRescheduleModalProps {
   post: PostData | LongFormPostData;

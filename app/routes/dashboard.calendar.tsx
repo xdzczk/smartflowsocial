@@ -7,8 +7,8 @@ import {
   useSearchParams,
 } from "@remix-run/react";
 
-import { requireUserId } from "~/features/auth/session.server";
-import { requireFeatureAccess, requireAnySubscription } from "~/features/payments/subscriptions.server";
+import { requireUserId } from "~/features/auth";
+import { requireFeatureAccess, requireAnySubscription } from "~/features/payments";
 import {
   Calendar,
   getQueueColor,

@@ -1,5 +1,6 @@
 import { connectToPrimalCache } from "~/features/cache/primalCache.server";
-import type { RelatedEvent, PrimalEvent } from "~/features/giveaway/types";
+
+import type { RelatedEvent, PrimalEvent } from "./types";
 /**
  * Fetches all engagement events for giveaway participation
  * Uses a hybrid approach:
@@ -77,7 +78,7 @@ export const fetchGiveawayParticipants = async (
                   if (amountTag && Array.isArray(amountTag) && amountTag[1] && typeof amountTag[1] === "string") {
                     const amount = parseInt(amountTag[1], 10);
                     if (!isNaN(amount)) {
-                      aggregatedStats.satszapped += amount / 1000 || 0; // Convert millisats to sats
+                      aggregatedStats.satszapped += isNaN(amount / 1000) ? 0 : amount / 1000; // Convert millisats to sats
                     }
                   }
                 }
@@ -106,7 +107,7 @@ export const fetchGiveawayParticipants = async (
                 if (statsContent.event_id === eventId) {
                   aggregatedStats.likes += typeof statsContent.likes === "number" ? statsContent.likes : 0;
                   aggregatedStats.reposts += typeof statsContent.reposts === "number" ? statsContent.reposts : 0;
-                  aggregatedStats.zaps += statsContent.zaps || 0;
+                  aggregatedStats.zaps += statsContent.zaps ?? 0;
                   // Don't add satszapped here as we already calculated it from actual zap events
                 }
               }

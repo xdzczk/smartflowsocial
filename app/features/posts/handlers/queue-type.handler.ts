@@ -4,12 +4,13 @@
  * Handles queue type changes for individual and bulk posts
  */
 
-import type { BulkPostsHandlerDeps } from "~/features/posts/types";
+import { logClientError } from "~/lib/error-handler.client";
+
+import type { BulkPostsHandlerDeps } from "../types";
 import {
   isIntervalScheduleConfig,
   isFixedSlotsScheduleConfig,
-} from "~/features/posts/types";
-import { logClientError } from "~/lib/error-handler.client";
+} from "../types";
 
 import { updateDisplayedHashtags } from "./hashtag.handler";
 
@@ -207,9 +208,9 @@ export async function handleBulkQueueUpdate(
 
         if (config && isIntervalScheduleConfig(config)) {
           if (config.useGlobalInterval) {
-            intervalHours = user?.scheduleInterval?.[0] || 4;
+            intervalHours = user?.scheduleInterval?.[0] ?? 4;
           } else {
-            intervalHours = config.intervalHours || 4;
+            intervalHours = config.intervalHours ?? 4;
           }
         }
 

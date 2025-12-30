@@ -1,7 +1,7 @@
 import { useFetcher } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
-import type { CombinedContent, LongFormPostData, PostData } from "~/features/posts/types";
+import type { CombinedContent, LongFormPostData, PostData } from "../types";
 // Union type for posts that can be edited/rescheduled
 type EditablePost = PostData | LongFormPostData;
 
@@ -96,8 +96,8 @@ export function useScheduledState({
   // Sort posts
   const sortedPosts = [...scheduledPosts].sort((a, b) => {
     if (sortConfig.key === "scheduledFor") {
-      const aScheduledFor = typeof a.scheduledFor === "string" ? a.scheduledFor : String(a.scheduledFor || "0");
-      const bScheduledFor = typeof b.scheduledFor === "string" ? b.scheduledFor : String(b.scheduledFor || "0");
+      const aScheduledFor = typeof a.scheduledFor === "string" ? a.scheduledFor : String(a.scheduledFor ?? "0");
+      const bScheduledFor = typeof b.scheduledFor === "string" ? b.scheduledFor : String(b.scheduledFor ?? "0");
       const dateA = parseInt(aScheduledFor) * 1000;
       const dateB = parseInt(bScheduledFor) * 1000;
       return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;

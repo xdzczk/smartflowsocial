@@ -4,7 +4,7 @@
  * Handles recyclable status toggling for individual and bulk posts
  */
 
-import type { BulkPost } from "~/features/posts/types";
+import type { BulkPost } from "../types";
 /**
  * Handle recyclable checkbox change for a post
  */
@@ -39,6 +39,7 @@ export function handleBulkRecyclableToggle(
 
   setPosts(updatedPosts);
 }
+
 
 
 

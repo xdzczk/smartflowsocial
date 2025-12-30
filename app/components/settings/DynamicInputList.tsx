@@ -83,7 +83,7 @@ export function DynamicInputList({
             <div className="flex-1">
               <Input
                 type={inputType}
-                value={item || ""}
+                value={item ?? ""}
                 onChange={(e) => updateItem(index, e.target.value)}
                 placeholder={placeholder}
                 disabled={disabled}

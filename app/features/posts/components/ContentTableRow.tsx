@@ -1,12 +1,13 @@
 import { Link } from "@remix-run/react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
+
 import type {
   CombinedContent,
   LongFormPostData,
   PostData,
   PostFetcher,
-} from "~/features/posts/types";
+} from "../types";
 import {
   formatDate,
   getContentPreview,
@@ -16,7 +17,7 @@ import {
   getQueueTypeDisplay,
   getStatusColor,
   getStatusText,
-} from "~/features/posts/utils/content-helpers";
+} from "../utils/content-helpers";
 
 // Helper to safely access formData from a fetcher
 function getFetcherFormData(fetcher: PostFetcher | undefined): FormData | null | undefined {
@@ -134,8 +135,8 @@ export function ContentTableRow({
       </td>
       <td className="p-3">
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          {getContentPreview(item)?.slice(0, 20) || ""}
-          {(getContentPreview(item)?.length || 0) > 20 ? "…" : ""}
+          {getContentPreview(item)?.slice(0, 20) ?? ""}
+          {(getContentPreview(item)?.length ?? 0) > 20 ? "…" : ""}
         </p>
       </td>
       <td className="p-3">

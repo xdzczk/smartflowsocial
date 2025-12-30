@@ -2,8 +2,9 @@ import { useFetcher, Link } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
 import type { LongFormPostType } from "~/features/posts";
-import type { PostFetcher } from "~/features/posts/types";
-import type { EditorJSBlock } from "~/features/posts/types/editorjs.types";
+
+import type { PostFetcher } from "../types";
+import type { EditorJSBlock } from "../types/editorjs.types";
 
 // Helper to safely access formData from a fetcher
 function getFetcherFormData(fetcher: PostFetcher | undefined): FormData | null | undefined {

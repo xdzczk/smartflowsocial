@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import type { PreparedEvent } from "~/features/posts/types";
+import type { PreparedEvent } from "../types";
 /**
  * Custom hook for managing new post state
  */

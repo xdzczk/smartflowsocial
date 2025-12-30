@@ -3,7 +3,7 @@
  * Used by the "All" tab to display both types of content together
  */
 
-import type { CombinedContent, PostData, LongFormPostData } from "~/features/posts/types";
+import type { CombinedContent, PostData, LongFormPostData } from "./types";
 // Re-export the type
 export type { CombinedContent } from "~/features/posts/types";
 
@@ -146,8 +146,11 @@ export function filterCombinedContent(
   const searchLower = searchTerm.toLowerCase();
   return content.filter((item) => {
     return (
+      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- Boolean OR for filter logic
       item.caption?.toLowerCase().includes(searchLower) ||
+      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- Boolean OR for filter logic
       item.title?.toLowerCase().includes(searchLower) ||
+      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- Boolean OR for filter logic
       item.content?.toLowerCase().includes(searchLower) ||
       item.summary?.toLowerCase().includes(searchLower)
     );

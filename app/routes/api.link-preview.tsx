@@ -84,14 +84,14 @@ export const loader = withErrorHandling(
     const descriptionMatch =
       html.match(
         /<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["'][^>]*>/i,
-      ) ||
+      ) || // eslint-disable-line @typescript-eslint/prefer-nullish-coalescing -- Boolean OR for trying multiple regex patterns
       html.match(
         /<meta[^>]*content=["']([^"']+)["'][^>]*name=["']description["'][^>]*>/i,
       );
     const imageMatch =
       html.match(
         /<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["'][^>]*>/i,
-      ) ||
+      ) || // eslint-disable-line @typescript-eslint/prefer-nullish-coalescing -- Boolean OR for trying multiple regex patterns
       html.match(
         /<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:image["'][^>]*>/i,
       );

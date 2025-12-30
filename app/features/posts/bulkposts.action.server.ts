@@ -4,9 +4,9 @@
  */
 import { json, redirect } from "@remix-run/node";
 
-import { requireUserId } from "~/features/auth/session.server";
+import { requireUserId } from "~/features/auth";
 import type { NostrEvent, SignedEvent } from "~/features/nostr/types";
-import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
+import { resolveQueueTypeId } from "~/features/posts";
 import { logInfo } from "~/lib/error-logger.server";
 import { createPost, updatePost } from "~/models/post.commands.server";
 import { isVideoUrl } from "~/utils/media-helpers";

@@ -2,8 +2,8 @@
  * Draft preview component
  */
 
-import { getSelectedQueueStyle } from "~/features/posts/queueColors";
-import type { PostData, QueueType } from "~/features/posts/types";
+import { getSelectedQueueStyle } from "../queueColors";
+import type { PostData, QueueType } from "../types";
 interface DraftPreviewProps {
   post: PostData;
   selectedQueue: string;

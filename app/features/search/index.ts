@@ -8,8 +8,8 @@
  *   import { handleSearchAction } from "~/features/search";
  * 
  * Do NOT import from internal paths like:
- *   import { ... } from "~/features/search/services/..."  // ❌ Bad
- *   import { ... } from "~/features/search/hooks/..."      // ❌ Bad
+ *   import { ... } from "./services/..."  // ❌ Bad
+ *   import { ... } from "./hooks/..."      // ❌ Bad
  */
 
 // ============================================================================

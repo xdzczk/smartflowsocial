@@ -4,7 +4,7 @@ import { useLoaderData } from "@remix-run/react";
 import { RelaysSettings } from "~/components/settings/RelaysSettings";
 import { TimezoneSettings } from "~/components/settings/TimezoneSettings";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { requireUserId } from "~/features/auth/session.server";
+import { requireUserId } from "~/features/auth";
 import {
   MutedListSettings,
 } from "~/features/engagement";

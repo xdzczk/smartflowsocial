@@ -78,8 +78,8 @@ describe("Utility Functions", () => {
         "base",
         ["array1", "array2"],
         { obj1: true, obj2: false },
-        true && "conditional",
-        false && "excluded",
+        "conditional", // true && "conditional" -> always truthy, so just use the value
+        // false && "excluded" -> always falsy, so exclude it
       );
 
       expect(result).toContain("base");
@@ -101,6 +101,7 @@ describe("Utility Functions", () => {
     });
   });
 });
+
 
 
 

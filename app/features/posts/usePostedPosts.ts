@@ -2,9 +2,10 @@ import { useFetcher, useRevalidator, useSearchParams } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
 import type { ToastMessage } from "~/components/types";
-import type { CombinedContent, PostData, LongFormPostData } from "~/features/posts/types";
 import type { User } from "~/features/user";
 import { signEventFn } from "~/lib/nostr";
+
+import type { CombinedContent, PostData, LongFormPostData } from "./types";
 
 interface UsePostedPostsProps {
     user: User;

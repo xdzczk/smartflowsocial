@@ -8,8 +8,8 @@
  *   import { getEngagementData, getMutedList } from "~/features/engagement";
  * 
  * Do NOT import from internal paths like:
- *   import { ... } from "~/features/engagement/services/..."  // ❌ Bad
- *   import { ... } from "~/features/engagement/hooks/..."    // ❌ Bad
+ *   import { ... } from "./services/..."  // ❌ Bad
+ *   import { ... } from "./hooks/..."    // ❌ Bad
  */
 
 // ============================================================================

@@ -4,7 +4,7 @@ import { validateEvent } from "nostr-tools";
 
 import Footer from "~/components/layout/FrontendFooter";
 import Header from "~/components/layout/FrontendHeader";
-import { getUserId } from "~/features/auth/session.server";
+import { getUserId } from "~/features/auth";
 
 
 

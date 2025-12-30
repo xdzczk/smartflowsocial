@@ -3,9 +3,6 @@
  * Centralized data fetching for calendar pages
  */
 
-import { combineContent } from "~/features/posts/combined.server";
-import type { PostData, LongFormPostData, QueueType } from "~/features/posts/types";
-import { convertJsonValueToScheduleConfig } from "~/features/posts/types";
 import {
   getScheduledLongFormPosts,
   getPastLongFormPosts,
@@ -18,6 +15,10 @@ import {
   getUserById,
   getQueueTypes,
 } from "~/models/user.server";
+
+import { combineContent } from "../combined.server";
+import type { PostData, LongFormPostData, QueueType } from "../types";
+import { convertJsonValueToScheduleConfig } from "../types";
 
 import { filterPostsByQueueType } from "./post-filtering.server";
 
@@ -186,7 +187,7 @@ export async function loadCalendarData(
     user,
     queueTypes: queueTypes.filter((qt) => qt.isEnabled !== false),
     selectedQueueType: queueType,
-    scheduleIntervals: user?.scheduleInterval || [],
+    scheduleIntervals: user?.scheduleInterval ?? [],
   };
 }
 
@@ -212,7 +213,7 @@ export async function loadCalendarQueueData(
     user,
     queueTypes: queueTypes.filter((qt) => qt.isEnabled !== false),
     selectedQueueType: queueType,
-    scheduleIntervals: user?.scheduleInterval || [],
+    scheduleIntervals: user?.scheduleInterval ?? [],
   };
 }
 

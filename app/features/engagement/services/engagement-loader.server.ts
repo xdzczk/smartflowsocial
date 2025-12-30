@@ -4,14 +4,21 @@
  */
 
 import { connectToPrimalCache } from "~/features/cache/primalCache.server";
+import type { SignedEvent } from "~/features/nostr/types";
+import type { PostData, QueueType } from "~/features/posts/types";
+import { convertJsonValueToScheduleConfig } from "~/features/posts/types";
+import type { UserWithHashTagPresets } from "~/features/user";
+import { getUserById } from "~/features/user";
+import { getPostedPosts } from "~/models/post.queries.server";
+
 import {
   groupNotificationsByParent,
   groupNotificationsByType,
   parseThreadViewNotifications,
   processQuoteReposts,
   type Notification,
-} from "~/features/engagement/engagement.server";
-import { calculateTrustScore, type User } from "~/features/engagement/trustScore";
+} from "../engagement.server";
+import { calculateTrustScore, type User } from "../trustScore";
 import type {
   EngagementProfile,
   EngagementStats,
@@ -20,13 +27,7 @@ import type {
   NostrTag,
   NotificationEvent,
   PrimalEvent,
-} from "~/features/engagement/types";
-import type { SignedEvent } from "~/features/nostr/types";
-import type { PostData, QueueType } from "~/features/posts/types";
-import { convertJsonValueToScheduleConfig } from "~/features/posts/types";
-import type { UserWithHashTagPresets } from "~/features/user";
-import { getUserById } from "~/features/user";
-import { getPostedPosts } from "~/models/post.queries.server";
+} from "../types";
 
 /**
  * Fetches user profile data from Primal API and converts to User type for trust scoring

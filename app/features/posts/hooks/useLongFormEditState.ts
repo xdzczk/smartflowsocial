@@ -13,7 +13,7 @@ export function useLongFormEditState({
   hashtagPresets,
 }: UseLongFormEditStateProps) {
   const navigation = useNavigation();
-  const [displayedHashtags, setDisplayedHashtags] = useState(userTags || "");
+  const [displayedHashtags, setDisplayedHashtags] = useState(userTags ?? "");
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewData, setPreviewData] = useState({
     title: "",
@@ -61,7 +61,7 @@ export function useLongFormEditState({
     }
 
     if (queueTypeName === "unassigned") {
-      setDisplayedHashtags(userTags || "");
+      setDisplayedHashtags(userTags ?? "");
       return;
     }
 
@@ -80,11 +80,11 @@ export function useLongFormEditState({
         const data = (await response.json()) as { hashtags?: string };
         setDisplayedHashtags((data.hashtags ?? userTags) || "");
       } else {
-        setDisplayedHashtags(userTags || "");
+        setDisplayedHashtags(userTags ?? "");
       }
     } catch (error) {
       console.error("Error fetching effective hashtags:", error);
-      setDisplayedHashtags(userTags || "");
+      setDisplayedHashtags(userTags ?? "");
     }
   };
 

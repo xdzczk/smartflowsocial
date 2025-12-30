@@ -2,9 +2,10 @@
  * Helper functions for content listing components
  */
 
-import type { CombinedContent } from "~/features/posts/combined.server";
-import { getQueueColor } from "~/features/posts/queueColors";
 import { handleErrorSafely } from "~/lib/error-handler.client";
+
+import type { CombinedContent } from "../combined.server";
+import { getQueueColor } from "../queueColors";
 
 export function getImageUrls(fileUrl: string[] | undefined): string[] {
   if (!fileUrl || fileUrl.length === 0) return [];

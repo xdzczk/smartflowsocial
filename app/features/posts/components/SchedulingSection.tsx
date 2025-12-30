@@ -1,7 +1,8 @@
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import type { QueueType } from "~/features/posts/types";
+
+import type { QueueType } from "../types";
 interface SchedulingSectionProps {
   scheduledFor: string;
   onScheduledForChange: (value: string) => void;
@@ -48,7 +49,7 @@ export function SchedulingSection({
               type="datetime-local"
               id="scheduledFor"
               name="scheduledFor"
-              value={scheduledFor || ""}
+              value={scheduledFor ?? ""}
               onChange={(e) => onScheduledForChange(e.target.value)}
               disabled={disabled}
             />
@@ -86,6 +87,7 @@ export function SchedulingSection({
     </div>
   );
 }
+
 
 
 

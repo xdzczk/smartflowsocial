@@ -5,8 +5,8 @@ import {
   useActionData,
 } from "@remix-run/react";
 
-import type { Asset } from "~/features/assets/types";
-import { requireUserId } from "~/features/auth/session.server";
+import type { Asset } from "~/features/assets";
+import { requireUserId } from "~/features/auth";
 import {
   ErrorMessage,
   LongFormEditHeader,

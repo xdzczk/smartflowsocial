@@ -2,15 +2,18 @@ import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 
 import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
-import { QueueSelector } from "~/features/posts/components/QueueSelector";
-import { SchedulingSection } from "~/features/posts/components/SchedulingSection";
-import { usePostScheduling } from "~/features/posts/hooks/usePostScheduling";
-import type { QueueType, HashTagPreset } from "~/features/posts/types";
-import {
-  validateAndProcessFiles,
-} from "~/features/posts/utils/file-processing.client";
 import { uploadMultipleFiles } from "~/features/upload/upload.client";
 import { useOptionalUser } from "~/lib/remix-utils";
+
+import { usePostScheduling } from "../hooks/usePostScheduling";
+import type { QueueType, HashTagPreset } from "../types";
+import {
+  validateAndProcessFiles,
+} from "../utils/file-processing.client";
+
+import { QueueSelector } from "./QueueSelector";
+import { SchedulingSection } from "./SchedulingSection";
+
 
 interface PreparedEventData {
   content: {

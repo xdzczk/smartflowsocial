@@ -3,10 +3,11 @@ import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
-import type { QueueType, UserData } from "~/features/posts/types";
 import { handleErrorSafely } from "~/lib/error-handler.client";
 import { isVideoFile } from "~/lib/helpers";
 import { signEventFn } from "~/lib/nostr";
+
+import type { QueueType, UserData } from "../../types";
 
 import type { CalendarPost } from "./PostBlock.types";
 interface RescheduleData {

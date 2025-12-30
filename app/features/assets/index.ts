@@ -8,7 +8,7 @@
  *   import { useAssetManagement, useAssetUpload } from "~/features/assets";
  * 
  * Do NOT import from internal paths like:
- *   import { ... } from "~/features/assets/components/..."  // ❌ Bad
+ *   import { ... } from "./components/..."  // ❌ Bad
  */
 
 // ============================================================================

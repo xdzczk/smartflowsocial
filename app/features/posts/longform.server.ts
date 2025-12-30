@@ -1,7 +1,8 @@
 import { getPublicKey, finalizeEvent, nip19 } from "nostr-tools";
 
-import type { EditorJSOutput, EditorJSBlock } from "~/features/posts/types/editorjs.types";
 import { sanitizeMarkdown } from "~/lib/markdown-sanitizer.server";
+
+import type { EditorJSOutput, EditorJSBlock } from "./types/editorjs.types";
 
 export function createLongFormEvent({
   privateKey,
@@ -257,7 +258,7 @@ export function convertMarkdownToEditorJS(markdown: string): EditorJSOutput {
             file: {
               url: url,
             },
-            caption: caption || "",
+            caption: caption ?? "",
             withBorder: false,
             withBackground: false,
             stretched: false,

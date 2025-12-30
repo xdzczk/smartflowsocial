@@ -8,8 +8,8 @@
  *   import { getScheduledDashboardData, calculateNextScheduleTime } from "~/features/posts";
  * 
  * Do NOT import from internal paths like:
- *   import { ... } from "~/features/posts/services/..."  // ❌ Bad
- *   import { ... } from "~/features/posts/hooks/..."       // ❌ Bad
+ *   import { ... } from "./services/..."  // ❌ Bad
+ *   import { ... } from "./hooks/..."       // ❌ Bad
  */
 
 // ============================================================================
@@ -32,6 +32,7 @@ export type {
   UserData,
   HashTagPreset,
   PostFetcher,
+  PreparedEvent,
 } from "./types";
 
 // Re-export Prisma types for convenience (when needed for type annotations)

@@ -11,7 +11,8 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
-import type { QueueType } from "~/features/posts/types";
+
+import type { QueueType } from "../types";
 
 import { QueueTypeCard } from "./QueueTypeCard";
 import { QueueTypeDialog } from "./QueueTypeDialog";

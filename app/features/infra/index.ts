@@ -8,7 +8,7 @@
  *   import { performHealthCheck } from "~/features/infra";
  * 
  * Do NOT import from internal paths like:
- *   import { ... } from "~/features/infra/services/..."  // ❌ Bad
+ *   import { ... } from "./services/..."  // ❌ Bad
  */
 
 // ============================================================================
@@ -19,6 +19,7 @@ export {
   performHealthCheck,
   handleHealthCheckError,
 } from "./services/healthcheck.server";
+
 
 
 

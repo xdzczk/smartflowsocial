@@ -4,10 +4,11 @@
  * Handles file selection, validation, and processing for bulk uploads
  */
 
-import type { BulkPostsHandlerDeps } from "~/features/posts/types";
 import { resizeImage } from "~/features/upload/image-resize";
 import { logClientError } from "~/lib/error-handler.client";
 import { isVideoFile } from "~/utils/media-helpers";
+
+import type { BulkPostsHandlerDeps } from "../types";
 // File size limits
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB for images
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB for videos

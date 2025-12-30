@@ -8,7 +8,7 @@
  *   import { loadSettingsData, handleSettingsAction } from "~/features/settings";
  * 
  * Do NOT import from internal paths like:
- *   import { ... } from "~/features/settings/actions/..."  // ❌ Bad
+ *   import { ... } from "./actions/..."  // ❌ Bad
  */
 
 // ============================================================================
@@ -26,6 +26,7 @@ export {
 export {
   handleSettingsAction,
 } from "./settings-actions.server";
+
 
 
 

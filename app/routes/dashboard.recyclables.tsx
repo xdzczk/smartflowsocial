@@ -1,11 +1,11 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useParams, useFetcher } from "@remix-run/react";
 
-import { requireUserId } from "~/features/auth/session.server";
+import { requireUserId } from "~/features/auth";
 import {
   requireFeatureAccess,
   requireAnySubscription,
-} from "~/features/payments/subscriptions.server";
+} from "~/features/payments";
 import {
   PostDetailsModal,
   RecyclablesBulkActions,
@@ -19,7 +19,7 @@ import {
   handleRecyclablePostAction,
 } from "~/features/posts";
 import type { IndividualRepostFetcherData } from "~/features/posts";
-import type { PostData, CombinedContent } from "~/features/posts/types";
+import type { PostData, CombinedContent } from "~/features/posts";
 import { withErrorHandling, withActionErrorHandling } from "~/lib/error-handler.server";
 
 async function loaderImpl({ request, params }: LoaderFunctionArgs) {

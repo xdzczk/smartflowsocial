@@ -3,9 +3,6 @@
  * Centralized data fetching for dashboard index page
  */
 
-import { combineContent } from "~/features/posts/combined.server";
-import type { PostData, LongFormPostData } from "~/features/posts/types";
-import { convertPrismaQueueTypeToQueueType } from "~/features/posts/types";
 import {
   getScheduledLongFormPosts,
 } from "~/models/longformpost.server";
@@ -18,6 +15,10 @@ import {
   getQueueTypes,
   getUserHashTagPresets,
 } from "~/models/user.server";
+
+import { combineContent } from "../combined.server";
+import type { PostData, LongFormPostData } from "../types";
+import { convertPrismaQueueTypeToQueueType } from "../types";
 
 import { filterPostsByQueueType } from "./post-filtering.server";
 

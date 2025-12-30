@@ -8,8 +8,8 @@
  *   import { loadTemplatesData, handleTemplateAction } from "~/features/templates";
  * 
  * Do NOT import from internal paths like:
- *   import { ... } from "~/features/templates/services/..."  // ❌ Bad
- *   import { ... } from "~/features/templates/hooks/..."    // ❌ Bad
+ *   import { ... } from "./services/..."  // ❌ Bad
+ *   import { ... } from "./hooks/..."    // ❌ Bad
  */
 
 // ============================================================================

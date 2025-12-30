@@ -8,7 +8,7 @@
  *   import { getUser, requireUserId } from "~/features/auth";
  * 
  * Do NOT import from internal paths like:
- *   import { ... } from "~/features/auth/components/..."  // ❌ Bad
+ *   import { ... } from "./components/..."  // ❌ Bad
  */
 
 // ============================================================================
@@ -17,7 +17,9 @@
 
 export {
   getUser,
+  getUserId,
   requireUserId,
+  requireUser,
   logout,
   createUserSession,
 } from "./session.server";

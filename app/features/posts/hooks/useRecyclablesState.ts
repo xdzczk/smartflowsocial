@@ -1,8 +1,10 @@
-import { useFetcher, type FetcherWithComponents } from "@remix-run/react";
+import type { useFetcher} from "@remix-run/react";
+import { type FetcherWithComponents } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
-import type { PostData } from "~/features/posts/types";
 import { signEventFn } from "~/lib/nostr";
+
+import type { PostData } from "../types";
 
 interface Post {
   id: string;
@@ -427,7 +429,7 @@ export function useRecyclablesState({
     if (individualRepostFetcher.data) {
       void handleRepost();
     }
-  }, [individualRepostFetcher.data, user?.relays, individualRepostFetcher]);
+  }, [individualRepostFetcher.data, user?.relays, individualRepostFetcher, user]);
 
   return {
     sortConfig,

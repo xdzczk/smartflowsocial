@@ -6,9 +6,6 @@
 
 import { json } from "@remix-run/node";
 
-import { combineContent } from "~/features/posts/combined.server";
-import type { PostData, LongFormPostData } from "~/features/posts/types";
-import { convertPrismaQueueTypeToQueueType } from "~/features/posts/types";
 import {
   enqueuePostJob as schedulePost,
   cancelPostJob as cancelScheduledPost,
@@ -34,6 +31,10 @@ import {
   getQueueTypes,
   getUserHashTagPresets,
 } from "~/models/user.server";
+
+import { combineContent } from "../combined.server";
+import { convertPrismaQueueTypeToQueueType } from "../types";
+import type { PostData, LongFormPostData } from "../types";
 
 /**
  * Get scheduled posts dashboard data
@@ -350,8 +351,8 @@ export async function handleScheduledPostAction(
           : [],
         queueTypeId,
         scheduledFor: scheduledFor ? String(Number(scheduledFor)) : undefined,
-        signedEvent: parsedSignedEvent || undefined,
-        nostrEvent: parsedNostrEvent || undefined,
+        signedEvent: parsedSignedEvent ?? undefined,
+        nostrEvent: parsedNostrEvent ?? undefined,
         hashTagPresetId,
       },
     });

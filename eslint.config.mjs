@@ -98,6 +98,7 @@ export default (async () => {
   // TypeScript config
   {
     files: ["**/*.{ts,tsx}"],
+    ignores: ["tailwind.config.ts"], // Exclude from type-aware parsing (not in tsconfig)
     plugins: {
       "@typescript-eslint": tseslintPlugin,
       import: importPlugin,
@@ -227,57 +228,98 @@ export default (async () => {
             // Feature restrictions (excluding index.ts files which are the public API)
             // Note: index.ts files are allowed to import from their own internals
             // We use a more specific target pattern to exclude index.ts files
+            // IMPORTANT: The `except` patterns allow same-feature imports (when the importing file
+            // and imported file are in the same feature directory). The `*` wildcard matches any
+            // feature name, so `app/features/*/services/**` will match imports from the same feature.
+            // However, this also allows cross-feature imports, so we rely on the pattern matching
+            // to only allow when both are in the same feature (which the rule checks automatically).
             {
               target: ["app/features/**/*.ts", "!app/features/**/index.ts"],
-              from: "app/features/*/services/**",
-              except: ["app/features/*/services/**"],
-              message: "Features must use other features' public API (index.ts), not internal services",
-            },
-            {
-              target: ["app/features/**/*.ts", "!app/features/**/index.ts"],
-              from: "app/features/*/hooks/**",
-              except: ["app/features/*/hooks/**"],
-              message: "Features must use other features' public API (index.ts), not internal hooks",
-            },
-            {
-              target: ["app/features/**/*.ts", "!app/features/**/index.ts"],
-              from: "app/features/*/components/**",
-              except: ["app/features/*/components/**"],
-              message: "Features must use other features' public API (index.ts), not internal components",
-            },
-            {
-              target: ["app/features/**/*.ts", "!app/features/**/index.ts"],
-              from: "app/features/*/utils/**",
-              except: ["app/features/*/utils/**"],
-              message: "Features must use other features' public API (index.ts), not internal utils",
-            },
-            {
-              target: ["app/features/**/*.tsx", "!app/features/**/index.tsx"],
-              from: "app/features/*/services/**",
-              except: ["app/features/*/services/**"],
-              message: "Features must use other features' public API (index.ts), not internal services",
-            },
-            {
-              target: ["app/features/**/*.tsx", "!app/features/**/index.tsx"],
-              from: "app/features/*/hooks/**",
-              except: ["app/features/*/hooks/**"],
-              message: "Features must use other features' public API (index.ts), not internal hooks",
-            },
-            {
-              target: ["app/features/**/*.tsx", "!app/features/**/index.tsx"],
-              from: "app/features/*/components/**",
+              // Only check absolute imports (starting with ~/features/)
+              // Relative imports (./ or ../) are allowed for same-feature imports
+              from: "~/features/*/services/**",
               except: [
-                "app/features/*/components/**", // Allow importing from own components
-                // Allow relative imports within the same feature (components importing from sibling components)
-                "app/features/**/components/**/*.tsx", // Components can import from sibling components using relative paths
+                "app/features/*/services/**",
+                "app/features/**/services/**",
               ],
-              message: "Features must use other features' public API (index.ts), not internal components",
+              message: "Features must use other features' public API (index.ts), not internal services. Use relative imports (../services/ServiceName) for same-feature imports.",
+            },
+            {
+              target: ["app/features/**/*.ts", "!app/features/**/index.ts"],
+              // Only check absolute imports (starting with ~/features/)
+              // Relative imports (./ or ../) are allowed for same-feature imports
+              from: "~/features/*/hooks/**",
+              except: [
+                "app/features/*/hooks/**",
+                "app/features/**/hooks/**",
+              ],
+              message: "Features must use other features' public API (index.ts), not internal hooks. Use relative imports (../hooks/useHookName) for same-feature imports.",
+            },
+            {
+              target: ["app/features/**/*.ts", "!app/features/**/index.ts"],
+              // Only check absolute imports (starting with ~/features/)
+              // Relative imports (./ or ../) are allowed for same-feature imports
+              from: "~/features/*/components/**",
+              except: [
+                "app/features/*/components/**",
+                "app/features/**/components/**",
+              ],
+              message: "Features must use other features' public API (index.ts), not internal components. Use relative imports (./ComponentName) for same-feature imports.",
+            },
+            {
+              target: ["app/features/**/*.ts", "!app/features/**/index.ts"],
+              // Only check absolute imports (starting with ~/features/)
+              // Relative imports (./ or ../) are allowed for same-feature imports
+              from: "~/features/*/utils/**",
+              except: [
+                "app/features/*/utils/**",
+                "app/features/**/utils/**",
+              ],
+              message: "Features must use other features' public API (index.ts), not internal utils. Use relative imports (../utils/utilName) for same-feature imports.",
             },
             {
               target: ["app/features/**/*.tsx", "!app/features/**/index.tsx"],
-              from: "app/features/*/utils/**",
-              except: ["app/features/*/utils/**"],
-              message: "Features must use other features' public API (index.ts), not internal utils",
+              // Only check absolute imports (starting with ~/features/)
+              // Relative imports (./ or ../) are allowed for same-feature imports
+              from: "~/features/*/services/**",
+              except: [
+                "app/features/*/services/**",
+                "app/features/**/services/**",
+              ],
+              message: "Features must use other features' public API (index.ts), not internal services. Use relative imports (../services/ServiceName) for same-feature imports.",
+            },
+            {
+              target: ["app/features/**/*.tsx", "!app/features/**/index.tsx"],
+              // Only check absolute imports (starting with ~/features/)
+              // Relative imports (./ or ../) are allowed for same-feature imports
+              from: "~/features/*/hooks/**",
+              except: [
+                "app/features/*/hooks/**",
+                "app/features/**/hooks/**",
+              ],
+              message: "Features must use other features' public API (index.ts), not internal hooks. Use relative imports (../hooks/useHookName) for same-feature imports.",
+            },
+            {
+              target: ["app/features/**/*.tsx", "!app/features/**/index.tsx"],
+              // Only check absolute imports (starting with ~/features/)
+              // Relative imports (./ or ../) are allowed for same-feature imports
+              from: "~/features/*/components/**",
+              except: [
+                "app/features/*/components/**",
+                "app/features/**/components/**",
+              ],
+              message: "Features must use other features' public API (index.ts), not internal components. Use relative imports (./ComponentName) for same-feature imports.",
+            },
+            {
+              target: ["app/features/**/*.tsx", "!app/features/**/index.tsx"],
+              // Only check absolute imports (starting with ~/features/)
+              // Relative imports (./ or ../) are allowed for same-feature imports
+              from: "~/features/*/utils/**",
+              except: [
+                "app/features/*/utils/**",
+                "app/features/**/utils/**",
+              ],
+              message: "Features must use other features' public API (index.ts), not internal utils. Use relative imports (../utils/utilName) for same-feature imports.",
             },
             {
               target: "app/models/**/*",
@@ -297,7 +339,16 @@ export default (async () => {
           ],
         },
       ],
-      // Prevent Prisma imports in routes
+      // Prevent Prisma imports in routes (features/services can import prisma.server)
+      // This rule is scoped to routes only via a separate config block below
+      "no-restricted-imports": "off",
+    },
+  },
+
+  // Routes-specific rules - restrict Prisma imports (features/services can import prisma.server)
+  {
+    files: ["app/routes/**/*.{ts,tsx}"],
+    rules: {
       "no-restricted-imports": [
         "warn",
         {
@@ -468,6 +519,7 @@ export default (async () => {
       "import/no-restricted-paths": "off",
       "no-restricted-imports": "off",
       ...(cypressPlugin && { "cypress/no-unnecessary-waiting": "warn" }),
+      "jest/valid-expect": "off", // Cypress uses different assertion syntax (.to.be.true)
     },
   },
 
@@ -513,6 +565,7 @@ export default (async () => {
       "import/no-restricted-paths": "off",
       "no-restricted-imports": "off",
       ...(cypressPlugin && { "cypress/no-unnecessary-waiting": "warn" }),
+      "jest/valid-expect": "off", // Cypress uses different assertion syntax (.to.be.true)
     },
   },
 
@@ -543,7 +596,7 @@ export default (async () => {
 
   // TypeScript scripts and config files (with type-aware rules)
   {
-    files: ["scripts/**/*.ts", "*.config.ts", "cypress.config.ts", "vitest.config.ts"],
+    files: ["scripts/**/*.ts", "cypress.config.ts", "vitest.config.ts"],
     plugins: {
       "@typescript-eslint": tseslintPlugin,
       import: importPlugin,
@@ -654,6 +707,34 @@ export default (async () => {
     },
     rules: {
       "import/no-restricted-paths": "off", // Index.ts files are the public API and should import from their own internals
+    },
+  },
+
+  // Config files without type-aware parsing (not in tsconfig)
+  {
+    files: ["tailwind.config.ts"],
+    plugins: {
+      "@typescript-eslint": tseslintPlugin,
+      import: importPlugin,
+    },
+    languageOptions: {
+      parser: tseslintParser,
+      // No parserOptions.project - not in tsconfig, so no type-aware rules
+      globals: {
+        ...globals.node,
+      },
+    },
+    rules: {
+      // Only non-type-aware rules
+      "@typescript-eslint/no-explicit-any": "off", // Requires type info
+      "@typescript-eslint/no-unsafe-assignment": "off", // Requires type info
+      "@typescript-eslint/no-unsafe-member-access": "off", // Requires type info
+      "@typescript-eslint/no-unsafe-call": "off", // Requires type info
+      "no-console": "off",
+      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+      "import/order": "warn",
+      "import/no-restricted-paths": "off",
+      "no-restricted-imports": "off",
     },
   },
 

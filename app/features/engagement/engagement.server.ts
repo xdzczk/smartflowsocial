@@ -1,3 +1,7 @@
+import type { LongFormPostData, PostData } from "~/features/posts/types";
+import { logError } from "~/lib/error-logger.server";
+
+import { loadEngagementFeedData } from "./services/engagement-loader.server";
 import type {
   EventStats,
   GroupedNotification,
@@ -8,11 +12,7 @@ import type {
   ParentPost,
   PrimalEvent,
   UserProfile,
-} from "~/features/engagement/types";
-import type { LongFormPostData, PostData } from "~/features/posts/types";
-import { logError } from "~/lib/error-logger.server";
-
-import { loadEngagementFeedData } from "./services/engagement-loader.server";
+} from "./types";
 
 // Re-export types for consumers
 export type {

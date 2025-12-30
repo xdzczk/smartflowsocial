@@ -5,8 +5,6 @@
 
 import { validateEvent } from "nostr-tools";
 
-import { getCompleteProfile } from "~/features/auth/profile.server";
-import { createUserSession } from "~/features/auth/session.server";
 import { AuthenticationError, ValidationError } from "~/lib/errors";
 import { safeRedirect } from "~/lib/remix-utils";
 import {
@@ -14,6 +12,9 @@ import {
   getUserByNpub,
   updateUserProfile,
 } from "~/models/user.server";
+
+import { getCompleteProfile } from "../profile.server";
+import { createUserSession } from "../session.server";
 
 /**
  * Authenticate user via Nostr event signature
@@ -66,6 +67,7 @@ export async function authenticateNostrUser(
       npub: parsedEvent.pubkey ?? "",
     });
 
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- if (!user) pattern is clearer than user ??= await createUser()
     if (!user) {
       user = await createUser(
         parsedEvent.pubkey ?? "",

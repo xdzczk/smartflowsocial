@@ -4,8 +4,9 @@
  * Extracted from dashboard.bulkposts.tsx
  */
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
-import { getDynamicQueueStyle } from "~/features/posts/queueColors";
-import type { BulkPostCardProps , BulkPost, QueueType } from "~/features/posts/types";
+
+import { getDynamicQueueStyle } from "../queueColors";
+import type { BulkPostCardProps , BulkPost, QueueType } from "../types";
 // Re-export types for consumers
 export type { BulkPost, QueueType };
 

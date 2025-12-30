@@ -6,7 +6,6 @@
 import { NWCClient } from "@getalby/sdk";
 import { LN, USD } from "@getalby/sdk/lnclient";
 
-import { getBitcoinRate } from "~/features/payments/btc.rate";
 import { decrypt } from "~/lib/encryption.server";
 import { createErrorResponse } from "~/lib/error-handler.server";
 import { normalizeError } from "~/lib/errors";
@@ -19,6 +18,8 @@ import {
   disableUserAccount,
   getEnabledUsersWithSubscriptions,
 } from "~/models/user.server";
+
+import { getBitcoinRate } from "../btc.rate";
 
 interface RenewalResults {
   checked: number;

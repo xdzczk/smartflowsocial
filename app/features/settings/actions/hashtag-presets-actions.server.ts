@@ -24,7 +24,7 @@ export async function handleHashtagPresetAction(
       return json({ error: "Name and tags are required" }, { status: 400 });
     }
 
-    await createHashTagPreset(userId, name, tags, description || undefined);
+    await createHashTagPreset(userId, name, tags, description ?? undefined);
     return json({ success: true });
   }
 
@@ -46,7 +46,7 @@ export async function handleHashtagPresetAction(
       id,
       name,
       tags,
-      description || undefined,
+      description ?? undefined,
     );
     return json({ success: true });
   }
@@ -64,6 +64,7 @@ export async function handleHashtagPresetAction(
 
   return null;
 }
+
 
 
 

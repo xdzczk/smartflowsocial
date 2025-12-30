@@ -1,11 +1,12 @@
 import { useFetcher } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
-import { getSelectedQueueStyle } from "~/features/posts/queueColors";
-import { isIntervalScheduleConfig, isFixedSlotsScheduleConfig } from "~/features/posts/types";
-import type { QueueType, PostData } from "~/features/posts/types";
 import { signEventFn } from "~/lib/nostr";
 import { useOptionalUser } from "~/lib/remix-utils";
+
+import { getSelectedQueueStyle } from "../queueColors";
+import { isIntervalScheduleConfig, isFixedSlotsScheduleConfig } from "../types";
+import type { QueueType, PostData } from "../types";
 
 interface DraftBulkResumeProps {
   selectedDrafts: PostData[];
@@ -504,8 +505,8 @@ export default function DraftBulkResume({
                             disabled={isSubmitting}
                             className={`rounded-full px-3 py-1 text-xs font-medium transition-all duration-200 ${getSelectedQueueStyle(queueName, post.queueType === queueName)}`}
                             style={{
-                              backgroundColor: queueColor || undefined,
-                              borderColor: queueColor || undefined,
+                              backgroundColor: queueColor ?? undefined,
+                              borderColor: queueColor ?? undefined,
                             }}
                           >
                             {queueName}

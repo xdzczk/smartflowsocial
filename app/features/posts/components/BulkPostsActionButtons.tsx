@@ -1,6 +1,8 @@
 import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
-import type { BulkPost, QueueType } from "~/features/posts/components/BulkPostCard";
-import { getDynamicQueueStyle } from "~/features/posts/queueColors";
+
+import { getDynamicQueueStyle } from "../queueColors";
+
+import type { BulkPost, QueueType } from "./BulkPostCard";
 
 interface BulkPostsActionButtonsProps {
     posts: BulkPost[];
@@ -57,7 +59,7 @@ export default function BulkPostsActionButtons({
                 <div className="flex flex-wrap justify-center gap-2">
                     {queueTypes.map((queue) => {
                         const queueName =
-                            typeof queue === "string" ? queue : (queue.name || "");
+                            typeof queue === "string" ? queue : (queue.name ?? "");
                         const queueColor =
                             typeof queue === "object" ? queue.color : null;
                         // Check if this queue is selected for all posts

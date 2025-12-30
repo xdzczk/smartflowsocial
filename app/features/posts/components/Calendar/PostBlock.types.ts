@@ -1,4 +1,4 @@
-import type { PostData, QueueType as QueueTypeFromTypes, UserData } from "~/features/posts/types";
+import type { PostData, QueueType as QueueTypeFromTypes, UserData } from "../../types";
 // Re-export QueueType for convenience
 export type QueueType = QueueTypeFromTypes;
 

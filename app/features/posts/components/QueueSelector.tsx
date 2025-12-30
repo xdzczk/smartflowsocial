@@ -1,5 +1,5 @@
-import { getDynamicQueueStyle } from "~/features/posts/queueColors";
-import type { QueueType } from "~/features/posts/types";
+import { getDynamicQueueStyle } from "../queueColors";
+import type { QueueType } from "../types";
 interface QueueSelectorProps {
   queueTypes: (string | QueueType)[];
   selectedQueue: string;
@@ -19,7 +19,7 @@ export function QueueSelector({
     const selectedQueueType = queueTypes.find((qt) =>
       typeof qt === "string" ? qt === queueName : qt.name === queueName
     );
-    return typeof selectedQueueType === "object" ? selectedQueueType.id || "" : "";
+    return typeof selectedQueueType === "object" ? selectedQueueType.id ?? "" : "";
   };
 
   return (

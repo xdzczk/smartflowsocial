@@ -1,10 +1,11 @@
 import { useFetcher } from "@remix-run/react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
-import { getSelectedQueueStyle } from "~/features/posts/queueColors";
-import type { PreparedEvent } from "~/features/posts/types";
 import { logClientError } from "~/lib/error-handler.client";
 import { signEventFn } from "~/lib/nostr";
+
+import { getSelectedQueueStyle } from "../queueColors";
+import type { PreparedEvent } from "../types";
 
 interface PostConfirmationProps {
   preparedEvents: PreparedEvent[];
@@ -150,8 +151,8 @@ export default function PostConfirmation({ preparedEvents, postsCount }: PostCon
 
             if (isRepost) {
               // For reposts, use the fileUrl from the eventData
-              mediaUrl = eventData.fileUrl || "";
-              caption = eventData.caption || "";
+              mediaUrl = eventData.fileUrl ?? "";
+              caption = eventData.caption ?? "";
               // Hide tags for reposts
               tags = "";
             } else {
@@ -181,8 +182,8 @@ export default function PostConfirmation({ preparedEvents, postsCount }: PostCon
                 mediaUrl = mediaUrls[0] || "";
               } else {
                 // Fallback to eventData.caption if content is not available
-                caption = eventData.caption || "";
-                mediaUrl = eventData.fileUrl || "";
+                caption = eventData.caption ?? "";
+                mediaUrl = eventData.fileUrl ?? "";
               }
               const eventsTags = typeof eventsData === "object" && eventsData !== null && "tags" in eventsData ? (eventsData as { tags?: unknown }).tags : undefined;
               tags = (Array.isArray(eventsTags) ? eventsTags : []).map((tag) => Array.isArray(tag) && tag[1] && typeof tag[1] === "string" ? `#${tag[1]}` : "").filter((t) => t !== "").join(" ");

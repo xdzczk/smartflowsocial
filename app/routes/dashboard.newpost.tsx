@@ -3,8 +3,8 @@ import { useLoaderData } from "@remix-run/react";
 
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import type { Asset } from "~/features/assets/types";
-import { requireUserId } from "~/features/auth/session.server";
+import type { Asset } from "~/features/assets";
+import { requireUserId } from "~/features/auth";
 import {
   MediaPost,
   NewPostHeader,

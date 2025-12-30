@@ -2,8 +2,9 @@ import { useFetcher, useLocation } from "@remix-run/react";
 import { useState, useEffect, useRef } from "react";
 
 import { type Asset, type AssetFetcher } from "~/features/assets";
-import type { Template, ScheduleData, TemplateFetcher } from "~/features/templates/types";
 import { resizeImageClient, uploadFile, uploadMultipleFiles } from "~/features/upload";
+
+import type { Template, ScheduleData, TemplateFetcher } from "../types";
 
 interface UseTemplatesStateProps {
   searchTerm: string;
@@ -16,7 +17,7 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [activeTab, setActiveTab] = useState<"assets" | "upload">("assets");
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
-  const [searchInput, setSearchInput] = useState(searchTerm || "");
+  const [searchInput, setSearchInput] = useState(searchTerm ?? "");
   const [bulkUploadFiles, setBulkUploadFiles] = useState<File[]>([]);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");

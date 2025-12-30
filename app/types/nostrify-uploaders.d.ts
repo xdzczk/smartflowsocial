@@ -11,3 +11,4 @@ declare module "@nostrify/nostrify/uploaders" {
 
 
 
+

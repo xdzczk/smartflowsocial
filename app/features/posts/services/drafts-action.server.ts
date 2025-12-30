@@ -3,11 +3,12 @@
  * Centralized action processing for drafts page
  */
 
-import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
 import {
   deleteLongFormPost,
 } from "~/models/longformpost.server";
 import { deletePost, updatePost } from "~/models/post.commands.server";
+
+import { resolveQueueTypeId } from "./queue-type-resolver.server";
 
 export async function handleDraftsAction(
   formData: FormData,

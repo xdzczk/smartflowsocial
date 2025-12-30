@@ -110,7 +110,7 @@ function fixUnsafeAssignments(content, filePath) {
     
     // Pattern: Fix unsafe member access with optional chaining
     // x.y where x is any -> x?.y with proper type guard
-    if (line.includes('any') && line.match(/\.\w+\s*[=;,\)]/)) {
+    if (line.includes('any') && line.match(/\.\w+\s*[=;,\\)]/)) {
       // This requires more context, skip for now
     }
     

@@ -4,7 +4,7 @@
 
 import { Link , useFetcher } from "@remix-run/react";
 
-import { getQueueColor } from "~/features/posts/queueColors";
+import { getQueueColor } from "../queueColors";
 interface Post {
   id: string;
   caption?: string | null;

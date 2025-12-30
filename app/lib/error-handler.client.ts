@@ -87,7 +87,7 @@ export function handleApiError(
 
   // Handle error response object
   if (response.error) {
-    return response.error.message || "An error occurred";
+    return response.error.message ?? "An error occurred";
   }
 
   return "An unexpected error occurred";
@@ -110,7 +110,7 @@ export function showErrorToast(
   } else if (error instanceof Error) {
     message = error.message;
   } else {
-    message = error.message || "An error occurred";
+    message = error.message ?? "An error occurred";
   }
 
   toast.error(message, {

@@ -1,8 +1,8 @@
 import { Link, useLoaderData, useParams } from "@remix-run/react";
 
 import Toast from "~/components/ui/Toast";
-import { requireUserId } from "~/features/auth/session.server";
-import { requireAnySubscription } from "~/features/payments/subscriptions.server";
+import { requireUserId } from "~/features/auth";
+import { requireAnySubscription } from "~/features/payments";
 import {
   AllContentListing,
   LongFormDetailsModal,

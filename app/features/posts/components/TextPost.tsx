@@ -9,12 +9,15 @@ import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import AssetBrowser from "~/features/assets/components/AssetBrowser";
 import type { Asset } from "~/features/assets/types";
-import { QueueSelector } from "~/features/posts/components/QueueSelector";
-import { SchedulingSection } from "~/features/posts/components/SchedulingSection";
-import { usePostScheduling } from "~/features/posts/hooks/usePostScheduling";
-import type { QueueType } from "~/features/posts/types";
 import { signEventFn } from "~/lib/nostr";
 import { useOptionalUser } from "~/lib/remix-utils";
+
+import { usePostScheduling } from "../hooks/usePostScheduling";
+import type { QueueType } from "../types";
+
+import { QueueSelector } from "./QueueSelector";
+import { SchedulingSection } from "./SchedulingSection";
+
 interface TextPostProps {
   queueTypes?: (string | QueueType)[];
   assets?: Asset[];
@@ -42,6 +45,7 @@ export default function TextPost({
   const [isRecyclable, setIsRecyclable] = useState(false);
   const [useHashtagPresets, setUseHashtagPresets] = useState(false);
   const [selectedHashtagPresetId, setSelectedHashtagPresetId] = useState<string | undefined>(
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- Ternary is appropriate here; ?? undefined would be redundant
     selectedHashTagPresetId ? selectedHashTagPresetId : undefined,
   );
   const [selectedHashtags, setSelectedHashtags] = useState("");
@@ -186,7 +190,7 @@ export default function TextPost({
             action: "fetchEffectiveHashtags",
           });
           // Fallback to user's default hashtags
-          effectiveHashtags = Array.isArray(tags) ? tags.join(" ") : tags || "";
+          effectiveHashtags = Array.isArray(tags) ? tags.join(" ") : tags ?? "";
         }
       }
 

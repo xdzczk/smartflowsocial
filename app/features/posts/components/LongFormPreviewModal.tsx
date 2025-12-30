@@ -1,6 +1,7 @@
 import { Button } from "~/components/ui/button";
-import type { EditorJSBlock } from "~/features/posts/types/editorjs.types";
 import { handleErrorSafely } from "~/lib/error-handler.client";
+
+import type { EditorJSBlock } from "../types/editorjs.types";
 
 interface LongFormPreviewModalProps {
   isOpen: boolean;
@@ -131,8 +132,7 @@ export default function LongFormPreviewModal({
       });
 
       return (
-        html ||
-        '<p class="text-gray-500 italic">Content could not be rendered</p>'
+        html ?? '<p class="text-gray-500 italic">Content could not be rendered</p>'
       );
     } catch (error) {
       handleErrorSafely(error, {
@@ -141,7 +141,7 @@ export default function LongFormPreviewModal({
       });
       // Try to display as plain text if JSON parsing fails
       const plainTextContent = content.replace(/<[^>]*>/g, "");
-      return `<p class="text-gray-700 dark:text-gray-300">${plainTextContent || "Content parsing failed"}</p>`;
+      return `<p class="text-gray-700 dark:text-gray-300">${plainTextContent ?? "Content parsing failed"}</p>`;
     }
   };
 
@@ -243,7 +243,7 @@ export default function LongFormPreviewModal({
 
             {/* Title */}
             <h1 className="mb-4 text-2xl font-bold leading-tight text-gray-900 dark:text-white">
-              {title || "Untitled Post"}
+              {title ?? "Untitled Post"}
             </h1>
 
             {/* Cover Image */}
@@ -275,7 +275,7 @@ export default function LongFormPreviewModal({
                 color: "inherit",
               }}
               dangerouslySetInnerHTML={{
-                __html: convertEditorJSToHTML(content || ""),
+                __html: convertEditorJSToHTML(content ?? ""),
               }}
             />
 

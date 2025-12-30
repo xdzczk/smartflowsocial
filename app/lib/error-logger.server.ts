@@ -81,7 +81,7 @@ export function logError(
         id: context.userId,
       },
     }),
-    environment: process.env.NODE_ENV || "development",
+    environment: process.env.NODE_ENV ?? "development",
   };
 
   // Sanitize log entry to prevent secrets from appearing in logs
@@ -147,7 +147,7 @@ export function logWarning(
     level: "warn" as LogLevel,
     message,
     ...context,
-    environment: process.env.NODE_ENV || "development",
+    environment: process.env.NODE_ENV ?? "development",
   };
 
   if (process.env.NODE_ENV === "production") {
@@ -169,7 +169,7 @@ export function logInfo(
     level: "info" as LogLevel,
     message,
     ...context,
-    environment: process.env.NODE_ENV || "development",
+    environment: process.env.NODE_ENV ?? "development",
   };
 
   if (process.env.NODE_ENV === "production") {

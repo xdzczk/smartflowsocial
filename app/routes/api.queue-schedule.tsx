@@ -1,6 +1,6 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
 
-import { requireUserId } from "~/features/auth/session.server";
+import { requireUserId } from "~/features/auth";
 import {
   calculateQueueScheduleTime,
   parseQueueScheduleRequest,

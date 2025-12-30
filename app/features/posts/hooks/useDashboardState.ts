@@ -1,7 +1,7 @@
 import { useFetcher } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
-import type { PostData, LongFormPostData } from "~/features/posts/types";
+import type { PostData, LongFormPostData } from "../types";
 interface UseDashboardStateProps {
   scheduledPosts: PostData[];
   userTimezone?: string | null;
@@ -47,7 +47,7 @@ export function useDashboardState({
       scheduledPosts.forEach((post) => {
         const scheduledFor = post.scheduledFor;
         const scheduledForValue = typeof scheduledFor === "string" || typeof scheduledFor === "number" ? scheduledFor : "0";
-        const utcTime = parseInt(String(scheduledForValue || 0)) * 1000;
+        const utcTime = parseInt(String(scheduledForValue ?? 0)) * 1000;
         const userTime = new Date(utcTime).toLocaleString("en-US", {
           timeZone: tz,
         });

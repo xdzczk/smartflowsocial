@@ -10,8 +10,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { getDynamicQueueStyle } from "~/features/posts/queueColors";
-import type { QueueType } from "~/features/posts/types";
+
+import { getDynamicQueueStyle } from "../queueColors";
+import type { QueueType } from "../types";
 
 interface SchedulingControlsProps {
   queueTypes?: QueueType[];

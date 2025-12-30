@@ -2,8 +2,9 @@
  * Engagement feed content component
  */
 
-import GroupedNotificationList from "~/features/engagement/components/GroupedNotificationList";
-import type { GroupedNotification } from "~/features/engagement/types";
+import type { GroupedNotification } from "../types";
+
+import GroupedNotificationList from "./GroupedNotificationList";
 interface EngagementContentProps {
   activeTab: "all" | "replies" | "quotes";
   groupedNotifications: {

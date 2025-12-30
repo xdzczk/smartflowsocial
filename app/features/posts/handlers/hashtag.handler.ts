@@ -4,8 +4,9 @@
  * Handles hashtag management and display based on queue type
  */
 
-import type { QueueType } from "~/features/posts/types";
 import { logClientError } from "~/lib/error-handler.client";
+
+import type { QueueType } from "../types";
 
 /**
  * Update displayed hashtags based on queue type

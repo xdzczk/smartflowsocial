@@ -114,7 +114,7 @@ export async function assertionExample({
   assertAuthenticated(userId, "You must be logged in");
 
   const resource = await getResource(params.id);
-  assertExists(resource, "Resource not found", { id: params.id || "" });
+  assertExists(resource, "Resource not found", { id: params.id ?? "" });
 
   const hasPermission = await checkPermission(userId, resource);
   const resourceId = resource && typeof resource === "object" && resource !== null && "id" in resource ? String((resource as { id: unknown }).id) : "";

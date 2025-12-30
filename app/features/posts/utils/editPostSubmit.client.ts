@@ -3,9 +3,10 @@
  * Extracted from EditPostModal for better separation of concerns
  */
 
-import type { PostData, LongFormPostData, UserData } from "~/features/posts/types";
 import { uploadMultipleFiles } from "~/features/upload/upload.client";
 import { signEventFn } from "~/lib/nostr";
+
+import type { PostData, LongFormPostData, UserData } from "../types";
 
 interface EditPostSubmitParams {
   post: PostData | LongFormPostData;

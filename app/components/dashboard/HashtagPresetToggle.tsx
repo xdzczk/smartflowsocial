@@ -142,7 +142,7 @@ export function HashtagPresetToggle({
                   Choose Hashtag Preset
                 </Label>
                 <Select
-                  value={selectedPresetId || "none"}
+                  value={selectedPresetId ?? "none"}
                   onValueChange={handlePresetChange}
                   disabled={disabled}
                 >

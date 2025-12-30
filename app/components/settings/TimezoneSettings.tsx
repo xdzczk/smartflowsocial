@@ -31,7 +31,7 @@ interface FetcherData {
 export function TimezoneSettings({ timezone }: TimezoneSettingsProps) {
   const fetcher = useFetcher<FetcherData>();
   const [selectedTimezone, setSelectedTimezone] = useState(
-    timezone || "Etc/UTC",
+    timezone ?? "Etc/UTC",
   );
 
   const isSubmitting = fetcher.state === "submitting";

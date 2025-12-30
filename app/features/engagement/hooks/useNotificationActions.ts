@@ -1,8 +1,9 @@
 import { nip19 } from "nostr-tools";
 import { useCallback, useEffect, useState } from "react";
 
-import type { NotificationEvent, NostrTag } from "~/features/engagement/types";
 import { signEventFn } from "~/lib/nostr";
+
+import type { NotificationEvent, NostrTag } from "../types";
 
 export interface NotificationActionTarget {
     eventId: string;

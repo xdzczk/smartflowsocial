@@ -4,8 +4,9 @@ import { useState } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import type { LongFormPostType } from "~/features/posts";
-import type { EditorJSBlock } from "~/features/posts/types/editorjs.types";
 import { handleErrorSafely } from "~/lib/error-handler.client";
+
+import type { EditorJSBlock } from "../types/editorjs.types";
 interface LongFormDetailsModalProps {
   post: LongFormPostType;
   onClose: () => void;
