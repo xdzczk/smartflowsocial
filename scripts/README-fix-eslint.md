@@ -1,6 +1,6 @@
 # ESLint Auto-Fix Script
 
-This script automatically fixes common ESLint errors in the codebase.
+This script automatically fixes common ESLint errors in the codebase. Or not.
 
 ## Usage
 
