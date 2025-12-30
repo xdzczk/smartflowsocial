@@ -99,7 +99,7 @@ async function createImageUploadHandler(uploadProvider: string | null) {
       );
 
       // Check upload provider and use appropriate method
-      if (uploadProvider && uploadProvider.includes("BLOSSOM")) {
+      if (uploadProvider?.includes("BLOSSOM")) {
         // Use client-side upload for Blossom
         const { uploadFile } = await import("~/features/upload/upload.client");
         const uploadResult = await uploadFile(file);

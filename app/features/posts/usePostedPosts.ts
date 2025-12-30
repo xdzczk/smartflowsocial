@@ -3,8 +3,8 @@ import { useState, useEffect } from "react";
 
 import type { ToastMessage } from "~/components/types";
 import type { CombinedContent, PostData, LongFormPostData } from "~/features/posts/types";
-import { signEventFn } from "~/lib/nostr";
 import type { User } from "~/features/user";
+import { signEventFn } from "~/lib/nostr";
 
 interface UsePostedPostsProps {
     user: User;
@@ -529,7 +529,7 @@ export function usePostedPosts({ user, allContent, posts: _posts }: UsePostedPos
                     }, false); // Don't show toast, we set toast state instead
                     setToast({
                         type: "error",
-                        message: getErrorMessage(error) || "Failed to sign or publish repost",
+                        message: getErrorMessage(error) ?? "Failed to sign or publish repost",
                     });
 
                     // Hide toast after 5 seconds for errors
@@ -548,7 +548,7 @@ export function usePostedPosts({ user, allContent, posts: _posts }: UsePostedPos
                 setToast({
                     type: "error",
                     message:
-                        individualRepostFetcher.data.message || "Failed to create repost",
+                        individualRepostFetcher.data.message ?? "Failed to create repost",
                 });
 
                 // Hide toast after 5 seconds for errors

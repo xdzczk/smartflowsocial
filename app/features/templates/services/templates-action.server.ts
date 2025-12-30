@@ -229,9 +229,9 @@ export async function handleTemplatesAction(
       scheduleDate.setHours(scheduleDate.getHours() + index);
 
       return {
-        caption: post.caption || "",
+        caption: post.caption ?? "",
         fileUrl: post.fileUrl,
-        queueType: post.queueTypeId || "unassigned",
+        queueType: post.queueTypeId ?? "unassigned",
         scheduledFor: scheduleDate
           .toLocaleString("en-US", {
             year: "numeric",

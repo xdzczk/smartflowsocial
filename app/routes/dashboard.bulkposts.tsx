@@ -8,6 +8,13 @@ import Toast from "~/components/ui/Toast";
 import { requireUserId } from "~/features/auth/session.server";
 import { requireFeatureAccess } from "~/features/payments/subscriptions.server";
 import {
+  BulkPostsActionButtons,
+  BulkPostsTable,
+  BulkPostsUploadArea,
+  PostConfirmation,
+  getBulkPostsDashboardData,
+} from "~/features/posts";
+import {
   handleFileChange as handleFileChangeHandler,
   handleCaptionChange as handleCaptionChangeHandler,
   handleDateChange as handleDateChangeHandler,
@@ -18,13 +25,6 @@ import {
   handleQueueTypeChange as handleQueueTypeChangeHandler,
   handleBulkQueueUpdate as handleBulkQueueUpdateHandler,
 } from "~/features/posts/bulkposts.handlers";
-import {
-  BulkPostsActionButtons,
-  BulkPostsTable,
-  BulkPostsUploadArea,
-  PostConfirmation,
-  getBulkPostsDashboardData,
-} from "~/features/posts";
 import { type BulkPost, type QueueType , type PreparedEvent } from "~/features/posts/types";
 import { useBulkPostEvents } from "~/features/posts/useBulkPostEvents";
 import { useBulkPostsState } from "~/features/posts/useBulkPostsState";
@@ -73,7 +73,7 @@ export default function BulkPosts() {
   const fetcher = useFetcher<{ success?: boolean; fileUrls?: { fileUrl: string; scheduledFor: string; queueType: string }[] }>();
   const isSubmitting = fetcher.state !== "idle";
   const userOptional = useOptionalUser();
-  const user = userOptional || null;
+  const user = userOptional ?? null;
   const scheduleIntervals = user?.scheduleInterval 
     ? (Array.isArray(user.scheduleInterval) 
         ? user.scheduleInterval.map(s => typeof s === "string" ? parseInt(s, 10) : s).filter((n): n is number => !isNaN(n)) 
@@ -137,7 +137,7 @@ export default function BulkPosts() {
 
   // Wrapper functions that delegate to extracted handlers
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const userDeps = user ? { id: user.id, timezone: user.timezone || undefined, scheduleInterval: scheduleIntervals } : null;
+    const userDeps = user ? { id: user.id, timezone: user.timezone ?? undefined, scheduleInterval: scheduleIntervals } : null;
     void handleFileChangeHandler(e, {
       posts,
       setPosts,
@@ -184,7 +184,7 @@ export default function BulkPosts() {
   };
 
   const handleQueueTypeChange = async (index: number, value: string) => {
-    const userDeps = user ? { id: user.id, timezone: user.timezone || undefined, scheduleInterval: scheduleIntervals } : null;
+    const userDeps = user ? { id: user.id, timezone: user.timezone ?? undefined, scheduleInterval: scheduleIntervals } : null;
     await handleQueueTypeChangeHandler(index, value, {
       posts,
       setPosts,
@@ -205,7 +205,7 @@ export default function BulkPosts() {
   };
 
   const handleBulkQueueUpdate = async (queueType: string) => {
-    const userDeps = user ? { id: user.id, timezone: user.timezone || undefined, scheduleInterval: scheduleIntervals } : null;
+    const userDeps = user ? { id: user.id, timezone: user.timezone ?? undefined, scheduleInterval: scheduleIntervals } : null;
     await handleBulkQueueUpdateHandler(queueType, {
       posts,
       setPosts,

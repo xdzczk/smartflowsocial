@@ -130,7 +130,7 @@ export async function insertAssetsIntoEditor(
     const newBlocks: EditorJSBlock[] = [];
     for (const asset of selectedAssets) {
       if (asset.assetType === "TEXT") {
-        const textContent = asset.content || asset.title || "";
+        const textContent = asset.content ?? asset.title ?? "";
         if (textContent) {
           newBlocks.push({
             id: Math.random().toString(36).substr(2, 9),
@@ -183,7 +183,7 @@ export async function insertAssetsIntoEditor(
     try {
       for (const asset of selectedAssets) {
         if (asset.assetType === "TEXT") {
-          const textContent = asset.content || asset.title || "";
+          const textContent = asset.content ?? asset.title ?? "";
           if (textContent) {
             editorRef.current.blocks.insert("paragraph", {
               text: textContent,

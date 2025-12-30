@@ -293,12 +293,14 @@ function applyCustomFixes(filePath) {
     // to avoid conflicts with ESLint's more sophisticated rules
 
     // Fix 2: Remove unnecessary async
-    const asyncResult = removeUnnecessaryAsync(content);
-    if (asyncResult.modified) {
-      content = asyncResult.content;
-      totalFixes += asyncResult.fixes;
-      modified = true;
-    }
+    // DISABLED: This function has a bug - it only checks the first brace level
+    // and incorrectly removes async from functions that use await in nested blocks
+    // const asyncResult = removeUnnecessaryAsync(content);
+    // if (asyncResult.modified) {
+    //   content = asyncResult.content;
+    //   totalFixes += asyncResult.fixes;
+    //   modified = true;
+    // }
 
 
     if (modified) {

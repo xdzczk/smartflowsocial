@@ -29,8 +29,8 @@ import {
   type UserData,
   convertJsonValueToScheduleConfig,
 } from "~/features/posts";
-import { withErrorHandling, withActionErrorHandling } from "~/lib/error-handler.server";
 import type { LongFormPostType } from "~/features/posts";
+import { withErrorHandling, withActionErrorHandling } from "~/lib/error-handler.server";
 
 async function loaderImpl({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
@@ -40,7 +40,7 @@ async function loaderImpl({ request, params }: LoaderFunctionArgs) {
   // Check if user has access to the drafts feature
   await requireFeatureAccess(userId, "drafts");
 
-  const queueType = params.queueType || "all";
+  const queueType = params.queueType ?? "all";
 
   const data = await loadDraftsData(userId, queueType);
   return data;
@@ -72,13 +72,13 @@ export default function DraftPosts() {
 
   // Type assertions for Remix JsonifyObject serialization
   // Remix serializes Date objects to strings, so we need to assert these types
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+   
   const posts: PostData[] = Array.isArray(postsRaw) ? (postsRaw as unknown as PostData[]) : [];
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+   
   const longformPosts: LongFormPostData[] = Array.isArray(longformPostsRaw) ? (longformPostsRaw as unknown as LongFormPostData[]) : [];
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+   
   const allContent: CombinedContent[] = Array.isArray(allContentRaw) ? (allContentRaw as unknown as CombinedContent[]) : [];
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+   
   const user: UserData | null | undefined = userRaw ? (userRaw as unknown as UserData) : null;
 
   // Conversion function: PostData -> Post (for useDraftsState hook)
@@ -120,7 +120,7 @@ export default function DraftPosts() {
   const isChildRoute = params.id;
 
   // Get current tab from URL params - default to "all"
-  const currentTab = searchParams.get("tab") || "all";
+  const currentTab = searchParams.get("tab") ?? "all";
 
   const {
     sortConfig,
@@ -227,9 +227,9 @@ export default function DraftPosts() {
           />
 
           {selectedPost ? (() => {
-            const postData = posts.find(p => p.id === selectedPost.id) as PostData | undefined;
-            const combinedContent = allContent.find(c => c.id === selectedPost.id) as CombinedContent | undefined;
-            // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+            const postData = posts.find(p => p.id === selectedPost.id);
+            const combinedContent = allContent.find(c => c.id === selectedPost.id);
+             
             const fallbackPost = selectedPost as unknown as PostData | CombinedContent;
             const postToShow = postData ?? combinedContent ?? fallbackPost;
             return postToShow ? (
@@ -246,7 +246,7 @@ export default function DraftPosts() {
           {showAdvancedBulkResume ? (
             <div className="fixed inset-0 z-50 bg-white dark:bg-gray-900">
               <DraftBulkResume
-                // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+                 
                 selectedDrafts={filteredPosts.filter((post) =>
                   selectedPosts.has(post.id),
                 ) as unknown as PostData[]}
@@ -258,7 +258,7 @@ export default function DraftPosts() {
         </div>
       ) : (
         <LongFormListing
-          // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+           
           posts={longformPosts as unknown as LongFormPostType[]}
           type="draft"
           searchTerm={searchTerm}

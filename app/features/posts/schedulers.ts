@@ -7,9 +7,9 @@ import {
   isIntervalScheduleConfig,
   isFixedSlotsScheduleConfig,
 } from "~/features/posts/types";
+import { getScheduleInterval } from "~/features/user";
 import { logError } from "~/lib/error-logger.server";
 import { getLastPostTimeForQueue } from "~/models/post.queries.server";
-import { getScheduleInterval } from "~/features/user";
 
 interface CalculateNextScheduleTimeParams {
   queueType: QueueType | TypedQueueType;

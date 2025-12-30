@@ -33,7 +33,7 @@ async function loaderImpl({ request, params }: LoaderFunctionArgs) {
   // Check if user has access to calendar feature
   await requireFeatureAccess(userId, 'calendar');
 
-  const queueType = params.queueType || "all";
+  const queueType = params.queueType ?? "all";
 
   return loadCalendarData(userId, queueType);
 }
@@ -63,15 +63,15 @@ export default function CalendarRoute() {
 
   // Type assertions for Remix JsonifyObject serialization
   // Remix serializes Date objects to strings, so we need to assert these types
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+   
   const scheduledPosts: PostData[] = Array.isArray(scheduledPostsRaw) ? (scheduledPostsRaw as unknown as PostData[]) : [];
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+   
   const scheduledLongFormPosts: LongFormPostData[] = Array.isArray(scheduledLongFormPostsRaw) ? (scheduledLongFormPostsRaw as unknown as LongFormPostData[]) : [];
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+   
   const pastPosts: PostData[] = Array.isArray(pastPostsRaw) ? (pastPostsRaw as unknown as PostData[]) : [];
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+   
   const pastLongFormPosts: LongFormPostData[] = Array.isArray(pastLongFormPostsRaw) ? (pastLongFormPostsRaw as unknown as LongFormPostData[]) : [];
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+   
   const user: UserData | null | undefined = userRaw ? (userRaw as unknown as UserData) : null;
   const queueTypes: QueueType[] = Array.isArray(queueTypesRaw) ? queueTypesRaw.map((qt: unknown) => {
     if (qt && typeof qt === "object" && "id" in qt && "name" in qt) {
@@ -95,7 +95,7 @@ export default function CalendarRoute() {
   const [searchParams] = useSearchParams();
 
   // Get current tab from URL params - default to "all"
-  const currentTab = searchParams.get("tab") || "all";
+  const currentTab = searchParams.get("tab") ?? "all";
 
   return (
     <div className="flex h-full flex-col space-y-6">

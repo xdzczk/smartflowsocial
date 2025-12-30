@@ -269,7 +269,7 @@ async function attemptRenewal(
         const amountMatch = invoiceStr.match(
           /lnbc([0-9]+)([munp]?)/,
         );
-        if (amountMatch && amountMatch[1]) {
+        if (amountMatch?.[1]) {
           const baseAmount = parseInt(amountMatch[1], 10);
           const unit = amountMatch[2];
 

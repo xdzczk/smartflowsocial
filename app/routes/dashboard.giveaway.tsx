@@ -28,8 +28,8 @@ async function loaderImpl({ request, params }: LoaderFunctionArgs) {
   await requireFeatureAccess(userId, "giveaways");
 
   const url = new URL(request.url);
-  const queueType = params.queueType || "all";
-  const days = parseInt(url.searchParams.get("days") || "7");
+  const queueType = params.queueType ?? "all";
+  const days = parseInt(url.searchParams.get("days") ?? "7");
 
   const data = await loadGiveawayData(userId, queueType, days);
   return data;

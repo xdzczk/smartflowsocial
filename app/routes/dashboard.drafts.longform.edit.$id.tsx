@@ -109,14 +109,14 @@ export default function EditLongFormPost() {
           assets={assets}
           onQueueTypeChange={(name) => void updateDisplayedHashtags(name)}
           onPreview={handlePreview}
-          initialData={typedPost ? { title: typedPost.title, summary: typedPost.summary, content: typedPost.content, image: typedPost.image, queueType: typedPost.queueType || undefined } as unknown as { title?: string; summary?: string; content?: string; image?: string; queueType?: { name: string } } : null}
+          initialData={typedPost ? { title: typedPost.title, summary: typedPost.summary, content: typedPost.content, image: typedPost.image, queueType: typedPost.queueType ?? undefined } as unknown as { title?: string; summary?: string; content?: string; image?: string; queueType?: { name: string } } : null}
           isEditing={true}
           hashTagPresets={hashtagPresets}
           useHashtagPresets={useHashtagPresets}
           selectedHashtagPresetId={selectedHashtagPresetId}
           selectedHashtags={selectedHashtags}
           onUseHashtagPresetsChange={handleHashtagPresetToggle}
-          onHashtagPresetChange={(presetId) => handleHashtagPresetChange(presetId || "")}
+          onHashtagPresetChange={(presetId) => handleHashtagPresetChange(presetId ?? "")}
         />
       </Form>
 

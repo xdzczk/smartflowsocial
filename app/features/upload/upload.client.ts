@@ -181,14 +181,14 @@ async function uploadFileToBlossom(
           url: result.file.url,
           size: file.size,
           name: file.name,
-          extension: file.name.split(".").pop() || "",
+          extension: file.name.split(".").pop() ?? "",
           provider: "BLOSSOM_PRIMAL" as const,
         },
       };
     } else {
       return {
         success: false,
-        error: result.error || "Blossom upload failed",
+        error: result.error ?? "Blossom upload failed",
       };
     }
   } catch (error) {

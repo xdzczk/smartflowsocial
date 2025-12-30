@@ -5,8 +5,8 @@ import { useEffect, useRef, useCallback } from "react";
 import { type ToastMessage } from "~/components/types";
 import { type BulkPost , type PreparedEvent } from "~/features/posts/types";
 import { uploadMultipleFiles } from "~/features/upload/upload.client";
-import { logClientError } from "~/lib/error-handler.client";
 import type { User } from "~/features/user";
+import { logClientError } from "~/lib/error-handler.client";
 interface FetcherData {
     fileUrls?: { fileUrl: string; scheduledFor: string }[];
 }
@@ -114,13 +114,13 @@ export function useBulkPostEvents({
                         const dataRaw: unknown = await res.json();
                         const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { hashtags?: unknown } : {};
                         const hashtags = typeof data.hashtags === "string" ? data.hashtags : null;
-                        effectiveHashtags = hashtags || tags.join(" ");
+                        effectiveHashtags = hashtags ?? tags.join(" ");
                     } catch {
                         effectiveHashtags = tags.join(" ");
                     }
                 }
 
-                const tagsString = effectiveHashtags || "";
+                const tagsString = effectiveHashtags ?? "";
                 const addTags = user && typeof user === "object" && "showHashTagsinPosts" in user && user.showHashTagsinPosts ? `${tagsString}` : "";
 
                 // Build content array, filtering out null/undefined/empty values
@@ -215,8 +215,8 @@ export function useBulkPostEvents({
                             created_at: Math.floor(scheduledTime / 1000),
                             kind: 6, // Kind 6 for reposts
                             tags: [
-                                ["e", post.originalEventId || "", "wss://relay.primal.net"],
-                                ["p", post.originalEventPubkey || ""],
+                                ["e", post.originalEventId ?? "", "wss://relay.primal.net"],
+                                ["p", post.originalEventPubkey ?? ""],
                             ],
                         },
                     };
@@ -266,12 +266,12 @@ export function useBulkPostEvents({
                         quoteTags = [
                             ...tagArray, // Hashtag tags
                             ...(aTag ? [aTag] : []), // 'a' tag for longform reference if available
-                            ["p", post.originalEventPubkey || "", "", "mention"], // Reference to quoted author
+                            ["p", post.originalEventPubkey ?? "", "", "mention"], // Reference to quoted author
                         ];
                     } else {
                         // Create nevent1 format for regular quoted events
                         const neventEncoded = nip19.neventEncode({
-                            id: post.originalEventId || "",
+                            id: post.originalEventId ?? "",
                             relays: ["wss://relay.primal.net"],
                             author: post.originalEventPubkey,
                         });
@@ -288,8 +288,8 @@ export function useBulkPostEvents({
                         // Include hashtag t tags plus e and p tags for quote posts
                         quoteTags = [
                             ...tagArray, // Hashtag tags
-                            ["e", post.originalEventId || "", "wss://relay.primal.net", "mention"], // Reference to quoted event
-                            ["p", post.originalEventPubkey || "", "", "mention"], // Reference to quoted author
+                            ["e", post.originalEventId ?? "", "wss://relay.primal.net", "mention"], // Reference to quoted event
+                            ["p", post.originalEventPubkey ?? "", "", "mention"], // Reference to quoted author
                         ];
                     }
 
@@ -405,7 +405,7 @@ export function useBulkPostEvents({
                         fileUrl,
                         scheduledFor: post.scheduledFor,
                         queueType: post.queueType,
-                        isRecyclable: post.isRecyclable || false,
+                        isRecyclable: post.isRecyclable ?? false,
                     };
                 });
 
@@ -453,7 +453,7 @@ export function useBulkPostEvents({
                         posts.forEach((post) => {
                             formData.append("scheduledDates", post.scheduledFor);
                             formData.append("queueTypes", post.queueType);
-                            formData.append("isRecyclable", (post.isRecyclable || false).toString());
+                            formData.append("isRecyclable", (post.isRecyclable ?? false).toString());
                         });
                         formData.append("_action", "_upload_images_preview");
 
@@ -489,7 +489,7 @@ export function useBulkPostEvents({
                     posts.forEach((post) => {
                         formData.append("scheduledDates", post.scheduledFor);
                         formData.append("queueTypes", post.queueType);
-                        formData.append("isRecyclable", (post.isRecyclable || false).toString());
+                        formData.append("isRecyclable", (post.isRecyclable ?? false).toString());
                     });
                     formData.append("_action", "_upload_images_preview");
 

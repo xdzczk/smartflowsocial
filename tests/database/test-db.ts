@@ -7,7 +7,8 @@
 
 import { execSync } from "child_process";
 
-import { PrismaClient, Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 let testPrisma: PrismaClient | null = null;
 let transactionClient: PrismaClient | null = null;
 
@@ -86,7 +87,7 @@ export async function withTransaction<T>(
  * Syncs schema and seeds test data
  * Uses `db push` for test databases as it doesn't require migrations
  */
-export async function setupTestDatabase(): Promise<void> {
+export function setupTestDatabase(): Promise<void> {
   const testDatabaseUrl = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL;
   
   if (!testDatabaseUrl) {
@@ -102,6 +103,7 @@ export async function setupTestDatabase(): Promise<void> {
       env: { ...process.env, DATABASE_URL: testDatabaseUrl },
       stdio: "inherit",
     });
+    return Promise.resolve();
   } catch (error) {
     console.error("Failed to sync database schema:", error);
     // If db push fails, it might be due to breaking schema changes

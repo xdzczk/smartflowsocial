@@ -13,6 +13,7 @@ vi.mock("~/infra/queue/queue-client.server", () => ({
   },
 }));
 
+import type { SignedEvent } from "~/features/nostr/types";
 import { queueClient } from "~/infra/queue/queue-client.server";
 import {
   enqueuePostJob,
@@ -21,7 +22,6 @@ import {
   cancelLongFormPostJob,
   enqueuePostCheckerJob,
 } from "~/infra/queue/queue-operations.server";
-import type { SignedEvent } from "~/features/nostr/types";
 
 import { TEST_USER_ID } from "../utils/test-helpers";
 

@@ -242,7 +242,7 @@ export default function BulkPostsTable({
                                 <div className="flex flex-wrap gap-1">
                                     {queueTypes.map((queue) => {
                                         const queueName =
-                                            typeof queue === "string" ? queue : (queue.name || "");
+                                            typeof queue === "string" ? queue : (queue.name ?? "");
                                         const queueColor =
                                             typeof queue === "object" ? queue.color : null;
                                         return (
@@ -254,8 +254,8 @@ export default function BulkPostsTable({
                                                 }}
                                                 className={`rounded-full px-3 py-1 text-xs ${getDynamicQueueStyle(queueColor ?? null, post.queueType === queueName)}`}
                                                 style={{
-                                                    backgroundColor: queueColor || undefined,
-                                                    borderColor: queueColor || undefined,
+                                                    backgroundColor: queueColor ?? undefined,
+                                                    borderColor: queueColor ?? undefined,
                                                 }}
                                             >
                                                 {queueName}
@@ -280,7 +280,7 @@ export default function BulkPostsTable({
                                     <input
                                         id={`bulk-recyclable-${index}`}
                                         type="checkbox"
-                                        checked={post.isRecyclable || false}
+                                        checked={post.isRecyclable ?? false}
                                         onChange={(e) =>
                                             handleIsRecyclableChange(index, e.target.checked)
                                         }

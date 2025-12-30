@@ -80,7 +80,7 @@ export const action = withActionErrorHandling(
       file: {
         url: fileUrl,
         size: fileSize,
-        name: data.fileName || `blossom-${sha256.substring(0, 8)}`,
+        name: data.fileName ?? `blossom-${sha256.substring(0, 8)}`,
         extension: data.fileName ? data.fileName.split(".").pop() : "bin",
         sha256,
         mimeType,

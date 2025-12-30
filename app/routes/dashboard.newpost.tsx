@@ -46,7 +46,8 @@ export default function NewPost() {
         typeof (qt as { id: unknown; name: unknown }).id === "string" &&
         typeof (qt as { id: unknown; name: unknown }).name === "string") {
       const queueTypeObj = qt as { id: string; name: string; scheduleConfig?: unknown; [key: string]: unknown };
-      return {
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+      const result = {
         id: queueTypeObj.id,
         name: queueTypeObj.name,
         color: typeof queueTypeObj.color === "string" ? queueTypeObj.color : undefined,
@@ -56,6 +57,7 @@ export default function NewPost() {
         isEnabled: typeof queueTypeObj.isEnabled === "boolean" ? queueTypeObj.isEnabled : undefined,
         userId: typeof queueTypeObj.userId === "string" ? queueTypeObj.userId : undefined,
       } as QueueType;
+      return result;
     }
     return qt as string | QueueType;
   });
@@ -97,7 +99,7 @@ export default function NewPost() {
       content: typeof asset.content === "string" ? asset.content : asset.content === null ? null : null,
       fileUrl: typeof asset.fileUrl === "string" ? asset.fileUrl : asset.fileUrl === null ? null : null,
       tags: Array.isArray(asset.tags) ? asset.tags.filter((tag): tag is string => typeof tag === "string") : [],
-      assetType: typeof asset.assetType === "string" ? asset.assetType as Asset["assetType"] : "IMAGE",
+      assetType: typeof asset.assetType === "string" ? asset.assetType : "IMAGE",
       createdAt: (() => {
         const createdAtValue: unknown = asset.createdAt;
         if (createdAtValue instanceof Date) return createdAtValue;
@@ -142,7 +144,7 @@ export default function NewPost() {
             hashTagPresets={typedHashTagPresets}
             onQueueTypeChange={handleQueueTypeChange}
             selectedHashTagPresetId={selectedHashTagPresetId}
-            onHashtagPresetChange={(presetId, _hashtags) => handleHashtagPresetSelect(presetId || "", _hashtags || "")}
+            onHashtagPresetChange={(presetId, _hashtags) => handleHashtagPresetSelect(presetId ?? "", _hashtags ?? "")}
           />
         </TabsContent>
         <TabsContent value="media">
@@ -160,7 +162,7 @@ export default function NewPost() {
               }] : []}
               onCancel={() => setShowImagePreview(false)}
               postsCount={1}
-              tags={selectedHashTagPresetId || ""}
+              tags={selectedHashTagPresetId ?? ""}
             />
           ) : (
             <MediaPost

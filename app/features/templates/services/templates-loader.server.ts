@@ -3,12 +3,12 @@
  * Centralized data fetching for templates page
  */
 
+import { getUserById } from "~/features/user";
 import {
   getAssets,
   searchAssets,
 } from "~/models/asset.server";
 import { getTemplates } from "~/models/template.server";
-import { getUserById } from "~/features/user";
 
 /**
  * Load templates data

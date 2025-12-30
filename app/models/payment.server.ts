@@ -51,7 +51,7 @@ export async function createPlanInvoice({
         invoice: "free_plan",
         paymentHash: "free_plan",
         status: "COMPLETED",
-        description: description || `Free plan subscription`,
+        description: description ?? `Free plan subscription`,
         paidAt: new Date(),
       },
     });
@@ -125,7 +125,7 @@ export async function createPlanInvoice({
         if (invoiceStr.startsWith("lnbc")) {
           // Extract amount from Lightning invoice - amounts are encoded after 'lnbc'
           const amountMatch = invoiceStr.match(/lnbc([0-9]+)([munp]?)/);
-          if (amountMatch && amountMatch[1]) {
+          if (amountMatch?.[1]) {
             const baseAmount = parseInt(amountMatch[1], 10);
             const unit = amountMatch[2];
 
@@ -190,7 +190,7 @@ export async function createPlanInvoice({
         invoice: invoiceString,
         paymentHash: paymentHashString,
         status: "PENDING",
-        description: description || `${plan.name} plan subscription`,
+        description: description ?? `${plan.name} plan subscription`,
         expiresAt,
       },
     });
@@ -402,7 +402,7 @@ export async function checkPaymentStatus(paymentId: string): Promise<{
   return {
     status: payment.status,
     paid: payment.status === "COMPLETED",
-    paidAt: payment.paidAt || undefined,
+    paidAt: payment.paidAt ?? undefined,
   };
 }
 

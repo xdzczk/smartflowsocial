@@ -41,7 +41,7 @@ export const action = withActionErrorHandling(
     // Continue with S3 upload for EditorJS
 
     // Check content type
-    const contentType = request.headers.get("content-type") || "";
+    const contentType = request.headers.get("content-type") ?? "";
     assert(
       contentType.includes("multipart/form-data"),
       "Request must be multipart/form-data",
@@ -66,7 +66,7 @@ export const action = withActionErrorHandling(
       );
     }
 
-    const imageFile = formData.get("image") || formData.get("imageFile");
+    const imageFile = formData.get("image") ?? formData.get("imageFile");
     assert(imageFile !== null, "No image file provided", {
       formDataKeys: Array.from(formData.keys()),
     });

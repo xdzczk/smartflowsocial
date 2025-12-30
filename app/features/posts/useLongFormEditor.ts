@@ -105,6 +105,7 @@ export function useLongFormEditor({
                     tools: tools,
                     data: undefined, // Initial data will be loaded separately
                     // @ts-expect-error - EditorJS onChange signature doesn't match types but works at runtime
+                    // eslint-disable-next-line @typescript-eslint/no-misused-promises
                     onChange: async (api: EditorJSAPI) => {
                         try {
                             const outputData = await api.saver.save();

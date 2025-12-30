@@ -96,7 +96,7 @@ export default function AccountSwitcher() {
         </SelectTrigger>
         <SelectContent>
           {children.map((c) => {
-            const label = c.name || c.displayName || `${c.npub.slice(0, 8)}...${c.npub.slice(-8)}`;
+            const label = c.name ?? c.displayName ?? `${c.npub.slice(0, 8)}...${c.npub.slice(-8)}`;
             return (
               <SelectItem key={c.npub} value={c.npub}>
                 <div className="flex items-center gap-2">

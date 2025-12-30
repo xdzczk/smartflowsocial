@@ -173,7 +173,7 @@ export default function Settings() {
   const searchParams = new URLSearchParams(
     typeof window !== "undefined" ? window.location.search : "",
   );
-  let defaultTab = searchParams.get("tab") || "general";
+  let defaultTab = searchParams.get("tab") ?? "general";
   if (
     (isChild && defaultTab === "subscription") ||
     (!hasAccountsAccess && defaultTab === "accounts")

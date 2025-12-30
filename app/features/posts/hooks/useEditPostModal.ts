@@ -253,6 +253,7 @@ export function useEditPostModal({
             // @ts-expect-error - EditorJS types don't match exactly but work at runtime
             tools: toolsConfig,
             // @ts-expect-error - EditorJS onChange signature doesn't match types but works at runtime
+            // eslint-disable-next-line @typescript-eslint/no-misused-promises
             onChange: async (api: EditorJSAPI) => {
               try {
                 const outputData = await api.saver.save();

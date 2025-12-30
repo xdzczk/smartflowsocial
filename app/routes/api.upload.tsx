@@ -22,7 +22,7 @@ export const action = withActionErrorHandling(
     const userId = await requireUserId(request);
 
     // Validate content type
-    const contentType = request.headers.get("content-type") || "";
+    const contentType = request.headers.get("content-type") ?? "";
     assert(
       contentType.includes("multipart/form-data"),
       "Request must be multipart/form-data",

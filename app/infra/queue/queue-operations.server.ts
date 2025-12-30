@@ -33,7 +33,7 @@ export async function enqueuePostJob(
   );
 
   if (!result.success) {
-    throw new Error(result.error || "Failed to schedule post");
+    throw new Error(result.error ?? "Failed to schedule post");
   }
 }
 
@@ -72,7 +72,7 @@ export async function enqueueLongFormPostJob(
   );
 
   if (!result.success) {
-    throw new Error(result.error || "Failed to schedule longform post");
+    throw new Error(result.error ?? "Failed to schedule longform post");
   }
 }
 
@@ -98,7 +98,7 @@ export async function enqueuePostCheckerJob(delay = 0): Promise<void> {
   );
 
   if (!result.success) {
-    throw new Error(result.error || "Failed to enqueue post checker job");
+    throw new Error(result.error ?? "Failed to enqueue post checker job");
   }
 }
 

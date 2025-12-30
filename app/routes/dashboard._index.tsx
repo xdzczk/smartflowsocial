@@ -46,7 +46,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const planActivated = url.searchParams.get("planActivated");
   const successMessage = url.searchParams.get("message");
 
-  const queueType = params.queueType || "all";
+  const queueType = params.queueType ?? "all";
 
   const data = await loadDashboardData(userId, queueType);
 
@@ -87,18 +87,18 @@ export default function DashboardIndex() {
   const [searchParams] = useSearchParams();
 
   // Get current tab from URL params - default to "all"
-  const currentTab = searchParams.get("tab") || "all";
+  const currentTab = searchParams.get("tab") ?? "all";
 
   const [showSuccessMessage, setShowSuccessMessage] = useState(!!(planActivated && typeof planActivated === "string"));
 
   // Type assertions for Remix JsonifyObject serialization
   // Remix serializes Date objects to strings, so we need to assert these types
   // The loader returns proper types, but Remix serializes them
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+   
   const scheduledPosts: PostData[] = Array.isArray(scheduledPostsRaw) ? (scheduledPostsRaw as unknown as PostData[]) : [];
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+   
   const longformPosts: LongFormPostData[] = Array.isArray(longformPostsRaw) ? (longformPostsRaw as unknown as LongFormPostData[]) : [];
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+   
   const allContent: CombinedContent[] = Array.isArray(allContentRaw) ? (allContentRaw as unknown as CombinedContent[]) : [];
   const queueTypes: QueueType[] = Array.isArray(queueTypesRaw) ? queueTypesRaw.map((qt: unknown) => {
     if (qt && typeof qt === "object" && qt !== null && "id" in qt && "name" in qt) {
@@ -220,7 +220,7 @@ export default function DashboardIndex() {
             if (content.type === "post") {
               setSelectedPost(content.originalData as PostData);
             } else {
-              // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+               
               setSelectedLongFormPost(content.originalData as unknown as LongFormPostData);
             }
           }}

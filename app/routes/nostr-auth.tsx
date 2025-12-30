@@ -10,5 +10,5 @@ export const action = withActionErrorHandling(async ({ request }: ActionFunction
   const contentSign = formData.get("contentSign") as string | null;
   const redirectTo = safeRedirect(formData.get("redirectTo"), `/dashboard`);
 
-  return authenticateNostrUser(event || "", contentSign, redirectTo, request);
+  return authenticateNostrUser(event ?? "", contentSign, redirectTo, request);
 });

@@ -18,8 +18,8 @@ import {
   getRecyclableDashboardData,
   handleRecyclablePostAction,
 } from "~/features/posts";
-import type { PostData, CombinedContent } from "~/features/posts/types";
 import type { IndividualRepostFetcherData } from "~/features/posts";
+import type { PostData, CombinedContent } from "~/features/posts/types";
 import { withErrorHandling, withActionErrorHandling } from "~/lib/error-handler.server";
 
 async function loaderImpl({ request, params }: LoaderFunctionArgs) {
@@ -71,11 +71,13 @@ export default function RecyclablesPosts() {
   // Type assertions for posts - ensure they match Post[] | PostData[]
   const typedPosts: PostData[] = Array.isArray(posts) ? posts.map((post: unknown) => {
     const p = post as { id: string; createdAt?: string | Date; postedAt?: string | Date | null; [key: string]: unknown };
-    return {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    const result = {
       ...p,
       createdAt: p.createdAt instanceof Date ? p.createdAt : typeof p.createdAt === "string" ? new Date(p.createdAt) : new Date(),
       postedAt: p.postedAt instanceof Date ? p.postedAt : typeof p.postedAt === "string" ? new Date(p.postedAt) : p.postedAt === null ? null : null,
     } as PostData;
+    return result;
   }) : [];
   
   // Type assertions for stats - ensure it matches Stats type
@@ -116,7 +118,7 @@ export default function RecyclablesPosts() {
   } = useRecyclablesState({
     posts: typedPosts,
     stats: typedStats,
-    user: user || null,
+    user: user ?? null,
     repostFetcher,
     bulkDeleteFetcher,
     bulkRepostFetcher: repostFetcher,
@@ -191,7 +193,7 @@ export default function RecyclablesPosts() {
 
       {selectedPost ? (
         <PostDetailsModal
-              // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+               
               post={selectedPost as unknown as PostData | CombinedContent}
           stats={(() => {
             const eventId = (selectedPost && typeof selectedPost === "object" && "signedEvent" in selectedPost && selectedPost.signedEvent && typeof selectedPost.signedEvent === "object" && "id" in selectedPost.signedEvent) ? String((selectedPost.signedEvent as { id?: string }).id) : "";

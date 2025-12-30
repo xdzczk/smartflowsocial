@@ -11,6 +11,7 @@ import { Worker } from "bullmq";
 import type { Job } from "bullmq";
 
 import type { SignedEvent } from "~/features/nostr/types";
+import { getUserById } from "~/features/user";
 import {
   getQueueInstance,
   redis,
@@ -28,7 +29,6 @@ import {
 } from "~/models/longformpost.server";
 import { updatePostStatus } from "~/models/post.commands.server";
 import { getCronDueScheduledPosts } from "~/models/post.queries.server";
-import { getUserById } from "~/features/user";
 
 /**
  * Type guard to check if value is a SignedEvent

@@ -25,7 +25,7 @@ async function loaderImpl({ request }: LoaderFunctionArgs) {
   await requireAnySubscription(userId);
 
   const url = new URL(request.url);
-  const page = parseInt(url.searchParams.get("page") || "1");
+  const page = parseInt(url.searchParams.get("page") ?? "1");
   const limit = 50; // Get last 50 posts
 
   const data = await loadEngagementFeedData(userId, page, limit);

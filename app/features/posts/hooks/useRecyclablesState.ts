@@ -1,5 +1,4 @@
-import type { FetcherWithComponents } from "@remix-run/react";
-import { useFetcher } from "@remix-run/react";
+import { useFetcher, type FetcherWithComponents } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
 import type { PostData } from "~/features/posts/types";
@@ -72,8 +71,9 @@ interface UseRecyclablesStateProps {
   posts: Post[] | PostData[]; // Accept any post type from loader
   stats: Stats;
   user?: User | null;
-  repostFetcher: ReturnType<typeof useFetcher<RepostFetcherData>> | any;
-  bulkDeleteFetcher: ReturnType<typeof useFetcher>;
+  repostFetcher: FetcherWithComponents<RepostFetcherData> | FetcherWithComponents<unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  bulkDeleteFetcher: ReturnType<typeof useFetcher<any>>;
   bulkRepostFetcher: ReturnType<typeof useFetcher>;
   individualRepostFetcher: FetcherWithComponents<IndividualRepostFetcherData>;
 }
@@ -226,6 +226,7 @@ export function useRecyclablesState({
 
   // Handle bulk delete success
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const dataRaw = bulkDeleteFetcher.data;
     const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown } : null;
     if (data && typeof data.success === "boolean" && data.success) {
@@ -235,8 +236,9 @@ export function useRecyclablesState({
 
   // Handle repost data and navigation
   useEffect(() => {
-    const fetcherDataRaw = repostFetcher.data;
-    const fetcherData: RepostFetcherData | null = fetcherDataRaw && typeof fetcherDataRaw === "object" && !Array.isArray(fetcherDataRaw) ? fetcherDataRaw as RepostFetcherData : null;
+     
+    const fetcherDataRaw: unknown = repostFetcher?.data;
+    const fetcherData: RepostFetcherData | null = fetcherDataRaw && typeof fetcherDataRaw === "object" && !Array.isArray(fetcherDataRaw) && "repostData" in fetcherDataRaw ? (fetcherDataRaw as RepostFetcherData) : null;
     if (fetcherData && "repostData" in fetcherData && Array.isArray(fetcherData.repostData)) {
       const postsData = fetcherData.repostData;
 
@@ -253,14 +255,14 @@ export function useRecyclablesState({
         scheduleDate.setHours(scheduleDate.getHours() + index);
 
         return {
-          caption: post.caption || "",
+          caption: post.caption ?? "",
           fileUrl:
             post.fileUrl &&
               Array.isArray(post.fileUrl) &&
               post.fileUrl.length > 0
               ? post.fileUrl[0]
               : "",
-          queueType: post.queueType || "unassigned",
+          queueType: post.queueType ?? "unassigned",
           scheduledFor: scheduleDate
             .toLocaleString("en-US", {
               year: "numeric",
@@ -297,7 +299,7 @@ export function useRecyclablesState({
         return {
           caption: "",
           fileUrl: "",
-          queueType: post.queueType || "unassigned",
+          queueType: post.queueType ?? "unassigned",
           scheduledFor: scheduleDate
             .toLocaleString("en-US", {
               year: "numeric",
@@ -329,7 +331,8 @@ export function useRecyclablesState({
       window.location.href = "/dashboard/bulkposts?mode=quote";
       setSelectedPosts(new Set());
     }
-  }, [repostFetcher.data, user?.timezone, repostFetcher]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [repostFetcher?.data, user?.timezone, repostFetcher]);
 
   // Handle individual repost actions
   useEffect(() => {

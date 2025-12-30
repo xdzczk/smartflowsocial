@@ -3,9 +3,9 @@ import { useState } from "react";
 
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import type { LongFormPostType } from "~/features/posts";
 import type { EditorJSBlock } from "~/features/posts/types/editorjs.types";
 import { handleErrorSafely } from "~/lib/error-handler.client";
-import type { LongFormPostType } from "~/features/posts";
 interface LongFormDetailsModalProps {
   post: LongFormPostType;
   onClose: () => void;
@@ -320,7 +320,7 @@ export default function LongFormDetailsModal({
                       ? (post.publishedAt ?? undefined)
                       : type === "scheduled"
                         ? (post.scheduledFor ?? undefined)
-                        : (post.createdAt || undefined),
+                        : (post.createdAt ?? undefined),
                   )}
                 </span>
                 <span>•</span>
@@ -427,7 +427,7 @@ export default function LongFormDetailsModal({
                           ? (post.publishedAt ?? undefined)
                           : type === "scheduled"
                             ? (post.scheduledFor ?? undefined)
-                            : (post.createdAt || undefined),
+                            : (post.createdAt ?? undefined),
                       )}
                     </p>
                   </div>

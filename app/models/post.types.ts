@@ -4,7 +4,7 @@
  * Shared type definitions for Post model operations.
  */
 
-import type { Post, QueueType } from "@prisma/client";
+import type { Post, PostType, QueueType } from "@prisma/client";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 export interface CreatePostData {
@@ -16,7 +16,7 @@ export interface CreatePostData {
   nostrEventId?: string;
   signedEvent?: SignedEvent;
   nostrEvent?: NostrEvent;
-  postType: import("@prisma/client").PostType;
+  postType: PostType;
   tags: string[];
   caption?: string;
   isScheduled: boolean;

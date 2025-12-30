@@ -20,7 +20,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   // Pending parent link requests for this user (as child)
    
   const pendingParentNpubs: string[] =
-    (user as unknown as { pendingParentRequests?: string[] }).pendingParentRequests || [];
+    (user as unknown as { pendingParentRequests?: string[] }).pendingParentRequests ?? [];
   
   const dashboardData = await loadDashboardData(user.id, user.npub, pendingParentNpubs);
 
@@ -49,7 +49,7 @@ function ProfileBits({ nostrProfile }: { nostrProfile: unknown }) {
     name = p?.name;
     display_name = p?.display_name;
   } catch { /* ignore parse errors */ }
-  return <>{name || display_name || "Unknown User"}</>;
+  return <>{name ?? display_name ?? "Unknown User"}</>;
 }
 
 export default function Dashboard() {

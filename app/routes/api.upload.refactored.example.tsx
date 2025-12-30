@@ -34,7 +34,7 @@ export const action = withActionErrorHandling(
     const userId = await requireUserId(request);
 
     // Validate content type
-    const contentType = request.headers.get("content-type") || "";
+    const contentType = request.headers.get("content-type") ?? "";
     assert(
       contentType.includes("multipart/form-data"),
       "Request must be multipart/form-data",
@@ -82,7 +82,7 @@ export async function actionManual({ request }: ActionFunctionArgs) {
   try {
     const userId = await requireUserId(request);
 
-    const contentType = request.headers.get("content-type") || "";
+    const contentType = request.headers.get("content-type") ?? "";
     if (!contentType.includes("multipart/form-data")) {
       throw new ValidationError("Request must be multipart/form-data", {
         contentType,

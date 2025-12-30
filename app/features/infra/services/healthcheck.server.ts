@@ -3,9 +3,9 @@
  * Handles application health checks
  */
 
+import { countUsers } from "~/features/user";
 import { logError } from "~/lib/error-logger.server";
 import { DatabaseError, ExternalServiceError, ValidationError } from "~/lib/errors";
-import { countUsers } from "~/features/user";
 /**
  * Perform health check
  * Verifies database connectivity and HTTP service availability

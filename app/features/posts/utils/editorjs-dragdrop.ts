@@ -36,7 +36,7 @@ export function setupCustomDragDrop(
   const handleDragStart = async (e: Event) => {
     const dragEvent = e as DragEvent;
     const blockElement = (dragEvent.target as HTMLElement).closest(".ce-block") as HTMLElement;
-    draggedBlockIndex = parseInt(blockElement.dataset.blockIndex || "0");
+    draggedBlockIndex = parseInt(blockElement.dataset.blockIndex ?? "0");
 
     // Get block data using EditorJS API
     try {
@@ -92,7 +92,7 @@ export function setupCustomDragDrop(
     )
       return;
 
-    const dropIndex = parseInt(dropBlockElement.dataset.blockIndex || "0");
+    const dropIndex = parseInt(dropBlockElement.dataset.blockIndex ?? "0");
 
     // Don't do anything if dropping on the same position
     if (draggedBlockIndex === dropIndex) return;

@@ -101,7 +101,7 @@ export async function searchUsersByProfileName(
         profilePicture: bits.picture,
         _match:
           u.npub.toLowerCase().includes(lowered) ||
-          (name && name.toLowerCase().includes(lowered)),
+          (name?.toLowerCase().includes(lowered)),
       };
     })
     .filter((u) => u._match)

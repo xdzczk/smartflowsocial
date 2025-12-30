@@ -8,9 +8,9 @@ import { combineContent } from "~/features/posts/combined.server";
 import { getPostStats } from "~/features/posts/stats.server";
 import type { PostData, LongFormPostData } from "~/features/posts/types";
 import { convertPrismaQueueTypeToQueueType } from "~/features/posts/types";
+import { getUserById, getQueueTypes } from "~/features/user";
 import { getPublishedLongFormPosts } from "~/models/longformpost.server";
 import { getPostedPosts } from "~/models/post.queries.server";
-import { getUserById, getQueueTypes } from "~/features/user";
 /**
  * Get posted posts dashboard data
  */
@@ -85,7 +85,8 @@ export async function getPostedDashboardData({
     const signedEventValue: LongFormPostData["signedEvent"] | undefined = (signedEvent && typeof signedEvent === "object") ? signedEvent as unknown as LongFormPostData["signedEvent"] : undefined;
     const nostrEventValue: LongFormPostData["nostrEvent"] | undefined = (nostrEvent && typeof nostrEvent === "object") ? nostrEvent as unknown as LongFormPostData["nostrEvent"] : undefined;
     const queueTypeValue = ("queueType" in postObj && postObj.queueType && typeof postObj.queueType === "object" && postObj.queueType !== null && "id" in postObj.queueType && "name" in postObj.queueType && typeof (postObj.queueType as { id: unknown; name: unknown }).id === "string" && typeof (postObj.queueType as { id: unknown; name: unknown }).name === "string") ? postObj.queueType as { id: string; name: string; scheduleConfig?: unknown; color?: string | null; description?: string | null; scheduleType?: string | null; isEnabled?: boolean | null; userId: string; [key: string]: unknown } : undefined;
-    const result: LongFormPostData = {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    const result = {
       ...postObj,
       queueType: convertPrismaQueueTypeToQueueType(queueTypeValue as unknown as Parameters<typeof convertPrismaQueueTypeToQueueType>[0]),
       signedEvent: signedEventValue,

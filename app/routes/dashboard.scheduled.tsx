@@ -30,8 +30,8 @@ import {
   type UserData,
   convertJsonValueToScheduleConfig,
 } from "~/features/posts";
-import { withErrorHandling, withActionErrorHandling } from "~/lib/error-handler.server";
 import type { LongFormPostType } from "~/features/posts";
+import { withErrorHandling, withActionErrorHandling } from "~/lib/error-handler.server";
 
 async function loaderImpl({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
@@ -41,7 +41,7 @@ async function loaderImpl({ request, params }: LoaderFunctionArgs) {
   // Check if user has access to scheduled posts feature
   await requireFeatureAccess(userId, "scheduled");
 
-  const queueType = params.queueType || "all";
+  const queueType = params.queueType ?? "all";
 
   const data = await loadScheduledData(userId, queueType);
   return data;
@@ -74,15 +74,15 @@ export default function ScheduledPosts() {
   const [searchParams] = useSearchParams();
 
   // Get current tab from URL params - default to "all"
-  const currentTab = searchParams.get("tab") || "all";
+  const currentTab = searchParams.get("tab") ?? "all";
 
   // Type assertions for Remix JsonifyObject serialization
   // Remix serializes Date objects to strings, so we need to assert these types
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+   
   const posts: PostData[] = Array.isArray(postsRaw) ? (postsRaw as unknown as PostData[]) : [];
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+   
   const longformPosts: LongFormPostData[] = Array.isArray(longformPostsRaw) ? (longformPostsRaw as unknown as LongFormPostData[]) : [];
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+   
   const allContent: CombinedContent[] = Array.isArray(allContentRaw) ? (allContentRaw as unknown as CombinedContent[]) : [];
   const queueTypes: QueueType[] = Array.isArray(queueTypesRaw) ? queueTypesRaw.map((qt: unknown) => {
     if (qt && typeof qt === "object" && qt !== null && "id" in qt && "name" in qt) {
@@ -187,7 +187,7 @@ export default function ScheduledPosts() {
             if (content.type === "post") {
               setSelectedPost(content.originalData as PostData);
             } else {
-              // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+               
               setSelectedLongFormPost(content.originalData as unknown as LongFormPostData);
             }
           }}
@@ -262,14 +262,14 @@ export default function ScheduledPosts() {
         </div>
       ) : (
         <LongFormListing
-          // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+           
           posts={longformPosts as unknown as LongFormPostType[]}
           type="scheduled"
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
           userTimezone={user?.timezone ?? undefined}
           onPostSelect={(post) => {
-            // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+             
             setSelectedLongFormPost(post as unknown as LongFormPostData);
           }}
           onEditPost={(post) => handleEditPost(post as PostData | LongFormPostData)}
@@ -280,7 +280,7 @@ export default function ScheduledPosts() {
       {/* Long Form Post Details Modal */}
       {selectedLongFormPost ? (
         <LongFormDetailsModal
-          // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+           
           post={selectedLongFormPost as unknown as LongFormPostType}
           onClose={() => setSelectedLongFormPost(null)}
           type="scheduled"
@@ -295,7 +295,7 @@ export default function ScheduledPosts() {
           post={postToEdit}
           onClose={handleCloseEditModal}
           onConfirm={handleModalSuccess}
-          // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+           
           user={user ? (user as unknown as UserData) : undefined}
           queueTypes={queueTypes}
           hashTagPresets={Array.isArray(hashTagPresets) ? (hashTagPresets as { id: string; name: string; tags: string; description?: string | null }[]) : []}
@@ -308,7 +308,7 @@ export default function ScheduledPosts() {
           post={postToReschedule}
           onClose={handleCloseRescheduleModal}
           onConfirm={handleModalSuccess}
-          // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+           
           user={user ? (user as unknown as UserData) : undefined}
           queueTypes={queueTypes}
         />

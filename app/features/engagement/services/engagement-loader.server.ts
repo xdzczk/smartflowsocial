@@ -25,8 +25,8 @@ import type { SignedEvent } from "~/features/nostr/types";
 import type { PostData, QueueType } from "~/features/posts/types";
 import { convertJsonValueToScheduleConfig } from "~/features/posts/types";
 import type { UserWithHashTagPresets } from "~/features/user";
-import { getPostedPosts } from "~/models/post.queries.server";
 import { getUserById } from "~/features/user";
+import { getPostedPosts } from "~/models/post.queries.server";
 
 /**
  * Fetches user profile data from Primal API and converts to User type for trust scoring
@@ -314,7 +314,7 @@ export async function loadEngagementFeedData(
     // Combine stats and notifications
     const initialStats: Record<string, EventStats> = {};
     stats = results.reduce((acc, result) => {
-      if (result && result.eventId && result.stats) {
+      if (result?.eventId && result?.stats) {
         acc[result.eventId] = result.stats;
       }
       return acc;
@@ -408,7 +408,8 @@ export async function loadEngagementFeedData(
       isEnabled: queueType.isEnabled,
       userId: queueType.userId,
     } : null;
-    const result: PostData = {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    const result = {
       ...rest,
       signedEvent: post.signedEvent as SignedEvent | null | undefined,
       queueType: convertedQueueType,

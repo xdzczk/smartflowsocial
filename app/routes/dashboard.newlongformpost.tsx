@@ -74,7 +74,7 @@ export default function NewLongFormPost() {
       content: typeof asset.content === "string" ? asset.content : asset.content === null ? null : null,
       fileUrl: typeof asset.fileUrl === "string" ? asset.fileUrl : asset.fileUrl === null ? null : null,
       tags: Array.isArray(asset.tags) ? asset.tags.filter((tag): tag is string => typeof tag === "string") : [],
-      assetType: typeof asset.assetType === "string" ? asset.assetType as Asset["assetType"] : "IMAGE",
+      assetType: typeof asset.assetType === "string" ? asset.assetType : "IMAGE",
       createdAt: (() => {
         const createdAtValue: unknown = asset.createdAt;
         if (createdAtValue instanceof Date) return createdAtValue;

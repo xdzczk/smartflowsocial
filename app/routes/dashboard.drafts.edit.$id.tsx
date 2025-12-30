@@ -155,7 +155,7 @@ export default function EditDraft() {
         <DraftEditForm
           post={typedPost}
           content={content}
-          caption={typedPost.caption || ""}
+          caption={typedPost.caption ?? ""}
           selectedQueue={selectedQueue}
           scheduledFor={scheduledFor}
           useHashtagPresets={useHashtagPresets}
@@ -166,7 +166,7 @@ export default function EditDraft() {
           onContentChange={setContent}
           onQueueChange={setSelectedQueue}
           onScheduledForChange={setScheduledFor}
-          onHashtagPresetSelect={(presetId, _hashtags) => handleHashtagPresetSelect(presetId || "", _hashtags || "")}
+          onHashtagPresetSelect={(presetId, _hashtags) => handleHashtagPresetSelect(presetId ?? "", _hashtags ?? "")}
           onUseHashtagPresetsChange={setUseHashtagPresets}
           onResumeClick={handleResumeClick}
         />

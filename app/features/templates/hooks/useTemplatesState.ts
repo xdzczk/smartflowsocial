@@ -119,7 +119,7 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
     );
 
     const assetData = selectedAssetData.map((asset) => ({
-      caption: asset.assetType === "TEXT" ? asset.content : asset.title || "",
+      caption: asset.assetType === "TEXT" ? asset.content : asset.title ?? "",
       fileUrl:
         asset.assetType === "IMAGE" || asset.assetType === "VIDEO"
           ? asset.fileUrl
@@ -210,7 +210,7 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
       const uploadResult = await uploadFile(processedFile);
 
       if (!uploadResult.success) {
-        throw new Error(uploadResult.error || "Upload failed");
+        throw new Error(uploadResult.error ?? "Upload failed");
       }
 
       const serverFormData = new FormData();

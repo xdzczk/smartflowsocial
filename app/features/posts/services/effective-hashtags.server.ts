@@ -5,8 +5,8 @@
 
 import { json } from "@remix-run/node";
 
-import { ValidationError } from "~/lib/errors";
 import { getQueueTypes } from "~/features/user";
+import { ValidationError } from "~/lib/errors";
 /**
  * Get effective hashtags for a queue type
  * Returns the hashtag preset assigned to the queue type, or empty if none assigned

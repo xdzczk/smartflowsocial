@@ -9,7 +9,7 @@ import { redirect ,
   unstable_parseMultipartFormData as parseMultipartFormData,
 } from "@remix-run/node";
 
-import type { SignedEvent } from "~/features/nostr/types";
+import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 import { createUploadHandler } from "~/features/upload/s3.server";
 import { createPost } from "~/models/post.commands.server";
 import {
@@ -195,16 +195,16 @@ async function handlePostOrScheduleText(
   const nostrEventStr = nostrEventValue ? String(nostrEventValue) : "";
   
   let signedEventRaw: SignedEvent;
-  let nostrEventRaw: import("~/features/nostr/types").NostrEvent;
+  let nostrEventRaw: NostrEvent;
   try {
     signedEventRaw = JSON.parse(signedEventStr) as SignedEvent;
-    nostrEventRaw = JSON.parse(nostrEventStr) as import("~/features/nostr/types").NostrEvent;
+    nostrEventRaw = JSON.parse(nostrEventStr) as NostrEvent;
   } catch {
     throw new Error("Invalid signedEvent or nostrEvent format");
   }
   
   const signedEvent: SignedEvent = signedEventRaw;
-  const nostrEvent: import("~/features/nostr/types").NostrEvent = nostrEventRaw;
+  const nostrEvent: NostrEvent = nostrEventRaw;
   const signedEventJson = signedEvent;
 
   if (action === "post-text") {
@@ -334,16 +334,16 @@ async function handlePostImages(
   const caption = captionValue ? String(captionValue) : "";
   
   let signedEventRaw: SignedEvent;
-  let nostrEventRaw: import("~/features/nostr/types").NostrEvent;
+  let nostrEventRaw: NostrEvent;
   try {
     signedEventRaw = JSON.parse(signedEventStr) as SignedEvent;
-    nostrEventRaw = JSON.parse(nostrEventStr) as import("~/features/nostr/types").NostrEvent;
+    nostrEventRaw = JSON.parse(nostrEventStr) as NostrEvent;
   } catch {
     throw new Error("Invalid signedEvent or nostrEvent format");
   }
   
   const signedEvent: SignedEvent = signedEventRaw;
-  const nostrEvent: import("~/features/nostr/types").NostrEvent = nostrEventRaw;
+  const nostrEvent: NostrEvent = nostrEventRaw;
 
   const isVideo = isVideoFile(fileUrl);
 
@@ -398,10 +398,10 @@ async function handleScheduleImages(
   const caption = captionValue ? String(captionValue) : "";
   
   let signedEvent: SignedEvent;
-  let nostrEvent: import("~/features/nostr/types").NostrEvent;
+  let nostrEvent: NostrEvent;
   try {
     signedEvent = JSON.parse(signedEventStr) as SignedEvent;
-    nostrEvent = JSON.parse(nostrEventStr) as import("~/features/nostr/types").NostrEvent;
+    nostrEvent = JSON.parse(nostrEventStr) as NostrEvent;
   } catch {
     throw new Error("Invalid signedEvent or nostrEvent format");
   }

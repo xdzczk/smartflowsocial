@@ -317,7 +317,7 @@ export function convertEditorJSToMarkdown(editorData: EditorJSOutput | string | 
         const imageUrl = fileUrl ?? url;
         const caption = typeof data.caption === "string" ? data.caption : "";
         if (imageUrl) {
-          if (caption && caption.trim()) {
+          if (caption?.trim()) {
             markdown += `![${caption}](${imageUrl})\n\n`;
           } else {
             markdown += `![](${imageUrl})\n\n`;

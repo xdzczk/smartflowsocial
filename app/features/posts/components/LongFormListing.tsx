@@ -1,13 +1,14 @@
 import { useFetcher, Link } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
+import type { LongFormPostType } from "~/features/posts";
 import type { PostFetcher } from "~/features/posts/types";
+import type { EditorJSBlock } from "~/features/posts/types/editorjs.types";
+
 // Helper to safely access formData from a fetcher
 function getFetcherFormData(fetcher: PostFetcher | undefined): FormData | null | undefined {
   return (fetcher as { formData?: FormData | null })?.formData;
 }
-import type { EditorJSBlock } from "~/features/posts/types/editorjs.types";
-import type { LongFormPostType } from "~/features/posts";
 
 interface LongFormListingProps {
   posts: LongFormPostType[];
@@ -510,7 +511,7 @@ export default function LongFormListing({
                       ? (post.publishedAt ?? undefined)
                       : type === "scheduled"
                         ? (post.scheduledFor ?? undefined)
-                        : (post.createdAt || undefined),
+                        : (post.createdAt ?? undefined),
                   )}
                 </td>
                 <td className="p-3 text-center">
@@ -521,7 +522,7 @@ export default function LongFormListing({
                 {type === "scheduled" ? (
                   <td className="p-3 text-center">
                     <div className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                      {countdowns[post.id] || "—"}
+                      {countdowns[post.id] ?? "—"}
                     </div>
                   </td>
                 ) : null}

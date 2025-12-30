@@ -1,12 +1,13 @@
 import { useFetcher } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
-import { EditLongFormFormFields } from "./EditLongFormFormFields";
-import { EditorJSStyles } from "./EditorJSStyles";
-import { EditPostFormFields } from "./EditPostFormFields";
 import { useEditPostModal } from "~/features/posts/hooks/useEditPostModal";
 import type { PostData, LongFormPostData, QueueType, HashTagPreset, UserData } from "~/features/posts/types";
 import { prepareEditPostSubmission } from "~/features/posts/utils/editPostSubmit.client";
+
+import { EditLongFormFormFields } from "./EditLongFormFormFields";
+import { EditorJSStyles } from "./EditorJSStyles";
+import { EditPostFormFields } from "./EditPostFormFields";
 interface EditPostModalProps {
   post: PostData | LongFormPostData;
   onClose: () => void;

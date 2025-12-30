@@ -146,7 +146,7 @@ export function useBlossomAwareUpload() {
         setUploadProgress(70);
 
         // Get the action URL (default to current page)
-        const actionUrl = options.action || window.location.pathname;
+        const actionUrl = options.action ?? window.location.pathname;
 
         // Make the request with custom headers for Blossom Primal
         const fetchResponse = await fetch(actionUrl, {
@@ -175,7 +175,7 @@ export function useBlossomAwareUpload() {
                 : errorText,
             };
           }
-          throw new Error(errorData.error || "Upload failed");
+          throw new Error(errorData.error ?? "Upload failed");
         }
 
         let result;
@@ -225,7 +225,7 @@ export function useBlossomAwareUpload() {
         if (result.success !== false) {
           // Check if this was a redirect response
           if (fetchResponse.redirected || result.redirect) {
-            const redirectUrl = result.redirect || fetchResponse.url;
+            const redirectUrl = result.redirect ?? fetchResponse.url;
             navigate(redirectUrl);
           }
         }
