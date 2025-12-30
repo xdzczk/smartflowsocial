@@ -27,7 +27,7 @@ export function npubToHex(npub: string): string | null {
       return npub;
     }
     const { data } = nip19.decode(npub);
-    return data as string;
+    return typeof data === "string" ? data : null;
   } catch (_error) {
     // This is a utility function, errors are expected and handled gracefully
     // No need to log conversion errors as they're not critical
@@ -358,7 +358,8 @@ export function convertMarkdownToEditorJS(markdown: string): EditorJSOutput {
 
     // Headers
     if (line.startsWith("#")) {
-      const level = line.match(/^#+/)?.[0].length ?? 1;
+      const match = line.match(/^#+/);
+      const level = match?.[0]?.length ?? 1;
       const text = line.replace(/^#+\s*/, "");
       blocks.push({
         id: generateBlockId(),

@@ -8,7 +8,7 @@ import { json } from "@remix-run/node";
 
 import { logWarning } from "~/lib/error-logger.server";
 import { updateUserSubscription } from "~/models/payment.server";
-import { getUsersByNpubs } from "~/models/user.server";
+import { getUsersByNpubs } from "~/features/user";
 
 import { respondToChildRequest } from "./parent-child.server";
 /**

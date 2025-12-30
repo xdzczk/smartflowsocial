@@ -379,7 +379,7 @@ export default function BulkPosts() {
         </fetcher.Form>
       ) : (
         <PostConfirmation
-          preparedEvents={preparedEvents || []}
+          preparedEvents={preparedEvents ?? []}
           postsCount={posts.length}
         />
       )}

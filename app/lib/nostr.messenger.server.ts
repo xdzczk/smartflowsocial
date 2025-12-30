@@ -18,14 +18,14 @@ export async function sendNostrDirectMessage(
 ): Promise<SendNostrDirectMessageResult | false> {
   try {
     if (!content) {
-      return false;
+      return Promise.resolve(false);
     }
     const nsecEnv = process.env.NOSTR_NSEC;
     if (!nsecEnv) {
-      return {
+      return Promise.resolve({
         success: false,
         error: "NOSTR_NSEC is not set.",
-      };
+      });
     }
     const nsecHex: string | null = convertToHex(nsecEnv);
 
@@ -49,13 +49,13 @@ export async function sendNostrDirectMessage(
       } else {
         // Assume hex string
         privateKeyBytes = new Uint8Array(
-          nsecHex.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) || []
+          nsecHex.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) ?? []
         );
       }
     } catch {
       // Fallback: treat as hex string
       privateKeyBytes = new Uint8Array(
-        nsecHex.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) || []
+        nsecHex.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) ?? []
       );
     }
 

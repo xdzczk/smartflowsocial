@@ -250,7 +250,9 @@ export function useEditPostModal({
           const editorInstance = new EditorJS({
             holder: "longform-editorjs",
             minHeight: 300,
-            tools: toolsConfig as unknown as Record<string, unknown>,
+            // @ts-expect-error - EditorJS types don't match exactly but work at runtime
+            tools: toolsConfig,
+            // @ts-expect-error - EditorJS onChange signature doesn't match types but works at runtime
             onChange: async (api: EditorJSAPI) => {
               try {
                 const outputData = await api.saver.save();
@@ -260,7 +262,7 @@ export function useEditPostModal({
                 console.error("Editor save error:", error);
               }
             },
-          } as any);
+          }) as EditorJSInstanceType;
 
           editorRef.current = editorInstance;
           await editorRef.current.isReady;

@@ -18,8 +18,8 @@ import {
   getRecyclableDashboardData,
   handleRecyclablePostAction,
 } from "~/features/posts";
-import type { PostData } from "~/features/posts/types";
-import type { IndividualRepostFetcherData } from "~/features/posts/hooks/useRecyclablesState";
+import type { PostData, CombinedContent } from "~/features/posts/types";
+import type { IndividualRepostFetcherData } from "~/features/posts";
 import { withErrorHandling, withActionErrorHandling } from "~/lib/error-handler.server";
 
 async function loaderImpl({ request, params }: LoaderFunctionArgs) {
@@ -69,7 +69,7 @@ export default function RecyclablesPosts() {
   const individualRepostFetcher = useFetcher<IndividualRepostFetcherData>();
 
   // Type assertions for posts - ensure they match Post[] | PostData[]
-  const typedPosts: (PostData[] | Array<{ id: string; caption?: string | null; postedAt: Date | null; fileUrl: string[]; signedEvent: { id: string }; queueType?: { name: string; color?: string | null } | null; status?: string; [key: string]: unknown }>) = Array.isArray(posts) ? posts.map((post: unknown) => {
+  const typedPosts: PostData[] = Array.isArray(posts) ? posts.map((post: unknown) => {
     const p = post as { id: string; createdAt?: string | Date; postedAt?: string | Date | null; [key: string]: unknown };
     return {
       ...p,
@@ -86,14 +86,7 @@ export default function RecyclablesPosts() {
     reposts?: number;
     zaps?: number;
     satszapped?: number;
-  }> = stats && typeof stats === "object" && !Array.isArray(stats) ? stats as Record<string, {
-    likes?: number;
-    replies?: number;
-    mentions?: number;
-    reposts?: number;
-    zaps?: number;
-    satszapped?: number;
-  }> : {};
+  }> = stats && typeof stats === "object" && !Array.isArray(stats) ? stats : {};
   
   // Type assertion for pagination
   const typedPagination = pagination && typeof pagination === "object" && !Array.isArray(pagination) && "total" in pagination && "pages" in pagination && "currentPage" in pagination && "limit" in pagination ? {
@@ -198,7 +191,8 @@ export default function RecyclablesPosts() {
 
       {selectedPost ? (
         <PostDetailsModal
-              post={selectedPost as unknown as PostData}
+              // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+              post={selectedPost as unknown as PostData | CombinedContent}
           stats={(() => {
             const eventId = (selectedPost && typeof selectedPost === "object" && "signedEvent" in selectedPost && selectedPost.signedEvent && typeof selectedPost.signedEvent === "object" && "id" in selectedPost.signedEvent) ? String((selectedPost.signedEvent as { id?: string }).id) : "";
             const statsEntry = typedStats[eventId];

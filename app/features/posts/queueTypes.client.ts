@@ -28,7 +28,7 @@ export async function calculateQueueScheduleTime(
   userId?: string
 ): Promise<string | null> {
   if (queueTypeName === "unassigned") {
-    return null;
+    return Promise.resolve(null);
   }
 
   const queueTypeId = findQueueTypeId(queueTypes, queueTypeName);
@@ -52,6 +52,7 @@ export async function calculateQueueScheduleTime(
       return scheduledTime ?? null;
     } else {
       const errorData = (await response.json()) as { error?: { message?: string }; message?: string };
+      // @ts-ignore - Dynamic imports work in client-side Remix bundles
       const { logClientError } = await import("~/lib/error-handler.client");
       logClientError(
         new Error(errorData?.error?.message ?? errorData?.message ?? 'Unknown error'),
@@ -61,15 +62,16 @@ export async function calculateQueueScheduleTime(
         },
         "warning",
       );
-      return null;
+      return Promise.resolve(null);
     }
   } catch (error) {
+    // @ts-ignore - Dynamic imports work in client-side Remix bundles
     const { handleErrorSafely } = await import("~/lib/error-handler.client");
     handleErrorSafely(error, {
       component: "queueTypes.client",
       action: "calculateQueueScheduleTime",
     });
-    return null;
+    return Promise.resolve(null);
   }
 }
 
@@ -82,7 +84,7 @@ export async function fetchEffectiveHashtags(
   userId?: string
 ): Promise<string> {
   if (queueTypeName === "unassigned") {
-    return "";
+    return Promise.resolve("");
   }
 
   const queueTypeId = findQueueTypeId(queueTypes, queueTypeName);
@@ -104,6 +106,7 @@ export async function fetchEffectiveHashtags(
       const data = (await response.json()) as { hashtags?: string; effectiveHashtags?: string[] };
       return data.hashtags ?? data.effectiveHashtags?.join(" ") ?? "";
     } else {
+      // @ts-ignore - Dynamic imports work in client-side Remix bundles
       const { logClientError } = await import("~/lib/error-handler.client");
       logClientError(
         new Error("Hashtags API error"),
@@ -113,14 +116,15 @@ export async function fetchEffectiveHashtags(
         },
         "warning",
       );
-      return "";
+      return Promise.resolve("");
     }
   } catch (error) {
+    // @ts-ignore - Dynamic imports work in client-side Remix bundles
     const { handleErrorSafely } = await import("~/lib/error-handler.client");
     handleErrorSafely(error, {
       component: "queueTypes.client",
       action: "fetchEffectiveHashtags",
     });
-    return "";
+    return Promise.resolve("");
   }
 }

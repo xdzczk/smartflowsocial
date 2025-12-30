@@ -221,7 +221,7 @@ export async function getPostStatistics({
   };
 }
 
-export function getPastPosts({
+export async function getPastPosts({
   userId,
   startDate,
   endDate,

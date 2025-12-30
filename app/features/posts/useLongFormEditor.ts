@@ -101,8 +101,10 @@ export function useLongFormEditor({
                 const editorInstance = new EditorJS({
                     holder: "editorjs",
                     minHeight: 300,
-                    tools: tools as unknown as Record<string, unknown>,
+                    // @ts-expect-error - EditorJS types don't match exactly but work at runtime
+                    tools: tools,
                     data: undefined, // Initial data will be loaded separately
+                    // @ts-expect-error - EditorJS onChange signature doesn't match types but works at runtime
                     onChange: async (api: EditorJSAPI) => {
                         try {
                             const outputData = await api.saver.save();
@@ -115,7 +117,7 @@ export function useLongFormEditor({
                             });
                         }
                     },
-                } as any) as EditorJSInstance;
+                }) as EditorJSInstance;
 
                 // Store the editor reference and add to global tracking
                 editorRef.current = editorInstance;

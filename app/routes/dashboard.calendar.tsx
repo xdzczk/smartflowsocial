@@ -62,10 +62,16 @@ export default function CalendarRoute() {
   } = data;
 
   // Type assertions for Remix JsonifyObject serialization
-  const scheduledPosts: PostData[] = Array.isArray(scheduledPostsRaw) ? scheduledPostsRaw as unknown as PostData[] : [];
-  const scheduledLongFormPosts: LongFormPostData[] = Array.isArray(scheduledLongFormPostsRaw) ? scheduledLongFormPostsRaw as unknown as LongFormPostData[] : [];
-  const pastPosts: PostData[] = Array.isArray(pastPostsRaw) ? pastPostsRaw as unknown as PostData[] : [];
-  const pastLongFormPosts: LongFormPostData[] = Array.isArray(pastLongFormPostsRaw) ? pastLongFormPostsRaw as unknown as LongFormPostData[] : [];
+  // Remix serializes Date objects to strings, so we need to assert these types
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+  const scheduledPosts: PostData[] = Array.isArray(scheduledPostsRaw) ? (scheduledPostsRaw as unknown as PostData[]) : [];
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+  const scheduledLongFormPosts: LongFormPostData[] = Array.isArray(scheduledLongFormPostsRaw) ? (scheduledLongFormPostsRaw as unknown as LongFormPostData[]) : [];
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+  const pastPosts: PostData[] = Array.isArray(pastPostsRaw) ? (pastPostsRaw as unknown as PostData[]) : [];
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+  const pastLongFormPosts: LongFormPostData[] = Array.isArray(pastLongFormPostsRaw) ? (pastLongFormPostsRaw as unknown as LongFormPostData[]) : [];
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
   const user: UserData | null | undefined = userRaw ? (userRaw as unknown as UserData) : null;
   const queueTypes: QueueType[] = Array.isArray(queueTypesRaw) ? queueTypesRaw.map((qt: unknown) => {
     if (qt && typeof qt === "object" && "id" in qt && "name" in qt) {

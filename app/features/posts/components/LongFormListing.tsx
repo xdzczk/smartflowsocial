@@ -7,19 +7,19 @@ function getFetcherFormData(fetcher: PostFetcher | undefined): FormData | null |
   return (fetcher as { formData?: FormData | null })?.formData;
 }
 import type { EditorJSBlock } from "~/features/posts/types/editorjs.types";
-import type { LongFormPost } from "~/models/longformpost.server";
+import type { LongFormPostType } from "~/features/posts";
 
 interface LongFormListingProps {
-  posts: LongFormPost[];
+  posts: LongFormPostType[];
   type: "draft" | "scheduled" | "posted";
-  onPostSelect?: (post: LongFormPost) => void;
+  onPostSelect?: (post: LongFormPostType) => void;
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
   userTimezone?: string;
   longformRepostFetcher?: PostFetcher;
   longformQuoteFetcher?: PostFetcher;
-  onEditPost?: (post: LongFormPost) => void;
-  onReschedulePost?: (post: LongFormPost) => void;
+  onEditPost?: (post: LongFormPostType) => void;
+  onReschedulePost?: (post: LongFormPostType) => void;
 }
 
 export default function LongFormListing({
@@ -66,8 +66,8 @@ export default function LongFormListing({
       aValue = new Date(a.createdAt).getTime();
       bValue = new Date(b.createdAt).getTime();
     } else {
-      const aVal = a[sortConfig.key as keyof LongFormPost];
-      const bVal = b[sortConfig.key as keyof LongFormPost];
+      const aVal = a[sortConfig.key as keyof LongFormPostType];
+      const bVal = b[sortConfig.key as keyof LongFormPostType];
 
       if (typeof aVal === "string" && typeof bVal === "string") {
         return sortConfig.direction === "asc"
@@ -256,7 +256,7 @@ export default function LongFormListing({
     }
   }, [bulkDeleteFetcher.data]);
 
-  const getStatusBadge = (_post: LongFormPost) => {
+  const getStatusBadge = (_post: LongFormPostType) => {
     if (type === "draft") {
       return (
         <div className="inline-flex rounded-full border border-transparent bg-orange-100 px-2 py-1 text-xs font-semibold leading-4 text-orange-900 dark:border-orange-900/75 dark:bg-orange-700/10 dark:text-orange-200">
@@ -372,6 +372,15 @@ export default function LongFormListing({
               <th
                 className="cursor-pointer bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50"
                 onClick={() => requestSort("title")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    requestSort("title");
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                aria-label="Sort by title"
               >
                 Title{" "}
                 {sortConfig.key === "title"
@@ -394,6 +403,21 @@ export default function LongFormListing({
                         : "createdAt",
                   )
                 }
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    requestSort(
+                      type === "posted"
+                        ? "publishedAt"
+                        : type === "scheduled"
+                          ? "scheduledFor"
+                          : "createdAt",
+                    );
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                aria-label={`Sort by ${type === "posted" ? "published date" : type === "scheduled" ? "scheduled date" : "created date"}`}
               >
                 {type === "posted"
                   ? "Published"
@@ -434,6 +458,15 @@ export default function LongFormListing({
                 key={post.id}
                 className="cursor-pointer even:bg-gray-50 hover:bg-gray-100 dark:even:bg-gray-900/50 dark:hover:bg-gray-700/50"
                 onClick={() => onPostSelect?.(post)}
+                onKeyDown={(e) => {
+                  if ((e.key === "Enter" || e.key === " ") && onPostSelect) {
+                    e.preventDefault();
+                    onPostSelect(post);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                aria-label={`Select ${post.title ?? "post"}`}
               >
                 <td className="p-3 text-center">
                   <input

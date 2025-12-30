@@ -9,7 +9,7 @@ import {
 } from "~/features/posts/types";
 import { logError } from "~/lib/error-logger.server";
 import { getLastPostTimeForQueue } from "~/models/post.queries.server";
-import { getScheduleInterval } from "~/models/user.server";
+import { getScheduleInterval } from "~/features/user";
 
 interface CalculateNextScheduleTimeParams {
   queueType: QueueType | TypedQueueType;
@@ -235,7 +235,7 @@ async function calculateNextScheduleTimeInternal({
       baseDate?: Date,
     ): Date => {
       // Use provided baseDate or current time (not captured 'now' to avoid stale time)
-      const actualBaseDate = baseDate || new Date();
+      const actualBaseDate = baseDate ?? new Date();
       try {
         // For UTC/GMT timezones, no conversion needed
         if (userTimezone === "UTC" || userTimezone === "Etc/GMT") {

@@ -183,7 +183,7 @@ export async function getRateLimitInfo(userId: string): Promise<{
   resetTime: number;
 } | null> {
   if (!isRedisAvailable()) {
-    return null;
+    return Promise.resolve(null);
   }
 
   try {
@@ -197,19 +197,19 @@ export async function getRateLimitInfo(userId: string): Promise<{
     const info = await userLimiter.get(userId);
     
     if (!info) {
-      return {
+      return Promise.resolve({
         remaining: 100, // Default points
         resetTime: Date.now() + 60 * 1000, // Default duration
-      };
+      });
     }
 
-    return {
+    return Promise.resolve({
       remaining: info.remainingPoints,
       resetTime: Date.now() + info.msBeforeNext,
-    };
+    });
   } catch (error) {
     console.error("Error getting rate limit info:", error);
-    return null;
+    return Promise.resolve(null);
   }
 }
 

@@ -2,7 +2,7 @@ import { nip19 } from "nostr-tools";
 export function convertToHex(key: string): string | null {
   try {
     const { data } = nip19.decode(key);
-    return data as string;
+    return typeof data === "string" ? data : null;
   } catch (error) {
     console.error("Error decoding npub:", error);
     return null;

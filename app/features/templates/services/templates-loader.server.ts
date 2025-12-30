@@ -8,7 +8,7 @@ import {
   searchAssets,
 } from "~/models/asset.server";
 import { getTemplates } from "~/models/template.server";
-import { getUserById } from "~/models/user.server";
+import { getUserById } from "~/features/user";
 
 /**
  * Load templates data

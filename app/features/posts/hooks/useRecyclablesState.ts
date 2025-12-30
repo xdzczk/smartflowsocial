@@ -130,8 +130,8 @@ export function useRecyclablesState({
     ) {
       const aEventId = a.signedEvent && typeof a.signedEvent === "object" && "id" in a.signedEvent && typeof a.signedEvent.id === "string" ? a.signedEvent.id : null;
       const bEventId = b.signedEvent && typeof b.signedEvent === "object" && "id" in b.signedEvent && typeof b.signedEvent.id === "string" ? b.signedEvent.id : null;
-      const aStats = (aEventId && typeof stats[aEventId] === "object" && stats[aEventId] !== null ? stats[aEventId] : {}) || {};
-      const bStats = (bEventId && typeof stats[bEventId] === "object" && stats[bEventId] !== null ? stats[bEventId] : {}) || {};
+      const aStats = (aEventId && aEventId in stats && typeof stats[aEventId] === "object" && stats[aEventId] !== null ? stats[aEventId] : {}) ?? {};
+      const bStats = (bEventId && bEventId in stats && typeof stats[bEventId] === "object" && stats[bEventId] !== null ? stats[bEventId] : {}) ?? {};
       const aValue = Number(aStats[sortConfig.key as keyof typeof aStats] ?? 0);
       const bValue = Number(bStats[sortConfig.key as keyof typeof bStats] ?? 0);
       return sortConfig.direction === "asc" ? aValue - bValue : bValue - aValue;
@@ -236,9 +236,9 @@ export function useRecyclablesState({
   // Handle repost data and navigation
   useEffect(() => {
     const fetcherDataRaw = repostFetcher.data;
-    const fetcherData = fetcherDataRaw && typeof fetcherDataRaw === "object" && !Array.isArray(fetcherDataRaw) ? fetcherDataRaw as { repostData?: unknown; scheduledRepostData?: unknown; quotePostData?: unknown } : null;
+    const fetcherData: RepostFetcherData | null = fetcherDataRaw && typeof fetcherDataRaw === "object" && !Array.isArray(fetcherDataRaw) ? fetcherDataRaw as RepostFetcherData : null;
     if (fetcherData && "repostData" in fetcherData && Array.isArray(fetcherData.repostData)) {
-      const postsData = fetcherData.repostData as PostData[];
+      const postsData = fetcherData.repostData;
 
       // Prepare repost data with 1 hour default scheduling
       const now = new Date();
@@ -281,7 +281,7 @@ export function useRecyclablesState({
     }
 
     if (fetcherData && "scheduledRepostData" in fetcherData && Array.isArray(fetcherData.scheduledRepostData)) {
-      const postsData = fetcherData.scheduledRepostData as PostData[];
+      const postsData = fetcherData.scheduledRepostData;
 
       const now = new Date();
       const userTimezoneForScheduled = user && typeof user === "object" && "timezone" in user && typeof user.timezone === "string" ? user.timezone : "UTC";

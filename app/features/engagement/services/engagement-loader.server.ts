@@ -26,7 +26,7 @@ import type { PostData, QueueType } from "~/features/posts/types";
 import { convertJsonValueToScheduleConfig } from "~/features/posts/types";
 import type { UserWithHashTagPresets } from "~/features/user";
 import { getPostedPosts } from "~/models/post.queries.server";
-import { getUserById } from "~/models/user.server";
+import { getUserById } from "~/features/user";
 
 /**
  * Fetches user profile data from Primal API and converts to User type for trust scoring
@@ -475,7 +475,7 @@ export async function loadEngagementFeedData(
               return false;
             }
 
-            const tags = (eventTyped as { tags?: unknown }).tags as NostrTag[] || [];
+            const tags = ((eventTyped as { tags?: unknown }).tags as NostrTag[]) ?? [];
 
             // Skip if it's the user's own post
             if (eventTyped.pubkey === userNpub) {
@@ -585,10 +585,10 @@ export async function loadEngagementFeedData(
   });
 
   return {
-    posts: postsWithReplies || [],
-    stats: stats || {},
-    user: user || {},
-    notifications: groupedNotifications || {
+    posts: postsWithReplies ?? [],
+    stats: stats ?? {},
+    user: user ?? {},
+    notifications: groupedNotifications ?? {
       all: [],
       replies: [],
       mentions: [],
@@ -596,10 +596,10 @@ export async function loadEngagementFeedData(
       quotes: [],
     },
     groupedNotifications: {
-      replies: groupedByParent?.replies || [],
-      quotes: groupedQuoteReposts || [],
+      replies: groupedByParent?.replies ?? [],
+      quotes: groupedQuoteReposts ?? [],
     },
-    trustScores: trustScores || {},
+    trustScores: trustScores ?? {},
   };
 }
 

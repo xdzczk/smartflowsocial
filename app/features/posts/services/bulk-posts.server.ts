@@ -4,7 +4,7 @@
  * Handles bulk posts dashboard data loading
  */
 
-import { getQueueTypes, getUserHashTagPresets, getUserHashTags } from "~/models/user.server";
+import { getQueueTypes, getUserHashTagPresets, getUserHashTags } from "~/features/user";
 /**
  * Get bulk posts dashboard data
  */

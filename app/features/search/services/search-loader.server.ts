@@ -3,7 +3,7 @@
  * Centralized data fetching for search page
  */
 
-import { getUserById } from "~/models/user.server";
+import { getUserById } from "~/features/user";
 /**
  * Load search page data
  */

@@ -34,6 +34,9 @@ export type {
   PostFetcher,
 } from "./types";
 
+// Re-export Prisma types for convenience (when needed for type annotations)
+export type { LongFormPost as LongFormPostType } from "@prisma/client";
+
 export {
   convertJsonValueToScheduleConfig,
 } from "./types";
@@ -353,6 +356,7 @@ export { useScheduledState } from "./hooks/useScheduledState";
 export { useDraftsState } from "./hooks/useDraftsState";
 export { usePostedPosts } from "./usePostedPosts";
 export { useRecyclablesState } from "./hooks/useRecyclablesState";
+export type { IndividualRepostFetcherData } from "./hooks/useRecyclablesState";
 export { useDraftEditState } from "./hooks/useDraftEditState";
 export { useLongFormEditState } from "./hooks/useLongFormEditState";
 export { useNewLongFormState } from "./hooks/useNewLongFormState";

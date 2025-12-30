@@ -20,12 +20,12 @@ export async function resolveQueueTypeId(
 ): Promise<string | null> {
   // Use provided queue type ID directly
   if (queueTypeId) {
-    return queueTypeId;
+    return Promise.resolve(queueTypeId);
   }
 
   // If no queueType name provided or it's "unassigned", return null
   if (!queueType || queueType === "unassigned") {
-    return null;
+    return Promise.resolve(null);
   }
 
   // Lookup queue type by name

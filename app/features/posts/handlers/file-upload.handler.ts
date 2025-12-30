@@ -44,7 +44,7 @@ export async function handleFileChange(
   const totalSize = selectedFiles.reduce((sum, file) => sum + file.size, 0);
   if (totalSize > MAX_TOTAL_SIZE) {
     alert("Total file size exceeds 100MB. Please select smaller files.");
-    return;
+    return Promise.resolve();
   }
 
   // Check individual file size limits
@@ -54,12 +54,12 @@ export async function handleFileChange(
       alert(
         `Video file ${file.name} exceeds 100MB limit. Please select a smaller file.`,
       );
-      return;
+      return Promise.resolve();
     } else if (!isVideo && file.size > MAX_IMAGE_SIZE) {
       alert(
         `Image file ${file.name} exceeds 10MB limit. Please select a smaller file.`,
       );
-      return;
+      return Promise.resolve();
     }
   }
 
@@ -107,7 +107,7 @@ export async function handleFileChange(
     );
     alert("Error processing media files. Please try again.");
     setIsProcessing(false);
-    return;
+    return Promise.resolve();
   }
 
   const newPosts = processedFiles.map((file, index) => {

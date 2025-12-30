@@ -10,7 +10,7 @@ import type { PostData, LongFormPostData } from "~/features/posts/types";
 import { convertPrismaQueueTypeToQueueType } from "~/features/posts/types";
 import { getPublishedLongFormPosts } from "~/models/longformpost.server";
 import { getPostedPosts } from "~/models/post.queries.server";
-import { getUserById, getQueueTypes } from "~/models/user.server";
+import { getUserById, getQueueTypes } from "~/features/user";
 /**
  * Get posted posts dashboard data
  */

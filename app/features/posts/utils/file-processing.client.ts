@@ -130,20 +130,20 @@ export async function validateAndProcessFiles(
   // Filter acceptable file types
   const validFiles = filterAcceptableFiles(files);
   if (validFiles.length === 0) {
-    return null;
+    return Promise.resolve(null);
   }
 
   // Check individual file sizes
   const sizeErrors = validateFileSizes(validFiles);
   if (sizeErrors.length > 0) {
     sizeErrors.forEach((error) => toast.error(error));
-    return null;
+    return Promise.resolve(null);
   }
 
   // Check total size
   if (!validateTotalSize(validFiles)) {
     toast.error("Total file size exceeds 100MB. Please select smaller files.");
-    return null;
+    return Promise.resolve(null);
   }
 
   // Process files

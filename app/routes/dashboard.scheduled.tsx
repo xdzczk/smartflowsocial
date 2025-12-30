@@ -31,7 +31,7 @@ import {
   convertJsonValueToScheduleConfig,
 } from "~/features/posts";
 import { withErrorHandling, withActionErrorHandling } from "~/lib/error-handler.server";
-import type { LongFormPost } from "~/models/longformpost.server";
+import type { LongFormPostType } from "~/features/posts";
 
 async function loaderImpl({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
@@ -77,9 +77,13 @@ export default function ScheduledPosts() {
   const currentTab = searchParams.get("tab") || "all";
 
   // Type assertions for Remix JsonifyObject serialization
-  const posts: PostData[] = Array.isArray(postsRaw) ? postsRaw as unknown as PostData[] : [];
-  const longformPosts: LongFormPostData[] = Array.isArray(longformPostsRaw) ? longformPostsRaw as unknown as LongFormPostData[] : [];
-  const allContent: CombinedContent[] = Array.isArray(allContentRaw) ? allContentRaw as unknown as CombinedContent[] : [];
+  // Remix serializes Date objects to strings, so we need to assert these types
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+  const posts: PostData[] = Array.isArray(postsRaw) ? (postsRaw as unknown as PostData[]) : [];
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+  const longformPosts: LongFormPostData[] = Array.isArray(longformPostsRaw) ? (longformPostsRaw as unknown as LongFormPostData[]) : [];
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+  const allContent: CombinedContent[] = Array.isArray(allContentRaw) ? (allContentRaw as unknown as CombinedContent[]) : [];
   const queueTypes: QueueType[] = Array.isArray(queueTypesRaw) ? queueTypesRaw.map((qt: unknown) => {
     if (qt && typeof qt === "object" && qt !== null && "id" in qt && "name" in qt) {
       const q = qt as { id?: unknown; name?: unknown; color?: unknown; scheduleType?: unknown; scheduleConfig?: unknown; isEnabled?: unknown; userId?: unknown };
@@ -183,7 +187,8 @@ export default function ScheduledPosts() {
             if (content.type === "post") {
               setSelectedPost(content.originalData as PostData);
             } else {
-              setSelectedLongFormPost(content.originalData as LongFormPostData);
+              // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+              setSelectedLongFormPost(content.originalData as unknown as LongFormPostData);
             }
           }}
           selectedItems={selectedPosts}
@@ -228,7 +233,7 @@ export default function ScheduledPosts() {
             onToggleSelectAll={toggleSelectAll}
             countdowns={countdowns}
             userTimezone={user?.timezone ?? undefined}
-            onPostClick={(post) => setSelectedPost(post as unknown as PostData)}
+            onPostClick={(post) => setSelectedPost(post as PostData)}
             onEditPost={(post) => handleEditPost(post as PostData | LongFormPostData)}
             onReschedulePost={(post) => handleReschedulePost(post as PostData | LongFormPostData)}
             onMediaClick={handleMediaClick}
@@ -257,12 +262,14 @@ export default function ScheduledPosts() {
         </div>
       ) : (
         <LongFormListing
-          posts={longformPosts as unknown as LongFormPost[]}
+          // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+          posts={longformPosts as unknown as LongFormPostType[]}
           type="scheduled"
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
           userTimezone={user?.timezone ?? undefined}
           onPostSelect={(post) => {
+            // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
             setSelectedLongFormPost(post as unknown as LongFormPostData);
           }}
           onEditPost={(post) => handleEditPost(post as PostData | LongFormPostData)}
@@ -273,7 +280,8 @@ export default function ScheduledPosts() {
       {/* Long Form Post Details Modal */}
       {selectedLongFormPost ? (
         <LongFormDetailsModal
-          post={selectedLongFormPost as unknown as LongFormPost}
+          // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+          post={selectedLongFormPost as unknown as LongFormPostType}
           onClose={() => setSelectedLongFormPost(null)}
           type="scheduled"
           showSignedEvent={true}
@@ -287,9 +295,10 @@ export default function ScheduledPosts() {
           post={postToEdit}
           onClose={handleCloseEditModal}
           onConfirm={handleModalSuccess}
+          // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
           user={user ? (user as unknown as UserData) : undefined}
           queueTypes={queueTypes}
-          hashTagPresets={Array.isArray(hashTagPresets) ? hashTagPresets as unknown as { id: string; name: string; tags: string; description?: string | null }[] : []}
+          hashTagPresets={Array.isArray(hashTagPresets) ? (hashTagPresets as { id: string; name: string; tags: string; description?: string | null }[]) : []}
         />
       ) : null}
 
@@ -299,6 +308,7 @@ export default function ScheduledPosts() {
           post={postToReschedule}
           onClose={handleCloseRescheduleModal}
           onConfirm={handleModalSuccess}
+          // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
           user={user ? (user as unknown as UserData) : undefined}
           queueTypes={queueTypes}
         />

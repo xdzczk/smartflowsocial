@@ -128,12 +128,12 @@ export async function requestChildLink(
 
   if (!/^[0-9a-fA-F]{64}$/.test(parent) || !/^[0-9a-fA-F]{64}$/.test(child)) {
     logWarning("[requestChildLink] Invalid hex key(s)", { parent, child });
-    return { ok: false, reason: "Invalid hex public key provided." };
+    return Promise.resolve({ ok: false, reason: "Invalid hex public key provided." });
   }
 
   if (parent === child) {
     logWarning("[requestChildLink] Attempt to add self as child", { parent });
-    return { ok: false, reason: "You cannot add yourself as a child." };
+    return Promise.resolve({ ok: false, reason: "You cannot add yourself as a child." });
   }
 
   const childUser = await prisma.user.findUnique({ where: { npub: child } });
@@ -141,7 +141,7 @@ export async function requestChildLink(
     logError(new Error("[requestChildLink] Child account not found in DB"), {
       child,
     });
-    return { ok: false, reason: "Child account not found." };
+    return Promise.resolve({ ok: false, reason: "Child account not found." });
   }
 
   if (childUser.parentNpub) {
@@ -152,7 +152,7 @@ export async function requestChildLink(
     return { ok: false, reason: "This account is already linked to a parent." };
   }
 
-  const alreadyRequested = (childUser.pendingParentRequests || []).includes(
+  const alreadyRequested = (childUser.pendingParentRequests ?? []).includes(
     parent,
   );
   if (alreadyRequested) {
@@ -180,15 +180,15 @@ export async function cancelChildLinkRequest(
   const child = (childHex || "").trim();
 
   if (!/^[0-9a-fA-F]{64}$/.test(parent) || !/^[0-9a-fA-F]{64}$/.test(child)) {
-    return { ok: false, reason: "Invalid hex public key provided." };
+    return Promise.resolve({ ok: false, reason: "Invalid hex public key provided." });
   }
 
   const childUser = await prisma.user.findUnique({ where: { npub: child } });
-  if (!childUser) return { ok: false, reason: "Child account not found." };
+  if (!childUser) return Promise.resolve({ ok: false, reason: "Child account not found." });
 
-  const pending = childUser.pendingParentRequests || [];
+  const pending = childUser.pendingParentRequests ?? [];
   if (!pending.includes(parent)) {
-    return { ok: false, reason: "No pending request to cancel." };
+    return Promise.resolve({ ok: false, reason: "No pending request to cancel." });
   }
 
   await prisma.user.update({
@@ -198,7 +198,7 @@ export async function cancelChildLinkRequest(
     },
   });
 
-  return { ok: true };
+  return Promise.resolve({ ok: true });
 }
 
 /**
@@ -250,7 +250,7 @@ export async function respondToChildRequest(
   const child = await prisma.user.findUnique({ where: { npub: childNpub } });
   if (!child) return { ok: false, reason: "Child not found" };
 
-  const pending = child.pendingParentRequests || [];
+  const pending = child.pendingParentRequests ?? [];
   if (!pending.includes(parentNpub)) {
     return { ok: false, reason: "No pending request from this parent" };
   }

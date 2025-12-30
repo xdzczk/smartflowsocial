@@ -28,7 +28,7 @@ import {
 } from "~/models/longformpost.server";
 import { updatePostStatus } from "~/models/post.commands.server";
 import { getCronDueScheduledPosts } from "~/models/post.queries.server";
-import { getUserById } from "~/models/user.server";
+import { getUserById } from "~/features/user";
 
 /**
  * Type guard to check if value is a SignedEvent

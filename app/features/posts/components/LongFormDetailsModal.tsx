@@ -5,9 +5,9 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import type { EditorJSBlock } from "~/features/posts/types/editorjs.types";
 import { handleErrorSafely } from "~/lib/error-handler.client";
-import type { LongFormPost } from "~/models/longformpost.server";
+import type { LongFormPostType } from "~/features/posts";
 interface LongFormDetailsModalProps {
-  post: LongFormPost;
+  post: LongFormPostType;
   onClose: () => void;
   type: "draft" | "scheduled" | "posted";
   showSignedEvent?: boolean;

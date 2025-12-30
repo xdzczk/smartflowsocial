@@ -1,5 +1,5 @@
 import { nip19 } from "nostr-tools";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import type { NotificationEvent, NostrTag } from "~/features/engagement/types";
 import { signEventFn } from "~/lib/nostr";
@@ -252,7 +252,7 @@ export function useNotificationActions({
         }
     };
 
-    const fetchChildReplies = async () => {
+    const fetchChildReplies = useCallback(async () => {
         if (isLoadingReplies || childReplies.length > 0) return;
 
         setIsLoadingReplies(true);
@@ -264,7 +264,7 @@ export function useNotificationActions({
 
             // Filter to only show direct replies
             const directReplies = (data.events ?? []).filter((event: NotificationEvent) => {
-                const eTags = event.tags?.filter((tag: NostrTag) => tag[0] === "e") || [];
+                const eTags = event.tags?.filter((tag: NostrTag) => tag[0] === "e") ?? [];
                 return eTags.some((tag: NostrTag) => tag[1] === notification.eventId);
             });
 
@@ -285,15 +285,14 @@ export function useNotificationActions({
         } finally {
             setIsLoadingReplies(false);
         }
-    };
+    }, [notification.eventId, isLoadingReplies, childReplies.length]);
 
     // Auto-fetch child replies when expanded
     useEffect(() => {
         if (showChildReplies && childReplies.length === 0) {
             void fetchChildReplies();
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [showChildReplies]);
+    }, [showChildReplies, childReplies.length, fetchChildReplies]);
 
     return {
         // State

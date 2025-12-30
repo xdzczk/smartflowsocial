@@ -6,7 +6,7 @@ import { type ToastMessage } from "~/components/types";
 import { type BulkPost , type PreparedEvent } from "~/features/posts/types";
 import { uploadMultipleFiles } from "~/features/upload/upload.client";
 import { logClientError } from "~/lib/error-handler.client";
-import { type User } from "~/models/user.server";
+import type { User } from "~/features/user";
 interface FetcherData {
     fileUrls?: { fileUrl: string; scheduledFor: string }[];
 }

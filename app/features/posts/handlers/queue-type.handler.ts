@@ -140,7 +140,7 @@ export async function handleBulkQueueUpdate(
     firstItemTimeManuallyChanged,
   } = deps;
 
-  if (posts.length === 0) return;
+  if (posts.length === 0) return Promise.resolve();
 
   // Update displayed hashtags
   await updateDisplayedHashtags(

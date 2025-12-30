@@ -21,8 +21,8 @@ import {
 } from "~/features/posts";
 import type { PostStats } from "~/features/posts/stats.server";
 import { withErrorHandling } from "~/lib/error-handler.server";
-import type { LongFormPost } from "~/models/longformpost.server";
-import type { User } from "~/models/user.server";
+import type { LongFormPostType } from "~/features/posts";
+import type { User } from "~/features/user";
 // Re-export action from server module
 export { postedPostsAction as action } from "~/features/posts/posted.action.server";
 
@@ -55,13 +55,12 @@ export default function PostedPosts() {
   // Transform serialized dates back to Date objects and assert types
   const posts: PostData[] = Array.isArray(postsRaw) ? postsRaw.map((post: unknown) => {
     const p = post as { createdAt: string | Date; updatedAt: string | Date; postedAt?: string | Date | null; [key: string]: unknown };
-    const result = {
+    return {
       ...p,
       createdAt: (p.createdAt && typeof p.createdAt === "object" && p.createdAt instanceof Date) ? p.createdAt : new Date(p.createdAt as string),
       updatedAt: (p.updatedAt && typeof p.updatedAt === "object" && p.updatedAt instanceof Date) ? p.updatedAt : new Date(p.updatedAt as string),
       postedAt: p.postedAt ? ((p.postedAt && typeof p.postedAt === "object" && p.postedAt instanceof Date) ? p.postedAt : new Date(p.postedAt as string)) : null,
     } as PostData;
-    return result;
   }) : [];
 
   const longformPosts: LongFormPostData[] = Array.isArray(longformPostsRaw) ? longformPostsRaw.map((post: unknown) => {
@@ -75,7 +74,11 @@ export default function PostedPosts() {
     return result;
   }) : [];
 
-  const allContent: CombinedContent[] = Array.isArray(allContentRaw) ? allContentRaw as unknown as CombinedContent[] : [];
+  // Type assertions for Remix JsonifyObject serialization
+  // Remix serializes Date objects to strings, so we need to assert these types
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+  const allContent: CombinedContent[] = Array.isArray(allContentRaw) ? (allContentRaw as unknown as CombinedContent[]) : [];
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
   const user: User | null = userRaw ? (userRaw as unknown as User) : null;
   const queueTypes: QueueType[] = Array.isArray(queueTypesRaw) ? queueTypesRaw.map((qt: unknown) => {
     if (typeof qt !== "object" || qt === null) {
@@ -143,6 +146,7 @@ export default function PostedPosts() {
     user: (() => {
       if (user) return user;
       // Create a minimal User object with required properties
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
       return {
         id: "",
         npub: "",
@@ -182,8 +186,10 @@ export default function PostedPosts() {
     ) {
       const aEventId = a.signedEvent && typeof a.signedEvent === "object" && "id" in a.signedEvent && typeof a.signedEvent.id === "string" ? a.signedEvent.id : "";
       const bEventId = b.signedEvent && typeof b.signedEvent === "object" && "id" in b.signedEvent && typeof b.signedEvent.id === "string" ? b.signedEvent.id : "";
-      const aStats = aEventId && stats && typeof stats === "object" && !Array.isArray(stats) && aEventId in stats ? stats[aEventId] as unknown as Record<string, unknown> : {};
-      const bStats = bEventId && stats && typeof stats === "object" && !Array.isArray(stats) && bEventId in stats ? stats[bEventId] as unknown as Record<string, unknown> : {};
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+      const aStats = aEventId && stats && typeof stats === "object" && !Array.isArray(stats) && aEventId in stats ? (stats[aEventId] as unknown as Record<string, unknown>) : {};
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+      const bStats = bEventId && stats && typeof stats === "object" && !Array.isArray(stats) && bEventId in stats ? (stats[bEventId] as unknown as Record<string, unknown>) : {};
       const sortKey = sortConfig.key;
       const aValue = (typeof sortKey === "string" && sortKey in aStats && typeof aStats[sortKey] === "number" ? aStats[sortKey] : 0);
       const bValue = (typeof sortKey === "string" && sortKey in bStats && typeof bStats[sortKey] === "number" ? bStats[sortKey] : 0);
@@ -191,11 +197,20 @@ export default function PostedPosts() {
     }
 
     // Type-safe property access
-    const aValue = (a as unknown as Record<string, unknown>)[sortConfig.key];
-    const bValue = (b as unknown as Record<string, unknown>)[sortConfig.key];
-    if ((aValue as number | string) < (bValue as number | string))
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    const aRecord = a as unknown as Record<string, unknown>;
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    const bRecord = b as unknown as Record<string, unknown>;
+    const aValue = aRecord[sortConfig.key];
+    const bValue = bRecord[sortConfig.key];
+    const aTyped = (typeof aValue === "number" || typeof aValue === "string") ? aValue : undefined;
+    const bTyped = (typeof bValue === "number" || typeof bValue === "string") ? bValue : undefined;
+    if (aTyped == null && bTyped == null) return 0;
+    if (aTyped == null) return sortConfig.direction === "asc" ? -1 : 1;
+    if (bTyped == null) return sortConfig.direction === "asc" ? 1 : -1;
+    if (aTyped < bTyped)
       return sortConfig.direction === "asc" ? -1 : 1;
-    if ((aValue as number | string) > (bValue as number | string))
+    if (aTyped > bTyped)
       return sortConfig.direction === "asc" ? 1 : -1;
     return 0;
   });
@@ -233,7 +248,8 @@ export default function PostedPosts() {
             if (content.type === "post") {
               setSelectedPost(content.originalData as PostData);
             } else {
-              setSelectedLongFormPost(content.originalData as LongFormPostData);
+              // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+              setSelectedLongFormPost(content.originalData as unknown as LongFormPostData);
             }
           }}
           selectedItems={selectedPosts}
@@ -378,7 +394,7 @@ export default function PostedPosts() {
             togglePostSelection={togglePostSelection}
             requestSort={requestSort}
             setSelectedPost={setSelectedPost}
-            individualRepostFetcher={individualRepostFetcher as unknown as typeof individualRepostFetcher}
+            individualRepostFetcher={individualRepostFetcher}
             deleteFetcher={deleteFetcher}
             bulkDeleteFetcher={bulkDeleteFetcher}
           />
@@ -430,7 +446,8 @@ export default function PostedPosts() {
       ) : (
         /* Longform Posts Content */
         <LongFormListing
-          posts={longformPosts as unknown as LongFormPost[]}
+          // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+          posts={longformPosts as unknown as LongFormPostType[]}
           type="posted"
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
@@ -438,6 +455,7 @@ export default function PostedPosts() {
           longformRepostFetcher={longformRepostFetcher}
           longformQuoteFetcher={longformQuoteFetcher}
           onPostSelect={(post) => {
+            // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
             setSelectedLongFormPost(post as unknown as LongFormPostData);
           }}
         />
@@ -446,7 +464,8 @@ export default function PostedPosts() {
       {/* Long Form Post Details Modal */}
       {selectedLongFormPost ? (
         <LongFormDetailsModal
-          post={selectedLongFormPost as unknown as LongFormPost}
+          // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+          post={selectedLongFormPost as unknown as LongFormPostType}
           onClose={() => setSelectedLongFormPost(null)}
           type="posted"
           showSignedEvent={true}

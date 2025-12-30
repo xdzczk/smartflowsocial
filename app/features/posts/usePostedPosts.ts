@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import type { ToastMessage } from "~/components/types";
 import type { CombinedContent, PostData, LongFormPostData } from "~/features/posts/types";
 import { signEventFn } from "~/lib/nostr";
-import { type User } from "~/models/user.server";
+import type { User } from "~/features/user";
 
 interface UsePostedPostsProps {
     user: User;

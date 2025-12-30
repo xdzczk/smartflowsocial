@@ -10,7 +10,7 @@ import { getPostStats } from "~/features/posts/stats.server";
 import type { UserWithHashTagPresets } from "~/features/user";
 import { deletePost } from "~/models/post.commands.server";
 import { getRecyclablePosts, getPostsByIds } from "~/models/post.queries.server";
-import { getUserById, getQueueTypes } from "~/models/user.server";
+import { getUserById, getQueueTypes } from "~/features/user";
 /**
  * Get recyclable posts dashboard data
  */
