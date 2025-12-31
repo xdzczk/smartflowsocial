@@ -84,11 +84,6 @@ describe("Scheduled Posts Management", () => {
 
         it("should display queue type filter if available", () => {
             cy.get("body").then(($body) => {
-                // Queue type filter might be a select or tabs
-                const _hasQueueFilter =
-                    $body.find("select").length > 0 ||
-                    $body.find('[role="tablist"]').length > 0 ||
-                    $body.find('[data-testid="queue-filter"]').length > 0;
                 // Page should load regardless
                 cy.location("pathname").should("include", "scheduled");
             });

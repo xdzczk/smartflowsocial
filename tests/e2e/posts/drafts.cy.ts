@@ -149,9 +149,6 @@ describe("Drafts Management", () => {
         it("should have save as draft option on new post page", () => {
             cy.visitAndCheck("/dashboard/newpost");
             cy.get("body").then(($body) => {
-                const _hasSaveAsDraft =
-                    $body.find('button:contains("Draft")').length > 0 ||
-                    $body.find('[data-testid="save-draft"]').length > 0 ||
                     $body.find('button:contains("Save")').length > 0;
                 // Save draft option should exist
                 cy.location("pathname").should("include", "newpost");

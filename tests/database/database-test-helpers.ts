@@ -6,7 +6,6 @@
 
 import { beforeAll, afterAll } from "vitest";
 
-import { createMinimalFixtures, createCompleteFixtures } from "./fixtures";
 import type { TestFixtures } from "./fixtures";
 import type { getTestPrisma } from "./test-db";
 import {
@@ -65,6 +64,7 @@ export function describeDatabase(
     return;
   }
 
+  // eslint-disable-next-line jest/valid-title -- name is a parameter, not a literal
   describe(name, () => {
     beforeAll(async () => {
       try {

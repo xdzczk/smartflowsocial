@@ -9,6 +9,8 @@ import { execSync } from "child_process";
 
 import type { Prisma } from "@prisma/client";
 import { PrismaClient } from "@prisma/client";
+
+/* eslint-disable @typescript-eslint/consistent-type-assertions -- Prisma type casts (as unknown as Prisma.XxxInput) are necessary for fixture compatibility */
 let testPrisma: PrismaClient | null = null;
 let transactionClient: PrismaClient | null = null;
 
@@ -49,7 +51,7 @@ export async function createTransactionClient(): Promise<PrismaClient> {
   const prisma = getTestPrisma();
   
   // Start a transaction
-  const transaction = await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx) => {
     // Return a client that uses this transaction
     return tx as unknown as PrismaClient;
   }, {
@@ -192,7 +194,7 @@ export async function seedTestDatabase(fixtures?: TestFixtures): Promise<void> {
         env: { ...process.env, DATABASE_URL: process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL },
         stdio: "inherit",
       });
-    } catch (error) {
+    } catch {
       console.warn("Failed to run seed, continuing without seed data");
     }
   }

@@ -88,10 +88,6 @@ describe("Bulk Posts Upload", () => {
 
         it("should display start date/time picker", () => {
             cy.get("body").then(($body) => {
-                const _hasDatePicker =
-                    $body.find('input[type="datetime-local"]').length > 0 ||
-                    $body.find('input[type="date"]').length > 0 ||
-                    $body.find('[data-testid="start-datetime"]').length > 0;
                 // Page should contain scheduling options
                 cy.location("pathname").should("include", "bulkposts");
             });
@@ -99,10 +95,6 @@ describe("Bulk Posts Upload", () => {
 
         it("should display interval selector", () => {
             cy.get("body").then(($body) => {
-                const _hasIntervalSelector =
-                    $body.find("select").length > 0 ||
-                    $body.find('[data-testid="interval-select"]').length > 0 ||
-                    $body.find('input[type="number"]').length > 0;
                 cy.location("pathname").should("include", "bulkposts");
             });
         });
@@ -115,9 +107,6 @@ describe("Bulk Posts Upload", () => {
 
         it("should display preview button when ready", () => {
             cy.get("body").then(($body) => {
-                const _hasPreviewButton =
-                    $body.find('button:contains("Preview")').length > 0 ||
-                    $body.find('[data-testid="preview-button"]').length > 0;
                 // Preview might not be available until files are uploaded
                 cy.location("pathname").should("include", "bulkposts");
             });
@@ -125,12 +114,6 @@ describe("Bulk Posts Upload", () => {
 
         it("should display table or grid for images", () => {
             cy.get("body").then(($body) => {
-                // Look for table, grid, or list structure for uploaded images
-                const _hasImageContainer =
-                    $body.find("table").length > 0 ||
-                    $body.find('[role="grid"]').length > 0 ||
-                    $body.find(".grid, .image-grid").length > 0 ||
-                    $body.find('[data-testid="posts-table"]').length > 0;
                 // Container might only appear after upload
                 cy.location("pathname").should("include", "bulkposts");
             });
@@ -145,11 +128,6 @@ describe("Bulk Posts Upload", () => {
         it("should display caption input fields when images are present", () => {
             // This will show after files are uploaded
             cy.get("body").then(($body) => {
-                // Look for any caption-related inputs (jQuery doesn't support `i` flag)
-                const _hasCaptionInputs =
-                    $body.find('[data-testid="caption-input"]').length > 0 ||
-                    $body.find('textarea[placeholder*="caption"], textarea[placeholder*="Caption"]').length > 0 ||
-                    $body.find('input[placeholder*="caption"], input[placeholder*="Caption"]').length > 0;
                 // Caption inputs appear after file upload
                 cy.location("pathname").should("include", "bulkposts");
             });
@@ -163,11 +141,6 @@ describe("Bulk Posts Upload", () => {
 
         it("should display schedule button", () => {
             cy.get("body").then(($body) => {
-                const _hasScheduleButton =
-                    $body.find('button:contains("Schedule")').length > 0 ||
-                    $body.find('button:contains("Sign")').length > 0 ||
-                    $body.find('[data-testid="schedule-button"]').length > 0 ||
-                    $body.find('button[type="submit"]').length > 0;
                 // Submit button should exist
                 cy.location("pathname").should("include", "bulkposts");
             });
@@ -181,11 +154,6 @@ describe("Bulk Posts Upload", () => {
 
         it("should display queue type selector", () => {
             cy.get("body").then(($body) => {
-                const _hasQueueSelector =
-                    $body.find("select").length > 0 ||
-                    $body.find('[data-testid="queue-type-select"]').length >
-                    0 ||
-                    $body.find('[role="combobox"]').length > 0;
                 cy.location("pathname").should("include", "bulkposts");
             });
         });

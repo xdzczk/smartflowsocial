@@ -8,7 +8,7 @@ import { execSync } from "child_process";
 
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 
-import { getTestPrisma, setupTestDatabase, resetTestDatabase } from "./test-db";
+import { getTestPrisma, setupTestDatabase } from "./test-db";
 describe("Database Migrations", () => {
   beforeAll(async () => {
     await setupTestDatabase();
@@ -63,7 +63,7 @@ describe("Database Migrations", () => {
           throw new Error(`Table ${table} does not exist or is not accessible`);
         }
         await prismaModel.findMany({ take: 1 });
-      } catch (error) {
+      } catch {
         throw new Error(`Table ${table} does not exist or is not accessible`);
       }
     }

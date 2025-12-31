@@ -44,6 +44,10 @@ export default (async () => {
       "build/**",
       "public/build/**",
       "postgres-data/**",
+      "scripts/**",
+      "mocks/**",
+      "*.config.js",
+      ".eslintrc.js",
     ],
   },
 
@@ -592,8 +596,6 @@ export default (async () => {
       "import/order": "warn",
       "import/no-restricted-paths": "off",
       "no-restricted-imports": "off",
-      "jest/valid-title": "off",
-      "jest/valid-describe-callback": "off",
     },
   },
 

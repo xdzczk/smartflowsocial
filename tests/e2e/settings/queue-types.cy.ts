@@ -66,13 +66,6 @@ describe("Queue Types Management", () => {
 
         it("should display schedule type or interval options", () => {
             cy.get("body").then(($body) => {
-                const _hasScheduleOptions =
-                    $body.text().toLowerCase().includes("interval") ||
-                    $body.text().toLowerCase().includes("fixed slots") ||
-                    $body.text().toLowerCase().includes("schedule") ||
-                    $body.find('[data-testid="schedule-type"]').length > 0 ||
-                    $body.find('input[type="radio"]').length > 0 ||
-                    $body.find('input[type="number"]').length > 0;
                 cy.location("pathname").should("include", "settings");
             });
         });
@@ -106,11 +99,6 @@ describe("Queue Types Management", () => {
 
         it("should display queue or schedule configuration", () => {
             cy.get("body").then(($body) => {
-                const _hasConfig =
-                    $body.find('[data-testid="default-queue"]').length > 0 ||
-                    $body.text().toLowerCase().includes("default") ||
-                    $body.text().toLowerCase().includes("queue") ||
-                    $body.text().toLowerCase().includes("schedule");
                 cy.location("pathname").should("include", "settings");
             });
         });

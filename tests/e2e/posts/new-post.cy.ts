@@ -126,11 +126,6 @@ describe("New Post Creation", () => {
 
             // Check for datetime input after toggle
             cy.get("body").then(($body) => {
-                const _hasDateInput =
-                    $body.find('input[type="datetime-local"]').length > 0 ||
-                    $body.find('[data-testid="schedule-datetime"]').length >
-                    0 ||
-                    $body.find(".date-picker").length > 0;
                 // Just verify page didn't break
                 cy.location("pathname").should("include", "newpost");
             });
@@ -176,10 +171,6 @@ describe("New Post Creation", () => {
 
         it("should display hashtag preset selector if available", () => {
             cy.get("body").then(($body) => {
-                // Hashtag presets might be optional based on user setup
-                const _hasHashtagPresets =
-                    $body.find('[data-testid="hashtag-preset"]').length > 0 ||
-                    $body.find("select").length > 0;
                 // Just verify page loads correctly
                 cy.location("pathname").should("include", "newpost");
             });

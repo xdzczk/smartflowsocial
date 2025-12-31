@@ -41,11 +41,6 @@ describe("Calendar View", () => {
 
         it("should display week or month view toggle", () => {
             cy.get("body").then(($body) => {
-                const _hasViewToggle =
-                    $body.find('button:contains("Week")').length > 0 ||
-                    $body.find('button:contains("Month")').length > 0 ||
-                    $body.find('[data-testid="view-toggle"]').length > 0 ||
-                    $body.find('[role="tablist"]').length > 0;
                 // View toggle might be present
                 cy.location("pathname").should("include", "calendar");
             });
@@ -85,9 +80,6 @@ describe("Calendar View", () => {
 
         it("should display current time indicator", () => {
             cy.get("body").then(($body) => {
-                const _hasTimeIndicator =
-                    $body.find('[data-testid="current-time"]').length > 0 ||
-                    $body.find(".current-time, .now-indicator").length > 0;
                 // Current time indicator might be conditionally rendered
                 cy.location("pathname").should("include", "calendar");
             });
@@ -101,10 +93,6 @@ describe("Calendar View", () => {
 
         it("should display posts on calendar if any exist", () => {
             cy.get("body").then(($body) => {
-                const _hasPosts =
-                    $body.find('[data-testid="calendar-post"]').length > 0 ||
-                    $body.find(".post-block, .event-block").length > 0 ||
-                    $body.find('[draggable="true"]').length > 0;
                 // Posts might not exist, but structure should be present
                 cy.location("pathname").should("include", "calendar");
             });
@@ -134,9 +122,6 @@ describe("Calendar View", () => {
 
         it("should display today button", () => {
             cy.get("body").then(($body) => {
-                const _hasTodayButton =
-                    $body.find('button:contains("Today")').length > 0 ||
-                    $body.find('[data-testid="today-button"]').length > 0;
                 // Today button might be present
                 cy.location("pathname").should("include", "calendar");
             });
@@ -150,9 +135,6 @@ describe("Calendar View", () => {
 
         it("should have draggable post elements if posts exist", () => {
             cy.get("body").then(($body) => {
-                const _hasDraggable =
-                    $body.find('[draggable="true"]').length > 0 ||
-                    $body.find('[data-testid="draggable-post"]').length > 0;
                 // Draggable elements present if posts exist
                 cy.location("pathname").should("include", "calendar");
             });

@@ -6,7 +6,7 @@
 
 import type { Prisma } from "@prisma/client";
 
-import { createCompleteFixtures, fixtures } from "./fixtures";
+import { createCompleteFixtures } from "./fixtures";
 import { getTestPrisma, setupTestDatabase } from "./test-db";
 async function seedTestDatabase() {
   try {

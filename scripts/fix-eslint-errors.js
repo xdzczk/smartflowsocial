@@ -64,7 +64,6 @@ function findTsFiles(dir, fileList = []) {
 /**
  * Run ESLint with --fix flag
  */
-// eslint-disable-next-line jest/valid-title
 function runEslintFix() {
   log('\n🔧 Running ESLint auto-fix...', 'cyan');
   try {

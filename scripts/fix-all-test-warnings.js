@@ -43,3 +43,4 @@ console.log('   - Unsafe assignments (add proper types)');
 console.log('   - cypress/no-unnecessary-waiting (replace cy.wait())');
 console.log('\n📝 Continue with manual fixes...\n');
 
+

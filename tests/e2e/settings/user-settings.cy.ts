@@ -49,12 +49,6 @@ describe("User Settings", () => {
 
         it("should display timezone selector", () => {
             cy.get("body").then(($body) => {
-                const _hasTimezoneSelector =
-                    $body.find('[data-testid="timezone-select"]').length > 0 ||
-                    $body.find("select").filter((_, el) =>
-                        el.innerHTML.toLowerCase().includes("timezone"),
-                    ).length > 0 ||
-                    $body.text().toLowerCase().includes("timezone");
                 // Timezone selector should be present
                 cy.location("pathname").should("include", "settings");
             });
@@ -68,20 +62,12 @@ describe("User Settings", () => {
 
         it("should display mute settings toggle", () => {
             cy.get("body").then(($body) => {
-                const _hasMuteSettings =
-                    $body.find('[data-testid="mute-toggle"]').length > 0 ||
-                    $body.find('input[type="checkbox"]').length > 0 ||
-                    $body.text().toLowerCase().includes("mute") ||
-                    $body.text().toLowerCase().includes("filter");
                 cy.location("pathname").should("include", "settings");
             });
         });
 
         it("should display trust score filter settings", () => {
             cy.get("body").then(($body) => {
-                const _hasTrustSettings =
-                    $body.find('[data-testid="trust-filter"]').length > 0 ||
-                    $body.text().toLowerCase().includes("trust");
                 cy.location("pathname").should("include", "settings");
             });
         });
@@ -94,13 +80,6 @@ describe("User Settings", () => {
 
         it("should display schedule interval setting", () => {
             cy.get("body").then(($body) => {
-                const _hasIntervalSetting =
-                    $body.find('[data-testid="schedule-interval"]').length >
-                    0 ||
-                    $body.find('input[type="number"]').length > 0 ||
-                    $body.find("select").length > 0 ||
-                    $body.text().toLowerCase().includes("interval") ||
-                    $body.text().toLowerCase().includes("schedule");
                 cy.location("pathname").should("include", "settings");
             });
         });
@@ -113,20 +92,12 @@ describe("User Settings", () => {
 
         it("should display NWC connection settings", () => {
             cy.get("body").then(($body) => {
-                const _hasNwcSettings =
-                    $body.find('[data-testid="nwc-settings"]').length > 0 ||
-                    $body.text().toLowerCase().includes("nwc") ||
-                    $body.text().toLowerCase().includes("wallet") ||
-                    $body.text().toLowerCase().includes("nostr wallet");
                 cy.location("pathname").should("include", "settings");
             });
         });
 
         it("should display NWC connection status", () => {
             cy.get("body").then(($body) => {
-                const _hasNwcStatus =
-                    $body.find('[data-testid="nwc-status"]').length > 0 ||
-                    $body.text().toLowerCase().includes("connected") ||
                     $body.text().toLowerCase().includes("connect");
                 cy.location("pathname").should("include", "settings");
             });

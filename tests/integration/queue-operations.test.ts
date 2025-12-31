@@ -33,7 +33,15 @@ describe("Queue Operations", () => {
   describe("Post Job Operations", () => {
     it("should enqueue post job with scheduled timestamp", async () => {
       const scheduledFor = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
-      const mockSignedEvent: SignedEvent = { id: "event-123", kind: 1, pubkey: "test-pubkey", created_at: Date.now(), tags: [], content: "", sig: "test-sig" } as SignedEvent;
+      const mockSignedEvent: SignedEvent = {
+        id: "event-123",
+        kind: 1,
+        pubkey: "test-pubkey",
+        created_at: Date.now(),
+        tags: [],
+        content: "",
+        sig: "test-sig",
+      };
 
       (queueClient.enqueue as ReturnType<typeof vi.fn>).mockResolvedValue({
         success: true,
@@ -55,7 +63,15 @@ describe("Queue Operations", () => {
     });
 
     it("should enqueue post job with immediate processing (delay: 0)", async () => {
-      const mockSignedEvent: SignedEvent = { id: "event-123", kind: 1, pubkey: "test-pubkey", created_at: Date.now(), tags: [], content: "", sig: "test-sig" } as SignedEvent;
+      const mockSignedEvent: SignedEvent = {
+        id: "event-123",
+        kind: 1,
+        pubkey: "test-pubkey",
+        created_at: Date.now(),
+        tags: [],
+        content: "",
+        sig: "test-sig",
+      };
 
       (queueClient.enqueue as ReturnType<typeof vi.fn>).mockResolvedValue({
         success: true,
@@ -77,7 +93,15 @@ describe("Queue Operations", () => {
     });
 
     it("should throw error when enqueue fails", async () => {
-      const mockSignedEvent: SignedEvent = { id: "event-123", kind: 1, pubkey: "test-pubkey", created_at: Date.now(), tags: [], content: "", sig: "test-sig" } as SignedEvent;
+      const mockSignedEvent: SignedEvent = {
+        id: "event-123",
+        kind: 1,
+        pubkey: "test-pubkey",
+        created_at: Date.now(),
+        tags: [],
+        content: "",
+        sig: "test-sig",
+      };
 
       (queueClient.enqueue as ReturnType<typeof vi.fn>).mockResolvedValue({
         success: false,
