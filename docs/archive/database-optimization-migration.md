@@ -67,10 +67,10 @@ Added Prisma middleware to monitor query performance:
 
 ```bash
 # Generate migration for new indexes
-npx prisma migrate dev --name add_query_performance_indexes
+pnpm exec prisma migrate dev --name add_query_performance_indexes
 
 # Or in production
-npx prisma migrate deploy
+pnpm exec prisma migrate deploy
 ```
 
 ### Step 2: Verify Indexes
@@ -154,7 +154,7 @@ If issues occur, you can rollback the migration:
 
 ```bash
 # Rollback last migration
-npx prisma migrate resolve --rolled-back <migration_name>
+pnpm exec prisma migrate resolve --rolled-back <migration_name>
 
 # Or manually drop indexes
 DROP INDEX IF EXISTS "Post_userId_isScheduled_isPosted_idx";

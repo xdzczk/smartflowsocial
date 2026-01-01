@@ -465,7 +465,7 @@ The application includes error tracking in `app/lib/error-metrics.server.ts`:
 1. **Install Sentry**
 
 ```bash
-npm install @sentry/remix
+pnpm add @sentry/remix
 ```
 
 2. **Configure in `app/entry.server.tsx`**
@@ -539,7 +539,7 @@ ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
 Monitor database in real-time:
 
 ```bash
-npx prisma studio
+pnpm exec prisma studio
 ```
 
 Access at `http://localhost:5555`

@@ -79,11 +79,11 @@ pg_dump -Fc $DATABASE_URL > backup-$(date +%Y%m%d-%H%M%S).dump
 
 ```bash
 # Using Prisma Studio (export data)
-npx prisma studio
+pnpm exec prisma studio
 # Manually export data through UI
 
 # Using Prisma Migrate (schema only)
-npx prisma migrate diff --from-schema-datamodel prisma/schema.prisma --to-schema-datasource prisma/schema.prisma --script > backup-schema.sql
+pnpm exec prisma migrate diff --from-schema-datamodel prisma/schema.prisma --to-schema-datasource prisma/schema.prisma --script > backup-schema.sql
 ```
 
 ### Automated Backup Script

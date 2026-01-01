@@ -298,7 +298,7 @@ Coverage thresholds are enforced in CI/CD and `vitest.config.ts`:
 
 ```bash
 # Generate coverage report
-npm run test:coverage
+pnpm test:coverage
 
 # View HTML report
 open coverage/index.html
@@ -338,7 +338,7 @@ The following are excluded from coverage:
 
 **HTML Report**:
 ```bash
-npm run test:coverage
+pnpm test:coverage
 open coverage/index.html
 ```
 
@@ -368,7 +368,7 @@ Track coverage over time:
 
 ```bash
 # Record snapshot after each test run
-npm run test:coverage && node scripts/coverage-trend.js record
+pnpm test:coverage && node scripts/coverage-trend.js record
 
 # View trends
 node scripts/coverage-trend.js report
@@ -458,10 +458,10 @@ Track coverage trends over time:
 
 ```bash
 # Record current coverage snapshot
-npm run test:coverage:report
+pnpm test:coverage:report
 
 # View coverage trend report
-npm run test:coverage:trend
+pnpm test:coverage:trend
 ```
 
 The trend tracking:
@@ -534,7 +534,7 @@ Track coverage trends over time:
 
 ```bash
 # Record snapshot after each test run
-npm run test:coverage && node scripts/coverage-trend.js record
+pnpm test:coverage && node scripts/coverage-trend.js record
 
 # View trends
 node scripts/coverage-trend.js report
@@ -582,7 +582,7 @@ tests/
 
 1. **Write Code**: Implement feature
 2. **Write Tests**: Write tests alongside code
-3. **Run Tests**: `npm run test:watch`
+3. **Run Tests**: `pnpm test:watch`
 4. **Refactor**: Improve code and tests
 5. **Commit**: Commit with tests passing
 

@@ -282,7 +282,7 @@ function MyRoute() {
 **Analyze Bundle:**
 
 ```bash
-npm run build
+pnpm build
 # Check build output for large bundles
 ```
 
@@ -481,7 +481,7 @@ Use CDN for image delivery:
 
 ```bash
 # Run performance tests
-npm run test:performance
+pnpm test:performance
 
 # k6 load tests
 k6 run tests/performance/load-test.js

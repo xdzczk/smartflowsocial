@@ -16,7 +16,7 @@ Sentry has been integrated into the codebase for production error tracking and m
 ### 1. Install Sentry Package
 
 ```bash
-npm install @sentry/remix
+pnpm add @sentry/remix
 ```
 
 ### 2. Get Your Sentry DSN
@@ -253,7 +253,7 @@ For most applications, this is sufficient. Paid plans start at $26/month for mor
 
 ## Next Steps
 
-1. **Install the package**: `npm install @sentry/remix`
+1. **Install the package**: `pnpm add @sentry/remix`
 2. **Get your DSN**: Sign up at sentry.io and create a project
 3. **Add to .env**: Set `SENTRY_DSN=your-dsn-here`
 4. **Test it**: Trigger an error and check Sentry dashboard

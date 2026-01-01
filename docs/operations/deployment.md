@@ -152,7 +152,7 @@ Railway provides simple deployment with automatic PostgreSQL and Redis provision
 #### 1. Install Railway CLI
 
 ```bash
-npm i -g @railway/cli
+pnpm add -g @railway/cli
 ```
 
 #### 2. Login
@@ -195,7 +195,7 @@ Create a separate service for the worker:
 ```bash
 railway add
 # Select "Empty Service"
-# Set start command: npm run start:worker
+# Set start command: pnpm start:worker
 ```
 
 ---
@@ -209,7 +209,7 @@ Vercel is optimized for frontend deployments but can run Remix applications.
 #### 1. Install Vercel CLI
 
 ```bash
-npm i -g vercel
+pnpm add -g vercel
 ```
 
 #### 2. Deploy
@@ -243,21 +243,21 @@ curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt-get install -y nodejs
 
 # Install PM2
-sudo npm install -g pm2
+sudo pnpm install -g pm2
 
 # Clone repository
 git clone https://github.com/xdzczk/SmartFlowSocial.git
 cd SmartFlowSocial
 
 # Install dependencies
-npm install
+pnpm install
 
 # Build application
-npm run build
+pnpm build
 
 # Start with PM2
-pm2 start npm --name "smartflow" -- start
-pm2 start npm --name "smartflow-worker" -- run start:worker
+pm2 start pnpm --name "smartflow" -- start
+pm2 start pnpm --name "smartflow-worker" -- run start:worker
 
 # Save PM2 configuration
 pm2 save
@@ -316,7 +316,7 @@ services:
   worker:
     image: smartflow:latest
     restart: always
-    command: npm run start:worker
+    command: pnpm start:worker
     environment:
       - NODE_ENV=production
       - DATABASE_URL=${DATABASE_URL}
@@ -409,22 +409,22 @@ METRICS_PORT=3010
 
 ```bash
 # Generate Prisma client
-npx prisma generate
+pnpm exec prisma generate
 
 # Run migrations
-npx prisma migrate deploy
+pnpm exec prisma migrate deploy
 ```
 
 ### 2. Seed Initial Data (Optional)
 
 ```bash
-npm run db:seed
+pnpm db:seed
 ```
 
 ### 3. Verify Database Connection
 
 ```bash
-npx prisma studio
+pnpm exec prisma studio
 ```
 
 ### 4. Backup Strategy
@@ -450,13 +450,13 @@ The worker process handles scheduled posts and background jobs.
 ### Standalone Worker
 
 ```bash
-npm run start:worker
+pnpm start:worker
 ```
 
 ### With PM2
 
 ```bash
-pm2 start npm --name "smartflow-worker" -- run start:worker
+pm2 start pnpm --name "smartflow-worker" -- run start:worker
 pm2 save
 ```
 
@@ -467,7 +467,7 @@ docker run -d \
   --name smartflow-worker \
   --env-file .env.production \
   smartflow:latest \
-  npm run start:worker
+  pnpm start:worker
 ```
 
 ### Scaling Workers
@@ -476,8 +476,8 @@ You can run multiple worker instances:
 
 ```bash
 # PM2
-pm2 start npm --name "worker-1" -- run start:worker
-pm2 start npm --name "worker-2" -- run start:worker
+pm2 start pnpm --name "worker-1" -- run start:worker
+pm2 start pnpm --name "worker-2" -- run start:worker
 
 # Docker Compose
 docker-compose scale worker=3
@@ -591,13 +591,13 @@ smartflow.example.com {
 
 ```bash
 # Install PM2
-npm install -g pm2
+pnpm install -g pm2
 
 # Start application
-pm2 start npm --name "smartflow" -- start
+pm2 start pnpm --name "smartflow" -- start
 
 # Start worker
-pm2 start npm --name "smartflow-worker" -- run start:worker
+pm2 start pnpm --name "smartflow-worker" -- run start:worker
 
 # Save configuration
 pm2 save
@@ -627,7 +627,7 @@ Type=simple
 User=www-data
 WorkingDirectory=/var/www/smartflow
 Environment=NODE_ENV=production
-ExecStart=/usr/bin/npm start
+ExecStart=/usr/bin/pnpm start
 Restart=always
 
 [Install]
@@ -685,7 +685,7 @@ Should return `OK`.
 ### 2. Database Connection
 
 ```bash
-npx prisma studio
+pnpm exec prisma studio
 ```
 
 ### 3. Worker Process

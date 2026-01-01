@@ -33,13 +33,13 @@ Open `.env` in your editor and configure all required variables.
 node -e "console.log(process.env.DATABASE_URL)"
 
 # Or use a validation script
-npm run validate-env
+pnpm run validate-env
 ```
 
 ### 4. Start Application
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 ## Environment Variables
@@ -80,7 +80,7 @@ DATABASE_URL=postgresql://user:password@localhost:5432/smartflow?schema=public
 
 **Local Development with Docker:**
 ```bash
-npm run docker  # Starts PostgreSQL container
+pnpm docker  # Starts PostgreSQL container
 # Use: DATABASE_URL=postgresql://postgres:postgres@localhost:5432/smartflow
 ```
 
@@ -279,16 +279,16 @@ After configuring your environment:
 
 ```bash
 # Generate Prisma client
-npx prisma generate
+pnpm exec prisma generate
 
 # Push schema to database
-npx prisma db push
+pnpm exec prisma db push
 
 # Seed initial data
-npm run db:seed
+pnpm db:seed
 
 # Start development server
-npm run dev
+pnpm dev
 ```
 
 The app should be running at http://localhost:3000
@@ -303,7 +303,7 @@ The app should be running at http://localhost:3000
 
 ```bash
 # Start PostgreSQL and Redis
-npm run docker
+pnpm docker
 
 # Use these connection strings:
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/smartflow

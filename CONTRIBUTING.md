@@ -46,7 +46,7 @@ SmartFlowSocial is built with **Remix**, a full-stack web framework. Follow thes
 ### 1. Install Dependencies
 
 ```bash
-ppnpm install
+pnpm install
 ```
 
 ### 2. Set Up Environment Variables

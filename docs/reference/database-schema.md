@@ -307,20 +307,20 @@ Payment transaction records.
 
 ```bash
 # Create a new migration
-npx prisma migrate dev --name migration_name
+pnpm exec prisma migrate dev --name migration_name
 
 # Apply migrations
-npx prisma migrate deploy
+pnpm exec prisma migrate deploy
 
 # Reset database (development only)
-npx prisma migrate reset
+pnpm exec prisma migrate reset
 ```
 
 ### Seeding
 
 ```bash
 # Run database seed
-npm run db:seed
+pnpm db:seed
 ```
 
 The seed file is located at `prisma/seed.ts` and populates initial plan data.
@@ -329,5 +329,5 @@ The seed file is located at `prisma/seed.ts` and populates initial plan data.
 
 ```bash
 # Open Prisma Studio for database exploration
-npx prisma studio
+pnpm exec prisma studio
 ```

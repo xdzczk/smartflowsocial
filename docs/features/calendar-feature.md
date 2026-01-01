@@ -79,7 +79,7 @@ model Post {
 ### Migration
 
 ```bash
-npx prisma db push
+pnpm exec prisma db push
 ```
 
 ## API Endpoints

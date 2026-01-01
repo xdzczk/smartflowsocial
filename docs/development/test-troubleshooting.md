@@ -108,7 +108,7 @@ This guide helps you diagnose and fix common test issues.
      provider: "v8",
    }
    ```
-3. Run with coverage flag: `npm run test:coverage`
+3. Run with coverage flag: `pnpm test:coverage`
 4. Check coverage directory exists: `coverage/`
 
 ### Test Environment Issues
@@ -136,7 +136,7 @@ This guide helps you diagnose and fix common test issues.
 **Solutions**:
 1. Ensure dev server is running:
    ```bash
-   npm run dev
+   pnpm dev
    ```
 2. Check server is accessible at `http://localhost:3000`
 3. Verify `PORT` environment variable
@@ -172,10 +172,10 @@ This guide helps you diagnose and fix common test issues.
 **Solutions**:
 1. Ensure PostgreSQL is running:
    ```bash
-   npm run docker
+   pnpm docker
    ```
 2. Check `.env` has correct `DATABASE_URL`
-3. Run migrations: `npx prisma migrate deploy`
+3. Run migrations: `pnpm exec prisma migrate deploy`
 4. Verify test database is accessible
 
 ## Mocking Issues
@@ -229,7 +229,7 @@ This guide helps you diagnose and fix common test issues.
 **Symptoms**: CI fails with "Coverage threshold not met"
 
 **Solutions**:
-1. Review coverage report: `npm run test:coverage`
+1. Review coverage report: `pnpm test:coverage`
 2. Identify files with low coverage
 3. Add missing tests
 4. Adjust thresholds if needed (in `vitest.config.ts`)
@@ -252,7 +252,7 @@ This guide helps you diagnose and fix common test issues.
 1. Check coverage directory exists: `coverage/`
 2. Verify coverage reporters in `vitest.config.ts`
 3. Check file permissions
-4. Run coverage command: `npm run test:coverage`
+4. Run coverage command: `pnpm test:coverage`
 
 ## CI/CD Issues
 
@@ -265,7 +265,7 @@ This guide helps you diagnose and fix common test issues.
 2. Verify Node.js version matches local
 3. Check for timezone differences
 4. Review CI logs for specific errors
-5. Run tests in CI mode locally: `CI=true npm run test`
+5. Run tests in CI mode locally: `CI=true pnpm test`
 
 ### Coverage Upload Failing
 
@@ -321,13 +321,13 @@ This guide helps you diagnose and fix common test issues.
 ### 1. Run Single Test
 
 ```bash
-npm run test -- tests/unit/helpers.test.ts
+pnpm test -- tests/unit/helpers.test.ts
 ```
 
 ### 2. Run with Verbose Output
 
 ```bash
-npm run test -- --reporter=verbose
+pnpm test -- --reporter=verbose
 ```
 
 ### 3. Use Debugger
@@ -372,7 +372,7 @@ beforeEach(() => {
 ### Common Solutions
 
 1. **Clear cache**: `rm -rf node_modules/.vite`
-2. **Reinstall dependencies**: `rm -rf node_modules && npm install`
+2. **Reinstall dependencies**: `rm -rf node_modules && pnpm install`
 3. **Check environment**: Verify `.env` file exists
 4. **Review logs**: Check test output for specific errors
 5. **Isolate issue**: Run single test to identify problem

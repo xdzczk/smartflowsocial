@@ -137,7 +137,7 @@ Recurring job that checks for due posts and schedules them.
 Workers run in a separate process from the main application:
 
 ```bash
-npm run start:worker
+pnpm start:worker
 ```
 
 ### Worker Configuration
@@ -284,7 +284,7 @@ HGETALL bull:scheduled-posts:1
 Install BullMQ dashboard for visual monitoring:
 
 ```bash
-npm install @bull-board/express @bull-board/api
+pnpm add @bull-board/express @bull-board/api
 ```
 
 ### Application Logs
@@ -299,7 +299,7 @@ pm2 logs smartflow-worker
 docker logs smartflow-worker
 
 # Direct
-npm run start:worker
+pnpm start:worker
 ```
 
 ### Key Metrics to Monitor
@@ -410,7 +410,7 @@ npm run start:worker
 
 1. **Use Process Manager:**
    ```bash
-   pm2 start npm --name "worker" -- run start:worker
+   pm2 start pnpm --name "worker" -- run start:worker
    pm2 save
    ```
 
@@ -437,9 +437,9 @@ Run multiple worker instances:
 
 ```bash
 # PM2
-pm2 start npm --name "worker-1" -- run start:worker
-pm2 start npm --name "worker-2" -- run start:worker
-pm2 start npm --name "worker-3" -- run start:worker
+pm2 start pnpm --name "worker-1" -- run start:worker
+pm2 start pnpm --name "worker-2" -- run start:worker
+pm2 start pnpm --name "worker-3" -- run start:worker
 
 # Docker Compose
 docker-compose scale worker=3

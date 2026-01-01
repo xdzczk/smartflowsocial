@@ -30,7 +30,7 @@ TEST_DATABASE_URL=postgresql://user:password@localhost:5432/smartflow_test
 
 ```bash
 # Run migrations on test database
-TEST_DATABASE_URL=postgresql://... npx prisma migrate deploy
+TEST_DATABASE_URL=postgresql://... pnpm exec prisma migrate deploy
 ```
 
 ### 3. Write Database Tests
@@ -300,10 +300,10 @@ TEST_DATABASE_URL=${DATABASE_URL}
 createdb smartflow_test
 
 # Run migrations
-TEST_DATABASE_URL=postgresql://... npx prisma migrate deploy
+TEST_DATABASE_URL=postgresql://... pnpm exec prisma migrate deploy
 
 # Or use setup utility
-npm run test:db:setup
+pnpm test:db:setup
 ```
 
 ## Troubleshooting
@@ -316,7 +316,7 @@ Set `TEST_DATABASE_URL` in your `.env` file.
 
 Ensure PostgreSQL is running:
 ```bash
-npm run docker  # If using Docker
+pnpm docker  # If using Docker
 # or
 pg_ctl start    # If using local PostgreSQL
 ```
@@ -325,7 +325,7 @@ pg_ctl start    # If using local PostgreSQL
 
 Run migrations manually:
 ```bash
-TEST_DATABASE_URL=postgresql://... npx prisma migrate deploy
+TEST_DATABASE_URL=postgresql://... pnpm exec prisma migrate deploy
 ```
 
 ### "Transaction timeout"
@@ -349,10 +349,10 @@ await withDatabase(async (prisma) => {
 - name: Setup test database
   run: |
     createdb smartflow_test
-    TEST_DATABASE_URL=postgresql://... npx prisma migrate deploy
+    TEST_DATABASE_URL=postgresql://... pnpm exec prisma migrate deploy
 
 - name: Run database tests
-  run: npm run test:db
+  run: pnpm test:db
   env:
     TEST_DATABASE_URL: postgresql://...
 ```

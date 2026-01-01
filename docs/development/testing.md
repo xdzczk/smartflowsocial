@@ -27,7 +27,7 @@ SmartFlowSocial uses the following test types:
 Before running tests, ensure you have:
 
 1. **Node.js 20+** installed
-2. **Dependencies installed**: Run `npm install`
+2. **Dependencies installed**: Run `pnpm install`
 3. **Database running**: Ensure PostgreSQL is accessible (via Docker or local install)
 4. **Environment configured**: Copy `example.env` to `.env` and configure required variables
 5. **k6 installed** (optional, for load tests): See [Performance Testing Guide](./PERFORMANCE_TESTING.md)
@@ -71,7 +71,7 @@ Before running tests, ensure you have:
 Vitest and related dependencies should already be installed. If not, run:
 
 ```bash
-npm install --save-dev vitest @vitest/ui @vitest/coverage-v8 jsdom @testing-library/react @testing-library/jest-dom happy-dom
+pnpm add -D vitest @vitest/ui @vitest/coverage-v8 jsdom @testing-library/react @testing-library/jest-dom happy-dom
 ```
 
 ### Project Structure
@@ -145,13 +145,13 @@ describe("Scheduling Logic", () => {
 
 ```bash
 # Run all Vitest tests (unit, integration, property, security, performance)
-npm run test
+pnpm test
 
 # Run all tests with coverage
-npm run test:coverage
+pnpm test:coverage
 
 # Run all tests and show Cypress instructions
-npm run test:all
+pnpm test:all
 ```
 
 ### Vitest Tests (Unit & Integration)
@@ -160,31 +160,31 @@ Vitest tests run **without** a development server and are much faster than Cypre
 
 ```bash
 # Run all Vitest tests once
-npm run test
+pnpm test
 
 # Run tests in watch mode (recommended for development)
-npm run test:watch
+pnpm test:watch
 
 # Run tests with UI
-npm run test:ui
+pnpm test:ui
 
 # Run tests with coverage report
-npm run test:coverage
+pnpm test:coverage
 
 # Run only unit tests
-npm run test:unit
+pnpm test:unit
 
 # Run only integration tests
-npm run test:integration
+pnpm test:integration
 
 # Run property-based tests
-npm run test:property
+pnpm test:property
 
 # Run security tests
-npm run test:security
+pnpm test:security
 
 # Run performance tests
-npm run test:performance
+pnpm test:performance
 ```
 
 ### Cypress Tests (E2E)
@@ -194,46 +194,46 @@ npm run test:performance
 
 ```bash
 # Terminal 1: Start the dev server
-npm run dev
+pnpm dev
 
 # Terminal 2: Run Cypress tests
-npm run test:e2e
+pnpm test:e2e
 ```
 
 ### Available Test Commands
 
 | Command | Description | Framework |
 |---------|-------------|-----------|
-| `npm run test` | Run all Vitest tests | Vitest |
-| `npm run test:watch` | Run Vitest in watch mode | Vitest |
-| `npm run test:ui` | Open Vitest UI for interactive testing | Vitest |
-| `npm run test:coverage` | Generate coverage report | Vitest |
-| `npm run test:coverage:report` | Generate coverage and record trend | Vitest |
-| `npm run test:coverage:trend` | View coverage trend report | Vitest |
-| `npm run test:unit` | Run unit tests only | Vitest |
-| `npm run test:integration` | Run integration tests only | Vitest |
-| `npm run test:property` | Run property-based tests | Vitest |
-| `npm run test:security` | Run security tests | Vitest |
-| `npm run test:performance` | Run performance tests | Vitest |
-| `npm run test:e2e` | Run all Cypress E2E tests | Cypress |
-| `npm run test:e2e:open` | Open Cypress UI for interactive testing | Cypress |
-| `npm run test:e2e:dev` | Starts dev server and opens Cypress | Cypress |
-| `npm run test:all` | Run Vitest tests + show Cypress instructions | Vitest |
+| `pnpm test` | Run all Vitest tests | Vitest |
+| `pnpm test:watch` | Run Vitest in watch mode | Vitest |
+| `pnpm test:ui` | Open Vitest UI for interactive testing | Vitest |
+| `pnpm test:coverage` | Generate coverage report | Vitest |
+| `pnpm test:coverage:report` | Generate coverage and record trend | Vitest |
+| `pnpm test:coverage:trend` | View coverage trend report | Vitest |
+| `pnpm test:unit` | Run unit tests only | Vitest |
+| `pnpm test:integration` | Run integration tests only | Vitest |
+| `pnpm test:property` | Run property-based tests | Vitest |
+| `pnpm test:security` | Run security tests | Vitest |
+| `pnpm test:performance` | Run performance tests | Vitest |
+| `pnpm test:e2e` | Run all Cypress E2E tests | Cypress |
+| `pnpm test:e2e:open` | Open Cypress UI for interactive testing | Cypress |
+| `pnpm test:e2e:dev` | Starts dev server and opens Cypress | Cypress |
+| `pnpm test:all` | Run Vitest tests + show Cypress instructions | Vitest |
 
 ### Running Specific Tests
 
 ```bash
 # Vitest - Run a single test file
-npm run test -- tests/unit/scheduling-logic.test.ts
+pnpm test -- tests/unit/scheduling-logic.test.ts
 
 # Vitest - Run tests matching a pattern
-npm run test -- --grep "dashboard"
+pnpm test -- --grep "dashboard"
 
 # Cypress - Run a single test file
-npx cypress run --spec "tests/e2e/smoke.cy.ts"
+pnpm exec cypress run --spec "tests/e2e/smoke.cy.ts"
 
 # Cypress - Run tests in a specific folder
-npx cypress run --spec "tests/e2e/posts/**/*.cy.ts"
+pnpm exec cypress run --spec "tests/e2e/posts/**/*.cy.ts"
 ```
 
 ---
@@ -452,22 +452,22 @@ Vitest is used for both unit tests and integration tests. It runs tests in Node.
 
 ```bash
 # Run all tests once
-npm run test
+pnpm test
 
 # Watch mode (recommended for development)
-npm run test:watch
+pnpm test:watch
 
 # Run with UI
-npm run test:ui
+pnpm test:ui
 
 # Generate coverage
-npm run test:coverage
+pnpm test:coverage
 
 # Run only unit tests
-npm run test:unit
+pnpm test:unit
 
 # Run only integration tests
-npm run test:integration
+pnpm test:integration
 ```
 
 ### Configuration
@@ -491,7 +491,7 @@ Property-based testing generates random inputs to test functions, automatically 
 ### Installation
 
 ```bash
-npm install --save-dev fast-check
+pnpm add -D fast-check
 ```
 
 ### Example
@@ -530,7 +530,7 @@ it("should always return a string for valid date inputs", () => {
 ### Running Property-Based Tests
 
 ```bash
-npm run test:property
+pnpm test:property
 ```
 
 ---
@@ -585,10 +585,10 @@ Located in `tests/security/`, these tests verify:
 
 ```bash
 # Run all security tests
-npm run test:security
+pnpm test:security
 
 # Run specific security test file
-npm run test tests/security/xss-prevention.test.ts
+pnpm test tests/security/xss-prevention.test.ts
 ```
 
 ---
@@ -629,7 +629,7 @@ Or download from [k6.io](https://k6.io/docs/getting-started/installation/)
 
 ```bash
 # Unit performance tests
-npm run test:performance
+pnpm test:performance
 
 # k6 load tests
 k6 run tests/performance/api-endpoints.js
@@ -637,7 +637,7 @@ k6 run tests/performance/bulk-operations.js
 k6 run tests/performance/loader-performance.js
 
 # All performance tests
-npm run test:performance:all
+pnpm test:performance:all
 ```
 
 ### Performance Benchmarks
@@ -814,7 +814,7 @@ See [CI/CD Guide](./ci-cd.md) for details.
 Ensure the dev server is running:
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 ### Tests timing out
@@ -825,13 +825,13 @@ npm run dev
 
 ### Database-related failures
 
-1. Ensure PostgreSQL is running: `npm run docker` (if using Docker)
+1. Ensure PostgreSQL is running: `pnpm docker` (if using Docker)
 2. Check `.env` has correct `DATABASE_URL`
-3. Run migrations: `npx prisma migrate deploy`
+3. Run migrations: `pnpm exec prisma migrate deploy`
 
 ### Coverage threshold failures
 
-1. Review coverage report: `npm run test:coverage`
+1. Review coverage report: `pnpm test:coverage`
 2. Add missing tests
 3. Adjust thresholds if needed (in `vitest.config.ts`)
 

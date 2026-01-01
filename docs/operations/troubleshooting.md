@@ -36,7 +36,7 @@ This guide helps you diagnose and resolve common issues with SmartFlowSocial.
    kill -9 <PID>
    
    # Or use a different port
-   PORT=3001 npm start
+   PORT=3001 pnpm start
    ```
 
 2. **Check Environment Variables:**
@@ -50,8 +50,8 @@ This guide helps you diagnose and resolve common issues with SmartFlowSocial.
 
 3. **Reinstall Dependencies:**
    ```bash
-   rm -rf node_modules package-lock.json
-   npm install
+   rm -rf node_modules pnpm-lock.yaml
+   pnpm install
    ```
 
 4. **Check Node.js Version:**
@@ -82,7 +82,7 @@ This guide helps you diagnose and resolve common issues with SmartFlowSocial.
    pm2 monit
    
    # Increase Node.js memory limit
-   NODE_OPTIONS="--max-old-space-size=4096" npm start
+   NODE_OPTIONS="--max-old-space-size=4096" pnpm start
    ```
 
 3. **Check for Memory Leaks:**
@@ -102,7 +102,7 @@ This guide helps you diagnose and resolve common issues with SmartFlowSocial.
 1. **Check Database Connection:**
    ```bash
    # Test database connection
-   npx prisma db execute --stdin <<< "SELECT 1"
+   pnpm exec prisma db execute --stdin <<< "SELECT 1"
    ```
 
 2. **Check Database URL:**
@@ -151,7 +151,7 @@ This guide helps you diagnose and resolve common issues with SmartFlowSocial.
    psql $DATABASE_URL -c "SELECT 1"
    
    # Using Prisma
-   npx prisma db execute --stdin <<< "SELECT 1"
+   pnpm exec prisma db execute --stdin <<< "SELECT 1"
    ```
 
 4. **Check Firewall:**
@@ -171,22 +171,22 @@ This guide helps you diagnose and resolve common issues with SmartFlowSocial.
 
 1. **Check Migration Status:**
    ```bash
-   npx prisma migrate status
+   pnpm exec prisma migrate status
    ```
 
 2. **Reset Database (Development Only):**
    ```bash
-   npx prisma migrate reset
+   pnpm exec prisma migrate reset
    ```
 
 3. **Create New Migration:**
    ```bash
-   npx prisma migrate dev --name migration_name
+   pnpm exec prisma migrate dev --name migration_name
    ```
 
 4. **Deploy Migrations (Production):**
    ```bash
-   npx prisma migrate deploy
+   pnpm exec prisma migrate deploy
    ```
 
 ### Slow Queries
@@ -406,7 +406,7 @@ See [Queue System Documentation](./queue-system.md) for more details.
 
 2. **Increase Memory Limit:**
    ```bash
-   NODE_OPTIONS="--max-old-space-size=4096" npm start
+   NODE_OPTIONS="--max-old-space-size=4096" pnpm start
    ```
 
 3. **Check for Memory Leaks:**
@@ -435,19 +435,19 @@ See [Queue System Documentation](./queue-system.md) for more details.
 
 1. **Check Build Logs:**
    ```bash
-   npm run build
+   pnpm run build
    # Review error messages
    ```
 
 2. **Check TypeScript:**
    ```bash
-   npx tsc --noEmit
+   pnpm exec tsc --noEmit
    ```
 
 3. **Check Dependencies:**
    ```bash
-   npm install
-   npm run build
+   pnpm install
+   pnpm run build
    ```
 
 ### Deployment Errors
@@ -586,10 +586,10 @@ See [Queue System Documentation](./queue-system.md) for more details.
 
 ```bash
 # Set debug environment variable
-DEBUG=* npm start
+DEBUG=* pnpm start
 
 # Or specific module
-DEBUG=prisma:* npm start
+DEBUG=prisma:* pnpm start
 ```
 
 ### Check Application State
@@ -622,7 +622,7 @@ nslookup your-domain.com
 
 ```bash
 # Prisma Studio
-npx prisma studio
+pnpm exec prisma studio
 
 # Direct database access
 psql $DATABASE_URL

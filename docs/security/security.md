@@ -400,13 +400,13 @@ Keep dependencies up to date:
 
 ```bash
 # Check for vulnerabilities
-npm audit
+pnpm audit
 
 # Fix vulnerabilities
-npm audit fix
+pnpm audit fix
 
 # Update dependencies
-npm update
+pnpm update
 ```
 
 ### Automated Security Scanning
@@ -415,12 +415,12 @@ Use tools like:
 
 1. **Dependabot** (GitHub)
 2. **Snyk**
-3. **npm audit**
+3. **pnpm audit**
 4. **OWASP Dependency-Check**
 
 ### Lock File Security
 
-- ✅ Commit `package-lock.json`
+- ✅ Commit `pnpm-lock.yaml`
 - ✅ Use exact versions in production
 - ✅ Review dependency changes
 

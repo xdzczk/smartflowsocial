@@ -157,7 +157,7 @@ const freeInvoice = await createPlanInvoice({
 ### Test Environment Setup
 1. Set up a test Lightning wallet with NWC
 2. Configure `OWNER_NWC` environment variable
-3. Seed database with test plans: `npm run db:seed`
+3. Seed database with test plans: `pnpm db:seed`
 4. Test the full payment flow on development server
 
 ## Error Handling
