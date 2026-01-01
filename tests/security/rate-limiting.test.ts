@@ -27,6 +27,8 @@ describe("Rate Limiting", () => {
       ip: "127.0.0.1",
       socket: {
         remoteAddress: "127.0.0.1",
+      // Dynamic import() type annotation needed for type reference
+      // eslint-disable-next-line @typescript-eslint/consistent-type-imports
       } as unknown as import("net").Socket,
       path: "/api/test",
       method: "GET",

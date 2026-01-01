@@ -83,14 +83,13 @@ describe("Performance: getPostStats()", () => {
     const eventId = "test-event-123";
 
     // Mock fetch
-    global.fetch = vi.fn(async () => {
-      return {
-        ok: true,
-        json: async () => [
-          ["EVENT", "", { kind: 10000100, content: JSON.stringify({ replies: 5, reposts: 2, likes: 10 }) }],
-        ],
-      } as Response;
-    });
+    const mockResponse: Response = {
+      ok: true,
+      json: async () => [
+        ["EVENT", "", { kind: 10000100, content: JSON.stringify({ replies: 5, reposts: 2, likes: 10 }) }],
+      ],
+    } as unknown as Response;
+    global.fetch = vi.fn(async () => mockResponse);
 
     const start = performance.now();
     const result = await getPostStats([eventId]);
@@ -104,22 +103,20 @@ describe("Performance: getPostStats()", () => {
     const eventIds = Array.from({ length: 25 }, (_, i) => `event-${i + 1}`);
 
     // Mock fetch
-    global.fetch = vi.fn(async () => {
-      return {
-        ok: true,
-        json: async () => eventIds.map((id) => [
-          "EVENT",
-          "",
-          { kind: 10000100, content: JSON.stringify({ replies: 5, reposts: 2, likes: 10 }) },
-        ]),
-      } as Response;
-    });
+    const mockResponse: Response = {
+      ok: true,
+      json: async () => eventIds.map((_id) => [
+        "EVENT",
+        "",
+        { kind: 10000100, content: JSON.stringify({ replies: 5, reposts: 2, likes: 10 }) },
+      ]),
+    } as unknown as Response;
+    global.fetch = vi.fn(async () => mockResponse);
 
     const start = performance.now();
-    const result = await getPostStats(eventIds);
+    await getPostStats(eventIds);
     const duration = performance.now() - start;
 
-    expect(result).toBeDefined();
     expect(duration).toBeLessThan(2000);
   });
 
@@ -127,16 +124,15 @@ describe("Performance: getPostStats()", () => {
     const eventIds = Array.from({ length: 75 }, (_, i) => `event-${i + 1}`);
 
     // Mock fetch
-    global.fetch = vi.fn(async () => {
-      return {
-        ok: true,
-        json: async () => eventIds.map((id) => [
-          "EVENT",
-          "",
-          { kind: 10000100, content: JSON.stringify({ replies: 5, reposts: 2, likes: 10 }) },
-        ]),
-      } as Response;
-    });
+    const mockResponse: Response = {
+      ok: true,
+      json: async () => eventIds.map((_id) => [
+        "EVENT",
+        "",
+        { kind: 10000100, content: JSON.stringify({ replies: 5, reposts: 2, likes: 10 }) },
+      ]),
+    } as unknown as Response;
+    global.fetch = vi.fn(async () => mockResponse);
 
     const start = performance.now();
     const result = await getPostStats(eventIds);

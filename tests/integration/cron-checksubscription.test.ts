@@ -7,7 +7,7 @@
  * Comprehensive test coverage is essential.
  */
 
-import { json } from "@remix-run/node";
+import { LN } from "@getalby/sdk/lnclient";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock dependencies
 vi.mock("~/models/user.server", () => ({
@@ -63,8 +63,6 @@ import { decrypt } from "~/lib/encryption.server";
 import { sendNostrDirectMessage } from "~/lib/nostr.messenger.server";
 import { createRenewalPayment, updateUserSubscription } from "~/models/payment.server";
 import { getEnabledUsersWithSubscriptions, disableUserAccount } from "~/models/user.server";
-
-import { LN } from "@getalby/sdk/lnclient";
 
 describe("Cron Subscription Checker", () => {
   const TEST_USER_ID = "user-123";
@@ -311,7 +309,7 @@ describe("Cron Subscription Checker", () => {
       // Mock the constructor to return our configured instance
       // Use a constructor function that returns the instance
       const lnMock = LN as unknown as { mockImplementation: (fn: (credentials: string) => typeof mockLNInstance) => void };
-      lnMock.mockImplementation(function(credentials: string) {
+      lnMock.mockImplementation(function(_credentials: string) {
         return mockLNInstance;
       });
 

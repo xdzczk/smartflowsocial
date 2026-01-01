@@ -7,7 +7,6 @@
  * Migrated from: tests/e2e/loaders/queues-loader.cy.ts (Drafts Queue Loader section)
  */
 
-import { json } from "@remix-run/node";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock Prisma to prevent $use errors
@@ -58,7 +57,8 @@ describe("Drafts Loader Integration", () => {
   describe("Drafts Loader", () => {
     it("should load drafts data for authenticated user", async () => {
       const request = new Request("http://localhost:3000/dashboard/drafts");
-      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
+      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
+      const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
 
@@ -127,7 +127,8 @@ describe("Drafts Loader Integration", () => {
       (loadDraftsData as ReturnType<typeof vi.fn>).mockResolvedValue(mockData);
 
       const request = new Request("http://localhost:3000/dashboard/drafts");
-      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
+      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
+      const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
 
@@ -149,7 +150,8 @@ describe("Drafts Loader Integration", () => {
       );
 
       const request = new Request("http://localhost:3000/dashboard/drafts");
-      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
+      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
+      const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
       
@@ -166,7 +168,8 @@ describe("Drafts Loader Integration", () => {
       );
 
       const request = new Request("http://localhost:3000/dashboard/drafts");
-      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
+      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
+      const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
       
@@ -182,8 +185,9 @@ describe("Drafts Loader Integration", () => {
         new Error("Feature access denied")
       );
 
-      const request = new Request("http://localhost:3000/dashboard/drafts");
-      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
+      const _request = new Request("http://localhost:3000/dashboard/drafts");
+      const loaderArgs: LoaderFunctionArgs = { request: _request, params: {}, context: {} };
+      const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
       

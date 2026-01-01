@@ -4,8 +4,8 @@
  * Tests the action handler in app/features/posts/services/newlongform-action.server.ts
  */
 
-import { redirect } from "@remix-run/node";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
 // Mock global fetch
 global.fetch = vi.fn();
 
@@ -66,7 +66,7 @@ vi.mock("@remix-run/node", async () => {
       return async (part: { filename?: string; name?: string; data: AsyncIterable<Uint8Array> }) => {
         if (part.filename) {
           // It's a file - process through the first handler (S3 upload handler)
-          const firstHandler = handlers[0];
+          const firstHandler = handlers[0] as ((part: { filename?: string; name?: string; data: AsyncIterable<Uint8Array> }) => Promise<unknown>) | undefined;
           if (firstHandler) {
             return await firstHandler(part);
           }
@@ -89,7 +89,7 @@ vi.mock("@remix-run/node", async () => {
       try {
         const formData = request && typeof request === "object" && "formData" in request && typeof request.formData === "function" ? await request.formData() : new FormData();
         return formData;
-      } catch (error) {
+      } catch (_error) {
         // If parsing fails, return empty FormData
         return new FormData();
       }
@@ -234,6 +234,7 @@ describe("New Longform Action Handler", () => {
       const response = await handleNewLongFormAction(TEST_USER_ID, request);
 
       expect(createLongFormPost).toHaveBeenCalledWith(
+        // expect.objectContaining returns 'any' - acceptable for test mocks
         expect.objectContaining({
           userId: TEST_USER_ID,
           title: "Test Post",
@@ -304,7 +305,9 @@ describe("New Longform Action Handler", () => {
       await handleNewLongFormAction(TEST_USER_ID, request);
 
       expect(createLongFormPost).toHaveBeenCalledWith(
+        // expect.objectContaining returns 'any' - acceptable for test mocks
         expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           tags: expect.arrayContaining(["tag1", "tag2", "tag3", "tag4"]),
         }),
       );
@@ -326,6 +329,7 @@ describe("New Longform Action Handler", () => {
       await handleNewLongFormAction(TEST_USER_ID, request);
 
       expect(createLongFormPost).toHaveBeenCalledWith(
+        // expect.objectContaining returns 'any' - acceptable for test mocks
         expect.objectContaining({
           queueTypeId: null,
         }),
@@ -376,6 +380,7 @@ describe("New Longform Action Handler", () => {
       const response = await handleNewLongFormAction(TEST_USER_ID, request);
 
       expect(createLongFormPost).toHaveBeenCalledWith(
+        // expect.objectContaining returns 'any' - acceptable for test mocks
         expect.objectContaining({
           userId: TEST_USER_ID,
           title: "Test Post",
@@ -497,7 +502,9 @@ describe("New Longform Action Handler", () => {
       await handleNewLongFormAction(TEST_USER_ID, request);
 
       expect(createLongFormPost).toHaveBeenCalledWith(
+        // expect.objectContaining returns 'any' - acceptable for test mocks
         expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           content: expect.stringContaining("#marketing #social"),
         }),
       );
@@ -570,6 +577,7 @@ describe("New Longform Action Handler", () => {
       const response = await handleNewLongFormAction(TEST_USER_ID, request);
 
       expect(createLongFormPost).toHaveBeenCalledWith(
+        // expect.objectContaining returns 'any' - acceptable for test mocks
         expect.objectContaining({
           isPublished: false,
           scheduledFor: "1704067200",
@@ -627,6 +635,7 @@ describe("New Longform Action Handler", () => {
 
       expect(getHashTagPresetById).toHaveBeenCalledWith(TEST_USER_ID, "preset-1");
       expect(createLongFormPost).toHaveBeenCalledWith(
+        // expect.objectContaining returns 'any' - acceptable for test mocks
         expect.objectContaining({
           hashTagPresetId: "preset-1",
         }),
@@ -665,6 +674,7 @@ describe("New Longform Action Handler", () => {
 
       expect(getQueueTypes).toHaveBeenCalledWith(TEST_USER_ID);
       expect(createLongFormPost).toHaveBeenCalledWith(
+        // expect.objectContaining returns 'any' - acceptable for test mocks
         expect.objectContaining({
           hashTagPresetId: "preset-1",
         }),

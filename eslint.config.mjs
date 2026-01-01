@@ -48,6 +48,7 @@ export default (async () => {
       "mocks/**",
       "*.config.js",
       ".eslintrc.js",
+      "tests/e2e/cypress.config.mobile.ts", // Exclude from all linting (parser limitation)
     ],
   },
 
@@ -99,10 +100,39 @@ export default (async () => {
     },
   },
 
+  // E2E test config files (no type-aware parsing) - MUST come before general TypeScript config
+  {
+    files: ["tests/e2e/**/*.config.ts"],
+    plugins: {
+      "@typescript-eslint": tseslintPlugin,
+      import: importPlugin,
+    },
+    languageOptions: {
+      parser: tseslintParser,
+      // Explicitly set parserOptions to empty object to prevent type-aware parsing
+      parserOptions: {},
+      globals: {
+        ...globals.node,
+      },
+    },
+    rules: {
+      // Only non-type-aware rules for config files
+      "@typescript-eslint/no-explicit-any": "off", // Requires type info
+      "@typescript-eslint/no-unsafe-assignment": "off", // Requires type info
+      "@typescript-eslint/no-unsafe-member-access": "off", // Requires type info
+      "@typescript-eslint/no-unsafe-call": "off", // Requires type info
+      "no-console": "off",
+      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+      "import/order": "off", // Config files don't need strict import ordering
+      "import/no-restricted-paths": "off",
+      "no-restricted-imports": "off",
+    },
+  },
+
   // TypeScript config
   {
     files: ["**/*.{ts,tsx}"],
-    ignores: ["tailwind.config.ts"], // Exclude from type-aware parsing (not in tsconfig)
+    ignores: ["tailwind.config.ts", "tests/e2e/**/*.config.ts"], // Exclude from type-aware parsing
     plugins: {
       "@typescript-eslint": tseslintPlugin,
       import: importPlugin,
@@ -462,30 +492,73 @@ export default (async () => {
       ...jest.configs.recommended.rules,
       ...jestDom.configs.recommended.rules,
       ...testingLibrary.configs.react.rules,
-      // Relax Tier 1 rules for tests
-      "@typescript-eslint/no-explicit-any": "warn",
-      "@typescript-eslint/no-unsafe-assignment": "warn",
-      "@typescript-eslint/no-unsafe-member-access": "warn",
-      "@typescript-eslint/no-unsafe-call": "warn",
-      "@typescript-eslint/no-floating-promises": "warn",
-      "@typescript-eslint/await-thenable": "warn",
-      "@typescript-eslint/no-misused-promises": "warn",
-      "@typescript-eslint/no-unnecessary-type-assertion": "warn",
-      "@typescript-eslint/consistent-type-assertions": "warn",
+      // Tier 1 — Must be zero (same strictness as production code)
+      "@typescript-eslint/no-explicit-any": "error",
+      "@typescript-eslint/no-unsafe-assignment": "error",
+      "@typescript-eslint/no-unsafe-member-access": "error",
+      "@typescript-eslint/no-unsafe-call": "error",
+      "@typescript-eslint/no-floating-promises": "error",
+      "@typescript-eslint/await-thenable": "error",
+      "@typescript-eslint/no-misused-promises": "error",
+      "@typescript-eslint/no-unnecessary-type-assertion": "error",
+      "@typescript-eslint/consistent-type-assertions": [
+        "error",
+        {
+          assertionStyle: "as",
+          objectLiteralTypeAssertions: "never",
+        },
+      ],
       "@typescript-eslint/restrict-template-expressions": [
-        "warn",
+        "error",
         {
           allowNumber: true,
           allowBoolean: true,
-          allowAny: true,
-          allowNullish: true,
+          allowAny: false,
+          allowNullish: false,
         },
       ],
-      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
-      "no-console": "off",
-      "import/order": "warn",
-      "import/no-restricted-paths": "off", // Tests can import from anywhere
-      "no-restricted-imports": "off", // Tests can import anything
+      // Tier 2 — Strongly preferred to be zero (same as production)
+      "@typescript-eslint/consistent-type-imports": [
+        "warn",
+        {
+          prefer: "type-imports",
+          fixStyle: "separate-type-imports",
+        },
+      ],
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          args: "after-used",
+          ignoreRestSiblings: true,
+        },
+      ],
+      "no-unused-vars": "off", // Use @typescript-eslint/no-unused-vars instead
+      "@typescript-eslint/prefer-nullish-coalescing": "warn",
+      "@typescript-eslint/prefer-optional-chain": "warn",
+      "@typescript-eslint/no-inferrable-types": "warn",
+      "@typescript-eslint/ban-ts-comment": [
+        "warn",
+        {
+          "ts-expect-error": "allow-with-description",
+          "ts-ignore": "allow-with-description",
+          "ts-nocheck": "allow-with-description",
+          "ts-check": false,
+        },
+      ],
+      "import/order": [
+        "error",
+        {
+          alphabetize: { caseInsensitive: true, order: "asc" },
+          groups: ["builtin", "external", "internal", "parent", "sibling"],
+          "newlines-between": "always",
+        },
+      ],
+      "no-console": "off", // Tests may need console for debugging
+      "import/no-restricted-paths": "off", // Tests can import from anywhere for testing
+      "no-restricted-imports": "off", // Tests can import anything for testing
     },
   },
 
@@ -495,45 +568,92 @@ export default (async () => {
     plugins: {
       "@typescript-eslint": tseslintPlugin,
       import: importPlugin,
+      jest,
       ...(cypressPlugin && { cypress: cypressPlugin }),
     },
     rules: {
       ...(cypressPlugin?.configs?.recommended?.rules || {}),
-      // Relax Tier 1 rules for E2E tests
-      "@typescript-eslint/no-explicit-any": "warn",
-      "@typescript-eslint/no-unsafe-assignment": "warn",
-      "@typescript-eslint/no-unsafe-member-access": "warn",
-      "@typescript-eslint/no-unsafe-call": "warn",
-      "@typescript-eslint/no-floating-promises": "warn",
-      "@typescript-eslint/await-thenable": "warn",
-      "@typescript-eslint/no-misused-promises": "warn",
-      "@typescript-eslint/no-unnecessary-type-assertion": "warn",
-      "@typescript-eslint/consistent-type-assertions": "warn",
+      // Tier 1 — Must be zero (same strictness as production code)
+      "@typescript-eslint/no-explicit-any": "error",
+      "@typescript-eslint/no-unsafe-assignment": "error",
+      "@typescript-eslint/no-unsafe-member-access": "error",
+      "@typescript-eslint/no-unsafe-call": "error",
+      "@typescript-eslint/no-floating-promises": "error",
+      "@typescript-eslint/await-thenable": "error",
+      "@typescript-eslint/no-misused-promises": "error",
+      "@typescript-eslint/no-unnecessary-type-assertion": "error",
+      "@typescript-eslint/consistent-type-assertions": [
+        "error",
+        {
+          assertionStyle: "as",
+          objectLiteralTypeAssertions: "never",
+        },
+      ],
       "@typescript-eslint/restrict-template-expressions": [
-        "warn",
+        "error",
         {
           allowNumber: true,
           allowBoolean: true,
-          allowAny: true,
-          allowNullish: true,
+          allowAny: false,
+          allowNullish: false,
         },
       ],
-      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
-      "no-console": "off",
-      "import/order": "warn",
-      "import/no-restricted-paths": "off",
-      "no-restricted-imports": "off",
+      // Tier 2 — Strongly preferred to be zero (same as production)
+      "@typescript-eslint/consistent-type-imports": [
+        "warn",
+        {
+          prefer: "type-imports",
+          fixStyle: "separate-type-imports",
+        },
+      ],
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          args: "after-used",
+          ignoreRestSiblings: true,
+        },
+      ],
+      "no-unused-vars": "off", // Use @typescript-eslint/no-unused-vars instead
+      "@typescript-eslint/prefer-nullish-coalescing": "warn",
+      "@typescript-eslint/prefer-optional-chain": "warn",
+      "@typescript-eslint/no-inferrable-types": "warn",
+      "@typescript-eslint/ban-ts-comment": [
+        "warn",
+        {
+          "ts-expect-error": "allow-with-description",
+          "ts-ignore": "allow-with-description",
+          "ts-nocheck": "allow-with-description",
+          "ts-check": false,
+        },
+      ],
+      "import/order": [
+        "error",
+        {
+          alphabetize: { caseInsensitive: true, order: "asc" },
+          groups: ["builtin", "external", "internal", "parent", "sibling"],
+          "newlines-between": "always",
+        },
+      ],
+      "no-console": "off", // E2E tests may need console for debugging
+      "import/no-restricted-paths": "off", // E2E tests can import from anywhere
+      "no-restricted-imports": "off", // E2E tests can import anything
       ...(cypressPlugin && { "cypress/no-unnecessary-waiting": "warn" }),
       "jest/valid-expect": "off", // Cypress uses different assertion syntax (.to.be.true)
+      "jest/expect-expect": "off", // Cypress tests use implicit assertions
     },
   },
 
   // E2E tests - tests/e2e directory (uses separate tsconfig)
   {
     files: ["tests/e2e/**/*.ts"],
+    ignores: ["tests/e2e/**/*.config.ts"], // Exclude config files
     plugins: {
       "@typescript-eslint": tseslintPlugin,
       import: importPlugin,
+      jest,
       ...(cypressPlugin && { cypress: cypressPlugin }),
     },
     languageOptions: {
@@ -545,32 +665,76 @@ export default (async () => {
     },
     rules: {
       ...(cypressPlugin?.configs?.recommended?.rules || {}),
-      // Relax Tier 1 rules for E2E tests
-      "@typescript-eslint/no-explicit-any": "warn",
-      "@typescript-eslint/no-unsafe-assignment": "warn",
-      "@typescript-eslint/no-unsafe-member-access": "warn",
-      "@typescript-eslint/no-unsafe-call": "warn",
-      "@typescript-eslint/no-floating-promises": "warn",
-      "@typescript-eslint/await-thenable": "warn",
-      "@typescript-eslint/no-misused-promises": "warn",
-      "@typescript-eslint/no-unnecessary-type-assertion": "warn",
-      "@typescript-eslint/consistent-type-assertions": "warn",
+      // Tier 1 — Must be zero (same strictness as production code)
+      "@typescript-eslint/no-explicit-any": "error",
+      "@typescript-eslint/no-unsafe-assignment": "error",
+      "@typescript-eslint/no-unsafe-member-access": "error",
+      "@typescript-eslint/no-unsafe-call": "error",
+      "@typescript-eslint/no-floating-promises": "error",
+      "@typescript-eslint/await-thenable": "error",
+      "@typescript-eslint/no-misused-promises": "error",
+      "@typescript-eslint/no-unnecessary-type-assertion": "error",
+      "@typescript-eslint/consistent-type-assertions": [
+        "error",
+        {
+          assertionStyle: "as",
+          objectLiteralTypeAssertions: "never",
+        },
+      ],
       "@typescript-eslint/restrict-template-expressions": [
-        "warn",
+        "error",
         {
           allowNumber: true,
           allowBoolean: true,
-          allowAny: true,
-          allowNullish: true,
+          allowAny: false,
+          allowNullish: false,
         },
       ],
-      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
-      "no-console": "off",
-      "import/order": "warn",
-      "import/no-restricted-paths": "off",
-      "no-restricted-imports": "off",
+      // Tier 2 — Strongly preferred to be zero (same as production)
+      "@typescript-eslint/consistent-type-imports": [
+        "warn",
+        {
+          prefer: "type-imports",
+          fixStyle: "separate-type-imports",
+        },
+      ],
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          args: "after-used",
+          ignoreRestSiblings: true,
+        },
+      ],
+      "no-unused-vars": "off", // Use @typescript-eslint/no-unused-vars instead
+      "@typescript-eslint/prefer-nullish-coalescing": "warn",
+      "@typescript-eslint/prefer-optional-chain": "warn",
+      "@typescript-eslint/no-inferrable-types": "warn",
+      "@typescript-eslint/ban-ts-comment": [
+        "warn",
+        {
+          "ts-expect-error": "allow-with-description",
+          "ts-ignore": "allow-with-description",
+          "ts-nocheck": "allow-with-description",
+          "ts-check": false,
+        },
+      ],
+      "import/order": [
+        "warn", // E2E tests: warning instead of error (best practice - less critical for test files)
+        {
+          alphabetize: { caseInsensitive: true, order: "asc" },
+          groups: ["builtin", "external", "internal", "parent", "sibling"],
+          "newlines-between": "always",
+        },
+      ],
+      "no-console": "off", // E2E tests may need console for debugging
+      "import/no-restricted-paths": "off", // E2E tests can import from anywhere
+      "no-restricted-imports": "off", // E2E tests can import anything
       ...(cypressPlugin && { "cypress/no-unnecessary-waiting": "warn" }),
       "jest/valid-expect": "off", // Cypress uses different assertion syntax (.to.be.true)
+      "jest/expect-expect": "off", // Cypress tests use implicit assertions
     },
   },
 

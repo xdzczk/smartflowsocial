@@ -35,14 +35,15 @@ describe("API: Publish", () => {
 
       const mockRelays = ["wss://relay1.com", "wss://relay2.com"];
 
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      const mockResponse: Response = {
         ok: true,
         status: 200,
         statusText: "OK",
         headers: new Headers({ "content-type": "application/json" }),
         json: async () => ({ success: true }),
         text: async () => "",
-      } as Response);
+      } as unknown as Response;
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(mockResponse);
 
       const request = new Request("http://localhost:3000/api/publish", {
         method: "POST",
@@ -53,7 +54,8 @@ describe("API: Publish", () => {
         }),
       });
 
-      const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+      const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
+      const response = await action(actionParams);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; message?: unknown; error?: unknown } : {};
 
@@ -78,14 +80,15 @@ describe("API: Publish", () => {
       const mockEvent = { id: "event-123" };
       const mockRelays = ["wss://relay1.com"];
 
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      const mockTextResponse: Response = {
         ok: true,
         status: 200,
         statusText: "OK",
         headers: new Headers({ "content-type": "text/plain" }),
         json: async () => ({}),
         text: async () => "Published successfully",
-      } as Response);
+      } as unknown as Response;
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(mockTextResponse);
 
       const request = new Request("http://localhost:3000/api/publish", {
         method: "POST",
@@ -96,7 +99,8 @@ describe("API: Publish", () => {
         }),
       });
 
-      const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+      const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
+      const response = await action(actionParams);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; message?: unknown; error?: unknown } : {};
 
@@ -110,7 +114,8 @@ describe("API: Publish", () => {
         method: "GET",
       });
 
-      const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+      const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
+      const response = await action(actionParams);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; message?: unknown; error?: unknown } : {};
 
@@ -151,7 +156,8 @@ describe("API: Publish", () => {
         body: "invalid json",
       });
 
-      const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+      const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
+      const response = await action(actionParams);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; message?: unknown; error?: unknown } : {};
 
@@ -169,7 +175,8 @@ describe("API: Publish", () => {
         }),
       });
 
-      const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+      const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
+      const response = await action(actionParams);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; message?: unknown; error?: unknown } : {};
 
@@ -188,7 +195,8 @@ describe("API: Publish", () => {
         }),
       });
 
-      const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+      const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
+      const response = await action(actionParams);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; message?: unknown; error?: unknown } : {};
 
@@ -207,7 +215,8 @@ describe("API: Publish", () => {
         }),
       });
 
-      const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+      const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
+      const response = await action(actionParams);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; message?: unknown; error?: unknown } : {};
 
@@ -228,7 +237,8 @@ describe("API: Publish", () => {
         }),
       });
 
-      const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+      const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
+      const response = await action(actionParams);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; message?: unknown; error?: unknown } : {};
 
@@ -251,7 +261,8 @@ describe("API: Publish", () => {
         }),
       });
 
-      const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+      const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
+      const response = await action(actionParams);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; message?: unknown; error?: unknown } : {};
 
@@ -278,7 +289,8 @@ describe("API: Publish", () => {
         }),
       });
 
-      const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+      const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
+      const response = await action(actionParams);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; message?: unknown; error?: unknown } : {};
 
@@ -305,7 +317,8 @@ describe("API: Publish", () => {
         }),
       });
 
-      const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+      const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
+      const response = await action(actionParams);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; message?: unknown; error?: unknown } : {};
 

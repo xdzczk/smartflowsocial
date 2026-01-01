@@ -6,6 +6,7 @@
  */
 
 import type { QueueType, $Enums } from "@prisma/client";
+
 /**
  * Test constants for scheduling tests
  */
@@ -16,10 +17,11 @@ export const BASE_TIME = new Date("2024-01-15T10:00:00Z"); // Monday, Jan 15, 20
  * Create a QueueType object for testing
  */
 export function createQueueType(overrides: Partial<QueueType> = {}): QueueType {
-  const queueType = {
+  const scheduleType: $Enums.ScheduleType = "INTERVAL";
+  const queueType: QueueType = {
     id: "queue-1",
     name: "posts",
-    scheduleType: "INTERVAL" as $Enums.ScheduleType,
+    scheduleType,
     scheduleConfig: { intervalHours: 6 },
     userId: TEST_USER_ID,
     isEnabled: true,
@@ -28,8 +30,10 @@ export function createQueueType(overrides: Partial<QueueType> = {}): QueueType {
     color: null,
     description: null,
     hashTagPresetId: null,
+    lastPostTime: null,
+    isDefault: false,
     ...overrides,
-  } as QueueType;
+  };
   return queueType;
 }
 
@@ -40,8 +44,9 @@ export function createIntervalQueueType(
   intervalHours: number,
   overrides: Partial<QueueType> = {},
 ): QueueType {
+  const scheduleType: $Enums.ScheduleType = "INTERVAL";
   return createQueueType({
-    scheduleType: "INTERVAL" as $Enums.ScheduleType,
+    scheduleType,
     scheduleConfig: { intervalHours },
     ...overrides,
   });

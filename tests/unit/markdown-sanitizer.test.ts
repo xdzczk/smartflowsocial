@@ -16,19 +16,20 @@ import {
 vi.mock("marked", () => {
   class MockRenderer {
     html = vi.fn(() => "");
-    link = vi.fn((href, title, text) => `<a href="${href}">${text}</a>`);
-    image = vi.fn((href, title, text) => `<img src="${href}" alt="${text}">`);
-    code = vi.fn((code) => `<code>${code}</code>`);
+    link = vi.fn((href, title, text) => `<a href="${String(href)}">${String(text)}</a>`);
+    image = vi.fn((href, title, text) => `<img src="${String(href)}" alt="${String(text)}">`);
+    code = vi.fn((code) => `<code>${String(code)}</code>`);
   }
 
   return {
     marked: vi.fn((markdown, _options) => {
       // Simple mock that returns basic HTML
       // For code blocks, return a pre/code structure
-      if (markdown.includes("```")) {
-        return `<pre><code>${markdown.replace(/```/g, "")}</code></pre>`;
+      const markdownStr = String(markdown);
+      if (markdownStr.includes("```")) {
+        return `<pre><code>${markdownStr.replace(/```/g, "")}</code></pre>`;
       }
-      return `<p>${markdown}</p>`;
+      return `<p>${String(markdown)}</p>`;
     }),
     Renderer: MockRenderer,
   };

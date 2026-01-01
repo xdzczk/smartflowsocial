@@ -5,6 +5,7 @@
   ],
   "include": [
     "**/*.cy.ts",
+    "**/*.config.ts",
     "support/**/*",
     "../../node_modules/cypress",
     "../../node_modules/@testing-library/cypress"

@@ -323,6 +323,7 @@ describe("Bulk Posts Handlers", () => {
       handleScheduleIntervalClick(2, posts, setPosts, false); // 2 hour interval
 
       const calls = Array.isArray(setPosts.mock.calls) && setPosts.mock.calls[0] ? setPosts.mock.calls[0] : [];
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const updatedPostsRaw = Array.isArray(calls) && calls[0] ? calls[0] : null;
       const updatedPosts = Array.isArray(updatedPostsRaw) ? updatedPostsRaw : [];
       expect(updatedPosts).toHaveLength(3);
@@ -351,6 +352,7 @@ describe("Bulk Posts Handlers", () => {
       handleScheduleIntervalClick(1, posts, setPosts, false);
 
       const calls = Array.isArray(setPosts.mock.calls) && setPosts.mock.calls[0] ? setPosts.mock.calls[0] : [];
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const updatedPostsRaw = Array.isArray(calls) && calls[0] ? calls[0] : null;
       const updatedPosts = Array.isArray(updatedPostsRaw) ? updatedPostsRaw : [];
       const firstPost = updatedPosts[0] && typeof updatedPosts[0] === "object" && !Array.isArray(updatedPosts[0]) ? updatedPosts[0] as { scheduledFor?: string } : {};
@@ -370,6 +372,7 @@ describe("Bulk Posts Handlers", () => {
       handleScheduleIntervalClick(1, posts, setPosts, true);
 
       const calls = Array.isArray(setPosts.mock.calls) && setPosts.mock.calls[0] ? setPosts.mock.calls[0] : [];
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const updatedPostsRaw = Array.isArray(calls) && calls[0] ? calls[0] : null;
       const updatedPosts = Array.isArray(updatedPostsRaw) ? updatedPostsRaw : [];
       const firstPost = updatedPosts[0] && typeof updatedPosts[0] === "object" && !Array.isArray(updatedPosts[0]) ? updatedPosts[0] as { scheduledFor?: string } : {};
@@ -389,6 +392,7 @@ describe("Bulk Posts Handlers", () => {
       handleScheduleIntervalClick(1, posts, setPosts, false);
 
       const calls = Array.isArray(setPosts.mock.calls) && setPosts.mock.calls[0] ? setPosts.mock.calls[0] : [];
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const updatedPostsRaw = Array.isArray(calls) && calls[0] ? calls[0] : null;
       const updatedPosts = Array.isArray(updatedPostsRaw) ? updatedPostsRaw : [];
       const firstPost = updatedPosts[0] && typeof updatedPosts[0] === "object" && !Array.isArray(updatedPosts[0]) ? updatedPosts[0] as { scheduledFor?: string } : {};
@@ -418,6 +422,7 @@ describe("Bulk Posts Handlers", () => {
       handleScheduleIntervalClick(3, posts, setPosts, false);
 
       const calls = Array.isArray(setPosts.mock.calls) && setPosts.mock.calls[0] ? setPosts.mock.calls[0] : [];
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const updatedPostsRaw = Array.isArray(calls) && calls[0] ? calls[0] : null;
       const updatedPosts = Array.isArray(updatedPostsRaw) ? updatedPostsRaw : [];
       const firstPost = updatedPosts[0] && typeof updatedPosts[0] === "object" && !Array.isArray(updatedPosts[0]) ? updatedPosts[0] as { scheduledFor?: string } : {};

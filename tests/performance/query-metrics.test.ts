@@ -4,7 +4,7 @@
  * Tests for query performance monitoring and metrics collection.
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 
 import {
   queryDurationHistogram,
@@ -88,6 +88,7 @@ describe("Query Metrics", () => {
  * });
  * ```
  */
+
 
 
 

@@ -9,21 +9,7 @@
  * - Edge cases and error handling
  */
 
-import type { QueueType } from "@prisma/client";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-
-import { calculateNextScheduleTime } from "~/features/posts/schedulers";
-
-
-import {
-  TEST_USER_ID,
-  BASE_TIME,
-  createQueueType,
-  createIntervalQueueType,
-  createFixedSlotsQueueType,
-  createTestDate,
-  createDateAtTime,
-} from "../utils/scheduling-test-helpers";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock dependencies
 vi.mock("~/models/post.queries.server", () => ({
@@ -34,8 +20,20 @@ vi.mock("~/models/user.server", () => ({
   getScheduleInterval: vi.fn(),
 }));
 
+// Import after vi.mock() for dynamic import pattern
+import { calculateNextScheduleTime } from "~/features/posts/schedulers";
 import { getLastPostTimeForQueue } from "~/models/post.queries.server";
 import { getScheduleInterval } from "~/models/user.server";
+
+import {
+  TEST_USER_ID,
+  BASE_TIME,
+  createQueueType,
+  createIntervalQueueType,
+  createFixedSlotsQueueType,
+  createTestDate,
+  createDateAtTime,
+} from "../utils/scheduling-test-helpers";
 
 describe("Scheduling Algorithms", () => {
   beforeEach(() => {
@@ -433,7 +431,7 @@ describe("Scheduling Algorithms", () => {
       const queueType = createQueueType({
         id: "queue-1",
         name: "posts",
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Testing edge case with invalid scheduleType
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment -- Testing edge case with invalid scheduleType
         scheduleType: "INVALID" as any,
         scheduleConfig: {},
       });
@@ -454,7 +452,7 @@ describe("Scheduling Algorithms", () => {
       const queueType = createIntervalQueueType(4, {
         id: "queue-1",
         name: "posts",
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Testing edge case with null scheduleConfig
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment -- Testing edge case with null scheduleConfig
         scheduleConfig: null as any,
       });
 

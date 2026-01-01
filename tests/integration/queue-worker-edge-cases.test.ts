@@ -16,10 +16,18 @@ import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
 vi.mock("bullmq", () => {
   class MockWorker {
     queueName: string;
+    // Dynamic import() type annotation needed for type reference
+    // eslint-disable-next-line @typescript-eslint/consistent-type-imports
     process: ((job: import("bullmq").Job) => Promise<unknown>) | undefined;
     close: ReturnType<typeof vi.fn>;
     
-    constructor(queueName: string, processor: ((job: import("bullmq").Job) => Promise<unknown>) | undefined, options?: unknown) {
+    constructor(
+      queueName: string,
+      // Dynamic import() type annotation needed for type reference
+      // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+      processor: ((job: import("bullmq").Job) => Promise<unknown>) | undefined,
+      _options?: unknown
+    ) {
       this.queueName = queueName;
       // Store the processor function so tests can call it
       this.process = processor;
@@ -75,11 +83,12 @@ vi.mock("~/infra/queue", () => ({
 global.fetch = vi.fn();
 
 import { prisma } from "~/lib/prisma.server";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Used via mock at runtime
 import { updateLongFormPostStatus } from "~/models/longformpost.server";
 import { updatePostStatus } from "~/models/post.commands.server";
 import { getUserById } from "~/models/user.server";
 
-import { TEST_USER_ID, createMockPost } from "../utils/test-helpers";
+import { TEST_USER_ID } from "../utils/test-helpers";
 
 // Import workers after mocks are set up
 interface MockWorkerType {
@@ -221,11 +230,7 @@ describe("Queue Worker Edge Cases", () => {
         userRelays: ["wss://relay1.com"],
       });
 
-      (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(() => {
-        return new Promise((_, reject) => {
-          setTimeout(() => reject(new Error("Network timeout")), 100);
-        });
-      });
+      (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Network timeout"));
 
       const mockJobData = {
         postId: TEST_POST_ID,

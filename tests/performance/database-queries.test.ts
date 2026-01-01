@@ -4,7 +4,7 @@
  * Tests to verify query optimization and prevent N+1 query problems.
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 // Mock Prisma to prevent $use middleware errors
 vi.mock("~/lib/prisma.server", () => ({
   prisma: {
@@ -59,7 +59,7 @@ describe("Query Batching", () => {
     });
 
     it("should filter out null values", async () => {
-      const result = await batchLoadQueueTypes([null, null, "valid-id"]);
+      const _result = await batchLoadQueueTypes([null, null, "valid-id"]);
       // Should only process valid-id
       expect(typeof batchLoadQueueTypes).toBe("function");
     });

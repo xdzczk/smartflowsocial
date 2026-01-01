@@ -42,7 +42,8 @@ describe("Example Loader Integration Tests", () => {
     const request = new Request("http://localhost:3000/test?q=hello");
     
     // Call the loader
-    const response = await mockLoader({ request } as { request: Request; params?: Record<string, string>; context?: Record<string, unknown> });
+    const loaderArgs: { request: Request; params?: Record<string, string>; context?: Record<string, unknown> } = { request };
+    const response = await mockLoader(loaderArgs);
     const dataRaw: unknown = await response.json();
     const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
 

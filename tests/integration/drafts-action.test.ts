@@ -32,11 +32,12 @@ describe("Drafts Action Handler", () => {
     vi.clearAllMocks();
     // Default mock for resolveQueueTypeId - returns the queueTypeId if provided, otherwise resolves from queueType name
     (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockImplementation(
-      async (userId, queueTypeId, queueType) => {
-        if (queueTypeId) return queueTypeId;
-        if (queueType === "queue-1") return "queue-1";
-        if (queueType === "queue-2") return "queue-2";
-        return null;
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises
+      (userId, queueTypeId, queueType): Promise<string | null> => {
+        if (queueTypeId) return Promise.resolve(queueTypeId);
+        if (queueType === "queue-1") return Promise.resolve("queue-1");
+        if (queueType === "queue-2") return Promise.resolve("queue-2");
+        return Promise.resolve(null);
       },
     );
   });
@@ -237,7 +238,9 @@ describe("Drafts Action Handler", () => {
       await handleDraftsAction(formData, TEST_USER_ID);
 
       expect(updatePost).toHaveBeenCalledWith(
+        // expect.objectContaining returns 'any' - acceptable for test mocks
         expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           data: expect.objectContaining({
             signedEvent,
             nostrEvent,

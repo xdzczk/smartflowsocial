@@ -6,7 +6,7 @@
  */
 
 import fc from "fast-check";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, vi, beforeEach } from "vitest";
 // Mock dependencies
 vi.mock("~/features/payments/btc.rate", () => ({
   getBitcoinRate: vi.fn(),

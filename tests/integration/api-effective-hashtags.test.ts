@@ -4,7 +4,6 @@
  * Tests the API endpoint in app/routes/api.effective-hashtags.tsx
  */
 
-import { json } from "@remix-run/node";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock dependencies
 vi.mock("~/features/auth/session.server", () => ({
@@ -53,7 +52,8 @@ describe("API: Effective Hashtags", () => {
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
       }
-      const response = await action({ request, params: {}, context: {} } as ActionArgs);
+      const actionArgs: ActionArgs = { request, params: {}, context: {} };
+      const response = await action(actionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { hashtags?: string; success?: unknown; error?: unknown } : {};
 
@@ -89,7 +89,8 @@ describe("API: Effective Hashtags", () => {
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
       }
-      const response = await action({ request, params: {}, context: {} } as ActionArgs);
+      const actionArgs: ActionArgs = { request, params: {}, context: {} };
+      const response = await action(actionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { hashtags?: string; success?: unknown; error?: unknown } : {};
 
@@ -134,7 +135,8 @@ describe("API: Effective Hashtags", () => {
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
       }
-      const response = await action({ request, params: {}, context: {} } as ActionArgs);
+      const actionArgs: ActionArgs = { request, params: {}, context: {} };
+      const response = await action(actionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { hashtags?: string; success?: unknown; error?: unknown } : {};
 
@@ -154,7 +156,8 @@ describe("API: Effective Hashtags", () => {
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
       }
-      const response = await action({ request, params: {}, context: {} } as ActionArgs);
+      const actionArgs: ActionArgs = { request, params: {}, context: {} };
+      const response = await action(actionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { hashtags?: string; success?: unknown; error?: unknown } : {};
 
@@ -184,7 +187,8 @@ describe("API: Effective Hashtags", () => {
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
       }
-      const response = await action({ request, params: {}, context: {} } as ActionArgs);
+      const actionArgs: ActionArgs = { request, params: {}, context: {} };
+      const response = await action(actionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { hashtags?: string; success?: unknown; error?: unknown } : {};
 
@@ -205,7 +209,8 @@ describe("API: Effective Hashtags", () => {
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
       }
-      const response = await action({ request, params: {}, context: {} } as ActionArgs);
+      const actionArgs: ActionArgs = { request, params: {}, context: {} };
+      const response = await action(actionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { hashtags?: string; success?: unknown; error?: unknown } : {};
 
@@ -237,7 +242,8 @@ describe("API: Effective Hashtags", () => {
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
       }
-      const response = await action({ request, params: {}, context: {} } as ActionArgs);
+      const actionArgs: ActionArgs = { request, params: {}, context: {} };
+      const response = await action(actionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { hashtags?: string; success?: unknown; error?: unknown } : {};
 
@@ -280,7 +286,8 @@ describe("API: Effective Hashtags", () => {
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
       }
-      const response = await action({ request, params: {}, context: {} } as ActionArgs);
+      const actionArgs: ActionArgs = { request, params: {}, context: {} };
+      const response = await action(actionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { hashtags?: string; success?: unknown; error?: unknown } : {};
 
@@ -302,7 +309,8 @@ describe("API: Effective Hashtags", () => {
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
       }
-      const response = await action({ request, params: {}, context: {} } as ActionArgs);
+      const actionArgs: ActionArgs = { request, params: {}, context: {} };
+      const response = await action(actionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { hashtags?: string; success?: unknown; error?: unknown } : {};
 
@@ -328,7 +336,8 @@ describe("API: Effective Hashtags", () => {
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
       }
-      const response = await action({ request, params: {}, context: {} } as ActionArgs);
+      const actionArgs: ActionArgs = { request, params: {}, context: {} };
+      const response = await action(actionArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { hashtags?: string; success?: unknown; error?: unknown } : {};
 

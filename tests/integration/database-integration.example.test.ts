@@ -109,7 +109,7 @@ describeDatabase("Database Integration Example", () => {
   it("should test post creation with queue", async () => {
     const testFixtures = fixtures.userWithQueues();
     
-    await withDatabase(async (prisma) => {
+    await withDatabase(async (_prisma) => {
       const user = testFixtures.users![0];
       const queue = testFixtures.queueTypes![0];
 

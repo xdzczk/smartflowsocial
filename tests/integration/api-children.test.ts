@@ -75,7 +75,8 @@ describe("API: Children", () => {
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
       }
-      const response = await loader({ request, params: {}, context: {} } as LoaderArgs);
+      const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
+      const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
 
@@ -124,7 +125,8 @@ describe("API: Children", () => {
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
       }
-      const response = await loader({ request, params: {}, context: {} } as LoaderArgs);
+      const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
+      const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
 
@@ -154,7 +156,8 @@ describe("API: Children", () => {
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
       }
-      const response = await loader({ request, params: {}, context: {} } as LoaderArgs);
+      const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
+      const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
 
@@ -191,7 +194,8 @@ describe("API: Children", () => {
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
       }
-      const response = await loader({ request, params: {}, context: {} } as LoaderArgs);
+      const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
+      const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
 
@@ -239,7 +243,8 @@ describe("API: Children", () => {
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
       }
-      const response = await loader({ request, params: {}, context: {} } as LoaderArgs);
+      const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
+      const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
 
@@ -263,7 +268,8 @@ describe("API: Children", () => {
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
       }
-      const response = await loader({ request, params: {}, context: {} } as LoaderArgs);
+      const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
+      const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
 
@@ -285,7 +291,8 @@ describe("API: Children", () => {
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
       }
-      const response = await loader({ request, params: {}, context: {} } as LoaderArgs);
+      const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
+      const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
 
@@ -315,7 +322,8 @@ describe("API: Children", () => {
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
       }
-      const response = await loader({ request, params: {}, context: {} } as LoaderArgs);
+      const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
+      const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
 
@@ -340,7 +348,8 @@ describe("API: Children", () => {
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
       }
-      const response = await loader({ request, params: {}, context: {} } as LoaderArgs);
+      const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
+      const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
 
@@ -388,7 +397,8 @@ describe("API: Children", () => {
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
       }
-      const response = await loader({ request, params: {}, context: {} } as LoaderArgs);
+      const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
+      const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
 
@@ -426,7 +436,8 @@ describe("API: Children", () => {
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
       }
-      const response = await loader({ request, params: {}, context: {} } as LoaderArgs);
+      const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
+      const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
 

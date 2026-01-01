@@ -9,7 +9,7 @@
  */
 
 import fc from "fast-check";
-import { describe, it, expect } from "vitest";
+import { describe, it } from "vitest";
 
 import { formatDate as formatDateWithTimezone } from "~/features/posts/utils/content-helpers";
 import { formatDate } from "~/lib/helpers";

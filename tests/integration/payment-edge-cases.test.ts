@@ -9,7 +9,7 @@
  * - Concurrent payment attempts
  */
 
-import { LN, USD } from "@getalby/sdk/lnclient";
+import { LN } from "@getalby/sdk/lnclient";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock Prisma - use vi.hoisted to allow top-level variables in mocks
 const { mockPrisma } = vi.hoisted(() => {
@@ -344,7 +344,9 @@ describe("Payment Processing Edge Cases", () => {
       // Should use fallback calculation
       expect(result.amount).toBeGreaterThan(0);
       expect(mockPrisma.payment.create).toHaveBeenCalledWith(
+        // expect.objectContaining returns 'any' - acceptable for test mocks
         expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           data: expect.objectContaining({
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             amount: expect.any(Number),

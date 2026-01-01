@@ -57,7 +57,7 @@ describe("Templates Loader", () => {
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (getAssets as ReturnType<typeof vi.fn>).mockResolvedValue(mockAssetsData);
 
-      const result = await loadTemplatesData(TEST_USER_ID, "", 1, 100);
+      const _result = await loadTemplatesData(TEST_USER_ID, "", 1, 100);
 
       expect(getTemplates).toHaveBeenCalledWith({ userId: TEST_USER_ID });
       expect(getUserById).toHaveBeenCalledWith(TEST_USER_ID);
@@ -66,7 +66,7 @@ describe("Templates Loader", () => {
         page: 1,
         limit: 100,
       });
-      expect(result).toEqual({
+      expect(_result).toEqual({
         templates: mockTemplates,
         user: mockUser,
         assets: mockAssetsData.assets,
@@ -100,7 +100,7 @@ describe("Templates Loader", () => {
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (searchAssets as ReturnType<typeof vi.fn>).mockResolvedValue(mockAssetsData);
 
-      const result = await loadTemplatesData(TEST_USER_ID, "search", 1, 100);
+      const _result = await loadTemplatesData(TEST_USER_ID, "search", 1, 100);
 
       expect(searchAssets).toHaveBeenCalledWith({
         userId: TEST_USER_ID,
@@ -108,7 +108,7 @@ describe("Templates Loader", () => {
         page: 1,
         limit: 100,
       });
-      expect(result.searchTerm).toBe("search");
+      expect(_result.searchTerm).toBe("search");
     });
 
     it("should handle pagination correctly", async () => {
@@ -125,16 +125,16 @@ describe("Templates Loader", () => {
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (getAssets as ReturnType<typeof vi.fn>).mockResolvedValue(mockAssetsData);
 
-      const result = await loadTemplatesData(TEST_USER_ID, "", 2, 10);
+      const _result = await loadTemplatesData(TEST_USER_ID, "", 2, 10);
 
       expect(getAssets).toHaveBeenCalledWith({
         userId: TEST_USER_ID,
         page: 2,
         limit: 10,
       });
-      expect(result.currentPage).toBe(2);
-      expect(result.totalPages).toBe(5);
-      expect(result.totalCount).toBe(50);
+      expect(_result.currentPage).toBe(2);
+      expect(_result.totalPages).toBe(5);
+      expect(_result.totalCount).toBe(50);
     });
 
     it("should handle custom limit", async () => {
@@ -151,7 +151,7 @@ describe("Templates Loader", () => {
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (getAssets as ReturnType<typeof vi.fn>).mockResolvedValue(mockAssetsData);
 
-      const result = await loadTemplatesData(TEST_USER_ID, "", 1, 50);
+      await loadTemplatesData(TEST_USER_ID, "", 1, 50);
 
       expect(getAssets).toHaveBeenCalledWith({
         userId: TEST_USER_ID,

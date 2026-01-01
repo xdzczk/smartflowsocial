@@ -5,7 +5,7 @@
  */
 
 import fc from "fast-check";
-import { describe, it, expect } from "vitest";
+import { describe, it } from "vitest";
 
 import { getTimeRemaining, formatDate, getImageUrls, isVideoFile } from "~/lib/helpers";
 describe("Property-Based Tests: Helpers", () => {

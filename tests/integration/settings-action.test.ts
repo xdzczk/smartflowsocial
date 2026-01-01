@@ -8,7 +8,6 @@
  * The full settings-actions.server.ts has many actions - we test the key ones.
  */
 
-import { json } from "@remix-run/node";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock all dependencies
 vi.mock("~/models/user.server", () => ({
@@ -44,7 +43,7 @@ import {
   hashTagPresetExistsForUser,
 } from "~/models/user.server";
 
-import { createActionFormData, createFormData, TEST_USER_ID } from "../utils/test-helpers";
+import { createFormData, TEST_USER_ID } from "../utils/test-helpers";
 
 describe("Settings Action Handler", () => {
   beforeEach(() => {

@@ -70,11 +70,12 @@ describe("LongFormPost Model Functions", () => {
         updatedAt: new Date(),
       };
 
-      mockPrisma.longFormPost.create.mockResolvedValue(mockLongFormPost);
+      (mockPrisma.longFormPost.create as ReturnType<typeof vi.fn>).mockResolvedValue(mockLongFormPost);
 
       const result = await createLongFormPost(postData);
 
-      expect(mockPrisma.longFormPost.create).toHaveBeenCalledWith({
+      expect(mockPrisma.longFormPost.create as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         data: expect.objectContaining({
           title: "Test Article",
           content: "Article content",
@@ -101,14 +102,15 @@ describe("LongFormPost Model Functions", () => {
         isPublished: false,
       };
 
-      mockPrisma.longFormPost.create.mockResolvedValue({
+      (mockPrisma.longFormPost.create as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: TEST_LONGFORM_ID,
         ...postData,
       });
 
       const result = await createLongFormPost(postData);
 
-      expect(mockPrisma.longFormPost.create).toHaveBeenCalledWith({
+      expect(mockPrisma.longFormPost.create as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         data: expect.objectContaining({
           draft: true,
         }),
@@ -128,14 +130,15 @@ describe("LongFormPost Model Functions", () => {
         scheduledFor: scheduledDate.toString(),
       };
 
-      mockPrisma.longFormPost.create.mockResolvedValue({
+      (mockPrisma.longFormPost.create as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: TEST_LONGFORM_ID,
         ...postData,
       });
 
       const result = await createLongFormPost(postData);
 
-      expect(mockPrisma.longFormPost.create).toHaveBeenCalledWith({
+      expect(mockPrisma.longFormPost.create as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         data: expect.objectContaining({
           isScheduled: true,
           scheduledFor: scheduledDate.toString(),
@@ -153,14 +156,14 @@ describe("LongFormPost Model Functions", () => {
         title: "Test Article",
       };
 
-      mockPrisma.longFormPost.delete.mockResolvedValue(mockLongFormPost);
+      (mockPrisma.longFormPost.delete as ReturnType<typeof vi.fn>).mockResolvedValue(mockLongFormPost);
 
       const result = await deleteLongFormPost({
         id: TEST_LONGFORM_ID,
         userId: TEST_USER_ID,
       });
 
-      expect(mockPrisma.longFormPost.delete).toHaveBeenCalledWith({
+      expect(mockPrisma.longFormPost.delete as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
         where: {
           id: TEST_LONGFORM_ID,
           userId: TEST_USER_ID,
@@ -180,7 +183,7 @@ describe("LongFormPost Model Functions", () => {
         summary: "Updated summary",
       };
 
-      mockPrisma.longFormPost.update.mockResolvedValue(mockUpdatedPost);
+      (mockPrisma.longFormPost.update as ReturnType<typeof vi.fn>).mockResolvedValue(mockUpdatedPost);
 
       const result = await updateLongFormPost({
         id: TEST_LONGFORM_ID,
@@ -190,15 +193,17 @@ describe("LongFormPost Model Functions", () => {
         summary: "Updated summary",
       });
 
-      expect(mockPrisma.longFormPost.update).toHaveBeenCalledWith({
+      expect(mockPrisma.longFormPost.update as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
         where: {
           id: TEST_LONGFORM_ID,
           userId: TEST_USER_ID,
         },
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         data: expect.objectContaining({
           title: "Updated Article",
           content: "Updated content",
           summary: "Updated summary",
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           updatedAt: expect.any(Date),
         }),
       });
@@ -215,14 +220,14 @@ describe("LongFormPost Model Functions", () => {
         queueType: { name: "articles" },
       };
 
-      mockPrisma.longFormPost.findFirst.mockResolvedValue(mockLongFormPost);
+      (mockPrisma.longFormPost.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockLongFormPost);
 
       const result = await getLongFormPost({
         id: TEST_LONGFORM_ID,
         userId: TEST_USER_ID,
       });
 
-      expect(mockPrisma.longFormPost.findFirst).toHaveBeenCalledWith({
+      expect(mockPrisma.longFormPost.findFirst as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
         where: {
           id: TEST_LONGFORM_ID,
           userId: TEST_USER_ID,
@@ -247,13 +252,13 @@ describe("LongFormPost Model Functions", () => {
         },
       ];
 
-      mockPrisma.longFormPost.findMany.mockResolvedValue(mockPosts);
+      (mockPrisma.longFormPost.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
 
       const result = await getDraftLongFormPosts({
         userId: TEST_USER_ID,
       });
 
-      expect(mockPrisma.longFormPost.findMany).toHaveBeenCalledWith({
+      expect(mockPrisma.longFormPost.findMany as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
         where: {
           userId: TEST_USER_ID,
           isPublished: false,
@@ -282,7 +287,7 @@ describe("LongFormPost Model Functions", () => {
         },
       ];
 
-      mockPrisma.longFormPost.findMany.mockResolvedValue(mockPosts);
+      (mockPrisma.longFormPost.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
 
       const result = await getPublishedLongFormPosts({
         userId: TEST_USER_ID,
@@ -290,7 +295,7 @@ describe("LongFormPost Model Functions", () => {
         limit: 50,
       });
 
-      expect(mockPrisma.longFormPost.findMany).toHaveBeenCalledWith({
+      expect(mockPrisma.longFormPost.findMany as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
         where: {
           userId: TEST_USER_ID,
           isPublished: true,
@@ -301,7 +306,7 @@ describe("LongFormPost Model Functions", () => {
         skip: 0,
         take: 50,
       });
-      expect(mockPrisma.longFormPost.count).toHaveBeenCalledWith({
+      expect(mockPrisma.longFormPost.count as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
         where: {
           userId: TEST_USER_ID,
           isPublished: true,
@@ -323,13 +328,13 @@ describe("LongFormPost Model Functions", () => {
         },
       ];
 
-      mockPrisma.longFormPost.findMany.mockResolvedValue(mockPosts);
+      (mockPrisma.longFormPost.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
 
       const result = await getScheduledLongFormPosts({
         userId: TEST_USER_ID,
       });
 
-      expect(mockPrisma.longFormPost.findMany).toHaveBeenCalledWith({
+      expect(mockPrisma.longFormPost.findMany as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
         where: {
           userId: TEST_USER_ID,
           status: "SCHEDULED",
@@ -354,7 +359,7 @@ describe("LongFormPost Model Functions", () => {
         publishedAt: new Date(),
       };
 
-      mockPrisma.longFormPost.update.mockResolvedValue(mockUpdatedPost);
+      (mockPrisma.longFormPost.update as ReturnType<typeof vi.fn>).mockResolvedValue(mockUpdatedPost);
 
       const result = await updateLongFormPostStatus({
         id: TEST_LONGFORM_ID,
@@ -362,7 +367,7 @@ describe("LongFormPost Model Functions", () => {
         isPublished: true,
       });
 
-      expect(mockPrisma.longFormPost.update).toHaveBeenCalledWith({
+      expect(mockPrisma.longFormPost.update as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
         where: {
           id: TEST_LONGFORM_ID,
           userId: TEST_USER_ID,
@@ -370,6 +375,7 @@ describe("LongFormPost Model Functions", () => {
         data: {
           isPublished: true,
           status: "ACTIVE",
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           postedAt: expect.any(Date),
         },
       });

@@ -1,0 +1,97 @@
+import { TEST_NPUB } from "./support/nostr-test-keys";
+
+/**
+ * Bulk Posts Upload Tests
+ * 
+ * Tests bulk post upload functionality:
+ * - Navigate to bulk posts page
+ * - Upload multiple files
+ * - Configure scheduling
+ * - Submit bulk posts
+ */
+describe("Bulk Posts Upload", () => {
+  beforeEach(() => {
+    cy.loginNostr({ npub: TEST_NPUB });
+  });
+
+  afterEach(() => {
+    cy.cleanupNostrUser();
+  });
+
+  describe("Page Navigation", () => {
+    it("should navigate to bulk posts page from dashboard", () => {
+      cy.visitAndCheck("/dashboard");
+      cy.get('a[href*="bulk"], a:contains("Bulk")')
+        .first()
+        .should("be.visible")
+        .click();
+      cy.location("pathname").should("include", "bulk");
+    });
+
+    it("should load bulk posts page directly", () => {
+      cy.visitAndCheck("/dashboard/bulkposts");
+      cy.location("pathname").should("include", "bulkposts");
+      cy.get("body").should("be.visible");
+    });
+  });
+
+  describe("Upload Area", () => {
+    beforeEach(() => {
+      cy.visitAndCheck("/dashboard/bulkposts");
+    });
+
+    it("should display file upload area", () => {
+      cy.get("body").then(($body) => {
+        const hasUploadArea =
+          $body.find('input[type="file"]').length > 0 ||
+          $body.find('[data-testid="upload-area"]').length > 0 ||
+          $body.find(".dropzone, .upload-zone").length > 0 ||
+          $body.text().toLowerCase().includes("upload") ||
+          $body.text().toLowerCase().includes("drag");
+        
+        expect(hasUploadArea).to.be.true;
+      });
+    });
+
+    it("should accept file uploads", () => {
+      cy.get("body").then(($body) => {
+        const fileInput = $body.find('input[type="file"]');
+        if (fileInput.length > 0) {
+          cy.uploadTestFile('input[type="file"]', 0);
+          // Wait for navigation after file upload
+          cy.location("pathname", { timeout: 10000 }).should("include", "bulkposts");
+        }
+      });
+    });
+
+    it("should accept multiple file uploads", () => {
+      cy.get("body").then(($body) => {
+        const fileInput = $body.find('input[type="file"]');
+        if (fileInput.length > 0) {
+          cy.uploadTestFile('input[type="file"]', [0, 1, 2]);
+          // Wait for navigation after file upload
+          cy.location("pathname", { timeout: 10000 }).should("include", "bulkposts");
+        }
+      });
+    });
+  });
+
+  describe("Scheduling Configuration", () => {
+    beforeEach(() => {
+      cy.visitAndCheck("/dashboard/bulkposts");
+    });
+
+    it("should display scheduling options", () => {
+      cy.get("body").then(($body) => {
+        const hasSchedulingOptions =
+          $body.find('input[type="date"]').length > 0 ||
+          $body.find('input[type="time"]').length > 0 ||
+          $body.find('select').length > 0 ||
+          $body.text().toLowerCase().includes("schedule");
+        
+        expect(hasSchedulingOptions).to.be.true;
+      });
+    });
+  });
+});
+

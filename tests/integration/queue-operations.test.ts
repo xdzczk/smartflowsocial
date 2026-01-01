@@ -138,7 +138,15 @@ describe("Queue Operations", () => {
   describe("Longform Post Job Operations", () => {
     it("should enqueue longform post job with scheduled timestamp", async () => {
       const scheduledFor = Math.floor(Date.now() / 1000) + 3600;
-      const mockSignedEvent: SignedEvent = { id: "event-123", kind: 30023, pubkey: "test-pubkey", created_at: Date.now(), tags: [], content: "", sig: "test-sig" } as SignedEvent;
+      const mockSignedEvent: SignedEvent = {
+        id: "event-123",
+        kind: 30023,
+        pubkey: "test-pubkey",
+        created_at: Date.now(),
+        tags: [],
+        content: "",
+        sig: "test-sig",
+      } as unknown as SignedEvent;
 
       (queueClient.enqueue as ReturnType<typeof vi.fn>).mockResolvedValue({
         success: true,
@@ -165,7 +173,15 @@ describe("Queue Operations", () => {
     });
 
     it("should enqueue longform post job with immediate processing", async () => {
-      const mockSignedEvent: SignedEvent = { id: "event-123", kind: 30023, pubkey: "test-pubkey", created_at: Date.now(), tags: [], content: "", sig: "test-sig" } as SignedEvent;
+      const mockSignedEvent: SignedEvent = {
+        id: "event-123",
+        kind: 30023,
+        pubkey: "test-pubkey",
+        created_at: Date.now(),
+        tags: [],
+        content: "",
+        sig: "test-sig",
+      } as unknown as SignedEvent;
 
       (queueClient.enqueue as ReturnType<typeof vi.fn>).mockResolvedValue({
         success: true,
@@ -187,7 +203,15 @@ describe("Queue Operations", () => {
     });
 
     it("should throw error when longform enqueue fails", async () => {
-      const mockSignedEvent: SignedEvent = { id: "event-123", kind: 30023, pubkey: "test-pubkey", created_at: Date.now(), tags: [], content: "", sig: "test-sig" } as SignedEvent;
+      const mockSignedEvent: SignedEvent = {
+        id: "event-123",
+        kind: 30023,
+        pubkey: "test-pubkey",
+        created_at: Date.now(),
+        tags: [],
+        content: "",
+        sig: "test-sig",
+      } as unknown as SignedEvent;
 
       (queueClient.enqueue as ReturnType<typeof vi.fn>).mockResolvedValue({
         success: false,

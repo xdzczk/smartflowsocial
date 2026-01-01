@@ -10,7 +10,6 @@ import { execSync } from "child_process";
 import type { Prisma } from "@prisma/client";
 import { PrismaClient } from "@prisma/client";
 
-/* eslint-disable @typescript-eslint/consistent-type-assertions -- Prisma type casts (as unknown as Prisma.XxxInput) are necessary for fixture compatibility */
 let testPrisma: PrismaClient | null = null;
 let transactionClient: PrismaClient | null = null;
 
@@ -204,7 +203,12 @@ export async function seedTestDatabase(fixtures?: TestFixtures): Promise<void> {
  * Apply fixtures to database
  * Uses upsert to handle existing records (idempotent)
  */
-async function applyFixtures(prisma: PrismaClient, fixtures: TestFixtures | import("./fixtures").TestFixtures): Promise<void> {
+async function applyFixtures(
+  prisma: PrismaClient,
+  // Dynamic import() type annotation needed for conditional type
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+  fixtures: TestFixtures | import("./fixtures").TestFixtures
+): Promise<void> {
   // Apply fixtures in dependency order
   if (fixtures.users && Array.isArray(fixtures.users)) {
     for (const user of fixtures.users) {
@@ -324,11 +328,13 @@ export async function useTestDatabase<T>(
   testFn: (prisma: PrismaClient) => Promise<T>,
   options?: {
     useTransaction?: boolean;
+    // Dynamic import() type annotation needed for conditional type
+    // eslint-disable-next-line @typescript-eslint/consistent-type-imports
     fixtures?: import("./fixtures").TestFixtures;
     cleanup?: boolean;
   },
 ): Promise<T> {
-  const { useTransaction = false, fixtures, cleanup = true } = options || {};
+  const { useTransaction = false, fixtures, cleanup = true } = options ?? {};
   const prisma = getTestPrisma();
   
   // Apply fixtures if provided

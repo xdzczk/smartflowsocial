@@ -8,7 +8,7 @@
  */
 
 import fc from "fast-check";
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, beforeEach } from "vitest";
 
 import { encrypt, decrypt } from "~/lib/encryption.server";
 describe("Property-Based Tests: Encryption", () => {
@@ -27,7 +27,7 @@ describe("Property-Based Tests: Encryption", () => {
               const encrypted = encrypt(plaintext);
               const decrypted = decrypt(encrypted);
               return decrypted === plaintext;
-            } catch (error) {
+            } catch (_error) {
               return false;
             }
           },

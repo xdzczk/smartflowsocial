@@ -47,11 +47,7 @@ describe("External API Failure Edge Cases", () => {
     });
 
     it("should handle Nostr publisher timeout", async () => {
-      (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(() => {
-        return new Promise((_, reject) => {
-          setTimeout(() => reject(new Error("Request timeout")), 100);
-        });
-      });
+      (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Request timeout"));
 
       await expect(
         fetch(process.env.NOSTR_PUBLISHER_URL!, {
@@ -103,7 +99,7 @@ describe("External API Failure Edge Cases", () => {
 
   describe("S3 Storage Failures", () => {
     it("should handle S3 connection failure", async () => {
-      const { S3Client, PutObjectCommand } = await import("@aws-sdk/client-s3");
+      const { PutObjectCommand } = await import("@aws-sdk/client-s3");
 
       // Mock S3 client to throw connection error
       const mockS3Client = {
@@ -189,20 +185,23 @@ describe("External API Failure Edge Cases", () => {
   describe("API Rate Limiting", () => {
     it("should handle rate limit from external API", async () => {
       let callCount = 0;
-      (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(() => {
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises
+      (global.fetch as ReturnType<typeof vi.fn>).mockImplementation((): Promise<Response> => {
         callCount++;
         if (callCount > 10) {
-          return Promise.resolve({
+          const rateLimitResponse: Response = {
             ok: false,
             status: 429,
             statusText: "Too Many Requests",
-          });
+          } as unknown as Response;
+          return Promise.resolve(rateLimitResponse);
         }
-        return Promise.resolve({
+        const successResponse: Response = {
           ok: true,
           status: 200,
           json: async () => ({ success: true }),
-        });
+        } as unknown as Response;
+        return Promise.resolve(successResponse);
       });
 
       // Simulate multiple rapid requests
@@ -219,11 +218,7 @@ describe("External API Failure Edge Cases", () => {
 
   describe("Network Interruption", () => {
     it("should handle network interruption during request", async () => {
-      (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(() => {
-        return new Promise((_, reject) => {
-          setTimeout(() => reject(new Error("Network error: ENOTFOUND")), 50);
-        });
-      });
+      (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Network error: ENOTFOUND"));
 
       await expect(
         fetch("https://api.example.com/endpoint"),

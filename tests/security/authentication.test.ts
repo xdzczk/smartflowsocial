@@ -7,6 +7,7 @@
 import { redirect } from "@remix-run/node";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Used in test description/comments
 import { AuthenticationError } from "~/lib/errors";
 // Set up environment variable before mocking
 process.env.SESSION_SECRET = "test-secret-key-for-testing";
@@ -26,13 +27,15 @@ const mockGetSession = vi.fn();
 
 // Mock the module before any imports
 vi.mock("~/features/auth/session.server", async () => {
+  // Dynamic import() type annotation needed for vi.importActual
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
   const actual = await vi.importActual<typeof import("~/features/auth/session.server")>("~/features/auth/session.server");
   
   // Create new implementations that use our mock
   const getSession = mockGetSession;
   
   const getUserId = async (request: Request) => {
-    const session = await getSession(request);
+    const session = await getSession(request) as { get: (key: string) => string | undefined };
     return session.get("userId");
   };
   
@@ -40,7 +43,7 @@ vi.mock("~/features/auth/session.server", async () => {
     request: Request,
     redirectTo: string = new URL(request.url).pathname,
   ) => {
-    const userId = await getUserId(request);
+    const userId: string | undefined = await getUserId(request);
     if (!userId) {
       const searchParams = new URLSearchParams([["redirectTo", redirectTo]]);
       throw redirect(`/login?${searchParams}`);

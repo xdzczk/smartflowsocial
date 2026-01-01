@@ -8,7 +8,7 @@
  */
 
 import fc from "fast-check";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, vi, beforeEach } from "vitest";
 // Mock dependencies
 vi.mock("~/lib/prisma.server", () => ({
   prisma: {
@@ -50,7 +50,7 @@ describe("Property-Based Tests: Queue Operations", () => {
         userRelays: ["wss://relay1.com"],
       });
 
-      fc.assert(
+      await fc.assert(
         fc.asyncProperty(
           fc.string({ minLength: 1, maxLength: 50 }), // postId
           fc.string({ minLength: 1, maxLength: 50 }), // userId
@@ -111,6 +111,7 @@ describe("Property-Based Tests: Queue Operations", () => {
           (jobData: { postId: string; userId: string; signedEvent: { id: string; kind: number; content: string } }) => {
             // Job data should remain unchanged
             const serialized = JSON.stringify(jobData);
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const deserialized = JSON.parse(serialized);
             return JSON.stringify(deserialized) === serialized;
           },

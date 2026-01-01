@@ -7,7 +7,6 @@
  * Migrated from: tests/e2e/subscription/billing-loader.cy.ts
  */
 
-import { json } from "@remix-run/node";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock Prisma to prevent $use errors
 vi.mock("~/lib/prisma.server", () => ({
@@ -71,7 +70,8 @@ describe("Subscription/Billing Loader Integration", () => {
   describe("Subscription Settings Loader", () => {
     it("should load subscription settings data for authenticated user", async () => {
       const request = new Request("http://localhost:3000/dashboard/settings?tab=subscription");
-      const response = await loader({ request } as { request: Request; params?: Record<string, string>; context?: Record<string, unknown> });
+      const loaderArgs: { request: Request; params?: Record<string, string>; context?: Record<string, unknown> } = { request };
+      const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
 
@@ -126,7 +126,8 @@ describe("Subscription/Billing Loader Integration", () => {
       (loadSettingsData as ReturnType<typeof vi.fn>).mockResolvedValue(mockData);
 
       const request = new Request("http://localhost:3000/dashboard/settings?tab=subscription");
-      const response = await loader({ request } as { request: Request; params?: Record<string, string>; context?: Record<string, unknown> });
+      const loaderArgs: { request: Request; params?: Record<string, string>; context?: Record<string, unknown> } = { request };
+      const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
 
@@ -168,7 +169,8 @@ describe("Subscription/Billing Loader Integration", () => {
       (loadSettingsData as ReturnType<typeof vi.fn>).mockResolvedValue(mockData);
 
       const request = new Request("http://localhost:3000/dashboard/settings?tab=subscription");
-      const response = await loader({ request } as { request: Request; params?: Record<string, string>; context?: Record<string, unknown> });
+      const loaderArgs: { request: Request; params?: Record<string, string>; context?: Record<string, unknown> } = { request };
+      const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
 
@@ -217,7 +219,8 @@ describe("Subscription/Billing Loader Integration", () => {
       (loadSettingsData as ReturnType<typeof vi.fn>).mockResolvedValue(mockData);
 
       const request = new Request("http://localhost:3000/dashboard/settings?tab=subscription");
-      const response = await loader({ request } as { request: Request; params?: Record<string, string>; context?: Record<string, unknown> });
+      const loaderArgs: { request: Request; params?: Record<string, string>; context?: Record<string, unknown> } = { request };
+      const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
 
@@ -264,7 +267,8 @@ describe("Subscription/Billing Loader Integration", () => {
       (loadSettingsData as ReturnType<typeof vi.fn>).mockResolvedValue(mockData);
 
       const request = new Request("http://localhost:3000/dashboard/settings?tab=subscription");
-      const response = await loader({ request } as { request: Request; params?: Record<string, string>; context?: Record<string, unknown> });
+      const loaderArgs: { request: Request; params?: Record<string, string>; context?: Record<string, unknown> } = { request };
+      const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
 

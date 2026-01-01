@@ -6,7 +6,6 @@
 
 import { describe, it, expect } from "vitest";
 
-import { ValidationError } from "~/lib/errors";
 import { sanitizeMarkdown } from "~/lib/markdown-sanitizer.server";
 describe("Input Validation: Required Fields", () => {
   it("should reject missing required fields", () => {
@@ -122,7 +121,7 @@ describe("Input Validation: File Uploads", () => {
     
     // Example:
     // const allowedTypes = ["image/jpeg", "image/png"];
-    // if (!allowedTypes.includes(file.type)) {
+    // if (!allowedTypes.includes(file?.type)) {
     //   throw new ValidationError("Invalid file type");
     // }
     
@@ -164,12 +163,13 @@ describe("Input Validation: URL Validation", () => {
     // URLs should not allow javascript: protocol
     // This prevents XSS attacks
     
-    const malicious = "javascript:alert('XSS')";
+    const _malicious = "javascript:alert('XSS')";
     // Should be rejected or sanitized
     
     expect(true).toBe(true); // Documentation test
   });
 });
+
 
 
 

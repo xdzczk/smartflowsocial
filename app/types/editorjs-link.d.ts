@@ -16,3 +16,4 @@ declare module "@editorjs/link" {
 
 
 
+

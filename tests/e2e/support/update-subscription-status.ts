@@ -61,11 +61,9 @@ async function updateSubscriptionStatus(npub: string, targetStatus: TestSubscrip
                 where: { id: "premium" },
             });
 
-            if (!plan) {
-                plan = await prisma.plan.findFirst({
-                    where: { isActive: true },
-                });
-            }
+            plan ??= await prisma.plan.findFirst({
+                where: { isActive: true },
+            });
 
             if (!plan) {
                 throw new Error("No plan found in database");
@@ -107,11 +105,9 @@ async function updateSubscriptionStatus(npub: string, targetStatus: TestSubscrip
                 where: { id: "premium" },
             });
 
-            if (!plan) {
-                plan = await prisma.plan.findFirst({
-                    where: { isActive: true },
-                });
-            }
+            plan ??= await prisma.plan.findFirst({
+                where: { isActive: true },
+            });
 
             if (!plan) {
                 throw new Error("No plan found in database");
@@ -153,11 +149,9 @@ async function updateSubscriptionStatus(npub: string, targetStatus: TestSubscrip
                 where: { id: "premium" },
             });
 
-            if (!plan) {
-                plan = await prisma.plan.findFirst({
-                    where: { isActive: true },
-                });
-            }
+            plan ??= await prisma.plan.findFirst({
+                where: { isActive: true },
+            });
 
             if (!plan) {
                 throw new Error("No plan found in database");
@@ -198,11 +192,9 @@ async function updateSubscriptionStatus(npub: string, targetStatus: TestSubscrip
                 where: { id: "premium" },
             });
 
-            if (!plan) {
-                plan = await prisma.plan.findFirst({
-                    where: { isActive: true },
-                });
-            }
+            plan ??= await prisma.plan.findFirst({
+                where: { isActive: true },
+            });
 
             if (!plan) {
                 throw new Error("No plan found in database");
@@ -224,10 +216,10 @@ async function updateSubscriptionStatus(npub: string, targetStatus: TestSubscrip
          
         console.log(`<status>PAST_DUE</status>`);
     } else {
-        throw new Error(`Unknown status: ${targetStatus}`);
+        throw new Error(`Unknown status: ${String(targetStatus)}`);
     }
 
     await prisma.$disconnect();
 }
 
-updateSubscriptionStatus(process.argv[2], process.argv[3] as TestSubscriptionStatus);
+void updateSubscriptionStatus(process.argv[2], process.argv[3] as TestSubscriptionStatus);

@@ -5,7 +5,7 @@
  */
 
 import fc from "fast-check";
-import { describe, it, expect } from "vitest";
+import { describe, it } from "vitest";
 
 import { convertToHex, convertHexToNpub } from "~/lib/nostr-conversion";
 describe("Property-Based Tests: Nostr Conversion", () => {
@@ -65,7 +65,7 @@ describe("Property-Based Tests: Nostr Conversion", () => {
               const result = convertHexToNpub(hexString);
               // Should return a string (may be invalid if hex is wrong length, but still a string)
               return typeof result === "string";
-            } catch (error) {
+            } catch (_error) {
               return false;
             }
           },
@@ -83,7 +83,7 @@ describe("Property-Based Tests: Nostr Conversion", () => {
             try {
               const result = convertHexToNpub(hexString);
               return typeof result === "string";
-            } catch (error) {
+            } catch (_error) {
               return false;
             }
           },
@@ -114,7 +114,7 @@ describe("Property-Based Tests: Nostr Conversion", () => {
           fc.hexaString({ minLength: 64, maxLength: 64 }),
           (originalHex: string) => {
             const npub = convertHexToNpub(originalHex);
-            if (npub && npub.startsWith("npub")) {
+            if (npub?.startsWith("npub")) {
               const backToHex = convertToHex(npub);
               // For valid conversions, should get back original or valid hex
               return backToHex === null || (typeof backToHex === "string" && backToHex.length > 0);

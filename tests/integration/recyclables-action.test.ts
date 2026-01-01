@@ -5,7 +5,6 @@
  * Tests handleRecyclablePostAction function
  */
 
-import { json } from "@remix-run/node";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock Prisma to prevent $use errors
 vi.mock("~/lib/prisma.server", () => ({
@@ -29,7 +28,6 @@ import { getPostsByIds } from "~/models/post.queries.server";
 
 import {
   createActionFormData,
-  createFormData,
   TEST_USER_ID,
   TEST_POST_ID,
   createPostIds,
@@ -178,6 +176,7 @@ describe("Recyclables Action Handler", () => {
       const dataRaw: unknown = await result.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; repostData?: unknown; scheduledRepostData?: unknown; quotePostData?: unknown; repostEventData?: unknown; originalPost?: unknown; error?: unknown } : {};
       const quotePostData = Array.isArray(data.quotePostData) ? data.quotePostData : [];
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const firstQuotePost = quotePostData[0] && typeof quotePostData[0] === "object" && !Array.isArray(quotePostData[0]) ? quotePostData[0] : {};
 
       expect(quotePostData).toHaveLength(2);
@@ -225,6 +224,7 @@ describe("Recyclables Action Handler", () => {
           ["e", "event-123", "wss://relay.primal.net"],
           ["p", "pubkey-123"],
         ],
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         created_at: expect.any(Number),
       });
       // Dates are serialized to strings in JSON responses
@@ -272,6 +272,7 @@ describe("Recyclables Action Handler", () => {
       const dataRaw: unknown = await result.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; repostData?: unknown; scheduledRepostData?: unknown; quotePostData?: unknown; repostEventData?: unknown; originalPost?: unknown; error?: unknown } : {};
       const quotePostData = Array.isArray(data.quotePostData) ? data.quotePostData : [];
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const firstQuotePost = quotePostData[0] && typeof quotePostData[0] === "object" && !Array.isArray(quotePostData[0]) ? quotePostData[0] : {};
 
       expect(quotePostData).toHaveLength(1);

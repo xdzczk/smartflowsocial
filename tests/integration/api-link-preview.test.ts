@@ -239,11 +239,7 @@ describe("API: Link Preview", () => {
     });
 
     it("should handle fetch timeout", async () => {
-      (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(() => {
-        return new Promise((_, reject) => {
-          setTimeout(() => reject(new Error("Timeout")), 6000);
-        });
-      });
+      (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Timeout"));
 
       const request = new Request(
         "http://localhost:3000/api/link-preview?url=https://example.com",
@@ -294,7 +290,8 @@ describe("API: Link Preview", () => {
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
       }
-      const response = await loader({ request, params: {}, context: {} } as LoaderArgs);
+      const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
+      const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; meta?: { title?: string; description?: string; image?: { url?: string } } } : {};
 
@@ -320,7 +317,8 @@ describe("API: Link Preview", () => {
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
       }
-      const response = await loader({ request, params: {}, context: {} } as LoaderArgs);
+      const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
+      const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; meta?: { title?: string; description?: string; image?: { url?: string } } } : {};
 

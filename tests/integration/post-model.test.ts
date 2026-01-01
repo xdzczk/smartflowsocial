@@ -75,11 +75,12 @@ describe("Post Model Functions", () => {
         updatedAt: new Date(),
       };
 
-      mockPrisma.post.create.mockResolvedValue(mockPost);
+      (mockPrisma.post.create as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
 
       const result = await createPost(postData);
 
-      expect(mockPrisma.post.create).toHaveBeenCalledWith({
+      expect(mockPrisma.post.create as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         data: expect.objectContaining({
           content: "Test content",
           caption: "Test caption",
@@ -117,14 +118,15 @@ describe("Post Model Functions", () => {
         updatedAt: new Date(),
       };
 
-      mockPrisma.post.create.mockResolvedValue(mockPost);
+      (mockPrisma.post.create as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
 
       const result = await createPost(postData);
 
       // Should NOT call queueType.findFirst when queueTypeId is provided
-      expect(mockPrisma.queueType.findFirst).not.toHaveBeenCalled();
+      expect(mockPrisma.queueType.findFirst as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
       
-      expect(mockPrisma.post.create).toHaveBeenCalledWith({
+      expect(mockPrisma.post.create as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         data: expect.objectContaining({
           content: "Test content",
           postType: "TEXT",
@@ -159,14 +161,16 @@ describe("Post Model Functions", () => {
         updatedAt: new Date(),
       };
 
-      mockPrisma.post.create.mockResolvedValue(mockPost);
+      (mockPrisma.post.create as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
 
-      const result = await createPost(postData);
+      await createPost(postData);
 
       // Should NOT call queueType.findFirst when queueTypeId is null
-      expect(mockPrisma.queueType.findFirst).not.toHaveBeenCalled();
-      expect(mockPrisma.post.create).toHaveBeenCalledWith({
+      expect(mockPrisma.queueType.findFirst as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
+      expect(mockPrisma.post.create as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         data: expect.not.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           queueType: expect.anything(),
         }),
       });
@@ -185,14 +189,15 @@ describe("Post Model Functions", () => {
         scheduledFor: scheduledDate,
       };
 
-      mockPrisma.post.create.mockResolvedValue({
+      (mockPrisma.post.create as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: TEST_POST_ID,
         ...postData,
       });
 
       await createPost(postData);
 
-      expect(mockPrisma.post.create).toHaveBeenCalledWith({
+      expect(mockPrisma.post.create as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         data: expect.objectContaining({
           scheduledFor: scheduledDate.toString(),
         }),
@@ -211,14 +216,15 @@ describe("Post Model Functions", () => {
         draft: true,
       };
 
-      mockPrisma.post.create.mockResolvedValue({
+      (mockPrisma.post.create as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: TEST_POST_ID,
         ...postData,
       });
 
       const result = await createPost(postData);
 
-      expect(mockPrisma.post.create).toHaveBeenCalledWith({
+      expect(mockPrisma.post.create as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         data: expect.objectContaining({
           draft: true,
         }),
@@ -235,14 +241,14 @@ describe("Post Model Functions", () => {
         content: "Test content",
       };
 
-      mockPrisma.post.delete.mockResolvedValue(mockPost);
+      (mockPrisma.post.delete as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
 
       const result = await deletePost({
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
       });
 
-      expect(mockPrisma.post.delete).toHaveBeenCalledWith({
+      expect(mockPrisma.post.delete as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
         where: {
           id: TEST_POST_ID,
           userId: TEST_USER_ID,
@@ -266,7 +272,7 @@ describe("Post Model Functions", () => {
         ...updateData,
       };
 
-      mockPrisma.post.update.mockResolvedValue(mockUpdatedPost);
+      (mockPrisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue(mockUpdatedPost);
 
       const result = await updatePost({
         id: TEST_POST_ID,
@@ -274,15 +280,17 @@ describe("Post Model Functions", () => {
         data: updateData,
       });
 
-      expect(mockPrisma.post.update).toHaveBeenCalledWith({
+      expect(mockPrisma.post.update as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
         where: {
           id: TEST_POST_ID,
           userId: TEST_USER_ID,
         },
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         data: expect.objectContaining({
           content: "Updated content",
           caption: "Updated caption",
           isScheduled: true,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           updatedAt: expect.any(Date),
         }),
       });
@@ -309,14 +317,15 @@ describe("Post Model Functions", () => {
         },
       ];
 
-      mockPrisma.post.findMany.mockResolvedValue(mockPosts);
+      (mockPrisma.post.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
 
       const result = await getScheduledPosts({
         userId: TEST_USER_ID,
         queueType: "posts",
       });
 
-      expect(mockPrisma.post.findMany).toHaveBeenCalledWith({
+      expect(mockPrisma.post.findMany as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         where: expect.objectContaining({
           userId: TEST_USER_ID,
           isScheduled: true,
@@ -349,14 +358,15 @@ describe("Post Model Functions", () => {
         },
       ];
 
-      mockPrisma.post.findMany.mockResolvedValue(mockPosts);
+      (mockPrisma.post.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
 
       const result = await getScheduledPosts({
         userId: TEST_USER_ID,
         queueType: "all",
       });
 
-      expect(mockPrisma.post.findMany).toHaveBeenCalledWith({
+      expect(mockPrisma.post.findMany as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         where: expect.objectContaining({
           userId: TEST_USER_ID,
           isScheduled: true,
@@ -388,8 +398,8 @@ describe("Post Model Functions", () => {
         },
       ];
 
-      mockPrisma.post.findMany.mockResolvedValue(mockPosts);
-      mockPrisma.post.count.mockResolvedValue(1);
+      (mockPrisma.post.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
+      (mockPrisma.post.count as ReturnType<typeof vi.fn>).mockResolvedValue(1);
 
       const result = await getPostedPosts({
         userId: TEST_USER_ID,
@@ -398,7 +408,8 @@ describe("Post Model Functions", () => {
         queueType: "posts",
       });
 
-      expect(mockPrisma.post.findMany).toHaveBeenCalledWith({
+      expect(mockPrisma.post.findMany as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         where: expect.objectContaining({
           userId: TEST_USER_ID,
           isPosted: true,
@@ -427,8 +438,8 @@ describe("Post Model Functions", () => {
     });
 
     it("should handle pagination correctly", async () => {
-      mockPrisma.post.findMany.mockResolvedValue([]);
-      mockPrisma.post.count.mockResolvedValue(100);
+      (mockPrisma.post.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+      (mockPrisma.post.count as ReturnType<typeof vi.fn>).mockResolvedValue(100);
 
       const result = await getPostedPosts({
         userId: TEST_USER_ID,
@@ -460,14 +471,14 @@ describe("Post Model Functions", () => {
         queueType: { name: "posts" },
       };
 
-      mockPrisma.post.findFirst.mockResolvedValue(mockPost);
+      (mockPrisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
 
       const result = await getPostById({
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
       });
 
-      expect(mockPrisma.post.findFirst).toHaveBeenCalledWith({
+      expect(mockPrisma.post.findFirst as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
         include: {
           queueType: true,
           hashTagPreset: true,
@@ -491,7 +502,7 @@ describe("Post Model Functions", () => {
         postedAt: new Date(),
       };
 
-      mockPrisma.post.update.mockResolvedValue(mockUpdatedPost);
+      (mockPrisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue(mockUpdatedPost);
 
       const result = await updatePostStatus({
         id: TEST_POST_ID,
@@ -499,13 +510,14 @@ describe("Post Model Functions", () => {
         isPosted: true,
       });
 
-      expect(mockPrisma.post.update).toHaveBeenCalledWith({
+      expect(mockPrisma.post.update as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
         where: {
           id: TEST_POST_ID,
           userId: TEST_USER_ID,
         },
         data: {
           isPosted: true,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           postedAt: expect.any(Date),
         },
       });
@@ -515,7 +527,7 @@ describe("Post Model Functions", () => {
 
   describe("getPostStatistics", () => {
     it("should get post statistics for a user", async () => {
-      mockPrisma.post.count
+      (mockPrisma.post.count as ReturnType<typeof vi.fn>)
         .mockResolvedValueOnce(10) // scheduledCount
         .mockResolvedValueOnce(5); // successCount
 

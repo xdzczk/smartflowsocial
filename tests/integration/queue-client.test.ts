@@ -4,11 +4,8 @@
  * Tests the queue client in app/infra/queue/queue-client.server.ts
  */
 
-import { Queue } from "bullmq";
 import type { Job } from "bullmq";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-
-import type { SignedEvent } from "~/features/nostr/types";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock queue operations - use vi.hoisted to ensure mocks are available
 const { mockQueue, MockQueue } = vi.hoisted(() => {
@@ -40,7 +37,7 @@ vi.mock("bullmq", () => ({
 vi.mock("ioredis", () => {
   class RedisMock {
     quit = vi.fn();
-    constructor(url?: string, options?: unknown) {
+    constructor(_url?: string, _options?: unknown) {
       // Constructor implementation
     }
   }
@@ -49,8 +46,9 @@ vi.mock("ioredis", () => {
   };
 });
 
-// Import after mocks are set up
-import { queueClient, getQueueInstance } from "~/infra/queue/queue-client.server";
+// Import after mocks are set up for dynamic import pattern
+import type { SignedEvent } from "~/features/nostr/types";
+import { queueClient } from "~/infra/queue/queue-client.server";
 
 describe("Queue Client", () => {
   beforeEach(() => {

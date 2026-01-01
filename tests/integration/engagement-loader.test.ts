@@ -80,10 +80,12 @@ describe("Engagement Loader", () => {
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       // Mock connectToPrimalCache for sequential calls
       (connectToPrimalCache as ReturnType<typeof vi.fn>)
-        .mockImplementation((method, params) => {
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
+        .mockImplementation((method, params): Promise<unknown> => {
           if (method === "thread_view") {
-            if (params.event_id === "event-1") return Promise.resolve(mockThreadViewData1);
-            if (params.event_id === "event-2") return Promise.resolve(mockThreadViewData2);
+            const eventId = (params as { event_id?: string }).event_id;
+            if (eventId === "event-1") return Promise.resolve(mockThreadViewData1);
+            if (eventId === "event-2") return Promise.resolve(mockThreadViewData2);
           }
           if (method === "user_profile") {
             return Promise.resolve([]);
@@ -155,7 +157,8 @@ describe("Engagement Loader", () => {
       // Mock thread_view calls - the implementation calls connectToPrimalCache("thread_view", ...) for each event
       // The implementation processes events in batches, so we need to mock for each event ID
       (connectToPrimalCache as ReturnType<typeof vi.fn>)
-        .mockImplementation((method: string, params: Record<string, unknown>) => {
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
+        .mockImplementation((method: string, params: Record<string, unknown>): Promise<unknown> => {
           if (method === "thread_view") {
             // Return stats based on event_id
             if (params.event_id === "event-1") {

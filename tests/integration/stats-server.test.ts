@@ -284,9 +284,10 @@ describe("Statistics Service", () => {
     it("should timeout after 5 seconds", async () => {
       // Mock AbortController
       const abortSpy = vi.fn();
+      const mockSignal: AbortSignal = {} as unknown as AbortSignal;
       global.AbortController = vi.fn(() => ({
         abort: abortSpy,
-        signal: {} as AbortSignal,
+        signal: mockSignal,
       })) as typeof AbortController;
 
       // Mock setTimeout to trigger timeout immediately
@@ -296,12 +297,7 @@ describe("Statistics Service", () => {
         return 123 as unknown as ReturnType<typeof setTimeout>;
       }) as unknown as typeof setTimeout;
 
-      (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(
-        () =>
-          new Promise((_, reject) => {
-            setTimeout(() => reject(new Error("Timeout")), 100);
-          }),
-      );
+      (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Timeout"));
 
       const result = await getPostStats(["event-1"]);
 

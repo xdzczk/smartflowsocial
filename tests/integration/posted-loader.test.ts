@@ -7,9 +7,8 @@
  * Migrated from: tests/e2e/loaders/queues-loader.cy.ts (Posted Queue Loader section)
  */
 
-import { json } from "@remix-run/node";
 import type { LoaderFunctionArgs } from "@remix-run/node";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 // Mock Prisma to prevent $use errors
 vi.mock("~/lib/prisma.server", () => ({
   prisma: {
@@ -55,7 +54,8 @@ describe("Posted Posts Loader Integration", () => {
   describe("Posted Posts Loader", () => {
     it("should load posted posts data for authenticated user", async () => {
       const request = new Request("http://localhost:3000/dashboard/posted");
-      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
+      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
+      const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
 
@@ -94,6 +94,7 @@ describe("Posted Posts Loader Integration", () => {
       expect(getPostedDashboardData).toHaveBeenCalledWith({
         userId: "user-123",
         params: { queueType: "posts" },
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         url: expect.any(URL),
       });
       const selectedQueueType = typeof data.selectedQueueType === "string" ? data.selectedQueueType : "";
@@ -126,7 +127,8 @@ describe("Posted Posts Loader Integration", () => {
       (getPostedDashboardData as ReturnType<typeof vi.fn>).mockResolvedValue(mockData);
 
       const request = new Request("http://localhost:3000/dashboard/posted");
-      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
+      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
+      const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
 
@@ -143,12 +145,15 @@ describe("Posted Posts Loader Integration", () => {
     it("should pass URL object to getPostedDashboardData", async () => {
       const request = new Request("http://localhost:3000/dashboard/posted?page=2&limit=10");
       
-      await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
+      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
+      await loader(loaderArgs);
 
       expect(getPostedDashboardData).toHaveBeenCalledWith({
         userId: "user-123",
         params: {},
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         url: expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           searchParams: expect.any(URLSearchParams),
         }),
       });
@@ -162,7 +167,8 @@ describe("Posted Posts Loader Integration", () => {
       );
 
       const request = new Request("http://localhost:3000/dashboard/posted");
-      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
+      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
+      const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
       
@@ -179,7 +185,8 @@ describe("Posted Posts Loader Integration", () => {
       );
 
       const request = new Request("http://localhost:3000/dashboard/posted");
-      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
+      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
+      const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
       
@@ -196,7 +203,8 @@ describe("Posted Posts Loader Integration", () => {
       );
 
       const request = new Request("http://localhost:3000/dashboard/posted");
-      const response = await loader({ request, params: {}, context: {} } as LoaderFunctionArgs);
+      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
+      const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
       

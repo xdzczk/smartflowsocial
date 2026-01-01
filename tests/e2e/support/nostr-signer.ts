@@ -72,7 +72,6 @@ export function signEvent(eventData: {
     // finalizeEvent adds id, pubkey, and sig
     const signedEvent = finalizeEvent(eventTemplate, secretKey);
 
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Necessary cast for test types
     return signedEvent as unknown as SignedEvent;
 }
 

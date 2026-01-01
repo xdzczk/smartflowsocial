@@ -5,7 +5,6 @@
  * For UI interaction tests, see tests/e2e/subscription/billing-loader.cy.ts
  */
 
-import { json } from "@remix-run/node";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock dependencies
 vi.mock("~/features/auth/session.server", () => ({
@@ -21,7 +20,7 @@ import { requireUser } from "~/features/auth/session.server";
 import { handlePlansAction } from "~/features/payments/services/plans-action.server";
 import { createPlanInvoice, checkPaymentStatus } from "~/models/payment.server";
 
-import { createActionFormData, createFormData, TEST_USER_ID } from "../utils/test-helpers";
+import { createFormData, TEST_USER_ID } from "../utils/test-helpers";
 
 describe("Plans Action Handler", () => {
   beforeEach(() => {
@@ -111,6 +110,7 @@ describe("Plans Action Handler", () => {
 
       expect(result).toEqual({
         success: false,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         error: expect.any(String),
       });
     });

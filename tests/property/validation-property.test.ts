@@ -8,7 +8,7 @@
  */
 
 import fc from "fast-check";
-import { describe, it, expect } from "vitest";
+import { describe, it } from "vitest";
 describe("Property-Based Tests: Data Validation", () => {
   describe("String Sanitization Properties", () => {
     it("should preserve valid strings after sanitization", () => {

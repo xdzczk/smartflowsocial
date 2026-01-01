@@ -8,7 +8,7 @@
  */
 
 import fc from "fast-check";
-import { describe, it, expect } from "vitest";
+import { describe, it } from "vitest";
 // Valid IANA timezone identifiers
 const validTimezones = [
   "UTC",

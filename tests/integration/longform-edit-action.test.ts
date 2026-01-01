@@ -5,6 +5,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
 // Mock global fetch
 global.fetch = vi.fn();
 
@@ -19,7 +20,7 @@ vi.mock("~/features/upload/s3.server", () => ({
 }));
 
 vi.mock("~/lib/markdown-sanitizer.server", () => ({
-  sanitizeMarkdown: vi.fn((content) => `Sanitized: ${content}`),
+  sanitizeMarkdown: vi.fn((content) => `Sanitized: ${String(content)}`),
   generateSummary: vi.fn((content: string) => {
     const contentStr = typeof content === "string" ? content : String(content);
     return `Summary of ${contentStr.substring(0, 50)}`;
@@ -50,7 +51,7 @@ vi.mock("@remix-run/node", async () => {
       return async (part: { filename?: string; name?: string; data: AsyncIterable<Uint8Array> }) => {
         if (part.filename) {
           // It's a file - process through the first handler (S3 upload handler)
-          const firstHandler = handlers[0];
+          const firstHandler = handlers[0] as ((part: { filename?: string; name?: string; data: AsyncIterable<Uint8Array> }) => Promise<unknown>) | undefined;
           if (firstHandler) {
             return await firstHandler(part);
           }
@@ -73,7 +74,7 @@ vi.mock("@remix-run/node", async () => {
       try {
         const formData = request && typeof request === "object" && "formData" in request && typeof request.formData === "function" ? await request.formData() : new FormData();
         return formData;
-      } catch (error) {
+      } catch (_error) {
         // If parsing fails, return empty FormData
         return new FormData();
       }
@@ -86,7 +87,7 @@ import { uploadBufferToS3 } from "~/features/upload/s3.server";
 import { updateLongFormPost } from "~/models/longformpost.server";
 import { getUserById, getEffectiveHashtags, getHashTagPresetById, getQueueTypeByNameForUser } from "~/models/user.server";
 
-import { TEST_USER_ID , createMockFormData } from "../utils/test-helpers";
+import { TEST_USER_ID, createMockFormData } from "../utils/test-helpers";
 
 describe("Longform Edit Action Handler", () => {
   const POST_ID = "post-123";
@@ -369,6 +370,7 @@ describe("Longform Edit Action Handler", () => {
 
       expect(updateLongFormPost).toHaveBeenCalledWith(
         expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           content: expect.stringContaining("#marketing #social"),
         }),
       );

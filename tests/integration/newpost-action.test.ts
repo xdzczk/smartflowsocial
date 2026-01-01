@@ -7,8 +7,8 @@
  * Note: This tests the core logic. File uploads are tested separately.
  */
 
-import { redirect } from "@remix-run/node";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
 // Mock dependencies
 vi.mock("~/models/user.server", () => ({
   getUserById: vi.fn(),
@@ -36,7 +36,7 @@ import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolve
 import { createPost } from "~/models/post.commands.server";
 import { getUserById, getQueueTypes, getHashTagPresetById } from "~/models/user.server";
 
-import { createActionFormData, createFormData, TEST_USER_ID } from "../utils/test-helpers";
+import { createActionFormData, TEST_USER_ID } from "../utils/test-helpers";
 
 describe("New Post Action Handler", () => {
   beforeEach(() => {
@@ -64,11 +64,12 @@ describe("New Post Action Handler", () => {
       signedEvent: { id: "event-123" },
     });
     (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockImplementation(
-      async (userId, queueTypeId, queueType) => {
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises
+      (userId, queueTypeId, queueType): Promise<string | null> => {
         // Mock behavior: if queueTypeId provided, use it; otherwise resolve from queueType name
-        if (queueTypeId) return queueTypeId;
-        if (queueType === "posts") return "queue-1";
-        return null;
+        if (queueTypeId) return Promise.resolve(queueTypeId);
+        if (queueType === "posts") return Promise.resolve("queue-1");
+        return Promise.resolve(null);
       },
     );
     (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -296,6 +297,7 @@ describe("New Post Action Handler", () => {
       expect(result.status).toBe(200);
       expect(data).toEqual({
         success: true,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         fileUrls: expect.any(Array),
       });
     });

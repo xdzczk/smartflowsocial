@@ -8,10 +8,9 @@
  * Comprehensive test coverage is essential.
  */
 
+import { LN } from "@getalby/sdk/lnclient";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// Import only what we need - updateUserSubscription will be dynamically imported
-// to ensure it uses mocked prisma. Other functions are imported statically for convenience.
 import {
   checkPaymentStatus,
   getUserSubscription,
@@ -21,6 +20,8 @@ import {
   handlePaymentTimeout,
   createRenewalPayment,
 } from "~/models/payment.server";
+// Import only what we need - updateUserSubscription will be dynamically imported
+// to ensure it uses mocked prisma. Other functions are imported statically for convenience.
 // createPlanInvoice and updateUserSubscription will be dynamically imported
 // to ensure they use mocked prisma
 
@@ -59,6 +60,7 @@ const { mockPrisma } = vi.hoisted(() => {
         subscription: mockPrisma.subscription,
         user: mockPrisma.user,
       };
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       return await callback(tx);
     }),
   };
@@ -98,12 +100,9 @@ vi.mock("@getalby/sdk/lnclient", () => ({
   LN: vi.fn().mockImplementation(function(credentials: string) {
     return new MockLN(credentials);
   }),
-  USD: vi.fn((amount) => ({ amount })),
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  _USD: vi.fn((amount) => ({ amount })),
 }));
-
-import { getBitcoinRate } from "~/features/payments/btc.rate";
-
-import { LN } from "@getalby/sdk/lnclient";
 
 describe("Payment Model Functions", () => {
   const TEST_USER_ID = "user-123";
@@ -122,6 +121,7 @@ describe("Payment Model Functions", () => {
         subscription: mockPrisma.subscription,
         user: mockPrisma.user,
       };
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       return await callback(tx);
     });
     // Reset LN to default implementation - use function, not arrow, so it works as constructor
@@ -140,8 +140,8 @@ describe("Payment Model Functions", () => {
         isActive: true,
       };
 
-      mockPrisma.plan.findUnique.mockResolvedValue(mockPlan);
-      mockPrisma.payment.create.mockResolvedValue({
+      (mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockPlan);
+      (mockPrisma.payment.create as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: TEST_PAYMENT_ID,
         userId: TEST_USER_ID,
         amount: 0,
@@ -156,10 +156,11 @@ describe("Payment Model Functions", () => {
         description: "Free plan subscription",
       });
 
-      expect(mockPrisma.plan.findUnique).toHaveBeenCalledWith({
+      expect(mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
         where: { id: TEST_PLAN_ID },
       });
-      expect(mockPrisma.payment.create).toHaveBeenCalledWith({
+      expect(mockPrisma.payment.create as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         data: expect.objectContaining({
           userId: TEST_USER_ID,
           amount: 0,
@@ -172,7 +173,7 @@ describe("Payment Model Functions", () => {
     });
 
     it("should throw error for non-existent plan", async () => {
-      mockPrisma.plan.findUnique.mockResolvedValue(null);
+      (mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
       const { createPlanInvoice } = await import("~/models/payment.server");
 
@@ -192,7 +193,7 @@ describe("Payment Model Functions", () => {
         isActive: false,
       };
 
-      mockPrisma.plan.findUnique.mockResolvedValue(mockPlan);
+      (mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockPlan);
 
       const { createPlanInvoice } = await import("~/models/payment.server");
 
@@ -212,7 +213,7 @@ describe("Payment Model Functions", () => {
         isActive: true,
       };
 
-      mockPrisma.plan.findUnique.mockResolvedValue(mockPlan);
+      (mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockPlan);
       delete process.env.OWNER_NWC;
 
       const { createPlanInvoice } = await import("~/models/payment.server");
@@ -260,8 +261,8 @@ describe("Payment Model Functions", () => {
       });
       process.env.OWNER_NWC = "test-nwc-credentials";
 
-      mockPrisma.plan.findUnique.mockResolvedValue(mockPlan);
-      mockPrisma.payment.create.mockResolvedValue({
+      (mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockPlan);
+      (mockPrisma.payment.create as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: TEST_PAYMENT_ID,
         userId: TEST_USER_ID,
         amount: mockAmountSats,
@@ -283,7 +284,8 @@ describe("Payment Model Functions", () => {
       });
 
       expect(mockLNInstance.requestPayment).toHaveBeenCalled();
-      expect(mockPrisma.payment.create).toHaveBeenCalledWith({
+      expect(mockPrisma.payment.create as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         data: expect.objectContaining({
           userId: TEST_USER_ID,
           amount: mockAmountSats,
@@ -321,7 +323,7 @@ describe("Payment Model Functions", () => {
       });
       process.env.OWNER_NWC = "test-nwc-credentials";
 
-      mockPrisma.plan.findUnique.mockResolvedValue(mockPlan);
+      (mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockPlan);
 
       const { createPlanInvoice } = await import("~/models/payment.server");
 
@@ -367,7 +369,7 @@ describe("Payment Model Functions", () => {
       });
       process.env.OWNER_NWC = "test-nwc-credentials";
 
-      mockPrisma.plan.findUnique.mockResolvedValue(mockPlan);
+      (mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockPlan);
 
       const { createPlanInvoice } = await import("~/models/payment.server");
 
@@ -388,11 +390,11 @@ describe("Payment Model Functions", () => {
         paidAt: new Date("2024-01-15"),
       };
 
-      mockPrisma.payment.findUnique.mockResolvedValue(mockPayment);
+      (mockPrisma.payment.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockPayment);
 
       const result = await checkPaymentStatus(TEST_PAYMENT_ID);
 
-      expect(mockPrisma.payment.findUnique).toHaveBeenCalledWith({
+      expect(mockPrisma.payment.findUnique as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
         where: { id: TEST_PAYMENT_ID },
         select: {
           paidAt: true,
@@ -413,7 +415,7 @@ describe("Payment Model Functions", () => {
         paidAt: null,
       };
 
-      mockPrisma.payment.findUnique.mockResolvedValue(mockPayment);
+      (mockPrisma.payment.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockPayment);
 
       const result = await checkPaymentStatus(TEST_PAYMENT_ID);
 
@@ -444,11 +446,11 @@ describe("Payment Model Functions", () => {
         },
       };
 
-      mockPrisma.subscription.findUnique.mockResolvedValue(mockSubscription);
+      (mockPrisma.subscription.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockSubscription);
 
       const result = await getUserSubscription(TEST_USER_ID);
 
-      expect(mockPrisma.subscription.findUnique).toHaveBeenCalledWith({
+      expect(mockPrisma.subscription.findUnique as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
         where: { userId: TEST_USER_ID },
         include: { Plan: true },
       });
@@ -481,11 +483,11 @@ describe("Payment Model Functions", () => {
         },
       ];
 
-      mockPrisma.plan.findMany.mockResolvedValue(mockPlans);
+      (mockPrisma.plan.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(mockPlans);
 
       const result = await getAllPlans();
 
-      expect(mockPrisma.plan.findMany).toHaveBeenCalledWith({
+      expect(mockPrisma.plan.findMany as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
         where: { isActive: true },
         orderBy: { price: "asc" },
       });
@@ -502,18 +504,18 @@ describe("Payment Model Functions", () => {
         isActive: true,
       };
 
-      mockPrisma.plan.findUnique.mockResolvedValue(mockPlan);
+      (mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockPlan);
 
       const result = await getPlanById(TEST_PLAN_ID);
 
-      expect(mockPrisma.plan.findUnique).toHaveBeenCalledWith({
+      expect(mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
         where: { id: TEST_PLAN_ID },
       });
       expect(result).toEqual(mockPlan);
     });
 
     it("should return null for non-existent plan", async () => {
-      mockPrisma.plan.findUnique.mockResolvedValue(null);
+      (mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
       const result = await getPlanById("invalid-plan");
 
@@ -535,11 +537,11 @@ describe("Payment Model Functions", () => {
         amount: 25000,
       };
 
-      mockPrisma.plan.findUnique.mockResolvedValue(mockPlan);
-      mockPrisma.payment.findUnique.mockResolvedValue(mockPayment);
-      mockPrisma.subscription.upsert.mockResolvedValue({ id: "sub-123" });
-      mockPrisma.payment.update.mockResolvedValue({ id: TEST_PAYMENT_ID });
-      mockPrisma.user.update.mockResolvedValue({ id: TEST_USER_ID, isEnabled: true });
+      (mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockPlan);
+      (mockPrisma.payment.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockPayment);
+      (mockPrisma.subscription.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sub-123" });
+      (mockPrisma.payment.update as ReturnType<typeof vi.fn>).mockResolvedValue({ id: TEST_PAYMENT_ID });
+      (mockPrisma.user.update as ReturnType<typeof vi.fn>).mockResolvedValue({ id: TEST_USER_ID, isEnabled: true });
 
       // Dynamically import to ensure it uses mocked prisma
       // Use vi.resetModules() to clear cache and ensure fresh import with mocked prisma
@@ -551,10 +553,10 @@ describe("Payment Model Functions", () => {
       await paymentModule.updateUserSubscription(TEST_USER_ID, TEST_PLAN_ID, TEST_PAYMENT_ID);
 
       // Verify the function was called with correct arguments
-      expect(mockPrisma.plan.findUnique).toHaveBeenCalledWith({
+      expect(mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
         where: { id: TEST_PLAN_ID },
       });
-      expect(mockPrisma.payment.findUnique).toHaveBeenCalledWith({
+      expect(mockPrisma.payment.findUnique as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
         where: { id: TEST_PAYMENT_ID },
         select: { amount: true },
       });
@@ -574,24 +576,27 @@ describe("Payment Model Functions", () => {
         amount: 50000,
       };
 
-      mockPrisma.plan.findUnique.mockResolvedValue(mockPlan);
-      mockPrisma.payment.findUnique.mockResolvedValue(mockPayment);
-      mockPrisma.subscription.upsert.mockResolvedValue({ id: "sub-123" });
-      mockPrisma.payment.update.mockResolvedValue({ id: TEST_PAYMENT_ID });
-      mockPrisma.user.update.mockResolvedValue({ id: TEST_USER_ID, isEnabled: true });
+      (mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockPlan);
+      (mockPrisma.payment.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockPayment);
+      (mockPrisma.subscription.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sub-123" });
+      (mockPrisma.payment.update as ReturnType<typeof vi.fn>).mockResolvedValue({ id: TEST_PAYMENT_ID });
+      (mockPrisma.user.update as ReturnType<typeof vi.fn>).mockResolvedValue({ id: TEST_USER_ID, isEnabled: true });
 
       vi.resetModules();
       const paymentModule = await import("~/models/payment.server");
       await paymentModule.updateUserSubscription(TEST_USER_ID, TEST_PLAN_ID, TEST_PAYMENT_ID);
 
-      expect(mockPrisma.subscription.upsert).toHaveBeenCalledWith(
+      expect(mockPrisma.subscription.upsert as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(
+        // expect.objectContaining returns 'any' - acceptable for test mocks
         expect.objectContaining({
           where: { userId: TEST_USER_ID },
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           create: expect.objectContaining({
             planId: TEST_PLAN_ID,
             status: "ACTIVE",
             amountSats: BigInt(50000),
           }),
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           update: expect.objectContaining({
             planId: TEST_PLAN_ID,
             status: "ACTIVE",
@@ -614,18 +619,20 @@ describe("Payment Model Functions", () => {
         amount: 250000,
       };
 
-      mockPrisma.plan.findUnique.mockResolvedValue(mockPlan);
-      mockPrisma.payment.findUnique.mockResolvedValue(mockPayment);
-      mockPrisma.subscription.upsert.mockResolvedValue({ id: "sub-123" });
-      mockPrisma.payment.update.mockResolvedValue({ id: TEST_PAYMENT_ID });
-      mockPrisma.user.update.mockResolvedValue({ id: TEST_USER_ID, isEnabled: true });
+      (mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockPlan);
+      (mockPrisma.payment.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockPayment);
+      (mockPrisma.subscription.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sub-123" });
+      (mockPrisma.payment.update as ReturnType<typeof vi.fn>).mockResolvedValue({ id: TEST_PAYMENT_ID });
+      (mockPrisma.user.update as ReturnType<typeof vi.fn>).mockResolvedValue({ id: TEST_USER_ID, isEnabled: true });
 
       vi.resetModules();
       const paymentModule = await import("~/models/payment.server");
       await paymentModule.updateUserSubscription(TEST_USER_ID, TEST_PLAN_ID, TEST_PAYMENT_ID);
 
-      expect(mockPrisma.subscription.upsert).toHaveBeenCalledWith(
+      expect(mockPrisma.subscription.upsert as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(
+        // expect.objectContaining returns 'any' - acceptable for test mocks
         expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           create: expect.objectContaining({
             currentPeriodEnd: null,
             nextPaymentDue: null,
@@ -642,20 +649,20 @@ describe("Payment Model Functions", () => {
         enableLifetimeAccess: false,
       };
 
-      mockPrisma.plan.findUnique.mockResolvedValue(mockPlan);
-      mockPrisma.subscription.upsert.mockResolvedValue({ id: "sub-123" });
-      mockPrisma.user.update.mockResolvedValue({ id: TEST_USER_ID, isEnabled: true });
+      (mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockPlan);
+      (mockPrisma.subscription.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sub-123" });
+      (mockPrisma.user.update as ReturnType<typeof vi.fn>).mockResolvedValue({ id: TEST_USER_ID, isEnabled: true });
 
       // Free plan payment ID starts with "free_"
       const paymentModule = await import("~/models/payment.server");
       await paymentModule.updateUserSubscription(TEST_USER_ID, TEST_PLAN_ID, "free_123");
 
-      expect(mockPrisma.payment.findUnique).not.toHaveBeenCalled();
+      expect(mockPrisma.payment.findUnique as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
       expect(mockPrisma.subscription.upsert).toHaveBeenCalled();
     });
 
     it("should throw error if plan not found", async () => {
-      mockPrisma.plan.findUnique.mockResolvedValue(null);
+      (mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
       vi.resetModules();
       const paymentModule = await import("~/models/payment.server");
@@ -672,17 +679,17 @@ describe("Payment Model Functions", () => {
         enableLifetimeAccess: false,
       };
 
-      mockPrisma.plan.findUnique.mockResolvedValue(mockPlan);
+      (mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockPlan);
       mockPrisma.payment.findUnique.mockResolvedValue({ id: TEST_PAYMENT_ID, amount: 25000 });
-      mockPrisma.subscription.upsert.mockResolvedValue({ id: "sub-123" });
-      mockPrisma.payment.update.mockResolvedValue({ id: TEST_PAYMENT_ID });
-      mockPrisma.user.update.mockResolvedValue({ id: TEST_USER_ID, isEnabled: true });
+      (mockPrisma.subscription.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sub-123" });
+      (mockPrisma.payment.update as ReturnType<typeof vi.fn>).mockResolvedValue({ id: TEST_PAYMENT_ID });
+      (mockPrisma.user.update as ReturnType<typeof vi.fn>).mockResolvedValue({ id: TEST_USER_ID, isEnabled: true });
 
       vi.resetModules();
       const paymentModule = await import("~/models/payment.server");
       await paymentModule.updateUserSubscription(TEST_USER_ID, TEST_PLAN_ID, TEST_PAYMENT_ID);
 
-      expect(mockPrisma.user.update).toHaveBeenCalledWith({
+      expect(mockPrisma.user.update as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
         where: { id: TEST_USER_ID },
         data: { isEnabled: true },
       });
@@ -696,7 +703,7 @@ describe("Payment Model Functions", () => {
         enableLifetimeAccess: false,
       };
 
-      mockPrisma.plan.findUnique.mockResolvedValue(mockPlan);
+      (mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockPlan);
       mockPrisma.payment.findUnique.mockResolvedValue({ id: TEST_PAYMENT_ID, amount: 25000 });
       
       // Simulate transaction failure - override the default implementation
@@ -731,8 +738,8 @@ describe("Payment Model Functions", () => {
         enableLifetimeAccess: false,
       });
       mockPrisma.payment.findUnique.mockResolvedValue({ id: TEST_PAYMENT_ID, amount: 25000 });
-      mockPrisma.subscription.upsert.mockResolvedValue({ id: "sub-123" });
-      mockPrisma.user.update.mockResolvedValue({ id: TEST_USER_ID, isEnabled: true });
+      (mockPrisma.subscription.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sub-123" });
+      (mockPrisma.user.update as ReturnType<typeof vi.fn>).mockResolvedValue({ id: TEST_USER_ID, isEnabled: true });
 
       // Import the module - we'll verify updateUserSubscription was called by checking
       // the database calls it makes, rather than spying on it directly
@@ -743,24 +750,25 @@ describe("Payment Model Functions", () => {
       await paymentModule.handlePaymentCompleted(TEST_PAYMENT_ID, TEST_USER_ID, TEST_PLAN_ID);
 
       // Verify payment was updated
-      expect(mockPrisma.payment.update).toHaveBeenCalledWith({
+      expect(mockPrisma.payment.update as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
         where: { id: TEST_PAYMENT_ID },
         data: {
           status: "COMPLETED",
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           paidAt: expect.any(Date),
         },
       });
       
       // Verify updateUserSubscription was called by checking the database calls it makes
-      expect(mockPrisma.plan.findUnique).toHaveBeenCalledWith({
+      expect(mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
         where: { id: TEST_PLAN_ID },
       });
-      expect(mockPrisma.payment.findUnique).toHaveBeenCalledWith({
+      expect(mockPrisma.payment.findUnique as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
         where: { id: TEST_PAYMENT_ID },
         select: { amount: true },
       });
       expect(mockPrisma.subscription.upsert).toHaveBeenCalled();
-      expect(mockPrisma.user.update).toHaveBeenCalledWith({
+      expect(mockPrisma.user.update as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
         where: { id: TEST_USER_ID },
         data: { isEnabled: true },
       });
@@ -768,7 +776,7 @@ describe("Payment Model Functions", () => {
 
     it("should handle errors during payment completion", async () => {
       const error = new Error("Database error");
-      mockPrisma.payment.update.mockRejectedValue(error);
+      (mockPrisma.payment.update as ReturnType<typeof vi.fn>).mockRejectedValue(error);
 
       await expect(
         handlePaymentCompleted(TEST_PAYMENT_ID, TEST_USER_ID, TEST_PLAN_ID),
@@ -789,10 +797,11 @@ describe("Payment Model Functions", () => {
 
       await handlePaymentTimeout(TEST_PAYMENT_ID);
 
-      expect(mockPrisma.payment.update).toHaveBeenCalledWith({
+      expect(mockPrisma.payment.update as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
         where: { id: TEST_PAYMENT_ID },
         data: {
           status: "EXPIRED",
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           failedAt: expect.any(Date),
           failureReason: "Payment timeout",
         },
@@ -801,7 +810,7 @@ describe("Payment Model Functions", () => {
 
     it("should handle errors gracefully (not throw)", async () => {
       const error = new Error("Database error");
-      mockPrisma.payment.update.mockRejectedValue(error);
+      (mockPrisma.payment.update as ReturnType<typeof vi.fn>).mockRejectedValue(error);
 
       // Should not throw - timeout handler should be resilient
       await expect(handlePaymentTimeout(TEST_PAYMENT_ID)).resolves.not.toThrow();
@@ -823,7 +832,7 @@ describe("Payment Model Functions", () => {
         paidAt,
       };
 
-      mockPrisma.payment.create.mockResolvedValue(renewalPayment);
+      (mockPrisma.payment.create as ReturnType<typeof vi.fn>).mockResolvedValue(renewalPayment);
 
       const result = await createRenewalPayment({
         paymentId: TEST_PAYMENT_ID,
@@ -835,7 +844,7 @@ describe("Payment Model Functions", () => {
         description: "Monthly renewal",
       });
 
-      expect(mockPrisma.payment.create).toHaveBeenCalledWith({
+      expect(mockPrisma.payment.create as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
         data: {
           id: TEST_PAYMENT_ID,
           userId: TEST_USER_ID,
@@ -845,6 +854,7 @@ describe("Payment Model Functions", () => {
           paymentHash: "renewal-hash",
           status: "COMPLETED",
           description: "Monthly renewal",
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           paidAt: expect.any(Date),
         },
       });
@@ -864,7 +874,7 @@ describe("Payment Model Functions", () => {
         paidAt: new Date(),
       };
 
-      mockPrisma.payment.create.mockResolvedValue(renewalPayment);
+      (mockPrisma.payment.create as ReturnType<typeof vi.fn>).mockResolvedValue(renewalPayment);
 
       const result = await createRenewalPayment({
         paymentId: "free_renewal_123",
@@ -889,7 +899,7 @@ describe("Payment Model Functions", () => {
         paidAt: null,
       };
 
-      mockPrisma.payment.findUnique.mockResolvedValue(mockPayment);
+      (mockPrisma.payment.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockPayment);
 
       const result = await checkPaymentStatus(TEST_PAYMENT_ID);
 
@@ -907,7 +917,7 @@ describe("Payment Model Functions", () => {
         paidAt: null,
       };
 
-      mockPrisma.payment.findUnique.mockResolvedValue(mockPayment);
+      (mockPrisma.payment.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockPayment);
 
       const result = await checkPaymentStatus(TEST_PAYMENT_ID);
 

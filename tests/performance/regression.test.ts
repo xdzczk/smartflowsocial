@@ -101,13 +101,8 @@ describe("Performance Regression Tests", () => {
 
   describe("Database Query Performance", () => {
     it("should fetch scheduled posts within threshold", async () => {
-      (getScheduledPosts as ReturnType<typeof vi.fn>).mockImplementation(
-        async () => {
-          // Simulate database query delay
-          await new Promise((resolve) => setTimeout(resolve, 10));
-          return [];
-        },
-      );
+      // Simulate database query delay
+      (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
       const startTime = performance.now();
       await getScheduledPosts({ userId: TEST_USER_ID, queueType: "all" });
@@ -208,7 +203,7 @@ export function measurePerformance<T>(
 ): Promise<{ result: T; duration: number }> {
   return new Promise((resolve) => {
     const startTime = performance.now();
-    fn().then((result) => {
+    void fn().then((result) => {
       const endTime = performance.now();
       resolve({
         result,

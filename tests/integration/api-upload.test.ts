@@ -19,14 +19,14 @@ vi.mock("@remix-run/node", async () => {
   const actual = await vi.importActual("@remix-run/node");
   return {
     ...actual,
-    unstable_composeUploadHandlers: vi.fn((...handlers) => {
-      return async (name: string, stream: unknown, info: unknown) => {
+    unstable_composeUploadHandlers: vi.fn((..._handlers) => {
+      return async (_name: string, _stream: unknown, _info: unknown) => {
         // Mock upload handler that returns a URL
         return "https://example.com/uploaded-file.jpg";
       };
     }),
     unstable_createMemoryUploadHandler: vi.fn(() => vi.fn()),
-    unstable_parseMultipartFormData: vi.fn(async (request, handler) => {
+    unstable_parseMultipartFormData: vi.fn(async (_request, _handler) => {
       const formData = new FormData();
       formData.append("file", "https://example.com/uploaded-file.jpg");
       return formData;
@@ -56,7 +56,8 @@ describe("API: Upload", () => {
           body: new FormData(),
         });
 
-        const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+        const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
+        const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
         const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; fileUrl?: unknown; error?: unknown } : {};
 
@@ -96,7 +97,8 @@ describe("API: Upload", () => {
           },
         });
 
-        const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+        const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
+        const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
         const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; fileUrl?: unknown; error?: unknown } : {};
 
@@ -119,7 +121,8 @@ describe("API: Upload", () => {
           },
         });
 
-        const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+        const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
+        const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
         const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; fileUrl?: unknown; error?: unknown } : {};
 
@@ -140,7 +143,8 @@ describe("API: Upload", () => {
           },
         });
 
-        const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+        const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
+        const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
         const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; fileUrl?: unknown; error?: unknown } : {};
 
@@ -163,7 +167,8 @@ describe("API: Upload", () => {
           },
         });
 
-        const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+        const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
+        const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
         const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; fileUrl?: unknown; error?: unknown } : {};
 
@@ -175,7 +180,7 @@ describe("API: Upload", () => {
 
   describe("Loader Handler", () => {
     it("should return API description", async () => {
-      const request = new Request("http://localhost:3000/api/upload", {
+      const _request = new Request("http://localhost:3000/api/upload", {
         method: "GET",
       });
 

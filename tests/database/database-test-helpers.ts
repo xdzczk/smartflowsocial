@@ -59,7 +59,8 @@ export function describeDatabase(
   // Skip the entire suite if database is not configured
   // This prevents beforeAll from failing and marking the suite as failed
   if (shouldSkip) {
-    // eslint-disable-next-line jest/valid-describe-callback, jest/valid-title
+    // Intentionally skipping tests when database setup fails
+    // eslint-disable-next-line jest/valid-describe-callback, jest/valid-title, jest/no-disabled-tests
     describe.skip(name, fn);
     return;
   }

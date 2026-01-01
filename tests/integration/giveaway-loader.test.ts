@@ -5,11 +5,8 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-
-import type { RelatedEvent } from "~/features/giveaway/types";
 // Mock global fetch
 global.fetch = vi.fn();
-
 // Mock dependencies
 vi.mock("~/lib/nostrwebsocket.server", () => ({
   connectToPrimalCache: vi.fn(),
@@ -31,7 +28,8 @@ vi.mock("~/features/giveaway/giveaway.server", () => ({
 
 vi.mock("~/features/engagement/trustScore", () => ({
   calculateTrustScore: vi.fn((user) => {
-    return (user.followersCount || 0) > 100 ? 50 : 30;
+    const userObj = user as { followersCount?: number };
+    return (userObj.followersCount ?? 0) > 100 ? 50 : 30;
   }),
 }));
 
@@ -41,6 +39,7 @@ vi.mock("~/lib/helpers", () => ({
 
 import { loadGiveawayData } from "~/features/giveaway/giveaway-loader.server";
 import { fetchGiveawayParticipants } from "~/features/giveaway/giveaway.server";
+import type { RelatedEvent } from "~/features/giveaway/types";
 import { connectToPrimalCache } from "~/lib/nostrwebsocket.server";
 import { getRecentPostedPosts } from "~/models/post.queries.server";
 import { getGiveawayBlacklist, getUserById, getQueueTypes } from "~/models/user.server";

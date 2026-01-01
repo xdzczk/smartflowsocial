@@ -81,8 +81,9 @@ vi.mock("~/lib/prisma.server", () => ({
   prisma: mockPrisma,
 }));
 
-import { enqueuePostJob, enqueueLongFormPostJob } from "~/infra/queue";
+import { enqueuePostJob } from "~/infra/queue";
 import { prisma } from "~/lib/prisma.server";
+// updateLongFormPostStatus is used via mock (see lines 373, 384, 435)
 import { updateLongFormPostStatus, getCronDueScheduledLongFormPosts } from "~/models/longformpost.server";
 import { updatePostStatus } from "~/models/post.commands.server";
 import { getCronDueScheduledPosts } from "~/models/post.queries.server";
@@ -467,6 +468,8 @@ describe("Queue Workers", () => {
         },
       ];
 
+      // Dynamic import() type annotation needed for type reference
+      // eslint-disable-next-line @typescript-eslint/consistent-type-imports
       const mockLongformPosts: import("~/features/posts/types").LongFormPostData[] = [];
 
       (getCronDueScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
@@ -524,6 +527,8 @@ describe("Queue Workers", () => {
       const now = Math.floor(Date.now() / 1000);
       const dueTime = now - 10;
 
+      // Dynamic import() type annotation needed for type reference
+      // eslint-disable-next-line @typescript-eslint/consistent-type-imports
       const mockPosts: import("~/features/posts/types").PostData[] = [];
       const mockLongformPosts = [
         {

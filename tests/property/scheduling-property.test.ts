@@ -148,8 +148,8 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
       expect(!isNaN(result.getTime())).toBe(true);
     });
 
-    it("should always return a Date object", () => {
-      fc.assert(
+    it("should always return a Date object", async () => {
+      await fc.assert(
         fc.asyncProperty(
           fc.integer({ min: 1, max: 24 }), // intervalHours
           fc.oneof(
@@ -197,8 +197,8 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
                 return false;
               }
               return true;
-            } catch (error) {
-              console.error("Error in test:", error, { intervalHours, lastPostTime, timezone });
+            } catch (_error) {
+              console.error("Error in test:", _error, { intervalHours, lastPostTime, timezone });
               return false;
             }
           },
@@ -207,8 +207,8 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
       );
     });
 
-    it("should return a date in the future or present (never past)", () => {
-      fc.assert(
+    it("should return a date in the future or present (never past)", async () => {
+      await fc.assert(
         fc.asyncProperty(
           fc.integer({ min: 1, max: 24 }),
           fc.oneof(
@@ -239,7 +239,7 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
                 userId: TEST_USER_ID,
                 userTimezone: "UTC",
               });
-              const afterCall = Date.now();
+              const _afterCall = Date.now();
 
               // Result should be a valid Date
               if (!result || !(result instanceof Date) || isNaN(result.getTime())) {
@@ -250,8 +250,8 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
               // Allow tolerance for async execution and clock drift (5 seconds)
               const resultTime = result.getTime();
               return resultTime >= beforeCall - 5000;
-            } catch (error) {
-              console.error("Error in test:", error, { intervalHours, lastPostTime });
+            } catch (_error) {
+              console.error("Error in test:", _error, { intervalHours, lastPostTime });
               return false;
             }
           },
@@ -260,8 +260,8 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
       );
     });
 
-    it("should handle various interval hours correctly", () => {
-      fc.assert(
+    it("should handle various interval hours correctly", async () => {
+      await fc.assert(
         fc.asyncProperty(
           fc.integer({ min: 1, max: 168 }), // 1 hour to 1 week
           async (intervalHours: number) => {
@@ -309,8 +309,8 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
                 return false;
               }
               return true;
-            } catch (error) {
-              console.error("Error in test:", error, { intervalHours });
+            } catch (_error) {
+              console.error("Error in test:", _error, { intervalHours });
               return false;
             }
           },
@@ -321,8 +321,8 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
   });
 
   describe("calculateNextScheduleTime - FIXED_SLOTS scheduling", () => {
-    it("should always return a Date object for valid slot configurations", () => {
-      fc.assert(
+    it("should always return a Date object for valid slot configurations", async () => {
+      await fc.assert(
         fc.asyncProperty(
           fc.array(
             fc.tuple(
@@ -386,8 +386,8 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
                 return false;
               }
               return true;
-            } catch (error) {
-              console.error("Error in test:", error, { slots, timezone });
+            } catch (_error) {
+              console.error("Error in test:", _error, { slots, timezone });
               return false;
             }
           },
@@ -396,8 +396,8 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
       );
     });
 
-    it("should return a date in the future or present for slot-based scheduling", () => {
-      fc.assert(
+    it("should return a date in the future or present for slot-based scheduling", async () => {
+      await fc.assert(
         fc.asyncProperty(
           fc.array(
             fc.tuple(
@@ -448,7 +448,7 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
                 userId: TEST_USER_ID,
                 userTimezone: "UTC",
               });
-              const afterCall = Date.now();
+              const _afterCall = Date.now();
 
               // Result should be a valid Date
               if (!result || !(result instanceof Date) || isNaN(result.getTime())) {
@@ -457,8 +457,8 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
 
               // Result should be >= beforeCall (allow tolerance for async execution and clock drift)
               return result.getTime() >= beforeCall - 5000;
-            } catch (error) {
-              console.error("Error in test:", error, { slots });
+            } catch (_error) {
+              console.error("Error in test:", _error, { slots });
               return false;
             }
           },
@@ -467,8 +467,8 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
       );
     });
 
-    it("should handle various timezone inputs correctly", () => {
-      fc.assert(
+    it("should handle various timezone inputs correctly", async () => {
+      await fc.assert(
         fc.asyncProperty(
           fc.constantFrom("UTC", "America/New_York", "Europe/London", "Asia/Tokyo", "Australia/Sydney"),
           async (timezone: string) => {
@@ -508,8 +508,8 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
                 return false;
               }
               return true;
-            } catch (error) {
-              console.error("Error in test:", error, { timezone });
+            } catch (_error) {
+              console.error("Error in test:", _error, { timezone });
               return false;
             }
           },
@@ -564,8 +564,8 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
       expect(!isNaN(result.getTime())).toBe(true);
     });
 
-    it("should handle empty slot arrays gracefully", () => {
-      fc.assert(
+    it("should handle empty slot arrays gracefully", async () => {
+      await fc.assert(
         fc.asyncProperty(
           fc.constant([]),
           async (slots: [number, number][]) => {
@@ -617,8 +617,8 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
                 return false;
               }
               return true;
-            } catch (error) {
-              console.error("Error in test:", error, { slots });
+            } catch (_error) {
+              console.error("Error in test:", _error, { slots });
               return false;
             }
           },
@@ -627,8 +627,8 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
       );
     });
 
-    it("should handle very large interval hours", () => {
-      fc.assert(
+    it("should handle very large interval hours", async () => {
+      await fc.assert(
         fc.asyncProperty(
           fc.integer({ min: 1, max: 8760 }), // Up to 1 year
           async (intervalHours: number) => {
@@ -672,8 +672,8 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
                 return false;
               }
               return true;
-            } catch (error) {
-              console.error("Error in test:", error, { intervalHours });
+            } catch (_error) {
+              console.error("Error in test:", _error, { intervalHours });
               return false;
             }
           },

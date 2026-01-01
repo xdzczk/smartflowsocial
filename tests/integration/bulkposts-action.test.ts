@@ -5,7 +5,6 @@
  * Tests bulkPostsAction function
  */
 
-import { json, redirect } from "@remix-run/node";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock dependencies
 vi.mock("~/features/auth/session.server", () => ({
@@ -33,7 +32,6 @@ import { getPostsByIds } from "~/models/post.queries.server";
 
 import {
   TEST_USER_ID,
-  TEST_POST_ID,
   createActionFormData,
   createMockPost,
 } from "../utils/test-helpers";
@@ -231,7 +229,9 @@ describe("Bulk Posts Action Handler", () => {
       expect(updatePost).toHaveBeenCalledWith(
         expect.objectContaining({
           id: originalPostId,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           userId: expect.any(String),
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           data: expect.objectContaining({
             isRecyclable: false,
           }),

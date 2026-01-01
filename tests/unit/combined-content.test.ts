@@ -267,6 +267,8 @@ describe("Content Combining Logic", () => {
         },
       ];
 
+      // Dynamic import() type annotation needed for type reference
+      // eslint-disable-next-line @typescript-eslint/consistent-type-imports
       const result = combineContent(posts as import("~/features/posts/types").PostData[], [], "createdAt", "desc");
 
       expect(result).toHaveLength(1);
@@ -299,6 +301,8 @@ describe("Content Combining Logic", () => {
         },
       ];
 
+      // Dynamic import() type annotation needed for type reference
+      // eslint-disable-next-line @typescript-eslint/consistent-type-imports
       const result = combineContent(posts as import("~/features/posts/types").PostData[], [], "createdAt", "desc");
 
       expect(result).toHaveLength(2);

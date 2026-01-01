@@ -38,7 +38,6 @@ vi.mock("~/lib/prisma.server", () => ({
   prisma: mockPrisma,
 }));
 
-import { prisma } from "~/lib/prisma.server";
 import { createPost, updatePost } from "~/models/post.commands.server";
 import { getScheduledPosts } from "~/models/post.queries.server";
 import { getUserById } from "~/models/user.server";
@@ -53,14 +52,9 @@ describe("Database Failure Edge Cases", () => {
 
   describe("Connection Failures", () => {
     it("should handle database connection timeout", async () => {
-      (mockPrisma.post.findMany as ReturnType<typeof vi.fn>).mockImplementation(() => {
-        return new Promise((_, reject) => {
-          setTimeout(
-            () => reject(new Error("Connection timeout after 30s")),
-            100,
-          );
-        });
-      });
+      (mockPrisma.post.findMany as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error("Connection timeout after 30s")
+      );
 
       await expect(
         getScheduledPosts({ userId: TEST_USER_ID, queueType: "all" }),
@@ -135,11 +129,9 @@ describe("Database Failure Edge Cases", () => {
 
   describe("Query Failures", () => {
     it("should handle query timeout", async () => {
-      (mockPrisma.post.findMany as ReturnType<typeof vi.fn>).mockImplementation(() => {
-        return new Promise((_, reject) => {
-          setTimeout(() => reject(new Error("Query timeout")), 100);
-        });
-      });
+      (mockPrisma.post.findMany as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error("Query timeout")
+      );
 
       await expect(
         getScheduledPosts({ userId: TEST_USER_ID, queueType: "all" }),

@@ -68,38 +68,34 @@ async function createNostrUserAndLogin(npub: string) {
             where: { id: "premium" },
         });
 
-        if (!plan) {
             // Fall back to any active plan
-            plan = await tx.plan.findFirst({
+            plan ??= await tx.plan.findFirst({
                 where: { isActive: true },
             });
-        }
 
         // If no plan exists, create a premium plan for testing
         // This plan should have all features enabled for e2e tests
-        if (!plan) {
-            plan = await tx.plan.create({
-                data: {
-                    id: "premium",
-                    name: "Premium",
-                    price: 71,
-                    isActive: true,
-                    features: {
-                        basicScheduling: true,
-                        multipleQueues: true,
-                        bulkScheduling: true,
-                        engagementFeed: true,
-                        giveaways: true,
-                    },
-                    enableBasicScheduling: true,
-                    enableMultipleQueues: true,
-                    enableBulkScheduling: true,
-                    enableEngagementFeed: true,
-                    enableGiveaways: true,
-                    enableLifetimeAccess: false,
+        plan ??= await tx.plan.create({
+            data: {
+                id: "premium",
+                name: "Premium",
+                price: 71,
+                isActive: true,
+                features: {
+                    basicScheduling: true,
+                    multipleQueues: true,
+                    bulkScheduling: true,
+                    engagementFeed: true,
+                    giveaways: true,
                 },
-            });
-        }
+                enableBasicScheduling: true,
+                enableMultipleQueues: true,
+                enableBulkScheduling: true,
+                enableEngagementFeed: true,
+                enableGiveaways: true,
+                enableLifetimeAccess: false,
+            },
+        });
         
         // Ensure the plan has the correct name for feature detection
         // The getUserPlanType function checks planId and plan name
@@ -201,4 +197,4 @@ async function createNostrUserAndLogin(npub: string) {
     await prisma.$disconnect();
 }
 
-createNostrUserAndLogin(process.argv[2]);
+void createNostrUserAndLogin(process.argv[2]);

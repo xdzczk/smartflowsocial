@@ -72,7 +72,7 @@ async function seedTestDatabase() {
 
 // Run if called directly
 if (require.main === module) {
-  seedTestDatabase();
+  void seedTestDatabase();
 }
 
 export { seedTestDatabase };

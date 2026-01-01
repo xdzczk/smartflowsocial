@@ -31,4 +31,4 @@ async function deleteUser(npub: string) {
   }
 }
 
-deleteUser(process.argv[2]);
+void deleteUser(process.argv[2]);

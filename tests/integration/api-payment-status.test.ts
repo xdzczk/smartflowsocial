@@ -4,7 +4,6 @@
  * Tests the API endpoint in app/routes/api.payment-status.ts
  */
 
-import { json } from "@remix-run/node";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock dependencies
 vi.mock("~/models/payment.server", () => ({
@@ -37,7 +36,8 @@ describe("API: Payment Status", () => {
           body: formData,
         });
 
-        const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+        const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
+        const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
         const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; paid?: unknown; paidAt?: unknown; message?: unknown; status?: unknown; error?: unknown } : {};
 
@@ -67,7 +67,8 @@ describe("API: Payment Status", () => {
           body: formData,
         });
 
-        const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+        const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
+        const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
         const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; paid?: unknown; paidAt?: unknown; message?: unknown; status?: unknown; error?: unknown } : {};
 
@@ -94,7 +95,8 @@ describe("API: Payment Status", () => {
           body: formData,
         });
 
-        const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+        const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
+        const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
         const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; paid?: unknown; paidAt?: unknown; message?: unknown; status?: unknown; error?: unknown } : {};
 
@@ -112,7 +114,8 @@ describe("API: Payment Status", () => {
           method: "GET",
         });
 
-        const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+        const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
+        const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
         const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; paid?: unknown; paidAt?: unknown; message?: unknown; status?: unknown; error?: unknown } : {};
 
@@ -130,7 +133,8 @@ describe("API: Payment Status", () => {
           body: formData,
         });
 
-        const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+        const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
+        const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
         const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; paid?: unknown; paidAt?: unknown; message?: unknown; status?: unknown; error?: unknown } : {};
 
@@ -149,7 +153,8 @@ describe("API: Payment Status", () => {
           body: formData,
         });
 
-        const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+        const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
+        const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
         const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; paid?: unknown; paidAt?: unknown; message?: unknown; status?: unknown; error?: unknown } : {};
 
@@ -170,7 +175,8 @@ describe("API: Payment Status", () => {
           body: formData,
         });
 
-        const response = await action({ request, params: {}, context: {} } as { request: Request; params: Record<string, string>; context: Record<string, unknown> });
+        const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
+        const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
         const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; paid?: unknown; paidAt?: unknown; message?: unknown; status?: unknown; error?: unknown } : {};
 
@@ -184,10 +190,6 @@ describe("API: Payment Status", () => {
 
   describe("Loader Handler", () => {
     it("should return method not allowed for GET requests", async () => {
-      const request = new Request("http://localhost:3000/api/payment-status", {
-        method: "GET",
-      });
-
       const loaderFn = loader as () => Promise<Response>;
       const response = await loaderFn();
       const dataRaw: unknown = await response.json();

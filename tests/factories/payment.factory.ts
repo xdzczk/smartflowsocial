@@ -3,9 +3,8 @@
  * Uses builder pattern for flexible test data creation
  */
 
-import { Decimal } from "@prisma/client/runtime/library";
-
 import type { Payment, PaymentStatus } from "@prisma/client";
+import { Decimal } from "@prisma/client/runtime/library";
 
 import { TEST_USER_ID } from "../utils/test-helpers";
 

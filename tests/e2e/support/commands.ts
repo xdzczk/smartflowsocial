@@ -173,9 +173,12 @@ function cleanupNostrUser({ npub }: { npub?: string } = {}) {
     // Check if @user alias exists before trying to access it
     // Use cy.state to check aliases
     cy.wrap(null).then(() => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const aliases = (cy as any).state("aliases") ?? {};
-      if (aliases.user) {
+      // Type assertion for Cypress internal state access
+      interface CypressState {
+        state: (key: string) => unknown;
+      }
+      const aliases = ((cy as unknown) as CypressState).state("aliases") as Record<string, unknown> | undefined;
+      if (aliases?.user) {
         cy.get("@user", { log: false }).then((user) => {
           const userNpub = (user as { npub?: string }).npub;
           if (userNpub) {
@@ -191,12 +194,12 @@ function cleanupNostrUser({ npub }: { npub?: string } = {}) {
 }
 
 function deleteUserByEmail(email: string) {
-  cy.exec(`npx tsx ./tests/e2e/support/delete-user.ts "${email}"`);
+  void cy.exec(`npx tsx ./tests/e2e/support/delete-user.ts "${email}"`);
   cy.clearCookie("__session");
 }
 
 function deleteNostrUserByNpub(npub: string) {
-  cy.exec(`npx tsx ./tests/e2e/support/delete-nostr-user.ts "${npub}"`);
+  void cy.exec(`npx tsx ./tests/e2e/support/delete-nostr-user.ts "${npub}"`);
   cy.clearCookie("__session");
 }
 

@@ -34,7 +34,7 @@ describe("Database Migrations", () => {
       // If we get here, migrations succeeded
       expect(true).toBe(true);
     } catch (error) {
-      throw new Error(`Migrations failed: ${error}`);
+      throw new Error(`Migrations failed: ${String(error)}`);
     }
   });
 
