@@ -15,7 +15,7 @@ export function nullToUndefined<T>(value: T | null): T | undefined {
 }
 
 export function postToCombinedContent(post: PostData): CombinedContent {
-  return {
+  const result: CombinedContent = {
     id: post.id,
     type: "post",
     caption: nullToUndefined(post.caption),
@@ -29,8 +29,8 @@ export function postToCombinedContent(post: PostData): CombinedContent {
     isPosted: post.isPosted,
     draft: post.draft,
     status: post.status,
-    queueType: post.queueType && typeof post.queueType === "object" && "id" in post.queueType && "name" in post.queueType ? {
-      id: typeof post.queueType.id === "string" ? post.queueType.id : String(post.queueType.id ?? ""),
+    queueType: post.queueType && typeof post.queueType === "object" && "name" in post.queueType ? {
+      id: "id" in post.queueType && post.queueType.id ? (typeof post.queueType.id === "string" ? post.queueType.id : String(post.queueType.id)) : "",
       name: typeof post.queueType.name === "string" ? post.queueType.name : String(post.queueType.name ?? ""),
       color: "color" in post.queueType && post.queueType.color ? (typeof post.queueType.color === "string" ? post.queueType.color : String(post.queueType.color)) : undefined,
     } : undefined,
@@ -39,15 +39,21 @@ export function postToCombinedContent(post: PostData): CombinedContent {
     tags: post.tags,
     signedEvent: nullToUndefined(post.signedEvent),
     nostrEvent: nullToUndefined(post.nostrEvent),
-    nostrEventId: nullToUndefined(post.nostrEventId),
     manual_override: post.manual_override,
     postType: post.postType,
     repost: post.repost,
     isQuotedPost: post.isQuotedPost,
     isRecyclable: post.isRecyclable,
-    templateId: nullToUndefined(post.templateId),
+    templateId: post.templateId ?? null,
     originalData: post,
   };
+
+  // Only include nostrEventId if it exists in the post
+  if (post.nostrEventId !== null && post.nostrEventId !== undefined) {
+    result.nostrEventId = post.nostrEventId;
+  }
+
+  return result;
 }
 
 /**

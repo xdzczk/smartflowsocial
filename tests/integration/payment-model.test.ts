@@ -100,8 +100,7 @@ vi.mock("@getalby/sdk/lnclient", () => ({
   LN: vi.fn().mockImplementation(function(credentials: string) {
     return new MockLN(credentials);
   }),
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  _USD: vi.fn((amount) => ({ amount })),
+  USD: vi.fn((amount: unknown) => ({ amount: amount as number })),
 }));
 
 describe("Payment Model Functions", () => {

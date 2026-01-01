@@ -197,9 +197,12 @@ export function normalizeError(error: unknown): AppError {
       });
     }
 
-    // Generic error
+    // Generic error - use default message if empty
+    const message = error.message && error.message.trim() !== "" 
+      ? error.message 
+      : "An unexpected error occurred";
     return new AppError(
-      error.message ?? "An unexpected error occurred",
+      message,
       500,
       "INTERNAL_ERROR",
       false,

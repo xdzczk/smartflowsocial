@@ -46,7 +46,7 @@ vi.mock("~/models/longformpost.server", () => ({
   getCronDueScheduledLongFormPosts: vi.fn(),
 }));
 
-vi.mock("~/models/user.server", () => ({
+vi.mock("~/features/user", () => ({
   getUserById: vi.fn(),
 }));
 
@@ -72,6 +72,9 @@ const { mockPrisma } = vi.hoisted(() => {
       findUnique: vi.fn(),
       update: vi.fn(),
     },
+    user: {
+      findUnique: vi.fn(),
+    },
     $use: vi.fn(),
   };
   return { mockPrisma };
@@ -87,7 +90,7 @@ import { prisma } from "~/lib/prisma.server";
 import { updateLongFormPostStatus, getCronDueScheduledLongFormPosts } from "~/models/longformpost.server";
 import { updatePostStatus } from "~/models/post.commands.server";
 import { getCronDueScheduledPosts } from "~/models/post.queries.server";
-import { getUserById } from "~/models/user.server";
+import { getUserById } from "~/features/user";
 
 import { TEST_USER_ID } from "../utils/test-helpers";
 

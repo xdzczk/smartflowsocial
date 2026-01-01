@@ -264,6 +264,7 @@ describe("Bulk Posts Action Handler", () => {
       const captions = ["Caption 1", "Caption 2"];
       const queueTypes = ["posts", "all"];
 
+      (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue(TEST_USER_ID);
       (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue("queue-1");
       (createPost as ReturnType<typeof vi.fn>)
         .mockResolvedValueOnce(createMockPost({ id: "draft-1" }))
@@ -272,7 +273,7 @@ describe("Bulk Posts Action Handler", () => {
       const formData = new FormData();
       formData.append("_action", "save_as_draft");
       fileUrls.forEach((url) => {
-        formData.append("fileUrl", JSON.stringify(url));
+        formData.append("fileUrl", JSON.stringify([url]));
       });
       captions.forEach((caption) => {
         formData.append("caption", JSON.stringify(caption));

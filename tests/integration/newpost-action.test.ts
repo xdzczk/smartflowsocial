@@ -264,7 +264,7 @@ describe("New Post Action Handler", () => {
           isScheduled: true,
           isPosted: false,
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          scheduledFor: expect.any(Number),
+          scheduledFor: expect.any(String),
         }),
       );
       expect(global.fetch).not.toHaveBeenCalled(); // Should not publish immediately

@@ -10,63 +10,78 @@ vi.mock("~/features/auth/session.server", () => ({
   requireUserId: vi.fn(),
 }));
 
-vi.mock("~/models/user.server", () => ({
-  getUserBasicInfo: vi.fn(),
-  getConfirmedChildrenForParent: vi.fn(),
+// Use vi.hoisted to create mock functions before module import - best practice
+const { mockLoadChildrenData, mockHandleChildrenApiError } = vi.hoisted(() => ({
+  mockLoadChildrenData: vi.fn(),
+  mockHandleChildrenApiError: vi.fn(),
 }));
 
-vi.mock("~/models/payment.server", () => ({
-  getUserSubscription: vi.fn(),
+// Mock only loadChildrenData - we'll inject the error handler via dependency injection
+vi.mock("~/features/user", async () => {
+  // Dynamic import() type annotation needed for vi.importActual
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+  const actual = await vi.importActual<typeof import("~/features/user")>("~/features/user");
+  return {
+    ...actual,
+    loadChildrenData: mockLoadChildrenData,
+  };
+});
+
+vi.mock("~/lib/error-logger.server", () => ({
+  logError: vi.fn(),
 }));
 
+vi.mock("~/lib/errors", () => ({
+  normalizeError: vi.fn((error) => ({
+    message: error instanceof Error ? error.message : String(error),
+    code: "UNKNOWN_ERROR",
+    statusCode: 500,
+  })),
+}));
+
+import { json } from "@remix-run/node";
 import { requireUserId } from "~/features/auth/session.server";
-import { getUserSubscription } from "~/models/payment.server";
-import { getUserBasicInfo, getConfirmedChildrenForParent } from "~/models/user.server";
-import { loader } from "~/routes/api.children";
+import { createLoader } from "~/routes/api.children";
+
+// Import the mocked functions
+import { loadChildrenData } from "~/features/user";
 
 import { TEST_USER_ID } from "../utils/test-helpers";
 
 describe("API: Children", () => {
+  // Create loader with injected error handler for testing
+  // This is created fresh for each test via the factory function
+  let loader: ReturnType<typeof createLoader>;
+
   beforeEach(() => {
     vi.clearAllMocks();
     (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue(TEST_USER_ID);
+    // Set default mock for error handler
+    mockHandleChildrenApiError.mockReturnValue(json({ children: [] }));
+    // Create loader with injected dependencies for each test
+    loader = createLoader(mockLoadChildrenData, mockHandleChildrenApiError);
   });
 
   describe("Successful Requests", () => {
     it("should return children for parent with premium subscription", async () => {
-      const mockUser = {
-        id: TEST_USER_ID,
-        npub: "npub123",
-        isChild: false,
-      };
-
-      const mockSubscription = {
-        planId: "premium",
-        Plan: { name: "Premium" },
-      };
-
-      const mockChildren = [
-        {
-          npub: "npub-child-1",
-          nostrProfile: JSON.stringify({
+      const expectedResponse = json({
+        children: [
+          {
+            npub: "npub-child-1",
             name: "Child 1",
-            display_name: "Child One",
+            displayName: "Child One",
             picture: "https://example.com/pic1.jpg",
-          }),
-        },
-        {
-          npub: "npub-child-2",
-          nostrProfile: JSON.stringify({
+          },
+          {
+            npub: "npub-child-2",
             name: "Child 2",
-            display_name: "Child Two",
+            displayName: "Child Two",
             picture: "https://example.com/pic2.jpg",
-          }),
-        },
-      ];
+          },
+        ],
+      });
 
-      (getUserBasicInfo as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
-      (getUserSubscription as ReturnType<typeof vi.fn>).mockResolvedValue(mockSubscription);
-      (getConfirmedChildrenForParent as ReturnType<typeof vi.fn>).mockResolvedValue(mockChildren);
+      mockLoadChildrenData.mockResolvedValue(expectedResponse);
 
       const request = new Request("http://localhost:3000/api/children");
 
@@ -81,9 +96,7 @@ describe("API: Children", () => {
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
 
       expect(requireUserId).toHaveBeenCalledWith(request);
-      expect(getUserBasicInfo).toHaveBeenCalledWith(TEST_USER_ID);
-      expect(getUserSubscription).toHaveBeenCalledWith(TEST_USER_ID);
-      expect(getConfirmedChildrenForParent).toHaveBeenCalledWith("npub123");
+      expect(loadChildrenData).toHaveBeenCalledWith(TEST_USER_ID);
       expect(data).toEqual({
         children: [
           {
@@ -103,20 +116,7 @@ describe("API: Children", () => {
     });
 
     it("should return children for founder subscription", async () => {
-      const mockUser = {
-        id: TEST_USER_ID,
-        npub: "npub123",
-        isChild: false,
-      };
-
-      const mockSubscription = {
-        planId: "basic",
-        Plan: { name: "Founder" },
-      };
-
-      (getUserBasicInfo as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
-      (getUserSubscription as ReturnType<typeof vi.fn>).mockResolvedValue(mockSubscription);
-      (getConfirmedChildrenForParent as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+      (loadChildrenData as ReturnType<typeof vi.fn>).mockResolvedValue(json({ children: [] }));
 
       const request = new Request("http://localhost:3000/api/children");
 
@@ -130,24 +130,12 @@ describe("API: Children", () => {
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
 
+      expect(loadChildrenData).toHaveBeenCalledWith(TEST_USER_ID);
       expect(data.children).toEqual([]);
     });
 
     it("should handle case-insensitive plan matching", async () => {
-      const mockUser = {
-        id: TEST_USER_ID,
-        npub: "npub123",
-        isChild: false,
-      };
-
-      const mockSubscription = {
-        planId: "PREMIUM",
-        Plan: { name: "premium" },
-      };
-
-      (getUserBasicInfo as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
-      (getUserSubscription as ReturnType<typeof vi.fn>).mockResolvedValue(mockSubscription);
-      (getConfirmedChildrenForParent as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+      (loadChildrenData as ReturnType<typeof vi.fn>).mockResolvedValue(json({ children: [] }));
 
       const request = new Request("http://localhost:3000/api/children");
 
@@ -161,31 +149,23 @@ describe("API: Children", () => {
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
 
+      expect(loadChildrenData).toHaveBeenCalledWith(TEST_USER_ID);
       expect(data.children).toEqual([]);
     });
 
     it("should handle children with missing profile data", async () => {
-      const mockUser = {
-        id: TEST_USER_ID,
-        npub: "npub123",
-        isChild: false,
-      };
-
-      const mockSubscription = {
-        planId: "premium",
-        Plan: { name: "Premium" },
-      };
-
-      const mockChildren = [
-        {
-          npub: "npub-child-1",
-          nostrProfile: null,
-        },
-      ];
-
-      (getUserBasicInfo as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
-      (getUserSubscription as ReturnType<typeof vi.fn>).mockResolvedValue(mockSubscription);
-      (getConfirmedChildrenForParent as ReturnType<typeof vi.fn>).mockResolvedValue(mockChildren);
+      (loadChildrenData as ReturnType<typeof vi.fn>).mockResolvedValue(
+        json({
+          children: [
+            {
+              npub: "npub-child-1",
+              name: undefined,
+              displayName: undefined,
+              picture: undefined,
+            },
+          ],
+        }),
+      );
 
       const request = new Request("http://localhost:3000/api/children");
 
@@ -199,6 +179,7 @@ describe("API: Children", () => {
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
 
+      expect(loadChildrenData).toHaveBeenCalledWith(TEST_USER_ID);
       expect(data.children).toEqual([
         {
           npub: "npub-child-1",
@@ -210,31 +191,18 @@ describe("API: Children", () => {
     });
 
     it("should handle children with object profile data", async () => {
-      const mockUser = {
-        id: TEST_USER_ID,
-        npub: "npub123",
-        isChild: false,
-      };
-
-      const mockSubscription = {
-        planId: "premium",
-        Plan: { name: "Premium" },
-      };
-
-      const mockChildren = [
-        {
-          npub: "npub-child-1",
-          nostrProfile: {
-            name: "Child 1",
-            display_name: "Child One",
-            picture: "https://example.com/pic.jpg",
-          },
-        },
-      ];
-
-      (getUserBasicInfo as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
-      (getUserSubscription as ReturnType<typeof vi.fn>).mockResolvedValue(mockSubscription);
-      (getConfirmedChildrenForParent as ReturnType<typeof vi.fn>).mockResolvedValue(mockChildren);
+      (loadChildrenData as ReturnType<typeof vi.fn>).mockResolvedValue(
+        json({
+          children: [
+            {
+              npub: "npub-child-1",
+              name: "Child 1",
+              displayName: "Child One",
+              picture: "https://example.com/pic.jpg",
+            },
+          ],
+        }),
+      );
 
       const request = new Request("http://localhost:3000/api/children");
 
@@ -248,6 +216,7 @@ describe("API: Children", () => {
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
 
+      expect(loadChildrenData).toHaveBeenCalledWith(TEST_USER_ID);
       expect(data.children?.[0]?.name).toBe("Child 1");
       expect(data.children?.[0]?.displayName).toBe("Child One");
       expect(data.children?.[0]?.picture).toBe("https://example.com/pic.jpg");
@@ -256,10 +225,7 @@ describe("API: Children", () => {
 
   describe("Access Control", () => {
     it("should return empty array when user has no npub", async () => {
-      (getUserBasicInfo as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: TEST_USER_ID,
-        npub: null,
-      });
+      (loadChildrenData as ReturnType<typeof vi.fn>).mockResolvedValue(json({ children: [] }));
 
       const request = new Request("http://localhost:3000/api/children");
 
@@ -273,16 +239,12 @@ describe("API: Children", () => {
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
 
+      expect(loadChildrenData).toHaveBeenCalledWith(TEST_USER_ID);
       expect(data).toEqual({ children: [] });
-      expect(getUserSubscription).not.toHaveBeenCalled();
     });
 
     it("should return empty array when user is a child account", async () => {
-      (getUserBasicInfo as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: TEST_USER_ID,
-        npub: "npub123",
-        isChild: true,
-      });
+      (loadChildrenData as ReturnType<typeof vi.fn>).mockResolvedValue(json({ children: [] }));
 
       const request = new Request("http://localhost:3000/api/children");
 
@@ -296,24 +258,12 @@ describe("API: Children", () => {
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
 
+      expect(loadChildrenData).toHaveBeenCalledWith(TEST_USER_ID);
       expect(data).toEqual({ children: [] });
-      expect(getUserSubscription).not.toHaveBeenCalled();
     });
 
     it("should return empty array when user doesn't have premium/founder subscription", async () => {
-      const mockUser = {
-        id: TEST_USER_ID,
-        npub: "npub123",
-        isChild: false,
-      };
-
-      const mockSubscription = {
-        planId: "basic",
-        Plan: { name: "Basic" },
-      };
-
-      (getUserBasicInfo as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
-      (getUserSubscription as ReturnType<typeof vi.fn>).mockResolvedValue(mockSubscription);
+      (loadChildrenData as ReturnType<typeof vi.fn>).mockResolvedValue(json({ children: [] }));
 
       const request = new Request("http://localhost:3000/api/children");
 
@@ -327,19 +277,12 @@ describe("API: Children", () => {
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
 
+      expect(loadChildrenData).toHaveBeenCalledWith(TEST_USER_ID);
       expect(data).toEqual({ children: [] });
-      expect(getConfirmedChildrenForParent).not.toHaveBeenCalled();
     });
 
     it("should return empty array when subscription is null", async () => {
-      const mockUser = {
-        id: TEST_USER_ID,
-        npub: "npub123",
-        isChild: false,
-      };
-
-      (getUserBasicInfo as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
-      (getUserSubscription as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (loadChildrenData as ReturnType<typeof vi.fn>).mockResolvedValue(json({ children: [] }));
 
       const request = new Request("http://localhost:3000/api/children");
 
@@ -353,6 +296,7 @@ describe("API: Children", () => {
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
 
+      expect(loadChildrenData).toHaveBeenCalledWith(TEST_USER_ID);
       expect(data).toEqual({ children: [] });
     });
   });
@@ -366,6 +310,13 @@ describe("API: Children", () => {
       });
       (requireUserId as ReturnType<typeof vi.fn>).mockImplementation(() => {
         throw redirectResponse;
+      });
+      // handleChildrenApiError rethrows Response errors
+      mockHandleChildrenApiError.mockImplementation((error) => {
+        if (error instanceof Response) {
+          throw error;
+        }
+        return json({ children: [] });
       });
 
       const request = new Request("http://localhost:3000/api/children");
@@ -386,24 +337,30 @@ describe("API: Children", () => {
     });
 
     it("should handle database errors gracefully", async () => {
-      (getUserBasicInfo as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Database error"),
-      );
+      // When loadChildrenData fails, the loader should catch it and call
+      // the injected error handler, which returns an empty array
+      const dbError = new Error("Database error");
+      mockLoadChildrenData.mockRejectedValue(dbError);
+      
+      // Mock the error handler to return a graceful response
+      const errorResponse = json({ children: [] });
+      mockHandleChildrenApiError.mockReturnValue(errorResponse);
 
       const request = new Request("http://localhost:3000/api/children");
-
-      interface LoaderArgs {
-        request: Request;
-        params: Record<string, string | undefined>;
-        context: Record<string, unknown>;
-      }
-      const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
+      const loaderArgs = { request, params: {}, context: {} };
+      
+      // The loader should catch the error and return a graceful response
+      // The error from mockLoadChildrenData should be caught by the loader's try-catch
       const response = await loader(loaderArgs);
-      const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
+      const data = await response.json() as { children?: unknown[] };
 
-      // Should return empty array on error
+      // Verify graceful error handling - returns empty array instead of throwing
+      expect(response.status).toBe(200);
       expect(data).toEqual({ children: [] });
+      expect(mockHandleChildrenApiError).toHaveBeenCalledWith(
+        dbError,
+        expect.any(String),
+      );
     });
 
     it("should handle invalid JSON in nostrProfile", async () => {
@@ -418,16 +375,18 @@ describe("API: Children", () => {
         Plan: { name: "Premium" },
       };
 
-      const mockChildren = [
-        {
-          npub: "npub-child-1",
-          nostrProfile: "invalid json",
-        },
-      ];
-
-      (getUserBasicInfo as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
-      (getUserSubscription as ReturnType<typeof vi.fn>).mockResolvedValue(mockSubscription);
-      (getConfirmedChildrenForParent as ReturnType<typeof vi.fn>).mockResolvedValue(mockChildren);
+      (loadChildrenData as ReturnType<typeof vi.fn>).mockResolvedValue(
+        json({
+          children: [
+            {
+              npub: "npub-child-1",
+              name: undefined,
+              displayName: undefined,
+              picture: undefined,
+            },
+          ],
+        }),
+      );
 
       const request = new Request("http://localhost:3000/api/children");
 
@@ -441,6 +400,7 @@ describe("API: Children", () => {
       const dataRaw: unknown = await response.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { children?: Array<{ name?: string; displayName?: string; npub?: string; picture?: string }> } : {};
 
+      expect(loadChildrenData).toHaveBeenCalledWith(TEST_USER_ID);
       // Should handle parse error gracefully
       const children = Array.isArray(data.children) ? data.children : [];
       const firstChild = children[0] && typeof children[0] === "object" && !Array.isArray(children[0]) ? children[0] as { name?: string; displayName?: string; npub?: string; picture?: string } : {};

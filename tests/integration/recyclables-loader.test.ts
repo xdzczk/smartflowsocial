@@ -18,7 +18,7 @@ vi.mock("~/models/post.queries.server", () => ({
   getRecyclablePosts: vi.fn(),
 }));
 
-vi.mock("~/models/user.server", () => ({
+vi.mock("~/features/user", () => ({
   getUserById: vi.fn(),
   getQueueTypes: vi.fn(),
 }));
@@ -30,7 +30,7 @@ vi.mock("~/features/posts/stats.server", () => ({
 import { getRecyclableDashboardData } from "~/features/posts/posts.server";
 import { getPostStats } from "~/features/posts/stats.server";
 import { getRecyclablePosts } from "~/models/post.queries.server";
-import { getUserById, getQueueTypes } from "~/models/user.server";
+import { getUserById, getQueueTypes } from "~/features/user";
 
 import {
   TEST_USER_ID,

@@ -2,13 +2,21 @@
  * Example Database Integration Test
  * 
  * This file demonstrates how to write tests that use a real database
- * with transaction-based isolation for safety
+ * with transaction-based isolation for safety.
+ * 
+ * **Requirements:**
+ * - Set `TEST_DATABASE_URL` environment variable to a test database URL
+ * - Or set `SKIP_DATABASE_TESTS=true` to skip these tests
+ * - Database must be running and accessible
+ * 
+ * **Note:** This is an example test file. It will be automatically skipped
+ * if `TEST_DATABASE_URL` is not set or if `SKIP_DATABASE_TESTS=true`.
  */
 
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 
 import { createPost } from "~/models/post.commands.server";
-import { getUserById } from "~/models/user.server";
+import { getUserById } from "~/features/user";
 
 import {
   describeDatabase,
@@ -25,10 +33,22 @@ import { getTestPrisma } from "../database/test-db";
 // database operations will use the real client from withDatabase
 vi.mock("~/lib/prisma.server", async () => {
   // Return a proxy that forwards to getTestPrisma() when accessed
+  // Handle case where database URL is not set (tests will be skipped)
   const { getTestPrisma } = await import("../database/test-db");
   return {
     get prisma() {
-      return getTestPrisma();
+      try {
+        return getTestPrisma();
+      } catch (error) {
+        // If database URL is not set, return a mock Prisma client
+        // The describeDatabase helper will skip the tests anyway
+        return {
+          $use: vi.fn(),
+          $transaction: vi.fn(),
+          user: { findUnique: vi.fn(), create: vi.fn() },
+          post: { findUnique: vi.fn(), create: vi.fn() },
+        } as unknown as typeof import("@prisma/client").PrismaClient;
+      }
     },
   };
 });

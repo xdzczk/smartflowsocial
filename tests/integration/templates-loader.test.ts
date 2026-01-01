@@ -15,14 +15,14 @@ vi.mock("~/models/template.server", () => ({
   getTemplates: vi.fn(),
 }));
 
-vi.mock("~/models/user.server", () => ({
+vi.mock("~/features/user", () => ({
   getUserById: vi.fn(),
 }));
 
 import { loadTemplatesData } from "~/features/templates/services/templates-loader.server";
 import { getAssets, searchAssets } from "~/models/asset.server";
 import { getTemplates } from "~/models/template.server";
-import { getUserById } from "~/models/user.server";
+import { getUserById } from "~/features/user";
 
 import { TEST_USER_ID } from "../utils/test-helpers";
 

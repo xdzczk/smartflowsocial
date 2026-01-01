@@ -66,16 +66,20 @@ describe("Queue Client", () => {
 
       mockQueue.add.mockResolvedValue(mockJob);
 
+      // Use a fixed timestamp to avoid timing issues
+      const fixedTimestamp = 1767303323189;
+      const signedEvent = { id: "event-123", pubkey: "test-pubkey", created_at: fixedTimestamp, kind: 1, tags: [], content: "", sig: "test-sig" } satisfies Partial<SignedEvent> as SignedEvent;
+
       const result = await queueClient.enqueue(
         "scheduled-posts",
         "publish-post",
-        { postId: "post-123", userId: "user-123", signedEvent: { id: "event-123", pubkey: "test-pubkey", created_at: Date.now(), kind: 1, tags: [], content: "", sig: "test-sig" } satisfies Partial<SignedEvent> as SignedEvent },
+        { postId: "post-123", userId: "user-123", signedEvent },
         { delay: 5000 },
       );
 
       expect(mockQueue.add).toHaveBeenCalledWith(
         "publish-post",
-        { postId: "post-123", userId: "user-123", signedEvent: { id: "event-123", pubkey: "test-pubkey", created_at: Date.now(), kind: 1, tags: [], content: "", sig: "test-sig" } satisfies Partial<SignedEvent> as SignedEvent },
+        { postId: "post-123", userId: "user-123", signedEvent },
         { delay: 5000 },
       );
       expect(result).toEqual({

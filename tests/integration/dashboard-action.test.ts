@@ -44,17 +44,10 @@ describe("Dashboard Action Handler", () => {
     });
 
     it("should handle missing postId gracefully", async () => {
-      (deletePost as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
-
       const formData = createActionFormData("delete", {});
 
-      const result = await handleDashboardAction(formData, TEST_USER_ID);
-
-      expect(deletePost).toHaveBeenCalledWith({
-        id: null,
-        userId: TEST_USER_ID,
-      });
-      expect(result).toEqual({ success: true });
+      await expect(handleDashboardAction(formData, TEST_USER_ID)).rejects.toThrow("Post ID is required");
+      expect(deletePost).not.toHaveBeenCalled();
     });
   });
 

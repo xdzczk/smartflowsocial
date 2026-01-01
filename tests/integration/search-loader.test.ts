@@ -6,12 +6,12 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock dependencies
-vi.mock("~/models/user.server", () => ({
+vi.mock("~/features/user", () => ({
   getUserById: vi.fn(),
 }));
 
 import { loadSearchData } from "~/features/search/services/search-loader.server";
-import { getUserById } from "~/models/user.server";
+import { getUserById } from "~/features/user";
 
 import { TEST_USER_ID } from "../utils/test-helpers";
 

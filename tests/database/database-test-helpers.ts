@@ -4,7 +4,7 @@
  * Utilities for writing database-integrated tests
  */
 
-import { beforeAll, afterAll } from "vitest";
+import { beforeAll, afterAll, describe } from "vitest";
 
 import type { TestFixtures } from "./fixtures";
 import type { getTestPrisma } from "./test-db";
@@ -59,7 +59,7 @@ export function describeDatabase(
   // Skip the entire suite if database is not configured
   // This prevents beforeAll from failing and marking the suite as failed
   if (shouldSkip) {
-    // Intentionally skipping tests when database setup fails
+    // Intentionally skipping tests when database is not configured
     // eslint-disable-next-line jest/valid-describe-callback, jest/valid-title, jest/no-disabled-tests
     describe.skip(name, fn);
     return;
@@ -75,10 +75,11 @@ export function describeDatabase(
         }
       } catch (error) {
         console.warn(
-          `Database setup failed for "${name}". Tests will be skipped.`,
+          `Database setup failed for "${name}". Tests may fail.`,
           error,
         );
-        // Skip all tests in this suite if setup fails
+        // Re-throw to mark tests as failed if database is not available
+        // This ensures tests don't silently pass when database is unavailable
         throw error;
       }
     });

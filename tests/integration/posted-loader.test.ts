@@ -25,13 +25,13 @@ vi.mock("~/features/payments/subscriptions.server", () => ({
   requireAnySubscription: vi.fn(),
 }));
 
-vi.mock("~/features/posts/posts.server", () => ({
+vi.mock("~/features/posts/services/posted-posts.server", () => ({
   getPostedDashboardData: vi.fn(),
 }));
 
 import { requireUserId } from "~/features/auth/session.server";
 import { requireAnySubscription } from "~/features/payments/subscriptions.server";
-import { getPostedDashboardData } from "~/features/posts/posts.server";
+import { getPostedDashboardData } from "~/features/posts/services/posted-posts.server";
 import { loader } from "~/routes/dashboard.posted";
 
 describe("Posted Posts Loader Integration", () => {

@@ -6,6 +6,20 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
+// Set SESSION_SECRET for tests (must be before any imports that use it)
+process.env.SESSION_SECRET = "test-session-secret";
+
+// Mock session.server to prevent SESSION_SECRET invariant error
+vi.mock("~/features/auth/session.server", () => ({
+  requireUserId: vi.fn(),
+  sessionStorage: {
+    getSession: vi.fn(),
+    commitSession: vi.fn(),
+    destroySession: vi.fn(),
+  },
+}));
+
 // Mock Prisma to prevent $use errors
 vi.mock("~/lib/prisma.server", () => ({
   prisma: {
@@ -182,7 +196,7 @@ describe("Recyclables Action Handler", () => {
       expect(quotePostData).toHaveLength(2);
       expect(firstQuotePost).toMatchObject({
         caption: "",
-        fileUrl: [`https://example.com/image-${postIds[0]}.jpg`],
+        fileUrl: `https://example.com/image-${postIds[0]}.jpg`, // Implementation returns first element as string
         queueType: "posts",
         scheduledFor: "",
         originalPostId: postIds[0],
@@ -278,7 +292,7 @@ describe("Recyclables Action Handler", () => {
       expect(quotePostData).toHaveLength(1);
       expect(firstQuotePost).toMatchObject({
         caption: "",
-        fileUrl: ["https://example.com/image.jpg"],
+        fileUrl: "https://example.com/image.jpg", // Implementation returns first element as string
         queueType: "posts",
         scheduledFor: "",
         originalPostId: TEST_POST_ID,

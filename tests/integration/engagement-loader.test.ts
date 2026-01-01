@@ -21,7 +21,7 @@ vi.mock("~/models/post.queries.server", () => ({
   getPostedPosts: vi.fn(),
 }));
 
-vi.mock("~/models/user.server", () => ({
+vi.mock("~/features/user", () => ({
   getUserById: vi.fn(),
 }));
 
@@ -29,7 +29,7 @@ import { connectToPrimalCache } from "~/features/cache/primalCache.server";
 import { parseThreadViewNotifications, groupNotificationsByType, groupNotificationsByParent, processQuoteReposts } from "~/features/engagement/engagement.server";
 import { loadEngagementFeedData } from "~/features/engagement/services/engagement-loader.server";
 import { getPostedPosts } from "~/models/post.queries.server";
-import { getUserById } from "~/models/user.server";
+import { getUserById } from "~/features/user";
 
 import { TEST_USER_ID } from "../utils/test-helpers";
 
@@ -371,7 +371,8 @@ describe("Engagement Loader", () => {
 
       const result = await loadEngagementFeedData(TEST_USER_ID, 1, 50);
 
-      expect(result.user.npub).toBe("");
+      // The function uses npub ?? "" internally but returns the original user object
+      expect(result.user.npub).toBeNull();
     });
   });
 

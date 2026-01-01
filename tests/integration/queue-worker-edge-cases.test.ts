@@ -53,6 +53,9 @@ vi.mock("~/lib/prisma.server", () => ({
       findUnique: vi.fn(),
       update: vi.fn(),
     },
+    user: {
+      findUnique: vi.fn(),
+    },
     $use: vi.fn(),
   },
 }));
@@ -65,7 +68,7 @@ vi.mock("~/models/longformpost.server", () => ({
   updateLongFormPostStatus: vi.fn(),
 }));
 
-vi.mock("~/models/user.server", () => ({
+vi.mock("~/features/user", () => ({
   getUserById: vi.fn(),
 }));
 
@@ -86,7 +89,7 @@ import { prisma } from "~/lib/prisma.server";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Used via mock at runtime
 import { updateLongFormPostStatus } from "~/models/longformpost.server";
 import { updatePostStatus } from "~/models/post.commands.server";
-import { getUserById } from "~/models/user.server";
+import { getUserById } from "~/features/user";
 
 import { TEST_USER_ID } from "../utils/test-helpers";
 

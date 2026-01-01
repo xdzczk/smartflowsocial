@@ -10,12 +10,12 @@ vi.mock("~/features/auth/session.server", () => ({
   requireUserId: vi.fn(),
 }));
 
-vi.mock("~/models/user.server", () => ({
+vi.mock("~/features/user", () => ({
   getQueueTypes: vi.fn(),
 }));
 
 import { requireUserId } from "~/features/auth/session.server";
-import { getQueueTypes } from "~/models/user.server";
+import { getQueueTypes } from "~/features/user";
 import { action } from "~/routes/api.effective-hashtags";
 
 import { TEST_USER_ID } from "../utils/test-helpers";

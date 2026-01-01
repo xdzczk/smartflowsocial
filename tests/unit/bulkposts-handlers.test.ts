@@ -165,11 +165,7 @@ describe("Bulk Posts Handlers", () => {
       handleDateChange(0, "", posts, setPosts, setFirstItemTimeManuallyChanged);
 
       expect(setPosts).toHaveBeenCalledWith([
-        {
-          caption: "Post 1",
-          queueType: "unassigned",
-          scheduledFor: "",
-        },
+        createBulkPost({ caption: "Post 1", scheduledFor: "" }),
       ]);
     });
   });

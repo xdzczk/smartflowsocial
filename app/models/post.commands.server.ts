@@ -198,6 +198,7 @@ export function updatePost({
   if (data.scheduledFor !== undefined) updateData.scheduledFor = data.scheduledFor.toString();
   if (data.userId !== undefined) updateData.user = { connect: { id: data.userId } };
   if (data.content !== undefined) updateData.content = data.content;
+  if (data.caption !== undefined) updateData.caption = data.caption;
   if (data.postedAt !== undefined) updateData.postedAt = data.postedAt;
   if (data.fileUrl !== undefined) updateData.fileUrl = data.fileUrl;
   if (data.nostrEventId !== undefined) updateData.nostrEventId = data.nostrEventId;

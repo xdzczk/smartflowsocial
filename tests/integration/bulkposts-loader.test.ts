@@ -10,18 +10,26 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 vi.mock("~/lib/prisma.server", () => ({
   prisma: {
     $use: vi.fn(),
+    hashTagPreset: {
+      findFirst: vi.fn(),
+    },
+    queueType: {
+      count: vi.fn(),
+      createMany: vi.fn(),
+      findMany: vi.fn(),
+    },
   },
 }));
 
-// Mock dependencies
-vi.mock("~/models/user.server", () => ({
+// Mock dependencies - mock the actual module being used
+vi.mock("~/features/user", () => ({
   getQueueTypes: vi.fn(),
   getUserHashTags: vi.fn(),
   getUserHashTagPresets: vi.fn(),
 }));
 
 import { getBulkPostsDashboardData } from "~/features/posts/posts.server";
-import { getQueueTypes, getUserHashTags, getUserHashTagPresets } from "~/models/user.server";
+import { getQueueTypes, getUserHashTags, getUserHashTagPresets } from "~/features/user";
 
 import {
   TEST_USER_ID,

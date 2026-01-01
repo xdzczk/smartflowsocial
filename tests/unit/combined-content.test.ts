@@ -61,7 +61,7 @@ describe("Content Combining Logic", () => {
         isPosted: false,
         draft: false,
         status: "scheduled",
-        queueType: { name: "posts" },
+        queueType: { id: "", name: "posts" },
         queueTypeId: "queue-1",
         userId: "user-1",
         tags: ["tag1", "tag2"],

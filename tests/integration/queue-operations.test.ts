@@ -257,7 +257,11 @@ describe("Queue Operations", () => {
       expect(queueClient.enqueue).toHaveBeenCalledWith(
         "post-checker",
         "check-due-posts",
-        {},
+        expect.objectContaining({
+          postId: "",
+          userId: "",
+          signedEvent: expect.any(Object),
+        }),
         { delay: 0 },
       );
     });
@@ -273,7 +277,11 @@ describe("Queue Operations", () => {
       expect(queueClient.enqueue).toHaveBeenCalledWith(
         "post-checker",
         "check-due-posts",
-        {},
+        expect.objectContaining({
+          postId: "",
+          userId: "",
+          signedEvent: expect.any(Object),
+        }),
         { delay: 5000 },
       );
     });

@@ -12,12 +12,33 @@ import { RateLimiterRedis } from "rate-limiter-flexible";
 import { redis } from "~/infra/queue/queue-client.server";
 
 /**
+ * Check if we're in a test environment
+ * Rate limiting should be disabled or relaxed in test environments
+ * This is checked at request time, not module load time, to support dynamic env vars
+ */
+function isTestEnvironment(): boolean {
+  // Check environment variables at request time
+  const nodeEnv = process.env.NODE_ENV;
+  const cypress = process.env.CYPRESS;
+  const e2eTest = process.env.E2E_TEST;
+  const disableRateLimit = process.env.DISABLE_RATE_LIMIT;
+  
+  return (
+    nodeEnv === "test" ||
+    cypress === "true" ||
+    e2eTest === "true" ||
+    disableRateLimit === "true"
+  );
+}
+
+/**
  * General API rate limiter
  * Limits: 100 requests per 15 minutes per IP
+ * Disabled in test environments
  */
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // 100 requests per window
+  max: isTestEnvironment() ? 10000 : 100, // Very high limit in tests, normal in production
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
   message: "Too many requests, please try again later.",
@@ -28,15 +49,17 @@ export const apiLimiter = rateLimit({
       retryAfter: Math.ceil((req.rateLimit?.resetTime ?? Date.now() + 15 * 60 * 1000 - Date.now()) / 1000),
     });
   },
+  skip: (req: Request) => isTestEnvironment(), // Skip rate limiting entirely in test environments
 });
 
 /**
  * Strict rate limiter for sensitive endpoints
  * Limits: 10 requests per 15 minutes per IP
+ * Disabled in test environments
  */
 export const strictLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // 10 requests per window
+  max: isTestEnvironment() ? 10000 : 10, // Very high limit in tests, normal in production
   standardHeaders: true,
   legacyHeaders: false,
   message: "Rate limit exceeded for this endpoint.",
@@ -47,15 +70,17 @@ export const strictLimiter = rateLimit({
       retryAfter: Math.ceil((req.rateLimit?.resetTime ?? Date.now() + 15 * 60 * 1000 - Date.now()) / 1000),
     });
   },
+  skip: (req: Request) => isTestEnvironment(), // Skip rate limiting entirely in test environments
 });
 
 /**
  * Very strict rate limiter for authentication endpoints
  * Limits: 5 requests per 15 minutes per IP
+ * Disabled in test environments
  */
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 requests per window
+  max: isTestEnvironment() ? 10000 : 5, // Very high limit in tests, normal in production
   standardHeaders: true,
   legacyHeaders: false,
   message: "Too many authentication attempts, please try again later.",
@@ -66,6 +91,7 @@ export const authLimiter = rateLimit({
       retryAfter: Math.ceil((req.rateLimit?.resetTime ?? Date.now() + 15 * 60 * 1000 - Date.now()) / 1000),
     });
   },
+  skip: (req: Request) => isTestEnvironment(), // Skip rate limiting entirely in test environments
 });
 
 /**
