@@ -1,6 +1,6 @@
 # Common Issues
 
-**Last updated:** 2025-01-15
+**Last updated:** 2026-01-02
 
 Solutions to frequently encountered problems when using SmartFlowSocial.
 

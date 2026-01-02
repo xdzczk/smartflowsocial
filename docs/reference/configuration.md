@@ -1,6 +1,6 @@
 # Configuration Reference
 
-**Last updated:** 2025-01-15
+**Last updated:** 2026-01-02
 
 Complete reference for all environment variables and configuration options in SmartFlowSocial.
 

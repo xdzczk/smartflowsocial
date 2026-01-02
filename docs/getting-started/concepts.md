@@ -2,7 +2,7 @@
 
 **Estimated time:** 20 minutes  
 **Difficulty:** Beginner  
-**Last updated:** 2025-01-15
+**Last updated:** 2026-01-02
 
 Understand the fundamental concepts behind SmartFlowSocial and how everything works together.
 

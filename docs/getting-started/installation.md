@@ -2,7 +2,7 @@
 
 **Estimated time:** 15 minutes  
 **Difficulty:** Beginner  
-**Last updated:** 2025-01-15
+**Last updated:** 2026-01-02
 
 Complete installation guide for SmartFlowSocial, covering all platforms and deployment options.
 

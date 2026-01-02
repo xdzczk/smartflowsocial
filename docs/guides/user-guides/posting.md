@@ -1,6 +1,10 @@
-# Posting Workflow Guide
+# Posting Guide
 
-This comprehensive guide covers all the ways you can create, manage, and optimize posts in SmartFlowSocial.
+**Estimated time:** 30 minutes  
+**Difficulty:** Beginner  
+**Last updated:** 2026-01-02
+
+Complete guide to creating, managing, and optimizing posts in SmartFlowSocial.
 
 ## Table of Contents
 

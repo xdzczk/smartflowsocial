@@ -1,4 +1,10 @@
-# Calendar Feature Documentation
+# Calendar Guide
+
+**Estimated time:** 20 minutes  
+**Difficulty:** Beginner  
+**Last updated:** 2026-01-02
+
+Complete guide to using the visual calendar interface for scheduling posts in SmartFlowSocial.
 
 ## Table of Contents
 

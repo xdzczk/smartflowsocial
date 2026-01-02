@@ -1,6 +1,10 @@
-# Operations & Monitoring Guide
+# Operations Guide
 
-This guide covers operational aspects of running SmartFlowSocial in production, including monitoring, logging, alerting, and maintenance.
+**Estimated time:** 45 minutes  
+**Difficulty:** Intermediate  
+**Last updated:** 2026-01-02
+
+Complete guide to operating SmartFlowSocial in production, including monitoring, logging, alerting, and maintenance.
 
 ## Table of Contents
 

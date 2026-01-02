@@ -1,6 +1,10 @@
-# Security Best Practices
+# Security Guide
 
-This guide covers security best practices for deploying and operating SmartFlowSocial.
+**Estimated time:** 30 minutes  
+**Difficulty:** Intermediate  
+**Last updated:** 2026-01-02
+
+Complete guide to security best practices for deploying and operating SmartFlowSocial.
 
 ## Table of Contents
 

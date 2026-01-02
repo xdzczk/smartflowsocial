@@ -165,12 +165,12 @@ We welcome contributions! See our [Documentation Contributing Guide](./meta/cont
 
 | Section | Status | Last Updated |
 |---------|--------|--------------|
-| Getting Started | ✅ Complete | 2025-01-15 |
-| User Guides | ✅ Complete | 2025-01-15 |
-| Developer Guides | ✅ Complete | 2025-01-15 |
-| Reference | ✅ Complete | 2025-01-15 |
-| Examples | 🚧 In Progress | 2025-01-15 |
-| Troubleshooting | ✅ Complete | 2025-01-15 |
+| Getting Started | ✅ Complete | 2026-01-02 |
+| User Guides | ✅ Complete | 2026-01-02 |
+| Developer Guides | ✅ Complete | 2026-01-02 |
+| Reference | ✅ Complete | 2026-01-02 |
+| Examples | 🚧 In Progress | 2026-01-02 |
+| Troubleshooting | ✅ Complete | 2026-01-02 |
 
 ---
 

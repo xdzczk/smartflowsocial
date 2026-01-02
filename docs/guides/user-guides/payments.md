@@ -1,6 +1,10 @@
-# Lightning Payments System
+# Payments Guide
 
-This documentation covers the Lightning Network payment integration for SmartFlow Social plan subscriptions.
+**Estimated time:** 20 minutes  
+**Difficulty:** Beginner  
+**Last updated:** 2026-01-02
+
+Complete guide to Lightning Network payment integration for SmartFlowSocial plan subscriptions.
 
 ## Overview
 

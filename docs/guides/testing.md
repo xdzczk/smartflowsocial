@@ -1,7 +1,8 @@
 # Testing Guide
 
-**Last Updated**: 2025-12-25  
-**Status**: Comprehensive testing suite with Vitest, Cypress, and advanced testing features
+**Estimated time:** 30 minutes  
+**Difficulty:** Intermediate  
+**Last updated:** 2026-01-02
 
 This guide covers how to run and write tests for SmartFlowSocial. The project uses **Vitest** for unit, integration, property-based, security, and performance tests, and **Cypress** for end-to-end tests.
 
