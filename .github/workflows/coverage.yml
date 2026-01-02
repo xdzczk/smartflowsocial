@@ -53,6 +53,7 @@ jobs:
           NODE_ENV: test
           TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+          SESSION_SECRET: test-session-secret-very-long-and-secure-32-chars-minimum
 
       - name: Check coverage thresholds
         run: |

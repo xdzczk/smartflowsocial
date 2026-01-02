@@ -80,6 +80,7 @@ jobs:
         env:
           TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+          SESSION_SECRET: test-session-secret-very-long-and-secure-32-chars-minimum
 
       - name: Run integration tests
         run: pnpm test:integration
@@ -87,6 +88,7 @@ jobs:
         env:
           TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+          SESSION_SECRET: test-session-secret-very-long-and-secure-32-chars-minimum
 
       - name: Smoke test summary
         if: always()
