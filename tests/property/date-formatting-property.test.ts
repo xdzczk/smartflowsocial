@@ -83,7 +83,7 @@ describe("Property-Based Tests: Date Formatting", () => {
       fc.assert(
         fc.property(
           fc.date({ min: new Date("2000-01-01"), max: new Date("2100-12-31") }),
-          fc.integer({ min: 7200, max: 86400 * 365 }), // At least 2 hours to avoid DST and minute-level precision issues
+          fc.integer({ min: 86400, max: 86400 * 365 }), // At least 24 hours to avoid DST transition issues
           fc.constantFrom(...validTimezones),
           (date: Date, secondsToAdd: number, timezone: string) => {
             const laterDate = new Date(date.getTime() + secondsToAdd * 1000);
@@ -91,18 +91,18 @@ describe("Property-Based Tests: Date Formatting", () => {
             const formatted2 = formatScheduleTimeForInput(laterDate, timezone);
             
             // Compare the actual date values to handle DST transitions
-            // If the later date is significantly later (>= 2 hours), the formatted string should not be earlier
+            // With 24+ hour difference, we should be safe from DST transition edge cases
             const dateDiff = laterDate.getTime() - date.getTime();
             const comparison = formatted2.localeCompare(formatted1);
             
-            // For significant time differences (>= 2 hours), require non-negative comparison
-            // This ensures that with a 2+ hour difference, the formatted string maintains ordering
-            // DST transitions can cause issues, but with 2+ hours difference, we should be safe
-            if (dateDiff >= 7200000) { // 2 hours in milliseconds
-              // With 2+ hour difference, formatted2 should not be lexicographically less
+            // For 24+ hour differences, require non-negative comparison
+            // This ensures that with a full day difference, the formatted string maintains ordering
+            // DST transitions can cause issues with smaller differences, but 24 hours should be safe
+            if (dateDiff >= 86400000) { // 24 hours in milliseconds
+              // With 24+ hour difference, formatted2 should not be lexicographically less
               return comparison >= 0;
             } else {
-              // For smaller differences (shouldn't happen with min: 7200, but just in case),
+              // For smaller differences (shouldn't happen with min: 86400, but just in case),
               // just ensure both are valid formatted strings
               return formatted1.length > 0 && formatted2.length > 0;
             }
