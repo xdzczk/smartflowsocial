@@ -119,7 +119,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       return error;
     }
     // Use dynamic import to avoid bundling issues
-    const { handleLoaderError, createErrorResponse } = await import("~/lib/error-handler.server");
+    const { createErrorResponse } = await import("~/lib/error-handler.server");
     const [errorResponse, statusCode] = createErrorResponse(error);
     return json({ success: false, error: errorResponse.error }, { status: statusCode });
   }
