@@ -57,6 +57,22 @@ export default defineConfig({
         // Exclude client-side only files
         "app/**/*.client.ts",
         "app/**/*.client.tsx",
+        // Exclude type definition files (not testable)
+        "app/**/*.types.ts",
+        "app/**/types.ts",
+        "app/models/**/post.types.ts",
+        "app/infra/**/queue-types.ts",
+        // Exclude example/reference files
+        "app/**/*.example.ts",
+        "app/lib/error-handler.example.ts",
+        // Exclude re-export/index files that only export types
+        "app/infra/queue/index.ts",
+        // Exclude React hooks that require browser environment
+        "app/lib/useLocalStorage.ts",
+        // Exclude EditorJS utilities that require DOM
+        "app/features/**/utils/editorjs-captions.ts",
+        "app/features/**/utils/editorjs-config.ts",
+        "app/features/**/utils/editorjs-dragdrop.ts",
       ],
       // Coverage thresholds - adjusted to be more realistic
       // These will be enforced on files that are actually tested
@@ -79,10 +95,10 @@ export default defineConfig({
     ],
     // Global test timeout
     testTimeout: 10000,
-    // Use threads for faster execution
-    threads: true,
     // Watch mode configuration
     watch: false,
+    // Pool for parallel execution
+    pool: "threads",
   },
   resolve: {
     alias: {
