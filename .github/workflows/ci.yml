@@ -61,9 +61,23 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Setup PostgreSQL
+        uses: ankane/setup-postgres@v1
+        with:
+          database: smartflow_test
+
+      - name: Setup test database
+        run: pnpm exec prisma db push --skip-generate
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+
       - name: Run unit tests
         run: pnpm test:unit
         id: unit-tests
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
 
       - name: Upload unit test results
         if: always()
@@ -98,9 +112,23 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Setup PostgreSQL
+        uses: ankane/setup-postgres@v1
+        with:
+          database: smartflow_test
+
+      - name: Setup test database
+        run: pnpm exec prisma db push --skip-generate
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+
       - name: Run integration tests
         run: pnpm test:integration
         id: integration-tests
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
 
       - name: Upload integration test results
         if: always()
@@ -135,9 +163,23 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Setup PostgreSQL
+        uses: ankane/setup-postgres@v1
+        with:
+          database: smartflow_test
+
+      - name: Setup test database
+        run: pnpm exec prisma db push --skip-generate
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+
       - name: Run property-based tests
         run: pnpm test:property
         id: property-tests
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
 
       - name: Upload property test results
         if: always()

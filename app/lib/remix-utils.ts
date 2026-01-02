@@ -40,7 +40,12 @@ export function useMatchesData(
     () => matchingRoutes.find((route) => route.id === id),
     [matchingRoutes, id],
   );
-  return route?.data as Record<string, unknown>;
+  const data = route?.data;
+  // Type guard to ensure data is an object and not an error type
+  if (data && typeof data === "object" && !(data instanceof Error)) {
+    return data as Record<string, unknown>;
+  }
+  return undefined;
 }
 
 function isUser(user: unknown): user is User {

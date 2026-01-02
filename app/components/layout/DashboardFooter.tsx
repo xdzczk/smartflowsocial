@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 
-import { useUser } from "~/lib/remix-utils";
+import { useOptionalUser } from "~/lib/remix-utils";
 export default function Footer() {
-  const user = useUser();
+  const user = useOptionalUser();
   const [time, setTime] = useState(new Date());
   useEffect(() => {
     const timer = setInterval(() => {

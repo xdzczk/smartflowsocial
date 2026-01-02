@@ -173,9 +173,10 @@ export function useAssetUpload({
     const handleFetcherResponse = useCallback(() => {
         if (assetFetcher.data?.success) {
             // Show toast message
-            if (assetFetcher.data.asset) {
+            if (assetFetcher.data?.asset) {
+                const assetType = assetFetcher.data.asset.assetType;
                 onSuccess(
-                    `${assetFetcher.data.asset.assetType.toLowerCase()} asset created successfully!`,
+                    `${typeof assetType === 'string' ? assetType.toLowerCase() : String(assetType).toLowerCase()} asset created successfully!`,
                 );
             } else if (assetFetcher.data.assets) {
                 onSuccess(
