@@ -85,11 +85,9 @@ vi.mock("~/infra/queue", () => ({
 // Mock global fetch
 global.fetch = vi.fn();
 
-import { prisma } from "~/lib/prisma.server";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Used via mock at runtime
-import { updateLongFormPostStatus } from "~/models/longformpost.server";
-import { updatePostStatus } from "~/models/post.commands.server";
 import { getUserById } from "~/features/user";
+import { prisma } from "~/lib/prisma.server";
+import { updatePostStatus } from "~/models/post.commands.server";
 
 import { TEST_USER_ID } from "../utils/test-helpers";
 

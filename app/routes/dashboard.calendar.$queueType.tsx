@@ -17,24 +17,40 @@ import {
   type QueueType,
   postsToCalendarPosts,
 } from "~/features/posts";
-import { withErrorHandling, withActionErrorHandling } from "~/lib/error-handler.server";
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  try {
+    const userId = await requireUserId(request);
+    const queueType = params.queueType ?? "all";
 
-async function loaderImpl({ request, params }: LoaderFunctionArgs) {
-  const userId = await requireUserId(request);
-  const queueType = params.queueType ?? "all";
-
-  return loadCalendarQueueData(userId, queueType);
+    return await loadCalendarQueueData(userId, queueType);
+  } catch (error) {
+    // If error is a Response (e.g., redirect from requireUserId), return it
+    if (error instanceof Response) {
+      return error;
+    }
+    // Use dynamic import to avoid bundling issues
+    const { handleLoaderError } = await import("~/lib/error-handler.server");
+    return handleLoaderError(error, {});
+  }
 }
 
-export const loader = withErrorHandling(loaderImpl);
+export async function action({ request }: ActionFunctionArgs) {
+  try {
+    const userId = await requireUserId(request);
+    const formData = await request.formData();
+    return handleCalendarAction(formData, userId);
+  } catch (error) {
+    // If error is a Response (e.g., redirect from requireUserId), return it
+    if (error instanceof Response) {
+      return error;
+    }
+    // Use dynamic import to avoid bundling issues
+    const { handleActionError } = await import("~/lib/error-handler.server");
+    return handleActionError(error);
+  }
+}
 
-export const action = withActionErrorHandling(async ({ request }: ActionFunctionArgs) => {
-  const userId = await requireUserId(request);
-  const formData = await request.formData();
-  return handleCalendarAction(formData, userId);
-});
-
-type LoaderData = Awaited<ReturnType<typeof loaderImpl>>;
+type LoaderData = Exclude<Awaited<ReturnType<typeof loader>>, Response>;
 
 export default function CalendarQueueRoute() {
   const data = useLoaderData<LoaderData>();

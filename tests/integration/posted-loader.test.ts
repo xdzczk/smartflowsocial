@@ -56,10 +56,11 @@ describe("Posted Posts Loader Integration", () => {
       const request = new Request("http://localhost:3000/dashboard/posted");
       const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
       const response = await loader(loaderArgs);
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
 
-      expect(response.status).toBe(200);
+      expect(responseObj.status).toBe(200);
       expect(requireUserId).toHaveBeenCalledWith(request);
       expect(requireAnySubscription).toHaveBeenCalledWith("user-123");
       expect(getPostedDashboardData).toHaveBeenCalled();
@@ -88,7 +89,8 @@ describe("Posted Posts Loader Integration", () => {
         params: { queueType: "posts" },
         context: {}
       } as unknown as LoaderFunctionArgs);
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
 
       expect(getPostedDashboardData).toHaveBeenCalledWith({
@@ -129,7 +131,8 @@ describe("Posted Posts Loader Integration", () => {
       const request = new Request("http://localhost:3000/dashboard/posted");
       const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
       const response = await loader(loaderArgs);
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
 
       const posts = Array.isArray(data.posts) ? data.posts : [];
@@ -169,10 +172,11 @@ describe("Posted Posts Loader Integration", () => {
       const request = new Request("http://localhost:3000/dashboard/posted");
       const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
       const response = await loader(loaderArgs);
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
       
-      expect(response.status).toBe(500);
+      expect(responseObj.status).toBe(500);
       expect(data.error).toBeDefined();
       const error = data.error && typeof data.error === "object" && !Array.isArray(data.error) ? data.error as { message?: string } : {};
       const errorMessage = typeof error.message === "string" ? error.message : "";
@@ -187,10 +191,11 @@ describe("Posted Posts Loader Integration", () => {
       const request = new Request("http://localhost:3000/dashboard/posted");
       const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
       const response = await loader(loaderArgs);
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
       
-      expect(response.status).toBe(500);
+      expect(responseObj.status).toBe(500);
       expect(data.error).toBeDefined();
       const error = data.error && typeof data.error === "object" && !Array.isArray(data.error) ? data.error as { message?: string } : {};
       const errorMessage = typeof error.message === "string" ? error.message : "";
@@ -205,10 +210,11 @@ describe("Posted Posts Loader Integration", () => {
       const request = new Request("http://localhost:3000/dashboard/posted");
       const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
       const response = await loader(loaderArgs);
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
       
-      expect(response.status).toBe(500);
+      expect(responseObj.status).toBe(500);
       expect(data.error).toBeDefined();
       const error = data.error && typeof data.error === "object" && !Array.isArray(data.error) ? data.error as { message?: string } : {};
       const errorMessage = typeof error.message === "string" ? error.message : "";

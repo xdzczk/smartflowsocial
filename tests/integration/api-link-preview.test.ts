@@ -39,7 +39,8 @@ describe("API: Link Preview", () => {
       );
 
       const response = await loader({ request, params: {}, context: {} });
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; meta?: { title?: string; description?: string; image?: { url?: string } } } : {};
 
       expect(global.fetch).toHaveBeenCalledWith(
@@ -77,7 +78,8 @@ describe("API: Link Preview", () => {
       );
 
       const response = await loader({ request, params: {}, context: {} });
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; meta?: { title?: string; description?: string; image?: { url?: string } } } : {};
 
       expect(data).toEqual({
@@ -112,7 +114,8 @@ describe("API: Link Preview", () => {
       );
 
       const response = await loader({ request, params: {}, context: {} });
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; meta?: { title?: string; description?: string; image?: { url?: string } } } : {};
       const meta = data.meta && typeof data.meta === "object" && !Array.isArray(data.meta) ? data.meta as { description?: string } : {};
 
@@ -139,7 +142,8 @@ describe("API: Link Preview", () => {
       );
 
       const response = await loader({ request, params: {}, context: {} });
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; meta?: { title?: string; description?: string; image?: { url?: string } } } : {};
       const meta = data.meta && typeof data.meta === "object" && !Array.isArray(data.meta) ? data.meta as { image?: { url?: string } } : {};
       const image = meta.image && typeof meta.image === "object" && !Array.isArray(meta.image) ? meta.image as { url?: string } : {};
@@ -168,7 +172,8 @@ describe("API: Link Preview", () => {
       );
 
       const response = await loader({ request, params: {}, context: {} });
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; meta?: { title?: string; description?: string; image?: { url?: string } } } : {};
       const meta = data.meta && typeof data.meta === "object" && !Array.isArray(data.meta) ? data.meta as { title?: string; description?: string } : {};
 
@@ -182,10 +187,11 @@ describe("API: Link Preview", () => {
       const request = new Request("http://localhost:3000/api/link-preview");
 
       const response = await loader({ request, params: {}, context: {} });
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
 
-      expect(response.status).toBe(400);
+      expect(responseObj.status).toBe(400);
       const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
       expect(success).toBe(false);
       expect(data.error).toBeDefined();
@@ -197,10 +203,11 @@ describe("API: Link Preview", () => {
       );
 
       const response = await loader({ request, params: {}, context: {} });
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
 
-      expect(response.status).toBe(400);
+      expect(responseObj.status).toBe(400);
       const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
       expect(success).toBe(false);
     });
@@ -211,10 +218,11 @@ describe("API: Link Preview", () => {
       );
 
       const response = await loader({ request, params: {}, context: {} });
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
 
-      expect(response.status).toBe(400);
+      expect(responseObj.status).toBe(400);
       const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
       expect(success).toBe(false);
     });
@@ -229,10 +237,11 @@ describe("API: Link Preview", () => {
       );
 
       const response = await loader({ request, params: {}, context: {} });
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
 
-      expect(response.status).toBe(502);
+      expect(responseObj.status).toBe(502);
       const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
       expect(success).toBe(false);
       expect(data.error).toBeDefined();
@@ -246,10 +255,11 @@ describe("API: Link Preview", () => {
       );
 
       const response = await loader({ request, params: {}, context: {} });
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
 
-      expect(response.status).toBe(502);
+      expect(responseObj.status).toBe(502);
       const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
       expect(success).toBe(false);
     });
@@ -266,10 +276,11 @@ describe("API: Link Preview", () => {
       );
 
       const response = await loader({ request, params: {}, context: {} });
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
 
-      expect(response.status).toBe(404);
+      expect(responseObj.status).toBe(404);
       const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
       expect(success).toBe(false);
     });
@@ -292,10 +303,11 @@ describe("API: Link Preview", () => {
       }
       const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
       const response = await loader(loaderArgs);
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; meta?: { title?: string; description?: string; image?: { url?: string } } } : {};
 
-      expect(response.status).toBe(502);
+      expect(responseObj.status).toBe(502);
       expect(data.success).toBe(false);
     });
 
@@ -319,10 +331,11 @@ describe("API: Link Preview", () => {
       }
       const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
       const response = await loader(loaderArgs);
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; meta?: { title?: string; description?: string; image?: { url?: string } } } : {};
 
-      expect(response.status).toBe(502);
+      expect(responseObj.status).toBe(502);
       expect(data.success).toBe(false);
     });
   });

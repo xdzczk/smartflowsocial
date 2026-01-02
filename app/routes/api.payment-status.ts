@@ -2,13 +2,14 @@ import { json } from "@remix-run/node";
 import type { ActionFunctionArgs } from "@remix-run/node";
 
 import { checkPaymentStatusById } from "~/features/payments";
-import {
-  withActionErrorHandling,
-  assert,
-} from "~/lib/error-handler.server";
 
-export const action = withActionErrorHandling(
-  async ({ request }: ActionFunctionArgs) => {
+type AssertFunction = (condition: boolean, message: string, context?: Record<string, unknown>) => asserts condition;
+
+export async function action({ request }: ActionFunctionArgs) {
+  try {
+    const errorHandler = await import("~/lib/error-handler.server");
+    const assert: AssertFunction = errorHandler.assert;
+    
     assert(request.method === "POST", "Method not allowed", {
       method: request.method,
     });
@@ -20,9 +21,17 @@ export const action = withActionErrorHandling(
       hasPaymentId: paymentId !== null,
     });
 
-    return checkPaymentStatusById(paymentId);
-  },
-);
+    return await checkPaymentStatusById(paymentId);
+  } catch (error) {
+    // If error is a Response (e.g., redirect from requireUserId), return it
+    if (error instanceof Response) {
+      return error;
+    }
+    // Use dynamic import to avoid bundling issues
+    const { handleActionError } = await import("~/lib/error-handler.server");
+    return handleActionError(error);
+  }
+}
 
 // Handle GET requests with a proper error response
 export async function loader() {

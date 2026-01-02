@@ -4,17 +4,18 @@ import { json } from "@remix-run/node";
 import { requireUserId } from "~/features/auth";
 import { loadUploadProviderSettings } from "~/features/user";
 import {
-  withActionErrorHandling,
-  createSuccessResponse,
-  assert,
-} from "~/lib/error-handler.server";
-import {
   ValidationError,
   AuthorizationError,
 } from "~/lib/errors";
 
-export const action = withActionErrorHandling(
-  async ({ request }: ActionFunctionArgs) => {
+type AssertFunction = (condition: boolean, message: string, context?: Record<string, unknown>) => asserts condition;
+
+export async function action({ request }: ActionFunctionArgs) {
+  try {
+    const errorHandler = await import("~/lib/error-handler.server");
+    const assert: AssertFunction = errorHandler.assert;
+    const { createSuccessResponse } = errorHandler;
+    
     // Ensure user is authenticated
     const userId = await requireUserId(request);
 
@@ -88,8 +89,16 @@ export const action = withActionErrorHandling(
         provider: uploadProvider,
       },
     });
-  },
-);
+  } catch (error) {
+    // If error is a Response (e.g., redirect from requireUserId), return it
+    if (error instanceof Response) {
+      return error;
+    }
+    // Use dynamic import to avoid bundling issues
+    const { handleActionError } = await import("~/lib/error-handler.server");
+    return handleActionError(error);
+  }
+}
 
 // Handle preflight requests for CORS
 export async function loader() {

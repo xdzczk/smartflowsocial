@@ -3,8 +3,9 @@
  * 
  * Tests the API endpoint in app/routes/api.children.tsx
  */
-
+import { json } from "@remix-run/node";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
 // Mock dependencies
 vi.mock("~/features/auth/session.server", () => ({
   requireUserId: vi.fn(),
@@ -39,12 +40,9 @@ vi.mock("~/lib/errors", () => ({
   })),
 }));
 
-import { json } from "@remix-run/node";
 import { requireUserId } from "~/features/auth/session.server";
-import { createLoader } from "~/routes/api.children";
-
-// Import the mocked functions
 import { loadChildrenData } from "~/features/user";
+import { createLoader } from "~/routes/api.children";
 
 import { TEST_USER_ID } from "../utils/test-helpers";
 
@@ -364,17 +362,6 @@ describe("API: Children", () => {
     });
 
     it("should handle invalid JSON in nostrProfile", async () => {
-      const mockUser = {
-        id: TEST_USER_ID,
-        npub: "npub123",
-        isChild: false,
-      };
-
-      const mockSubscription = {
-        planId: "premium",
-        Plan: { name: "Premium" },
-      };
-
       (loadChildrenData as ReturnType<typeof vi.fn>).mockResolvedValue(
         json({
           children: [

@@ -59,10 +59,11 @@ describe("Scheduled Posts Loader Integration", () => {
       const request = new Request("http://localhost:3000/dashboard/scheduled");
       const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
       const response = await loader(loaderArgs);
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
 
-      expect(response.status).toBe(200);
+      expect(responseObj.status).toBe(200);
       expect(requireUserId).toHaveBeenCalledWith(request);
       expect(requireAnySubscription).toHaveBeenCalledWith("user-123");
       expect(requireFeatureAccess).toHaveBeenCalledWith("user-123", "scheduled");
@@ -92,7 +93,8 @@ describe("Scheduled Posts Loader Integration", () => {
         request, 
         params: { queueType: "posts" } 
       } as unknown as LoaderFunctionArgs);
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
 
       expect(loadScheduledData).toHaveBeenCalledWith("user-123", "posts");
@@ -125,7 +127,8 @@ describe("Scheduled Posts Loader Integration", () => {
       const request = new Request("http://localhost:3000/dashboard/scheduled");
       const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
       const response = await loader(loaderArgs);
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
 
       expect(data.posts).toHaveLength(2);
@@ -154,7 +157,8 @@ describe("Scheduled Posts Loader Integration", () => {
       const request = new Request("http://localhost:3000/dashboard/scheduled");
       const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
       const response = await loader(loaderArgs);
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
 
       // The loadScheduledData function should already filter, but we verify the structure
@@ -176,10 +180,11 @@ describe("Scheduled Posts Loader Integration", () => {
       const request = new Request("http://localhost:3000/dashboard/scheduled");
       const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
       const response = await loader(loaderArgs);
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
       
-      expect(response.status).toBe(500);
+      expect(responseObj.status).toBe(500);
       expect(data.error).toBeDefined();
       const error = data.error && typeof data.error === "object" && "message" in data.error && typeof data.error.message === "string" ? data.error.message : "";
       expect(error).toContain("Authentication required");
@@ -193,10 +198,11 @@ describe("Scheduled Posts Loader Integration", () => {
       const request = new Request("http://localhost:3000/dashboard/scheduled");
       const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
       const response = await loader(loaderArgs);
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
       
-      expect(response.status).toBe(500);
+      expect(responseObj.status).toBe(500);
       expect(data.error).toBeDefined();
       const error = data.error && typeof data.error === "object" && "message" in data.error && typeof data.error.message === "string" ? data.error.message : "";
       expect(error).toContain("Subscription required");
@@ -210,10 +216,11 @@ describe("Scheduled Posts Loader Integration", () => {
       const request = new Request("http://localhost:3000/dashboard/scheduled");
       const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
       const response = await loader(loaderArgs);
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
       
-      expect(response.status).toBe(500);
+      expect(responseObj.status).toBe(500);
       expect(data.error).toBeDefined();
       const error = data.error && typeof data.error === "object" && "message" in data.error && typeof data.error.message === "string" ? data.error.message : "";
       expect(error).toContain("Feature access denied");
@@ -227,10 +234,11 @@ describe("Scheduled Posts Loader Integration", () => {
       const request = new Request("http://localhost:3000/dashboard/scheduled");
       const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
       const response = await loader(loaderArgs);
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
       
-      expect(response.status).toBe(500);
+      expect(responseObj.status).toBe(500);
       expect(data.error).toBeDefined();
       const error = data.error && typeof data.error === "object" && "message" in data.error && typeof data.error.message === "string" ? data.error.message : "";
       expect(error).toContain("Database error");

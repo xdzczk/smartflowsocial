@@ -14,16 +14,17 @@ import {
 import { uploadEditorJSImage } from "~/features/upload/s3.server";
 import { loadUploadProviderSettings } from "~/features/user";
 import {
-  withActionErrorHandling,
-  assert,
-} from "~/lib/error-handler.server";
-import {
   ValidationError,
   ExternalServiceError,
 } from "~/lib/errors";
 
-export const action = withActionErrorHandling(
-  async ({ request }: ActionFunctionArgs) => {
+type AssertFunction = (condition: boolean, message: string, context?: Record<string, unknown>) => asserts condition;
+
+export async function action({ request }: ActionFunctionArgs) {
+  try {
+    const errorHandler = await import("~/lib/error-handler.server");
+    const assert: AssertFunction = errorHandler.assert;
+    
     // Ensure user is authenticated
     const userId = await requireUserId(request);
 
@@ -169,8 +170,16 @@ export const action = withActionErrorHandling(
       fileType: typeof imageFile,
       isFile,
     });
-  },
-);
+  } catch (error) {
+    // If error is a Response (e.g., redirect from requireUserId), return it
+    if (error instanceof Response) {
+      return error;
+    }
+    // Use dynamic import to avoid bundling issues
+    const { handleActionError } = await import("~/lib/error-handler.server");
+    return handleActionError(error);
+  }
+}
 
 // Handle preflight requests for CORS
 export async function loader() {

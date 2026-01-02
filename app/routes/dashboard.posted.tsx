@@ -22,25 +22,32 @@ import {
 import type { LongFormPostType } from "~/features/posts";
 import type { PostStats } from "~/features/posts/stats.server";
 import type { User } from "~/features/user";
-import { withErrorHandling } from "~/lib/error-handler.server";
 // Re-export action from server module
 export { postedPostsAction as action } from "~/features/posts/posted.action.server";
 
-async function loaderImpl({ request, params }: { request: Request; params: { queueType?: string } }) {
-  const userId = await requireUserId(request);
-  // Require that the user has at least a subscription record
-  await requireAnySubscription(userId);
+export async function loader({ request, params }: { request: Request; params: { queueType?: string } }) {
+  try {
+    const userId = await requireUserId(request);
+    // Require that the user has at least a subscription record
+    await requireAnySubscription(userId);
 
-  const url = new URL(request.url);
+    const url = new URL(request.url);
 
-  const data = await getPostedDashboardData({ userId, params, url });
+    const data = await getPostedDashboardData({ userId, params, url });
 
-  return data;
+    return data;
+  } catch (error) {
+    // If error is a Response (e.g., redirect from requireUserId), return it
+    if (error instanceof Response) {
+      return error;
+    }
+    // Use dynamic import to avoid bundling issues
+    const { handleLoaderError } = await import("~/lib/error-handler.server");
+    return handleLoaderError(error, {});
+  }
 }
 
-export const loader = withErrorHandling(loaderImpl);
-
-type LoaderData = Awaited<ReturnType<typeof loaderImpl>>;
+type LoaderData = Awaited<ReturnType<typeof loader>>;
 
 export default function PostedPosts() {
   const data = useLoaderData<LoaderData>();

@@ -60,12 +60,10 @@ export function describeDatabase(
   // This prevents beforeAll from failing and marking the suite as failed
   if (shouldSkip) {
     // Intentionally skipping tests when database is not configured
-    // eslint-disable-next-line jest/valid-describe-callback, jest/valid-title, jest/no-disabled-tests
     describe.skip(name, fn);
     return;
   }
 
-  // eslint-disable-next-line jest/valid-title -- name is a parameter, not a literal
   describe(name, () => {
     beforeAll(async () => {
       try {

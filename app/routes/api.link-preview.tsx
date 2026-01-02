@@ -1,22 +1,25 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import { json, type LoaderFunctionArgs } from "@remix-run/node";
 
-import {
-  withErrorHandling,
-  assert,
-} from "~/lib/error-handler.server";
 import {
   ValidationError,
   ExternalServiceError,
 } from "~/lib/errors";
 
-export const loader = withErrorHandling(
-  async ({ request }: LoaderFunctionArgs) => {
-    const url = new URL(request.url);
-    const targetUrl = url.searchParams.get("url");
+type AssertFunction = (condition: boolean, message: string, context?: Record<string, unknown>) => asserts condition;
 
-    assert(targetUrl !== null, "URL parameter is required", {
+export async function loader({ request }: LoaderFunctionArgs) {
+  try {
+    const errorHandler = await import("~/lib/error-handler.server");
+    const assert: AssertFunction = errorHandler.assert;
+    
+    const url = new URL(request.url);
+    const targetUrlParam = url.searchParams.get("url");
+
+    assert(targetUrlParam !== null, "URL parameter is required", {
       searchParams: Array.from(url.searchParams.entries()),
     });
+
+    const targetUrl = targetUrlParam;
 
     // Validate URL format
     try {
@@ -110,5 +113,14 @@ export const loader = withErrorHandling(
         },
       },
     };
-  },
-);
+  } catch (error) {
+    // If error is a Response (e.g., redirect from requireUserId), return it
+    if (error instanceof Response) {
+      return error;
+    }
+    // Use dynamic import to avoid bundling issues
+    const { handleLoaderError, createErrorResponse } = await import("~/lib/error-handler.server");
+    const [errorResponse, statusCode] = createErrorResponse(error);
+    return json({ success: false, error: errorResponse.error }, { status: statusCode });
+  }
+}

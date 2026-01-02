@@ -3,6 +3,10 @@
  * Server-side Error Handling Utilities
  * 
  * Provides utilities for handling errors in Remix loaders and actions
+ * 
+ * NOTE: This module must be imported/initialized before routes use it.
+ * The bundler uses lazy ESM initialization, so we ensure functions are
+ * defined immediately to avoid timing issues.
  */
 
 import { json, type ActionFunctionArgs, type LoaderFunctionArgs } from "@remix-run/node";
@@ -19,6 +23,9 @@ import {
   NotFoundError,
   ValidationError,
 } from "./errors";
+
+// Force immediate evaluation by defining functions before exports
+// This ensures they're available when the export getter is called
 
 /**
  * Standard error response structure
@@ -97,6 +104,8 @@ export function createSuccessResponse<T>(data: T): SuccessResponse<T> {
 
 /**
  * Wrapper for Remix loaders with automatic error handling
+ * Using export function (not const) to match pattern used by other server utilities
+ * that work correctly with Remix bundler (e.g., requireUserId, requireFeatureAccess)
  */
 export function withErrorHandling<T>(
   loaderFn: (args: LoaderFunctionArgs) => Promise<T>,
@@ -124,6 +133,8 @@ export function withErrorHandling<T>(
 
 /**
  * Wrapper for Remix actions with automatic error handling
+ * Using export function (not const) to match pattern used by other server utilities
+ * that work correctly with Remix bundler (e.g., requireUserId, requireFeatureAccess)
  */
 export function withActionErrorHandling<T>(
   actionFn: (args: ActionFunctionArgs) => Promise<T>,

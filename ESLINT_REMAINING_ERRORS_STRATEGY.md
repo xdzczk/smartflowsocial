@@ -192,3 +192,4 @@ import { getBitcoinRate } from "~/features/payments/btc.rate";
 
 **Alternative:** Accept current state if time-constrained. 27 errors (89% fixed) is excellent, and all remaining errors are in test files with acceptable patterns.
 
+

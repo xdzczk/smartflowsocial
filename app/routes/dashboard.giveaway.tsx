@@ -18,26 +18,33 @@ import {
   PostDetailsModal,
   type PostData,
 } from "~/features/posts";
-import { withErrorHandling } from "~/lib/error-handler.server";
-async function loaderImpl({ request, params }: LoaderFunctionArgs) {
-  const userId = await requireUserId(request);
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  try {
+    const userId = await requireUserId(request);
 
-  // Require that the user has at least a subscription record
-  await requireAnySubscription(userId);
-  // Check if user has access to giveaway feature
-  await requireFeatureAccess(userId, "giveaways");
+    // Require that the user has at least a subscription record
+    await requireAnySubscription(userId);
+    // Check if user has access to giveaway feature
+    await requireFeatureAccess(userId, "giveaways");
 
-  const url = new URL(request.url);
-  const queueType = params.queueType ?? "all";
-  const days = parseInt(url.searchParams.get("days") ?? "7");
+    const url = new URL(request.url);
+    const queueType = params.queueType ?? "all";
+    const days = parseInt(url.searchParams.get("days") ?? "7");
 
-  const data = await loadGiveawayData(userId, queueType, days);
-  return data;
+    const data = await loadGiveawayData(userId, queueType, days);
+    return data;
+  } catch (error) {
+    // If error is a Response (e.g., redirect from requireUserId), return it
+    if (error instanceof Response) {
+      return error;
+    }
+    // Use dynamic import to avoid bundling issues
+    const { handleLoaderError } = await import("~/lib/error-handler.server");
+    return handleLoaderError(error, {});
+  }
 }
 
-export const loader = withErrorHandling(loaderImpl);
-
-type LoaderData = Awaited<ReturnType<typeof loaderImpl>>;
+type LoaderData = Exclude<Awaited<ReturnType<typeof loader>>, Response>;
 
 export default function PostedPosts() {
   const data = useLoaderData<LoaderData>();
@@ -56,7 +63,7 @@ export default function PostedPosts() {
     setDateRange,
     clearFilters,
   } = useGiveawayState({ 
-    posts: posts.map((post) => ({
+    posts: posts.map((post: typeof posts[0]) => ({
       ...post,
       postedAt: (() => {
         const postedAtValue: unknown = post.postedAt;
@@ -92,7 +99,7 @@ export default function PostedPosts() {
         onRequestSort={requestSort}
         onPostClick={(post) => {
           // Find the original PostData from posts array
-          const originalPostData = posts.find(p => p.id === post.id);
+          const originalPostData = posts.find((p: typeof posts[0]) => p.id === post.id);
           if (originalPostData) {
             // Convert to the Post format expected by useGiveawayState
             setSelectedPost({

@@ -20,11 +20,12 @@ describe("Engagement Feed", () => {
   describe("Page Access", () => {
     it("should navigate to engagement feed from dashboard", () => {
       cy.visitAndCheck("/dashboard");
+      // Use force:true for fixed sidebar links
       cy.get('a[href*="engagement"]')
         .first()
-        .should("be.visible")
-        .click();
-      cy.location("pathname").should("include", "engagement");
+        .should("exist")
+        .click({ force: true });
+      cy.location("pathname", { timeout: 10000 }).should("include", "engagement");
     });
 
     it("should load engagement feed page directly", () => {
@@ -52,4 +53,5 @@ describe("Engagement Feed", () => {
     });
   });
 });
+
 

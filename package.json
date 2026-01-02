@@ -1,7 +1,12 @@
 {
   "name": "smartflow-social",
   "private": true,
-  "sideEffects": false,
+  "sideEffects": [
+    "**/*.css",
+    "**/*.server.ts",
+    "**/*.server.tsx",
+    "app/lib/error-handler.server.ts"
+  ],
   "scripts": {
     "build": "remix build && esbuild --platform=node --format=cjs ./server.ts --outdir=build --bundle --external:fsevents && esbuild --platform=node --format=cjs ./worker.ts --outdir=build --bundle --external:fsevents",
     "dev": "npm-run-all2 --parallel dev:*",

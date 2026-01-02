@@ -32,7 +32,7 @@ export function postToCombinedContent(post: PostData): CombinedContent {
     queueType: post.queueType && typeof post.queueType === "object" && "name" in post.queueType ? {
       id: "id" in post.queueType && post.queueType.id ? (typeof post.queueType.id === "string" ? post.queueType.id : String(post.queueType.id)) : "",
       name: typeof post.queueType.name === "string" ? post.queueType.name : String(post.queueType.name ?? ""),
-      color: "color" in post.queueType && post.queueType.color ? (typeof post.queueType.color === "string" ? post.queueType.color : String(post.queueType.color)) : undefined,
+      ...("color" in post.queueType && post.queueType.color ? { color: typeof post.queueType.color === "string" ? post.queueType.color : String(post.queueType.color) } : {}),
     } : undefined,
     queueTypeId: nullToUndefined(post.queueTypeId),
     userId: post.userId,
@@ -44,7 +44,7 @@ export function postToCombinedContent(post: PostData): CombinedContent {
     repost: post.repost,
     isQuotedPost: post.isQuotedPost,
     isRecyclable: post.isRecyclable,
-    templateId: post.templateId ?? null,
+    templateId: post.templateId ?? undefined,
     originalData: post,
   };
 

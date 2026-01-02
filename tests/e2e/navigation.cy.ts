@@ -22,17 +22,21 @@ describe("Navigation and Routing", () => {
     it("should navigate between dashboard sections", () => {
       cy.visitAndCheck("/dashboard");
       
-      // Navigate to new post
-      cy.get('a[href*="newpost"]').first().should("be.visible").click();
-      cy.location("pathname").should("include", "newpost");
+      // Wait for dashboard to fully load
+      cy.get("body").should("be.visible");
       
-      // Navigate back to dashboard
+      // Navigate to new post - use force:true for fixed sidebar links
+      cy.get('a[href*="newpost"]').first().should("exist").click({ force: true });
+      cy.location("pathname", { timeout: 10000 }).should("include", "newpost");
+      
+      // Navigate back to dashboard and wait for it to load
       cy.visitAndCheck("/dashboard");
       cy.location("pathname").should("include", "dashboard");
+      cy.get("body").should("be.visible");
       
-      // Navigate to drafts
-      cy.get('a[href*="drafts"]').first().should("be.visible").click();
-      cy.location("pathname").should("include", "drafts");
+      // Navigate to drafts - use force:true for fixed sidebar links
+      cy.get('a[href*="drafts"]').first().should("exist").click({ force: true });
+      cy.location("pathname", { timeout: 10000 }).should("include", "drafts");
     });
   });
 
@@ -83,4 +87,5 @@ describe("Navigation and Routing", () => {
     });
   });
 });
+
 

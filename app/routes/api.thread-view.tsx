@@ -2,10 +2,6 @@ import type { LoaderFunctionArgs } from "@remix-run/node";
 
 import { connectToPrimalCache } from "~/features/cache/primalCache.server";
 import {
-  withErrorHandling,
-  assert,
-} from "~/lib/error-handler.server";
-import {
   ExternalServiceError,
 } from "~/lib/errors";
 
@@ -13,14 +9,20 @@ import {
  * API route to fetch thread view data from Primal cache
  * GET /api/thread-view?event_id=<event_id>
  */
-export const loader = withErrorHandling(
-  async ({ request }: LoaderFunctionArgs) => {
-    const url = new URL(request.url);
-    const eventId = url.searchParams.get("event_id");
+type AssertFunction = (condition: boolean, message: string, context?: Record<string, unknown>) => asserts condition;
 
-    assert(eventId !== null, "Missing event_id parameter", {
+export async function loader({ request }: LoaderFunctionArgs) {
+  try {
+    const errorHandler = await import("~/lib/error-handler.server");
+    const assert: AssertFunction = errorHandler.assert;
+    const url = new URL(request.url);
+    const eventIdParam = url.searchParams.get("event_id");
+
+    assert(eventIdParam !== null, "Missing event_id parameter", {
       searchParams: Array.from(url.searchParams.entries()),
     });
+
+    const eventId = eventIdParam;
 
     // Fetch thread view data using centralized cache utility
     let threadViewData: unknown;
@@ -68,5 +70,13 @@ export const loader = withErrorHandling(
       metadata,
       raw: threadViewData, // Include raw data for debugging
     };
-  },
-);
+  } catch (error) {
+    // If error is a Response (e.g., redirect from requireUserId), return it
+    if (error instanceof Response) {
+      return error;
+    }
+    // Use dynamic import to avoid bundling issues
+    const { handleLoaderError } = await import("~/lib/error-handler.server");
+    return handleLoaderError(error, {});
+  }
+}

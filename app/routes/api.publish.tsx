@@ -3,16 +3,17 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
 import {
-  withActionErrorHandling,
-  assert,
-} from "~/lib/error-handler.server";
-import {
   ValidationError,
   ExternalServiceError,
 } from "~/lib/errors";
 
-export const action = withActionErrorHandling(
-  async ({ request }: ActionFunctionArgs) => {
+type AssertFunction = (condition: boolean, message: string, context?: Record<string, unknown>) => asserts condition;
+
+export async function action({ request }: ActionFunctionArgs) {
+  try {
+    const errorHandler = await import("~/lib/error-handler.server");
+    const assert: AssertFunction = errorHandler.assert;
+    
     // Validate HTTP method
     assert(
       request.method === "POST",
@@ -122,5 +123,13 @@ export const action = withActionErrorHandling(
     }
     // For JSON responses, just return success
     return json({ success: true });
-  },
-);
+  } catch (error) {
+    // If error is a Response (e.g., redirect from requireUserId), return it
+    if (error instanceof Response) {
+      return error;
+    }
+    // Use dynamic import to avoid bundling issues
+    const { handleActionError } = await import("~/lib/error-handler.server");
+    return handleActionError(error);
+  }
+}

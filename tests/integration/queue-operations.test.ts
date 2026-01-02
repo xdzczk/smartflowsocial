@@ -260,6 +260,7 @@ describe("Queue Operations", () => {
         expect.objectContaining({
           postId: "",
           userId: "",
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.any returns any type
           signedEvent: expect.any(Object),
         }),
         { delay: 0 },
@@ -280,6 +281,7 @@ describe("Queue Operations", () => {
         expect.objectContaining({
           postId: "",
           userId: "",
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.any returns any type
           signedEvent: expect.any(Object),
         }),
         { delay: 5000 },

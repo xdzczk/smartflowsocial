@@ -100,10 +100,11 @@ describe("Calendar Loader Integration", () => {
       const request = new Request("http://localhost:3000/dashboard/calendar");
       const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
       const response = await loader(loaderArgs);
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data: LoaderData = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as LoaderData : {};
 
-      expect(response.status).toBe(200);
+      expect(responseObj.status).toBe(200);
       expect(requireUserId).toHaveBeenCalledWith(request);
       expect(getScheduledPosts).toHaveBeenCalledWith({ userId: "user-123" });
       expect(getUserById).toHaveBeenCalledWith("user-123");
@@ -128,7 +129,8 @@ describe("Calendar Loader Integration", () => {
         request, 
         params: { queueType: "posts" } 
       } as unknown as LoaderFunctionArgs);
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data: LoaderData = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as LoaderData : {};
       const selectedQueueType = typeof data.selectedQueueType === "string" ? data.selectedQueueType : "";
       const scheduledPosts = Array.isArray(data.scheduledPosts) ? data.scheduledPosts : [];
@@ -151,7 +153,8 @@ describe("Calendar Loader Integration", () => {
         request, 
         params: { queueType: "posts" } 
       } as unknown as LoaderFunctionArgs);
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data: LoaderData = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as LoaderData : {};
       const scheduledPosts = Array.isArray(data.scheduledPosts) ? data.scheduledPosts : [];
 
@@ -179,7 +182,8 @@ describe("Calendar Loader Integration", () => {
         request, 
         params: { queueType: "all" } 
       } as unknown as LoaderFunctionArgs);
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data: LoaderData = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as LoaderData : {};
       const selectedQueueType = typeof data.selectedQueueType === "string" ? data.selectedQueueType : "";
       const scheduledPosts = Array.isArray(data.scheduledPosts) ? data.scheduledPosts : [];
@@ -200,7 +204,8 @@ describe("Calendar Loader Integration", () => {
       const request = new Request("http://localhost:3000/dashboard/calendar");
       const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
       const response = await loader(loaderArgs);
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data: LoaderData = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as LoaderData : {};
       const scheduleIntervals = Array.isArray(data.scheduleIntervals) ? data.scheduleIntervals : [];
       const user = data.user && typeof data.user === "object" && !Array.isArray(data.user) ? data.user as { timezone?: string } : {};
@@ -221,7 +226,8 @@ describe("Calendar Loader Integration", () => {
       const request = new Request("http://localhost:3000/dashboard/calendar");
       const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
       const response = await loader(loaderArgs);
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data: LoaderData = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as LoaderData : {};
       const queueTypes = Array.isArray(data.queueTypes) ? data.queueTypes : [];
       const enabledQueueTypes = queueTypes.filter((qt: unknown) => {
@@ -244,11 +250,12 @@ describe("Calendar Loader Integration", () => {
       const request = new Request("http://localhost:3000/dashboard/calendar");
       const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
       const response = await loader(loaderArgs);
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data: LoaderData = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as LoaderData : {};
       const error = data.error && typeof data.error === "object" && !Array.isArray(data.error) ? data.error as { message?: string } : {};
       
-      expect(response.status).toBe(500);
+      expect(responseObj.status).toBe(500);
       expect(data.error).toBeDefined();
       const errorMessage = typeof error.message === "string" ? error.message : "";
       expect(errorMessage).toContain("Authentication required");
@@ -262,11 +269,12 @@ describe("Calendar Loader Integration", () => {
       const request = new Request("http://localhost:3000/dashboard/calendar");
       const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
       const response = await loader(loaderArgs);
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data: LoaderData = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as LoaderData : {};
       const error = data.error && typeof data.error === "object" && !Array.isArray(data.error) ? data.error as { message?: string } : {};
       
-      expect(response.status).toBe(500);
+      expect(responseObj.status).toBe(500);
       expect(data.error).toBeDefined();
       const errorMessage = typeof error.message === "string" ? error.message : "";
       expect(errorMessage).toContain("Database error");

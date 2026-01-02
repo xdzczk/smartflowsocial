@@ -12,11 +12,11 @@
  * **Note:** This is an example test file. It will be automatically skipped
  * if `TEST_DATABASE_URL` is not set or if `SKIP_DATABASE_TESTS=true`.
  */
-
+import type { PrismaClient } from "@prisma/client";
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 
-import { createPost } from "~/models/post.commands.server";
 import { getUserById } from "~/features/user";
+import { createPost } from "~/models/post.commands.server";
 
 import {
   describeDatabase,
@@ -39,7 +39,7 @@ vi.mock("~/lib/prisma.server", async () => {
     get prisma() {
       try {
         return getTestPrisma();
-      } catch (error) {
+      } catch (_error) {
         // If database URL is not set, return a mock Prisma client
         // The describeDatabase helper will skip the tests anyway
         return {
@@ -47,7 +47,7 @@ vi.mock("~/lib/prisma.server", async () => {
           $transaction: vi.fn(),
           user: { findUnique: vi.fn(), create: vi.fn() },
           post: { findUnique: vi.fn(), create: vi.fn() },
-        } as unknown as typeof import("@prisma/client").PrismaClient;
+        } as unknown as PrismaClient;
       }
     },
   };

@@ -5,14 +5,15 @@ import {
   getBatchPosts,
   parseBatchPostsRequest,
 } from "~/features/posts";
-import {
-  withActionErrorHandling,
-  assert,
-} from "~/lib/error-handler.server";
 import { ValidationError } from "~/lib/errors";
 
-export const action = withActionErrorHandling(
-  async ({ request }: ActionFunctionArgs) => {
+type AssertFunction = (condition: boolean, message: string, context?: Record<string, unknown>) => asserts condition;
+
+export async function action({ request }: ActionFunctionArgs) {
+  try {
+    const errorHandler = await import("~/lib/error-handler.server");
+    const assert: AssertFunction = errorHandler.assert;
+    
     assert(request.method === "POST", "Method not allowed", {
       method: request.method,
     });
@@ -31,5 +32,13 @@ export const action = withActionErrorHandling(
     const { postIds } = parseBatchPostsRequest(body);
 
     return getBatchPosts(userId, postIds);
-  },
-);
+  } catch (error) {
+    // If error is a Response (e.g., redirect from requireUserId), return it
+    if (error instanceof Response) {
+      return error;
+    }
+    // Use dynamic import to avoid bundling issues
+    const { handleActionError } = await import("~/lib/error-handler.server");
+    return handleActionError(error);
+  }
+}

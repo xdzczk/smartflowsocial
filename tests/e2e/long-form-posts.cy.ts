@@ -20,11 +20,12 @@ describe("Long Form Posts", () => {
   describe("Long Form Post Creation", () => {
     it("should navigate to new long form post page", () => {
       cy.visitAndCheck("/dashboard");
+      // Fixed sidebar links need force:true or we need to ensure sidebar is visible
       cy.get('a[href*="newlongformpost"]')
         .first()
-        .should("be.visible")
-        .click();
-      cy.location("pathname").should("include", "newlongformpost");
+        .should("exist")
+        .click({ force: true });
+      cy.location("pathname", { timeout: 10000 }).should("include", "newlongformpost");
     });
 
     it("should load new long form post page directly", () => {

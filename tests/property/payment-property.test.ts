@@ -78,7 +78,8 @@ describe("Property-Based Tests: Payment Processing", () => {
 
       fc.assert(
         fc.property(
-          fc.float({ min: 0, max: Math.fround(10000) }),
+          fc.float({ min: 0, max: Math.fround(10000) })
+            .filter((amount: number) => Number.isFinite(amount) && amount >= 0), // Filter out NaN and Infinity
           (usdAmount: number) => {
             const sats = Math.round((usdAmount / 2500) * 100000000);
             return sats >= 0;
@@ -105,7 +106,8 @@ describe("Property-Based Tests: Payment Processing", () => {
     it("should handle very small amounts correctly (minimum 1 sat)", async () => {
       fc.assert(
         fc.property(
-          fc.float({ min: Math.fround(0.00000001), max: Math.fround(0.01) }), // Very small USD amounts
+          fc.float({ min: Math.fround(0.00000001), max: Math.fround(0.01) }) // Very small USD amounts
+            .filter((amount: number) => Number.isFinite(amount) && amount > 0), // Filter out NaN, Infinity, and zero
           (usdAmount: number) => {
             const sats = Math.max(1, Math.round((usdAmount / 2500) * 100000000));
             return sats >= 1;

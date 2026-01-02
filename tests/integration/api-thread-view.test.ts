@@ -33,7 +33,8 @@ describe("API: Thread View", () => {
       );
 
       const response = await loader({ request, params: {}, context: {} });
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { events?: unknown; metadata?: unknown; raw?: unknown } : {};
       const events = Array.isArray(data.events) ? data.events : [];
       const metadata = data.metadata && typeof data.metadata === "object" && !Array.isArray(data.metadata) ? data.metadata as Record<string, unknown> : {};
@@ -59,7 +60,8 @@ describe("API: Thread View", () => {
       );
 
       const response = await loader({ request, params: {}, context: {} });
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { events?: unknown; metadata?: unknown } : {};
       const events = Array.isArray(data.events) ? data.events : [];
       const metadata = data.metadata && typeof data.metadata === "object" && !Array.isArray(data.metadata) ? data.metadata as Record<string, unknown> : {};
@@ -81,7 +83,8 @@ describe("API: Thread View", () => {
       );
 
       const response = await loader({ request, params: {}, context: {} });
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { events?: unknown } : {};
       const events = Array.isArray(data.events) ? data.events : [];
       const firstEvent = events[0] && typeof events[0] === "object" && !Array.isArray(events[0]) ? events[0] as { id?: string } : {};
@@ -98,7 +101,8 @@ describe("API: Thread View", () => {
       );
 
       const response = await loader({ request, params: {}, context: {} });
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { events?: unknown; metadata?: unknown } : {};
       const events = Array.isArray(data.events) ? data.events : [];
       const metadata = data.metadata && typeof data.metadata === "object" && !Array.isArray(data.metadata) ? data.metadata : {};
@@ -115,7 +119,8 @@ describe("API: Thread View", () => {
       );
 
       const response = await loader({ request, params: {}, context: {} });
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { events?: unknown; metadata?: unknown } : {};
       const events = Array.isArray(data.events) ? data.events : [];
       const metadata = data.metadata && typeof data.metadata === "object" && !Array.isArray(data.metadata) ? data.metadata : {};
@@ -130,10 +135,11 @@ describe("API: Thread View", () => {
       const request = new Request("http://localhost:3000/api/thread-view");
 
       const response = await loader({ request, params: {}, context: {} });
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
 
-      expect(response.status).toBe(400);
+      expect(responseObj.status).toBe(400);
       const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
       expect(success).toBe(false);
       expect(data.error).toBeDefined();
@@ -149,10 +155,11 @@ describe("API: Thread View", () => {
       );
 
       const response = await loader({ request, params: {}, context: {} });
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
 
-      expect(response.status).toBe(502);
+      expect(responseObj.status).toBe(502);
       const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
       expect(success).toBe(false);
       expect(data.error).toBeDefined();
@@ -172,7 +179,8 @@ describe("API: Thread View", () => {
       );
 
       const response = await loader({ request, params: {}, context: {} });
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { events?: unknown; metadata?: unknown } : {};
       const events = Array.isArray(data.events) ? data.events : [];
       const metadata = data.metadata && typeof data.metadata === "object" && !Array.isArray(data.metadata) ? data.metadata : {};

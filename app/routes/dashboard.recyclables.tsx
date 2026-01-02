@@ -20,33 +20,50 @@ import {
 } from "~/features/posts";
 import type { IndividualRepostFetcherData } from "~/features/posts";
 import type { PostData, CombinedContent } from "~/features/posts";
-import { withErrorHandling, withActionErrorHandling } from "~/lib/error-handler.server";
 
-async function loaderImpl({ request, params }: LoaderFunctionArgs) {
-  const userId = await requireUserId(request);
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  try {
+    const userId = await requireUserId(request);
 
-  // Require that the user has at least a subscription record
-  await requireAnySubscription(userId);
-  // Check if user has access to recyclables feature
-  await requireFeatureAccess(userId, "recyclables");
+    // Require that the user has at least a subscription record
+    await requireAnySubscription(userId);
+    // Check if user has access to recyclables feature
+    await requireFeatureAccess(userId, "recyclables");
 
-  const url = new URL(request.url);
+    const url = new URL(request.url);
 
-  const data = await getRecyclableDashboardData({ userId, params, url });
+    const data = await getRecyclableDashboardData({ userId, params, url });
 
-  return data;
+    return data;
+  } catch (error) {
+    // If error is a Response (e.g., redirect from requireUserId), return it
+    if (error instanceof Response) {
+      return error;
+    }
+    // Use dynamic import to avoid bundling issues
+    const { handleLoaderError } = await import("~/lib/error-handler.server");
+    return handleLoaderError(error, {});
+  }
 }
 
-export const loader = withErrorHandling(loaderImpl);
+export async function action({ request }: ActionFunctionArgs) {
+  try {
+    const userId = await requireUserId(request);
+    const formData = await request.formData();
 
-export const action = withActionErrorHandling(async ({ request }: ActionFunctionArgs) => {
-  const userId = await requireUserId(request);
-  const formData = await request.formData();
+    return handleRecyclablePostAction(formData, userId);
+  } catch (error) {
+    // If error is a Response (e.g., redirect from requireUserId), return it
+    if (error instanceof Response) {
+      return error;
+    }
+    // Use dynamic import to avoid bundling issues
+    const { handleActionError } = await import("~/lib/error-handler.server");
+    return handleActionError(error);
+  }
+}
 
-  return handleRecyclablePostAction(formData, userId);
-});
-
-type LoaderData = Awaited<ReturnType<typeof loaderImpl>>;
+type LoaderData = Awaited<ReturnType<typeof loader>>;
 
 interface RepostFetcherData {
   repostData?: unknown;

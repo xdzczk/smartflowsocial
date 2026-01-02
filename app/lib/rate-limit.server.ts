@@ -49,7 +49,7 @@ export const apiLimiter = rateLimit({
       retryAfter: Math.ceil((req.rateLimit?.resetTime ?? Date.now() + 15 * 60 * 1000 - Date.now()) / 1000),
     });
   },
-  skip: (req: Request) => isTestEnvironment(), // Skip rate limiting entirely in test environments
+  skip: (_req: Request) => isTestEnvironment(), // Skip rate limiting entirely in test environments
 });
 
 /**
@@ -70,7 +70,7 @@ export const strictLimiter = rateLimit({
       retryAfter: Math.ceil((req.rateLimit?.resetTime ?? Date.now() + 15 * 60 * 1000 - Date.now()) / 1000),
     });
   },
-  skip: (req: Request) => isTestEnvironment(), // Skip rate limiting entirely in test environments
+  skip: (_req: Request) => isTestEnvironment(), // Skip rate limiting entirely in test environments
 });
 
 /**
@@ -91,7 +91,7 @@ export const authLimiter = rateLimit({
       retryAfter: Math.ceil((req.rateLimit?.resetTime ?? Date.now() + 15 * 60 * 1000 - Date.now()) / 1000),
     });
   },
-  skip: (req: Request) => isTestEnvironment(), // Skip rate limiting entirely in test environments
+  skip: (_req: Request) => isTestEnvironment(), // Skip rate limiting entirely in test environments
 });
 
 /**

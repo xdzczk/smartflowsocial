@@ -30,37 +30,54 @@ import {
   convertJsonValueToScheduleConfig,
 } from "~/features/posts";
 import type { LongFormPostType } from "~/features/posts";
-import { withErrorHandling, withActionErrorHandling } from "~/lib/error-handler.server";
 
-async function loaderImpl({ request, params }: LoaderFunctionArgs) {
-  const userId = await requireUserId(request);
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  try {
+    const userId = await requireUserId(request);
 
-  // Require that the user has at least a subscription record
-  await requireAnySubscription(userId);
-  // Check if user has access to the drafts feature
-  await requireFeatureAccess(userId, "drafts");
+    // Require that the user has at least a subscription record
+    await requireAnySubscription(userId);
+    // Check if user has access to the drafts feature
+    await requireFeatureAccess(userId, "drafts");
 
-  const queueType = params.queueType ?? "all";
+    const queueType = params.queueType ?? "all";
 
-  const data = await loadDraftsData(userId, queueType);
-  return data;
+    const data = await loadDraftsData(userId, queueType);
+    return data;
+  } catch (error) {
+    // If error is a Response (e.g., redirect from requireUserId), return it
+    if (error instanceof Response) {
+      return error;
+    }
+    // Use dynamic import to avoid bundling issues
+    const { handleLoaderError } = await import("~/lib/error-handler.server");
+    return handleLoaderError(error, {});
+  }
 }
 
-export const loader = withErrorHandling(loaderImpl);
-
-export const action = withActionErrorHandling(async ({ request }: ActionFunctionArgs) => {
-  const userId = await requireUserId(request);
-  const formData = await request.formData();
-  const result = await handleDraftsAction(formData, userId);
-  
-  if (result.error) {
-    return json(result, { status: 400 });
+export async function action({ request }: ActionFunctionArgs) {
+  try {
+    const userId = await requireUserId(request);
+    const formData = await request.formData();
+    const result = await handleDraftsAction(formData, userId);
+    
+    if (result.error) {
+      return json(result, { status: 400 });
+    }
+    
+    return json(result);
+  } catch (error) {
+    // If error is a Response (e.g., redirect from requireUserId), return it
+    if (error instanceof Response) {
+      return error;
+    }
+    // Use dynamic import to avoid bundling issues
+    const { handleActionError } = await import("~/lib/error-handler.server");
+    return handleActionError(error);
   }
-  
-  return json(result);
-});
+}
 
-type LoaderData = Awaited<ReturnType<typeof loaderImpl>>;
+type LoaderData = Awaited<ReturnType<typeof loader>>;
 
 export default function DraftPosts() {
   const data = useLoaderData<LoaderData>();

@@ -22,8 +22,8 @@ vi.mock("~/features/user", () => ({
 
 // Import after vi.mock() for dynamic import pattern
 import { calculateNextScheduleTime } from "~/features/posts/schedulers";
-import { getLastPostTimeForQueue } from "~/models/post.queries.server";
 import { getScheduleInterval } from "~/features/user";
+import { getLastPostTimeForQueue } from "~/models/post.queries.server";
 
 import {
   TEST_USER_ID,

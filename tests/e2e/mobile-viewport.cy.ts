@@ -76,7 +76,8 @@ describe("Mobile Viewport", () => {
       cy.viewport("iphone-x");
       cy.visitAndCheck("/dashboard/drafts");
       
-      cy.scrollTo("bottom");
+      // Scroll the body or main content area instead of window
+      cy.get("body").scrollTo("bottom", { ensureScrollable: false });
       cy.get("body").should("be.visible");
     });
   });
@@ -98,4 +99,5 @@ describe("Mobile Viewport", () => {
     });
   });
 });
+
 

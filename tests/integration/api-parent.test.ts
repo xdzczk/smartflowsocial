@@ -3,13 +3,8 @@
  * 
  * Tests the API endpoint in app/routes/api.parent.tsx
  */
-
+import { json } from "@remix-run/node";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-// Mock dependencies
-vi.mock("~/features/auth/session.server", () => ({
-  requireUserId: vi.fn(),
-}));
-
 vi.mock("~/features/auth/session.server", () => ({
   requireUserId: vi.fn(),
 }));
@@ -43,12 +38,9 @@ vi.mock("~/lib/errors", () => ({
   })),
 }));
 
-import { json } from "@remix-run/node";
 import { requireUserId } from "~/features/auth/session.server";
-import { createLoader } from "~/routes/api.parent";
-
-// Import the mocked functions
 import { loadParentData } from "~/features/user";
+import { createLoader } from "~/routes/api.parent";
 
 import { TEST_USER_ID } from "../utils/test-helpers";
 

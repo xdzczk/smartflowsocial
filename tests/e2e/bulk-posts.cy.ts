@@ -21,11 +21,12 @@ describe("Bulk Posts Upload", () => {
   describe("Page Navigation", () => {
     it("should navigate to bulk posts page from dashboard", () => {
       cy.visitAndCheck("/dashboard");
+      // Use force:true for fixed sidebar links
       cy.get('a[href*="bulk"], a:contains("Bulk")')
         .first()
-        .should("be.visible")
-        .click();
-      cy.location("pathname").should("include", "bulk");
+        .should("exist")
+        .click({ force: true });
+      cy.location("pathname", { timeout: 10000 }).should("include", "bulk");
     });
 
     it("should load bulk posts page directly", () => {

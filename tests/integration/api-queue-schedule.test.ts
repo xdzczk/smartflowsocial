@@ -64,7 +64,8 @@ describe("API: Queue Schedule", () => {
       }
       const actionArgs: ActionArgs = { request, params: {}, context: {} };
       const response = await action(actionArgs);
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; nextScheduleTime?: unknown; error?: unknown } : {};
 
       expect(requireUserId).toHaveBeenCalledWith(request);
@@ -116,7 +117,8 @@ describe("API: Queue Schedule", () => {
       }
       const actionArgs: ActionArgs = { request, params: {}, context: {} };
       const response = await action(actionArgs);
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; nextScheduleTime?: unknown; error?: unknown } : {};
 
       expect(getQueueTypes).toHaveBeenCalledWith(TEST_USER_ID);
@@ -142,7 +144,8 @@ describe("API: Queue Schedule", () => {
       }
       const actionArgs: ActionArgs = { request, params: {}, context: {} };
       const response = await action(actionArgs);
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; nextScheduleTime?: unknown; error?: unknown } : {};
 
       expect(getQueueTypes).not.toHaveBeenCalled();
@@ -229,10 +232,11 @@ describe("API: Queue Schedule", () => {
       }
       const actionArgs: ActionArgs = { request, params: {}, context: {} };
       const response = await action(actionArgs);
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; nextScheduleTime?: unknown; error?: unknown } : {};
 
-      expect(response.status).toBe(400);
+      expect(responseObj.status).toBe(400);
       const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
       expect(success).toBe(false);
       expect(data.error).toBeDefined();
@@ -256,8 +260,9 @@ describe("API: Queue Schedule", () => {
 
       const response = await action({ request, params: {}, context: {} });
       // Response should be rethrown by error handler, so we should get a redirect
-      expect(response.status).toBe(302);
-      expect(response.headers.get("Location")).toBe("/login");
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      expect(responseObj.status).toBe(302);
+      expect(responseObj.headers.get("Location")).toBe("/login");
     });
 
     it("should return validation error for invalid JSON", async () => {
@@ -274,10 +279,11 @@ describe("API: Queue Schedule", () => {
       }
       const actionArgs: ActionArgs = { request, params: {}, context: {} };
       const response = await action(actionArgs);
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; nextScheduleTime?: unknown; error?: unknown } : {};
 
-      expect(response.status).toBe(400);
+      expect(responseObj.status).toBe(400);
       const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
       expect(success).toBe(false);
     });
@@ -298,10 +304,11 @@ describe("API: Queue Schedule", () => {
       }
       const actionArgs: ActionArgs = { request, params: {}, context: {} };
       const response = await action(actionArgs);
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; nextScheduleTime?: unknown; error?: unknown } : {};
 
-      expect(response.status).toBe(404);
+      expect(responseObj.status).toBe(404);
       expect(data.success).toBe(false);
       expect(data.error).toBeDefined();
     });
@@ -332,10 +339,11 @@ describe("API: Queue Schedule", () => {
       }
       const actionArgs: ActionArgs = { request, params: {}, context: {} };
       const response = await action(actionArgs);
-      const dataRaw: unknown = await response.json();
+      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
       const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; nextScheduleTime?: unknown; error?: unknown } : {};
 
-      expect(response.status).toBeGreaterThanOrEqual(400);
+      expect(responseObj.status).toBeGreaterThanOrEqual(400);
       const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
       expect(success).toBe(false);
     });

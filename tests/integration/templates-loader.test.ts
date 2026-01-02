@@ -20,9 +20,9 @@ vi.mock("~/features/user", () => ({
 }));
 
 import { loadTemplatesData } from "~/features/templates/services/templates-loader.server";
+import { getUserById } from "~/features/user";
 import { getAssets, searchAssets } from "~/models/asset.server";
 import { getTemplates } from "~/models/template.server";
-import { getUserById } from "~/features/user";
 
 import { TEST_USER_ID } from "../utils/test-helpers";
 

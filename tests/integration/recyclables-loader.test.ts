@@ -29,8 +29,8 @@ vi.mock("~/features/posts/stats.server", () => ({
 
 import { getRecyclableDashboardData } from "~/features/posts/posts.server";
 import { getPostStats } from "~/features/posts/stats.server";
-import { getRecyclablePosts } from "~/models/post.queries.server";
 import { getUserById, getQueueTypes } from "~/features/user";
+import { getRecyclablePosts } from "~/models/post.queries.server";
 
 import {
   TEST_USER_ID,

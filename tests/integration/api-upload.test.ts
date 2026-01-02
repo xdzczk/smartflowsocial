@@ -58,7 +58,8 @@ describe("API: Upload", () => {
 
         const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
         const response = await action(actionParams);
-        const dataRaw: unknown = await response.json();
+        const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+        const dataRaw: unknown = await responseObj.json();
         const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; fileUrl?: unknown; error?: unknown } : {};
 
         expect(requireUserId).toHaveBeenCalledWith(request);
@@ -86,7 +87,8 @@ describe("API: Upload", () => {
 
         // requireUserId throws a Response (redirect), not an Error
         const response = await action({ request, params: {}, context: {} });
-        expect(response.status).toBeGreaterThanOrEqual(400);
+        const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+        expect(responseObj.status).toBeGreaterThanOrEqual(400);
       });
 
       it("should return validation error for non-multipart content type", async () => {
@@ -99,10 +101,11 @@ describe("API: Upload", () => {
 
         const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
         const response = await action(actionParams);
-        const dataRaw: unknown = await response.json();
+        const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+        const dataRaw: unknown = await responseObj.json();
         const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; fileUrl?: unknown; error?: unknown } : {};
 
-        expect(response.status).toBe(400);
+        expect(responseObj.status).toBe(400);
         const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
         expect(success).toBe(false);
         expect(data.error).toBeDefined();
@@ -123,10 +126,11 @@ describe("API: Upload", () => {
 
         const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
         const response = await action(actionParams);
-        const dataRaw: unknown = await response.json();
+        const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+        const dataRaw: unknown = await responseObj.json();
         const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; fileUrl?: unknown; error?: unknown } : {};
 
-        expect(response.status).toBe(400);
+        expect(responseObj.status).toBe(400);
         expect(data.success).toBe(false);
       });
 
@@ -145,10 +149,11 @@ describe("API: Upload", () => {
 
         const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
         const response = await action(actionParams);
-        const dataRaw: unknown = await response.json();
+        const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+        const dataRaw: unknown = await responseObj.json();
         const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; fileUrl?: unknown; error?: unknown } : {};
 
-        expect(response.status).toBe(400);
+        expect(responseObj.status).toBe(400);
         expect(data.success).toBe(false);
       });
 
@@ -169,10 +174,11 @@ describe("API: Upload", () => {
 
         const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
         const response = await action(actionParams);
-        const dataRaw: unknown = await response.json();
+        const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+        const dataRaw: unknown = await responseObj.json();
         const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; fileUrl?: unknown; error?: unknown } : {};
 
-        expect(response.status).toBe(400);
+        expect(responseObj.status).toBe(400);
         expect(data.success).toBe(false);
       });
     });

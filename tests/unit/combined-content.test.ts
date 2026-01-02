@@ -72,7 +72,7 @@ describe("Content Combining Logic", () => {
         repost: false,
         isQuotedPost: false,
         isRecyclable: true,
-        templateId: null,
+        templateId: undefined,
         originalData: post,
       });
     });

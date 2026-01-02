@@ -124,3 +124,4 @@ pnpm test:e2e --spec "tests/e2e/smoke.cy.ts"
 3. **Run smoke test** to verify both fixes work
 4. **Fix remaining test issues** (element visibility, etc.)
 
+

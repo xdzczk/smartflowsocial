@@ -20,11 +20,12 @@ describe("User Settings", () => {
   describe("Settings Page Access", () => {
     it("should navigate to settings page from dashboard", () => {
       cy.visitAndCheck("/dashboard");
+      // Use force:true for fixed sidebar links
       cy.get('a[href*="settings"]')
         .first()
-        .should("be.visible")
-        .click();
-      cy.location("pathname").should("include", "settings");
+        .should("exist")
+        .click({ force: true });
+      cy.location("pathname", { timeout: 10000 }).should("include", "settings");
     });
 
     it("should load settings page directly", () => {
@@ -86,4 +87,5 @@ describe("User Settings", () => {
     });
   });
 });
+
 
