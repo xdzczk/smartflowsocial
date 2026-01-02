@@ -38,6 +38,19 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Setup PostgreSQL
+        uses: ankane/setup-postgres@v1
+        with:
+          database: smartflow_test
+          user: postgres
+          password: postgres
+
+      - name: Setup test database
+        run: pnpm exec prisma db push --skip-generate
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+
       - name: Run ${{ matrix.test-type }} tests
         run: |
           if [ "${{ matrix.test-type }}" == "unit" ]; then
@@ -45,6 +58,9 @@ jobs:
           else
             pnpm test:integration
           fi
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
 
       - name: Upload test results
         if: always()

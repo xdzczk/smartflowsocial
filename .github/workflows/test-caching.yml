@@ -53,11 +53,27 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Setup PostgreSQL
+        uses: ankane/setup-postgres@v1
+        with:
+          database: smartflow_test
+          user: postgres
+          password: postgres
+
+      - name: Setup test database
+        run: pnpm exec prisma db push --skip-generate
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+
       - name: Run tests with cache
         run: |
           if [ "${{ steps.changed-files.outputs.any_changed }}" == "true" ]; then
             echo "Files changed, running all tests"
             pnpm test
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
           else
             echo "No test-related files changed, skipping tests"
           fi

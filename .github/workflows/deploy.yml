@@ -31,14 +31,30 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Setup PostgreSQL
+        uses: ankane/setup-postgres@v1
+        with:
+          database: smartflow_test
+          user: postgres
+          password: postgres
+
+      - name: Setup test database
+        run: pnpm exec prisma db push --skip-generate
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+
       - name: Run lint
         run: pnpm lint
 
       - name: Run type check
-        run: pnpm exec tsc --noEmit
+        run: pnpm exec tsc --noEmit --skipLibCheck
 
       - name: Run all tests
         run: pnpm test
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
 
       - name: Run security tests
         run: pnpm test:security

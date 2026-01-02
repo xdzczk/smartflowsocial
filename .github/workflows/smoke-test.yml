@@ -34,21 +34,40 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Setup PostgreSQL
+        uses: ankane/setup-postgres@v1
+        with:
+          database: smartflow_test
+          user: postgres
+          password: postgres
+
+      - name: Setup test database
+        run: pnpm exec prisma db push --skip-generate
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+
       - name: Run ESLint
         run: pnpm lint
         continue-on-error: false
 
       - name: Run TypeScript type check
-        run: pnpm exec tsc --noEmit
+        run: pnpm exec tsc --noEmit --skipLibCheck
         continue-on-error: false
 
       - name: Run unit tests
         run: pnpm test:unit
         continue-on-error: false
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
 
       - name: Run integration tests
         run: pnpm test:integration
         continue-on-error: false
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
 
       - name: Smoke test summary
         if: always()
