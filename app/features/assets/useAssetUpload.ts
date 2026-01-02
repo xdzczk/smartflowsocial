@@ -173,7 +173,7 @@ export function useAssetUpload({
     const handleFetcherResponse = useCallback(() => {
         if (assetFetcher.data?.success) {
             // Show toast message
-            if (assetFetcher.data?.asset) {
+            if (assetFetcher.data && typeof assetFetcher.data === "object" && "asset" in assetFetcher.data && assetFetcher.data.asset && typeof assetFetcher.data.asset === "object" && "assetType" in assetFetcher.data.asset) {
                 const assetType = assetFetcher.data.asset.assetType;
                 onSuccess(
                     `${typeof assetType === 'string' ? assetType.toLowerCase() : String(assetType).toLowerCase()} asset created successfully!`,

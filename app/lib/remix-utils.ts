@@ -60,11 +60,17 @@ function isUser(user: unknown): user is User {
 export function useOptionalUser(): User | undefined {
   const data = useMatchesData("root");
 
-  if (!data || !isUser(data.user)) {
+  // Type guard: ensure data is not an error type and has user property
+  if (!data || typeof data !== "object" || "error" in data || !("user" in data)) {
     return undefined;
   }
 
-  return data.user;
+  const user = data.user;
+  if (!isUser(user)) {
+    return undefined;
+  }
+
+  return user;
 }
 
 export function useUser(): User {

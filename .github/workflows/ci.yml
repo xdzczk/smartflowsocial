@@ -65,6 +65,8 @@ jobs:
         uses: ankane/setup-postgres@v1
         with:
           database: smartflow_test
+          user: postgres
+          password: postgres
 
       - name: Setup test database
         run: pnpm exec prisma db push --skip-generate
@@ -116,6 +118,8 @@ jobs:
         uses: ankane/setup-postgres@v1
         with:
           database: smartflow_test
+          user: postgres
+          password: postgres
 
       - name: Setup test database
         run: pnpm exec prisma db push --skip-generate
@@ -167,6 +171,8 @@ jobs:
         uses: ankane/setup-postgres@v1
         with:
           database: smartflow_test
+          user: postgres
+          password: postgres
 
       - name: Setup test database
         run: pnpm exec prisma db push --skip-generate

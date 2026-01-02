@@ -6,7 +6,7 @@ import { Button } from "~/components/ui/button";
 import { handleAsyncError } from "~/lib/error-handler.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 export default function NostrAuthButton() {
-  const user = useOptionalUser();
+  const user = useOptionalUser() ?? null;
   const fetcher = useFetcher();
   const location = useLocation();
 
@@ -105,11 +105,11 @@ export default function NostrAuthButton() {
           <div className="flex items-center gap-3">
             <Avatar>
               <AvatarImage
-                src={typeof user.nostrProfile === 'object' && user.nostrProfile !== null && 'picture' in user.nostrProfile ? String(user.nostrProfile.picture) : undefined}
+                src={user && typeof user === "object" && "nostrProfile" in user && typeof user.nostrProfile === 'object' && user.nostrProfile !== null && 'picture' in user.nostrProfile ? String(user.nostrProfile.picture) : undefined}
                 alt="Profile"
               />
               <AvatarFallback>
-                {typeof user.nostrProfile === 'object' && user.nostrProfile !== null
+                {user && typeof user === "object" && "nostrProfile" in user && typeof user.nostrProfile === 'object' && user.nostrProfile !== null
                   ? (('name' in user.nostrProfile && user.nostrProfile.name ? String(user.nostrProfile.name)[0] : null) ??
                      ('display_name' in user.nostrProfile && user.nostrProfile.display_name ? String(user.nostrProfile.display_name)[0] : null) ??
                      "U")
@@ -117,11 +117,11 @@ export default function NostrAuthButton() {
               </AvatarFallback>
             </Avatar>
             <span className="hidden sm:inline">
-              {typeof user.nostrProfile === 'object' && user.nostrProfile !== null
+              {user && typeof user === "object" && "nostrProfile" in user && typeof user.nostrProfile === 'object' && user.nostrProfile !== null
                 ? (('name' in user.nostrProfile && user.nostrProfile.name ? String(user.nostrProfile.name) : null) ??
                    ('display_name' in user.nostrProfile && user.nostrProfile.display_name ? String(user.nostrProfile.display_name) : null) ??
-                   `${(user.npub ?? "").slice(0, 12)}...${(user.npub ?? "").slice(-8)}`)
-                : `${(user.npub ?? "").slice(0, 12)}...${(user.npub ?? "").slice(-8)}`}
+                   (("npub" in user && user.npub) ? `${String(user.npub).slice(0, 12)}...${String(user.npub).slice(-8)}` : ""))
+                : (user && typeof user === "object" && "npub" in user && user.npub) ? `${String(user.npub).slice(0, 12)}...${String(user.npub).slice(-8)}` : ""}
             </span>
             {location.pathname === "/" ? (
               <Button variant="outline" size="sm" asChild>

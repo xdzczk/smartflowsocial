@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
+const prisma: PrismaClient = new PrismaClient();
 
 async function main() {
   console.log("🌱 Starting seed...");

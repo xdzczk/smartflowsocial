@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 
 import { useOptionalUser } from "~/lib/remix-utils";
 export default function Footer() {
-  const user = useOptionalUser();
+  const user = useOptionalUser() ?? null;
   const [time, setTime] = useState(new Date());
   useEffect(() => {
     const timer = setInterval(() => {
@@ -24,7 +24,7 @@ export default function Footer() {
             <span className="font-mono">
               {" "}
               {time.toLocaleDateString("en-US", {
-                timeZone: user?.timezone ?? undefined,
+                timeZone: (user && typeof user === "object" && "timezone" in user) ? (user.timezone ?? undefined) : undefined,
                 month: "short",
                 day: "numeric",
                 year: "numeric",
@@ -38,7 +38,7 @@ export default function Footer() {
                 hour12: true,
               })}
               {" 🌍 "}
-              {user?.timezone}
+              {(user && typeof user === "object" && "timezone" in user) ? user.timezone : undefined}
             </span>
           </div>
         </div>
