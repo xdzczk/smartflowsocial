@@ -12,7 +12,7 @@ env:
 
 jobs:
   test-matrix:
-    name: Test on Node.js ${{ matrix.node-version }}
+    name: Test ${{ matrix.test-type }} on Node.js ${{ matrix.node-version }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
