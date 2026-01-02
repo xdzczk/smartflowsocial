@@ -1,111 +1,193 @@
 # SmartFlowSocial Documentation
 
-Welcome to the SmartFlowSocial documentation hub! This guide will help you understand, set up, and contribute to the project.
+<div align="center">
+
+**Professional documentation for a professional platform**
+
+[Quick Start](#-quick-start) • [Guides](#-guides) • [Reference](#-reference) • [Examples](#-examples) • [Troubleshooting](#-troubleshooting)
+
+</div>
+
+---
 
 ## 🚀 Quick Start
 
-**New to SmartFlowSocial?** Start here:
+**New to SmartFlowSocial?** Choose your path:
 
-1. **[Environment Setup](./getting-started/environment-setup.md)** - Configure your development environment
-2. **[Onboarding Guide](./getting-started/onboarding.md)** - First-time user guide
-3. **[Architecture Overview](./getting-started/architecture.md)** - Understand the system structure
+### For End Users
+1. **[5-Minute Quick Start](./getting-started/quickstart.md)** - Get up and running fast
+2. **[First Steps Guide](./getting-started/first-steps.md)** - Your first 30 minutes
+3. **[Core Concepts](./getting-started/concepts.md)** - Understand how it works
 
-**Want to contribute?**
-- [Contributing Guide](../CONTRIBUTING.md) - How to contribute
-- [Development Setup](./development/testing.md) - Testing and development workflow
-- [Documentation Style Guide](./documentation-style-guide.md) - How to write documentation
+### For Developers
+1. **[Installation Guide](./getting-started/installation.md)** - Set up your development environment
+2. **[Architecture Overview](./getting-started/architecture.md)** - System design and patterns
+3. **[Development Guide](./guides/developer-guide.md)** - Building and contributing
 
-## 📚 Table of Contents
+### For DevOps
+1. **[Deployment Guide](./guides/deployment.md)** - Production deployment
+2. **[Operations Guide](./guides/operations.md)** - Monitoring and maintenance
+3. **[Configuration Reference](./reference/configuration.md)** - All configuration options
+
+---
+
+## 📚 Documentation Structure
 
 ### Getting Started
-- [Environment Setup](./getting-started/environment-setup.md) - Configure all required environment variables
-- [Onboarding](./getting-started/onboarding.md) - First-time user guide
-- [Architecture](./getting-started/architecture.md) - Project structure and code organization
+Essential guides for new users and developers.
 
-### Core Features
-- [Posting Workflow](./features/posting.md) - How to create and schedule posts
-- [Calendar Feature](./features/calendar-feature.md) - Visual post scheduling with drag-and-drop
-- [Lightning Payments](./features/lightning-payments.md) - Subscription payment system
+| Guide | Description | Time |
+|------|-------------|------|
+| [Quick Start](./getting-started/quickstart.md) | Get running in 5 minutes | 5 min |
+| [Installation](./getting-started/installation.md) | Complete setup guide | 15 min |
+| [First Steps](./getting-started/first-steps.md) | Your first 30 minutes | 30 min |
+| [Core Concepts](./getting-started/concepts.md) | Understanding the system | 20 min |
+| [Architecture](./getting-started/architecture.md) | System design and patterns | 45 min |
 
-### Development
-- [Contributing Guide](../CONTRIBUTING.md) - How to contribute to the project
-- [Documentation Style Guide](./documentation-style-guide.md) - How to write and maintain documentation
-- [Testing Guide](./development/testing.md) - Complete testing guide (Vitest setup, Cypress, property-based, security, performance)
-- [Test Strategy](./development/test-strategy.md) - Testing philosophy, strategy, coverage goals, and reporting
-- [Testing Patterns](./development/testing-patterns.md) - Common testing patterns and mocking guidelines
-- [Test Troubleshooting](./development/test-troubleshooting.md) - Common testing issues and solutions
-- [Test Database](./development/test-database.md) - Database integration testing guide
-- [Error Handling](./error-handling.md) - Centralized error handling (includes implementation and metrics)
-- [CI/CD Guide](./ci-cd.md) - Continuous integration and deployment
-- [Migration Plan](./migration-plan.md) - Database migration guide
-- [Migration Drift Resolution](./migration-drift-resolution.md) - Resolving migration drift issues
+### Guides
+Comprehensive guides organized by role and topic.
 
-### Operations & Deployment
-- [Deployment Guide](./operations/deployment.md) - Production deployment guide (Fly.io, Railway, Docker, AWS)
-- [Operations Guide](./operations/operations.md) - Monitoring, logging, alerting, and maintenance
-- [Queue System](./operations/queue-system.md) - BullMQ/Redis queue system documentation
-- [Backup & Recovery](./operations/backup-recovery.md) - Backup procedures and disaster recovery
-- [Troubleshooting Guide](./operations/troubleshooting.md) - Common issues and solutions
+#### User Guides
+- [Posting Guide](./guides/user-guides/posting.md) - Create and schedule posts
+- [Calendar Guide](./guides/user-guides/calendar.md) - Visual scheduling
+- [Engagement Guide](./guides/user-guides/engagement.md) - Track interactions
+- [Templates Guide](./guides/user-guides/templates.md) - Reusable post templates
+- [Payments Guide](./guides/user-guides/payments.md) - Subscription management
 
-### Security
-- [Security Guide](./security/security.md) - Security best practices and guidelines
-- [Sentry Setup](./security/sentry-setup.md) - Error tracking and monitoring setup
+#### Developer Guides
+- [Developer Guide](./guides/developer-guide.md) - Development workflow
+- [Testing Guide](./guides/testing.md) - Testing strategies and patterns
+- [Contributing Guide](./guides/contributing.md) - How to contribute
+- [API Development](./guides/api-development.md) - Building API endpoints
 
-### Integration
-- [Nostr Integration](./integration/nostr-integration.md) - Nostr protocol integration and NIP implementations
-- [Component Library](./integration/components.md) - UI component documentation and usage guide
+#### Operations Guides
+- [Deployment Guide](./guides/deployment.md) - Production deployment
+- [Operations Guide](./guides/operations.md) - Monitoring and maintenance
+- [Security Guide](./guides/security.md) - Security best practices
+- [Scaling Guide](./guides/scaling.md) - Scaling strategies
 
 ### Reference
-- [API Reference](./reference/api-reference.md) - API endpoints and usage
-- [Database Schema](./reference/database-schema.md) - Data models and relationships
-- [Performance Guide](./reference/performance.md) - Performance optimization strategies
+Complete reference documentation.
 
-## 🔗 Quick Links
+- [API Reference](./reference/api.md) - All API endpoints
+- [Configuration](./reference/configuration.md) - Environment variables and config
+- [Database Schema](./reference/database-schema.md) - Data models
+- [Nostr Integration](./reference/nostr.md) - Nostr protocol details
+- [Error Codes](./reference/errors.md) - Error reference
 
-### Essential Resources
-| Resource | Description |
-|----------|-------------|
-| [Project README](../README.md) | Project overview and quick start |
-| [example.env](../example.env) | Environment variable template |
-| [schema.prisma](../prisma/schema.prisma) | Database schema definition |
-| [Contributing Guide](../CONTRIBUTING.md) | How to contribute to the project |
+### Examples
+Working code examples and recipes.
 
-### Common Tasks
-- **Setting up**: [Environment Setup](./getting-started/environment-setup.md)
-- **Creating posts**: [Posting Workflow](./features/posting.md)
-- **Deploying**: [Deployment Guide](./operations/deployment.md)
-- **Testing**: [Testing Guide](./development/testing.md)
-- **Troubleshooting**: [Troubleshooting Guide](./operations/troubleshooting.md)
+- [Code Examples](./examples/code-samples.md) - Common code patterns
+- [Integration Examples](./examples/integrations.md) - Third-party integrations
+- [Recipes](./examples/recipes.md) - Common use cases
 
-### Documentation
-- [Documentation Style Guide](./documentation-style-guide.md) - How to write and maintain documentation
-- [Archive](./archive/README.md) - Historical documentation
+### Tutorials
+Step-by-step tutorials for common tasks.
 
-## 📋 Documentation Categories
+- [Beginner Tutorials](./tutorials/beginner/) - Getting started tutorials
+- [Intermediate Tutorials](./tutorials/intermediate/) - Advanced features
+- [Advanced Tutorials](./tutorials/advanced/) - Expert-level topics
 
-### By Role
-- **👨‍💻 Developers**: [Development](./development/) - Testing, CI/CD, error handling
-- **🚀 DevOps**: [Operations](./operations/) - Deployment, monitoring, troubleshooting
-- **🔒 Security**: [Security](./security/) - Security practices, Sentry setup
-- **👤 Users**: [Getting Started](./getting-started/) - Setup, onboarding, features
+### Troubleshooting
+Help when things go wrong.
 
-### By Topic
-- **🏗️ Architecture**: [Architecture](./getting-started/architecture.md), [Database Schema](./reference/database-schema.md)
-- **🧪 Testing**: [Testing Guide](./development/testing.md), [Test Strategy](./development/test-strategy.md)
-- **🔌 Integration**: [Nostr Integration](./integration/nostr-integration.md), [Components](./integration/components.md)
-- **📊 Reference**: [API Reference](./reference/api-reference.md), [Performance](./reference/performance.md)
+- [Common Issues](./troubleshooting/common-issues.md) - Frequently asked questions
+- [Error Solutions](./troubleshooting/errors.md) - Error resolution
+- [Debugging Guide](./troubleshooting/debugging.md) - Debugging techniques
+- [Performance Issues](./troubleshooting/performance.md) - Performance troubleshooting
 
-## 🆘 Need Help?
+---
 
-1. **Check the relevant documentation** file above
-2. **Review the [Contributing Guide](../CONTRIBUTING.md)** for development questions
-3. **Check [Troubleshooting Guide](./operations/troubleshooting.md)** for common issues
-4. **Open an issue on GitHub** for bugs or feature requests
+## 🎯 Learning Paths
+
+### I want to...
+
+**Get started quickly**
+→ [Quick Start](./getting-started/quickstart.md) → [First Steps](./getting-started/first-steps.md) → [Posting Guide](./guides/user-guides/posting.md)
+
+**Deploy to production**
+→ [Installation](./getting-started/installation.md) → [Deployment Guide](./guides/deployment.md) → [Operations Guide](./guides/operations.md)
+
+**Build a custom feature**
+→ [Architecture](./getting-started/architecture.md) → [Developer Guide](./guides/developer-guide.md) → [Contributing](./guides/contributing.md)
+
+**Understand how it works**
+→ [Core Concepts](./getting-started/concepts.md) → [Architecture](./getting-started/architecture.md) → [Nostr Integration](./reference/nostr.md)
+
+**Troubleshoot an issue**
+→ [Common Issues](./troubleshooting/common-issues.md) → [Error Solutions](./troubleshooting/errors.md) → [Debugging Guide](./troubleshooting/debugging.md)
+
+---
+
+## 📖 Documentation Standards
+
+All documentation follows our [Documentation Style Guide](./meta/style-guide.md) which ensures:
+- ✅ Clear, concise writing
+- ✅ Working code examples
+- ✅ Consistent formatting
+- ✅ Regular updates
+- ✅ Accessibility compliance
+
+---
+
+## 🔍 Search
+
+Looking for something specific? Use your browser's search (Cmd/Ctrl+F) or check:
+- [Common Tasks](./meta/common-tasks.md) - Quick reference
+- [Glossary](./meta/glossary.md) - Terminology
+- [FAQ](./troubleshooting/faq.md) - Frequently asked questions
+
+---
 
 ## 📝 Contributing to Documentation
 
-See our [Documentation Style Guide](./documentation-style-guide.md) for:
-- Writing standards and conventions
-- Documentation templates
+We welcome contributions! See our [Documentation Contributing Guide](./meta/contributing.md) for:
+- How to write documentation
+- Style guidelines
 - Review process
 - Best practices
+
+---
+
+## 🔗 Quick Links
+
+| Resource | Description |
+|----------|-------------|
+| [Project README](../README.md) | Project overview |
+| [example.env](../example.env) | Environment template |
+| [schema.prisma](../prisma/schema.prisma) | Database schema |
+| [Contributing](../CONTRIBUTING.md) | Code contributing guide |
+
+---
+
+## 📊 Documentation Status
+
+| Section | Status | Last Updated |
+|---------|--------|--------------|
+| Getting Started | ✅ Complete | 2025-01-15 |
+| User Guides | ✅ Complete | 2025-01-15 |
+| Developer Guides | ✅ Complete | 2025-01-15 |
+| Reference | ✅ Complete | 2025-01-15 |
+| Examples | 🚧 In Progress | 2025-01-15 |
+| Troubleshooting | ✅ Complete | 2025-01-15 |
+
+---
+
+## 🆘 Need Help?
+
+1. **Check the relevant guide** above
+2. **Search troubleshooting** for common issues
+3. **Review examples** for code patterns
+4. **Open an issue** on GitHub for bugs
+5. **Start a discussion** for questions
+
+---
+
+<div align="center">
+
+**SmartFlowSocial Documentation** — Built with ❤️ for the community
+
+[Report Documentation Issue](https://github.com/xdzczk/SmartFlowSocial/issues) • [Improve This Page](./meta/contributing.md)
+
+</div>

@@ -310,35 +310,45 @@ SmartFlowSocial vs. other Nostr scheduling and management tools:
 
 ## 📚 Documentation
 
+### Quick Start
+- **[5-Minute Quick Start](./docs/getting-started/quickstart.md)** - Get running fast
+- **[Installation Guide](./docs/getting-started/installation.md)** - Complete setup
+- **[First Steps](./docs/getting-started/first-steps.md)** - Your first 30 minutes
+
 ### Getting Started
-- [Environment Setup](./docs/environment-setup.md) - Configure environment variables
-- [User Onboarding](./docs/onboarding.md) - First-time user guide
-- [Deployment Guide](./docs/operations/deployment.md) - Production deployment
+- [Quick Start](./docs/getting-started/quickstart.md) - 5-minute setup
+- [Installation](./docs/getting-started/installation.md) - Complete installation guide
+- [First Steps](./docs/getting-started/first-steps.md) - Learn the basics
+- [Core Concepts](./docs/getting-started/concepts.md) - Understand how it works
+- [Architecture](./docs/getting-started/architecture.md) - System design
 
-### Core Features
-- [Posting Workflow](./docs/posting.md) - Create and manage posts
-- [Calendar Feature](./docs/calendar-feature.md) - Visual scheduling
-- [Lightning Payments](./docs/LIGHTNING_PAYMENTS.md) - Payment system
+### User Guides
+- [Posting Guide](./docs/guides/user-guides/posting.md) - Create and schedule posts
+- [Calendar Guide](./docs/guides/user-guides/calendar.md) - Visual scheduling
+- [Payments Guide](./docs/guides/user-guides/payments.md) - Subscription management
 
-### Technical Reference
-- [Architecture](./docs/architecture.md) - System architecture and patterns
-- [Database Schema](./docs/database-schema.md) - Data models
-- [API Reference](./docs/api-reference.md) - API endpoints
-- [Nostr Integration](./docs/NOSTR_INTEGRATION.md) - Nostr protocol details
+### Developer Guides
+- [Developer Guide](./docs/guides/developer-guide.md) - Development workflow
+- [Testing Guide](./docs/guides/testing.md) - Testing strategies
+- [Contributing Guide](./CONTRIBUTING.md) - How to contribute
 
 ### Operations
-- [Operations Guide](./docs/operations/operations.md) - Monitoring and maintenance
-- [Queue System](./docs/operations/queue-system.md) - BullMQ/Redis documentation
-- [Security Guide](./docs/security/security.md) - Security best practices
-- [Performance Guide](./docs/reference/performance.md) - Optimization strategies
-- [Troubleshooting](./docs/operations/troubleshooting.md) - Common issues
+- [Deployment Guide](./docs/guides/deployment.md) - Production deployment
+- [Operations Guide](./docs/guides/operations.md) - Monitoring and maintenance
+- [Security Guide](./docs/guides/security.md) - Security best practices
 
-### Development
-- [Contributing Guide](./CONTRIBUTING.md) - How to contribute
-- [Testing Guide](./docs/testing.md) - Complete testing documentation
-- [Component Library](./docs/COMPONENTS.md) - UI components
+### Reference
+- [API Reference](./docs/reference/api.md) - All API endpoints
+- [Configuration](./docs/reference/configuration.md) - Environment variables
+- [Database Schema](./docs/reference/database-schema.md) - Data models
+- [Nostr Integration](./docs/reference/nostr.md) - Nostr protocol details
+- [Performance](./docs/reference/performance.md) - Optimization strategies
 
-**📖 [Full Documentation Index](./docs/README.md)**
+### Troubleshooting
+- [Common Issues](./docs/troubleshooting/common-issues.md) - Frequently asked questions
+- [Error Solutions](./docs/troubleshooting/errors.md) - Error resolution
+
+**📖 [Full Documentation Index](./docs/README.md)** - Complete documentation hub
 
 ---
 

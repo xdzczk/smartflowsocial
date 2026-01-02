@@ -173,11 +173,14 @@ describe("Property-Based Tests: Data Validation", () => {
     });
 
     it("should validate future dates", () => {
+      // Capture the current time once at test start to avoid race conditions
+      const now = new Date();
       fc.assert(
         fc.property(
-          fc.date({ min: new Date() }),
+          fc.date({ min: now }),
           (date: Date) => {
-            return date >= new Date() && !isNaN(date.getTime());
+            // Use the captured 'now' time for consistent validation
+            return date >= now && !isNaN(date.getTime());
           },
         ),
         { numRuns: 30 },

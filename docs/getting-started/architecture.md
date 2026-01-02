@@ -504,13 +504,13 @@ See [Queue System Documentation](../operations/queue-system.md) for details.
 - [Prisma Documentation](https://www.prisma.io/docs)
 - [BullMQ Documentation](https://docs.bullmq.io/)
 - [Database Schema](../reference/database-schema.md)
-- [API Reference](../reference/api-reference.md)
-- [Deployment Guide](../operations/deployment.md)
+- [API Reference](../reference/api.md)
+- [Deployment Guide](../guides/deployment.md)
 
 ## See Also
 
-- [Environment Setup](./environment-setup.md) - Configuration and setup
-- [Error Handling Guide](../error-handling.md) - Error handling architecture
-- [Security Guide](../security/security.md) - Security architecture
+- [Installation Guide](./installation.md) - Configuration and setup
+- [Core Concepts](./concepts.md) - Understanding the system
+- [Security Guide](../guides/security.md) - Security architecture
 - [Performance Guide](../reference/performance.md) - Performance considerations
-- [Queue System](../operations/queue-system.md) - Queue architecture
+- [Configuration Reference](../reference/configuration.md) - All configuration options
