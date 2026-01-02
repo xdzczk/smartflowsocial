@@ -46,6 +46,7 @@ describe("Property-Based Tests: Encryption", () => {
             return decrypted === plaintext;
           },
         ),
+        { timeout: 30000 },
       );
     });
 

@@ -44,9 +44,13 @@ describe("Property-Based Tests: Queue Operations", () => {
         nostrEventId: null,
       };
 
-      (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
-      (updatePostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
-      (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
+      const mockFindUnique = prisma.post.findUnique as ReturnType<typeof vi.fn>;
+      const mockUpdatePostStatus = updatePostStatus as ReturnType<typeof vi.fn>;
+      const mockGetUserById = getUserById as ReturnType<typeof vi.fn>;
+      
+      mockFindUnique.mockResolvedValue(mockPost);
+      mockUpdatePostStatus.mockResolvedValue(undefined);
+      mockGetUserById.mockResolvedValue({
         userRelays: ["wss://relay1.com"],
       });
 
@@ -72,10 +76,13 @@ describe("Property-Based Tests: Queue Operations", () => {
     });
 
     async function processJob(postId: string, userId: string) {
-      const existingPost = await prisma.post.findUnique({
+      const mockPostFindUnique = prisma.post.findUnique as ReturnType<typeof vi.fn>;
+      const mockUpdatePostStatus = updatePostStatus as ReturnType<typeof vi.fn>;
+      
+      const existingPost = await mockPostFindUnique({
         where: { id: postId, userId },
         select: { isPosted: true, nostrEventId: true },
-      });
+      }) as { isPosted: boolean; nostrEventId: string | null } | null;
 
       if (!existingPost) {
         return { success: false, error: "Post not found" };
@@ -85,7 +92,7 @@ describe("Property-Based Tests: Queue Operations", () => {
         return { success: true, skipped: true };
       }
 
-      await updatePostStatus({
+      await mockUpdatePostStatus({
         id: postId,
         userId,
         isPosted: true,
