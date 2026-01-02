@@ -6,6 +6,7 @@
 import { Queue } from "bullmq";
 import Redis from "ioredis";
 
+import { env } from "~/lib/env.server";
 import { logError } from "~/lib/error-logger.server";
 
 import type {
@@ -19,7 +20,7 @@ import type {
 } from "./queue-types";
 
 // Redis connection with BullMQ required config
-const redis = new Redis(process.env.REDIS_URL!, {
+const redis = new Redis(env.REDIS_URL, {
   maxRetriesPerRequest: null,
 });
 

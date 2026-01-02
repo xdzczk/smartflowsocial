@@ -1,3 +1,5 @@
+import { env } from "~/lib/env.server";
+import { fetchJsonWithRetry } from "~/lib/fetch.server";
 
 export interface PostStats {
     likes: number;
@@ -21,26 +23,25 @@ export async function getPostStats(eventIds: string[]): Promise<Record<string, P
 
         // Fetch stats for each event ID
         const statsPromises = eventIds.map(async (eventId) => {
-            const response = await fetch(process.env.PRIMAL_CACHING_URL!, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    requestType: "thread_view",
-                    params: {
-                        event_id: eventId,
+            const response = await fetchJsonWithRetry<unknown[]>(
+                env.PRIMAL_CACHING_URL!,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
                     },
-                }),
-                signal: controller.signal,
-            });
+                    body: JSON.stringify({
+                        requestType: "thread_view",
+                        params: {
+                            event_id: eventId,
+                        },
+                    }),
+                    timeout: 5000, // 5 seconds for cache requests
+                    maxRetries: 1, // Single retry for stats
+                },
+            );
 
-            if (!response.ok) {
-                throw new Error("Failed to fetch stats");
-            }
-
-            const dataRaw: unknown = await response.json();
-            const data: unknown[] = Array.isArray(dataRaw) ? dataRaw : [];
+            const data: unknown[] = Array.isArray(response) ? response : [];
             // Find the stats event in the response array
             // The stats event has kind 10000100 and contains engagement metrics
             const statsEvent: unknown = data.find(

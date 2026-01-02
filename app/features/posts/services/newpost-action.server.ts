@@ -11,6 +11,8 @@ import { redirect ,
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 import { createUploadHandler } from "~/features/upload/s3.server";
+import { env } from "~/lib/env.server";
+import { fetchWithRetry } from "~/lib/fetch.server";
 import { createPost } from "~/models/post.commands.server";
 import {
   getUserById,
@@ -116,7 +118,7 @@ async function publishToNostr(
   relays: string[],
   signedEvent: SignedEvent,
 ): Promise<void> {
-  const response = await fetch(process.env.NOSTR_PUBLISHER_URL!, {
+  const response = await fetchWithRetry(env.NOSTR_PUBLISHER_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -125,6 +127,8 @@ async function publishToNostr(
       relays,
       event: signedEvent,
     }),
+    timeout: 15000, // 15 seconds for publishing
+    maxRetries: 2,
   });
 
   if (!response.ok) {

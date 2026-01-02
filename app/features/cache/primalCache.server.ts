@@ -1,22 +1,26 @@
+import { env } from "~/lib/env.server";
 import { logError } from "~/lib/error-logger.server";
+import { fetchJsonWithRetry } from "~/lib/fetch.server";
+
 type CacheParams = Record<string, unknown>;
 type CacheResponse = unknown[];
 
 /**
  * Fetches data from the Primal cache REST API
+ * Uses hardened fetch wrapper with retries and timeouts
  */
 export async function fetchFromCache(
   requestType: string,
   params: CacheParams,
-  retries = 2,
 ): Promise<CacheResponse> {
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      const url = process.env.PRIMAL_CACHING_URL;
-      if (!url) {
-        throw new Error("PRIMAL_CACHING_URL environment variable is not set");
-      }
-      const response = await fetch(url, {
+  if (!env.PRIMAL_CACHING_URL) {
+    throw new Error("PRIMAL_CACHING_URL environment variable is not set");
+  }
+  
+  try {
+    const data = await fetchJsonWithRetry<CacheResponse>(
+      env.PRIMAL_CACHING_URL,
+      {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -25,38 +29,24 @@ export async function fetchFromCache(
           requestType,
           params,
         }),
-      });
-
-      if (!response.ok) {
-        // For 502/503 errors, retry after a short delay
-        if (
-          (response.status === 502 || response.status === 503) &&
-          attempt < retries
-        ) {
-          await new Promise((resolve) =>
-            setTimeout(resolve, 1000 * (attempt + 1)),
-          );
-          continue;
-        }
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = (await response.json()) as CacheResponse;
-
-      return data;
-    } catch (error) {
-      if (attempt === retries) {
-        console.error(
-          `[REST Cache] Failed to fetch after ${retries + 1} attempts:`,
-          error,
-        );
-        throw error;
-      }
-      await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)));
-    }
+        timeout: 5000, // 5 seconds for cache requests
+        maxRetries: 2,
+        retryOn5xx: true,
+      },
+    );
+    
+    return data;
+  } catch (error) {
+    logError(
+      error instanceof Error ? error : new Error(String(error)),
+      {
+        requestType,
+        params,
+        message: "[REST Cache] Failed to fetch",
+      },
+    );
+    throw error;
   }
-
-  throw new Error("Failed to fetch from cache after all retries");
 }
 
 /**

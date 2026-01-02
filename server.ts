@@ -14,15 +14,15 @@ import morgan from "morgan";
 import * as promClient from "prom-client";
 import sourceMapSupport from "source-map-support";
 
+import { env } from "./app/lib/env.server";
 import {
   apiLimiter,
   strictLimiter,
   authLimiter,
 } from "./app/lib/rate-limit.server";
 
-// Install source map support
 // Only install in production or when explicitly enabled to avoid missing map file errors in dev
-if (process.env.NODE_ENV === "production" || process.env.ENABLE_SOURCE_MAPS === "true") {
+if (env.NODE_ENV === "production" || env.ENABLE_SOURCE_MAPS === "true") {
   try {
     (sourceMapSupport as { install: (options: { handleUncaughtExceptions: boolean; environment: string }) => void }).install({
       handleUncaughtExceptions: false,
@@ -44,99 +44,6 @@ if (!globalWithCrypto.crypto?.getRandomValues) {
   globalWithCrypto.crypto = nodeWebcrypto as Crypto;
 }
 
-/**
- * Validate required environment variables at startup
- * Prevents the application from starting with missing critical configuration
- */
-function validateEnvironment(): void {
-  const required = [
-    'DATABASE_URL',
-    'SESSION_SECRET',
-    'NOSTR_PUBLISHER_URL',
-    'REDIS_URL',
-  ];
-
-  // Storage variables are optional - only required if using image uploads
-  // If any storage variable is set, all must be set
-  const storageVariables = [
-    'STORAGE_ACCESS_KEY',
-    'STORAGE_SECRET',
-    'STORAGE_REGION',
-    'STORAGE_BUCKET',
-  ];
-
-  const missing: string[] = [];
-  const invalid: { key: string; reason: string }[] = [];
-
-  for (const key of required) {
-    const value = process.env[key];
-    if (!value || value.trim() === '') {
-      missing.push(key);
-    } else {
-      // Additional validation for specific variables
-      if (key === 'SESSION_SECRET' && value.length < 32) {
-        invalid.push({
-          key,
-          reason: 'must be at least 32 characters long',
-        });
-      }
-      if (key === 'DATABASE_URL' && !value.startsWith('postgresql://')) {
-        invalid.push({
-          key,
-          reason: 'must be a valid PostgreSQL connection string (postgresql://...)',
-        });
-      }
-      if (key === 'REDIS_URL' && !value.startsWith('redis://')) {
-        invalid.push({
-          key,
-          reason: 'must be a valid Redis connection string (redis://...)',
-        });
-      }
-    }
-  }
-
-  // Validate storage variables: if any is set, all must be set
-  const storageValues = storageVariables.map(key => process.env[key]);
-  const hasSomeStorage = storageValues.some(v => v && v.trim() !== '');
-  const hasAllStorage = storageValues.every(v => v && v.trim() !== '');
-
-  if (hasSomeStorage && !hasAllStorage) {
-    missing.push(...storageVariables.filter(key => {
-      const value = process.env[key];
-      return !value || value.trim() === '';
-    }));
-  }
-
-  if (missing.length > 0 || invalid.length > 0) {
-    console.error('❌ Environment validation failed:');
-    
-    if (missing.length > 0) {
-      console.error('\nMissing required environment variables:');
-      missing.forEach((key) => console.error(`  - ${key}`));
-    }
-    
-    if (invalid.length > 0) {
-      console.error('\nInvalid environment variables:');
-      invalid.forEach(({ key, reason }) =>
-        console.error(`  - ${key}: ${reason}`),
-      );
-    }
-    
-    console.error(
-      '\nPlease check your .env file or environment configuration.',
-    );
-    console.error(
-      'See docs/environment-setup.md for detailed configuration instructions.',
-    );
-    
-    process.exit(1);
-  }
-
-  console.log('✅ Environment variables validated');
-}
-
-// Validate environment before starting
-validateEnvironment();
 
 void run();
 
@@ -146,7 +53,7 @@ async function run() {
 
   const initialBuild = await reimportServer();
   const remixHandler =
-    process.env.NODE_ENV === "development"
+    env.NODE_ENV === "development"
       ? await createDevRequestHandler(initialBuild)
       : createRequestHandler({
           build: initialBuild,
@@ -173,7 +80,7 @@ async function run() {
 
   app.use((req, res, next) => {
     // helpful headers:
-    res.set("x-fly-region", process.env.FLY_REGION ?? "unknown");
+    res.set("x-fly-region", env.FLY_REGION ?? "unknown");
     res.set("Strict-Transport-Security", `max-age=${60 * 60 * 24 * 365 * 100}`);
 
     // /clean-urls/ -> /clean-urls
@@ -192,7 +99,8 @@ async function run() {
   // learn more: https://fly.io/docs/getting-started/multi-region-databases/#replay-the-request
   app.all("*", function getReplayResponse(req, res, next) {
     const { method, path: pathname } = req;
-    const { PRIMARY_REGION, FLY_REGION } = process.env;
+    const PRIMARY_REGION = env.PRIMARY_REGION;
+    const FLY_REGION = env.FLY_REGION;
 
     const isMethodReplayable = !["GET", "OPTIONS", "HEAD"].includes(method);
     const isReadOnlyRegion =
@@ -221,7 +129,7 @@ async function run() {
   // Security headers with Helmet
   // Configure CSP to work with Remix (which uses inline scripts/styles)
   // In production, we remove 'unsafe-eval' for better security
-  const isDevelopment = process.env.NODE_ENV === "development";
+  const isDevelopment = env.NODE_ENV === "development";
   const scriptSrc = [
     "'self'",
     "'unsafe-inline'", // Required for Remix
@@ -336,16 +244,16 @@ async function run() {
 
   app.all("*", remixHandler);
 
-  const port = parseInt(process.env.PORT ?? "3000", 10);
+  const port = parseInt(env.PORT ?? "3000", 10);
   app.listen(port, () => {
     console.log(`✅ app ready: http://localhost:${port}`);
 
-    if (process.env.NODE_ENV === "development") {
+    if (env.NODE_ENV === "development") {
       void broadcastDevReady(initialBuild);
     }
   });
 
-  const metricsPort = parseInt(process.env.METRICS_PORT ?? "3010", 10);
+  const metricsPort = parseInt(env.METRICS_PORT ?? "3010", 10);
 
   metricsApp.listen(metricsPort, () => {
     console.log(`✅ metrics ready: http://localhost:${metricsPort}/metrics`);

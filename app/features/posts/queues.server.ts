@@ -21,8 +21,14 @@ import type {
   PostJobData,
   LongFormPostJobData,
 } from "~/infra/queue";
-import { logInfo, logError } from "~/lib/error-logger.server";
+import { env } from "~/lib/env.server";
+import { logError, logInfo } from "~/lib/error-logger.server";
+import { fetchWithRetry } from "~/lib/fetch.server";
 import { prisma } from "~/lib/prisma.server";
+import {
+  recordJobMetrics,
+  updateActiveJobs,
+} from "~/lib/queue-metrics.server";
 import {
   updateLongFormPostStatus,
   getCronDueScheduledLongFormPosts,
@@ -67,8 +73,11 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
   "scheduled-posts",
   async (job: Job<PostJobData>) => {
     const { postId, userId, signedEvent } = job.data;
+    const startTime = Date.now();
+    const queueName = "scheduled-posts";
 
     try {
+      updateActiveJobs(queueName, 1);
       // Idempotency check: verify post exists and is not already posted
       const existingPost = await prisma.post.findUnique({
         where: { id: postId, userId },
@@ -108,7 +117,7 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
       });
 
       // Post to nostr publisher endpoint
-      const response = await fetch(process.env.NOSTR_PUBLISHER_URL!, {
+      const response = await fetchWithRetry(env.NOSTR_PUBLISHER_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -117,6 +126,8 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
           relays: sanitizedRelays,
           event: signedEvent,
         }),
+        timeout: 15000, // 15 seconds for publishing
+        maxRetries: 2,
       });
 
       if (!response.ok) {
@@ -125,9 +136,16 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
         );
       }
 
+      const duration = Date.now() - startTime;
+      recordJobMetrics(queueName, duration, true);
+      updateActiveJobs(queueName, -1);
       return { success: true, postId };
     } catch (error) {
-      logError(error instanceof Error ? error : new Error(String(error)), {
+      const duration = Date.now() - startTime;
+      const err = error instanceof Error ? error : new Error(String(error));
+      recordJobMetrics(queueName, duration, false, err);
+      updateActiveJobs(queueName, -1);
+      logError(err, {
         userId,
         postId,
         message: "Error processing scheduled post",
@@ -146,8 +164,11 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
   "scheduled-longform-posts",
   async (job: Job<LongFormPostJobData>) => {
     const { postId, userId, signedEvent } = job.data;
+    const startTime = Date.now();
+    const queueName = "scheduled-longform-posts";
 
     try {
+      updateActiveJobs(queueName, 1);
       // Idempotency check: verify post exists and is not already published
       const existingPost = await prisma.longFormPost.findUnique({
         where: { id: postId, userId },
@@ -187,7 +208,7 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
       });
 
       // Post to nostr publisher endpoint
-      const response = await fetch(process.env.NOSTR_PUBLISHER_URL!, {
+      const response = await fetchWithRetry(env.NOSTR_PUBLISHER_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -196,6 +217,8 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
           relays: sanitizedRelays,
           event: signedEvent,
         }),
+        timeout: 15000, // 15 seconds for publishing
+        maxRetries: 2,
       });
 
       if (!response.ok) {
@@ -204,9 +227,16 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
         );
       }
 
+      const duration = Date.now() - startTime;
+      recordJobMetrics(queueName, duration, true);
+      updateActiveJobs(queueName, -1);
       return { success: true, postId };
     } catch (error) {
-      logError(error instanceof Error ? error : new Error(String(error)), {
+      const duration = Date.now() - startTime;
+      const err = error instanceof Error ? error : new Error(String(error));
+      recordJobMetrics(queueName, duration, false, err);
+      updateActiveJobs(queueName, -1);
+      logError(err, {
         userId,
         postId,
         message: "Error processing scheduled longform post",

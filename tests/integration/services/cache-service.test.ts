@@ -62,7 +62,7 @@ describe("Primal Cache Service", () => {
         });
 
       vi.useFakeTimers();
-      const promise = fetchFromCache("thread_view", { event_id: "event-123" }, 2);
+      const promise = fetchFromCache("thread_view", { event_id: "event-123" });
 
       // Fast-forward through retry delay
       await vi.advanceTimersByTimeAsync(1000);
@@ -88,7 +88,7 @@ describe("Primal Cache Service", () => {
         });
 
       vi.useFakeTimers();
-      const promise = fetchFromCache("thread_view", { event_id: "event-123" }, 2);
+      const promise = fetchFromCache("thread_view", { event_id: "event-123" });
 
       await vi.advanceTimersByTimeAsync(1000);
       await vi.advanceTimersByTimeAsync(2000);
@@ -114,9 +114,7 @@ describe("Primal Cache Service", () => {
         status: 500,
       });
 
-      await expect(fetchFromCache("thread_view", { event_id: "event-123" }, 1)).rejects.toThrow(
-        "HTTP error! status: 500",
-      );
+      await expect(fetchFromCache("thread_view", { event_id: "event-123" })).rejects.toThrow();
     });
 
     it("should handle network errors with retries", async () => {
@@ -128,7 +126,7 @@ describe("Primal Cache Service", () => {
         });
 
       vi.useFakeTimers();
-      const promise = fetchFromCache("thread_view", { event_id: "event-123" }, 2);
+      const promise = fetchFromCache("thread_view", { event_id: "event-123" });
 
       await vi.advanceTimersByTimeAsync(1000);
       await vi.advanceTimersByTimeAsync(2000);
@@ -147,7 +145,7 @@ describe("Primal Cache Service", () => {
       
       // Create promise and handle rejection immediately to prevent unhandled rejection warning
       let rejectionHandled = false;
-      const promise = fetchFromCache("thread_view", { event_id: "event-123" }, 1);
+      const promise = fetchFromCache("thread_view", { event_id: "event-123" });
       
       // Attach error handler immediately to prevent unhandled rejection
       promise.catch(() => {

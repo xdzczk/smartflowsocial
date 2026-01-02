@@ -10,6 +10,10 @@ import {
   postCheckerWorker,
 } from "./app/features/posts/queues.server";
 
+// Import centralized environment validation
+// This validates env vars at module load time and exports typed config
+import "./app/lib/env.server";
+
 console.log("🚀 BullMQ worker started");
 console.log("Workers initialized:", {
   scheduledPostsWorker: !!scheduledPostsWorker,

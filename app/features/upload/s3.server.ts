@@ -5,6 +5,7 @@ import {
 } from "@remix-run/node";
 import { v4 as uuidv4 } from "uuid";
 
+import { env } from "~/lib/env.server";
 import { logError } from "~/lib/error-logger.server";
 
 type UploadStream = AsyncIterable<Uint8Array>;
@@ -22,7 +23,7 @@ const uploadStreamToS3 = async (
   const buffer = Buffer.concat(chunks);
 
   const params = {
-    Bucket: process.env.STORAGE_BUCKET,
+    Bucket: env.STORAGE_BUCKET!,
     Key: key,
     Body: buffer,
   };
@@ -31,11 +32,11 @@ const uploadStreamToS3 = async (
     const command = new PutObjectCommand(params);
     await s3Client.send(command);
     // Construct the URL manually since v3 doesn't return Location
-    return `https://${String(process.env.STORAGE_BUCKET ?? '')}.s3.${String(process.env.STORAGE_REGION ?? '')}.amazonaws.com/${key}`;
+    return `https://${String(env.STORAGE_BUCKET ?? '')}.s3.${String(env.STORAGE_REGION ?? '')}.amazonaws.com/${key}`;
   } catch (error) {
     logError(error instanceof Error ? error : new Error(String(error)), {
       key,
-      bucket: process.env.STORAGE_BUCKET,
+      bucket: env.STORAGE_BUCKET,
       message: "S3 upload error",
     });
     throw error;
@@ -61,10 +62,10 @@ export function createUploadHandler(userId: string) {
 
         const s3Client = new S3Client({
           credentials: {
-            accessKeyId: process.env.STORAGE_ACCESS_KEY!,
-            secretAccessKey: process.env.STORAGE_SECRET!,
+            accessKeyId: env.STORAGE_ACCESS_KEY!,
+            secretAccessKey: env.STORAGE_SECRET!,
           },
-          region: process.env.STORAGE_REGION!,
+          region: env.STORAGE_REGION!,
         });
 
         const uploadedFileLocation = await uploadStreamToS3(
@@ -112,7 +113,7 @@ export async function uploadBufferToS3(
     const s3Client = createS3Client();
 
     const command = new PutObjectCommand({
-      Bucket: process.env.STORAGE_BUCKET,
+      Bucket: env.STORAGE_BUCKET!,
       Key: key,
       Body: buffer,
     });
@@ -120,8 +121,8 @@ export async function uploadBufferToS3(
     await s3Client.send(command);
 
     // Return the full URL
-    const bucket = process.env.STORAGE_BUCKET ?? "";
-    const region = process.env.STORAGE_REGION ?? "";
+    const bucket = env.STORAGE_BUCKET ?? "";
+    const region = env.STORAGE_REGION ?? "";
     return `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
   } catch (error) {
     logError(error instanceof Error ? error : new Error(String(error)), {
@@ -137,10 +138,10 @@ export async function uploadBufferToS3(
 // Create S3 client with credentials
 export function createS3Client() {
   return new S3Client({
-    region: process.env.STORAGE_REGION!,
+    region: env.STORAGE_REGION!,
     credentials: {
-      accessKeyId: process.env.STORAGE_ACCESS_KEY!,
-      secretAccessKey: process.env.STORAGE_SECRET!,
+      accessKeyId: env.STORAGE_ACCESS_KEY!,
+      secretAccessKey: env.STORAGE_SECRET!,
     },
   });
 }
@@ -160,7 +161,7 @@ export async function uploadEditorJSImage(
     const s3Client = createS3Client();
 
     const command = new PutObjectCommand({
-      Bucket: process.env.STORAGE_BUCKET,
+      Bucket: env.STORAGE_BUCKET!,
       Key: key,
       Body: buffer,
       ContentType: `image/${ext === "jpg" ? "jpeg" : ext}`,
@@ -171,8 +172,8 @@ export async function uploadEditorJSImage(
     await s3Client.send(command);
 
     // Return the full URL
-    const bucket = process.env.STORAGE_BUCKET ?? "";
-    const region = process.env.STORAGE_REGION ?? "";
+    const bucket = env.STORAGE_BUCKET ?? "";
+    const region = env.STORAGE_REGION ?? "";
     const imageUrl = `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
 
     return imageUrl;

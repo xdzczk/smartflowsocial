@@ -2,25 +2,18 @@ import { useFetcher } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
 import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
-import { Textarea } from "~/components/ui/textarea";
 import { AssetBrowser, type Asset } from "~/features/assets";
-import {
-  signLongFormEvent,
-  convertEditorJSToMarkdown,
-  generateArticleIdentifier,
-} from "~/lib/nostr";
 
-import type { EditorJSBlock } from "../types";
+import { useLongFormSubmission } from "../hooks/useLongFormSubmission";
 import { useCoverImageUpload } from "../useCoverImageUpload";
 import { useLongFormEditor } from "../useLongFormEditor";
 import { useLongFormScheduling } from "../useLongFormScheduling";
 
 import { LongFormActionButtons } from "./LongFormActionButtons";
+import { LongFormContentEditor } from "./LongFormContentEditor";
 import { LongFormCoverImage } from "./LongFormCoverImage";
 import { LongFormEditorStyles } from "./LongFormEditorStyles";
+import { LongFormPostFields } from "./LongFormPostFields";
 import { LongFormPublishingOptions } from "./LongFormPublishingOptions";
 
 interface QueueType {
@@ -180,120 +173,18 @@ export default function LongFormPost({
     }
   };
 
-  const handleSchedule = async (actionType: "schedule" | "publish") => {
-    if (!title.trim() || !content.trim()) {
-      return;
-    }
-
-    try {
-      let markdownContent;
-      try {
-        const editorData = JSON.parse(content) as { blocks?: EditorJSBlock[] };
-        markdownContent = convertEditorJSToMarkdown(editorData as { blocks: EditorJSBlock[] });
-      } catch {
-        markdownContent = content;
-      }
-
-      const finalSummary = summary || generateSummaryFromContent(content);
-      const identifier = generateArticleIdentifier(title);
-
-      let scheduledTimestamp;
-      if (actionType === "schedule" && scheduledFor) {
-        const scheduledTime = new Date(scheduledFor);
-        scheduledTimestamp = Math.floor(scheduledTime.getTime() / 1000);
-      }
-
-      // Get effective hashtags - prioritize manual selection over queue defaults
-      let effectiveHashtags = "";
-
-      if (useHashtagPresets) {
-        // Manual hashtag presets are enabled
-        if (selectedHashtags) {
-          // Use manually selected hashtag preset
-          effectiveHashtags = selectedHashtags;
-        }
-        // If useHashtagPresets is true but no manual preset selected, use no hashtags
-      } else {
-        // Manual hashtag presets are disabled, use displayed hashtags (queue defaults)
-        effectiveHashtags = displayedHashtags ?? "";
-      }
-
-      const hashtagsFromQueue = effectiveHashtags
-        ? effectiveHashtags
-          .split(" ")
-          .map((tag) => tag.replace("#", "").trim())
-          .filter(Boolean)
-        : [];
-      const customTagsList = customTags
-        ? customTags
-          .split(",")
-          .map((tag) => tag.trim())
-          .filter(Boolean)
-        : [];
-      // Combine and deduplicate tags (case insensitive)
-      const allTags = [...hashtagsFromQueue, ...customTagsList];
-      const uniqueTags = allTags.filter(
-        (tag, index) =>
-          allTags.findIndex((t) => t.toLowerCase() === tag.toLowerCase()) ===
-          index,
-      );
-
-      const eventData = {
-        title,
-        content: markdownContent,
-        summary: finalSummary,
-        image,
-        tags: uniqueTags,
-        identifier,
-        publishedAt:
-          actionType === "publish"
-            ? Math.floor(Date.now() / 1000)
-            : scheduledTimestamp,
-      };
-
-      const { nostrEvent, signedEvent } = await signLongFormEvent(eventData);
-
-      const form = document.createElement("form");
-      form.method = "POST";
-      form.style.display = "none";
-
-      const fields: [string, string][] = [
-        [
-          "_action",
-          actionType === "schedule" ? "schedule-longform" : "publish",
-        ],
-        ["title", title],
-        ["content", content],
-        ["summary", finalSummary],
-        ["image", image],
-        ["tags", uniqueTags.join(",")],
-        ["queueType", selectedQueueType],
-        [
-          "scheduledFor",
-          scheduledTimestamp ? scheduledTimestamp.toString() : "",
-        ],
-        ["signedEvent", JSON.stringify(signedEvent)],
-        ["nostrEvent", JSON.stringify(nostrEvent)],
-      ];
-
-      fields.forEach(([name, value]) => {
-        const input = document.createElement("input");
-        input.type = "hidden";
-        input.name = name;
-        input.value = value ?? "";
-        form.appendChild(input);
-      });
-
-      document.body.appendChild(form);
-      form.submit();
-    } catch (error) {
-      const { handleAsyncError } = await import("~/lib/error-handler.client");
-      handleAsyncError(error, {
-        component: "LongFormPost",
-        action: "handleSubmit",
-      }, false); // Don't show toast, let component handle it
-    }
-  };
+  const { handleSchedule } = useLongFormSubmission({
+    title,
+    summary,
+    content,
+    image,
+    customTags,
+    selectedQueueType,
+    scheduledFor,
+    displayedHashtags,
+    useHashtagPresets,
+    selectedHashtags,
+  });
 
   const isFormValid = !!(title.trim() && summary.trim() && content.trim() && image);
 
@@ -302,44 +193,16 @@ export default function LongFormPost({
       <LongFormEditorStyles />
 
       <div className="space-y-6">
-        <div>
-          <Label htmlFor="title">Title *</Label>
-          <Input
-            id="title"
-            name="title"
-            type="text"
-            required
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Enter your post title"
-            className="mt-1"
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="summary">Summary *</Label>
-          <div className="mt-1 flex gap-2">
-            <Textarea
-              id="summary"
-              name="summary"
-              required
-              value={summary}
-              onChange={(e) => setSummary(e.target.value)}
-              placeholder="Brief description of your post"
-              rows={3}
-              className="flex-1"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleGenerateSummary}
-              disabled={!content}
-              className="whitespace-nowrap"
-            >
-              Auto-generate
-            </Button>
-          </div>
-        </div>
+        <LongFormPostFields
+          title={title}
+          summary={summary}
+          customTags={customTags}
+          content={content}
+          onTitleChange={setTitle}
+          onSummaryChange={setSummary}
+          onCustomTagsChange={setCustomTags}
+          onGenerateSummary={handleGenerateSummary}
+        />
 
         <LongFormCoverImage
           image={image}
@@ -351,78 +214,10 @@ export default function LongFormPost({
           onOpenAssetBrowser={() => setShowAssetBrowser("cover")}
         />
 
-        <div>
-          <div className="mb-1 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Label htmlFor="content">Content *</Label>
-              {uploadProvider ? (
-                <div className="flex items-center gap-1 text-xs text-gray-500">
-                  <span>Images upload via:</span>
-                  <span
-                    className={`rounded px-2 py-1 text-xs font-medium ${uploadProvider.includes("BLOSSOM")
-                      ? "bg-purple-100 text-purple-800"
-                      : "bg-blue-100 text-blue-800"
-                      }`}
-                  >
-                    {uploadProvider.includes("BLOSSOM")
-                      ? `🌸 ${uploadProvider === "BLOSSOM_PRIMAL" ? "Primal" : "Blosstr"}`
-                      : "☁️ S3"}
-                  </span>
-                </div>
-              ) : null}
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setShowAssetBrowser("content")}
-              className="text-xs"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="mr-1 h-3 w-3"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                />
-              </svg>
-              Insert Assets
-            </Button>
-          </div>
-          <div className="mt-1 rounded-lg border border-gray-300 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 dark:border-gray-600">
-            <div className="min-h-[500px] p-4">
-              <div
-                id="editorjs"
-                className="prose prose-lg dark:prose-invert min-h-[460px] max-w-none"
-              ></div>
-            </div>
-          </div>
-          <input type="hidden" name="content" value={content} />
-        </div>
-
-        {/* Custom Tags Input */}
-        <div>
-          <Label htmlFor="customTags">Custom Tags</Label>
-          <Input
-            id="customTags"
-            name="customTags"
-            type="text"
-            value={customTags}
-            onChange={(e) => setCustomTags(e.target.value)}
-            placeholder="Enter custom tags separated by commas (e.g. bitcoin, nostr, technology)"
-            className="mt-1"
-          />
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            These tags will be added to the NOSTR event and combined with queue
-            type hashtags if any
-          </p>
-        </div>
+        <LongFormContentEditor
+          uploadProvider={uploadProvider}
+          onOpenAssetBrowser={() => setShowAssetBrowser("content")}
+        />
 
         {/* Hashtags Display */}
         {displayedHashtags ? (

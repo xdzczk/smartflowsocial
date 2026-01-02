@@ -13,6 +13,8 @@ import {
   createUploadHandler,
   uploadBufferToS3,
 } from "~/features/upload/s3.server";
+import { env } from "~/lib/env.server";
+import { fetchWithRetry } from "~/lib/fetch.server";
 import {
   sanitizeMarkdown,
   generateSummary,
@@ -310,7 +312,7 @@ async function handlePublish(
     hashTagPresetId,
   });
 
-  const response = await fetch(process.env.NOSTR_PUBLISHER_URL!, {
+  const response = await fetchWithRetry(env.NOSTR_PUBLISHER_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -319,6 +321,8 @@ async function handlePublish(
       relays: sanitizedRelays,
       event: signedEventJson,
     }),
+    timeout: 15000, // 15 seconds for publishing
+    maxRetries: 2,
   });
 
   if (!response.ok) {
