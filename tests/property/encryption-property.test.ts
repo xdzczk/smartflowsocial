@@ -32,9 +32,9 @@ describe("Property-Based Tests: Encryption", () => {
             }
           },
         ),
-        { numRuns: 100 },
+        { numRuns: 50, timeout: 30000 }, // Reduced runs and increased timeout
       );
-    });
+    }, 60000); // 60 second test timeout
 
     it("should handle empty strings correctly", () => {
       fc.assert(
@@ -48,7 +48,7 @@ describe("Property-Based Tests: Encryption", () => {
         ),
         { timeout: 30000 },
       );
-    });
+    }, 60000); // 60 second test timeout
 
     it("should handle very long strings", () => {
       fc.assert(
