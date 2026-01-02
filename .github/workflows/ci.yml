@@ -33,8 +33,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run ESLint
-        run: pnpm lint
+      - name: Generate Prisma Client
+        run: pnpm exec prisma generate
+
+      - name: Generate TypeScript type information
+        run: pnpm exec tsc --noEmit --skipLibCheck
+
+      - name: Run ESLint (no cache)
+        run: pnpm lint:ci
 
       - name: Run TypeScript type check
         run: pnpm exec tsc --noEmit --skipLibCheck

@@ -1,6 +1,7 @@
 {
   "name": "smartflow-social",
   "private": true,
+  "packageManager": "pnpm@10.27.0",
   "sideEffects": [
     "**/*.css",
     "**/*.server.ts",
@@ -8,6 +9,7 @@
     "app/lib/error-handler.server.ts"
   ],
   "scripts": {
+    "postinstall": "prisma generate",
     "build": "remix build && esbuild --platform=node --format=cjs ./server.ts --outdir=build --bundle --external:fsevents && esbuild --platform=node --format=cjs ./worker.ts --outdir=build --bundle --external:fsevents",
     "dev": "npm-run-all2 --parallel dev:*",
     "dev:remix": "remix dev --manual -c \"node --watch-path ./build/server.js --watch ./build/server.js\"",
@@ -16,6 +18,7 @@
     "docker": "docker compose up -d",
     "format": "prettier --write .",
     "lint": "eslint --cache --cache-location ./node_modules/.cache/eslint .; LINT_EXIT=$?; eslint --format json . > eslint-report.json 2>&1; exit $LINT_EXIT",
+    "lint:ci": "eslint . --format json > eslint-report.json 2>&1; eslint . || exit 1",
     "start": "cross-env NODE_ENV=production node ./build/server.js",
     "start:worker": "cross-env NODE_ENV=production node ./build/worker.js",
     "db:seed": "tsx prisma/seed.ts",

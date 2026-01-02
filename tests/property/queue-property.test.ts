@@ -76,8 +76,8 @@ describe("Property-Based Tests: Queue Operations", () => {
     });
 
     async function processJob(postId: string, userId: string) {
-      const mockPostFindUnique = prisma.post.findUnique as ReturnType<typeof vi.fn>;
-      const mockUpdatePostStatus = updatePostStatus as ReturnType<typeof vi.fn>;
+      const mockPostFindUnique = prisma.post.findUnique as unknown as ReturnType<typeof vi.fn> & ((args: unknown) => Promise<{ isPosted: boolean; nostrEventId: string | null } | null>);
+      const mockUpdatePostStatus = updatePostStatus as unknown as ReturnType<typeof vi.fn> & ((args: { id: string; userId: string; isPosted: boolean }) => Promise<void>);
       
       const existingPost = await mockPostFindUnique({
         where: { id: postId, userId },

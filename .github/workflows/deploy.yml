@@ -31,6 +31,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Generate Prisma Client
+        run: pnpm exec prisma generate
+
+      - name: Generate TypeScript type information
+        run: pnpm exec tsc --noEmit --skipLibCheck
+
       - name: Setup PostgreSQL
         uses: ankane/setup-postgres@v1
         with:
@@ -44,8 +50,8 @@ jobs:
           TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
 
-      - name: Run lint
-        run: pnpm lint
+      - name: Run lint (no cache)
+        run: pnpm lint:ci
 
       - name: Run type check
         run: pnpm exec tsc --noEmit --skipLibCheck
