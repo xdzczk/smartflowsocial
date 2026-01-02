@@ -7,7 +7,15 @@
  * Migrated from tests/e2e/unit/engagement-logic.cy.ts
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+
+// Mock Prisma to prevent database connection attempts
+vi.mock("~/lib/prisma.server", () => ({
+  prisma: {
+    $connect: vi.fn(),
+    $disconnect: vi.fn(),
+  },
+}));
 
 import { groupNotificationsByType, type Notification } from "~/features/engagement/engagement.server";
 import {

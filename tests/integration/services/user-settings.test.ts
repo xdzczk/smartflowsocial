@@ -260,7 +260,8 @@ describe("User Settings", () => {
 
       const result = await getUserUploadProvider(TEST_USER_ID);
 
-      expect(result).toBe("s3");
+      // UploadProvider enum returns "S3" (uppercase), not "s3"
+      expect(result).toBe("S3");
     });
 
     it("should return S3 as default if upload provider not set", async () => {

@@ -415,8 +415,9 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
     expect(setPosts).toHaveBeenCalled();
     const updatedPosts = setPosts.mock.calls[0][0] as BulkPost[];
     expect(updatedPosts).toHaveLength(1);
-    // Should default to 4 hours
-    expect(updatedPosts[0].scheduledFor).toMatch(/2024-12-25T14:00/); // 10:00 + 4 hours
+    // First post (index 0) should be at base time, not base time + interval
+    // The interval is used for spacing subsequent posts (index * intervalHours)
+    expect(updatedPosts[0].scheduledFor).toMatch(/2024-12-25T10:00/);
   });
 });
 

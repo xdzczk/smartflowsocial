@@ -224,9 +224,9 @@ describe("Nostr Edge Cases", () => {
       const { signLongFormEvent } = await import("~/lib/nostr");
 
       const eventData = {
-        title: "Test Title",
+        title: "", // Empty title - required by type but should not result in title tag
         content: "Test content",
-        // No optional fields
+        // No optional fields (no summary, image, etc.)
       };
 
       const result = await signLongFormEvent(eventData);

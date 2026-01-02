@@ -144,12 +144,27 @@ describe("Primal Cache Service", () => {
       (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Network error"));
 
       vi.useFakeTimers();
+      
+      // Create promise and handle rejection immediately to prevent unhandled rejection warning
+      let rejectionHandled = false;
       const promise = fetchFromCache("thread_view", { event_id: "event-123" }, 1);
-
+      
+      // Attach error handler immediately to prevent unhandled rejection
+      promise.catch(() => {
+        rejectionHandled = true;
+      });
+      
+      // Advance timers to trigger retries
       await vi.advanceTimersByTimeAsync(1000);
       await vi.advanceTimersByTimeAsync(2000);
-
+      
+      // Wait for all pending promises to settle
+      await vi.runAllTimersAsync();
+      
+      // Now expect the rejection
       await expect(promise).rejects.toThrow("Network error");
+      expect(rejectionHandled).toBe(true);
+      
       vi.useRealTimers();
     });
   });
