@@ -64,6 +64,33 @@ User drags post → Advanced modal with options:
 - "Convert to Manual" - Update time and disable auto-scheduling
 ```
 
+### Calendar Drag & Drop Process
+
+```mermaid
+flowchart TD
+    Start[User Drags Post] --> Check{Post Type?}
+    Check -->|Manual| Simple[Show Simple Modal]
+    Check -->|Auto-Scheduled| Advanced[Show Advanced Modal]
+    
+    Simple --> Confirm[Confirm New Time]
+    Confirm --> Update[Update Post Time]
+    Update --> Resign[Re-sign Event]
+    Resign --> Save[Save to Database]
+    
+    Advanced --> Choice{User Choice?}
+    Choice -->|Cancel| End1[No Changes]
+    Choice -->|Keep Queue| UpdateTime[Update Time Only]
+    Choice -->|Convert Manual| Convert[Disable Auto-Scheduling]
+    
+    UpdateTime --> CancelJob[Cancel Old Queue Job]
+    CancelJob --> Update
+    Convert --> CancelJob
+    
+    Save --> End2[Post Rescheduled]
+    End1 --> End3[End]
+    End2 --> End3
+```
+
 ### ⚙️ Queue Override System
 
 - **`manual_override` field**: New boolean field in Post model

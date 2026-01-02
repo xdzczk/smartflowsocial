@@ -39,6 +39,69 @@ SmartFlowSocial is built as a full-stack Remix application with a focus on:
 | Authentication | Nostr-based (NIP-07 browser extensions) |
 | Payments | Lightning Network via NWC |
 
+## System Architecture Diagram
+
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        Browser[Browser/User Interface]
+        Extension[Nostr Extension<br/>NIP-07]
+    end
+    
+    subgraph "Application Layer"
+        Remix[Remix Server<br/>HTTP Handler]
+        Routes[Route Handlers<br/>Loaders & Actions]
+        Models[Data Models<br/>Prisma Wrappers]
+        Services[Business Logic<br/>Services]
+    end
+    
+    subgraph "Background Processing"
+        Worker[Worker Process<br/>BullMQ Worker]
+        Queue[Job Queue<br/>Redis/BullMQ]
+        Scheduler[Post Scheduler<br/>Queue Manager]
+    end
+    
+    subgraph "Data Layer"
+        DB[(PostgreSQL<br/>User Data & Posts)]
+        Redis[(Redis<br/>Queue Storage & Cache)]
+    end
+    
+    subgraph "External Services"
+        Publisher[HTTP Nostr Publisher<br/>Event Publishing]
+        Primal[Primal Cache<br/>Profile/Event Lookups]
+        Storage[S3/Blossom Storage<br/>Image Uploads]
+        Relays[Nostr Relays<br/>Event Distribution]
+        NWC[NWC Service<br/>Lightning Payments]
+    end
+    
+    Browser -->|HTTP Requests| Remix
+    Browser -->|Sign Events| Extension
+    Extension -->|Signed Events| Remix
+    Remix --> Routes
+    Routes --> Models
+    Routes --> Services
+    Models --> DB
+    Services -->|Enqueue Jobs| Queue
+    Worker -->|Process Jobs| Queue
+    Worker -->|Publish Events| Publisher
+    Worker -->|Update Status| DB
+    Publisher --> Relays
+    Routes -->|Fetch Profiles| Primal
+    Routes -->|Upload Images| Storage
+    Routes -->|Process Payments| NWC
+    Scheduler --> Queue
+    Scheduler --> DB
+    
+    style Browser fill:#e1f5ff
+    style Extension fill:#fff4e1
+    style Remix fill:#c8e6c9
+    style Worker fill:#ffccbc
+    style DB fill:#f3e5f5
+    style Redis fill:#ffcdd2
+    style Publisher fill:#e0f2f1
+    style Relays fill:#fff9c4
+```
+
 ## Project Structure
 
 ```
@@ -210,6 +273,93 @@ export async function action({ request }: ActionFunctionArgs) {
 │  │  (data)     │    │  (queues)   │    │  (publishing)   │  │
 │  └─────────────┘    └─────────────┘    └─────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
+```
+
+### Component Architecture Diagram
+
+```mermaid
+graph LR
+    subgraph "Frontend Components"
+        UI[UI Components]
+        Forms[Form Components]
+        Calendar[Calendar View]
+        Dashboard[Dashboard]
+    end
+    
+    subgraph "Feature Modules"
+        Posts[Posts Feature]
+        Auth[Auth Feature]
+        Payments[Payments Feature]
+        Templates[Templates Feature]
+    end
+    
+    subgraph "Core Services"
+        API[API Routes]
+        Models[Data Models]
+        Services[Business Services]
+    end
+    
+    subgraph "Infrastructure"
+        DB[(Database)]
+        Cache[(Cache)]
+        Queue[Queue System]
+    end
+    
+    UI --> Forms
+    Forms --> Posts
+    Calendar --> Posts
+    Dashboard --> Posts
+    Dashboard --> Templates
+    Posts --> API
+    Auth --> API
+    Payments --> API
+    API --> Models
+    API --> Services
+    Models --> DB
+    Services --> Queue
+    Services --> Cache
+    Queue --> DB
+```
+
+## Data Flow
+
+The application follows a clear data flow pattern:
+
+### Data Flow Diagram
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Browser
+    participant Extension
+    participant Remix
+    participant Database
+    participant Queue
+    participant Worker
+    participant Publisher
+    participant Relays
+    
+    User->>Browser: Create Post
+    Browser->>Remix: POST /api/posts
+    Remix->>Database: Store Post (DRAFT)
+    Remix->>Browser: Return Post Data
+    Browser->>Extension: Request Signature
+    Extension->>Browser: Signed Event
+    Browser->>Remix: POST /api/publish
+    Remix->>Database: Update Post (SIGNED)
+    
+    alt Scheduled Post
+        Remix->>Queue: Enqueue Job
+        Queue->>Worker: Process Job (at scheduled time)
+        Worker->>Database: Get Post
+        Worker->>Publisher: Publish Event
+        Publisher->>Relays: Distribute Event
+        Worker->>Database: Update Status (POSTED)
+    else Instant Post
+        Remix->>Publisher: Publish Event
+        Publisher->>Relays: Distribute Event
+        Remix->>Database: Update Status (POSTED)
+    end
 ```
 
 ## Architectural Patterns

@@ -136,18 +136,28 @@ All API endpoints return errors in a consistent format:
 ### Upload
 
 #### POST `/api/upload`
-Upload files to S3-compatible storage.
+Upload files to S3-compatible storage (or configured upload provider).
 
 **Request:**
 - Content-Type: `multipart/form-data`
-- Body: File data
+- Body: FormData with `file` field
+- Max file size: 100MB (for videos)
 
 **Response:**
 ```json
 {
-  "url": "https://storage.example.com/image.jpg"
+  "success": true,
+  "data": {
+    "fileUrl": "https://storage.example.com/image.jpg"
+  }
 }
 ```
+
+**Supported formats:**
+- Images: JPEG, PNG, WebP, GIF
+- Videos: MP4, WebM, MOV
+
+**Note:** Files are automatically processed and optimized. Images are resized if needed.
 
 ---
 
@@ -189,13 +199,24 @@ Upload images from the EditorJS rich text editor.
 ### Posts
 
 #### POST `/api/publish`
-Publish a signed Nostr event to relays.
+Publish a signed Nostr event to relays via the HTTP Nostr Publisher service.
 
 **Request:**
 ```json
 {
-  "signedEvent": { ... },
-  "postId": "post_123"
+  "relays": [
+    "wss://relay.example.com",
+    "wss://relay2.example.com"
+  ],
+  "event": {
+    "id": "event_id",
+    "pubkey": "pubkey",
+    "created_at": 1234567890,
+    "kind": 1,
+    "tags": [],
+    "content": "Hello Nostr!",
+    "sig": "signature"
+  }
 }
 ```
 
@@ -203,9 +224,11 @@ Publish a signed Nostr event to relays.
 ```json
 {
   "success": true,
-  "eventId": "nostr_event_id"
+  "message": "Published successfully"
 }
 ```
+
+**Note:** Requires `NOSTR_PUBLISHER_URL` environment variable to be configured. The event must be signed client-side before sending.
 
 ---
 
@@ -224,12 +247,16 @@ Batch operations on multiple posts.
 
 ### Queue & Scheduling
 
-#### GET `/api/queue-schedule`
+#### POST `/api/queue-schedule`
 Get the calculated next schedule time for a queue.
 
-**Query Parameters:**
-- `queueTypeId` - Queue type ID
-- `timezone` - User timezone
+**Request:**
+```json
+{
+  "queueTypeName": "Bitcoin News",
+  "queueTypeId": "queue_123"
+}
+```
 
 **Response:**
 ```json
@@ -239,14 +266,20 @@ Get the calculated next schedule time for a queue.
 }
 ```
 
+**Note:** Calculates next available time slot based on queue schedule rules (interval or fixed slots).
+
 ---
 
-#### GET `/api/effective-hashtags`
+#### POST `/api/effective-hashtags`
 Get the effective hashtags for a post based on queue and preset settings.
 
-**Query Parameters:**
-- `queueTypeId` - Queue type ID (optional)
-- `hashTagPresetId` - Hashtag preset ID (optional)
+**Request:**
+```json
+{
+  "queueTypeName": "Bitcoin News",
+  "queueTypeId": "queue_123"
+}
+```
 
 **Response:**
 ```json
@@ -254,6 +287,8 @@ Get the effective hashtags for a post based on queue and preset settings.
   "effectiveHashtags": "#nostr #bitcoin #lightning"
 }
 ```
+
+**Note:** Returns hashtag preset assigned to the queue type, or empty if none assigned.
 
 ---
 

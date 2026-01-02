@@ -35,7 +35,36 @@ SmartFlowSocial supports multiple ways to create and publish content to Nostr:
 
 All posts are signed client-side using your Nostr extension (NIP-07) before being published to relays.
 
----
+### Posting Workflow
+
+```mermaid
+flowchart TD
+    Start[User Creates Post] --> Input[Enter Content]
+    Input --> Media{Add Media?}
+    Media -->|Yes| Upload[Upload Images/Video]
+    Media -->|No| Queue{Assign Queue?}
+    Upload --> Queue
+    Queue -->|Yes| QueueSelect[Select Queue Type]
+    Queue -->|No| Schedule{Schedule?}
+    QueueSelect --> Schedule
+    Schedule -->|Yes| SetTime[Set Date & Time]
+    Schedule -->|No| Sign[Sign with Nostr Extension]
+    SetTime --> Sign
+    Sign --> Validate{Valid Signature?}
+    Validate -->|No| Error[Show Error]
+    Validate -->|Yes| Save{Save Type?}
+    Save -->|Draft| Draft[Save as Draft]
+    Save -->|Schedule| SchedulePost[Store in Database]
+    Save -->|Post Now| Publish[Publish Immediately]
+    SchedulePost --> QueueJob[Add to Queue]
+    QueueJob --> Wait[Wait for Scheduled Time]
+    Wait --> Publish
+    Publish --> Relays[Publish to Nostr Relays]
+    Relays --> Success[Post Published]
+    Draft --> End[End]
+    Error --> End
+    Success --> End
+```
 
 ## Post Types
 
@@ -494,6 +523,43 @@ Posts marked as recyclable can be:
 
 Queues help organize content with different scheduling rules.
 
+### Queue System Architecture
+
+```mermaid
+graph TB
+    subgraph "Queue Configuration"
+        Interval[Interval Queue<br/>Every X hours]
+        Fixed[Fixed Slots Queue<br/>Specific times daily]
+    end
+    
+    subgraph "Post Assignment"
+        Post1[Post 1]
+        Post2[Post 2]
+        Post3[Post 3]
+    end
+    
+    subgraph "Scheduling Logic"
+        Calc[Calculate Next Time]
+        Schedule[Schedule Post]
+    end
+    
+    subgraph "Execution"
+        Queue[(Job Queue)]
+        Worker[Worker Process]
+        Publish[Publish to Nostr]
+    end
+    
+    Interval --> Post1
+    Fixed --> Post1
+    Post1 --> Calc
+    Post2 --> Calc
+    Post3 --> Calc
+    Calc --> Schedule
+    Schedule --> Queue
+    Queue --> Worker
+    Worker --> Publish
+```
+
 ### Interval Scheduling
 
 Posts automatically every X hours from the last post.
@@ -513,6 +579,23 @@ Posts automatically every X hours from the last post.
   - Post 1: 10:00 AM
   - Post 2: 2:00 PM (4 hours later)
   - Post 3: 6:00 PM (4 hours later)
+
+### Interval Scheduling Flow
+
+```mermaid
+flowchart LR
+    Start[Post Added to Queue] --> Check{First Post?}
+    Check -->|Yes| FirstTime[Use Queue Start Time]
+    Check -->|No| LastTime[Get Last Post Time]
+    LastTime --> AddInterval[Add Interval Hours]
+    FirstTime --> Schedule[Schedule Post]
+    AddInterval --> Schedule
+    Schedule --> Queue[(Job Queue)]
+    Queue --> Wait[Wait Until Time]
+    Wait --> Publish[Publish Post]
+    Publish --> Update[Update Last Post Time]
+    Update --> Next[Next Post]
+```
 
 **Use Cases:**
 

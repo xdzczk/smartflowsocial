@@ -550,6 +550,65 @@ Access at `http://localhost:5555`
 
 ---
 
+## Queue System
+
+The application uses BullMQ with Redis for background job processing.
+
+### Queue Processing Architecture
+
+```mermaid
+graph TB
+    subgraph "Post Creation"
+        Create[User Creates Post]
+        Sign[Sign Event]
+        Store[Store in Database]
+    end
+    
+    subgraph "Queue System"
+        Enqueue[Enqueue Job]
+        Queue[(Redis Queue)]
+        Worker[Worker Process]
+    end
+    
+    subgraph "Publishing"
+        GetPost[Get Post from DB]
+        Publish[Publish to Nostr]
+        Update[Update Status]
+    end
+    
+    Create --> Sign
+    Sign --> Store
+    Store --> Enqueue
+    Enqueue --> Queue
+    Queue --> Worker
+    Worker --> GetPost
+    GetPost --> Publish
+    Publish --> Update
+    Update --> Complete[Job Complete]
+```
+
+### Worker Process Flow
+
+```mermaid
+sequenceDiagram
+    participant Queue
+    participant Worker
+    participant DB
+    participant Publisher
+    participant Relays
+    
+    Queue->>Worker: Job Ready
+    Worker->>DB: Get Post Data
+    DB-->>Worker: Post Data
+    Worker->>Worker: Validate Post
+    Worker->>Publisher: Publish Event
+    Publisher->>Relays: Distribute Event
+    Relays-->>Publisher: Confirm
+    Publisher-->>Worker: Success
+    Worker->>DB: Update Status (POSTED)
+    Worker->>Queue: Job Complete
+```
+
 ## Queue Monitoring
 
 See [Queue System Documentation](./queue-system.md) for detailed queue monitoring.

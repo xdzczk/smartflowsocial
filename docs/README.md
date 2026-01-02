@@ -53,6 +53,11 @@ Comprehensive guides organized by role and topic.
 - [Engagement Guide](./guides/user-guides/engagement.md) - Track interactions
 - [Templates Guide](./guides/user-guides/templates.md) - Reusable post templates
 - [Payments Guide](./guides/user-guides/payments.md) - Subscription management
+- [Giveaways Guide](./guides/user-guides/giveaways.md) - Create and manage giveaways
+- [Multi-Account Guide](./guides/user-guides/multi-account.md) - Manage multiple accounts
+- [Settings Guide](./guides/user-guides/settings.md) - Complete settings configuration
+- [Search Guide](./guides/user-guides/search.md) - Search for Nostr events
+- [Assets Management Guide](./guides/user-guides/assets.md) - Manage uploaded assets
 
 #### Developer Guides
 - [Developer Guide](./guides/developer-guide.md) - Development workflow
@@ -73,7 +78,8 @@ Complete reference documentation.
 - [Configuration](./reference/configuration.md) - Environment variables and config
 - [Database Schema](./reference/database-schema.md) - Data models
 - [Nostr Integration](./reference/nostr.md) - Nostr protocol details
-- [Error Codes](./reference/errors.md) - Error reference
+- [Error Codes](./reference/error-codes.md) - Complete error code reference
+- [Plan Features](./reference/plan-features.md) - Subscription plans and features
 
 ### Examples
 Working code examples and recipes.
