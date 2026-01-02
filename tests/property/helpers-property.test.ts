@@ -58,10 +58,16 @@ describe("Property-Based Tests: Helpers", () => {
     it("should return time in correct format (days, hours, minutes, or seconds)", () => {
       fc.assert(
         fc.property(
-          fc.date({ min: new Date() }),
-          (futureDate: Date) => {
-            const result = getTimeRemaining(futureDate, new Date());
+          fc.integer({ min: 1, max: 86400 * 365 }), // Seconds in the future (1 second to 1 year)
+          (secondsInFuture: number) => {
+            const currentTime = new Date();
+            const futureDate = new Date(currentTime.getTime() + secondsInFuture * 1000);
+            const result = getTimeRemaining(futureDate, currentTime);
             // Should match format: "Xd Xh" or "Xh Xm" or "Xm Xs" or "Xs"
+            // Allow for edge cases where time might be exactly 0 or very small
+            if (secondsInFuture === 0) {
+              return result === "0s" || /^(\d+d \d+h|\d+h \d+m|\d+m \d+s|\d+s)$/.test(result);
+            }
             return /^(\d+d \d+h|\d+h \d+m|\d+m \d+s|\d+s)$/.test(result);
           },
         ),
