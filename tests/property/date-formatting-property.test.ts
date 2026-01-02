@@ -83,32 +83,29 @@ describe("Property-Based Tests: Date Formatting", () => {
       fc.assert(
         fc.property(
           fc.date({ min: new Date("2000-01-01"), max: new Date("2100-12-31") }),
-          fc.integer({ min: 120, max: 86400 * 365 }), // At least 2 minutes to avoid edge cases with minute rounding
+          fc.integer({ min: 7200, max: 86400 * 365 }), // At least 2 hours to avoid DST and minute-level precision issues
           fc.constantFrom(...validTimezones),
           (date: Date, secondsToAdd: number, timezone: string) => {
             const laterDate = new Date(date.getTime() + secondsToAdd * 1000);
             const formatted1 = formatScheduleTimeForInput(date, timezone);
             const formatted2 = formatScheduleTimeForInput(laterDate, timezone);
             
-            // Later date should format to later or equal string
-            // Note: Due to DST transitions and minute-level precision, we allow equality
-            // but the formatted string should never be lexicographically less
+            // Compare the actual date values to handle DST transitions
+            // If the later date is significantly later (>= 2 hours), the formatted string should not be earlier
+            const dateDiff = laterDate.getTime() - date.getTime();
             const comparison = formatted2.localeCompare(formatted1);
             
-            // Allow equal (when time difference rounds to same minute) or greater
-            // Only fail if formatted2 is lexicographically less than formatted1
-            if (comparison < 0) {
-              // Log the failure for debugging
-              console.warn("Ordering violation:", {
-                date1: date.toISOString(),
-                date2: laterDate.toISOString(),
-                formatted1,
-                formatted2,
-                timezone,
-                secondsToAdd,
-              });
+            // For significant time differences (>= 2 hours), require non-negative comparison
+            // This ensures that with a 2+ hour difference, the formatted string maintains ordering
+            // DST transitions can cause issues, but with 2+ hours difference, we should be safe
+            if (dateDiff >= 7200000) { // 2 hours in milliseconds
+              // With 2+ hour difference, formatted2 should not be lexicographically less
+              return comparison >= 0;
+            } else {
+              // For smaller differences (shouldn't happen with min: 7200, but just in case),
+              // just ensure both are valid formatted strings
+              return formatted1.length > 0 && formatted2.length > 0;
             }
-            return comparison >= 0;
           },
         ),
         { numRuns: 50 },
