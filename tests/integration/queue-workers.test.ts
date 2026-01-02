@@ -160,19 +160,18 @@ describe("Queue Workers", () => {
         isPosted: true,
       });
       expect(getUserById).toHaveBeenCalledWith(TEST_USER_ID);
-      expect(global.fetch).toHaveBeenCalledWith(
-        "https://api.nostr-publisher.com/publish",
-        expect.objectContaining({
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            relays: ["wss://relay1.com", "wss://relay2.com"],
-            event: mockJobData.signedEvent,
-          }),
-        }),
-      );
+      // fetchWithRetry adds additional options (timeout, maxRetries, correlation ID, etc.)
+      expect(global.fetch).toHaveBeenCalled();
+      const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+      expect(fetchCall[0]).toBe("https://api.nostr-publisher.com/publish");
+      const fetchOptions = fetchCall[1] as RequestInit;
+      expect(fetchOptions.method).toBe("POST");
+      const headers = fetchOptions.headers as Record<string, string> | undefined;
+      expect(headers?.["Content-Type"]).toBe("application/json");
+      expect(fetchOptions.body).toBe(JSON.stringify({
+        relays: ["wss://relay1.com", "wss://relay2.com"],
+        event: mockJobData.signedEvent,
+      }));
       expect(result).toEqual({ success: true, postId: "post-123" });
     });
 
@@ -203,15 +202,14 @@ describe("Queue Workers", () => {
       }
       await scheduledPostsWorker.process(mockJob);
 
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({
-          body: JSON.stringify({
-            relays: ["wss://relay1.com", "wss://relay2.com"],
-            event: mockJobData.signedEvent,
-          }),
-        }),
-      );
+      // fetchWithRetry adds additional options (timeout, maxRetries, correlation ID, etc.)
+      expect(global.fetch).toHaveBeenCalled();
+      const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+      const fetchOptions = fetchCall[1] as RequestInit;
+      expect(fetchOptions.body).toBe(JSON.stringify({
+        relays: ["wss://relay1.com", "wss://relay2.com"],
+        event: mockJobData.signedEvent,
+      }));
     });
 
     it("should handle missing user", async () => {
@@ -268,15 +266,14 @@ describe("Queue Workers", () => {
       }
       await scheduledPostsWorker.process(mockJob);
 
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({
-          body: JSON.stringify({
-            relays: [],
-            event: mockJobData.signedEvent,
-          }),
-        }),
-      );
+      // fetchWithRetry adds additional options (timeout, maxRetries, correlation ID, etc.)
+      expect(global.fetch).toHaveBeenCalled();
+      const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+      const fetchOptions = fetchCall[1] as RequestInit;
+      expect(fetchOptions.body as string).toBe(JSON.stringify({
+        relays: [],
+        event: mockJobData.signedEvent,
+      }));
     });
 
     it("should handle publisher API errors", async () => {

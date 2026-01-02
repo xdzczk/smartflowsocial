@@ -224,14 +224,13 @@ describe("New Post Action Handler", () => {
           nostrEvent,
         }),
       );
-      expect(global.fetch).toHaveBeenCalledWith(
-        "https://api.nostr-publisher.com/publish",
-        expect.objectContaining({
-          method: "POST",
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          body: expect.stringContaining("event-123"),
-        }),
-      );
+      // fetchWithRetry adds additional options (timeout, maxRetries, correlation ID, etc.)
+      expect(global.fetch).toHaveBeenCalled();
+      const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+      expect(fetchCall[0]).toBe("https://api.nostr-publisher.com/publish");
+      const fetchOptions = fetchCall[1] as RequestInit;
+      expect(fetchOptions.method).toBe("POST");
+      expect(fetchOptions.body).toContain("event-123");
       expect(result).toBeInstanceOf(Response);
       expect(result.status).toBe(302); // Redirect to /dashboard/posted
     });

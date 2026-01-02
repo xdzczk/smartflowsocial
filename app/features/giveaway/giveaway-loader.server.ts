@@ -144,6 +144,7 @@ async function fetchPostStats(eventIds: string[]): Promise<Record<string, {
 
     // Fetch stats for each event ID
     const statsPromises = eventIds.map(async (eventId) => {
+      // Read directly from process.env to support test environment changes
       const primalUrl = process.env.PRIMAL_CACHING_URL;
       if (!primalUrl) {
         throw new Error("PRIMAL_CACHING_URL environment variable is not set");

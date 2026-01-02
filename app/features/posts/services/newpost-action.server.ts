@@ -118,7 +118,12 @@ async function publishToNostr(
   relays: string[],
   signedEvent: SignedEvent,
 ): Promise<void> {
-  const response = await fetchWithRetry(env.NOSTR_PUBLISHER_URL, {
+  // Read directly from process.env to support test environment changes
+  const publisherUrl = process.env.NOSTR_PUBLISHER_URL ?? env.NOSTR_PUBLISHER_URL;
+  if (!publisherUrl) {
+    throw new Error("NOSTR_PUBLISHER_URL environment variable is not set");
+  }
+  const response = await fetchWithRetry(publisherUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

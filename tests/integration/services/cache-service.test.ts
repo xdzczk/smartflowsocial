@@ -36,16 +36,18 @@ describe("Primal Cache Service", () => {
 
       const result = await fetchFromCache("thread_view", { event_id: "event-123" });
 
-      expect(global.fetch).toHaveBeenCalledWith("https://cache.example.com/api", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          requestType: "thread_view",
-          params: { event_id: "event-123" },
-        }),
-      });
+      // fetchWithRetry adds additional options (timeout, maxRetries, correlation ID, etc.)
+      expect(global.fetch).toHaveBeenCalled();
+      const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+      expect(fetchCall[0]).toBe("https://cache.example.com/api");
+      const fetchOptions = fetchCall[1] as RequestInit;
+      expect(fetchOptions.method).toBe("POST");
+      const headers = fetchOptions.headers as Record<string, string> | undefined;
+      expect(headers?.["Content-Type"]).toBe("application/json");
+      expect(fetchOptions.body).toBe(JSON.stringify({
+        requestType: "thread_view",
+        params: { event_id: "event-123" },
+      }));
       expect(result).toEqual(mockResponse);
     });
 
@@ -64,9 +66,8 @@ describe("Primal Cache Service", () => {
       vi.useFakeTimers();
       const promise = fetchFromCache("thread_view", { event_id: "event-123" });
 
-      // Fast-forward through retry delay
-      await vi.advanceTimersByTimeAsync(1000);
-      await vi.advanceTimersByTimeAsync(2000);
+      // Advance all timers to allow retries to complete
+      await vi.runAllTimersAsync();
 
       const result = await promise;
       vi.useRealTimers();
@@ -90,8 +91,8 @@ describe("Primal Cache Service", () => {
       vi.useFakeTimers();
       const promise = fetchFromCache("thread_view", { event_id: "event-123" });
 
-      await vi.advanceTimersByTimeAsync(1000);
-      await vi.advanceTimersByTimeAsync(2000);
+      // Advance all timers to allow retries to complete
+      await vi.runAllTimersAsync();
 
       const result = await promise;
       vi.useRealTimers();
@@ -119,17 +120,19 @@ describe("Primal Cache Service", () => {
 
     it("should handle network errors with retries", async () => {
       (global.fetch as ReturnType<typeof vi.fn>)
-        .mockRejectedValueOnce(new Error("Network error"))
+        .mockRejectedValueOnce(new TypeError("Network error"))
         .mockResolvedValueOnce({
           ok: true,
           json: () => Promise.resolve([{ id: "event-123" }]),
         });
 
       vi.useFakeTimers();
+      
+      // Create promise
       const promise = fetchFromCache("thread_view", { event_id: "event-123" });
-
-      await vi.advanceTimersByTimeAsync(1000);
-      await vi.advanceTimersByTimeAsync(2000);
+      
+      // Advance timers to allow retries (exponential backoff: ~1000ms, ~2000ms)
+      await vi.advanceTimersByTimeAsync(5000);
 
       const result = await promise;
       vi.useRealTimers();

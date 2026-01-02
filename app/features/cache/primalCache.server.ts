@@ -13,13 +13,15 @@ export async function fetchFromCache(
   requestType: string,
   params: CacheParams,
 ): Promise<CacheResponse> {
-  if (!env.PRIMAL_CACHING_URL) {
+  // Read directly from process.env to support test environment changes
+  const primalUrl = process.env.PRIMAL_CACHING_URL ?? env.PRIMAL_CACHING_URL;
+  if (!primalUrl) {
     throw new Error("PRIMAL_CACHING_URL environment variable is not set");
   }
   
   try {
     const data = await fetchJsonWithRetry<CacheResponse>(
-      env.PRIMAL_CACHING_URL,
+      primalUrl,
       {
         method: "POST",
         headers: {
