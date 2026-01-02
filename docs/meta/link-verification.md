@@ -9,6 +9,7 @@ Guide for verifying and maintaining links in the documentation.
 ## Overview
 
 All documentation links should be verified regularly to ensure:
+
 - Internal links point to existing files
 - External links are valid and accessible
 - Cross-references are correct
@@ -21,6 +22,7 @@ All documentation links should be verified regularly to ensure:
 ### Markdown Link Format
 
 **Relative links:**
+
 ```markdown
 [Link Text](./relative/path.md)
 [Link Text](../parent/path.md)
@@ -28,6 +30,7 @@ All documentation links should be verified regularly to ensure:
 ```
 
 **Anchor links:**
+
 ```markdown
 [Section](#section-name)
 [Section in Another File](./file.md#section-name)
@@ -36,11 +39,13 @@ All documentation links should be verified regularly to ensure:
 ### Verification Checklist
 
 1. **File exists:**
+
    - Verify target file exists
    - Check file path is correct
    - Ensure file hasn't been moved
 
 2. **Anchor exists:**
+
    - Verify section heading exists
    - Check heading format matches link
    - Ensure heading hasn't changed
@@ -57,10 +62,12 @@ All documentation links should be verified regularly to ensure:
 ### Common External Links
 
 **Nostr Resources:**
+
 - NIPs: https://github.com/nostr-protocol/nips
 - Nostr Protocol: https://nostr.com
 
 **Technology Docs:**
+
 - Remix: https://remix.run/docs
 - Prisma: https://www.prisma.io/docs
 - BullMQ: https://docs.bullmq.io
@@ -68,11 +75,13 @@ All documentation links should be verified regularly to ensure:
 ### Verification Process
 
 1. **Check link is accessible:**
+
    - Test link in browser
    - Verify HTTPS/HTTP protocol
    - Check for redirects
 
 2. **Verify content is relevant:**
+
    - Ensure link content matches context
    - Check link hasn't changed
    - Verify link is still maintained
@@ -95,12 +104,12 @@ All documentation links should be verified regularly to ensure:
 # Find all markdown files
 find docs -name "*.md" -type f | while read file; do
   echo "Checking $file..."
-  
+
   # Extract links
   grep -oP '\[.*?\]\(.*?\)' "$file" | while read link; do
     # Extract URL
     url=$(echo "$link" | sed -n 's/.*(\(.*\))/\1/p')
-    
+
     # Check if internal link
     if [[ "$url" == .* ]]; then
       # Check if file exists
@@ -116,11 +125,13 @@ done
 ### Manual Verification Steps
 
 1. **Review each documentation file:**
+
    - Check all internal links
    - Verify external links
    - Test anchor links
 
 2. **Update broken links:**
+
    - Fix file paths
    - Update moved files
    - Replace broken external links
@@ -139,6 +150,7 @@ done
 **Problem:** File moved but links not updated
 
 **Solution:**
+
 1. Find all references to old path
 2. Update to new path
 3. Verify all links work
@@ -148,6 +160,7 @@ done
 **Problem:** Section heading changed, anchor link broken
 
 **Solution:**
+
 1. Update heading to match link
 2. Or update link to match heading
 3. Verify anchor works
@@ -157,6 +170,7 @@ done
 **Problem:** External site changed or removed
 
 **Solution:**
+
 1. Find alternative source
 2. Update link to new URL
 3. Or remove link if not critical
@@ -198,4 +212,3 @@ done
 ---
 
 **Note:** This guide should be updated as link verification processes improve.
-

@@ -52,16 +52,19 @@ The Engagement Feed helps you track and respond to interactions with your posts 
 ### Replies
 
 **What they are:**
+
 - Responses to your posts
 - Threaded conversations
 - Direct responses
 
 **How to view:**
+
 1. Go to **Engagement** feed
 2. Filter by **Replies**
 3. Click on a reply to view thread
 
 **How to respond:**
+
 1. Click **"Reply"** on the engagement item
 2. Write your response
 3. Post immediately or schedule
@@ -69,16 +72,19 @@ The Engagement Feed helps you track and respond to interactions with your posts 
 ### Mentions
 
 **What they are:**
+
 - When someone mentions your npub
 - References to your account
 - Tagged in conversations
 
 **How to view:**
+
 1. Go to **Engagement** feed
 2. Filter by **Mentions**
 3. See all mentions in chronological order
 
 **How to respond:**
+
 1. Click on the mention
 2. View the context
 3. Reply if appropriate
@@ -86,11 +92,13 @@ The Engagement Feed helps you track and respond to interactions with your posts 
 ### Reactions
 
 **What they are:**
+
 - Likes, upvotes, or other reactions
 - Positive feedback
 - Engagement indicators
 
 **How to view:**
+
 1. Go to **Engagement** feed
 2. Filter by **Reactions**
 3. See who reacted to your posts
@@ -98,11 +106,13 @@ The Engagement Feed helps you track and respond to interactions with your posts 
 ### Reposts
 
 **What they are:**
+
 - When someone reposts your content
 - Shares of your posts
 - Amplification of your message
 
 **How to view:**
+
 1. Go to **Engagement** feed
 2. Filter by **Reposts**
 3. See who reposted your content
@@ -114,10 +124,12 @@ The Engagement Feed helps you track and respond to interactions with your posts 
 ### Responding to Replies
 
 1. **View the reply:**
+
    - Click on the engagement item
    - See full context and thread
 
 2. **Write your response:**
+
    - Click **"Reply"**
    - Write your message
    - Include relevant hashtags
@@ -129,10 +141,12 @@ The Engagement Feed helps you track and respond to interactions with your posts 
 ### Engaging with Mentions
 
 1. **Review the mention:**
+
    - Check the context
    - Understand why you were mentioned
 
 2. **Decide on response:**
+
    - Reply if relevant
    - Acknowledge if appropriate
    - Ignore if not relevant
@@ -145,6 +159,7 @@ The Engagement Feed helps you track and respond to interactions with your posts 
 ### Tracking Engagement Metrics
 
 **Available metrics:**
+
 - Total replies
 - Total mentions
 - Total reactions
@@ -152,6 +167,7 @@ The Engagement Feed helps you track and respond to interactions with your posts 
 - Engagement rate
 
 **How to view:**
+
 1. Go to **Dashboard**
 2. View **Engagement Statistics**
 3. See metrics over time
@@ -180,11 +196,13 @@ The Engagement Feed helps you track and respond to interactions with your posts 
 ### Responding to Engagement
 
 1. **Be timely:**
+
    - Respond within 24-48 hours
    - Use scheduling for planned responses
    - Set aside time for engagement
 
 2. **Be authentic:**
+
    - Write genuine responses
    - Add value to conversations
    - Be helpful and friendly
@@ -197,11 +215,13 @@ The Engagement Feed helps you track and respond to interactions with your posts 
 ### Building Engagement
 
 1. **Ask questions:**
+
    - Encourage replies
    - Start conversations
    - Engage with your audience
 
 2. **Respond to comments:**
+
    - Acknowledge replies
    - Answer questions
    - Thank supporters
@@ -222,4 +242,3 @@ The Engagement Feed helps you track and respond to interactions with your posts 
 ---
 
 **Next:** [Templates Guide](./templates.md) → Learn about reusable templates
-

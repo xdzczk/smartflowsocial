@@ -8,586 +8,606 @@ import { signEventFn } from "~/lib/nostr";
 import type { CombinedContent, PostData, LongFormPostData } from "./types";
 
 interface UsePostedPostsProps {
-    user: User;
-    allContent: CombinedContent[];
-    posts: PostData[];
+  user: User;
+  allContent: CombinedContent[];
+  posts: PostData[];
 }
 
-export function usePostedPosts({ user, allContent, posts: _posts }: UsePostedPostsProps) {
-    const _revalidator = useRevalidator();
-    const [searchParams] = useSearchParams();
+export function usePostedPosts({
+  user,
+  allContent,
+  posts: _posts,
+}: UsePostedPostsProps) {
+  const _revalidator = useRevalidator();
+  const [searchParams] = useSearchParams();
 
-    // Get current tab from URL params - default to "all"
-    const currentTab = searchParams.get("tab") ?? "all";
+  // Get current tab from URL params - default to "all"
+  const currentTab = searchParams.get("tab") ?? "all";
 
-    const [sortConfig, setSortConfig] = useState({
-        key: "postedAt",
-        direction: "desc",
+  const [sortConfig, setSortConfig] = useState({
+    key: "postedAt",
+    direction: "desc",
+  });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedPost, setSelectedPost] = useState<PostData | null>(null);
+  const [selectedPosts, setSelectedPosts] = useState<Set<string>>(new Set());
+  const [selectedLongFormPost, setSelectedLongFormPost] =
+    useState<LongFormPostData | null>(null);
+  const [toast, setToast] = useState<ToastMessage | null>(null);
+
+  const deleteFetcher = useFetcher<{ success?: boolean; error?: string }>();
+  const bulkDeleteFetcher = useFetcher<{ success?: boolean; error?: string }>();
+  const repostFetcher = useFetcher<{
+    repostData?: PostData[];
+    scheduledRepostData?: PostData[];
+    quotePostData?: {
+      caption: string;
+      fileUrl: string;
+      queueType: string;
+      scheduledFor: string;
+      originalPostId: string;
+      originalEventId?: string;
+      originalEventPubkey?: string;
+      isQuotePost?: boolean;
+      originalCaption?: string;
+    }[];
+    longformQuotePostData?: {
+      caption: string;
+      fileUrl: string;
+      queueType: string;
+      scheduledFor: string;
+      originalPostId: string;
+      originalEventId?: string;
+      originalEventPubkey?: string;
+      isQuotePost?: boolean;
+      originalCaption?: string;
+    }[];
+  }>();
+  const individualRepostFetcher = useFetcher<{
+    repostEventData?: {
+      kind: number;
+      content: string;
+      tags: string[][];
+      created_at: number;
+    };
+    quotePostData?: {
+      caption: string;
+      fileUrl: string;
+      queueType: string;
+      scheduledFor: string;
+      originalPostId: string;
+      originalEventId?: string;
+      originalEventPubkey?: string;
+      isQuotePost?: boolean;
+      originalCaption?: string;
+    }[];
+    originalPost?: PostData;
+    error?: string;
+    message?: string;
+  }>();
+  const longformRepostFetcher = useFetcher<{
+    longformRepostEventData?: {
+      kind: number;
+      content: string;
+      tags: string[][];
+      created_at: number;
+    };
+    originalPost?: LongFormPostData;
+    error?: string;
+    message?: string;
+  }>();
+  const longformQuoteFetcher = useFetcher<{
+    longformQuotePostData?: {
+      caption: string;
+      fileUrl: string;
+      queueType: string;
+      scheduledFor: string;
+      originalPostId: string;
+      originalEventId?: string;
+      originalEventPubkey?: string;
+      isQuotePost?: boolean;
+      originalCaption?: string;
+    }[];
+    error?: string;
+    message?: string;
+  }>();
+
+  const requestSort = (key: string) => {
+    setSortConfig((current) => ({
+      key,
+      direction:
+        current.key === key && current.direction === "asc" ? "desc" : "asc",
+    }));
+  };
+
+  const togglePostSelection = (postId: string) => {
+    setSelectedPosts((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(postId)) {
+        newSet.delete(postId);
+      } else {
+        newSet.add(postId);
+      }
+      return newSet;
     });
-    const [searchTerm, setSearchTerm] = useState("");
-    const [selectedPost, setSelectedPost] = useState<PostData | null>(null);
-    const [selectedPosts, setSelectedPosts] = useState<Set<string>>(new Set());
-    const [selectedLongFormPost, setSelectedLongFormPost] = useState<LongFormPostData | null>(null);
-    const [toast, setToast] = useState<ToastMessage | null>(null);
+  };
 
-    const deleteFetcher = useFetcher<{ success?: boolean; error?: string }>();
-    const bulkDeleteFetcher = useFetcher<{ success?: boolean; error?: string }>();
-    const repostFetcher = useFetcher<{
-        repostData?: PostData[];
-        scheduledRepostData?: PostData[];
-        quotePostData?: {
-            caption: string;
-            fileUrl: string;
-            queueType: string;
-            scheduledFor: string;
-            originalPostId: string;
-            originalEventId?: string;
-            originalEventPubkey?: string;
-            isQuotePost?: boolean;
-            originalCaption?: string;
-        }[];
-        longformQuotePostData?: {
-            caption: string;
-            fileUrl: string;
-            queueType: string;
-            scheduledFor: string;
-            originalPostId: string;
-            originalEventId?: string;
-            originalEventPubkey?: string;
-            isQuotePost?: boolean;
-            originalCaption?: string;
-        }[];
-    }>();
-    const individualRepostFetcher = useFetcher<{
-        repostEventData?: {
-            kind: number;
-            content: string;
-            tags: string[][];
-            created_at: number;
+  const toggleSelectAll = (filteredPosts: PostData[] | CombinedContent[]) => {
+    if (selectedPosts.size === filteredPosts.length) {
+      setSelectedPosts(new Set());
+    } else {
+      setSelectedPosts(new Set(filteredPosts.map((post) => post.id)));
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedPosts.size === 0) return;
+
+    // For All tab, we need to handle mixed content types
+    if (currentTab === "all") {
+      const selectedItems = allContent
+        .filter((item) => selectedPosts.has(item.id))
+        .map((item) => ({ id: item.id, type: item.type }));
+
+      const formData = new FormData();
+      formData.append("_action", "bulkDeleteMixed");
+      formData.append("itemData", JSON.stringify(selectedItems));
+
+      bulkDeleteFetcher.submit(formData, { method: "post" });
+    } else {
+      // For individual tabs, use the original handlers
+      const formData = new FormData();
+      formData.append(
+        "_action",
+        currentTab === "longform" ? "bulkDeleteLongForm" : "bulkDelete",
+      );
+      formData.append("postIds", JSON.stringify(Array.from(selectedPosts)));
+
+      bulkDeleteFetcher.submit(formData, { method: "post" });
+    }
+  };
+
+  const handleBulkRepost = () => {
+    if (selectedPosts.size === 0) return;
+
+    if (currentTab === "all") {
+      // For All tab, only process regular posts (longform doesn't support bulk repost)
+      const selectedItems = allContent.filter(
+        (item) => selectedPosts.has(item.id) && item.type === "post",
+      );
+
+      if (selectedItems.length === 0) {
+        alert("No regular posts selected for recycling.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("_action", "bulkRepost");
+      formData.append(
+        "postIds",
+        JSON.stringify(selectedItems.map((item) => item.id)),
+      );
+
+      repostFetcher.submit(formData, { method: "post" });
+    } else {
+      const formData = new FormData();
+      formData.append("_action", "bulkRepost");
+      formData.append("postIds", JSON.stringify(Array.from(selectedPosts)));
+
+      repostFetcher.submit(formData, { method: "post" });
+    }
+  };
+
+  const handleBulkScheduledRepost = () => {
+    if (selectedPosts.size === 0) return;
+
+    if (currentTab === "all") {
+      // For All tab, only process regular posts
+      const selectedItems = allContent.filter(
+        (item) => selectedPosts.has(item.id) && item.type === "post",
+      );
+
+      if (selectedItems.length === 0) {
+        alert("No regular posts selected for reposting.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("_action", "bulkScheduledRepost");
+      formData.append(
+        "postIds",
+        JSON.stringify(selectedItems.map((item) => item.id)),
+      );
+
+      repostFetcher.submit(formData, { method: "post" });
+    } else {
+      const formData = new FormData();
+      formData.append("_action", "bulkScheduledRepost");
+      formData.append("postIds", JSON.stringify(Array.from(selectedPosts)));
+
+      repostFetcher.submit(formData, { method: "post" });
+    }
+  };
+
+  const handleBulkQuote = () => {
+    if (selectedPosts.size === 0) return;
+
+    if (currentTab === "all") {
+      // For All tab, only process regular posts
+      const selectedItems = allContent.filter(
+        (item) => selectedPosts.has(item.id) && item.type === "post",
+      );
+
+      if (selectedItems.length === 0) {
+        alert("No regular posts selected for quote posting.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("_action", "bulkQuote");
+      formData.append(
+        "postIds",
+        JSON.stringify(selectedItems.map((item) => item.id)),
+      );
+
+      repostFetcher.submit(formData, { method: "post" });
+    } else {
+      const formData = new FormData();
+      formData.append("_action", "bulkQuote");
+      formData.append("postIds", JSON.stringify(Array.from(selectedPosts)));
+
+      repostFetcher.submit(formData, { method: "post" });
+    }
+  };
+
+  useEffect(() => {
+    if (bulkDeleteFetcher.data?.success) {
+      setSelectedPosts(new Set());
+    }
+  }, [bulkDeleteFetcher.data]);
+
+  useEffect(() => {
+    if (repostFetcher.data?.repostData) {
+      const postsData = repostFetcher.data.repostData;
+
+      // Prepare repost data with 1 hour default scheduling
+      const now = new Date();
+      const userTimezone = user?.timezone ?? "UTC";
+      const localDate = new Date(
+        now.toLocaleString("en-US", { timeZone: userTimezone }),
+      );
+      localDate.setHours(localDate.getHours() + 1);
+
+      const repostData = postsData.map((post, index: number) => {
+        const scheduleDate = new Date(localDate);
+        scheduleDate.setHours(scheduleDate.getHours() + index);
+
+        return {
+          caption: post.caption ?? "",
+          fileUrl:
+            post.fileUrl &&
+            Array.isArray(post.fileUrl) &&
+            post.fileUrl.length > 0
+              ? post.fileUrl[0]
+              : "",
+          queueType: post.queueType ?? "unassigned",
+          scheduledFor: scheduleDate
+            .toLocaleString("en-US", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false,
+            })
+            .replace(/(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+)/, "$3-$1-$2T$4:$5"),
         };
-        quotePostData?: {
-            caption: string;
-            fileUrl: string;
-            queueType: string;
-            scheduledFor: string;
-            originalPostId: string;
-            originalEventId?: string;
-            originalEventPubkey?: string;
-            isQuotePost?: boolean;
-            originalCaption?: string;
-        }[];
-        originalPost?: PostData;
-        error?: string;
-        message?: string;
-    }>();
-    const longformRepostFetcher = useFetcher<{
-        longformRepostEventData?: {
-            kind: number;
-            content: string;
-            tags: string[][];
-            created_at: number;
+      });
+
+      // Store repost data in sessionStorage
+      sessionStorage.setItem("repostData", JSON.stringify(repostData));
+
+      // Navigate to bulk posts page
+      window.location.href = "/dashboard/bulkposts?mode=recycle";
+
+      // Clear selection
+      setSelectedPosts(new Set());
+    }
+
+    if (repostFetcher.data?.scheduledRepostData) {
+      const postsData = repostFetcher.data.scheduledRepostData;
+
+      // Prepare scheduled repost data with 1 hour default scheduling
+      const now = new Date();
+      const userTimezone = user?.timezone ?? "UTC";
+      const localDate = new Date(
+        now.toLocaleString("en-US", { timeZone: userTimezone }),
+      );
+      localDate.setHours(localDate.getHours() + 1);
+
+      const scheduledRepostData = postsData.map((post, index: number) => {
+        const scheduleDate = new Date(localDate);
+        scheduleDate.setHours(scheduleDate.getHours() + index);
+
+        return {
+          caption: "", // Empty content for kind 6 reposts
+          fileUrl: "", // No file URL for kind 6 reposts
+          queueType: post.queueType ?? "unassigned",
+          scheduledFor: scheduleDate
+            .toLocaleString("en-US", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false,
+            })
+            .replace(/(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+)/, "$3-$1-$2T$4:$5"),
+          originalPostId: post.id,
+          originalEventId: post.signedEvent?.id,
+          originalEventPubkey: post.signedEvent?.pubkey,
+          isKind6Repost: true,
         };
-        originalPost?: LongFormPostData;
-        error?: string;
-        message?: string;
-    }>();
-    const longformQuoteFetcher = useFetcher<{
-        longformQuotePostData?: {
-            caption: string;
-            fileUrl: string;
-            queueType: string;
-            scheduledFor: string;
-            originalPostId: string;
-            originalEventId?: string;
-            originalEventPubkey?: string;
-            isQuotePost?: boolean;
-            originalCaption?: string;
-        }[];
-        error?: string;
-        message?: string;
-    }>();
+      });
 
-    const requestSort = (key: string) => {
-        setSortConfig((current) => ({
-            key,
-            direction:
-                current.key === key && current.direction === "asc" ? "desc" : "asc",
-        }));
-    };
+      // Store scheduled repost data in sessionStorage
+      sessionStorage.setItem(
+        "scheduledRepostData",
+        JSON.stringify(scheduledRepostData),
+      );
 
-    const togglePostSelection = (postId: string) => {
-        setSelectedPosts((prev) => {
-            const newSet = new Set(prev);
-            if (newSet.has(postId)) {
-                newSet.delete(postId);
-            } else {
-                newSet.add(postId);
-            }
-            return newSet;
-        });
-    };
+      // Navigate to bulk posts page with repost mode
+      window.location.href = "/dashboard/bulkposts?mode=repost";
 
-    const toggleSelectAll = (filteredPosts: PostData[] | CombinedContent[]) => {
-        if (selectedPosts.size === filteredPosts.length) {
-            setSelectedPosts(new Set());
-        } else {
-            setSelectedPosts(new Set(filteredPosts.map((post) => post.id)));
-        }
-    };
+      // Clear selection
+      setSelectedPosts(new Set());
+    }
 
-    const handleBulkDelete = () => {
-        if (selectedPosts.size === 0) return;
+    if (repostFetcher.data?.quotePostData) {
+      const quoteData = repostFetcher.data.quotePostData;
 
-        // For All tab, we need to handle mixed content types
-        if (currentTab === "all") {
-            const selectedItems = allContent
-                .filter((item) => selectedPosts.has(item.id))
-                .map((item) => ({ id: item.id, type: item.type }));
+      // Store quote post data in sessionStorage
+      sessionStorage.setItem("quotePostData", JSON.stringify(quoteData));
 
-            const formData = new FormData();
-            formData.append("_action", "bulkDeleteMixed");
-            formData.append("itemData", JSON.stringify(selectedItems));
+      // Navigate to bulk posts page with quote mode
+      window.location.href = "/dashboard/bulkposts?mode=quote";
 
-            bulkDeleteFetcher.submit(formData, { method: "post" });
-        } else {
-            // For individual tabs, use the original handlers
-            const formData = new FormData();
-            formData.append(
-                "_action",
-                currentTab === "longform" ? "bulkDeleteLongForm" : "bulkDelete",
-            );
-            formData.append("postIds", JSON.stringify(Array.from(selectedPosts)));
+      // Clear selection
+      setSelectedPosts(new Set());
+    }
 
-            bulkDeleteFetcher.submit(formData, { method: "post" });
-        }
-    };
+    if (repostFetcher.data?.longformQuotePostData) {
+      const quoteData = repostFetcher.data.longformQuotePostData;
 
-    const handleBulkRepost = () => {
-        if (selectedPosts.size === 0) return;
+      // Store longform quote post data in sessionStorage
+      sessionStorage.setItem("quotePostData", JSON.stringify(quoteData));
 
-        if (currentTab === "all") {
-            // For All tab, only process regular posts (longform doesn't support bulk repost)
-            const selectedItems = allContent.filter(
-                (item) => selectedPosts.has(item.id) && item.type === "post",
-            );
+      // Navigate to bulk posts page with quote mode
+      window.location.href = "/dashboard/bulkposts?mode=quote";
 
-            if (selectedItems.length === 0) {
-                alert("No regular posts selected for recycling.");
-                return;
-            }
+      // Clear selection
+      setSelectedPosts(new Set());
+    }
+  }, [repostFetcher.data, user?.timezone]);
 
-            const formData = new FormData();
-            formData.append("_action", "bulkRepost");
-            formData.append(
-                "postIds",
-                JSON.stringify(selectedItems.map((item) => item.id)),
-            );
+  // Handle longform repost responses
+  useEffect(() => {
+    const handleLongformRepost = async () => {
+      if (longformRepostFetcher.data?.longformRepostEventData) {
+        try {
+          const eventData = longformRepostFetcher.data.longformRepostEventData;
+          const originalPost = longformRepostFetcher.data.originalPost;
 
-            repostFetcher.submit(formData, { method: "post" });
-        } else {
-            const formData = new FormData();
-            formData.append("_action", "bulkRepost");
-            formData.append("postIds", JSON.stringify(Array.from(selectedPosts)));
+          // Sign the event using client-side signing
+          const { signedEvent } = await signEventFn(eventData);
 
-            repostFetcher.submit(formData, { method: "post" });
-        }
-    };
+          // Get user relays from user data
+          const sanitizedRelays = user.userRelays ?? ["wss://relay.primal.net"];
 
-    const handleBulkScheduledRepost = () => {
-        if (selectedPosts.size === 0) return;
+          // Publish the signed event
+          const response = await fetch("/api/publish", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              relays: sanitizedRelays,
+              event: signedEvent,
+            }),
+          });
 
-        if (currentTab === "all") {
-            // For All tab, only process regular posts
-            const selectedItems = allContent.filter(
-                (item) => selectedPosts.has(item.id) && item.type === "post",
-            );
+          if (!response.ok) {
+            throw new Error("Failed to publish longform repost");
+          }
 
-            if (selectedItems.length === 0) {
-                alert("No regular posts selected for reposting.");
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append("_action", "bulkScheduledRepost");
-            formData.append(
-                "postIds",
-                JSON.stringify(selectedItems.map((item) => item.id)),
-            );
-
-            repostFetcher.submit(formData, { method: "post" });
-        } else {
-            const formData = new FormData();
-            formData.append("_action", "bulkScheduledRepost");
-            formData.append("postIds", JSON.stringify(Array.from(selectedPosts)));
-
-            repostFetcher.submit(formData, { method: "post" });
-        }
-    };
-
-    const handleBulkQuote = () => {
-        if (selectedPosts.size === 0) return;
-
-        if (currentTab === "all") {
-            // For All tab, only process regular posts
-            const selectedItems = allContent.filter(
-                (item) => selectedPosts.has(item.id) && item.type === "post",
-            );
-
-            if (selectedItems.length === 0) {
-                alert("No regular posts selected for quote posting.");
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append("_action", "bulkQuote");
-            formData.append(
-                "postIds",
-                JSON.stringify(selectedItems.map((item) => item.id)),
-            );
-
-            repostFetcher.submit(formData, { method: "post" });
-        } else {
-            const formData = new FormData();
-            formData.append("_action", "bulkQuote");
-            formData.append("postIds", JSON.stringify(Array.from(selectedPosts)));
-
-            repostFetcher.submit(formData, { method: "post" });
-        }
-    };
-
-    useEffect(() => {
-        if (bulkDeleteFetcher.data?.success) {
-            setSelectedPosts(new Set());
-        }
-    }, [bulkDeleteFetcher.data]);
-
-    useEffect(() => {
-        if (repostFetcher.data?.repostData) {
-            const postsData = repostFetcher.data.repostData;
-
-            // Prepare repost data with 1 hour default scheduling
-            const now = new Date();
-            const userTimezone = user?.timezone ?? "UTC";
-            const localDate = new Date(
-                now.toLocaleString("en-US", { timeZone: userTimezone }),
-            );
-            localDate.setHours(localDate.getHours() + 1);
-
-            const repostData = postsData.map((post, index: number) => {
-                const scheduleDate = new Date(localDate);
-                scheduleDate.setHours(scheduleDate.getHours() + index);
-
-                return {
-                    caption: post.caption ?? "",
-                    fileUrl:
-                        post.fileUrl &&
-                            Array.isArray(post.fileUrl) &&
-                            post.fileUrl.length > 0
-                            ? post.fileUrl[0]
-                            : "",
-                    queueType: post.queueType ?? "unassigned",
-                    scheduledFor: scheduleDate
-                        .toLocaleString("en-US", {
-                            year: "numeric",
-                            month: "2-digit",
-                            day: "2-digit",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            hour12: false,
-                        })
-                        .replace(/(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+)/, "$3-$1-$2T$4:$5"),
-                };
-            });
-
-            // Store repost data in sessionStorage
-            sessionStorage.setItem("repostData", JSON.stringify(repostData));
-
-            // Navigate to bulk posts page
-            window.location.href = "/dashboard/bulkposts?mode=recycle";
-
-            // Clear selection
-            setSelectedPosts(new Set());
-        }
-
-        if (repostFetcher.data?.scheduledRepostData) {
-            const postsData = repostFetcher.data.scheduledRepostData;
-
-            // Prepare scheduled repost data with 1 hour default scheduling
-            const now = new Date();
-            const userTimezone = user?.timezone ?? "UTC";
-            const localDate = new Date(
-                now.toLocaleString("en-US", { timeZone: userTimezone }),
-            );
-            localDate.setHours(localDate.getHours() + 1);
-
-            const scheduledRepostData = postsData.map((post, index: number) => {
-                const scheduleDate = new Date(localDate);
-                scheduleDate.setHours(scheduleDate.getHours() + index);
-
-                return {
-                    caption: "", // Empty content for kind 6 reposts
-                    fileUrl: "", // No file URL for kind 6 reposts
-                    queueType: post.queueType ?? "unassigned",
-                    scheduledFor: scheduleDate
-                        .toLocaleString("en-US", {
-                            year: "numeric",
-                            month: "2-digit",
-                            day: "2-digit",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            hour12: false,
-                        })
-                        .replace(/(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+)/, "$3-$1-$2T$4:$5"),
-                    originalPostId: post.id,
-                    originalEventId: post.signedEvent?.id,
-                    originalEventPubkey: post.signedEvent?.pubkey,
-                    isKind6Repost: true,
-                };
-            });
-
-            // Store scheduled repost data in sessionStorage
-            sessionStorage.setItem(
-                "scheduledRepostData",
-                JSON.stringify(scheduledRepostData),
-            );
-
-            // Navigate to bulk posts page with repost mode
-            window.location.href = "/dashboard/bulkposts?mode=repost";
-
-            // Clear selection
-            setSelectedPosts(new Set());
-        }
-
-        if (repostFetcher.data?.quotePostData) {
-            const quoteData = repostFetcher.data.quotePostData;
-
-            // Store quote post data in sessionStorage
-            sessionStorage.setItem("quotePostData", JSON.stringify(quoteData));
-
-            // Navigate to bulk posts page with quote mode
-            window.location.href = "/dashboard/bulkposts?mode=quote";
-
-            // Clear selection
-            setSelectedPosts(new Set());
-        }
-
-        if (repostFetcher.data?.longformQuotePostData) {
-            const quoteData = repostFetcher.data.longformQuotePostData;
-
-            // Store longform quote post data in sessionStorage
-            sessionStorage.setItem("quotePostData", JSON.stringify(quoteData));
-
-            // Navigate to bulk posts page with quote mode
-            window.location.href = "/dashboard/bulkposts?mode=quote";
-
-            // Clear selection
-            setSelectedPosts(new Set());
-        }
-    }, [repostFetcher.data, user?.timezone]);
-
-    // Handle longform repost responses
-    useEffect(() => {
-        const handleLongformRepost = async () => {
-            if (longformRepostFetcher.data?.longformRepostEventData) {
-                try {
-                    const eventData = longformRepostFetcher.data.longformRepostEventData;
-                    const originalPost = longformRepostFetcher.data.originalPost;
-
-                    // Sign the event using client-side signing
-                    const { signedEvent } = await signEventFn(eventData);
-
-                    // Get user relays from user data
-                    const sanitizedRelays = user.userRelays ?? ["wss://relay.primal.net"];
-
-                    // Publish the signed event
-                    const response = await fetch("/api/publish", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({
-                            relays: sanitizedRelays,
-                            event: signedEvent,
-                        }),
-                    });
-
-                    if (!response.ok) {
-                        throw new Error("Failed to publish longform repost");
-                    }
-
-                    // Show success toast
-                    setTimeout(() => {
-                        setToast({
-                            type: "success",
-                            message: "Article reposted successfully!",
-                            link: `https://primal.net/a/${(originalPost?.nostrEventId ?? originalPost?.signedEvent?.id) ?? ""}`,
-                            linkText: "View Original Article",
-                        });
-
-                        // Hide toast after 8 seconds
-                        setTimeout(() => setToast(null), 8000);
-                    }, 1000);
-                } catch (error: unknown) {
-                    const { handleAsyncError, getErrorMessage } = await import("~/lib/error-handler.client");
-                    handleAsyncError(error, {
-                        component: "usePostedPosts",
-                        action: "handleLongformRepost",
-                    }, false); // Don't show toast, we set toast state instead
-                    setToast({
-                        type: "error",
-                        message: getErrorMessage(error) ?? "Failed to sign or publish longform repost",
-                    });
-
-                    // Hide toast after 5 seconds for errors
-                    setTimeout(() => setToast(null), 5000);
-                }
-            } else if (longformRepostFetcher.data?.error) {
-                setToast({
-                    type: "error",
-                    message:
-                        longformRepostFetcher.data.message ??
-                        "Failed to create longform repost",
-                });
-
-                // Hide toast after 5 seconds for errors
-                setTimeout(() => setToast(null), 5000);
-            }
-        };
-
-        if (longformRepostFetcher.data) {
-            void handleLongformRepost();
-        }
-    }, [longformRepostFetcher.data, user]);
-
-    // Handle longform quote responses
-    useEffect(() => {
-        if (longformQuoteFetcher.data?.longformQuotePostData) {
-            const quoteData = longformQuoteFetcher.data.longformQuotePostData;
-
-            // Store longform quote post data in sessionStorage
-            sessionStorage.setItem("quotePostData", JSON.stringify(quoteData));
-
-            // Navigate to bulk posts page with quote mode
-            window.location.href = "/dashboard/bulkposts?mode=quote";
-        } else if (longformQuoteFetcher.data?.error) {
+          // Show success toast
+          setTimeout(() => {
             setToast({
-                type: "error",
-                message:
-                    longformQuoteFetcher.data.message ??
-                    "Failed to create longform quote post",
+              type: "success",
+              message: "Article reposted successfully!",
+              link: `https://primal.net/a/${originalPost?.nostrEventId ?? originalPost?.signedEvent?.id ?? ""}`,
+              linkText: "View Original Article",
             });
 
-            // Hide toast after 5 seconds for errors
-            setTimeout(() => setToast(null), 5000);
+            // Hide toast after 8 seconds
+            setTimeout(() => setToast(null), 8000);
+          }, 1000);
+        } catch (error: unknown) {
+          const { handleAsyncError, getErrorMessage } = await import(
+            "~/lib/error-handler.client"
+          );
+          handleAsyncError(
+            error,
+            {
+              component: "usePostedPosts",
+              action: "handleLongformRepost",
+            },
+            false,
+          ); // Don't show toast, we set toast state instead
+          setToast({
+            type: "error",
+            message:
+              getErrorMessage(error) ??
+              "Failed to sign or publish longform repost",
+          });
+
+          // Hide toast after 5 seconds for errors
+          setTimeout(() => setToast(null), 5000);
         }
-    }, [longformQuoteFetcher.data]);
+      } else if (longformRepostFetcher.data?.error) {
+        setToast({
+          type: "error",
+          message:
+            longformRepostFetcher.data.message ??
+            "Failed to create longform repost",
+        });
 
-    useEffect(() => {
-        const handleRepost = async () => {
-            if (individualRepostFetcher.data?.repostEventData) {
-                try {
-                    const eventData = individualRepostFetcher.data.repostEventData;
-
-                    // Sign the event using client-side signing
-                    const { signedEvent } = await signEventFn(eventData);
-
-                    // Get user relays from user data
-                    const sanitizedRelays = user.userRelays ?? ["wss://relay.primal.net"];
-
-                    // Publish the signed event
-                    const response = await fetch("/api/publish", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({
-                            relays: sanitizedRelays,
-                            event: signedEvent,
-                        }),
-                    });
-
-                    if (!response.ok) {
-                        throw new Error("Failed to publish repost");
-                    }
-
-                    // Add delay before showing success toast
-                    setTimeout(() => {
-                        setToast({
-                            type: "success",
-                            message: "Post reposted successfully!",
-                            link: `https://primal.net/e/${String(eventData.tags.find((tag: string[]) => tag[0] === "e")?.[1] ?? '')}`,
-                            linkText: "View Original Post",
-                        });
-
-                        // Hide toast after 8 seconds for success with link
-                        setTimeout(() => setToast(null), 8000);
-                    }, 1000); // 1 second delay
-                } catch (error: unknown) {
-                    const { handleAsyncError, getErrorMessage } = await import("~/lib/error-handler.client");
-                    handleAsyncError(error, {
-                        component: "usePostedPosts",
-                        action: "handleRepost",
-                    }, false); // Don't show toast, we set toast state instead
-                    setToast({
-                        type: "error",
-                        message: getErrorMessage(error) ?? "Failed to sign or publish repost",
-                    });
-
-                    // Hide toast after 5 seconds for errors
-                    setTimeout(() => setToast(null), 5000);
-                }
-            } else if (individualRepostFetcher.data?.quotePostData) {
-                // Handle individual quote post - redirect to bulk posts with single item
-                const quoteData = individualRepostFetcher.data.quotePostData;
-
-                // Store quote post data in sessionStorage
-                sessionStorage.setItem("quotePostData", JSON.stringify(quoteData));
-
-                // Navigate to bulk posts page with quote mode
-                window.location.href = "/dashboard/bulkposts?mode=quote";
-            } else if (individualRepostFetcher.data?.error) {
-                setToast({
-                    type: "error",
-                    message:
-                        individualRepostFetcher.data.message ?? "Failed to create repost",
-                });
-
-                // Hide toast after 5 seconds for errors
-                setTimeout(() => setToast(null), 5000);
-            }
-        };
-
-        if (individualRepostFetcher.data) {
-            void handleRepost();
-        }
-    }, [individualRepostFetcher.data, user.userRelays]);
-
-    return {
-        currentTab,
-        sortConfig,
-        setSortConfig,
-        searchTerm,
-        setSearchTerm,
-        selectedPost,
-        setSelectedPost,
-        selectedPosts,
-        setSelectedPosts,
-        selectedLongFormPost,
-        setSelectedLongFormPost,
-        toast,
-        setToast,
-        deleteFetcher,
-        bulkDeleteFetcher,
-        repostFetcher,
-        individualRepostFetcher,
-        longformRepostFetcher,
-        longformQuoteFetcher,
-        requestSort,
-        togglePostSelection,
-        toggleSelectAll,
-        handleBulkDelete,
-        handleBulkRepost,
-        handleBulkScheduledRepost,
-        handleBulkQuote,
+        // Hide toast after 5 seconds for errors
+        setTimeout(() => setToast(null), 5000);
+      }
     };
+
+    if (longformRepostFetcher.data) {
+      void handleLongformRepost();
+    }
+  }, [longformRepostFetcher.data, user]);
+
+  // Handle longform quote responses
+  useEffect(() => {
+    if (longformQuoteFetcher.data?.longformQuotePostData) {
+      const quoteData = longformQuoteFetcher.data.longformQuotePostData;
+
+      // Store longform quote post data in sessionStorage
+      sessionStorage.setItem("quotePostData", JSON.stringify(quoteData));
+
+      // Navigate to bulk posts page with quote mode
+      window.location.href = "/dashboard/bulkposts?mode=quote";
+    } else if (longformQuoteFetcher.data?.error) {
+      setToast({
+        type: "error",
+        message:
+          longformQuoteFetcher.data.message ??
+          "Failed to create longform quote post",
+      });
+
+      // Hide toast after 5 seconds for errors
+      setTimeout(() => setToast(null), 5000);
+    }
+  }, [longformQuoteFetcher.data]);
+
+  useEffect(() => {
+    const handleRepost = async () => {
+      if (individualRepostFetcher.data?.repostEventData) {
+        try {
+          const eventData = individualRepostFetcher.data.repostEventData;
+
+          // Sign the event using client-side signing
+          const { signedEvent } = await signEventFn(eventData);
+
+          // Get user relays from user data
+          const sanitizedRelays = user.userRelays ?? ["wss://relay.primal.net"];
+
+          // Publish the signed event
+          const response = await fetch("/api/publish", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              relays: sanitizedRelays,
+              event: signedEvent,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error("Failed to publish repost");
+          }
+
+          // Add delay before showing success toast
+          setTimeout(() => {
+            setToast({
+              type: "success",
+              message: "Post reposted successfully!",
+              link: `https://primal.net/e/${String(eventData.tags.find((tag: string[]) => tag[0] === "e")?.[1] ?? "")}`,
+              linkText: "View Original Post",
+            });
+
+            // Hide toast after 8 seconds for success with link
+            setTimeout(() => setToast(null), 8000);
+          }, 1000); // 1 second delay
+        } catch (error: unknown) {
+          const { handleAsyncError, getErrorMessage } = await import(
+            "~/lib/error-handler.client"
+          );
+          handleAsyncError(
+            error,
+            {
+              component: "usePostedPosts",
+              action: "handleRepost",
+            },
+            false,
+          ); // Don't show toast, we set toast state instead
+          setToast({
+            type: "error",
+            message:
+              getErrorMessage(error) ?? "Failed to sign or publish repost",
+          });
+
+          // Hide toast after 5 seconds for errors
+          setTimeout(() => setToast(null), 5000);
+        }
+      } else if (individualRepostFetcher.data?.quotePostData) {
+        // Handle individual quote post - redirect to bulk posts with single item
+        const quoteData = individualRepostFetcher.data.quotePostData;
+
+        // Store quote post data in sessionStorage
+        sessionStorage.setItem("quotePostData", JSON.stringify(quoteData));
+
+        // Navigate to bulk posts page with quote mode
+        window.location.href = "/dashboard/bulkposts?mode=quote";
+      } else if (individualRepostFetcher.data?.error) {
+        setToast({
+          type: "error",
+          message:
+            individualRepostFetcher.data.message ?? "Failed to create repost",
+        });
+
+        // Hide toast after 5 seconds for errors
+        setTimeout(() => setToast(null), 5000);
+      }
+    };
+
+    if (individualRepostFetcher.data) {
+      void handleRepost();
+    }
+  }, [individualRepostFetcher.data, user.userRelays]);
+
+  return {
+    currentTab,
+    sortConfig,
+    setSortConfig,
+    searchTerm,
+    setSearchTerm,
+    selectedPost,
+    setSelectedPost,
+    selectedPosts,
+    setSelectedPosts,
+    selectedLongFormPost,
+    setSelectedLongFormPost,
+    toast,
+    setToast,
+    deleteFetcher,
+    bulkDeleteFetcher,
+    repostFetcher,
+    individualRepostFetcher,
+    longformRepostFetcher,
+    longformQuoteFetcher,
+    requestSort,
+    togglePostSelection,
+    toggleSelectAll,
+    handleBulkDelete,
+    handleBulkRepost,
+    handleBulkScheduledRepost,
+    handleBulkQuote,
+  };
 }

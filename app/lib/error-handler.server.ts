@@ -1,15 +1,19 @@
 /* eslint-disable no-console */
 /**
  * Server-side Error Handling Utilities
- * 
+ *
  * Provides utilities for handling errors in Remix loaders and actions
- * 
+ *
  * NOTE: This module must be imported/initialized before routes use it.
  * The bundler uses lazy ESM initialization, so we ensure functions are
  * defined immediately to avoid timing issues.
  */
 
-import { json, type ActionFunctionArgs, type LoaderFunctionArgs } from "@remix-run/node";
+import {
+  json,
+  type ActionFunctionArgs,
+  type LoaderFunctionArgs,
+} from "@remix-run/node";
 import { logError } from "./error-logger.server";
 
 import type { ErrorCode } from "./errors";
@@ -65,7 +69,8 @@ export function createErrorResponse(
   },
 ): [ErrorResponse, number] {
   const normalizedError = normalizeError(error);
-  const includeStack = options?.includeStack ?? process.env.NODE_ENV === "development";
+  const includeStack =
+    options?.includeStack ?? process.env.NODE_ENV === "development";
   const includeContext = options?.includeContext ?? true;
 
   // Log the error
@@ -80,12 +85,14 @@ export function createErrorResponse(
       code: normalizedError.code,
       statusCode: normalizedError.statusCode,
       timestamp: normalizedError.timestamp,
-      ...(includeContext && normalizedError.context && {
-        context: normalizedError.context,
-      }),
-      ...(includeStack && normalizedError.stack && {
-        stack: normalizedError.stack,
-      }),
+      ...(includeContext &&
+        normalizedError.context && {
+          context: normalizedError.context,
+        }),
+      ...(includeStack &&
+        normalizedError.stack && {
+          stack: normalizedError.stack,
+        }),
     },
   };
 
@@ -168,7 +175,8 @@ export function handleLoaderError(
   defaultData: unknown,
 ): Response {
   const [errorResponse, statusCode] = createErrorResponse(error);
-  const defaultDataObj = defaultData && typeof defaultData === "object" ? defaultData : {};
+  const defaultDataObj =
+    defaultData && typeof defaultData === "object" ? defaultData : {};
   return json(
     {
       ...defaultDataObj,
@@ -236,4 +244,3 @@ export function assertAuthorized(
     throw new AuthorizationError(message, context);
   }
 }
-

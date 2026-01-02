@@ -7,13 +7,17 @@ import {
 } from "~/features/posts";
 import { ValidationError } from "~/lib/errors";
 
-type AssertFunction = (condition: boolean, message: string, context?: Record<string, unknown>) => asserts condition;
+type AssertFunction = (
+  condition: boolean,
+  message: string,
+  context?: Record<string, unknown>,
+) => asserts condition;
 
 export async function action({ request }: ActionFunctionArgs) {
   try {
     const errorHandler = await import("~/lib/error-handler.server");
     const assert: AssertFunction = errorHandler.assert;
-    
+
     assert(request.method === "POST", "Method not allowed", {
       method: request.method,
     });
@@ -30,7 +34,8 @@ export async function action({ request }: ActionFunctionArgs) {
       });
     }
 
-    const { queueTypeName, queueTypeId } = parseQueueScheduleRequest(requestBody);
+    const { queueTypeName, queueTypeId } =
+      parseQueueScheduleRequest(requestBody);
 
     return await calculateQueueScheduleTime(userId, queueTypeName, queueTypeId);
   } catch (error) {

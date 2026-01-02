@@ -1,9 +1,9 @@
 /**
  * Posts Feature Server Functions
- * 
+ *
  * This file re-exports all post-related server functions from their domain-specific modules.
  * This maintains backward compatibility while allowing better organization.
- * 
+ *
  * @deprecated Import directly from services/ subdirectory for better tree-shaking
  */
 

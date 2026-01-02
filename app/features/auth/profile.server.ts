@@ -77,10 +77,14 @@ export function processPrimalData(data: PrimalEvent[]): {
     : {};
 
   // Parse stats content
-  const stats: StatsData = statsEvent ? (JSON.parse(statsEvent[2].content) as StatsData) : {};
+  const stats: StatsData = statsEvent
+    ? (JSON.parse(statsEvent[2].content) as StatsData)
+    : {};
 
   // Parse media content
-  const media: MediaData = mediaEvent ? (JSON.parse(mediaEvent[2].content) as MediaData) : {};
+  const media: MediaData = mediaEvent
+    ? (JSON.parse(mediaEvent[2].content) as MediaData)
+    : {};
 
   return {
     profile: {
@@ -99,7 +103,7 @@ export async function getCompleteProfile({
   npub,
 }: GetCompleteProfileParams): Promise<CompleteProfileResult> {
   const primalData = await fetchPrimalProfileData(npub);
-  
+
   // If no data returned, return empty profile
   if (!primalData || primalData.length === 0) {
     const emptyProfile: ProcessedProfile = {
@@ -115,7 +119,7 @@ export async function getCompleteProfile({
       lud16: undefined,
     };
   }
-  
+
   const { profile } = processPrimalData(primalData);
 
   return {

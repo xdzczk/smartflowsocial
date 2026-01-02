@@ -1,6 +1,6 @@
 /**
  * Integration tests for effective hashtags API route
- * 
+ *
  * Tests the API endpoint in app/routes/api.effective-hashtags.tsx
  */
 
@@ -39,13 +39,18 @@ describe("API: Effective Hashtags", () => {
         },
       ];
 
-      (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueTypes);
+      (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockQueueTypes,
+      );
 
-      const request = new Request("http://localhost:3000/api/effective-hashtags", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ queueTypeName: "posts" }),
-      });
+      const request = new Request(
+        "http://localhost:3000/api/effective-hashtags",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ queueTypeName: "posts" }),
+        },
+      );
 
       interface ActionArgs {
         request: Request;
@@ -55,7 +60,14 @@ describe("API: Effective Hashtags", () => {
       const actionArgs: ActionArgs = { request, params: {}, context: {} };
       const response = await action(actionArgs);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { hashtags?: string; success?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              hashtags?: string;
+              success?: unknown;
+              error?: unknown;
+            })
+          : {};
 
       expect(requireUserId).toHaveBeenCalledWith(request);
       expect(getQueueTypes).toHaveBeenCalledWith(TEST_USER_ID);
@@ -76,13 +88,18 @@ describe("API: Effective Hashtags", () => {
         },
       ];
 
-      (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueTypes);
+      (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockQueueTypes,
+      );
 
-      const request = new Request("http://localhost:3000/api/effective-hashtags", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ queueTypeId: "queue-1" }),
-      });
+      const request = new Request(
+        "http://localhost:3000/api/effective-hashtags",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ queueTypeId: "queue-1" }),
+        },
+      );
 
       interface ActionArgs {
         request: Request;
@@ -92,7 +109,14 @@ describe("API: Effective Hashtags", () => {
       const actionArgs: ActionArgs = { request, params: {}, context: {} };
       const response = await action(actionArgs);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { hashtags?: string; success?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              hashtags?: string;
+              success?: unknown;
+              error?: unknown;
+            })
+          : {};
 
       expect(data).toEqual({
         hashtags: "#custom #tags",
@@ -119,16 +143,21 @@ describe("API: Effective Hashtags", () => {
         },
       ];
 
-      (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueTypes);
+      (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockQueueTypes,
+      );
 
-      const request = new Request("http://localhost:3000/api/effective-hashtags", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          queueTypeId: "queue-1",
-          queueTypeName: "posts",
-        }),
-      });
+      const request = new Request(
+        "http://localhost:3000/api/effective-hashtags",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            queueTypeId: "queue-1",
+            queueTypeName: "posts",
+          }),
+        },
+      );
 
       interface ActionArgs {
         request: Request;
@@ -138,18 +167,28 @@ describe("API: Effective Hashtags", () => {
       const actionArgs: ActionArgs = { request, params: {}, context: {} };
       const response = await action(actionArgs);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { hashtags?: string; success?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              hashtags?: string;
+              success?: unknown;
+              error?: unknown;
+            })
+          : {};
 
       const hashtags = typeof data.hashtags === "string" ? data.hashtags : "";
       expect(hashtags).toBe("#id-tags");
     });
 
     it("should return empty string for unassigned queue type", async () => {
-      const request = new Request("http://localhost:3000/api/effective-hashtags", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ queueTypeName: "unassigned" }),
-      });
+      const request = new Request(
+        "http://localhost:3000/api/effective-hashtags",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ queueTypeName: "unassigned" }),
+        },
+      );
 
       interface ActionArgs {
         request: Request;
@@ -159,7 +198,14 @@ describe("API: Effective Hashtags", () => {
       const actionArgs: ActionArgs = { request, params: {}, context: {} };
       const response = await action(actionArgs);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { hashtags?: string; success?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              hashtags?: string;
+              success?: unknown;
+              error?: unknown;
+            })
+          : {};
 
       expect(getQueueTypes).not.toHaveBeenCalled();
       expect(data).toEqual({ hashtags: "" });
@@ -174,13 +220,18 @@ describe("API: Effective Hashtags", () => {
         },
       ];
 
-      (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueTypes);
+      (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockQueueTypes,
+      );
 
-      const request = new Request("http://localhost:3000/api/effective-hashtags", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ queueTypeName: "posts" }),
-      });
+      const request = new Request(
+        "http://localhost:3000/api/effective-hashtags",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ queueTypeName: "posts" }),
+        },
+      );
 
       interface ActionArgs {
         request: Request;
@@ -190,7 +241,14 @@ describe("API: Effective Hashtags", () => {
       const actionArgs: ActionArgs = { request, params: {}, context: {} };
       const response = await action(actionArgs);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { hashtags?: string; success?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              hashtags?: string;
+              success?: unknown;
+              error?: unknown;
+            })
+          : {};
 
       expect(data).toEqual({ hashtags: "" });
     });
@@ -198,11 +256,14 @@ describe("API: Effective Hashtags", () => {
     it("should return empty string when queue type not found", async () => {
       (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
-      const request = new Request("http://localhost:3000/api/effective-hashtags", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ queueTypeName: "nonexistent" }),
-      });
+      const request = new Request(
+        "http://localhost:3000/api/effective-hashtags",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ queueTypeName: "nonexistent" }),
+        },
+      );
 
       interface ActionArgs {
         request: Request;
@@ -212,7 +273,14 @@ describe("API: Effective Hashtags", () => {
       const actionArgs: ActionArgs = { request, params: {}, context: {} };
       const response = await action(actionArgs);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { hashtags?: string; success?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              hashtags?: string;
+              success?: unknown;
+              error?: unknown;
+            })
+          : {};
 
       expect(data).toEqual({ hashtags: "" });
     });
@@ -229,13 +297,18 @@ describe("API: Effective Hashtags", () => {
         },
       ];
 
-      (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueTypes);
+      (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockQueueTypes,
+      );
 
-      const request = new Request("http://localhost:3000/api/effective-hashtags", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ queueTypeName: "posts" }),
-      });
+      const request = new Request(
+        "http://localhost:3000/api/effective-hashtags",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ queueTypeName: "posts" }),
+        },
+      );
 
       interface ActionArgs {
         request: Request;
@@ -245,7 +318,14 @@ describe("API: Effective Hashtags", () => {
       const actionArgs: ActionArgs = { request, params: {}, context: {} };
       const response = await action(actionArgs);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { hashtags?: string; success?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              hashtags?: string;
+              success?: unknown;
+              error?: unknown;
+            })
+          : {};
 
       expect(data).toEqual({ hashtags: "" });
     });
@@ -262,11 +342,14 @@ describe("API: Effective Hashtags", () => {
         throw redirectResponse;
       });
 
-      const request = new Request("http://localhost:3000/api/effective-hashtags", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ queueTypeName: "posts" }),
-      });
+      const request = new Request(
+        "http://localhost:3000/api/effective-hashtags",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ queueTypeName: "posts" }),
+        },
+      );
 
       const response = await action({ request, params: {}, context: {} });
       // Response should be rethrown by error handler, so we should get a redirect
@@ -275,11 +358,14 @@ describe("API: Effective Hashtags", () => {
     });
 
     it("should return validation error for invalid JSON", async () => {
-      const request = new Request("http://localhost:3000/api/effective-hashtags", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: "invalid json",
-      });
+      const request = new Request(
+        "http://localhost:3000/api/effective-hashtags",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: "invalid json",
+        },
+      );
 
       interface ActionArgs {
         request: Request;
@@ -289,20 +375,33 @@ describe("API: Effective Hashtags", () => {
       const actionArgs: ActionArgs = { request, params: {}, context: {} };
       const response = await action(actionArgs);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { hashtags?: string; success?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              hashtags?: string;
+              success?: unknown;
+              error?: unknown;
+            })
+          : {};
 
       expect(response.status).toBe(400);
-      const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
+      const success =
+        typeof data.success === "boolean"
+          ? data.success
+          : data.success === 0 || data.success === false;
       expect(success).toBe(false);
       expect(data.error).toBeDefined();
     });
 
     it("should return validation error when neither queueTypeName nor queueTypeId provided", async () => {
-      const request = new Request("http://localhost:3000/api/effective-hashtags", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
+      const request = new Request(
+        "http://localhost:3000/api/effective-hashtags",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        },
+      );
 
       interface ActionArgs {
         request: Request;
@@ -312,10 +411,20 @@ describe("API: Effective Hashtags", () => {
       const actionArgs: ActionArgs = { request, params: {}, context: {} };
       const response = await action(actionArgs);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { hashtags?: string; success?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              hashtags?: string;
+              success?: unknown;
+              error?: unknown;
+            })
+          : {};
 
       expect(response.status).toBe(400);
-      const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
+      const success =
+        typeof data.success === "boolean"
+          ? data.success
+          : data.success === 0 || data.success === false;
       expect(success).toBe(false);
       expect(data.error).toBeDefined();
     });
@@ -325,11 +434,14 @@ describe("API: Effective Hashtags", () => {
         new Error("Database error"),
       );
 
-      const request = new Request("http://localhost:3000/api/effective-hashtags", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ queueTypeName: "posts" }),
-      });
+      const request = new Request(
+        "http://localhost:3000/api/effective-hashtags",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ queueTypeName: "posts" }),
+        },
+      );
 
       interface ActionArgs {
         request: Request;
@@ -339,11 +451,17 @@ describe("API: Effective Hashtags", () => {
       const actionArgs: ActionArgs = { request, params: {}, context: {} };
       const response = await action(actionArgs);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { hashtags?: string; success?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              hashtags?: string;
+              success?: unknown;
+              error?: unknown;
+            })
+          : {};
 
       expect(response.status).toBeGreaterThanOrEqual(400);
       expect(data.success).toBe(false);
     });
   });
 });
-

@@ -12,7 +12,10 @@ interface PostConfirmationProps {
   postsCount: number;
 }
 
-export default function PostConfirmation({ preparedEvents, postsCount }: PostConfirmationProps) {
+export default function PostConfirmation({
+  preparedEvents,
+  postsCount,
+}: PostConfirmationProps) {
   const fetcher = useFetcher();
   const isSubmitting = fetcher.state !== "idle";
 
@@ -35,12 +38,18 @@ export default function PostConfirmation({ preparedEvents, postsCount }: PostCon
               originalPostId: eventData.originalPostId,
             };
           } catch (eventError) {
-            const { handleAsyncError } = await import("~/lib/error-handler.client");
-            handleAsyncError(eventError, {
-              component: "PostConfirmation",
-              action: "signEvent",
-              eventIndex: index,
-            }, false); // Don't show toast, throw to outer catch
+            const { handleAsyncError } = await import(
+              "~/lib/error-handler.client"
+            );
+            handleAsyncError(
+              eventError,
+              {
+                component: "PostConfirmation",
+                action: "signEvent",
+                eventIndex: index,
+              },
+              false,
+            ); // Don't show toast, throw to outer catch
             throw eventError;
           }
         }),
@@ -72,10 +81,14 @@ export default function PostConfirmation({ preparedEvents, postsCount }: PostCon
       });
     } catch (error) {
       const { handleAsyncError } = await import("~/lib/error-handler.client");
-      handleAsyncError(error, {
-        component: "PostConfirmation",
-        action: "handleSignAndSubmit",
-      }, false); // Don't show toast, let component handle it
+      handleAsyncError(
+        error,
+        {
+          component: "PostConfirmation",
+          action: "handleSignAndSubmit",
+        },
+        false,
+      ); // Don't show toast, let component handle it
     }
   };
 
@@ -122,12 +135,22 @@ export default function PostConfirmation({ preparedEvents, postsCount }: PostCon
           {preparedEvents?.map((eventData, index) => {
             // Extract events data with type safety
             const eventsData = eventData.events;
-            const eventsKind = typeof eventsData === "object" && eventsData !== null && "kind" in eventsData ? (eventsData as { kind?: unknown }).kind : undefined;
+            const eventsKind =
+              typeof eventsData === "object" &&
+              eventsData !== null &&
+              "kind" in eventsData
+                ? (eventsData as { kind?: unknown }).kind
+                : undefined;
             const isRepost = eventsKind === 6;
 
             // Debug logging for reposts
             if (isRepost) {
-              const eventsTags = typeof eventsData === "object" && eventsData !== null && "tags" in eventsData ? (eventsData as { tags?: unknown }).tags : undefined;
+              const eventsTags =
+                typeof eventsData === "object" &&
+                eventsData !== null &&
+                "tags" in eventsData
+                  ? (eventsData as { tags?: unknown }).tags
+                  : undefined;
               logClientError(
                 `Repost ${index + 1} data`,
                 {
@@ -157,11 +180,13 @@ export default function PostConfirmation({ preparedEvents, postsCount }: PostCon
               tags = "";
             } else {
               // For regular posts, parse content assuming format: "caption mediaUrl1 mediaUrl2 ..."
-              const eventsContent = typeof eventsData === "object" && eventsData !== null && "content" in eventsData ? (eventsData as { content?: unknown }).content : undefined;
-              if (
-                eventsContent &&
-                typeof eventsContent === "string"
-              ) {
+              const eventsContent =
+                typeof eventsData === "object" &&
+                eventsData !== null &&
+                "content" in eventsData
+                  ? (eventsData as { content?: unknown }).content
+                  : undefined;
+              if (eventsContent && typeof eventsContent === "string") {
                 const contentParts = eventsContent.split(" ");
                 const mediaUrls = contentParts.filter(
                   (part) =>
@@ -185,12 +210,29 @@ export default function PostConfirmation({ preparedEvents, postsCount }: PostCon
                 caption = eventData.caption ?? "";
                 mediaUrl = eventData.fileUrl ?? "";
               }
-              const eventsTags = typeof eventsData === "object" && eventsData !== null && "tags" in eventsData ? (eventsData as { tags?: unknown }).tags : undefined;
-              tags = (Array.isArray(eventsTags) ? eventsTags : []).map((tag) => Array.isArray(tag) && tag[1] && typeof tag[1] === "string" ? `#${tag[1]}` : "").filter((t) => t !== "").join(" ");
+              const eventsTags =
+                typeof eventsData === "object" &&
+                eventsData !== null &&
+                "tags" in eventsData
+                  ? (eventsData as { tags?: unknown }).tags
+                  : undefined;
+              tags = (Array.isArray(eventsTags) ? eventsTags : [])
+                .map((tag) =>
+                  Array.isArray(tag) && tag[1] && typeof tag[1] === "string"
+                    ? `#${tag[1]}`
+                    : "",
+                )
+                .filter((t) => t !== "")
+                .join(" ");
             }
 
             // Extract eventsTags for use in JSX
-            const eventsTagsForDisplay = typeof eventsData === "object" && eventsData !== null && "tags" in eventsData ? (eventsData as { tags?: unknown }).tags : undefined;
+            const eventsTagsForDisplay =
+              typeof eventsData === "object" &&
+              eventsData !== null &&
+              "tags" in eventsData
+                ? (eventsData as { tags?: unknown }).tags
+                : undefined;
 
             return (
               <div
@@ -258,10 +300,18 @@ export default function PostConfirmation({ preparedEvents, postsCount }: PostCon
                         Tags
                       </h4>
                       <div className="flex flex-wrap gap-1">
-                        {(Array.isArray(eventsTagsForDisplay) ? eventsTagsForDisplay : [])
+                        {(Array.isArray(eventsTagsForDisplay)
+                          ? eventsTagsForDisplay
+                          : []
+                        )
                           .filter((tag) => Array.isArray(tag) && tag[0] === "t") // Only show hashtag tags
                           .map((tag, tagIndex) => {
-                            const tagValue = Array.isArray(tag) && tag[1] && typeof tag[1] === "string" ? tag[1] : "";
+                            const tagValue =
+                              Array.isArray(tag) &&
+                              tag[1] &&
+                              typeof tag[1] === "string"
+                                ? tag[1]
+                                : "";
                             return (
                               <span
                                 key={tagIndex}
@@ -282,7 +332,13 @@ export default function PostConfirmation({ preparedEvents, postsCount }: PostCon
                     </h4>
                     <p className="text-sm font-semibold text-gray-900 dark:text-white">
                       {new Date(
-                        (typeof eventsData === "object" && eventsData !== null && "created_at" in eventsData && typeof (eventsData as { created_at?: unknown }).created_at === "number" ? (eventsData as { created_at: number }).created_at : 0) * 1000,
+                        (typeof eventsData === "object" &&
+                        eventsData !== null &&
+                        "created_at" in eventsData &&
+                        typeof (eventsData as { created_at?: unknown })
+                          .created_at === "number"
+                          ? (eventsData as { created_at: number }).created_at
+                          : 0) * 1000,
                       ).toLocaleDateString("en-US", {
                         weekday: "short",
                         month: "short",

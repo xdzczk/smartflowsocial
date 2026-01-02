@@ -1,6 +1,6 @@
 /**
  * Integration tests for queue client
- * 
+ *
  * Tests the queue client in app/infra/queue/queue-client.server.ts
  */
 
@@ -16,14 +16,14 @@ const { mockQueue, MockQueue } = vi.hoisted(() => {
     close: vi.fn(),
     remove: vi.fn(),
   };
-  
+
   // Create a proper constructor class
   class MockQueue {
     constructor() {
       return mockQueue;
     }
   }
-  
+
   return { mockQueue, MockQueue };
 });
 
@@ -68,7 +68,15 @@ describe("Queue Client", () => {
 
       // Use a fixed timestamp to avoid timing issues
       const fixedTimestamp = 1767303323189;
-      const signedEvent = { id: "event-123", pubkey: "test-pubkey", created_at: fixedTimestamp, kind: 1, tags: [], content: "", sig: "test-sig" } satisfies Partial<SignedEvent> as SignedEvent;
+      const signedEvent = {
+        id: "event-123",
+        pubkey: "test-pubkey",
+        created_at: fixedTimestamp,
+        kind: 1,
+        tags: [],
+        content: "",
+        sig: "test-sig",
+      } satisfies Partial<SignedEvent> as SignedEvent;
 
       const result = await queueClient.enqueue(
         "scheduled-posts",
@@ -99,7 +107,19 @@ describe("Queue Client", () => {
       const result = await queueClient.enqueue(
         "scheduled-posts",
         "publish-post",
-        { postId: "post-123", userId: "user-123", signedEvent: { id: "event-123", pubkey: "test-pubkey", created_at: Date.now(), kind: 1, tags: [], content: "", sig: "test-sig" } satisfies Partial<SignedEvent> as SignedEvent },
+        {
+          postId: "post-123",
+          userId: "user-123",
+          signedEvent: {
+            id: "event-123",
+            pubkey: "test-pubkey",
+            created_at: Date.now(),
+            kind: 1,
+            tags: [],
+            content: "",
+            sig: "test-sig",
+          } satisfies Partial<SignedEvent> as SignedEvent,
+        },
         { scheduledFor },
       );
 
@@ -114,7 +134,19 @@ describe("Queue Client", () => {
       const result = await queueClient.enqueue(
         "scheduled-posts",
         "publish-post",
-        { postId: "post-123", userId: "user-123", signedEvent: { id: "event-123", pubkey: "test-pubkey", created_at: Date.now(), kind: 1, tags: [], content: "", sig: "test-sig" } satisfies Partial<SignedEvent> as SignedEvent },
+        {
+          postId: "post-123",
+          userId: "user-123",
+          signedEvent: {
+            id: "event-123",
+            pubkey: "test-pubkey",
+            created_at: Date.now(),
+            kind: 1,
+            tags: [],
+            content: "",
+            sig: "test-sig",
+          } satisfies Partial<SignedEvent> as SignedEvent,
+        },
         { scheduledFor: pastTime },
       );
 
@@ -128,7 +160,19 @@ describe("Queue Client", () => {
       const result = await queueClient.enqueue(
         "scheduled-posts",
         "publish-post",
-        { postId: "post-123", userId: "user-123", signedEvent: { id: "event-123", pubkey: "test-pubkey", created_at: Date.now(), kind: 1, tags: [], content: "", sig: "test-sig" } satisfies Partial<SignedEvent> as SignedEvent },
+        {
+          postId: "post-123",
+          userId: "user-123",
+          signedEvent: {
+            id: "event-123",
+            pubkey: "test-pubkey",
+            created_at: Date.now(),
+            kind: 1,
+            tags: [],
+            content: "",
+            sig: "test-sig",
+          } satisfies Partial<SignedEvent> as SignedEvent,
+        },
       );
 
       expect(result.success).toBe(false);
@@ -260,4 +304,3 @@ describe("Queue Client", () => {
     });
   });
 });
-

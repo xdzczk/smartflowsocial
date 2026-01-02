@@ -7,7 +7,9 @@ import type { PostFetcher } from "../types";
 import type { EditorJSBlock } from "../types/editorjs.types";
 
 // Helper to safely access formData from a fetcher
-function getFetcherFormData(fetcher: PostFetcher | undefined): FormData | null | undefined {
+function getFetcherFormData(
+  fetcher: PostFetcher | undefined,
+): FormData | null | undefined {
   return (fetcher as { formData?: FormData | null })?.formData;
 }
 
@@ -146,14 +148,20 @@ export default function LongFormListing({
         const editorData = JSON.parse(content) as { blocks?: EditorJSBlock[] };
         editorData.blocks?.forEach((block: EditorJSBlock) => {
           if (block.type === "paragraph" || block.type === "header") {
-            const text = typeof block.data.text === "string" ? block.data.text.replace(/<[^>]*>/g, "") : "";
+            const text =
+              typeof block.data.text === "string"
+                ? block.data.text.replace(/<[^>]*>/g, "")
+                : "";
             wordCount += text
               .split(/\s+/)
               .filter((word: string) => word.length > 0).length;
           } else if (block.type === "list") {
-            const items = Array.isArray(block.data.items) ? block.data.items : [];
+            const items = Array.isArray(block.data.items)
+              ? block.data.items
+              : [];
             items.forEach((item: unknown) => {
-              const text = typeof item === "string" ? item.replace(/<[^>]*>/g, "") : "";
+              const text =
+                typeof item === "string" ? item.replace(/<[^>]*>/g, "") : "";
               wordCount += text
                 .split(/\s+/)
                 .filter((word: string) => word.length > 0).length;
@@ -496,14 +504,14 @@ export default function LongFormListing({
                   <p className="font-medium">
                     {post.title && post.title.length > 40
                       ? post.title.substring(0, 40) + "..."
-                      : post.title ?? "Untitled"}
+                      : (post.title ?? "Untitled")}
                   </p>
                 </td>
                 <td className="max-w-xs p-3">
                   <p className="line-clamp-2 text-sm text-gray-600 dark:text-gray-400">
                     {post.summary && post.summary.length > 60
                       ? post.summary.substring(0, 60) + "..."
-                      : post.summary ?? "No summary"}
+                      : (post.summary ?? "No summary")}
                   </p>
                 </td>
                 <td className="p-3">
@@ -564,10 +572,15 @@ export default function LongFormListing({
                       </>
                     ) : null}
                     {type === "posted" &&
-                    (post.nostrEventId ?? (post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent ? (post.signedEvent as { id?: string }).id : undefined)) ? (
+                    (post.nostrEventId ??
+                      (post.signedEvent &&
+                      typeof post.signedEvent === "object" &&
+                      "id" in post.signedEvent
+                        ? (post.signedEvent as { id?: string }).id
+                        : undefined)) ? (
                       <>
                         <Link
-                          to={`https://primal.net/a/${String(post.nostrEventId ?? (post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent ? (post.signedEvent as { id?: string }).id : "") ?? '')}`}
+                          to={`https://primal.net/a/${String(post.nostrEventId ?? (post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent ? (post.signedEvent as { id?: string }).id : "") ?? "")}`}
                           target="_blank"
                           rel="noreferrer"
                           onClick={(e) => e.stopPropagation()}
@@ -575,74 +588,94 @@ export default function LongFormListing({
                         >
                           View Article
                         </Link>
-                        {longformRepostFetcher ? (() => {
-                          const fetcher = longformRepostFetcher;
-                          const formData = getFetcherFormData(fetcher);
-                          return (
-                            <fetcher.Form
-                            method="post"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <input
-                              type="hidden"
-                              name="postId"
-                              value={post.id}
-                            />
-                            <input
-                              type="hidden"
-                              name="_action"
-                              value="longformRepost"
-                            />
-                            <button
-                              type="submit"
-                              disabled={
-                                fetcher.state !== "idle" ||
-                                (formData ? (formData.get("postId") as string | null) === post.id : false)
-                              }
-                              className="inline-flex items-center justify-center gap-2 rounded-lg border border-purple-200 bg-white px-2 py-1 text-sm font-semibold leading-5 text-purple-800 hover:border-purple-300 hover:text-purple-900 hover:shadow-sm focus:ring focus:ring-purple-300/25 active:border-purple-200 active:shadow-none disabled:opacity-50 dark:border-purple-700 dark:bg-gray-800 dark:text-purple-300 dark:hover:border-purple-600 dark:hover:text-purple-200 dark:focus:ring-purple-600/40 dark:active:border-purple-700"
-                            >
-                              {fetcher.state !== "idle" &&
-                              (formData ? (formData.get("postId") as string | null) === post.id : false)
-                                ? "Reposting..."
-                                : "Repost"}
-                            </button>
-                          </fetcher.Form>
-                          );
-                        })() : null}
-                        {longformQuoteFetcher ? (() => {
-                          const fetcher = longformQuoteFetcher;
-                          const formData = getFetcherFormData(fetcher);
-                          return (
-                            <fetcher.Form
-                            method="post"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <input
-                              type="hidden"
-                              name="postId"
-                              value={post.id}
-                            />
-                            <input
-                              type="hidden"
-                              name="_action"
-                              value="longformQuote"
-                            />
-                            <button
-                              type="submit"
-                              disabled={
-                                fetcher.state !== "idle" ||
-                                (formData ? (formData.get("postId") as string | null) === post.id : false)
-                              }
-                              className="inline-flex items-center justify-center gap-2 rounded-lg border border-green-200 bg-white px-2 py-1 text-sm font-semibold leading-5 text-green-800 hover:border-green-300 hover:text-green-900 hover:shadow-sm focus:ring focus:ring-green-300/25 active:border-green-200 active:shadow-none disabled:opacity-50 dark:border-green-700 dark:bg-gray-800 dark:text-green-300 dark:hover:border-green-600 dark:hover:text-green-200 dark:focus:ring-green-600/40 dark:active:border-green-700"
-                            >
-                              {fetcher.state !== "idle" &&
-                              (fetcher.formData ? (fetcher.formData.get("postId") as string | null) === post.id : false)
-                                ? "Quoting..."
-                                : "Quote Post"}
-                            </button>
-                          </fetcher.Form>
-                          );
-                        })() : null}
+                        {longformRepostFetcher
+                          ? (() => {
+                              const fetcher = longformRepostFetcher;
+                              const formData = getFetcherFormData(fetcher);
+                              return (
+                                <fetcher.Form
+                                  method="post"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <input
+                                    type="hidden"
+                                    name="postId"
+                                    value={post.id}
+                                  />
+                                  <input
+                                    type="hidden"
+                                    name="_action"
+                                    value="longformRepost"
+                                  />
+                                  <button
+                                    type="submit"
+                                    disabled={
+                                      fetcher.state !== "idle" ||
+                                      (formData
+                                        ? (formData.get("postId") as
+                                            | string
+                                            | null) === post.id
+                                        : false)
+                                    }
+                                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-purple-200 bg-white px-2 py-1 text-sm font-semibold leading-5 text-purple-800 hover:border-purple-300 hover:text-purple-900 hover:shadow-sm focus:ring focus:ring-purple-300/25 active:border-purple-200 active:shadow-none disabled:opacity-50 dark:border-purple-700 dark:bg-gray-800 dark:text-purple-300 dark:hover:border-purple-600 dark:hover:text-purple-200 dark:focus:ring-purple-600/40 dark:active:border-purple-700"
+                                  >
+                                    {fetcher.state !== "idle" &&
+                                    (formData
+                                      ? (formData.get("postId") as
+                                          | string
+                                          | null) === post.id
+                                      : false)
+                                      ? "Reposting..."
+                                      : "Repost"}
+                                  </button>
+                                </fetcher.Form>
+                              );
+                            })()
+                          : null}
+                        {longformQuoteFetcher
+                          ? (() => {
+                              const fetcher = longformQuoteFetcher;
+                              const formData = getFetcherFormData(fetcher);
+                              return (
+                                <fetcher.Form
+                                  method="post"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <input
+                                    type="hidden"
+                                    name="postId"
+                                    value={post.id}
+                                  />
+                                  <input
+                                    type="hidden"
+                                    name="_action"
+                                    value="longformQuote"
+                                  />
+                                  <button
+                                    type="submit"
+                                    disabled={
+                                      fetcher.state !== "idle" ||
+                                      (formData
+                                        ? (formData.get("postId") as
+                                            | string
+                                            | null) === post.id
+                                        : false)
+                                    }
+                                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-green-200 bg-white px-2 py-1 text-sm font-semibold leading-5 text-green-800 hover:border-green-300 hover:text-green-900 hover:shadow-sm focus:ring focus:ring-green-300/25 active:border-green-200 active:shadow-none disabled:opacity-50 dark:border-green-700 dark:bg-gray-800 dark:text-green-300 dark:hover:border-green-600 dark:hover:text-green-200 dark:focus:ring-green-600/40 dark:active:border-green-700"
+                                  >
+                                    {fetcher.state !== "idle" &&
+                                    (fetcher.formData
+                                      ? (fetcher.formData.get("postId") as
+                                          | string
+                                          | null) === post.id
+                                      : false)
+                                      ? "Quoting..."
+                                      : "Quote Post"}
+                                  </button>
+                                </fetcher.Form>
+                              );
+                            })()
+                          : null}
                       </>
                     ) : null}
                     <deleteFetcher.Form

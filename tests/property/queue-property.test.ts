@@ -1,6 +1,6 @@
 /**
  * Property-based tests for queue operations
- * 
+ *
  * Uses fast-check to verify queue invariants:
  * - Idempotency
  * - Ordering guarantees
@@ -47,7 +47,7 @@ describe("Property-Based Tests: Queue Operations", () => {
       const mockFindUnique = prisma.post.findUnique as ReturnType<typeof vi.fn>;
       const mockUpdatePostStatus = updatePostStatus as ReturnType<typeof vi.fn>;
       const mockGetUserById = getUserById as ReturnType<typeof vi.fn>;
-      
+
       mockFindUnique.mockResolvedValue(mockPost);
       mockUpdatePostStatus.mockResolvedValue(undefined);
       mockGetUserById.mockResolvedValue({
@@ -76,13 +76,25 @@ describe("Property-Based Tests: Queue Operations", () => {
     });
 
     async function processJob(postId: string, userId: string) {
-      const mockPostFindUnique = prisma.post.findUnique as unknown as ReturnType<typeof vi.fn> & ((args: unknown) => Promise<{ isPosted: boolean; nostrEventId: string | null } | null>);
-      const mockUpdatePostStatus = updatePostStatus as unknown as ReturnType<typeof vi.fn> & ((args: { id: string; userId: string; isPosted: boolean }) => Promise<void>);
-      
-      const existingPost = await mockPostFindUnique({
+      const mockPostFindUnique = prisma.post
+        .findUnique as unknown as ReturnType<typeof vi.fn> &
+        ((args: unknown) => Promise<{
+          isPosted: boolean;
+          nostrEventId: string | null;
+        } | null>);
+      const mockUpdatePostStatus = updatePostStatus as unknown as ReturnType<
+        typeof vi.fn
+      > &
+        ((args: {
+          id: string;
+          userId: string;
+          isPosted: boolean;
+        }) => Promise<void>);
+
+      const existingPost = (await mockPostFindUnique({
         where: { id: postId, userId },
         select: { isPosted: true, nostrEventId: true },
-      }) as { isPosted: boolean; nostrEventId: string | null } | null;
+      })) as { isPosted: boolean; nostrEventId: string | null } | null;
 
       if (!existingPost) {
         return { success: false, error: "Post not found" };
@@ -115,7 +127,11 @@ describe("Property-Based Tests: Queue Operations", () => {
               content: fc.string(),
             }),
           }),
-          (jobData: { postId: string; userId: string; signedEvent: { id: string; kind: number; content: string } }) => {
+          (jobData: {
+            postId: string;
+            userId: string;
+            signedEvent: { id: string; kind: number; content: string };
+          }) => {
             // Job data should remain unchanged
             const serialized = JSON.stringify(jobData);
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -144,21 +160,26 @@ describe("Property-Based Tests: Queue Operations", () => {
               fc.constant(""), // Explicitly allow empty strings
             ),
           }),
-          (jobData: { postId: string | null | undefined; userId: string | null | undefined }) => {
+          (jobData: {
+            postId: string | null | undefined;
+            userId: string | null | undefined;
+          }) => {
             // Validate required fields - both must be present and non-empty for valid job data
-            const hasPostId = jobData.postId != null 
-              && typeof jobData.postId === "string" 
-              && jobData.postId.trim() !== "";
-            const hasUserId = jobData.userId != null 
-              && typeof jobData.userId === "string" 
-              && jobData.userId.trim() !== "";
-            
+            const hasPostId =
+              jobData.postId != null &&
+              typeof jobData.postId === "string" &&
+              jobData.postId.trim() !== "";
+            const hasUserId =
+              jobData.userId != null &&
+              typeof jobData.userId === "string" &&
+              jobData.userId.trim() !== "";
+
             // Property: validation logic correctly identifies valid vs invalid data
             // Valid: both fields present and non-empty
             // Invalid: at least one field missing, null, undefined, empty, or whitespace-only
             const isValid = hasPostId && hasUserId;
             const isInvalid = !hasPostId || !hasUserId;
-            
+
             // The property holds: valid and invalid are mutually exclusive and cover all cases
             return isValid !== isInvalid; // XOR: exactly one must be true
           },
@@ -175,7 +196,9 @@ describe("Property-Based Tests: Queue Operations", () => {
           fc.date({ min: new Date("2020-01-01"), max: new Date("2030-12-31") }),
           fc.integer({ min: 0, max: 86400 * 365 }), // Delay in seconds (up to 1 year)
           (baseTime: Date, delaySeconds: number) => {
-            const scheduledTime = new Date(baseTime.getTime() + delaySeconds * 1000);
+            const scheduledTime = new Date(
+              baseTime.getTime() + delaySeconds * 1000,
+            );
             return scheduledTime >= baseTime;
           },
         ),
@@ -201,5 +224,3 @@ describe("Property-Based Tests: Queue Operations", () => {
     });
   });
 });
-
-

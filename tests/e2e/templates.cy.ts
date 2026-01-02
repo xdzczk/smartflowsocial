@@ -2,7 +2,7 @@ import { TEST_NPUB } from "./support/nostr-test-keys";
 
 /**
  * Templates Tests
- * 
+ *
  * Tests template functionality:
  * - View templates list
  * - Create templates
@@ -26,7 +26,10 @@ describe("Templates", () => {
         .first()
         .should("exist")
         .click({ force: true });
-      cy.location("pathname", { timeout: 10000 }).should("include", "templates");
+      cy.location("pathname", { timeout: 10000 }).should(
+        "include",
+        "templates",
+      );
     });
 
     it("should load templates page directly", () => {
@@ -44,19 +47,22 @@ describe("Templates", () => {
     it("should display templates list or empty state", () => {
       // Wait for page to load
       cy.get("body").should("be.visible");
-      
+
       cy.get("body", { timeout: 10000 }).then(($body) => {
         const hasTemplates =
-          $body.find('table tbody tr, [data-testid="template-item"], .template-item, tbody tr').length > 0;
+          $body.find(
+            'table tbody tr, [data-testid="template-item"], .template-item, tbody tr',
+          ).length > 0;
         const hasEmptyState =
           $body.find('[data-testid="empty-state"]').length > 0 ||
           $body.text().toLowerCase().includes("no templates") ||
           $body.text().toLowerCase().includes("empty") ||
           $body.text().toLowerCase().includes("no items");
-        
+
         // If page loaded and has content (even if it's just headers), consider it valid
-        const hasContent = $body.find('h1, h2, h3, table, .container, main').length > 0;
-        
+        const hasContent =
+          $body.find("h1, h2, h3, table, .container, main").length > 0;
+
         expect(hasTemplates || hasEmptyState || hasContent).to.be.true;
       });
     });
@@ -64,12 +70,12 @@ describe("Templates", () => {
     it("should display create template button", () => {
       cy.get("body").then(($body) => {
         const hasCreateButton =
-          $body.find('a[href*="templates"], button:contains("Create"), button:contains("New")').length > 0;
-        
+          $body.find(
+            'a[href*="templates"], button:contains("Create"), button:contains("New")',
+          ).length > 0;
+
         expect(hasCreateButton).to.be.true;
       });
     });
   });
 });
-
-

@@ -1,9 +1,9 @@
 /**
  * Integration tests for scheduled posts loader
- * 
+ *
  * Tests the loader function logic directly, without requiring a browser.
  * For UI rendering tests, see tests/e2e/posts/scheduled-posts.cy.ts
- * 
+ *
  * Migrated from: tests/e2e/loaders/queues-loader.cy.ts (Scheduled Posts section)
  */
 
@@ -31,18 +31,25 @@ vi.mock("~/features/posts/services/scheduled-loader.server", () => ({
 }));
 
 import { requireUserId } from "~/features/auth/session.server";
-import { requireAnySubscription, requireFeatureAccess } from "~/features/payments/subscriptions.server";
+import {
+  requireAnySubscription,
+  requireFeatureAccess,
+} from "~/features/payments/subscriptions.server";
 import { loadScheduledData } from "~/features/posts/services/scheduled-loader.server";
 import { loader } from "~/routes/dashboard.scheduled";
 
 describe("Scheduled Posts Loader Integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Default mocks
     (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue("user-123");
-    (requireAnySubscription as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
-    (requireFeatureAccess as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    (requireAnySubscription as ReturnType<typeof vi.fn>).mockResolvedValue(
+      undefined,
+    );
+    (requireFeatureAccess as ReturnType<typeof vi.fn>).mockResolvedValue(
+      undefined,
+    );
     (loadScheduledData as ReturnType<typeof vi.fn>).mockResolvedValue({
       posts: [],
       longformPosts: [],
@@ -57,16 +64,37 @@ describe("Scheduled Posts Loader Integration", () => {
   describe("Scheduled Posts Loader", () => {
     it("should load scheduled posts data for authenticated user", async () => {
       const request = new Request("http://localhost:3000/dashboard/scheduled");
-      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
       const response = await loader(loaderArgs);
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              posts?: unknown;
+              longformPosts?: unknown;
+              allContent?: unknown;
+              user?: unknown;
+              queueTypes?: unknown;
+              selectedQueueType?: unknown;
+              error?: { message?: string };
+            })
+          : {};
 
       expect(responseObj.status).toBe(200);
       expect(requireUserId).toHaveBeenCalledWith(request);
       expect(requireAnySubscription).toHaveBeenCalledWith("user-123");
-      expect(requireFeatureAccess).toHaveBeenCalledWith("user-123", "scheduled");
+      expect(requireFeatureAccess).toHaveBeenCalledWith(
+        "user-123",
+        "scheduled",
+      );
       expect(loadScheduledData).toHaveBeenCalledWith("user-123", "all");
       expect(data).toHaveProperty("posts");
       expect(data).toHaveProperty("longformPosts");
@@ -86,16 +114,32 @@ describe("Scheduled Posts Loader Integration", () => {
         hashTagPresets: [],
       };
 
-      (loadScheduledData as ReturnType<typeof vi.fn>).mockResolvedValue(mockData);
+      (loadScheduledData as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockData,
+      );
 
       const request = new Request("http://localhost:3000/dashboard/scheduled");
-      const response = await loader({ 
-        request, 
-        params: { queueType: "posts" } 
+      const response = await loader({
+        request,
+        params: { queueType: "posts" },
       } as unknown as LoaderFunctionArgs);
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              posts?: unknown;
+              longformPosts?: unknown;
+              allContent?: unknown;
+              user?: unknown;
+              queueTypes?: unknown;
+              selectedQueueType?: unknown;
+              error?: { message?: string };
+            })
+          : {};
 
       expect(loadScheduledData).toHaveBeenCalledWith("user-123", "posts");
       expect(data.selectedQueueType).toBe("posts");
@@ -122,14 +166,34 @@ describe("Scheduled Posts Loader Integration", () => {
         hashTagPresets: [],
       };
 
-      (loadScheduledData as ReturnType<typeof vi.fn>).mockResolvedValue(mockData);
+      (loadScheduledData as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockData,
+      );
 
       const request = new Request("http://localhost:3000/dashboard/scheduled");
-      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
       const response = await loader(loaderArgs);
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              posts?: unknown;
+              longformPosts?: unknown;
+              allContent?: unknown;
+              user?: unknown;
+              queueTypes?: unknown;
+              selectedQueueType?: unknown;
+              error?: { message?: string };
+            })
+          : {};
 
       expect(data.posts).toHaveLength(2);
       expect(data.allContent).toHaveLength(2);
@@ -152,14 +216,34 @@ describe("Scheduled Posts Loader Integration", () => {
         hashTagPresets: [],
       };
 
-      (loadScheduledData as ReturnType<typeof vi.fn>).mockResolvedValue(mockData);
+      (loadScheduledData as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockData,
+      );
 
       const request = new Request("http://localhost:3000/dashboard/scheduled");
-      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
       const response = await loader(loaderArgs);
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              posts?: unknown;
+              longformPosts?: unknown;
+              allContent?: unknown;
+              user?: unknown;
+              queueTypes?: unknown;
+              selectedQueueType?: unknown;
+              error?: { message?: string };
+            })
+          : {};
 
       // The loadScheduledData function should already filter, but we verify the structure
       const queueTypes = data.queueTypes;
@@ -174,75 +258,170 @@ describe("Scheduled Posts Loader Integration", () => {
   describe("Error Handling", () => {
     it("should handle authentication errors", async () => {
       (requireUserId as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Authentication required")
+        new Error("Authentication required"),
       );
 
       const request = new Request("http://localhost:3000/dashboard/scheduled");
-      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
       const response = await loader(loaderArgs);
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
-      
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              posts?: unknown;
+              longformPosts?: unknown;
+              allContent?: unknown;
+              user?: unknown;
+              queueTypes?: unknown;
+              selectedQueueType?: unknown;
+              error?: { message?: string };
+            })
+          : {};
+
       expect(responseObj.status).toBe(500);
       expect(data.error).toBeDefined();
-      const error = data.error && typeof data.error === "object" && "message" in data.error && typeof data.error.message === "string" ? data.error.message : "";
+      const error =
+        data.error &&
+        typeof data.error === "object" &&
+        "message" in data.error &&
+        typeof data.error.message === "string"
+          ? data.error.message
+          : "";
       expect(error).toContain("Authentication required");
     });
 
     it("should handle subscription requirement errors", async () => {
       (requireAnySubscription as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Subscription required")
+        new Error("Subscription required"),
       );
 
       const request = new Request("http://localhost:3000/dashboard/scheduled");
-      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
       const response = await loader(loaderArgs);
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
-      
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              posts?: unknown;
+              longformPosts?: unknown;
+              allContent?: unknown;
+              user?: unknown;
+              queueTypes?: unknown;
+              selectedQueueType?: unknown;
+              error?: { message?: string };
+            })
+          : {};
+
       expect(responseObj.status).toBe(500);
       expect(data.error).toBeDefined();
-      const error = data.error && typeof data.error === "object" && "message" in data.error && typeof data.error.message === "string" ? data.error.message : "";
+      const error =
+        data.error &&
+        typeof data.error === "object" &&
+        "message" in data.error &&
+        typeof data.error.message === "string"
+          ? data.error.message
+          : "";
       expect(error).toContain("Subscription required");
     });
 
     it("should handle feature access errors", async () => {
       (requireFeatureAccess as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Feature access denied")
+        new Error("Feature access denied"),
       );
 
       const request = new Request("http://localhost:3000/dashboard/scheduled");
-      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
       const response = await loader(loaderArgs);
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
-      
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              posts?: unknown;
+              longformPosts?: unknown;
+              allContent?: unknown;
+              user?: unknown;
+              queueTypes?: unknown;
+              selectedQueueType?: unknown;
+              error?: { message?: string };
+            })
+          : {};
+
       expect(responseObj.status).toBe(500);
       expect(data.error).toBeDefined();
-      const error = data.error && typeof data.error === "object" && "message" in data.error && typeof data.error.message === "string" ? data.error.message : "";
+      const error =
+        data.error &&
+        typeof data.error === "object" &&
+        "message" in data.error &&
+        typeof data.error.message === "string"
+          ? data.error.message
+          : "";
       expect(error).toContain("Feature access denied");
     });
 
     it("should handle data loading errors", async () => {
       (loadScheduledData as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Database error")
+        new Error("Database error"),
       );
 
       const request = new Request("http://localhost:3000/dashboard/scheduled");
-      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
       const response = await loader(loaderArgs);
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
-      
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              posts?: unknown;
+              longformPosts?: unknown;
+              allContent?: unknown;
+              user?: unknown;
+              queueTypes?: unknown;
+              selectedQueueType?: unknown;
+              error?: { message?: string };
+            })
+          : {};
+
       expect(responseObj.status).toBe(500);
       expect(data.error).toBeDefined();
-      const error = data.error && typeof data.error === "object" && "message" in data.error && typeof data.error.message === "string" ? data.error.message : "";
+      const error =
+        data.error &&
+        typeof data.error === "object" &&
+        "message" in data.error &&
+        typeof data.error.message === "string"
+          ? data.error.message
+          : "";
       expect(error).toContain("Database error");
     });
   });
 });
-

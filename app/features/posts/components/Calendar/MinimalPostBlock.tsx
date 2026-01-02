@@ -1,10 +1,14 @@
-
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { isVideoFile } from "~/lib/helpers";
 
 import { PostBadges } from "./PostBadges";
 import type { PostBlockBaseProps, QueueColorStyle } from "./PostBlock.types";
-import { getPostPreview, getFirstImage, getStatusColor, getDisplayTime } from "./PostBlock.utils";
+import {
+  getPostPreview,
+  getFirstImage,
+  getStatusColor,
+  getDisplayTime,
+} from "./PostBlock.utils";
 import { PostIcon } from "./PostIcon";
 interface MinimalPostBlockProps extends PostBlockBaseProps {
   queueColorStyle: QueueColorStyle | null;
@@ -30,7 +34,11 @@ export function MinimalPostBlock({
 }: MinimalPostBlockProps) {
   const firstImage = getFirstImage(post, isLongform ?? false);
   const postPreview = getPostPreview(post, isLongform ?? false);
-  const displayTime = getDisplayTime(post, isLongform ?? false, isPast ?? false);
+  const displayTime = getDisplayTime(
+    post,
+    isLongform ?? false,
+    isPast ?? false,
+  );
 
   // When there are multiple posts in cell, use ultra-compact layout
   if (multipleInCell) {
@@ -70,7 +78,11 @@ export function MinimalPostBlock({
           ) : (
             <div className="relative">
               <div className="h-3 w-3">
-                <PostIcon post={post} isLongform={isLongform ?? false} className="h-3 w-3" />
+                <PostIcon
+                  post={post}
+                  isLongform={isLongform ?? false}
+                  className="h-3 w-3"
+                />
               </div>
               <PostBadges post={post} size="xs" />
             </div>
@@ -133,11 +145,3 @@ export function MinimalPostBlock({
     </div>
   );
 }
-
-
-
-
-
-
-
-

@@ -60,7 +60,10 @@ export function InvoiceModal({
         </div>
 
         <div className="mb-4">
-          <label htmlFor="lightning-invoice" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label
+            htmlFor="lightning-invoice"
+            className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+          >
             Lightning Invoice:
           </label>
           <div className="flex">
@@ -108,7 +111,9 @@ export function InvoiceModal({
             {timeRemaining > 0 ? (
               <>
                 Payment expires in {Math.floor(timeRemaining / (1000 * 60))}:
-                {String(Math.floor((timeRemaining % (1000 * 60)) / 1000)).padStart(2, "0")}
+                {String(
+                  Math.floor((timeRemaining % (1000 * 60)) / 1000),
+                ).padStart(2, "0")}
               </>
             ) : (
               <span className="text-red-500">Payment expired</span>
@@ -119,7 +124,3 @@ export function InvoiceModal({
     </div>
   );
 }
-
-
-
-

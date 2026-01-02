@@ -20,7 +20,7 @@ export async function handleDraftEditAction(
     const queueTypeId = formData.get("queueTypeId");
     const useHashtagPresets = formData.get("useHashtagPresets") === "on";
     const hashTagPresetId = useHashtagPresets
-      ? formData.get("hashTagPresetId") ?? null
+      ? (formData.get("hashTagPresetId") ?? null)
       : null;
 
     // Resolve queue type ID in feature layer (business logic)
@@ -54,7 +54,7 @@ export async function handleDraftEditAction(
     const nostrEvent = formData.get("nostrEvent");
     const useHashtagPresets = formData.get("useHashtagPresets") === "on";
     const hashTagPresetId = useHashtagPresets
-      ? formData.get("hashTagPresetId") ?? null
+      ? (formData.get("hashTagPresetId") ?? null)
       : null;
 
     // Ensure the post is signed before resuming
@@ -82,8 +82,23 @@ export async function handleDraftEditAction(
         caption: caption as string,
         queueTypeId: resolvedQueueTypeId,
         scheduledFor: scheduledFor as string,
-        signedEvent: JSON.parse(signedEvent as string) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][]; sig: string },
-        nostrEvent: JSON.parse(nostrEvent as string) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][] },
+        signedEvent: JSON.parse(signedEvent as string) as {
+          id: string;
+          pubkey: string;
+          created_at: number;
+          kind: number;
+          content: string;
+          tags: string[][];
+          sig: string;
+        },
+        nostrEvent: JSON.parse(nostrEvent as string) as {
+          id: string;
+          pubkey: string;
+          created_at: number;
+          kind: number;
+          content: string;
+          tags: string[][];
+        },
         draft: false,
         isScheduled: true,
         isPosted: false,
@@ -96,5 +111,3 @@ export async function handleDraftEditAction(
 
   return { error: "Invalid action" };
 }
-
-

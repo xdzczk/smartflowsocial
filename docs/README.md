@@ -15,16 +15,19 @@
 **New to SmartFlowSocial?** Choose your path:
 
 ### For End Users
+
 1. **[5-Minute Quick Start](./getting-started/quickstart.md)** - Get up and running fast
 2. **[First Steps Guide](./getting-started/first-steps.md)** - Your first 30 minutes
 3. **[Core Concepts](./getting-started/concepts.md)** - Understand how it works
 
 ### For Developers
+
 1. **[Installation Guide](./getting-started/installation.md)** - Set up your development environment
 2. **[Architecture Overview](./getting-started/architecture.md)** - System design and patterns
 3. **[Development Guide](./guides/developer-guide.md)** - Building and contributing
 
 ### For DevOps
+
 1. **[Deployment Guide](./guides/deployment.md)** - Production deployment
 2. **[Operations Guide](./guides/operations.md)** - Monitoring and maintenance
 3. **[Configuration Reference](./reference/configuration.md)** - All configuration options
@@ -34,20 +37,23 @@
 ## 📚 Documentation Structure
 
 ### Getting Started
+
 Essential guides for new users and developers.
 
-| Guide | Description | Time |
-|------|-------------|------|
-| [Quick Start](./getting-started/quickstart.md) | Get running in 5 minutes | 5 min |
-| [Installation](./getting-started/installation.md) | Complete setup guide | 15 min |
-| [First Steps](./getting-started/first-steps.md) | Your first 30 minutes | 30 min |
-| [Core Concepts](./getting-started/concepts.md) | Understanding the system | 20 min |
+| Guide                                             | Description                | Time   |
+| ------------------------------------------------- | -------------------------- | ------ |
+| [Quick Start](./getting-started/quickstart.md)    | Get running in 5 minutes   | 5 min  |
+| [Installation](./getting-started/installation.md) | Complete setup guide       | 15 min |
+| [First Steps](./getting-started/first-steps.md)   | Your first 30 minutes      | 30 min |
+| [Core Concepts](./getting-started/concepts.md)    | Understanding the system   | 20 min |
 | [Architecture](./getting-started/architecture.md) | System design and patterns | 45 min |
 
 ### Guides
+
 Comprehensive guides organized by role and topic.
 
 #### User Guides
+
 - [Posting Guide](./guides/user-guides/posting.md) - Create and schedule posts
 - [Calendar Guide](./guides/user-guides/calendar.md) - Visual scheduling
 - [Engagement Guide](./guides/user-guides/engagement.md) - Track interactions
@@ -60,18 +66,21 @@ Comprehensive guides organized by role and topic.
 - [Assets Management Guide](./guides/user-guides/assets.md) - Manage uploaded assets
 
 #### Developer Guides
+
 - [Developer Guide](./guides/developer-guide.md) - Development workflow
 - [Testing Guide](./guides/testing.md) - Testing strategies and patterns
 - [Contributing Guide](./guides/contributing.md) - How to contribute
 - [API Development](./guides/api-development.md) - Building API endpoints
 
 #### Operations Guides
+
 - [Deployment Guide](./guides/deployment.md) - Production deployment
 - [Operations Guide](./guides/operations.md) - Monitoring and maintenance
 - [Security Guide](./guides/security.md) - Security best practices
 - [Scaling Guide](./guides/scaling.md) - Scaling strategies
 
 ### Reference
+
 Complete reference documentation.
 
 - [API Reference](./reference/api.md) - All API endpoints
@@ -82,6 +91,7 @@ Complete reference documentation.
 - [Plan Features](./reference/plan-features.md) - Subscription plans and features
 
 ### Examples
+
 Working code examples and recipes.
 
 - [Code Examples](./examples/code-samples.md) - Common code patterns
@@ -89,6 +99,7 @@ Working code examples and recipes.
 - [Recipes](./examples/recipes.md) - Common use cases
 
 ### Tutorials
+
 Step-by-step tutorials for common tasks.
 
 - [Beginner Tutorials](./tutorials/beginner/) - Getting started tutorials
@@ -96,6 +107,7 @@ Step-by-step tutorials for common tasks.
 - [Advanced Tutorials](./tutorials/advanced/) - Expert-level topics
 
 ### Troubleshooting
+
 Help when things go wrong.
 
 - [Common Issues](./troubleshooting/common-issues.md) - Frequently asked questions
@@ -129,6 +141,7 @@ Help when things go wrong.
 ## 📖 Documentation Standards
 
 All documentation follows our [Documentation Style Guide](./meta/style-guide.md) which ensures:
+
 - ✅ Clear, concise writing
 - ✅ Working code examples
 - ✅ Consistent formatting
@@ -140,6 +153,7 @@ All documentation follows our [Documentation Style Guide](./meta/style-guide.md)
 ## 🔍 Search
 
 Looking for something specific? Use your browser's search (Cmd/Ctrl+F) or check:
+
 - [Common Tasks](./meta/common-tasks.md) - Quick reference
 - [Glossary](./meta/glossary.md) - Terminology
 - [FAQ](./troubleshooting/faq.md) - Frequently asked questions
@@ -149,6 +163,7 @@ Looking for something specific? Use your browser's search (Cmd/Ctrl+F) or check:
 ## 📝 Contributing to Documentation
 
 We welcome contributions! See our [Documentation Contributing Guide](./meta/contributing.md) for:
+
 - How to write documentation
 - Style guidelines
 - Review process
@@ -158,25 +173,25 @@ We welcome contributions! See our [Documentation Contributing Guide](./meta/cont
 
 ## 🔗 Quick Links
 
-| Resource | Description |
-|----------|-------------|
-| [Project README](../README.md) | Project overview |
-| [example.env](../example.env) | Environment template |
-| [schema.prisma](../prisma/schema.prisma) | Database schema |
-| [Contributing](../CONTRIBUTING.md) | Code contributing guide |
+| Resource                                 | Description             |
+| ---------------------------------------- | ----------------------- |
+| [Project README](../README.md)           | Project overview        |
+| [example.env](../example.env)            | Environment template    |
+| [schema.prisma](../prisma/schema.prisma) | Database schema         |
+| [Contributing](../CONTRIBUTING.md)       | Code contributing guide |
 
 ---
 
 ## 📊 Documentation Status
 
-| Section | Status | Last Updated |
-|---------|--------|--------------|
-| Getting Started | ✅ Complete | 2026-01-02 |
-| User Guides | ✅ Complete | 2026-01-02 |
-| Developer Guides | ✅ Complete | 2026-01-02 |
-| Reference | ✅ Complete | 2026-01-02 |
-| Examples | 🚧 In Progress | 2026-01-02 |
-| Troubleshooting | ✅ Complete | 2026-01-02 |
+| Section          | Status         | Last Updated |
+| ---------------- | -------------- | ------------ |
+| Getting Started  | ✅ Complete    | 2026-01-02   |
+| User Guides      | ✅ Complete    | 2026-01-02   |
+| Developer Guides | ✅ Complete    | 2026-01-02   |
+| Reference        | ✅ Complete    | 2026-01-02   |
+| Examples         | 🚧 In Progress | 2026-01-02   |
+| Troubleshooting  | ✅ Complete    | 2026-01-02   |
 
 ---
 

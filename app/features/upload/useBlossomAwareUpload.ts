@@ -17,7 +17,9 @@ interface SubmitOptions {
 export function useBlossomAwareUpload() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [response, setResponse] = useState<Record<string, unknown> | null>(null);
+  const [response, setResponse] = useState<Record<string, unknown> | null>(
+    null,
+  );
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
@@ -135,7 +137,10 @@ export function useBlossomAwareUpload() {
             toast.success("Upload authorized!", { id: "blossom-auth" });
             setUploadProgress(60);
           } catch (authError: unknown) {
-            const errorMessage = authError instanceof Error ? authError.message : String(authError);
+            const errorMessage =
+              authError instanceof Error
+                ? authError.message
+                : String(authError);
             toast.error("Failed to authorize upload: " + errorMessage, {
               id: "blossom-auth",
             });
@@ -211,9 +216,9 @@ export function useBlossomAwareUpload() {
             const parseError = _parseError as Error;
             throw new Error(
               "Invalid response format: " +
-              (parseError?.message ?? "Unknown error") +
-              ". Response: " +
-              responseText.substring(0, 100),
+                (parseError?.message ?? "Unknown error") +
+                ". Response: " +
+                responseText.substring(0, 100),
             );
           }
         }

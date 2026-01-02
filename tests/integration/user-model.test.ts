@@ -1,6 +1,6 @@
 /**
  * Integration tests for User model functions
- * 
+ *
  * Tests the database operations in app/features/user
  * Uses mocked Prisma to test business logic without requiring a real database.
  */
@@ -118,10 +118,7 @@ describe("User Model Functions", () => {
         include: {
           hashTagPreset: true,
         },
-        orderBy: [
-          { isDefault: "desc" },
-          { createdAt: "asc" },
-        ],
+        orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
       });
       expect(result).toEqual(mockQueueTypes);
     });
@@ -220,4 +217,3 @@ describe("User Model Functions", () => {
     });
   });
 });
-

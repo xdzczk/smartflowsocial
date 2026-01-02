@@ -1,4 +1,8 @@
-import { json, type ActionFunctionArgs, type LoaderFunctionArgs } from "@remix-run/node";
+import {
+  json,
+  type ActionFunctionArgs,
+  type LoaderFunctionArgs,
+} from "@remix-run/node";
 import { useLoaderData, useFetcher } from "@remix-run/react";
 
 import { requireUserId } from "~/features/auth";
@@ -51,7 +55,32 @@ export default function SearchPosts() {
     handleScheduleQuote,
     handleScheduleRepost,
     clearSearch,
-  } = useSearchState({ user, fetcherData: (fetcher.data && typeof fetcher.data === "object" ? fetcher.data as unknown as { event?: { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][]; mediaUrls?: string[] }; stats?: { likes: number; replies: number; mentions: number; reposts: number; zaps: number; satszapped: number }; error?: string } : null) });
+  } = useSearchState({
+    user,
+    fetcherData:
+      fetcher.data && typeof fetcher.data === "object"
+        ? (fetcher.data as unknown as {
+            event?: {
+              id: string;
+              pubkey: string;
+              created_at: number;
+              kind: number;
+              content: string;
+              tags: string[][];
+              mediaUrls?: string[];
+            };
+            stats?: {
+              likes: number;
+              replies: number;
+              mentions: number;
+              reposts: number;
+              zaps: number;
+              satszapped: number;
+            };
+            error?: string;
+          })
+        : null,
+  });
 
   return (
     <div className="p-6">

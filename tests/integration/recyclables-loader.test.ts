@@ -1,6 +1,6 @@
 /**
  * Integration tests for recyclables loader
- * 
+ *
  * Tests app/routes/dashboard.recyclables.tsx loader
  * Tests getRecyclableDashboardData function
  */
@@ -81,7 +81,9 @@ describe("Recyclables Loader", () => {
       pagination: mockPagination,
     });
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
-    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueTypes);
+    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockQueueTypes,
+    );
     (getPostStats as ReturnType<typeof vi.fn>).mockResolvedValue(mockStats);
 
     const url = new URL("http://localhost/dashboard/recyclables");
@@ -120,7 +122,9 @@ describe("Recyclables Loader", () => {
       posts: mockPosts,
       pagination: mockPagination,
     });
-    (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(createMockUser());
+    (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(
+      createMockUser(),
+    );
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getPostStats as ReturnType<typeof vi.fn>).mockResolvedValue({});
 
@@ -145,16 +149,29 @@ describe("Recyclables Loader", () => {
   it("should filter out disabled queue types", async () => {
     const mockQueueTypes = [
       createMockQueueType({ id: "queue-1", name: "posts", isEnabled: true }),
-      createMockQueueType({ id: "queue-2", name: "disabled", isEnabled: false }),
+      createMockQueueType({
+        id: "queue-2",
+        name: "disabled",
+        isEnabled: false,
+      }),
       createMockQueueType({ id: "queue-3", name: "enabled", isEnabled: true }),
     ];
 
     (getRecyclablePosts as ReturnType<typeof vi.fn>).mockResolvedValue({
       posts: [],
-      pagination: { currentPage: 1, totalPages: 1, totalItems: 0, itemsPerPage: 50 },
+      pagination: {
+        currentPage: 1,
+        totalPages: 1,
+        totalItems: 0,
+        itemsPerPage: 50,
+      },
     });
-    (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(createMockUser());
-    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueTypes);
+    (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(
+      createMockUser(),
+    );
+    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockQueueTypes,
+    );
     (getPostStats as ReturnType<typeof vi.fn>).mockResolvedValue({});
 
     const url = new URL("http://localhost/dashboard/recyclables");
@@ -184,9 +201,16 @@ describe("Recyclables Loader", () => {
 
     (getRecyclablePosts as ReturnType<typeof vi.fn>).mockResolvedValue({
       posts: mockPosts,
-      pagination: { currentPage: 1, totalPages: 1, totalItems: 2, itemsPerPage: 50 },
+      pagination: {
+        currentPage: 1,
+        totalPages: 1,
+        totalItems: 2,
+        itemsPerPage: 50,
+      },
     });
-    (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(createMockUser());
+    (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(
+      createMockUser(),
+    );
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getPostStats as ReturnType<typeof vi.fn>).mockResolvedValue({
       "event-1": { likes: 10 },
@@ -205,4 +229,3 @@ describe("Recyclables Loader", () => {
     expect(getPostStats).toHaveBeenCalledWith(["event-1", "event-2"]);
   });
 });
-

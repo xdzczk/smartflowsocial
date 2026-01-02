@@ -24,7 +24,14 @@ import {
 // Only install in production or when explicitly enabled to avoid missing map file errors in dev
 if (env.NODE_ENV === "production" || env.ENABLE_SOURCE_MAPS === "true") {
   try {
-    (sourceMapSupport as { install: (options: { handleUncaughtExceptions: boolean; environment: string }) => void }).install({
+    (
+      sourceMapSupport as {
+        install: (options: {
+          handleUncaughtExceptions: boolean;
+          environment: string;
+        }) => void;
+      }
+    ).install({
       handleUncaughtExceptions: false,
       environment: "node",
     });
@@ -44,7 +51,6 @@ if (!globalWithCrypto.crypto?.getRandomValues) {
   globalWithCrypto.crypto = nodeWebcrypto as Crypto;
 }
 
-
 void run();
 
 async function run() {
@@ -62,13 +68,13 @@ async function run() {
 
   const app = express();
   const metricsApp = express();
-  
+
   // Import query metrics to register them
   await import("./app/lib/query-metrics.server");
-  
+
   // Collect default metrics (CPU, memory, process info, etc.)
   promClient.collectDefaultMetrics();
-  
+
   // Expose Prometheus metrics endpoint
   metricsApp.get("/metrics", (req, res) => {
     void (async () => {
@@ -194,22 +200,22 @@ async function run() {
   app.use((req, res, next) => {
     // X-Content-Type-Options: Prevent MIME type sniffing
     res.setHeader("X-Content-Type-Options", "nosniff");
-    
+
     // X-Frame-Options: Prevent clickjacking (redundant with helmet frameguard, but explicit)
     res.setHeader("X-Frame-Options", "DENY");
-    
+
     // X-XSS-Protection: Enable XSS filter (legacy browsers)
     res.setHeader("X-XSS-Protection", "1; mode=block");
-    
+
     // Referrer-Policy: Control referrer information (redundant with helmet, but explicit)
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-    
+
     // Permissions-Policy: Control browser features (redundant with helmet, but explicit)
     res.setHeader(
       "Permissions-Policy",
       "geolocation=(), microphone=(), camera=()",
     );
-    
+
     next();
   });
 
@@ -228,16 +234,16 @@ async function run() {
   // Rate limiting
   // Apply general API rate limiting to all API routes
   app.use("/api/", apiLimiter);
-  
+
   // Stricter limits for sensitive endpoints
   app.use("/api/publish", strictLimiter);
   app.use("/api/upload", strictLimiter);
   app.use("/api/upload-blossom", strictLimiter);
   app.use("/api/upload-editorjs-image", strictLimiter);
-  
+
   // Very strict limits for authentication endpoints
   app.use("/api/payment-status", strictLimiter);
-  
+
   // Auth endpoints get the strictest limits
   app.use("/login", authLimiter);
   app.use("/nostr-auth", authLimiter);
@@ -289,8 +295,12 @@ async function run() {
     const chokidar = await import("chokidar");
     chokidar
       .watch(VERSION_PATH, { ignoreInitial: true })
-      .on("add", () => { void handleServerUpdate(); })
-      .on("change", () => { void handleServerUpdate(); });
+      .on("add", () => {
+        void handleServerUpdate();
+      })
+      .on("change", () => {
+        void handleServerUpdate();
+      });
 
     // wrap request handler to make sure its recreated with the latest build for every request
     return (req, res, next) => {

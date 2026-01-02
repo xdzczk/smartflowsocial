@@ -6,9 +6,11 @@
 /**
  * Create a FormData object with the given entries
  */
-export function createFormData(entries: Record<string, string | string[]>): FormData {
+export function createFormData(
+  entries: Record<string, string | string[]>,
+): FormData {
   const formData = new FormData();
-  
+
   for (const [key, value] of Object.entries(entries)) {
     if (Array.isArray(value)) {
       value.forEach((v) => formData.append(key, v));
@@ -16,7 +18,7 @@ export function createFormData(entries: Record<string, string | string[]>): Form
       formData.append(key, value);
     }
   }
-  
+
   return formData;
 }
 
@@ -48,7 +50,7 @@ export function createPostIds(count: number): string[] {
 /**
  * Re-export factory functions for convenience
  * Use factories for creating complex test data
- * 
+ *
  * Example:
  *   import { postFactory, userFactory } from "~/tests/utils/test-helpers";
  *   const post = postFactory.draft();
@@ -83,4 +85,3 @@ export {
  * Note: TEST_USER_ID, TEST_POST_ID, TEST_LONGFORM_ID are exported from mock-helpers
  */
 export * from "./mock-helpers";
-

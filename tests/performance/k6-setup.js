@@ -1,6 +1,6 @@
 /**
  * k6 Performance Testing Setup
- * 
+ *
  * This file contains shared utilities and configuration for k6 load tests
  */
 
@@ -14,7 +14,7 @@ export const responseTime = new Trend("response_time");
 export const requestCount = new Counter("requests");
 
 // Test configuration
- 
+
 export const BASE_URL = __ENV.BASE_URL || "http://localhost:3000";
 
 // Helper function to create authenticated session
@@ -76,7 +76,3 @@ export const commonOptions = {
   thresholds,
   summaryTrendStats: ["avg", "min", "med", "max", "p(90)", "p(95)", "p(99)"],
 };
-
-
-
-

@@ -1,9 +1,9 @@
 /**
  * Integration tests for calendar loader
- * 
+ *
  * Tests the loader function logic directly, without requiring a browser.
  * For UI rendering tests, see tests/e2e/posts/calendar.cy.ts
- * 
+ *
  * Migrated from: tests/e2e/loaders/queues-loader.cy.ts (Calendar Queue Loader section)
  */
 
@@ -81,7 +81,7 @@ import { loader } from "~/routes/dashboard.calendar.$queueType";
 describe("Calendar Loader Integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Default mocks
     (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue("user-123");
     (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue([]);
@@ -98,11 +98,21 @@ describe("Calendar Loader Integration", () => {
   describe("Calendar Loader", () => {
     it("should load calendar data for authenticated user", async () => {
       const request = new Request("http://localhost:3000/dashboard/calendar");
-      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
       const response = await loader(loaderArgs);
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data: LoaderData = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as LoaderData : {};
+      const data: LoaderData =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as LoaderData)
+          : {};
 
       expect(responseObj.status).toBe(200);
       expect(requireUserId).toHaveBeenCalledWith(request);
@@ -122,18 +132,33 @@ describe("Calendar Loader Integration", () => {
         { id: "2", caption: "Post 2", queueType: { name: "posts" } },
       ];
 
-      (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
+      (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockPosts,
+      );
 
-      const request = new Request("http://localhost:3000/dashboard/calendar/posts");
-      const response = await loader({ 
-        request, 
-        params: { queueType: "posts" } 
+      const request = new Request(
+        "http://localhost:3000/dashboard/calendar/posts",
+      );
+      const response = await loader({
+        request,
+        params: { queueType: "posts" },
       } as unknown as LoaderFunctionArgs);
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data: LoaderData = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as LoaderData : {};
-      const selectedQueueType = typeof data.selectedQueueType === "string" ? data.selectedQueueType : "";
-      const scheduledPosts = Array.isArray(data.scheduledPosts) ? data.scheduledPosts : [];
+      const data: LoaderData =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as LoaderData)
+          : {};
+      const selectedQueueType =
+        typeof data.selectedQueueType === "string"
+          ? data.selectedQueueType
+          : "";
+      const scheduledPosts = Array.isArray(data.scheduledPosts)
+        ? data.scheduledPosts
+        : [];
 
       expect(selectedQueueType).toBe("posts");
       expect(scheduledPosts).toHaveLength(2);
@@ -146,17 +171,29 @@ describe("Calendar Loader Integration", () => {
         { id: "3", caption: "Post 3", queueType: { name: "posts" } },
       ];
 
-      (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue(allPosts);
+      (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
+        allPosts,
+      );
 
-      const request = new Request("http://localhost:3000/dashboard/calendar/posts");
-      const response = await loader({ 
-        request, 
-        params: { queueType: "posts" } 
+      const request = new Request(
+        "http://localhost:3000/dashboard/calendar/posts",
+      );
+      const response = await loader({
+        request,
+        params: { queueType: "posts" },
       } as unknown as LoaderFunctionArgs);
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data: LoaderData = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as LoaderData : {};
-      const scheduledPosts = Array.isArray(data.scheduledPosts) ? data.scheduledPosts : [];
+      const data: LoaderData =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as LoaderData)
+          : {};
+      const scheduledPosts = Array.isArray(data.scheduledPosts)
+        ? data.scheduledPosts
+        : [];
 
       // Should filter to only posts with queueType "posts"
       const filteredPosts = scheduledPosts.filter((post: unknown) => {
@@ -175,18 +212,31 @@ describe("Calendar Loader Integration", () => {
         { id: "2", caption: "Post 2", queueType: { name: "marketing" } },
       ];
 
-      (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue(allPosts);
+      (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
+        allPosts,
+      );
 
       const request = new Request("http://localhost:3000/dashboard/calendar");
-      const response = await loader({ 
-        request, 
-        params: { queueType: "all" } 
+      const response = await loader({
+        request,
+        params: { queueType: "all" },
       } as unknown as LoaderFunctionArgs);
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data: LoaderData = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as LoaderData : {};
-      const selectedQueueType = typeof data.selectedQueueType === "string" ? data.selectedQueueType : "";
-      const scheduledPosts = Array.isArray(data.scheduledPosts) ? data.scheduledPosts : [];
+      const data: LoaderData =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as LoaderData)
+          : {};
+      const selectedQueueType =
+        typeof data.selectedQueueType === "string"
+          ? data.selectedQueueType
+          : "";
+      const scheduledPosts = Array.isArray(data.scheduledPosts)
+        ? data.scheduledPosts
+        : [];
 
       expect(selectedQueueType).toBe("all");
       expect(scheduledPosts).toHaveLength(2);
@@ -199,16 +249,33 @@ describe("Calendar Loader Integration", () => {
         scheduleInterval: ["08:00", "12:00", "16:00", "20:00"],
       };
 
-      (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(userWithIntervals);
+      (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(
+        userWithIntervals,
+      );
 
       const request = new Request("http://localhost:3000/dashboard/calendar");
-      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
       const response = await loader(loaderArgs);
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data: LoaderData = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as LoaderData : {};
-      const scheduleIntervals = Array.isArray(data.scheduleIntervals) ? data.scheduleIntervals : [];
-      const user = data.user && typeof data.user === "object" && !Array.isArray(data.user) ? data.user as { timezone?: string } : {};
+      const data: LoaderData =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as LoaderData)
+          : {};
+      const scheduleIntervals = Array.isArray(data.scheduleIntervals)
+        ? data.scheduleIntervals
+        : [];
+      const user =
+        data.user && typeof data.user === "object" && !Array.isArray(data.user)
+          ? (data.user as { timezone?: string })
+          : {};
 
       expect(scheduleIntervals).toEqual(["08:00", "12:00", "16:00", "20:00"]);
       expect(user).toHaveProperty("timezone", "America/New_York");
@@ -221,14 +288,26 @@ describe("Calendar Loader Integration", () => {
         { id: "3", name: "Marketing", isEnabled: true },
       ];
 
-      (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueTypes);
+      (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockQueueTypes,
+      );
 
       const request = new Request("http://localhost:3000/dashboard/calendar");
-      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
       const response = await loader(loaderArgs);
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data: LoaderData = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as LoaderData : {};
+      const data: LoaderData =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as LoaderData)
+          : {};
       const queueTypes = Array.isArray(data.queueTypes) ? data.queueTypes : [];
       const enabledQueueTypes = queueTypes.filter((qt: unknown) => {
         if (qt && typeof qt === "object" && !Array.isArray(qt)) {
@@ -244,41 +323,72 @@ describe("Calendar Loader Integration", () => {
   describe("Error Handling", () => {
     it("should handle authentication errors", async () => {
       (requireUserId as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Authentication required")
+        new Error("Authentication required"),
       );
 
       const request = new Request("http://localhost:3000/dashboard/calendar");
-      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
       const response = await loader(loaderArgs);
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data: LoaderData = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as LoaderData : {};
-      const error = data.error && typeof data.error === "object" && !Array.isArray(data.error) ? data.error as { message?: string } : {};
-      
+      const data: LoaderData =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as LoaderData)
+          : {};
+      const error =
+        data.error &&
+        typeof data.error === "object" &&
+        !Array.isArray(data.error)
+          ? (data.error as { message?: string })
+          : {};
+
       expect(responseObj.status).toBe(500);
       expect(data.error).toBeDefined();
-      const errorMessage = typeof error.message === "string" ? error.message : "";
+      const errorMessage =
+        typeof error.message === "string" ? error.message : "";
       expect(errorMessage).toContain("Authentication required");
     });
 
     it("should handle data loading errors", async () => {
       (getScheduledPosts as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Database error")
+        new Error("Database error"),
       );
 
       const request = new Request("http://localhost:3000/dashboard/calendar");
-      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
       const response = await loader(loaderArgs);
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data: LoaderData = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as LoaderData : {};
-      const error = data.error && typeof data.error === "object" && !Array.isArray(data.error) ? data.error as { message?: string } : {};
-      
+      const data: LoaderData =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as LoaderData)
+          : {};
+      const error =
+        data.error &&
+        typeof data.error === "object" &&
+        !Array.isArray(data.error)
+          ? (data.error as { message?: string })
+          : {};
+
       expect(responseObj.status).toBe(500);
       expect(data.error).toBeDefined();
-      const errorMessage = typeof error.message === "string" ? error.message : "";
+      const errorMessage =
+        typeof error.message === "string" ? error.message : "";
       expect(errorMessage).toContain("Database error");
     });
   });
 });
-

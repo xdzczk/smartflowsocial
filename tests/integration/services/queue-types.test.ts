@@ -41,7 +41,9 @@ describe("Queue Types Service", () => {
   describe("createDefaultQueueTypes", () => {
     it("should create default queue types for new user", async () => {
       (prisma.queueType.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
-      (prisma.queueType.createMany as ReturnType<typeof vi.fn>).mockResolvedValue({ count: 1 });
+      (
+        prisma.queueType.createMany as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({ count: 1 });
 
       await createDefaultQueueTypes(TEST_USER_ID);
 
@@ -77,7 +79,9 @@ describe("Queue Types Service", () => {
         name: "Updated Queue",
         scheduleType: "INTERVAL",
       };
-      (prisma.queueType.update as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueType);
+      (prisma.queueType.update as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockQueueType,
+      );
 
       const result = await updateQueueType(TEST_USER_ID, {
         id: "queue-1",
@@ -103,7 +107,9 @@ describe("Queue Types Service", () => {
         name: "New Queue",
         scheduleType: "FIXED_SLOTS",
       };
-      (prisma.queueType.create as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueType);
+      (prisma.queueType.create as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockQueueType,
+      );
 
       const result = await updateQueueType(TEST_USER_ID, {
         name: "New Queue",
@@ -123,7 +129,9 @@ describe("Queue Types Service", () => {
 
     it("should connect hashtag preset when provided", async () => {
       const mockQueueType = { id: "queue-1" };
-      (prisma.queueType.update as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueType);
+      (prisma.queueType.update as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockQueueType,
+      );
 
       await updateQueueType(TEST_USER_ID, {
         id: "queue-1",
@@ -133,7 +141,10 @@ describe("Queue Types Service", () => {
         hashTagPresetId: "preset-1",
       });
 
-      const updateCall = (prisma.queueType.update as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as { data?: { hashTagPreset?: { connect?: { id?: string } } } } | undefined;
+      const updateCall = (prisma.queueType.update as ReturnType<typeof vi.fn>)
+        .mock.calls[0]?.[0] as
+        | { data?: { hashTagPreset?: { connect?: { id?: string } } } }
+        | undefined;
       expect(updateCall?.data?.hashTagPreset).toEqual({
         connect: { id: "preset-1" },
       });
@@ -141,7 +152,9 @@ describe("Queue Types Service", () => {
 
     it("should disconnect hashtag preset when null", async () => {
       const mockQueueType = { id: "queue-1" };
-      (prisma.queueType.update as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueType);
+      (prisma.queueType.update as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockQueueType,
+      );
 
       await updateQueueType(TEST_USER_ID, {
         id: "queue-1",
@@ -151,12 +164,17 @@ describe("Queue Types Service", () => {
         hashTagPresetId: null,
       });
 
-      const updateCall = (prisma.queueType.update as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as { data?: { hashTagPreset?: { disconnect?: boolean } } } | undefined;
+      const updateCall = (prisma.queueType.update as ReturnType<typeof vi.fn>)
+        .mock.calls[0]?.[0] as
+        | { data?: { hashTagPreset?: { disconnect?: boolean } } }
+        | undefined;
       expect(updateCall?.data?.hashTagPreset).toEqual({ disconnect: true });
     });
 
     it("should trim queue type name", async () => {
-      (prisma.queueType.update as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "queue-1" });
+      (prisma.queueType.update as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: "queue-1",
+      });
 
       await updateQueueType(TEST_USER_ID, {
         id: "queue-1",
@@ -165,14 +183,17 @@ describe("Queue Types Service", () => {
         scheduleConfig: {},
       });
 
-      const updateCall = (prisma.queueType.update as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as { data?: { name?: string } } | undefined;
+      const updateCall = (prisma.queueType.update as ReturnType<typeof vi.fn>)
+        .mock.calls[0]?.[0] as { data?: { name?: string } } | undefined;
       expect(updateCall?.data?.name).toBe("Queue 1");
     });
   });
 
   describe("deleteQueueType", () => {
     it("should delete queue type", async () => {
-      (prisma.queueType.delete as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "queue-1" });
+      (prisma.queueType.delete as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: "queue-1",
+      });
 
       await deleteQueueType(TEST_USER_ID, "queue-1");
 
@@ -188,18 +209,19 @@ describe("Queue Types Service", () => {
         { id: "queue-1", name: "Queue 1", isDefault: true },
       ];
       (prisma.queueType.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
-      (prisma.queueType.createMany as ReturnType<typeof vi.fn>).mockResolvedValue({ count: 1 });
-      (prisma.queueType.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueTypes);
+      (
+        prisma.queueType.createMany as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({ count: 1 });
+      (prisma.queueType.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockQueueTypes,
+      );
 
       const result = await getQueueTypes(TEST_USER_ID);
 
       expect(prisma.queueType.findMany).toHaveBeenCalledWith({
         where: { userId: TEST_USER_ID },
         include: { hashTagPreset: true },
-        orderBy: [
-          { isDefault: "desc" },
-          { createdAt: "asc" },
-        ],
+        orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
       });
       expect(result).toEqual(mockQueueTypes);
     });
@@ -212,7 +234,9 @@ describe("Queue Types Service", () => {
         { id: "queue-2", name: "Queue 2" },
       ];
       (prisma.queueType.count as ReturnType<typeof vi.fn>).mockResolvedValue(1);
-      (prisma.queueType.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueTypes);
+      (prisma.queueType.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockQueueTypes,
+      );
 
       const result = await getQueueType(TEST_USER_ID);
 
@@ -223,7 +247,9 @@ describe("Queue Types Service", () => {
   describe("getQueueTypeByIdForUser", () => {
     it("should get queue type by ID", async () => {
       const mockQueueType = { id: "queue-1", name: "Queue 1" };
-      (prisma.queueType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueType);
+      (
+        prisma.queueType.findFirst as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockQueueType);
 
       const result = await getQueueTypeByIdForUser(TEST_USER_ID, "queue-1");
 
@@ -234,7 +260,9 @@ describe("Queue Types Service", () => {
     });
 
     it("should return null if queue type not found", async () => {
-      (prisma.queueType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (
+        prisma.queueType.findFirst as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(null);
 
       const result = await getQueueTypeByIdForUser(TEST_USER_ID, "nonexistent");
 
@@ -245,7 +273,9 @@ describe("Queue Types Service", () => {
   describe("getQueueTypeByNameForUser", () => {
     it("should get queue type ID by name", async () => {
       const mockQueueType = { id: "queue-1" };
-      (prisma.queueType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueType);
+      (
+        prisma.queueType.findFirst as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockQueueType);
 
       const result = await getQueueTypeByNameForUser(TEST_USER_ID, "Queue 1");
 
@@ -257,12 +287,16 @@ describe("Queue Types Service", () => {
     });
 
     it("should return null if queue type not found", async () => {
-      (prisma.queueType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (
+        prisma.queueType.findFirst as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(null);
 
-      const result = await getQueueTypeByNameForUser(TEST_USER_ID, "Nonexistent");
+      const result = await getQueueTypeByNameForUser(
+        TEST_USER_ID,
+        "Nonexistent",
+      );
 
       expect(result).toBeNull();
     });
   });
 });
-

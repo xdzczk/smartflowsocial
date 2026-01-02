@@ -1,4 +1,4 @@
-import type { useFetcher} from "@remix-run/react";
+import type { useFetcher } from "@remix-run/react";
 import { type FetcherWithComponents } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
@@ -17,14 +17,17 @@ interface Post {
   [key: string]: unknown; // Allow additional properties from Prisma
 }
 
-type Stats = Record<string, {
+type Stats = Record<
+  string,
+  {
     likes?: number;
     replies?: number;
     mentions?: number;
     reposts?: number;
     zaps?: number;
     satszapped?: number;
-  }>;
+  }
+>;
 
 interface User {
   timezone?: string | null;
@@ -73,7 +76,9 @@ interface UseRecyclablesStateProps {
   posts: Post[] | PostData[]; // Accept any post type from loader
   stats: Stats;
   user?: User | null;
-  repostFetcher: FetcherWithComponents<RepostFetcherData> | FetcherWithComponents<unknown>;
+  repostFetcher:
+    | FetcherWithComponents<RepostFetcherData>
+    | FetcherWithComponents<unknown>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   bulkDeleteFetcher: ReturnType<typeof useFetcher<any>>;
   bulkRepostFetcher: ReturnType<typeof useFetcher>;
@@ -130,27 +135,55 @@ export function useRecyclablesState({
         "satszapped",
       ].includes(sortConfig.key)
     ) {
-      const aEventId = a.signedEvent && typeof a.signedEvent === "object" && "id" in a.signedEvent && typeof a.signedEvent.id === "string" ? a.signedEvent.id : null;
-      const bEventId = b.signedEvent && typeof b.signedEvent === "object" && "id" in b.signedEvent && typeof b.signedEvent.id === "string" ? b.signedEvent.id : null;
-      const aStats = (aEventId && aEventId in stats && typeof stats[aEventId] === "object" && stats[aEventId] !== null ? stats[aEventId] : {}) ?? {};
-      const bStats = (bEventId && bEventId in stats && typeof stats[bEventId] === "object" && stats[bEventId] !== null ? stats[bEventId] : {}) ?? {};
+      const aEventId =
+        a.signedEvent &&
+        typeof a.signedEvent === "object" &&
+        "id" in a.signedEvent &&
+        typeof a.signedEvent.id === "string"
+          ? a.signedEvent.id
+          : null;
+      const bEventId =
+        b.signedEvent &&
+        typeof b.signedEvent === "object" &&
+        "id" in b.signedEvent &&
+        typeof b.signedEvent.id === "string"
+          ? b.signedEvent.id
+          : null;
+      const aStats =
+        (aEventId &&
+        aEventId in stats &&
+        typeof stats[aEventId] === "object" &&
+        stats[aEventId] !== null
+          ? stats[aEventId]
+          : {}) ?? {};
+      const bStats =
+        (bEventId &&
+        bEventId in stats &&
+        typeof stats[bEventId] === "object" &&
+        stats[bEventId] !== null
+          ? stats[bEventId]
+          : {}) ?? {};
       const aValue = Number(aStats[sortConfig.key as keyof typeof aStats] ?? 0);
       const bValue = Number(bStats[sortConfig.key as keyof typeof bStats] ?? 0);
       return sortConfig.direction === "asc" ? aValue - bValue : bValue - aValue;
     }
 
-    const aValue = (a as Record<string, unknown>)[sortConfig.key] as string | number | undefined;
-    const bValue = (b as Record<string, unknown>)[sortConfig.key] as string | number | undefined;
-    
+    const aValue = (a as Record<string, unknown>)[sortConfig.key] as
+      | string
+      | number
+      | undefined;
+    const bValue = (b as Record<string, unknown>)[sortConfig.key] as
+      | string
+      | number
+      | undefined;
+
     // Handle null/undefined values
     if (aValue == null && bValue == null) return 0;
     if (aValue == null) return sortConfig.direction === "asc" ? -1 : 1;
     if (bValue == null) return sortConfig.direction === "asc" ? 1 : -1;
-    
-    if (aValue < bValue)
-      return sortConfig.direction === "asc" ? -1 : 1;
-    if (aValue > bValue)
-      return sortConfig.direction === "asc" ? 1 : -1;
+
+    if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
+    if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
     return 0;
   });
 
@@ -230,7 +263,10 @@ export function useRecyclablesState({
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const dataRaw = bulkDeleteFetcher.data;
-    const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown } : null;
+    const data =
+      dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+        ? (dataRaw as { success?: unknown })
+        : null;
     if (data && typeof data.success === "boolean" && data.success) {
       setSelectedPosts(new Set());
     }
@@ -238,15 +274,30 @@ export function useRecyclablesState({
 
   // Handle repost data and navigation
   useEffect(() => {
-     
     const fetcherDataRaw: unknown = repostFetcher?.data;
-    const fetcherData: RepostFetcherData | null = fetcherDataRaw && typeof fetcherDataRaw === "object" && !Array.isArray(fetcherDataRaw) && "repostData" in fetcherDataRaw ? (fetcherDataRaw as RepostFetcherData) : null;
-    if (fetcherData && "repostData" in fetcherData && Array.isArray(fetcherData.repostData)) {
+    const fetcherData: RepostFetcherData | null =
+      fetcherDataRaw &&
+      typeof fetcherDataRaw === "object" &&
+      !Array.isArray(fetcherDataRaw) &&
+      "repostData" in fetcherDataRaw
+        ? (fetcherDataRaw as RepostFetcherData)
+        : null;
+    if (
+      fetcherData &&
+      "repostData" in fetcherData &&
+      Array.isArray(fetcherData.repostData)
+    ) {
       const postsData = fetcherData.repostData;
 
       // Prepare repost data with 1 hour default scheduling
       const now = new Date();
-      const userTimezone = user && typeof user === "object" && "timezone" in user && typeof user.timezone === "string" ? user.timezone : "UTC";
+      const userTimezone =
+        user &&
+        typeof user === "object" &&
+        "timezone" in user &&
+        typeof user.timezone === "string"
+          ? user.timezone
+          : "UTC";
       const localDate = new Date(
         now.toLocaleString("en-US", { timeZone: userTimezone }),
       );
@@ -260,8 +311,8 @@ export function useRecyclablesState({
           caption: post.caption ?? "",
           fileUrl:
             post.fileUrl &&
-              Array.isArray(post.fileUrl) &&
-              post.fileUrl.length > 0
+            Array.isArray(post.fileUrl) &&
+            post.fileUrl.length > 0
               ? post.fileUrl[0]
               : "",
           queueType: post.queueType ?? "unassigned",
@@ -284,40 +335,64 @@ export function useRecyclablesState({
       setSelectedPosts(new Set());
     }
 
-    if (fetcherData && "scheduledRepostData" in fetcherData && Array.isArray(fetcherData.scheduledRepostData)) {
+    if (
+      fetcherData &&
+      "scheduledRepostData" in fetcherData &&
+      Array.isArray(fetcherData.scheduledRepostData)
+    ) {
       const postsData = fetcherData.scheduledRepostData;
 
       const now = new Date();
-      const userTimezoneForScheduled = user && typeof user === "object" && "timezone" in user && typeof user.timezone === "string" ? user.timezone : "UTC";
+      const userTimezoneForScheduled =
+        user &&
+        typeof user === "object" &&
+        "timezone" in user &&
+        typeof user.timezone === "string"
+          ? user.timezone
+          : "UTC";
       const localDate = new Date(
         now.toLocaleString("en-US", { timeZone: userTimezoneForScheduled }),
       );
       localDate.setHours(localDate.getHours() + 1);
 
-      const scheduledRepostData = postsData.map((post: PostData, index: number) => {
-        const scheduleDate = new Date(localDate);
-        scheduleDate.setHours(scheduleDate.getHours() + index);
+      const scheduledRepostData = postsData.map(
+        (post: PostData, index: number) => {
+          const scheduleDate = new Date(localDate);
+          scheduleDate.setHours(scheduleDate.getHours() + index);
 
-        return {
-          caption: "",
-          fileUrl: "",
-          queueType: post.queueType ?? "unassigned",
-          scheduledFor: scheduleDate
-            .toLocaleString("en-US", {
-              year: "numeric",
-              month: "2-digit",
-              day: "2-digit",
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: false,
-            })
-            .replace(/(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+)/, "$3-$1-$2T$4:$5"),
-          originalPostId: post.id,
-          originalEventId: post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent && typeof post.signedEvent.id === "string" ? post.signedEvent.id : undefined,
-          originalEventPubkey: post.signedEvent && typeof post.signedEvent === "object" && "pubkey" in post.signedEvent && typeof post.signedEvent.pubkey === "string" ? post.signedEvent.pubkey : undefined,
-          isKind6Repost: true,
-        };
-      });
+          return {
+            caption: "",
+            fileUrl: "",
+            queueType: post.queueType ?? "unassigned",
+            scheduledFor: scheduleDate
+              .toLocaleString("en-US", {
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false,
+              })
+              .replace(/(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+)/, "$3-$1-$2T$4:$5"),
+            originalPostId: post.id,
+            originalEventId:
+              post.signedEvent &&
+              typeof post.signedEvent === "object" &&
+              "id" in post.signedEvent &&
+              typeof post.signedEvent.id === "string"
+                ? post.signedEvent.id
+                : undefined,
+            originalEventPubkey:
+              post.signedEvent &&
+              typeof post.signedEvent === "object" &&
+              "pubkey" in post.signedEvent &&
+              typeof post.signedEvent.pubkey === "string"
+                ? post.signedEvent.pubkey
+                : undefined,
+            isKind6Repost: true,
+          };
+        },
+      );
 
       sessionStorage.setItem(
         "scheduledRepostData",
@@ -327,7 +402,11 @@ export function useRecyclablesState({
       setSelectedPosts(new Set());
     }
 
-    if (fetcherData && "quotePostData" in fetcherData && fetcherData.quotePostData) {
+    if (
+      fetcherData &&
+      "quotePostData" in fetcherData &&
+      fetcherData.quotePostData
+    ) {
       const quoteData = fetcherData.quotePostData;
       sessionStorage.setItem("quotePostData", JSON.stringify(quoteData));
       window.location.href = "/dashboard/bulkposts?mode=quote";
@@ -340,26 +419,62 @@ export function useRecyclablesState({
   useEffect(() => {
     const handleRepost = async () => {
       const dataRaw = individualRepostFetcher.data;
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { repostEventData?: unknown; quotePostData?: unknown; error?: unknown; message?: unknown } : null;
-      
-      if (data && "repostEventData" in data && data.repostEventData && typeof data.repostEventData === "object" && !Array.isArray(data.repostEventData)) {
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              repostEventData?: unknown;
+              quotePostData?: unknown;
+              error?: unknown;
+              message?: unknown;
+            })
+          : null;
+
+      if (
+        data &&
+        "repostEventData" in data &&
+        data.repostEventData &&
+        typeof data.repostEventData === "object" &&
+        !Array.isArray(data.repostEventData)
+      ) {
         try {
-          const eventDataRaw = data.repostEventData as { kind?: unknown; content?: unknown; tags?: unknown; created_at?: unknown; pubkey?: unknown; [key: string]: unknown };
-          
+          const eventDataRaw = data.repostEventData as {
+            kind?: unknown;
+            content?: unknown;
+            tags?: unknown;
+            created_at?: unknown;
+            pubkey?: unknown;
+            [key: string]: unknown;
+          };
+
           // Convert to NostrEventData format expected by signEventFn
           const eventData = {
             kind: typeof eventDataRaw.kind === "number" ? eventDataRaw.kind : 1,
-            content: typeof eventDataRaw.content === "string" ? eventDataRaw.content : "",
+            content:
+              typeof eventDataRaw.content === "string"
+                ? eventDataRaw.content
+                : "",
             tags: Array.isArray(eventDataRaw.tags) ? eventDataRaw.tags : [],
-            created_at: typeof eventDataRaw.created_at === "number" ? eventDataRaw.created_at : Math.floor(Date.now() / 1000),
-            pubkey: typeof eventDataRaw.pubkey === "string" ? eventDataRaw.pubkey : "",
+            created_at:
+              typeof eventDataRaw.created_at === "number"
+                ? eventDataRaw.created_at
+                : Math.floor(Date.now() / 1000),
+            pubkey:
+              typeof eventDataRaw.pubkey === "string"
+                ? eventDataRaw.pubkey
+                : "",
           };
 
           // Sign the event using client-side signing
           const { signedEvent } = await signEventFn(eventData);
 
           // Get user relays from user data
-          const sanitizedRelays = user && typeof user === "object" && "relays" in user && Array.isArray(user.relays) ? user.relays : ["wss://relay.primal.net"];
+          const sanitizedRelays =
+            user &&
+            typeof user === "object" &&
+            "relays" in user &&
+            Array.isArray(user.relays)
+              ? user.relays
+              : ["wss://relay.primal.net"];
 
           // Publish the signed event
           const response = await fetch("/api/publish", {
@@ -380,8 +495,11 @@ export function useRecyclablesState({
           // Add delay before showing success toast
           setTimeout(() => {
             const tags = Array.isArray(eventData.tags) ? eventData.tags : [];
-            const eTag: unknown = tags.find((tag: unknown) => Array.isArray(tag) && tag[0] === "e");
-            const eventId = Array.isArray(eTag) && typeof eTag[1] === "string" ? eTag[1] : "";
+            const eTag: unknown = tags.find(
+              (tag: unknown) => Array.isArray(tag) && tag[0] === "e",
+            );
+            const eventId =
+              Array.isArray(eTag) && typeof eTag[1] === "string" ? eTag[1] : "";
             setToast({
               type: "success",
               message: "Post reposted successfully!",
@@ -394,9 +512,10 @@ export function useRecyclablesState({
           }, 1000); // 1 second delay
         } catch (error: unknown) {
           console.error("Repost signing/publishing error:", error);
-          const errorMessage = error instanceof Error 
-            ? error.message 
-            : "Failed to sign or publish repost";
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : "Failed to sign or publish repost";
           setToast({
             type: "error",
             message: errorMessage,
@@ -415,7 +534,10 @@ export function useRecyclablesState({
         // Navigate to bulk posts page with quote mode
         window.location.href = "/dashboard/bulkposts?mode=quote";
       } else if (data && "error" in data && data.error) {
-        const message = typeof data.message === "string" ? data.message : "Failed to create repost";
+        const message =
+          typeof data.message === "string"
+            ? data.message
+            : "Failed to create repost";
         setToast({
           type: "error",
           message,
@@ -429,7 +551,12 @@ export function useRecyclablesState({
     if (individualRepostFetcher.data) {
       void handleRepost();
     }
-  }, [individualRepostFetcher.data, user?.relays, individualRepostFetcher, user]);
+  }, [
+    individualRepostFetcher.data,
+    user?.relays,
+    individualRepostFetcher,
+    user,
+  ]);
 
   return {
     sortConfig,
@@ -450,4 +577,3 @@ export function useRecyclablesState({
     setToast,
   };
 }
-

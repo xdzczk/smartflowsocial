@@ -208,8 +208,10 @@ export class PostFactory {
       updatedAt: this.options.updatedAt ?? new Date(),
       draft: this.options.draft ?? false,
       status: this.options.status ?? "ACTIVE",
-      signedEvent: (this.options.signedEvent ?? null) as unknown as Prisma.JsonValue,
-      nostrEvent: (this.options.nostrEvent ?? null) as unknown as Prisma.JsonValue,
+      signedEvent: (this.options.signedEvent ??
+        null) as unknown as Prisma.JsonValue,
+      nostrEvent: (this.options.nostrEvent ??
+        null) as unknown as Prisma.JsonValue,
       queueTypeId: this.options.queueTypeId ?? null,
       tags: this.options.tags ?? [],
       hashTagPresetId: this.options.hashTagPresetId ?? null,
@@ -282,10 +284,3 @@ export const postFactory = {
     );
   },
 };
-
-
-
-
-
-
-

@@ -9,6 +9,7 @@ Guide for adding visual aids to documentation, including screenshots, diagrams, 
 ## Overview
 
 Visual aids enhance documentation by:
+
 - Making concepts easier to understand
 - Showing UI elements and workflows
 - Illustrating relationships and processes
@@ -21,39 +22,45 @@ Visual aids enhance documentation by:
 ### Screenshots
 
 **When to use:**
+
 - UI features and interfaces
 - Step-by-step tutorials
 - Error messages and dialogs
 - Configuration screens
 
 **Best practices:**
+
 - Use high-quality screenshots
 - Highlight relevant areas
 - Keep file sizes reasonable
 - Use consistent styling
 
 **Example:**
+
 ```markdown
 ![Post Creation Interface](./screenshots/post-creation.png)
-*The post creation interface with all options visible*
+_The post creation interface with all options visible_
 ```
 
 ### Diagrams
 
 **When to use:**
+
 - System architecture
 - Data flow
 - Component relationships
 - Process flows
 
 **Tools:**
+
 - Mermaid (markdown-based)
 - PlantUML
 - Draw.io
 - Excalidraw
 
 **Example (Mermaid):**
-```markdown
+
+````markdown
 ```mermaid
 graph TD
     A[User Creates Post] --> B[Sign Event]
@@ -61,7 +68,9 @@ graph TD
     C --> D[Schedule in Queue]
     D --> E[Publish to Nostr]
 ```
-```
+````
+
+````
 
 ### Flowcharts
 
@@ -80,8 +89,9 @@ flowchart TD
     Check -->|No| Redirect[Redirect to Login]
     Allow --> End[End]
     Redirect --> End
-```
-```
+````
+
+````
 
 ### Comparison Tables
 
@@ -98,7 +108,7 @@ flowchart TD
 | Posts per day | 10 | Unlimited |
 | Queues | 1 | 5 |
 | Templates | ❌ | ✅ |
-```
+````
 
 ---
 
@@ -107,11 +117,13 @@ flowchart TD
 ### Preparation
 
 1. **Capture screenshot:**
+
    - Use browser dev tools
    - Crop to relevant area
    - Ensure high resolution
 
 2. **Optimize image:**
+
    - Compress if needed
    - Use appropriate format (PNG for UI, JPG for photos)
    - Keep file size reasonable
@@ -139,7 +151,7 @@ docs/
 
 ```markdown
 ![Alt text](./images/screenshots/ui/post-creation.png)
-*Caption explaining the screenshot*
+_Caption explaining the screenshot_
 ```
 
 ---
@@ -150,7 +162,7 @@ docs/
 
 **Supported in many markdown renderers:**
 
-```markdown
+````markdown
 ```mermaid
 sequenceDiagram
     User->>API: Create Post
@@ -158,7 +170,9 @@ sequenceDiagram
     API->>Queue: Schedule Post
     Queue->>Nostr: Publish Post
 ```
-```
+````
+
+````
 
 ### Architecture Diagrams
 
@@ -183,8 +197,9 @@ graph TB
     C --> D
     C --> E
     C --> F
-```
-```
+````
+
+````
 
 ---
 
@@ -285,11 +300,11 @@ graph TB
 *The new post interface showing all available options*
 
 3. Click "Post Now" or "Schedule"
-```
+````
 
 ### Diagram Example
 
-```markdown
+````markdown
 ## System Architecture
 
 The following diagram shows the overall system architecture:
@@ -302,7 +317,9 @@ graph LR
     C --> E[Queue]
     E --> F[Nostr]
 ```
-```
+````
+
+````
 
 ### Comparison Table Example
 
@@ -314,7 +331,7 @@ graph LR
 | Posts/day | 10 | 100 | Unlimited |
 | Queues | 1 | 3 | 10 |
 | Templates | ❌ | ✅ | ✅ |
-```
+````
 
 ---
 
@@ -326,4 +343,3 @@ graph LR
 ---
 
 **Note:** Visual aids should enhance, not replace, written documentation. Always provide text alternatives.
-

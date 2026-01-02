@@ -2,7 +2,13 @@ import { useFetcher } from "@remix-run/react";
 import * as React from "react";
 
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { useSubscription } from "~/features/payments/types";
 import { useOptionalUser } from "~/lib/remix-utils";
 
@@ -19,13 +25,23 @@ export default function AccountSwitcher() {
   const fetcher = useFetcher<{ children: ChildAccount[] }>();
   const [children, setChildren] = React.useState<ChildAccount[]>([]);
 
-  const planId = (subscription?.currentSubscription?.planId ?? "").toLowerCase();
-  const planName = (subscription?.currentSubscription?.Plan?.name ?? "").toLowerCase();
-  const hasAccountsAccess = planId === "premium" || planName === "premium" || planName === "founder";
+  const planId = (
+    subscription?.currentSubscription?.planId ?? ""
+  ).toLowerCase();
+  const planName = (
+    subscription?.currentSubscription?.Plan?.name ?? ""
+  ).toLowerCase();
+  const hasAccountsAccess =
+    planId === "premium" || planName === "premium" || planName === "founder";
   const isChild = !!user?.isChild;
 
   React.useEffect(() => {
-    if (!isChild && hasAccountsAccess && fetcher.state === "idle" && !fetcher.data) {
+    if (
+      !isChild &&
+      hasAccountsAccess &&
+      fetcher.state === "idle" &&
+      !fetcher.data
+    ) {
       fetcher.load("/api/children");
     }
   }, [isChild, hasAccountsAccess, fetcher.state, fetcher]);
@@ -59,7 +75,9 @@ export default function AccountSwitcher() {
 
               const signedEvent = await window.nostr.signEvent(event);
               if (signedEvent.pubkey !== childNpub) {
-                alert("Please sign with the selected child's keys in your Nostr extension.");
+                alert(
+                  "Please sign with the selected child's keys in your Nostr extension.",
+                );
                 return;
               }
 
@@ -70,7 +88,10 @@ export default function AccountSwitcher() {
               formData.append("contentSign", contentSign);
               formData.append("redirectTo", "/dashboard");
 
-              fetcher.submit(formData, { method: "post", action: "/nostr-auth" });
+              fetcher.submit(formData, {
+                method: "post",
+                action: "/nostr-auth",
+              });
             }
           })();
         },
@@ -78,8 +99,13 @@ export default function AccountSwitcher() {
 
       document.dispatchEvent(new CustomEvent("nlLaunch", { detail: "switch" }));
     } catch (e) {
-       
-      const { handleErrorSafely } = require("~/lib/error-handler.client") as unknown as { handleErrorSafely: (error: unknown, context: { component: string; action: string }) => void };
+      const { handleErrorSafely } =
+        require("~/lib/error-handler.client") as unknown as {
+          handleErrorSafely: (
+            error: unknown,
+            context: { component: string; action: string },
+          ) => void;
+        };
       handleErrorSafely(e, {
         component: "AccountSwitcher",
         action: "handleAccountSwitch",
@@ -89,18 +115,29 @@ export default function AccountSwitcher() {
 
   return (
     <div className="flex items-center">
-      <Select onValueChange={(value) => { void handleSwitch(value); }}>
-        <SelectTrigger className="h-9 w-[220px] bg-white dark:bg-gray-900 text-sm">
+      <Select
+        onValueChange={(value) => {
+          void handleSwitch(value);
+        }}
+      >
+        <SelectTrigger className="h-9 w-[220px] bg-white text-sm dark:bg-gray-900">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
           {children.map((c) => {
-            const label = c.name ?? c.displayName ?? `${c.npub.slice(0, 8)}...${c.npub.slice(-8)}`;
+            const label =
+              c.name ??
+              c.displayName ??
+              `${c.npub.slice(0, 8)}...${c.npub.slice(-8)}`;
             return (
               <SelectItem key={c.npub} value={c.npub}>
                 <div className="flex items-center gap-2">
                   <Avatar className="h-5 w-5">
-                    {c.picture ? <AvatarImage src={c.picture} alt={label} /> : <AvatarFallback>C</AvatarFallback>}
+                    {c.picture ? (
+                      <AvatarImage src={c.picture} alt={label} />
+                    ) : (
+                      <AvatarFallback>C</AvatarFallback>
+                    )}
                   </Avatar>
                   <span>{label}</span>
                 </div>

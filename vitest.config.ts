@@ -10,7 +10,10 @@ export default defineConfig({
     // Test environment - use 'node' for server-side tests, 'jsdom' for React components
     environment: "node",
     // Glob patterns for test files
-    include: ["**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}", "**/property/**/*.test.ts"],
+    include: [
+      "**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
+      "**/property/**/*.test.ts",
+    ],
     // Exclude patterns
     exclude: ["node_modules", "build", "tests/e2e", ".next", ".remix"],
     // Setup files
@@ -77,9 +80,9 @@ export default defineConfig({
       // Coverage thresholds - adjusted to be more realistic
       // These will be enforced on files that are actually tested
       thresholds: {
-        lines: 50,      // Lowered from 70% - more realistic for current state
-        functions: 45,  // Lowered from 65%
-        branches: 40,  // Lowered from 60%
+        lines: 50, // Lowered from 70% - more realistic for current state
+        functions: 45, // Lowered from 65%
+        branches: 40, // Lowered from 60%
         statements: 50, // Lowered from 70%
       },
       // Report uncovered lines

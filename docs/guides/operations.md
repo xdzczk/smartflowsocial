@@ -44,10 +44,12 @@ The application provides a health check endpoint at `/healthcheck`.
 **Endpoint:** `GET /healthcheck`
 
 **Response:**
+
 - `200 OK` - Application is healthy
 - `500 ERROR` - Application is unhealthy
 
 **What it checks:**
+
 1. Database connectivity (queries `countUsers()`)
 2. Self-connectivity (HEAD request to root)
 
@@ -235,9 +237,9 @@ global:
   scrape_interval: 15s
 
 scrape_configs:
-  - job_name: 'smartflow'
+  - job_name: "smartflow"
     static_configs:
-      - targets: ['localhost:3010']
+      - targets: ["localhost:3010"]
 ```
 
 #### 3. Start Prometheus
@@ -356,13 +358,13 @@ groups:
         for: 5m
         annotations:
           summary: "High error rate detected"
-      
+
       - alert: HighMemoryUsage
         expr: process_resident_memory_bytes > 2e9
         for: 5m
         annotations:
           summary: "High memory usage"
-      
+
       - alert: ApplicationDown
         expr: up{job="smartflow"} == 0
         for: 1m
@@ -375,19 +377,19 @@ groups:
 ```yaml
 # alertmanager.yml
 route:
-  receiver: 'email'
+  receiver: "email"
   group_wait: 10s
   group_interval: 10s
   repeat_interval: 12h
 
 receivers:
-  - name: 'email'
+  - name: "email"
     email_configs:
-      - to: 'admin@example.com'
-        from: 'alerts@example.com'
-        smarthost: 'smtp.example.com:587'
-        auth_username: 'alerts@example.com'
-        auth_password: 'password'
+      - to: "admin@example.com"
+        from: "alerts@example.com"
+        smarthost: "smtp.example.com:587"
+        auth_username: "alerts@example.com"
+        auth_password: "password"
 ```
 
 ### Key Metrics to Alert On
@@ -407,15 +409,18 @@ receivers:
 ### Key Performance Indicators (KPIs)
 
 1. **Response Time**
+
    - P50 (median): < 200ms
    - P95: < 500ms
    - P99: < 1s
 
 2. **Throughput**
+
    - Requests per second
    - Jobs processed per minute
 
 3. **Error Rate**
+
    - < 1% of requests
    - < 10 errors per minute
 
@@ -505,11 +510,13 @@ try {
 ### Key Metrics
 
 1. **Connection Pool**
+
    - Active connections
    - Idle connections
    - Connection wait time
 
 2. **Query Performance**
+
    - Slow queries
    - Query frequency
    - Cache hit rate
@@ -529,7 +536,7 @@ SELECT count(*) FROM pg_stat_activity;
 SELECT pg_size_pretty(pg_database_size('smartflow'));
 
 -- Table sizes
-SELECT 
+SELECT
   schemaname,
   tablename,
   pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size
@@ -563,19 +570,19 @@ graph TB
         Sign[Sign Event]
         Store[Store in Database]
     end
-    
+
     subgraph "Queue System"
         Enqueue[Enqueue Job]
         Queue[(Redis Queue)]
         Worker[Worker Process]
     end
-    
+
     subgraph "Publishing"
         GetPost[Get Post from DB]
         Publish[Publish to Nostr]
         Update[Update Status]
     end
-    
+
     Create --> Sign
     Sign --> Store
     Store --> Enqueue
@@ -596,7 +603,7 @@ sequenceDiagram
     participant DB
     participant Publisher
     participant Relays
-    
+
     Queue->>Worker: Job Ready
     Worker->>DB: Get Post Data
     DB-->>Worker: Post Data
@@ -710,25 +717,27 @@ cp /var/lib/redis/dump.rdb /backups/redis-$(date +%Y%m%d).rdb
 ### Recovery Procedures
 
 1. **Database Recovery**
+
    ```bash
    # Stop application
    pm2 stop smartflow
-   
+
    # Restore database
    psql $DATABASE_URL < backup.sql
-   
+
    # Restart application
    pm2 start smartflow
    ```
 
 2. **Redis Recovery**
+
    ```bash
    # Stop Redis
    redis-cli -u $REDIS_URL SHUTDOWN
-   
+
    # Copy backup
    cp /backups/redis-20240101.rdb /var/lib/redis/dump.rdb
-   
+
    # Start Redis
    redis-server
    ```
@@ -741,7 +750,3 @@ cp /var/lib/redis/dump.rdb /backups/redis-$(date +%Y%m%d).rdb
 - [Queue System Documentation](./queue-system.md)
 - [Troubleshooting Guide](./troubleshooting.md)
 - [Error Handling Guide](./error-handling.md)
-
-
-
-

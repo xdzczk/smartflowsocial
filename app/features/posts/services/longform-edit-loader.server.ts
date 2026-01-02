@@ -4,9 +4,7 @@
  */
 
 import { getAssets } from "~/models/asset.server";
-import {
-  getLongFormPost,
-} from "~/models/longformpost.server";
+import { getLongFormPost } from "~/models/longformpost.server";
 import {
   getUserHashTags,
   getUserById,
@@ -52,7 +50,3 @@ export async function loadLongFormEditData(userId: string, postId: string) {
     hashtagPresets,
   };
 }
-
-
-
-

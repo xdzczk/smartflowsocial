@@ -73,7 +73,8 @@ export default function LongFormDetailsModal({
             const textValue = block.data.text;
             const text = typeof textValue === "string" ? textValue : "";
             const captionValue = block.data.caption;
-            const caption = typeof captionValue === "string" ? captionValue : "";
+            const caption =
+              typeof captionValue === "string" ? captionValue : "";
             html += `<blockquote class="border-l-4 border-blue-500 pl-4 py-2 mb-4 italic text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded-r">
               <p>${text}</p>
               ${caption ? `<footer class="text-sm mt-2">— ${caption}</footer>` : ""}
@@ -87,8 +88,12 @@ export default function LongFormDetailsModal({
             break;
           }
           case "linkTool": {
-            const link = typeof block.data.link === "string" ? block.data.link : "";
-            const meta = block.data.meta && typeof block.data.meta === "object" ? block.data.meta as { title?: string; description?: string } : null;
+            const link =
+              typeof block.data.link === "string" ? block.data.link : "";
+            const meta =
+              block.data.meta && typeof block.data.meta === "object"
+                ? (block.data.meta as { title?: string; description?: string })
+                : null;
             html += `<div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4">
               <a href="${link}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:underline">
                 <div class="font-semibold">${meta?.title ?? link}</div>
@@ -98,17 +103,23 @@ export default function LongFormDetailsModal({
             break;
           }
           case "embed": {
-            const embed = typeof block.data.embed === "string" ? block.data.embed : "";
+            const embed =
+              typeof block.data.embed === "string" ? block.data.embed : "";
             html += `<div class="mb-4">
               <iframe src="${embed}" class="w-full aspect-video rounded-lg" frameborder="0" allowfullscreen></iframe>
             </div>`;
             break;
           }
           case "image": {
-            const file = block.data.file && typeof block.data.file === "object" ? block.data.file as { url?: string } : null;
-            const url = typeof block.data.url === "string" ? block.data.url : "";
+            const file =
+              block.data.file && typeof block.data.file === "object"
+                ? (block.data.file as { url?: string })
+                : null;
+            const url =
+              typeof block.data.url === "string" ? block.data.url : "";
             const imageUrl = file?.url ?? url;
-            const caption = typeof block.data.caption === "string" ? block.data.caption : "";
+            const caption =
+              typeof block.data.caption === "string" ? block.data.caption : "";
             if (imageUrl) {
               html += `<figure class="mb-6">
                 <img src="${imageUrl}" alt="${caption}" class="w-full rounded-lg shadow-sm" style="max-height: 500px; object-fit: contain;" />
@@ -121,7 +132,10 @@ export default function LongFormDetailsModal({
             if (typeof block.data.text === "string") {
               html += `<p class="mb-4 text-gray-700 dark:text-gray-300">${block.data.text}</p>`;
             } else {
-              const file = block.data.file && typeof block.data.file === "object" ? block.data.file as { url?: string } : null;
+              const file =
+                block.data.file && typeof block.data.file === "object"
+                  ? (block.data.file as { url?: string })
+                  : null;
               if (file?.url) {
                 // Handle any other block types that might have images
                 html += `<div class="mb-4">
@@ -195,14 +209,20 @@ export default function LongFormDetailsModal({
         const editorData = JSON.parse(content) as { blocks?: EditorJSBlock[] };
         editorData.blocks?.forEach((block: EditorJSBlock) => {
           if (block.type === "paragraph" || block.type === "header") {
-            const text = typeof block.data.text === "string" ? block.data.text.replace(/<[^>]*>/g, "") : "";
+            const text =
+              typeof block.data.text === "string"
+                ? block.data.text.replace(/<[^>]*>/g, "")
+                : "";
             wordCount += text
               .split(/\s+/)
               .filter((word: string) => word.length > 0).length;
           } else if (block.type === "list") {
-            const items = Array.isArray(block.data.items) ? block.data.items : [];
+            const items = Array.isArray(block.data.items)
+              ? block.data.items
+              : [];
             items.forEach((item: unknown) => {
-              const text = typeof item === "string" ? item.replace(/<[^>]*>/g, "") : "";
+              const text =
+                typeof item === "string" ? item.replace(/<[^>]*>/g, "") : "";
               wordCount += text
                 .split(/\s+/)
                 .filter((word: string) => word.length > 0).length;
@@ -494,9 +514,14 @@ export default function LongFormDetailsModal({
           <div className="flex items-center justify-between">
             <div className="flex gap-3">
               {type === "posted" &&
-                (post.nostrEventId ?? (post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent ? (post.signedEvent as { id?: string }).id : undefined)) ? (
+              (post.nostrEventId ??
+                (post.signedEvent &&
+                typeof post.signedEvent === "object" &&
+                "id" in post.signedEvent
+                  ? (post.signedEvent as { id?: string }).id
+                  : undefined)) ? (
                 <Link
-                  to={`https://primal.net/a/${String(post.nostrEventId ?? (post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent ? (post.signedEvent as { id?: string }).id : "") ?? '')}`}
+                  to={`https://primal.net/a/${String(post.nostrEventId ?? (post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent ? (post.signedEvent as { id?: string }).id : "") ?? "")}`}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:bg-gray-700 dark:hover:bg-gray-600"
@@ -528,7 +553,7 @@ export default function LongFormDetailsModal({
                   className="inline-flex items-center rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 dark:border-red-600 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-950/50"
                 >
                   {deleteFetcher.state !== "idle" &&
-                    deleteFetcher.formData?.get("postId") === post.id
+                  deleteFetcher.formData?.get("postId") === post.id
                     ? "Deleting..."
                     : "Delete"}
                 </button>

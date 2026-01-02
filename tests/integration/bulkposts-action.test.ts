@@ -1,6 +1,6 @@
 /**
  * Integration tests for bulk posts action handler
- * 
+ *
  * Tests app/routes/dashboard.bulkposts.tsx action
  * Tests bulkPostsAction function
  */
@@ -83,7 +83,10 @@ describe("Bulk Posts Action Handler", () => {
 
       const result = await bulkPostsAction({ request });
       const dataRaw: unknown = await result.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as Record<string, unknown>)
+          : {};
 
       expect(data.success).toBe(true);
       const fileUrls = Array.isArray(data.fileUrls) ? data.fileUrls : [];
@@ -152,7 +155,9 @@ describe("Bulk Posts Action Handler", () => {
         }),
       );
 
-      (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue("queue-1");
+      (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
+        "queue-1",
+      );
       (createPost as ReturnType<typeof vi.fn>)
         .mockResolvedValueOnce(mockPosts[0])
         .mockResolvedValueOnce(mockPosts[1]);
@@ -167,8 +172,14 @@ describe("Bulk Posts Action Handler", () => {
       });
       formData.append("caption", JSON.stringify("Caption 1"));
       formData.append("caption", JSON.stringify("Caption 2"));
-      formData.append("fileUrl", JSON.stringify("https://example.com/image1.jpg"));
-      formData.append("fileUrl", JSON.stringify("https://example.com/image2.jpg"));
+      formData.append(
+        "fileUrl",
+        JSON.stringify("https://example.com/image1.jpg"),
+      );
+      formData.append(
+        "fileUrl",
+        JSON.stringify("https://example.com/image2.jpg"),
+      );
       formData.append("queueType", "posts");
       formData.append("queueType", "all");
       formData.append("isRecyclable", "false");
@@ -196,7 +207,9 @@ describe("Bulk Posts Action Handler", () => {
       };
 
       const originalPostId = "original-post-123";
-      (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue("queue-1");
+      (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
+        "queue-1",
+      );
       (createPost as ReturnType<typeof vi.fn>).mockResolvedValue(
         createMockPost({ id: "new-post-1" }),
       );
@@ -210,7 +223,10 @@ describe("Bulk Posts Action Handler", () => {
       formData.append("signedEvents", JSON.stringify(signedEvent));
       formData.append("nostrEvent", JSON.stringify(signedEvent));
       formData.append("caption", JSON.stringify("Caption"));
-      formData.append("fileUrl", JSON.stringify("https://example.com/image.jpg"));
+      formData.append(
+        "fileUrl",
+        JSON.stringify("https://example.com/image.jpg"),
+      );
       formData.append("queueType", "posts");
       formData.append("isRecyclable", "false");
       formData.append("originalPostId", originalPostId);
@@ -264,8 +280,12 @@ describe("Bulk Posts Action Handler", () => {
       const captions = ["Caption 1", "Caption 2"];
       const queueTypes = ["posts", "all"];
 
-      (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue(TEST_USER_ID);
-      (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue("queue-1");
+      (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue(
+        TEST_USER_ID,
+      );
+      (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
+        "queue-1",
+      );
       (createPost as ReturnType<typeof vi.fn>)
         .mockResolvedValueOnce(createMockPost({ id: "draft-1" }))
         .mockResolvedValueOnce(createMockPost({ id: "draft-2" }));
@@ -336,4 +356,3 @@ describe("Bulk Posts Action Handler", () => {
     });
   });
 });
-

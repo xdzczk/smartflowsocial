@@ -17,7 +17,6 @@ import {
   getContentTypeBadge,
 } from "~/features/posts/utils/content-helpers";
 
-
 describe("Content Helpers", () => {
   describe("getImageUrls", () => {
     it("should return empty array for undefined", () => {
@@ -349,4 +348,3 @@ describe("Content Helpers", () => {
     });
   });
 });
-

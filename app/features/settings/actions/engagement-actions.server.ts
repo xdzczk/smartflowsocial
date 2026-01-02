@@ -52,7 +52,8 @@ export async function handleEngagementAction(
   }
 
   if (action === "toggle_hide_low_trust") {
-    const hidePostsFromLowTrustUsers = formData.get("hidePostsFromLowTrustUsers") === "true";
+    const hidePostsFromLowTrustUsers =
+      formData.get("hidePostsFromLowTrustUsers") === "true";
     await updateUserHideLowTrust(userId, hidePostsFromLowTrustUsers);
 
     return json({ success: true, hidePostsFromLowTrustUsers });
@@ -60,7 +61,3 @@ export async function handleEngagementAction(
 
   return null;
 }
-
-
-
-

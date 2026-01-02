@@ -8,7 +8,6 @@ import { formatDate } from "~/lib/helpers";
 import type { Notification } from "../engagement.server";
 import type { GroupedNotification } from "../types";
 
-
 import { NotificationItem } from "./NotificationItem";
 interface GroupedNotificationListProps {
   groupedNotifications: GroupedNotification[];
@@ -78,7 +77,10 @@ function GroupedNotificationCard({
   trustScores?: Record<string, number>;
 }) {
   const { parentPost, notifications } = group;
-  const [parentToast, setParentToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [parentToast, setParentToast] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
   const copyParentNevent = async () => {
     try {
@@ -89,10 +91,15 @@ function GroupedNotificationCard({
       });
 
       await navigator.clipboard.writeText(`nostr:${neventEncoded}`);
-      setParentToast({ type: "success", message: "NEvent copied to clipboard!" });
+      setParentToast({
+        type: "success",
+        message: "NEvent copied to clipboard!",
+      });
       setTimeout(() => setParentToast(null), 2000);
     } catch (error) {
-      const { handleAsyncErrorWithMessage } = await import("~/lib/error-handler.client");
+      const { handleAsyncErrorWithMessage } = await import(
+        "~/lib/error-handler.client"
+      );
       handleAsyncErrorWithMessage(
         error,
         "Failed to copy",
@@ -128,7 +135,9 @@ function GroupedNotificationCard({
               />
             </svg>
             <span className="font-medium">Your post</span>
-            {parentPost.postedAt ? <span>· {formatDate(parentPost.postedAt)}</span> : null}
+            {parentPost.postedAt ? (
+              <span>· {formatDate(parentPost.postedAt)}</span>
+            ) : null}
           </div>
 
           <div className="flex gap-3">
@@ -191,8 +200,18 @@ function GroupedNotificationCard({
                   }}
                   className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700"
                 >
-                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  <svg
+                    className="h-3.5 w-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                    />
                   </svg>
                   Copy NEvent
                 </button>
@@ -202,7 +221,9 @@ function GroupedNotificationCard({
 
           {/* Toast for parent post */}
           {parentToast ? (
-            <div className={`mt-2 rounded-lg px-3 py-2 text-xs ${parentToast.type === "success" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"}`}>
+            <div
+              className={`mt-2 rounded-lg px-3 py-2 text-xs ${parentToast.type === "success" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"}`}
+            >
               {parentToast.message}
             </div>
           ) : null}
@@ -211,24 +232,40 @@ function GroupedNotificationCard({
           {parentPost.stats ? (
             <div className="mt-4 flex flex-wrap gap-4 border-t border-gray-200 pt-3 dark:border-gray-700">
               <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
-                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                <svg
+                  className="h-4 w-4"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
                   <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
                   <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
                 </svg>
                 <span>{parentPost.stats.replies}</span>
               </div>
               <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
-                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                <svg
+                  className="h-4 w-4"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
                   <path
                     fillRule="evenodd"
                     d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
                     clipRule="evenodd"
                   />
                 </svg>
-                <span>{parentPost.stats.zaps > 0 ? `${parentPost.stats.satszapped.toLocaleString()}` : '0'}</span>
+                <span>
+                  {parentPost.stats.zaps > 0
+                    ? `${parentPost.stats.satszapped.toLocaleString()}`
+                    : "0"}
+                </span>
               </div>
               <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
-                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                <svg
+                  className="h-4 w-4"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
                   <path
                     fillRule="evenodd"
                     d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
@@ -238,7 +275,12 @@ function GroupedNotificationCard({
                 <span>{parentPost.stats.likes}</span>
               </div>
               <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -256,7 +298,8 @@ function GroupedNotificationCard({
         <div className="flex-1 lg:w-3/5">
           <div className="bg-blue-50 px-4 py-2 dark:bg-blue-900/20">
             <span className="text-sm font-medium text-blue-900 dark:text-blue-200">
-              {notifications.length} {notifications.length === 1 ? "reply" : "replies"} / mentions
+              {notifications.length}{" "}
+              {notifications.length === 1 ? "reply" : "replies"} / mentions
             </span>
           </div>
 

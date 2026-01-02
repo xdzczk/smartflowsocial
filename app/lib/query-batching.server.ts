@@ -1,6 +1,6 @@
 /**
  * Query Batching Utilities
- * 
+ *
  * Provides utilities for batching database queries to prevent N+1 query problems.
  * These functions help optimize database access by loading related data in batches.
  */
@@ -15,7 +15,15 @@ import { prisma } from "~/lib/prisma.server";
  */
 export async function batchLoadUsers(
   userIds: string[],
-): Promise<Map<string, Pick<User, "id" | "npub" | "timezone" | "isEnabled" | "createdAt" | "updatedAt">>> {
+): Promise<
+  Map<
+    string,
+    Pick<
+      User,
+      "id" | "npub" | "timezone" | "isEnabled" | "createdAt" | "updatedAt"
+    >
+  >
+> {
   if (userIds.length === 0) {
     return new Map();
   }
@@ -47,7 +55,7 @@ export async function batchLoadQueueTypes(
   const validIds = queueTypeIds.filter(
     (id): id is string => id !== null && id !== undefined,
   );
-  
+
   if (validIds.length === 0) {
     return new Map();
   }
@@ -70,7 +78,7 @@ export async function batchLoadHashTagPresets(
   const validIds = hashTagPresetIds.filter(
     (id): id is string => id !== null && id !== undefined,
   );
-  
+
   if (validIds.length === 0) {
     return new Map();
   }
@@ -93,7 +101,7 @@ export async function batchLoadTemplates(
   const validIds = templateIds.filter(
     (id): id is string => id !== null && id !== undefined,
   );
-  
+
   if (validIds.length === 0) {
     return new Map();
   }
@@ -131,8 +139,3 @@ export async function batchLoadPostRelations(ids: {
     templates,
   };
 }
-
-
-
-
-

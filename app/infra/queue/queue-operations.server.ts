@@ -21,9 +21,7 @@ export async function enqueuePostJob(
   scheduledFor: number,
 ): Promise<void> {
   // Handle immediate scheduling (delay: 0)
-  const options = scheduledFor === 0 
-    ? { delay: 0 }
-    : { scheduledFor };
+  const options = scheduledFor === 0 ? { delay: 0 } : { scheduledFor };
 
   const result = await queueClient.enqueue<PostJobData>(
     "scheduled-posts",
@@ -60,9 +58,7 @@ export async function enqueueLongFormPostJob(
   scheduledFor: number,
 ): Promise<void> {
   // Handle immediate scheduling (delay: 0)
-  const options = scheduledFor === 0 
-    ? { delay: 0 }
-    : { scheduledFor };
+  const options = scheduledFor === 0 ? { delay: 0 } : { scheduledFor };
 
   const result = await queueClient.enqueue<LongFormPostJobData>(
     "scheduled-longform-posts",
@@ -93,7 +89,19 @@ export async function enqueuePostCheckerJob(delay = 0): Promise<void> {
   const result = await queueClient.enqueue<PostJobData>(
     "post-checker",
     "check-due-posts",
-    { postId: "", userId: "", signedEvent: { id: "", pubkey: "", created_at: 0, kind: 0, tags: [], content: "", sig: "" } },
+    {
+      postId: "",
+      userId: "",
+      signedEvent: {
+        id: "",
+        pubkey: "",
+        created_at: 0,
+        kind: 0,
+        tags: [],
+        content: "",
+        sig: "",
+      },
+    },
     { delay },
   );
 
@@ -101,4 +109,3 @@ export async function enqueuePostCheckerJob(delay = 0): Promise<void> {
     throw new Error(result.error ?? "Failed to enqueue post checker job");
   }
 }
-

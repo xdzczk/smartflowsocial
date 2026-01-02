@@ -125,4 +125,3 @@ export async function handleTemplateEditAction(
 
   return json({ error: "Invalid action" }, { status: 400 });
 }
-

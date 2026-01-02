@@ -1,15 +1,17 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 
 import { connectToPrimalCache } from "~/features/cache/primalCache.server";
-import {
-  ExternalServiceError,
-} from "~/lib/errors";
+import { ExternalServiceError } from "~/lib/errors";
 
 /**
  * API route to fetch thread view data from Primal cache
  * GET /api/thread-view?event_id=<event_id>
  */
-type AssertFunction = (condition: boolean, message: string, context?: Record<string, unknown>) => asserts condition;
+type AssertFunction = (
+  condition: boolean,
+  message: string,
+  context?: Record<string, unknown>,
+) => asserts condition;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   try {
@@ -50,8 +52,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
       for (const item of threadViewData) {
         if (!Array.isArray(item) || item[0] !== "EVENT" || !item[2]) continue;
         const eventData: unknown = item[2] as unknown;
-        if (!eventData || typeof eventData !== "object" || Array.isArray(eventData)) continue;
-        const event = eventData as { kind?: number; pubkey?: string; content?: string; id?: string; tags?: string[][]; created_at?: number };
+        if (
+          !eventData ||
+          typeof eventData !== "object" ||
+          Array.isArray(eventData)
+        )
+          continue;
+        const event = eventData as {
+          kind?: number;
+          pubkey?: string;
+          content?: string;
+          id?: string;
+          tags?: string[][];
+          created_at?: number;
+        };
 
         // Add to events array if it's a regular event (not metadata)
         if (event.kind !== 0 && event.kind !== 10000100) {
@@ -59,7 +73,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
         }
 
         // Extract user metadata (kind 0 events)
-        if (event.kind === 0 && event.pubkey && typeof event.pubkey === "string") {
+        if (
+          event.kind === 0 &&
+          event.pubkey &&
+          typeof event.pubkey === "string"
+        ) {
           metadata[event.pubkey] = event;
         }
       }

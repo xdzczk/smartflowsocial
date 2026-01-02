@@ -89,7 +89,9 @@ function NavigationItem({
     >
       <span className="flex flex-none items-center text-gray-300">{icon}</span>
       <span className="grow py-2">{children}</span>
-      {!hasAccess ? <Lock className="h-4 w-4 flex-shrink-0 text-amber-500" /> : null}
+      {!hasAccess ? (
+        <Lock className="h-4 w-4 flex-shrink-0 text-amber-500" />
+      ) : null}
     </Link>
   );
 }
@@ -376,12 +378,14 @@ export default function Header() {
       {/* END Page Header */}
 
       {/* Upgrade Prompt Modal */}
-      {upgradePrompt.feature ? <UpgradePrompt
+      {upgradePrompt.feature ? (
+        <UpgradePrompt
           isOpen={upgradePrompt.isOpen}
           onClose={closeUpgradePrompt}
           feature={upgradePrompt.feature}
           featureName={upgradePrompt.featureName}
-        /> : null}
+        />
+      ) : null}
     </>
   );
 }

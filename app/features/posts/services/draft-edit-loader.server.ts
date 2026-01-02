@@ -13,10 +13,7 @@ import {
 /**
  * Load draft edit data
  */
-export async function loadDraftEditData(
-  userId: string,
-  postId: string,
-) {
+export async function loadDraftEditData(userId: string, postId: string) {
   const [post, user, queueTypes, hashTagPresets] = await Promise.all([
     getPostById({ id: postId, userId }),
     getUserById(userId),
@@ -35,7 +32,3 @@ export async function loadDraftEditData(
     hashTagPresets,
   };
 }
-
-
-
-

@@ -18,7 +18,11 @@ vi.mock("~/models/user.server", () => ({
 
 import { loadDraftEditData } from "~/features/posts/services/draft-edit-loader.server";
 import { getPostById } from "~/models/post.queries.server";
-import { getUserById, getQueueTypes, getUserHashTagPresets } from "~/models/user.server";
+import {
+  getUserById,
+  getQueueTypes,
+  getUserHashTagPresets,
+} from "~/models/user.server";
 
 import { TEST_USER_ID, TEST_POST_ID } from "../../../utils/test-helpers";
 
@@ -43,8 +47,12 @@ describe("Draft Edit Loader", () => {
 
     (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
-    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueTypes);
-    (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue(mockHashTagPresets);
+    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockQueueTypes,
+    );
+    (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockHashTagPresets,
+    );
 
     const result = await loadDraftEditData(TEST_USER_ID, TEST_POST_ID);
 
@@ -62,20 +70,28 @@ describe("Draft Edit Loader", () => {
     };
 
     (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
-    (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: TEST_USER_ID });
+    (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: TEST_USER_ID,
+    });
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
-    await expect(loadDraftEditData(TEST_USER_ID, TEST_POST_ID)).rejects.toThrow();
+    await expect(
+      loadDraftEditData(TEST_USER_ID, TEST_POST_ID),
+    ).rejects.toThrow();
   });
 
   it("should throw 404 if post not found", async () => {
     (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(null);
-    (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: TEST_USER_ID });
+    (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: TEST_USER_ID,
+    });
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
-    await expect(loadDraftEditData(TEST_USER_ID, TEST_POST_ID)).rejects.toThrow();
+    await expect(
+      loadDraftEditData(TEST_USER_ID, TEST_POST_ID),
+    ).rejects.toThrow();
   });
 
   it("should filter out disabled queue types", async () => {
@@ -87,8 +103,12 @@ describe("Draft Edit Loader", () => {
     ];
 
     (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
-    (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: TEST_USER_ID });
-    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueTypes);
+    (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: TEST_USER_ID,
+    });
+    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockQueueTypes,
+    );
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
     const result = await loadDraftEditData(TEST_USER_ID, TEST_POST_ID);
@@ -99,4 +119,3 @@ describe("Draft Edit Loader", () => {
     expect(result.queueTypes.some((qt) => qt.id === "queue-2")).toBe(false);
   });
 });
-

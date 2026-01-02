@@ -25,6 +25,7 @@ Complete guide to creating and managing Nostr giveaways with fair winner selecti
 ## Overview
 
 SmartFlowSocial's giveaway feature allows you to:
+
 - **Track engagement** on your posts (likes, reposts, comments, zaps)
 - **Select random winners** fairly from participants
 - **Filter participants** by engagement type
@@ -99,12 +100,14 @@ flowchart TD
 ### Step 3: Configure Giveaway
 
 1. **Set time period:**
+
    - Last 7 days (default)
    - Last 14 days
    - Last 30 days
    - Custom range
 
 2. **Filter by queue:**
+
    - All queues
    - Specific queue type
 
@@ -121,11 +124,13 @@ flowchart TD
 SmartFlowSocial uses a fair random selection process:
 
 1. **Group participants** by engagement type:
+
    - Reposters (kind 6)
    - Likers (kind 7, 9735, 9734)
    - Commenters (kind 1)
 
 2. **Select random winners:**
+
    - 3 random reposters
    - 3 random likers
    - 3 random commenters
@@ -138,12 +143,14 @@ SmartFlowSocial uses a fair random selection process:
 ### Winner Selection Process
 
 **How it works:**
+
 - Random selection from each category
 - No bias or favoritism
 - Transparent process
 - Verifiable results
 
 **Example:**
+
 ```
 ✅ 3 random reposts from last week each got 2,000 sats
 ✅ 3 random reactions from last week each got 1,000 sats
@@ -157,6 +164,7 @@ SmartFlowSocial uses a fair random selection process:
 ### Giveaway Dashboard
 
 **Features:**
+
 - View all posts with engagement
 - Filter by queue type
 - Filter by time period
@@ -166,6 +174,7 @@ SmartFlowSocial uses a fair random selection process:
 ### Engagement Statistics
 
 **Metrics shown:**
+
 - Total engagement count
 - Likes, reposts, comments, zaps
 - Total sats zapped
@@ -174,6 +183,7 @@ SmartFlowSocial uses a fair random selection process:
 ### Queue Filtering
 
 **Filter options:**
+
 - **All Queues** - All posts
 - **Specific Queue** - Posts from one queue
 - **Unassigned** - Posts without queue
@@ -185,6 +195,7 @@ SmartFlowSocial uses a fair random selection process:
 ### Filter by Engagement Type
 
 **Available filters:**
+
 - **All** - All engagement types
 - **Reposts** - Only reposters
 - **Likes** - Only likers
@@ -194,6 +205,7 @@ SmartFlowSocial uses a fair random selection process:
 ### Filter by Time Period
 
 **Time options:**
+
 - **Last 7 days** (default)
 - **Last 14 days**
 - **Last 30 days**
@@ -202,6 +214,7 @@ SmartFlowSocial uses a fair random selection process:
 ### Filter by Queue
 
 **Queue options:**
+
 - **All queues**
 - **Specific queue type**
 - **Unassigned posts**
@@ -218,6 +231,7 @@ A blacklist allows you to exclude specific accounts from giveaway participation.
 
 1. Go to **Settings** → **Giveaways** → **Blacklist**
 2. **Add accounts:**
+
    - Enter npub or hex pubkey
    - Click "Add to Blacklist"
    - Account is excluded from giveaways
@@ -230,6 +244,7 @@ A blacklist allows you to exclude specific accounts from giveaway participation.
 ### Use Cases
 
 **When to use blacklist:**
+
 - Exclude bots
 - Exclude spam accounts
 - Exclude specific users
@@ -244,6 +259,7 @@ A blacklist allows you to exclude specific accounts from giveaway participation.
 1. **Select winners** using randomizer
 2. **Click "Generate Message"**
 3. **Review generated post:**
+
    ```
    Thanks to everyone who shared, zapped, liked and commented on our memes lately 🫡
 
@@ -259,6 +275,7 @@ A blacklist allows you to exclude specific accounts from giveaway participation.
    ```
 
 4. **Edit if needed:**
+
    - Customize message
    - Add additional content
    - Modify hashtags
@@ -271,12 +288,14 @@ A blacklist allows you to exclude specific accounts from giveaway participation.
 ### Posting Workflow
 
 **Option 1: Post Immediately**
+
 1. Generate message
 2. Copy to clipboard
 3. Go to **New Post**
 4. Paste and post
 
 **Option 2: Schedule Post**
+
 1. Generate message
 2. Copy to clipboard
 3. Go to **New Post**
@@ -289,21 +308,25 @@ A blacklist allows you to exclude specific accounts from giveaway participation.
 ### Giveaway Strategy
 
 1. **Set clear rules:**
+
    - Define engagement types
    - Set time period
    - Specify prizes
 
 2. **Announce in advance:**
+
    - Post giveaway announcement
    - Include rules and timeline
    - Build anticipation
 
 3. **Track engagement:**
+
    - Monitor participation
    - Check engagement metrics
    - Adjust strategy as needed
 
 4. **Select winners fairly:**
+
    - Use random selection
    - Be transparent
    - Post results publicly
@@ -316,21 +339,25 @@ A blacklist allows you to exclude specific accounts from giveaway participation.
 ### Engagement Types
 
 **Reposts (Kind 6):**
+
 - Sharing your content
 - Amplifying your message
 - Higher engagement value
 
 **Likes (Kind 7, 9735, 9734):**
+
 - Positive feedback
 - Quick engagement
 - Easy participation
 
 **Comments (Kind 1):**
+
 - Thoughtful engagement
 - Conversation starters
 - Community building
 
 **Zaps (Kind 9735):**
+
 - Monetary support
 - Highest engagement value
 - Lightning payments
@@ -338,11 +365,13 @@ A blacklist allows you to exclude specific accounts from giveaway participation.
 ### Prize Distribution
 
 **Common patterns:**
+
 - **Equal prizes** - Same amount for all winners
 - **Tiered prizes** - Different amounts by category
 - **Weighted selection** - More winners from higher engagement
 
 **Example:**
+
 - Reposters: 2,000 sats each
 - Likers: 1,000 sats each
 - Commenters: 1,000 sats each
@@ -354,11 +383,13 @@ A blacklist allows you to exclude specific accounts from giveaway participation.
 ### No Engagement Shown
 
 **Possible causes:**
+
 - Post hasn't received engagement yet
 - Time period too short
 - Filters too restrictive
 
 **Solutions:**
+
 - Check post on Nostr directly
 - Expand time period
 - Remove filters
@@ -367,11 +398,13 @@ A blacklist allows you to exclude specific accounts from giveaway participation.
 ### Winners Not Showing
 
 **Possible causes:**
+
 - No participants in category
 - Blacklist filtering all participants
 - Engagement type filter too restrictive
 
 **Solutions:**
+
 - Check engagement statistics
 - Review blacklist
 - Adjust filters
@@ -380,11 +413,13 @@ A blacklist allows you to exclude specific accounts from giveaway participation.
 ### Generated Message Issues
 
 **Possible causes:**
+
 - Missing winner data
 - Formatting issues
 - npub encoding problems
 
 **Solutions:**
+
 - Regenerate message
 - Check winner selection
 - Verify npub format
@@ -402,4 +437,3 @@ A blacklist allows you to exclude specific accounts from giveaway participation.
 ---
 
 **Next:** [Multi-Account Guide](./multi-account.md) → Manage multiple accounts
-

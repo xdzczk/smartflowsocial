@@ -47,8 +47,16 @@ async function fetchUserProfile(pubkey: string): Promise<User | null> {
     for (const item of profileData) {
       if (!Array.isArray(item) || item[0] !== "EVENT" || !item[2]) continue;
       const rawEventData: unknown = item[2] as unknown;
-      if (!rawEventData || typeof rawEventData !== "object" || Array.isArray(rawEventData)) continue;
-      const event: { kind?: number; content?: string } = rawEventData as { kind?: number; content?: string };
+      if (
+        !rawEventData ||
+        typeof rawEventData !== "object" ||
+        Array.isArray(rawEventData)
+      )
+        continue;
+      const event: { kind?: number; content?: string } = rawEventData as {
+        kind?: number;
+        content?: string;
+      };
 
       if (event.kind === 0) {
         profileEvent = event;
@@ -82,19 +90,19 @@ async function fetchUserProfile(pubkey: string): Promise<User | null> {
     const statsTyped = stats;
     const user: User = {
       pubkey,
-      name: (profileTyped.name) ?? undefined,
-      displayName: (profileTyped.display_name) ?? undefined,
+      name: profileTyped.name ?? undefined,
+      displayName: profileTyped.display_name ?? undefined,
       about: (profileTyped.about as string | undefined) ?? undefined,
-      picture: (profileTyped.picture) ?? undefined,
+      picture: profileTyped.picture ?? undefined,
       nip05: (profileTyped.nip05 as string | undefined) ?? undefined,
       lud16: (profileTyped.lud16 as string | undefined) ?? undefined,
-      followsCount: (statsTyped.follows_count) ?? 0,
-      followersCount: (statsTyped.followers_count) ?? 0,
-      noteCount: (statsTyped.note_count) ?? 0,
+      followsCount: statsTyped.follows_count ?? 0,
+      followersCount: statsTyped.followers_count ?? 0,
+      noteCount: statsTyped.note_count ?? 0,
       replyCount: (statsTyped.reply_count as number | undefined) ?? 0,
       timeJoined: (statsTyped.time_joined as number | undefined) ?? 0,
-      zapCount: (statsTyped.total_zap_count) ?? 0,
-      totalSatsZapped: (statsTyped.total_satszapped) ?? 0,
+      zapCount: statsTyped.total_zap_count ?? 0,
+      totalSatsZapped: statsTyped.total_satszapped ?? 0,
       mediaCount: (statsTyped.media_count as number | undefined) ?? 0,
     };
 
@@ -108,10 +116,7 @@ async function fetchUserProfile(pubkey: string): Promise<User | null> {
 /**
  * Fetch thread view with timeout
  */
-async function fetchThreadViewWithTimeout(
-  eventId: string,
-  timeout = 5000,
-) {
+async function fetchThreadViewWithTimeout(eventId: string, timeout = 5000) {
   const timeoutPromise = new Promise((_, reject) =>
     setTimeout(() => reject(new Error("Request timeout")), timeout),
   );
@@ -126,10 +131,7 @@ async function fetchThreadViewWithTimeout(
 /**
  * Process batch of event IDs to get stats and notifications
  */
-async function processEventBatch(
-  batchIds: string[],
-  userNpub: string,
-) {
+async function processEventBatch(batchIds: string[], userNpub: string) {
   const notificationPromises = batchIds.map(async (eventId) => {
     try {
       const threadViewData = await fetchThreadViewWithTimeout(eventId);
@@ -141,14 +143,18 @@ async function processEventBatch(
 
       const statsEvent = (threadViewData as PrimalEvent[]).find(
         (event: PrimalEvent) => {
-          if (!Array.isArray(event) || event[0] !== "EVENT" || !event[2]) return false;
+          if (!Array.isArray(event) || event[0] !== "EVENT" || !event[2])
+            return false;
           const eventData = event[2];
-          if (typeof eventData !== "object" || Array.isArray(eventData)) return false;
+          if (typeof eventData !== "object" || Array.isArray(eventData))
+            return false;
           const eventTyped = eventData as { kind?: number; content?: string };
-          return eventTyped.kind === 10000100 &&
+          return (
+            eventTyped.kind === 10000100 &&
             eventTyped.content &&
             typeof eventTyped.content === "string" &&
-            eventTyped.content.includes(eventId);
+            eventTyped.content.includes(eventId)
+          );
         },
       );
 
@@ -272,19 +278,33 @@ export async function loadEngagementFeedData(
   // Ensure user has required properties with safe defaults
   const userNpub = user.npub ?? "";
   const userFilterMuted = user.filterMuted ?? false;
-  const userHidePostsFromLowTrustUsers = user.hidePostsFromLowTrustUsers ?? false;
-  
+  const userHidePostsFromLowTrustUsers =
+    user.hidePostsFromLowTrustUsers ?? false;
+
   // Type guard for mutedList
-  const mutedListData = user.mutedList && typeof user.mutedList === "object" && !Array.isArray(user.mutedList) && "npubs" in user.mutedList
-    ? (user.mutedList as { npubs?: unknown; lastSynced?: unknown })
-    : null;
-  const mutedNpubs = mutedListData && Array.isArray(mutedListData.npubs) ? mutedListData.npubs as string[] : [];
+  const mutedListData =
+    user.mutedList &&
+    typeof user.mutedList === "object" &&
+    !Array.isArray(user.mutedList) &&
+    "npubs" in user.mutedList
+      ? (user.mutedList as { npubs?: unknown; lastSynced?: unknown })
+      : null;
+  const mutedNpubs =
+    mutedListData && Array.isArray(mutedListData.npubs)
+      ? (mutedListData.npubs as string[])
+      : [];
 
   // Get event IDs from signedEvent.id
   const eventIds = posts
     .filter((post) => {
       const se = post.signedEvent;
-      return se && typeof se === "object" && !Array.isArray(se) && "id" in se && typeof (se as { id: unknown }).id === "string";
+      return (
+        se &&
+        typeof se === "object" &&
+        !Array.isArray(se) &&
+        "id" in se &&
+        typeof (se as { id: unknown }).id === "string"
+      );
     })
     .map((post) => {
       const se = post.signedEvent as { id: string };
@@ -326,14 +346,8 @@ export async function loadEngagementFeedData(
     );
 
     // Filter out muted users if enabled
-    if (
-      userFilterMuted &&
-      mutedNpubs.length > 0
-    ) {
-      allNotifications = filterMutedNotifications(
-        allNotifications,
-        mutedNpubs,
-      );
+    if (userFilterMuted && mutedNpubs.length > 0) {
+      allNotifications = filterMutedNotifications(allNotifications, mutedNpubs);
     }
 
     // Fetch user profiles and calculate trust scores
@@ -371,25 +385,40 @@ export async function loadEngagementFeedData(
     stats = posts
       .filter((post) => {
         const se = post.signedEvent;
-        return se && typeof se === "object" && !Array.isArray(se) && "id" in se && typeof (se as { id: unknown }).id === "string";
+        return (
+          se &&
+          typeof se === "object" &&
+          !Array.isArray(se) &&
+          "id" in se &&
+          typeof (se as { id: unknown }).id === "string"
+        );
       })
-      .reduce((acc, post) => {
-        const se = post.signedEvent;
-        if (se && typeof se === "object" && !Array.isArray(se) && "id" in se && typeof se.id === "string") {
-          const result: Record<string, EventStats> = acc;
-          const eventStats: EventStats = {
-            likes: 0,
-            replies: 0,
-            mentions: 0,
-            reposts: 0,
-            zaps: 0,
-            satszapped: 0,
-          };
-          result[se.id] = eventStats;
-          return result;
-        }
-        return acc;
-      }, ((): Record<string, EventStats> => ({}))());
+      .reduce(
+        (acc, post) => {
+          const se = post.signedEvent;
+          if (
+            se &&
+            typeof se === "object" &&
+            !Array.isArray(se) &&
+            "id" in se &&
+            typeof se.id === "string"
+          ) {
+            const result: Record<string, EventStats> = acc;
+            const eventStats: EventStats = {
+              likes: 0,
+              replies: 0,
+              mentions: 0,
+              reposts: 0,
+              zaps: 0,
+              satszapped: 0,
+            };
+            result[se.id] = eventStats;
+            return result;
+          }
+          return acc;
+        },
+        ((): Record<string, EventStats> => ({}))(),
+      );
   }
 
   // Group notifications by type
@@ -399,16 +428,23 @@ export async function loadEngagementFeedData(
   // Convert PostWithQueueType[] to PostData[] for compatibility
   const postsAsPostData: PostData[] = posts.map((post) => {
     const { queueType, ...rest } = post;
-    const convertedQueueType: QueueType | null = queueType ? {
-      id: queueType.id,
-      name: queueType.name,
-      color: queueType.color,
-      description: queueType.description,
-      scheduleType: queueType.scheduleType as "INTERVAL" | "FIXED_SLOTS" | undefined,
-      scheduleConfig: convertJsonValueToScheduleConfig(queueType.scheduleConfig),
-      isEnabled: queueType.isEnabled,
-      userId: queueType.userId,
-    } : null;
+    const convertedQueueType: QueueType | null = queueType
+      ? {
+          id: queueType.id,
+          name: queueType.name,
+          color: queueType.color,
+          description: queueType.description,
+          scheduleType: queueType.scheduleType as
+            | "INTERVAL"
+            | "FIXED_SLOTS"
+            | undefined,
+          scheduleConfig: convertJsonValueToScheduleConfig(
+            queueType.scheduleConfig,
+          ),
+          isEnabled: queueType.isEnabled,
+          userId: queueType.userId,
+        }
+      : null;
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     const result = {
       ...rest,
@@ -417,7 +453,7 @@ export async function loadEngagementFeedData(
     } as PostData;
     return result;
   });
-  
+
   const groupedByParent = {
     replies: groupNotificationsByParent(
       groupedNotifications.replies,
@@ -430,7 +466,13 @@ export async function loadEngagementFeedData(
   // Filter posts to only show those with replies
   const postsWithReplies = posts.filter((post) => {
     const se = post.signedEvent;
-    if (!se || typeof se !== "object" || Array.isArray(se) || !("id" in se) || typeof (se as { id: unknown }).id !== "string") {
+    if (
+      !se ||
+      typeof se !== "object" ||
+      Array.isArray(se) ||
+      !("id" in se) ||
+      typeof (se as { id: unknown }).id !== "string"
+    ) {
       return false;
     }
     const eventId = (se as { id: string }).id;
@@ -460,8 +502,14 @@ export async function loadEngagementFeedData(
             "kind" in item[2] &&
             (item[2] as { kind?: unknown }).kind === 1
           ) {
-            const event = item[2] as { id?: unknown; pubkey?: unknown; content?: unknown; kind?: unknown; tags?: unknown };
-            
+            const event = item[2] as {
+              id?: unknown;
+              pubkey?: unknown;
+              content?: unknown;
+              kind?: unknown;
+              tags?: unknown;
+            };
+
             if (!event || typeof event !== "object" || Array.isArray(event)) {
               return false;
             }
@@ -477,7 +525,8 @@ export async function loadEngagementFeedData(
               return false;
             }
 
-            const tags = ((eventTyped as { tags?: unknown }).tags as NostrTag[]) ?? [];
+            const tags =
+              ((eventTyped as { tags?: unknown }).tags as NostrTag[]) ?? [];
 
             // Skip if it's the user's own post
             if (eventTyped.pubkey === userNpub) {
@@ -526,10 +575,7 @@ export async function loadEngagementFeedData(
         );
 
         // Filter out muted users if enabled
-        if (
-          userFilterMuted &&
-          mutedNpubs.length > 0
-        ) {
+        if (userFilterMuted && mutedNpubs.length > 0) {
           quoteRepostNotifications = filterMutedNotifications(
             quoteRepostNotifications,
             mutedNpubs,
@@ -609,4 +655,3 @@ export async function loadEngagementFeedData(
  * Load engagement data (alias for loadEngagementFeedData)
  */
 export const loadEngagementData = loadEngagementFeedData;
-

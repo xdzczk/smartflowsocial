@@ -21,7 +21,10 @@ export default function DraftBulkResume({
 }: DraftBulkResumeProps) {
   const fetcher = useFetcher();
   const user = useOptionalUser();
-  const scheduleIntervals = user && typeof user === "object" && "scheduleInterval" in user ? user.scheduleInterval : null;
+  const scheduleIntervals =
+    user && typeof user === "object" && "scheduleInterval" in user
+      ? user.scheduleInterval
+      : null;
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // State for bulk operations similar to bulkposts
@@ -43,7 +46,7 @@ export default function DraftBulkResume({
         caption: draft.caption,
         fileUrl: draft.fileUrl,
         postType: draft.postType,
-        queueType: (draft.queueType?.name ?? draft.queueType) ?? "unassigned",
+        queueType: draft.queueType?.name ?? draft.queueType ?? "unassigned",
         scheduledFor: localDate
           .toLocaleString("en-US", {
             year: "numeric",
@@ -58,7 +61,10 @@ export default function DraftBulkResume({
     }),
   );
 
-  const calculateQueueScheduleTime = async (queueTypeName: string, baseIndex = 0): Promise<string> => {
+  const calculateQueueScheduleTime = async (
+    queueTypeName: string,
+    baseIndex = 0,
+  ): Promise<string> => {
     if (queueTypeName === "unassigned") {
       return "";
     }
@@ -77,8 +83,14 @@ export default function DraftBulkResume({
 
       if (response.ok) {
         const dataRaw: unknown = await response.json();
-        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { scheduledTime?: unknown } : {};
-        const scheduledTime = typeof data.scheduledTime === "string" ? data.scheduledTime : undefined;
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as { scheduledTime?: unknown })
+            : {};
+        const scheduledTime =
+          typeof data.scheduledTime === "string"
+            ? data.scheduledTime
+            : undefined;
         if (!scheduledTime) return "";
 
         // For bulk posts, add interval offset based on index
@@ -88,18 +100,40 @@ export default function DraftBulkResume({
             return name === queueTypeName;
           });
 
-          if (queueType && typeof queueType === "object" && "scheduleType" in queueType) {
+          if (
+            queueType &&
+            typeof queueType === "object" &&
+            "scheduleType" in queueType
+          ) {
             const baseDate = new Date(scheduledTime);
 
             if (queueType.scheduleType === "INTERVAL") {
-              const config = queueType && typeof queueType === "object" && "scheduleConfig" in queueType ? queueType.scheduleConfig : null;
+              const config =
+                queueType &&
+                typeof queueType === "object" &&
+                "scheduleConfig" in queueType
+                  ? queueType.scheduleConfig
+                  : null;
               let intervalHours = 4; // default
 
               if (config && isIntervalScheduleConfig(config)) {
                 if (config.useGlobalInterval) {
-                  const userIntervalRaw = user && typeof user === "object" && "scheduleInterval" in user && Array.isArray(user.scheduleInterval) && user.scheduleInterval.length > 0 ? user.scheduleInterval[0] : null;
-                  const userInterval = typeof userIntervalRaw === "number" ? userIntervalRaw : (typeof userIntervalRaw === "string" ? Number(userIntervalRaw) : null);
-                  intervalHours = (userInterval && !isNaN(userInterval)) ? userInterval : 4;
+                  const userIntervalRaw =
+                    user &&
+                    typeof user === "object" &&
+                    "scheduleInterval" in user &&
+                    Array.isArray(user.scheduleInterval) &&
+                    user.scheduleInterval.length > 0
+                      ? user.scheduleInterval[0]
+                      : null;
+                  const userInterval =
+                    typeof userIntervalRaw === "number"
+                      ? userIntervalRaw
+                      : typeof userIntervalRaw === "string"
+                        ? Number(userIntervalRaw)
+                        : null;
+                  intervalHours =
+                    userInterval && !isNaN(userInterval) ? userInterval : 4;
                 } else {
                   intervalHours = config.intervalHours ?? 4;
                 }
@@ -109,8 +143,16 @@ export default function DraftBulkResume({
                 baseDate.getHours() + baseIndex * intervalHours,
               );
             } else if (queueType.scheduleType === "FIXED_SLOTS") {
-              const config = queueType && typeof queueType === "object" && "scheduleConfig" in queueType ? queueType.scheduleConfig : null;
-              const slots = (config && isFixedSlotsScheduleConfig(config)) ? config.slots ?? [] : [];
+              const config =
+                queueType &&
+                typeof queueType === "object" &&
+                "scheduleConfig" in queueType
+                  ? queueType.scheduleConfig
+                  : null;
+              const slots =
+                config && isFixedSlotsScheduleConfig(config)
+                  ? (config.slots ?? [])
+                  : [];
 
               if (slots.length > 0) {
                 // Sort slots to ensure consistent ordering
@@ -124,7 +166,12 @@ export default function DraftBulkResume({
                       totalMinutes: hours * 60 + minutes,
                     };
                   })
-                  .sort((a: { totalMinutes: number }, b: { totalMinutes: number }) => a.totalMinutes - b.totalMinutes);
+                  .sort(
+                    (
+                      a: { totalMinutes: number },
+                      b: { totalMinutes: number },
+                    ) => a.totalMinutes - b.totalMinutes,
+                  );
 
                 // Get the current slot index based on the base time
                 const baseHours = baseDate.getHours();
@@ -179,7 +226,10 @@ export default function DraftBulkResume({
     return "";
   };
 
-  const handleQueueTypeChange = async (index: number, value: string | QueueType) => {
+  const handleQueueTypeChange = async (
+    index: number,
+    value: string | QueueType,
+  ) => {
     const updatedPosts = [...posts];
     updatedPosts[index].queueType = value;
 
@@ -233,7 +283,8 @@ export default function DraftBulkResume({
         let scheduledFor = post.scheduledFor;
 
         // Auto-calculate schedule time if not unassigned
-        const queueTypeName = typeof queueType === "string" ? queueType : queueType.name;
+        const queueTypeName =
+          typeof queueType === "string" ? queueType : queueType.name;
         if (queueTypeName !== "unassigned") {
           const calculatedTime = await calculateQueueScheduleTime(
             queueTypeName,
@@ -274,7 +325,9 @@ export default function DraftBulkResume({
               },
             );
             const userOffset =
-              (new Date(userDate).getTime() - new Date(post.scheduledFor).getTime()) / 60000;
+              (new Date(userDate).getTime() -
+                new Date(post.scheduledFor).getTime()) /
+              60000;
             utcDate.setMinutes(utcDate.getMinutes() - userOffset);
             scheduledTime = utcDate.getTime();
           } else {
@@ -300,7 +353,9 @@ export default function DraftBulkResume({
             const data = (await response.json()) as { hashtags?: string };
             tagsString = data.hashtags ?? "";
           } catch (error) {
-            const { handleErrorSafely } = await import("~/lib/error-handler.client");
+            const { handleErrorSafely } = await import(
+              "~/lib/error-handler.client"
+            );
             handleErrorSafely(error, {
               component: "DraftBulkResume",
               action: "getEffectiveHashtags",
@@ -344,7 +399,10 @@ export default function DraftBulkResume({
         formData.append("postIds", post.id);
         formData.append("contents", post.content ?? "");
         formData.append("captions", post.caption ?? "");
-        const queueTypeValue = typeof post.queueType === "string" ? post.queueType : (post.queueType?.name ?? "");
+        const queueTypeValue =
+          typeof post.queueType === "string"
+            ? post.queueType
+            : (post.queueType?.name ?? "");
         formData.append("queueTypes", queueTypeValue);
         formData.append("scheduledFors", post.scheduledFor ?? "");
         formData.append("signedEvents", post.signedEvent);
@@ -377,10 +435,13 @@ export default function DraftBulkResume({
   interface _FetcherData {
     success?: boolean;
   }
-  
+
   useEffect(() => {
     const dataRaw = fetcher.data;
-    const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown } : null;
+    const data =
+      dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+        ? (dataRaw as { success?: unknown })
+        : null;
     if (data && typeof data.success === "boolean" && data.success) {
       onCancel(); // Close the modal and refresh
     }
@@ -407,7 +468,13 @@ export default function DraftBulkResume({
                   <button
                     key={interval}
                     type="button"
-                    onClick={() => handleScheduleIntervalClick(typeof interval === "string" ? parseInt(interval, 10) : interval)}
+                    onClick={() =>
+                      handleScheduleIntervalClick(
+                        typeof interval === "string"
+                          ? parseInt(interval, 10)
+                          : interval,
+                      )
+                    }
                     disabled={isSubmitting}
                     className="mx-2 rounded-md bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 shadow-md transition-all hover:scale-105 hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                   >

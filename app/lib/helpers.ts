@@ -62,23 +62,23 @@ export const getImageUrls = (fileUrl: string[]): string[] => {
  * @returns true if the URL appears to be a video file
  */
 export const isVideoFile = (url: string): boolean => {
-  if (!url || typeof url !== 'string') return false;
+  if (!url || typeof url !== "string") return false;
 
   const lowerUrl = url.toLowerCase();
   const videoExtensions = [
-    '.mp4',
-    '.mov',
-    '.webm',
-    '.ogg',
-    '.avi',
-    '.mkv',
-    '.m4v',
-    '.3gp',
-    '.flv',
-    '.wmv'
+    ".mp4",
+    ".mov",
+    ".webm",
+    ".ogg",
+    ".avi",
+    ".mkv",
+    ".m4v",
+    ".3gp",
+    ".flv",
+    ".wmv",
   ];
 
   // Check if URL ends with a video extension (after removing query params and fragments)
-  const urlWithoutQuery = lowerUrl.split('?')[0].split('#')[0];
-  return videoExtensions.some(ext => urlWithoutQuery.endsWith(ext));
+  const urlWithoutQuery = lowerUrl.split("?")[0].split("#")[0];
+  return videoExtensions.some((ext) => urlWithoutQuery.endsWith(ext));
 };

@@ -14,7 +14,7 @@ jobs:
   cached-tests:
     name: Cached Tests
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -27,8 +27,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'pnpm'
+          node-version: "20"
+          cache: "pnpm"
 
       - name: Get changed files
         id: changed-files
@@ -71,12 +71,12 @@ jobs:
           if [ "${{ steps.changed-files.outputs.any_changed }}" == "true" ]; then
             echo "Files changed, running all tests"
             pnpm test
-        env:
-          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
           else
             echo "No test-related files changed, skipping tests"
           fi
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
 
       - name: Save test cache
         if: always()
@@ -87,10 +87,3 @@ jobs:
             node_modules/.cache
             test-results
           key: ${{ runner.os }}-test-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ hashFiles('tests/**/*.test.ts') }}
-
-
-
-
-
-
-

@@ -23,7 +23,11 @@ const positionClasses = {
   inline: "",
 };
 
-export function PostBadges({ post, size = "sm", position = "absolute" }: PostBadgesProps) {
+export function PostBadges({
+  post,
+  size = "sm",
+  position = "absolute",
+}: PostBadgesProps) {
   const sizeClass = sizeClasses[size];
   const strokeWidth = strokeWidths[size];
   const positionClass = positionClasses[position];
@@ -67,4 +71,3 @@ export function PostBadges({ post, size = "sm", position = "absolute" }: PostBad
     </>
   );
 }
-

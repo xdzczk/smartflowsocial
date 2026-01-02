@@ -1,6 +1,6 @@
 /**
  * Shared test helpers for scheduling algorithm tests
- * 
+ *
  * These helpers reduce duplication in large integration tests by providing
  * common setup patterns and test data factories.
  */
@@ -54,7 +54,7 @@ export function createIntervalQueueType(
 
 /**
  * Create a FIXED_SLOTS-based queue type
- * 
+ *
  * @param slots - Array of slot objects with hour and minute, OR array of time strings like "09:00"
  */
 export function createFixedSlotsQueueType(
@@ -62,11 +62,13 @@ export function createFixedSlotsQueueType(
   overrides: Partial<QueueType> = {},
 ): QueueType {
   // Convert to string format that the scheduler expects (e.g., "09:00")
-  const slotStrings = typeof slots[0] === "string"
-    ? slots as string[]
-    : (slots as { hour: number; minute: number }[]).map(
-        (slot) => `${String(slot.hour).padStart(2, '0')}:${String(slot.minute).padStart(2, '0')}`
-      );
+  const slotStrings =
+    typeof slots[0] === "string"
+      ? (slots as string[])
+      : (slots as { hour: number; minute: number }[]).map(
+          (slot) =>
+            `${String(slot.hour).padStart(2, "0")}:${String(slot.minute).padStart(2, "0")}`,
+        );
 
   return createQueueType({
     scheduleType: "FIXED_SLOTS",
@@ -96,4 +98,3 @@ export function createDateAtTime(
 ): Date {
   return new Date(Date.UTC(year, month - 1, day, hour, minute));
 }
-

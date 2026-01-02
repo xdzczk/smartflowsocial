@@ -1,9 +1,9 @@
 /**
  * Integration tests for dashboard loader
- * 
+ *
  * These tests verify the loader function logic directly, without requiring a browser.
  * For UI rendering tests, see tests/e2e/dashboard.cy.ts
- * 
+ *
  * Migrated from: tests/e2e/loaders/dashboard-loader.cy.ts
  */
 
@@ -37,10 +37,12 @@ import { loader } from "~/routes/dashboard._index";
 describe("Dashboard Loader Integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Default mocks
     (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue("user-123");
-    (requireFeatureAccess as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    (requireFeatureAccess as ReturnType<typeof vi.fn>).mockResolvedValue(
+      undefined,
+    );
     (loadDashboardData as ReturnType<typeof vi.fn>).mockResolvedValue({
       scheduledPosts: [],
       longformPosts: [],
@@ -54,14 +56,24 @@ describe("Dashboard Loader Integration", () => {
   describe("Dashboard Index Loader", () => {
     it("should load dashboard data for authenticated user", async () => {
       const request = new Request("http://localhost:3000/dashboard");
-      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
       const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as Record<string, unknown>)
+          : {};
 
       expect(response.status).toBe(200);
       expect(requireUserId).toHaveBeenCalledWith(request);
-      expect(requireFeatureAccess).toHaveBeenCalledWith("user-123", "dashboard");
+      expect(requireFeatureAccess).toHaveBeenCalledWith(
+        "user-123",
+        "dashboard",
+      );
       expect(loadDashboardData).toHaveBeenCalledWith("user-123", "all");
       expect(data).toHaveProperty("scheduledPosts");
       expect(data).toHaveProperty("longformPosts");
@@ -72,37 +84,60 @@ describe("Dashboard Loader Integration", () => {
 
     it("should handle queue type parameter", async () => {
       const request = new Request("http://localhost:3000/dashboard");
-      const loaderArgs: LoaderFunctionArgs = { 
-        request, 
-        params: { queueType: "posts" } 
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: { queueType: "posts" },
       } as unknown as LoaderFunctionArgs;
       const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as Record<string, unknown>)
+          : {};
 
       expect(loadDashboardData).toHaveBeenCalledWith("user-123", "posts");
       expect(data).toBeDefined();
     });
 
     it("should handle planActivated query parameter", async () => {
-      const request = new Request("http://localhost:3000/dashboard?planActivated=true");
-      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
+      const request = new Request(
+        "http://localhost:3000/dashboard?planActivated=true",
+      );
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
       const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as Record<string, unknown>)
+          : {};
 
-      const planActivated = typeof data.planActivated === "string" ? data.planActivated : "";
+      const planActivated =
+        typeof data.planActivated === "string" ? data.planActivated : "";
       expect(planActivated).toBe("true");
     });
 
     it("should handle successMessage query parameter", async () => {
-      const request = new Request("http://localhost:3000/dashboard?message=success");
-      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
+      const request = new Request(
+        "http://localhost:3000/dashboard?message=success",
+      );
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
       const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as Record<string, unknown>)
+          : {};
 
-      const successMessage = typeof data.successMessage === "string" ? data.successMessage : "";
+      const successMessage =
+        typeof data.successMessage === "string" ? data.successMessage : "";
       expect(successMessage).toBe("success");
     });
 
@@ -116,19 +151,38 @@ describe("Dashboard Loader Integration", () => {
         hashTagPresets: [],
       };
 
-      (loadDashboardData as ReturnType<typeof vi.fn>).mockResolvedValue(mockData);
+      (loadDashboardData as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockData,
+      );
 
       const request = new Request("http://localhost:3000/dashboard");
-      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
       const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as Record<string, unknown>)
+          : {};
 
-      const scheduledPosts = Array.isArray(data.scheduledPosts) ? data.scheduledPosts : [];
+      const scheduledPosts = Array.isArray(data.scheduledPosts)
+        ? data.scheduledPosts
+        : [];
       expect(scheduledPosts).toHaveLength(1);
-      const firstPost = scheduledPosts[0] && typeof scheduledPosts[0] === "object" && !Array.isArray(scheduledPosts[0]) ? scheduledPosts[0] as { id?: unknown } : {};
+      const firstPost =
+        scheduledPosts[0] &&
+        typeof scheduledPosts[0] === "object" &&
+        !Array.isArray(scheduledPosts[0])
+          ? (scheduledPosts[0] as { id?: unknown })
+          : {};
       expect(firstPost).toHaveProperty("id", "1");
-      const user = data.user && typeof data.user === "object" && !Array.isArray(data.user) ? data.user as { timezone?: unknown } : {};
+      const user =
+        data.user && typeof data.user === "object" && !Array.isArray(data.user)
+          ? (data.user as { timezone?: unknown })
+          : {};
       expect(user).toHaveProperty("timezone", "America/New_York");
       const queueTypes = Array.isArray(data.queueTypes) ? data.queueTypes : [];
       expect(queueTypes).toHaveLength(1);
@@ -138,34 +192,40 @@ describe("Dashboard Loader Integration", () => {
   describe("Dashboard Queue Filtering", () => {
     it("should handle 'all' queue type", async () => {
       const request = new Request("http://localhost:3000/dashboard?tab=all");
-      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
       const response = await loader(loaderArgs);
-      
+
       expect(response.status).toBe(200);
       expect(loadDashboardData).toHaveBeenCalledWith("user-123", "all");
     });
 
     it("should handle 'posts' queue type", async () => {
       const request = new Request("http://localhost:3000/dashboard?tab=posts");
-      const loaderArgs: LoaderFunctionArgs = { 
-        request, 
-        params: { queueType: "posts" } 
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: { queueType: "posts" },
       } as unknown as LoaderFunctionArgs;
       const response = await loader(loaderArgs);
-      
+
       expect(response.status).toBe(200);
       expect(loadDashboardData).toHaveBeenCalledWith("user-123", "posts");
     });
 
     it("should handle 'longform' queue type", async () => {
-      const request = new Request("http://localhost:3000/dashboard?tab=longform");
+      const request = new Request(
+        "http://localhost:3000/dashboard?tab=longform",
+      );
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: { queueType: "longform" },
         context: {},
       };
       const response = await loader(loaderArgs);
-      
+
       expect(response.status).toBe(200);
       expect(loadDashboardData).toHaveBeenCalledWith("user-123", "longform");
     });
@@ -174,42 +234,49 @@ describe("Dashboard Loader Integration", () => {
   describe("Error Handling", () => {
     it("should handle authentication errors", async () => {
       (requireUserId as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Authentication required")
+        new Error("Authentication required"),
       );
 
       const request = new Request("http://localhost:3000/dashboard");
-      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
-      
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
+
       await expect(loader(loaderArgs)).rejects.toThrow(
-        "Authentication required"
+        "Authentication required",
       );
     });
 
     it("should handle feature access errors", async () => {
       (requireFeatureAccess as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Feature access denied")
+        new Error("Feature access denied"),
       );
 
       const request = new Request("http://localhost:3000/dashboard");
-      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
-      
-      await expect(loader(loaderArgs)).rejects.toThrow(
-        "Feature access denied"
-      );
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
+
+      await expect(loader(loaderArgs)).rejects.toThrow("Feature access denied");
     });
 
     it("should handle data loading errors", async () => {
       (loadDashboardData as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Database error")
+        new Error("Database error"),
       );
 
       const request = new Request("http://localhost:3000/dashboard");
-      
-      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
-      await expect(loader(loaderArgs)).rejects.toThrow(
-        "Database error"
-      );
+
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
+      await expect(loader(loaderArgs)).rejects.toThrow("Database error");
     });
   });
 });
-

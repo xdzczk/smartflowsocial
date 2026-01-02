@@ -1,9 +1,9 @@
 /**
  * Handler functions for Bulk Posts feature
- * 
+ *
  * This file re-exports all handlers from their individual modules.
  * This maintains backward compatibility while allowing better organization.
- * 
+ *
  * @deprecated Import directly from handlers/ subdirectory for better tree-shaking
  */
 

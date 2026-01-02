@@ -49,7 +49,12 @@ interface LongFormPostProps {
   uploadProvider?: string | null;
   userTimezone?: string;
   onQueueTypeChange?: (name: string) => void;
-  onPreview?: (data: { title: string; summary: string; content: string; image: string }) => void;
+  onPreview?: (data: {
+    title: string;
+    summary: string;
+    content: string;
+    image: string;
+  }) => void;
   initialData?: InitialData | null;
   isEditing?: boolean;
   hashTagPresets?: HashTagPreset[];
@@ -151,17 +156,21 @@ export default function LongFormPost({
 
   const handleAssetBrowserSelect = (selectedAssets: Asset[]) => {
     if (showAssetBrowser === "cover") {
-      handleCoverImageAssets(selectedAssets.map(asset => ({
-        assetType: asset.assetType,
-        fileUrl: asset.fileUrl ?? undefined,
-      })));
+      handleCoverImageAssets(
+        selectedAssets.map((asset) => ({
+          assetType: asset.assetType,
+          fileUrl: asset.fileUrl ?? undefined,
+        })),
+      );
     } else {
-      void insertAssetIntoEditor(selectedAssets.map(asset => ({
-        assetType: asset.assetType,
-        fileUrl: asset.fileUrl ?? undefined,
-        content: asset.content ?? undefined,
-        title: asset.title ?? undefined,
-      })));
+      void insertAssetIntoEditor(
+        selectedAssets.map((asset) => ({
+          assetType: asset.assetType,
+          fileUrl: asset.fileUrl ?? undefined,
+          content: asset.content ?? undefined,
+          title: asset.title ?? undefined,
+        })),
+      );
     }
     setShowAssetBrowser("");
   };
@@ -186,7 +195,12 @@ export default function LongFormPost({
     selectedHashtags,
   });
 
-  const isFormValid = !!(title.trim() && summary.trim() && content.trim() && image);
+  const isFormValid = !!(
+    title.trim() &&
+    summary.trim() &&
+    content.trim() &&
+    image
+  );
 
   return (
     <>
@@ -247,7 +261,9 @@ export default function LongFormPost({
           scheduledFor={scheduledFor}
           onScheduledForChange={setScheduledFor}
           scheduleIntervals={scheduleIntervals}
-          onScheduleIntervalClick={(intervalHours) => void handleScheduleIntervalClick(intervalHours)}
+          onScheduleIntervalClick={(intervalHours) =>
+            void handleScheduleIntervalClick(intervalHours)
+          }
           onNextSlotClick={() => {
             void calculateQueueScheduleTime(selectedQueueType);
           }}
@@ -255,8 +271,19 @@ export default function LongFormPost({
           useHashtagPresets={useHashtagPresets}
           selectedHashtagPresetId={selectedHashtagPresetId}
           selectedHashtags={selectedHashtags}
-          onHashtagPresetChange={onHashtagPresetChange ?? ((_id, _tags) => { void _id; void _tags; })}
-          onUseHashtagPresetsChange={onUseHashtagPresetsChange ?? (() => { void 0; })}
+          onHashtagPresetChange={
+            onHashtagPresetChange ??
+            ((_id, _tags) => {
+              void _id;
+              void _tags;
+            })
+          }
+          onUseHashtagPresetsChange={
+            onUseHashtagPresetsChange ??
+            (() => {
+              void 0;
+            })
+          }
         />
 
         <LongFormActionButtons

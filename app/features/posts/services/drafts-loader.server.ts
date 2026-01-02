@@ -3,16 +3,9 @@
  * Centralized data fetching for drafts page
  */
 
-import {
-  getDraftLongFormPosts,
-} from "~/models/longformpost.server";
-import {
-  getDraftPosts,
-} from "~/models/post.queries.server";
-import {
-  getUserById,
-  getQueueTypes,
-} from "~/models/user.server";
+import { getDraftLongFormPosts } from "~/models/longformpost.server";
+import { getDraftPosts } from "~/models/post.queries.server";
+import { getUserById, getQueueTypes } from "~/models/user.server";
 
 import { combineContent } from "../combined.server";
 import type { PostData, LongFormPostData } from "../types";
@@ -21,10 +14,7 @@ import { convertPrismaQueueTypeToQueueType } from "../types";
 /**
  * Load drafts data
  */
-export async function loadDraftsData(
-  userId: string,
-  queueType: string,
-) {
+export async function loadDraftsData(userId: string, queueType: string) {
   const [posts, allLongformPosts, user, queueTypes] = await Promise.all([
     getDraftPosts({ userId, queueType }),
     getDraftLongFormPosts({ userId }),
@@ -41,8 +31,10 @@ export async function loadDraftsData(
   // Convert PostWithQueueType[] to PostData[] for combineContent
   const postsData: PostData[] = posts.map((post) => {
     const { queueType, ...rest } = post;
-    const signedEventValue: PostData["signedEvent"] = post.signedEvent as PostData["signedEvent"];
-    const nostrEventValue: PostData["nostrEvent"] = post.nostrEvent as PostData["nostrEvent"];
+    const signedEventValue: PostData["signedEvent"] =
+      post.signedEvent as PostData["signedEvent"];
+    const nostrEventValue: PostData["nostrEvent"] =
+      post.nostrEvent as PostData["nostrEvent"];
     const result: PostData = {
       ...rest,
       queueType: convertPrismaQueueTypeToQueueType(queueType),
@@ -55,8 +47,10 @@ export async function loadDraftsData(
   // Convert LongFormPost[] to LongFormPostData[] for combineContent
   const longformPostsData: LongFormPostData[] = longformPosts.map((post) => {
     const { queueType, ...rest } = post;
-    const signedEventValue: LongFormPostData["signedEvent"] = post.signedEvent as LongFormPostData["signedEvent"];
-    const nostrEventValue: LongFormPostData["nostrEvent"] = post.nostrEvent as LongFormPostData["nostrEvent"];
+    const signedEventValue: LongFormPostData["signedEvent"] =
+      post.signedEvent as LongFormPostData["signedEvent"];
+    const nostrEventValue: LongFormPostData["nostrEvent"] =
+      post.nostrEvent as LongFormPostData["nostrEvent"];
     const result: LongFormPostData = {
       ...rest,
       queueType: convertPrismaQueueTypeToQueueType(queueType),
@@ -67,7 +61,12 @@ export async function loadDraftsData(
   });
 
   // Combine posts and longform posts for the "All" tab
-  const allContent = combineContent(postsData, longformPostsData, "createdAt", "desc");
+  const allContent = combineContent(
+    postsData,
+    longformPostsData,
+    "createdAt",
+    "desc",
+  );
 
   return {
     posts,
@@ -78,7 +77,3 @@ export async function loadDraftsData(
     selectedQueueType: queueType,
   };
 }
-
-
-
-

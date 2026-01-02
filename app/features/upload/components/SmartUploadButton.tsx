@@ -36,7 +36,7 @@ export function SmartUploadButton({
     try {
       const response = await fetch("/api/user-upload-provider");
       if (!response.ok) throw new Error("Failed to check provider");
-      const data = await response.json() as { provider?: string };
+      const data = (await response.json()) as { provider?: string };
 
       // Handle legacy BLOSSOM value as BLOSSOM_PRIMAL
       if (data.provider === "BLOSSOM" || data.provider === "BLOSSOM_PRIMAL") {
@@ -77,33 +77,40 @@ export function SmartUploadButton({
     return result.fileUrl;
   };
 
-  const uploadToBlossom = useCallback(async (
-    _file: File,
-    _provider: "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR",
-  ): Promise<string> => {
-    try {
-      // Check if NOSTR extension is available
-      if (!window.nostr) {
+  const uploadToBlossom = useCallback(
+    async (
+      _file: File,
+      _provider: "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR",
+    ): Promise<string> => {
+      try {
+        // Check if NOSTR extension is available
+        if (!window.nostr) {
+          throw new Error(
+            "NOSTR extension not found. Please install Alby, Amber, or another NOSTR extension to upload to Blossom.",
+          );
+        }
+
+        onUploadProgress?.(10); // Starting auth
+
+        // Note: Blossom uploads now handled by upload.client.ts utility
         throw new Error(
-          "NOSTR extension not found. Please install Alby, Amber, or another NOSTR extension to upload to Blossom.",
+          "Direct blossom uploads not supported in SmartUploadButton. Use upload.client.ts instead.",
         );
+      } catch (error) {
+        const { handleAsyncError } = await import("~/lib/error-handler.client");
+        handleAsyncError(
+          error,
+          {
+            component: "SmartUploadButton",
+            action: "uploadToBlossom",
+          },
+          false,
+        ); // Don't show toast, throw to caller
+        throw error;
       }
-
-      onUploadProgress?.(10); // Starting auth
-
-      // Note: Blossom uploads now handled by upload.client.ts utility
-      throw new Error(
-        "Direct blossom uploads not supported in SmartUploadButton. Use upload.client.ts instead.",
-      );
-    } catch (error) {
-      const { handleAsyncError } = await import("~/lib/error-handler.client");
-      handleAsyncError(error, {
-        component: "SmartUploadButton",
-        action: "uploadToBlossom",
-      }, false); // Don't show toast, throw to caller
-      throw error;
-    }
-  }, [onUploadProgress]);
+    },
+    [onUploadProgress],
+  );
 
   const handleFileUpload = useCallback(
     async (file: File) => {
@@ -150,7 +157,13 @@ export function SmartUploadButton({
         }
       }
     },
-    [onUploadStart, onUploadProgress, onUploadComplete, onUploadError, uploadToBlossom],
+    [
+      onUploadStart,
+      onUploadProgress,
+      onUploadComplete,
+      onUploadError,
+      uploadToBlossom,
+    ],
   );
 
   const handleFileSelect = useCallback(

@@ -1,12 +1,16 @@
 /* eslint-disable no-console */
 /**
  * Example Usage of Centralized Error Handling
- * 
+ *
  * This file demonstrates how to use the error handling system
  * in your routes and features.
  */
 
-import { json, type ActionFunctionArgs, type LoaderFunctionArgs } from "@remix-run/node";
+import {
+  json,
+  type ActionFunctionArgs,
+  type LoaderFunctionArgs,
+} from "@remix-run/node";
 
 import {
   withErrorHandling,
@@ -117,7 +121,13 @@ export async function assertionExample({
   assertExists(resource, "Resource not found", { id: params.id ?? "" });
 
   const hasPermission = await checkPermission(userId, resource);
-  const resourceId = resource && typeof resource === "object" && resource !== null && "id" in resource ? String((resource as { id: unknown }).id) : "";
+  const resourceId =
+    resource &&
+    typeof resource === "object" &&
+    resource !== null &&
+    "id" in resource
+      ? String((resource as { id: unknown }).id)
+      : "";
   assertAuthorized(
     hasPermission,
     "You don't have permission to access this resource",
@@ -151,7 +161,10 @@ export async function specificErrorsExample({
     throw new NotFoundError("Post not found", { postId });
   }
 
-  const postUserId = post && typeof post === "object" && post !== null && "userId" in post ? (post as { userId: unknown }).userId : undefined;
+  const postUserId =
+    post && typeof post === "object" && post !== null && "userId" in post
+      ? (post as { userId: unknown }).userId
+      : undefined;
   if (postUserId && typeof postUserId === "string" && postUserId !== userId) {
     throw new AuthorizationError(
       "You don't have permission to edit this post",
@@ -167,10 +180,7 @@ export async function specificErrorsExample({
 // Example 6: Handling external service errors
 // ============================================================================
 
-
-export async function externalServiceExample({
-  request,
-}: ActionFunctionArgs) {
+export async function externalServiceExample({ request }: ActionFunctionArgs) {
   try {
     const response = await fetch("https://api.example.com/data");
     if (!response.ok) {
@@ -218,8 +228,3 @@ async function getPost(postId: string) {
   // Your database logic
   return null;
 }
-
-
-
-
-

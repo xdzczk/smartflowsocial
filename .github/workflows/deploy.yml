@@ -25,8 +25,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'pnpm'
+          node-version: "20"
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -84,8 +84,6 @@ jobs:
       - name: Check coverage thresholds
         run: |
           pnpm test:coverage
-        env:
-          SESSION_SECRET: test-session-secret-very-long-and-secure-32-chars-minimum
           node -e "
             const fs = require('fs');
             const coverage = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8'));
@@ -101,6 +99,8 @@ jobs:
             }
             process.exit(failed ? 1 : 0);
           "
+        env:
+          SESSION_SECRET: test-session-secret-very-long-and-secure-32-chars-minimum
 
   # Build application
   build:
@@ -119,8 +119,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'pnpm'
+          node-version: "20"
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -161,10 +161,3 @@ jobs:
           # flyctl deploy
           # railway up
           # vercel --prod
-
-
-
-
-
-
-

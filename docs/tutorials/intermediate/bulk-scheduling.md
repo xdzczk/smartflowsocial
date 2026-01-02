@@ -20,12 +20,14 @@ Learn how to upload multiple images and schedule them automatically with consist
 ## What is Bulk Scheduling?
 
 **Bulk scheduling allows you to:**
+
 - Upload multiple images at once
 - Automatically space posts with intervals
 - Add captions to each image
 - Schedule entire batches efficiently
 
 **Use cases:**
+
 - Product catalogs
 - Photo series
 - Content batching
@@ -65,12 +67,14 @@ Learn how to upload multiple images and schedule them automatically with consist
 5. **Images upload** automatically
 
 **Supported formats:**
+
 - JPEG/JPG
 - PNG
 - WebP
 - GIF
 
 **File size:**
+
 - Recommended: Under 2MB each
 - Maximum: 10MB per image (may vary)
 
@@ -79,6 +83,7 @@ Learn how to upload multiple images and schedule them automatically with consist
 ## Step 3: Review Uploaded Images
 
 **After upload:**
+
 - Images appear in grid
 - Each image has:
   - Preview thumbnail
@@ -87,6 +92,7 @@ Learn how to upload multiple images and schedule them automatically with consist
   - Queue selector
 
 **Image order:**
+
 - Order matters for scheduling
 - First image posts first
 - Can reorder if needed
@@ -105,6 +111,7 @@ Learn how to upload multiple images and schedule them automatically with consist
 4. **First image** posts at this time
 
 **Example:**
+
 - Start date: Tomorrow
 - Start time: 9:00 AM
 - First image: Tomorrow 9:00 AM
@@ -114,6 +121,7 @@ Learn how to upload multiple images and schedule them automatically with consist
 ## Step 5: Choose Posting Interval
 
 **Quick intervals:**
+
 - Click preset buttons:
   - **2h** - Every 2 hours
   - **4h** - Every 4 hours
@@ -122,16 +130,19 @@ Learn how to upload multiple images and schedule them automatically with consist
   - **24h** - Every 24 hours
 
 **Custom interval:**
+
 - Enter custom hours
 - Example: 3 hours, 8 hours
 
 **How it works:**
+
 - First image: Start time
 - Second image: Start time + interval
 - Third image: Start time + (2 × interval)
 - And so on...
 
 **Example with 4-hour interval:**
+
 - Image 1: 9:00 AM
 - Image 2: 1:00 PM (4 hours later)
 - Image 3: 5:00 PM (8 hours later)
@@ -145,20 +156,24 @@ Learn how to upload multiple images and schedule them automatically with consist
 
 1. **Click caption field** below image
 2. **Type caption:**
+
    ```
    Beautiful sunset from my window 🌅
-   
+
    #photography #sunset #nostr
    ```
+
 3. **Repeat for each image**
 
 **Caption tips:**
+
 - Use similar style for series
 - Add variations to avoid repetition
 - Include relevant hashtags
 - Keep captions engaging
 
 **Bulk caption options:**
+
 - Add same caption to all
 - Or customize individually
 - Mix of both approaches
@@ -178,6 +193,7 @@ Learn how to upload multiple images and schedule them automatically with consist
    - Applies hashtag preset (if set)
 
 **Bulk queue assignment:**
+
 - Select all images
 - Choose queue
 - Applies to all selected
@@ -189,11 +205,13 @@ Learn how to upload multiple images and schedule them automatically with consist
 **Before scheduling:**
 
 1. **Check scheduled times:**
+
    - Review each image's time
    - Verify intervals are correct
    - Ensure times work for audience
 
 2. **Review captions:**
+
    - Check spelling
    - Verify hashtags
    - Ensure consistency
@@ -265,6 +283,7 @@ Learn how to upload multiple images and schedule them automatically with consist
 ### Organization
 
 **Before uploading:**
+
 - Name files in order
 - Organize by topic
 - Group related images
@@ -273,12 +292,14 @@ Learn how to upload multiple images and schedule them automatically with consist
 ### Scheduling Strategy
 
 **Consider:**
+
 - **Audience activity** - When are they online?
 - **Content type** - News vs. evergreen
 - **Frequency** - How often to post?
 - **Time zones** - Where is your audience?
 
 **Best practices:**
+
 - Space posts evenly
 - Avoid posting too frequently
 - Consider peak engagement times
@@ -287,12 +308,14 @@ Learn how to upload multiple images and schedule them automatically with consist
 ### Caption Strategy
 
 **For series:**
+
 - Use consistent style
 - Add variations
 - Include series numbering
 - Maintain brand voice
 
 **For variety:**
+
 - Customize each caption
 - Match caption to image
 - Use different hashtags
@@ -337,6 +360,7 @@ Learn how to upload multiple images and schedule them automatically with consist
 **Problem:** Images won't upload
 
 **Solutions:**
+
 - Check file sizes (too large?)
 - Verify file formats (supported?)
 - Check internet connection
@@ -348,6 +372,7 @@ Learn how to upload multiple images and schedule them automatically with consist
 **Problem:** Posts scheduled at same time
 
 **Solutions:**
+
 - Check interval settings
 - Verify start time
 - Review queue rules
@@ -358,6 +383,7 @@ Learn how to upload multiple images and schedule them automatically with consist
 **Problem:** Extension signing fails
 
 **Solutions:**
+
 - Check extension is unlocked
 - Verify permissions
 - Try signing in smaller batches
@@ -371,7 +397,7 @@ Learn how to upload multiple images and schedule them automatically with consist
 ✅ How to set posting intervals  
 ✅ How to add captions in bulk  
 ✅ How to preview and schedule  
-✅ Bulk scheduling best practices  
+✅ Bulk scheduling best practices
 
 ---
 
@@ -392,4 +418,3 @@ Learn how to upload multiple images and schedule them automatically with consist
 ---
 
 **Next Tutorial:** [Creating Giveaways](./creating-giveaways.md) → Engage your audience
-

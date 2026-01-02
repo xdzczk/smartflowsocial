@@ -67,4 +67,3 @@ describe("Remix Utils", () => {
   // that require React context. They should be tested with React Testing Library
   // in integration tests or component tests, not unit tests.
 });
-

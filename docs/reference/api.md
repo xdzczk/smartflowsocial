@@ -21,6 +21,7 @@ This document describes all API endpoints available in SmartFlowSocial, includin
 All API routes are located in `app/routes/api.*.tsx`. These endpoints handle various background operations for the application, including file uploads, post publishing, queue management, and user operations.
 
 **API Design Principles:**
+
 - RESTful where applicable
 - JSON request/response format
 - Consistent error handling
@@ -58,6 +59,7 @@ https://your-domain.com/api/...
 ```
 
 For local development:
+
 ```
 http://localhost:3000/api/...
 ```
@@ -71,6 +73,7 @@ http://localhost:3000/api/...
 **Content-Type:** `application/json` (for JSON requests) or `multipart/form-data` (for file uploads)
 
 **Example:**
+
 ```bash
 curl -X POST https://your-domain.com/api/publish \
   -H "Content-Type: application/json" \
@@ -81,6 +84,7 @@ curl -X POST https://your-domain.com/api/publish \
 ### Response Format
 
 **Success Response:**
+
 ```json
 {
   "success": true,
@@ -89,6 +93,7 @@ curl -X POST https://your-domain.com/api/publish \
 ```
 
 **Error Response:**
+
 ```json
 {
   "error": "Error message",
@@ -111,15 +116,15 @@ All API endpoints return errors in a consistent format:
 
 ### HTTP Status Codes
 
-| Code | Meaning | Description |
-|------|---------|-------------|
-| `200` | OK | Request successful |
-| `201` | Created | Resource created |
-| `400` | Bad Request | Invalid parameters |
-| `401` | Unauthorized | Not authenticated |
-| `403` | Forbidden | Insufficient permissions |
-| `404` | Not Found | Resource not found |
-| `500` | Internal Server Error | Server error |
+| Code  | Meaning               | Description              |
+| ----- | --------------------- | ------------------------ |
+| `200` | OK                    | Request successful       |
+| `201` | Created               | Resource created         |
+| `400` | Bad Request           | Invalid parameters       |
+| `401` | Unauthorized          | Not authenticated        |
+| `403` | Forbidden             | Insufficient permissions |
+| `404` | Not Found             | Resource not found       |
+| `500` | Internal Server Error | Server error             |
 
 ### Error Types
 
@@ -136,14 +141,17 @@ All API endpoints return errors in a consistent format:
 ### Upload
 
 #### POST `/api/upload`
+
 Upload files to S3-compatible storage (or configured upload provider).
 
 **Request:**
+
 - Content-Type: `multipart/form-data`
 - Body: FormData with `file` field
 - Max file size: 100MB (for videos)
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -154,6 +162,7 @@ Upload files to S3-compatible storage (or configured upload provider).
 ```
 
 **Supported formats:**
+
 - Images: JPEG, PNG, WebP, GIF
 - Videos: MP4, WebM, MOV
 
@@ -162,13 +171,16 @@ Upload files to S3-compatible storage (or configured upload provider).
 ---
 
 #### POST `/api/upload-blossom`
+
 Upload files to Blossom storage.
 
 **Request:**
+
 - Content-Type: `multipart/form-data`
 - Body: File data and Blossom authentication
 
 **Response:**
+
 ```json
 {
   "url": "https://blossom.example.com/image.jpg"
@@ -178,13 +190,16 @@ Upload files to Blossom storage.
 ---
 
 #### POST `/api/upload-editorjs-image`
+
 Upload images from the EditorJS rich text editor.
 
 **Request:**
+
 - Content-Type: `multipart/form-data`
 - Body: Image file from EditorJS
 
 **Response:**
+
 ```json
 {
   "success": 1,
@@ -199,15 +214,14 @@ Upload images from the EditorJS rich text editor.
 ### Posts
 
 #### POST `/api/publish`
+
 Publish a signed Nostr event to relays via the HTTP Nostr Publisher service.
 
 **Request:**
+
 ```json
 {
-  "relays": [
-    "wss://relay.example.com",
-    "wss://relay2.example.com"
-  ],
+  "relays": ["wss://relay.example.com", "wss://relay2.example.com"],
   "event": {
     "id": "event_id",
     "pubkey": "pubkey",
@@ -221,6 +235,7 @@ Publish a signed Nostr event to relays via the HTTP Nostr Publisher service.
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -233,9 +248,11 @@ Publish a signed Nostr event to relays via the HTTP Nostr Publisher service.
 ---
 
 #### POST `/api/posts/batch`
+
 Batch operations on multiple posts.
 
 **Request:**
+
 ```json
 {
   "action": "delete|schedule",
@@ -248,9 +265,11 @@ Batch operations on multiple posts.
 ### Queue & Scheduling
 
 #### POST `/api/queue-schedule`
+
 Get the calculated next schedule time for a queue.
 
 **Request:**
+
 ```json
 {
   "queueTypeName": "Bitcoin News",
@@ -259,6 +278,7 @@ Get the calculated next schedule time for a queue.
 ```
 
 **Response:**
+
 ```json
 {
   "nextScheduleTime": "2024-01-15T10:00:00Z",
@@ -271,9 +291,11 @@ Get the calculated next schedule time for a queue.
 ---
 
 #### POST `/api/effective-hashtags`
+
 Get the effective hashtags for a post based on queue and preset settings.
 
 **Request:**
+
 ```json
 {
   "queueTypeName": "Bitcoin News",
@@ -282,6 +304,7 @@ Get the effective hashtags for a post based on queue and preset settings.
 ```
 
 **Response:**
+
 ```json
 {
   "effectiveHashtags": "#nostr #bitcoin #lightning"
@@ -295,9 +318,11 @@ Get the effective hashtags for a post based on queue and preset settings.
 ### User Management
 
 #### GET `/api/user-upload-provider`
+
 Get the current user's upload provider setting.
 
 **Response:**
+
 ```json
 {
   "provider": "S3"
@@ -307,9 +332,11 @@ Get the current user's upload provider setting.
 ---
 
 #### GET `/api/children`
+
 Get child accounts linked to the current user.
 
 **Response:**
+
 ```json
 {
   "children": [
@@ -321,9 +348,11 @@ Get child accounts linked to the current user.
 ---
 
 #### POST `/api/parent`
+
 Manage parent-child account relationships.
 
 **Request:**
+
 ```json
 {
   "action": "request|accept|reject",
@@ -336,12 +365,15 @@ Manage parent-child account relationships.
 ### External Data
 
 #### GET `/api/link-preview`
+
 Fetch Open Graph preview data for a URL.
 
 **Query Parameters:**
+
 - `url` - URL to fetch preview for
 
 **Response:**
+
 ```json
 {
   "title": "Page Title",
@@ -353,12 +385,15 @@ Fetch Open Graph preview data for a URL.
 ---
 
 #### GET `/api/thread-view`
+
 Fetch a Nostr thread from the cache or relays.
 
 **Query Parameters:**
+
 - `eventId` - Root event ID
 
 **Response:**
+
 ```json
 {
   "events": [ ... ],
@@ -371,14 +406,17 @@ Fetch a Nostr thread from the cache or relays.
 ### Error Metrics
 
 #### GET `/api/error-metrics`
+
 Get error metrics and statistics.
 
 **Query Parameters:**
+
 - `summary` (boolean) - Return summary metrics with error rate
 - `top` (number) - Get top N error codes (e.g., `?top=10`)
 - `checkRate` (boolean) - Check if error rate is high
 
 **Response (summary=true):**
+
 ```json
 {
   "summary": {
@@ -395,6 +433,7 @@ Get error metrics and statistics.
 ```
 
 **Response (top=N):**
+
 ```json
 {
   "topErrors": [
@@ -405,6 +444,7 @@ Get error metrics and statistics.
 ```
 
 **Response (checkRate=true):**
+
 ```json
 {
   "errorRate": 5.2,
@@ -414,6 +454,7 @@ Get error metrics and statistics.
 ```
 
 **Response (default):**
+
 ```json
 {
   "metrics": { ... },
@@ -428,12 +469,15 @@ Get error metrics and statistics.
 ### Payments
 
 #### GET `/api/payment-status`
+
 Check the status of a Lightning payment.
 
 **Query Parameters:**
+
 - `paymentId` - Payment ID
 
 **Response:**
+
 ```json
 {
   "status": "COMPLETED",
@@ -447,9 +491,11 @@ Check the status of a Lightning payment.
 ## Cron Endpoints
 
 ### POST `/cron/checksubscription`
+
 Check and update subscription statuses.
 
 **Note:** This endpoint should be called periodically (e.g., daily) to:
+
 - Mark expired subscriptions as inactive
 - Send renewal reminders
 - Process subscription updates
@@ -468,6 +514,7 @@ All API endpoints return errors in a consistent format:
 ```
 
 Common HTTP status codes:
+
 - `400` - Bad Request (invalid parameters)
 - `401` - Unauthorized (not logged in)
 - `403` - Forbidden (insufficient permissions)
@@ -481,6 +528,7 @@ Common HTTP status codes:
 Currently, there is no built-in rate limiting. For production deployments, consider adding rate limiting at the reverse proxy level (e.g., nginx, Cloudflare).
 
 **Recommended Limits:**
+
 - General API: 100 requests per 15 minutes per IP
 - Upload endpoints: 20 requests per 15 minutes per IP
 - Publish endpoints: 50 requests per 15 minutes per IP
@@ -488,14 +536,14 @@ Currently, there is no built-in rate limiting. For production deployments, consi
 ### Implementing Rate Limiting
 
 ```typescript
-import rateLimit from 'express-rate-limit';
+import rateLimit from "express-rate-limit";
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // Limit each IP to 100 requests
 });
 
-app.use('/api/', apiLimiter);
+app.use("/api/", apiLimiter);
 ```
 
 ---
@@ -508,12 +556,14 @@ API endpoints are same-origin only by default. If you need cross-origin access, 
 
 ```typescript
 // eslint-disable-next-line import/no-unresolved
-import cors from 'cors';
+import cors from "cors";
 
-app.use(cors({
-  origin: 'https://allowed-origin.com',
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: "https://allowed-origin.com",
+    credentials: true,
+  }),
+);
 ```
 
 ---
@@ -533,20 +583,20 @@ app.use(cors({
 ```typescript
 async function apiCall() {
   try {
-    const response = await fetch('/api/endpoint', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const response = await fetch("/api/endpoint", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    
+
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error || 'Request failed');
+      throw new Error(error.error || "Request failed");
     }
-    
+
     return await response.json();
   } catch (error) {
-    console.error('API call failed:', error);
+    console.error("API call failed:", error);
     throw error;
   }
 }
@@ -561,7 +611,7 @@ async function apiCallWithRetry(maxRetries = 3) {
       return await apiCall();
     } catch (error) {
       if (i === maxRetries - 1) throw error;
-      await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+      await new Promise((resolve) => setTimeout(resolve, 1000 * (i + 1)));
     }
   }
 }
@@ -583,25 +633,25 @@ const signedEvent = await window.nostr.signEvent({
 });
 
 // 2. Send to API
-const response = await fetch('/api/publish', {
-  method: 'POST',
+const response = await fetch("/api/publish", {
+  method: "POST",
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
-  credentials: 'include', // Include session cookie
+  credentials: "include", // Include session cookie
   body: JSON.stringify({
     signedEvent,
-    postId: 'post_123',
+    postId: "post_123",
   }),
 });
 
 // 3. Handle response
 if (response.ok) {
   const result = await response.json();
-  console.log('Published:', result.eventId);
+  console.log("Published:", result.eventId);
 } else {
   const error = await response.json();
-  console.error('Error:', error.error);
+  console.error("Error:", error.error);
 }
 ```
 
@@ -609,17 +659,17 @@ if (response.ok) {
 
 ```typescript
 const formData = new FormData();
-formData.append('file', fileInput.files[0]);
+formData.append("file", fileInput.files[0]);
 
-const response = await fetch('/api/upload', {
-  method: 'POST',
-  credentials: 'include',
+const response = await fetch("/api/upload", {
+  method: "POST",
+  credentials: "include",
   body: formData,
 });
 
 if (response.ok) {
   const { url } = await response.json();
-  console.log('Uploaded:', url);
+  console.log("Uploaded:", url);
 }
 ```
 

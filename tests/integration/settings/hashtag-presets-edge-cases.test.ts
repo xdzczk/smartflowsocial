@@ -13,7 +13,11 @@ vi.mock("~/models/user.server", () => ({
 }));
 
 import { handleHashtagPresetAction } from "~/features/settings/actions/hashtag-presets-actions.server";
-import { createHashTagPreset, updateHashTagPreset, deleteHashTagPreset } from "~/models/user.server";
+import {
+  createHashTagPreset,
+  updateHashTagPreset,
+  deleteHashTagPreset,
+} from "~/models/user.server";
 
 import { createFormData, TEST_USER_ID } from "../../utils/test-helpers";
 
@@ -30,10 +34,22 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
         tags: "#tag1 #tag2",
       });
 
-      const result = await handleHashtagPresetAction(TEST_USER_ID, "create_hashtag_preset", formData);
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const result = await handleHashtagPresetAction(
+        TEST_USER_ID,
+        "create_hashtag_preset",
+        formData,
+      );
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as { success?: boolean; error?: string })
+          : {};
 
       expect(createHashTagPreset).not.toHaveBeenCalled();
       expect(result instanceof Response ? result.status : 200).toBe(400);
@@ -47,10 +63,22 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
         tags: "   ",
       });
 
-      const result = await handleHashtagPresetAction(TEST_USER_ID, "create_hashtag_preset", formData);
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const result = await handleHashtagPresetAction(
+        TEST_USER_ID,
+        "create_hashtag_preset",
+        formData,
+      );
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as { success?: boolean; error?: string })
+          : {};
 
       expect(createHashTagPreset).not.toHaveBeenCalled();
       expect(result instanceof Response ? result.status : 200).toBe(400);
@@ -58,7 +86,9 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
     });
 
     it("should handle optional description", async () => {
-      (createHashTagPreset as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (createHashTagPreset as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined,
+      );
 
       const formData = createFormData({
         _action: "create_hashtag_preset",
@@ -67,10 +97,22 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
         description: "Test description",
       });
 
-      const result = await handleHashtagPresetAction(TEST_USER_ID, "create_hashtag_preset", formData);
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const result = await handleHashtagPresetAction(
+        TEST_USER_ID,
+        "create_hashtag_preset",
+        formData,
+      );
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as { success?: boolean; error?: string })
+          : {};
 
       expect(createHashTagPreset).toHaveBeenCalledWith(
         TEST_USER_ID,
@@ -82,7 +124,9 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
     });
 
     it("should handle missing description", async () => {
-      (createHashTagPreset as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (createHashTagPreset as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined,
+      );
 
       const formData = createFormData({
         _action: "create_hashtag_preset",
@@ -90,10 +134,22 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
         tags: "#tag1 #tag2",
       });
 
-      const result = await handleHashtagPresetAction(TEST_USER_ID, "create_hashtag_preset", formData);
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const result = await handleHashtagPresetAction(
+        TEST_USER_ID,
+        "create_hashtag_preset",
+        formData,
+      );
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as { success?: boolean; error?: string })
+          : {};
 
       expect(createHashTagPreset).toHaveBeenCalledWith(
         TEST_USER_ID,
@@ -113,10 +169,22 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
         tags: "#tag1 #tag2",
       });
 
-      const result = await handleHashtagPresetAction(TEST_USER_ID, "update_hashtag_preset", formData);
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const result = await handleHashtagPresetAction(
+        TEST_USER_ID,
+        "update_hashtag_preset",
+        formData,
+      );
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as { success?: boolean; error?: string })
+          : {};
 
       expect(updateHashTagPreset).not.toHaveBeenCalled();
       expect(result instanceof Response ? result.status : 200).toBe(400);
@@ -131,10 +199,22 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
         tags: "#tag1 #tag2",
       });
 
-      const result = await handleHashtagPresetAction(TEST_USER_ID, "update_hashtag_preset", formData);
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const result = await handleHashtagPresetAction(
+        TEST_USER_ID,
+        "update_hashtag_preset",
+        formData,
+      );
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as { success?: boolean; error?: string })
+          : {};
 
       expect(updateHashTagPreset).not.toHaveBeenCalled();
       expect(result instanceof Response ? result.status : 200).toBe(400);
@@ -149,10 +229,22 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
         tags: "   ",
       });
 
-      const result = await handleHashtagPresetAction(TEST_USER_ID, "update_hashtag_preset", formData);
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const result = await handleHashtagPresetAction(
+        TEST_USER_ID,
+        "update_hashtag_preset",
+        formData,
+      );
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as { success?: boolean; error?: string })
+          : {};
 
       expect(updateHashTagPreset).not.toHaveBeenCalled();
       expect(result instanceof Response ? result.status : 200).toBe(400);
@@ -160,7 +252,9 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
     });
 
     it("should handle optional description", async () => {
-      (updateHashTagPreset as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (updateHashTagPreset as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined,
+      );
 
       const formData = createFormData({
         _action: "update_hashtag_preset",
@@ -170,10 +264,22 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
         description: "Updated description",
       });
 
-      const result = await handleHashtagPresetAction(TEST_USER_ID, "update_hashtag_preset", formData);
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const result = await handleHashtagPresetAction(
+        TEST_USER_ID,
+        "update_hashtag_preset",
+        formData,
+      );
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as { success?: boolean; error?: string })
+          : {};
 
       expect(updateHashTagPreset).toHaveBeenCalledWith(
         TEST_USER_ID,
@@ -192,10 +298,22 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
         _action: "delete_hashtag_preset",
       });
 
-      const result = await handleHashtagPresetAction(TEST_USER_ID, "delete_hashtag_preset", formData);
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const result = await handleHashtagPresetAction(
+        TEST_USER_ID,
+        "delete_hashtag_preset",
+        formData,
+      );
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as { success?: boolean; error?: string })
+          : {};
 
       expect(deleteHashTagPreset).not.toHaveBeenCalled();
       expect(result instanceof Response ? result.status : 200).toBe(400);
@@ -203,19 +321,36 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
     });
 
     it("should delete preset with valid ID", async () => {
-      (deleteHashTagPreset as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (deleteHashTagPreset as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined,
+      );
 
       const formData = createFormData({
         _action: "delete_hashtag_preset",
         id: "preset-123",
       });
 
-      const result = await handleHashtagPresetAction(TEST_USER_ID, "delete_hashtag_preset", formData);
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const result = await handleHashtagPresetAction(
+        TEST_USER_ID,
+        "delete_hashtag_preset",
+        formData,
+      );
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as { success?: boolean; error?: string })
+          : {};
 
-      expect(deleteHashTagPreset).toHaveBeenCalledWith(TEST_USER_ID, "preset-123");
+      expect(deleteHashTagPreset).toHaveBeenCalledWith(
+        TEST_USER_ID,
+        "preset-123",
+      );
       expect(jsonResult).toEqual({ success: true });
     });
   });
@@ -226,10 +361,13 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
         _action: "unknown_action",
       });
 
-      const result = await handleHashtagPresetAction(TEST_USER_ID, "unknown_action", formData);
+      const result = await handleHashtagPresetAction(
+        TEST_USER_ID,
+        "unknown_action",
+        formData,
+      );
 
       expect(result).toBeNull();
     });
   });
 });
-

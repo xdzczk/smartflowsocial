@@ -67,7 +67,8 @@ export function QueueTypeDialog({
   );
 
   const isEditing = !!queueType;
-  const isSubmitting = fetcher.state === "submitting" || fetcher.state === "loading";
+  const isSubmitting =
+    fetcher.state === "submitting" || fetcher.state === "loading";
 
   useEffect(() => {
     if (queueType) {
@@ -81,7 +82,11 @@ export function QueueTypeDialog({
 
   useEffect(() => {
     const fetcherData = fetcher.data;
-    if (fetcherData && typeof fetcherData === "object" && !Array.isArray(fetcherData)) {
+    if (
+      fetcherData &&
+      typeof fetcherData === "object" &&
+      !Array.isArray(fetcherData)
+    ) {
       const data = fetcherData as FetcherData;
       if (typeof data.success === "boolean" && data.success) {
         const action = isEditing ? "updated" : "created";
@@ -156,10 +161,7 @@ export function QueueTypeDialog({
 
           <div className="space-y-2">
             <Label htmlFor="hashTagPresetId">Hashtag Preset (optional)</Label>
-            <Select
-              value={hashTagPresetId}
-              onValueChange={setHashTagPresetId}
-            >
+            <Select value={hashTagPresetId} onValueChange={setHashTagPresetId}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a hashtag preset" />
               </SelectTrigger>
@@ -222,7 +224,12 @@ export function QueueTypeDialog({
                 <Checkbox
                   id="useGlobalInterval"
                   name="useGlobalInterval"
-                  defaultChecked={queueType?.scheduleConfig && isIntervalScheduleConfig(queueType.scheduleConfig) ? queueType.scheduleConfig.useGlobalInterval : false}
+                  defaultChecked={
+                    queueType?.scheduleConfig &&
+                    isIntervalScheduleConfig(queueType.scheduleConfig)
+                      ? queueType.scheduleConfig.useGlobalInterval
+                      : false
+                  }
                 />
                 <Label
                   htmlFor="useGlobalInterval"
@@ -239,7 +246,12 @@ export function QueueTypeDialog({
                   type="number"
                   min="1"
                   max="168"
-                  defaultValue={queueType?.scheduleConfig && isIntervalScheduleConfig(queueType.scheduleConfig) ? (queueType.scheduleConfig.intervalHours ?? 4) : 4}
+                  defaultValue={
+                    queueType?.scheduleConfig &&
+                    isIntervalScheduleConfig(queueType.scheduleConfig)
+                      ? (queueType.scheduleConfig.intervalHours ?? 4)
+                      : 4
+                  }
                 />
               </div>
             </div>
@@ -254,7 +266,10 @@ export function QueueTypeDialog({
                 id="slots"
                 name="slots"
                 defaultValue={
-                  queueType?.scheduleConfig && isFixedSlotsScheduleConfig(queueType.scheduleConfig) ? (queueType.scheduleConfig.slots?.join(", ") || "") : ""
+                  queueType?.scheduleConfig &&
+                  isFixedSlotsScheduleConfig(queueType.scheduleConfig)
+                    ? queueType.scheduleConfig.slots?.join(", ") || ""
+                    : ""
                 }
                 placeholder="08:00, 12:00, 18:00"
               />
@@ -273,8 +288,9 @@ export function QueueTypeDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? <svg
-                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+              {isSubmitting ? (
+                <svg
+                  className="-ml-1 mr-2 h-4 w-4 animate-spin text-white"
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
@@ -292,7 +308,8 @@ export function QueueTypeDialog({
                     fill="currentColor"
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   ></path>
-                </svg> : null}
+                </svg>
+              ) : null}
               {isSubmitting
                 ? isEditing
                   ? "Updating..."

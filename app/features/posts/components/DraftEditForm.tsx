@@ -81,10 +81,8 @@ export function DraftEditForm({
           <Label>Queue Type</Label>
           <div className="mt-2 flex flex-wrap gap-2">
             {queueTypes.map((queue) => {
-              const queueName =
-                typeof queue === "string" ? queue : queue.name;
-              const queueColor =
-                typeof queue === "object" ? queue.color : null;
+              const queueName = typeof queue === "string" ? queue : queue.name;
+              const queueColor = typeof queue === "object" ? queue.color : null;
               const isSelected = selectedQueue === queueName;
 
               if (queueColor) {
@@ -225,4 +223,3 @@ export function DraftEditForm({
     </div>
   );
 }
-

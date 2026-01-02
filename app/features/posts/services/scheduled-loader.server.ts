@@ -3,12 +3,8 @@
  * Centralized data fetching for scheduled posts page
  */
 
-import {
-  getScheduledLongFormPosts,
-} from "~/models/longformpost.server";
-import {
-  getScheduledPosts,
-} from "~/models/post.queries.server";
+import { getScheduledLongFormPosts } from "~/models/longformpost.server";
+import { getScheduledPosts } from "~/models/post.queries.server";
 import {
   getUserById,
   getQueueTypes,
@@ -24,10 +20,7 @@ import { filterPostsByQueueType } from "./post-filtering.server";
 /**
  * Load scheduled dashboard data
  */
-export async function loadScheduledData(
-  userId: string,
-  queueType: string,
-) {
+export async function loadScheduledData(userId: string, queueType: string) {
   const [posts, allLongformPosts, user, queueTypes, hashTagPresets] =
     await Promise.all([
       getScheduledPosts({ userId, queueType }),
@@ -43,8 +36,10 @@ export async function loadScheduledData(
   // Convert PostWithQueueType[] to PostData[] for combineContent
   const postsData: PostData[] = posts.map((post) => {
     const { queueType, ...rest } = post;
-    const signedEventValue: PostData["signedEvent"] = post.signedEvent as PostData["signedEvent"];
-    const nostrEventValue: PostData["nostrEvent"] = post.nostrEvent as PostData["nostrEvent"];
+    const signedEventValue: PostData["signedEvent"] =
+      post.signedEvent as PostData["signedEvent"];
+    const nostrEventValue: PostData["nostrEvent"] =
+      post.nostrEvent as PostData["nostrEvent"];
     const result: PostData = {
       ...rest,
       queueType: convertPrismaQueueTypeToQueueType(queueType),
@@ -56,11 +51,15 @@ export async function loadScheduledData(
 
   // Convert LongFormPost[] to LongFormPostData[] for combineContent
   const longformPostsData: LongFormPostData[] = longformPosts.map((post) => {
-    const signedEventValue: LongFormPostData["signedEvent"] = post.signedEvent as LongFormPostData["signedEvent"];
-    const nostrEventValue: LongFormPostData["nostrEvent"] = post.nostrEvent as LongFormPostData["nostrEvent"];
+    const signedEventValue: LongFormPostData["signedEvent"] =
+      post.signedEvent as LongFormPostData["signedEvent"];
+    const nostrEventValue: LongFormPostData["nostrEvent"] =
+      post.nostrEvent as LongFormPostData["nostrEvent"];
     const result: LongFormPostData = {
       ...post,
-      queueType: convertPrismaQueueTypeToQueueType("queueType" in post ? post.queueType : undefined),
+      queueType: convertPrismaQueueTypeToQueueType(
+        "queueType" in post ? post.queueType : undefined,
+      ),
       signedEvent: signedEventValue,
       nostrEvent: nostrEventValue,
     };
@@ -85,4 +84,3 @@ export async function loadScheduledData(
     hashTagPresets,
   };
 }
-

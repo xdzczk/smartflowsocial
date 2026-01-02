@@ -1,6 +1,6 @@
 /**
  * Query Metrics Tests
- * 
+ *
  * Tests for query performance monitoring and metrics collection.
  */
 
@@ -24,7 +24,7 @@ describe("Query Metrics", () => {
     it("should record successful query metrics", () => {
       // Verify function exists and can be called
       expect(typeof recordQueryMetrics).toBe("function");
-      
+
       // Test that it doesn't throw
       expect(() => {
         recordQueryMetrics("User", "findMany", 50, true);
@@ -70,35 +70,21 @@ describe("Query Metrics", () => {
  * 1. Prometheus server running
  * 2. Metrics endpoint accessible
  * 3. Actual query execution
- * 
+ *
  * Example integration test:
- * 
+ *
  * ```typescript
  * import { describe, it, expect, beforeAll, afterAll } from "vitest";
  * import { prisma } from "~/lib/prisma.server";
- * 
+ *
  * describe("Query Metrics Integration", () => {
  *   it("should record metrics for actual queries", async () => {
  *     // Make actual query
  *     await prisma.user.findMany({ take: 1 });
- *     
+ *
  *     // Verify metrics were recorded
  *     // This would require querying Prometheus metrics endpoint
  *   });
  * });
  * ```
  */
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -1,7 +1,7 @@
 /**
  * Unit tests for error classes and utilities
  * Tests error classes from: app/lib/errors.ts
- * 
+ *
  * Migrated from tests/e2e/unit/error-classes.cy.ts
  */
 
@@ -57,7 +57,13 @@ describe("Error Classes Unit Tests", () => {
 
     it("should serialize to JSON correctly", () => {
       const context = { userId: "123" };
-      const error = new AppError("Test error", 400, "TEST_ERROR", true, context);
+      const error = new AppError(
+        "Test error",
+        400,
+        "TEST_ERROR",
+        true,
+        context,
+      );
       const json = error.toJSON();
 
       expect(json).toHaveProperty("name", "AppError");
@@ -370,7 +376,10 @@ describe("Error Classes Unit Tests", () => {
       expect(normalized.message).toBe("An unexpected error occurred");
       expect(normalized.code).toBe("UNKNOWN_ERROR");
       expect(normalized.isOperational).toBe(false);
-      expect(normalized.context).toHaveProperty("originalError", "String error");
+      expect(normalized.context).toHaveProperty(
+        "originalError",
+        "String error",
+      );
     });
 
     it("should convert null to AppError", () => {
@@ -425,7 +434,9 @@ describe("Error Classes Unit Tests", () => {
       );
 
       const message = getUserFriendlyMessage(error);
-      expect(message).toBe("An unexpected error occurred. Please try again later.");
+      expect(message).toBe(
+        "An unexpected error occurred. Please try again later.",
+      );
     });
   });
 
@@ -485,4 +496,3 @@ describe("Error Classes Unit Tests", () => {
     });
   });
 });
-

@@ -12,9 +12,12 @@ interface QueueType {
 /**
  * Find a queue type by name and extract its ID
  */
-export function findQueueTypeId(queueTypes: QueueType[], queueTypeName: string): string | null {
-  const selectedQueueType = queueTypes.find(qt => 
-    (typeof qt === "string" ? qt : qt.name) === queueTypeName
+export function findQueueTypeId(
+  queueTypes: QueueType[],
+  queueTypeName: string,
+): string | null {
+  const selectedQueueType = queueTypes.find(
+    (qt) => (typeof qt === "string" ? qt : qt.name) === queueTypeName,
   );
   return typeof selectedQueueType === "object" ? selectedQueueType.id : null;
 }
@@ -23,9 +26,9 @@ export function findQueueTypeId(queueTypes: QueueType[], queueTypeName: string):
  * Calculate the next schedule time for a queue using the ID-based API
  */
 export async function calculateQueueScheduleTime(
-  queueTypes: QueueType[], 
-  queueTypeName: string, 
-  userId?: string
+  queueTypes: QueueType[],
+  queueTypeName: string,
+  userId?: string,
 ): Promise<string | null> {
   if (queueTypeName === "unassigned") {
     return Promise.resolve(null);
@@ -51,11 +54,16 @@ export async function calculateQueueScheduleTime(
       const scheduledTime = data.scheduledTime;
       return scheduledTime ?? null;
     } else {
-      const errorData = (await response.json()) as { error?: { message?: string }; message?: string };
+      const errorData = (await response.json()) as {
+        error?: { message?: string };
+        message?: string;
+      };
       // @ts-ignore - Dynamic imports work in client-side Remix bundles
       const { logClientError } = await import("~/lib/error-handler.client");
       logClientError(
-        new Error(errorData?.error?.message ?? errorData?.message ?? 'Unknown error'),
+        new Error(
+          errorData?.error?.message ?? errorData?.message ?? "Unknown error",
+        ),
         {
           component: "queueTypes.client",
           action: "calculateQueueScheduleTime",
@@ -79,9 +87,9 @@ export async function calculateQueueScheduleTime(
  * Fetch effective hashtags for a queue using the ID-based API
  */
 export async function fetchEffectiveHashtags(
-  queueTypes: QueueType[], 
-  queueTypeName: string, 
-  userId?: string
+  queueTypes: QueueType[],
+  queueTypeName: string,
+  userId?: string,
 ): Promise<string> {
   if (queueTypeName === "unassigned") {
     return Promise.resolve("");
@@ -103,7 +111,10 @@ export async function fetchEffectiveHashtags(
     });
 
     if (response.ok) {
-      const data = (await response.json()) as { hashtags?: string; effectiveHashtags?: string[] };
+      const data = (await response.json()) as {
+        hashtags?: string;
+        effectiveHashtags?: string[];
+      };
       return data.hashtags ?? data.effectiveHashtags?.join(" ") ?? "";
     } else {
       // @ts-ignore - Dynamic imports work in client-side Remix bundles

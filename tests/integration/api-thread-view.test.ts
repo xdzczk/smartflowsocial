@@ -1,6 +1,6 @@
 /**
  * Integration tests for thread view API route
- * 
+ *
  * Tests the API endpoint in app/routes/api.thread-view.tsx
  */
 
@@ -21,23 +21,44 @@ describe("API: Thread View", () => {
   describe("Successful Requests", () => {
     it("should fetch and parse thread view data", async () => {
       const mockThreadData = [
-        ["EVENT", "sub-id", { kind: 1, id: "event-1", pubkey: "pubkey-1", content: "Post 1" }],
+        [
+          "EVENT",
+          "sub-id",
+          { kind: 1, id: "event-1", pubkey: "pubkey-1", content: "Post 1" },
+        ],
         ["EVENT", "sub-id", { kind: 0, pubkey: "pubkey-1", name: "User 1" }],
-        ["EVENT", "sub-id", { kind: 1, id: "event-2", pubkey: "pubkey-2", content: "Reply 1" }],
+        [
+          "EVENT",
+          "sub-id",
+          { kind: 1, id: "event-2", pubkey: "pubkey-2", content: "Reply 1" },
+        ],
       ];
 
-      (connectToPrimalCache as ReturnType<typeof vi.fn>).mockResolvedValue(mockThreadData);
+      (connectToPrimalCache as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockThreadData,
+      );
 
       const request = new Request(
         "http://localhost:3000/api/thread-view?event_id=event-123",
       );
 
       const response = await loader({ request, params: {}, context: {} });
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { events?: unknown; metadata?: unknown; raw?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as { events?: unknown; metadata?: unknown; raw?: unknown })
+          : {};
       const events = Array.isArray(data.events) ? data.events : [];
-      const metadata = data.metadata && typeof data.metadata === "object" && !Array.isArray(data.metadata) ? data.metadata as Record<string, unknown> : {};
+      const metadata =
+        data.metadata &&
+        typeof data.metadata === "object" &&
+        !Array.isArray(data.metadata)
+          ? (data.metadata as Record<string, unknown>)
+          : {};
 
       expect(connectToPrimalCache).toHaveBeenCalledWith("thread_view", {
         event_id: "event-123",
@@ -53,18 +74,31 @@ describe("API: Thread View", () => {
         ["EVENT", "sub-id", { kind: 1, id: "event-1", content: "Post" }],
       ];
 
-      (connectToPrimalCache as ReturnType<typeof vi.fn>).mockResolvedValue(mockThreadData);
+      (connectToPrimalCache as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockThreadData,
+      );
 
       const request = new Request(
         "http://localhost:3000/api/thread-view?event_id=event-123",
       );
 
       const response = await loader({ request, params: {}, context: {} });
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { events?: unknown; metadata?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as { events?: unknown; metadata?: unknown })
+          : {};
       const events = Array.isArray(data.events) ? data.events : [];
-      const metadata = data.metadata && typeof data.metadata === "object" && !Array.isArray(data.metadata) ? data.metadata as Record<string, unknown> : {};
+      const metadata =
+        data.metadata &&
+        typeof data.metadata === "object" &&
+        !Array.isArray(data.metadata)
+          ? (data.metadata as Record<string, unknown>)
+          : {};
 
       expect(events).toHaveLength(1);
       expect(metadata).toHaveProperty("pubkey-1");
@@ -76,18 +110,29 @@ describe("API: Thread View", () => {
         ["EVENT", "sub-id", { kind: 1, id: "event-1", content: "Post" }],
       ];
 
-      (connectToPrimalCache as ReturnType<typeof vi.fn>).mockResolvedValue(mockThreadData);
+      (connectToPrimalCache as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockThreadData,
+      );
 
       const request = new Request(
         "http://localhost:3000/api/thread-view?event_id=event-123",
       );
 
       const response = await loader({ request, params: {}, context: {} });
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { events?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as { events?: unknown })
+          : {};
       const events = Array.isArray(data.events) ? data.events : [];
-      const firstEvent = events[0] && typeof events[0] === "object" && !Array.isArray(events[0]) ? events[0] as { id?: string } : {};
+      const firstEvent =
+        events[0] && typeof events[0] === "object" && !Array.isArray(events[0])
+          ? (events[0] as { id?: string })
+          : {};
 
       expect(events).toHaveLength(1);
       expect(firstEvent.id).toBe("event-1");
@@ -101,29 +146,53 @@ describe("API: Thread View", () => {
       );
 
       const response = await loader({ request, params: {}, context: {} });
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { events?: unknown; metadata?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as { events?: unknown; metadata?: unknown })
+          : {};
       const events = Array.isArray(data.events) ? data.events : [];
-      const metadata = data.metadata && typeof data.metadata === "object" && !Array.isArray(data.metadata) ? data.metadata : {};
+      const metadata =
+        data.metadata &&
+        typeof data.metadata === "object" &&
+        !Array.isArray(data.metadata)
+          ? data.metadata
+          : {};
 
       expect(events).toEqual([]);
       expect(metadata).toEqual({});
     });
 
     it("should handle non-array thread data", async () => {
-      (connectToPrimalCache as ReturnType<typeof vi.fn>).mockResolvedValue({ some: "data" });
+      (connectToPrimalCache as ReturnType<typeof vi.fn>).mockResolvedValue({
+        some: "data",
+      });
 
       const request = new Request(
         "http://localhost:3000/api/thread-view?event_id=event-123",
       );
 
       const response = await loader({ request, params: {}, context: {} });
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { events?: unknown; metadata?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as { events?: unknown; metadata?: unknown })
+          : {};
       const events = Array.isArray(data.events) ? data.events : [];
-      const metadata = data.metadata && typeof data.metadata === "object" && !Array.isArray(data.metadata) ? data.metadata : {};
+      const metadata =
+        data.metadata &&
+        typeof data.metadata === "object" &&
+        !Array.isArray(data.metadata)
+          ? data.metadata
+          : {};
 
       expect(events).toEqual([]);
       expect(metadata).toEqual({});
@@ -135,12 +204,21 @@ describe("API: Thread View", () => {
       const request = new Request("http://localhost:3000/api/thread-view");
 
       const response = await loader({ request, params: {}, context: {} });
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as { success?: unknown; error?: unknown })
+          : {};
 
       expect(responseObj.status).toBe(400);
-      const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
+      const success =
+        typeof data.success === "boolean"
+          ? data.success
+          : data.success === 0 || data.success === false;
       expect(success).toBe(false);
       expect(data.error).toBeDefined();
     });
@@ -155,45 +233,56 @@ describe("API: Thread View", () => {
       );
 
       const response = await loader({ request, params: {}, context: {} });
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as { success?: unknown; error?: unknown })
+          : {};
 
       expect(responseObj.status).toBe(502);
-      const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
+      const success =
+        typeof data.success === "boolean"
+          ? data.success
+          : data.success === 0 || data.success === false;
       expect(success).toBe(false);
       expect(data.error).toBeDefined();
     });
 
     it("should handle malformed thread data gracefully", async () => {
-      const malformedData = [
-        ["NOT_EVENT", "data"],
-        { notAnArray: true },
-        null,
-      ];
+      const malformedData = [["NOT_EVENT", "data"], { notAnArray: true }, null];
 
-      (connectToPrimalCache as ReturnType<typeof vi.fn>).mockResolvedValue(malformedData);
+      (connectToPrimalCache as ReturnType<typeof vi.fn>).mockResolvedValue(
+        malformedData,
+      );
 
       const request = new Request(
         "http://localhost:3000/api/thread-view?event_id=event-123",
       );
 
       const response = await loader({ request, params: {}, context: {} });
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { events?: unknown; metadata?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as { events?: unknown; metadata?: unknown })
+          : {};
       const events = Array.isArray(data.events) ? data.events : [];
-      const metadata = data.metadata && typeof data.metadata === "object" && !Array.isArray(data.metadata) ? data.metadata : {};
+      const metadata =
+        data.metadata &&
+        typeof data.metadata === "object" &&
+        !Array.isArray(data.metadata)
+          ? data.metadata
+          : {};
 
       expect(events).toEqual([]);
       expect(metadata).toEqual({});
     });
   });
 });
-
-
-
-
-
-
-

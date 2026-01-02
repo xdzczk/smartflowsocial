@@ -1,6 +1,6 @@
 /**
  * Integration tests for scheduling algorithms
- * 
+ *
  * Tests the core scheduling logic in app/features/posts/schedulers.ts
  * This includes:
  * - INTERVAL-based scheduling (global and queue-specific)
@@ -43,7 +43,9 @@ describe("Scheduling Algorithms", () => {
   describe("INTERVAL-based Scheduling", () => {
     describe("Queue-specific Interval", () => {
       it("should schedule next post using queue-specific interval when no last post exists", async () => {
-        (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+        (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+          null,
+        );
 
         const queueType = createIntervalQueueType(6, {
           id: "queue-1",
@@ -67,7 +69,9 @@ describe("Scheduling Algorithms", () => {
 
       it("should schedule next post by adding interval to last post time", async () => {
         const lastPostTime = createTestDate(-2); // 2 hours before BASE_TIME
-        (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(lastPostTime);
+        (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+          lastPostTime,
+        );
 
         const queueType = createIntervalQueueType(4, {
           id: "queue-1",
@@ -87,9 +91,12 @@ describe("Scheduling Algorithms", () => {
 
       it("should return baseTime if calculated time is in the past", async () => {
         const lastPostTime = createTestDate(-1); // 1 hour ago
-        (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(lastPostTime);
+        (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+          lastPostTime,
+        );
 
-        const queueType = createIntervalQueueType(0.5, { // 30 minutes
+        const queueType = createIntervalQueueType(0.5, {
+          // 30 minutes
           id: "queue-1",
           name: "posts",
         });
@@ -107,7 +114,9 @@ describe("Scheduling Algorithms", () => {
 
       it("should use default interval of 4 hours when not specified", async () => {
         const lastPostTime = createTestDate(-2); // 2 hours before BASE_TIME
-        (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(lastPostTime);
+        (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+          lastPostTime,
+        );
 
         const queueType = createIntervalQueueType(4, {
           id: "queue-1",
@@ -130,8 +139,12 @@ describe("Scheduling Algorithms", () => {
     describe("Global Interval", () => {
       it("should use global interval when useGlobalInterval is true", async () => {
         const lastPostTime = createTestDate(-2); // 2 hours before BASE_TIME
-        (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(lastPostTime);
-        (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(["2"]); // 2 hours
+        (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+          lastPostTime,
+        );
+        (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue([
+          "2",
+        ]); // 2 hours
 
         const queueType = createIntervalQueueType(4, {
           id: "queue-1",
@@ -157,8 +170,12 @@ describe("Scheduling Algorithms", () => {
 
       it("should default to 4 hours when global interval is not available", async () => {
         const lastPostTime = createTestDate(-2); // 2 hours before BASE_TIME
-        (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(lastPostTime);
-        (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+        (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+          lastPostTime,
+        );
+        (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(
+          null,
+        );
 
         const queueType = createIntervalQueueType(4, {
           id: "queue-1",
@@ -179,8 +196,14 @@ describe("Scheduling Algorithms", () => {
 
       it("should use first interval from scheduleIntervals array", async () => {
         const lastPostTime = createTestDate(-2); // 2 hours before BASE_TIME
-        (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(lastPostTime);
-        (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(["3", "6", "9"]);
+        (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+          lastPostTime,
+        );
+        (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue([
+          "3",
+          "6",
+          "9",
+        ]);
 
         const queueType = createIntervalQueueType(4, {
           id: "queue-1",
@@ -208,7 +231,9 @@ describe("Scheduling Algorithms", () => {
   describe("FIXED_SLOTS-based Scheduling", () => {
     describe("No Previous Posts", () => {
       it("should return next available slot today when no last post exists", async () => {
-        (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+        (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+          null,
+        );
 
         const queueType = createFixedSlotsQueueType(
           [
@@ -236,7 +261,9 @@ describe("Scheduling Algorithms", () => {
       });
 
       it("should return first slot tomorrow if all today slots are in the past", async () => {
-        (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+        (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+          null,
+        );
 
         const queueType = createFixedSlotsQueueType(
           ["08:00", "09:00"], // Both in the past
@@ -260,7 +287,9 @@ describe("Scheduling Algorithms", () => {
       });
 
       it("should handle empty slots array by returning baseTime", async () => {
-        (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+        (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+          null,
+        );
 
         const queueType = createFixedSlotsQueueType([], {
           id: "queue-1",
@@ -281,7 +310,9 @@ describe("Scheduling Algorithms", () => {
     describe("With Previous Posts", () => {
       it("should find next slot after last post time", async () => {
         const lastPostTime = createDateAtTime(2024, 1, 15, 12, 0);
-        (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(lastPostTime);
+        (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+          lastPostTime,
+        );
 
         const queueType = createFixedSlotsQueueType(
           ["09:00", "12:00", "15:00", "18:00"],
@@ -305,7 +336,9 @@ describe("Scheduling Algorithms", () => {
 
       it("should find next slot on next day if all slots today are in the past", async () => {
         const lastPostTime = createDateAtTime(2024, 1, 15, 18, 0);
-        (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(lastPostTime);
+        (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+          lastPostTime,
+        );
 
         const queueType = createFixedSlotsQueueType(
           ["09:00", "12:00", "15:00", "18:00"],
@@ -330,7 +363,9 @@ describe("Scheduling Algorithms", () => {
 
       it("should handle slots sorted correctly", async () => {
         const lastPostTime = createDateAtTime(2024, 1, 15, 10, 0);
-        (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(lastPostTime);
+        (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+          lastPostTime,
+        );
 
         const queueType = createFixedSlotsQueueType(
           ["18:00", "09:00", "15:00", "12:00"], // Unsorted
@@ -356,15 +391,14 @@ describe("Scheduling Algorithms", () => {
 
   describe("Timezone Handling", () => {
     it("should handle UTC timezone correctly", async () => {
-      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
-
-      const queueType = createFixedSlotsQueueType(
-        ["14:00"],
-        {
-          id: "queue-1",
-          name: "posts",
-        },
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+        null,
       );
+
+      const queueType = createFixedSlotsQueueType(["14:00"], {
+        id: "queue-1",
+        name: "posts",
+      });
 
       const result = await calculateNextScheduleTime({
         queueType,
@@ -378,15 +412,14 @@ describe("Scheduling Algorithms", () => {
     });
 
     it("should convert slots to user timezone (America/New_York)", async () => {
-      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
-
-      const queueType = createFixedSlotsQueueType(
-        ["09:00"],
-        {
-          id: "queue-1",
-          name: "posts",
-        },
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+        null,
       );
+
+      const queueType = createFixedSlotsQueueType(["09:00"], {
+        id: "queue-1",
+        name: "posts",
+      });
 
       // January 15, 2024 - New York is in EST (UTC-5)
       const result = await calculateNextScheduleTime({
@@ -402,15 +435,14 @@ describe("Scheduling Algorithms", () => {
     });
 
     it("should handle Etc/GMT timezone same as UTC", async () => {
-      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
-
-      const queueType = createFixedSlotsQueueType(
-        ["12:00"],
-        {
-          id: "queue-1",
-          name: "posts",
-        },
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+        null,
       );
+
+      const queueType = createFixedSlotsQueueType(["12:00"], {
+        id: "queue-1",
+        name: "posts",
+      });
 
       const result = await calculateNextScheduleTime({
         queueType,
@@ -426,7 +458,9 @@ describe("Scheduling Algorithms", () => {
 
   describe("Edge Cases", () => {
     it("should handle invalid scheduleType by returning baseTime", async () => {
-      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+        null,
+      );
 
       const queueType = createQueueType({
         id: "queue-1",
@@ -447,7 +481,9 @@ describe("Scheduling Algorithms", () => {
     });
 
     it("should handle missing scheduleConfig", async () => {
-      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+        null,
+      );
 
       const queueType = createIntervalQueueType(4, {
         id: "queue-1",
@@ -494,7 +530,9 @@ describe("Scheduling Algorithms", () => {
   describe("Complex Scenarios", () => {
     it("should handle multiple slots with last post in the middle", async () => {
       const lastPostTime = createDateAtTime(2024, 1, 15, 13, 0);
-      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(lastPostTime);
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+        lastPostTime,
+      );
 
       const queueType = createFixedSlotsQueueType(
         ["08:00", "10:00", "12:00", "14:00", "16:00", "18:00"],
@@ -518,9 +556,12 @@ describe("Scheduling Algorithms", () => {
 
     it("should handle interval scheduling with large intervals", async () => {
       const lastPostTime = createTestDate(-2); // 2 hours before BASE_TIME
-      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(lastPostTime);
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+        lastPostTime,
+      );
 
-      const queueType = createIntervalQueueType(24, { // Daily
+      const queueType = createIntervalQueueType(24, {
+        // Daily
         id: "queue-1",
         name: "posts",
       });
@@ -537,4 +578,3 @@ describe("Scheduling Algorithms", () => {
     });
   });
 });
-

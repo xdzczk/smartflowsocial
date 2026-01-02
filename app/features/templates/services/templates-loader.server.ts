@@ -4,10 +4,7 @@
  */
 
 import { getUserById } from "~/features/user";
-import {
-  getAssets,
-  searchAssets,
-} from "~/models/asset.server";
+import { getAssets, searchAssets } from "~/models/asset.server";
 import { getTemplates } from "~/models/template.server";
 
 /**
@@ -37,13 +34,3 @@ export async function loadTemplatesData(
     searchTerm,
   };
 }
-
-
-
-
-
-
-
-
-
-

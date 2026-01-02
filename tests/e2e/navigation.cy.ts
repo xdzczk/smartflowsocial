@@ -2,7 +2,7 @@ import { TEST_NPUB } from "./support/nostr-test-keys";
 
 /**
  * Navigation and Routing Tests
- * 
+ *
  * Tests navigation between pages:
  * - Dashboard navigation
  * - Sidebar navigation
@@ -21,21 +21,27 @@ describe("Navigation and Routing", () => {
   describe("Dashboard Navigation", () => {
     it("should navigate between dashboard sections", () => {
       cy.visitAndCheck("/dashboard");
-      
+
       // Wait for dashboard to fully load
       cy.get("body").should("be.visible");
-      
+
       // Navigate to new post - use force:true for fixed sidebar links
-      cy.get('a[href*="newpost"]').first().should("exist").click({ force: true });
+      cy.get('a[href*="newpost"]')
+        .first()
+        .should("exist")
+        .click({ force: true });
       cy.location("pathname", { timeout: 10000 }).should("include", "newpost");
-      
+
       // Navigate back to dashboard and wait for it to load
       cy.visitAndCheck("/dashboard");
       cy.location("pathname").should("include", "dashboard");
       cy.get("body").should("be.visible");
-      
+
       // Navigate to drafts - use force:true for fixed sidebar links
-      cy.get('a[href*="drafts"]').first().should("exist").click({ force: true });
+      cy.get('a[href*="drafts"]')
+        .first()
+        .should("exist")
+        .click({ force: true });
       cy.location("pathname", { timeout: 10000 }).should("include", "drafts");
     });
   });
@@ -64,7 +70,7 @@ describe("Navigation and Routing", () => {
     it("should handle browser back button", () => {
       cy.visitAndCheck("/dashboard");
       cy.visitAndCheck("/dashboard/newpost");
-      
+
       cy.go("back");
       cy.location("pathname").should("include", "dashboard");
     });
@@ -73,7 +79,7 @@ describe("Navigation and Routing", () => {
       cy.visitAndCheck("/dashboard");
       cy.visitAndCheck("/dashboard/newpost");
       cy.go("back");
-      
+
       cy.go("forward");
       cy.location("pathname").should("include", "newpost");
     });
@@ -87,5 +93,3 @@ describe("Navigation and Routing", () => {
     });
   });
 });
-
-

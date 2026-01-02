@@ -1,6 +1,6 @@
 /**
  * Queue Performance Metrics
- * 
+ *
  * Provides Prometheus metrics for queue job performance monitoring.
  * Metrics are automatically registered with the default Prometheus registry
  * and will be exposed via the /metrics endpoint.
@@ -28,7 +28,7 @@ function getOrCreateMetric<T extends promClient.Metric>(
     } catch {
       // Metric doesn't exist, continue to create it
     }
-    
+
     try {
       return factory();
     } catch (error) {
@@ -156,7 +156,7 @@ export function recordJobMetrics(
   error?: Error,
 ): void {
   const status = success ? "success" : "error";
-  
+
   // Record duration
   jobDurationHistogram.observe(
     {
@@ -165,13 +165,13 @@ export function recordJobMetrics(
     },
     duration,
   );
-  
+
   // Increment job counter
   jobCounter.inc({
     queue,
     status,
   });
-  
+
   // Record failed jobs
   if (!success) {
     const errorType = error?.constructor.name ?? "UnknownError";
@@ -179,9 +179,10 @@ export function recordJobMetrics(
       queue,
       error_type: errorType,
     });
-    
+
     // Record stuck jobs (processing > 5 minutes)
-    if (duration > 300000) { // 5 minutes
+    if (duration > 300000) {
+      // 5 minutes
       stuckJobCounter.inc({
         queue,
       });
@@ -209,4 +210,3 @@ export function updateActiveJobs(queue: string, active: number): void {
 export function recordJobRetry(queue: string): void {
   retryCounter.inc({ queue });
 }
-

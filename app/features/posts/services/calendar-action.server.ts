@@ -49,8 +49,23 @@ export async function handleCalendarReschedule(
 
   if (signedEvent && nostrEvent) {
     try {
-      parsedSignedEvent = JSON.parse(signedEvent) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][]; sig: string };
-      parsedNostrEvent = JSON.parse(nostrEvent) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][] };
+      parsedSignedEvent = JSON.parse(signedEvent) as {
+        id: string;
+        pubkey: string;
+        created_at: number;
+        kind: number;
+        content: string;
+        tags: string[][];
+        sig: string;
+      };
+      parsedNostrEvent = JSON.parse(nostrEvent) as {
+        id: string;
+        pubkey: string;
+        created_at: number;
+        kind: number;
+        content: string;
+        tags: string[][];
+      };
     } catch (e) {
       // Log parsing error but continue without signed events
       logWarning("Failed to parse signed events in reschedule", {
@@ -81,12 +96,7 @@ export async function handleCalendarReschedule(
     });
 
     // Schedule new job
-    await schedulePost(
-      postId,
-      userId,
-      parsedSignedEvent,
-      parseInt(newTime),
-    );
+    await schedulePost(postId, userId, parsedSignedEvent, parseInt(newTime));
 
     return json({ success: true, post: finalPost, signed: true });
   }
@@ -123,8 +133,23 @@ export async function handleCalendarRescheduleLongform(
 
   if (signedEvent && nostrEvent) {
     try {
-      parsedSignedEvent = JSON.parse(signedEvent) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][]; sig: string };
-      parsedNostrEvent = JSON.parse(nostrEvent) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][] };
+      parsedSignedEvent = JSON.parse(signedEvent) as {
+        id: string;
+        pubkey: string;
+        created_at: number;
+        kind: number;
+        content: string;
+        tags: string[][];
+        sig: string;
+      };
+      parsedNostrEvent = JSON.parse(nostrEvent) as {
+        id: string;
+        pubkey: string;
+        created_at: number;
+        kind: number;
+        content: string;
+        tags: string[][];
+      };
     } catch (e) {
       // Log parsing error but continue without signed events
       logWarning("Failed to parse signed events in reschedule", {
@@ -153,10 +178,7 @@ export async function handleCalendarRescheduleLongform(
 /**
  * Handle calendar actions (routes to appropriate handler)
  */
-export async function handleCalendarAction(
-  formData: FormData,
-  userId: string,
-) {
+export async function handleCalendarAction(formData: FormData, userId: string) {
   const actionType = formData.get("action");
 
   if (actionType === "reschedule") {
@@ -169,4 +191,3 @@ export async function handleCalendarAction(
 
   return json({ error: "Invalid action" }, { status: 400 });
 }
-

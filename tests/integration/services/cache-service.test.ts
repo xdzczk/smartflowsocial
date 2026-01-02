@@ -13,7 +13,10 @@ vi.mock("~/lib/error-logger.server", () => ({
 // Mock global fetch
 global.fetch = vi.fn();
 
-import { fetchFromCache, connectToPrimalCache } from "~/features/cache/primalCache.server";
+import {
+  fetchFromCache,
+  connectToPrimalCache,
+} from "~/features/cache/primalCache.server";
 import { logError } from "~/lib/error-logger.server";
 
 describe("Primal Cache Service", () => {
@@ -34,20 +37,27 @@ describe("Primal Cache Service", () => {
         json: () => Promise.resolve(mockResponse),
       });
 
-      const result = await fetchFromCache("thread_view", { event_id: "event-123" });
+      const result = await fetchFromCache("thread_view", {
+        event_id: "event-123",
+      });
 
       // fetchWithRetry adds additional options (timeout, maxRetries, correlation ID, etc.)
       expect(global.fetch).toHaveBeenCalled();
-      const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+      const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock
+        .calls[0];
       expect(fetchCall[0]).toBe("https://cache.example.com/api");
       const fetchOptions = fetchCall[1] as RequestInit;
       expect(fetchOptions.method).toBe("POST");
-      const headers = fetchOptions.headers as Record<string, string> | undefined;
+      const headers = fetchOptions.headers as
+        | Record<string, string>
+        | undefined;
       expect(headers?.["Content-Type"]).toBe("application/json");
-      expect(fetchOptions.body).toBe(JSON.stringify({
-        requestType: "thread_view",
-        params: { event_id: "event-123" },
-      }));
+      expect(fetchOptions.body).toBe(
+        JSON.stringify({
+          requestType: "thread_view",
+          params: { event_id: "event-123" },
+        }),
+      );
       expect(result).toEqual(mockResponse);
     });
 
@@ -104,9 +114,9 @@ describe("Primal Cache Service", () => {
     it("should throw error if PRIMAL_CACHING_URL is not set", async () => {
       delete process.env.PRIMAL_CACHING_URL;
 
-      await expect(fetchFromCache("thread_view", { event_id: "event-123" })).rejects.toThrow(
-        "PRIMAL_CACHING_URL environment variable is not set",
-      );
+      await expect(
+        fetchFromCache("thread_view", { event_id: "event-123" }),
+      ).rejects.toThrow("PRIMAL_CACHING_URL environment variable is not set");
     });
 
     it("should throw error after max retries", async () => {
@@ -115,7 +125,9 @@ describe("Primal Cache Service", () => {
         status: 500,
       });
 
-      await expect(fetchFromCache("thread_view", { event_id: "event-123" })).rejects.toThrow();
+      await expect(
+        fetchFromCache("thread_view", { event_id: "event-123" }),
+      ).rejects.toThrow();
     });
 
     it("should handle network errors with retries", async () => {
@@ -127,10 +139,10 @@ describe("Primal Cache Service", () => {
         });
 
       vi.useFakeTimers();
-      
+
       // Create promise
       const promise = fetchFromCache("thread_view", { event_id: "event-123" });
-      
+
       // Advance timers to allow retries (exponential backoff: ~1000ms, ~2000ms)
       await vi.advanceTimersByTimeAsync(5000);
 
@@ -142,47 +154,47 @@ describe("Primal Cache Service", () => {
     });
 
     it("should throw error after all retries exhausted", async () => {
-      (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Network error"));
+      (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error("Network error"),
+      );
 
       vi.useFakeTimers();
-      
+
       // Create promise and handle rejection immediately to prevent unhandled rejection warning
       let rejectionHandled = false;
       const promise = fetchFromCache("thread_view", { event_id: "event-123" });
-      
+
       // Attach error handler immediately to prevent unhandled rejection
       promise.catch(() => {
         rejectionHandled = true;
       });
-      
+
       // Advance timers to trigger retries
       await vi.advanceTimersByTimeAsync(1000);
       await vi.advanceTimersByTimeAsync(2000);
-      
+
       // Wait for all pending promises to settle
       await vi.runAllTimersAsync();
-      
+
       // Now expect the rejection
       await expect(promise).rejects.toThrow("Network error");
       expect(rejectionHandled).toBe(true);
-      
+
       vi.useRealTimers();
     });
   });
 
   describe("connectToPrimalCache", () => {
     it("should return responses with non-EOSE events", async () => {
-      const mockResponse = [
-        [{ id: "event-1" }],
-        [{ id: "event-2" }],
-        ["EOSE"],
-      ];
+      const mockResponse = [[{ id: "event-1" }], [{ id: "event-2" }], ["EOSE"]];
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         json: () => Promise.resolve(mockResponse),
       });
 
-      const result = await connectToPrimalCache("thread_view", { event_id: "event-123" });
+      const result = await connectToPrimalCache("thread_view", {
+        event_id: "event-123",
+      });
 
       expect(result).toEqual(mockResponse);
       expect(logError).not.toHaveBeenCalled();
@@ -195,9 +207,9 @@ describe("Primal Cache Service", () => {
         json: () => Promise.resolve(mockResponse),
       });
 
-      await expect(connectToPrimalCache("thread_view", { event_id: "event-123" })).rejects.toThrow(
-        "Primal cache gave empty response.",
-      );
+      await expect(
+        connectToPrimalCache("thread_view", { event_id: "event-123" }),
+      ).rejects.toThrow("Primal cache gave empty response.");
       expect(logError).toHaveBeenCalled();
     });
 
@@ -207,15 +219,19 @@ describe("Primal Cache Service", () => {
         json: () => Promise.resolve([]),
       });
 
-      await expect(connectToPrimalCache("thread_view", { event_id: "event-123" })).rejects.toThrow(
-        "Primal cache gave empty response.",
-      );
+      await expect(
+        connectToPrimalCache("thread_view", { event_id: "event-123" }),
+      ).rejects.toThrow("Primal cache gave empty response.");
     });
 
     it("should handle fetch errors and log them", async () => {
-      (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Fetch failed"));
+      (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error("Fetch failed"),
+      );
 
-      await expect(connectToPrimalCache("thread_view", { event_id: "event-123" })).rejects.toThrow("Fetch failed");
+      await expect(
+        connectToPrimalCache("thread_view", { event_id: "event-123" }),
+      ).rejects.toThrow("Fetch failed");
       expect(logError).toHaveBeenCalled();
     });
 
@@ -225,8 +241,9 @@ describe("Primal Cache Service", () => {
         json: () => Promise.resolve({ error: "Invalid response" }),
       });
 
-      await expect(connectToPrimalCache("thread_view", { event_id: "event-123" })).rejects.toThrow();
+      await expect(
+        connectToPrimalCache("thread_view", { event_id: "event-123" }),
+      ).rejects.toThrow();
     });
   });
 });
-

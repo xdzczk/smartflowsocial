@@ -39,7 +39,9 @@ export default function PostDetailsModal({
   const [activeMediaSrc, setActiveMediaSrc] = useState<string | null>(null);
 
   // Type guard to check if post has queueType property
-  const hasQueueType = (p: Post | PostData | CombinedContent): p is PostData | CombinedContent => {
+  const hasQueueType = (
+    p: Post | PostData | CombinedContent,
+  ): p is PostData | CombinedContent => {
     return "queueType" in p;
   };
 
@@ -340,7 +342,11 @@ export default function PostDetailsModal({
 
         <div className="sticky bottom-0 border-t border-gray-200 bg-white/95 px-6 py-4 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-900/95">
           <div className="flex justify-end gap-3">
-            {type === "posted" && post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent && typeof post.signedEvent.id === "string" ? (
+            {type === "posted" &&
+            post.signedEvent &&
+            typeof post.signedEvent === "object" &&
+            "id" in post.signedEvent &&
+            typeof post.signedEvent.id === "string" ? (
               <Link
                 to={`https://primal.net/e/${post.signedEvent.id}`}
                 target="_blank"

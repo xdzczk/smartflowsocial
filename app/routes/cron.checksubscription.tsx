@@ -1,8 +1,13 @@
 // Polyfill WebSocket for @getalby/sdk in Node.js (production only)
 // Using ws package instead of deprecated websocket-polyfill
-if (process.env.NODE_ENV !== "development" && typeof globalThis !== "undefined" && globalThis.WebSocket === undefined) {
-   
-  const { WebSocket } = require("ws") as { WebSocket: typeof globalThis.WebSocket };
+if (
+  process.env.NODE_ENV !== "development" &&
+  typeof globalThis !== "undefined" &&
+  globalThis.WebSocket === undefined
+) {
+  const { WebSocket } = require("ws") as {
+    WebSocket: typeof globalThis.WebSocket;
+  };
   globalThis.WebSocket = WebSocket;
 }
 

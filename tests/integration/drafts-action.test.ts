@@ -1,6 +1,6 @@
 /**
  * Integration tests for drafts action handlers
- * 
+ *
  * Tests the action handler logic directly, without requiring a browser.
  * For UI interaction tests, see tests/e2e/posts/drafts.cy.ts
  */
@@ -25,7 +25,14 @@ import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolve
 import { deleteLongFormPost } from "~/models/longformpost.server";
 import { deletePost, updatePost } from "~/models/post.commands.server";
 
-import { createActionFormData, createFormData, TEST_USER_ID, TEST_POST_ID, TEST_LONGFORM_ID, createPostIds } from "../utils/test-helpers";
+import {
+  createActionFormData,
+  createFormData,
+  TEST_USER_ID,
+  TEST_POST_ID,
+  TEST_LONGFORM_ID,
+  createPostIds,
+} from "../utils/test-helpers";
 
 describe("Drafts Action Handler", () => {
   beforeEach(() => {
@@ -62,7 +69,9 @@ describe("Drafts Action Handler", () => {
 
   describe("Delete Longform Post Action", () => {
     it("should delete a single draft longform post", async () => {
-      (deleteLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (deleteLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined,
+      );
 
       const formData = createActionFormData("deleteLongForm", {
         postId: TEST_LONGFORM_ID,
@@ -207,8 +216,14 @@ describe("Drafts Action Handler", () => {
         captions: ["Caption 1", "Caption 2"],
         queueTypes: ["queue-1", "queue-2"],
         scheduledFors: ["2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z"],
-        signedEvents: [JSON.stringify({ id: "event-1" }), JSON.stringify({ id: "event-2" })],
-        nostrEvents: [JSON.stringify({ id: "nostr-1" }), JSON.stringify({ id: "nostr-2" })],
+        signedEvents: [
+          JSON.stringify({ id: "event-1" }),
+          JSON.stringify({ id: "event-2" }),
+        ],
+        nostrEvents: [
+          JSON.stringify({ id: "nostr-1" }),
+          JSON.stringify({ id: "nostr-2" }),
+        ],
       });
 
       const result = await handleDraftsAction(formData, TEST_USER_ID);
@@ -268,9 +283,9 @@ describe("Drafts Action Handler", () => {
         postId: TEST_POST_ID,
       });
 
-      await expect(
-        handleDraftsAction(formData, TEST_USER_ID),
-      ).rejects.toThrow("Database error");
+      await expect(handleDraftsAction(formData, TEST_USER_ID)).rejects.toThrow(
+        "Database error",
+      );
     });
 
     it("should handle database errors from updatePost", async () => {
@@ -289,9 +304,9 @@ describe("Drafts Action Handler", () => {
         nostrEvents: [JSON.stringify({ id: "nostr-1" })],
       });
 
-      await expect(
-        handleDraftsAction(formData, TEST_USER_ID),
-      ).rejects.toThrow("Update failed");
+      await expect(handleDraftsAction(formData, TEST_USER_ID)).rejects.toThrow(
+        "Update failed",
+      );
     });
 
     it("should handle JSON parse errors in bulk sign and resume", async () => {
@@ -312,4 +327,3 @@ describe("Drafts Action Handler", () => {
     });
   });
 });
-

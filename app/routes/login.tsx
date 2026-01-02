@@ -7,8 +7,6 @@ import { Card, CardContent } from "~/components/ui/card";
 import { NostrAuthButton } from "~/features/auth";
 import { getUserId } from "~/features/auth";
 
-
-
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
     const userId = await getUserId(request);

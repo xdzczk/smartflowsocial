@@ -31,16 +31,16 @@ export function getContentTitle(item: CombinedContent): string {
   }
   return item.caption?.length && item.caption.length > 50
     ? item.caption.substring(0, 50) + "..."
-    : item.caption ?? "No caption";
+    : (item.caption ?? "No caption");
 }
 
 export function getContentPreview(item: CombinedContent): string | null {
   if (item.type === "longform") {
     return (
-      (item.summary ??
+      item.summary ??
       (item.content?.length && item.content.length > 100
         ? item.content.substring(0, 100) + "..."
-        : item.content)) ??
+        : item.content) ??
       "No content"
     );
   }
@@ -92,14 +92,17 @@ export function formatDate(
   });
 }
 
-export function getQueueTypeDisplay(
-  queueType: CombinedContent["queueType"],
-): { className: string; style?: React.CSSProperties; name: string } {
+export function getQueueTypeDisplay(queueType: CombinedContent["queueType"]): {
+  className: string;
+  style?: React.CSSProperties;
+  name: string;
+} {
   const name = queueType?.name ?? "unassigned";
 
   if (queueType?.color) {
     return {
-      className: "inline-flex rounded-full border-2 px-3 py-1 text-xs font-semibold leading-4 shadow-sm",
+      className:
+        "inline-flex rounded-full border-2 px-3 py-1 text-xs font-semibold leading-4 shadow-sm",
       style: {
         backgroundColor: `${queueType.color}20`,
         color: queueType.color,
@@ -121,18 +124,18 @@ export function getContentTypeBadge(item: CombinedContent): {
   text: string;
 } {
   // Check for kind property in signedEvent or originalData.signedEvent
-  const kind =
-    item.signedEvent?.kind ??
-    item.originalData?.signedEvent?.kind;
+  const kind = item.signedEvent?.kind ?? item.originalData?.signedEvent?.kind;
 
   if (kind === 6) {
     return {
-      className: "inline-flex rounded-full bg-orange-100 px-2 py-1 text-xs font-medium text-orange-800 dark:bg-orange-900 dark:text-orange-200",
+      className:
+        "inline-flex rounded-full bg-orange-100 px-2 py-1 text-xs font-medium text-orange-800 dark:bg-orange-900 dark:text-orange-200",
       text: "REPOST",
     };
   } else if (kind === 30023) {
     return {
-      className: "inline-flex rounded-full bg-purple-100 px-2 py-1 text-xs font-medium text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+      className:
+        "inline-flex rounded-full bg-purple-100 px-2 py-1 text-xs font-medium text-purple-800 dark:bg-purple-900 dark:text-purple-200",
       text: "LONG-FORM",
     };
   } else {
@@ -147,7 +150,3 @@ export function getContentTypeBadge(item: CombinedContent): {
     };
   }
 }
-
-
-
-

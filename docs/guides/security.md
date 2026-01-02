@@ -28,6 +28,7 @@ Complete guide to security best practices for deploying and operating SmartFlowS
 ## Overview
 
 SmartFlowSocial handles sensitive data including:
+
 - User authentication (Nostr keys)
 - Payment information (Lightning invoices)
 - User content and posts
@@ -227,7 +228,7 @@ Set CSP headers to prevent XSS:
 app.use((req, res, next) => {
   res.setHeader(
     "Content-Security-Policy",
-    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';",
   );
   next();
 });
@@ -368,28 +369,28 @@ See [Deployment Guide](./deployment.md) for nginx/Caddy configuration.
 app.use((req, res, next) => {
   // Prevent clickjacking
   res.setHeader("X-Frame-Options", "DENY");
-  
+
   // Prevent MIME type sniffing
   res.setHeader("X-Content-Type-Options", "nosniff");
-  
+
   // XSS protection
   res.setHeader("X-XSS-Protection", "1; mode=block");
-  
+
   // HSTS
   res.setHeader(
     "Strict-Transport-Security",
-    "max-age=31536000; includeSubDomains; preload"
+    "max-age=31536000; includeSubDomains; preload",
   );
-  
+
   // Referrer policy
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-  
+
   // Content Security Policy
   res.setHeader(
     "Content-Security-Policy",
-    "default-src 'self'; script-src 'self' 'unsafe-inline';"
+    "default-src 'self'; script-src 'self' 'unsafe-inline';",
   );
-  
+
   next();
 });
 ```
@@ -565,7 +566,3 @@ If you discover a security vulnerability:
 ## Security Contact
 
 For security-related questions or to report vulnerabilities, contact the project maintainers through the appropriate channels.
-
-
-
-

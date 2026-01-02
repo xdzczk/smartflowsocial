@@ -29,7 +29,7 @@ import type { LoaderFunctionArgs } from "@remix-run/node";
 export async function loader({ request }: LoaderFunctionArgs) {
   // Throws if not authenticated
   const userId = await requireUserId(request);
-  
+
   // Use userId for data fetching
   const posts = await getPostsByUserId(userId);
   return json({ posts });
@@ -44,7 +44,7 @@ import { getUser } from "~/features/auth";
 export async function loader({ request }: LoaderFunctionArgs) {
   // Returns null if not authenticated
   const user = await getUser(request);
-  
+
   if (user) {
     // Authenticated user
     const posts = await getPostsByUserId(user.id);
@@ -108,10 +108,10 @@ export async function getPostWithUser(postId: string) {
 export async function getPostsPaginated(
   userId: string,
   page: number = 1,
-  pageSize: number = 20
+  pageSize: number = 20,
 ) {
   const skip = (page - 1) * pageSize;
-  
+
   const [posts, total] = await Promise.all([
     prisma.post.findMany({
       where: { userId },
@@ -121,7 +121,7 @@ export async function getPostsPaginated(
     }),
     prisma.post.count({ where: { userId } }),
   ]);
-  
+
   return {
     posts,
     pagination: {
@@ -150,14 +150,14 @@ import { getPostsByUserId } from "~/features/posts";
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   const url = new URL(request.url);
-  
+
   // Parse query parameters
   const status = url.searchParams.get("status");
   const page = parseInt(url.searchParams.get("page") || "1");
-  
+
   // Fetch data
   const posts = await getPostsByUserId(userId, { status, page });
-  
+
   return json({ posts });
 }
 ```
@@ -174,25 +174,25 @@ import { createPost } from "~/features/posts";
 
 export async function action({ request }: ActionFunctionArgs) {
   const userId = await requireUserId(request);
-  
+
   if (request.method !== "POST") {
     return json({ error: "Method not allowed" }, { status: 405 });
   }
-  
+
   const body = await request.json();
-  
+
   // Validate
   if (!body.content) {
     throw new ValidationError("Content is required");
   }
-  
+
   // Create post
   const post = await createPost({
     userId,
     content: body.content,
     scheduledAt: body.scheduledAt ? new Date(body.scheduledAt) : undefined,
   });
-  
+
   return json({ post }, { status: 201 });
 }
 ```
@@ -214,7 +214,7 @@ const postQueue = new Queue("post-publish", {
 
 export async function schedulePost(postId: string, scheduledAt: Date) {
   const delay = scheduledAt.getTime() - Date.now();
-  
+
   await postQueue.add(
     "publish-post",
     { postId },
@@ -225,7 +225,7 @@ export async function schedulePost(postId: string, scheduledAt: Date) {
         type: "exponential",
         delay: 2000,
       },
-    }
+    },
   );
 }
 ```
@@ -247,7 +247,7 @@ const worker = new Worker(
   {
     connection: redis,
     concurrency: 5,
-  }
+  },
 );
 
 worker.on("completed", (job) => {
@@ -281,16 +281,16 @@ const s3Client = new S3Client({
 export async function uploadFile(file: File, userId: string) {
   const key = `${userId}/${uuidv4()}-${file.name}`;
   const buffer = Buffer.from(await file.arrayBuffer());
-  
+
   await s3Client.send(
     new PutObjectCommand({
       Bucket: process.env.STORAGE_BUCKET!,
       Key: key,
       Body: buffer,
       ContentType: file.type,
-    })
+    }),
   );
-  
+
   const url = `https://${process.env.STORAGE_BUCKET}.s3.${process.env.STORAGE_REGION}.amazonaws.com/${key}`;
   return url;
 }
@@ -309,11 +309,11 @@ export async function action({ request }: ActionFunctionArgs) {
   const userId = await requireUserId(request);
   const formData = await request.formData();
   const file = formData.get("file") as File;
-  
+
   if (!file) {
     return json({ error: "File required" }, { status: 400 });
   }
-  
+
   const url = await uploadFile(file, userId);
   return json({ url });
 }
@@ -331,14 +331,14 @@ async function signEvent(content: string) {
   if (!window.nostr) {
     throw new Error("Nostr extension not found");
   }
-  
+
   const event = {
     kind: 1,
     content,
     created_at: Math.floor(Date.now() / 1000),
     tags: [],
   };
-  
+
   const signedEvent = await window.nostr.signEvent(event);
   return signedEvent;
 }
@@ -350,11 +350,11 @@ async function signEvent(content: string) {
 // app/features/posts/services/publishing.server.ts
 export async function publishPost(postId: string) {
   const post = await getPostById(postId);
-  
+
   if (!post.signedEvent) {
     throw new Error("Post not signed");
   }
-  
+
   // Send to HTTP Nostr Publisher
   const response = await fetch(process.env.NOSTR_PUBLISHER_URL!, {
     method: "POST",
@@ -363,11 +363,11 @@ export async function publishPost(postId: string) {
       event: post.signedEvent,
     }),
   });
-  
+
   if (!response.ok) {
     throw new Error("Failed to publish");
   }
-  
+
   // Update post status
   await updatePostStatus(postId, "POSTED");
 }
@@ -386,38 +386,43 @@ export async function publishPost(postId: string) {
 async function retryWithBackoff<T>(
   fn: () => Promise<T>,
   maxRetries: number = 3,
-  initialDelay: number = 1000
+  initialDelay: number = 1000,
 ): Promise<T> {
   let lastError: Error;
-  
+
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await fn();
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
-      
+
       if (attempt === maxRetries) {
         throw lastError;
       }
-      
+
       // Exponential backoff: 1s, 2s, 4s
       const delay = initialDelay * Math.pow(2, attempt);
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
-  
+
   throw lastError!;
 }
 
 // Usage: Publishing with retry
 export async function publishPostWithRetry(postId: string) {
-  return retryWithBackoff(async () => {
-    return await publishPost(postId);
-  }, 3, 1000);
+  return retryWithBackoff(
+    async () => {
+      return await publishPost(postId);
+    },
+    3,
+    1000,
+  );
 }
 ```
 
 **Common pitfalls:**
+
 - ❌ Not implementing backoff (can overwhelm services)
 - ❌ Retrying on all errors (some errors shouldn't be retried)
 - ✅ Only retry transient errors (network, timeouts)
@@ -429,42 +434,41 @@ export async function publishPostWithRetry(postId: string) {
 
 ```typescript
 // app/lib/batch-processor.server.ts
-import pLimit from 'p-limit';
+import pLimit from "p-limit";
 
 export async function processBatch<T, R>(
   items: T[],
   processor: (item: T) => Promise<R>,
-  concurrency: number = 5
+  concurrency: number = 5,
 ): Promise<R[]> {
   const limit = pLimit(concurrency);
-  
+
   const results = await Promise.allSettled(
-    items.map(item => 
-      limit(() => processor(item))
-    )
+    items.map((item) => limit(() => processor(item))),
   );
-  
+
   const successful: R[] = [];
   const failed: Array<{ item: T; error: Error }> = [];
-  
+
   results.forEach((result, index) => {
-    if (result.status === 'fulfilled') {
+    if (result.status === "fulfilled") {
       successful.push(result.value);
     } else {
       failed.push({
         item: items[index],
-        error: result.reason instanceof Error 
-          ? result.reason 
-          : new Error(String(result.reason))
+        error:
+          result.reason instanceof Error
+            ? result.reason
+            : new Error(String(result.reason)),
       });
     }
   });
-  
+
   // Log failures but don't throw
   if (failed.length > 0) {
     console.error(`Failed to process ${failed.length} items:`, failed);
   }
-  
+
   return successful;
 }
 
@@ -475,12 +479,13 @@ export async function bulkPublishPosts(postIds: string[]) {
     async (postId) => {
       return await publishPost(postId);
     },
-    5 // Process 5 at a time
+    5, // Process 5 at a time
   );
 }
 ```
 
 **Common pitfalls:**
+
 - ❌ Processing all items at once (can crash system)
 - ❌ Not handling partial failures
 - ✅ Use concurrency limits
@@ -498,7 +503,7 @@ import { prisma } from "~/lib/prisma.server";
 export async function schedulePostWithQueue(
   postId: string,
   queueId: string,
-  scheduledAt: Date
+  scheduledAt: Date,
 ) {
   // Use transaction to ensure consistency
   return await prisma.$transaction(async (tx) => {
@@ -508,16 +513,16 @@ export async function schedulePostWithQueue(
       data: {
         queueId,
         scheduledAt,
-        status: 'SCHEDULED',
+        status: "SCHEDULED",
       },
     });
-    
+
     // 2. Create queue job
     await createQueueJob(tx, {
       postId,
       scheduledAt,
     });
-    
+
     // 3. Update queue stats
     await tx.queue.update({
       where: { id: queueId },
@@ -525,7 +530,7 @@ export async function schedulePostWithQueue(
         scheduledCount: { increment: 1 },
       },
     });
-    
+
     return post;
   });
 }
@@ -549,19 +554,19 @@ const CACHE_TTL = 3600; // 1 hour
 
 export async function getCachedUser(userId: string) {
   const cacheKey = `user:${userId}`;
-  
+
   // Try cache first
   const cached = await redis.get(cacheKey);
   if (cached) {
     return JSON.parse(cached);
   }
-  
+
   // Cache miss - fetch from database
   const user = await getUserById(userId);
-  
+
   // Cache for 1 hour
   await redis.setex(cacheKey, CACHE_TTL, JSON.stringify(user));
-  
+
   return user;
 }
 
@@ -573,10 +578,10 @@ export async function invalidateUserCache(userId: string) {
 // Usage: Invalidate on update
 export async function updateUser(userId: string, data: UserUpdate) {
   const user = await updateUserInDatabase(userId, data);
-  
+
   // Invalidate cache
   await invalidateUserCache(userId);
-  
+
   return user;
 }
 
@@ -604,25 +609,25 @@ const worker = new Worker(
   "post-publish",
   async (job: Job) => {
     const { postId } = job.data;
-    
+
     try {
       // Update status to processing
       await updatePostStatus(postId, "PROCESSING");
-      
+
       // Publish post
       await publishPost(postId);
-      
+
       // Update status to posted
       await updatePostStatus(postId, "POSTED");
-      
+
       return { success: true, postId };
     } catch (error) {
       // Update status to failed
       await updatePostStatus(postId, "FAILED");
-      
+
       // Log error
       console.error(`Failed to publish post ${postId}:`, error);
-      
+
       // Re-throw to trigger retry
       throw error;
     }
@@ -634,7 +639,7 @@ const worker = new Worker(
       max: 10,
       duration: 1000, // 10 jobs per second
     },
-  }
+  },
 );
 
 // Event handlers
@@ -644,7 +649,7 @@ worker.on("completed", (job) => {
 
 worker.on("failed", (job, err) => {
   console.error(`Post ${job?.data?.postId} failed:`, err);
-  
+
   // Send alert if too many failures
   if (job?.attemptsMade && job.attemptsMade >= 3) {
     sendAlert(`Post ${job.data.postId} failed after 3 attempts`);
@@ -670,12 +675,13 @@ import { z } from "zod";
 
 // Define schema
 const PostSchema = z.object({
-  content: z.string()
+  content: z
+    .string()
     .min(1, "Content cannot be empty")
     .max(5000, "Content too long")
     .refine(
       (val) => val.trim().length > 0,
-      "Content cannot be only whitespace"
+      "Content cannot be only whitespace",
     ),
   scheduledAt: z.date().optional(),
   queueId: z.string().uuid().optional(),
@@ -687,10 +693,7 @@ export function validatePost(data: unknown) {
     return PostSchema.parse(data);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new ValidationError(
-        "Invalid post data",
-        error.errors
-      );
+      throw new ValidationError("Invalid post data", error.errors);
     }
     throw error;
   }
@@ -700,7 +703,7 @@ export function validatePost(data: unknown) {
 export function sanitizeContent(content: string): string {
   // Remove potentially dangerous HTML
   return content
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
     .trim();
 }
 
@@ -708,22 +711,22 @@ export function sanitizeContent(content: string): string {
 export async function action({ request }: ActionFunctionArgs) {
   const userId = await requireUserId(request);
   const body = await request.json();
-  
+
   // Validate
   const validated = validatePost(body);
-  
+
   // Sanitize
   const sanitized = {
     ...validated,
     content: sanitizeContent(validated.content),
   };
-  
+
   // Create post
   const post = await createPost({
     userId,
     ...sanitized,
   });
-  
+
   return json({ post });
 }
 
@@ -743,18 +746,21 @@ export async function action({ request }: ActionFunctionArgs) {
 ### Do's ✅
 
 1. **Error Handling:**
+
    - Always handle errors
    - Implement retry logic for transient errors
    - Log errors for debugging
    - Provide meaningful error messages
 
 2. **Performance:**
+
    - Use pagination for large datasets
    - Implement caching for frequent queries
    - Batch operations when possible
    - Use transactions for consistency
 
 3. **Security:**
+
    - Validate all input
    - Sanitize user content
    - Use parameterized queries
@@ -769,16 +775,19 @@ export async function action({ request }: ActionFunctionArgs) {
 ### Don'ts ❌
 
 1. **Error Handling:**
+
    - Don't ignore errors
    - Don't retry on all errors
    - Don't expose internal errors to users
 
 2. **Performance:**
+
    - Don't fetch all records at once
    - Don't cache without invalidation
    - Don't create N+1 queries
 
 3. **Security:**
+
    - Don't trust client input
    - Don't skip validation
    - Don't expose sensitive data
@@ -800,4 +809,3 @@ export async function action({ request }: ActionFunctionArgs) {
 ---
 
 **Next:** [Recipes](./recipes.md) → Common use case patterns
-

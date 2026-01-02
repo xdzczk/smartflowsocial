@@ -24,11 +24,17 @@ vi.mock("~/features/posts/stats.server", () => ({
   getPostStats: vi.fn(),
 }));
 
-import { getRecyclableDashboardData, handleRecyclablePostAction } from "~/features/posts/services/recyclable-posts.server";
+import {
+  getRecyclableDashboardData,
+  handleRecyclablePostAction,
+} from "~/features/posts/services/recyclable-posts.server";
 import { getPostStats } from "~/features/posts/stats.server";
 import { getUserById, getQueueTypes } from "~/features/user";
 import { deletePost } from "~/models/post.commands.server";
-import { getRecyclablePosts, getPostsByIds } from "~/models/post.queries.server";
+import {
+  getRecyclablePosts,
+  getPostsByIds,
+} from "~/models/post.queries.server";
 
 import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 
@@ -44,7 +50,15 @@ describe("Recyclable Posts Service", () => {
           {
             id: "post-1",
             queueType: { id: "queue-1", name: "Queue 1" },
-            signedEvent: { id: "event-123", pubkey: "pk-123", created_at: 1234567890, kind: 1, content: "test", tags: [], sig: "sig-123" },
+            signedEvent: {
+              id: "event-123",
+              pubkey: "pk-123",
+              created_at: 1234567890,
+              kind: 1,
+              content: "test",
+              tags: [],
+              sig: "sig-123",
+            },
           },
         ],
         pagination: { total: 1, pages: 1, currentPage: 1 },
@@ -56,9 +70,13 @@ describe("Recyclable Posts Service", () => {
       ];
       const mockStats = { "event-123": { likes: 5, reposts: 2 } };
 
-      (getRecyclablePosts as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
+      (getRecyclablePosts as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockPosts,
+      );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
-      (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueTypes);
+      (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockQueueTypes,
+      );
       (getPostStats as ReturnType<typeof vi.fn>).mockResolvedValue(mockStats);
 
       const url = new URL("http://localhost:3000/dashboard/recyclables?page=1");
@@ -81,11 +99,27 @@ describe("Recyclable Posts Service", () => {
         posts: [
           {
             id: "post-1",
-            signedEvent: { id: "event-1", pubkey: "pk-1", created_at: 1234567890, kind: 1, content: "test", tags: [], sig: "sig-1" },
+            signedEvent: {
+              id: "event-1",
+              pubkey: "pk-1",
+              created_at: 1234567890,
+              kind: 1,
+              content: "test",
+              tags: [],
+              sig: "sig-1",
+            },
           },
           {
             id: "post-2",
-            signedEvent: { id: "event-2", pubkey: "pk-2", created_at: 1234567890, kind: 1, content: "test", tags: [], sig: "sig-2" },
+            signedEvent: {
+              id: "event-2",
+              pubkey: "pk-2",
+              created_at: 1234567890,
+              kind: 1,
+              content: "test",
+              tags: [],
+              sig: "sig-2",
+            },
           },
           {
             id: "post-3",
@@ -95,8 +129,12 @@ describe("Recyclable Posts Service", () => {
         pagination: { total: 3, pages: 1, currentPage: 1 },
       };
 
-      (getRecyclablePosts as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
-      (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: TEST_USER_ID });
+      (getRecyclablePosts as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockPosts,
+      );
+      (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: TEST_USER_ID,
+      });
       (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
       (getPostStats as ReturnType<typeof vi.fn>).mockResolvedValue({});
 
@@ -133,7 +171,9 @@ describe("Recyclable Posts Service", () => {
         posts: [],
         pagination: { total: 0, pages: 0, currentPage: 2 },
       });
-      (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: TEST_USER_ID });
+      (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: TEST_USER_ID,
+      });
       (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
       (getPostStats as ReturnType<typeof vi.fn>).mockResolvedValue({});
 
@@ -155,7 +195,9 @@ describe("Recyclable Posts Service", () => {
 
   describe("handleRecyclablePostAction", () => {
     it("should handle delete action", async () => {
-      (deletePost as ReturnType<typeof vi.fn>).mockResolvedValue({ id: TEST_POST_ID });
+      (deletePost as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: TEST_POST_ID,
+      });
 
       const formData = new FormData();
       formData.append("_action", "delete");
@@ -163,15 +205,34 @@ describe("Recyclable Posts Service", () => {
 
       const result = await handleRecyclablePostAction(formData, TEST_USER_ID);
 
-      expect(deletePost).toHaveBeenCalledWith({ id: TEST_POST_ID, userId: TEST_USER_ID });
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      expect(deletePost).toHaveBeenCalledWith({
+        id: TEST_POST_ID,
+        userId: TEST_USER_ID,
+      });
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string; repostData?: unknown; quotePostData?: unknown; repostEventData?: { kind?: number } } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as {
+              success?: boolean;
+              error?: string;
+              repostData?: unknown;
+              quotePostData?: unknown;
+              repostEventData?: { kind?: number };
+            })
+          : {};
       expect(jsonResult.success).toBe(true);
     });
 
     it("should handle bulkDelete action", async () => {
-      (deletePost as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "post-1" });
+      (deletePost as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: "post-1",
+      });
 
       const formData = new FormData();
       formData.append("_action", "bulkDelete");
@@ -180,16 +241,52 @@ describe("Recyclable Posts Service", () => {
       const result = await handleRecyclablePostAction(formData, TEST_USER_ID);
 
       expect(deletePost).toHaveBeenCalledTimes(2);
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string; repostData?: unknown; quotePostData?: unknown; repostEventData?: { kind?: number } } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as {
+              success?: boolean;
+              error?: string;
+              repostData?: unknown;
+              quotePostData?: unknown;
+              repostEventData?: { kind?: number };
+            })
+          : {};
       expect(jsonResult.success).toBe(true);
     });
 
     it("should handle bulkRepost action", async () => {
       const mockPosts = [
-        { id: "post-1", signedEvent: { id: "event-1", pubkey: "pk-1", created_at: 1234567890, kind: 1, content: "test", tags: [], sig: "sig-1" } },
-        { id: "post-2", signedEvent: { id: "event-2", pubkey: "pk-2", created_at: 1234567890, kind: 1, content: "test", tags: [], sig: "sig-2" } },
+        {
+          id: "post-1",
+          signedEvent: {
+            id: "event-1",
+            pubkey: "pk-1",
+            created_at: 1234567890,
+            kind: 1,
+            content: "test",
+            tags: [],
+            sig: "sig-1",
+          },
+        },
+        {
+          id: "post-2",
+          signedEvent: {
+            id: "event-2",
+            pubkey: "pk-2",
+            created_at: 1234567890,
+            kind: 1,
+            content: "test",
+            tags: [],
+            sig: "sig-2",
+          },
+        },
       ];
       (getPostsByIds as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
 
@@ -199,9 +296,23 @@ describe("Recyclable Posts Service", () => {
 
       const result = await handleRecyclablePostAction(formData, TEST_USER_ID);
 
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string; repostData?: unknown; quotePostData?: unknown; repostEventData?: { kind?: number } } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as {
+              success?: boolean;
+              error?: string;
+              repostData?: unknown;
+              quotePostData?: unknown;
+              repostEventData?: { kind?: number };
+            })
+          : {};
       expect(jsonResult.repostData).toEqual(mockPosts);
     });
 
@@ -212,7 +323,15 @@ describe("Recyclable Posts Service", () => {
           fileUrl: ["https://example.com/image.jpg"],
           caption: "Caption",
           queueType: { name: "Queue 1" },
-          signedEvent: { id: "event-1", pubkey: "pk-1", created_at: 1234567890, kind: 1, content: "test", tags: [], sig: "sig-1" },
+          signedEvent: {
+            id: "event-1",
+            pubkey: "pk-1",
+            created_at: 1234567890,
+            kind: 1,
+            content: "test",
+            tags: [],
+            sig: "sig-1",
+          },
         },
       ];
       (getPostsByIds as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
@@ -223,9 +342,23 @@ describe("Recyclable Posts Service", () => {
 
       const result = await handleRecyclablePostAction(formData, TEST_USER_ID);
 
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string; repostData?: unknown; quotePostData?: unknown; repostEventData?: { kind?: number } } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as {
+              success?: boolean;
+              error?: string;
+              repostData?: unknown;
+              quotePostData?: unknown;
+              repostEventData?: { kind?: number };
+            })
+          : {};
       expect(jsonResult.quotePostData).toBeDefined();
       expect(Array.isArray(jsonResult.quotePostData)).toBe(true);
     });
@@ -234,7 +367,15 @@ describe("Recyclable Posts Service", () => {
       const mockPost = {
         id: "post-1",
         content: "Test content",
-        signedEvent: { id: "event-123", pubkey: "pk-123", created_at: 1234567890, kind: 1, content: "test", tags: [], sig: "sig-123" },
+        signedEvent: {
+          id: "event-123",
+          pubkey: "pk-123",
+          created_at: 1234567890,
+          kind: 1,
+          content: "test",
+          tags: [],
+          sig: "sig-123",
+        },
       };
       (getPostsByIds as ReturnType<typeof vi.fn>).mockResolvedValue([mockPost]);
 
@@ -248,9 +389,23 @@ describe("Recyclable Posts Service", () => {
         ids: ["post-1"],
         userId: TEST_USER_ID,
       });
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string; repostData?: unknown; quotePostData?: unknown; repostEventData?: { kind?: number } } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as {
+              success?: boolean;
+              error?: string;
+              repostData?: unknown;
+              quotePostData?: unknown;
+              repostEventData?: { kind?: number };
+            })
+          : {};
       expect(jsonResult.repostEventData).toBeDefined();
       expect(jsonResult.repostEventData?.kind).toBe(6);
     });
@@ -262,7 +417,15 @@ describe("Recyclable Posts Service", () => {
         caption: "Test caption",
         fileUrl: ["https://example.com/image.jpg"],
         queueType: { name: "Queue 1" },
-        signedEvent: { id: "event-123", pubkey: "pk-123", created_at: 1234567890, kind: 1, content: "test", tags: [], sig: "sig-123" },
+        signedEvent: {
+          id: "event-123",
+          pubkey: "pk-123",
+          created_at: 1234567890,
+          kind: 1,
+          content: "test",
+          tags: [],
+          sig: "sig-123",
+        },
       };
       (getPostsByIds as ReturnType<typeof vi.fn>).mockResolvedValue([mockPost]);
 
@@ -276,9 +439,23 @@ describe("Recyclable Posts Service", () => {
         ids: ["post-1"],
         userId: TEST_USER_ID,
       });
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string; repostData?: unknown; quotePostData?: unknown; repostEventData?: { kind?: number } } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as {
+              success?: boolean;
+              error?: string;
+              repostData?: unknown;
+              quotePostData?: unknown;
+              repostEventData?: { kind?: number };
+            })
+          : {};
       expect(jsonResult.quotePostData).toBeDefined();
       expect(Array.isArray(jsonResult.quotePostData)).toBe(true);
     });
@@ -289,11 +466,24 @@ describe("Recyclable Posts Service", () => {
 
       const result = await handleRecyclablePostAction(formData, TEST_USER_ID);
 
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string; repostData?: unknown; quotePostData?: unknown; repostEventData?: { kind?: number } } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as {
+              success?: boolean;
+              error?: string;
+              repostData?: unknown;
+              quotePostData?: unknown;
+              repostEventData?: { kind?: number };
+            })
+          : {};
       expect(jsonResult.error).toBe("Invalid action");
     });
   });
 });
-

@@ -1,8 +1,13 @@
 // Polyfill WebSocket for @getalby/sdk in Node.js (production only)
 // Using ws package instead of deprecated websocket-polyfill
-if (process.env.NODE_ENV !== "development" && typeof globalThis !== "undefined" && globalThis.WebSocket === undefined) {
-   
-  const { WebSocket } = require("ws") as { WebSocket: typeof globalThis.WebSocket };
+if (
+  process.env.NODE_ENV !== "development" &&
+  typeof globalThis !== "undefined" &&
+  globalThis.WebSocket === undefined
+) {
+  const { WebSocket } = require("ws") as {
+    WebSocket: typeof globalThis.WebSocket;
+  };
   globalThis.WebSocket = WebSocket;
 }
 
@@ -88,22 +93,35 @@ export async function createPlanInvoice({
     // Store payment record in database
     // Extract invoice, paymentHash and amount from the request
     const requestAny: unknown = request;
-    const requestRecord = requestAny && typeof requestAny === "object" && !Array.isArray(requestAny) ? requestAny as Record<string, unknown> : {};
+    const requestRecord =
+      requestAny && typeof requestAny === "object" && !Array.isArray(requestAny)
+        ? (requestAny as Record<string, unknown>)
+        : {};
     const invoiceValue = requestRecord.invoice;
     const invoiceString =
       typeof invoiceValue === "string"
         ? invoiceValue
-        : (invoiceValue && typeof invoiceValue === "object" && !Array.isArray(invoiceValue) && "paymentRequest" in invoiceValue && typeof (invoiceValue as { paymentRequest?: unknown }).paymentRequest === "string"
-            ? (invoiceValue as { paymentRequest: string }).paymentRequest
-            : "");
-    const invoiceObj = invoiceValue && typeof invoiceValue === "object" && !Array.isArray(invoiceValue) ? invoiceValue as Record<string, unknown> : null;
+        : invoiceValue &&
+            typeof invoiceValue === "object" &&
+            !Array.isArray(invoiceValue) &&
+            "paymentRequest" in invoiceValue &&
+            typeof (invoiceValue as { paymentRequest?: unknown })
+              .paymentRequest === "string"
+          ? (invoiceValue as { paymentRequest: string }).paymentRequest
+          : "";
+    const invoiceObj =
+      invoiceValue &&
+      typeof invoiceValue === "object" &&
+      !Array.isArray(invoiceValue)
+        ? (invoiceValue as Record<string, unknown>)
+        : null;
     const paymentHashValue = requestRecord.paymentHash;
     const paymentHashString =
       typeof paymentHashValue === "string"
         ? paymentHashValue
-        : (invoiceObj && "paymentHash" in invoiceObj
-            ? String(invoiceObj.paymentHash)
-            : "");
+        : invoiceObj && "paymentHash" in invoiceObj
+          ? String(invoiceObj.paymentHash)
+          : "";
 
     // Extract amount in sats - try multiple possible locations
     let amountSats = 0;
@@ -112,7 +130,12 @@ export async function createPlanInvoice({
       amountSats = amountValue;
     } else if (invoiceObj && "satoshi" in invoiceObj) {
       amountSats = Number(invoiceObj.satoshi) || 0;
-    } else if (requestAny && typeof requestAny === "object" && "satoshi" in requestAny && typeof requestAny.satoshi === "number") {
+    } else if (
+      requestAny &&
+      typeof requestAny === "object" &&
+      "satoshi" in requestAny &&
+      typeof requestAny.satoshi === "number"
+    ) {
       amountSats = requestAny.satoshi;
     } else {
       // Parse the Lightning invoice to get the exact amount
@@ -171,11 +194,14 @@ export async function createPlanInvoice({
     }
 
     if (!invoiceString || !paymentHashString) {
-      logError(new Error("Failed to extract invoice or paymentHash from request"), {
-        invoiceString,
-        paymentHashString,
-        requestStructure: Object.keys(request),
-      });
+      logError(
+        new Error("Failed to extract invoice or paymentHash from request"),
+        {
+          invoiceString,
+          paymentHashString,
+          requestStructure: Object.keys(request),
+        },
+      );
       throw new Error(
         "Invalid response from payment provider - missing invoice or paymentHash",
       );

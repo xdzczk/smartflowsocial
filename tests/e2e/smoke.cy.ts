@@ -2,12 +2,12 @@ import { TEST_NPUB } from "./support/nostr-test-keys";
 
 /**
  * Smoke Tests - Critical Path Sanity Checks
- * 
+ *
  * These tests verify that the most critical paths work:
  * - Landing page loads
  * - Authentication works
  * - Dashboard is accessible
- * 
+ *
  * These should be fast and reliable.
  */
 describe("Smoke Tests - Critical Paths", () => {
@@ -36,5 +36,3 @@ describe("Smoke Tests - Critical Paths", () => {
     cy.get("body").should("be.visible");
   });
 });
-
-

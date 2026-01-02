@@ -19,6 +19,7 @@ Learn how to use the visual calendar interface to schedule and manage your posts
 ## What is the Calendar View?
 
 **The calendar view provides:**
+
 - Visual representation of scheduled posts
 - Drag-and-drop rescheduling
 - Weekly and monthly views
@@ -26,6 +27,7 @@ Learn how to use the visual calendar interface to schedule and manage your posts
 - Easy date navigation
 
 **Benefits:**
+
 - See your schedule at a glance
 - Quickly reschedule posts
 - Identify gaps in your schedule
@@ -45,12 +47,14 @@ Learn how to use the visual calendar interface to schedule and manage your posts
 ## Step 2: Understand the Interface
 
 **Calendar header:**
+
 - **Date range** - Current week/month displayed
 - **Navigation buttons** - Previous/Next, Today
 - **View toggle** - Switch between Week and Month
 - **Queue filter** - Filter by queue type (optional)
 
 **Calendar body:**
+
 - **Weekly view:** Horizontal timeline with time slots
 - **Monthly view:** Calendar grid with post cards
 - **Post blocks:** Visual representation of scheduled posts
@@ -60,6 +64,7 @@ Learn how to use the visual calendar interface to schedule and manage your posts
 ## Step 3: Switch Between Views
 
 **Weekly View:**
+
 1. **Click "Week"** button in header
 2. **See horizontal timeline:**
    - Days of week (Mon-Sun)
@@ -68,6 +73,7 @@ Learn how to use the visual calendar interface to schedule and manage your posts
    - Post blocks positioned by time
 
 **Monthly View:**
+
 1. **Click "Month"** button in header
 2. **See calendar grid:**
    - Days of the month
@@ -75,6 +81,7 @@ Learn how to use the visual calendar interface to schedule and manage your posts
    - Color-coded by queue
 
 **Switch anytime:**
+
 - Toggle between views
 - Posts remain visible
 - Layout adapts to view
@@ -84,16 +91,19 @@ Learn how to use the visual calendar interface to schedule and manage your posts
 ## Step 4: Navigate Dates
 
 **Previous/Next:**
+
 1. **Click "<"** to go back
 2. **Click ">"** to go forward
 3. **Moves by week** (weekly view) or **month** (monthly view)
 
 **Jump to Today:**
+
 1. **Click "Today"** button
 2. **Calendar jumps** to current date
 3. **Highlights today** in view
 
 **Date range display:**
+
 - Shows current week/month range
 - Helps orient yourself
 - Updates as you navigate
@@ -103,18 +113,21 @@ Learn how to use the visual calendar interface to schedule and manage your posts
 ## Step 5: View Scheduled Posts
 
 **In Weekly View:**
+
 - Posts appear as blocks in time slots
 - Positioned by scheduled time
 - Shows post preview and time
 - Color-coded by queue
 
 **In Monthly View:**
+
 - Posts appear as cards under dates
 - Grouped by day
 - Shows post preview
 - Color-coded by queue
 
 **Post information:**
+
 - Preview of content
 - Scheduled time
 - Queue type (by color)
@@ -141,6 +154,7 @@ Learn how to use the visual calendar interface to schedule and manage your posts
 7. **Post rescheduled!**
 
 **Visual feedback:**
+
 - Post follows cursor while dragging
 - Drop zone highlights
 - Modal confirms changes
@@ -183,11 +197,13 @@ Learn how to use the visual calendar interface to schedule and manage your posts
 ### Visual Organization
 
 1. **Use queue colors:**
+
    - Assign distinct colors to queues
    - Easy visual identification
    - Better organization
 
 2. **Balance schedule:**
+
    - Don't overload time slots
    - Space posts appropriately
    - Consider audience timezone
@@ -200,11 +216,13 @@ Learn how to use the visual calendar interface to schedule and manage your posts
 ### Time Management
 
 1. **Peak engagement times:**
+
    - Schedule during active hours
    - Use analytics to find best times
    - Test different schedules
 
 2. **Consistency:**
+
    - Post at regular intervals
    - Use queues for automation
    - Maintain schedule
@@ -223,6 +241,7 @@ Learn how to use the visual calendar interface to schedule and manage your posts
 **Problem:** Calendar view is blank
 
 **Solutions:**
+
 - Refresh the page
 - Check you have scheduled posts
 - Verify queue filter settings
@@ -233,6 +252,7 @@ Learn how to use the visual calendar interface to schedule and manage your posts
 **Problem:** Can't drag posts
 
 **Solutions:**
+
 - Check browser compatibility
 - Disable browser extensions
 - Try different browser
@@ -243,6 +263,7 @@ Learn how to use the visual calendar interface to schedule and manage your posts
 **Problem:** Reschedule doesn't save
 
 **Solutions:**
+
 - Check post has signed event
 - Verify new time is in future
 - Re-sign event if needed
@@ -256,7 +277,7 @@ Learn how to use the visual calendar interface to schedule and manage your posts
 ✅ How to switch between views  
 ✅ How to reschedule with drag and drop  
 ✅ How to filter by queue  
-✅ Calendar best practices  
+✅ Calendar best practices
 
 ---
 
@@ -277,4 +298,3 @@ Learn how to use the visual calendar interface to schedule and manage your posts
 ---
 
 **Next Tutorial:** [Bulk Scheduling](../intermediate/bulk-scheduling.md) → Schedule multiple posts
-

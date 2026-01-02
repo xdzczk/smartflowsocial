@@ -69,29 +69,31 @@ function sanitizeAttribute(
 }
 
 function sanitizeHtml(html: string): string {
-  return html
-    // Remove script tags and all content between them (case-insensitive)
-    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
-    .replace(/<SCRIPT\b[^>]*>[\s\S]*?<\/SCRIPT>/gi, "")
-    // Remove inline event handlers
-    .replace(/on\w+\s*=\s*["'][^"']*["']/gi, "")
-    .replace(/on\w+\s*=\s*[^>\s]*/gi, "")
-    // Remove dangerous protocols
-    .replace(/javascript:/gi, "")
-    .replace(/data:/gi, "")
-    .replace(/vbscript:/gi, "")
-    // Remove dangerous tags
-    .replace(/<iframe\b[^>]*>[\s\S]*?<\/iframe>/gi, "")
-    .replace(/<embed\b[^>]*>/gi, "")
-    .replace(/<object\b[^>]*>[\s\S]*?<\/object>/gi, "")
-    .replace(/<form\b[^>]*>[\s\S]*?<\/form>/gi, "")
-    .replace(/<input\b[^>]*>/gi, "")
-    .replace(/<textarea\b[^>]*>[\s\S]*?<\/textarea>/gi, "")
-    .replace(/<select\b[^>]*>[\s\S]*?<\/select>/gi, "")
-    .replace(/<button\b[^>]*>[\s\S]*?<\/button>/gi, "")
-    .replace(/<link\b[^>]*>/gi, "")
-    .replace(/<meta\b[^>]*>/gi, "")
-    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "");
+  return (
+    html
+      // Remove script tags and all content between them (case-insensitive)
+      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
+      .replace(/<SCRIPT\b[^>]*>[\s\S]*?<\/SCRIPT>/gi, "")
+      // Remove inline event handlers
+      .replace(/on\w+\s*=\s*["'][^"']*["']/gi, "")
+      .replace(/on\w+\s*=\s*[^>\s]*/gi, "")
+      // Remove dangerous protocols
+      .replace(/javascript:/gi, "")
+      .replace(/data:/gi, "")
+      .replace(/vbscript:/gi, "")
+      // Remove dangerous tags
+      .replace(/<iframe\b[^>]*>[\s\S]*?<\/iframe>/gi, "")
+      .replace(/<embed\b[^>]*>/gi, "")
+      .replace(/<object\b[^>]*>[\s\S]*?<\/object>/gi, "")
+      .replace(/<form\b[^>]*>[\s\S]*?<\/form>/gi, "")
+      .replace(/<input\b[^>]*>/gi, "")
+      .replace(/<textarea\b[^>]*>[\s\S]*?<\/textarea>/gi, "")
+      .replace(/<select\b[^>]*>[\s\S]*?<\/select>/gi, "")
+      .replace(/<button\b[^>]*>[\s\S]*?<\/button>/gi, "")
+      .replace(/<link\b[^>]*>/gi, "")
+      .replace(/<meta\b[^>]*>/gi, "")
+      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "")
+  );
 }
 
 export function sanitizeMarkdown(markdown: string): string {
@@ -116,7 +118,8 @@ export function sanitizeMarkdown(markdown: string): string {
       smartLists: true,
       smartypants: false,
     });
-    let html = typeof htmlResult === "string" ? htmlResult : String(htmlResult ?? "");
+    let html =
+      typeof htmlResult === "string" ? htmlResult : String(htmlResult ?? "");
 
     // Sanitize links and images by processing the HTML
     html = html.replace(
@@ -129,7 +132,7 @@ export function sanitizeMarkdown(markdown: string): string {
           return textStr; // Return just the text if href is invalid
         }
         return `<a href="${sanitizedHref}" target="_blank" rel="noopener noreferrer">${textStr}</a>`;
-      }
+      },
     );
 
     html = html.replace(
@@ -141,7 +144,7 @@ export function sanitizeMarkdown(markdown: string): string {
           return ""; // Remove image if src is invalid
         }
         return `<img src="${sanitizedSrc}" loading="lazy">`;
-      }
+      },
     );
 
     // FIRST: Remove dangerous tags and content (script tags, event handlers, etc.)
@@ -171,35 +174,41 @@ export function sanitizeMarkdown(markdown: string): string {
           .replace(/'/g, "&#39;");
 
         if (lang) {
-          const langStr = typeof lang === "string" ? lang : String(lang as unknown);
+          const langStr =
+            typeof lang === "string" ? lang : String(lang as unknown);
           const sanitizedLang = langStr.replace(/[^a-zA-Z0-9-_]/g, "");
           return `<pre><code class="language-${sanitizedLang}">${escapedCode}</code></pre>`;
         }
 
         return `<pre><code>${escapedCode}</code></pre>`;
-      }
+      },
     );
 
     // THIRD: Escape HTML tags that aren't in our allowed list
     // This handles cases like <b>, <i>, etc. that aren't dangerous but should be escaped
     // Store code blocks temporarily to avoid escaping their content
-    const codeBlockPlaceholders: { placeholder: string; content: string }[] = [];
+    const codeBlockPlaceholders: { placeholder: string; content: string }[] =
+      [];
     let placeholderIndex = 0;
-    
-    html = html.replace(/<pre><code[^>]*>[\s\S]*?<\/code><\/pre>/gi, (match) => {
-      const placeholder = `__CODE_BLOCK_${placeholderIndex}__`;
-      codeBlockPlaceholders.push({ placeholder, content: match });
-      placeholderIndex++;
-      return placeholder;
-    });
-    
+
+    html = html.replace(
+      /<pre><code[^>]*>[\s\S]*?<\/code><\/pre>/gi,
+      (match) => {
+        const placeholder = `__CODE_BLOCK_${placeholderIndex}__`;
+        codeBlockPlaceholders.push({ placeholder, content: match });
+        placeholderIndex++;
+        return placeholder;
+      },
+    );
+
     // Escape HTML tags that aren't in our allowed list
-    html = html.replace(/<(\/?)(?!\/?(?:p|br|strong|em|h[1-6]|ul|ol|li|blockquote|pre|code|a|img)\b)[a-z][^>]*>/gi, (match) => {
-      return match
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-    });
-    
+    html = html.replace(
+      /<(\/?)(?!\/?(?:p|br|strong|em|h[1-6]|ul|ol|li|blockquote|pre|code|a|img)\b)[a-z][^>]*>/gi,
+      (match) => {
+        return match.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      },
+    );
+
     // Restore code blocks
     codeBlockPlaceholders.forEach(({ placeholder, content }) => {
       html = html.replace(placeholder, content);

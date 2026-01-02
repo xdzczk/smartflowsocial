@@ -1,10 +1,7 @@
 // learn more: https://fly.io/docs/reference/configuration/#services-http_checks
 import type { LoaderFunctionArgs } from "@remix-run/node";
 
-import {
-  performHealthCheck,
-  handleHealthCheckError,
-} from "~/features/infra";
+import { performHealthCheck, handleHealthCheckError } from "~/features/infra";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
@@ -16,4 +13,3 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     return handleHealthCheckError(error, request.url);
   }
 };
-

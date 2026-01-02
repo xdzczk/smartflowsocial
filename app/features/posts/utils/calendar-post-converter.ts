@@ -1,6 +1,6 @@
 /**
  * Calendar Post Converter
- * 
+ *
  * Utility functions to convert PostData and LongFormPostData to CalendarPost format
  */
 
@@ -10,9 +10,14 @@ import type { PostData, LongFormPostData } from "../types";
  * Convert PostData to CalendarPost
  */
 export function postDataToCalendarPost(post: PostData): CalendarPost {
-  const publishedAtValue = "publishedAt" in post && post.publishedAt 
-    ? (post.publishedAt instanceof Date ? post.publishedAt : typeof post.publishedAt === "string" ? post.publishedAt : null)
-    : null;
+  const publishedAtValue =
+    "publishedAt" in post && post.publishedAt
+      ? post.publishedAt instanceof Date
+        ? post.publishedAt
+        : typeof post.publishedAt === "string"
+          ? post.publishedAt
+          : null
+      : null;
   const result: CalendarPost = {
     ...post,
     scheduledFor: post.scheduledFor ?? null,
@@ -27,14 +32,25 @@ export function postDataToCalendarPost(post: PostData): CalendarPost {
 /**
  * Convert LongFormPostData to CalendarPost
  */
-export function longFormPostDataToCalendarPost(post: LongFormPostData): CalendarPost {
-  const publishedAtValue = "publishedAt" in post && post.publishedAt 
-    ? (post.publishedAt instanceof Date ? post.publishedAt : typeof post.publishedAt === "string" ? post.publishedAt : null)
-    : null;
-  const templateIdValue = "templateId" in post && post.templateId 
-    ? (typeof post.templateId === "string" ? post.templateId : null)
-    : null;
-  const hashtagsValue = post.tags && Array.isArray(post.tags) ? post.tags.join(" ") : undefined;
+export function longFormPostDataToCalendarPost(
+  post: LongFormPostData,
+): CalendarPost {
+  const publishedAtValue =
+    "publishedAt" in post && post.publishedAt
+      ? post.publishedAt instanceof Date
+        ? post.publishedAt
+        : typeof post.publishedAt === "string"
+          ? post.publishedAt
+          : null
+      : null;
+  const templateIdValue =
+    "templateId" in post && post.templateId
+      ? typeof post.templateId === "string"
+        ? post.templateId
+        : null
+      : null;
+  const hashtagsValue =
+    post.tags && Array.isArray(post.tags) ? post.tags.join(" ") : undefined;
   const result: CalendarPost = {
     ...post,
     // Override specific fields for CalendarPost
@@ -44,7 +60,10 @@ export function longFormPostDataToCalendarPost(post: LongFormPostData): Calendar
     isScheduled: post.isScheduled ?? false,
     isPosted: post.isPublished ?? false,
     templateId: templateIdValue,
-    isRecyclable: ("isRecyclable" in post && typeof post.isRecyclable === "boolean") ? post.isRecyclable : false,
+    isRecyclable:
+      "isRecyclable" in post && typeof post.isRecyclable === "boolean"
+        ? post.isRecyclable
+        : false,
     // CalendarPost specific fields
     title: post.title ?? undefined,
     summary: post.summary ?? undefined,
@@ -69,7 +88,9 @@ export function postsToCalendarPosts(posts: PostData[]): CalendarPost[] {
 /**
  * Convert array of LongFormPostData to CalendarPost[]
  */
-export function longFormPostsToCalendarPosts(posts: LongFormPostData[]): CalendarPost[] {
+export function longFormPostsToCalendarPosts(
+  posts: LongFormPostData[],
+): CalendarPost[] {
   return posts.map(longFormPostDataToCalendarPost);
 }
 
@@ -85,6 +106,3 @@ export function mixedPostsToCalendarPosts(
     ...longFormPosts.map(longFormPostDataToCalendarPost),
   ];
 }
-
-
-

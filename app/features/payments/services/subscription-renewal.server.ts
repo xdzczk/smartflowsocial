@@ -34,10 +34,12 @@ interface RenewalResults {
 /**
  * Check and renew subscriptions for all users
  */
-export async function checkAndRenewSubscriptions(): Promise<{
-  success: boolean;
-  timestamp: string;
-} & RenewalResults> {
+export async function checkAndRenewSubscriptions(): Promise<
+  {
+    success: boolean;
+    timestamp: string;
+  } & RenewalResults
+> {
   const results: RenewalResults = {
     checked: 0,
     expired: 0,
@@ -84,21 +86,27 @@ export async function checkAndRenewSubscriptions(): Promise<{
               if (!user.encryptedNwc) {
                 throw new Error("User NWC credentials not available");
               }
-              await attemptRenewal({ ...user, encryptedNwc: user.encryptedNwc }, {
-                planId: subscription.planId,
-                plan: subscription.plan,
-                Plan: subscription.Plan ? {
-                  name: subscription.Plan.name,
-                  price: String(subscription.Plan.price),
-                } : null,
-              });
+              await attemptRenewal(
+                { ...user, encryptedNwc: user.encryptedNwc },
+                {
+                  planId: subscription.planId,
+                  plan: subscription.plan,
+                  Plan: subscription.Plan
+                    ? {
+                        name: subscription.Plan.name,
+                        price: String(subscription.Plan.price),
+                      }
+                    : null,
+                },
+              );
               results.renewalSuccess++;
             } catch (renewalError: unknown) {
               results.renewalFailed++;
-              const errorMsg = `Failed to renew subscription for user ${user.id}: ${renewalError instanceof Error
-                ? renewalError.message
-                : String(renewalError)
-                }`;
+              const errorMsg = `Failed to renew subscription for user ${user.id}: ${
+                renewalError instanceof Error
+                  ? renewalError.message
+                  : String(renewalError)
+              }`;
               results.errors.push(errorMsg);
               console.error(`[CRON] ${errorMsg}`, renewalError);
 
@@ -131,8 +139,9 @@ export async function checkAndRenewSubscriptions(): Promise<{
           }
         }
       } catch (userError: unknown) {
-        const errorMsg = `Error processing user ${user.id}: ${userError instanceof Error ? userError.message : String(userError)
-          }`;
+        const errorMsg = `Error processing user ${user.id}: ${
+          userError instanceof Error ? userError.message : String(userError)
+        }`;
         results.errors.push(errorMsg);
         console.error(errorMsg, userError);
       }
@@ -152,7 +161,12 @@ export async function checkAndRenewSubscriptions(): Promise<{
       success: false,
       timestamp: new Date().toISOString(),
       ...results,
-      errors: [...results.errors, typeof errorResponse.error === "string" ? errorResponse.error : errorResponse.error.message ?? String(errorResponse.error)],
+      errors: [
+        ...results.errors,
+        typeof errorResponse.error === "string"
+          ? errorResponse.error
+          : (errorResponse.error.message ?? String(errorResponse.error)),
+      ],
     };
   }
 }
@@ -227,28 +241,44 @@ async function attemptRenewal(
   } catch (error) {
     console.error("[CRON] Failed to request make_invoice", error);
     throw new Error(
-      `Failed to create invoice: ${error instanceof Error ? error.message : String(error)
+      `Failed to create invoice: ${
+        error instanceof Error ? error.message : String(error)
       }`,
     );
   }
 
   // Extract invoice, paymentHash and amount from the request object structure
   // Cast to unknown then to Record to access properties that may exist on ReceiveInvoice
-  const requestAny: Record<string, unknown> = invoiceRequest && typeof invoiceRequest === "object" && !Array.isArray(invoiceRequest) ? invoiceRequest as unknown as Record<string, unknown> : {};
+  const requestAny: Record<string, unknown> =
+    invoiceRequest &&
+    typeof invoiceRequest === "object" &&
+    !Array.isArray(invoiceRequest)
+      ? (invoiceRequest as unknown as Record<string, unknown>)
+      : {};
   const invoiceValue = requestAny.invoice;
   const invoiceString =
     typeof invoiceValue === "string"
       ? invoiceValue
-      : (invoiceValue && typeof invoiceValue === "object" && !Array.isArray(invoiceValue) && "paymentRequest" in invoiceValue && typeof (invoiceValue as { paymentRequest?: unknown }).paymentRequest === "string"
-          ? (invoiceValue as { paymentRequest: string }).paymentRequest
-          : "");
-  const invoiceObj = invoiceValue && typeof invoiceValue === "object" && !Array.isArray(invoiceValue) ? invoiceValue as Record<string, unknown> : null;
+      : invoiceValue &&
+          typeof invoiceValue === "object" &&
+          !Array.isArray(invoiceValue) &&
+          "paymentRequest" in invoiceValue &&
+          typeof (invoiceValue as { paymentRequest?: unknown })
+            .paymentRequest === "string"
+        ? (invoiceValue as { paymentRequest: string }).paymentRequest
+        : "";
+  const invoiceObj =
+    invoiceValue &&
+    typeof invoiceValue === "object" &&
+    !Array.isArray(invoiceValue)
+      ? (invoiceValue as Record<string, unknown>)
+      : null;
   const paymentHashString =
     typeof requestAny.paymentHash === "string"
       ? requestAny.paymentHash
-      : (invoiceObj && "paymentHash" in invoiceObj
-          ? String(invoiceObj.paymentHash)
-          : "");
+      : invoiceObj && "paymentHash" in invoiceObj
+        ? String(invoiceObj.paymentHash)
+        : "";
 
   // Extract amount in sats - try multiple possible locations
   let amountSats = 0;
@@ -267,9 +297,7 @@ async function attemptRenewal(
       const invoiceStr = invoiceString.toLowerCase();
       if (invoiceStr.startsWith("lnbc")) {
         // Extract amount from Lightning invoice - amounts are encoded after 'lnbc'
-        const amountMatch = invoiceStr.match(
-          /lnbc([0-9]+)([munp]?)/,
-        );
+        const amountMatch = invoiceStr.match(/lnbc([0-9]+)([munp]?)/);
         if (amountMatch?.[1]) {
           const baseAmount = parseInt(amountMatch[1], 10);
           const unit = amountMatch[2];
@@ -289,10 +317,7 @@ async function attemptRenewal(
         }
       }
     } catch (error) {
-      console.error(
-        "[CRON] Error parsing Lightning invoice amount:",
-        error,
-      );
+      console.error("[CRON] Error parsing Lightning invoice amount:", error);
     }
 
     // If we still don't have an amount, use live Bitcoin rate as fallback
@@ -316,7 +341,9 @@ async function attemptRenewal(
       {
         invoiceString,
         paymentHashString,
-        requestStructure: Object.keys(invoiceRequest as unknown as Record<string, unknown>),
+        requestStructure: Object.keys(
+          invoiceRequest as unknown as Record<string, unknown>,
+        ),
       },
     );
     throw new Error(
@@ -335,7 +362,12 @@ async function attemptRenewal(
   });
 
   // Extract payment hash from result
-  const paymentResultObj = paymentResult && typeof paymentResult === "object" && !Array.isArray(paymentResult) ? paymentResult as Record<string, unknown> : {};
+  const paymentResultObj =
+    paymentResult &&
+    typeof paymentResult === "object" &&
+    !Array.isArray(paymentResult)
+      ? (paymentResult as Record<string, unknown>)
+      : {};
   const preimageValue = paymentResultObj.preimage;
   const paymentHash =
     (typeof preimageValue === "string" ? preimageValue : null) ??
@@ -382,4 +414,3 @@ async function sendRenewalNotification(
     // Don't throw - notification failure shouldn't break the cron job
   }
 }
-

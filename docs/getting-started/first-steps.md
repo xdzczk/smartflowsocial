@@ -11,6 +11,7 @@ Your first 30 minutes with SmartFlowSocial. Learn the basics and create your fir
 ## Overview
 
 This guide will walk you through:
+
 1. Logging in with Nostr
 2. Understanding the dashboard
 3. Creating your first post
@@ -24,6 +25,7 @@ This guide will walk you through:
 ### Prerequisites
 
 You need a **Nostr browser extension** installed:
+
 - [Alby](https://getalby.com/) (Recommended)
 - [nos2x](https://github.com/fiatjaf/nos2x)
 - [Amber](https://amber.app/)
@@ -37,6 +39,7 @@ You need a **Nostr browser extension** installed:
 5. You're logged in! 🎉
 
 **What happens:**
+
 - SmartFlowSocial creates a session cookie
 - Your public key (npub) is stored in the session
 - You can now create and manage posts
@@ -63,6 +66,7 @@ The dashboard has several sections:
 ### Dashboard Overview
 
 The dashboard shows:
+
 - **Post Statistics** - Total, scheduled, posted, drafts
 - **Recent Activity** - Latest posts and engagements
 - **Queue Status** - Active queues and next scheduled time
@@ -76,13 +80,15 @@ The dashboard shows:
 
 1. Click **"New Post"** in the navigation
 2. Enter your post content:
+
    ```
    Hello Nostr! 👋
-   
+
    Just set up SmartFlowSocial to manage my posts.
-   
+
    #nostr #bitcoin #lightning
    ```
+
 3. Click **"Post Now"**
 4. Approve the signing request in your Nostr extension
 5. Your post is published! ✅
@@ -105,13 +111,15 @@ The dashboard shows:
 
 1. Click **"New Post"**
 2. Enter your content:
+
    ```
    Scheduled post! 🕐
-   
+
    This was scheduled in advance.
-   
+
    #nostr #scheduling
    ```
+
 3. Click **"Schedule"** instead of "Post Now"
 4. Select a date and time
 5. Choose a queue (or use default)
@@ -152,6 +160,7 @@ The dashboard shows:
 ### Understanding Queues
 
 Queues control how posts are scheduled:
+
 - **Interval Queue** - Post every X hours
 - **Fixed Time Slots** - Post at specific times daily
 - **Manual** - Schedule individually
@@ -169,6 +178,7 @@ Queues control how posts are scheduled:
 ### Assign Posts to Queue
 
 When scheduling a post:
+
 1. Select your queue from the dropdown
 2. Post will be scheduled according to queue rules
 3. Or override with manual time
@@ -182,7 +192,7 @@ When scheduling a post:
 ✅ Created an instant post  
 ✅ Scheduled a post  
 ✅ Used the calendar view  
-✅ Created a queue  
+✅ Created a queue
 
 ---
 
@@ -255,4 +265,3 @@ See [Troubleshooting Guide](../troubleshooting/common-issues.md) for more soluti
 ---
 
 **Next:** [Core Concepts](./concepts.md) → Understand how SmartFlowSocial works
-

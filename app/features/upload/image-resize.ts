@@ -46,7 +46,6 @@ export async function resizeImage(
 
     return newFile;
   } catch (error) {
-     
     console.error("Error processing image:", error);
     throw error;
   }

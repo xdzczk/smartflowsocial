@@ -2,7 +2,7 @@ import { TEST_NPUB } from "./support/nostr-test-keys";
 
 /**
  * Mobile Viewport Tests
- * 
+ *
  * Tests mobile responsiveness:
  * - Mobile viewport rendering
  * - Touch interactions
@@ -46,13 +46,13 @@ describe("Mobile Viewport", () => {
     it("should handle mobile menu/navigation", () => {
       cy.viewport("iphone-x");
       cy.visitAndCheck("/dashboard");
-      
+
       cy.get("body").then(($body) => {
         const hasMobileMenu =
           $body.find('[data-testid="mobile-menu"]').length > 0 ||
           $body.find('button:contains("Menu")').length > 0 ||
           $body.find('[aria-label*="menu"]').length > 0;
-        
+
         if (hasMobileMenu) {
           cy.get('[data-testid="mobile-menu"], button:contains("Menu")')
             .first()
@@ -67,7 +67,7 @@ describe("Mobile Viewport", () => {
     it("should handle touch interactions on mobile", () => {
       cy.viewport("iphone-x");
       cy.visitAndCheck("/dashboard/newpost");
-      
+
       cy.get("textarea").first().should("be.visible").type("Mobile test");
       cy.get("textarea").first().should("have.value", "Mobile test");
     });
@@ -75,7 +75,7 @@ describe("Mobile Viewport", () => {
     it("should handle scrolling on mobile", () => {
       cy.viewport("iphone-x");
       cy.visitAndCheck("/dashboard/drafts");
-      
+
       // Scroll the body or main content area instead of window
       cy.get("body").scrollTo("bottom", { ensureScrollable: false });
       cy.get("body").should("be.visible");
@@ -99,5 +99,3 @@ describe("Mobile Viewport", () => {
     });
   });
 });
-
-

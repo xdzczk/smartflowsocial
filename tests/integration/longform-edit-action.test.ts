@@ -1,6 +1,6 @@
 /**
  * Integration tests for longform edit action handler
- * 
+ *
  * Tests the action handler in app/features/posts/services/longform-edit-action.server.ts
  */
 
@@ -11,7 +11,9 @@ global.fetch = vi.fn();
 
 // Mock dependencies
 vi.mock("~/features/posts/longform.server", () => ({
-  convertEditorJSToMarkdown: vi.fn((data) => `Markdown: ${JSON.stringify(data)}`),
+  convertEditorJSToMarkdown: vi.fn(
+    (data) => `Markdown: ${JSON.stringify(data)}`,
+  ),
 }));
 
 vi.mock("~/features/upload/s3.server", () => ({
@@ -48,10 +50,20 @@ vi.mock("@remix-run/node", async () => {
     ...actual,
     unstable_composeUploadHandlers: vi.fn((...handlers) => {
       // Return a handler that processes files through the first handler
-      return async (part: { filename?: string; name?: string; data: AsyncIterable<Uint8Array> }) => {
+      return async (part: {
+        filename?: string;
+        name?: string;
+        data: AsyncIterable<Uint8Array>;
+      }) => {
         if (part.filename) {
           // It's a file - process through the first handler (S3 upload handler)
-          const firstHandler = handlers[0] as ((part: { filename?: string; name?: string; data: AsyncIterable<Uint8Array> }) => Promise<unknown>) | undefined;
+          const firstHandler = handlers[0] as
+            | ((part: {
+                filename?: string;
+                name?: string;
+                data: AsyncIterable<Uint8Array>;
+              }) => Promise<unknown>)
+            | undefined;
           if (firstHandler) {
             return await firstHandler(part);
           }
@@ -61,31 +73,53 @@ vi.mock("@remix-run/node", async () => {
       };
     }),
     unstable_createMemoryUploadHandler: vi.fn(() => vi.fn()),
-    unstable_parseMultipartFormData: vi.fn(async (request: { url?: string; formData?: () => Promise<FormData> }, _uploadHandler: unknown) => {
-      // Try to get FormData from store first (set by test using request URL as key)
-      const url = request && typeof request === "object" && "url" in request && typeof request.url === "string" ? request.url : String(request?.url ?? "");
-      const storedFormData = formDataStore.get(url);
-      if (storedFormData) {
-        formDataStore.delete(url); // Clean up after use
-        return storedFormData;
-      }
-      
-      // Fallback: try to parse from request
-      try {
-        const formData = request && typeof request === "object" && "formData" in request && typeof request.formData === "function" ? await request.formData() : new FormData();
-        return formData;
-      } catch (_error) {
-        // If parsing fails, return empty FormData
-        return new FormData();
-      }
-    }),
+    unstable_parseMultipartFormData: vi.fn(
+      async (
+        request: { url?: string; formData?: () => Promise<FormData> },
+        _uploadHandler: unknown,
+      ) => {
+        // Try to get FormData from store first (set by test using request URL as key)
+        const url =
+          request &&
+          typeof request === "object" &&
+          "url" in request &&
+          typeof request.url === "string"
+            ? request.url
+            : String(request?.url ?? "");
+        const storedFormData = formDataStore.get(url);
+        if (storedFormData) {
+          formDataStore.delete(url); // Clean up after use
+          return storedFormData;
+        }
+
+        // Fallback: try to parse from request
+        try {
+          const formData =
+            request &&
+            typeof request === "object" &&
+            "formData" in request &&
+            typeof request.formData === "function"
+              ? await request.formData()
+              : new FormData();
+          return formData;
+        } catch (_error) {
+          // If parsing fails, return empty FormData
+          return new FormData();
+        }
+      },
+    ),
   };
 });
 
 import { handleLongFormEditAction } from "~/features/posts/services/longform-edit-action.server";
 import { uploadBufferToS3 } from "~/features/upload/s3.server";
 import { updateLongFormPost } from "~/models/longformpost.server";
-import { getUserById, getEffectiveHashtags, getHashTagPresetById, getQueueTypeByNameForUser } from "~/models/user.server";
+import {
+  getUserById,
+  getEffectiveHashtags,
+  getHashTagPresetById,
+  getQueueTypeByNameForUser,
+} from "~/models/user.server";
 
 import { TEST_USER_ID, createMockFormData } from "../utils/test-helpers";
 
@@ -115,14 +149,24 @@ describe("Longform Edit Action Handler", () => {
         imageFile: "https://example.com/image.jpg",
       });
 
-      const request = new Request("http://localhost:3000/dashboard/longform/edit", {
-        method: "POST",
-        body: formData,
-      });
+      const request = new Request(
+        "http://localhost:3000/dashboard/longform/edit",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
-      const response = await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
+      const response = await handleLongFormEditAction(
+        TEST_USER_ID,
+        POST_ID,
+        request,
+      );
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as { success?: unknown; error?: unknown })
+          : {};
 
       expect(data).toEqual({
         success: true,
@@ -132,7 +176,9 @@ describe("Longform Edit Action Handler", () => {
 
     it("should upload File object to S3", async () => {
       const mockFile = new File(["test"], "image.jpg", { type: "image/jpeg" });
-      (uploadBufferToS3 as ReturnType<typeof vi.fn>).mockResolvedValue("https://s3.example.com/image.jpg");
+      (uploadBufferToS3 as ReturnType<typeof vi.fn>).mockResolvedValue(
+        "https://s3.example.com/image.jpg",
+      );
 
       const formData = new FormData();
       formData.append("_action", "upload-image");
@@ -148,10 +194,20 @@ describe("Longform Edit Action Handler", () => {
         body: formData,
       });
 
-      const response = await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
+      const response = await handleLongFormEditAction(
+        TEST_USER_ID,
+        POST_ID,
+        request,
+      );
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
-      const success = typeof data.success === "boolean" ? data.success : data.success === true || data.success === 1;
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as { success?: unknown; error?: unknown })
+          : {};
+      const success =
+        typeof data.success === "boolean"
+          ? data.success
+          : data.success === true || data.success === 1;
 
       expect(uploadBufferToS3).toHaveBeenCalled();
       expect(success).toBe(true);
@@ -160,28 +216,39 @@ describe("Longform Edit Action Handler", () => {
 
   describe("Save Draft Action", () => {
     it("should update draft with all required fields", async () => {
-      (getQueueTypeByNameForUser as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: "queue-1",
-        name: "posts",
-      });
+      (getQueueTypeByNameForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
+        {
+          id: "queue-1",
+          name: "posts",
+        },
+      );
       (getEffectiveHashtags as ReturnType<typeof vi.fn>).mockResolvedValue("");
 
       const formData = createMockFormData({
         _action: "save-draft",
         title: "Updated Post",
-        content: JSON.stringify({ blocks: [{ type: "paragraph", data: { text: "Updated content" } }] }),
+        content: JSON.stringify({
+          blocks: [{ type: "paragraph", data: { text: "Updated content" } }],
+        }),
         summary: "Updated summary",
         tags: "tag1,tag2",
         queueType: "posts",
         useHashtagPresets: "false",
       });
 
-      const request = new Request("http://localhost:3000/dashboard/longform/edit", {
-        method: "POST",
-        body: formData,
-      });
+      const request = new Request(
+        "http://localhost:3000/dashboard/longform/edit",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
-      const response = await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
+      const response = await handleLongFormEditAction(
+        TEST_USER_ID,
+        POST_ID,
+        request,
+      );
 
       expect(updateLongFormPost).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -202,14 +269,24 @@ describe("Longform Edit Action Handler", () => {
         content: "Test content",
       });
 
-      const request = new Request("http://localhost:3000/dashboard/longform/edit", {
-        method: "POST",
-        body: formData,
-      });
+      const request = new Request(
+        "http://localhost:3000/dashboard/longform/edit",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
-      const response = await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
+      const response = await handleLongFormEditAction(
+        TEST_USER_ID,
+        POST_ID,
+        request,
+      );
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as { success?: unknown; error?: unknown })
+          : {};
       const error = typeof data.error === "string" ? data.error : "";
 
       expect(response.status).toBe(400);
@@ -224,14 +301,24 @@ describe("Longform Edit Action Handler", () => {
         title: "Test Post",
       });
 
-      const request = new Request("http://localhost:3000/dashboard/longform/edit", {
-        method: "POST",
-        body: formData,
-      });
+      const request = new Request(
+        "http://localhost:3000/dashboard/longform/edit",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
-      const response = await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
+      const response = await handleLongFormEditAction(
+        TEST_USER_ID,
+        POST_ID,
+        request,
+      );
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as { success?: unknown; error?: unknown })
+          : {};
       const error = typeof data.error === "string" ? data.error : "";
 
       expect(response.status).toBe(400);
@@ -241,11 +328,15 @@ describe("Longform Edit Action Handler", () => {
 
   describe("Publish Action", () => {
     beforeEach(() => {
-      (getQueueTypeByNameForUser as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: "queue-1",
-        name: "posts",
-      });
-      (getEffectiveHashtags as ReturnType<typeof vi.fn>).mockResolvedValue("#hashtags");
+      (getQueueTypeByNameForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
+        {
+          id: "queue-1",
+          name: "posts",
+        },
+      );
+      (getEffectiveHashtags as ReturnType<typeof vi.fn>).mockResolvedValue(
+        "#hashtags",
+      );
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         status: 200,
@@ -259,7 +350,9 @@ describe("Longform Edit Action Handler", () => {
       const formData = createMockFormData({
         _action: "publish",
         title: "Updated Post",
-        content: JSON.stringify({ blocks: [{ type: "paragraph", data: { text: "Updated content" } }] }),
+        content: JSON.stringify({
+          blocks: [{ type: "paragraph", data: { text: "Updated content" } }],
+        }),
         summary: "Updated summary",
         image: "https://example.com/image.jpg",
         signedEvent: JSON.stringify(mockSignedEvent),
@@ -269,12 +362,19 @@ describe("Longform Edit Action Handler", () => {
         useHashtagPresets: "false",
       });
 
-      const request = new Request("http://localhost:3000/dashboard/longform/edit", {
-        method: "POST",
-        body: formData,
-      });
+      const request = new Request(
+        "http://localhost:3000/dashboard/longform/edit",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
-      const response = await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
+      const response = await handleLongFormEditAction(
+        TEST_USER_ID,
+        POST_ID,
+        request,
+      );
 
       expect(updateLongFormPost).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -304,14 +404,24 @@ describe("Longform Edit Action Handler", () => {
         useHashtagPresets: "false",
       });
 
-      const request = new Request("http://localhost:3000/dashboard/longform/edit", {
-        method: "POST",
-        body: formData,
-      });
+      const request = new Request(
+        "http://localhost:3000/dashboard/longform/edit",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
-      const response = await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
+      const response = await handleLongFormEditAction(
+        TEST_USER_ID,
+        POST_ID,
+        request,
+      );
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as { success?: unknown; error?: unknown })
+          : {};
       const error = typeof data.error === "string" ? data.error : "";
 
       expect(response.status).toBe(400);
@@ -329,14 +439,24 @@ describe("Longform Edit Action Handler", () => {
         useHashtagPresets: "false",
       });
 
-      const request = new Request("http://localhost:3000/dashboard/longform/edit", {
-        method: "POST",
-        body: formData,
-      });
+      const request = new Request(
+        "http://localhost:3000/dashboard/longform/edit",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
-      const response = await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
+      const response = await handleLongFormEditAction(
+        TEST_USER_ID,
+        POST_ID,
+        request,
+      );
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as { success?: unknown; error?: unknown })
+          : {};
       const error = typeof data.error === "string" ? data.error : "";
 
       expect(response.status).toBe(400);
@@ -344,7 +464,9 @@ describe("Longform Edit Action Handler", () => {
     });
 
     it("should add hashtags to content when enabled", async () => {
-      (getEffectiveHashtags as ReturnType<typeof vi.fn>).mockResolvedValue("#marketing #social");
+      (getEffectiveHashtags as ReturnType<typeof vi.fn>).mockResolvedValue(
+        "#marketing #social",
+      );
 
       const mockSignedEvent = { id: "event-123", kind: 30023 };
       const mockNostrEvent = { id: "event-123", kind: 30023 };
@@ -352,7 +474,9 @@ describe("Longform Edit Action Handler", () => {
       const formData = createMockFormData({
         _action: "publish",
         title: "Test Post",
-        content: JSON.stringify({ blocks: [{ type: "paragraph", data: { text: "Content" } }] }),
+        content: JSON.stringify({
+          blocks: [{ type: "paragraph", data: { text: "Content" } }],
+        }),
         summary: "Test summary",
         image: "https://example.com/image.jpg",
         signedEvent: JSON.stringify(mockSignedEvent),
@@ -361,10 +485,13 @@ describe("Longform Edit Action Handler", () => {
         useHashtagPresets: "false",
       });
 
-      const request = new Request("http://localhost:3000/dashboard/longform/edit", {
-        method: "POST",
-        body: formData,
-      });
+      const request = new Request(
+        "http://localhost:3000/dashboard/longform/edit",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
       await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
 
@@ -379,10 +506,12 @@ describe("Longform Edit Action Handler", () => {
 
   describe("Schedule Longform Action", () => {
     beforeEach(() => {
-      (getQueueTypeByNameForUser as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: "queue-1",
-        name: "posts",
-      });
+      (getQueueTypeByNameForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
+        {
+          id: "queue-1",
+          name: "posts",
+        },
+      );
       (getEffectiveHashtags as ReturnType<typeof vi.fn>).mockResolvedValue("");
     });
 
@@ -406,12 +535,19 @@ describe("Longform Edit Action Handler", () => {
         useHashtagPresets: "false",
       });
 
-      const request = new Request("http://localhost:3000/dashboard/longform/edit", {
-        method: "POST",
-        body: formData,
-      });
+      const request = new Request(
+        "http://localhost:3000/dashboard/longform/edit",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
-      const response = await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
+      const response = await handleLongFormEditAction(
+        TEST_USER_ID,
+        POST_ID,
+        request,
+      );
 
       expect(updateLongFormPost).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -430,14 +566,24 @@ describe("Longform Edit Action Handler", () => {
         content: "Test content",
       });
 
-      const request = new Request("http://localhost:3000/dashboard/longform/edit", {
-        method: "POST",
-        body: formData,
-      });
+      const request = new Request(
+        "http://localhost:3000/dashboard/longform/edit",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
-      const response = await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
+      const response = await handleLongFormEditAction(
+        TEST_USER_ID,
+        POST_ID,
+        request,
+      );
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as { success?: unknown; error?: unknown })
+          : {};
 
       expect(response.status).toBe(400);
       expect(data.error).toBeDefined();
@@ -460,14 +606,20 @@ describe("Longform Edit Action Handler", () => {
         queueType: "posts",
       });
 
-      const request = new Request("http://localhost:3000/dashboard/longform/edit", {
-        method: "POST",
-        body: formData,
-      });
+      const request = new Request(
+        "http://localhost:3000/dashboard/longform/edit",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
       await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
 
-      expect(getHashTagPresetById).toHaveBeenCalledWith(TEST_USER_ID, "preset-1");
+      expect(getHashTagPresetById).toHaveBeenCalledWith(
+        TEST_USER_ID,
+        "preset-1",
+      );
       expect(updateLongFormPost).toHaveBeenCalledWith(
         expect.objectContaining({
           hashTagPresetId: "preset-1",
@@ -476,7 +628,9 @@ describe("Longform Edit Action Handler", () => {
     });
 
     it("should use queue type default when manual presets disabled", async () => {
-      (getEffectiveHashtags as ReturnType<typeof vi.fn>).mockResolvedValue("#queue #tags");
+      (getEffectiveHashtags as ReturnType<typeof vi.fn>).mockResolvedValue(
+        "#queue #tags",
+      );
 
       const formData = createMockFormData({
         _action: "save-draft",
@@ -486,10 +640,13 @@ describe("Longform Edit Action Handler", () => {
         queueType: "posts",
       });
 
-      const request = new Request("http://localhost:3000/dashboard/longform/edit", {
-        method: "POST",
-        body: formData,
-      });
+      const request = new Request(
+        "http://localhost:3000/dashboard/longform/edit",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
       await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
 
@@ -497,4 +654,3 @@ describe("Longform Edit Action Handler", () => {
     });
   });
 });
-

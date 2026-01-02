@@ -112,7 +112,9 @@ export class QueueTypeFactory {
       userId: this.options.userId!,
       name: this.options.name!,
       scheduleType: this.options.scheduleType ?? "INTERVAL",
-      scheduleConfig: (this.options.scheduleConfig ?? { intervalHours: 4 }) as unknown as Prisma.JsonValue,
+      scheduleConfig: (this.options.scheduleConfig ?? {
+        intervalHours: 4,
+      }) as unknown as Prisma.JsonValue,
       isEnabled: this.options.isEnabled ?? true,
       color: this.options.color ?? null,
       description: this.options.description ?? null,
@@ -163,10 +165,3 @@ export const queueTypeFactory = {
     );
   },
 };
-
-
-
-
-
-
-

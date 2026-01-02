@@ -49,9 +49,7 @@ export async function prepareEditPostSubmission({
   const allImageUrls = [...existingImages];
   if (newFiles.length > 0) {
     const uploadResults = await uploadMultipleFiles(newFiles);
-    const failedUploads = uploadResults.filter(
-      (result) => !result.success,
-    );
+    const failedUploads = uploadResults.filter((result) => !result.success);
     if (failedUploads.length > 0) {
       throw new Error(
         `Upload failed: ${failedUploads.map((r) => r.error).join(", ")}`,
@@ -159,4 +157,3 @@ export async function prepareEditPostSubmission({
 
   return formData;
 }
-

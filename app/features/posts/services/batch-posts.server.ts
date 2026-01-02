@@ -9,10 +9,7 @@ import { getPostsByIds } from "~/models/post.queries.server";
 /**
  * Get posts by IDs in batch
  */
-export async function getBatchPosts(
-  userId: string,
-  postIds: string[],
-) {
+export async function getBatchPosts(userId: string, postIds: string[]) {
   if (!Array.isArray(postIds)) {
     throw new ValidationError("postIds must be an array", {
       postIdsType: typeof postIds,
@@ -59,4 +56,3 @@ export function parseBatchPostsRequest(body: unknown): {
     postIds: requestBody.postIds as string[],
   };
 }
-

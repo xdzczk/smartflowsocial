@@ -1,12 +1,12 @@
 /**
  * Queue abstraction layer
- * 
+ *
  * This module provides a clean abstraction over the queue implementation,
  * allowing the codebase to swap queue systems without changing business logic.
- * 
+ *
  * Usage:
  *   import { enqueuePostJob, cancelPostJob } from "~/infra/queue";
- * 
+ *
  *   await enqueuePostJob(postId, userId, signedEvent, scheduledTimestamp);
  *   await cancelPostJob(postId);
  */
@@ -36,5 +36,3 @@ export type {
   JobStatus,
   QueueType,
 } from "./queue-types";
-
-

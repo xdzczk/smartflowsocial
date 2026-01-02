@@ -9,20 +9,20 @@ type CacheResponse = unknown[];
  */
 function getCacheEndpoints(): string[] {
   const envUrl = process.env.PRIMAL_CACHING_URL;
-  
+
   if (envUrl) {
     // Support comma-separated list of endpoints
-    const endpoints = envUrl.split(",").map((url) => url.trim()).filter(Boolean);
+    const endpoints = envUrl
+      .split(",")
+      .map((url) => url.trim())
+      .filter(Boolean);
     if (endpoints.length > 0) {
       return endpoints;
     }
   }
-  
+
   // Default fallback endpoints (public Primal cache servers only)
-  return [
-    "wss://cache1.primal.net/v1",
-    "wss://cache2.primal.net/v1",
-  ];
+  return ["wss://cache1.primal.net/v1", "wss://cache2.primal.net/v1"];
 }
 
 async function tryConnectToCache(
@@ -197,9 +197,10 @@ async function tryConnectToCache(
     };
 
     ws.onerror = (ev: Event) => {
-      const error = ev instanceof ErrorEvent && ev.error instanceof Error 
-        ? ev.error 
-        : new Error("WebSocket error");
+      const error =
+        ev instanceof ErrorEvent && ev.error instanceof Error
+          ? ev.error
+          : new Error("WebSocket error");
       console.error(`[WS] WebSocket error on ${endpoint}:`, error);
       ws.close();
       if (!resolved) {
@@ -241,7 +242,7 @@ export async function connectToPrimalCache(
   params: CacheParams,
 ): Promise<CacheResponse> {
   const endpoints = getCacheEndpoints();
-  
+
   for (const endpoint of endpoints) {
     try {
       const responses = await tryConnectToCache(endpoint, requestType, params);

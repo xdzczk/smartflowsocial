@@ -26,7 +26,9 @@ import {
 describe("Helper Utilities", () => {
   describe("getTimeRemaining", () => {
     it("should return days and hours for future dates", () => {
-      const future = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 5 * 60 * 60 * 1000);
+      const future = new Date(
+        Date.now() + 3 * 24 * 60 * 60 * 1000 + 5 * 60 * 60 * 1000,
+      );
       const result = getTimeRemaining(future);
 
       expect(result).toMatch(/\d+d \d+h/);
@@ -103,17 +105,26 @@ describe("Helper Utilities", () => {
 
   describe("getImageUrls", () => {
     it("should return array of URLs", () => {
-      const urls = ["https://example.com/image1.jpg", "https://example.com/image2.jpg"];
+      const urls = [
+        "https://example.com/image1.jpg",
+        "https://example.com/image2.jpg",
+      ];
       const result = getImageUrls(urls);
 
       expect(result).toEqual(urls);
     });
 
     it("should parse JSON string array", () => {
-      const jsonString = JSON.stringify(["https://example.com/image1.jpg", "https://example.com/image2.jpg"]);
+      const jsonString = JSON.stringify([
+        "https://example.com/image1.jpg",
+        "https://example.com/image2.jpg",
+      ]);
       const result = getImageUrls([jsonString]);
 
-      expect(result).toEqual(["https://example.com/image1.jpg", "https://example.com/image2.jpg"]);
+      expect(result).toEqual([
+        "https://example.com/image1.jpg",
+        "https://example.com/image2.jpg",
+      ]);
     });
 
     it("should return empty array for empty input", () => {
@@ -146,7 +157,9 @@ describe("Helper Utilities", () => {
     });
 
     it("should handle URLs with query parameters", () => {
-      expect(isVideoFile("https://example.com/video.mp4?param=value")).toBe(true);
+      expect(isVideoFile("https://example.com/video.mp4?param=value")).toBe(
+        true,
+      );
       expect(isVideoFile("https://example.com/video.mp4#fragment")).toBe(true);
     });
 

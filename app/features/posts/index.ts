@@ -1,12 +1,12 @@
 /**
  * Posts Feature Public API
- * 
+ *
  * This module exports the public API for post-related operations.
  * Internal implementation details are kept in services/, hooks/, components/, and utils/ directories.
- * 
+ *
  * Usage:
  *   import { getScheduledDashboardData, calculateNextScheduleTime } from "~/features/posts";
- * 
+ *
  * Do NOT import from internal paths like:
  *   import { ... } from "./services/..."  // ❌ Bad
  *   import { ... } from "./hooks/..."       // ❌ Bad
@@ -38,9 +38,7 @@ export type {
 // Re-export Prisma types for convenience (when needed for type annotations)
 export type { LongFormPost as LongFormPostType } from "@prisma/client";
 
-export {
-  convertJsonValueToScheduleConfig,
-} from "./types";
+export { convertJsonValueToScheduleConfig } from "./types";
 
 // ============================================================================
 // Core Business Logic - Dashboard Data
@@ -69,17 +67,13 @@ export { getBulkPostsDashboardData } from "./services/bulk-posts.server";
 // Scheduling Logic
 // ============================================================================
 
-export {
-  calculateNextScheduleTime,
-} from "./schedulers";
+export { calculateNextScheduleTime } from "./schedulers";
 
 // ============================================================================
 // Post Actions
 // ============================================================================
 
-export {
-  postedPostsAction,
-} from "./posted.action.server";
+export { postedPostsAction } from "./posted.action.server";
 
 // ============================================================================
 // Bulk Posts
@@ -118,18 +112,13 @@ export {
 // Post Statistics
 // ============================================================================
 
-export {
-  getPostStats,
-} from "./stats.server";
+export { getPostStats } from "./stats.server";
 
 // ============================================================================
 // Content Utilities
 // ============================================================================
 
-export {
-  combineContent,
-  postToCombinedContent,
-} from "./combined.server";
+export { combineContent, postToCombinedContent } from "./combined.server";
 
 // ============================================================================
 // Post Filtering
@@ -160,9 +149,7 @@ export {
 // Queue Type Utilities
 // ============================================================================
 
-export {
-  getQueueColor,
-} from "./queueColors";
+export { getQueueColor } from "./queueColors";
 
 // Note: QueueTypeOption is not exported from queueTypes.client
 // export type {
@@ -173,34 +160,22 @@ export {
 // Dashboard Services (Loaders)
 // ============================================================================
 
-export {
-  loadDashboardData,
-} from "./services/dashboard-loader.server";
+export { loadDashboardData } from "./services/dashboard-loader.server";
 
-export {
-  handleDashboardAction,
-} from "./services/dashboard-action.server";
+export { handleDashboardAction } from "./services/dashboard-action.server";
 
-export {
-  loadDraftsData,
-} from "./services/drafts-loader.server";
+export { loadDraftsData } from "./services/drafts-loader.server";
 export { handleDraftsAction } from "./services/drafts-action.server";
 
-export {
-  loadScheduledData,
-} from "./services/scheduled-loader.server";
+export { loadScheduledData } from "./services/scheduled-loader.server";
 
 // ============================================================================
 // Draft Services
 // ============================================================================
 
-export {
-  loadDraftEditData,
-} from "./services/draft-edit-loader.server";
+export { loadDraftEditData } from "./services/draft-edit-loader.server";
 
-export {
-  handleDraftEditAction,
-} from "./services/draft-edit-action.server";
+export { handleDraftEditAction } from "./services/draft-edit-action.server";
 
 // Note: handleDraftSignAction is not exported from draft-sign.server
 // export {
@@ -211,56 +186,43 @@ export {
 // Long Form Services
 // ============================================================================
 
-export {
-  loadLongFormEditData,
-} from "./services/longform-edit-loader.server";
+export { loadLongFormEditData } from "./services/longform-edit-loader.server";
 
-export {
-  handleLongFormEditAction,
-} from "./services/longform-edit-action.server";
+export { handleLongFormEditAction } from "./services/longform-edit-action.server";
 
-export {
-  loadNewLongFormData,
-} from "./services/newlongform-loader.server";
+export { loadNewLongFormData } from "./services/newlongform-loader.server";
 
-export {
-  handleNewLongFormAction,
-} from "./services/newlongform-action.server";
+export { handleNewLongFormAction } from "./services/newlongform-action.server";
 
 // ============================================================================
 // New Post Services
 // ============================================================================
 
-export {
-  loadNewPostData,
-} from "./services/newpost-loader.server";
+export { loadNewPostData } from "./services/newpost-loader.server";
 
-export {
-  handleNewPostAction,
-} from "./services/newpost-action.server";
+export { handleNewPostAction } from "./services/newpost-action.server";
 
 // ============================================================================
 // Queue Type Resolver
 // ============================================================================
 
-export {
-  resolveQueueTypeId,
-} from "./services/queue-type-resolver.server";
+export { resolveQueueTypeId } from "./services/queue-type-resolver.server";
 
 // ============================================================================
 // Long Form Status Calculator
 // ============================================================================
 
-export {
-  calculateLongFormStatus,
-} from "./services/longform-status-calculator.server";
+export { calculateLongFormStatus } from "./services/longform-status-calculator.server";
 
 // ============================================================================
 // Calendar Services
 // ============================================================================
 
 export { handleCalendarAction } from "./services/calendar-action.server";
-export { loadCalendarData, loadCalendarQueueData } from "./services/calendar-loader.server";
+export {
+  loadCalendarData,
+  loadCalendarQueueData,
+} from "./services/calendar-loader.server";
 
 // ============================================================================
 // API Services
@@ -362,4 +324,3 @@ export { useDraftEditState } from "./hooks/useDraftEditState";
 export { useLongFormEditState } from "./hooks/useLongFormEditState";
 export { useNewLongFormState } from "./hooks/useNewLongFormState";
 export { useNewPostState } from "./hooks/useNewPostState";
-

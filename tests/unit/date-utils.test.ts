@@ -1,6 +1,6 @@
 /**
  * Unit tests for date utility functions
- * 
+ *
  * Tests the date utilities in app/lib/date.ts
  */
 
@@ -41,7 +41,9 @@ describe("Date Utilities", () => {
     });
 
     it("should contain Asia timezones", () => {
-      const asiaTimezones = timeZonesList.filter((tz) => tz.startsWith("Asia/"));
+      const asiaTimezones = timeZonesList.filter((tz) =>
+        tz.startsWith("Asia/"),
+      );
       expect(asiaTimezones.length).toBeGreaterThan(0);
     });
 
@@ -94,4 +96,3 @@ describe("Date Utilities", () => {
     });
   });
 });
-

@@ -24,18 +24,30 @@ vi.mock("~/models/user.server", () => ({
 vi.mock("~/features/posts/services/post-filtering.server", () => ({
   filterPostsByQueueType: vi.fn((posts, queueType) => {
     if (queueType === "all") return posts;
-    return (posts as Array<{ queueType?: { name?: string | null } | null }>).filter((p) => p.queueType?.name === queueType);
+    return (
+      posts as Array<{ queueType?: { name?: string | null } | null }>
+    ).filter((p) => p.queueType?.name === queueType);
   }),
 }));
 
 vi.mock("~/features/posts/services/combined.server", () => ({
-  combineContent: vi.fn((posts: unknown[], longformPosts: unknown[]) => [...posts, ...longformPosts]),
+  combineContent: vi.fn((posts: unknown[], longformPosts: unknown[]) => [
+    ...posts,
+    ...longformPosts,
+  ]),
 }));
 
 import { loadDashboardData } from "~/features/posts/services/dashboard-loader.server";
 import { getScheduledLongFormPosts } from "~/models/longformpost.server";
-import { getScheduledPosts, getPostStatistics } from "~/models/post.queries.server";
-import { getUserById, getQueueTypes, getUserHashTagPresets } from "~/models/user.server";
+import {
+  getScheduledPosts,
+  getPostStatistics,
+} from "~/models/post.queries.server";
+import {
+  getUserById,
+  getQueueTypes,
+  getUserHashTagPresets,
+} from "~/models/user.server";
 
 import { TEST_USER_ID } from "../../../utils/test-helpers";
 
@@ -59,12 +71,22 @@ describe("Dashboard Loader", () => {
     const mockHashTagPresets = [{ id: "preset-1", name: "Preset 1" }];
     const mockStatistics = { scheduledCount: 5, successCount: 10 };
 
-    (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
-    (getScheduledLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue(mockLongformPosts);
-    (getPostStatistics as ReturnType<typeof vi.fn>).mockResolvedValue(mockStatistics);
+    (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockPosts,
+    );
+    (getScheduledLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockLongformPosts,
+    );
+    (getPostStatistics as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockStatistics,
+    );
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
-    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueTypes);
-    (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue(mockHashTagPresets);
+    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockQueueTypes,
+    );
+    (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockHashTagPresets,
+    );
 
     const result = await loadDashboardData(TEST_USER_ID, "all");
 
@@ -86,18 +108,32 @@ describe("Dashboard Loader", () => {
       { id: "longform-2", queueType: { id: "queue-2", name: "Queue 2" } },
     ];
     const mockUser = { id: TEST_USER_ID };
-    const mockQueueTypes = [{ id: "queue-1", name: "Queue 1", isEnabled: true }];
+    const mockQueueTypes = [
+      { id: "queue-1", name: "Queue 1", isEnabled: true },
+    ];
 
-    (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
-    (getScheduledLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue(mockLongformPosts);
-    (getPostStatistics as ReturnType<typeof vi.fn>).mockResolvedValue({ scheduledCount: 0, successCount: 0 });
+    (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockPosts,
+    );
+    (getScheduledLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockLongformPosts,
+    );
+    (getPostStatistics as ReturnType<typeof vi.fn>).mockResolvedValue({
+      scheduledCount: 0,
+      successCount: 0,
+    });
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
-    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueTypes);
+    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockQueueTypes,
+    );
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
     const result = await loadDashboardData(TEST_USER_ID, "Queue 1");
 
-    expect(getScheduledPosts).toHaveBeenCalledWith({ userId: TEST_USER_ID, queueType: "Queue 1" });
+    expect(getScheduledPosts).toHaveBeenCalledWith({
+      userId: TEST_USER_ID,
+      queueType: "Queue 1",
+    });
     expect(result.selectedQueueType).toBe("Queue 1");
   });
 
@@ -109,10 +145,19 @@ describe("Dashboard Loader", () => {
     ];
 
     (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-    (getScheduledLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-    (getPostStatistics as ReturnType<typeof vi.fn>).mockResolvedValue({ scheduledCount: 0, successCount: 0 });
-    (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: TEST_USER_ID });
-    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueTypes);
+    (getScheduledLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
+      [],
+    );
+    (getPostStatistics as ReturnType<typeof vi.fn>).mockResolvedValue({
+      scheduledCount: 0,
+      successCount: 0,
+    });
+    (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: TEST_USER_ID,
+    });
+    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockQueueTypes,
+    );
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
     const result = await loadDashboardData(TEST_USER_ID, "all");
@@ -123,4 +168,3 @@ describe("Dashboard Loader", () => {
     expect(result.queueTypes.some((qt) => qt.id === "queue-2")).toBe(false);
   });
 });
-

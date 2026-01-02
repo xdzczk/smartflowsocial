@@ -171,8 +171,10 @@ export class LongFormPostFactory {
       isPublished: this.options.isPublished ?? false,
       draft: this.options.draft ?? false,
       status: this.options.status ?? "DRAFT",
-      signedEvent: (this.options.signedEvent ?? null) as unknown as Prisma.JsonValue,
-      nostrEvent: (this.options.nostrEvent ?? null) as unknown as Prisma.JsonValue,
+      signedEvent: (this.options.signedEvent ??
+        null) as unknown as Prisma.JsonValue,
+      nostrEvent: (this.options.nostrEvent ??
+        null) as unknown as Prisma.JsonValue,
       queueTypeId: this.options.queueTypeId ?? null,
       tags: this.options.tags ?? [],
       hashTagPresetId: this.options.hashTagPresetId ?? null,
@@ -216,14 +218,10 @@ export const longFormPostFactory = {
    */
   many: (count: number, overrides?: LongFormPostFactoryOptions) => {
     return Array.from({ length: count }, (_, i) =>
-      new LongFormPostFactory({ ...overrides, id: `longform-${i + 1}` }).build(),
+      new LongFormPostFactory({
+        ...overrides,
+        id: `longform-${i + 1}`,
+      }).build(),
     );
   },
 };
-
-
-
-
-
-
-

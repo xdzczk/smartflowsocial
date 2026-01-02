@@ -1,6 +1,6 @@
 /**
  * Integration tests for statistics service
- * 
+ *
  * Tests the statistics fetching logic in app/features/posts/stats.server.ts
  */
 
@@ -57,18 +57,23 @@ describe("Statistics Service", () => {
 
       // fetchJsonWithRetry adds additional options (timeout, maxRetries, correlation ID, etc.)
       expect(global.fetch).toHaveBeenCalled();
-      const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+      const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock
+        .calls[0];
       expect(fetchCall[0]).toBe("https://api.primal.net/v1/cache");
       const fetchOptions = fetchCall[1] as RequestInit;
       expect(fetchOptions.method).toBe("POST");
-      const headers = fetchOptions.headers as Record<string, string> | undefined;
+      const headers = fetchOptions.headers as
+        | Record<string, string>
+        | undefined;
       expect(headers?.["Content-Type"]).toBe("application/json");
-      expect(fetchOptions.body).toBe(JSON.stringify({
-        requestType: "thread_view",
-        params: {
-          event_id: "event-1",
-        },
-      }));
+      expect(fetchOptions.body).toBe(
+        JSON.stringify({
+          requestType: "thread_view",
+          params: {
+            event_id: "event-1",
+          },
+        }),
+      );
 
       expect(result).toEqual({
         "event-1": {
@@ -296,7 +301,9 @@ describe("Statistics Service", () => {
         return 123 as unknown as ReturnType<typeof setTimeout>;
       }) as unknown as typeof setTimeout;
 
-      (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Timeout"));
+      (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error("Timeout"),
+      );
 
       const result = await getPostStats(["event-1"]);
 
@@ -381,4 +388,3 @@ describe("Statistics Service", () => {
     });
   });
 });
-

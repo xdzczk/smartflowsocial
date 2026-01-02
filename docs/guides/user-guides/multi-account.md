@@ -45,12 +45,14 @@ SmartFlowSocial supports **parent/child account relationships**, allowing you to
 ### Parent Account
 
 **What it is:**
+
 - Main account that manages child accounts
 - Can have multiple child accounts
 - Controls child account access
 - Requires **Premium or Founder** plan
 
 **Capabilities:**
+
 - Search for accounts
 - Request child links
 - Manage child accounts
@@ -60,12 +62,14 @@ SmartFlowSocial supports **parent/child account relationships**, allowing you to
 ### Child Account
 
 **What it is:**
+
 - Account linked to a parent
 - Can be managed by parent
 - Inherits some parent features
 - Can unlink from parent
 
 **Capabilities:**
+
 - Access parent's features (if granted)
 - Switch back to parent account
 - Unlink from parent
@@ -83,7 +87,7 @@ sequenceDiagram
     participant System
     participant Child
     participant DB
-    
+
     Parent->>System: Search for Child Account
     System->>DB: Query Users
     DB-->>System: Return Results
@@ -92,7 +96,7 @@ sequenceDiagram
     System->>DB: Create Pending Request
     DB-->>System: Request Stored
     System-->>Child: Notification
-    
+
     Child->>System: View Pending Requests
     System->>DB: Get Pending Requests
     DB-->>System: Return Requests
@@ -121,10 +125,12 @@ flowchart TD
 ### Prerequisites
 
 **For Parent Account:**
+
 - **Premium or Founder** subscription required
 - Account must not be a child account
 
 **For Child Account:**
+
 - Account must exist in SmartFlowSocial
 - Account must not already be linked
 - Account must accept parent request
@@ -133,6 +139,7 @@ flowchart TD
 
 1. Go to **Settings** → **Accounts**
 2. In the search box, enter:
+
    - Account name
    - Profile display name
    - npub (public key)
@@ -152,10 +159,12 @@ flowchart TD
 ### Step 3: Accept Request (Child Account)
 
 1. **Child account receives request:**
+
    - Notification in Settings
    - Shows in "Pending Requests" section
 
 2. **Accept or reject:**
+
    - Click **"Accept"** to link accounts
    - Click **"Reject"** to decline
    - Request expires if not responded to
@@ -186,11 +195,13 @@ flowchart TD
 ### Account Switcher Location
 
 **In Navigation:**
+
 - Appears in header/navigation bar
 - Shows current account
 - Dropdown shows available accounts
 
 **Visual Indicator:**
+
 - Current account highlighted
 - Parent/child relationship shown
 - Account profile pictures displayed
@@ -225,6 +236,7 @@ flowchart TD
 5. Child account is unlinked
 
 **Effects:**
+
 - Child account loses parent features
 - Child account returns to free plan
 - Relationship is removed
@@ -236,6 +248,7 @@ flowchart TD
 ### Parent Account Permissions
 
 **Can do:**
+
 - Search for accounts
 - Request child links
 - Manage child accounts
@@ -244,18 +257,21 @@ flowchart TD
 - Cancel pending requests
 
 **Cannot do:**
+
 - Link to another parent (if already a child)
 - Manage accounts if not Premium/Founder
 
 ### Child Account Permissions
 
 **Can do:**
+
 - Accept/reject parent requests
 - Switch to parent account
 - Unlink from parent
 - Use parent's features (if granted)
 
 **Cannot do:**
+
 - Search for accounts
 - Request child links
 - Manage other child accounts
@@ -264,11 +280,13 @@ flowchart TD
 ### Feature Access
 
 **Child accounts inherit:**
+
 - Parent's subscription features (if granted)
 - Access to parent's queues
 - Some parent settings
 
 **Child accounts maintain:**
+
 - Own posts and content
 - Own settings (some)
 - Own queues
@@ -286,6 +304,7 @@ flowchart TD
 5. Account is unlinked
 
 **Effects:**
+
 - Relationship removed
 - Account returns to free plan
 - Loses parent features
@@ -300,6 +319,7 @@ flowchart TD
 5. Child is unlinked
 
 **Effects:**
+
 - Relationship removed
 - Child returns to free plan
 - Child loses parent features
@@ -312,11 +332,13 @@ flowchart TD
 ### Account Organization
 
 1. **Clear naming:**
+
    - Use descriptive account names
    - Distinguish parent from children
    - Organize by purpose
 
 2. **Limit child accounts:**
+
    - Only link necessary accounts
    - Keep relationships clear
    - Avoid over-complication
@@ -329,11 +351,13 @@ flowchart TD
 ### Security
 
 1. **Trust relationships:**
+
    - Only link trusted accounts
    - Verify account ownership
    - Monitor linked accounts
 
 2. **Access control:**
+
    - Review child account access
    - Remove unnecessary links
    - Update permissions as needed
@@ -346,6 +370,7 @@ flowchart TD
 ### Workflow
 
 1. **Parent workflow:**
+
    - Search for child account
    - Request link
    - Wait for acceptance
@@ -366,11 +391,13 @@ flowchart TD
 ### Cannot Search for Accounts
 
 **Possible causes:**
+
 - Not on Premium/Founder plan
 - Account is a child account
 - Search feature unavailable
 
 **Solutions:**
+
 - Upgrade to Premium/Founder
 - Use parent account for search
 - Check subscription status
@@ -378,11 +405,13 @@ flowchart TD
 ### Request Not Showing
 
 **Possible causes:**
+
 - Request not sent
 - Request expired
 - Account already linked
 
 **Solutions:**
+
 - Resend request
 - Check account status
 - Verify account is available
@@ -390,11 +419,13 @@ flowchart TD
 ### Cannot Switch Accounts
 
 **Possible causes:**
+
 - Account not linked
 - Relationship removed
 - Access revoked
 
 **Solutions:**
+
 - Verify account relationship
 - Check account status
 - Re-link if needed
@@ -410,4 +441,3 @@ flowchart TD
 ---
 
 **Next:** [Settings Guide](./settings.md) → Complete settings configuration
-

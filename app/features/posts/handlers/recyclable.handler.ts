@@ -1,6 +1,6 @@
 /**
  * Recyclable Handlers for Bulk Posts
- * 
+ *
  * Handles recyclable status toggling for individual and bulk posts
  */
 
@@ -39,16 +39,3 @@ export function handleBulkRecyclableToggle(
 
   setPosts(updatedPosts);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -1,6 +1,6 @@
 /**
  * Edge Case Tests for Timezone Handling
- * 
+ *
  * Tests timezone-related edge cases:
  * - Invalid timezones
  * - Missing timezones
@@ -28,7 +28,9 @@ describe("Timezone Edge Cases", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(["4"]);
-    (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+      null,
+    );
   });
 
   describe("Invalid Timezones", () => {
@@ -278,6 +280,3 @@ describe("Timezone Edge Cases", () => {
     });
   });
 });
-
-
-

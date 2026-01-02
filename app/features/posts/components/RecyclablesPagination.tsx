@@ -26,10 +26,7 @@ export function RecyclablesPagination({
     <div className="mt-4 flex items-center justify-between">
       <div className="text-sm text-gray-500">
         Showing {(pagination.currentPage - 1) * pagination.limit + 1} to{" "}
-        {Math.min(
-          pagination.currentPage * pagination.limit,
-          pagination.total,
-        )}{" "}
+        {Math.min(pagination.currentPage * pagination.limit, pagination.total)}{" "}
         of {pagination.total} posts
       </div>
       <div className="flex gap-2">
@@ -57,19 +54,3 @@ export function RecyclablesPagination({
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

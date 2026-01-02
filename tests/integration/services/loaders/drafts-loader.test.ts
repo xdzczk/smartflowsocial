@@ -20,7 +20,10 @@ vi.mock("~/models/user.server", () => ({
 }));
 
 vi.mock("~/features/posts/services/combined.server", () => ({
-  combineContent: vi.fn((posts: unknown[], longformPosts: unknown[]) => [...posts, ...longformPosts]),
+  combineContent: vi.fn((posts: unknown[], longformPosts: unknown[]) => [
+    ...posts,
+    ...longformPosts,
+  ]),
 }));
 
 import { loadDraftsData } from "~/features/posts/services/drafts-loader.server";
@@ -43,12 +46,18 @@ describe("Drafts Loader", () => {
       { id: "longform-1", queueType: { id: "queue-1", name: "Queue 1" } },
     ];
     const mockUser = { id: TEST_USER_ID };
-    const mockQueueTypes = [{ id: "queue-1", name: "Queue 1", isEnabled: true }];
+    const mockQueueTypes = [
+      { id: "queue-1", name: "Queue 1", isEnabled: true },
+    ];
 
     (getDraftPosts as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
-    (getDraftLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue(mockLongformPosts);
+    (getDraftLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockLongformPosts,
+    );
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
-    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueTypes);
+    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockQueueTypes,
+    );
 
     const result = await loadDraftsData(TEST_USER_ID, "all");
 
@@ -69,8 +78,12 @@ describe("Drafts Loader", () => {
     ];
 
     (getDraftPosts as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
-    (getDraftLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue(mockLongformPosts);
-    (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: TEST_USER_ID });
+    (getDraftLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockLongformPosts,
+    );
+    (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: TEST_USER_ID,
+    });
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
     const result = await loadDraftsData(TEST_USER_ID, "Queue 1");
@@ -87,8 +100,12 @@ describe("Drafts Loader", () => {
     ];
 
     (getDraftPosts as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-    (getDraftLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue(mockLongformPosts);
-    (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: TEST_USER_ID });
+    (getDraftLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockLongformPosts,
+    );
+    (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: TEST_USER_ID,
+    });
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
     const result = await loadDraftsData(TEST_USER_ID, "all");
@@ -96,4 +113,3 @@ describe("Drafts Loader", () => {
     expect(result.longformPosts).toHaveLength(2);
   });
 });
-

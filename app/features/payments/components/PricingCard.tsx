@@ -18,7 +18,10 @@ interface PricingCardProps {
   isCurrentPlan: boolean;
   isLoading: boolean;
   selectedPlan: string | null;
-  onPlanSelect: (event: React.MouseEvent<HTMLButtonElement>, planId: string) => boolean;
+  onPlanSelect: (
+    event: React.MouseEvent<HTMLButtonElement>,
+    planId: string,
+  ) => boolean;
 }
 
 export function PricingCard({
@@ -93,19 +96,3 @@ export function PricingCard({
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -1,6 +1,6 @@
 /**
  * Centralized Error Handling System
- * 
+ *
  * This module provides a comprehensive error handling system with:
  * - Custom error classes for different error types
  * - Structured error responses
@@ -55,10 +55,7 @@ export class AppError extends Error {
  * Validation errors (400)
  */
 export class ValidationError extends AppError {
-  constructor(
-    message: string,
-    context?: Record<string, unknown>,
-  ) {
+  constructor(message: string, context?: Record<string, unknown>) {
     super(message, 400, "VALIDATION_ERROR", true, context);
   }
 }
@@ -132,13 +129,7 @@ export class ExternalServiceError extends AppError {
     statusCode = 502,
     context?: Record<string, unknown>,
   ) {
-    super(
-      message,
-      statusCode,
-      "EXTERNAL_SERVICE_ERROR",
-      true,
-      context,
-    );
+    super(message, statusCode, "EXTERNAL_SERVICE_ERROR", true, context);
   }
 }
 
@@ -192,22 +183,22 @@ export function normalizeError(error: unknown): AppError {
     }
 
     if (error.message.includes("Record to update not found")) {
-      return new NotFoundError("The record you're trying to update doesn't exist", {
-        originalError: error.message,
-      });
+      return new NotFoundError(
+        "The record you're trying to update doesn't exist",
+        {
+          originalError: error.message,
+        },
+      );
     }
 
     // Generic error - use default message if empty
-    const message = error.message && error.message.trim() !== "" 
-      ? error.message 
-      : "An unexpected error occurred";
-    return new AppError(
-      message,
-      500,
-      "INTERNAL_ERROR",
-      false,
-      { originalError: error.message },
-    );
+    const message =
+      error.message && error.message.trim() !== ""
+        ? error.message
+        : "An unexpected error occurred";
+    return new AppError(message, 500, "INTERNAL_ERROR", false, {
+      originalError: error.message,
+    });
   }
 
   // Unknown error type
@@ -248,12 +239,4 @@ export const ErrorCodes = {
   UNKNOWN_ERROR: "UNKNOWN_ERROR",
 };
 
-export type ErrorCode = typeof ErrorCodes[keyof typeof ErrorCodes];
-
-
-
-
-
-
-
-
+export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

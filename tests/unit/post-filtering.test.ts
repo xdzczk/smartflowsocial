@@ -95,12 +95,8 @@ describe("Post Filtering Utilities", () => {
           { id: "3", queueType: { name: "queue1" } },
           { id: "4", queueType: { name: "queue3" } },
         ],
-        pastPosts: [
-          { id: "5", queueType: { name: "queue1" } },
-        ],
-        pastLongFormPosts: [
-          { id: "6", queueType: { name: "queue2" } },
-        ],
+        pastPosts: [{ id: "5", queueType: { name: "queue1" } }],
+        pastLongFormPosts: [{ id: "6", queueType: { name: "queue2" } }],
         queueType: "queue1",
       };
 
@@ -121,9 +117,7 @@ describe("Post Filtering Utilities", () => {
           { id: "1", queueType: { name: "queue1" } },
           { id: "2", queueType: { name: "queue2" } },
         ],
-        scheduledLongFormPosts: [
-          { id: "3", queueType: { name: "queue1" } },
-        ],
+        scheduledLongFormPosts: [{ id: "3", queueType: { name: "queue1" } }],
         pastPosts: [],
         pastLongFormPosts: [],
         queueType: "all",
@@ -172,4 +166,3 @@ describe("Post Filtering Utilities", () => {
     });
   });
 });
-

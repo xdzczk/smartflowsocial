@@ -25,7 +25,13 @@ import type { User } from "~/features/user";
 // Re-export action from server module
 export { postedPostsAction as action } from "~/features/posts/posted.action.server";
 
-export async function loader({ request, params }: { request: Request; params: { queueType?: string } }) {
+export async function loader({
+  request,
+  params,
+}: {
+  request: Request;
+  params: { queueType?: string };
+}) {
   try {
     const userId = await requireUserId(request);
     // Require that the user has at least a subscription record
@@ -53,77 +59,169 @@ export default function PostedPosts() {
   const data = useLoaderData<LoaderData>();
 
   // Type assertions for Remix JsonifyObject serialization
-  const postsRaw = "posts" in data && Array.isArray(data.posts) ? data.posts : [];
-  const longformPostsRaw = "longformPosts" in data && Array.isArray(data.longformPosts) ? data.longformPosts : [];
-  const allContentRaw = "allContent" in data && Array.isArray(data.allContent) ? data.allContent : [];
+  const postsRaw =
+    "posts" in data && Array.isArray(data.posts) ? data.posts : [];
+  const longformPostsRaw =
+    "longformPosts" in data && Array.isArray(data.longformPosts)
+      ? data.longformPosts
+      : [];
+  const allContentRaw =
+    "allContent" in data && Array.isArray(data.allContent)
+      ? data.allContent
+      : [];
   const userRaw = "user" in data ? data.user : null;
-  const queueTypesRaw = "queueTypes" in data && Array.isArray(data.queueTypes) ? data.queueTypes : [];
+  const queueTypesRaw =
+    "queueTypes" in data && Array.isArray(data.queueTypes)
+      ? data.queueTypes
+      : [];
 
   // Transform serialized dates back to Date objects and assert types
-  const posts: PostData[] = Array.isArray(postsRaw) ? postsRaw.map((post: unknown) => {
-    const p = post as { createdAt: string | Date; updatedAt: string | Date; postedAt?: string | Date | null; [key: string]: unknown };
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    const result = {
-      ...p,
-      createdAt: (p.createdAt && typeof p.createdAt === "object" && p.createdAt instanceof Date) ? p.createdAt : new Date(p.createdAt),
-      updatedAt: (p.updatedAt && typeof p.updatedAt === "object" && p.updatedAt instanceof Date) ? p.updatedAt : new Date(p.updatedAt),
-      postedAt: p.postedAt ? ((p.postedAt && typeof p.postedAt === "object" && p.postedAt instanceof Date) ? p.postedAt : new Date(p.postedAt)) : null,
-    } as PostData;
-    return result;
-  }) : [];
+  const posts: PostData[] = Array.isArray(postsRaw)
+    ? postsRaw.map((post: unknown) => {
+        const p = post as {
+          createdAt: string | Date;
+          updatedAt: string | Date;
+          postedAt?: string | Date | null;
+          [key: string]: unknown;
+        };
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+        const result = {
+          ...p,
+          createdAt:
+            p.createdAt &&
+            typeof p.createdAt === "object" &&
+            p.createdAt instanceof Date
+              ? p.createdAt
+              : new Date(p.createdAt),
+          updatedAt:
+            p.updatedAt &&
+            typeof p.updatedAt === "object" &&
+            p.updatedAt instanceof Date
+              ? p.updatedAt
+              : new Date(p.updatedAt),
+          postedAt: p.postedAt
+            ? p.postedAt &&
+              typeof p.postedAt === "object" &&
+              p.postedAt instanceof Date
+              ? p.postedAt
+              : new Date(p.postedAt)
+            : null,
+        } as PostData;
+        return result;
+      })
+    : [];
 
-  const longformPosts: LongFormPostData[] = Array.isArray(longformPostsRaw) ? longformPostsRaw.map((post: unknown) => {
-    const p = post as { createdAt: string | Date; updatedAt: string | Date; publishedAt?: string | Date | null; [key: string]: unknown };
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    const result = {
-      ...p,
-      createdAt: p.createdAt instanceof Date ? p.createdAt : new Date(p.createdAt),
-      updatedAt: p.updatedAt instanceof Date ? p.updatedAt : new Date(p.updatedAt),
-      publishedAt: p.publishedAt ? (p.publishedAt instanceof Date ? p.publishedAt : new Date(p.publishedAt)) : null,
-    } as LongFormPostData;
-    return result;
-  }) : [];
+  const longformPosts: LongFormPostData[] = Array.isArray(longformPostsRaw)
+    ? longformPostsRaw.map((post: unknown) => {
+        const p = post as {
+          createdAt: string | Date;
+          updatedAt: string | Date;
+          publishedAt?: string | Date | null;
+          [key: string]: unknown;
+        };
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+        const result = {
+          ...p,
+          createdAt:
+            p.createdAt instanceof Date ? p.createdAt : new Date(p.createdAt),
+          updatedAt:
+            p.updatedAt instanceof Date ? p.updatedAt : new Date(p.updatedAt),
+          publishedAt: p.publishedAt
+            ? p.publishedAt instanceof Date
+              ? p.publishedAt
+              : new Date(p.publishedAt)
+            : null,
+        } as LongFormPostData;
+        return result;
+      })
+    : [];
 
   // Type assertions for Remix JsonifyObject serialization
   // Remix serializes Date objects to strings, so we need to assert these types
-   
-  const allContent: CombinedContent[] = Array.isArray(allContentRaw) ? (allContentRaw as unknown as CombinedContent[]) : [];
-   
+
+  const allContent: CombinedContent[] = Array.isArray(allContentRaw)
+    ? (allContentRaw as unknown as CombinedContent[])
+    : [];
+
   const user: User | null = userRaw ? (userRaw as unknown as User) : null;
-  const queueTypes: QueueType[] = Array.isArray(queueTypesRaw) ? queueTypesRaw.map((qt: unknown) => {
-    if (typeof qt !== "object" || qt === null) {
-      throw new Error("Invalid queue type");
-    }
-    const q = qt as { id?: unknown; name?: unknown; color?: unknown; scheduleType?: unknown; scheduleConfig?: unknown; isEnabled?: unknown; userId?: unknown; createdAt?: unknown; updatedAt?: unknown };
-    const id = typeof q.id === "string" ? q.id : String(q.id ?? "");
-    const name = typeof q.name === "string" ? q.name : String(q.name ?? "");
-    const color = q.color !== null && q.color !== undefined ? (typeof q.color === "string" ? q.color : String(q.color)) : null;
-    const scheduleType = typeof q.scheduleType === "string" && (q.scheduleType === "INTERVAL" || q.scheduleType === "FIXED_SLOTS") ? q.scheduleType : undefined;
-    const scheduleConfig = convertJsonValueToScheduleConfig(q.scheduleConfig);
-    const isEnabled = typeof q.isEnabled === "boolean" ? q.isEnabled : q.isEnabled !== false;
-    const userId = typeof q.userId === "string" ? q.userId : "";
-    const result: QueueType = {
-      id,
-      name,
-      color,
-      description: undefined,
-      scheduleType,
-      scheduleConfig,
-      isEnabled,
-      userId,
-    };
-    return result;
-  }) : [];
+  const queueTypes: QueueType[] = Array.isArray(queueTypesRaw)
+    ? queueTypesRaw.map((qt: unknown) => {
+        if (typeof qt !== "object" || qt === null) {
+          throw new Error("Invalid queue type");
+        }
+        const q = qt as {
+          id?: unknown;
+          name?: unknown;
+          color?: unknown;
+          scheduleType?: unknown;
+          scheduleConfig?: unknown;
+          isEnabled?: unknown;
+          userId?: unknown;
+          createdAt?: unknown;
+          updatedAt?: unknown;
+        };
+        const id = typeof q.id === "string" ? q.id : String(q.id ?? "");
+        const name = typeof q.name === "string" ? q.name : String(q.name ?? "");
+        const color =
+          q.color !== null && q.color !== undefined
+            ? typeof q.color === "string"
+              ? q.color
+              : String(q.color)
+            : null;
+        const scheduleType =
+          typeof q.scheduleType === "string" &&
+          (q.scheduleType === "INTERVAL" || q.scheduleType === "FIXED_SLOTS")
+            ? q.scheduleType
+            : undefined;
+        const scheduleConfig = convertJsonValueToScheduleConfig(
+          q.scheduleConfig,
+        );
+        const isEnabled =
+          typeof q.isEnabled === "boolean"
+            ? q.isEnabled
+            : q.isEnabled !== false;
+        const userId = typeof q.userId === "string" ? q.userId : "";
+        const result: QueueType = {
+          id,
+          name,
+          color,
+          description: undefined,
+          scheduleType,
+          scheduleConfig,
+          isEnabled,
+          userId,
+        };
+        return result;
+      })
+    : [];
 
   const paginationRaw = "pagination" in data ? data.pagination : undefined;
-  const pagination = paginationRaw && typeof paginationRaw === "object" && !Array.isArray(paginationRaw) && "total" in paginationRaw && "pages" in paginationRaw && "currentPage" in paginationRaw && "limit" in paginationRaw ? {
-    total: typeof paginationRaw.total === "number" ? paginationRaw.total : 0,
-    pages: typeof paginationRaw.pages === "number" ? paginationRaw.pages : 0,
-    currentPage: typeof paginationRaw.currentPage === "number" ? paginationRaw.currentPage : 1,
-    limit: typeof paginationRaw.limit === "number" ? paginationRaw.limit : 50,
-  } : { total: 0, pages: 0, currentPage: 1, limit: 50 };
+  const pagination =
+    paginationRaw &&
+    typeof paginationRaw === "object" &&
+    !Array.isArray(paginationRaw) &&
+    "total" in paginationRaw &&
+    "pages" in paginationRaw &&
+    "currentPage" in paginationRaw &&
+    "limit" in paginationRaw
+      ? {
+          total:
+            typeof paginationRaw.total === "number" ? paginationRaw.total : 0,
+          pages:
+            typeof paginationRaw.pages === "number" ? paginationRaw.pages : 0,
+          currentPage:
+            typeof paginationRaw.currentPage === "number"
+              ? paginationRaw.currentPage
+              : 1,
+          limit:
+            typeof paginationRaw.limit === "number" ? paginationRaw.limit : 50,
+        }
+      : { total: 0, pages: 0, currentPage: 1, limit: 50 };
   const statsRaw = "stats" in data ? data.stats : undefined;
-  const stats: Record<string, PostStats> = statsRaw && typeof statsRaw === "object" && !Array.isArray(statsRaw) ? statsRaw as Record<string, PostStats> : {};
+  const stats: Record<string, PostStats> =
+    statsRaw && typeof statsRaw === "object" && !Array.isArray(statsRaw)
+      ? (statsRaw as Record<string, PostStats>)
+      : {};
 
   const params = useParams();
 
@@ -152,11 +250,11 @@ export default function PostedPosts() {
     handleBulkRepost,
     handleBulkScheduledRepost,
     handleBulkQuote,
-  } = usePostedPosts({ 
+  } = usePostedPosts({
     user: (() => {
       if (user) return user;
       // Create a minimal User object with required properties
-       
+
       return {
         id: "",
         npub: "",
@@ -171,15 +269,27 @@ export default function PostedPosts() {
         pendingChildRequests: [],
         pendingParentRequests: [],
       } as unknown as User;
-    })(), 
-    allContent, 
-    posts 
+    })(),
+    allContent,
+    posts,
   });
 
   const sortedPosts = [...posts].sort((a, b) => {
     if (sortConfig.key === "postedAt") {
-      const dateA = (a.postedAt instanceof Date ? a.postedAt : a.postedAt ? new Date(a.postedAt) : new Date(0)).getTime();
-      const dateB = (b.postedAt instanceof Date ? b.postedAt : b.postedAt ? new Date(b.postedAt) : new Date(0)).getTime();
+      const dateA = (
+        a.postedAt instanceof Date
+          ? a.postedAt
+          : a.postedAt
+            ? new Date(a.postedAt)
+            : new Date(0)
+      ).getTime();
+      const dateB = (
+        b.postedAt instanceof Date
+          ? b.postedAt
+          : b.postedAt
+            ? new Date(b.postedAt)
+            : new Date(0)
+      ).getTime();
       return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
     }
 
@@ -194,34 +304,74 @@ export default function PostedPosts() {
         "satszapped",
       ].includes(sortConfig.key)
     ) {
-      const aEventId = a.signedEvent && typeof a.signedEvent === "object" && "id" in a.signedEvent && typeof a.signedEvent.id === "string" ? a.signedEvent.id : "";
-      const bEventId = b.signedEvent && typeof b.signedEvent === "object" && "id" in b.signedEvent && typeof b.signedEvent.id === "string" ? b.signedEvent.id : "";
-       
-      const aStats = aEventId && stats && typeof stats === "object" && !Array.isArray(stats) && aEventId in stats ? (stats[aEventId] as unknown as Record<string, unknown>) : {};
-       
-      const bStats = bEventId && stats && typeof stats === "object" && !Array.isArray(stats) && bEventId in stats ? (stats[bEventId] as unknown as Record<string, unknown>) : {};
+      const aEventId =
+        a.signedEvent &&
+        typeof a.signedEvent === "object" &&
+        "id" in a.signedEvent &&
+        typeof a.signedEvent.id === "string"
+          ? a.signedEvent.id
+          : "";
+      const bEventId =
+        b.signedEvent &&
+        typeof b.signedEvent === "object" &&
+        "id" in b.signedEvent &&
+        typeof b.signedEvent.id === "string"
+          ? b.signedEvent.id
+          : "";
+
+      const aStats =
+        aEventId &&
+        stats &&
+        typeof stats === "object" &&
+        !Array.isArray(stats) &&
+        aEventId in stats
+          ? (stats[aEventId] as unknown as Record<string, unknown>)
+          : {};
+
+      const bStats =
+        bEventId &&
+        stats &&
+        typeof stats === "object" &&
+        !Array.isArray(stats) &&
+        bEventId in stats
+          ? (stats[bEventId] as unknown as Record<string, unknown>)
+          : {};
       const sortKey = sortConfig.key;
-      const aValue = (typeof sortKey === "string" && sortKey in aStats && typeof aStats[sortKey] === "number" ? aStats[sortKey] : 0);
-      const bValue = (typeof sortKey === "string" && sortKey in bStats && typeof bStats[sortKey] === "number" ? bStats[sortKey] : 0);
+      const aValue =
+        typeof sortKey === "string" &&
+        sortKey in aStats &&
+        typeof aStats[sortKey] === "number"
+          ? aStats[sortKey]
+          : 0;
+      const bValue =
+        typeof sortKey === "string" &&
+        sortKey in bStats &&
+        typeof bStats[sortKey] === "number"
+          ? bStats[sortKey]
+          : 0;
       return sortConfig.direction === "asc" ? aValue - bValue : bValue - aValue;
     }
 
     // Type-safe property access
-     
+
     const aRecord = a as unknown as Record<string, unknown>;
-     
+
     const bRecord = b as unknown as Record<string, unknown>;
     const aValue = aRecord[sortConfig.key];
     const bValue = bRecord[sortConfig.key];
-    const aTyped = (typeof aValue === "number" || typeof aValue === "string") ? aValue : undefined;
-    const bTyped = (typeof bValue === "number" || typeof bValue === "string") ? bValue : undefined;
+    const aTyped =
+      typeof aValue === "number" || typeof aValue === "string"
+        ? aValue
+        : undefined;
+    const bTyped =
+      typeof bValue === "number" || typeof bValue === "string"
+        ? bValue
+        : undefined;
     if (aTyped == null && bTyped == null) return 0;
     if (aTyped == null) return sortConfig.direction === "asc" ? -1 : 1;
     if (bTyped == null) return sortConfig.direction === "asc" ? 1 : -1;
-    if (aTyped < bTyped)
-      return sortConfig.direction === "asc" ? -1 : 1;
-    if (aTyped > bTyped)
-      return sortConfig.direction === "asc" ? 1 : -1;
+    if (aTyped < bTyped) return sortConfig.direction === "asc" ? -1 : 1;
+    if (aTyped > bTyped) return sortConfig.direction === "asc" ? 1 : -1;
     return 0;
   });
 
@@ -239,7 +389,10 @@ export default function PostedPosts() {
 
       <PostedPostsTabs
         currentTab={currentTab}
-        queueTypes={queueTypes.map(qt => ({ name: qt.name, color: qt.color ?? undefined }))}
+        queueTypes={queueTypes.map((qt) => ({
+          name: qt.name,
+          color: qt.color ?? undefined,
+        }))}
         allContentLength={allContent.length}
         postsLength={filteredPosts.length}
         longformPostsLength={longformPosts.length}
@@ -258,13 +411,16 @@ export default function PostedPosts() {
             if (content.type === "post") {
               setSelectedPost(content.originalData as PostData);
             } else {
-               
-              setSelectedLongFormPost(content.originalData as unknown as LongFormPostData);
+              setSelectedLongFormPost(
+                content.originalData as unknown as LongFormPostData,
+              );
             }
           }}
           selectedItems={selectedPosts}
           onToggleSelection={togglePostSelection}
-          onToggleSelectAll={() => toggleSelectAll(filteredPosts as PostData[] | CombinedContent[])}
+          onToggleSelectAll={() =>
+            toggleSelectAll(filteredPosts as PostData[] | CombinedContent[])
+          }
           showBulkActions={true}
           onBulkDelete={handleBulkDelete}
           bulkDeleteState={bulkDeleteFetcher.state}
@@ -400,7 +556,9 @@ export default function PostedPosts() {
             selectedPosts={selectedPosts}
             stats={stats}
             sortConfig={sortConfig}
-            toggleSelectAll={() => toggleSelectAll(filteredPosts as PostData[] | CombinedContent[])}
+            toggleSelectAll={() =>
+              toggleSelectAll(filteredPosts as PostData[] | CombinedContent[])
+            }
             togglePostSelection={togglePostSelection}
             requestSort={requestSort}
             setSelectedPost={setSelectedPost}
@@ -422,19 +580,21 @@ export default function PostedPosts() {
             <div className="flex gap-2">
               <Link
                 to={`${params.queueType ? `/dashboard/posted/${params.queueType}` : "/dashboard/posted"}?page=${pagination.currentPage - 1}`}
-                className={`rounded-lg border px-3 py-1 ${pagination.currentPage === 1
-                  ? "pointer-events-none opacity-50"
-                  : "hover:bg-gray-100"
-                  }`}
+                className={`rounded-lg border px-3 py-1 ${
+                  pagination.currentPage === 1
+                    ? "pointer-events-none opacity-50"
+                    : "hover:bg-gray-100"
+                }`}
               >
                 Previous
               </Link>
               <Link
                 to={`${params.queueType ? `/dashboard/posted/${params.queueType}` : "/dashboard/posted"}?page=${pagination.currentPage + 1}`}
-                className={`rounded-lg border px-3 py-1 ${pagination.currentPage === pagination.pages
-                  ? "pointer-events-none opacity-50"
-                  : "hover:bg-gray-100"
-                  }`}
+                className={`rounded-lg border px-3 py-1 ${
+                  pagination.currentPage === pagination.pages
+                    ? "pointer-events-none opacity-50"
+                    : "hover:bg-gray-100"
+                }`}
               >
                 Next
               </Link>
@@ -444,7 +604,17 @@ export default function PostedPosts() {
           {selectedPost ? (
             <PostDetailsModal
               post={selectedPost}
-              stats={selectedPost && typeof selectedPost === "object" && "signedEvent" in selectedPost && selectedPost.signedEvent && typeof selectedPost.signedEvent === "object" && "id" in selectedPost.signedEvent && typeof selectedPost.signedEvent.id === "string" ? stats[selectedPost.signedEvent.id] : undefined}
+              stats={
+                selectedPost &&
+                typeof selectedPost === "object" &&
+                "signedEvent" in selectedPost &&
+                selectedPost.signedEvent &&
+                typeof selectedPost.signedEvent === "object" &&
+                "id" in selectedPost.signedEvent &&
+                typeof selectedPost.signedEvent.id === "string"
+                  ? stats[selectedPost.signedEvent.id]
+                  : undefined
+              }
               onClose={() => setSelectedPost(null)}
               showStats={true}
               showSignedEvent={true}
@@ -456,7 +626,6 @@ export default function PostedPosts() {
       ) : (
         /* Longform Posts Content */
         <LongFormListing
-           
           posts={longformPosts as unknown as LongFormPostType[]}
           type="posted"
           searchTerm={searchTerm}
@@ -465,7 +634,6 @@ export default function PostedPosts() {
           longformRepostFetcher={longformRepostFetcher}
           longformQuoteFetcher={longformQuoteFetcher}
           onPostSelect={(post) => {
-             
             setSelectedLongFormPost(post as unknown as LongFormPostData);
           }}
         />
@@ -474,7 +642,6 @@ export default function PostedPosts() {
       {/* Long Form Post Details Modal */}
       {selectedLongFormPost ? (
         <LongFormDetailsModal
-           
           post={selectedLongFormPost as unknown as LongFormPostType}
           onClose={() => setSelectedLongFormPost(null)}
           type="posted"
@@ -484,9 +651,7 @@ export default function PostedPosts() {
       ) : null}
 
       {/* Toast Notification */}
-      {toast ? (
-        <Toast toast={toast} onClose={() => setToast(null)} />
-      ) : null}
+      {toast ? <Toast toast={toast} onClose={() => setToast(null)} /> : null}
     </div>
   );
 }

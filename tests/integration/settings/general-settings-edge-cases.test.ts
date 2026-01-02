@@ -29,17 +29,31 @@ describe("General Settings Action Handler - Edge Cases", () => {
 
   describe("update_relays", () => {
     it("should filter out empty relay lines", async () => {
-      (updateUserRelays as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (updateUserRelays as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined,
+      );
 
       const formData = createFormData({
         _action: "update_relays",
         relays: "wss://relay1.com\n\nwss://relay2.com\n  \nwss://relay3.com",
       });
 
-      const result = await handleGeneralSettingsAction(TEST_USER_ID, "update_relays", formData);
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const result = await handleGeneralSettingsAction(
+        TEST_USER_ID,
+        "update_relays",
+        formData,
+      );
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as { success?: boolean; error?: string })
+          : {};
 
       expect(updateUserRelays).toHaveBeenCalledWith(TEST_USER_ID, [
         "wss://relay1.com",
@@ -50,34 +64,64 @@ describe("General Settings Action Handler - Edge Cases", () => {
     });
 
     it("should handle single relay", async () => {
-      (updateUserRelays as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (updateUserRelays as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined,
+      );
 
       const formData = createFormData({
         _action: "update_relays",
         relays: "wss://relay1.com",
       });
 
-      const result = await handleGeneralSettingsAction(TEST_USER_ID, "update_relays", formData);
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const result = await handleGeneralSettingsAction(
+        TEST_USER_ID,
+        "update_relays",
+        formData,
+      );
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as { success?: boolean; error?: string })
+          : {};
 
-      expect(updateUserRelays).toHaveBeenCalledWith(TEST_USER_ID, ["wss://relay1.com"]);
+      expect(updateUserRelays).toHaveBeenCalledWith(TEST_USER_ID, [
+        "wss://relay1.com",
+      ]);
       expect(jsonResult).toEqual({ success: true });
     });
 
     it("should handle empty relays string", async () => {
-      (updateUserRelays as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (updateUserRelays as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined,
+      );
 
       const formData = createFormData({
         _action: "update_relays",
         relays: "",
       });
 
-      const result = await handleGeneralSettingsAction(TEST_USER_ID, "update_relays", formData);
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const result = await handleGeneralSettingsAction(
+        TEST_USER_ID,
+        "update_relays",
+        formData,
+      );
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as { success?: boolean; error?: string })
+          : {};
 
       expect(updateUserRelays).toHaveBeenCalledWith(TEST_USER_ID, []);
       expect(jsonResult).toEqual({ success: true });
@@ -91,10 +135,22 @@ describe("General Settings Action Handler - Edge Cases", () => {
         blacklist: "npub1abc\ninvalid-npub\nnpub2def",
       });
 
-      const result = await handleGeneralSettingsAction(TEST_USER_ID, "update_blacklist", formData);
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const result = await handleGeneralSettingsAction(
+        TEST_USER_ID,
+        "update_blacklist",
+        formData,
+      );
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as { success?: boolean; error?: string })
+          : {};
 
       expect(updateGiveawayBlacklist).not.toHaveBeenCalled();
       expect(result instanceof Response ? result.status : 200).toBe(400);
@@ -102,17 +158,31 @@ describe("General Settings Action Handler - Edge Cases", () => {
     });
 
     it("should accept valid npub entries", async () => {
-      (updateGiveawayBlacklist as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (updateGiveawayBlacklist as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined,
+      );
 
       const formData = createFormData({
         _action: "update_blacklist",
         blacklist: "npub1abc\nnpub2def\nnpub3ghi",
       });
 
-      const result = await handleGeneralSettingsAction(TEST_USER_ID, "update_blacklist", formData);
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const result = await handleGeneralSettingsAction(
+        TEST_USER_ID,
+        "update_blacklist",
+        formData,
+      );
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as { success?: boolean; error?: string })
+          : {};
 
       expect(updateGiveawayBlacklist).toHaveBeenCalledWith(TEST_USER_ID, [
         "npub1abc",
@@ -123,34 +193,65 @@ describe("General Settings Action Handler - Edge Cases", () => {
     });
 
     it("should filter out empty lines", async () => {
-      (updateGiveawayBlacklist as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (updateGiveawayBlacklist as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined,
+      );
 
       const formData = createFormData({
         _action: "update_blacklist",
         blacklist: "npub1abc\n\nnpub2def\n  \n",
       });
 
-      const result = await handleGeneralSettingsAction(TEST_USER_ID, "update_blacklist", formData);
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const result = await handleGeneralSettingsAction(
+        TEST_USER_ID,
+        "update_blacklist",
+        formData,
+      );
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as { success?: boolean; error?: string })
+          : {};
 
-      expect(updateGiveawayBlacklist).toHaveBeenCalledWith(TEST_USER_ID, ["npub1abc", "npub2def"]);
+      expect(updateGiveawayBlacklist).toHaveBeenCalledWith(TEST_USER_ID, [
+        "npub1abc",
+        "npub2def",
+      ]);
       expect(jsonResult).toEqual({ success: true });
     });
 
     it("should handle empty blacklist", async () => {
-      (updateGiveawayBlacklist as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (updateGiveawayBlacklist as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined,
+      );
 
       const formData = createFormData({
         _action: "update_blacklist",
         blacklist: "",
       });
 
-      const result = await handleGeneralSettingsAction(TEST_USER_ID, "update_blacklist", formData);
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const result = await handleGeneralSettingsAction(
+        TEST_USER_ID,
+        "update_blacklist",
+        formData,
+      );
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as { success?: boolean; error?: string })
+          : {};
 
       expect(updateGiveawayBlacklist).toHaveBeenCalledWith(TEST_USER_ID, []);
       expect(jsonResult).toEqual({ success: true });
@@ -164,14 +265,28 @@ describe("General Settings Action Handler - Edge Cases", () => {
         scheduleIntervals: "4\nabc\n6",
       });
 
-      const result = await handleGeneralSettingsAction(TEST_USER_ID, "update_schedule_intervals", formData);
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const result = await handleGeneralSettingsAction(
+        TEST_USER_ID,
+        "update_schedule_intervals",
+        formData,
+      );
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as { success?: boolean; error?: string })
+          : {};
 
       expect(updateScheduleInterval).not.toHaveBeenCalled();
       expect(result instanceof Response ? result.status : 200).toBe(400);
-      expect(jsonResult.error).toBe("All schedule intervals must be positive whole numbers");
+      expect(jsonResult.error).toBe(
+        "All schedule intervals must be positive whole numbers",
+      );
     });
 
     it("should reject zero or negative intervals", async () => {
@@ -180,14 +295,28 @@ describe("General Settings Action Handler - Edge Cases", () => {
         scheduleIntervals: "4\n0\n-2",
       });
 
-      const result = await handleGeneralSettingsAction(TEST_USER_ID, "update_schedule_intervals", formData);
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const result = await handleGeneralSettingsAction(
+        TEST_USER_ID,
+        "update_schedule_intervals",
+        formData,
+      );
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as { success?: boolean; error?: string })
+          : {};
 
       expect(updateScheduleInterval).not.toHaveBeenCalled();
       expect(result instanceof Response ? result.status : 200).toBe(400);
-      expect(jsonResult.error).toBe("All schedule intervals must be positive whole numbers");
+      expect(jsonResult.error).toBe(
+        "All schedule intervals must be positive whole numbers",
+      );
     });
 
     it("should reject decimal intervals", async () => {
@@ -196,62 +325,125 @@ describe("General Settings Action Handler - Edge Cases", () => {
         scheduleIntervals: "4\n4.5\n6",
       });
 
-      const result = await handleGeneralSettingsAction(TEST_USER_ID, "update_schedule_intervals", formData);
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const result = await handleGeneralSettingsAction(
+        TEST_USER_ID,
+        "update_schedule_intervals",
+        formData,
+      );
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as { success?: boolean; error?: string })
+          : {};
 
       expect(updateScheduleInterval).not.toHaveBeenCalled();
       expect(result instanceof Response ? result.status : 200).toBe(400);
-      expect(jsonResult.error).toBe("All schedule intervals must be positive whole numbers");
+      expect(jsonResult.error).toBe(
+        "All schedule intervals must be positive whole numbers",
+      );
     });
 
     it("should accept valid intervals", async () => {
-      (updateScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (updateScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined,
+      );
 
       const formData = createFormData({
         _action: "update_schedule_intervals",
         scheduleIntervals: "4\n6\n8",
       });
 
-      const result = await handleGeneralSettingsAction(TEST_USER_ID, "update_schedule_intervals", formData);
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const result = await handleGeneralSettingsAction(
+        TEST_USER_ID,
+        "update_schedule_intervals",
+        formData,
+      );
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as { success?: boolean; error?: string })
+          : {};
 
-      expect(updateScheduleInterval).toHaveBeenCalledWith(TEST_USER_ID, ["4", "6", "8"]);
+      expect(updateScheduleInterval).toHaveBeenCalledWith(TEST_USER_ID, [
+        "4",
+        "6",
+        "8",
+      ]);
       expect(jsonResult).toEqual({ success: true });
     });
 
     it("should filter out empty lines", async () => {
-      (updateScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (updateScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined,
+      );
 
       const formData = createFormData({
         _action: "update_schedule_intervals",
         scheduleIntervals: "4\n\n6\n  \n",
       });
 
-      const result = await handleGeneralSettingsAction(TEST_USER_ID, "update_schedule_intervals", formData);
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const result = await handleGeneralSettingsAction(
+        TEST_USER_ID,
+        "update_schedule_intervals",
+        formData,
+      );
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as { success?: boolean; error?: string })
+          : {};
 
-      expect(updateScheduleInterval).toHaveBeenCalledWith(TEST_USER_ID, ["4", "6"]);
+      expect(updateScheduleInterval).toHaveBeenCalledWith(TEST_USER_ID, [
+        "4",
+        "6",
+      ]);
       expect(jsonResult).toEqual({ success: true });
     });
 
     it("should handle single interval", async () => {
-      (updateScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (updateScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined,
+      );
 
       const formData = createFormData({
         _action: "update_schedule_intervals",
         scheduleIntervals: "4",
       });
 
-      const result = await handleGeneralSettingsAction(TEST_USER_ID, "update_schedule_intervals", formData);
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const result = await handleGeneralSettingsAction(
+        TEST_USER_ID,
+        "update_schedule_intervals",
+        formData,
+      );
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as { success?: boolean; error?: string })
+          : {};
 
       expect(updateScheduleInterval).toHaveBeenCalledWith(TEST_USER_ID, ["4"]);
       expect(jsonResult).toEqual({ success: true });
@@ -264,10 +456,13 @@ describe("General Settings Action Handler - Edge Cases", () => {
         _action: "unknown_action",
       });
 
-      const result = await handleGeneralSettingsAction(TEST_USER_ID, "unknown_action", formData);
+      const result = await handleGeneralSettingsAction(
+        TEST_USER_ID,
+        "unknown_action",
+        formData,
+      );
 
       expect(result).toBeNull();
     });
   });
 });
-

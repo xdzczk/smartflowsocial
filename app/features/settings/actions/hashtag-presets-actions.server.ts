@@ -35,19 +35,10 @@ export async function handleHashtagPresetAction(
     const description = formData.get("description") as string;
 
     if (!id || !name.trim() || !tags.trim()) {
-      return json(
-        { error: "ID, name and tags are required" },
-        { status: 400 },
-      );
+      return json({ error: "ID, name and tags are required" }, { status: 400 });
     }
 
-    await updateHashTagPreset(
-      userId,
-      id,
-      name,
-      tags,
-      description ?? undefined,
-    );
+    await updateHashTagPreset(userId, id, name, tags, description ?? undefined);
     return json({ success: true });
   }
 
@@ -64,19 +55,3 @@ export async function handleHashtagPresetAction(
 
   return null;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

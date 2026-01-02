@@ -17,9 +17,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: ['20', '22']
-        test-type: ['unit', 'integration']
-    
+        node-version: ["20", "22"]
+        test-type: ["unit", "integration"]
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -33,7 +33,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -76,10 +76,3 @@ jobs:
             test-results/*.json
           retention-days: 7
           if-no-files-found: ignore
-
-
-
-
-
-
-

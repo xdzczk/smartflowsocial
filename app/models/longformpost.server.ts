@@ -1,22 +1,22 @@
 /**
  * LongFormPost Model - Database Access Layer
- * 
+ *
  * This module provides pure database access operations for LongFormPost entities.
  * It contains ONLY Prisma queries and data persistence operations.
- * 
+ *
  * **What belongs here:**
  * - CRUD operations (create, read, update, delete)
  * - Database queries with filters, pagination, sorting
  * - Data aggregation queries
  * - Prisma transactions
- * 
+ *
  * **What does NOT belong here:**
  * - Business logic or workflows
  * - Status determination logic
  * - PublishedAt calculation logic
  * - Permission checks or authorization
  * - Plan enforcement or subscription validation
- * 
+ *
  * For business logic, see: app/features/posts/
  */
 
@@ -55,7 +55,9 @@ function isSignedEvent(value: unknown): value is SignedEvent {
 /**
  * Convert Prisma JsonValue to SignedEvent if valid
  */
-function toSignedEvent(value: Prisma.JsonValue | null | undefined): SignedEvent | null {
+function toSignedEvent(
+  value: Prisma.JsonValue | null | undefined,
+): SignedEvent | null {
   if (!value || typeof value !== "object") {
     return null;
   }
@@ -64,7 +66,7 @@ function toSignedEvent(value: Prisma.JsonValue | null | undefined): SignedEvent 
 
 /**
  * Create a new longform post in the database
- * 
+ *
  * Note: This is a pure data access function. Status calculation
  * is done using calculateLongFormStatus() from the feature layer.
  */
@@ -98,7 +100,7 @@ export async function createLongFormPost({
   // Calculate status and related fields using business logic from feature layer
   // Convert Prisma JsonValue to SignedEvent type
   const typedSignedEvent = signedEvent ? toSignedEvent(signedEvent) : null;
-  
+
   const {
     status,
     isScheduled,
@@ -170,13 +172,23 @@ export async function updateLongFormPost({
 }) {
   // Extract published_at from NOSTR event tags if scheduledFor is not provided
   let finalScheduledFor = scheduledFor;
-  if (scheduledFor === undefined && !isPublished && signedEvent && typeof signedEvent === "object" && "tags" in signedEvent) {
+  if (
+    scheduledFor === undefined &&
+    !isPublished &&
+    signedEvent &&
+    typeof signedEvent === "object" &&
+    "tags" in signedEvent
+  ) {
     const tags = signedEvent.tags;
     if (Array.isArray(tags)) {
       const publishedAtTag = tags.find(
         (tag: unknown) => Array.isArray(tag) && tag[0] === "published_at",
       );
-      if (publishedAtTag && Array.isArray(publishedAtTag) && publishedAtTag[1]) {
+      if (
+        publishedAtTag &&
+        Array.isArray(publishedAtTag) &&
+        publishedAtTag[1]
+      ) {
         finalScheduledFor = String(publishedAtTag[1]);
       }
     }
@@ -203,9 +215,13 @@ export async function updateLongFormPost({
 
   if (signedEvent !== undefined) {
     updateData.signedEvent = signedEvent as Prisma.InputJsonValue;
-    updateData.nostrEventId = (signedEvent && typeof signedEvent === "object" && "id" in signedEvent) ? String(signedEvent.id) : null;
+    updateData.nostrEventId =
+      signedEvent && typeof signedEvent === "object" && "id" in signedEvent
+        ? String(signedEvent.id)
+        : null;
   }
-  if (nostrEvent !== undefined) updateData.nostrEvent = nostrEvent as Prisma.InputJsonValue;
+  if (nostrEvent !== undefined)
+    updateData.nostrEvent = nostrEvent as Prisma.InputJsonValue;
 
   if (isPublished !== undefined || finalScheduledFor !== undefined) {
     const finalIsPublished = isPublished ?? false;
@@ -218,10 +234,16 @@ export async function updateLongFormPost({
 
     if (finalIsPublished) {
       updateData.status = "ACTIVE";
-      const publishedAt = signedEvent && typeof signedEvent === "object" && "published_at" in signedEvent && typeof signedEvent.published_at === "number"
-        ? signedEvent.published_at
-        : undefined;
-      updateData.publishedAt = publishedAt ? new Date(publishedAt * 1000) : new Date();
+      const publishedAt =
+        signedEvent &&
+        typeof signedEvent === "object" &&
+        "published_at" in signedEvent &&
+        typeof signedEvent.published_at === "number"
+          ? signedEvent.published_at
+          : undefined;
+      updateData.publishedAt = publishedAt
+        ? new Date(publishedAt * 1000)
+        : new Date();
       updateData.postedAt = new Date();
     } else if (isScheduled && finalScheduledFor) {
       updateData.status = "SCHEDULED";
@@ -334,7 +356,13 @@ export async function publishLongFormPost({
       publishedAt: new Date(),
       signedEvent: signedEvent as Prisma.InputJsonValue,
       nostrEvent: nostrEvent as Prisma.InputJsonValue,
-      nostrEventId: signedEvent && typeof signedEvent === "object" && "id" in signedEvent && typeof signedEvent.id === "string" ? signedEvent.id : null,
+      nostrEventId:
+        signedEvent &&
+        typeof signedEvent === "object" &&
+        "id" in signedEvent &&
+        typeof signedEvent.id === "string"
+          ? signedEvent.id
+          : null,
     },
   });
 }
@@ -418,9 +446,7 @@ export async function getLongFormPostsByIds({
   });
 }
 
-export function getCronDueScheduledLongFormPosts(): Promise<
-  LongFormPost[]
-> {
+export function getCronDueScheduledLongFormPosts(): Promise<LongFormPost[]> {
   const now = Math.floor(Date.now() / 1000).toString();
   return prisma.longFormPost.findMany({
     where: {
@@ -472,10 +498,7 @@ export function getPastLongFormPosts({
     // Look for posts that are published OR have active status
     AND: [
       {
-        OR: [
-          { isPublished: true },
-          { status: "ACTIVE" }
-        ],
+        OR: [{ isPublished: true }, { status: "ACTIVE" }],
       },
       {
         // Check both postedAt and publishedAt for date filtering

@@ -29,11 +29,31 @@ export function postToCombinedContent(post: PostData): CombinedContent {
     isPosted: post.isPosted,
     draft: post.draft,
     status: post.status,
-    queueType: post.queueType && typeof post.queueType === "object" && "name" in post.queueType ? {
-      id: "id" in post.queueType && post.queueType.id ? (typeof post.queueType.id === "string" ? post.queueType.id : String(post.queueType.id)) : "",
-      name: typeof post.queueType.name === "string" ? post.queueType.name : String(post.queueType.name ?? ""),
-      ...("color" in post.queueType && post.queueType.color ? { color: typeof post.queueType.color === "string" ? post.queueType.color : String(post.queueType.color) } : {}),
-    } : undefined,
+    queueType:
+      post.queueType &&
+      typeof post.queueType === "object" &&
+      "name" in post.queueType
+        ? {
+            id:
+              "id" in post.queueType && post.queueType.id
+                ? typeof post.queueType.id === "string"
+                  ? post.queueType.id
+                  : String(post.queueType.id)
+                : "",
+            name:
+              typeof post.queueType.name === "string"
+                ? post.queueType.name
+                : String(post.queueType.name ?? ""),
+            ...("color" in post.queueType && post.queueType.color
+              ? {
+                  color:
+                    typeof post.queueType.color === "string"
+                      ? post.queueType.color
+                      : String(post.queueType.color),
+                }
+              : {}),
+          }
+        : undefined,
     queueTypeId: nullToUndefined(post.queueTypeId),
     userId: post.userId,
     tags: post.tags,
@@ -79,11 +99,13 @@ export function longFormPostToCombinedContent(
     isPosted: longFormPost.isPublished, // Map isPublished to isPosted for consistency
     draft: longFormPost.draft,
     status: longFormPost.status,
-    queueType: longFormPost.queueType ? {
-      id: longFormPost.queueType.id,
-      name: longFormPost.queueType.name,
-      color: longFormPost.queueType.color ?? undefined,
-    } : undefined,
+    queueType: longFormPost.queueType
+      ? {
+          id: longFormPost.queueType.id,
+          name: longFormPost.queueType.name,
+          color: longFormPost.queueType.color ?? undefined,
+        }
+      : undefined,
     queueTypeId: nullToUndefined(longFormPost.queueTypeId),
     userId: longFormPost.userId,
     tags: longFormPost.tags,
@@ -116,8 +138,20 @@ export function combineContent(
       // Handle Unix timestamps for scheduledFor
       const aScheduled = a.scheduledFor;
       const bScheduled = b.scheduledFor;
-      aValue = aScheduled ? (typeof aScheduled === "string" ? parseInt(aScheduled, 10) : typeof aScheduled === "number" ? aScheduled : 0) * 1000 : 0;
-      bValue = bScheduled ? (typeof bScheduled === "string" ? parseInt(bScheduled, 10) : typeof bScheduled === "number" ? bScheduled : 0) * 1000 : 0;
+      aValue = aScheduled
+        ? (typeof aScheduled === "string"
+            ? parseInt(aScheduled, 10)
+            : typeof aScheduled === "number"
+              ? aScheduled
+              : 0) * 1000
+        : 0;
+      bValue = bScheduled
+        ? (typeof bScheduled === "string"
+            ? parseInt(bScheduled, 10)
+            : typeof bScheduled === "number"
+              ? bScheduled
+              : 0) * 1000
+        : 0;
     } else if (sortBy === "postedAt" || sortBy === "publishedAt") {
       // Handle dates for postedAt/publishedAt
       const aPosted = a.postedAt;

@@ -13,7 +13,6 @@ import {
 } from "~/features/posts/handlers/queue-type.handler";
 import type { BulkPost, QueueType } from "~/features/posts/types";
 
-
 // Mock dependencies
 vi.mock("~/features/posts/handlers/hashtag.handler", () => ({
   updateDisplayedHashtags: vi.fn(),
@@ -76,7 +75,9 @@ describe("Queue Type Handler Integration Tests", () => {
       });
 
       expect(setPosts).toHaveBeenCalled();
-      const updatedPosts = setPosts.mock.calls[0]?.[0] as BulkPost[] | undefined;
+      const updatedPosts = setPosts.mock.calls[0]?.[0] as
+        | BulkPost[]
+        | undefined;
       expect(updatedPosts?.[0]?.queueType).toBe("Morning");
     });
 
@@ -108,7 +109,8 @@ describe("Queue Type Handler Integration Tests", () => {
       });
 
       expect(setPosts).toHaveBeenCalled();
-      const updatedPosts: BulkPost[] | undefined = setPosts.mock.calls[0]?.[0] as BulkPost[] | undefined;
+      const updatedPosts: BulkPost[] | undefined = setPosts.mock
+        .calls[0]?.[0] as BulkPost[] | undefined;
       expect(updatedPosts?.[0]?.scheduledFor).toBe("");
     });
 
@@ -161,7 +163,8 @@ describe("Queue Type Handler Integration Tests", () => {
         }),
       });
 
-      const updatedPosts: BulkPost[] | undefined = setPosts.mock.calls[0]?.[0] as BulkPost[] | undefined;
+      const updatedPosts: BulkPost[] | undefined = setPosts.mock
+        .calls[0]?.[0] as BulkPost[] | undefined;
       expect(updatedPosts?.[0]?.scheduledFor).toBe("2024-01-15T10:00");
     });
 
@@ -201,7 +204,9 @@ describe("Queue Type Handler Integration Tests", () => {
 
       // Should still update the queue type even if API fails
       expect(setPosts).toHaveBeenCalled();
-      const updatedPosts = setPosts.mock.calls[0]?.[0] as BulkPost[] | undefined;
+      const updatedPosts = setPosts.mock.calls[0]?.[0] as
+        | BulkPost[]
+        | undefined;
       expect(updatedPosts?.[0]?.queueType).toBe("Morning");
     });
 
@@ -344,7 +349,8 @@ describe("Queue Type Handler Integration Tests", () => {
       });
 
       expect(setPosts).toHaveBeenCalled();
-      const updatedPosts: BulkPost[] | undefined = setPosts.mock.calls[0]?.[0] as BulkPost[] | undefined;
+      const updatedPosts: BulkPost[] | undefined = setPosts.mock
+        .calls[0]?.[0] as BulkPost[] | undefined;
       expect(updatedPosts).toHaveLength(2);
       expect(updatedPosts?.[0]?.queueType).toBe("Morning");
       expect(updatedPosts?.[1]?.queueType).toBe("Morning");
@@ -401,9 +407,27 @@ describe("Queue Type Handler Integration Tests", () => {
 
     it("should calculate interval-based schedule times", async () => {
       const posts: BulkPost[] = [
-        { file: null, caption: "", queueType: "unassigned", scheduledFor: "", isRecyclable: false },
-        { file: null, caption: "", queueType: "unassigned", scheduledFor: "", isRecyclable: false },
-        { file: null, caption: "", queueType: "unassigned", scheduledFor: "", isRecyclable: false },
+        {
+          file: null,
+          caption: "",
+          queueType: "unassigned",
+          scheduledFor: "",
+          isRecyclable: false,
+        },
+        {
+          file: null,
+          caption: "",
+          queueType: "unassigned",
+          scheduledFor: "",
+          isRecyclable: false,
+        },
+        {
+          file: null,
+          caption: "",
+          queueType: "unassigned",
+          scheduledFor: "",
+          isRecyclable: false,
+        },
       ];
       const setPosts = vi.fn();
       const queueTypes: QueueType[] = [
@@ -439,7 +463,8 @@ describe("Queue Type Handler Integration Tests", () => {
       });
 
       expect(setPosts).toHaveBeenCalled();
-      const updatedPosts: BulkPost[] | undefined = setPosts.mock.calls[0]?.[0] as BulkPost[] | undefined;
+      const updatedPosts: BulkPost[] | undefined = setPosts.mock
+        .calls[0]?.[0] as BulkPost[] | undefined;
       // First post should use base time
       expect(updatedPosts?.[0]?.scheduledFor).toContain("2024-01-15T10:");
       // Second post should be 2 hours later
@@ -477,9 +502,9 @@ describe("Queue Type Handler Integration Tests", () => {
       });
 
       expect(setPosts).toHaveBeenCalled();
-      const updatedPosts: BulkPost[] | undefined = setPosts.mock.calls[0]?.[0] as BulkPost[] | undefined;
+      const updatedPosts: BulkPost[] | undefined = setPosts.mock
+        .calls[0]?.[0] as BulkPost[] | undefined;
       expect(updatedPosts?.[0]?.scheduledFor).toBe("");
     });
   });
 });
-

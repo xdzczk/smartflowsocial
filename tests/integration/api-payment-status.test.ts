@@ -1,6 +1,6 @@
 /**
  * Integration tests for payment status API route
- * 
+ *
  * Tests the API endpoint in app/routes/api.payment-status.ts
  */
 
@@ -31,15 +31,32 @@ describe("API: Payment Status", () => {
         const formData = new FormData();
         formData.append("paymentId", "payment-123");
 
-        const request = new Request("http://localhost:3000/api/payment-status", {
-          method: "POST",
-          body: formData,
-        });
+        const request = new Request(
+          "http://localhost:3000/api/payment-status",
+          {
+            method: "POST",
+            body: formData,
+          },
+        );
 
-        const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
+        const actionParams: {
+          request: Request;
+          params: Record<string, string>;
+          context: Record<string, unknown>;
+        } = { request, params: {}, context: {} };
         const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
-        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; paid?: unknown; paidAt?: unknown; message?: unknown; status?: unknown; error?: unknown } : {};
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as {
+                success?: unknown;
+                paid?: unknown;
+                paidAt?: unknown;
+                message?: unknown;
+                status?: unknown;
+                error?: unknown;
+              })
+            : {};
 
         expect(checkPaymentStatus).toHaveBeenCalledWith("payment-123");
         // paidAt is serialized to ISO string in JSON response
@@ -62,15 +79,32 @@ describe("API: Payment Status", () => {
         const formData = new FormData();
         formData.append("paymentId", "payment-123");
 
-        const request = new Request("http://localhost:3000/api/payment-status", {
-          method: "POST",
-          body: formData,
-        });
+        const request = new Request(
+          "http://localhost:3000/api/payment-status",
+          {
+            method: "POST",
+            body: formData,
+          },
+        );
 
-        const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
+        const actionParams: {
+          request: Request;
+          params: Record<string, string>;
+          context: Record<string, unknown>;
+        } = { request, params: {}, context: {} };
         const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
-        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; paid?: unknown; paidAt?: unknown; message?: unknown; status?: unknown; error?: unknown } : {};
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as {
+                success?: unknown;
+                paid?: unknown;
+                paidAt?: unknown;
+                message?: unknown;
+                status?: unknown;
+                error?: unknown;
+              })
+            : {};
 
         expect(data).toEqual({
           success: true,
@@ -90,15 +124,32 @@ describe("API: Payment Status", () => {
         const formData = new FormData();
         formData.append("paymentId", "payment-123");
 
-        const request = new Request("http://localhost:3000/api/payment-status", {
-          method: "POST",
-          body: formData,
-        });
+        const request = new Request(
+          "http://localhost:3000/api/payment-status",
+          {
+            method: "POST",
+            body: formData,
+          },
+        );
 
-        const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
+        const actionParams: {
+          request: Request;
+          params: Record<string, string>;
+          context: Record<string, unknown>;
+        } = { request, params: {}, context: {} };
         const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
-        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; paid?: unknown; paidAt?: unknown; message?: unknown; status?: unknown; error?: unknown } : {};
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as {
+                success?: unknown;
+                paid?: unknown;
+                paidAt?: unknown;
+                message?: unknown;
+                status?: unknown;
+                error?: unknown;
+              })
+            : {};
 
         expect(data).toEqual({
           success: true,
@@ -110,17 +161,37 @@ describe("API: Payment Status", () => {
 
     describe("Error Handling", () => {
       it("should reject non-POST methods", async () => {
-        const request = new Request("http://localhost:3000/api/payment-status", {
-          method: "GET",
-        });
+        const request = new Request(
+          "http://localhost:3000/api/payment-status",
+          {
+            method: "GET",
+          },
+        );
 
-        const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
+        const actionParams: {
+          request: Request;
+          params: Record<string, string>;
+          context: Record<string, unknown>;
+        } = { request, params: {}, context: {} };
         const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
-        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; paid?: unknown; paidAt?: unknown; message?: unknown; status?: unknown; error?: unknown } : {};
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as {
+                success?: unknown;
+                paid?: unknown;
+                paidAt?: unknown;
+                message?: unknown;
+                status?: unknown;
+                error?: unknown;
+              })
+            : {};
 
         expect(response.status).toBe(400);
-        const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
+        const success =
+          typeof data.success === "boolean"
+            ? data.success
+            : data.success === 0 || data.success === false;
         expect(success).toBe(false);
         expect(data.error).toBeDefined();
       });
@@ -128,18 +199,38 @@ describe("API: Payment Status", () => {
       it("should return validation error when paymentId is missing", async () => {
         const formData = new FormData();
 
-        const request = new Request("http://localhost:3000/api/payment-status", {
-          method: "POST",
-          body: formData,
-        });
+        const request = new Request(
+          "http://localhost:3000/api/payment-status",
+          {
+            method: "POST",
+            body: formData,
+          },
+        );
 
-        const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
+        const actionParams: {
+          request: Request;
+          params: Record<string, string>;
+          context: Record<string, unknown>;
+        } = { request, params: {}, context: {} };
         const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
-        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; paid?: unknown; paidAt?: unknown; message?: unknown; status?: unknown; error?: unknown } : {};
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as {
+                success?: unknown;
+                paid?: unknown;
+                paidAt?: unknown;
+                message?: unknown;
+                status?: unknown;
+                error?: unknown;
+              })
+            : {};
 
         expect(response.status).toBe(400);
-        const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
+        const success =
+          typeof data.success === "boolean"
+            ? data.success
+            : data.success === 0 || data.success === false;
         expect(success).toBe(false);
         expect(data.error).toBeDefined();
       });
@@ -148,15 +239,32 @@ describe("API: Payment Status", () => {
         const formData = new FormData();
         formData.append("paymentId", "");
 
-        const request = new Request("http://localhost:3000/api/payment-status", {
-          method: "POST",
-          body: formData,
-        });
+        const request = new Request(
+          "http://localhost:3000/api/payment-status",
+          {
+            method: "POST",
+            body: formData,
+          },
+        );
 
-        const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
+        const actionParams: {
+          request: Request;
+          params: Record<string, string>;
+          context: Record<string, unknown>;
+        } = { request, params: {}, context: {} };
         const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
-        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; paid?: unknown; paidAt?: unknown; message?: unknown; status?: unknown; error?: unknown } : {};
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as {
+                success?: unknown;
+                paid?: unknown;
+                paidAt?: unknown;
+                message?: unknown;
+                status?: unknown;
+                error?: unknown;
+              })
+            : {};
 
         expect(response.status).toBe(400);
         expect(data.success).toBe(false);
@@ -170,18 +278,38 @@ describe("API: Payment Status", () => {
         const formData = new FormData();
         formData.append("paymentId", "payment-123");
 
-        const request = new Request("http://localhost:3000/api/payment-status", {
-          method: "POST",
-          body: formData,
-        });
+        const request = new Request(
+          "http://localhost:3000/api/payment-status",
+          {
+            method: "POST",
+            body: formData,
+          },
+        );
 
-        const actionParams: { request: Request; params: Record<string, string>; context: Record<string, unknown> } = { request, params: {}, context: {} };
+        const actionParams: {
+          request: Request;
+          params: Record<string, string>;
+          context: Record<string, unknown>;
+        } = { request, params: {}, context: {} };
         const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
-        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; paid?: unknown; paidAt?: unknown; message?: unknown; status?: unknown; error?: unknown } : {};
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as {
+                success?: unknown;
+                paid?: unknown;
+                paidAt?: unknown;
+                message?: unknown;
+                status?: unknown;
+                error?: unknown;
+              })
+            : {};
 
         expect(response.status).toBeGreaterThanOrEqual(400);
-        const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
+        const success =
+          typeof data.success === "boolean"
+            ? data.success
+            : data.success === 0 || data.success === false;
         expect(success).toBe(false);
         expect(data.error).toBeDefined();
       });
@@ -193,7 +321,17 @@ describe("API: Payment Status", () => {
       const loaderFn = loader as () => Promise<Response>;
       const response = await loaderFn();
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; paid?: unknown; paidAt?: unknown; message?: unknown; status?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              success?: unknown;
+              paid?: unknown;
+              paidAt?: unknown;
+              message?: unknown;
+              status?: unknown;
+              error?: unknown;
+            })
+          : {};
 
       const status = typeof response.status === "number" ? response.status : 0;
       expect(status).toBe(405);
@@ -204,4 +342,3 @@ describe("API: Payment Status", () => {
     });
   });
 });
-

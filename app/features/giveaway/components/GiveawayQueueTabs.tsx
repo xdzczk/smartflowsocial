@@ -1,4 +1,4 @@
-import { Link , useRevalidator } from "@remix-run/react";
+import { Link, useRevalidator } from "@remix-run/react";
 
 import { getQueueColor } from "~/features/posts/queueColors";
 interface QueueType {
@@ -88,19 +88,3 @@ export function GiveawayQueueTabs({
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

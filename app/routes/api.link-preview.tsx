@@ -1,17 +1,18 @@
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
 
-import {
-  ValidationError,
-  ExternalServiceError,
-} from "~/lib/errors";
+import { ValidationError, ExternalServiceError } from "~/lib/errors";
 
-type AssertFunction = (condition: boolean, message: string, context?: Record<string, unknown>) => asserts condition;
+type AssertFunction = (
+  condition: boolean,
+  message: string,
+  context?: Record<string, unknown>,
+) => asserts condition;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   try {
     const errorHandler = await import("~/lib/error-handler.server");
     const assert: AssertFunction = errorHandler.assert;
-    
+
     const url = new URL(request.url);
     const targetUrlParam = url.searchParams.get("url");
 
@@ -44,15 +45,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
         signal: AbortSignal.timeout(5000),
       });
     } catch (error) {
-      throw new ExternalServiceError(
-        "Failed to fetch URL",
-        502,
-        {
-          service: "LinkPreview",
-          targetUrl,
-          originalError: error instanceof Error ? error.message : String(error),
-        },
-      );
+      throw new ExternalServiceError("Failed to fetch URL", 502, {
+        service: "LinkPreview",
+        targetUrl,
+        originalError: error instanceof Error ? error.message : String(error),
+      });
     }
 
     if (!response.ok) {
@@ -72,15 +69,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     try {
       html = await response.text();
     } catch (error) {
-      throw new ExternalServiceError(
-        "Failed to read response from URL",
-        502,
-        {
-          service: "LinkPreview",
-          targetUrl,
-          originalError: error instanceof Error ? error.message : String(error),
-        },
-      );
+      throw new ExternalServiceError("Failed to read response from URL", 502, {
+        service: "LinkPreview",
+        targetUrl,
+        originalError: error instanceof Error ? error.message : String(error),
+      });
     }
 
     const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
@@ -121,6 +114,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // Use dynamic import to avoid bundling issues
     const { createErrorResponse } = await import("~/lib/error-handler.server");
     const [errorResponse, statusCode] = createErrorResponse(error);
-    return json({ success: false, error: errorResponse.error }, { status: statusCode });
+    return json(
+      { success: false, error: errorResponse.error },
+      { status: statusCode },
+    );
   }
 }

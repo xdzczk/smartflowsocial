@@ -1,6 +1,6 @@
 /**
  * Integration tests for queue schedule API route
- * 
+ *
  * Tests the API endpoint in app/routes/api.queue-schedule.tsx
  */
 
@@ -22,8 +22,15 @@ vi.mock("~/features/posts/schedulers", () => ({
 }));
 
 import { requireUserId } from "~/features/auth/session.server";
-import { calculateNextScheduleTime, formatScheduleTimeForInput } from "~/features/posts/schedulers";
-import { getQueueTypes, getUserTimezone, getQueueTypeByIdForUser } from "~/models/user.server";
+import {
+  calculateNextScheduleTime,
+  formatScheduleTimeForInput,
+} from "~/features/posts/schedulers";
+import {
+  getQueueTypes,
+  getUserTimezone,
+  getQueueTypeByIdForUser,
+} from "~/models/user.server";
 import { action } from "~/routes/api.queue-schedule";
 
 import { TEST_USER_ID } from "../utils/test-helpers";
@@ -32,7 +39,9 @@ describe("API: Queue Schedule", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue(TEST_USER_ID);
-    (getUserTimezone as ReturnType<typeof vi.fn>).mockResolvedValue("America/New_York");
+    (getUserTimezone as ReturnType<typeof vi.fn>).mockResolvedValue(
+      "America/New_York",
+    );
   });
 
   describe("Successful Requests", () => {
@@ -47,9 +56,15 @@ describe("API: Queue Schedule", () => {
       const mockNextTime = new Date("2024-01-15T14:00:00Z");
       const formattedTime = "2024-01-15T10:00";
 
-      (getQueueTypeByIdForUser as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueType);
-      (calculateNextScheduleTime as ReturnType<typeof vi.fn>).mockResolvedValue(mockNextTime);
-      (formatScheduleTimeForInput as ReturnType<typeof vi.fn>).mockReturnValue(formattedTime);
+      (getQueueTypeByIdForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockQueueType,
+      );
+      (calculateNextScheduleTime as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockNextTime,
+      );
+      (formatScheduleTimeForInput as ReturnType<typeof vi.fn>).mockReturnValue(
+        formattedTime,
+      );
 
       const request = new Request("http://localhost:3000/api/queue-schedule", {
         method: "POST",
@@ -64,12 +79,25 @@ describe("API: Queue Schedule", () => {
       }
       const actionArgs: ActionArgs = { request, params: {}, context: {} };
       const response = await action(actionArgs);
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; nextScheduleTime?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              success?: unknown;
+              nextScheduleTime?: unknown;
+              error?: unknown;
+            })
+          : {};
 
       expect(requireUserId).toHaveBeenCalledWith(request);
-      expect(getQueueTypeByIdForUser).toHaveBeenCalledWith(TEST_USER_ID, "queue-1");
+      expect(getQueueTypeByIdForUser).toHaveBeenCalledWith(
+        TEST_USER_ID,
+        "queue-1",
+      );
       expect(calculateNextScheduleTime).toHaveBeenCalledWith({
         queueType: mockQueueType,
         userId: TEST_USER_ID,
@@ -100,9 +128,15 @@ describe("API: Queue Schedule", () => {
       const mockNextTime = new Date("2024-01-15T14:00:00Z");
       const formattedTime = "2024-01-15T10:00";
 
-      (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueTypes);
-      (calculateNextScheduleTime as ReturnType<typeof vi.fn>).mockResolvedValue(mockNextTime);
-      (formatScheduleTimeForInput as ReturnType<typeof vi.fn>).mockReturnValue(formattedTime);
+      (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockQueueTypes,
+      );
+      (calculateNextScheduleTime as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockNextTime,
+      );
+      (formatScheduleTimeForInput as ReturnType<typeof vi.fn>).mockReturnValue(
+        formattedTime,
+      );
 
       const request = new Request("http://localhost:3000/api/queue-schedule", {
         method: "POST",
@@ -117,9 +151,19 @@ describe("API: Queue Schedule", () => {
       }
       const actionArgs: ActionArgs = { request, params: {}, context: {} };
       const response = await action(actionArgs);
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; nextScheduleTime?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              success?: unknown;
+              nextScheduleTime?: unknown;
+              error?: unknown;
+            })
+          : {};
 
       expect(getQueueTypes).toHaveBeenCalledWith(TEST_USER_ID);
       expect(data).toEqual({
@@ -144,9 +188,19 @@ describe("API: Queue Schedule", () => {
       }
       const actionArgs: ActionArgs = { request, params: {}, context: {} };
       const response = await action(actionArgs);
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; nextScheduleTime?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              success?: unknown;
+              nextScheduleTime?: unknown;
+              error?: unknown;
+            })
+          : {};
 
       expect(getQueueTypes).not.toHaveBeenCalled();
       expect(calculateNextScheduleTime).not.toHaveBeenCalled();
@@ -168,9 +222,15 @@ describe("API: Queue Schedule", () => {
       const mockNextTime = new Date("2024-01-15T14:00:00Z");
       const formattedTime = "2024-01-15T14:00";
 
-      (getQueueTypeByIdForUser as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueType);
-      (calculateNextScheduleTime as ReturnType<typeof vi.fn>).mockResolvedValue(mockNextTime);
-      (formatScheduleTimeForInput as ReturnType<typeof vi.fn>).mockReturnValue(formattedTime);
+      (getQueueTypeByIdForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockQueueType,
+      );
+      (calculateNextScheduleTime as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockNextTime,
+      );
+      (formatScheduleTimeForInput as ReturnType<typeof vi.fn>).mockReturnValue(
+        formattedTime,
+      );
 
       const request = new Request("http://localhost:3000/api/queue-schedule", {
         method: "POST",
@@ -185,7 +245,10 @@ describe("API: Queue Schedule", () => {
         userId: TEST_USER_ID,
         userTimezone: "UTC",
       });
-      expect(formatScheduleTimeForInput).toHaveBeenCalledWith(mockNextTime, "UTC");
+      expect(formatScheduleTimeForInput).toHaveBeenCalledWith(
+        mockNextTime,
+        "UTC",
+      );
     });
 
     it("should prefer queueTypeId over queueTypeName", async () => {
@@ -199,9 +262,15 @@ describe("API: Queue Schedule", () => {
       const mockNextTime = new Date("2024-01-15T14:00:00Z");
       const formattedTime = "2024-01-15T10:00";
 
-      (getQueueTypeByIdForUser as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueType);
-      (calculateNextScheduleTime as ReturnType<typeof vi.fn>).mockResolvedValue(mockNextTime);
-      (formatScheduleTimeForInput as ReturnType<typeof vi.fn>).mockReturnValue(formattedTime);
+      (getQueueTypeByIdForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockQueueType,
+      );
+      (calculateNextScheduleTime as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockNextTime,
+      );
+      (formatScheduleTimeForInput as ReturnType<typeof vi.fn>).mockReturnValue(
+        formattedTime,
+      );
 
       const request = new Request("http://localhost:3000/api/queue-schedule", {
         method: "POST",
@@ -232,12 +301,25 @@ describe("API: Queue Schedule", () => {
       }
       const actionArgs: ActionArgs = { request, params: {}, context: {} };
       const response = await action(actionArgs);
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; nextScheduleTime?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              success?: unknown;
+              nextScheduleTime?: unknown;
+              error?: unknown;
+            })
+          : {};
 
       expect(responseObj.status).toBe(400);
-      const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
+      const success =
+        typeof data.success === "boolean"
+          ? data.success
+          : data.success === 0 || data.success === false;
       expect(success).toBe(false);
       expect(data.error).toBeDefined();
     });
@@ -260,7 +342,10 @@ describe("API: Queue Schedule", () => {
 
       const response = await action({ request, params: {}, context: {} });
       // Response should be rethrown by error handler, so we should get a redirect
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       expect(responseObj.status).toBe(302);
       expect(responseObj.headers.get("Location")).toBe("/login");
     });
@@ -279,17 +364,32 @@ describe("API: Queue Schedule", () => {
       }
       const actionArgs: ActionArgs = { request, params: {}, context: {} };
       const response = await action(actionArgs);
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; nextScheduleTime?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              success?: unknown;
+              nextScheduleTime?: unknown;
+              error?: unknown;
+            })
+          : {};
 
       expect(responseObj.status).toBe(400);
-      const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
+      const success =
+        typeof data.success === "boolean"
+          ? data.success
+          : data.success === 0 || data.success === false;
       expect(success).toBe(false);
     });
 
     it("should return NotFoundError when queue type not found", async () => {
-      (getQueueTypeByIdForUser as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (getQueueTypeByIdForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
+        null,
+      );
 
       const request = new Request("http://localhost:3000/api/queue-schedule", {
         method: "POST",
@@ -304,9 +404,19 @@ describe("API: Queue Schedule", () => {
       }
       const actionArgs: ActionArgs = { request, params: {}, context: {} };
       const response = await action(actionArgs);
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; nextScheduleTime?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              success?: unknown;
+              nextScheduleTime?: unknown;
+              error?: unknown;
+            })
+          : {};
 
       expect(responseObj.status).toBe(404);
       expect(data.success).toBe(false);
@@ -321,7 +431,9 @@ describe("API: Queue Schedule", () => {
         scheduleConfig: { intervalHours: 4 },
       };
 
-      (getQueueTypeByIdForUser as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueType);
+      (getQueueTypeByIdForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockQueueType,
+      );
       (calculateNextScheduleTime as ReturnType<typeof vi.fn>).mockRejectedValue(
         new Error("Scheduling error"),
       );
@@ -339,14 +451,26 @@ describe("API: Queue Schedule", () => {
       }
       const actionArgs: ActionArgs = { request, params: {}, context: {} };
       const response = await action(actionArgs);
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; nextScheduleTime?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              success?: unknown;
+              nextScheduleTime?: unknown;
+              error?: unknown;
+            })
+          : {};
 
       expect(responseObj.status).toBeGreaterThanOrEqual(400);
-      const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
+      const success =
+        typeof data.success === "boolean"
+          ? data.success
+          : data.success === 0 || data.success === false;
       expect(success).toBe(false);
     });
   });
 });
-

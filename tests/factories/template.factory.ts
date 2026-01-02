@@ -80,10 +80,3 @@ export const templateFactory = {
     );
   },
 };
-
-
-
-
-
-
-

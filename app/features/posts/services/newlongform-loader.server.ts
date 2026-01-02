@@ -21,16 +21,23 @@ export async function loadNewLongFormData(userId: string) {
   // Check if user has access to long-form posts feature
   await requireFeatureAccess(userId, "longformPosts");
 
-  const [tags, scheduleIntervals, queueTypes, hashTagPresets, user, assetsData, uploadProvider] =
-    await Promise.all([
-      getUserHashTags(userId),
-      getScheduleInterval(userId),
-      getQueueTypes(userId),
-      getUserHashTagPresets(userId),
-      getUserById(userId),
-      getAssets({ userId, page: 1, limit: 100 }),
-      getUserUploadProvider(userId),
-    ]);
+  const [
+    tags,
+    scheduleIntervals,
+    queueTypes,
+    hashTagPresets,
+    user,
+    assetsData,
+    uploadProvider,
+  ] = await Promise.all([
+    getUserHashTags(userId),
+    getScheduleInterval(userId),
+    getQueueTypes(userId),
+    getUserHashTagPresets(userId),
+    getUserById(userId),
+    getAssets({ userId, page: 1, limit: 100 }),
+    getUserUploadProvider(userId),
+  ]);
 
   return {
     userId,
@@ -43,7 +50,3 @@ export async function loadNewLongFormData(userId: string) {
     uploadProvider,
   };
 }
-
-
-
-

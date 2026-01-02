@@ -1,6 +1,6 @@
 /**
  * Sentry Client-side Initialization
- * 
+ *
  * Initializes Sentry for client-side error tracking
  * Only initializes if SENTRY_DSN is configured
  */
@@ -17,7 +17,8 @@ export function initSentry(): void {
   }
 
   // Get DSN from window.ENV (set by root.tsx)
-  const dsn = (window as { ENV?: { SENTRY_DSN?: string } }).ENV?.SENTRY_DSN ?? null;
+  const dsn =
+    (window as { ENV?: { SENTRY_DSN?: string } }).ENV?.SENTRY_DSN ?? null;
 
   if (!dsn) {
     // Sentry not configured - that's okay, just return
@@ -30,8 +31,10 @@ export function initSentry(): void {
       try {
         // @ts-ignore - Dynamic imports work in client-side Remix bundles
         const Sentry = await import("@sentry/remix");
-        const isProduction = (window as { ENV?: { NODE_ENV?: string } }).ENV?.NODE_ENV === "production" || false;
-        
+        const isProduction =
+          (window as { ENV?: { NODE_ENV?: string } }).ENV?.NODE_ENV ===
+            "production" || false;
+
         Sentry.init({
           dsn,
           environment: isProduction ? "production" : "development",
@@ -43,15 +46,17 @@ export function initSentry(): void {
           // Filter out noise
           beforeSend(event, _hint) {
             // Don't send events for browser extensions, etc.
-            if (event.exception?.values?.[0]?.value?.includes("Non-Error promise rejection")) {
+            if (
+              event.exception?.values?.[0]?.value?.includes(
+                "Non-Error promise rejection",
+              )
+            ) {
               return null;
             }
             return event;
           },
           // Configure integrations
-          integrations: [
-            Sentry.replayIntegration(),
-          ],
+          integrations: [Sentry.replayIntegration()],
         });
 
         sentryInitialized = true;
@@ -151,7 +156,11 @@ export function captureMessage(
 /**
  * Set user context for Sentry (client-side)
  */
-export function setUser(user: { id?: string; email?: string; username?: string }): void {
+export function setUser(user: {
+  id?: string;
+  email?: string;
+  username?: string;
+}): void {
   if (!sentryInitialized || typeof window === "undefined") {
     return;
   }
@@ -195,4 +204,3 @@ export function clearUser(): void {
     console.error("Failed to clear user in Sentry:", err);
   }
 }
-

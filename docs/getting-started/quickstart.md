@@ -111,16 +111,19 @@ pnpm start:worker
 ## What's Next?
 
 ### For End Users
+
 - **[First Steps Guide](./first-steps.md)** - Learn the basics (30 minutes)
 - **[Posting Guide](../guides/user-guides/posting.md)** - Create your first post
 - **[Calendar Guide](../guides/user-guides/calendar.md)** - Schedule posts visually
 
 ### For Developers
+
 - **[Installation Guide](./installation.md)** - Complete development setup
 - **[Architecture Overview](./architecture.md)** - Understand the system
 - **[Developer Guide](../guides/developer-guide.md)** - Development workflow
 
 ### For DevOps
+
 - **[Deployment Guide](../guides/deployment.md)** - Production deployment
 - **[Operations Guide](../guides/operations.md)** - Monitoring and maintenance
 
@@ -161,14 +164,14 @@ See [Troubleshooting Guide](../troubleshooting/common-issues.md) for more soluti
 
 ## Quick Reference
 
-| Task | Command |
-|------|---------|
-| Start dev server | `pnpm dev` |
-| Start worker | `pnpm start:worker` |
-| Run tests | `pnpm test` |
-| Check types | `pnpm exec tsc --noEmit` |
-| Format code | `pnpm format` |
-| Lint code | `pnpm lint` |
+| Task             | Command                  |
+| ---------------- | ------------------------ |
+| Start dev server | `pnpm dev`               |
+| Start worker     | `pnpm start:worker`      |
+| Run tests        | `pnpm test`              |
+| Check types      | `pnpm exec tsc --noEmit` |
+| Format code      | `pnpm format`            |
+| Lint code        | `pnpm lint`              |
 
 ---
 
@@ -182,4 +185,3 @@ See [Troubleshooting Guide](../troubleshooting/common-issues.md) for more soluti
 ---
 
 **Next:** [First Steps Guide](./first-steps.md) → Learn the basics in 30 minutes
-

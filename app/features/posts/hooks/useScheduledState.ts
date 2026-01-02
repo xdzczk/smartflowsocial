@@ -33,11 +33,14 @@ export function useScheduledState({
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
   const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
 
-  const [selectedLongFormPost, setSelectedLongFormPost] = useState<LongFormPostData | null>(null);
+  const [selectedLongFormPost, setSelectedLongFormPost] =
+    useState<LongFormPostData | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [postToEdit, setPostToEdit] = useState<EditablePost | null>(null);
-  const [postToReschedule, setPostToReschedule] = useState<EditablePost | null>(null);
+  const [postToReschedule, setPostToReschedule] = useState<EditablePost | null>(
+    null,
+  );
   interface FetcherData {
     success?: boolean;
   }
@@ -54,7 +57,10 @@ export function useScheduledState({
       const newCountdowns: Record<string, string> = {};
 
       scheduledPosts.forEach((post) => {
-        const scheduledFor = typeof post.scheduledFor === "string" ? post.scheduledFor : String(post.scheduledFor ?? "0");
+        const scheduledFor =
+          typeof post.scheduledFor === "string"
+            ? post.scheduledFor
+            : String(post.scheduledFor ?? "0");
         const utcTime = parseInt(scheduledFor) * 1000;
         const userTime = new Date(utcTime).toLocaleString("en-US", {
           timeZone: tz,
@@ -87,7 +93,10 @@ export function useScheduledState({
   // Clear selected posts after bulk delete
   useEffect(() => {
     const dataRaw = bulkDeleteFetcher.data;
-    const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown } : null;
+    const data =
+      dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+        ? (dataRaw as { success?: unknown })
+        : null;
     if (data && typeof data.success === "boolean" && data.success) {
       setSelectedPosts(new Set());
     }
@@ -96,19 +105,29 @@ export function useScheduledState({
   // Sort posts
   const sortedPosts = [...scheduledPosts].sort((a, b) => {
     if (sortConfig.key === "scheduledFor") {
-      const aScheduledFor = typeof a.scheduledFor === "string" ? a.scheduledFor : String(a.scheduledFor ?? "0");
-      const bScheduledFor = typeof b.scheduledFor === "string" ? b.scheduledFor : String(b.scheduledFor ?? "0");
+      const aScheduledFor =
+        typeof a.scheduledFor === "string"
+          ? a.scheduledFor
+          : String(a.scheduledFor ?? "0");
+      const bScheduledFor =
+        typeof b.scheduledFor === "string"
+          ? b.scheduledFor
+          : String(b.scheduledFor ?? "0");
       const dateA = parseInt(aScheduledFor) * 1000;
       const dateB = parseInt(bScheduledFor) * 1000;
       return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
     }
-    const aValue = (a as unknown as Record<string, unknown>)[sortConfig.key] as string | number | undefined;
-    const bValue = (b as unknown as Record<string, unknown>)[sortConfig.key] as string | number | undefined;
+    const aValue = (a as unknown as Record<string, unknown>)[sortConfig.key] as
+      | string
+      | number
+      | undefined;
+    const bValue = (b as unknown as Record<string, unknown>)[sortConfig.key] as
+      | string
+      | number
+      | undefined;
     if (aValue === undefined || bValue === undefined) return 0;
-    if (aValue < bValue)
-      return sortConfig.direction === "asc" ? -1 : 1;
-    if (aValue > bValue)
-      return sortConfig.direction === "asc" ? 1 : -1;
+    if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
+    if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
     return 0;
   });
 
@@ -238,4 +257,3 @@ export function useScheduledState({
     handleModalSuccess,
   };
 }
-

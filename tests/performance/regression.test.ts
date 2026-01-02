@@ -1,18 +1,21 @@
 /**
  * Performance Regression Tests
- * 
+ *
  * Tracks performance over time and alerts on performance degradation.
  * These tests establish baseline performance metrics and fail if performance
  * degrades beyond acceptable thresholds.
- * 
+ *
  * Run these tests regularly to catch performance regressions early.
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { calculateNextScheduleTime } from "~/features/posts/schedulers";
-import { getScheduledPosts, getLastPostTimeForQueue } from "~/models/post.queries.server";
-import { getUserById , getScheduleInterval } from "~/models/user.server";
+import {
+  getScheduledPosts,
+  getLastPostTimeForQueue,
+} from "~/models/post.queries.server";
+import { getUserById, getScheduleInterval } from "~/models/user.server";
 
 import { TEST_USER_ID } from "../utils/test-helpers";
 // Mock dependencies
@@ -41,7 +44,9 @@ describe("Performance Regression Tests", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(["4"]);
-    (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+      null,
+    );
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: TEST_USER_ID,
       timezone: "UTC",
@@ -69,7 +74,9 @@ describe("Performance Regression Tests", () => {
       const endTime = performance.now();
       const duration = endTime - startTime;
 
-      expect(duration).toBeLessThan(PERFORMANCE_THRESHOLDS.SCHEDULER_CALCULATION);
+      expect(duration).toBeLessThan(
+        PERFORMANCE_THRESHOLDS.SCHEDULER_CALCULATION,
+      );
     });
 
     it("should handle multiple scheduling calculations efficiently", async () => {
@@ -95,7 +102,9 @@ describe("Performance Regression Tests", () => {
       const duration = endTime - startTime;
 
       // 10 calculations should complete in reasonable time
-      expect(duration).toBeLessThan(PERFORMANCE_THRESHOLDS.SCHEDULER_CALCULATION * 10);
+      expect(duration).toBeLessThan(
+        PERFORMANCE_THRESHOLDS.SCHEDULER_CALCULATION * 10,
+      );
     });
   });
 
@@ -222,10 +231,9 @@ export function expectPerformance(
   operation: string,
 ) {
   if (duration >= threshold) {
-    throw new Error(`${operation} took ${duration.toFixed(2)}ms, exceeding threshold of ${threshold}ms`);
+    throw new Error(
+      `${operation} took ${duration.toFixed(2)}ms, exceeding threshold of ${threshold}ms`,
+    );
   }
   expect(duration).toBeLessThan(threshold);
 }
-
-
-

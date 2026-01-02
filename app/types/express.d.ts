@@ -1,6 +1,6 @@
 /**
  * Express Type Extensions
- * 
+ *
  * Extends Express Request interface with custom properties used in middleware
  */
 
@@ -30,6 +30,3 @@ declare global {
 }
 
 export {};
-
-
-

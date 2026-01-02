@@ -2,7 +2,7 @@ import { TEST_NPUB } from "./support/nostr-test-keys";
 
 /**
  * Post Creation Flow Tests
- * 
+ *
  * Tests creating posts (immediate posting):
  * - Navigate to new post page
  * - Fill in post content
@@ -65,22 +65,20 @@ describe("Post Creation Flow", () => {
 
     it("should create an immediate post", () => {
       const postContent = `E2E test post ${Date.now()} #e2e`;
-      
+
       // Fill in content
       cy.get("textarea").first().type(postContent);
-      
+
       // Submit
-      cy.get('button[type="submit"], button:contains("Post")')
-        .first()
-        .click();
-      
+      cy.get('button[type="submit"], button:contains("Post")').first().click();
+
       // Wait for redirect or success message
       cy.location("pathname", { timeout: 10000 }).should((pathname) => {
-        expect(pathname).to.satisfy((p: string) => 
-          p.includes("dashboard") || p.includes("posted")
+        expect(pathname).to.satisfy(
+          (p: string) => p.includes("dashboard") || p.includes("posted"),
         );
       });
-      
+
       // Verify post appears in posted queue (with timeout for async operations)
       // Wait a bit for post to be processed
       // eslint-disable-next-line cypress/no-unnecessary-waiting -- Waiting for async post processing
@@ -90,18 +88,23 @@ describe("Post Creation Flow", () => {
       cy.location("pathname").then((pathname) => {
         // If redirected to login, session was lost - this is a bug
         if (pathname.includes("login")) {
-          cy.log("Warning: Session lost after post creation - may indicate application bug");
+          cy.log(
+            "Warning: Session lost after post creation - may indicate application bug",
+          );
           // Re-login and try again
           cy.loginNostr({ npub: TEST_NPUB });
           cy.visit("/dashboard/posted");
         }
         // Check if post appears
         cy.get("body", { timeout: 15000 }).then(($body) => {
-          const hasPost = $body.text().includes(postContent) || 
-                         $body.find(`*:contains("${postContent}")`).length > 0;
+          const hasPost =
+            $body.text().includes(postContent) ||
+            $body.find(`*:contains("${postContent}")`).length > 0;
           if (!hasPost) {
             // Post might not have been created or might be in a different queue
-            cy.log("Post not found in posted queue - may indicate application bug");
+            cy.log(
+              "Post not found in posted queue - may indicate application bug",
+            );
           }
           // Verify page loaded at least
           expect($body.length).to.be.greaterThan(0);
@@ -111,19 +114,15 @@ describe("Post Creation Flow", () => {
 
     it("should validate required fields", () => {
       // Try to submit without content
-      cy.get('button[type="submit"], button:contains("Post")')
-        .first()
-        .click();
-      
+      cy.get('button[type="submit"], button:contains("Post")').first().click();
+
       // Should show validation error or stay on page
       cy.location("pathname").then((pathname) => {
         // Either shows error or stays on newpost page
-        expect(pathname).to.satisfy((p: string) => 
-          p.includes("newpost") || p.includes("dashboard")
+        expect(pathname).to.satisfy(
+          (p: string) => p.includes("newpost") || p.includes("dashboard"),
         );
       });
     });
   });
 });
-
-

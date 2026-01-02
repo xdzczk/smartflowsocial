@@ -20,6 +20,7 @@ Master advanced queue management techniques, complex configurations, optimizatio
 ## Overview
 
 **Advanced queue management involves:**
+
 - Complex queue configurations
 - Multiple queue strategies
 - Queue optimization
@@ -33,12 +34,14 @@ Master advanced queue management techniques, complex configurations, optimizatio
 ### Queue Types
 
 **Interval Scheduling:**
+
 - Posts every X hours
 - Calculated from last post
 - Flexible timing
 - Good for consistent posting
 
 **Fixed Slots:**
+
 - Posts at specific times
 - Exact time control
 - Daily schedule
@@ -47,6 +50,7 @@ Master advanced queue management techniques, complex configurations, optimizatio
 ### Queue Configuration
 
 **Key settings:**
+
 - Schedule type (interval/fixed)
 - Schedule configuration
 - Hashtag presets
@@ -62,6 +66,7 @@ Master advanced queue management techniques, complex configurations, optimizatio
 **Using global schedule intervals:**
 
 1. **Configure in Settings:**
+
    - Settings → General
    - Set schedule intervals
    - Example: [2, 4, 6, 12, 24] hours
@@ -73,6 +78,7 @@ Master advanced queue management techniques, complex configurations, optimizatio
    - Queue uses global intervals
 
 **Benefits:**
+
 - Consistent intervals across queues
 - Easy to update globally
 - Standardized scheduling
@@ -90,6 +96,7 @@ Master advanced queue management techniques, complex configurations, optimizatio
    - Specific to this queue
 
 **Use cases:**
+
 - Different frequencies per queue
 - Content-specific timing
 - Campaign-specific schedules
@@ -105,6 +112,7 @@ Master advanced queue management techniques, complex configurations, optimizatio
 1. **Create/edit queue**
 2. **Select "Fixed Slots" type**
 3. **Add time slots:**
+
    - Click "Add Slot"
    - Enter time (HH:MM format)
    - Example: 09:00, 14:00, 19:00
@@ -115,6 +123,7 @@ Master advanced queue management techniques, complex configurations, optimizatio
    - Slots removed from schedule
 
 **Slot distribution:**
+
 - Posts distributed across slots
 - Uses next available slot
 - Wraps to next day if needed
@@ -125,11 +134,13 @@ Master advanced queue management techniques, complex configurations, optimizatio
 **Best practices:**
 
 1. **Peak engagement times:**
+
    - Research audience activity
    - Set slots at peak times
    - Test different times
 
 2. **Balanced distribution:**
+
    - Space slots evenly
    - Avoid clustering
    - Consider time zones
@@ -148,11 +159,13 @@ Master advanced queue management techniques, complex configurations, optimizatio
 **Organize by content type:**
 
 1. **News Queue:**
+
    - High frequency (every 2-4 hours)
    - Time-sensitive content
    - Fixed slots at peak times
 
 2. **Educational Queue:**
+
    - Lower frequency (daily)
    - Evergreen content
    - Fixed slots morning/evening
@@ -167,11 +180,13 @@ Master advanced queue management techniques, complex configurations, optimizatio
 **Organize by posting frequency:**
 
 1. **High-Frequency Queue:**
+
    - 3+ posts per day
    - Interval: 4-6 hours
    - News, updates
 
 2. **Medium-Frequency Queue:**
+
    - 1-2 posts per day
    - Fixed slots
    - Regular content
@@ -186,11 +201,13 @@ Master advanced queue management techniques, complex configurations, optimizatio
 **Temporary queues for campaigns:**
 
 1. **Create campaign queue:**
+
    - Specific campaign name
    - Campaign-specific schedule
    - Campaign hashtags
 
 2. **Use during campaign:**
+
    - Assign campaign posts
    - Follow campaign schedule
    - Track campaign performance
@@ -209,11 +226,13 @@ Master advanced queue management techniques, complex configurations, optimizatio
 **Distribute posts across queues:**
 
 1. **Analyze queue load:**
+
    - Check posts per queue
    - Identify overloaded queues
    - Find underutilized queues
 
 2. **Redistribute posts:**
+
    - Move posts between queues
    - Balance queue load
    - Optimize schedule
@@ -228,11 +247,13 @@ Master advanced queue management techniques, complex configurations, optimizatio
 **Multi-time zone strategy:**
 
 1. **Identify audience locations:**
+
    - Check engagement patterns
    - Review follower data
    - Analyze time-based metrics
 
 2. **Create time zone queues:**
+
    - US East Coast queue
    - European queue
    - Asian queue
@@ -247,11 +268,13 @@ Master advanced queue management techniques, complex configurations, optimizatio
 **Priority-based scheduling:**
 
 1. **High-priority queue:**
+
    - Important announcements
    - Time-sensitive content
    - Frequent posting
 
 2. **Normal-priority queue:**
+
    - Regular content
    - Standard schedule
    - Balanced posting
@@ -268,12 +291,14 @@ Master advanced queue management techniques, complex configurations, optimizatio
 ### Scenario 1: Multi-Content Strategy
 
 **Setup:**
+
 - News queue: Every 4 hours
 - Memes queue: 3 times daily (9am, 2pm, 7pm)
 - Educational queue: Daily at 10am
 - Promotional queue: Weekly on Fridays
 
 **Implementation:**
+
 1. Create 4 queues with different configs
 2. Assign content to appropriate queue
 3. Let queues handle scheduling
@@ -282,11 +307,13 @@ Master advanced queue management techniques, complex configurations, optimizatio
 ### Scenario 2: Peak Time Optimization
 
 **Setup:**
+
 - Morning queue: 7am, 9am slots
 - Afternoon queue: 12pm, 2pm slots
 - Evening queue: 5pm, 7pm slots
 
 **Implementation:**
+
 1. Create 3 queues with fixed slots
 2. Assign posts based on content type
 3. Optimize for peak engagement
@@ -295,12 +322,14 @@ Master advanced queue management techniques, complex configurations, optimizatio
 ### Scenario 3: Content Batching
 
 **Setup:**
+
 - Batch queue: Interval 2 hours
 - Start time: 9am
 - Batch 10 posts
 - Posts every 2 hours
 
 **Implementation:**
+
 1. Create interval queue (2 hours)
 2. Use bulk upload
 3. Assign all to batch queue
@@ -315,6 +344,7 @@ Master advanced queue management techniques, complex configurations, optimizatio
 **Problem:** Posts assigned to queue but not scheduling
 
 **Solutions:**
+
 - Check queue is enabled
 - Verify schedule configuration
 - Check queue has valid slots/intervals
@@ -326,6 +356,7 @@ Master advanced queue management techniques, complex configurations, optimizatio
 **Problem:** Multiple posts scheduled at same time
 
 **Solutions:**
+
 - Review queue configuration
 - Check slot availability
 - Adjust queue intervals
@@ -337,6 +368,7 @@ Master advanced queue management techniques, complex configurations, optimizatio
 **Problem:** Queue calculations slow
 
 **Solutions:**
+
 - Reduce queue complexity
 - Optimize schedule configs
 - Limit queue count
@@ -350,6 +382,7 @@ Master advanced queue management techniques, complex configurations, optimizatio
 ### Track Queue Performance
 
 **Metrics to monitor:**
+
 - Posts per queue
 - Schedule accuracy
 - Queue utilization
@@ -359,6 +392,7 @@ Master advanced queue management techniques, complex configurations, optimizatio
 ### Queue Analytics
 
 **Analyze queue effectiveness:**
+
 - Engagement by queue
 - Best performing queues
 - Optimal schedules
@@ -372,11 +406,13 @@ Master advanced queue management techniques, complex configurations, optimizatio
 ### Queue Organization
 
 1. **Clear naming:**
+
    - Descriptive queue names
    - Consistent naming convention
    - Easy to identify purpose
 
 2. **Logical grouping:**
+
    - Group by content type
    - Group by frequency
    - Group by purpose
@@ -389,11 +425,13 @@ Master advanced queue management techniques, complex configurations, optimizatio
 ### Configuration Management
 
 1. **Document configurations:**
+
    - Note queue purposes
    - Document schedule rules
    - Track changes
 
 2. **Test before deploying:**
+
    - Test queue configurations
    - Verify schedule calculations
    - Check for conflicts
@@ -411,7 +449,7 @@ Master advanced queue management techniques, complex configurations, optimizatio
 ✅ Multiple queue strategies  
 ✅ Queue optimization techniques  
 ✅ Complex queue scenarios  
-✅ Troubleshooting queue issues  
+✅ Troubleshooting queue issues
 
 ---
 
@@ -432,4 +470,3 @@ Master advanced queue management techniques, complex configurations, optimizatio
 ---
 
 **Next Tutorial:** [Performance Optimization](./performance-optimization.md) → Scale efficiently
-

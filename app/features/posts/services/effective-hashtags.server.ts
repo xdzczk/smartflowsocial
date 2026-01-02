@@ -40,7 +40,11 @@ export async function getEffectiveHashtags(
     queueType = queueTypes.find((qt) => qt.name === queueTypeName);
   }
 
-  if (!queueType || !("hashTagPreset" in queueType) || !queueType.hashTagPreset) {
+  if (
+    !queueType ||
+    !("hashTagPreset" in queueType) ||
+    !queueType.hashTagPreset
+  ) {
     return json({ hashtags: "" });
   }
 
@@ -71,10 +75,3 @@ export function parseEffectiveHashtagsRequest(body: unknown): {
     queueTypeId: requestBody.queueTypeId,
   };
 }
-
-
-
-
-
-
-

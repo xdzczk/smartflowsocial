@@ -54,7 +54,9 @@ describe("Queue Type Resolver Service", () => {
     });
 
     it("should lookup queue type by name and return ID", async () => {
-      (prisma.queueType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (
+        prisma.queueType.findFirst as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({
         id: "queue-456",
       });
 
@@ -73,9 +75,15 @@ describe("Queue Type Resolver Service", () => {
     });
 
     it("should return null if queue type not found by name", async () => {
-      (prisma.queueType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (
+        prisma.queueType.findFirst as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(null);
 
-      const result = await resolveQueueTypeId(TEST_USER_ID, null, "NonExistent");
+      const result = await resolveQueueTypeId(
+        TEST_USER_ID,
+        null,
+        "NonExistent",
+      );
 
       expect(result).toBeNull();
       expect(prisma.queueType.findFirst).toHaveBeenCalledWith({
@@ -90,7 +98,11 @@ describe("Queue Type Resolver Service", () => {
     });
 
     it("should prioritize queueTypeId over queueType name", async () => {
-      const result = await resolveQueueTypeId(TEST_USER_ID, "queue-789", "Morning");
+      const result = await resolveQueueTypeId(
+        TEST_USER_ID,
+        "queue-789",
+        "Morning",
+      );
 
       expect(result).toBe("queue-789");
       expect(prisma.queueType.findFirst).not.toHaveBeenCalled();
@@ -105,4 +117,3 @@ describe("Queue Type Resolver Service", () => {
     });
   });
 });
-

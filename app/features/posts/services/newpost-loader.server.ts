@@ -17,7 +17,7 @@ import {
 export async function loadNewPostData(userId: string) {
   // Require that the user has any subscription before accessing dashboard child routes
   await requireAnySubscription(userId);
-  
+
   const [scheduleIntervals, queueTypes, hashTagPresets, assetsData] =
     await Promise.all([
       getScheduleInterval(userId),
@@ -33,19 +33,3 @@ export async function loadNewPostData(userId: string) {
     assets: assetsData.assets,
   };
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

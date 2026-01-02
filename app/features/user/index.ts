@@ -1,12 +1,18 @@
 /**
  * User Feature Public API
- * 
+ *
  * This module exports the public API for user-related operations.
  * Internal implementation details are kept in services/ and queries/ directories.
  */
 
 // Re-export Prisma types for convenience
-export type { User, HashTagPreset, QueueType, ScheduleType, UploadProvider } from "@prisma/client";
+export type {
+  User,
+  HashTagPreset,
+  QueueType,
+  ScheduleType,
+  UploadProvider,
+} from "@prisma/client";
 
 // User Profile
 export {
@@ -121,9 +127,7 @@ export {
   handleDashboardAction,
 } from "./services/dashboard.server";
 
-export {
-  loadUploadProviderSettings,
-} from "./services/upload-provider.server";
+export { loadUploadProviderSettings } from "./services/upload-provider.server";
 
 // ============================================================================
 // Components (Public API)

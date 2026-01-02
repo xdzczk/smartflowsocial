@@ -36,7 +36,10 @@ interface UseSearchStateProps {
 export function useSearchState({ user, fetcherData }: UseSearchStateProps) {
   const fetcher = useFetcher();
   const [eventInput, setEventInput] = useState("");
-  const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [toast, setToast] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
   const isSearching = fetcher.state !== "idle";
   const searchResult = fetcherData?.event;
@@ -94,7 +97,7 @@ export function useSearchState({ user, fetcherData }: UseSearchStateProps) {
     const now = new Date();
     const userTimezone = user?.timezone ?? "UTC";
     const localDate = new Date(
-      now.toLocaleString("en-US", { timeZone: userTimezone })
+      now.toLocaleString("en-US", { timeZone: userTimezone }),
     );
     localDate.setHours(localDate.getHours() + 1);
 
@@ -126,7 +129,7 @@ export function useSearchState({ user, fetcherData }: UseSearchStateProps) {
     // Store in sessionStorage
     sessionStorage.setItem(
       "scheduledRepostData",
-      JSON.stringify(scheduledRepostData)
+      JSON.stringify(scheduledRepostData),
     );
 
     // Navigate to bulk posts page with repost mode
@@ -154,4 +157,3 @@ export function useSearchState({ user, fetcherData }: UseSearchStateProps) {
     clearSearch,
   };
 }
-

@@ -1,6 +1,6 @@
 /**
  * k6 Load Test: API Endpoints
- * 
+ *
  * Tests performance of critical API endpoints under load
  */
 
@@ -107,4 +107,3 @@ export default function () {
 }
 
 // Summary is handled automatically by k6
-

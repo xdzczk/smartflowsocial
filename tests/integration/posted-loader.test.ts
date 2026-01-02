@@ -1,9 +1,9 @@
 /**
  * Integration tests for posted posts loader
- * 
+ *
  * Tests the loader function logic directly, without requiring a browser.
  * For UI rendering tests, see tests/e2e/posts/scheduled-posts.cy.ts
- * 
+ *
  * Migrated from: tests/e2e/loaders/queues-loader.cy.ts (Posted Queue Loader section)
  */
 
@@ -37,10 +37,12 @@ import { loader } from "~/routes/dashboard.posted";
 describe("Posted Posts Loader Integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Default mocks
     (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue("user-123");
-    (requireAnySubscription as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    (requireAnySubscription as ReturnType<typeof vi.fn>).mockResolvedValue(
+      undefined,
+    );
     (getPostedDashboardData as ReturnType<typeof vi.fn>).mockResolvedValue({
       posts: [],
       longformPosts: [],
@@ -54,11 +56,29 @@ describe("Posted Posts Loader Integration", () => {
   describe("Posted Posts Loader", () => {
     it("should load posted posts data for authenticated user", async () => {
       const request = new Request("http://localhost:3000/dashboard/posted");
-      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
       const response = await loader(loaderArgs);
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              posts?: unknown;
+              longformPosts?: unknown;
+              allContent?: unknown;
+              user?: unknown;
+              queueTypes?: unknown;
+              selectedQueueType?: unknown;
+              error?: { message?: string };
+            })
+          : {};
 
       expect(responseObj.status).toBe(200);
       expect(requireUserId).toHaveBeenCalledWith(request);
@@ -81,17 +101,33 @@ describe("Posted Posts Loader Integration", () => {
         selectedQueueType: "posts",
       };
 
-      (getPostedDashboardData as ReturnType<typeof vi.fn>).mockResolvedValue(mockData);
+      (getPostedDashboardData as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockData,
+      );
 
       const request = new Request("http://localhost:3000/dashboard/posted");
-      const response = await loader({ 
-        request, 
+      const response = await loader({
+        request,
         params: { queueType: "posts" },
-        context: {}
+        context: {},
       } as unknown as LoaderFunctionArgs);
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              posts?: unknown;
+              longformPosts?: unknown;
+              allContent?: unknown;
+              user?: unknown;
+              queueTypes?: unknown;
+              selectedQueueType?: unknown;
+              error?: { message?: string };
+            })
+          : {};
 
       expect(getPostedDashboardData).toHaveBeenCalledWith({
         userId: "user-123",
@@ -99,7 +135,10 @@ describe("Posted Posts Loader Integration", () => {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         url: expect.any(URL),
       });
-      const selectedQueueType = typeof data.selectedQueueType === "string" ? data.selectedQueueType : "";
+      const selectedQueueType =
+        typeof data.selectedQueueType === "string"
+          ? data.selectedQueueType
+          : "";
       const posts = Array.isArray(data.posts) ? data.posts : [];
       expect(selectedQueueType).toBe("posts");
       expect(posts).toHaveLength(1);
@@ -112,33 +151,64 @@ describe("Posted Posts Loader Integration", () => {
           { id: "2", caption: "Post 2", postedAt: new Date("2024-01-02") },
         ],
         longformPosts: [
-          { id: "3", title: "Longform Post", publishedAt: new Date("2024-01-03") },
+          {
+            id: "3",
+            title: "Longform Post",
+            publishedAt: new Date("2024-01-03"),
+          },
         ],
         allContent: [
           { id: "1", caption: "Post 1", postedAt: new Date("2024-01-01") },
           { id: "2", caption: "Post 2", postedAt: new Date("2024-01-02") },
-          { id: "3", title: "Longform Post", publishedAt: new Date("2024-01-03") },
+          {
+            id: "3",
+            title: "Longform Post",
+            publishedAt: new Date("2024-01-03"),
+          },
         ],
         user: { id: "user-123", timezone: "America/New_York" },
-        queueTypes: [
-          { id: "1", name: "Default", isEnabled: true },
-        ],
+        queueTypes: [{ id: "1", name: "Default", isEnabled: true }],
         selectedQueueType: "all",
       };
 
-      (getPostedDashboardData as ReturnType<typeof vi.fn>).mockResolvedValue(mockData);
+      (getPostedDashboardData as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockData,
+      );
 
       const request = new Request("http://localhost:3000/dashboard/posted");
-      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
       const response = await loader(loaderArgs);
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              posts?: unknown;
+              longformPosts?: unknown;
+              allContent?: unknown;
+              user?: unknown;
+              queueTypes?: unknown;
+              selectedQueueType?: unknown;
+              error?: { message?: string };
+            })
+          : {};
 
       const posts = Array.isArray(data.posts) ? data.posts : [];
-      const longformPosts = Array.isArray(data.longformPosts) ? data.longformPosts : [];
+      const longformPosts = Array.isArray(data.longformPosts)
+        ? data.longformPosts
+        : [];
       const allContent = Array.isArray(data.allContent) ? data.allContent : [];
-      const user = data.user && typeof data.user === "object" && !Array.isArray(data.user) ? data.user as { timezone?: string } : {};
+      const user =
+        data.user && typeof data.user === "object" && !Array.isArray(data.user)
+          ? (data.user as { timezone?: string })
+          : {};
       expect(posts).toHaveLength(2);
       expect(longformPosts).toHaveLength(1);
       expect(allContent).toHaveLength(3);
@@ -146,9 +216,15 @@ describe("Posted Posts Loader Integration", () => {
     });
 
     it("should pass URL object to getPostedDashboardData", async () => {
-      const request = new Request("http://localhost:3000/dashboard/posted?page=2&limit=10");
-      
-      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
+      const request = new Request(
+        "http://localhost:3000/dashboard/posted?page=2&limit=10",
+      );
+
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
       await loader(loaderArgs);
 
       expect(getPostedDashboardData).toHaveBeenCalledWith({
@@ -166,60 +242,131 @@ describe("Posted Posts Loader Integration", () => {
   describe("Error Handling", () => {
     it("should handle authentication errors", async () => {
       (requireUserId as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Authentication required")
+        new Error("Authentication required"),
       );
 
       const request = new Request("http://localhost:3000/dashboard/posted");
-      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
       const response = await loader(loaderArgs);
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
-      
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              posts?: unknown;
+              longformPosts?: unknown;
+              allContent?: unknown;
+              user?: unknown;
+              queueTypes?: unknown;
+              selectedQueueType?: unknown;
+              error?: { message?: string };
+            })
+          : {};
+
       expect(responseObj.status).toBe(500);
       expect(data.error).toBeDefined();
-      const error = data.error && typeof data.error === "object" && !Array.isArray(data.error) ? data.error as { message?: string } : {};
-      const errorMessage = typeof error.message === "string" ? error.message : "";
+      const error =
+        data.error &&
+        typeof data.error === "object" &&
+        !Array.isArray(data.error)
+          ? (data.error as { message?: string })
+          : {};
+      const errorMessage =
+        typeof error.message === "string" ? error.message : "";
       expect(errorMessage).toContain("Authentication required");
     });
 
     it("should handle subscription requirement errors", async () => {
       (requireAnySubscription as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Subscription required")
+        new Error("Subscription required"),
       );
 
       const request = new Request("http://localhost:3000/dashboard/posted");
-      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
       const response = await loader(loaderArgs);
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
-      
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              posts?: unknown;
+              longformPosts?: unknown;
+              allContent?: unknown;
+              user?: unknown;
+              queueTypes?: unknown;
+              selectedQueueType?: unknown;
+              error?: { message?: string };
+            })
+          : {};
+
       expect(responseObj.status).toBe(500);
       expect(data.error).toBeDefined();
-      const error = data.error && typeof data.error === "object" && !Array.isArray(data.error) ? data.error as { message?: string } : {};
-      const errorMessage = typeof error.message === "string" ? error.message : "";
+      const error =
+        data.error &&
+        typeof data.error === "object" &&
+        !Array.isArray(data.error)
+          ? (data.error as { message?: string })
+          : {};
+      const errorMessage =
+        typeof error.message === "string" ? error.message : "";
       expect(errorMessage).toContain("Subscription required");
     });
 
     it("should handle data loading errors", async () => {
       (getPostedDashboardData as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Database error")
+        new Error("Database error"),
       );
 
       const request = new Request("http://localhost:3000/dashboard/posted");
-      const loaderArgs: LoaderFunctionArgs = { request, params: {}, context: {} };
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
       const response = await loader(loaderArgs);
-      const responseObj = response instanceof Response ? response : new Response(JSON.stringify(response));
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
       const dataRaw: unknown = await responseObj.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { posts?: unknown; longformPosts?: unknown; allContent?: unknown; user?: unknown; queueTypes?: unknown; selectedQueueType?: unknown; error?: { message?: string } } : {};
-      
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              posts?: unknown;
+              longformPosts?: unknown;
+              allContent?: unknown;
+              user?: unknown;
+              queueTypes?: unknown;
+              selectedQueueType?: unknown;
+              error?: { message?: string };
+            })
+          : {};
+
       expect(responseObj.status).toBe(500);
       expect(data.error).toBeDefined();
-      const error = data.error && typeof data.error === "object" && !Array.isArray(data.error) ? data.error as { message?: string } : {};
-      const errorMessage = typeof error.message === "string" ? error.message : "";
+      const error =
+        data.error &&
+        typeof data.error === "object" &&
+        !Array.isArray(data.error)
+          ? (data.error as { message?: string })
+          : {};
+      const errorMessage =
+        typeof error.message === "string" ? error.message : "";
       expect(errorMessage).toContain("Database error");
     });
   });
 });
-

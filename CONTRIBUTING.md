@@ -140,6 +140,7 @@ To ensure a consistent and maintainable codebase, please follow these coding sta
 To maintain clear separation of concerns, follow these strict boundaries:
 
 #### **`app/models/*` - Database Access Layer**
+
 - **Purpose**: Pure database access and persistence primitives
 - **What belongs here**:
   - Prisma queries (CRUD operations)
@@ -154,6 +155,7 @@ To maintain clear separation of concerns, follow these strict boundaries:
   - Complex calculations or statistics (unless purely data aggregation)
 
 **Example**:
+
 ```typescript
 // ✅ Good: Pure data access
 async function createPost(data: CreatePostData) {
@@ -162,14 +164,15 @@ async function createPost(data: CreatePostData) {
 
 // ❌ Bad: Business logic in model
 async function createPostWithLogic(data: CreatePostData) {
-  if (user.subscription.status !== 'active') {
-    throw new Error('Subscription required');
+  if (user.subscription.status !== "active") {
+    throw new Error("Subscription required");
   }
   // ... business logic
 }
 ```
 
 #### **`app/features/*` - Business Logic Layer**
+
 - **Purpose**: Business workflows, policies, and feature-specific logic
 - **What belongs here**:
   - Business workflows and orchestration
@@ -184,13 +187,14 @@ async function createPostWithLogic(data: CreatePostData) {
   - Raw database operations
 
 **Example**:
+
 ```typescript
 // ✅ Good: Business logic in features
 async function schedulePost(userId: string, postData: PostData) {
-  await requireFeatureAccess(userId, 'scheduling');
+  await requireFeatureAccess(userId, "scheduling");
   const user = await getUserById(userId);
   if (!user.subscription) {
-    throw new AuthorizationError('Subscription required');
+    throw new AuthorizationError("Subscription required");
   }
   return createPost({ ...postData, userId });
 }
@@ -202,6 +206,7 @@ async function schedulePostDirect(userId: string, postData: PostData) {
 ```
 
 #### **`app/routes/*` - HTTP Wiring Layer**
+
 - **Purpose**: HTTP request/response handling and UI composition
 - **What belongs here**:
   - Request parsing (formData, params, searchParams)
@@ -216,12 +221,13 @@ async function schedulePostDirect(userId: string, postData: PostData) {
   - Permission logic (delegate to features)
 
 **Example**:
+
 ```typescript
 // ✅ Good: HTTP wiring with service layer
 async function loader({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   const queueType = params.queueType || "all";
-  
+
   // Use service layer function from features
   return loadCalendarData(userId, queueType);
 }
@@ -229,7 +235,7 @@ async function loader({ request, params }: LoaderFunctionArgs) {
 async function action({ request }: ActionFunctionArgs) {
   const userId = await requireUserId(request);
   const formData = await request.formData();
-  
+
   // Use service layer function from features
   return handleCalendarAction(formData, userId);
 }
@@ -237,11 +243,11 @@ async function action({ request }: ActionFunctionArgs) {
 // ❌ Bad: Direct model imports in routes
 async function badLoader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
-  
+
   // ❌ Don't import models directly
   const posts = await getScheduledPosts({ userId }); // BAD
   const user = await getUserById(userId); // BAD
-  
+
   return json({ posts, user });
 }
 
@@ -250,13 +256,14 @@ async function badAction({ request }: ActionFunctionArgs) {
   const userId = await requireUserId(request);
   const user = await getUserById(userId);
   if (!user.subscription) {
-    return json({ error: 'Subscription required' }, { status: 403 });
+    return json({ error: "Subscription required" }, { status: 403 });
   }
   // ... business logic
 }
 ```
 
 **Service Layer Pattern**:
+
 - Routes should call service layer functions from `app/features/*/services/*.server.ts`
 - Service layers handle orchestration, business logic, and model calls
 - This keeps routes thin and testable
@@ -267,11 +274,11 @@ async function badAction({ request }: ActionFunctionArgs) {
 
 #### **Summary Table**
 
-| Directory | Purpose | Contains | Does NOT Contain |
-|-----------|---------|----------|------------------|
-| `app/models/*` | Database access | Prisma queries, transactions, data access | Business logic, permissions, workflows |
-| `app/features/*` | Business logic | Workflows, permissions, plan enforcement, scheduling | Direct Prisma queries, HTTP handling |
-| `app/routes/*` | HTTP wiring | Request parsing, response formatting, UI composition | Business logic, database queries |
+| Directory        | Purpose         | Contains                                             | Does NOT Contain                       |
+| ---------------- | --------------- | ---------------------------------------------------- | -------------------------------------- |
+| `app/models/*`   | Database access | Prisma queries, transactions, data access            | Business logic, permissions, workflows |
+| `app/features/*` | Business logic  | Workflows, permissions, plan enforcement, scheduling | Direct Prisma queries, HTTP handling   |
+| `app/routes/*`   | HTTP wiring     | Request parsing, response formatting, UI composition | Business logic, database queries       |
 
 **When in doubt**: Ask yourself "Is this about data access, business rules, or HTTP handling?" and place it accordingly.
 
@@ -282,14 +289,19 @@ To maintain clear boundaries and prevent tight coupling, all features expose a *
 #### **Using Feature Public APIs**
 
 **✅ DO**: Import from feature public API
+
 ```typescript
 // ✅ Good: Use public API
 import { getUser, requireUserId } from "~/features/auth";
 import { getUserPlanType, hasFeatureAccess } from "~/features/payments";
-import { getScheduledDashboardData, calculateNextScheduleTime } from "~/features/posts";
+import {
+  getScheduledDashboardData,
+  calculateNextScheduleTime,
+} from "~/features/posts";
 ```
 
 **❌ DON'T**: Import from feature internals
+
 ```typescript
 // ❌ Bad: Deep import from feature internals
 import { getUser } from "~/features/auth/session.server";
@@ -474,6 +486,7 @@ Use appropriate labels to categorize issues:
 ### Setting Up Development Environment
 
 1. **Clone and Install:**
+
    ```bash
    git clone https://github.com/xdzczk/SmartFlowSocial.git
    cd SmartFlowSocial
@@ -481,21 +494,24 @@ Use appropriate labels to categorize issues:
    ```
 
 2. **Configure Environment:**
+
    ```bash
    cp example.env .env
    # Edit .env with your local configuration
    ```
 
 3. **Start Services:**
+
    ```bash
    # Start PostgreSQL and Redis with Docker
    pnpm docker
-   
+
    # Or use existing services
    # Set DATABASE_URL and REDIS_URL in .env
    ```
 
 4. **Setup Database:**
+
    ```bash
    pnpm exec prisma generate
    pnpm exec prisma db push
@@ -503,10 +519,11 @@ Use appropriate labels to categorize issues:
    ```
 
 5. **Start Development Server:**
+
    ```bash
    # Terminal 1: Main application
    pnpm dev
-   
+
    # Terminal 2: Worker process (optional, for testing scheduled posts)
    pnpm start:worker
    ```
@@ -519,32 +536,36 @@ Use appropriate labels to categorize issues:
 ### Development Process
 
 1. **Create Feature Branch:**
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
 
 2. **Make Changes:**
+
    - Write code following coding standards
    - Add tests for new functionality
    - Update documentation if needed
 
 3. **Test Locally:**
+
    ```bash
    # Run linter
    pnpm lint
-   
+
    # Run type check
    pnpm exec tsc --noEmit
-   
+
    # Run tests
    pnpm test
-   
+
    # Run specific test suite
    pnpm test:unit
    pnpm test:integration
    ```
 
 4. **Commit Changes:**
+
    ```bash
    git add .
    git commit -m "feat: add your feature"
@@ -563,6 +584,7 @@ Use appropriate labels to categorize issues:
 - Update Prisma schema documentation if needed
 
 **Creating Migrations:**
+
 ```bash
 # Make changes to schema.prisma
 pnpm exec prisma migrate dev --name descriptive-migration-name
@@ -574,6 +596,7 @@ pnpm exec prisma migrate deploy # Production
 ```
 
 **Best Practices:**
+
 - Always test migrations on a copy of production data
 - Never delete migrations (they're version history)
 - Document breaking changes in migration comments
@@ -585,6 +608,7 @@ pnpm exec prisma migrate deploy # Production
 - Test database operations and API endpoints
 
 **Running Tests:**
+
 ```bash
 # All tests
 pnpm test
@@ -600,6 +624,7 @@ pnpm test:coverage
 ```
 
 **Writing Tests:**
+
 - Unit tests: Test individual functions/components
 - Integration tests: Test API endpoints and loaders
 - E2E tests: Test user workflows (Cypress)
@@ -609,12 +634,14 @@ See [Testing Guide](./docs/testing.md) for detailed testing documentation.
 ### 3. **Component Development**
 
 **Creating New Components:**
+
 ```bash
 # Create component file
 touch app/components/YourComponent.tsx
 ```
 
 **Component Structure:**
+
 ```typescript
 // app/components/YourComponent.tsx
 import type { ComponentProps } from "react";
@@ -630,6 +657,7 @@ export function YourComponent({ ...props }: YourComponentProps) {
 ```
 
 **Best Practices:**
+
 - Use TypeScript for type safety
 - Follow existing component patterns
 - Use Tailwind CSS for styling
@@ -639,6 +667,7 @@ export function YourComponent({ ...props }: YourComponentProps) {
 ### 4. **API Development**
 
 **Creating API Routes:**
+
 ```typescript
 // app/routes/api.your-endpoint.tsx
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
@@ -656,6 +685,7 @@ async function action({ request }: ActionFunctionArgs) {
 ```
 
 **Best Practices:**
+
 - Always validate input
 - Use error handling utilities
 - Return consistent response formats
@@ -669,6 +699,7 @@ async function action({ request }: ActionFunctionArgs) {
 - Monitor memory usage and response times
 
 **Performance Tips:**
+
 - Use database indexes for frequently queried columns
 - Implement pagination for large datasets
 - Cache expensive operations
@@ -676,6 +707,7 @@ async function action({ request }: ActionFunctionArgs) {
 - Use `select` to limit database fields
 
 **Performance Testing:**
+
 ```bash
 # Run performance tests
 pnpm test:performance
@@ -688,6 +720,7 @@ pnpm test:performance
 - Follow security best practices for Nostr integration
 
 **Security Checklist:**
+
 - [ ] Input validation on all endpoints
 - [ ] Authentication checks on protected routes
 - [ ] No secrets in code (use environment variables)
@@ -700,6 +733,7 @@ See [Security Guide](./docs/security/security.md) for detailed security practice
 ### 7. **Debugging**
 
 **Debugging Tools:**
+
 ```bash
 # Node.js inspector
 node --inspect server.ts
@@ -716,6 +750,7 @@ redis-cli -u $REDIS_URL
 ```
 
 **Common Debugging Steps:**
+
 1. Check application logs
 2. Verify environment variables
 3. Test database connection

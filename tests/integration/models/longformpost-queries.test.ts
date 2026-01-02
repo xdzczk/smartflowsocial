@@ -17,18 +17,31 @@ vi.mock("~/lib/prisma.server", () => ({
 
 // Mock calculateLongFormStatus
 vi.mock("~/features/posts", () => ({
-  calculateLongFormStatus: vi.fn((params: { isPublished?: boolean; scheduledFor?: string | null; signedEvent?: { id?: string } | null }) => ({
-    status: params.isPublished ? "ACTIVE" : params.scheduledFor ? "SCHEDULED" : "DRAFT",
-    isScheduled: Boolean(params.scheduledFor && !params.isPublished),
-    isDraft: !params.isPublished && !params.scheduledFor,
-    publishedAt: params.isPublished ? new Date() : null,
-    nostrEventId: params.signedEvent?.id ?? null,
-    finalScheduledFor: params.scheduledFor ?? null,
-  })),
+  calculateLongFormStatus: vi.fn(
+    (params: {
+      isPublished?: boolean;
+      scheduledFor?: string | null;
+      signedEvent?: { id?: string } | null;
+    }) => ({
+      status: params.isPublished
+        ? "ACTIVE"
+        : params.scheduledFor
+          ? "SCHEDULED"
+          : "DRAFT",
+      isScheduled: Boolean(params.scheduledFor && !params.isPublished),
+      isDraft: !params.isPublished && !params.scheduledFor,
+      publishedAt: params.isPublished ? new Date() : null,
+      nostrEventId: params.signedEvent?.id ?? null,
+      finalScheduledFor: params.scheduledFor ?? null,
+    }),
+  ),
 }));
 
 import { prisma } from "~/lib/prisma.server";
-import { getLongFormPost, getLongFormPostByEventId } from "~/models/longformpost.server";
+import {
+  getLongFormPost,
+  getLongFormPostByEventId,
+} from "~/models/longformpost.server";
 
 import { TEST_USER_ID, TEST_LONGFORM_ID } from "../../utils/test-helpers";
 
@@ -45,7 +58,9 @@ describe("Longform Post Queries", () => {
         title: "Test Post",
         queueType: { id: "queue-1", name: "Test Queue" },
       };
-      (prisma.longFormPost.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
+      (
+        prisma.longFormPost.findFirst as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPost);
 
       const result = await getLongFormPost({
         id: TEST_LONGFORM_ID,
@@ -65,7 +80,9 @@ describe("Longform Post Queries", () => {
     });
 
     it("should return null if post not found", async () => {
-      (prisma.longFormPost.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (
+        prisma.longFormPost.findFirst as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(null);
 
       const result = await getLongFormPost({
         id: "nonexistent",
@@ -84,21 +101,29 @@ describe("Longform Post Queries", () => {
         nostrEventId: "event-123",
         title: "Test Post",
       };
-      (prisma.longFormPost.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
+      (
+        prisma.longFormPost.findFirst as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPost);
 
       const result = await getLongFormPostByEventId({
         nostrEventId: "event-123",
         userId: TEST_USER_ID,
       });
 
-      const callArgs = (prisma.longFormPost.findFirst as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as { where?: { nostrEventId?: string; userId?: string } } | undefined;
+      const callArgs = (
+        prisma.longFormPost.findFirst as ReturnType<typeof vi.fn>
+      ).mock.calls[0]?.[0] as
+        | { where?: { nostrEventId?: string; userId?: string } }
+        | undefined;
       expect(callArgs?.where?.nostrEventId).toBe("event-123");
       expect(callArgs?.where?.userId).toBe(TEST_USER_ID);
       expect(result).toEqual(mockPost);
     });
 
     it("should return null if post not found", async () => {
-      (prisma.longFormPost.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (
+        prisma.longFormPost.findFirst as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(null);
 
       const result = await getLongFormPostByEventId({
         nostrEventId: "nonexistent",
@@ -109,4 +134,3 @@ describe("Longform Post Queries", () => {
     });
   });
 });
-

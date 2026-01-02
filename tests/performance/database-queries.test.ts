@@ -1,6 +1,6 @@
 /**
  * Database Query Performance Tests
- * 
+ *
  * Tests to verify query optimization and prevent N+1 query problems.
  */
 
@@ -111,22 +111,22 @@ describe("Query Batching", () => {
  * 2. Seed data
  * 3. Actual query execution
  * 4. Performance measurement
- * 
+ *
  * Example integration test:
- * 
+ *
  * ```typescript
  * import { describe, it, expect, beforeAll, afterAll } from "vitest";
  * import { prisma } from "~/lib/prisma.server";
- * 
+ *
  * describe("Query Performance Integration", () => {
  *   beforeAll(async () => {
  *     // Set up test database
  *   });
- * 
+ *
  *   afterAll(async () => {
  *     // Clean up test database
  *   });
- * 
+ *
  *   it("should load posts with relations in single query", async () => {
  *     const start = Date.now();
  *     const posts = await prisma.post.findMany({
@@ -138,12 +138,12 @@ describe("Query Batching", () => {
  *       },
  *     });
  *     const duration = Date.now() - start;
- * 
+ *
  *     expect(posts.length).toBeGreaterThan(0);
  *     expect(duration).toBeLessThan(100); // Should be fast
  *     expect(posts[0].queueType).toBeDefined();
  *   });
- * 
+ *
  *   it("should prevent N+1 queries", async () => {
  *     // This would require query logging to verify
  *     // that only one query is executed
@@ -151,4 +151,3 @@ describe("Query Batching", () => {
  * });
  * ```
  */
-

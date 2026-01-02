@@ -20,12 +20,14 @@ Learn how to create and manage Nostr giveaways with fair winner selection and en
 ## What are Giveaways?
 
 **Giveaways allow you to:**
+
 - Track engagement on your posts
 - Select random winners fairly
 - Filter participants by engagement type
 - Post results automatically
 
 **Engagement types tracked:**
+
 - **Reposts** (Kind 6) - Sharing your content
 - **Likes** (Kind 7, 9735, 9734) - Positive reactions
 - **Comments** (Kind 1) - Replies to your posts
@@ -49,6 +51,7 @@ Learn how to create and manage Nostr giveaways with fair winner selection and en
    - Posted with relevant hashtags
 
 **Example post:**
+
 ```
 🎉 GIVEAWAY TIME! 🎉
 
@@ -75,6 +78,7 @@ Ends in 7 days.
 ## Step 3: Select a Post
 
 1. **View posts with engagement:**
+
    - Sorted by total engagement
    - Shows engagement statistics
    - Filter by queue or time period
@@ -92,12 +96,14 @@ Ends in 7 days.
 ## Step 4: Configure Giveaway Period
 
 1. **Select time period:**
+
    - **Last 7 days** (default)
    - **Last 14 days**
    - **Last 30 days**
    - **Custom range**
 
 2. **Filter by queue:**
+
    - **All queues** - All posts
    - **Specific queue** - Posts from one queue
    - **Unassigned** - Posts without queue
@@ -113,6 +119,7 @@ Ends in 7 days.
 **Filter options:**
 
 1. **By engagement type:**
+
    - **All** - All engagement types
    - **Reposts** - Only reposters
    - **Likes** - Only likers
@@ -120,6 +127,7 @@ Ends in 7 days.
    - **Zaps** - Only zappers
 
 2. **By time period:**
+
    - Last 7/14/30 days
    - Custom date range
 
@@ -135,6 +143,7 @@ Ends in 7 days.
 
 1. **Click "Select Winners"** or similar
 2. **System randomly selects:**
+
    - 3 random reposters
    - 3 random likers
    - 3 random commenters
@@ -145,6 +154,7 @@ Ends in 7 days.
    - Copy winner list
 
 **Selection process:**
+
 - Fair and random
 - No bias or favoritism
 - Transparent process
@@ -156,6 +166,7 @@ Ends in 7 days.
 
 1. **Click "Generate Message"** or similar
 2. **System generates post:**
+
    ```
    Thanks to everyone who shared, zapped, liked and commented on our memes lately 🫡
 
@@ -182,11 +193,13 @@ Ends in 7 days.
 **Edit generated message:**
 
 1. **Modify text:**
+
    - Add personal touches
    - Customize tone
    - Add additional content
 
 2. **Adjust format:**
+
    - Change structure
    - Add emojis
    - Modify hashtags
@@ -215,6 +228,7 @@ Ends in 7 days.
 4. **Schedule for later**
 
 **Best practice:**
+
 - Post results promptly
 - Thank all participants
 - Be transparent about winners
@@ -233,6 +247,7 @@ Ends in 7 days.
 4. **Save blacklist**
 
 **Use cases:**
+
 - Exclude bots
 - Exclude spam accounts
 - Exclude specific users
@@ -252,11 +267,13 @@ Ends in 7 days.
 ### Content Strategy
 
 1. **Create engaging content:**
+
    - Memes, announcements, updates
    - Clear and shareable
    - Relevant to your audience
 
 2. **Announce in advance:**
+
    - Post giveaway announcement
    - Include rules and timeline
    - Build anticipation
@@ -269,11 +286,13 @@ Ends in 7 days.
 ### Winner Selection
 
 1. **Be transparent:**
+
    - Use random selection
    - Show selection process
    - Post results publicly
 
 2. **Select fairly:**
+
    - No bias or favoritism
    - Random from all participants
    - Respect blacklist settings
@@ -286,11 +305,13 @@ Ends in 7 days.
 ### Prize Distribution
 
 **Common patterns:**
+
 - **Equal prizes** - Same amount for all winners
 - **Tiered prizes** - Different amounts by category
 - **Weighted selection** - More winners from higher engagement
 
 **Example:**
+
 - Reposters: 2,000 sats each (3 winners)
 - Likers: 1,000 sats each (3 winners)
 - Commenters: 1,000 sats each (3 winners)
@@ -304,6 +325,7 @@ Ends in 7 days.
 **Problem:** Post doesn't show engagement
 
 **Solutions:**
+
 - Check post on Nostr directly
 - Verify post was published
 - Wait for engagement to sync
@@ -314,6 +336,7 @@ Ends in 7 days.
 **Problem:** No winners selected
 
 **Solutions:**
+
 - Check engagement statistics
 - Verify participants exist
 - Review blacklist settings
@@ -324,6 +347,7 @@ Ends in 7 days.
 **Problem:** Message format incorrect
 
 **Solutions:**
+
 - Regenerate message
 - Check winner data
 - Verify npub format
@@ -337,7 +361,7 @@ Ends in 7 days.
 ✅ How to track engagement  
 ✅ How to select random winners  
 ✅ How to generate and post results  
-✅ Giveaway best practices  
+✅ Giveaway best practices
 
 ---
 
@@ -358,4 +382,3 @@ Ends in 7 days.
 ---
 
 **Next Tutorial:** [Multi-Account Setup](./multi-account-setup.md) → Manage multiple accounts
-

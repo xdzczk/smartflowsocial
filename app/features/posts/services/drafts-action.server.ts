@@ -3,17 +3,12 @@
  * Centralized action processing for drafts page
  */
 
-import {
-  deleteLongFormPost,
-} from "~/models/longformpost.server";
+import { deleteLongFormPost } from "~/models/longformpost.server";
 import { deletePost, updatePost } from "~/models/post.commands.server";
 
 import { resolveQueueTypeId } from "./queue-type-resolver.server";
 
-export async function handleDraftsAction(
-  formData: FormData,
-  userId: string,
-) {
+export async function handleDraftsAction(formData: FormData, userId: string) {
   const postId = formData.get("postId");
   const _action = formData.get("_action");
 
@@ -35,7 +30,9 @@ export async function handleDraftsAction(
 
   if (_action === "bulkDeleteLongForm") {
     const postIds = JSON.parse(formData.get("postIds") as string) as string[];
-    await Promise.all(postIds.map((id: string) => deleteLongFormPost({ id, userId })));
+    await Promise.all(
+      postIds.map((id: string) => deleteLongFormPost({ id, userId })),
+    );
     return { success: true };
   }
 
@@ -66,8 +63,23 @@ export async function handleDraftsAction(
             caption: captions[index] as string,
             queueTypeId: resolvedQueueTypeId,
             scheduledFor: scheduledFors[index] as string,
-            signedEvent: JSON.parse(signedEvents[index] as string) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][]; sig: string },
-            nostrEvent: JSON.parse(nostrEvents[index] as string) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][] },
+            signedEvent: JSON.parse(signedEvents[index] as string) as {
+              id: string;
+              pubkey: string;
+              created_at: number;
+              kind: number;
+              content: string;
+              tags: string[][];
+              sig: string;
+            },
+            nostrEvent: JSON.parse(nostrEvents[index] as string) as {
+              id: string;
+              pubkey: string;
+              created_at: number;
+              kind: number;
+              content: string;
+              tags: string[][];
+            },
             draft: false,
             isScheduled: true,
             isPosted: false,
@@ -80,5 +92,3 @@ export async function handleDraftsAction(
 
   return { error: "Invalid action" };
 }
-
-

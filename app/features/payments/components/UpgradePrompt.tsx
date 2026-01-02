@@ -9,16 +9,16 @@ interface UpgradePromptProps {
   featureName: string;
 }
 
-export default function UpgradePrompt({ 
-  isOpen, 
-  onClose, 
-  feature, 
-  featureName 
+export default function UpgradePrompt({
+  isOpen,
+  onClose,
+  feature,
+  featureName,
 }: UpgradePromptProps) {
   if (!isOpen) return null;
 
   const minPlan = getMinimumPlanForFeature(feature);
-  
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div className="mx-4 max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800">
@@ -43,21 +43,21 @@ export default function UpgradePrompt({
             <X className="h-5 w-5" />
           </button>
         </div>
-        
+
         <div className="mb-6">
           <p className="text-gray-700 dark:text-gray-300">
             <strong>{featureName}</strong> requires a{" "}
-            <span className="font-semibold text-blue-600 dark:text-blue-400 capitalize">
+            <span className="font-semibold capitalize text-blue-600 dark:text-blue-400">
               {minPlan}
             </span>{" "}
             plan or higher.
           </p>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-            Upgrade your plan to unlock this feature and many more advanced tools 
-            for your social media automation.
+            Upgrade your plan to unlock this feature and many more advanced
+            tools for your social media automation.
           </p>
         </div>
-        
+
         <div className="flex gap-3">
           <Link
             to="/plans"

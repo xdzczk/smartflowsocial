@@ -13,7 +13,6 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
 
-
 interface NWCSettingsProps {
   nwcEnabled: boolean;
   maskedNwcString?: string;
@@ -47,10 +46,7 @@ export function NWCSettings({
     // Always include nwcString if it has a value, regardless of showInput state
     if (nwcString.trim()) {
       formData.set("nwcString", nwcString.trim());
-
     }
-
-
 
     fetcher.submit(formData, { method: "post" });
   };
@@ -94,92 +90,102 @@ export function NWCSettings({
             />
           </div>
 
-          {enabled ? <div className="space-y-4">
-            {maskedNwcString && !showInput ? <div className="space-y-2">
-              <Label>Current NWC Connection</Label>
-              <div className="space-y-2 rounded-md bg-muted p-3">
-                <div className="flex items-center justify-between">
-                  <p className="break-all font-mono text-sm">
-                    {maskedNwcString}
-                  </p>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      void navigator.clipboard.writeText(maskedNwcString);
-                    }}
-                    className="ml-2 h-6 px-2 text-xs"
-                  >
-                    Copy
-                  </Button>
+          {enabled ? (
+            <div className="space-y-4">
+              {maskedNwcString && !showInput ? (
+                <div className="space-y-2">
+                  <Label>Current NWC Connection</Label>
+                  <div className="space-y-2 rounded-md bg-muted p-3">
+                    <div className="flex items-center justify-between">
+                      <p className="break-all font-mono text-sm">
+                        {maskedNwcString}
+                      </p>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          void navigator.clipboard.writeText(maskedNwcString);
+                        }}
+                        className="ml-2 h-6 px-2 text-xs"
+                      >
+                        Copy
+                      </Button>
+                    </div>
+                    {nwcLastUsed ? (
+                      <p className="text-xs text-muted-foreground">
+                        Last used: {new Date(nwcLastUsed).toLocaleString()}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowInput(true)}
+                      disabled={isSubmitting}
+                    >
+                      Update Connection
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleClear}
+                      disabled={isSubmitting}
+                    >
+                      Clear Connection
+                    </Button>
+                  </div>
                 </div>
-                {nwcLastUsed ? <p className="text-xs text-muted-foreground">
-                  Last used: {new Date(nwcLastUsed).toLocaleString()}
-                </p> : null}
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowInput(true)}
-                  disabled={isSubmitting}
-                >
-                  Update Connection
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleClear}
-                  disabled={isSubmitting}
-                >
-                  Clear Connection
-                </Button>
-              </div>
-            </div> : null}
+              ) : null}
 
-            {showInput ? <div className="space-y-2">
-              <Label htmlFor="nwc-string">NWC Connection String</Label>
-              <Input
-                id="nwc-string"
-                type="text"
-                placeholder="nostr+walletconnect://..."
-                value={nwcString}
-                onChange={(e) => setNwcString(e.target.value)}
-                disabled={isSubmitting}
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="off"
-                spellCheck="false"
-              />
-              <p className="text-xs text-muted-foreground">
-                Enter your Nostr Wallet Connect connection string. This will
-                be encrypted and stored securely.
-              </p>
-            </div> : null}
+              {showInput ? (
+                <div className="space-y-2">
+                  <Label htmlFor="nwc-string">NWC Connection String</Label>
+                  <Input
+                    id="nwc-string"
+                    type="text"
+                    placeholder="nostr+walletconnect://..."
+                    value={nwcString}
+                    onChange={(e) => setNwcString(e.target.value)}
+                    disabled={isSubmitting}
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck="false"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Enter your Nostr Wallet Connect connection string. This will
+                    be encrypted and stored securely.
+                  </p>
+                </div>
+              ) : null}
 
-            {!maskedNwcString && !showInput ? <div className="space-y-2">
-              <Label htmlFor="nwc-string">NWC Connection String</Label>
-              <Input
-                id="nwc-string"
-                type="text"
-                placeholder="nostr+walletconnect://..."
-                value={nwcString}
-                onChange={(e) => setNwcString(e.target.value)}
-                disabled={isSubmitting}
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="off"
-                spellCheck="false"
-              />
-              <p className="text-xs text-muted-foreground">
-                Enter your Nostr Wallet Connect connection string. This will
-                be encrypted and stored securely.
-              </p>
-            </div> : null}
-          </div> : null}
+              {!maskedNwcString && !showInput ? (
+                <div className="space-y-2">
+                  <Label htmlFor="nwc-string">NWC Connection String</Label>
+                  <Input
+                    id="nwc-string"
+                    type="text"
+                    placeholder="nostr+walletconnect://..."
+                    value={nwcString}
+                    onChange={(e) => setNwcString(e.target.value)}
+                    disabled={isSubmitting}
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck="false"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Enter your Nostr Wallet Connect connection string. This will
+                    be encrypted and stored securely.
+                  </p>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
 
           <Button
             type="submit"

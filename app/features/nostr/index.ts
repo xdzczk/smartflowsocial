@@ -1,11 +1,11 @@
 /**
  * Nostr Feature Public API
- * 
+ *
  * This module exports the public API for Nostr-related types and utilities.
- * 
+ *
  * Usage:
  *   import type { NostrEvent, NostrProfile } from "~/features/nostr";
- * 
+ *
  * Do NOT import from internal paths:
  *   import { ... } from "./types"  // ❌ Bad - use this module instead
  */
@@ -20,4 +20,3 @@ export type {
   ProfileData,
   RelaysSettingsProps,
 } from "./types";
-

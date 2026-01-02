@@ -5,7 +5,10 @@
 import { json } from "@remix-run/node";
 
 import { logWarning } from "~/lib/error-logger.server";
-import { updateUserSubscription, getUserSubscription } from "~/models/payment.server";
+import {
+  updateUserSubscription,
+  getUserSubscription,
+} from "~/models/payment.server";
 import {
   getUserBasicInfo,
   searchUsersByProfileName,
@@ -26,7 +29,12 @@ export async function handleAccountsAction(
   const planName = sub?.Plan?.name ?? "";
 
   // Check access for account management actions
-  const requiresPremium = ["search_accounts", "request_child", "cancel_child_request", "unlink_child"].includes(action);
+  const requiresPremium = [
+    "search_accounts",
+    "request_child",
+    "cancel_child_request",
+    "unlink_child",
+  ].includes(action);
   if (requiresPremium && !(planName === "Founder" || planName === "Premium")) {
     return json(
       {
@@ -121,7 +129,7 @@ export async function handleAccountsAction(
     if (!/^[0-9a-fA-F]{64}$/.test(childNpub)) {
       return json({ error: "Invalid child hex pubkey" }, { status: 400 });
     }
-    if ((!me?.npub) || me.isChild) {
+    if (!me?.npub || me.isChild) {
       return json(
         { error: "Only a parent account can unlink a child." },
         { status: 403 },
@@ -152,4 +160,3 @@ export async function handleAccountsAction(
 
   return null;
 }
-

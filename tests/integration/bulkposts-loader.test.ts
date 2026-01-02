@@ -1,6 +1,6 @@
 /**
  * Integration tests for bulk posts loader
- * 
+ *
  * Tests app/routes/dashboard.bulkposts.tsx loader
  * Tests getBulkPostsDashboardData function
  */
@@ -29,12 +29,13 @@ vi.mock("~/features/user", () => ({
 }));
 
 import { getBulkPostsDashboardData } from "~/features/posts/posts.server";
-import { getQueueTypes, getUserHashTags, getUserHashTagPresets } from "~/features/user";
-
 import {
-  TEST_USER_ID,
-  createMockQueueType,
-} from "../utils/test-helpers";
+  getQueueTypes,
+  getUserHashTags,
+  getUserHashTagPresets,
+} from "~/features/user";
+
+import { TEST_USER_ID, createMockQueueType } from "../utils/test-helpers";
 
 describe("Bulk Posts Loader", () => {
   beforeEach(() => {
@@ -53,8 +54,12 @@ describe("Bulk Posts Loader", () => {
     ];
 
     (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue(mockTags);
-    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueTypes);
-    (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue(mockHashTagPresets);
+    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockQueueTypes,
+    );
+    (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockHashTagPresets,
+    );
 
     const result = await getBulkPostsDashboardData(TEST_USER_ID);
 
@@ -63,13 +68,17 @@ describe("Bulk Posts Loader", () => {
     expect(getUserHashTagPresets).toHaveBeenCalledWith(TEST_USER_ID);
 
     expect(result.tags).toEqual(["#tag1", "#tag2", "#tag3"]);
-    expect(result.queueTypes).toEqual(mockQueueTypes.filter((qt) => qt.isEnabled !== false));
+    expect(result.queueTypes).toEqual(
+      mockQueueTypes.filter((qt) => qt.isEnabled !== false),
+    );
     expect(result.hashTagPresets).toEqual(mockHashTagPresets);
     expect(result.mode).toBe("preset"); // Has presets, so mode is "preset"
   });
 
   it("should set mode to 'manual' when no hash tag presets exist", async () => {
-    (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue("#tag1 #tag2");
+    (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue(
+      "#tag1 #tag2",
+    );
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
@@ -80,7 +89,9 @@ describe("Bulk Posts Loader", () => {
 
   it("should sort tags alphabetically", async () => {
     const unsortedTags = "#zebra #apple #banana";
-    (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue(unsortedTags);
+    (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue(
+      unsortedTags,
+    );
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
@@ -91,7 +102,9 @@ describe("Bulk Posts Loader", () => {
 
   it("should filter out empty tags", async () => {
     const tagsWithSpaces = "#tag1   #tag2  #tag3";
-    (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue(tagsWithSpaces);
+    (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue(
+      tagsWithSpaces,
+    );
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
@@ -114,12 +127,18 @@ describe("Bulk Posts Loader", () => {
   it("should filter out disabled queue types", async () => {
     const mockQueueTypes = [
       createMockQueueType({ id: "queue-1", name: "posts", isEnabled: true }),
-      createMockQueueType({ id: "queue-2", name: "disabled", isEnabled: false }),
+      createMockQueueType({
+        id: "queue-2",
+        name: "disabled",
+        isEnabled: false,
+      }),
       createMockQueueType({ id: "queue-3", name: "enabled", isEnabled: true }),
     ];
 
     (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue("");
-    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueTypes);
+    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockQueueTypes,
+    );
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
     const result = await getBulkPostsDashboardData(TEST_USER_ID);
@@ -128,4 +147,3 @@ describe("Bulk Posts Loader", () => {
     expect(result.queueTypes.every((qt) => qt.isEnabled !== false)).toBe(true);
   });
 });
-

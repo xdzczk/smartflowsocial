@@ -1,6 +1,6 @@
 /**
  * Integration tests for templates loader
- * 
+ *
  * Tests the loader in app/features/templates/services/templates-loader.server.ts
  */
 
@@ -53,7 +53,9 @@ describe("Templates Loader", () => {
         currentPage: 1,
       };
 
-      (getTemplates as ReturnType<typeof vi.fn>).mockResolvedValue(mockTemplates);
+      (getTemplates as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockTemplates,
+      );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (getAssets as ReturnType<typeof vi.fn>).mockResolvedValue(mockAssetsData);
 
@@ -78,9 +80,7 @@ describe("Templates Loader", () => {
     });
 
     it("should load templates data with search term", async () => {
-      const mockTemplates = [
-        { id: "template-1", name: "Template 1" },
-      ];
+      const mockTemplates = [{ id: "template-1", name: "Template 1" }];
 
       const mockUser = {
         id: TEST_USER_ID,
@@ -88,17 +88,19 @@ describe("Templates Loader", () => {
       };
 
       const mockAssetsData = {
-        assets: [
-          { id: "asset-1", name: "Searched Asset" },
-        ],
+        assets: [{ id: "asset-1", name: "Searched Asset" }],
         totalCount: 1,
         totalPages: 1,
         currentPage: 1,
       };
 
-      (getTemplates as ReturnType<typeof vi.fn>).mockResolvedValue(mockTemplates);
+      (getTemplates as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockTemplates,
+      );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
-      (searchAssets as ReturnType<typeof vi.fn>).mockResolvedValue(mockAssetsData);
+      (searchAssets as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockAssetsData,
+      );
 
       const _result = await loadTemplatesData(TEST_USER_ID, "search", 1, 100);
 
@@ -121,7 +123,9 @@ describe("Templates Loader", () => {
         currentPage: 2,
       };
 
-      (getTemplates as ReturnType<typeof vi.fn>).mockResolvedValue(mockTemplates);
+      (getTemplates as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockTemplates,
+      );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (getAssets as ReturnType<typeof vi.fn>).mockResolvedValue(mockAssetsData);
 
@@ -147,7 +151,9 @@ describe("Templates Loader", () => {
         currentPage: 1,
       };
 
-      (getTemplates as ReturnType<typeof vi.fn>).mockResolvedValue(mockTemplates);
+      (getTemplates as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockTemplates,
+      );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (getAssets as ReturnType<typeof vi.fn>).mockResolvedValue(mockAssetsData);
 
@@ -182,9 +188,7 @@ describe("Templates Loader", () => {
     });
 
     it("should handle empty assets", async () => {
-      const mockTemplates = [
-        { id: "template-1", name: "Template 1" },
-      ];
+      const mockTemplates = [{ id: "template-1", name: "Template 1" }];
       const mockUser = { id: TEST_USER_ID };
       const mockAssetsData = {
         assets: [],
@@ -193,7 +197,9 @@ describe("Templates Loader", () => {
         currentPage: 1,
       };
 
-      (getTemplates as ReturnType<typeof vi.fn>).mockResolvedValue(mockTemplates);
+      (getTemplates as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockTemplates,
+      );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (getAssets as ReturnType<typeof vi.fn>).mockResolvedValue(mockAssetsData);
 
@@ -213,7 +219,9 @@ describe("Templates Loader", () => {
         currentPage: 1,
       };
 
-      (getTemplates as ReturnType<typeof vi.fn>).mockResolvedValue(mockTemplates);
+      (getTemplates as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockTemplates,
+      );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (getAssets as ReturnType<typeof vi.fn>).mockResolvedValue(mockAssetsData);
 
@@ -224,10 +232,3 @@ describe("Templates Loader", () => {
     });
   });
 });
-
-
-
-
-
-
-

@@ -21,6 +21,7 @@ Learn how to build custom integrations with SmartFlowSocial, including webhooks,
 ## Overview
 
 **Custom integrations allow you to:**
+
 - Connect SmartFlowSocial to external services
 - Automate posting workflows
 - Build custom applications
@@ -48,16 +49,16 @@ Learn how to build custom integrations with SmartFlowSocial, including webhooks,
 ```typescript
 // Get session cookie from browser
 const sessionCookie = document.cookie
-  .split('; ')
-  .find(row => row.startsWith('session='))
-  ?.split('=')[1];
+  .split("; ")
+  .find((row) => row.startsWith("session="))
+  ?.split("=")[1];
 
 // Use in API requests
-const response = await fetch('/api/endpoint', {
+const response = await fetch("/api/endpoint", {
   headers: {
-    'Cookie': `session=${sessionCookie}`,
+    Cookie: `session=${sessionCookie}`,
   },
-  credentials: 'include',
+  credentials: "include",
 });
 ```
 
@@ -77,13 +78,13 @@ const response = await fetch('/api/endpoint', {
 ### Implementation
 
 ```typescript
-import { SmartFlowSocialClient } from './client';
-import Parser from 'rss-parser';
+import { SmartFlowSocialClient } from "./client";
+import Parser from "rss-parser";
 
 const parser = new Parser();
 const client = new SmartFlowSocialClient(
   process.env.SMARTFLOW_URL!,
-  process.env.SESSION_COOKIE!
+  process.env.SESSION_COOKIE!,
 );
 
 async function rssToPosts(feedUrl: string) {
@@ -100,23 +101,24 @@ async function rssToPosts(feedUrl: string) {
       kind: 1,
       content,
       created_at: Math.floor(Date.now() / 1000),
-      tags: [['r', item.link]],
+      tags: [["r", item.link]],
     };
 
     // Sign event (requires Nostr extension or private key)
     const signedEvent = await signEvent(event);
 
     // Publish via API
-    await client.publishEvent(signedEvent, [
-      'wss://relay.example.com'
-    ]);
+    await client.publishEvent(signedEvent, ["wss://relay.example.com"]);
   }
 }
 
 // Run on schedule
-setInterval(() => {
-  rssToPosts('https://example.com/feed.xml');
-}, 60 * 60 * 1000); // Every hour
+setInterval(
+  () => {
+    rssToPosts("https://example.com/feed.xml");
+  },
+  60 * 60 * 1000,
+); // Every hour
 ```
 
 ---
@@ -135,8 +137,8 @@ setInterval(() => {
 ### Implementation
 
 ```typescript
-import { SmartFlowSocialClient } from './client';
-import TwitterApi from 'twitter-api-v2';
+import { SmartFlowSocialClient } from "./client";
+import TwitterApi from "twitter-api-v2";
 
 const twitterClient = new TwitterApi({
   appKey: process.env.TWITTER_API_KEY!,
@@ -147,14 +149,14 @@ const twitterClient = new TwitterApi({
 
 const smartflowClient = new SmartFlowSocialClient(
   process.env.SMARTFLOW_URL!,
-  process.env.SESSION_COOKIE!
+  process.env.SESSION_COOKIE!,
 );
 
 async function syncTwitterToNostr() {
   // Get recent tweets
   const tweets = await twitterClient.v2.userTimeline(
     process.env.TWITTER_USER_ID!,
-    { max_results: 10 }
+    { max_results: 10 },
   );
 
   for (const tweet of tweets.data) {
@@ -163,13 +165,13 @@ async function syncTwitterToNostr() {
 
     // Convert tweet to post
     const content = tweet.text;
-    
+
     // Add media if present
     let postContent = content;
     if (tweet.attachments?.media_keys) {
       // Fetch media URLs and add to content
       const mediaUrls = await getMediaUrls(tweet.attachments.media_keys);
-      postContent += '\n\n' + mediaUrls.join('\n');
+      postContent += "\n\n" + mediaUrls.join("\n");
     }
 
     // Create and publish Nostr event
@@ -177,12 +179,12 @@ async function syncTwitterToNostr() {
       kind: 1,
       content: postContent,
       created_at: Math.floor(new Date(tweet.created_at).getTime() / 1000),
-      tags: [['twitter', tweet.id]],
+      tags: [["twitter", tweet.id]],
     };
 
     const signedEvent = await signEvent(event);
     await smartflowClient.publishEvent(signedEvent, [
-      'wss://relay.example.com'
+      "wss://relay.example.com",
     ]);
 
     // Mark as posted
@@ -207,60 +209,58 @@ async function syncTwitterToNostr() {
 ### Implementation
 
 ```typescript
-import express from 'express';
-import { SmartFlowSocialClient } from './client';
+import express from "express";
+import { SmartFlowSocialClient } from "./client";
 
 const app = express();
 app.use(express.json());
 
 const client = new SmartFlowSocialClient(
   process.env.SMARTFLOW_URL!,
-  process.env.SESSION_COOKIE!
+  process.env.SESSION_COOKIE!,
 );
 
 // Webhook endpoint
-app.post('/webhook/smartflow', async (req, res) => {
+app.post("/webhook/smartflow", async (req, res) => {
   try {
     const { event, data } = req.body;
 
     // Handle different event types
     switch (event) {
-      case 'post.created':
+      case "post.created":
         await handlePostCreated(data);
         break;
-      case 'post.updated':
+      case "post.updated":
         await handlePostUpdated(data);
         break;
       default:
-        console.log('Unknown event:', event);
+        console.log("Unknown event:", event);
     }
 
     res.status(200).json({ success: true });
   } catch (error) {
-    console.error('Webhook error:', error);
-    res.status(500).json({ error: 'Webhook processing failed' });
+    console.error("Webhook error:", error);
+    res.status(500).json({ error: "Webhook processing failed" });
   }
 });
 
 async function handlePostCreated(data: any) {
   // Convert webhook data to Nostr post
   const content = `${data.title}\n\n${data.content}`;
-  
+
   const event = {
     kind: 1,
     content,
     created_at: Math.floor(Date.now() / 1000),
-    tags: [['source', 'webhook']],
+    tags: [["source", "webhook"]],
   };
 
   const signedEvent = await signEvent(event);
-  await client.publishEvent(signedEvent, [
-    'wss://relay.example.com'
-  ]);
+  await client.publishEvent(signedEvent, ["wss://relay.example.com"]);
 }
 
 app.listen(3000, () => {
-  console.log('Webhook server running on port 3000');
+  console.log("Webhook server running on port 3000");
 });
 ```
 
@@ -280,8 +280,8 @@ app.listen(3000, () => {
 ### Implementation
 
 ```typescript
-import { Client, GatewayIntentBits } from 'discord.js';
-import { SmartFlowSocialClient } from './client';
+import { Client, GatewayIntentBits } from "discord.js";
+import { SmartFlowSocialClient } from "./client";
 
 const discordClient = new Client({
   intents: [
@@ -293,17 +293,17 @@ const discordClient = new Client({
 
 const smartflowClient = new SmartFlowSocialClient(
   process.env.SMARTFLOW_URL!,
-  process.env.SESSION_COOKIE!
+  process.env.SESSION_COOKIE!,
 );
 
-discordClient.on('messageCreate', async (message) => {
+discordClient.on("messageCreate", async (message) => {
   // Filter messages
   if (message.author.bot) return;
-  if (!message.content.startsWith('!post')) return;
+  if (!message.content.startsWith("!post")) return;
 
   // Extract content
   const content = message.content.slice(5).trim();
-  
+
   // Get attachments
   let postContent = content;
   if (message.attachments.size > 0) {
@@ -318,15 +318,13 @@ discordClient.on('messageCreate', async (message) => {
     kind: 1,
     content: postContent,
     created_at: Math.floor(Date.now() / 1000),
-    tags: [['source', 'discord']],
+    tags: [["source", "discord"]],
   };
 
   const signedEvent = await signEvent(event);
-  await smartflowClient.publishEvent(signedEvent, [
-    'wss://relay.example.com'
-  ]);
+  await smartflowClient.publishEvent(signedEvent, ["wss://relay.example.com"]);
 
-  await message.reply('Posted to Nostr!');
+  await message.reply("Posted to Nostr!");
 });
 
 discordClient.login(process.env.DISCORD_TOKEN!);
@@ -349,7 +347,7 @@ discordClient.login(process.env.DISCORD_TOKEN!);
 
 ```typescript
 // Zapier webhook receives data
-app.post('/zapier-webhook', express.json(), async (req, res) => {
+app.post("/zapier-webhook", express.json(), async (req, res) => {
   const { value1, value2, value3 } = req.body;
 
   // value1 = content
@@ -358,11 +356,11 @@ app.post('/zapier-webhook', express.json(), async (req, res) => {
 
   const client = new SmartFlowSocialClient(
     process.env.SMARTFLOW_URL!,
-    process.env.SESSION_COOKIE!
+    process.env.SESSION_COOKIE!,
   );
 
   // Build post content
-  let content = value1 || '';
+  let content = value1 || "";
   if (value2) content += `\n\n${value2}`;
   if (value3) content += `\n\n${value3}`;
 
@@ -375,9 +373,7 @@ app.post('/zapier-webhook', express.json(), async (req, res) => {
   };
 
   const signedEvent = await signEvent(event);
-  await client.publishEvent(signedEvent, [
-    'wss://relay.example.com'
-  ]);
+  await client.publishEvent(signedEvent, ["wss://relay.example.com"]);
 
   res.json({ success: true });
 });
@@ -399,19 +395,19 @@ app.post('/zapier-webhook', express.json(), async (req, res) => {
 ### Implementation
 
 ```typescript
-import { SmartFlowSocialClient } from './client';
-import { Queue } from 'bullmq';
+import { SmartFlowSocialClient } from "./client";
+import { Queue } from "bullmq";
 
 const client = new SmartFlowSocialClient(
   process.env.SMARTFLOW_URL!,
-  process.env.SESSION_COOKIE!
+  process.env.SESSION_COOKIE!,
 );
 
-const contentQueue = new Queue('content-processing');
+const contentQueue = new Queue("content-processing");
 
 // Add jobs to queue
 async function addContentToQueue(source: string, content: any) {
-  await contentQueue.add('process-content', {
+  await contentQueue.add("process-content", {
     source,
     content,
     timestamp: Date.now(),
@@ -419,38 +415,38 @@ async function addContentToQueue(source: string, content: any) {
 }
 
 // Process queue jobs
-contentQueue.process('process-content', async (job) => {
+contentQueue.process("process-content", async (job) => {
   const { source, content } = job.data;
 
   // Process based on source
-  let postContent = '';
+  let postContent = "";
   switch (source) {
-    case 'rss':
+    case "rss":
       postContent = formatRSSItem(content);
       break;
-    case 'api':
+    case "api":
       postContent = formatAPIResponse(content);
       break;
-    case 'file':
+    case "file":
       postContent = formatFileContent(content);
       break;
   }
 
   // Get queue schedule time
-  const schedule = await client.getQueueSchedule('Content Queue');
-  
+  const schedule = await client.getQueueSchedule("Content Queue");
+
   // Create and schedule post
   const event = {
     kind: 1,
     content: postContent,
-    created_at: Math.floor(new Date(schedule.nextScheduleTime).getTime() / 1000),
-    tags: [['source', source]],
+    created_at: Math.floor(
+      new Date(schedule.nextScheduleTime).getTime() / 1000,
+    ),
+    tags: [["source", source]],
   };
 
   const signedEvent = await signEvent(event);
-  await client.publishEvent(signedEvent, [
-    'wss://relay.example.com'
-  ]);
+  await client.publishEvent(signedEvent, ["wss://relay.example.com"]);
 });
 ```
 
@@ -469,8 +465,8 @@ async function safeIntegrationCall(fn: () => Promise<any>, retries = 3) {
       return await fn();
     } catch (error) {
       if (i === retries - 1) throw error;
-      await new Promise(resolve => 
-        setTimeout(resolve, 1000 * Math.pow(2, i))
+      await new Promise((resolve) =>
+        setTimeout(resolve, 1000 * Math.pow(2, i)),
       );
     }
   }
@@ -482,13 +478,11 @@ async function safeIntegrationCall(fn: () => Promise<any>, retries = 3) {
 **Respect rate limits:**
 
 ```typescript
-import pLimit from 'p-limit';
+import pLimit from "p-limit";
 
 const limit = pLimit(5); // Max 5 concurrent requests
 
-const requests = items.map(item => 
-  limit(() => processItem(item))
-);
+const requests = items.map((item) => limit(() => processItem(item)));
 
 await Promise.all(requests);
 ```
@@ -498,17 +492,15 @@ await Promise.all(requests);
 **Comprehensive logging:**
 
 ```typescript
-import winston from 'winston';
+import winston from "winston";
 
 const logger = winston.createLogger({
-  level: 'info',
+  level: "info",
   format: winston.format.json(),
-  transports: [
-    new winston.transports.File({ filename: 'integration.log' }),
-  ],
+  transports: [new winston.transports.File({ filename: "integration.log" })],
 });
 
-logger.info('Integration started', { source, itemCount });
+logger.info("Integration started", { source, itemCount });
 ```
 
 ---
@@ -518,6 +510,7 @@ logger.info('Integration started', { source, itemCount });
 ### API Keys
 
 **Secure storage:**
+
 - Use environment variables
 - Never commit keys
 - Rotate regularly
@@ -526,6 +519,7 @@ logger.info('Integration started', { source, itemCount });
 ### Authentication
 
 **Session management:**
+
 - Secure session cookies
 - Implement token refresh
 - Handle expiration
@@ -534,6 +528,7 @@ logger.info('Integration started', { source, itemCount });
 ### Data Validation
 
 **Input validation:**
+
 - Validate all inputs
 - Sanitize content
 - Check file types
@@ -548,6 +543,7 @@ logger.info('Integration started', { source, itemCount });
 **Problem:** API calls failing
 
 **Solutions:**
+
 - Check authentication
 - Verify endpoints
 - Review error messages
@@ -559,6 +555,7 @@ logger.info('Integration started', { source, itemCount });
 **Problem:** Integration not working
 
 **Solutions:**
+
 - Check logs
 - Verify configuration
 - Test endpoints individually
@@ -573,7 +570,7 @@ logger.info('Integration started', { source, itemCount });
 ✅ How to use the API for automation  
 ✅ How to handle webhooks  
 ✅ How to integrate with third-party services  
-✅ Security best practices  
+✅ Security best practices
 
 ---
 
@@ -594,4 +591,3 @@ logger.info('Integration started', { source, itemCount });
 ---
 
 **Next Tutorial:** [API Usage](./api-usage.md) → Deep dive into the API
-

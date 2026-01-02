@@ -20,6 +20,7 @@ Complete guide to creating, formatting, and publishing long-form articles using 
 ## What are Long-form Articles?
 
 **Long-form articles are:**
+
 - Full-length articles (NIP-23, Kind 30023)
 - Rich text formatted content
 - Structured with headers, lists, images
@@ -27,6 +28,7 @@ Complete guide to creating, formatting, and publishing long-form articles using 
 - Different from regular posts (Kind 1)
 
 **Benefits:**
+
 - Detailed content sharing
 - Better formatting options
 - Professional presentation
@@ -53,6 +55,7 @@ Complete guide to creating, formatting, and publishing long-form articles using 
    ```
 
 **Title best practices:**
+
 - Clear and descriptive
 - SEO-friendly
 - Engaging and compelling
@@ -69,6 +72,7 @@ Complete guide to creating, formatting, and publishing long-form articles using 
    ```
 
 **Summary best practices:**
+
 - 1-2 sentences
 - Compelling preview
 - Include key points
@@ -89,6 +93,7 @@ Complete guide to creating, formatting, and publishing long-form articles using 
 **Editor features:**
 
 **Text formatting:**
+
 - **Headers:** H1-H6 for structure
 - **Bold/Italic:** Text emphasis
 - **Lists:** Ordered and unordered
@@ -97,11 +102,13 @@ Complete guide to creating, formatting, and publishing long-form articles using 
 - **Links:** Hyperlinks
 
 **Media:**
+
 - **Images:** Upload and embed
 - **Videos:** Embed video URLs
 - **Cover Image:** Article thumbnail
 
 **Advanced:**
+
 - **Markdown Support:** Can paste markdown
 - **Export:** Export as markdown
 - **Import:** Import from markdown
@@ -120,6 +127,7 @@ Complete guide to creating, formatting, and publishing long-form articles using 
 4. **H4-H6:** Further nesting
 
 **Example structure:**
+
 ```
 # Main Title (H1)
 
@@ -138,11 +146,13 @@ Complete guide to creating, formatting, and publishing long-form articles using 
 ### Using Lists
 
 **Ordered lists:**
+
 - Step-by-step instructions
 - Numbered sequences
 - Sequential processes
 
 **Unordered lists:**
+
 - Feature lists
 - Bullet points
 - Non-sequential items
@@ -150,6 +160,7 @@ Complete guide to creating, formatting, and publishing long-form articles using 
 ### Using Code Blocks
 
 **For technical content:**
+
 - Code examples
 - Configuration snippets
 - Command examples
@@ -169,6 +180,7 @@ Complete guide to creating, formatting, and publishing long-form articles using 
    - Used in article cards
 
 **Cover image best practices:**
+
 - High quality (1080x1080px or larger)
 - Relevant to content
 - Engaging and eye-catching
@@ -185,6 +197,7 @@ Complete guide to creating, formatting, and publishing long-form articles using 
    - Used for categorization
 
 **Tag best practices:**
+
 - Use relevant tags
 - Include 3-5 tags
 - Mix broad and specific
@@ -219,12 +232,13 @@ Complete guide to creating, formatting, and publishing long-form articles using 
 
 1. **Click "Preview"** button
 2. **Review article:**
+
    - Check formatting
    - Verify images
    - Review structure
    - Check spelling
 
-2. **Make adjustments:**
+3. **Make adjustments:**
    - Edit content
    - Fix formatting
    - Update images
@@ -262,6 +276,7 @@ Complete guide to creating, formatting, and publishing long-form articles using 
 ### Keyboard Shortcuts
 
 **Common shortcuts:**
+
 - **Ctrl/Cmd + B:** Bold
 - **Ctrl/Cmd + I:** Italic
 - **Ctrl/Cmd + K:** Insert link
@@ -271,11 +286,13 @@ Complete guide to creating, formatting, and publishing long-form articles using 
 ### Markdown Support
 
 **Paste markdown:**
+
 - Editor converts markdown
 - Preserves formatting
 - Supports most markdown syntax
 
 **Export markdown:**
+
 - Export article as markdown
 - Use in other editors
 - Backup content
@@ -283,12 +300,14 @@ Complete guide to creating, formatting, and publishing long-form articles using 
 ### Image Management
 
 **Upload images:**
+
 - Click image button
 - Upload from computer
 - Or select from assets
 - Images embedded in content
 
 **Image best practices:**
+
 - Optimize before upload
 - Use appropriate sizes
 - Include alt text
@@ -301,11 +320,13 @@ Complete guide to creating, formatting, and publishing long-form articles using 
 ### Structure
 
 1. **Clear hierarchy:**
+
    - Use headers properly
    - Logical flow
    - Easy navigation
 
 2. **Readable length:**
+
    - Optimal: 1000-2000 words
    - Can be longer if needed
    - Break into sections
@@ -319,12 +340,14 @@ Complete guide to creating, formatting, and publishing long-form articles using 
 ### Content Quality
 
 1. **Valuable content:**
+
    - Provide value
    - Be informative
    - Answer questions
    - Share knowledge
 
 2. **Engaging writing:**
+
    - Clear and concise
    - Engaging tone
    - Good flow
@@ -339,6 +362,7 @@ Complete guide to creating, formatting, and publishing long-form articles using 
 ### Formatting
 
 1. **Consistent style:**
+
    - Use headers consistently
    - Format lists properly
    - Style code blocks
@@ -357,12 +381,14 @@ Complete guide to creating, formatting, and publishing long-form articles using 
 ### Event Structure
 
 **Kind 30023:**
+
 - Article event type
 - Includes title, summary, image
 - Rich content support
 - Article-specific tags
 
 **Event Tags:**
+
 - `["d", identifier]` - Article identifier
 - `["title", title]` - Article title
 - `["summary", summary]` - Article summary
@@ -373,6 +399,7 @@ Complete guide to creating, formatting, and publishing long-form articles using 
 ### Article Identifier
 
 **Generated from:**
+
 - Title
 - Author pubkey
 - Creates unique identifier
@@ -405,6 +432,7 @@ Complete guide to creating, formatting, and publishing long-form articles using 
 **Problem:** Editor doesn't appear
 
 **Solutions:**
+
 - Refresh page
 - Check browser compatibility
 - Clear browser cache
@@ -415,6 +443,7 @@ Complete guide to creating, formatting, and publishing long-form articles using 
 **Problem:** Formatting disappears
 
 **Solutions:**
+
 - Check editor mode
 - Verify markdown support
 - Re-apply formatting
@@ -425,6 +454,7 @@ Complete guide to creating, formatting, and publishing long-form articles using 
 **Problem:** Images won't upload
 
 **Solutions:**
+
 - Check file size
 - Verify format
 - Check upload provider
@@ -435,6 +465,7 @@ Complete guide to creating, formatting, and publishing long-form articles using 
 **Problem:** Article won't publish
 
 **Solutions:**
+
 - Check extension is connected
 - Verify event signing
 - Check network connection
@@ -449,7 +480,7 @@ Complete guide to creating, formatting, and publishing long-form articles using 
 ✅ How to structure articles  
 ✅ How to add cover images and tags  
 ✅ How to publish and schedule articles  
-✅ NIP-23 technical details  
+✅ NIP-23 technical details
 
 ---
 
@@ -470,4 +501,3 @@ Complete guide to creating, formatting, and publishing long-form articles using 
 ---
 
 **Next Tutorial:** [Custom Integrations](../advanced/custom-integrations.md) → Build integrations
-

@@ -6,9 +6,11 @@ import { prisma } from "~/lib/prisma.server";
 /**
  * Gets basic user info (npub, isChild, parentNpub) by userId
  */
-export async function getUserBasicInfo(
-  userId: string,
-): Promise<{ npub: string | null; isChild: boolean; parentNpub: string | null } | null> {
+export async function getUserBasicInfo(userId: string): Promise<{
+  npub: string | null;
+  isChild: boolean;
+  parentNpub: string | null;
+} | null> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { npub: true, isChild: true, parentNpub: true },
@@ -52,9 +54,12 @@ export async function getUserByNpubWithProfile(
   if (!user) return null;
   return {
     npub: user.npub,
-    nostrProfile: user.nostrProfile && typeof user.nostrProfile === "object" && !Array.isArray(user.nostrProfile)
-      ? (user.nostrProfile as ProfileData)
-      : null,
+    nostrProfile:
+      user.nostrProfile &&
+      typeof user.nostrProfile === "object" &&
+      !Array.isArray(user.nostrProfile)
+        ? (user.nostrProfile as ProfileData)
+        : null,
   };
 }
 
@@ -103,4 +108,3 @@ export async function disableUserAccount(userId: string): Promise<User> {
     data: { isEnabled: false },
   });
 }
-

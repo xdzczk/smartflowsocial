@@ -1,9 +1,9 @@
 /**
  * Integration tests for settings action handlers
- * 
+ *
  * Tests the action handler logic directly, without requiring a browser.
  * For UI interaction tests, see tests/e2e/settings/*.cy.ts
- * 
+ *
  * Note: This file tests the most critical settings actions.
  * The full settings-actions.server.ts has many actions - we test the key ones.
  */
@@ -48,18 +48,22 @@ import { createFormData, TEST_USER_ID } from "../utils/test-helpers";
 describe("Settings Action Handler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Default mocks
     (getUserSubscription as ReturnType<typeof vi.fn>).mockResolvedValue({
       Plan: { price: 1000 }, // Paid plan
     });
-    (hashTagPresetExistsForUser as ReturnType<typeof vi.fn>).mockResolvedValue(true);
+    (hashTagPresetExistsForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
+      true,
+    );
   });
 
   describe("General Settings Actions", () => {
     describe("Update Timezone", () => {
       it("should update user timezone", async () => {
-        (updateUserTimezone as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+        (updateUserTimezone as ReturnType<typeof vi.fn>).mockResolvedValue(
+          undefined,
+        );
 
         const formData = createFormData({
           _action: "update_timezone",
@@ -68,7 +72,10 @@ describe("Settings Action Handler", () => {
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
         const dataRaw: unknown = await result.json();
-        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as { success?: unknown; error?: unknown })
+            : {};
 
         expect(updateUserTimezone).toHaveBeenCalledWith(
           TEST_USER_ID,
@@ -80,7 +87,9 @@ describe("Settings Action Handler", () => {
 
     describe("Update Relays", () => {
       it("should update user relays", async () => {
-        (updateUserRelays as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+        (updateUserRelays as ReturnType<typeof vi.fn>).mockResolvedValue(
+          undefined,
+        );
 
         const formData = createFormData({
           _action: "update_relays",
@@ -89,7 +98,10 @@ describe("Settings Action Handler", () => {
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
         const dataRaw: unknown = await result.json();
-        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as { success?: unknown; error?: unknown })
+            : {};
 
         expect(updateUserRelays).toHaveBeenCalledWith(TEST_USER_ID, [
           "wss://relay1.com",
@@ -100,7 +112,9 @@ describe("Settings Action Handler", () => {
       });
 
       it("should filter out empty relay lines", async () => {
-        (updateUserRelays as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+        (updateUserRelays as ReturnType<typeof vi.fn>).mockResolvedValue(
+          undefined,
+        );
 
         const formData = createFormData({
           _action: "update_relays",
@@ -109,7 +123,10 @@ describe("Settings Action Handler", () => {
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
         const dataRaw: unknown = await result.json();
-        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as { success?: unknown; error?: unknown })
+            : {};
 
         expect(updateUserRelays).toHaveBeenCalledWith(TEST_USER_ID, [
           "wss://relay1.com",
@@ -122,7 +139,9 @@ describe("Settings Action Handler", () => {
 
     describe("Update Giveaway Blacklist", () => {
       it("should update giveaway blacklist with valid npubs", async () => {
-        (updateGiveawayBlacklist as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+        (updateGiveawayBlacklist as ReturnType<typeof vi.fn>).mockResolvedValue(
+          undefined,
+        );
 
         const formData = createFormData({
           _action: "update_blacklist",
@@ -131,7 +150,10 @@ describe("Settings Action Handler", () => {
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
         const dataRaw: unknown = await result.json();
-        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as { success?: unknown; error?: unknown })
+            : {};
 
         expect(updateGiveawayBlacklist).toHaveBeenCalledWith(TEST_USER_ID, [
           "npub1abc123",
@@ -149,7 +171,10 @@ describe("Settings Action Handler", () => {
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
         const dataRaw: unknown = await result.json();
-        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as { success?: unknown; error?: unknown })
+            : {};
 
         expect(updateGiveawayBlacklist).not.toHaveBeenCalled();
         expect(result.status).toBe(400);
@@ -161,7 +186,9 @@ describe("Settings Action Handler", () => {
 
     describe("Update Schedule Intervals", () => {
       it("should update schedule intervals with valid numbers", async () => {
-        (updateScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+        (updateScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(
+          undefined,
+        );
 
         const formData = createFormData({
           _action: "update_schedule_intervals",
@@ -170,7 +197,10 @@ describe("Settings Action Handler", () => {
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
         const dataRaw: unknown = await result.json();
-        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as { success?: unknown; error?: unknown })
+            : {};
 
         expect(updateScheduleInterval).toHaveBeenCalledWith(TEST_USER_ID, [
           "2",
@@ -189,7 +219,10 @@ describe("Settings Action Handler", () => {
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
         const dataRaw: unknown = await result.json();
-        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as { success?: unknown; error?: unknown })
+            : {};
 
         expect(updateScheduleInterval).not.toHaveBeenCalled();
         expect(result.status).toBe(400);
@@ -203,7 +236,9 @@ describe("Settings Action Handler", () => {
   describe("Hashtag Preset Actions", () => {
     describe("Create Hashtag Preset", () => {
       it("should create a hashtag preset", async () => {
-        (createHashTagPreset as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+        (createHashTagPreset as ReturnType<typeof vi.fn>).mockResolvedValue(
+          undefined,
+        );
 
         const formData = createFormData({
           _action: "create_hashtag_preset",
@@ -214,7 +249,10 @@ describe("Settings Action Handler", () => {
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
         const dataRaw: unknown = await result.json();
-        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as { success?: unknown; error?: unknown })
+            : {};
 
         expect(createHashTagPreset).toHaveBeenCalledWith(
           TEST_USER_ID,
@@ -234,7 +272,10 @@ describe("Settings Action Handler", () => {
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
         const dataRaw: unknown = await result.json();
-        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as { success?: unknown; error?: unknown })
+            : {};
 
         expect(createHashTagPreset).not.toHaveBeenCalled();
         expect(result.status).toBe(400);
@@ -244,7 +285,9 @@ describe("Settings Action Handler", () => {
       });
 
       it("should allow description to be optional", async () => {
-        (createHashTagPreset as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+        (createHashTagPreset as ReturnType<typeof vi.fn>).mockResolvedValue(
+          undefined,
+        );
 
         const formData = createFormData({
           _action: "create_hashtag_preset",
@@ -254,7 +297,10 @@ describe("Settings Action Handler", () => {
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
         const dataRaw: unknown = await result.json();
-        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as { success?: unknown; error?: unknown })
+            : {};
 
         expect(createHashTagPreset).toHaveBeenCalledWith(
           TEST_USER_ID,
@@ -268,7 +314,9 @@ describe("Settings Action Handler", () => {
 
     describe("Update Hashtag Preset", () => {
       it("should update a hashtag preset", async () => {
-        (updateHashTagPreset as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+        (updateHashTagPreset as ReturnType<typeof vi.fn>).mockResolvedValue(
+          undefined,
+        );
 
         const formData = createFormData({
           _action: "update_hashtag_preset",
@@ -280,7 +328,10 @@ describe("Settings Action Handler", () => {
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
         const dataRaw: unknown = await result.json();
-        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as { success?: unknown; error?: unknown })
+            : {};
 
         expect(updateHashTagPreset).toHaveBeenCalledWith(
           TEST_USER_ID,
@@ -302,7 +353,10 @@ describe("Settings Action Handler", () => {
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
         const dataRaw: unknown = await result.json();
-        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as { success?: unknown; error?: unknown })
+            : {};
 
         expect(updateHashTagPreset).not.toHaveBeenCalled();
         expect(result.status).toBe(400);
@@ -314,7 +368,9 @@ describe("Settings Action Handler", () => {
 
     describe("Delete Hashtag Preset", () => {
       it("should delete a hashtag preset", async () => {
-        (deleteHashTagPreset as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+        (deleteHashTagPreset as ReturnType<typeof vi.fn>).mockResolvedValue(
+          undefined,
+        );
 
         const formData = createFormData({
           _action: "delete_hashtag_preset",
@@ -323,9 +379,15 @@ describe("Settings Action Handler", () => {
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
         const dataRaw: unknown = await result.json();
-        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as { success?: unknown; error?: unknown })
+            : {};
 
-        expect(deleteHashTagPreset).toHaveBeenCalledWith(TEST_USER_ID, "preset-123");
+        expect(deleteHashTagPreset).toHaveBeenCalledWith(
+          TEST_USER_ID,
+          "preset-123",
+        );
         expect(data).toEqual({ success: true });
       });
 
@@ -336,7 +398,10 @@ describe("Settings Action Handler", () => {
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
         const dataRaw: unknown = await result.json();
-        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as { success?: unknown; error?: unknown })
+            : {};
 
         expect(deleteHashTagPreset).not.toHaveBeenCalled();
         expect(result.status).toBe(400);
@@ -350,7 +415,9 @@ describe("Settings Action Handler", () => {
   describe("Queue Type Actions", () => {
     describe("Create Queue Type", () => {
       it("should create a queue type with INTERVAL schedule", async () => {
-        (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+        (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(
+          undefined,
+        );
 
         const formData = createFormData({
           _action: "create_queue_type",
@@ -364,7 +431,10 @@ describe("Settings Action Handler", () => {
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
         const dataRaw: unknown = await result.json();
-        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as { success?: unknown; error?: unknown })
+            : {};
 
         expect(hashTagPresetExistsForUser).toHaveBeenCalledWith(
           TEST_USER_ID,
@@ -382,7 +452,9 @@ describe("Settings Action Handler", () => {
       });
 
       it("should create a queue type with FIXED_SLOTS schedule", async () => {
-        (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+        (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(
+          undefined,
+        );
 
         const formData = createFormData({
           _action: "create_queue_type",
@@ -395,7 +467,10 @@ describe("Settings Action Handler", () => {
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
         const dataRaw: unknown = await result.json();
-        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as { success?: unknown; error?: unknown })
+            : {};
 
         expect(updateQueueType).toHaveBeenCalledWith(TEST_USER_ID, {
           name: "Daily Queue",
@@ -425,7 +500,10 @@ describe("Settings Action Handler", () => {
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
         const dataRaw: unknown = await result.json();
-        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as { success?: unknown; error?: unknown })
+            : {};
 
         expect(updateQueueType).not.toHaveBeenCalled();
         expect(result.status).toBe(403);
@@ -436,7 +514,9 @@ describe("Settings Action Handler", () => {
       });
 
       it("should reject invalid hashtag preset", async () => {
-        (hashTagPresetExistsForUser as ReturnType<typeof vi.fn>).mockResolvedValue(false);
+        (
+          hashTagPresetExistsForUser as ReturnType<typeof vi.fn>
+        ).mockResolvedValue(false);
 
         const formData = createFormData({
           _action: "create_queue_type",
@@ -449,7 +529,10 @@ describe("Settings Action Handler", () => {
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
         const dataRaw: unknown = await result.json();
-        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as { success?: unknown; error?: unknown })
+            : {};
 
         expect(updateQueueType).not.toHaveBeenCalled();
         expect(result.status).toBe(400);
@@ -461,7 +544,9 @@ describe("Settings Action Handler", () => {
 
     describe("Delete Queue Type", () => {
       it("should delete a queue type", async () => {
-        (deleteQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+        (deleteQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(
+          undefined,
+        );
 
         const formData = createFormData({
           _action: "delete_queue_type",
@@ -470,7 +555,10 @@ describe("Settings Action Handler", () => {
 
         const result = await handleSettingsAction(TEST_USER_ID, formData);
         const dataRaw: unknown = await result.json();
-        const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as { success?: unknown; error?: unknown })
+            : {};
 
         expect(deleteQueueType).toHaveBeenCalledWith(TEST_USER_ID, "queue-123");
         expect(data).toEqual({ success: true });
@@ -495,4 +583,3 @@ describe("Settings Action Handler", () => {
     });
   });
 });
-

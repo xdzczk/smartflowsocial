@@ -10,12 +10,12 @@ on:
 jobs:
   coverage:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Full history for coverage diff
+          fetch-depth: 0 # Full history for coverage diff
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
@@ -25,8 +25,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'pnpm'
+          node-version: "20"
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -105,21 +105,14 @@ jobs:
           recreate: true
           message: |
             ## 📊 Test Coverage Report
-            
+
             Coverage for this PR:
-            
+
             | Metric | Coverage | Threshold | Status |
             |--------|----------|-----------|--------|
             | Lines | ${{ steps.coverage.outputs.lines }}% | 70% | ${{ steps.coverage.outputs.lines_status }} |
             | Functions | ${{ steps.coverage.outputs.functions }}% | 65% | ${{ steps.coverage.outputs.functions_status }} |
             | Branches | ${{ steps.coverage.outputs.branches }}% | 60% | ${{ steps.coverage.outputs.branches_status }} |
             | Statements | ${{ steps.coverage.outputs.statements }}% | 70% | ${{ steps.coverage.outputs.statements_status }} |
-            
+
             📄 [View detailed coverage report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
-
-
-
-
-
-
-

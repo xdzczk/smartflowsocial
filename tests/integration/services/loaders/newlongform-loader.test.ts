@@ -56,18 +56,31 @@ describe("New Longform Loader", () => {
     };
     const mockUploadProvider = "s3";
 
-    (requireFeatureAccess as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    (requireFeatureAccess as ReturnType<typeof vi.fn>).mockResolvedValue(
+      undefined,
+    );
     (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue(mockTags);
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
-    (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(mockScheduleIntervals);
-    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueTypes);
-    (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue(mockHashTagPresets);
+    (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockScheduleIntervals,
+    );
+    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockQueueTypes,
+    );
+    (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockHashTagPresets,
+    );
     (getAssets as ReturnType<typeof vi.fn>).mockResolvedValue(mockAssets);
-    (getUserUploadProvider as ReturnType<typeof vi.fn>).mockResolvedValue(mockUploadProvider);
+    (getUserUploadProvider as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockUploadProvider,
+    );
 
     const result = await loadNewLongFormData(TEST_USER_ID);
 
-    expect(requireFeatureAccess).toHaveBeenCalledWith(TEST_USER_ID, "longformPosts");
+    expect(requireFeatureAccess).toHaveBeenCalledWith(
+      TEST_USER_ID,
+      "longformPosts",
+    );
     expect(result.userId).toBe(TEST_USER_ID);
     expect(result.tags).toBe(mockTags);
     expect(result.scheduleIntervals).toEqual(mockScheduleIntervals);
@@ -81,13 +94,20 @@ describe("New Longform Loader", () => {
   it("should use default timezone if user timezone is missing", async () => {
     const mockUser = { id: TEST_USER_ID };
 
-    (requireFeatureAccess as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    (requireFeatureAccess as ReturnType<typeof vi.fn>).mockResolvedValue(
+      undefined,
+    );
     (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue("");
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
     (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-    (getAssets as ReturnType<typeof vi.fn>).mockResolvedValue({ assets: [], totalCount: 0, totalPages: 0, currentPage: 1 });
+    (getAssets as ReturnType<typeof vi.fn>).mockResolvedValue({
+      assets: [],
+      totalCount: 0,
+      totalPages: 0,
+      currentPage: 1,
+    });
     (getUserUploadProvider as ReturnType<typeof vi.fn>).mockResolvedValue("s3");
 
     const result = await loadNewLongFormData(TEST_USER_ID);
@@ -95,4 +115,3 @@ describe("New Longform Loader", () => {
     expect(result.userTimezone).toBe("Etc/GMT");
   });
 });
-

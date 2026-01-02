@@ -1,6 +1,6 @@
 /**
  * k6 Load Test: Bulk Operations
- * 
+ *
  * Tests performance of bulk post operations under load
  */
 
@@ -76,7 +76,3 @@ export default function () {
 
   sleep(2);
 }
-
-
-
-

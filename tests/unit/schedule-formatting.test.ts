@@ -49,4 +49,3 @@ describe("Schedule Formatting Utilities", () => {
     });
   });
 });
-

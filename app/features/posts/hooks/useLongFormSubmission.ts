@@ -46,7 +46,9 @@ export function useLongFormSubmission({
       let markdownContent;
       try {
         const editorData = JSON.parse(content) as { blocks?: EditorJSBlock[] };
-        markdownContent = convertEditorJSToMarkdown(editorData as { blocks: EditorJSBlock[] });
+        markdownContent = convertEditorJSToMarkdown(
+          editorData as { blocks: EditorJSBlock[] },
+        );
       } catch {
         markdownContent = content;
       }
@@ -79,15 +81,15 @@ export function useLongFormSubmission({
 
       const hashtagsFromQueue = effectiveHashtags
         ? effectiveHashtags
-          .split(" ")
-          .map((tag) => tag.replace("#", "").trim())
-          .filter(Boolean)
+            .split(" ")
+            .map((tag) => tag.replace("#", "").trim())
+            .filter(Boolean)
         : [];
       const customTagsList = customTags
         ? customTags
-          .split(",")
-          .map((tag) => tag.trim())
-          .filter(Boolean)
+            .split(",")
+            .map((tag) => tag.trim())
+            .filter(Boolean)
         : [];
       // Combine and deduplicate tags (case insensitive)
       const allTags = [...hashtagsFromQueue, ...customTagsList];
@@ -147,13 +149,16 @@ export function useLongFormSubmission({
       form.submit();
     } catch (error) {
       const { handleAsyncError } = await import("~/lib/error-handler.client");
-      handleAsyncError(error, {
-        component: "LongFormPost",
-        action: "handleSubmit",
-      }, false); // Don't show toast, let component handle it
+      handleAsyncError(
+        error,
+        {
+          component: "LongFormPost",
+          action: "handleSubmit",
+        },
+        false,
+      ); // Don't show toast, let component handle it
     }
   };
 
   return { handleSchedule };
 }
-

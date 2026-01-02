@@ -1,10 +1,7 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
-import {
-  loadChildrenData,
-  handleChildrenApiError,
-} from "~/features/user";
+import { loadChildrenData, handleChildrenApiError } from "~/features/user";
 
 /**
  * Creates a loader function with dependency injection

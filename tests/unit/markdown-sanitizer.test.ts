@@ -20,7 +20,11 @@ vi.mock("marked", () => ({
   }),
 }));
 
-import { sanitizeMarkdown, extractPlainText, generateSummary } from "~/lib/markdown-sanitizer.server";
+import {
+  sanitizeMarkdown,
+  extractPlainText,
+  generateSummary,
+} from "~/lib/markdown-sanitizer.server";
 
 describe("Markdown Sanitizer", () => {
   beforeEach(() => {
@@ -129,7 +133,8 @@ describe("Markdown Sanitizer", () => {
     });
 
     it("should truncate text at word boundary", () => {
-      const content = "This is a very long text that should be truncated at a word boundary when it exceeds the maximum length limit.";
+      const content =
+        "This is a very long text that should be truncated at a word boundary when it exceeds the maximum length limit.";
       const result = generateSummary(content, 50);
 
       expect(result).toContain("...");

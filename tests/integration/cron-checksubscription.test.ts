@@ -1,8 +1,8 @@
 /**
  * Integration tests for cron subscription checker
- * 
+ *
  * Tests app/routes/cron.checksubscription.tsx
- * 
+ *
  * CRITICAL: This cron job handles subscription renewals and account disabling.
  * Comprehensive test coverage is essential.
  */
@@ -35,7 +35,7 @@ const { MockLN } = vi.hoisted(() => {
     requestPayment: ReturnType<typeof vi.fn>;
     onPaid: ReturnType<typeof vi.fn>;
     onTimeout: ReturnType<typeof vi.fn>;
-    
+
     constructor(credentials: string) {
       this.credentials = credentials;
       // Initialize methods as vi.fn() so they can be mocked per test
@@ -44,12 +44,12 @@ const { MockLN } = vi.hoisted(() => {
       this.onTimeout = vi.fn().mockReturnValue(this); // Chainable
     }
   }
-  
+
   return { MockLN };
 });
 
 vi.mock("@getalby/sdk/lnclient", () => ({
-  LN: vi.fn().mockImplementation(function(credentials: string) {
+  LN: vi.fn().mockImplementation(function (credentials: string) {
     return new MockLN(credentials);
   }),
   USD: vi.fn((amount: unknown) => ({ amount: amount as number })),
@@ -61,8 +61,14 @@ vi.mock("~/features/payments/btc.rate", () => ({
 
 import { decrypt } from "~/lib/encryption.server";
 import { sendNostrDirectMessage } from "~/lib/nostr.messenger.server";
-import { createRenewalPayment, updateUserSubscription } from "~/models/payment.server";
-import { getEnabledUsersWithSubscriptions, disableUserAccount } from "~/models/user.server";
+import {
+  createRenewalPayment,
+  updateUserSubscription,
+} from "~/models/payment.server";
+import {
+  getEnabledUsersWithSubscriptions,
+  disableUserAccount,
+} from "~/models/user.server";
 
 describe("Cron Subscription Checker", () => {
   const TEST_USER_ID = "user-123";
@@ -73,8 +79,12 @@ describe("Cron Subscription Checker", () => {
     vi.clearAllMocks();
     process.env.OWNER_NWC = "test-owner-nwc";
     // Reset LN mock to default implementation - use function, not arrow, so it works as constructor
-    const lnMock = LN as unknown as { mockImplementation: (fn: (credentials: string) => InstanceType<typeof MockLN>) => void };
-    lnMock.mockImplementation(function(credentials: string) {
+    const lnMock = LN as unknown as {
+      mockImplementation: (
+        fn: (credentials: string) => InstanceType<typeof MockLN>,
+      ) => void;
+    };
+    lnMock.mockImplementation(function (credentials: string) {
       return new MockLN(credentials);
     });
   });
@@ -103,14 +113,27 @@ describe("Cron Subscription Checker", () => {
         },
       ];
 
-      (getEnabledUsersWithSubscriptions as ReturnType<typeof vi.fn>).mockResolvedValue(users);
-      (disableUserAccount as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (
+        getEnabledUsersWithSubscriptions as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(users);
+      (disableUserAccount as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined,
+      );
 
       const { loader } = await import("~/routes/cron.checksubscription");
       const response = await (loader as () => Promise<Response>)();
 
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { expired?: unknown; disabled?: unknown; checked?: unknown; renewalAttempted?: unknown; renewalSuccess?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              expired?: unknown;
+              disabled?: unknown;
+              checked?: unknown;
+              renewalAttempted?: unknown;
+              renewalSuccess?: unknown;
+            })
+          : {};
 
       expect(data.expired).toBe(1);
       expect(data.disabled).toBe(1);
@@ -128,13 +151,27 @@ describe("Cron Subscription Checker", () => {
         },
       ];
 
-      (getEnabledUsersWithSubscriptions as ReturnType<typeof vi.fn>).mockResolvedValue(users);
+      (
+        getEnabledUsersWithSubscriptions as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(users);
 
       const { loader } = await import("~/routes/cron.checksubscription");
       const response = await (loader as () => Promise<Response>)();
 
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { expired?: unknown; disabled?: unknown; checked?: unknown; renewalAttempted?: unknown; renewalSuccess?: unknown; renewalFailed?: unknown; success?: unknown; errors?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              expired?: unknown;
+              disabled?: unknown;
+              checked?: unknown;
+              renewalAttempted?: unknown;
+              renewalSuccess?: unknown;
+              renewalFailed?: unknown;
+              success?: unknown;
+              errors?: unknown;
+            })
+          : {};
 
       expect(data.checked).toBe(1);
       expect(data.expired).toBe(0);
@@ -164,13 +201,27 @@ describe("Cron Subscription Checker", () => {
         },
       ];
 
-      (getEnabledUsersWithSubscriptions as ReturnType<typeof vi.fn>).mockResolvedValue(users);
+      (
+        getEnabledUsersWithSubscriptions as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(users);
 
       const { loader } = await import("~/routes/cron.checksubscription");
       const response = await (loader as () => Promise<Response>)();
 
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { expired?: unknown; disabled?: unknown; checked?: unknown; renewalAttempted?: unknown; renewalSuccess?: unknown; renewalFailed?: unknown; success?: unknown; errors?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              expired?: unknown;
+              disabled?: unknown;
+              checked?: unknown;
+              renewalAttempted?: unknown;
+              renewalSuccess?: unknown;
+              renewalFailed?: unknown;
+              success?: unknown;
+              errors?: unknown;
+            })
+          : {};
 
       expect(data.checked).toBe(1);
       expect(data.expired).toBe(0);
@@ -200,13 +251,27 @@ describe("Cron Subscription Checker", () => {
         },
       ];
 
-      (getEnabledUsersWithSubscriptions as ReturnType<typeof vi.fn>).mockResolvedValue(users);
+      (
+        getEnabledUsersWithSubscriptions as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(users);
 
       const { loader } = await import("~/routes/cron.checksubscription");
       const response = await (loader as () => Promise<Response>)();
 
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { expired?: unknown; disabled?: unknown; checked?: unknown; renewalAttempted?: unknown; renewalSuccess?: unknown; renewalFailed?: unknown; success?: unknown; errors?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              expired?: unknown;
+              disabled?: unknown;
+              checked?: unknown;
+              renewalAttempted?: unknown;
+              renewalSuccess?: unknown;
+              renewalFailed?: unknown;
+              success?: unknown;
+              errors?: unknown;
+            })
+          : {};
 
       expect(data.checked).toBe(1);
       expect(data.expired).toBe(0);
@@ -238,20 +303,38 @@ describe("Cron Subscription Checker", () => {
         },
       ];
 
-      (getEnabledUsersWithSubscriptions as ReturnType<typeof vi.fn>).mockResolvedValue(users);
+      (
+        getEnabledUsersWithSubscriptions as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(users);
       (decrypt as ReturnType<typeof vi.fn>).mockReturnValue("decrypted-nwc");
       (createRenewalPayment as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: "free_renewal_123",
         status: "COMPLETED",
       });
-      (updateUserSubscription as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
-      (sendNostrDirectMessage as ReturnType<typeof vi.fn>).mockResolvedValue({ success: true });
+      (updateUserSubscription as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined,
+      );
+      (sendNostrDirectMessage as ReturnType<typeof vi.fn>).mockResolvedValue({
+        success: true,
+      });
 
       const { loader } = await import("~/routes/cron.checksubscription");
       const response = await (loader as () => Promise<Response>)();
 
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { expired?: unknown; disabled?: unknown; checked?: unknown; renewalAttempted?: unknown; renewalSuccess?: unknown; renewalFailed?: unknown; success?: unknown; errors?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              expired?: unknown;
+              disabled?: unknown;
+              checked?: unknown;
+              renewalAttempted?: unknown;
+              renewalSuccess?: unknown;
+              renewalFailed?: unknown;
+              success?: unknown;
+              errors?: unknown;
+            })
+          : {};
 
       expect(data.renewalAttempted).toBe(1);
       expect(data.renewalSuccess).toBe(1);
@@ -296,7 +379,7 @@ describe("Cron Subscription Checker", () => {
       const mockInvoice = "lnbc100u1p3example";
       const mockPaymentHash = "payment-hash-123";
       const mockAmountSats = 25000;
-      
+
       const mockLNInstance = new MockLN("test-nwc");
       mockLNInstance.requestPayment = vi.fn().mockResolvedValue({
         invoice: mockInvoice,
@@ -305,22 +388,42 @@ describe("Cron Subscription Checker", () => {
       });
       mockLNInstance.onPaid = vi.fn().mockReturnValue(mockLNInstance);
       mockLNInstance.onTimeout = vi.fn().mockReturnValue(mockLNInstance);
-      
+
       // Mock the constructor to return our configured instance
       // Use a constructor function that returns the instance
-      const lnMock = LN as unknown as { mockImplementation: (fn: (credentials: string) => typeof mockLNInstance) => void };
-      lnMock.mockImplementation(function(_credentials: string) {
+      const lnMock = LN as unknown as {
+        mockImplementation: (
+          fn: (credentials: string) => typeof mockLNInstance,
+        ) => void;
+      };
+      lnMock.mockImplementation(function (_credentials: string) {
         return mockLNInstance;
       });
 
-      (getEnabledUsersWithSubscriptions as ReturnType<typeof vi.fn>).mockResolvedValue(users);
-      (decrypt as ReturnType<typeof vi.fn>).mockReturnValue("decrypted-user-nwc");
+      (
+        getEnabledUsersWithSubscriptions as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(users);
+      (decrypt as ReturnType<typeof vi.fn>).mockReturnValue(
+        "decrypted-user-nwc",
+      );
 
       const { loader } = await import("~/routes/cron.checksubscription");
       const response = await (loader as () => Promise<Response>)();
 
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { expired?: unknown; disabled?: unknown; checked?: unknown; renewalAttempted?: unknown; renewalSuccess?: unknown; renewalFailed?: unknown; success?: unknown; errors?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              expired?: unknown;
+              disabled?: unknown;
+              checked?: unknown;
+              renewalAttempted?: unknown;
+              renewalSuccess?: unknown;
+              renewalFailed?: unknown;
+              success?: unknown;
+              errors?: unknown;
+            })
+          : {};
 
       expect(data.renewalAttempted).toBe(1);
       expect(mockLNInstance.requestPayment).toHaveBeenCalled();
@@ -349,22 +452,40 @@ describe("Cron Subscription Checker", () => {
         },
       ];
 
-      (getEnabledUsersWithSubscriptions as ReturnType<typeof vi.fn>).mockResolvedValue(users);
+      (
+        getEnabledUsersWithSubscriptions as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(users);
       (decrypt as ReturnType<typeof vi.fn>).mockReturnValue("decrypted-nwc");
 
       const mockLNInstance = new MockLN("test-nwc");
-      mockLNInstance.requestPayment = vi.fn().mockRejectedValue(new Error("Payment failed"));
+      mockLNInstance.requestPayment = vi
+        .fn()
+        .mockRejectedValue(new Error("Payment failed"));
       mockLNInstance.onPaid = vi.fn().mockReturnValue(mockLNInstance);
       mockLNInstance.onTimeout = vi.fn().mockReturnValue(mockLNInstance);
-      
-      const lnMock = LN as unknown as { mockImplementation: (fn: () => typeof mockLNInstance) => void };
+
+      const lnMock = LN as unknown as {
+        mockImplementation: (fn: () => typeof mockLNInstance) => void;
+      };
       lnMock.mockImplementation(() => mockLNInstance);
 
       const { loader } = await import("~/routes/cron.checksubscription");
       const response = await (loader as () => Promise<Response>)();
 
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { expired?: unknown; disabled?: unknown; checked?: unknown; renewalAttempted?: unknown; renewalSuccess?: unknown; renewalFailed?: unknown; success?: unknown; errors?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              expired?: unknown;
+              disabled?: unknown;
+              checked?: unknown;
+              renewalAttempted?: unknown;
+              renewalSuccess?: unknown;
+              renewalFailed?: unknown;
+              success?: unknown;
+              errors?: unknown;
+            })
+          : {};
 
       expect(data.renewalAttempted).toBe(1);
       expect(data.renewalFailed).toBe(1);
@@ -398,14 +519,28 @@ describe("Cron Subscription Checker", () => {
 
       delete process.env.OWNER_NWC;
 
-      (getEnabledUsersWithSubscriptions as ReturnType<typeof vi.fn>).mockResolvedValue(users);
+      (
+        getEnabledUsersWithSubscriptions as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(users);
       (decrypt as ReturnType<typeof vi.fn>).mockReturnValue("decrypted-nwc");
 
       const { loader } = await import("~/routes/cron.checksubscription");
       const response = await (loader as () => Promise<Response>)();
 
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { expired?: unknown; disabled?: unknown; checked?: unknown; renewalAttempted?: unknown; renewalSuccess?: unknown; renewalFailed?: unknown; success?: unknown; errors?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              expired?: unknown;
+              disabled?: unknown;
+              checked?: unknown;
+              renewalAttempted?: unknown;
+              renewalSuccess?: unknown;
+              renewalFailed?: unknown;
+              success?: unknown;
+              errors?: unknown;
+            })
+          : {};
       const errors = Array.isArray(data.errors) ? data.errors : [];
 
       expect(data.renewalAttempted).toBe(1);
@@ -436,7 +571,9 @@ describe("Cron Subscription Checker", () => {
         },
       ];
 
-      (getEnabledUsersWithSubscriptions as ReturnType<typeof vi.fn>).mockResolvedValue(users);
+      (
+        getEnabledUsersWithSubscriptions as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(users);
       (decrypt as ReturnType<typeof vi.fn>).mockImplementation(() => {
         throw new Error("Decryption failed");
       });
@@ -445,7 +582,19 @@ describe("Cron Subscription Checker", () => {
       const response = await (loader as () => Promise<Response>)();
 
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { expired?: unknown; disabled?: unknown; checked?: unknown; renewalAttempted?: unknown; renewalSuccess?: unknown; renewalFailed?: unknown; success?: unknown; errors?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              expired?: unknown;
+              disabled?: unknown;
+              checked?: unknown;
+              renewalAttempted?: unknown;
+              renewalSuccess?: unknown;
+              renewalFailed?: unknown;
+              success?: unknown;
+              errors?: unknown;
+            })
+          : {};
 
       expect(data.renewalAttempted).toBe(1);
       expect(data.renewalFailed).toBe(1);
@@ -494,7 +643,9 @@ describe("Cron Subscription Checker", () => {
         },
       ];
 
-      (getEnabledUsersWithSubscriptions as ReturnType<typeof vi.fn>).mockResolvedValue(users);
+      (
+        getEnabledUsersWithSubscriptions as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(users);
       (disableUserAccount as ReturnType<typeof vi.fn>)
         .mockRejectedValueOnce(new Error("Database error"))
         .mockResolvedValueOnce(undefined);
@@ -503,7 +654,19 @@ describe("Cron Subscription Checker", () => {
       const response = await (loader as () => Promise<Response>)();
 
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { expired?: unknown; disabled?: unknown; checked?: unknown; renewalAttempted?: unknown; renewalSuccess?: unknown; renewalFailed?: unknown; success?: unknown; errors?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              expired?: unknown;
+              disabled?: unknown;
+              checked?: unknown;
+              renewalAttempted?: unknown;
+              renewalSuccess?: unknown;
+              renewalFailed?: unknown;
+              success?: unknown;
+              errors?: unknown;
+            })
+          : {};
 
       expect(data.checked).toBe(2);
       expect(data.expired).toBe(2);
@@ -512,22 +675,35 @@ describe("Cron Subscription Checker", () => {
     });
 
     it("should return results even if getEnabledUsersWithSubscriptions fails", async () => {
-      (getEnabledUsersWithSubscriptions as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Database connection failed"),
-      );
+      (
+        getEnabledUsersWithSubscriptions as ReturnType<typeof vi.fn>
+      ).mockRejectedValue(new Error("Database connection failed"));
 
       const { loader } = await import("~/routes/cron.checksubscription");
       const response = await (loader as () => Promise<Response>)();
 
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { expired?: unknown; disabled?: unknown; checked?: unknown; renewalAttempted?: unknown; renewalSuccess?: unknown; renewalFailed?: unknown; success?: unknown; errors?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              expired?: unknown;
+              disabled?: unknown;
+              checked?: unknown;
+              renewalAttempted?: unknown;
+              renewalSuccess?: unknown;
+              renewalFailed?: unknown;
+              success?: unknown;
+              errors?: unknown;
+            })
+          : {};
       const errors = Array.isArray(data.errors) ? data.errors : [];
 
       expect(data.checked).toBe(0);
       expect(data.success).toBe(false);
       expect(data.errors).toBeDefined();
-      expect(errors.length > 0 && typeof errors[0] === "string" ? errors[0] : "").toContain("Database connection failed");
+      expect(
+        errors.length > 0 && typeof errors[0] === "string" ? errors[0] : "",
+      ).toContain("Database connection failed");
     });
   });
 });
-

@@ -1,6 +1,6 @@
 /**
  * Example: Refactored Upload Route with Centralized Error Handling
- * 
+ *
  * This shows how to refactor an existing route to use the new error handling system.
  * Compare this with the original api.upload.tsx to see the improvements.
  */
@@ -20,10 +20,7 @@ import {
   createSuccessResponse,
   assert,
 } from "~/lib/error-handler.server";
-import {
-  ValidationError,
-  ExternalServiceError,
-} from "~/lib/errors";
+import { ValidationError, ExternalServiceError } from "~/lib/errors";
 
 /**
  * Refactored version using error handling wrapper
@@ -55,19 +52,27 @@ export const action = withActionErrorHandling(
       throw new ExternalServiceError(
         "Failed to parse multipart form data",
         400,
-        { originalError: error instanceof Error ? error.message : String(error) },
+        {
+          originalError: error instanceof Error ? error.message : String(error),
+        },
       );
     }
 
     // Validate file exists
     const file = formData.get("file");
-    assert(file !== null, "No file provided", { formDataKeys: Array.from(formData.keys()) });
+    assert(file !== null, "No file provided", {
+      formDataKeys: Array.from(formData.keys()),
+    });
 
     // Validate file was processed correctly
     assert(
       typeof file === "string" && file.startsWith("https://"),
       "File upload failed - no URL returned",
-      { fileType: typeof file, fileValue: typeof file === "string" ? file.substring(0, 50) : "not a string" },
+      {
+        fileType: typeof file,
+        fileValue:
+          typeof file === "string" ? file.substring(0, 50) : "not a string",
+      },
     );
 
     // Return success response
@@ -103,7 +108,9 @@ export async function actionManual({ request }: ActionFunctionArgs) {
       throw new ExternalServiceError(
         "Failed to parse multipart form data",
         400,
-        { originalError: error instanceof Error ? error.message : String(error) },
+        {
+          originalError: error instanceof Error ? error.message : String(error),
+        },
       );
     }
 
@@ -115,9 +122,13 @@ export async function actionManual({ request }: ActionFunctionArgs) {
     }
 
     if (typeof file !== "string" || !file.startsWith("https://")) {
-      throw new ExternalServiceError("File upload failed - no URL returned", 500, {
-        fileType: typeof file,
-      });
+      throw new ExternalServiceError(
+        "File upload failed - no URL returned",
+        500,
+        {
+          fileType: typeof file,
+        },
+      );
     }
 
     return json(createSuccessResponse({ fileUrl: file }));
@@ -132,15 +143,3 @@ export async function actionManual({ request }: ActionFunctionArgs) {
 export async function loader() {
   return json({ message: "General File Upload API" });
 }
-
-
-
-
-
-
-
-
-
-
-
-

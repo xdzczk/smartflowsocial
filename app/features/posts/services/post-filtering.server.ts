@@ -9,10 +9,9 @@
  * @param queueType Queue type name to filter by, or "all" to return all posts
  * @returns Filtered array of posts
  */
-export function filterPostsByQueueType<T extends { queueType?: { name?: string | null } | null }>(
-  posts: T[],
-  queueType: string,
-): T[] {
+export function filterPostsByQueueType<
+  T extends { queueType?: { name?: string | null } | null },
+>(posts: T[], queueType: string): T[] {
   if (queueType === "all") {
     return posts;
   }
@@ -23,7 +22,9 @@ export function filterPostsByQueueType<T extends { queueType?: { name?: string |
  * Filter multiple post arrays by queue type
  * Convenience function for filtering multiple arrays at once
  */
-export function filterPostsArraysByQueueType<T extends { queueType?: { name?: string | null } | null }>(config: {
+export function filterPostsArraysByQueueType<
+  T extends { queueType?: { name?: string | null } | null },
+>(config: {
   scheduledPosts?: T[];
   scheduledLongFormPosts?: T[];
   pastPosts?: T[];
@@ -36,27 +37,20 @@ export function filterPostsArraysByQueueType<T extends { queueType?: { name?: st
   pastLongFormPosts: T[];
 } {
   const { queueType } = config;
-  
+
   return {
-    scheduledPosts: filterPostsByQueueType(config.scheduledPosts ?? [], queueType),
-    scheduledLongFormPosts: filterPostsByQueueType(config.scheduledLongFormPosts ?? [], queueType),
+    scheduledPosts: filterPostsByQueueType(
+      config.scheduledPosts ?? [],
+      queueType,
+    ),
+    scheduledLongFormPosts: filterPostsByQueueType(
+      config.scheduledLongFormPosts ?? [],
+      queueType,
+    ),
     pastPosts: filterPostsByQueueType(config.pastPosts ?? [], queueType),
-    pastLongFormPosts: filterPostsByQueueType(config.pastLongFormPosts ?? [], queueType),
+    pastLongFormPosts: filterPostsByQueueType(
+      config.pastLongFormPosts ?? [],
+      queueType,
+    ),
   };
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

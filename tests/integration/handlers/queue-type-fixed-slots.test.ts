@@ -20,7 +20,6 @@ import type { BulkPost, QueueType } from "~/features/posts/types";
 
 import { TEST_USER_ID } from "../../utils/test-helpers";
 
-
 describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -28,9 +27,27 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
 
   it("should calculate FIXED_SLOTS schedule times correctly", async () => {
     const posts: BulkPost[] = [
-      { file: null, caption: "", queueType: "Queue 1", scheduledFor: "", isRecyclable: false },
-      { file: null, caption: "", queueType: "Queue 1", scheduledFor: "", isRecyclable: false },
-      { file: null, caption: "", queueType: "Queue 1", scheduledFor: "", isRecyclable: false },
+      {
+        file: null,
+        caption: "",
+        queueType: "Queue 1",
+        scheduledFor: "",
+        isRecyclable: false,
+      },
+      {
+        file: null,
+        caption: "",
+        queueType: "Queue 1",
+        scheduledFor: "",
+        isRecyclable: false,
+      },
+      {
+        file: null,
+        caption: "",
+        queueType: "Queue 1",
+        scheduledFor: "",
+        isRecyclable: false,
+      },
     ];
 
     const queueTypes: QueueType[] = [
@@ -60,7 +77,9 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
       json: async () => ({ scheduledTime: "2024-12-25T10:00" }),
     });
 
-    (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue("queue-1");
+    (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
+      "queue-1",
+    );
 
     await handleBulkQueueUpdate("Queue 1", {
       posts,
@@ -86,9 +105,27 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
 
   it("should wrap to next day when slots are exhausted", async () => {
     const posts: BulkPost[] = [
-      { file: null, caption: "", queueType: "Queue 1", scheduledFor: "", isRecyclable: false },
-      { file: null, caption: "", queueType: "Queue 1", scheduledFor: "", isRecyclable: false },
-      { file: null, caption: "", queueType: "Queue 1", scheduledFor: "", isRecyclable: false },
+      {
+        file: null,
+        caption: "",
+        queueType: "Queue 1",
+        scheduledFor: "",
+        isRecyclable: false,
+      },
+      {
+        file: null,
+        caption: "",
+        queueType: "Queue 1",
+        scheduledFor: "",
+        isRecyclable: false,
+      },
+      {
+        file: null,
+        caption: "",
+        queueType: "Queue 1",
+        scheduledFor: "",
+        isRecyclable: false,
+      },
     ];
 
     const queueTypes: QueueType[] = [
@@ -113,7 +150,9 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
       json: async () => ({ scheduledTime: "2024-12-25T15:00" }),
     });
 
-    (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue("queue-1");
+    (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
+      "queue-1",
+    );
 
     await handleBulkQueueUpdate("Queue 1", {
       posts,
@@ -139,8 +178,20 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
 
   it("should handle useGlobalInterval for INTERVAL schedule type", async () => {
     const posts: BulkPost[] = [
-      { file: null, caption: "", queueType: "Queue 1", scheduledFor: "", isRecyclable: false },
-      { file: null, caption: "", queueType: "Queue 1", scheduledFor: "", isRecyclable: false },
+      {
+        file: null,
+        caption: "",
+        queueType: "Queue 1",
+        scheduledFor: "",
+        isRecyclable: false,
+      },
+      {
+        file: null,
+        caption: "",
+        queueType: "Queue 1",
+        scheduledFor: "",
+        isRecyclable: false,
+      },
     ];
 
     const queueTypes: QueueType[] = [
@@ -170,7 +221,9 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
       json: async () => ({ scheduledTime: "2024-12-25T10:00" }),
     });
 
-    (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue("queue-1");
+    (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
+      "queue-1",
+    );
 
     await handleBulkQueueUpdate("Queue 1", {
       posts,
@@ -194,8 +247,20 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
 
   it("should use queue-specific interval when useGlobalInterval is false", async () => {
     const posts: BulkPost[] = [
-      { file: null, caption: "", queueType: "Queue 1", scheduledFor: "", isRecyclable: false },
-      { file: null, caption: "", queueType: "Queue 1", scheduledFor: "", isRecyclable: false },
+      {
+        file: null,
+        caption: "",
+        queueType: "Queue 1",
+        scheduledFor: "",
+        isRecyclable: false,
+      },
+      {
+        file: null,
+        caption: "",
+        queueType: "Queue 1",
+        scheduledFor: "",
+        isRecyclable: false,
+      },
     ];
 
     const queueTypes: QueueType[] = [
@@ -226,7 +291,9 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
       json: async () => ({ scheduledTime: "2024-12-25T10:00" }),
     });
 
-    (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue("queue-1");
+    (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
+      "queue-1",
+    );
 
     await handleBulkQueueUpdate("Queue 1", {
       posts,
@@ -250,7 +317,13 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
 
   it("should handle unassigned queue type", async () => {
     const posts: BulkPost[] = [
-      { file: null, caption: "", queueType: "unassigned", scheduledFor: "", isRecyclable: false },
+      {
+        file: null,
+        caption: "",
+        queueType: "unassigned",
+        scheduledFor: "",
+        isRecyclable: false,
+      },
     ];
 
     const queueTypes: QueueType[] = [];
@@ -280,7 +353,13 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
 
   it("should sort slots correctly by time", async () => {
     const posts: BulkPost[] = [
-      { file: null, caption: "", queueType: "Queue 1", scheduledFor: "", isRecyclable: false },
+      {
+        file: null,
+        caption: "",
+        queueType: "Queue 1",
+        scheduledFor: "",
+        isRecyclable: false,
+      },
     ];
 
     const queueTypes: QueueType[] = [
@@ -305,7 +384,9 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
       json: async () => ({ scheduledTime: "2024-12-25T10:00" }),
     });
 
-    (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue("queue-1");
+    (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
+      "queue-1",
+    );
 
     await handleBulkQueueUpdate("Queue 1", {
       posts,
@@ -327,7 +408,13 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
 
   it("should handle empty slots array", async () => {
     const posts: BulkPost[] = [
-      { file: null, caption: "", queueType: "Queue 1", scheduledFor: "", isRecyclable: false },
+      {
+        file: null,
+        caption: "",
+        queueType: "Queue 1",
+        scheduledFor: "",
+        isRecyclable: false,
+      },
     ];
 
     const queueTypes: QueueType[] = [
@@ -352,7 +439,9 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
       json: async () => ({ scheduledTime: "2024-12-25T10:00" }),
     });
 
-    (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue("queue-1");
+    (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
+      "queue-1",
+    );
 
     await handleBulkQueueUpdate("Queue 1", {
       posts,
@@ -374,7 +463,13 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
 
   it("should handle missing scheduleInterval in user", async () => {
     const posts: BulkPost[] = [
-      { file: null, caption: "", queueType: "Queue 1", scheduledFor: "", isRecyclable: false },
+      {
+        file: null,
+        caption: "",
+        queueType: "Queue 1",
+        scheduledFor: "",
+        isRecyclable: false,
+      },
     ];
 
     const queueTypes: QueueType[] = [
@@ -399,7 +494,9 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
       json: async () => ({ scheduledTime: "2024-12-25T10:00" }),
     });
 
-    (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue("queue-1");
+    (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
+      "queue-1",
+    );
 
     await handleBulkQueueUpdate("Queue 1", {
       posts,
@@ -420,4 +517,3 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
     expect(updatedPosts[0].scheduledFor).toMatch(/2024-12-25T10:00/);
   });
 });
-

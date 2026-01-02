@@ -1,9 +1,9 @@
 /**
  * Example integration test for Remix loaders using Vitest
- * 
+ *
  * This demonstrates how to test Remix loaders without a browser.
  * You can use @remix-run/testing utilities or test the loader functions directly.
- * 
+ *
  * For more complex integration tests, you may need to:
  * - Set up a test database
  * - Mock external services
@@ -31,7 +31,7 @@ describe("Example Loader Integration Tests", () => {
     const mockLoader = async ({ request }: { request: Request }) => {
       const url = new URL(request.url);
       const query = url.searchParams.get("q");
-      
+
       return json({
         query,
         results: query ? [`Result for ${query}`] : [],
@@ -40,12 +40,19 @@ describe("Example Loader Integration Tests", () => {
 
     // Create a mock request
     const request = new Request("http://localhost:3000/test?q=hello");
-    
+
     // Call the loader
-    const loaderArgs: { request: Request; params?: Record<string, string>; context?: Record<string, unknown> } = { request };
+    const loaderArgs: {
+      request: Request;
+      params?: Record<string, string>;
+      context?: Record<string, unknown>;
+    } = { request };
     const response = await mockLoader(loaderArgs);
     const dataRaw: unknown = await response.json();
-    const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
+    const data =
+      dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+        ? (dataRaw as Record<string, unknown>)
+        : {};
 
     // Assert the response
     expect(response.status).toBe(200);
@@ -58,7 +65,7 @@ describe("Example Loader Integration Tests", () => {
   it("should demonstrate testing with RemixStub", async () => {
     // Example: Using RemixStub for more complex component + loader testing
     // This is useful when you want to test the full request/response cycle
-    // 
+    //
     // Note: To use RemixStub with JSX components, you'll need to:
     // 1. Create a separate .test.tsx file
     // 2. Import React
@@ -80,28 +87,28 @@ describe("Example Loader Integration Tests", () => {
 
 /**
  * Notes on Integration Testing with Vitest:
- * 
+ *
  * 1. **Direct Function Testing**: Test loader functions directly by calling them
  *    with mock Request objects. This is fast and doesn't require a browser.
- * 
+ *
  * 2. **Remix Testing Utilities**: Use @remix-run/testing for more complex scenarios
  *    where you need to test the full request/response cycle.
- * 
+ *
  * 3. **Database Testing**: For loaders that interact with the database:
  *    - Use a test database (separate from dev/prod)
  *    - Use transactions that rollback after each test
  *    - Or use mocks for database operations
- * 
+ *
  * 4. **Authentication Testing**: Mock the authentication layer:
  *    - Create mock session objects
  *    - Mock requireUserId() and similar functions
- * 
+ *
  * 5. **External Services**: Mock external API calls:
  *    - Use vi.mock() to mock fetch or axios
  *    - Use MSW (Mock Service Worker) for more realistic mocking
- * 
+ *
  * Example migration from Cypress loader test:
- * 
+ *
  * Before (Cypress):
  * ```typescript
  * it("should load dashboard without errors", () => {
@@ -109,7 +116,7 @@ describe("Example Loader Integration Tests", () => {
  *   cy.location("pathname").should("include", "dashboard");
  * });
  * ```
- * 
+ *
  * After (Vitest):
  * ```typescript
  * it("should load dashboard without errors", async () => {
@@ -119,4 +126,3 @@ describe("Example Loader Integration Tests", () => {
  * });
  * ```
  */
-

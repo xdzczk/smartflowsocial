@@ -75,19 +75,3 @@ export async function handleStorageSettingsAction(
 
   return null;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

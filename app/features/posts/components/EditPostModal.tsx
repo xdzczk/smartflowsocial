@@ -2,7 +2,13 @@ import { useFetcher } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
 import { useEditPostModal } from "../hooks/useEditPostModal";
-import type { PostData, LongFormPostData, QueueType, HashTagPreset, UserData } from "../types";
+import type {
+  PostData,
+  LongFormPostData,
+  QueueType,
+  HashTagPreset,
+  UserData,
+} from "../types";
 import { prepareEditPostSubmission } from "../utils/editPostSubmit.client";
 
 import { EditLongFormFormFields } from "./EditLongFormFormFields";
@@ -77,12 +83,22 @@ export function EditPostModal({
     isLongform,
   });
 
-
   useEffect(() => {
     const dataRaw = fetcher.data;
-    const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; needsSigning?: unknown; error?: unknown } : null;
+    const data =
+      dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+        ? (dataRaw as {
+            success?: unknown;
+            needsSigning?: unknown;
+            error?: unknown;
+          })
+        : null;
     if (data && typeof data.success === "boolean" && data.success) {
-      if (data.needsSigning && typeof data.needsSigning === "boolean" && data.needsSigning) {
+      if (
+        data.needsSigning &&
+        typeof data.needsSigning === "boolean" &&
+        data.needsSigning
+      ) {
         return; // Keep modal open for re-signing
       }
       onConfirm();
@@ -125,9 +141,10 @@ export function EditPostModal({
       console.error("Error re-signing event:", error);
       setIsSigningEvent(false);
       setIsUploadingImages(false);
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : "Failed to sign event. Please try again.";
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to sign event. Please try again.";
       setSigningError(errorMessage);
     }
   };
@@ -203,7 +220,10 @@ export function EditPostModal({
 
               {/* Schedule Date */}
               <div>
-                <label htmlFor="edit-post-scheduled-for" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label
+                  htmlFor="edit-post-scheduled-for"
+                  className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
                   Scheduled For
                 </label>
                 <input
@@ -245,7 +265,7 @@ export function EditPostModal({
               </div>
 
               {/* Error display */}
-              {fetcher.data?.error ?? signingError ? (
+              {(fetcher.data?.error ?? signingError) ? (
                 <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
                   <div className="text-sm text-red-800 dark:text-red-200">
                     {fetcher.data?.error ?? signingError}

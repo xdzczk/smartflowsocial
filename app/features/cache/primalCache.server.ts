@@ -18,35 +18,29 @@ export async function fetchFromCache(
   if (!primalUrl) {
     throw new Error("PRIMAL_CACHING_URL environment variable is not set");
   }
-  
+
   try {
-    const data = await fetchJsonWithRetry<CacheResponse>(
-      primalUrl,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          requestType,
-          params,
-        }),
-        timeout: 5000, // 5 seconds for cache requests
-        maxRetries: 2,
-        retryOn5xx: true,
+    const data = await fetchJsonWithRetry<CacheResponse>(primalUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
-    );
-    
-    return data;
-  } catch (error) {
-    logError(
-      error instanceof Error ? error : new Error(String(error)),
-      {
+      body: JSON.stringify({
         requestType,
         params,
-        message: "[REST Cache] Failed to fetch",
-      },
-    );
+      }),
+      timeout: 5000, // 5 seconds for cache requests
+      maxRetries: 2,
+      retryOn5xx: true,
+    });
+
+    return data;
+  } catch (error) {
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      requestType,
+      params,
+      message: "[REST Cache] Failed to fetch",
+    });
     throw error;
   }
 }

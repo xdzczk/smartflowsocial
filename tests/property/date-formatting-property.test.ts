@@ -1,6 +1,6 @@
 /**
  * Property-based tests for date formatting functions
- * 
+ *
  * Uses fast-check to verify date formatting properties:
  * - Round-trip conversions
  * - Timezone handling
@@ -89,16 +89,17 @@ describe("Property-Based Tests: Date Formatting", () => {
             const laterDate = new Date(date.getTime() + secondsToAdd * 1000);
             const formatted1 = formatScheduleTimeForInput(date, timezone);
             const formatted2 = formatScheduleTimeForInput(laterDate, timezone);
-            
+
             // Compare the actual date values to handle DST transitions
             // With 24+ hour difference, we should be safe from DST transition edge cases
             const dateDiff = laterDate.getTime() - date.getTime();
             const comparison = formatted2.localeCompare(formatted1);
-            
+
             // For 24+ hour differences, require non-negative comparison
             // This ensures that with a full day difference, the formatted string maintains ordering
             // DST transitions can cause issues with smaller differences, but 24 hours should be safe
-            if (dateDiff >= 86400000) { // 24 hours in milliseconds
+            if (dateDiff >= 86400000) {
+              // 24 hours in milliseconds
               // With 24+ hour difference, formatted2 should not be lexicographically less
               return comparison >= 0;
             } else {
@@ -136,8 +137,16 @@ describe("Property-Based Tests: Date Formatting", () => {
       fc.assert(
         fc.property(
           fc.oneof(
-            fc.date({ min: new Date("2000-01-01"), max: new Date("2100-12-31") }),
-            fc.date({ min: new Date("2000-01-01"), max: new Date("2100-12-31") }).map((d: Date) => d.toISOString()),
+            fc.date({
+              min: new Date("2000-01-01"),
+              max: new Date("2100-12-31"),
+            }),
+            fc
+              .date({
+                min: new Date("2000-01-01"),
+                max: new Date("2100-12-31"),
+              })
+              .map((d: Date) => d.toISOString()),
           ),
           (dateInput: Date | string) => {
             try {
@@ -160,7 +169,9 @@ describe("Property-Based Tests: Date Formatting", () => {
             const formattedFromDate = formatDate(date);
             const formattedFromString = formatDate(date.toISOString());
             // Should produce similar formatted output (may differ slightly due to timezone)
-            return formattedFromDate.length > 0 && formattedFromString.length > 0;
+            return (
+              formattedFromDate.length > 0 && formattedFromString.length > 0
+            );
           },
         ),
         { numRuns: 30 },
@@ -248,7 +259,12 @@ describe("Property-Based Tests: Date Formatting", () => {
               const formatted1 = formatDateWithTimezone(date, false, tz1);
               const formatted2 = formatDateWithTimezone(date, false, tz2);
               // Both should be valid formatted strings (may differ due to timezone)
-              return formatted1 !== "-" && formatted2 !== "-" && formatted1.length > 0 && formatted2.length > 0;
+              return (
+                formatted1 !== "-" &&
+                formatted2 !== "-" &&
+                formatted1.length > 0 &&
+                formatted2.length > 0
+              );
             } catch {
               return false;
             }
@@ -316,7 +332,11 @@ describe("Property-Based Tests: Date Formatting", () => {
             new Date("2023-03-12T07:00:00Z"), // DST start
             new Date("2023-11-05T06:00:00Z"), // DST end
           ),
-          fc.constantFrom("America/New_York", "America/Los_Angeles", "Europe/London"),
+          fc.constantFrom(
+            "America/New_York",
+            "America/Los_Angeles",
+            "Europe/London",
+          ),
           (date: Date, timezone: string) => {
             try {
               const formatted = formatScheduleTimeForInput(date, timezone);
@@ -330,9 +350,3 @@ describe("Property-Based Tests: Date Formatting", () => {
     });
   });
 });
-
-
-
-
-
-

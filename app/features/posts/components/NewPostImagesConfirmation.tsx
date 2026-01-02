@@ -43,7 +43,13 @@ export default function NewPostImagesConfirmation({
     try {
       // Get effective hashtags based on queue type
       const firstEvent = events[0];
-      const queueType = firstEvent && typeof firstEvent === "object" && "queueType" in firstEvent && typeof firstEvent.queueType === "string" ? firstEvent.queueType : "unassigned";
+      const queueType =
+        firstEvent &&
+        typeof firstEvent === "object" &&
+        "queueType" in firstEvent &&
+        typeof firstEvent.queueType === "string"
+          ? firstEvent.queueType
+          : "unassigned";
       let effectiveHashtags = "";
 
       try {
@@ -63,16 +69,20 @@ export default function NewPostImagesConfirmation({
           effectiveHashtags = data.hashtags ?? "";
         } else {
           // Fallback to user's default hashtags
-          effectiveHashtags = Array.isArray(tags) ? tags.join(" ") : tags ?? "";
+          effectiveHashtags = Array.isArray(tags)
+            ? tags.join(" ")
+            : (tags ?? "");
         }
       } catch (error) {
-        const { handleErrorSafely } = await import("~/lib/error-handler.client");
+        const { handleErrorSafely } = await import(
+          "~/lib/error-handler.client"
+        );
         handleErrorSafely(error, {
           component: "NewPostImagesConfirmation",
           action: "fetchEffectiveHashtags",
         });
         // Fallback to user's default hashtags
-        effectiveHashtags = Array.isArray(tags) ? tags.join(" ") : tags ?? "";
+        effectiveHashtags = Array.isArray(tags) ? tags.join(" ") : (tags ?? "");
       }
 
       const addTags = user?.showHashTagsinPosts ? `\n${effectiveHashtags}` : "";
@@ -85,9 +95,18 @@ export default function NewPostImagesConfirmation({
       } else {
         const firstEvent = events[0];
         let scheduledForStr = "";
-        if (firstEvent && typeof firstEvent === "object" && "content" in firstEvent) {
+        if (
+          firstEvent &&
+          typeof firstEvent === "object" &&
+          "content" in firstEvent
+        ) {
           const content = firstEvent.content;
-          if (content && typeof content === "object" && !Array.isArray(content) && "scheduledFor" in content) {
+          if (
+            content &&
+            typeof content === "object" &&
+            !Array.isArray(content) &&
+            "scheduledFor" in content
+          ) {
             const scheduledFor = content.scheduledFor;
             if (typeof scheduledFor === "string") {
               scheduledForStr = scheduledFor;
@@ -104,7 +123,9 @@ export default function NewPostImagesConfirmation({
             timeZone: userTimezone,
           });
           const userOffset =
-            (new Date(userDate).getTime() - new Date(scheduledForStr).getTime()) / 60000;
+            (new Date(userDate).getTime() -
+              new Date(scheduledForStr).getTime()) /
+            60000;
 
           // Adjust the date by the offset
           utcDate.setMinutes(utcDate.getMinutes() - userOffset);
@@ -124,17 +145,28 @@ export default function NewPostImagesConfirmation({
         .map((tag: string) => ["t", tag.replace("#", "")]);
 
       const firstEventContent = events[0]?.content;
-      const firstCaption = firstEventContent && typeof firstEventContent === "object" && "caption" in firstEventContent && typeof firstEventContent.caption === "string" ? firstEventContent.caption : "";
+      const firstCaption =
+        firstEventContent &&
+        typeof firstEventContent === "object" &&
+        "caption" in firstEventContent &&
+        typeof firstEventContent.caption === "string"
+          ? firstEventContent.caption
+          : "";
       const fileUrls = events
         .map((event) => {
           const content = event.content;
-          if (content && typeof content === "object" && "fileUrl" in content && typeof content.fileUrl === "string") {
+          if (
+            content &&
+            typeof content === "object" &&
+            "fileUrl" in content &&
+            typeof content.fileUrl === "string"
+          ) {
             return content.fileUrl;
           }
           return "";
         })
         .filter((url) => url !== "");
-      
+
       const eventData = {
         content:
           (firstCaption + addTags || "") +
@@ -153,15 +185,32 @@ export default function NewPostImagesConfirmation({
       const fileUrlsForForm = events
         .map((event) => {
           const content = event.content;
-          if (content && typeof content === "object" && "fileUrl" in content && typeof content.fileUrl === "string") {
+          if (
+            content &&
+            typeof content === "object" &&
+            "fileUrl" in content &&
+            typeof content.fileUrl === "string"
+          ) {
             return content.fileUrl;
           }
           return "";
         })
         .filter((url) => url !== "");
-      const captionForForm = firstEventContent && typeof firstEventContent === "object" && "caption" in firstEventContent && typeof firstEventContent.caption === "string" ? firstEventContent.caption : "";
-      const queueTypeForForm = firstEventContent && typeof firstEventContent === "object" && "queueType" in firstEventContent && typeof firstEventContent.queueType === "string" ? firstEventContent.queueType : "unassigned";
-      
+      const captionForForm =
+        firstEventContent &&
+        typeof firstEventContent === "object" &&
+        "caption" in firstEventContent &&
+        typeof firstEventContent.caption === "string"
+          ? firstEventContent.caption
+          : "";
+      const queueTypeForForm =
+        firstEventContent &&
+        typeof firstEventContent === "object" &&
+        "queueType" in firstEventContent &&
+        typeof firstEventContent.queueType === "string"
+          ? firstEventContent.queueType
+          : "unassigned";
+
       formData.append("fileUrl", JSON.stringify(fileUrlsForForm));
       formData.append("caption", captionForForm);
       formData.append("scheduledFor", scheduledForUnix.toString());
@@ -173,10 +222,14 @@ export default function NewPostImagesConfirmation({
       });
     } catch (error) {
       const { handleAsyncError } = await import("~/lib/error-handler.client");
-      handleAsyncError(error, {
-        component: "NewPostImagesConfirmation",
-        action: "handleSignAndSubmit",
-      }, false); // Don't show toast, let component handle it
+      handleAsyncError(
+        error,
+        {
+          component: "NewPostImagesConfirmation",
+          action: "handleSignAndSubmit",
+        },
+        false,
+      ); // Don't show toast, let component handle it
     }
   };
 
@@ -186,15 +239,38 @@ export default function NewPostImagesConfirmation({
     const draftFileUrls = events
       .map((event) => {
         const content = event.content;
-        if (content && typeof content === "object" && "fileUrl" in content && typeof content.fileUrl === "string") {
+        if (
+          content &&
+          typeof content === "object" &&
+          "fileUrl" in content &&
+          typeof content.fileUrl === "string"
+        ) {
           return content.fileUrl;
         }
         return "";
       })
       .filter((url) => url !== "");
     const draftFirstEvent = events[0];
-    const draftCaption = draftFirstEvent && typeof draftFirstEvent === "object" && "content" in draftFirstEvent && typeof draftFirstEvent.content === "object" && draftFirstEvent.content !== null && "caption" in draftFirstEvent.content && typeof draftFirstEvent.content.caption === "string" ? draftFirstEvent.content.caption : "";
-    const draftQueueType = draftFirstEvent && typeof draftFirstEvent === "object" && "content" in draftFirstEvent && typeof draftFirstEvent.content === "object" && draftFirstEvent.content !== null && "queueType" in draftFirstEvent.content && typeof draftFirstEvent.content.queueType === "string" ? draftFirstEvent.content.queueType : "unassigned";
+    const draftCaption =
+      draftFirstEvent &&
+      typeof draftFirstEvent === "object" &&
+      "content" in draftFirstEvent &&
+      typeof draftFirstEvent.content === "object" &&
+      draftFirstEvent.content !== null &&
+      "caption" in draftFirstEvent.content &&
+      typeof draftFirstEvent.content.caption === "string"
+        ? draftFirstEvent.content.caption
+        : "";
+    const draftQueueType =
+      draftFirstEvent &&
+      typeof draftFirstEvent === "object" &&
+      "content" in draftFirstEvent &&
+      typeof draftFirstEvent.content === "object" &&
+      draftFirstEvent.content !== null &&
+      "queueType" in draftFirstEvent.content &&
+      typeof draftFirstEvent.content.queueType === "string"
+        ? draftFirstEvent.content.queueType
+        : "unassigned";
     formData.append("fileUrl", JSON.stringify(draftFileUrls));
     formData.append("caption", draftCaption);
     formData.append("queueType", draftQueueType);
@@ -236,7 +312,13 @@ export default function NewPostImagesConfirmation({
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
                 {events.map((event: PreparedEventData, index: number) => {
                   const content = event.content;
-                  const fileUrl = content && typeof content === "object" && "fileUrl" in content && typeof content.fileUrl === "string" ? content.fileUrl : "";
+                  const fileUrl =
+                    content &&
+                    typeof content === "object" &&
+                    "fileUrl" in content &&
+                    typeof content.fileUrl === "string"
+                      ? content.fileUrl
+                      : "";
                   return (
                     <div
                       key={index}
@@ -260,7 +342,13 @@ export default function NewPostImagesConfirmation({
               {(() => {
                 const firstEvent = events[0];
                 const firstContent = firstEvent?.content;
-                const caption = firstContent && typeof firstContent === "object" && "caption" in firstContent && typeof firstContent.caption === "string" ? firstContent.caption : "";
+                const caption =
+                  firstContent &&
+                  typeof firstContent === "object" &&
+                  "caption" in firstContent &&
+                  typeof firstContent.caption === "string"
+                    ? firstContent.caption
+                    : "";
                 return caption ? (
                   <div>
                     <h4 className="mb-2 text-sm font-medium text-gray-500 dark:text-gray-400">

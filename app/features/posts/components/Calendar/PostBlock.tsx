@@ -71,7 +71,12 @@ export function PostBlock({
     timeZone: userTimezone,
   });
 
-  const queueColorStyle = getQueueColorStyle(post, queueTypes, isLongform, isPast);
+  const queueColorStyle = getQueueColorStyle(
+    post,
+    queueTypes,
+    isLongform,
+    isPast,
+  );
 
   const baseProps = {
     post,

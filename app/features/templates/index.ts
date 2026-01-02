@@ -1,12 +1,12 @@
 /**
  * Templates Feature Public API
- * 
+ *
  * This module exports the public API for template-related operations.
  * Internal implementation details are kept in services/, hooks/, and components/ directories.
- * 
+ *
  * Usage:
  *   import { loadTemplatesData, handleTemplateAction } from "~/features/templates";
- * 
+ *
  * Do NOT import from internal paths like:
  *   import { ... } from "./services/..."  // ❌ Bad
  *   import { ... } from "./hooks/..."    // ❌ Bad
@@ -16,21 +16,15 @@
 // Types
 // ============================================================================
 
-export type {
-  Template,
-} from "./types";
+export type { Template } from "./types";
 
 // ============================================================================
 // Template Services
 // ============================================================================
 
-export {
-  loadTemplatesData,
-} from "./services/templates-loader.server";
+export { loadTemplatesData } from "./services/templates-loader.server";
 
-export {
-  handleTemplatesAction,
-} from "./services/templates-action.server";
+export { handleTemplatesAction } from "./services/templates-action.server";
 
 export {
   loadTemplateEditData,

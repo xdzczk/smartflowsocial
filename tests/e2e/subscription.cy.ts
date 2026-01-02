@@ -2,7 +2,7 @@ import { TEST_NPUB } from "./support/nostr-test-keys";
 
 /**
  * Subscription and Payment Flow Tests
- * 
+ *
  * Tests subscription and payment functionality:
  * - View plans page
  * - Select subscription plan
@@ -33,7 +33,7 @@ describe("Subscription and Payment Flow", () => {
           $body.find(".pricing-card, .plan-card").length > 0 ||
           $body.text().toLowerCase().includes("plan") ||
           $body.text().toLowerCase().includes("pricing");
-        
+
         expect(hasPlans).to.be.true;
       });
     });
@@ -45,7 +45,7 @@ describe("Subscription and Payment Flow", () => {
           $body.find('[data-testid="feature"]').length > 0 ||
           $body.find("ul, li").length > 0 ||
           $body.text().toLowerCase().includes("feature");
-        
+
         expect(hasFeatures).to.be.true;
       });
     });
@@ -59,7 +59,7 @@ describe("Subscription and Payment Flow", () => {
           $body.find('[data-testid="subscription-info"]').length > 0 ||
           $body.text().toLowerCase().includes("subscription") ||
           $body.text().toLowerCase().includes("plan");
-        
+
         expect(hasSubscriptionInfo).to.be.true;
       });
     });
@@ -71,8 +71,11 @@ describe("Subscription and Payment Flow", () => {
       cy.visit("/dashboard/settings", { failOnStatusCode: false });
       cy.location("pathname").then((pathname) => {
         // Accept either settings page or plans page (if redirected)
-        expect(pathname).to.satisfy((p: string) => 
-          p.includes("settings") || p.includes("plans") || p.includes("dashboard")
+        expect(pathname).to.satisfy(
+          (p: string) =>
+            p.includes("settings") ||
+            p.includes("plans") ||
+            p.includes("dashboard"),
         );
       });
       cy.get("body").should("be.visible");
@@ -86,8 +89,8 @@ describe("Subscription and Payment Flow", () => {
       cy.visit("/dashboard", { failOnStatusCode: false });
       cy.location("pathname").then((pathname) => {
         // Accept either dashboard or plans page (if redirected)
-        expect(pathname).to.satisfy((p: string) => 
-          p.includes("dashboard") || p.includes("plans")
+        expect(pathname).to.satisfy(
+          (p: string) => p.includes("dashboard") || p.includes("plans"),
         );
       });
       cy.get("body").should("be.visible");
@@ -100,5 +103,3 @@ describe("Subscription and Payment Flow", () => {
     });
   });
 });
-
-

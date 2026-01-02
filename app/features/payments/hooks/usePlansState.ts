@@ -43,14 +43,13 @@ export function usePlansState({ user, actionData }: UsePlansStateProps) {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
 
-  const { isPolling, startPaymentPolling } =
-    usePaymentPolling({
-      paymentId: invoiceData?.paymentId ?? null,
-      onPaymentComplete: () => {
-        setPaymentComplete(true);
-        setShowInvoice(false);
-      },
-    });
+  const { isPolling, startPaymentPolling } = usePaymentPolling({
+    paymentId: invoiceData?.paymentId ?? null,
+    onPaymentComplete: () => {
+      setPaymentComplete(true);
+      setShowInvoice(false);
+    },
+  });
 
   // Handle action data (invoice creation or payment status)
   useEffect(() => {
@@ -68,8 +67,15 @@ export function usePlansState({ user, actionData }: UsePlansStateProps) {
       // Handle paid plan invoice creation
       if (actionData.invoice && actionData.invoice !== "free_plan") {
         // Convert ActionData to InvoiceData (all required fields must be present)
-        if (actionData.paymentHash && actionData.amount !== undefined && actionData.amountUsd !== undefined && 
-            actionData.paymentId && actionData.expiresAt && actionData.planName && actionData.planId) {
+        if (
+          actionData.paymentHash &&
+          actionData.amount !== undefined &&
+          actionData.amountUsd !== undefined &&
+          actionData.paymentId &&
+          actionData.expiresAt &&
+          actionData.planName &&
+          actionData.planId
+        ) {
           const invoice: InvoiceData = {
             invoice: actionData.invoice,
             paymentHash: actionData.paymentHash,
@@ -83,7 +89,9 @@ export function usePlansState({ user, actionData }: UsePlansStateProps) {
           setInvoiceData(invoice);
           setShowInvoice(true);
           // Set initial time remaining
-          setTimeRemaining(new Date(actionData.expiresAt).getTime() - Date.now());
+          setTimeRemaining(
+            new Date(actionData.expiresAt).getTime() - Date.now(),
+          );
           // Start automatic payment status polling
           startPaymentPolling(actionData.paymentId);
         }
@@ -141,4 +149,3 @@ export function usePlansState({ user, actionData }: UsePlansStateProps) {
     copyToClipboard,
   };
 }
-

@@ -26,16 +26,26 @@ export function setupCustomDragDrop(
       blockElement.dataset.blockIndex = String(index);
 
       // Add drag handlers
-      blockElement.addEventListener("dragstart", (e) => { void handleDragStart(e); });
-      blockElement.addEventListener("dragend", (e) => { handleDragEnd(e); });
-      blockElement.addEventListener("dragover", (e) => { handleDragOver(e); });
-      blockElement.addEventListener("drop", (e) => { void handleDrop(e); });
+      blockElement.addEventListener("dragstart", (e) => {
+        void handleDragStart(e);
+      });
+      blockElement.addEventListener("dragend", (e) => {
+        handleDragEnd(e);
+      });
+      blockElement.addEventListener("dragover", (e) => {
+        handleDragOver(e);
+      });
+      blockElement.addEventListener("drop", (e) => {
+        void handleDrop(e);
+      });
     });
   };
 
   const handleDragStart = async (e: Event) => {
     const dragEvent = e as DragEvent;
-    const blockElement = (dragEvent.target as HTMLElement).closest(".ce-block") as HTMLElement;
+    const blockElement = (dragEvent.target as HTMLElement).closest(
+      ".ce-block",
+    ) as HTMLElement;
     draggedBlockIndex = parseInt(blockElement.dataset.blockIndex ?? "0");
 
     // Get block data using EditorJS API
@@ -58,7 +68,9 @@ export function setupCustomDragDrop(
   };
 
   const handleDragEnd = (e: Event) => {
-    const blockElement = (e.target as HTMLElement).closest(".ce-block") as HTMLElement;
+    const blockElement = (e.target as HTMLElement).closest(
+      ".ce-block",
+    ) as HTMLElement;
     if (blockElement) {
       blockElement.style.opacity = "1";
       blockElement.classList.remove("dragging");
@@ -74,7 +86,9 @@ export function setupCustomDragDrop(
     const dragEvent = e as DragEvent;
     dragEvent.dataTransfer!.dropEffect = "move";
 
-    const blockElement = (dragEvent.target as HTMLElement).closest(".ce-block") as HTMLElement;
+    const blockElement = (dragEvent.target as HTMLElement).closest(
+      ".ce-block",
+    ) as HTMLElement;
     if (blockElement && draggedBlockIndex !== null) {
       blockElement.classList.add("drag-over");
     }
@@ -84,12 +98,10 @@ export function setupCustomDragDrop(
     e.preventDefault();
     e.stopPropagation();
 
-    const dropBlockElement = (e.target as HTMLElement).closest(".ce-block") as HTMLElement;
-    if (
-      !dropBlockElement ||
-      draggedBlockIndex === null ||
-      !draggedBlockData
-    )
+    const dropBlockElement = (e.target as HTMLElement).closest(
+      ".ce-block",
+    ) as HTMLElement;
+    if (!dropBlockElement || draggedBlockIndex === null || !draggedBlockData)
       return;
 
     const dropIndex = parseInt(dropBlockElement.dataset.blockIndex ?? "0");
@@ -168,4 +180,3 @@ export function setupCustomDragDrop(
 
   return dragObserver;
 }
-

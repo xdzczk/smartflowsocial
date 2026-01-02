@@ -56,15 +56,17 @@ flowchart TD
 
 1. **Click in the text area**
 2. **Type your post content:**
+
    ```
    Hello Nostr! 👋
-   
+
    Just getting started with SmartFlowSocial. Excited to share content on the decentralized web!
-   
+
    #nostr #bitcoin #lightning
    ```
 
 **Tips:**
+
 - Keep it simple for your first post
 - Add hashtags for discoverability
 - Use emojis to add personality
@@ -74,10 +76,12 @@ flowchart TD
 ## Step 3: Add Hashtags (Optional)
 
 **Option 1: Manual Hashtags**
+
 - Type hashtags directly in your post
 - Example: `#nostr #bitcoin #lightning`
 
 **Option 2: Hashtag Preset**
+
 - If you have presets configured:
   - Toggle "Use Hashtag Preset"
   - Select a preset from dropdown
@@ -99,6 +103,7 @@ flowchart TD
 ## Step 5: Review and Post
 
 1. **Review your post:**
+
    - Check spelling and grammar
    - Verify hashtags
    - Ensure content looks good
@@ -106,6 +111,7 @@ flowchart TD
 2. **Click "Post Now"**
 
 3. **Sign with Nostr Extension:**
+
    - Extension popup appears
    - Review the event details
    - Click "Sign" or "Approve"
@@ -120,6 +126,7 @@ flowchart TD
 ## Step 6: Verify Your Post
 
 1. **Check your Nostr client:**
+
    - Open your favorite Nostr client
    - Find your profile
    - Your post should appear
@@ -136,7 +143,7 @@ flowchart TD
 ✅ How to add hashtags  
 ✅ How to publish immediately  
 ✅ How to sign with Nostr extension  
-✅ How to verify your post  
+✅ How to verify your post
 
 ---
 
@@ -157,6 +164,7 @@ Now that you've created your first post, try:
 **Problem:** Nostr extension popup doesn't appear
 
 **Solutions:**
+
 - Check extension is installed and enabled
 - Refresh the page
 - Try a different browser
@@ -167,6 +175,7 @@ Now that you've created your first post, try:
 **Problem:** Post created but not visible on Nostr
 
 **Solutions:**
+
 - Check your relays are configured
 - Verify post was signed successfully
 - Wait a few minutes for propagation
@@ -177,6 +186,7 @@ Now that you've created your first post, try:
 **Problem:** Extension signing fails
 
 **Solutions:**
+
 - Check extension is unlocked
 - Verify you have permission to sign
 - Try signing again
@@ -193,4 +203,3 @@ Now that you've created your first post, try:
 ---
 
 **Next Tutorial:** [Adding Images to Posts](./adding-images.md) → Enhance your posts with media
-

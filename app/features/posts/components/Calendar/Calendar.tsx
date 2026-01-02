@@ -7,7 +7,6 @@ import type { CalendarPost } from "./PostBlock.types";
 import { RescheduleModal } from "./RescheduleModal";
 import { WeeklyView } from "./WeeklyView";
 
-
 interface RescheduleData {
   post: CalendarPost;
   newDateTime: Date;
@@ -37,19 +36,23 @@ export function Calendar({
   const [view, setView] = useState<"week" | "month">("week");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
-  const [rescheduleData, setRescheduleData] = useState<RescheduleData | null>(null);
+  const [rescheduleData, setRescheduleData] = useState<RescheduleData | null>(
+    null,
+  );
 
   const handlePostDrop = useCallback(
     (post: CalendarPost, newDateTime: Date) => {
       // Determine if this specific post is a longform post
-      const postIsLongform = isAll ? Boolean(post.title && post.publishedAt) : isLongform;
+      const postIsLongform = isAll
+        ? Boolean(post.title && post.publishedAt)
+        : isLongform;
       const wasAutoScheduled = postIsLongform ? false : !post.manual_override;
 
       setRescheduleData({
         post,
         newDateTime,
         wasAutoScheduled,
-        queueName: postIsLongform ? null : post.queueType?.name ?? null,
+        queueName: postIsLongform ? null : (post.queueType?.name ?? null),
         isEdit: false,
         isLongform: postIsLongform,
       });
@@ -61,7 +64,9 @@ export function Calendar({
   const handlePostEdit = useCallback(
     (post: CalendarPost) => {
       // Determine if this specific post is a longform post
-      const postIsLongform = isAll ? Boolean(post.title && post.publishedAt) : isLongform;
+      const postIsLongform = isAll
+        ? Boolean(post.title && post.publishedAt)
+        : isLongform;
       const wasAutoScheduled = postIsLongform ? false : !post.manual_override;
       // For longform posts, use publishedAt instead of scheduledFor
       const currentDateTime = postIsLongform
@@ -72,7 +77,7 @@ export function Calendar({
         post,
         newDateTime: currentDateTime,
         wasAutoScheduled,
-        queueName: postIsLongform ? null : post.queueType?.name ?? null,
+        queueName: postIsLongform ? null : (post.queueType?.name ?? null),
         isEdit: true,
         isLongform: postIsLongform,
       });
@@ -187,7 +192,7 @@ export function Calendar({
       </div>
 
       {/* Calendar content */}
-      <div className="flex-1 min-h-0 overflow-hidden p-4">
+      <div className="min-h-0 flex-1 overflow-hidden p-4">
         {view === "week" ? (
           <WeeklyView
             scheduledPosts={scheduledPosts}
@@ -236,4 +241,3 @@ export function Calendar({
     </div>
   );
 }
-

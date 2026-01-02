@@ -3,7 +3,8 @@
  * Centralized action processing for longform edit page
  */
 
-import { redirect ,
+import {
+  redirect,
   unstable_composeUploadHandlers as composeUploadHandlers,
   unstable_createMemoryUploadHandler as createMemoryUploadHandler,
   unstable_parseMultipartFormData as parseMultipartFormData,
@@ -20,9 +21,7 @@ import {
   sanitizeMarkdown,
   generateSummary,
 } from "~/lib/markdown-sanitizer.server";
-import {
-  updateLongFormPost,
-} from "~/models/longformpost.server";
+import { updateLongFormPost } from "~/models/longformpost.server";
 import {
   getUserById,
   getEffectiveHashtags,
@@ -30,9 +29,7 @@ import {
   getQueueTypeByNameForUser,
 } from "~/models/user.server";
 
-import {
-  convertEditorJSToMarkdown,
-} from "../longform.server";
+import { convertEditorJSToMarkdown } from "../longform.server";
 
 /**
  * Parse and combine tags from form data
@@ -40,11 +37,10 @@ import {
 function parseTags(formData: FormData): string[] {
   const tagsRaw = formData.get("tags");
   const tagsStr = typeof tagsRaw === "string" ? tagsRaw : "";
-  const tags =
-    tagsStr
-      .split(",")
-      .map((tag: string) => tag.trim())
-      .filter(Boolean);
+  const tags = tagsStr
+    .split(",")
+    .map((tag: string) => tag.trim())
+    .filter(Boolean);
 
   const customTagsRaw = formData.get("customTags");
   const customTags = typeof customTagsRaw === "string" ? customTagsRaw : "";
@@ -60,8 +56,9 @@ function parseTags(formData: FormData): string[] {
     const allTags: string[] = [...tags, ...customTagsList];
     const uniqueTags = allTags.filter(
       (tag: string, index: number) =>
-        allTags.findIndex((t: string) => t.toLowerCase() === tag.toLowerCase()) ===
-        index,
+        allTags.findIndex(
+          (t: string) => t.toLowerCase() === tag.toLowerCase(),
+        ) === index,
     );
     return uniqueTags;
   }
@@ -82,7 +79,10 @@ async function getEffectiveHashtagsForPost(
     // Manual hashtag presets are enabled
     if (hashTagPresetId) {
       // Use manually selected hashtag preset
-      const selectedPreset = await getHashTagPresetById(userId, hashTagPresetId);
+      const selectedPreset = await getHashTagPresetById(
+        userId,
+        hashTagPresetId,
+      );
       return selectedPreset?.tags ?? "";
     }
     // If useHashtagPresets is true but no manual preset selected, use no hashtags
@@ -132,7 +132,7 @@ async function handleImageUpload(
     } catch (error) {
       logError(error instanceof Error ? error : new Error(String(error)), {
         userId,
-        fileName: (imageFile).name,
+        fileName: imageFile.name,
         message: "S3 upload error",
       });
       return Response.json(
@@ -194,8 +194,16 @@ async function handleSaveDraft(
 
   let markdownContent;
   try {
-    const editorData = JSON.parse(editorContent) as { blocks?: { type: string; data: Record<string, unknown> }[]; time?: number; version?: string };
-    markdownContent = convertEditorJSToMarkdown({ blocks: editorData.blocks ?? [], time: editorData.time, version: editorData.version });
+    const editorData = JSON.parse(editorContent) as {
+      blocks?: { type: string; data: Record<string, unknown> }[];
+      time?: number;
+      version?: string;
+    };
+    markdownContent = convertEditorJSToMarkdown({
+      blocks: editorData.blocks ?? [],
+      time: editorData.time,
+      version: editorData.version,
+    });
   } catch {
     markdownContent = editorContent;
   }
@@ -278,8 +286,16 @@ async function handlePublish(
 
   let markdownContent;
   try {
-    const editorData = JSON.parse(editorContent) as { blocks?: { type: string; data: Record<string, unknown> }[]; time?: number; version?: string };
-    markdownContent = convertEditorJSToMarkdown({ blocks: editorData.blocks ?? [], time: editorData.time, version: editorData.version });
+    const editorData = JSON.parse(editorContent) as {
+      blocks?: { type: string; data: Record<string, unknown> }[];
+      time?: number;
+      version?: string;
+    };
+    markdownContent = convertEditorJSToMarkdown({
+      blocks: editorData.blocks ?? [],
+      time: editorData.time,
+      version: editorData.version,
+    });
   } catch {
     markdownContent = editorContent;
   }
@@ -292,8 +308,23 @@ async function handlePublish(
     ? `${sanitizedContent}\\n\\n${effectiveHashtags}`
     : sanitizedContent;
 
-  const signedEventJson = JSON.parse(signedEvent.toString()) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][]; sig: string };
-  const nostrEventJson = JSON.parse(nostrEvent.toString()) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][] };
+  const signedEventJson = JSON.parse(signedEvent.toString()) as {
+    id: string;
+    pubkey: string;
+    created_at: number;
+    kind: number;
+    content: string;
+    tags: string[][];
+    sig: string;
+  };
+  const nostrEventJson = JSON.parse(nostrEvent.toString()) as {
+    id: string;
+    pubkey: string;
+    created_at: number;
+    kind: number;
+    content: string;
+    tags: string[][];
+  };
 
   await updateLongFormPost({
     id: postId,
@@ -311,7 +342,8 @@ async function handlePublish(
   });
 
   // Read directly from process.env to support test environment changes
-  const publisherUrl = process.env.NOSTR_PUBLISHER_URL ?? env.NOSTR_PUBLISHER_URL;
+  const publisherUrl =
+    process.env.NOSTR_PUBLISHER_URL ?? env.NOSTR_PUBLISHER_URL;
   if (!publisherUrl) {
     throw new Error("NOSTR_PUBLISHER_URL environment variable is not set");
   }
@@ -393,8 +425,16 @@ async function handleScheduleLongform(
 
   let markdownContent;
   try {
-    const editorData = JSON.parse(editorContent) as { blocks?: { type: string; data: Record<string, unknown> }[]; time?: number; version?: string };
-    markdownContent = convertEditorJSToMarkdown({ blocks: editorData.blocks ?? [], time: editorData.time, version: editorData.version });
+    const editorData = JSON.parse(editorContent) as {
+      blocks?: { type: string; data: Record<string, unknown> }[];
+      time?: number;
+      version?: string;
+    };
+    markdownContent = convertEditorJSToMarkdown({
+      blocks: editorData.blocks ?? [],
+      time: editorData.time,
+      version: editorData.version,
+    });
   } catch {
     markdownContent = editorContent;
   }
@@ -407,8 +447,23 @@ async function handleScheduleLongform(
     ? `${sanitizedContent}\\n\\n${effectiveHashtags}`
     : sanitizedContent;
 
-  const signedEventJson = JSON.parse(signedEvent.toString()) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][]; sig: string };
-  const nostrEventJson = JSON.parse(nostrEvent.toString()) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][] };
+  const signedEventJson = JSON.parse(signedEvent.toString()) as {
+    id: string;
+    pubkey: string;
+    created_at: number;
+    kind: number;
+    content: string;
+    tags: string[][];
+    sig: string;
+  };
+  const nostrEventJson = JSON.parse(nostrEvent.toString()) as {
+    id: string;
+    pubkey: string;
+    created_at: number;
+    kind: number;
+    content: string;
+    tags: string[][];
+  };
 
   // Extract published_at from NOSTR event tags for scheduling
   let scheduledForTimestamp: string | null = null;
@@ -444,7 +499,8 @@ async function handleScheduleLongform(
 /**
  * Main action handler for longform edit page
  */
-export async function handleLongFormEditAction(userId: string,
+export async function handleLongFormEditAction(
+  userId: string,
   postId: string,
   request: Request,
 ): Promise<Response> {
@@ -471,8 +527,7 @@ export async function handleLongFormEditAction(userId: string,
   const _action = formData.get("_action") as string;
   const queueType = (formData.get("queueType") as string) ?? "unassigned";
   const useHashtagPresets = formData.get("useHashtagPresets") === "true";
-  const hashTagPresetId =
-    (formData.get("hashTagPresetId")?.toString() ?? null);
+  const hashTagPresetId = formData.get("hashTagPresetId")?.toString() ?? null;
 
   // Handle upload-image action first, before any validation
   if (_action === "upload-image") {
@@ -489,7 +544,13 @@ export async function handleLongFormEditAction(userId: string,
 
   // Handle different actions
   if (_action === "save-draft") {
-    return handleSaveDraft(postId, userId, formData, queueType, hashTagPresetId);
+    return handleSaveDraft(
+      postId,
+      userId,
+      formData,
+      queueType,
+      hashTagPresetId,
+    );
   }
 
   if (_action === "publish") {
@@ -519,7 +580,3 @@ export async function handleLongFormEditAction(userId: string,
 
   return Response.json({ success: false });
 }
-
-
-
-

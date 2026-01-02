@@ -144,7 +144,9 @@ export default function ScheduledPosts() {
                       <td className="p-3 text-center">
                         <button
                           type="button"
-                          onClick={() => setSelectedPost(post as unknown as PostData)}
+                          onClick={() =>
+                            setSelectedPost(post as unknown as PostData)
+                          }
                           className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1 text-sm font-semibold leading-5 text-gray-800 hover:border-gray-300 hover:text-gray-900 hover:shadow-sm focus:ring focus:ring-gray-300/25 active:border-gray-200 active:shadow-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:border-gray-600 dark:hover:text-gray-200 dark:focus:ring-gray-600/40 dark:active:border-gray-700"
                         >
                           View
@@ -196,7 +198,9 @@ export default function ScheduledPosts() {
                   let modalImage: string | undefined;
                   if (selectedPost.fileUrl && selectedPost.fileUrl.length > 0) {
                     try {
-                      const parsed = JSON.parse(selectedPost.fileUrl[0]) as string[];
+                      const parsed = JSON.parse(
+                        selectedPost.fileUrl[0],
+                      ) as string[];
                       modalImage = parsed[0];
                     } catch (_error) {
                       modalImage = selectedPost.fileUrl[0];

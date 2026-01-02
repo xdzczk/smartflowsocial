@@ -12,9 +12,17 @@ import {
   combineContent,
   filterCombinedContent,
 } from "~/features/posts/combined.server";
-import type { PostData, LongFormPostData, CombinedContent } from "~/features/posts/types";
+import type {
+  PostData,
+  LongFormPostData,
+  CombinedContent,
+} from "~/features/posts/types";
 
-import { TEST_USER_ID, TEST_POST_ID, TEST_LONGFORM_ID } from "../utils/test-helpers";
+import {
+  TEST_USER_ID,
+  TEST_POST_ID,
+  TEST_LONGFORM_ID,
+} from "../utils/test-helpers";
 
 describe("Combined Content Utilities", () => {
   describe("nullToUndefined", () => {
@@ -328,7 +336,12 @@ describe("Combined Content Utilities", () => {
         },
       ] as unknown as LongFormPostData[];
 
-      const result = combineContent(posts, longFormPosts, "scheduledFor", "asc");
+      const result = combineContent(
+        posts,
+        longFormPosts,
+        "scheduledFor",
+        "asc",
+      );
 
       expect(result[0].id).toBe("post-1"); // Earlier first
       expect(result[1].id).toBe("longform-1");

@@ -4,7 +4,11 @@
  */
 
 import type { ProfileData } from "~/features/nostr/types";
-import type { HashTagPreset, QueueType, ScheduleConfig } from "~/features/posts/types";
+import type {
+  HashTagPreset,
+  QueueType,
+  ScheduleConfig,
+} from "~/features/posts/types";
 import {
   getAllPlans,
   getUserPaymentHistory,
@@ -102,7 +106,9 @@ export interface SettingsLoaderData {
   accounts: {
     isChild: boolean;
     parentNpub: string | null;
-    parentUser: (UserAccountInfo & { nostrProfile?: ProfileData | null }) | null;
+    parentUser:
+      | (UserAccountInfo & { nostrProfile?: ProfileData | null })
+      | null;
     confirmedChildren: UserAccountInfo[];
     pendingChildren: UserAccountInfo[];
   };
@@ -114,7 +120,9 @@ export interface SettingsLoaderData {
 /**
  * Load all settings data
  */
-export async function loadSettingsData(userId: string): Promise<SettingsLoaderData> {
+export async function loadSettingsData(
+  userId: string,
+): Promise<SettingsLoaderData> {
   // Get subscription and plan name for gating Accounts tab
   const currentSub = await getUserSubscription(userId);
   const planName = currentSub?.Plan?.name ?? null;
@@ -159,7 +167,7 @@ export async function loadSettingsData(userId: string): Promise<SettingsLoaderDa
   ]);
 
   // Accounts data
-  let accounts: SettingsLoaderData['accounts'];
+  let accounts: SettingsLoaderData["accounts"];
   if (isChild) {
     const parentUser = userRecord?.parentNpub
       ? await getUserByNpubWithProfile(userRecord.parentNpub)
@@ -167,19 +175,25 @@ export async function loadSettingsData(userId: string): Promise<SettingsLoaderDa
     accounts = {
       isChild: true,
       parentNpub: parentUser?.npub ?? null,
-      parentUser: parentUser ? {
-        ...parentUser,
-        id: parentUser.npub, // Add required id field
-        nostrProfile: parentUser.nostrProfile,
-      } : null,
+      parentUser: parentUser
+        ? {
+            ...parentUser,
+            id: parentUser.npub, // Add required id field
+            nostrProfile: parentUser.nostrProfile,
+          }
+        : null,
       confirmedChildren: [],
       pendingChildren: [],
     };
   } else {
     const parentNpub = myNpub;
     const [confirmedChildren, pendingChildren] = await Promise.all([
-      parentNpub ? getConfirmedChildrenForParent(parentNpub) : Promise.resolve([]),
-      parentNpub ? getPendingChildrenForParent(parentNpub) : Promise.resolve([]),
+      parentNpub
+        ? getConfirmedChildrenForParent(parentNpub)
+        : Promise.resolve([]),
+      parentNpub
+        ? getPendingChildrenForParent(parentNpub)
+        : Promise.resolve([]),
     ]);
     accounts = {
       isChild: false,
@@ -209,9 +223,12 @@ export async function loadSettingsData(userId: string): Promise<SettingsLoaderDa
       color: qt.color,
       description: qt.description,
       scheduleType: qt.scheduleType,
-      scheduleConfig: qt.scheduleConfig && typeof qt.scheduleConfig === "object" && !Array.isArray(qt.scheduleConfig)
-        ? (qt.scheduleConfig as ScheduleConfig)
-        : undefined,
+      scheduleConfig:
+        qt.scheduleConfig &&
+        typeof qt.scheduleConfig === "object" &&
+        !Array.isArray(qt.scheduleConfig)
+          ? (qt.scheduleConfig as ScheduleConfig)
+          : undefined,
       isEnabled: qt.isEnabled,
       userId: qt.userId,
     })),
@@ -256,7 +273,9 @@ export async function loadSettingsData(userId: string): Promise<SettingsLoaderDa
       paymentMethod: payment.paymentMethod,
       paymentHash: payment.paymentHash ?? "",
       planName: payment.Subscription?.Plan?.name ?? undefined,
-      planPrice: payment.Subscription?.Plan?.price ? Number(payment.Subscription.Plan.price) : undefined,
+      planPrice: payment.Subscription?.Plan?.price
+        ? Number(payment.Subscription.Plan.price)
+        : undefined,
     })),
     isChild,
     hasAccountsAccess,
@@ -266,4 +285,3 @@ export async function loadSettingsData(userId: string): Promise<SettingsLoaderDa
     hidePostsFromLowTrustUsers,
   };
 }
-

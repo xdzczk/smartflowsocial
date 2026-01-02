@@ -19,12 +19,14 @@ Learn how to create and use hashtag presets to streamline your posting workflow 
 ## What are Hashtag Presets?
 
 **Hashtag presets are:**
+
 - Reusable sets of hashtags
 - Organized by topic or content type
 - Automatically applied to posts
 - Assigned to queues for consistency
 
 **Benefits:**
+
 - Save time on repetitive tagging
 - Maintain consistent hashtags
 - Organize by content type
@@ -53,11 +55,13 @@ Learn how to create and use hashtag presets to streamline your posting workflow 
 **Fill in preset details:**
 
 1. **Name:**
+
    - Enter descriptive name
    - Example: "Bitcoin Content"
    - This appears in dropdowns
 
 2. **Tags:**
+
    - Enter hashtags (space or comma separated)
    - Example: `#bitcoin #lightning #nostr #plebchain`
    - Or: `bitcoin, lightning, nostr, plebchain`
@@ -69,6 +73,7 @@ Learn how to create and use hashtag presets to streamline your posting workflow 
    - Helps remember preset purpose
 
 **Example preset:**
+
 ```
 Name: Bitcoin Content
 Tags: bitcoin lightning nostr plebchain
@@ -80,6 +85,7 @@ Description: For Bitcoin-related content
 ## Step 4: Save Preset
 
 1. **Review settings:**
+
    - Check name is clear
    - Verify tags are correct
    - Ensure description is helpful
@@ -105,6 +111,7 @@ Description: For Bitcoin-related content
 6. **Click "Save"**
 
 **Result:**
+
 - Preset automatically applied to posts in this queue
 - Saves time on repetitive tagging
 - Maintains consistency
@@ -124,6 +131,7 @@ Description: For Bitcoin-related content
 5. **Can be edited if needed**
 
 **Benefits:**
+
 - No manual tagging needed
 - Consistent hashtags
 - Faster posting
@@ -139,6 +147,7 @@ Description: For Bitcoin-related content
 5. **Can be edited if needed**
 
 **Use cases:**
+
 - One-off posts
 - Different content type
 - Override queue preset
@@ -183,12 +192,14 @@ Description: For Bitcoin-related content
 ### Organization
 
 **Create presets by:**
+
 - **Topic:** Bitcoin, Lightning, Nostr
 - **Content Type:** News, Memes, Educational
 - **Campaign:** Product Launch, Event Promotion
 - **Frequency:** Daily, Weekly, Monthly
 
 **Example presets:**
+
 - "Bitcoin News" - `#bitcoin #lightning #news`
 - "Memes" - `#meme #bitcoin #plebchain`
 - "Educational" - `#bitcoin #lightning #tutorial`
@@ -196,6 +207,7 @@ Description: For Bitcoin-related content
 ### Tag Selection
 
 **Tips for choosing tags:**
+
 - Use relevant, popular tags
 - Mix broad and specific tags
 - Include 3-5 tags per preset
@@ -203,12 +215,14 @@ Description: For Bitcoin-related content
 - Avoid over-tagging
 
 **Good examples:**
+
 - `bitcoin lightning nostr plebchain` ✅
 - `bitcoin lightning nostr plebchain memes news updates daily` ❌ (too many)
 
 ### Consistency
 
 **Maintain consistency:**
+
 - Use same tags for similar content
 - Update presets as needed
 - Review presets regularly
@@ -223,12 +237,14 @@ Description: For Bitcoin-related content
 **For different content types:**
 
 1. **Create preset for each type:**
+
    - Bitcoin News
    - Lightning Updates
    - Nostr Tips
    - Memes
 
 2. **Assign to different queues:**
+
    - News queue → Bitcoin News preset
    - Updates queue → Lightning Updates preset
 
@@ -239,6 +255,7 @@ Description: For Bitcoin-related content
 ### Preset Hierarchy
 
 **Priority order:**
+
 1. **Manual selection** (if enabled)
 2. **Queue preset** (if assigned)
 3. **No preset** (manual tagging)
@@ -252,6 +269,7 @@ Description: For Bitcoin-related content
 **Problem:** Preset not showing in post
 
 **Solutions:**
+
 - Check "Use Hashtag Preset" is toggled
 - Verify preset is selected
 - Check queue has preset assigned
@@ -262,6 +280,7 @@ Description: For Bitcoin-related content
 **Problem:** Tags not appearing in post
 
 **Solutions:**
+
 - Check "Show Hashtags in Posts" setting
 - Verify preset has tags
 - Check post content area
@@ -272,6 +291,7 @@ Description: For Bitcoin-related content
 **Problem:** Preset not available
 
 **Solutions:**
+
 - Verify preset is saved
 - Check preset is enabled
 - Refresh page
@@ -285,7 +305,7 @@ Description: For Bitcoin-related content
 ✅ How to create a preset  
 ✅ How to assign presets to queues  
 ✅ How to use presets in posts  
-✅ Preset management best practices  
+✅ Preset management best practices
 
 ---
 
@@ -306,4 +326,3 @@ Description: For Bitcoin-related content
 ---
 
 **Next Tutorial:** [Using the Calendar View](./using-calendar-view.md) → Visual scheduling
-

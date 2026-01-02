@@ -1,6 +1,6 @@
 /**
  * Property-based tests for data validation and sanitization
- * 
+ *
  * Uses fast-check to verify validation properties:
  * - Sanitization preserves valid data
  * - Invalid data is rejected or sanitized
@@ -46,17 +46,14 @@ describe("Property-Based Tests: Data Validation", () => {
   describe("URL Validation Properties", () => {
     it("should validate well-formed URLs", () => {
       fc.assert(
-        fc.property(
-          fc.webUrl(),
-          (url: string) => {
-            try {
-              new URL(url);
-              return true;
-            } catch {
-              return false;
-            }
-          },
-        ),
+        fc.property(fc.webUrl(), (url: string) => {
+          try {
+            new URL(url);
+            return true;
+          } catch {
+            return false;
+          }
+        }),
         { numRuns: 50 },
       );
     });
@@ -91,12 +88,9 @@ describe("Property-Based Tests: Data Validation", () => {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
       fc.assert(
-        fc.property(
-          fc.emailAddress(),
-          (email: string) => {
-            return emailRegex.test(email);
-          },
-        ),
+        fc.property(fc.emailAddress(), (email: string) => {
+          return emailRegex.test(email);
+        }),
         { numRuns: 50 },
       );
     });
@@ -105,24 +99,18 @@ describe("Property-Based Tests: Data Validation", () => {
   describe("Number Validation Properties", () => {
     it("should validate positive integers", () => {
       fc.assert(
-        fc.property(
-          fc.integer({ min: 1, max: 1000000 }),
-          (num: number) => {
-            return Number.isInteger(num) && num > 0;
-          },
-        ),
+        fc.property(fc.integer({ min: 1, max: 1000000 }), (num: number) => {
+          return Number.isInteger(num) && num > 0;
+        }),
         { numRuns: 50 },
       );
     });
 
     it("should validate non-negative numbers", () => {
       fc.assert(
-        fc.property(
-          fc.integer({ min: 0, max: 1000000 }),
-          (num: number) => {
-            return num >= 0;
-          },
-        ),
+        fc.property(fc.integer({ min: 0, max: 1000000 }), (num: number) => {
+          return num >= 0;
+        }),
         { numRuns: 50 },
       );
     });
@@ -176,13 +164,10 @@ describe("Property-Based Tests: Data Validation", () => {
       // Capture the current time once at test start to avoid race conditions
       const now = new Date();
       fc.assert(
-        fc.property(
-          fc.date({ min: now }),
-          (date: Date) => {
-            // Use the captured 'now' time for consistent validation
-            return date >= now && !isNaN(date.getTime());
-          },
-        ),
+        fc.property(fc.date({ min: now }), (date: Date) => {
+          // Use the captured 'now' time for consistent validation
+          return date >= now && !isNaN(date.getTime());
+        }),
         { numRuns: 30 },
       );
     });
@@ -204,9 +189,3 @@ describe("Property-Based Tests: Data Validation", () => {
     });
   });
 });
-
-
-
-
-
-

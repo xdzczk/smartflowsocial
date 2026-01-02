@@ -58,12 +58,14 @@ describe("Stats Service", () => {
     expect(fetchOptions.method).toBe("POST");
     const headers = fetchOptions.headers as Record<string, string> | undefined;
     expect(headers?.["Content-Type"]).toBe("application/json");
-    expect(fetchOptions.body).toBe(JSON.stringify({
-      requestType: "thread_view",
-      params: {
-        event_id: "event-123",
-      },
-    }));
+    expect(fetchOptions.body).toBe(
+      JSON.stringify({
+        requestType: "thread_view",
+        params: {
+          event_id: "event-123",
+        },
+      }),
+    );
     expect(result["event-123"]).toEqual({
       likes: 5,
       replies: 2,
@@ -93,7 +95,9 @@ describe("Stats Service", () => {
   });
 
   it("should handle fetch errors gracefully", async () => {
-    (fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Network error"));
+    (fetch as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error("Network error"),
+    );
 
     const result = await getPostStats(["event-123"]);
 
@@ -222,4 +226,3 @@ describe("Stats Service", () => {
     });
   });
 });
-

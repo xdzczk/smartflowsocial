@@ -1,6 +1,6 @@
 /**
  * Queue Type Resolver
- * 
+ *
  * Business logic for resolving queue type IDs from names.
  * This handles the lookup logic that was previously in the model layer.
  */
@@ -8,7 +8,7 @@
 import { prisma } from "~/lib/prisma.server";
 /**
  * Resolve queue type ID from name or ID
- * 
+ *
  * If queueTypeId is provided, returns it directly.
  * If queueType (name) is provided, looks up the ID.
  * Returns null if queueType is "unassigned" or not found.
@@ -41,9 +41,3 @@ export async function resolveQueueTypeId(
 
   return queueTypeRecord?.id ?? null;
 }
-
-
-
-
-
-

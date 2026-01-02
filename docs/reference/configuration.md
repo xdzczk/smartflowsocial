@@ -27,11 +27,13 @@ These variables must be set for SmartFlowSocial to run.
 PostgreSQL connection string.
 
 **Format:**
+
 ```
 postgresql://[user]:[password]@[host]:[port]/[database]?schema=[schema]
 ```
 
 **Examples:**
+
 ```env
 # Local development
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/smartflow?schema=public
@@ -47,6 +49,7 @@ DATABASE_URL=postgresql://user:password@host:5432/db?sslmode=require
 ```
 
 **Validation:**
+
 - Must be a valid PostgreSQL connection string
 - Database must exist
 - User must have CREATE, SELECT, INSERT, UPDATE, DELETE permissions
@@ -58,16 +61,19 @@ DATABASE_URL=postgresql://user:password@host:5432/db?sslmode=require
 Random secret for encrypting session cookies.
 
 **Generate:**
+
 ```bash
 openssl rand -base64 32
 ```
 
 **Example:**
+
 ```env
 SESSION_SECRET=your-random-32-character-secret-string-here
 ```
 
 **Security:**
+
 - Must be at least 32 characters
 - Use a cryptographically secure random generator
 - Never commit to version control
@@ -80,20 +86,24 @@ SESSION_SECRET=your-random-32-character-secret-string-here
 URL to your HTTP Nostr Publisher service.
 
 **Format:**
+
 ```
 https://your-publisher.example.com
 ```
 
 **Example:**
+
 ```env
 NOSTR_PUBLISHER_URL=https://publisher.example.com
 ```
 
 **Required for:**
+
 - Publishing posts to Nostr relays
 - Signing events server-side (when needed)
 
 **Setup:**
+
 1. Deploy [HTTP Nostr Publisher](https://github.com/getAlby/http-nostr-publisher)
 2. Configure with your Nostr private key
 3. Set this variable to the service URL
@@ -105,11 +115,13 @@ NOSTR_PUBLISHER_URL=https://publisher.example.com
 Redis connection string for BullMQ job queues.
 
 **Format:**
+
 ```
 redis://[password@][host]:[port]/[database]
 ```
 
 **Examples:**
+
 ```env
 # Local development
 REDIS_URL=redis://localhost:6379
@@ -125,6 +137,7 @@ REDIS_URL=rediss://default:password@xxx.upstash.io:6379
 ```
 
 **Required for:**
+
 - Scheduled post processing
 - Background job queue
 - Worker process functionality
@@ -185,16 +198,19 @@ STORAGE_BUCKET=my-smartflow-bucket
 Application environment mode.
 
 **Values:**
+
 - `development` - Development mode (default)
 - `production` - Production mode
 - `test` - Test mode
 
 **Example:**
+
 ```env
 NODE_ENV=production
 ```
 
 **Effects:**
+
 - Development: Debug logging, hot reload
 - Production: Optimized builds, error tracking
 - Test: Test database, mock services
@@ -206,26 +222,31 @@ NODE_ENV=production
 Primal caching service WebSocket URL(s) for profile and event lookups.
 
 **Format:**
+
 ```
 wss://cache.example.com/v1
 ```
 
 **Single endpoint:**
+
 ```env
 PRIMAL_CACHING_URL=wss://cache.example.com/v1
 ```
 
 **Multiple endpoints (comma-separated):**
+
 ```env
 PRIMAL_CACHING_URL=wss://cache1.example.com/v1,wss://cache2.example.com/v1
 ```
 
 **Default:**
 If not set, uses public Primal cache endpoints:
+
 - `wss://cache1.primal.net/v1`
 - `wss://cache2.primal.net/v1`
 
 **Required for:**
+
 - Profile lookups
 - Event fetching
 - Thread views
@@ -238,21 +259,25 @@ If not set, uses public Primal cache endpoints:
 Nostr secret key for server-side event signing and DMs.
 
 **Format:**
+
 ```
 nsec1...
 ```
 
 **Example:**
+
 ```env
 NOSTR_NSEC=nsec1abc123...
 ```
 
 **Security Warning:**
+
 - ⚠️ Keep this secret! Never commit to version control
 - Store in secure secret management service
 - Rotate if compromised
 
 **Required for:**
+
 - Sending subscription-related DMs
 - Server-side event signing (when user extension unavailable)
 
@@ -263,21 +288,25 @@ NOSTR_NSEC=nsec1abc123...
 Nostr Wallet Connect string for receiving subscription payments.
 
 **Format:**
+
 ```
 nostr+walletconnect://pubkey?relay=wss://relay.example.com&secret=...
 ```
 
 **Example:**
+
 ```env
 OWNER_NWC=nostr+walletconnect://npub1...?relay=wss://relay.example.com&secret=...
 ```
 
 **How to get:**
+
 1. Use a Lightning wallet supporting NWC (Alby, Mutiny, etc.)
 2. Generate connection string from wallet
 3. Set as this environment variable
 
 **Required for:**
+
 - Accepting Lightning payments
 - Subscription management
 
@@ -288,11 +317,13 @@ OWNER_NWC=nostr+walletconnect://npub1...?relay=wss://relay.example.com&secret=..
 Test database connection string (optional).
 
 **Format:**
+
 ```
 postgresql://user:password@host:port/testdb
 ```
 
 **Example:**
+
 ```env
 TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/smartflow_test
 ```
@@ -301,6 +332,7 @@ TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/smartflow_test
 If not set, uses `DATABASE_URL` for tests.
 
 **Use case:**
+
 - Separate test database
 - Avoid polluting development data
 
@@ -311,21 +343,25 @@ If not set, uses `DATABASE_URL` for tests.
 Sentry error tracking DSN (optional).
 
 **Format:**
+
 ```
 https://xxx@xxx.ingest.sentry.io/xxx
 ```
 
 **Example:**
+
 ```env
 SENTRY_DSN=https://abc123@o123456.ingest.sentry.io/123456
 ```
 
 **How to get:**
+
 1. Create project at [sentry.io](https://sentry.io)
 2. Get DSN from project settings
 3. Set as this environment variable
 
 **Required for:**
+
 - Error tracking
 - Performance monitoring
 - Release tracking
@@ -344,12 +380,14 @@ STORAGE_BUCKET=my-smartflow-bucket
 ```
 
 **Setup:**
+
 1. Create S3 bucket in AWS Console
 2. Create IAM user with S3 access
 3. Generate access keys
 4. Configure bucket CORS if needed
 
 **CORS Configuration:**
+
 ```json
 [
   {
@@ -373,6 +411,7 @@ STORAGE_BUCKET=your-bucket-name
 ```
 
 **Setup:**
+
 1. Create R2 bucket in Cloudflare Dashboard
 2. Create API token
 3. Use `auto` for region
@@ -389,6 +428,7 @@ STORAGE_BUCKET=smartflow
 ```
 
 **Docker Setup:**
+
 ```bash
 docker run -d \
   --name minio \
@@ -409,9 +449,11 @@ docker run -d \
 **Purpose:** Sign and publish Nostr events
 
 **Deploy:**
+
 - [HTTP Nostr Publisher](https://github.com/getAlby/http-nostr-publisher)
 
 **Configuration:**
+
 ```env
 NOSTR_PUBLISHER_URL=https://publisher.example.com
 ```
@@ -424,9 +466,11 @@ NOSTR_PUBLISHER_URL=https://publisher.example.com
 **Purpose:** Profile and event lookups
 
 **Deploy:**
+
 - [Primal Caching Service](https://github.com/PrimalHQ/primal-caching-service)
 
 **Configuration:**
+
 ```env
 PRIMAL_CACHING_URL=wss://cache.example.com/v1
 ```
@@ -502,6 +546,7 @@ NODE_ENV=production
 ```
 
 **Security Checklist:**
+
 - ✅ Strong `SESSION_SECRET` (32+ characters)
 - ✅ SSL/TLS for all connections
 - ✅ Secure secret management (not in code)
@@ -519,28 +564,29 @@ Create a validation script:
 ```javascript
 // scripts/validate-env.js
 const required = [
-  'DATABASE_URL',
-  'SESSION_SECRET',
-  'NOSTR_PUBLISHER_URL',
-  'REDIS_URL',
-  'STORAGE_ACCESS_KEY',
-  'STORAGE_SECRET',
-  'STORAGE_REGION',
-  'STORAGE_BUCKET',
+  "DATABASE_URL",
+  "SESSION_SECRET",
+  "NOSTR_PUBLISHER_URL",
+  "REDIS_URL",
+  "STORAGE_ACCESS_KEY",
+  "STORAGE_SECRET",
+  "STORAGE_REGION",
+  "STORAGE_BUCKET",
 ];
 
-const missing = required.filter(key => !process.env[key]);
+const missing = required.filter((key) => !process.env[key]);
 
 if (missing.length > 0) {
-  console.error('❌ Missing required environment variables:');
-  missing.forEach(key => console.error(`  - ${key}`));
+  console.error("❌ Missing required environment variables:");
+  missing.forEach((key) => console.error(`  - ${key}`));
   process.exit(1);
 }
 
-console.log('✅ All required environment variables are set');
+console.log("✅ All required environment variables are set");
 ```
 
 **Run:**
+
 ```bash
 node scripts/validate-env.js
 ```
@@ -557,4 +603,3 @@ node scripts/validate-env.js
 ---
 
 **Next:** [Installation Guide](../getting-started/installation.md) → Set up your environment
-

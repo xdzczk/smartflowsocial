@@ -1,6 +1,6 @@
 /**
  * Property-based tests for payment processing
- * 
+ *
  * Uses fast-check to generate random inputs and verify properties
  * Tests critical invariants for payment calculations
  */
@@ -45,7 +45,8 @@ describe("Property-Based Tests: Payment Processing", () => {
 
       fc.assert(
         fc.property(
-          fc.float({ min: Math.fround(0.01), max: Math.fround(10000) })
+          fc
+            .float({ min: Math.fround(0.01), max: Math.fround(10000) })
             .filter((amount: number) => Number.isFinite(amount) && amount > 0), // Filter out NaN, Infinity, and zero
           (usdAmount: number) => {
             const sats = Math.round((usdAmount / 2500) * 100000000);
@@ -63,13 +64,10 @@ describe("Property-Based Tests: Payment Processing", () => {
       (getBitcoinRate as ReturnType<typeof vi.fn>).mockResolvedValue(2500);
 
       fc.assert(
-        fc.property(
-          fc.constant(0),
-          (usdAmount: number) => {
-            const sats = Math.round((usdAmount / 2500) * 100000000);
-            return sats === 0;
-          },
-        ),
+        fc.property(fc.constant(0), (usdAmount: number) => {
+          const sats = Math.round((usdAmount / 2500) * 100000000);
+          return sats === 0;
+        }),
       );
     });
 
@@ -78,7 +76,8 @@ describe("Property-Based Tests: Payment Processing", () => {
 
       fc.assert(
         fc.property(
-          fc.float({ min: 0, max: Math.fround(10000) })
+          fc
+            .float({ min: 0, max: Math.fround(10000) })
             .filter((amount: number) => Number.isFinite(amount) && amount >= 0), // Filter out NaN and Infinity
           (usdAmount: number) => {
             const sats = Math.round((usdAmount / 2500) * 100000000);
@@ -106,10 +105,14 @@ describe("Property-Based Tests: Payment Processing", () => {
     it("should handle very small amounts correctly (minimum 1 sat)", async () => {
       fc.assert(
         fc.property(
-          fc.float({ min: Math.fround(0.00000001), max: Math.fround(0.01) }) // Very small USD amounts
+          fc
+            .float({ min: Math.fround(0.00000001), max: Math.fround(0.01) }) // Very small USD amounts
             .filter((amount: number) => Number.isFinite(amount) && amount > 0), // Filter out NaN, Infinity, and zero
           (usdAmount: number) => {
-            const sats = Math.max(1, Math.round((usdAmount / 2500) * 100000000));
+            const sats = Math.max(
+              1,
+              Math.round((usdAmount / 2500) * 100000000),
+            );
             return sats >= 1;
           },
         ),
@@ -163,18 +166,18 @@ describe("Property-Based Tests: Payment Processing", () => {
           fc.constantFrom("PENDING", "COMPLETED", "EXPIRED", "FAILED"),
           (from: string, to: string) => {
             const isValid = isValidTransition(from, to);
-            
+
             // Property: The validation logic correctly implements the transition rules
             // Rule 1: Terminal states can only stay in the same state
             if (terminalStates.includes(from)) {
               return isValid === (from === to);
             }
-            
+
             // Rule 2: Non-terminal states can stay in the same state (always valid)
             if (from === to) {
               return isValid === true;
             }
-            
+
             // Rule 3: Non-terminal states can only transition to states in the valid transitions list
             return isValid === validTransitions[from].includes(to);
           },
@@ -184,5 +187,3 @@ describe("Property-Based Tests: Payment Processing", () => {
     });
   });
 });
-
-

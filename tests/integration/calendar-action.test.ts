@@ -34,11 +34,19 @@ import {
   handleCalendarRescheduleLongform,
 } from "~/features/posts/services/calendar-action.server";
 import { cancelPostJob, enqueuePostJob } from "~/infra/queue";
-import { getLongFormPost, updateLongFormPost } from "~/models/longformpost.server";
+import {
+  getLongFormPost,
+  updateLongFormPost,
+} from "~/models/longformpost.server";
 import { reschedulePost } from "~/models/post.commands.server";
 import { getPostById } from "~/models/post.queries.server";
 
-import { createFormData, TEST_USER_ID, TEST_POST_ID, TEST_LONGFORM_ID } from "../utils/test-helpers";
+import {
+  createFormData,
+  TEST_USER_ID,
+  TEST_POST_ID,
+  TEST_LONGFORM_ID,
+} from "../utils/test-helpers";
 
 describe("Calendar Action Handler", () => {
   beforeEach(() => {
@@ -61,16 +69,33 @@ describe("Calendar Action Handler", () => {
       const result = await handleCalendarAction(formData, TEST_USER_ID);
 
       expect(getPostById).toHaveBeenCalled();
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string; needsSigning?: boolean; signed?: boolean } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as {
+              success?: boolean;
+              error?: string;
+              needsSigning?: boolean;
+              signed?: boolean;
+            })
+          : {};
       expect(jsonResult.success).toBe(true);
     });
 
     it("should route to handleCalendarRescheduleLongform for 'rescheduleLongform' action", async () => {
       const mockLongFormPost = { id: TEST_LONGFORM_ID, userId: TEST_USER_ID };
-      (getLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(mockLongFormPost);
-      (updateLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(mockLongFormPost);
+      (getLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockLongFormPost,
+      );
+      (updateLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockLongFormPost,
+      );
 
       const formData = createFormData({
         action: "rescheduleLongform",
@@ -81,9 +106,22 @@ describe("Calendar Action Handler", () => {
       const result = await handleCalendarAction(formData, TEST_USER_ID);
 
       expect(getLongFormPost).toHaveBeenCalled();
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string; needsSigning?: boolean; signed?: boolean } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as {
+              success?: boolean;
+              error?: string;
+              needsSigning?: boolean;
+              signed?: boolean;
+            })
+          : {};
       expect(jsonResult.success).toBe(true);
     });
 
@@ -94,9 +132,22 @@ describe("Calendar Action Handler", () => {
 
       const result = await handleCalendarAction(formData, TEST_USER_ID);
 
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string; needsSigning?: boolean; signed?: boolean } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as {
+              success?: boolean;
+              error?: string;
+              needsSigning?: boolean;
+              signed?: boolean;
+            })
+          : {};
       expect(jsonResult.error).toBe("Invalid action");
     });
   });
@@ -118,7 +169,10 @@ describe("Calendar Action Handler", () => {
 
       const result = await handleCalendarReschedule(formData, TEST_USER_ID);
 
-      expect(getPostById).toHaveBeenCalledWith({ id: TEST_POST_ID, userId: TEST_USER_ID });
+      expect(getPostById).toHaveBeenCalledWith({
+        id: TEST_POST_ID,
+        userId: TEST_USER_ID,
+      });
       expect(cancelPostJob).toHaveBeenCalledWith(TEST_POST_ID);
       expect(reschedulePost).toHaveBeenCalledWith({
         id: TEST_POST_ID,
@@ -127,9 +181,22 @@ describe("Calendar Action Handler", () => {
         overrideQueue: false,
       });
 
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string; needsSigning?: boolean; signed?: boolean } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as {
+              success?: boolean;
+              error?: string;
+              needsSigning?: boolean;
+              signed?: boolean;
+            })
+          : {};
       expect(jsonResult.success).toBe(true);
       expect(jsonResult.needsSigning).toBe(true);
     });
@@ -137,8 +204,23 @@ describe("Calendar Action Handler", () => {
     it("should reschedule with signed events", async () => {
       const mockPost = { id: TEST_POST_ID, userId: TEST_USER_ID };
       const newTime = String(Math.floor(Date.now() / 1000) + 3600);
-      const signedEvent = { id: "event-123", pubkey: "pk-123", created_at: Math.floor(Date.now() / 1000), kind: 1, content: "test", tags: [], sig: "sig-123" };
-      const nostrEvent = { id: "event-123", pubkey: "pk-123", created_at: Math.floor(Date.now() / 1000), kind: 1, content: "test", tags: [] };
+      const signedEvent = {
+        id: "event-123",
+        pubkey: "pk-123",
+        created_at: Math.floor(Date.now() / 1000),
+        kind: 1,
+        content: "test",
+        tags: [],
+        sig: "sig-123",
+      };
+      const nostrEvent = {
+        id: "event-123",
+        pubkey: "pk-123",
+        created_at: Math.floor(Date.now() / 1000),
+        kind: 1,
+        content: "test",
+        tags: [],
+      };
 
       (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
       (cancelPostJob as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
@@ -168,9 +250,22 @@ describe("Calendar Action Handler", () => {
         parseInt(newTime),
       );
 
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string; needsSigning?: boolean; signed?: boolean } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as {
+              success?: boolean;
+              error?: string;
+              needsSigning?: boolean;
+              signed?: boolean;
+            })
+          : {};
       expect(jsonResult.success).toBe(true);
       expect(jsonResult.signed).toBe(true);
     });
@@ -205,9 +300,22 @@ describe("Calendar Action Handler", () => {
 
       const result = await handleCalendarReschedule(formData, TEST_USER_ID);
 
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string; needsSigning?: boolean; signed?: boolean } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as {
+              success?: boolean;
+              error?: string;
+              needsSigning?: boolean;
+              signed?: boolean;
+            })
+          : {};
       expect(jsonResult.error).toBe("Missing required fields");
     });
 
@@ -218,9 +326,22 @@ describe("Calendar Action Handler", () => {
 
       const result = await handleCalendarReschedule(formData, TEST_USER_ID);
 
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string; needsSigning?: boolean; signed?: boolean } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as {
+              success?: boolean;
+              error?: string;
+              needsSigning?: boolean;
+              signed?: boolean;
+            })
+          : {};
       expect(jsonResult.error).toBe("Missing required fields");
     });
 
@@ -234,9 +355,22 @@ describe("Calendar Action Handler", () => {
 
       const result = await handleCalendarReschedule(formData, TEST_USER_ID);
 
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string; needsSigning?: boolean; signed?: boolean } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as {
+              success?: boolean;
+              error?: string;
+              needsSigning?: boolean;
+              signed?: boolean;
+            })
+          : {};
       expect(jsonResult.error).toBe("Post not found");
     });
 
@@ -258,9 +392,22 @@ describe("Calendar Action Handler", () => {
       const result = await handleCalendarReschedule(formData, TEST_USER_ID);
 
       // Should still succeed but without signed events
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string; needsSigning?: boolean; signed?: boolean } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as {
+              success?: boolean;
+              error?: string;
+              needsSigning?: boolean;
+              signed?: boolean;
+            })
+          : {};
       expect(jsonResult.success).toBe(true);
       expect(jsonResult.needsSigning).toBe(true);
     });
@@ -271,17 +418,27 @@ describe("Calendar Action Handler", () => {
       const mockLongFormPost = { id: TEST_LONGFORM_ID, userId: TEST_USER_ID };
       const newTime = String(Math.floor(Date.now() / 1000) + 3600);
 
-      (getLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(mockLongFormPost);
-      (updateLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(mockLongFormPost);
+      (getLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockLongFormPost,
+      );
+      (updateLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockLongFormPost,
+      );
 
       const formData = createFormData({
         postId: TEST_LONGFORM_ID,
         newTime,
       });
 
-      const result = await handleCalendarRescheduleLongform(formData, TEST_USER_ID);
+      const result = await handleCalendarRescheduleLongform(
+        formData,
+        TEST_USER_ID,
+      );
 
-      expect(getLongFormPost).toHaveBeenCalledWith({ id: TEST_LONGFORM_ID, userId: TEST_USER_ID });
+      expect(getLongFormPost).toHaveBeenCalledWith({
+        id: TEST_LONGFORM_ID,
+        userId: TEST_USER_ID,
+      });
       expect(updateLongFormPost).toHaveBeenCalledWith({
         id: TEST_LONGFORM_ID,
         userId: TEST_USER_ID,
@@ -290,9 +447,22 @@ describe("Calendar Action Handler", () => {
         nostrEvent: null,
       });
 
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string; needsSigning?: boolean; signed?: boolean } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as {
+              success?: boolean;
+              error?: string;
+              needsSigning?: boolean;
+              signed?: boolean;
+            })
+          : {};
       expect(jsonResult.success).toBe(true);
       expect(jsonResult.signed).toBe(false);
     });
@@ -300,11 +470,30 @@ describe("Calendar Action Handler", () => {
     it("should reschedule with signed events", async () => {
       const mockLongFormPost = { id: TEST_LONGFORM_ID, userId: TEST_USER_ID };
       const newTime = String(Math.floor(Date.now() / 1000) + 3600);
-      const signedEvent = { id: "event-123", pubkey: "pk-123", created_at: Math.floor(Date.now() / 1000), kind: 30023, content: "test", tags: [], sig: "sig-123" };
-      const nostrEvent = { id: "event-123", pubkey: "pk-123", created_at: Math.floor(Date.now() / 1000), kind: 30023, content: "test", tags: [] };
+      const signedEvent = {
+        id: "event-123",
+        pubkey: "pk-123",
+        created_at: Math.floor(Date.now() / 1000),
+        kind: 30023,
+        content: "test",
+        tags: [],
+        sig: "sig-123",
+      };
+      const nostrEvent = {
+        id: "event-123",
+        pubkey: "pk-123",
+        created_at: Math.floor(Date.now() / 1000),
+        kind: 30023,
+        content: "test",
+        tags: [],
+      };
 
-      (getLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(mockLongFormPost);
-      (updateLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(mockLongFormPost);
+      (getLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockLongFormPost,
+      );
+      (updateLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockLongFormPost,
+      );
 
       const formData = createFormData({
         postId: TEST_LONGFORM_ID,
@@ -313,7 +502,10 @@ describe("Calendar Action Handler", () => {
         nostrEvent: JSON.stringify(nostrEvent),
       });
 
-      const result = await handleCalendarRescheduleLongform(formData, TEST_USER_ID);
+      const result = await handleCalendarRescheduleLongform(
+        formData,
+        TEST_USER_ID,
+      );
 
       expect(updateLongFormPost).toHaveBeenCalledWith({
         id: TEST_LONGFORM_ID,
@@ -323,9 +515,22 @@ describe("Calendar Action Handler", () => {
         nostrEvent,
       });
 
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string; needsSigning?: boolean; signed?: boolean } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as {
+              success?: boolean;
+              error?: string;
+              needsSigning?: boolean;
+              signed?: boolean;
+            })
+          : {};
       expect(jsonResult.success).toBe(true);
       expect(jsonResult.signed).toBe(true);
     });
@@ -335,11 +540,27 @@ describe("Calendar Action Handler", () => {
         newTime: String(Math.floor(Date.now() / 1000) + 3600),
       });
 
-      const result = await handleCalendarRescheduleLongform(formData, TEST_USER_ID);
+      const result = await handleCalendarRescheduleLongform(
+        formData,
+        TEST_USER_ID,
+      );
 
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string; needsSigning?: boolean; signed?: boolean } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as {
+              success?: boolean;
+              error?: string;
+              needsSigning?: boolean;
+              signed?: boolean;
+            })
+          : {};
       expect(jsonResult.error).toBe("Missing required fields");
     });
 
@@ -348,11 +569,27 @@ describe("Calendar Action Handler", () => {
         postId: TEST_LONGFORM_ID,
       });
 
-      const result = await handleCalendarRescheduleLongform(formData, TEST_USER_ID);
+      const result = await handleCalendarRescheduleLongform(
+        formData,
+        TEST_USER_ID,
+      );
 
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string; needsSigning?: boolean; signed?: boolean } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as {
+              success?: boolean;
+              error?: string;
+              needsSigning?: boolean;
+              signed?: boolean;
+            })
+          : {};
       expect(jsonResult.error).toBe("Missing required fields");
     });
 
@@ -364,11 +601,27 @@ describe("Calendar Action Handler", () => {
         newTime: String(Math.floor(Date.now() / 1000) + 3600),
       });
 
-      const result = await handleCalendarRescheduleLongform(formData, TEST_USER_ID);
+      const result = await handleCalendarRescheduleLongform(
+        formData,
+        TEST_USER_ID,
+      );
 
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string; needsSigning?: boolean; signed?: boolean } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as {
+              success?: boolean;
+              error?: string;
+              needsSigning?: boolean;
+              signed?: boolean;
+            })
+          : {};
       expect(jsonResult.error).toBe("Longform post not found");
     });
 
@@ -376,8 +629,12 @@ describe("Calendar Action Handler", () => {
       const mockLongFormPost = { id: TEST_LONGFORM_ID, userId: TEST_USER_ID };
       const newTime = String(Math.floor(Date.now() / 1000) + 3600);
 
-      (getLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(mockLongFormPost);
-      (updateLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(mockLongFormPost);
+      (getLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockLongFormPost,
+      );
+      (updateLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockLongFormPost,
+      );
 
       const formData = createFormData({
         postId: TEST_LONGFORM_ID,
@@ -386,15 +643,30 @@ describe("Calendar Action Handler", () => {
         nostrEvent: "invalid-json",
       });
 
-      const result = await handleCalendarRescheduleLongform(formData, TEST_USER_ID);
+      const result = await handleCalendarRescheduleLongform(
+        formData,
+        TEST_USER_ID,
+      );
 
       // Should still succeed but without signed events
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string; needsSigning?: boolean; signed?: boolean } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as {
+              success?: boolean;
+              error?: string;
+              needsSigning?: boolean;
+              signed?: boolean;
+            })
+          : {};
       expect(jsonResult.success).toBe(true);
       expect(jsonResult.signed).toBe(false);
     });
   });
 });
-

@@ -37,48 +37,54 @@ export default function SchedulingControls({
 }: SchedulingControlsProps) {
   const [localScheduledFor, setLocalScheduledFor] = useState(scheduledFor);
 
-  const calculateQueueScheduleTime = useCallback(async (queueTypeName: string) => {
-    if (queueTypeName === "unassigned") {
-      setLocalScheduledFor("");
-      onScheduleChange("");
-      return;
-    }
-
-    // Find the queue type object to get its ID
-    const selectedQueueType = queueTypes.find(qt => 
-      (typeof qt === "string" ? qt : qt.name) === queueTypeName
-    );
-    const queueTypeId = typeof selectedQueueType === "object" ? selectedQueueType.id : null;
-
-    try {
-      const response = await fetch("/api/queue-schedule", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          queueTypeId,
-          queueTypeName, // Keep for backward compatibility
-          userId,
-        }),
-      });
-
-      if (response.ok) {
-        const data = (await response.json()) as { scheduledTime?: string };
-        const scheduledTime = data.scheduledTime;
-        if (scheduledTime) {
-          setLocalScheduledFor(scheduledTime);
-          onScheduleChange(scheduledTime);
-        }
+  const calculateQueueScheduleTime = useCallback(
+    async (queueTypeName: string) => {
+      if (queueTypeName === "unassigned") {
+        setLocalScheduledFor("");
+        onScheduleChange("");
+        return;
       }
-    } catch (error) {
-      const { handleErrorSafely } = await import("~/lib/error-handler.client");
-      handleErrorSafely(error, {
-        component: "SchedulingControls",
-        action: "calculateScheduleTime",
-      });
-    }
-  }, [queueTypes, userId, onScheduleChange]);
+
+      // Find the queue type object to get its ID
+      const selectedQueueType = queueTypes.find(
+        (qt) => (typeof qt === "string" ? qt : qt.name) === queueTypeName,
+      );
+      const queueTypeId =
+        typeof selectedQueueType === "object" ? selectedQueueType.id : null;
+
+      try {
+        const response = await fetch("/api/queue-schedule", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            queueTypeId,
+            queueTypeName, // Keep for backward compatibility
+            userId,
+          }),
+        });
+
+        if (response.ok) {
+          const data = (await response.json()) as { scheduledTime?: string };
+          const scheduledTime = data.scheduledTime;
+          if (scheduledTime) {
+            setLocalScheduledFor(scheduledTime);
+            onScheduleChange(scheduledTime);
+          }
+        }
+      } catch (error) {
+        const { handleErrorSafely } = await import(
+          "~/lib/error-handler.client"
+        );
+        handleErrorSafely(error, {
+          component: "SchedulingControls",
+          action: "calculateScheduleTime",
+        });
+      }
+    },
+    [queueTypes, userId, onScheduleChange],
+  );
 
   useEffect(() => {
     if (selectedQueueType !== "unassigned") {

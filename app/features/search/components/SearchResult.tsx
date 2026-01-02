@@ -74,7 +74,8 @@ export function SearchResult({
         <div>
           <p className="font-semibold">{result.authorName}</p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            {formatDate(new Date(result.created_at * 1000))} • Kind {result.kind}
+            {formatDate(new Date(result.created_at * 1000))} • Kind{" "}
+            {result.kind}
           </p>
         </div>
       </div>
@@ -214,4 +215,3 @@ export function SearchResult({
     </div>
   );
 }
-

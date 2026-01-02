@@ -42,7 +42,9 @@ describe("Payment Model Queries", () => {
         status: "COMPLETED",
         paidAt: new Date("2024-12-25T12:00:00Z"),
       };
-      (prisma.payment.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockPayment);
+      (prisma.payment.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockPayment,
+      );
 
       const result = await checkPaymentStatus("payment-123");
 
@@ -63,7 +65,9 @@ describe("Payment Model Queries", () => {
         status: "PENDING",
         paidAt: null,
       };
-      (prisma.payment.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockPayment);
+      (prisma.payment.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockPayment,
+      );
 
       const result = await checkPaymentStatus("payment-123");
 
@@ -73,9 +77,13 @@ describe("Payment Model Queries", () => {
     });
 
     it("should throw error if payment not found", async () => {
-      (prisma.payment.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (prisma.payment.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+        null,
+      );
 
-      await expect(checkPaymentStatus("nonexistent")).rejects.toThrow("Payment not found");
+      await expect(checkPaymentStatus("nonexistent")).rejects.toThrow(
+        "Payment not found",
+      );
     });
   });
 
@@ -91,17 +99,23 @@ describe("Payment Model Queries", () => {
           name: "Pro Plan",
         },
       };
-      (prisma.subscription.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockSubscription);
+      (
+        prisma.subscription.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockSubscription);
 
       const result = await getUserSubscription(TEST_USER_ID);
 
-      const callArgs = (prisma.subscription.findUnique as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as { where?: { userId?: string } } | undefined;
+      const callArgs = (
+        prisma.subscription.findUnique as ReturnType<typeof vi.fn>
+      ).mock.calls[0]?.[0] as { where?: { userId?: string } } | undefined;
       expect(callArgs?.where?.userId).toBe(TEST_USER_ID);
       expect(result).toEqual(mockSubscription);
     });
 
     it("should return null if no subscription found", async () => {
-      (prisma.subscription.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (
+        prisma.subscription.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(null);
 
       const result = await getUserSubscription(TEST_USER_ID);
 
@@ -127,17 +141,22 @@ describe("Payment Model Queries", () => {
           amountUsd: 20,
         },
       ];
-      (prisma.payment.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(mockPayments);
+      (prisma.payment.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockPayments,
+      );
 
       const result = await getUserPaymentHistory(TEST_USER_ID);
 
-      const callArgs = (prisma.payment.findMany as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as { where?: { userId?: string } } | undefined;
+      const callArgs = (prisma.payment.findMany as ReturnType<typeof vi.fn>)
+        .mock.calls[0]?.[0] as { where?: { userId?: string } } | undefined;
       expect(callArgs?.where?.userId).toBe(TEST_USER_ID);
       expect(result).toEqual(mockPayments);
     });
 
     it("should return empty array if no payments found", async () => {
-      (prisma.payment.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+      (prisma.payment.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
+        [],
+      );
 
       const result = await getUserPaymentHistory(TEST_USER_ID);
 
@@ -153,7 +172,9 @@ describe("Payment Model Queries", () => {
         price: "10.00",
         isActive: true,
       };
-      (prisma.plan.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockPlan);
+      (prisma.plan.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockPlan,
+      );
 
       const result = await getPlanById("plan-123");
 
@@ -164,7 +185,9 @@ describe("Payment Model Queries", () => {
     });
 
     it("should return null if plan not found", async () => {
-      (prisma.plan.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (prisma.plan.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+        null,
+      );
 
       const result = await getPlanById("nonexistent");
 
@@ -172,4 +195,3 @@ describe("Payment Model Queries", () => {
     });
   });
 });
-

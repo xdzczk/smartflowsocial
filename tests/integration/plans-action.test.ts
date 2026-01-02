@@ -1,6 +1,6 @@
 /**
  * Integration tests for plans action handlers
- * 
+ *
  * Tests the action handler logic directly, without requiring a browser.
  * For UI interaction tests, see tests/e2e/subscription/billing-loader.cy.ts
  */
@@ -25,7 +25,7 @@ import { createFormData, TEST_USER_ID } from "../utils/test-helpers";
 describe("Plans Action Handler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Default mocks
     (requireUser as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: TEST_USER_ID,
@@ -129,7 +129,9 @@ describe("Plans Action Handler", () => {
         planId: "basic",
       };
 
-      (createPlanInvoice as ReturnType<typeof vi.fn>).mockResolvedValue(mockInvoice);
+      (createPlanInvoice as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockInvoice,
+      );
 
       const formData = createFormData({
         intent: "select_plan",
@@ -261,11 +263,10 @@ describe("Plans Action Handler", () => {
       });
 
       const request = new Request("http://localhost:3000/plans");
-      
-      await expect(
-        handlePlansAction(formData, request),
-      ).rejects.toThrow("Authentication required");
+
+      await expect(handlePlansAction(formData, request)).rejects.toThrow(
+        "Authentication required",
+      );
     });
   });
 });
-

@@ -45,8 +45,12 @@ describe("Longform Post Queries - Extended", () => {
         { id: "longform-1", userId: TEST_USER_ID },
         { id: "longform-2", userId: TEST_USER_ID },
       ];
-      (prisma.longFormPost.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
-      (prisma.longFormPost.count as ReturnType<typeof vi.fn>).mockResolvedValue(10);
+      (
+        prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPosts);
+      (prisma.longFormPost.count as ReturnType<typeof vi.fn>).mockResolvedValue(
+        10,
+      );
 
       const result = await getUserLongFormPosts({
         userId: TEST_USER_ID,
@@ -67,8 +71,12 @@ describe("Longform Post Queries - Extended", () => {
     });
 
     it("should filter by isPublished", async () => {
-      (prisma.longFormPost.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-      (prisma.longFormPost.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
+      (
+        prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
+      ).mockResolvedValue([]);
+      (prisma.longFormPost.count as ReturnType<typeof vi.fn>).mockResolvedValue(
+        0,
+      );
 
       await getUserLongFormPosts({
         userId: TEST_USER_ID,
@@ -86,8 +94,12 @@ describe("Longform Post Queries - Extended", () => {
     });
 
     it("should calculate pagination correctly", async () => {
-      (prisma.longFormPost.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-      (prisma.longFormPost.count as ReturnType<typeof vi.fn>).mockResolvedValue(25);
+      (
+        prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
+      ).mockResolvedValue([]);
+      (prisma.longFormPost.count as ReturnType<typeof vi.fn>).mockResolvedValue(
+        25,
+      );
 
       const result = await getUserLongFormPosts({
         userId: TEST_USER_ID,
@@ -103,7 +115,9 @@ describe("Longform Post Queries - Extended", () => {
   describe("deleteLongFormPost", () => {
     it("should delete a longform post", async () => {
       const mockPost = { id: TEST_LONGFORM_ID, userId: TEST_USER_ID };
-      (prisma.longFormPost.delete as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
+      (
+        prisma.longFormPost.delete as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPost);
 
       const result = await deleteLongFormPost({
         id: TEST_LONGFORM_ID,
@@ -120,10 +134,27 @@ describe("Longform Post Queries - Extended", () => {
   describe("publishLongFormPost", () => {
     it("should publish a longform post", async () => {
       const mockPost = { id: TEST_LONGFORM_ID, isPublished: true };
-      const signedEvent = { id: "event-123", pubkey: "pk-123", created_at: 1234567890, kind: 30023, content: "test", tags: [], sig: "sig-123" };
-      const nostrEvent = { id: "event-123", pubkey: "pk-123", created_at: 1234567890, kind: 30023, content: "test", tags: [] };
+      const signedEvent = {
+        id: "event-123",
+        pubkey: "pk-123",
+        created_at: 1234567890,
+        kind: 30023,
+        content: "test",
+        tags: [],
+        sig: "sig-123",
+      };
+      const nostrEvent = {
+        id: "event-123",
+        pubkey: "pk-123",
+        created_at: 1234567890,
+        kind: 30023,
+        content: "test",
+        tags: [],
+      };
 
-      (prisma.longFormPost.update as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
+      (
+        prisma.longFormPost.update as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPost);
 
       const result = await publishLongFormPost({
         id: TEST_LONGFORM_ID,
@@ -154,7 +185,9 @@ describe("Longform Post Queries - Extended", () => {
       const mockPosts = [
         { id: "longform-1", userId: TEST_USER_ID, draft: true },
       ];
-      (prisma.longFormPost.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
+      (
+        prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPosts);
 
       const result = await getDraftLongFormPosts({ userId: TEST_USER_ID });
 
@@ -172,8 +205,12 @@ describe("Longform Post Queries - Extended", () => {
       const mockPosts = [
         { id: "longform-1", userId: TEST_USER_ID, isPublished: true },
       ];
-      (prisma.longFormPost.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
-      (prisma.longFormPost.count as ReturnType<typeof vi.fn>).mockResolvedValue(5);
+      (
+        prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPosts);
+      (prisma.longFormPost.count as ReturnType<typeof vi.fn>).mockResolvedValue(
+        5,
+      );
 
       const result = await getPublishedLongFormPosts({
         userId: TEST_USER_ID,
@@ -181,7 +218,11 @@ describe("Longform Post Queries - Extended", () => {
         limit: 10,
       });
 
-      const callArgs = (prisma.longFormPost.findMany as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as { where?: { userId?: string; isPublished?: boolean } } | undefined;
+      const callArgs = (
+        prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
+      ).mock.calls[0]?.[0] as
+        | { where?: { userId?: string; isPublished?: boolean } }
+        | undefined;
       expect(callArgs?.where?.userId).toBe(TEST_USER_ID);
       expect(callArgs?.where?.isPublished).toBe(true);
       expect(result.posts).toEqual(mockPosts);
@@ -195,11 +236,17 @@ describe("Longform Post Queries - Extended", () => {
       const mockPosts = [
         { id: "longform-1", userId: TEST_USER_ID, isScheduled: true },
       ];
-      (prisma.longFormPost.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
+      (
+        prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPosts);
 
       const result = await getScheduledLongFormPosts({ userId: TEST_USER_ID });
 
-      const callArgs = (prisma.longFormPost.findMany as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as { where?: { userId?: string; status?: string } } | undefined;
+      const callArgs = (
+        prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
+      ).mock.calls[0]?.[0] as
+        | { where?: { userId?: string; status?: string } }
+        | undefined;
       expect(callArgs?.where?.userId).toBe(TEST_USER_ID);
       expect(callArgs?.where?.status).toBe("SCHEDULED");
       expect(result).toEqual(mockPosts);
@@ -212,14 +259,20 @@ describe("Longform Post Queries - Extended", () => {
         { id: "longform-1", userId: TEST_USER_ID },
         { id: "longform-2", userId: TEST_USER_ID },
       ];
-      (prisma.longFormPost.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
+      (
+        prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPosts);
 
       const result = await getLongFormPostsByIds({
         ids: ["longform-1", "longform-2"],
         userId: TEST_USER_ID,
       });
 
-      const callArgs = (prisma.longFormPost.findMany as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as { where?: { id?: { in?: string[] }; userId?: string } } | undefined;
+      const callArgs = (
+        prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
+      ).mock.calls[0]?.[0] as
+        | { where?: { id?: { in?: string[] }; userId?: string } }
+        | undefined;
       expect(callArgs?.where?.id?.in).toEqual(["longform-1", "longform-2"]);
       expect(callArgs?.where?.userId).toBe(TEST_USER_ID);
       expect(result).toEqual(mockPosts);
@@ -229,14 +282,24 @@ describe("Longform Post Queries - Extended", () => {
   describe("getCronDueScheduledLongFormPosts", () => {
     it("should get longform posts due for posting", async () => {
       const now = Math.floor(Date.now() / 1000);
-      const mockPosts = [
-        { id: "longform-1", scheduledFor: String(now - 100) },
-      ];
-      (prisma.longFormPost.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
+      const mockPosts = [{ id: "longform-1", scheduledFor: String(now - 100) }];
+      (
+        prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPosts);
 
       const result = await getCronDueScheduledLongFormPosts();
 
-      const callArgs = (prisma.longFormPost.findMany as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as { where?: { status?: string; isScheduled?: boolean; isPublished?: boolean } } | undefined;
+      const callArgs = (
+        prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
+      ).mock.calls[0]?.[0] as
+        | {
+            where?: {
+              status?: string;
+              isScheduled?: boolean;
+              isPublished?: boolean;
+            };
+          }
+        | undefined;
       expect(callArgs?.where?.status).toBe("SCHEDULED");
       expect(callArgs?.where?.isScheduled).toBe(true);
       expect(callArgs?.where?.isPublished).toBe(false);
@@ -246,8 +309,14 @@ describe("Longform Post Queries - Extended", () => {
 
   describe("updateLongFormPostStatus", () => {
     it("should update longform post status to published", async () => {
-      const mockPost = { id: TEST_LONGFORM_ID, status: "ACTIVE", isPublished: true };
-      (prisma.longFormPost.update as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
+      const mockPost = {
+        id: TEST_LONGFORM_ID,
+        status: "ACTIVE",
+        isPublished: true,
+      };
+      (
+        prisma.longFormPost.update as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPost);
 
       const result = await updateLongFormPostStatus({
         id: TEST_LONGFORM_ID,
@@ -255,7 +324,13 @@ describe("Longform Post Queries - Extended", () => {
         isPublished: true,
       });
 
-      const callArgs = (prisma.longFormPost.update as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as { where?: { id?: string; userId?: string }; data?: { isPublished?: boolean; status?: string } } | undefined;
+      const callArgs = (prisma.longFormPost.update as ReturnType<typeof vi.fn>)
+        .mock.calls[0]?.[0] as
+        | {
+            where?: { id?: string; userId?: string };
+            data?: { isPublished?: boolean; status?: string };
+          }
+        | undefined;
       expect(callArgs?.where?.id).toBe(TEST_LONGFORM_ID);
       expect(callArgs?.where?.userId).toBe(TEST_USER_ID);
       expect(callArgs?.data?.isPublished).toBe(true);
@@ -264,8 +339,14 @@ describe("Longform Post Queries - Extended", () => {
     });
 
     it("should update longform post status to scheduled", async () => {
-      const mockPost = { id: TEST_LONGFORM_ID, status: "SCHEDULED", isPublished: false };
-      (prisma.longFormPost.update as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
+      const mockPost = {
+        id: TEST_LONGFORM_ID,
+        status: "SCHEDULED",
+        isPublished: false,
+      };
+      (
+        prisma.longFormPost.update as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPost);
 
       const result = await updateLongFormPostStatus({
         id: TEST_LONGFORM_ID,
@@ -273,7 +354,10 @@ describe("Longform Post Queries - Extended", () => {
         isPublished: false,
       });
 
-      const callArgs = (prisma.longFormPost.update as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as { data?: { isPublished?: boolean; status?: string } } | undefined;
+      const callArgs = (prisma.longFormPost.update as ReturnType<typeof vi.fn>)
+        .mock.calls[0]?.[0] as
+        | { data?: { isPublished?: boolean; status?: string } }
+        | undefined;
       expect(callArgs?.data?.isPublished).toBe(false);
       expect(callArgs?.data?.status).toBe("SCHEDULED");
       expect(result).toEqual(mockPost);
@@ -287,7 +371,9 @@ describe("Longform Post Queries - Extended", () => {
       const mockPosts = [
         { id: "longform-1", userId: TEST_USER_ID, isPublished: true },
       ];
-      (prisma.longFormPost.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
+      (
+        prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPosts);
 
       const result = await getPastLongFormPosts({
         userId: TEST_USER_ID,
@@ -295,7 +381,11 @@ describe("Longform Post Queries - Extended", () => {
         endDate,
       });
 
-      const callArgs = (prisma.longFormPost.findMany as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as { where?: { userId?: string; AND?: unknown } } | undefined;
+      const callArgs = (
+        prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
+      ).mock.calls[0]?.[0] as
+        | { where?: { userId?: string; AND?: unknown } }
+        | undefined;
       expect(callArgs?.where?.userId).toBe(TEST_USER_ID);
       expect(callArgs?.where?.AND).toBeDefined();
       expect(result).toEqual(mockPosts);
@@ -304,7 +394,9 @@ describe("Longform Post Queries - Extended", () => {
     it("should filter by queue type when provided", async () => {
       const startDate = new Date("2024-01-01");
       const endDate = new Date("2024-12-31");
-      (prisma.longFormPost.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+      (
+        prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
+      ).mockResolvedValue([]);
 
       await getPastLongFormPosts({
         userId: TEST_USER_ID,
@@ -313,9 +405,12 @@ describe("Longform Post Queries - Extended", () => {
         queueType: "Queue 1",
       });
 
-      const callArgs = (prisma.longFormPost.findMany as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as { where?: { queueType?: { name?: string } } } | undefined;
+      const callArgs = (
+        prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
+      ).mock.calls[0]?.[0] as
+        | { where?: { queueType?: { name?: string } } }
+        | undefined;
       expect(callArgs?.where?.queueType).toEqual({ name: "Queue 1" });
     });
   });
 });
-

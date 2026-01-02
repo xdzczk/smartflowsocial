@@ -13,7 +13,6 @@ import type { RelatedEvent, PrimalEvent } from "./types";
 export const fetchGiveawayParticipants = async (
   eventIds: string | string[],
 ): Promise<{
-
   relatedEvents: RelatedEvent[];
   count: number;
   stats: {
@@ -56,7 +55,12 @@ export const fetchGiveawayParticipants = async (
           if (!Array.isArray(item) || item[0] !== "EVENT" || !item[2]) return;
 
           const event = item[2];
-          if (typeof event !== "object" || Array.isArray(event) || !("kind" in event)) return;
+          if (
+            typeof event !== "object" ||
+            Array.isArray(event) ||
+            !("kind" in event)
+          )
+            return;
 
           // Extract zap receipts (kind 9735)
           if (event.kind === 9735) {
@@ -65,20 +69,43 @@ export const fetchGiveawayParticipants = async (
             // Extract zap amount for stats
             try {
               const tags = event.tags;
-              const descriptionTag = Array.isArray(tags) ? tags.find(
-                (tag: string[]) => Array.isArray(tag) && tag[0] === "description",
-              ) : undefined;
-              if (descriptionTag && Array.isArray(descriptionTag) && descriptionTag[1] && typeof descriptionTag[1] === "string") {
+              const descriptionTag = Array.isArray(tags)
+                ? tags.find(
+                    (tag: string[]) =>
+                      Array.isArray(tag) && tag[0] === "description",
+                  )
+                : undefined;
+              if (
+                descriptionTag &&
+                Array.isArray(descriptionTag) &&
+                descriptionTag[1] &&
+                typeof descriptionTag[1] === "string"
+              ) {
                 const zapRequestParsed: unknown = JSON.parse(descriptionTag[1]);
-                if (zapRequestParsed && typeof zapRequestParsed === "object" && !Array.isArray(zapRequestParsed) && "tags" in zapRequestParsed) {
+                if (
+                  zapRequestParsed &&
+                  typeof zapRequestParsed === "object" &&
+                  !Array.isArray(zapRequestParsed) &&
+                  "tags" in zapRequestParsed
+                ) {
                   const zapRequest = zapRequestParsed as { tags?: string[][] };
-                  const amountTag = Array.isArray(zapRequest.tags) ? zapRequest.tags.find(
-                    (tag: string[]) => Array.isArray(tag) && tag[0] === "amount",
-                  ) : undefined;
-                  if (amountTag && Array.isArray(amountTag) && amountTag[1] && typeof amountTag[1] === "string") {
+                  const amountTag = Array.isArray(zapRequest.tags)
+                    ? zapRequest.tags.find(
+                        (tag: string[]) =>
+                          Array.isArray(tag) && tag[0] === "amount",
+                      )
+                    : undefined;
+                  if (
+                    amountTag &&
+                    Array.isArray(amountTag) &&
+                    amountTag[1] &&
+                    typeof amountTag[1] === "string"
+                  ) {
                     const amount = parseInt(amountTag[1], 10);
                     if (!isNaN(amount)) {
-                      aggregatedStats.satszapped += isNaN(amount / 1000) ? 0 : amount / 1000; // Convert millisats to sats
+                      aggregatedStats.satszapped += isNaN(amount / 1000)
+                        ? 0
+                        : amount / 1000; // Convert millisats to sats
                     }
                   }
                 }
@@ -90,23 +117,45 @@ export const fetchGiveawayParticipants = async (
 
           // Extract reply events (kind 1) that reference our event
           if (event.kind === 1 && "id" in event && event.id !== eventId) {
-            const eTag = ("tags" in event && Array.isArray(event.tags)) ? event.tags.find(
-              (tag: string[]) => tag[0] === "e" && tag[1] === eventId,
-            ) : undefined;
+            const eTag =
+              "tags" in event && Array.isArray(event.tags)
+                ? event.tags.find(
+                    (tag: string[]) => tag[0] === "e" && tag[1] === eventId,
+                  )
+                : undefined;
             if (eTag) {
               events.push(event as RelatedEvent);
             }
           }
 
           // Extract stats from kind 10000100
-          if (event.kind === 10000100 && event.content && typeof event.content === "string") {
+          if (
+            event.kind === 10000100 &&
+            event.content &&
+            typeof event.content === "string"
+          ) {
             try {
               const statsContentParsed: unknown = JSON.parse(event.content);
-              if (statsContentParsed && typeof statsContentParsed === "object" && !Array.isArray(statsContentParsed)) {
-                const statsContent = statsContentParsed as { event_id?: string; likes?: number; reposts?: number; zaps?: number };
+              if (
+                statsContentParsed &&
+                typeof statsContentParsed === "object" &&
+                !Array.isArray(statsContentParsed)
+              ) {
+                const statsContent = statsContentParsed as {
+                  event_id?: string;
+                  likes?: number;
+                  reposts?: number;
+                  zaps?: number;
+                };
                 if (statsContent.event_id === eventId) {
-                  aggregatedStats.likes += typeof statsContent.likes === "number" ? statsContent.likes : 0;
-                  aggregatedStats.reposts += typeof statsContent.reposts === "number" ? statsContent.reposts : 0;
+                  aggregatedStats.likes +=
+                    typeof statsContent.likes === "number"
+                      ? statsContent.likes
+                      : 0;
+                  aggregatedStats.reposts +=
+                    typeof statsContent.reposts === "number"
+                      ? statsContent.reposts
+                      : 0;
                   aggregatedStats.zaps += statsContent.zaps ?? 0;
                   // Don't add satszapped here as we already calculated it from actual zap events
                 }

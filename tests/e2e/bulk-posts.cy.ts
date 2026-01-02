@@ -2,7 +2,7 @@ import { TEST_NPUB } from "./support/nostr-test-keys";
 
 /**
  * Bulk Posts Upload Tests
- * 
+ *
  * Tests bulk post upload functionality:
  * - Navigate to bulk posts page
  * - Upload multiple files
@@ -49,7 +49,7 @@ describe("Bulk Posts Upload", () => {
           $body.find(".dropzone, .upload-zone").length > 0 ||
           $body.text().toLowerCase().includes("upload") ||
           $body.text().toLowerCase().includes("drag");
-        
+
         expect(hasUploadArea).to.be.true;
       });
     });
@@ -60,7 +60,10 @@ describe("Bulk Posts Upload", () => {
         if (fileInput.length > 0) {
           cy.uploadTestFile('input[type="file"]', 0);
           // Wait for navigation after file upload
-          cy.location("pathname", { timeout: 10000 }).should("include", "bulkposts");
+          cy.location("pathname", { timeout: 10000 }).should(
+            "include",
+            "bulkposts",
+          );
         }
       });
     });
@@ -71,7 +74,10 @@ describe("Bulk Posts Upload", () => {
         if (fileInput.length > 0) {
           cy.uploadTestFile('input[type="file"]', [0, 1, 2]);
           // Wait for navigation after file upload
-          cy.location("pathname", { timeout: 10000 }).should("include", "bulkposts");
+          cy.location("pathname", { timeout: 10000 }).should(
+            "include",
+            "bulkposts",
+          );
         }
       });
     });
@@ -87,12 +93,11 @@ describe("Bulk Posts Upload", () => {
         const hasSchedulingOptions =
           $body.find('input[type="date"]').length > 0 ||
           $body.find('input[type="time"]').length > 0 ||
-          $body.find('select').length > 0 ||
+          $body.find("select").length > 0 ||
           $body.text().toLowerCase().includes("schedule");
-        
+
         expect(hasSchedulingOptions).to.be.true;
       });
     });
   });
 });
-

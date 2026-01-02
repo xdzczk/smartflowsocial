@@ -187,9 +187,7 @@ describe("File Processing Utils", () => {
     });
 
     it("should return true for files at exact total size limit", () => {
-      const files = [
-        createMockFile("file1.jpg", "image/jpeg", MAX_TOTAL_SIZE),
-      ];
+      const files = [createMockFile("file1.jpg", "image/jpeg", MAX_TOTAL_SIZE)];
 
       expect(validateTotalSize(files)).toBe(true);
     });
@@ -199,12 +197,9 @@ describe("File Processing Utils", () => {
     });
 
     it("should handle single file at limit", () => {
-      const files = [
-        createMockFile("file1.jpg", "image/jpeg", MAX_TOTAL_SIZE),
-      ];
+      const files = [createMockFile("file1.jpg", "image/jpeg", MAX_TOTAL_SIZE)];
 
       expect(validateTotalSize(files)).toBe(true);
     });
   });
 });
-

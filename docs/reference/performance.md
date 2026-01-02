@@ -62,11 +62,11 @@ for (const post of posts) {
 
 ```typescript
 const posts = await getPosts();
-const userIds = [...new Set(posts.map(p => p.userId))];
+const userIds = [...new Set(posts.map((p) => p.userId))];
 const users = await getUsersByIds(userIds); // 1 query
 
-const userMap = new Map(users.map(u => [u.id, u]));
-posts.forEach(post => {
+const userMap = new Map(users.map((u) => [u.id, u]));
+posts.forEach((post) => {
   post.user = userMap.get(post.userId);
 });
 ```
@@ -104,7 +104,7 @@ const posts = await prisma.post.findMany({
   where: { userId },
   take: 20, // Limit
   skip: (page - 1) * 20, // Offset
-  orderBy: { createdAt: 'desc' },
+  orderBy: { createdAt: "desc" },
 });
 ```
 
@@ -114,7 +114,7 @@ For complex queries, create views:
 
 ```sql
 CREATE VIEW user_post_summary AS
-SELECT 
+SELECT
   u.id as user_id,
   COUNT(p.id) as total_posts,
   COUNT(CASE WHEN p.is_posted THEN 1 END) as posted_count
@@ -151,7 +151,7 @@ datasource db {
 Cache frequently accessed data:
 
 ```typescript
-import { LRUCache } from 'lru-cache';
+import { LRUCache } from "lru-cache";
 
 const cache = new LRUCache<string, any>({
   max: 500, // Max items
@@ -160,17 +160,17 @@ const cache = new LRUCache<string, any>({
 
 export async function getCachedUser(userId: string) {
   const cacheKey = `user:${userId}`;
-  
+
   // Check cache
   const cached = cache.get(cacheKey);
   if (cached) return cached;
-  
+
   // Fetch from database
   const user = await getUserById(userId);
-  
+
   // Store in cache
   cache.set(cacheKey, user);
-  
+
   return user;
 }
 ```
@@ -180,17 +180,17 @@ export async function getCachedUser(userId: string) {
 For distributed caching:
 
 ```typescript
-import Redis from 'ioredis';
+import Redis from "ioredis";
 
 const redis = new Redis(process.env.REDIS_URL!);
 
 export async function getCachedData(key: string) {
   const cached = await redis.get(key);
   if (cached) return JSON.parse(cached);
-  
+
   const data = await fetchData();
   await redis.setex(key, 300, JSON.stringify(data)); // 5 min TTL
-  
+
   return data;
 }
 ```
@@ -203,10 +203,10 @@ Set appropriate cache headers:
 // In loader
 export async function loader({ request }: LoaderFunctionArgs) {
   const data = await getData();
-  
+
   return json(data, {
     headers: {
-      'Cache-Control': 'public, max-age=300', // 5 minutes
+      "Cache-Control": "public, max-age=300", // 5 minutes
     },
   });
 }
@@ -253,17 +253,13 @@ function MyRoute() {
 **Lazy Loading:**
 
 ```tsx
-<img 
-  src={imageUrl} 
-  loading="lazy" 
-  alt="Description"
-/>
+<img src={imageUrl} loading="lazy" alt="Description" />
 ```
 
 **Responsive Images:**
 
 ```tsx
-<img 
+<img
   src={imageUrl}
   srcSet={`${imageUrl}?w=400 400w, ${imageUrl}?w=800 800w`}
   sizes="(max-width: 768px) 400px, 800px"
@@ -296,9 +292,9 @@ pnpm build
 
 ```typescript
 // ❌ Bad: Import entire library
-import _ from 'lodash';
+import _ from "lodash";
 // ✅ Good: Import specific function
-import debounce from 'lodash/debounce';
+import debounce from "lodash/debounce";
 ```
 
 ### 4. Memoization
@@ -306,13 +302,13 @@ import debounce from 'lodash/debounce';
 Memoize expensive computations:
 
 ```tsx
-import { useMemo } from 'react';
+import { useMemo } from "react";
 
 function ExpensiveComponent({ data }) {
   const processedData = useMemo(() => {
     return expensiveComputation(data);
   }, [data]);
-  
+
   return <div>{processedData}</div>;
 }
 ```
@@ -323,7 +319,7 @@ For long lists, use virtual scrolling:
 
 ```tsx
 // eslint-disable-next-line import/no-unresolved
-import { FixedSizeList } from 'react-window';
+import { FixedSizeList } from "react-window";
 
 function PostList({ posts }) {
   return (
@@ -353,12 +349,12 @@ Combine multiple requests:
 
 ```typescript
 // ❌ Bad: Multiple requests
-const posts = await fetch('/api/posts');
-const user = await fetch('/api/user');
-const settings = await fetch('/api/settings');
+const posts = await fetch("/api/posts");
+const user = await fetch("/api/user");
+const settings = await fetch("/api/settings");
 
 // ✅ Good: Single request
-const data = await fetch('/api/dashboard'); // Returns all data
+const data = await fetch("/api/dashboard"); // Returns all data
 ```
 
 ### 2. Compression
@@ -366,7 +362,7 @@ const data = await fetch('/api/dashboard'); // Returns all data
 Enable gzip compression:
 
 ```typescript
-import compression from 'compression';
+import compression from "compression";
 
 app.use(compression());
 ```
@@ -386,9 +382,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
       controller.close();
     },
   });
-  
+
   return new Response(stream, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: { "Content-Type": "application/json" },
   });
 }
 ```
@@ -398,14 +394,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 Prevent abuse and ensure fair resource usage:
 
 ```typescript
-import rateLimit from 'express-rate-limit';
+import rateLimit from "express-rate-limit";
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // Limit each IP to 100 requests
 });
 
-app.use('/api/', limiter);
+app.use("/api/", limiter);
 ```
 
 ---
@@ -417,13 +413,13 @@ app.use('/api/', limiter);
 Compress images before upload:
 
 ```typescript
-import sharp from 'sharp';
+import sharp from "sharp";
 
 async function compressImage(file: File) {
   const buffer = await file.arrayBuffer();
-  
+
   return await sharp(Buffer.from(buffer))
-    .resize(1920, 1080, { fit: 'inside' })
+    .resize(1920, 1080, { fit: "inside" })
     .webp({ quality: 80 })
     .toBuffer();
 }
@@ -437,14 +433,14 @@ Generate multiple sizes:
 async function generateImageSizes(file: File) {
   const sizes = [400, 800, 1200, 1920];
   const images = await Promise.all(
-    sizes.map(size =>
+    sizes.map((size) =>
       sharp(buffer)
-        .resize(size, size, { fit: 'inside' })
+        .resize(size, size, { fit: "inside" })
         .webp({ quality: 80 })
-        .toBuffer()
-    )
+        .toBuffer(),
+    ),
   );
-  
+
   return images;
 }
 ```
@@ -454,7 +450,7 @@ async function generateImageSizes(file: File) {
 Lazy load images below the fold:
 
 ```tsx
-<img 
+<img
   src={placeholder}
   data-src={imageUrl}
   loading="lazy"
@@ -500,22 +496,22 @@ Target metrics:
 
 ```javascript
 // tests/performance/load-test.js
-import http from 'k6/http';
-import { check, sleep } from 'k6';
+import http from "k6/http";
+import { check, sleep } from "k6";
 
 export const options = {
   stages: [
-    { duration: '30s', target: 50 },
-    { duration: '1m', target: 100 },
-    { duration: '30s', target: 0 },
+    { duration: "30s", target: 50 },
+    { duration: "1m", target: 100 },
+    { duration: "30s", target: 0 },
   ],
 };
 
 export default function () {
-  const res = http.get('https://your-domain.com/healthcheck');
+  const res = http.get("https://your-domain.com/healthcheck");
   check(res, {
-    'status is 200': (r) => r.status === 200,
-    'response time < 500ms': (r) => r.timings.duration < 500,
+    "status is 200": (r) => r.status === 200,
+    "response time < 500ms": (r) => r.timings.duration < 500,
   });
   sleep(1);
 }
@@ -530,16 +526,19 @@ export default function () {
 Monitor these metrics:
 
 1. **Response Time**
+
    - P50, P95, P99 percentiles
    - Average response time
    - Slowest endpoints
 
 2. **Throughput**
+
    - Requests per second
    - Successful requests
    - Failed requests
 
 3. **Resource Usage**
+
    - CPU usage
    - Memory usage
    - Database connections
@@ -553,11 +552,13 @@ Monitor these metrics:
 ### Monitoring Tools
 
 1. **Prometheus + Grafana**
+
    - Metrics collection
    - Visualization
    - Alerting
 
 2. **Application Performance Monitoring (APM)**
+
    - New Relic
    - Datadog
    - Sentry Performance
@@ -655,7 +656,3 @@ See [Operations Guide](./operations.md) for detailed monitoring setup.
 - [Deployment Guide](./deployment.md) - Production deployment
 - [Database Schema](./database-schema.md) - Database structure
 - [Architecture](./architecture.md) - System architecture
-
-
-
-

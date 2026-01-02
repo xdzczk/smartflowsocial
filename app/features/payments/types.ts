@@ -84,7 +84,7 @@ export const PLAN_FEATURES = {
 } as const;
 
 export type PlanType = keyof typeof PLAN_FEATURES;
-export type FeatureName = keyof typeof PLAN_FEATURES.free  ;
+export type FeatureName = keyof typeof PLAN_FEATURES.free;
 
 export interface UserSubscription {
   planId: string;
@@ -153,7 +153,12 @@ export function useSubscription(): SubscriptionData | null {
 
   for (let i = matches.length - 1; i >= 0; i--) {
     const match = matches[i];
-    const data = match?.data as { user?: { id: string; isEnabled: boolean }; currentSubscription?: UserSubscription } | undefined;
+    const data = match?.data as
+      | {
+          user?: { id: string; isEnabled: boolean };
+          currentSubscription?: UserSubscription;
+        }
+      | undefined;
     if (!data || typeof data !== "object") continue;
 
     if (!foundSub && data.currentSubscription) {
@@ -167,11 +172,11 @@ export function useSubscription(): SubscriptionData | null {
   }
 
   if (foundUser || foundSub) {
-  return {
+    return {
       user: foundUser ?? null,
       currentSubscription: foundSub ?? null,
     };
-}
+  }
 
   return null;
 }
@@ -230,9 +235,7 @@ export function isNewUserWithoutSubscription(
   }
 
   // User exists but has no active subscription
-  return (
-    subscriptionData.currentSubscription?.status !== "ACTIVE"
-  );
+  return subscriptionData.currentSubscription?.status !== "ACTIVE";
 }
 
 /**

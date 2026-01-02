@@ -1,6 +1,6 @@
 /**
  * Edge Case Tests for Queue Workers
- * 
+ *
  * Tests critical edge cases for queue worker processing:
  * - Worker crashes mid-processing
  * - Duplicate job processing
@@ -20,13 +20,13 @@ vi.mock("bullmq", () => {
     // eslint-disable-next-line @typescript-eslint/consistent-type-imports
     process: ((job: import("bullmq").Job) => Promise<unknown>) | undefined;
     close: ReturnType<typeof vi.fn>;
-    
+
     constructor(
       queueName: string,
       // Dynamic import() type annotation needed for type reference
       // eslint-disable-next-line @typescript-eslint/consistent-type-imports
       processor: ((job: import("bullmq").Job) => Promise<unknown>) | undefined,
-      _options?: unknown
+      _options?: unknown,
     ) {
       this.queueName = queueName;
       // Store the processor function so tests can call it
@@ -34,7 +34,7 @@ vi.mock("bullmq", () => {
       this.close = vi.fn();
     }
   }
-  
+
   return {
     Worker: MockWorker,
     Queue: vi.fn(),
@@ -101,8 +101,10 @@ let scheduledLongFormPostsWorker: MockWorkerType | undefined;
 
 beforeAll(async () => {
   const module = await import("~/features/posts/queues.server");
-  scheduledPostsWorker = module.scheduledPostsWorker as unknown as MockWorkerType;
-  scheduledLongFormPostsWorker = module.scheduledLongFormPostsWorker as unknown as MockWorkerType;
+  scheduledPostsWorker =
+    module.scheduledPostsWorker as unknown as MockWorkerType;
+  scheduledLongFormPostsWorker =
+    module.scheduledLongFormPostsWorker as unknown as MockWorkerType;
 });
 
 describe("Queue Worker Edge Cases", () => {
@@ -149,9 +151,9 @@ describe("Queue Worker Edge Cases", () => {
         throw new Error("scheduledPostsWorker.process is not defined");
       }
       const processor = scheduledPostsWorker.process;
-      await expect(
-        processor(mockJob),
-      ).rejects.toThrow("Database connection lost");
+      await expect(processor(mockJob)).rejects.toThrow(
+        "Database connection lost",
+      );
     });
 
     it("should handle user not found error gracefully", async () => {
@@ -161,7 +163,9 @@ describe("Queue Worker Edge Cases", () => {
         nostrEventId: null,
       });
 
-      (updatePostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (updatePostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined,
+      );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
       const mockJobData = {
@@ -176,9 +180,9 @@ describe("Queue Worker Edge Cases", () => {
       if (!scheduledPostsWorker?.process) {
         throw new Error("scheduledPostsWorker.process is not defined");
       }
-      await expect(
-        scheduledPostsWorker.process(mockJob),
-      ).rejects.toThrow(`User ${TEST_USER_ID} not found`);
+      await expect(scheduledPostsWorker.process(mockJob)).rejects.toThrow(
+        `User ${TEST_USER_ID} not found`,
+      );
     });
 
     it("should handle Nostr publisher API failure", async () => {
@@ -188,7 +192,9 @@ describe("Queue Worker Edge Cases", () => {
         nostrEventId: null,
       });
 
-      (updatePostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (updatePostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined,
+      );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
         userRelays: ["wss://relay1.com"],
       });
@@ -211,9 +217,9 @@ describe("Queue Worker Edge Cases", () => {
       if (!scheduledPostsWorker?.process) {
         throw new Error("scheduledPostsWorker.process is not defined");
       }
-      await expect(
-        scheduledPostsWorker.process(mockJob),
-      ).rejects.toThrow("Failed to post to nostr publisher");
+      await expect(scheduledPostsWorker.process(mockJob)).rejects.toThrow(
+        "Failed to post to nostr publisher",
+      );
 
       // Post should still be marked as posted (idempotency prevents duplicate)
       expect(updatePostStatus).toHaveBeenCalled();
@@ -226,12 +232,16 @@ describe("Queue Worker Edge Cases", () => {
         nostrEventId: null,
       });
 
-      (updatePostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (updatePostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined,
+      );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
         userRelays: ["wss://relay1.com"],
       });
 
-      (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Network timeout"));
+      (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error("Network timeout"),
+      );
 
       const mockJobData = {
         postId: TEST_POST_ID,
@@ -245,9 +255,9 @@ describe("Queue Worker Edge Cases", () => {
       if (!scheduledPostsWorker?.process) {
         throw new Error("scheduledPostsWorker.process is not defined");
       }
-      await expect(
-        scheduledPostsWorker.process(mockJob),
-      ).rejects.toThrow("Network timeout");
+      await expect(scheduledPostsWorker.process(mockJob)).rejects.toThrow(
+        "Network timeout",
+      );
     });
   });
 
@@ -314,9 +324,7 @@ describe("Queue Worker Edge Cases", () => {
       if (!scheduledPostsWorker?.process) {
         throw new Error("scheduledPostsWorker.process is not defined");
       }
-      await expect(
-        scheduledPostsWorker.process(mockJob),
-      ).rejects.toThrow();
+      await expect(scheduledPostsWorker.process(mockJob)).rejects.toThrow();
     });
   });
 
@@ -328,7 +336,9 @@ describe("Queue Worker Edge Cases", () => {
         nostrEventId: null,
       });
 
-      (updatePostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (updatePostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined,
+      );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
         userRelays: ["wss://relay1.com"],
       });
@@ -367,9 +377,9 @@ describe("Queue Worker Edge Cases", () => {
 
   describe("Longform Post Worker Edge Cases", () => {
     it("should handle longform post not found", async () => {
-      (prisma.longFormPost.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null,
-      );
+      (
+        prisma.longFormPost.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(null);
 
       const mockJobData = {
         postId: "longform-123",
@@ -389,7 +399,9 @@ describe("Queue Worker Edge Cases", () => {
     });
 
     it("should skip if longform post already published", async () => {
-      (prisma.longFormPost.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (
+        prisma.longFormPost.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({
         id: "longform-123",
         isPublished: true,
         nostrEventId: "event-123",
@@ -429,14 +441,14 @@ describe("Queue Worker Edge Cases", () => {
       } as unknown as Job;
 
       // Mock Prisma to return null (post not found)
-      (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+        null,
+      );
 
       if (!scheduledPostsWorker?.process) {
         throw new Error("scheduledPostsWorker.process is not defined");
       }
-      await expect(
-        scheduledPostsWorker.process(mockJob),
-      ).rejects.toThrow();
+      await expect(scheduledPostsWorker.process(mockJob)).rejects.toThrow();
     });
 
     it("should handle missing signedEvent in job data", async () => {
@@ -469,10 +481,7 @@ describe("Queue Worker Edge Cases", () => {
       if (!scheduledPostsWorker?.process) {
         throw new Error("scheduledPostsWorker.process is not defined");
       }
-      await expect(
-        scheduledPostsWorker.process(mockJob),
-      ).rejects.toThrow();
+      await expect(scheduledPostsWorker.process(mockJob)).rejects.toThrow();
     });
   });
 });
-

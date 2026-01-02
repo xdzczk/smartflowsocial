@@ -24,7 +24,10 @@ export default function Footer() {
             <span className="font-mono">
               {" "}
               {time.toLocaleDateString("en-US", {
-                timeZone: (user && typeof user === "object" && "timezone" in user) ? (user.timezone ?? undefined) : undefined,
+                timeZone:
+                  user && typeof user === "object" && "timezone" in user
+                    ? (user.timezone ?? undefined)
+                    : undefined,
                 month: "short",
                 day: "numeric",
                 year: "numeric",
@@ -38,7 +41,9 @@ export default function Footer() {
                 hour12: true,
               })}
               {" 🌍 "}
-              {(user && typeof user === "object" && "timezone" in user) ? user.timezone : undefined}
+              {user && typeof user === "object" && "timezone" in user
+                ? user.timezone
+                : undefined}
             </span>
           </div>
         </div>

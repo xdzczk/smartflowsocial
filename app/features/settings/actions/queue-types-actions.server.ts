@@ -41,7 +41,10 @@ export async function handleQueueTypeAction(
 
     // Validate hashtag preset exists if provided
     if (processedHashTagPresetId) {
-      const presetExists = await hashTagPresetExistsForUser(userId, processedHashTagPresetId);
+      const presetExists = await hashTagPresetExistsForUser(
+        userId,
+        processedHashTagPresetId,
+      );
       if (!presetExists) {
         return json(
           { error: "Selected hashtag preset does not exist" },
@@ -94,7 +97,10 @@ export async function handleQueueTypeAction(
 
     // Validate hashtag preset exists if provided
     if (processedHashTagPresetId) {
-      const presetExists = await hashTagPresetExistsForUser(userId, processedHashTagPresetId);
+      const presetExists = await hashTagPresetExistsForUser(
+        userId,
+        processedHashTagPresetId,
+      );
       if (!presetExists) {
         return json(
           { error: "Selected hashtag preset does not exist" },
@@ -142,7 +148,3 @@ export async function handleQueueTypeAction(
 
   return null;
 }
-
-
-
-

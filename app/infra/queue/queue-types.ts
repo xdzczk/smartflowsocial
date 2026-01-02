@@ -48,12 +48,20 @@ export interface QueueOperationResult {
 /**
  * Queue job status
  */
-export type JobStatus = "waiting" | "active" | "completed" | "failed" | "delayed";
+export type JobStatus =
+  | "waiting"
+  | "active"
+  | "completed"
+  | "failed"
+  | "delayed";
 
 /**
  * Queue type identifier
  */
-export type QueueType = "scheduled-posts" | "scheduled-longform-posts" | "post-checker";
+export type QueueType =
+  | "scheduled-posts"
+  | "scheduled-longform-posts"
+  | "post-checker";
 
 /**
  * Queue client interface
@@ -85,12 +93,12 @@ export interface QueueClient {
   getJobs(
     queueName: QueueType,
     statuses: JobStatus[],
-  ): Promise<{ id: string; data: PostJobData | LongFormPostJobData; status: JobStatus }[]>;
+  ): Promise<
+    { id: string; data: PostJobData | LongFormPostJobData; status: JobStatus }[]
+  >;
 
   /**
    * Remove a job by ID
    */
   removeJob(queueName: QueueType, jobId: string): Promise<boolean>;
 }
-
-

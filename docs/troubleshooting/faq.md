@@ -59,6 +59,7 @@ Absolutely. Your private keys never leave your browser. All events are signed cl
 ### What Nostr extensions are supported?
 
 Any NIP-07 compatible extension works:
+
 - [Alby](https://getalby.com/) (recommended)
 - [nos2x](https://github.com/fiatjaf/nos2x)
 - [Amber](https://amber.app/)
@@ -99,6 +100,7 @@ Yes! SmartFlowSocial supports parent/child account relationships, allowing you t
 ### What is a queue?
 
 A queue controls how posts are scheduled:
+
 - **Interval Queue** - Post every X hours automatically
 - **Fixed Time Slots** - Post at specific times daily
 - **Manual** - Schedule posts individually
@@ -122,6 +124,7 @@ Yes! When scheduling a post, you can override the queue and choose a specific ti
 ### What storage providers are supported?
 
 Any S3-compatible storage:
+
 - **AWS S3**
 - **Cloudflare R2**
 - **MinIO** (self-hosted)
@@ -174,6 +177,7 @@ See [Common Issues](./common-issues.md#storage-issues) for more solutions.
 ### How do I contribute?
 
 See [Contributing Guide](../../CONTRIBUTING.md) for:
+
 - Development setup
 - Coding standards
 - Pull request process
@@ -182,6 +186,7 @@ See [Contributing Guide](../../CONTRIBUTING.md) for:
 ### How do I report bugs?
 
 Open an issue on [GitHub](https://github.com/xdzczk/SmartFlowSocial/issues):
+
 - Include clear steps to reproduce
 - Specify your environment
 - Add screenshots if applicable
@@ -189,6 +194,7 @@ Open an issue on [GitHub](https://github.com/xdzczk/SmartFlowSocial/issues):
 ### How do I request a feature?
 
 Open a feature request on [GitHub Discussions](https://github.com/xdzczk/SmartFlowSocial/discussions):
+
 - Describe the feature
 - Explain the use case
 - Suggest implementation if possible
@@ -205,4 +211,3 @@ Open a feature request on [GitHub Discussions](https://github.com/xdzczk/SmartFl
 ---
 
 **Still have questions?** [Open an issue](https://github.com/xdzczk/SmartFlowSocial/issues) or [start a discussion](https://github.com/xdzczk/SmartFlowSocial/discussions).
-

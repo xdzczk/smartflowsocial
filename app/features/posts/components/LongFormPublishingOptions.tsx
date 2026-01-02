@@ -5,197 +5,197 @@ import { Label } from "~/components/ui/label";
 
 import { getDynamicQueueStyle } from "../queueColors";
 interface QueueType {
-    id?: string;
-    name: string;
-    color?: string | null;
-    hashtags?: string | null;
-    scheduleType?: string;
-    isEnabled?: boolean;
+  id?: string;
+  name: string;
+  color?: string | null;
+  hashtags?: string | null;
+  scheduleType?: string;
+  isEnabled?: boolean;
 }
 
 interface HashTagPreset {
-    id: string;
-    name: string;
-    tags: string;
-    description?: string | null;
+  id: string;
+  name: string;
+  tags: string;
+  description?: string | null;
 }
 
 interface LongFormPublishingOptionsProps {
-    queueTypes: (string | QueueType)[];
-    selectedQueueType: string;
-    onQueueTypeChange: (queueTypeName: string) => void;
-    scheduledFor: string;
-    onScheduledForChange: (value: string) => void;
-    scheduleIntervals: number[];
-    onScheduleIntervalClick: (interval: number) => void;
-    onNextSlotClick: () => void;
-    hashTagPresets: HashTagPreset[];
-    useHashtagPresets: boolean;
-    selectedHashtagPresetId?: string | null;
-    selectedHashtags: string;
-    onHashtagPresetChange: (presetId: string | null, hashtags: string) => void;
-    onUseHashtagPresetsChange: (value: boolean) => void;
+  queueTypes: (string | QueueType)[];
+  selectedQueueType: string;
+  onQueueTypeChange: (queueTypeName: string) => void;
+  scheduledFor: string;
+  onScheduledForChange: (value: string) => void;
+  scheduleIntervals: number[];
+  onScheduleIntervalClick: (interval: number) => void;
+  onNextSlotClick: () => void;
+  hashTagPresets: HashTagPreset[];
+  useHashtagPresets: boolean;
+  selectedHashtagPresetId?: string | null;
+  selectedHashtags: string;
+  onHashtagPresetChange: (presetId: string | null, hashtags: string) => void;
+  onUseHashtagPresetsChange: (value: boolean) => void;
 }
 
 export function LongFormPublishingOptions({
-    queueTypes,
-    selectedQueueType,
-    onQueueTypeChange,
-    scheduledFor,
-    onScheduledForChange,
-    scheduleIntervals,
-    onScheduleIntervalClick,
-    onNextSlotClick,
-    hashTagPresets,
-    useHashtagPresets,
-    selectedHashtagPresetId,
-    selectedHashtags: _selectedHashtags,
-    onHashtagPresetChange,
-    onUseHashtagPresetsChange,
+  queueTypes,
+  selectedQueueType,
+  onQueueTypeChange,
+  scheduledFor,
+  onScheduledForChange,
+  scheduleIntervals,
+  onScheduleIntervalClick,
+  onNextSlotClick,
+  hashTagPresets,
+  useHashtagPresets,
+  selectedHashtagPresetId,
+  selectedHashtags: _selectedHashtags,
+  onHashtagPresetChange,
+  onUseHashtagPresetsChange,
 }: LongFormPublishingOptionsProps) {
-    // Find the currently selected queue type
-    const currentQueueType = queueTypes?.find(qt =>
-        (typeof qt === "string" ? qt : qt.name) === selectedQueueType
-    );
+  // Find the currently selected queue type
+  const currentQueueType = queueTypes?.find(
+    (qt) => (typeof qt === "string" ? qt : qt.name) === selectedQueueType,
+  );
 
-    const isFixedSlotQueue = currentQueueType &&
-        typeof currentQueueType === "object" &&
-        currentQueueType.scheduleType === "FIXED_SLOTS";
+  const isFixedSlotQueue =
+    currentQueueType &&
+    typeof currentQueueType === "object" &&
+    currentQueueType.scheduleType === "FIXED_SLOTS";
 
-    return (
-        <div className="space-y-6 rounded-lg bg-gray-50 p-6 dark:bg-gray-800/50">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Publishing Options
-            </h3>
+  return (
+    <div className="space-y-6 rounded-lg bg-gray-50 p-6 dark:bg-gray-800/50">
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+        Publishing Options
+      </h3>
 
-            {/* Queue Type Selection */}
-            <div className="space-y-3">
-                <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Queue Type
-                </Label>
-                <div className="flex flex-wrap gap-2">
-                    {queueTypes
-                        ?.filter((queue) => {
-                            const isEnabled =
-                                typeof queue === "object"
-                                    ? queue.isEnabled !== false
-                                    : true;
-                            return isEnabled;
-                        })
-                        .map((queue) => {
-                            const queueName =
-                                typeof queue === "string" ? queue : queue.name;
-                            const queueColor =
-                                typeof queue === "object" ? queue.color : null;
-                            return (
-                                <button
-                                    key={queueName}
-                                    type="button"
-                                    onClick={() => onQueueTypeChange(queueName)}
-                                    className={`rounded-full px-4 py-2 text-sm ${getDynamicQueueStyle(queueColor ?? null, selectedQueueType === queueName)} transition-all disabled:cursor-not-allowed disabled:opacity-50`}
-                                    style={
-                                        queueColor
-                                            ? {
-                                                backgroundColor:
-                                                    selectedQueueType === queueName
-                                                        ? queueColor
-                                                        : `${queueColor}33`,
-                                                borderColor: queueColor,
-                                                color:
-                                                    selectedQueueType === queueName
-                                                        ? "white"
-                                                        : queueColor,
-                                            }
-                                            : {}
-                                    }
-                                >
-                                    {queueName}
-                                </button>
-                            );
-                        })}
-                </div>
-                <input type="hidden" name="queueType" value={selectedQueueType} />
-            </div>
-
-            {/* Hashtag Preset Toggle */}
-            <HashtagPresetToggle
-                presets={hashTagPresets}
-                selectedPresetId={selectedHashtagPresetId}
-                onSelect={onHashtagPresetChange}
-                useHashtagPresets={useHashtagPresets}
-                onUseHashtagPresetsChange={onUseHashtagPresetsChange}
-                showQueuePreset={true}
-                queueType={(() => {
-                    const qt = queueTypes?.find(
-                        (q) =>
-                            (typeof q === "string" ? q : q.name) === selectedQueueType,
-                    );
-                    // Only pass QueueType objects with the necessary properties
-                    if (qt && typeof qt === "object" && qt.id) {
-                        return qt as { id: string; name: string; hashTagPreset?: HashTagPreset | null };
-                    }
-                    return null;
-                })()}
-            />
-
-            {/* Hidden hashtag preset inputs */}
-            <input
-                type="hidden"
-                name="useHashtagPresets"
-                value={useHashtagPresets.toString()}
-            />
-            <input
-                type="hidden"
-                name="hashTagPresetId"
-                value={selectedHashtagPresetId ?? ""}
-            />
-
-            {/* Schedule Controls */}
-            <div className="space-y-3">
-                <Label
-                    htmlFor="scheduledFor"
-                    className="text-sm font-medium text-gray-700 dark:text-gray-300"
+      {/* Queue Type Selection */}
+      <div className="space-y-3">
+        <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          Queue Type
+        </Label>
+        <div className="flex flex-wrap gap-2">
+          {queueTypes
+            ?.filter((queue) => {
+              const isEnabled =
+                typeof queue === "object" ? queue.isEnabled !== false : true;
+              return isEnabled;
+            })
+            .map((queue) => {
+              const queueName = typeof queue === "string" ? queue : queue.name;
+              const queueColor = typeof queue === "object" ? queue.color : null;
+              return (
+                <button
+                  key={queueName}
+                  type="button"
+                  onClick={() => onQueueTypeChange(queueName)}
+                  className={`rounded-full px-4 py-2 text-sm ${getDynamicQueueStyle(queueColor ?? null, selectedQueueType === queueName)} transition-all disabled:cursor-not-allowed disabled:opacity-50`}
+                  style={
+                    queueColor
+                      ? {
+                          backgroundColor:
+                            selectedQueueType === queueName
+                              ? queueColor
+                              : `${queueColor}33`,
+                          borderColor: queueColor,
+                          color:
+                            selectedQueueType === queueName
+                              ? "white"
+                              : queueColor,
+                        }
+                      : {}
+                  }
                 >
-                    Schedule for later
-                </Label>
-                <div className="flex flex-col gap-3 sm:flex-row">
-                    <Input
-                        type="datetime-local"
-                        id="scheduledFor"
-                        name="scheduledFor"
-                        value={scheduledFor ?? ""}
-                        onChange={(e) => onScheduledForChange(e.target.value)}
-                        className="flex-1 bg-white dark:bg-gray-900"
-                        placeholder="Select date and time"
-                    />
-                </div>
-                <div className="flex flex-wrap gap-2">
-                    {isFixedSlotQueue ? (
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={onNextSlotClick}
-                            className="border-blue-500 text-blue-700 hover:bg-blue-50"
-                        >
-                            Next Slot
-                        </Button>
-                    ) : (
-                        scheduleIntervals?.map((interval) => (
-                            <Button
-                                key={interval}
-                                type="button"
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => onScheduleIntervalClick(interval)}
-                                className="transition-transform hover:scale-105"
-                            >
-                                +{interval}h
-                            </Button>
-                        ))
-                    )}
-                </div>
-            </div>
+                  {queueName}
+                </button>
+              );
+            })}
         </div>
-    );
+        <input type="hidden" name="queueType" value={selectedQueueType} />
+      </div>
+
+      {/* Hashtag Preset Toggle */}
+      <HashtagPresetToggle
+        presets={hashTagPresets}
+        selectedPresetId={selectedHashtagPresetId}
+        onSelect={onHashtagPresetChange}
+        useHashtagPresets={useHashtagPresets}
+        onUseHashtagPresetsChange={onUseHashtagPresetsChange}
+        showQueuePreset={true}
+        queueType={(() => {
+          const qt = queueTypes?.find(
+            (q) => (typeof q === "string" ? q : q.name) === selectedQueueType,
+          );
+          // Only pass QueueType objects with the necessary properties
+          if (qt && typeof qt === "object" && qt.id) {
+            return qt as {
+              id: string;
+              name: string;
+              hashTagPreset?: HashTagPreset | null;
+            };
+          }
+          return null;
+        })()}
+      />
+
+      {/* Hidden hashtag preset inputs */}
+      <input
+        type="hidden"
+        name="useHashtagPresets"
+        value={useHashtagPresets.toString()}
+      />
+      <input
+        type="hidden"
+        name="hashTagPresetId"
+        value={selectedHashtagPresetId ?? ""}
+      />
+
+      {/* Schedule Controls */}
+      <div className="space-y-3">
+        <Label
+          htmlFor="scheduledFor"
+          className="text-sm font-medium text-gray-700 dark:text-gray-300"
+        >
+          Schedule for later
+        </Label>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Input
+            type="datetime-local"
+            id="scheduledFor"
+            name="scheduledFor"
+            value={scheduledFor ?? ""}
+            onChange={(e) => onScheduledForChange(e.target.value)}
+            className="flex-1 bg-white dark:bg-gray-900"
+            placeholder="Select date and time"
+          />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {isFixedSlotQueue ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onNextSlotClick}
+              className="border-blue-500 text-blue-700 hover:bg-blue-50"
+            >
+              Next Slot
+            </Button>
+          ) : (
+            scheduleIntervals?.map((interval) => (
+              <Button
+                key={interval}
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => onScheduleIntervalClick(interval)}
+                className="transition-transform hover:scale-105"
+              >
+                +{interval}h
+              </Button>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }

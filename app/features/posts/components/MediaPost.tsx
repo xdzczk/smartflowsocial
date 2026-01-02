@@ -7,13 +7,10 @@ import { useOptionalUser } from "~/lib/remix-utils";
 
 import { usePostScheduling } from "../hooks/usePostScheduling";
 import type { QueueType, HashTagPreset } from "../types";
-import {
-  validateAndProcessFiles,
-} from "../utils/file-processing.client";
+import { validateAndProcessFiles } from "../utils/file-processing.client";
 
 import { QueueSelector } from "./QueueSelector";
 import { SchedulingSection } from "./SchedulingSection";
-
 
 interface PreparedEventData {
   content: {
@@ -92,7 +89,7 @@ export default function MediaPost({
 
     // Use extracted utility for validation and processing
     const processedFiles = await validateAndProcessFiles(selectedFiles);
-    
+
     if (processedFiles) {
       setFiles((prev: File[]) => [...prev, ...processedFiles]);
     }
@@ -101,11 +98,11 @@ export default function MediaPost({
   const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const droppedFiles = Array.from(e.dataTransfer.files);
-    
+
     if (droppedFiles.length > 0) {
       // Use extracted utility for validation and processing
       const processedFiles = await validateAndProcessFiles(droppedFiles);
-      
+
       if (processedFiles) {
         setFiles((prev: File[]) => [...prev, ...processedFiles]);
       }
@@ -125,11 +122,23 @@ export default function MediaPost({
       try {
         const res = await fetch("/api/user-upload-provider");
         const data: unknown = await res.json();
-        const provider = data && typeof data === "object" && !Array.isArray(data) && "provider" in data && typeof data.provider === "string" ? data.provider : null;
+        const provider =
+          data &&
+          typeof data === "object" &&
+          !Array.isArray(data) &&
+          "provider" in data &&
+          typeof data.provider === "string"
+            ? data.provider
+            : null;
         setUploadProvider(provider);
       } catch (err) {
-         
-        const { handleErrorSafely } = require("~/lib/error-handler.client") as unknown as { handleErrorSafely: (error: unknown, context: { component: string; action: string }) => void };
+        const { handleErrorSafely } =
+          require("~/lib/error-handler.client") as unknown as {
+            handleErrorSafely: (
+              error: unknown,
+              context: { component: string; action: string },
+            ) => void;
+          };
         handleErrorSafely(err, {
           component: "MediaPost",
           action: "fetchUploadProvider",
@@ -199,7 +208,10 @@ export default function MediaPost({
           content: {
             fileUrl: url.fileUrl,
             scheduledFor: url.scheduledFor,
-            caption: typeof url.caption === "string" ? url.caption : String(url.caption ?? ""),
+            caption:
+              typeof url.caption === "string"
+                ? url.caption
+                : String(url.caption ?? ""),
             queueType: url.queueType ?? selectedQueue,
           },
           type: "media",
@@ -212,12 +224,18 @@ export default function MediaPost({
       setFiles([]);
       setIsUploading(false);
     } catch (error) {
-      const { handleAsyncError, getErrorMessage } = await import("~/lib/error-handler.client");
+      const { handleAsyncError, getErrorMessage } = await import(
+        "~/lib/error-handler.client"
+      );
       const errorMessage = getErrorMessage(error) ?? "Unknown error";
-      handleAsyncError(error, {
-        component: "MediaPost",
-        action: "handleImagePreview",
-      }, false); // Don't show toast, we call toast.error instead
+      handleAsyncError(
+        error,
+        {
+          component: "MediaPost",
+          action: "handleImagePreview",
+        },
+        false,
+      ); // Don't show toast, we call toast.error instead
       toast.error(`Upload failed: ${errorMessage}`);
       setIsUploading(false);
     }
@@ -253,7 +271,7 @@ export default function MediaPost({
         />
         <div
           className={`rounded-lg border-2 border-dashed border-gray-300 p-12 text-center ${!isUploaded && "hover:border-gray-400"}`}
-          onDrop={!isUploaded ? ((e) => void handleDrop(e)) : undefined}
+          onDrop={!isUploaded ? (e) => void handleDrop(e) : undefined}
           onDragOver={!isUploaded ? handleDragOver : undefined}
         >
           {files.length > 0 ? (
@@ -363,9 +381,11 @@ export default function MediaPost({
             useHashtagPresets={useHashtagPresets}
             onUseHashtagPresetsChange={setUseHashtagPresets}
             showQueuePreset={selectedQueue !== "unassigned"}
-            queueType={(queueTypes.find(
-              (q) => (typeof q === "string" ? q : q.name) === selectedQueue,
-            ) ?? null) as QueueType | null | undefined}
+            queueType={
+              (queueTypes.find(
+                (q) => (typeof q === "string" ? q : q.name) === selectedQueue,
+              ) ?? null) as QueueType | null | undefined
+            }
           />
           <div className="mb-2 flex items-center gap-2">
             <input
@@ -390,7 +410,9 @@ export default function MediaPost({
             scheduleIntervals={scheduleIntervals}
             queueTypes={queueTypes}
             selectedQueue={selectedQueue}
-            onScheduleIntervalClick={(intervalHours) => void handleScheduleIntervalClick(intervalHours)}
+            onScheduleIntervalClick={(intervalHours) =>
+              void handleScheduleIntervalClick(intervalHours)
+            }
             onCalculateNextSlot={() => {
               void calculateQueueScheduleTime(selectedQueue);
             }}

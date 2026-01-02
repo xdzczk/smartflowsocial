@@ -4,10 +4,7 @@
  */
 
 import { requireUser } from "~/features/auth/session.server";
-import {
-  getAllPlans,
-  getUserSubscription,
-} from "~/models/payment.server";
+import { getAllPlans, getUserSubscription } from "~/models/payment.server";
 
 /**
  * Load plans data
@@ -47,7 +44,8 @@ export async function loadPlansData(request: Request) {
       period,
       description: plan.description ?? "",
       features: {
-        basicScheduling: features?.basicScheduling ?? plan.enableBasicScheduling,
+        basicScheduling:
+          features?.basicScheduling ?? plan.enableBasicScheduling,
         multipleQueues: features?.multipleQueues ?? plan.enableMultipleQueues,
         bulkScheduling: features?.bulkScheduling ?? plan.enableBulkScheduling,
         repostsAndQuotes:
@@ -85,4 +83,3 @@ export async function loadPlansData(request: Request) {
       : null,
   };
 }
-

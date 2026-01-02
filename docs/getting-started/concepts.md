@@ -54,21 +54,25 @@ Nostr (Notes and Other Stuff Transmitted by Relays) is a decentralized social pr
 ### Key Concepts
 
 #### Public Key (npub)
+
 - Your public identifier (like a username)
 - Shareable and public
 - Example: `npub1abc123...`
 
 #### Private Key (nsec)
+
 - Your secret key (never share!)
 - Used to sign events
 - Example: `nsec1xyz789...`
 
 #### Relays
+
 - Servers that store and forward messages
 - No single relay is required
 - You can use multiple relays
 
 #### Events
+
 - Signed messages you publish
 - Types: posts (kind 1), articles (kind 30023), etc.
 - Cryptographically signed with your private key
@@ -76,11 +80,13 @@ Nostr (Notes and Other Stuff Transmitted by Relays) is a decentralized social pr
 ### NIP-07 (Browser Extension)
 
 NIP-07 allows browser extensions to:
+
 - Sign events on your behalf
 - Never expose your private key to websites
 - Provide secure authentication
 
 **How it works:**
+
 1. Website requests signature
 2. Extension prompts you
 3. You approve
@@ -128,14 +134,14 @@ NIP-07 allows browser extensions to:
 
 ### Technology Stack
 
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| **Framework** | Remix | Full-stack React framework |
-| **Database** | PostgreSQL + Prisma | Data persistence |
-| **Queue** | BullMQ + Redis | Background job processing |
-| **Storage** | S3-compatible | Image uploads |
-| **Authentication** | Nostr (NIP-07) | Decentralized auth |
-| **Payments** | Lightning (NWC) | Subscription payments |
+| Layer              | Technology          | Purpose                    |
+| ------------------ | ------------------- | -------------------------- |
+| **Framework**      | Remix               | Full-stack React framework |
+| **Database**       | PostgreSQL + Prisma | Data persistence           |
+| **Queue**          | BullMQ + Redis      | Background job processing  |
+| **Storage**        | S3-compatible       | Image uploads              |
+| **Authentication** | Nostr (NIP-07)      | Decentralized auth         |
+| **Payments**       | Lightning (NWC)     | Subscription payments      |
 
 ---
 
@@ -146,12 +152,14 @@ NIP-07 allows browser extensions to:
 **Post** - A piece of content to be published to Nostr.
 
 **Types:**
+
 - **Text Post** - Plain text content
 - **Image Post** - Single image with caption
 - **Carousel Post** - Multiple images
 - **Long-form Post** - Full article (NIP-23)
 
 **States:**
+
 - **Draft** - Work in progress, not scheduled
 - **Scheduled** - Queued for future publication
 - **Posted** - Published to Nostr relays
@@ -161,11 +169,13 @@ NIP-07 allows browser extensions to:
 **Queue** - A scheduling system that controls when posts are published.
 
 **Types:**
+
 - **Interval Queue** - Post every X hours automatically
 - **Fixed Time Slots** - Post at specific times daily
 - **Manual** - Schedule posts individually
 
 **How it works:**
+
 1. Post assigned to queue
 2. Queue calculates next available time slot
 3. Post scheduled at that time
@@ -176,6 +186,7 @@ NIP-07 allows browser extensions to:
 **Template** - Reusable post structure with placeholders.
 
 **Use cases:**
+
 - Weekly announcements
 - Product launches
 - Event promotions
@@ -186,6 +197,7 @@ NIP-07 allows browser extensions to:
 **Recyclable Post** - Evergreen content that can be reused.
 
 **Features:**
+
 - Schedule multiple times
 - Automatic hashtag rotation
 - Time-based reuse rules
@@ -246,6 +258,7 @@ NIP-07 allows browser extensions to:
 **Principle:** Private keys never leave the browser.
 
 **How it works:**
+
 1. Event created in browser
 2. Browser requests signature from extension
 3. Extension signs event (key stays in extension)
@@ -255,6 +268,7 @@ NIP-07 allows browser extensions to:
 ### Server-Side Validation
 
 **What the server validates:**
+
 - Event signature (cryptographic verification)
 - Event structure (valid Nostr event)
 - User permissions (authorization)
@@ -263,6 +277,7 @@ NIP-07 allows browser extensions to:
 ### Session Management
 
 **How sessions work:**
+
 1. User logs in with Nostr extension
 2. Server creates session cookie
 3. Cookie contains user's public key (npub)
@@ -276,6 +291,7 @@ NIP-07 allows browser extensions to:
 ### Queue System
 
 **Components:**
+
 - **Database** - Stores posts and schedules
 - **Redis** - BullMQ queue storage
 - **Worker Process** - Processes scheduled posts
@@ -307,16 +323,19 @@ NIP-07 allows browser extensions to:
 ### Queue Types
 
 #### Interval Queue
+
 - Posts every X hours automatically
 - Calculates next available slot
 - Distributes posts evenly
 
 #### Fixed Time Slots
+
 - Posts at specific times daily
 - Example: 9 AM, 12 PM, 5 PM
 - Respects timezone settings
 
 #### Manual Override
+
 - Schedule posts individually
 - Override queue rules
 - Full control over timing
@@ -333,4 +352,3 @@ NIP-07 allows browser extensions to:
 ---
 
 **Next:** [Architecture Overview](./architecture.md) → Deep dive into system design
-

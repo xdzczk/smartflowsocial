@@ -1,6 +1,6 @@
 /**
  * Post Model - Shared Types
- * 
+ *
  * Shared type definitions for Post model operations.
  */
 
@@ -47,11 +47,3 @@ export interface PostStatistics {
   scheduledCount: number;
   successCount: number;
 }
-
-
-
-
-
-
-
-

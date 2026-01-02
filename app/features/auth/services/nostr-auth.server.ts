@@ -43,7 +43,8 @@ export async function authenticateNostrUser(
     parsedEvent = JSON.parse(event) as typeof parsedEvent;
   } catch (parseError) {
     throw new ValidationError("Invalid event JSON format", {
-      error: parseError instanceof Error ? parseError.message : String(parseError),
+      error:
+        parseError instanceof Error ? parseError.message : String(parseError),
     });
   }
 
@@ -74,7 +75,7 @@ export async function authenticateNostrUser(
         JSON.stringify(nostrProfile),
       );
     }
-    
+
     const twelveHoursAgo = new Date(Date.now() - 1000 * 60 * 60 * 12);
     if (user.updatedAt < twelveHoursAgo) {
       await updateUserProfile({
@@ -82,7 +83,7 @@ export async function authenticateNostrUser(
         npub: parsedEvent.pubkey ?? "",
       });
     }
-    
+
     return createUserSession({
       redirectTo: safeRedirectTo,
       remember: false,
@@ -99,4 +100,3 @@ export async function authenticateNostrUser(
     });
   }
 }
-

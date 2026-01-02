@@ -1,9 +1,9 @@
 /**
  * Centralized environment variable validation and typed exports
- * 
+ *
  * This module validates all environment variables at boot time and exports
  * a typed object that can be safely used throughout the application.
- * 
+ *
  * Usage:
  *   import { env } from "~/lib/env.server";
  *   const url = env.NOSTR_PUBLISHER_URL; // Type-safe, guaranteed to exist
@@ -15,13 +15,13 @@ interface EnvConfig {
   SESSION_SECRET: string;
   NOSTR_PUBLISHER_URL: string;
   REDIS_URL: string;
-  
+
   // Storage (required if any storage var is set)
   STORAGE_ACCESS_KEY?: string;
   STORAGE_SECRET?: string;
   STORAGE_REGION?: string;
   STORAGE_BUCKET?: string;
-  
+
   // Optional
   PRIMAL_CACHING_URL?: string;
   OWNER_NWC?: string;
@@ -48,19 +48,19 @@ interface ValidationError {
  */
 function validateAndGetEnv(): EnvConfig {
   const required = [
-    'DATABASE_URL',
-    'SESSION_SECRET',
-    'NOSTR_PUBLISHER_URL',
-    'REDIS_URL',
+    "DATABASE_URL",
+    "SESSION_SECRET",
+    "NOSTR_PUBLISHER_URL",
+    "REDIS_URL",
   ] as const;
 
   // Storage variables are optional - only required if using image uploads
   // If any storage variable is set, all must be set
   const storageVariables = [
-    'STORAGE_ACCESS_KEY',
-    'STORAGE_SECRET',
-    'STORAGE_REGION',
-    'STORAGE_BUCKET',
+    "STORAGE_ACCESS_KEY",
+    "STORAGE_SECRET",
+    "STORAGE_REGION",
+    "STORAGE_BUCKET",
   ] as const;
 
   const missing: string[] = [];
@@ -69,66 +69,69 @@ function validateAndGetEnv(): EnvConfig {
   // Validate required variables
   for (const key of required) {
     const value = process.env[key];
-    if (!value || value.trim() === '') {
+    if (!value || value.trim() === "") {
       missing.push(key);
     } else {
       // Additional validation for specific variables
-      if (key === 'SESSION_SECRET' && value.length < 32) {
+      if (key === "SESSION_SECRET" && value.length < 32) {
         invalid.push({
           key,
-          reason: 'must be at least 32 characters long',
+          reason: "must be at least 32 characters long",
         });
       }
-      if (key === 'DATABASE_URL' && !value.startsWith('postgresql://')) {
+      if (key === "DATABASE_URL" && !value.startsWith("postgresql://")) {
         invalid.push({
           key,
-          reason: 'must be a valid PostgreSQL connection string (postgresql://...)',
+          reason:
+            "must be a valid PostgreSQL connection string (postgresql://...)",
         });
       }
-      if (key === 'REDIS_URL' && !value.startsWith('redis://')) {
+      if (key === "REDIS_URL" && !value.startsWith("redis://")) {
         invalid.push({
           key,
-          reason: 'must be a valid Redis connection string (redis://...)',
+          reason: "must be a valid Redis connection string (redis://...)",
         });
       }
     }
   }
 
   // Validate storage variables: if any is set, all must be set
-  const storageValues = storageVariables.map(key => process.env[key]);
-  const hasSomeStorage = storageValues.some(v => v && v.trim() !== '');
-  const hasAllStorage = storageValues.every(v => v && v.trim() !== '');
+  const storageValues = storageVariables.map((key) => process.env[key]);
+  const hasSomeStorage = storageValues.some((v) => v && v.trim() !== "");
+  const hasAllStorage = storageValues.every((v) => v && v.trim() !== "");
 
   if (hasSomeStorage && !hasAllStorage) {
-    missing.push(...storageVariables.filter(key => {
-      const value = process.env[key];
-      return !value || value.trim() === '';
-    }));
+    missing.push(
+      ...storageVariables.filter((key) => {
+        const value = process.env[key];
+        return !value || value.trim() === "";
+      }),
+    );
   }
 
   // Report errors
   if (missing.length > 0 || invalid.length > 0) {
-    console.error('❌ Environment validation failed:');
-    
+    console.error("❌ Environment validation failed:");
+
     if (missing.length > 0) {
-      console.error('\nMissing required environment variables:');
+      console.error("\nMissing required environment variables:");
       missing.forEach((key) => console.error(`  - ${key}`));
     }
-    
+
     if (invalid.length > 0) {
-      console.error('\nInvalid environment variables:');
+      console.error("\nInvalid environment variables:");
       invalid.forEach(({ key, reason }) =>
         console.error(`  - ${key}: ${reason}`),
       );
     }
-    
+
     console.error(
-      '\nPlease check your .env file or environment configuration.',
+      "\nPlease check your .env file or environment configuration.",
     );
     console.error(
-      'See docs/getting-started/environment-setup.md for detailed configuration instructions.',
+      "See docs/getting-started/environment-setup.md for detailed configuration instructions.",
     );
-    
+
     process.exit(1);
   }
 
@@ -186,7 +189,7 @@ function validateAndGetEnv(): EnvConfig {
     config.E2E_TEST = process.env.E2E_TEST;
   }
 
-  console.info('✅ Environment variables validated');
+  console.info("✅ Environment variables validated");
   return config;
 }
 
@@ -196,4 +199,3 @@ export const env = validateAndGetEnv();
 
 // Export type for use in other modules
 export type { EnvConfig };
-

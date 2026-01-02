@@ -180,61 +180,62 @@ export function HashtagPresetSelector({
                 return (
                   <div
                     key={preset.id}
-                    className={`cursor-pointer rounded-lg border p-3 transition-colors ${selectedPresetId === preset.id
+                    className={`cursor-pointer rounded-lg border p-3 transition-colors ${
+                      selectedPresetId === preset.id
                         ? "border-primary bg-primary/10"
                         : "hover:bg-accent/50"
-                      } ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
+                    } ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
                     onClick={() => !disabled && handlePresetClick(preset)}
                     onKeyDown={handleKeyDown}
                     role="button"
                     tabIndex={disabled ? -1 : 0}
                   >
-                  <div className="flex items-start justify-between">
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-1 flex items-center gap-2">
-                        <h4 className="text-sm font-medium">{preset.name}</h4>
-                        <Badge variant="secondary" className="text-xs">
-                          {countHashtags(preset.tags)} tags
-                        </Badge>
-                        {selectedPresetId === preset.id ? (
-                          <Check className="h-4 w-4 text-primary" />
+                    <div className="flex items-start justify-between">
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1 flex items-center gap-2">
+                          <h4 className="text-sm font-medium">{preset.name}</h4>
+                          <Badge variant="secondary" className="text-xs">
+                            {countHashtags(preset.tags)} tags
+                          </Badge>
+                          {selectedPresetId === preset.id ? (
+                            <Check className="h-4 w-4 text-primary" />
+                          ) : null}
+                        </div>
+
+                        {preset.description ? (
+                          <p className="mb-2 text-xs text-muted-foreground">
+                            {preset.description}
+                          </p>
                         ) : null}
-                      </div>
 
-                      {preset.description ? (
-                        <p className="mb-2 text-xs text-muted-foreground">
-                          {preset.description}
-                        </p>
-                      ) : null}
-
-                      <div className="flex flex-wrap gap-1">
-                        {preset.tags
-                          .split(/\s+/)
-                          .filter(
-                            (tag) => tag.startsWith("#") && tag.length > 1,
-                          )
-                          .slice(0, 3)
-                          .map((tag, index) => (
+                        <div className="flex flex-wrap gap-1">
+                          {preset.tags
+                            .split(/\s+/)
+                            .filter(
+                              (tag) => tag.startsWith("#") && tag.length > 1,
+                            )
+                            .slice(0, 3)
+                            .map((tag, index) => (
+                              <Badge
+                                key={index}
+                                variant="outline"
+                                className="px-2 py-0 text-xs"
+                              >
+                                {tag}
+                              </Badge>
+                            ))}
+                          {countHashtags(preset.tags) > 3 ? (
                             <Badge
-                              key={index}
                               variant="outline"
                               className="px-2 py-0 text-xs"
                             >
-                              {tag}
+                              +{countHashtags(preset.tags) - 3} more
                             </Badge>
-                          ))}
-                        {countHashtags(preset.tags) > 3 ? (
-                          <Badge
-                            variant="outline"
-                            className="px-2 py-0 text-xs"
-                          >
-                            +{countHashtags(preset.tags) - 3} more
-                          </Badge>
-                        ) : null}
+                          ) : null}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
                 );
               })}
             </div>

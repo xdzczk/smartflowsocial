@@ -61,34 +61,42 @@ Every documentation file should include:
 
 ```markdown
 # Title (H1) - Document title only
+
 ## Major Section (H2) - Main sections
+
 ### Subsection (H3) - Subsections
+
 #### Detail (H4) - Detailed topics
 ```
 
 **Guidelines:**
+
 - Only one H1 per document
 - Use H2 for major sections
 - Don't skip heading levels
 
 ### Code Blocks
 
-```markdown
+````markdown
 ✅ Good:
+
 ```typescript
 // app/models/user.server.ts
 export async function getUserById(id: string) {
   return prisma.user.findUnique({ where: { id } });
 }
 ```
+````
 
 ❌ Bad:
+
 ```
 getUserById(id) {
   return prisma.user.findUnique({ where: { id } });
 }
 ```
-```
+
+````
 
 **Requirements:**
 - Specify language for syntax highlighting
@@ -138,7 +146,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const user = await getUserById(userId);
   return json({ user });
 }
-```
+````
 
 ---
 
@@ -168,7 +176,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 ## Documentation Template
 
-```markdown
+````markdown
 # [Document Title]
 
 **Estimated time:** X minutes  
@@ -196,6 +204,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 ```typescript
 // Example code
 ```
+````
 
 ---
 
@@ -213,6 +222,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 ---
 
 **Next:** [Next Guide](./next-guide.md) → Description
+
 ```
 
 ---
@@ -251,3 +261,4 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 **Next:** [Contributing to Documentation](./contributing.md) → How to contribute
 
+```

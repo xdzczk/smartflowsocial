@@ -9,11 +9,13 @@ How to contribute to SmartFlowSocial documentation.
 ## Quick Start
 
 1. **Find what to improve:**
+
    - Check [open documentation issues](https://github.com/xdzczk/SmartFlowSocial/issues?q=label%3Adocumentation)
    - Review [documentation TODO list](#todo-list)
    - Identify gaps or outdated content
 
 2. **Make your changes:**
+
    - Edit markdown files in `docs/`
    - Follow [Style Guide](./style-guide.md)
    - Test code examples
@@ -70,6 +72,7 @@ docs/
 ### Follow the Style Guide
 
 See [Style Guide](./style-guide.md) for:
+
 - Writing standards
 - Formatting guidelines
 - Code example requirements
@@ -133,4 +136,3 @@ When creating a PR:
 ---
 
 **Thank you for contributing to SmartFlowSocial documentation!** 🙏
-

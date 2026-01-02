@@ -26,54 +26,57 @@ export function usePostScheduling({
   const [scheduledFor, setScheduledFor] = useState("");
   const [timeError, setTimeError] = useState("");
 
-  const calculateQueueScheduleTime = useCallback(async (queueTypeName: string) => {
-    if (queueTypeName === "unassigned") {
-      setScheduledFor("");
-      return;
-    }
-
-    // Find the queue type object to get its ID
-    const selectedQueueType = queueTypes.find((qt) =>
-      typeof qt === "string" ? qt === queueTypeName : qt.name === queueTypeName
-    );
-    const queueTypeId =
-      typeof selectedQueueType === "object" ? selectedQueueType.id : null;
-
-    try {
-      const response = await fetch("/api/queue-schedule", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          queueTypeId,
-          queueTypeName, // Keep for backward compatibility
-          userId: user?.id,
-        }),
-      });
-
-      if (response.ok) {
-        const data = (await response.json()) as { scheduledTime?: string };
-        const scheduledTime = data.scheduledTime;
-        if (scheduledTime) {
-          setScheduledFor(scheduledTime);
-        }
-        setTimeError("");
-        if (onTimeError) {
-          onTimeError("");
-        }
+  const calculateQueueScheduleTime = useCallback(
+    async (queueTypeName: string) => {
+      if (queueTypeName === "unassigned") {
+        setScheduledFor("");
+        return;
       }
-    } catch (error) {
-      console.error("Error calculating schedule time:", error);
-    }
-  }, [queueTypes, user?.id, onTimeError]);
+
+      // Find the queue type object to get its ID
+      const selectedQueueType = queueTypes.find((qt) =>
+        typeof qt === "string"
+          ? qt === queueTypeName
+          : qt.name === queueTypeName,
+      );
+      const queueTypeId =
+        typeof selectedQueueType === "object" ? selectedQueueType.id : null;
+
+      try {
+        const response = await fetch("/api/queue-schedule", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            queueTypeId,
+            queueTypeName, // Keep for backward compatibility
+            userId: user?.id,
+          }),
+        });
+
+        if (response.ok) {
+          const data = (await response.json()) as { scheduledTime?: string };
+          const scheduledTime = data.scheduledTime;
+          if (scheduledTime) {
+            setScheduledFor(scheduledTime);
+          }
+          setTimeError("");
+          if (onTimeError) {
+            onTimeError("");
+          }
+        }
+      } catch (error) {
+        console.error("Error calculating schedule time:", error);
+      }
+    },
+    [queueTypes, user?.id, onTimeError],
+  );
 
   const handleScheduleIntervalClick = (intervalHours: string | number) => {
     // Find the currently selected queue type
     const selectedQueueType = queueTypes.find((qt) =>
-      typeof qt === "string"
-        ? qt === selectedQueue
-        : qt.name === selectedQueue
+      typeof qt === "string" ? qt === selectedQueue : qt.name === selectedQueue,
     );
 
     // If this is a fixed slot queue, use the API to get the next scheduled time instead
@@ -89,7 +92,7 @@ export function usePostScheduling({
 
     const now = new Date();
     const hoursLater = new Date(
-      now.getTime() + parseInt(String(intervalHours)) * 60 * 60 * 1000
+      now.getTime() + parseInt(String(intervalHours)) * 60 * 60 * 1000,
     );
 
     // Format the date in the user's timezone
@@ -157,7 +160,3 @@ export function usePostScheduling({
     scheduleIntervals: scheduleIntervals || user?.scheduleInterval || [],
   };
 }
-
-
-
-

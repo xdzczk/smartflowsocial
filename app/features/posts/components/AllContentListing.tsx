@@ -64,7 +64,12 @@ export default function AllContentListing({
   onEditPost,
   onReschedulePost,
 }: AllContentListingProps) {
-  const deleteFetcher = useFetcher<{ success?: boolean; error?: string; needsSigning?: boolean; post?: PostData | LongFormPostData }>();
+  const deleteFetcher = useFetcher<{
+    success?: boolean;
+    error?: string;
+    needsSigning?: boolean;
+    post?: PostData | LongFormPostData;
+  }>();
   const [sortConfig, setSortConfig] = useState<{
     key: string;
     direction: "asc" | "desc";
@@ -93,8 +98,14 @@ export default function AllContentListing({
     if (sortConfig.key === "scheduledFor") {
       const aScheduled = a.scheduledFor;
       const bScheduled = b.scheduledFor;
-      aValue = aScheduled && typeof aScheduled === "string" ? parseInt(aScheduled, 10) * 1000 : 0;
-      bValue = bScheduled && typeof bScheduled === "string" ? parseInt(bScheduled, 10) * 1000 : 0;
+      aValue =
+        aScheduled && typeof aScheduled === "string"
+          ? parseInt(aScheduled, 10) * 1000
+          : 0;
+      bValue =
+        bScheduled && typeof bScheduled === "string"
+          ? parseInt(bScheduled, 10) * 1000
+          : 0;
     } else if (sortConfig.key === "postedAt") {
       const aPosted = a.postedAt;
       const bPosted = b.postedAt;
@@ -114,7 +125,7 @@ export default function AllContentListing({
       aValue = aKey ? (typeof aKey === "string" ? aKey : String(aKey)) : "";
       bValue = bKey ? (typeof bKey === "string" ? bKey : String(bKey)) : "";
     }
-    
+
     if (aValue < bValue) {
       return sortConfig.direction === "asc" ? -1 : 1;
     }
@@ -135,10 +146,12 @@ export default function AllContentListing({
       item.summary?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-
   return (
     <div>
-      <ContentSearchBar searchTerm={searchTerm} onSearchChange={onSearchChange} />
+      <ContentSearchBar
+        searchTerm={searchTerm}
+        onSearchChange={onSearchChange}
+      />
 
       {showBulkActions ? (
         <ContentBulkActions

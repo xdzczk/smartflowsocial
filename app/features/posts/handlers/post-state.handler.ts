@@ -1,6 +1,6 @@
 /**
  * Post State Handlers for Bulk Posts
- * 
+ *
  * Handles individual post state changes (caption, date, removal)
  */
 
@@ -79,16 +79,3 @@ export function handleRemovePost(
 ): void {
   setPosts(posts.filter((_, i) => i !== index));
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

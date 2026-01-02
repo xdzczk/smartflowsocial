@@ -34,7 +34,8 @@ export function useDraftEditState({
   const [caption] = useState(post.caption ?? "");
   const [selectedQueue, setSelectedQueue] = useState<string>(
     // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- Boolean OR for fallback logic; ?? would be incorrect here
-    (typeof post.queueType === "object" && post.queueType?.name) || (typeof post.queueType === "string" ? post.queueType : "unassigned"),
+    (typeof post.queueType === "object" && post.queueType?.name) ||
+      (typeof post.queueType === "string" ? post.queueType : "unassigned"),
   );
   const [scheduledFor, setScheduledFor] = useState("");
   const [showResumeModal, setShowResumeModal] = useState(false);
@@ -56,49 +57,58 @@ export function useDraftEditState({
     setShowResumeModal(true);
   };
 
-  const calculateQueueScheduleTime = useCallback(async (queueTypeName: string) => {
-    if (queueTypeName === "unassigned") {
-      setScheduledFor("");
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/queue-schedule", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          queueTypeName,
-          userId: currentUser?.id,
-        }),
-      });
-
-      if (response.ok) {
-        const data = (await response.json()) as { scheduledTime?: string };
-        const scheduledTime = data.scheduledTime;
-        if (scheduledTime) {
-          setScheduledFor(scheduledTime);
-        }
+  const calculateQueueScheduleTime = useCallback(
+    async (queueTypeName: string) => {
+      if (queueTypeName === "unassigned") {
+        setScheduledFor("");
+        return;
       }
-    } catch (error) {
-      console.error("Error calculating schedule time:", error);
-    }
-  }, [currentUser?.id]);
+
+      try {
+        const response = await fetch("/api/queue-schedule", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            queueTypeName,
+            userId: currentUser?.id,
+          }),
+        });
+
+        if (response.ok) {
+          const data = (await response.json()) as { scheduledTime?: string };
+          const scheduledTime = data.scheduledTime;
+          if (scheduledTime) {
+            setScheduledFor(scheduledTime);
+          }
+        }
+      } catch (error) {
+        console.error("Error calculating schedule time:", error);
+      }
+    },
+    [currentUser?.id],
+  );
 
   const handleSignAndResume = async () => {
     try {
       // Convert currentUser (User | null | undefined) to UserData | null
-      const currentUserData: UserData | null = currentUser ? {
-        id: currentUser.id,
-        npub: currentUser.npub,
-        timezone: currentUser.timezone ?? null,
-        scheduleInterval: currentUser.scheduleInterval ? currentUser.scheduleInterval.map(Number).filter(n => !isNaN(n)) : undefined,
-        userRelays: currentUser.userRelays,
-        showHashTagsinPosts: currentUser.showHashTagsinPosts,
-        isEnabled: currentUser.isEnabled,
-      } : null;
-      
+      const currentUserData: UserData | null = currentUser
+        ? {
+            id: currentUser.id,
+            npub: currentUser.npub,
+            timezone: currentUser.timezone ?? null,
+            scheduleInterval: currentUser.scheduleInterval
+              ? currentUser.scheduleInterval
+                  .map(Number)
+                  .filter((n) => !isNaN(n))
+              : undefined,
+            userRelays: currentUser.userRelays,
+            showHashTagsinPosts: currentUser.showHashTagsinPosts,
+            isEnabled: currentUser.isEnabled,
+          }
+        : null;
+
       const result = await signDraftForScheduling({
         content,
         caption,
@@ -176,4 +186,3 @@ export function useDraftEditState({
     handleHashtagPresetSelect,
   };
 }
-

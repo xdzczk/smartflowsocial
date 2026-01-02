@@ -49,13 +49,13 @@ export async function sendNostrDirectMessage(
       } else {
         // Assume hex string
         privateKeyBytes = new Uint8Array(
-          nsecHex.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) ?? []
+          nsecHex.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) ?? [],
         );
       }
     } catch {
       // Fallback: treat as hex string
       privateKeyBytes = new Uint8Array(
-        nsecHex.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) ?? []
+        nsecHex.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) ?? [],
       );
     }
 
@@ -70,10 +70,13 @@ export async function sendNostrDirectMessage(
         if (converted) receiverHex = converted;
       }
     } catch (e) {
-      logWarning("Failed to convert receiver pubkey to hex; using original value", {
-        receiverPubkey,
-        error: e instanceof Error ? e.message : String(e),
-      });
+      logWarning(
+        "Failed to convert receiver pubkey to hex; using original value",
+        {
+          receiverPubkey,
+          error: e instanceof Error ? e.message : String(e),
+        },
+      );
     }
 
     // Encrypt the content

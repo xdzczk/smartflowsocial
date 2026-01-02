@@ -10,18 +10,17 @@ This guide covers how to run and write tests for SmartFlowSocial. The project us
 
 SmartFlowSocial uses the following test types:
 
-| Type | Description | Location | Framework |
-|------|-------------|----------|-----------|
-| **Unit Tests** | Pure function tests for critical business logic | `tests/unit/*.test.ts` | Vitest |
-| **Integration Tests** | Loader/API/Model tests that verify data flow | `tests/integration/*.test.ts` | Vitest |
-| **Property-Based Tests** | Random input generation to find edge cases | `tests/property/*.test.ts` | Vitest + fast-check |
-| **Security Tests** | XSS, SQL injection, authentication, etc. | `tests/security/*.test.ts` | Vitest |
-| **Performance Tests** | Function performance benchmarks | `tests/performance/*.test.ts` | Vitest + k6 |
-| **E2E Tests** | Full user flow tests (login, navigation, forms) | `tests/e2e/**/*.cy.ts` | Cypress |
-| **Smoke Tests** | Quick sanity checks for critical paths | `tests/e2e/smoke.cy.ts` | Cypress |
+| Type                     | Description                                     | Location                      | Framework           |
+| ------------------------ | ----------------------------------------------- | ----------------------------- | ------------------- |
+| **Unit Tests**           | Pure function tests for critical business logic | `tests/unit/*.test.ts`        | Vitest              |
+| **Integration Tests**    | Loader/API/Model tests that verify data flow    | `tests/integration/*.test.ts` | Vitest              |
+| **Property-Based Tests** | Random input generation to find edge cases      | `tests/property/*.test.ts`    | Vitest + fast-check |
+| **Security Tests**       | XSS, SQL injection, authentication, etc.        | `tests/security/*.test.ts`    | Vitest              |
+| **Performance Tests**    | Function performance benchmarks                 | `tests/performance/*.test.ts` | Vitest + k6         |
+| **E2E Tests**            | Full user flow tests (login, navigation, forms) | `tests/e2e/**/*.cy.ts`        | Cypress             |
+| **Smoke Tests**          | Quick sanity checks for critical paths          | `tests/e2e/smoke.cy.ts`       | Cypress             |
 
-> [!NOTE]
-> **Vitest** is used for fast unit, integration, property-based, security, and performance tests that don't require a browser. **Cypress** is used for E2E tests that need real browser interactions.
+> [!NOTE] > **Vitest** is used for fast unit, integration, property-based, security, and performance tests that don't require a browser. **Cypress** is used for E2E tests that need real browser interactions.
 
 ## Prerequisites
 
@@ -57,15 +56,15 @@ Before running tests, ensure you have:
 
 ### When to Use Each
 
-| Test Type | Framework | Why |
-|-----------|-----------|-----|
-| Pure functions (utilities, business logic) | **Vitest** | Fast, no browser needed |
-| Remix loaders/actions | **Vitest** | Test server logic directly |
-| API routes | **Vitest** | Test without HTTP overhead |
-| React components (isolated) | **Vitest** | Fast rendering with jsdom |
-| Full user flows | **Cypress** | Real browser interactions |
-| UI interactions | **Cypress** | Real DOM events |
-| Cross-browser testing | **Cypress** | Multiple browser support |
+| Test Type                                  | Framework   | Why                        |
+| ------------------------------------------ | ----------- | -------------------------- |
+| Pure functions (utilities, business logic) | **Vitest**  | Fast, no browser needed    |
+| Remix loaders/actions                      | **Vitest**  | Test server logic directly |
+| API routes                                 | **Vitest**  | Test without HTTP overhead |
+| React components (isolated)                | **Vitest**  | Fast rendering with jsdom  |
+| Full user flows                            | **Cypress** | Real browser interactions  |
+| UI interactions                            | **Cypress** | Real DOM events            |
+| Cross-browser testing                      | **Cypress** | Multiple browser support   |
 
 ### Installation
 
@@ -92,12 +91,14 @@ tests/
 ### Configuration Files
 
 **`vitest.config.ts`**:
+
 - Configures test environment (Node.js)
 - Sets up path aliases (`~/*`)
 - Configures coverage reporting
 - Excludes Cypress and build directories
 
 **`tests/setup.ts`**:
+
 - Extends Vitest with jest-dom matchers
 - Sets up global test environment
 - Configures mocks and cleanup
@@ -105,6 +106,7 @@ tests/
 ### Migration from Cypress
 
 **Before (Cypress - Slow)**:
+
 ```typescript
 // tests/e2e/unit/scheduling-logic.cy.ts
 describe("Scheduling Logic", () => {
@@ -117,6 +119,7 @@ describe("Scheduling Logic", () => {
 ```
 
 **After (Vitest - Fast)**:
+
 ```typescript
 // tests/unit/scheduling-logic.test.ts
 import { describe, it, expect } from "vitest";
@@ -203,23 +206,23 @@ pnpm test:e2e
 
 ### Available Test Commands
 
-| Command | Description | Framework |
-|---------|-------------|-----------|
-| `pnpm test` | Run all Vitest tests | Vitest |
-| `pnpm test:watch` | Run Vitest in watch mode | Vitest |
-| `pnpm test:ui` | Open Vitest UI for interactive testing | Vitest |
-| `pnpm test:coverage` | Generate coverage report | Vitest |
-| `pnpm test:coverage:report` | Generate coverage and record trend | Vitest |
-| `pnpm test:coverage:trend` | View coverage trend report | Vitest |
-| `pnpm test:unit` | Run unit tests only | Vitest |
-| `pnpm test:integration` | Run integration tests only | Vitest |
-| `pnpm test:property` | Run property-based tests | Vitest |
-| `pnpm test:security` | Run security tests | Vitest |
-| `pnpm test:performance` | Run performance tests | Vitest |
-| `pnpm test:e2e` | Run all Cypress E2E tests | Cypress |
-| `pnpm test:e2e:open` | Open Cypress UI for interactive testing | Cypress |
-| `pnpm test:e2e:dev` | Starts dev server and opens Cypress | Cypress |
-| `pnpm test:all` | Run Vitest tests + show Cypress instructions | Vitest |
+| Command                     | Description                                  | Framework |
+| --------------------------- | -------------------------------------------- | --------- |
+| `pnpm test`                 | Run all Vitest tests                         | Vitest    |
+| `pnpm test:watch`           | Run Vitest in watch mode                     | Vitest    |
+| `pnpm test:ui`              | Open Vitest UI for interactive testing       | Vitest    |
+| `pnpm test:coverage`        | Generate coverage report                     | Vitest    |
+| `pnpm test:coverage:report` | Generate coverage and record trend           | Vitest    |
+| `pnpm test:coverage:trend`  | View coverage trend report                   | Vitest    |
+| `pnpm test:unit`            | Run unit tests only                          | Vitest    |
+| `pnpm test:integration`     | Run integration tests only                   | Vitest    |
+| `pnpm test:property`        | Run property-based tests                     | Vitest    |
+| `pnpm test:security`        | Run security tests                           | Vitest    |
+| `pnpm test:performance`     | Run performance tests                        | Vitest    |
+| `pnpm test:e2e`             | Run all Cypress E2E tests                    | Cypress   |
+| `pnpm test:e2e:open`        | Open Cypress UI for interactive testing      | Cypress   |
+| `pnpm test:e2e:dev`         | Starts dev server and opens Cypress          | Cypress   |
+| `pnpm test:all`             | Run Vitest tests + show Cypress instructions | Vitest    |
 
 ### Running Specific Tests
 
@@ -339,6 +342,7 @@ Unit tests exercise pure functions independently of the UI. They run **much fast
 **Coverage**: ~40% of business logic functions
 
 **Examples**:
+
 - Scheduling logic (`scheduling-logic.test.ts`)
 - Engagement grouping (`engagement-logic.test.ts`)
 - Subscription logic (`subscription-logic.test.ts`)
@@ -354,6 +358,7 @@ Integration tests verify Remix loaders, action handlers, API routes, and model f
 **Coverage**: ~70% of loaders, ~100% of action handlers, ~90% of API routes, ~70% of model functions
 
 **Examples**:
+
 - Loader tests (`dashboard-loader.test.ts`, `scheduled-loader.test.ts`, etc.)
 - Action handler tests (`dashboard-action.test.ts`, `newpost-action.test.ts`, etc.)
 - API route tests (`api-effective-hashtags.test.ts`, `api-upload.test.ts`, etc.)
@@ -369,6 +374,7 @@ Property-based tests use random input generation to find edge cases automaticall
 **Tools**: `fast-check`
 
 **Examples**:
+
 - Helper functions (`helpers-property.test.ts`)
 - Nostr conversions (`nostr-conversion-property.test.ts`)
 - Scheduling algorithms (`scheduling-property.test.ts`)
@@ -382,6 +388,7 @@ Security tests verify that the application is protected against common vulnerabi
 **Location**: `tests/security/*.test.ts`
 
 **Coverage**:
+
 - XSS prevention
 - SQL injection prevention
 - Authentication/authorization
@@ -401,6 +408,7 @@ Performance tests verify that functions meet performance benchmarks.
 **Tools**: Vitest for unit performance, k6 for load tests
 
 **Examples**:
+
 - Unit performance tests (`unit-performance.test.ts`)
 - API endpoint load tests (`api-endpoints.js`)
 - Bulk operations load tests (`bulk-operations.js`)
@@ -417,6 +425,7 @@ E2E tests verify full user flows in a real browser environment.
 **Coverage**: ~40% of user flows
 
 **Examples**:
+
 - Smoke tests (`smoke.cy.ts`)
 - Dashboard tests (`dashboard.cy.ts`)
 - Post creation tests (`posts/new-post.cy.ts`)
@@ -432,14 +441,14 @@ Vitest is used for both unit tests and integration tests. It runs tests in Node.
 
 ### When to Use Vitest
 
-| Test Type | Framework | Why |
-|-----------|-----------|-----|
-| Pure functions (utilities, business logic) | **Vitest** | Fast, no browser needed |
-| Remix loaders/actions | **Vitest** | Test server logic directly |
-| API routes | **Vitest** | Test without HTTP overhead |
-| React components (isolated) | **Vitest** | Fast rendering with jsdom |
-| Full user flows | **Cypress** | Real browser interactions |
-| UI interactions | **Cypress** | Real DOM events |
+| Test Type                                  | Framework   | Why                        |
+| ------------------------------------------ | ----------- | -------------------------- |
+| Pure functions (utilities, business logic) | **Vitest**  | Fast, no browser needed    |
+| Remix loaders/actions                      | **Vitest**  | Test server logic directly |
+| API routes                                 | **Vitest**  | Test without HTTP overhead |
+| React components (isolated)                | **Vitest**  | Fast rendering with jsdom  |
+| Full user flows                            | **Cypress** | Real browser interactions  |
+| UI interactions                            | **Cypress** | Real DOM events            |
 
 ### Benefits
 
@@ -474,6 +483,7 @@ pnpm test:integration
 ### Configuration
 
 Configuration is in `vitest.config.ts`:
+
 - Test environment: Node.js (for server-side tests)
 - Path aliases: `~/*` for app imports
 - Coverage: v8 provider with thresholds
@@ -498,6 +508,7 @@ pnpm add -D fast-check
 ### Example
 
 Instead of:
+
 ```typescript
 it("should format dates correctly", () => {
   expect(formatDate(new Date("2024-01-15"))).toBe("01/15/2024");
@@ -505,6 +516,7 @@ it("should format dates correctly", () => {
 ```
 
 Property-based testing:
+
 ```typescript
 import { fc } from "fast-check";
 
@@ -547,32 +559,38 @@ Security testing ensures that SmartFlowSocial is protected against common securi
 Located in `tests/security/`, these tests verify:
 
 1. **XSS Prevention** (`xss-prevention.test.ts`)
+
    - Script tag removal
    - Inline event handler removal
    - Dangerous protocol removal
    - Safe HTML tag preservation
 
 2. **SQL Injection Prevention** (`sql-injection.test.ts`)
+
    - Parameterized query usage
    - SQL injection attempt handling
    - Special character handling
 
 3. **Authentication & Authorization** (`authentication.test.ts`)
+
    - Session management
    - Authentication checks
    - Authorization checks
    - Session cookie security
 
 4. **CSRF Protection** (`csrf-protection.test.ts`)
+
    - Remix's built-in CSRF protection
    - SameSite cookie usage
 
 5. **Input Validation** (`input-validation.test.ts`)
+
    - Form data validation
    - Query parameter validation
    - Request body validation
 
 6. **File Upload Security** (`file-upload-security.test.ts`)
+
    - File type validation
    - File size limits
    - Malicious file detection
@@ -606,11 +624,13 @@ Performance testing ensures that SmartFlowSocial can handle expected load and me
 ### Installing k6
 
 **macOS:**
+
 ```bash
 brew install k6
 ```
 
 **Linux:**
+
 ```bash
 sudo gpg -k
 sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
@@ -620,6 +640,7 @@ sudo apt-get install k6
 ```
 
 **Windows:**
+
 ```bash
 choco install k6
 ```
@@ -643,12 +664,12 @@ pnpm test:performance:all
 
 ### Performance Benchmarks
 
-| Function | Small (< 100) | Medium (100-1000) | Large (1000+) |
-|----------|---------------|-------------------|---------------|
-| `combineContent()` | < 50ms | < 200ms | < 1000ms |
-| `getPostStats()` (single) | < 500ms | - | - |
-| `getPostStats()` (10-50) | - | < 2000ms | - |
-| `getPostStats()` (50-100) | - | - | < 5000ms |
+| Function                  | Small (< 100) | Medium (100-1000) | Large (1000+) |
+| ------------------------- | ------------- | ----------------- | ------------- |
+| `combineContent()`        | < 50ms        | < 200ms           | < 1000ms      |
+| `getPostStats()` (single) | < 500ms       | -                 | -             |
+| `getPostStats()` (10-50)  | -             | < 2000ms          | -             |
+| `getPostStats()` (50-100) | -             | -                 | < 5000ms      |
 
 ### Test Files
 
@@ -760,12 +781,12 @@ Configuration is in `vitest.config.ts`:
 
 Coverage thresholds are enforced:
 
-| Metric | Threshold |
-|--------|-----------|
-| Lines | 70% |
-| Functions | 65% |
-| Branches | 60% |
-| Statements | 70% |
+| Metric     | Threshold |
+| ---------- | --------- |
+| Lines      | 70%       |
+| Functions  | 65%       |
+| Branches   | 60%       |
+| Statements | 70%       |
 
 See [Test Strategy](./TEST_STRATEGY.md#coverage-strategy) for coverage details.
 

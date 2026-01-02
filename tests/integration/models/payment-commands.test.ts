@@ -33,7 +33,9 @@ describe("Payment Model Commands", () => {
         amountUsd: 10,
         status: "COMPLETED",
       };
-      (prisma.payment.create as ReturnType<typeof vi.fn>).mockResolvedValue(mockPayment);
+      (prisma.payment.create as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockPayment,
+      );
 
       const result = await createRenewalPayment({
         paymentId: "payment-123",
@@ -63,4 +65,3 @@ describe("Payment Model Commands", () => {
     });
   });
 });
-

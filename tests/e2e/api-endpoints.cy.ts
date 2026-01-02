@@ -2,7 +2,7 @@ import { TEST_NPUB } from "./support/nostr-test-keys";
 
 /**
  * API Endpoint Tests
- * 
+ *
  * Tests API endpoints:
  * - Effective hashtags API
  * - Queue schedule API
@@ -104,7 +104,7 @@ describe("API Endpoints", () => {
       // Clear cookies and session
       cy.clearCookies();
       cy.clearLocalStorage();
-      
+
       cy.request({
         method: "POST",
         url: "/api/effective-hashtags",
@@ -137,5 +137,3 @@ describe("API Endpoints", () => {
     });
   });
 });
-
-

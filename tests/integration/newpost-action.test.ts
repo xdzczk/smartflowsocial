@@ -1,9 +1,9 @@
 /**
  * Integration tests for new post action handlers
- * 
+ *
  * Tests the action handler logic directly, without requiring a browser.
  * For UI interaction tests, see tests/e2e/posts/new-post.cy.ts
- * 
+ *
  * Note: This tests the core logic. File uploads are tested separately.
  */
 
@@ -34,7 +34,11 @@ global.fetch = vi.fn();
 import { handleNewPostAction } from "~/features/posts/services/newpost-action.server";
 import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
 import { createPost } from "~/models/post.commands.server";
-import { getUserById, getQueueTypes, getHashTagPresetById } from "~/models/user.server";
+import {
+  getUserById,
+  getQueueTypes,
+  getHashTagPresetById,
+} from "~/models/user.server";
 
 import { createActionFormData, TEST_USER_ID } from "../utils/test-helpers";
 
@@ -42,7 +46,7 @@ describe("New Post Action Handler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.NOSTR_PUBLISHER_URL = "https://api.nostr-publisher.com/publish";
-    
+
     // Default mocks
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
       userRelays: ["wss://relay1.com", "wss://relay2.com"],
@@ -226,7 +230,8 @@ describe("New Post Action Handler", () => {
       );
       // fetchWithRetry adds additional options (timeout, maxRetries, correlation ID, etc.)
       expect(global.fetch).toHaveBeenCalled();
-      const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+      const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock
+        .calls[0];
       expect(fetchCall[0]).toBe("https://api.nostr-publisher.com/publish");
       const fetchOptions = fetchCall[1] as RequestInit;
       expect(fetchOptions.method).toBe("POST");
@@ -290,7 +295,14 @@ describe("New Post Action Handler", () => {
 
       const result = await handleNewPostAction(TEST_USER_ID, request);
       const dataRaw: unknown = await result.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; fileUrls?: unknown[]; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              success?: unknown;
+              fileUrls?: unknown[];
+              error?: unknown;
+            })
+          : {};
 
       // handleUploadPreview returns Response.json with success and fileUrls
       expect(result.status).toBe(200);
@@ -316,7 +328,14 @@ describe("New Post Action Handler", () => {
 
       const result = await handleNewPostAction(TEST_USER_ID, request);
       const dataRaw: unknown = await result.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; fileUrls?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              success?: unknown;
+              fileUrls?: unknown;
+              error?: unknown;
+            })
+          : {};
 
       expect(result.status).toBe(400);
       expect(data).toEqual({
@@ -460,7 +479,14 @@ describe("New Post Action Handler", () => {
 
       const result = await handleNewPostAction(TEST_USER_ID, request);
       const dataRaw: unknown = await result.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; fileUrls?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              success?: unknown;
+              fileUrls?: unknown;
+              error?: unknown;
+            })
+          : {};
 
       expect(result.status).toBe(200);
       expect(data).toEqual({ success: false });
@@ -481,9 +507,9 @@ describe("New Post Action Handler", () => {
         body: formData,
       });
 
-      await expect(
-        handleNewPostAction(TEST_USER_ID, request),
-      ).rejects.toThrow("Database error");
+      await expect(handleNewPostAction(TEST_USER_ID, request)).rejects.toThrow(
+        "Database error",
+      );
     });
 
     it("should handle Nostr publisher errors", async () => {
@@ -507,9 +533,9 @@ describe("New Post Action Handler", () => {
         body: formData,
       });
 
-      await expect(
-        handleNewPostAction(TEST_USER_ID, request),
-      ).rejects.toThrow("Failed to post to nostr publisher");
+      await expect(handleNewPostAction(TEST_USER_ID, request)).rejects.toThrow(
+        "Failed to post to nostr publisher",
+      );
     });
   });
 
@@ -560,4 +586,3 @@ describe("New Post Action Handler", () => {
     });
   });
 });
-

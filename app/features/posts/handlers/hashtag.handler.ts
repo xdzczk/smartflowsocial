@@ -1,6 +1,6 @@
 /**
  * Hashtag Handler for Bulk Posts
- * 
+ *
  * Handles hashtag management and display based on queue type
  */
 
@@ -51,17 +51,11 @@ export async function updateDisplayedHashtags(
       setDisplayedHashtags(tags);
     }
   } catch (error) {
-    logClientError(
-      error instanceof Error ? error : new Error(String(error)),
-      {
-        component: "bulkposts",
-        action: "updateDisplayedHashtags",
-        queueTypeName,
-      },
-    );
+    logClientError(error instanceof Error ? error : new Error(String(error)), {
+      component: "bulkposts",
+      action: "updateDisplayedHashtags",
+      queueTypeName,
+    });
     setDisplayedHashtags(tags);
   }
 }
-
-
-

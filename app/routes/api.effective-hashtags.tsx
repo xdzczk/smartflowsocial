@@ -23,7 +23,8 @@ export async function action({ request }: ActionFunctionArgs) {
       });
     }
 
-    const { queueTypeName, queueTypeId } = parseEffectiveHashtagsRequest(requestBody);
+    const { queueTypeName, queueTypeId } =
+      parseEffectiveHashtagsRequest(requestBody);
 
     return await getEffectiveHashtags(userId, queueTypeName, queueTypeId);
   } catch (error) {

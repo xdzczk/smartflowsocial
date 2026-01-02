@@ -76,7 +76,9 @@ export function MonthlyView({
     // Process scheduled posts
     scheduledPosts.forEach((post) => {
       // Determine if this specific post is longform when in All tab
-      const postIsLongform = isAll ? !!post.title && post.publishedAt : isLongform;
+      const postIsLongform = isAll
+        ? !!post.title && post.publishedAt
+        : isLongform;
       // For longform posts, use publishedAt, for regular posts use scheduledFor
       const timestamp = postIsLongform ? post.publishedAt : post.scheduledFor;
       if (timestamp) {
@@ -131,7 +133,9 @@ export function MonthlyView({
   const handleDrop = (e: React.DragEvent<HTMLDivElement>, date: Date) => {
     e.preventDefault();
 
-    const postData = JSON.parse(e.dataTransfer.getData("text/plain")) as CalendarPost;
+    const postData = JSON.parse(
+      e.dataTransfer.getData("text/plain"),
+    ) as CalendarPost;
     const userTimezone = user?.timezone ?? "Etc/UTC";
 
     // For monthly view, we'll set time to 9:00 AM by default in user's timezone
@@ -156,15 +160,19 @@ export function MonthlyView({
 
       onPostDrop(postData, newDateTime);
     } catch (error) {
-      handleErrorSafely(error, {
-        component: "MonthlyView",
-        action: "handlePostDrop",
-      }, () => {
-        // Fallback to simple date creation
-        const newDateTime = new Date(date);
-        newDateTime.setHours(9, 0, 0, 0);
-        onPostDrop(postData, newDateTime);
-      });
+      handleErrorSafely(
+        error,
+        {
+          component: "MonthlyView",
+          action: "handlePostDrop",
+        },
+        () => {
+          // Fallback to simple date creation
+          const newDateTime = new Date(date);
+          newDateTime.setHours(9, 0, 0, 0);
+          onPostDrop(postData, newDateTime);
+        },
+      );
     }
   };
 
@@ -173,7 +181,7 @@ export function MonthlyView({
   return (
     <div className="flex h-full flex-col">
       {/* Weekday headers */}
-      <div className="grid grid-cols-7 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+      <div className="grid flex-shrink-0 grid-cols-7 border-b border-gray-200 dark:border-gray-700">
         {weekdays.map((day) => (
           <div
             key={day}
@@ -185,7 +193,7 @@ export function MonthlyView({
       </div>
 
       {/* Calendar grid */}
-      <div className="grid flex-1 min-h-0 grid-cols-7 gap-0 overflow-auto">
+      <div className="grid min-h-0 flex-1 grid-cols-7 gap-0 overflow-auto">
         {calendarDays.map((dayInfo, index) => {
           // Use local date to match the posts grouping
           const year = dayInfo.date.getFullYear();
@@ -233,8 +241,14 @@ export function MonthlyView({
                     user={user}
                     queueTypes={queueTypes}
                     onEdit={onPostEdit}
-                    isLongform={isAll ? Boolean(post.title && post.publishedAt) : isLongform}
-                    isPast={typeof post.isPast === "boolean" ? post.isPast : false}
+                    isLongform={
+                      isAll
+                        ? Boolean(post.title && post.publishedAt)
+                        : isLongform
+                    }
+                    isPast={
+                      typeof post.isPast === "boolean" ? post.isPast : false
+                    }
                   />
                 ))}
 
@@ -252,4 +266,3 @@ export function MonthlyView({
     </div>
   );
 }
-

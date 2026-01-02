@@ -12,13 +12,17 @@ export function useNewPostState() {
   >(null);
   const [selectedHashtags, setSelectedHashtags] = useState("");
   const [showImagePreview, setShowImagePreview] = useState(false);
-  const [preparedImageEvent, setPreparedImageEvent] = useState<PreparedEvent | null>(null);
+  const [preparedImageEvent, setPreparedImageEvent] =
+    useState<PreparedEvent | null>(null);
 
   const handleQueueTypeChange = (queueTypeName: string) => {
     setSelectedQueueType(queueTypeName);
   };
 
-  const handleHashtagPresetSelect = (presetId: string | null, hashtags: string) => {
+  const handleHashtagPresetSelect = (
+    presetId: string | null,
+    hashtags: string,
+  ) => {
     setSelectedHashTagPresetId(presetId);
     setSelectedHashtags(hashtags);
   };
@@ -40,4 +44,3 @@ export function useNewPostState() {
     handleHashtagPresetSelect,
   };
 }
-

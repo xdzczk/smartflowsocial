@@ -1,6 +1,6 @@
 /**
  * Integration tests for dashboard action handlers
- * 
+ *
  * Tests the action handler logic directly, without requiring a browser.
  * For UI interaction tests, see tests/e2e/dashboard.cy.ts
  */
@@ -19,7 +19,14 @@ import { handleDashboardAction } from "~/features/posts/services/dashboard-actio
 import { deleteLongFormPost } from "~/models/longformpost.server";
 import { deletePost } from "~/models/post.commands.server";
 
-import { createActionFormData, createFormData, TEST_USER_ID, TEST_POST_ID, TEST_LONGFORM_ID, createPostIds } from "../utils/test-helpers";
+import {
+  createActionFormData,
+  createFormData,
+  TEST_USER_ID,
+  TEST_POST_ID,
+  TEST_LONGFORM_ID,
+  createPostIds,
+} from "../utils/test-helpers";
 
 describe("Dashboard Action Handler", () => {
   beforeEach(() => {
@@ -46,14 +53,18 @@ describe("Dashboard Action Handler", () => {
     it("should handle missing postId gracefully", async () => {
       const formData = createActionFormData("delete", {});
 
-      await expect(handleDashboardAction(formData, TEST_USER_ID)).rejects.toThrow("Post ID is required");
+      await expect(
+        handleDashboardAction(formData, TEST_USER_ID),
+      ).rejects.toThrow("Post ID is required");
       expect(deletePost).not.toHaveBeenCalled();
     });
   });
 
   describe("Delete Longform Post Action", () => {
     it("should delete a single longform post", async () => {
-      (deleteLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (deleteLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined,
+      );
 
       const formData = createActionFormData("deleteLongForm", {
         postId: TEST_LONGFORM_ID,
@@ -133,7 +144,9 @@ describe("Dashboard Action Handler", () => {
 
   describe("Bulk Delete Longform Posts Action", () => {
     it("should delete multiple longform posts", async () => {
-      (deleteLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (deleteLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined,
+      );
 
       const postIds = [TEST_LONGFORM_ID, "longform-2", "longform-3"];
       const formData = createActionFormData("bulkDeleteLongForm", {
@@ -255,4 +268,3 @@ describe("Dashboard Action Handler", () => {
     });
   });
 });
-

@@ -24,28 +24,33 @@ Techniques and tools for debugging SmartFlowSocial issues.
 ### Browser DevTools
 
 **Chrome/Edge DevTools:**
+
 - **Console** - View logs and errors
 - **Network** - Inspect HTTP requests
 - **Application** - Check storage and cookies
 - **React DevTools** - Inspect React components
 
 **Firefox DevTools:**
+
 - Similar features to Chrome
 - Additional developer tools
 
 ### Node.js Inspector
 
 **Start with inspector:**
+
 ```bash
 node --inspect server.ts
 ```
 
 **Connect:**
+
 1. Open Chrome
 2. Navigate to `chrome://inspect`
 3. Click "inspect" on your Node.js process
 
 **Debug:**
+
 - Set breakpoints
 - Step through code
 - Inspect variables
@@ -54,11 +59,13 @@ node --inspect server.ts
 ### Prisma Studio
 
 **Launch:**
+
 ```bash
 pnpm exec prisma studio
 ```
 
 **Access:**
+
 - Opens at `http://localhost:5555`
 - Browse database tables
 - View and edit records
@@ -67,11 +74,13 @@ pnpm exec prisma studio
 ### Redis CLI
 
 **Connect:**
+
 ```bash
 redis-cli -u $REDIS_URL
 ```
 
 **Commands:**
+
 ```bash
 # List all keys
 KEYS *
@@ -93,6 +102,7 @@ MONITOR
 ### Post Not Publishing
 
 **Symptoms:**
+
 - Post shows as "Scheduled"
 - Post doesn't appear on Nostr
 - No errors in logs
@@ -100,6 +110,7 @@ MONITOR
 **Debugging steps:**
 
 1. **Check worker process:**
+
 ```bash
 # Verify worker is running
 ps aux | grep "start:worker"
@@ -109,6 +120,7 @@ ps aux | grep "start:worker"
 ```
 
 2. **Check queue:**
+
 ```bash
 redis-cli -u $REDIS_URL
 KEYS bull:*
@@ -116,6 +128,7 @@ KEYS bull:*
 ```
 
 3. **Verify post data:**
+
 ```bash
 # Check database
 pnpm exec prisma studio
@@ -124,6 +137,7 @@ pnpm exec prisma studio
 ```
 
 4. **Test Nostr Publisher:**
+
 ```bash
 curl $NOSTR_PUBLISHER_URL/health
 # Should return 200 OK
@@ -132,6 +146,7 @@ curl $NOSTR_PUBLISHER_URL/health
 ### Database Connection Issues
 
 **Symptoms:**
+
 - "Can't reach database server"
 - Connection timeout
 - Query failures
@@ -139,11 +154,13 @@ curl $NOSTR_PUBLISHER_URL/health
 **Debugging steps:**
 
 1. **Test connection:**
+
 ```bash
 psql $DATABASE_URL -c "SELECT 1"
 ```
 
 2. **Check PostgreSQL:**
+
 ```bash
 # Verify PostgreSQL is running
 pg_isready -h localhost
@@ -153,6 +170,7 @@ tail -f /var/log/postgresql/postgresql.log
 ```
 
 3. **Verify credentials:**
+
 ```bash
 # Check DATABASE_URL format
 echo $DATABASE_URL
@@ -160,6 +178,7 @@ echo $DATABASE_URL
 ```
 
 4. **Check network:**
+
 ```bash
 # Test connectivity
 telnet localhost 5432
@@ -170,6 +189,7 @@ nc -zv localhost 5432
 ### Authentication Failures
 
 **Symptoms:**
+
 - Login fails
 - Session expires immediately
 - "Unauthorized" errors
@@ -177,6 +197,7 @@ nc -zv localhost 5432
 **Debugging steps:**
 
 1. **Check session secret:**
+
 ```bash
 # Verify SESSION_SECRET is set
 echo $SESSION_SECRET
@@ -184,20 +205,23 @@ echo $SESSION_SECRET
 ```
 
 2. **Check cookies:**
+
 ```javascript
 // In browser console
-document.cookie
+document.cookie;
 // Should see session cookie
 ```
 
 3. **Check Nostr extension:**
+
 ```javascript
 // In browser console
-window.nostr
+window.nostr;
 // Should be defined
 ```
 
 4. **Review authentication flow:**
+
 - Check server logs
 - Verify extension permissions
 - Test with different extension
@@ -209,6 +233,7 @@ window.nostr
 ### Application Logs
 
 **View logs:**
+
 ```bash
 # Development
 pnpm dev
@@ -220,6 +245,7 @@ tail -f /var/log/app.log
 ```
 
 **Log levels:**
+
 - **ERROR** - Critical errors
 - **WARN** - Warnings
 - **INFO** - Informational
@@ -228,6 +254,7 @@ tail -f /var/log/app.log
 ### Worker Logs
 
 **View worker logs:**
+
 ```bash
 # Development
 pnpm start:worker
@@ -239,6 +266,7 @@ tail -f /var/log/worker.log
 ```
 
 **Common log patterns:**
+
 - Job completion: `Job {id} completed`
 - Job failure: `Job {id} failed: {error}`
 - Queue processing: `Processing job {id}`
@@ -246,6 +274,7 @@ tail -f /var/log/worker.log
 ### Database Logs
 
 **PostgreSQL logs:**
+
 ```bash
 # Check PostgreSQL logs
 tail -f /var/log/postgresql/postgresql.log
@@ -262,17 +291,19 @@ log_statement = 'all'
 ### Query Performance
 
 **Enable query logging:**
+
 ```typescript
 // In Prisma client
 const prisma = new PrismaClient({
-  log: ['query', 'info', 'warn', 'error'],
+  log: ["query", "info", "warn", "error"],
 });
 ```
 
 **Analyze slow queries:**
+
 ```sql
 -- Find slow queries
-SELECT 
+SELECT
   query,
   calls,
   total_time,
@@ -285,12 +316,14 @@ LIMIT 10;
 ### Data Inspection
 
 **Prisma Studio:**
+
 ```bash
 pnpm exec prisma studio
 # Browse tables, view data
 ```
 
 **Direct SQL:**
+
 ```bash
 psql $DATABASE_URL
 # Run queries directly
@@ -328,15 +361,17 @@ redis-cli -u $REDIS_URL MONITOR
 ### Stuck Jobs
 
 **Identify stuck jobs:**
+
 ```bash
 # Check for jobs in "active" state too long
 # Review worker logs for errors
 ```
 
 **Clear stuck jobs:**
+
 ```typescript
 // In worker code
-await queue.clean(0, 100, 'active');
+await queue.clean(0, 100, "active");
 ```
 
 ---
@@ -346,11 +381,13 @@ await queue.clean(0, 100, 'active');
 ### Identify Bottlenecks
 
 1. **Database queries:**
+
    - Enable query logging
    - Identify slow queries
    - Add indexes
 
 2. **API endpoints:**
+
    - Measure response times
    - Identify slow endpoints
    - Optimize queries
@@ -363,6 +400,7 @@ await queue.clean(0, 100, 'active');
 ### Performance Monitoring
 
 **Add timing:**
+
 ```typescript
 const start = Date.now();
 await expensiveOperation();
@@ -371,11 +409,12 @@ console.log(`Operation took ${duration}ms`);
 ```
 
 **Use performance API:**
+
 ```typescript
-performance.mark('start');
+performance.mark("start");
 await operation();
-performance.mark('end');
-performance.measure('operation', 'start', 'end');
+performance.mark("end");
+performance.measure("operation", "start", "end");
 ```
 
 ---
@@ -389,4 +428,3 @@ performance.measure('operation', 'start', 'end');
 ---
 
 **Next:** [Performance Troubleshooting](./performance.md) → Performance debugging
-

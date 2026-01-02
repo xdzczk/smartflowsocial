@@ -12,7 +12,7 @@ import { checkPaymentStatus } from "~/models/payment.server";
  */
 export async function checkPaymentStatusById(paymentId: string) {
   let paymentStatus;
-  
+
   try {
     paymentStatus = await checkPaymentStatus(paymentId);
   } catch (error) {
@@ -53,4 +53,3 @@ export async function checkPaymentStatusById(paymentId: string) {
     },
   );
 }
-

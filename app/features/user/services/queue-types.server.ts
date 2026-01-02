@@ -42,7 +42,7 @@ export function updateQueueType(
     id?: string;
     name: string;
     scheduleType: ScheduleType;
-    scheduleConfig: QueueType['scheduleConfig'];
+    scheduleConfig: QueueType["scheduleConfig"];
     color?: string;
     description?: string;
     isEnabled?: boolean;
@@ -87,7 +87,7 @@ export function updateQueueType(
       description: queueTypeData.description,
       isEnabled: queueTypeData.isEnabled ?? true,
     };
-    
+
     // Handle hashtag preset relationship
     if (queueTypeData.hashTagPresetId) {
       createData.hashTagPreset = {
@@ -179,4 +179,3 @@ export function getQueueTypeByNameForUser(
     },
   });
 }
-

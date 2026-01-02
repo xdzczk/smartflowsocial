@@ -1,12 +1,11 @@
 /**
  * Rate Limiting Tests
- * 
+ *
  * Tests for rate limiting middleware to ensure proper protection against abuse.
  */
 
 import type { Request, Response, NextFunction } from "express";
 import { describe, it, expect, beforeEach, vi } from "vitest";
-
 
 import {
   apiLimiter,
@@ -27,8 +26,8 @@ describe("Rate Limiting", () => {
       ip: "127.0.0.1",
       socket: {
         remoteAddress: "127.0.0.1",
-      // Dynamic import() type annotation needed for type reference
-      // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+        // Dynamic import() type annotation needed for type reference
+        // eslint-disable-next-line @typescript-eslint/consistent-type-imports
       } as unknown as import("net").Socket,
       path: "/api/test",
       method: "GET",
@@ -154,16 +153,12 @@ describe("Rate Limiting", () => {
       // This would require Redis to be running
       // In a real test environment, you'd set up a test Redis instance
       const info = await getRateLimitInfo("test-user-id");
-      
+
       // If Redis is available, should return info or null
       // If not available, should return null
-      expect(info === null || (info && "remaining" in info && "resetTime" in info)).toBe(true);
+      expect(
+        info === null || (info && "remaining" in info && "resetTime" in info),
+      ).toBe(true);
     });
   });
 });
-
-
-
-
-
-

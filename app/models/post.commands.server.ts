@@ -1,6 +1,6 @@
 /**
  * Post Model - Command Operations (Writes)
- * 
+ *
  * This module provides write operations for Post entities.
  * All functions in this file perform INSERT, UPDATE, or DELETE operations.
  */
@@ -13,7 +13,7 @@ import { prisma } from "~/lib/prisma.server";
 import type { CreatePostData } from "./post.types";
 /**
  * Create a new post in the database
- * 
+ *
  * Note: This is a pure data access function. For best practices,
  * resolve queueTypeId in the feature layer before calling this function.
  * Use resolveQueueTypeId() from app/features/posts/services/queue-type-resolver.server.ts
@@ -195,15 +195,21 @@ export function updatePost({
   };
 
   // Only include defined fields
-  if (data.scheduledFor !== undefined) updateData.scheduledFor = data.scheduledFor.toString();
-  if (data.userId !== undefined) updateData.user = { connect: { id: data.userId } };
+  if (data.scheduledFor !== undefined)
+    updateData.scheduledFor = data.scheduledFor.toString();
+  if (data.userId !== undefined)
+    updateData.user = { connect: { id: data.userId } };
   if (data.content !== undefined) updateData.content = data.content;
   if (data.caption !== undefined) updateData.caption = data.caption;
   if (data.postedAt !== undefined) updateData.postedAt = data.postedAt;
   if (data.fileUrl !== undefined) updateData.fileUrl = data.fileUrl;
-  if (data.nostrEventId !== undefined) updateData.nostrEventId = data.nostrEventId;
-  if (data.signedEvent !== undefined) updateData.signedEvent = data.signedEvent as unknown as Prisma.InputJsonValue;
-  if (data.nostrEvent !== undefined) updateData.nostrEvent = data.nostrEvent as unknown as Prisma.InputJsonValue;
+  if (data.nostrEventId !== undefined)
+    updateData.nostrEventId = data.nostrEventId;
+  if (data.signedEvent !== undefined)
+    updateData.signedEvent =
+      data.signedEvent as unknown as Prisma.InputJsonValue;
+  if (data.nostrEvent !== undefined)
+    updateData.nostrEvent = data.nostrEvent as unknown as Prisma.InputJsonValue;
   if (data.tags !== undefined) updateData.tags = data.tags;
   // Note: status, isPublished, isScheduled, draft are Prisma Post model fields, not in CreatePostData
   // They should be set via separate update calls if needed
@@ -249,4 +255,3 @@ export function updatePost({
     data: updateData,
   });
 }
-

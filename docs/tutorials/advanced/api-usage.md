@@ -21,6 +21,7 @@ Complete guide to using the SmartFlowSocial API for programmatic access, automat
 ## Overview
 
 **The SmartFlowSocial API provides:**
+
 - Programmatic access to features
 - Automation capabilities
 - Custom integration support
@@ -45,16 +46,16 @@ Complete guide to using the SmartFlowSocial API for programmatic access, automat
 ```typescript
 // Browser environment
 const sessionCookie = document.cookie
-  .split('; ')
-  .find(row => row.startsWith('session='))
-  ?.split('=')[1];
+  .split("; ")
+  .find((row) => row.startsWith("session="))
+  ?.split("=")[1];
 
 // Use in requests
-const response = await fetch('/api/endpoint', {
+const response = await fetch("/api/endpoint", {
   headers: {
-    'Cookie': `session=${sessionCookie}`,
+    Cookie: `session=${sessionCookie}`,
   },
-  credentials: 'include',
+  credentials: "include",
 });
 ```
 
@@ -64,26 +65,23 @@ const response = await fetch('/api/endpoint', {
 class SmartFlowSocialAPI {
   constructor(
     private baseUrl: string,
-    private sessionCookie: string
+    private sessionCookie: string,
   ) {}
 
-  private async request(
-    endpoint: string,
-    options: RequestInit = {}
-  ) {
+  private async request(endpoint: string, options: RequestInit = {}) {
     const response = await fetch(`${this.baseUrl}/api/${endpoint}`, {
       ...options,
       headers: {
-        'Content-Type': 'application/json',
-        'Cookie': `session=${this.sessionCookie}`,
+        "Content-Type": "application/json",
+        Cookie: `session=${this.sessionCookie}`,
         ...options.headers,
       },
-      credentials: 'include',
+      credentials: "include",
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error || 'Request failed');
+      throw new Error(error.error || "Request failed");
     }
 
     return await response.json();
@@ -212,15 +210,13 @@ console.log(hashtags.effectiveHashtags);
 ```typescript
 async function batchPublish(events: any[], relays: string[]) {
   const results = await Promise.allSettled(
-    events.map(event => 
-      this.publishEvent(event, relays)
-    )
+    events.map((event) => this.publishEvent(event, relays)),
   );
 
   return results.map((result, index) => ({
     index,
-    success: result.status === 'fulfilled',
-    error: result.status === 'rejected' ? result.reason : null,
+    success: result.status === "fulfilled",
+    error: result.status === "rejected" ? result.reason : null,
   }));
 }
 ```
@@ -230,18 +226,14 @@ async function batchPublish(events: any[], relays: string[]) {
 **Handle transient failures:**
 
 ```typescript
-async function publishWithRetry(
-  event: any,
-  relays: string[],
-  maxRetries = 3
-) {
+async function publishWithRetry(event: any, relays: string[], maxRetries = 3) {
   for (let i = 0; i < maxRetries; i++) {
     try {
       return await this.publishEvent(event, relays);
     } catch (error) {
       if (i === maxRetries - 1) throw error;
-      await new Promise(resolve => 
-        setTimeout(resolve, 1000 * Math.pow(2, i))
+      await new Promise((resolve) =>
+        setTimeout(resolve, 1000 * Math.pow(2, i)),
       );
     }
   }
@@ -253,15 +245,13 @@ async function publishWithRetry(
 **Respect rate limits:**
 
 ```typescript
-import pLimit from 'p-limit';
+import pLimit from "p-limit";
 
 const limit = pLimit(10); // Max 10 concurrent requests
 
 async function processMany(items: any[]) {
-  const requests = items.map(item =>
-    limit(() => this.processItem(item))
-  );
-  
+  const requests = items.map((item) => limit(() => this.processItem(item)));
+
   return Promise.all(requests);
 }
 ```
@@ -293,7 +283,7 @@ interface APIError {
 async function handleAPIError(response: Response) {
   if (!response.ok) {
     const error = await response.json();
-    
+
     switch (error.error.statusCode) {
       case 400:
         throw new ValidationError(error.error.message);
@@ -307,7 +297,7 @@ async function handleAPIError(response: Response) {
         throw new APIError(error.error.message);
     }
   }
-  
+
   return await response.json();
 }
 ```
@@ -344,14 +334,14 @@ async function handleAPIError(response: Response) {
 **Full integration example:**
 
 ```typescript
-import { SmartFlowSocialAPI } from './api';
-import { finalizeEvent } from 'nostr-tools';
+import { SmartFlowSocialAPI } from "./api";
+import { finalizeEvent } from "nostr-tools";
 
 class ContentPublisher {
   constructor(
     private api: SmartFlowSocialAPI,
     private privateKey: string,
-    private relays: string[]
+    private relays: string[],
   ) {}
 
   async publishPost(content: string, hashtags?: string[]) {
@@ -360,7 +350,7 @@ class ContentPublisher {
       kind: 1,
       content,
       created_at: Math.floor(Date.now() / 1000),
-      tags: hashtags?.map(tag => ['t', tag]) || [],
+      tags: hashtags?.map((tag) => ["t", tag]) || [],
     };
 
     // Sign event
@@ -373,36 +363,34 @@ class ContentPublisher {
   async publishWithImage(content: string, imageFile: File) {
     // Upload image
     const imageUrl = await this.api.uploadFile(imageFile);
-    
+
     // Create post with image
     const postContent = `${content}\n\n${imageUrl}`;
-    
+
     return await this.publishPost(postContent);
   }
 
-  async schedulePost(
-    content: string,
-    queueName: string,
-    hashtags?: string[]
-  ) {
+  async schedulePost(content: string, queueName: string, hashtags?: string[]) {
     // Get queue schedule
     const schedule = await this.api.getQueueSchedule(queueName);
-    
+
     // Get effective hashtags
     const effectiveHashtags = await this.api.getEffectiveHashtags(queueName);
-    
+
     // Combine hashtags
     const allHashtags = [
       ...(hashtags || []),
-      ...(effectiveHashtags.effectiveHashtags.split(' ') || [])
+      ...(effectiveHashtags.effectiveHashtags.split(" ") || []),
     ];
 
     // Create event with scheduled time
     const event = {
       kind: 1,
-      content: `${content}\n\n${allHashtags.join(' ')}`,
-      created_at: Math.floor(new Date(schedule.nextScheduleTime).getTime() / 1000),
-      tags: allHashtags.map(tag => ['t', tag.replace('#', '')]),
+      content: `${content}\n\n${allHashtags.join(" ")}`,
+      created_at: Math.floor(
+        new Date(schedule.nextScheduleTime).getTime() / 1000,
+      ),
+      tags: allHashtags.map((tag) => ["t", tag.replace("#", "")]),
     };
 
     // Sign and publish
@@ -413,25 +401,23 @@ class ContentPublisher {
 
 // Usage
 const api = new SmartFlowSocialAPI(
-  'https://your-domain.com',
-  process.env.SESSION_COOKIE!
+  "https://your-domain.com",
+  process.env.SESSION_COOKIE!,
 );
 
-const publisher = new ContentPublisher(
-  api,
-  process.env.NOSTR_PRIVATE_KEY!,
-  ['wss://relay.example.com']
-);
+const publisher = new ContentPublisher(api, process.env.NOSTR_PRIVATE_KEY!, [
+  "wss://relay.example.com",
+]);
 
 // Publish simple post
-await publisher.publishPost('Hello from API!', ['nostr', 'api']);
+await publisher.publishPost("Hello from API!", ["nostr", "api"]);
 
 // Publish with image
-const file = new File(['...'], 'image.jpg');
-await publisher.publishWithImage('Check out this image!', file);
+const file = new File(["..."], "image.jpg");
+await publisher.publishWithImage("Check out this image!", file);
 
 // Schedule post
-await publisher.schedulePost('Scheduled post', 'Bitcoin News');
+await publisher.schedulePost("Scheduled post", "Bitcoin News");
 ```
 
 ---
@@ -443,6 +429,7 @@ await publisher.schedulePost('Scheduled post', 'Bitcoin News');
 **Problem:** 401 Unauthorized errors
 
 **Solutions:**
+
 - Verify session cookie is valid
 - Check cookie hasn't expired
 - Ensure credentials are included
@@ -453,6 +440,7 @@ await publisher.schedulePost('Scheduled post', 'Bitcoin News');
 **Problem:** 429 Too Many Requests
 
 **Solutions:**
+
 - Implement rate limiting
 - Add delays between requests
 - Batch requests when possible
@@ -463,6 +451,7 @@ await publisher.schedulePost('Scheduled post', 'Bitcoin News');
 **Problem:** Connection failures
 
 **Solutions:**
+
 - Check network connectivity
 - Verify API endpoint URL
 - Implement retry logic
@@ -476,7 +465,7 @@ await publisher.schedulePost('Scheduled post', 'Bitcoin News');
 ✅ How to use core endpoints  
 ✅ How to handle errors  
 ✅ How to implement best practices  
-✅ How to build complete integrations  
+✅ How to build complete integrations
 
 ---
 
@@ -497,4 +486,3 @@ await publisher.schedulePost('Scheduled post', 'Bitcoin News');
 ---
 
 **Next Tutorial:** [Advanced Queue Management](./advanced-queue-management.md) → Master queue systems
-

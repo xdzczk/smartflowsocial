@@ -6,8 +6,6 @@ import Footer from "~/components/layout/FrontendFooter";
 import Header from "~/components/layout/FrontendHeader";
 import { getUserId } from "~/features/auth";
 
-
-
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const userId = await getUserId(request);
   if (userId) return json({});
@@ -25,13 +23,19 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     // Parse the event JSON
-    let parsedEvent: { id?: string; pubkey?: string; sig?: string; [key: string]: unknown };
+    let parsedEvent: {
+      id?: string;
+      pubkey?: string;
+      sig?: string;
+      [key: string]: unknown;
+    };
     try {
       parsedEvent = JSON.parse(event) as typeof parsedEvent;
     } catch (parseError) {
       const { ValidationError } = await import("~/lib/errors");
       throw new ValidationError("Invalid event JSON format", {
-        error: parseError instanceof Error ? parseError.message : String(parseError),
+        error:
+          parseError instanceof Error ? parseError.message : String(parseError),
       });
     }
 

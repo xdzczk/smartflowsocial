@@ -52,9 +52,7 @@ function renderFeatureValue(
   return <span className="text-gray-400">-</span>;
 }
 
-export function FeatureComparisonTable({
-  plans,
-}: FeatureComparisonTableProps) {
+export function FeatureComparisonTable({ plans }: FeatureComparisonTableProps) {
   return (
     <div className="overflow-hidden rounded-lg bg-white shadow-lg dark:bg-gray-800">
       <div className="overflow-x-auto">
@@ -100,19 +98,3 @@ export function FeatureComparisonTable({
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

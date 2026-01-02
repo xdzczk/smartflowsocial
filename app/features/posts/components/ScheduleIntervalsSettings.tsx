@@ -11,7 +11,6 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 
-
 interface ScheduleIntervalsSettingsProps {
   scheduleIntervals: string[];
 }

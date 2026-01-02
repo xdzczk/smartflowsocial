@@ -3,7 +3,8 @@
  * Centralized action processing for new longform post page
  */
 
-import { redirect ,
+import {
+  redirect,
   unstable_composeUploadHandlers as composeUploadHandlers,
   unstable_createMemoryUploadHandler as createMemoryUploadHandler,
   unstable_parseMultipartFormData as parseMultipartFormData,
@@ -19,18 +20,14 @@ import {
   sanitizeMarkdown,
   generateSummary,
 } from "~/lib/markdown-sanitizer.server";
-import {
-  createLongFormPost,
-} from "~/models/longformpost.server";
+import { createLongFormPost } from "~/models/longformpost.server";
 import {
   getUserById,
   getQueueTypes,
   getHashTagPresetById,
 } from "~/models/user.server";
 
-import {
-  convertEditorJSToMarkdown,
-} from "../longform.server";
+import { convertEditorJSToMarkdown } from "../longform.server";
 
 import { resolveQueueTypeId } from "./queue-type-resolver.server";
 
@@ -95,12 +92,26 @@ async function getHashtagPresetTags(
     if (queueType !== "Unassigned") {
       const queueTypes = await getQueueTypes(userId);
       const selectedQueueType = queueTypes.find((qt) => qt.name === queueType);
-      if (selectedQueueType && "hashTagPreset" in selectedQueueType && selectedQueueType.hashTagPreset) {
+      if (
+        selectedQueueType &&
+        "hashTagPreset" in selectedQueueType &&
+        selectedQueueType.hashTagPreset
+      ) {
         const preset = selectedQueueType.hashTagPreset;
-        if (preset && typeof preset === "object" && "tags" in preset && typeof preset.tags === "string") {
+        if (
+          preset &&
+          typeof preset === "object" &&
+          "tags" in preset &&
+          typeof preset.tags === "string"
+        ) {
           hashTagPresetTags = preset.tags ?? "";
         }
-        if (preset && typeof preset === "object" && "id" in preset && typeof preset.id === "string") {
+        if (
+          preset &&
+          typeof preset === "object" &&
+          "id" in preset &&
+          typeof preset.id === "string"
+        ) {
           hashTagPresetId = preset.id;
         }
       }
@@ -150,7 +161,7 @@ async function handleImageUpload(
         500,
         {
           service: "S3",
-          fileName: (imageFile).name,
+          fileName: imageFile.name,
           originalError: error instanceof Error ? error.message : String(error),
         },
       );
@@ -190,7 +201,11 @@ async function handleSaveDraft(
   const tags = parseTags(formData);
 
   // Resolve queue type ID in feature layer (business logic)
-  const queueTypeId = await resolveQueueTypeId(userId, null, queueType === "Unassigned" ? null : queueType);
+  const queueTypeId = await resolveQueueTypeId(
+    userId,
+    null,
+    queueType === "Unassigned" ? null : queueType,
+  );
 
   if (!title.trim()) {
     return Response.json({ error: "Title is required" }, { status: 400 });
@@ -202,8 +217,16 @@ async function handleSaveDraft(
 
   let markdownContent;
   try {
-    const editorData = JSON.parse(editorContent) as { blocks?: { type: string; data: Record<string, unknown> }[]; time?: number; version?: string };
-    markdownContent = convertEditorJSToMarkdown({ blocks: editorData.blocks ?? [], time: editorData.time, version: editorData.version });
+    const editorData = JSON.parse(editorContent) as {
+      blocks?: { type: string; data: Record<string, unknown> }[];
+      time?: number;
+      version?: string;
+    };
+    markdownContent = convertEditorJSToMarkdown({
+      blocks: editorData.blocks ?? [],
+      time: editorData.time,
+      version: editorData.version,
+    });
   } catch {
     markdownContent = editorContent;
   }
@@ -247,7 +270,11 @@ async function handlePublish(
   const nostrEvent = formData.get("nostrEvent");
 
   // Resolve queue type ID in feature layer (business logic)
-  const queueTypeId = await resolveQueueTypeId(userId, null, queueType === "Unassigned" ? null : queueType);
+  const queueTypeId = await resolveQueueTypeId(
+    userId,
+    null,
+    queueType === "Unassigned" ? null : queueType,
+  );
 
   if (!title.trim()) {
     return Response.json({ error: "Title is required" }, { status: 400 });
@@ -280,8 +307,16 @@ async function handlePublish(
 
   let markdownContent;
   try {
-    const editorData = JSON.parse(editorContent) as { blocks?: { type: string; data: Record<string, unknown> }[]; time?: number; version?: string };
-    markdownContent = convertEditorJSToMarkdown({ blocks: editorData.blocks ?? [], time: editorData.time, version: editorData.version });
+    const editorData = JSON.parse(editorContent) as {
+      blocks?: { type: string; data: Record<string, unknown> }[];
+      time?: number;
+      version?: string;
+    };
+    markdownContent = convertEditorJSToMarkdown({
+      blocks: editorData.blocks ?? [],
+      time: editorData.time,
+      version: editorData.version,
+    });
   } catch {
     markdownContent = editorContent;
   }
@@ -295,8 +330,23 @@ async function handlePublish(
       ? `${sanitizedContent}\\n\\n${hashTagPresetTags}`
       : sanitizedContent;
 
-  const signedEventJson = JSON.parse(signedEvent.toString()) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][]; sig: string };
-  const nostrEventJson = JSON.parse(nostrEvent.toString()) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][] };
+  const signedEventJson = JSON.parse(signedEvent.toString()) as {
+    id: string;
+    pubkey: string;
+    created_at: number;
+    kind: number;
+    content: string;
+    tags: string[][];
+    sig: string;
+  };
+  const nostrEventJson = JSON.parse(nostrEvent.toString()) as {
+    id: string;
+    pubkey: string;
+    created_at: number;
+    kind: number;
+    content: string;
+    tags: string[][];
+  };
 
   await createLongFormPost({
     userId,
@@ -313,7 +363,8 @@ async function handlePublish(
   });
 
   // Read directly from process.env to support test environment changes
-  const publisherUrl = process.env.NOSTR_PUBLISHER_URL ?? env.NOSTR_PUBLISHER_URL;
+  const publisherUrl =
+    process.env.NOSTR_PUBLISHER_URL ?? env.NOSTR_PUBLISHER_URL;
   if (!publisherUrl) {
     throw new Error("NOSTR_PUBLISHER_URL environment variable is not set");
   }
@@ -357,7 +408,11 @@ async function handleScheduleLongform(
   const nostrEvent = formData.get("nostrEvent");
 
   // Resolve queue type ID in feature layer (business logic)
-  const queueTypeId = await resolveQueueTypeId(userId, null, queueType === "Unassigned" ? null : queueType);
+  const queueTypeId = await resolveQueueTypeId(
+    userId,
+    null,
+    queueType === "Unassigned" ? null : queueType,
+  );
 
   if (!title.trim()) {
     return Response.json({ error: "Title is required" }, { status: 400 });
@@ -390,8 +445,16 @@ async function handleScheduleLongform(
 
   let markdownContent;
   try {
-    const editorData = JSON.parse(editorContent) as { blocks?: { type: string; data: Record<string, unknown> }[]; time?: number; version?: string };
-    markdownContent = convertEditorJSToMarkdown({ blocks: editorData.blocks ?? [], time: editorData.time, version: editorData.version });
+    const editorData = JSON.parse(editorContent) as {
+      blocks?: { type: string; data: Record<string, unknown> }[];
+      time?: number;
+      version?: string;
+    };
+    markdownContent = convertEditorJSToMarkdown({
+      blocks: editorData.blocks ?? [],
+      time: editorData.time,
+      version: editorData.version,
+    });
   } catch {
     markdownContent = editorContent;
   }
@@ -405,8 +468,23 @@ async function handleScheduleLongform(
       ? `${sanitizedContent}\\n\\n${hashTagPresetTags}`
       : sanitizedContent;
 
-  const signedEventJson = JSON.parse(signedEvent.toString()) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][]; sig: string };
-  const nostrEventJson = JSON.parse(nostrEvent.toString()) as { id: string; pubkey: string; created_at: number; kind: number; content: string; tags: string[][] };
+  const signedEventJson = JSON.parse(signedEvent.toString()) as {
+    id: string;
+    pubkey: string;
+    created_at: number;
+    kind: number;
+    content: string;
+    tags: string[][];
+    sig: string;
+  };
+  const nostrEventJson = JSON.parse(nostrEvent.toString()) as {
+    id: string;
+    pubkey: string;
+    created_at: number;
+    kind: number;
+    content: string;
+    tags: string[][];
+  };
 
   // Extract published_at from NOSTR event tags for scheduling
   let scheduledForTimestamp: string | null = null;
@@ -516,5 +594,3 @@ export async function handleNewLongFormAction(
 
   return Response.json({ success: false });
 }
-
-

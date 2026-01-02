@@ -1,6 +1,6 @@
 /**
  * Seed Test Database
- * 
+ *
  * Utility script to seed the test database with initial data
  */
 
@@ -28,7 +28,7 @@ async function seedTestDatabase() {
 
     // Seed with complete fixtures
     const testFixtures = createCompleteFixtures();
-    
+
     // Apply fixtures
     if (testFixtures.users) {
       for (const user of testFixtures.users) {
@@ -38,13 +38,17 @@ async function seedTestDatabase() {
 
     if (testFixtures.queueTypes) {
       for (const queueType of testFixtures.queueTypes) {
-        await prisma.queueType.create({ data: queueType as Prisma.QueueTypeCreateInput });
+        await prisma.queueType.create({
+          data: queueType as Prisma.QueueTypeCreateInput,
+        });
       }
     }
 
     if (testFixtures.hashTagPresets) {
       for (const preset of testFixtures.hashTagPresets) {
-        await prisma.hashTagPreset.create({ data: preset as Prisma.HashTagPresetCreateInput });
+        await prisma.hashTagPreset.create({
+          data: preset as Prisma.HashTagPresetCreateInput,
+        });
       }
     }
 
@@ -56,7 +60,9 @@ async function seedTestDatabase() {
 
     if (testFixtures.longFormPosts) {
       for (const longform of testFixtures.longFormPosts) {
-        await prisma.longFormPost.create({ data: longform as Prisma.LongFormPostCreateInput });
+        await prisma.longFormPost.create({
+          data: longform as Prisma.LongFormPostCreateInput,
+        });
       }
     }
 
@@ -76,10 +82,3 @@ if (require.main === module) {
 }
 
 export { seedTestDatabase };
-
-
-
-
-
-
-

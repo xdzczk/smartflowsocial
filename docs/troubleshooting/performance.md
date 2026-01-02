@@ -44,12 +44,13 @@ Guide to identifying and resolving performance issues in SmartFlowSocial.
 ### Slow Queries
 
 **Identify slow queries:**
+
 ```sql
 -- Enable query logging
 SET log_min_duration_statement = 1000; -- Log queries > 1s
 
 -- View slow queries
-SELECT 
+SELECT
   query,
   calls,
   total_time,
@@ -60,18 +61,21 @@ LIMIT 10;
 ```
 
 **Common causes:**
+
 - Missing indexes
 - Full table scans
 - Complex joins
 - Large result sets
 
 **Solutions:**
+
 1. **Add indexes:**
+
 ```prisma
 model Post {
   userId String
   scheduledAt DateTime?
-  
+
   @@index([userId])
   @@index([scheduledAt])
   @@index([userId, scheduledAt]) // Composite index
@@ -79,6 +83,7 @@ model Post {
 ```
 
 2. **Limit result sets:**
+
 ```typescript
 // ✅ Good: Pagination
 const posts = await prisma.post.findMany({
@@ -92,6 +97,7 @@ const posts = await prisma.post.findMany({ where: { userId } });
 ```
 
 3. **Select specific fields:**
+
 ```typescript
 // ✅ Good: Select only needed fields
 const posts = await prisma.post.findMany({
@@ -105,6 +111,7 @@ const posts = await prisma.post.findMany();
 ### Connection Pooling
 
 **Configure connection pool:**
+
 ```typescript
 // prisma/schema.prisma
 datasource db {
@@ -115,6 +122,7 @@ datasource db {
 ```
 
 **Or in connection string:**
+
 ```
 DATABASE_URL=postgresql://user:pass@host:5432/db?connection_limit=10&pool_timeout=20
 ```
@@ -126,6 +134,7 @@ DATABASE_URL=postgresql://user:pass@host:5432/db?connection_limit=10&pool_timeou
 ### Slow Endpoints
 
 **Identify slow endpoints:**
+
 ```typescript
 // Add timing
 const start = Date.now();
@@ -137,6 +146,7 @@ console.log(`Endpoint took ${duration}ms`);
 **Optimization strategies:**
 
 1. **Cache responses:**
+
 ```typescript
 // Cache expensive operations
 const cacheKey = `user:${userId}:posts`;
@@ -149,6 +159,7 @@ return json(data);
 ```
 
 2. **Parallel requests:**
+
 ```typescript
 // ✅ Good: Parallel
 const [posts, user, stats] = await Promise.all([
@@ -164,6 +175,7 @@ const stats = await getStats(userId);
 ```
 
 3. **Lazy load data:**
+
 ```typescript
 // Load only what's needed
 const posts = await getPosts(userId, { limit: 20 });
@@ -177,6 +189,7 @@ const posts = await getPosts(userId, { limit: 20 });
 ### Slow Renders
 
 **Identify issues:**
+
 - Use React DevTools Profiler
 - Check for unnecessary re-renders
 - Identify slow components
@@ -184,6 +197,7 @@ const posts = await getPosts(userId, { limit: 20 });
 **Optimization strategies:**
 
 1. **Memoization:**
+
 ```typescript
 import { useMemo } from "react";
 
@@ -193,6 +207,7 @@ const expensiveValue = useMemo(() => {
 ```
 
 2. **Code splitting:**
+
 ```typescript
 // Lazy load components
 const HeavyComponent = lazy(() => import("./HeavyComponent"));
@@ -203,6 +218,7 @@ const HeavyComponent = lazy(() => import("./HeavyComponent"));
 ```
 
 3. **Optimize images:**
+
 - Compress images before upload
 - Use appropriate sizes
 - Lazy load images
@@ -214,6 +230,7 @@ const HeavyComponent = lazy(() => import("./HeavyComponent"));
 ### Queue Backlog
 
 **Check queue status:**
+
 ```bash
 redis-cli -u $REDIS_URL
 
@@ -230,6 +247,7 @@ LLEN bull:post-publish:failed
 **Solutions:**
 
 1. **Increase worker concurrency:**
+
 ```typescript
 const worker = new Worker("post-publish", handler, {
   concurrency: 10, // Increase from default 1
@@ -237,6 +255,7 @@ const worker = new Worker("post-publish", handler, {
 ```
 
 2. **Scale workers:**
+
 ```bash
 # Run multiple worker processes
 pnpm start:worker &
@@ -245,10 +264,11 @@ pnpm start:worker &
 ```
 
 3. **Process jobs in batches:**
+
 ```typescript
 // Process multiple jobs at once
 const jobs = await queue.getJobs(["waiting"], 0, 10);
-await Promise.all(jobs.map(job => processJob(job)));
+await Promise.all(jobs.map((job) => processJob(job)));
 ```
 
 ---
@@ -290,4 +310,3 @@ await Promise.all(jobs.map(job => processJob(job)));
 ---
 
 **Next:** [Common Issues](./common-issues.md) → Frequently asked questions
-

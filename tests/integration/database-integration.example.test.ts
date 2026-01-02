@@ -1,14 +1,14 @@
 /**
  * Example Database Integration Test
- * 
+ *
  * This file demonstrates how to write tests that use a real database
  * with transaction-based isolation for safety.
- * 
+ *
  * **Requirements:**
  * - Set `TEST_DATABASE_URL` environment variable to a test database URL
  * - Or set `SKIP_DATABASE_TESTS=true` to skip these tests
  * - Database must be running and accessible
- * 
+ *
  * **Note:** This is an example test file. It will be automatically skipped
  * if `TEST_DATABASE_URL` is not set or if `SKIP_DATABASE_TESTS=true`.
  */
@@ -81,7 +81,7 @@ describeDatabase("Database Integration Example", () => {
 
   it("should create user with fixtures", async () => {
     const testFixtures = createMinimalFixtures();
-    
+
     await withDatabase(async (prisma) => {
       // Fixtures are automatically applied
       const user = await prisma.user.findFirst({
@@ -104,7 +104,7 @@ describeDatabase("Database Integration Example", () => {
 
       // Test model function
       const retrieved = await getUserById(user.id);
-      
+
       expect(retrieved).toBeDefined();
       expect(retrieved?.id).toBe(user.id);
     });
@@ -112,7 +112,7 @@ describeDatabase("Database Integration Example", () => {
 
   it("should test relationships", async () => {
     const testFixtures = fixtures.userWithQueues();
-    
+
     await withDatabase(async (prisma) => {
       const user = await prisma.user.findUnique({
         where: { id: testFixtures.users![0].id },
@@ -128,7 +128,7 @@ describeDatabase("Database Integration Example", () => {
 
   it("should test post creation with queue", async () => {
     const testFixtures = fixtures.userWithQueues();
-    
+
     await withDatabase(async (_prisma) => {
       const user = testFixtures.users![0];
       const queue = testFixtures.queueTypes![0];
@@ -166,7 +166,7 @@ describe("Database Tests Without Transactions", () => {
 
   it("should persist data without transactions", async () => {
     const prisma = getTestPrisma();
-    
+
     const user = await prisma.user.create({
       data: {
         npub: "npub-persist-test",
@@ -176,10 +176,8 @@ describe("Database Tests Without Transactions", () => {
 
     // Data persists - requires manual cleanup
     expect(user).toBeDefined();
-    
+
     // Cleanup
     await prisma.user.delete({ where: { id: user.id } });
   });
 });
-
-

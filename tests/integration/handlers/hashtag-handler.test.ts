@@ -86,7 +86,10 @@ describe("Hashtag Handler Integration Tests", () => {
           queueTypeName: "Morning",
         }),
       });
-      expect(setDisplayedHashtags).toHaveBeenCalledWith(["effective1", "effective2"]);
+      expect(setDisplayedHashtags).toHaveBeenCalledWith([
+        "effective1",
+        "effective2",
+      ]);
     });
 
     it("should fallback to tags if API response is not ok", async () => {
@@ -226,4 +229,3 @@ describe("Hashtag Handler Integration Tests", () => {
     });
   });
 });
-

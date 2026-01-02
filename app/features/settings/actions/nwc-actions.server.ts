@@ -36,19 +36,3 @@ export async function handleNWCAction(
 
   return null;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

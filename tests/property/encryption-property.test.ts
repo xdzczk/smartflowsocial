@@ -1,6 +1,6 @@
 /**
  * Property-based tests for encryption/decryption
- * 
+ *
  * Uses fast-check to verify critical encryption properties:
  * - Round-trip property (encrypt then decrypt = original)
  * - Deterministic vs non-deterministic behavior
@@ -14,7 +14,8 @@ import { encrypt, decrypt } from "~/lib/encryption.server";
 describe("Property-Based Tests: Encryption", () => {
   beforeEach(() => {
     // Ensure SESSION_SECRET is set for tests
-    process.env.SESSION_SECRET = "test-session-secret-very-long-and-secure-32-chars";
+    process.env.SESSION_SECRET =
+      "test-session-secret-very-long-and-secure-32-chars";
   });
 
   describe("Round-Trip Property", () => {
@@ -38,14 +39,11 @@ describe("Property-Based Tests: Encryption", () => {
 
     it("should handle empty strings correctly", () => {
       fc.assert(
-        fc.property(
-          fc.constant(""),
-          (plaintext: string) => {
-            const encrypted = encrypt(plaintext);
-            const decrypted = decrypt(encrypted);
-            return decrypted === plaintext;
-          },
-        ),
+        fc.property(fc.constant(""), (plaintext: string) => {
+          const encrypted = encrypt(plaintext);
+          const decrypted = decrypt(encrypted);
+          return decrypted === plaintext;
+        }),
         { timeout: 30000 },
       );
     }, 60000); // 60 second test timeout
@@ -105,12 +103,13 @@ describe("Property-Based Tests: Encryption", () => {
           (plaintext: string, tamperIndex: number) => {
             const encrypted = encrypt(plaintext);
             const encryptedBuffer = Buffer.from(encrypted, "base64");
-            
+
             // Tamper with the data
             if (encryptedBuffer.length > tamperIndex) {
-              encryptedBuffer[tamperIndex] = (encryptedBuffer[tamperIndex] + 1) % 256;
+              encryptedBuffer[tamperIndex] =
+                (encryptedBuffer[tamperIndex] + 1) % 256;
               const tampered = encryptedBuffer.toString("base64");
-              
+
               // Should throw error on decryption
               try {
                 decrypt(tampered);
@@ -162,9 +161,3 @@ describe("Property-Based Tests: Encryption", () => {
     });
   });
 });
-
-
-
-
-
-

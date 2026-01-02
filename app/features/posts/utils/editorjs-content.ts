@@ -2,7 +2,6 @@
  * EditorJS content loading and manipulation utilities
  */
 
-
 import type React from "react";
 
 import { handleErrorSafely, logClientError } from "~/lib/error-handler.client";
@@ -27,12 +26,13 @@ export async function loadEditorJSContent(
     // Try to parse as JSON first (for legacy EditorJS format)
     if (content.trim().startsWith("{")) {
       try {
-        parsedContent = JSON.parse(content) as { blocks?: unknown[]; time?: number; version?: string };
+        parsedContent = JSON.parse(content) as {
+          blocks?: unknown[];
+          time?: number;
+          version?: string;
+        };
         // Validate it has EditorJS structure
-        if (
-          !parsedContent.blocks ||
-          !Array.isArray(parsedContent.blocks)
-        ) {
+        if (!parsedContent.blocks || !Array.isArray(parsedContent.blocks)) {
           throw new Error("Not valid EditorJS format");
         }
       } catch (jsonError) {
@@ -61,25 +61,39 @@ export async function loadEditorJSContent(
       parsedContent = convertMarkdownToEditorJS(content);
     }
 
-    await editorRef.current.render({ blocks: (parsedContent.blocks ?? []) as EditorJSBlock[], time: parsedContent.time, version: parsedContent.version });
+    await editorRef.current.render({
+      blocks: (parsedContent.blocks ?? []) as EditorJSBlock[],
+      time: parsedContent.time,
+      version: parsedContent.version,
+    });
     onContentChange(JSON.stringify(parsedContent));
   } catch (error) {
     const { handleAsyncError } = await import("~/lib/error-handler.client");
-    handleAsyncError(error, {
-      component: "useLongFormEditor",
-      action: "loadInitialData",
-    }, false);
+    handleAsyncError(
+      error,
+      {
+        component: "useLongFormEditor",
+        action: "loadInitialData",
+      },
+      false,
+    );
     // Fallback to empty editor if all else fails
     try {
       const emptyContent = { blocks: [] };
       await editorRef.current.render(emptyContent);
       onContentChange(JSON.stringify(emptyContent));
     } catch (fallbackError) {
-      const { handleAsyncError: handleFallbackError } = await import("~/lib/error-handler.client");
-      handleFallbackError(fallbackError, {
-        component: "useLongFormEditor",
-        action: "loadInitialDataFallback",
-      }, false);
+      const { handleAsyncError: handleFallbackError } = await import(
+        "~/lib/error-handler.client"
+      );
+      handleFallbackError(
+        fallbackError,
+        {
+          component: "useLongFormEditor",
+          action: "loadInitialDataFallback",
+        },
+        false,
+      );
     }
   }
 }
@@ -110,8 +124,7 @@ export async function insertAssetsIntoEditor(
     // Try to get current block index
     let insertIndex = blocks.length; // Default to end
     try {
-      const currentBlockIndex =
-        editorRef.current.blocks.getCurrentBlockIndex();
+      const currentBlockIndex = editorRef.current.blocks.getCurrentBlockIndex();
       if (currentBlockIndex >= 0) {
         insertIndex = currentBlockIndex + 1; // Insert after current block
       }
@@ -176,10 +189,14 @@ export async function insertAssetsIntoEditor(
     }, 100);
   } catch (error) {
     const { handleAsyncError } = await import("~/lib/error-handler.client");
-    handleAsyncError(error, {
-      component: "useLongFormEditor",
-      action: "insertAssetIntoEditor",
-    }, false);
+    handleAsyncError(
+      error,
+      {
+        component: "useLongFormEditor",
+        action: "insertAssetIntoEditor",
+      },
+      false,
+    );
     // Fallback to simple insertion
     try {
       for (const asset of selectedAssets) {
@@ -203,15 +220,28 @@ export async function insertAssetsIntoEditor(
         }
       }
       const saveResult = editorRef.current.saver.save();
-      const isPromise = saveResult !== null && saveResult !== undefined && typeof saveResult === "object" && "then" in saveResult && typeof (saveResult as { then?: unknown }).then === "function";
-      const updatedData = isPromise ? await (saveResult as Promise<unknown>) : (saveResult as unknown);
+      const isPromise =
+        saveResult !== null &&
+        saveResult !== undefined &&
+        typeof saveResult === "object" &&
+        "then" in saveResult &&
+        typeof (saveResult as { then?: unknown }).then === "function";
+      const updatedData = isPromise
+        ? await (saveResult as Promise<unknown>)
+        : (saveResult as unknown);
       onContentChange(JSON.stringify(updatedData));
     } catch (fallbackError) {
-      const { handleAsyncError: handleFallbackError } = await import("~/lib/error-handler.client");
-      handleFallbackError(fallbackError, {
-        component: "useLongFormEditor",
-        action: "insertAssetIntoEditorFallback",
-      }, false);
+      const { handleAsyncError: handleFallbackError } = await import(
+        "~/lib/error-handler.client"
+      );
+      handleFallbackError(
+        fallbackError,
+        {
+          component: "useLongFormEditor",
+          action: "insertAssetIntoEditorFallback",
+        },
+        false,
+      );
     }
   }
 }
@@ -224,13 +254,22 @@ export function generateSummaryFromContent(content: string): string {
 
   try {
     const parsed: unknown = JSON.parse(content);
-    const editorData = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as { blocks?: EditorJSBlock[] } : { blocks: [] };
+    const editorData =
+      parsed && typeof parsed === "object" && !Array.isArray(parsed)
+        ? (parsed as { blocks?: EditorJSBlock[] })
+        : { blocks: [] };
     let textContent = "";
 
     if (Array.isArray(editorData.blocks)) {
-      (editorData.blocks).forEach((block: EditorJSBlock) => {
+      editorData.blocks.forEach((block: EditorJSBlock) => {
         if (block.type === "paragraph" || block.type === "header") {
-          const textValue = block.data && typeof block.data === "object" && "text" in block.data && typeof (block.data as { text?: unknown }).text === "string" ? (block.data as { text: string }).text : "";
+          const textValue =
+            block.data &&
+            typeof block.data === "object" &&
+            "text" in block.data &&
+            typeof (block.data as { text?: unknown }).text === "string"
+              ? (block.data as { text: string }).text
+              : "";
           textContent += textValue + " ";
         } else if (block.type === "list") {
           if (Array.isArray(block.data.items)) {
@@ -244,9 +283,7 @@ export function generateSummaryFromContent(content: string): string {
 
     const plainText = textContent.replace(/<[^>]*>/g, "").trim();
     const generatedSummary =
-      plainText.length > 280
-        ? plainText.substring(0, 280) + "..."
-        : plainText;
+      plainText.length > 280 ? plainText.substring(0, 280) + "..." : plainText;
 
     return generatedSummary;
   } catch (error) {
@@ -257,4 +294,3 @@ export function generateSummaryFromContent(content: string): string {
     return "";
   }
 }
-

@@ -62,21 +62,25 @@ See [Installation Guide](../getting-started/installation.md) for detailed setup.
 ### Daily Workflow
 
 1. **Pull latest changes:**
+
 ```bash
 git pull origin main
 ```
 
 2. **Create feature branch:**
+
 ```bash
 git checkout -b feature/your-feature-name
 ```
 
 3. **Make changes:**
+
 - Write code following [coding standards](#code-organization)
 - Write tests for new functionality
 - Update documentation if needed
 
 4. **Test locally:**
+
 ```bash
 # Run linter
 pnpm lint
@@ -92,12 +96,14 @@ pnpm dev
 ```
 
 5. **Commit changes:**
+
 ```bash
 git add .
 git commit -m "feat: add your feature"
 ```
 
 6. **Push and create PR:**
+
 ```bash
 git push origin feature/your-feature-name
 # Create PR on GitHub
@@ -106,12 +112,14 @@ git push origin feature/your-feature-name
 ### Code Review Process
 
 1. **Self-review:**
+
    - Review your own code
    - Run all tests
    - Check for linting errors
    - Verify functionality
 
 2. **Request review:**
+
    - Assign reviewers
    - Add description
    - Link related issues
@@ -142,6 +150,7 @@ app/features/
 ```
 
 **Benefits:**
+
 - Easy to locate feature code
 - Clear feature boundaries
 - Simplified refactoring
@@ -150,16 +159,19 @@ app/features/
 ### Layer Boundaries
 
 #### Models (`app/models/*`)
+
 - **Purpose:** Database access layer
 - **Contains:** Prisma queries, CRUD operations
 - **Does NOT contain:** Business logic, permissions, workflows
 
 #### Features (`app/features/*`)
+
 - **Purpose:** Business logic layer
 - **Contains:** Workflows, permissions, plan enforcement
 - **Does NOT contain:** Direct Prisma queries, HTTP handling
 
 #### Routes (`app/routes/*`)
+
 - **Purpose:** HTTP wiring layer
 - **Contains:** Request parsing, response formatting, UI composition
 - **Does NOT contain:** Business logic, database queries
@@ -246,23 +258,27 @@ See [Testing Guide](./testing.md) for complete testing documentation.
 ### Development Tools
 
 1. **Browser DevTools:**
+
    - React DevTools
    - Network tab
    - Console logs
 
 2. **Node.js Inspector:**
+
 ```bash
 node --inspect server.ts
 # Open chrome://inspect in Chrome
 ```
 
 3. **Prisma Studio:**
+
 ```bash
 pnpm exec prisma studio
 # Opens at http://localhost:5555
 ```
 
 4. **Redis CLI:**
+
 ```bash
 redis-cli -u $REDIS_URL
 # Monitor queue: KEYS bull:*
@@ -271,16 +287,19 @@ redis-cli -u $REDIS_URL
 ### Common Debugging Steps
 
 1. **Check logs:**
+
    - Application logs
    - Worker logs
    - Database logs
 
 2. **Verify environment:**
+
    - Check `.env` variables
    - Test database connection
    - Test Redis connection
 
 3. **Review code:**
+
    - Check error messages
    - Review stack traces
    - Verify data flow
@@ -297,17 +316,19 @@ redis-cli -u $REDIS_URL
 ### Database Optimization
 
 1. **Use indexes:**
+
 ```prisma
 model Post {
   userId String
   scheduledAt DateTime?
-  
+
   @@index([userId])
   @@index([scheduledAt])
 }
 ```
 
 2. **Limit result sets:**
+
 ```typescript
 // ✅ Good: Pagination
 const posts = await prisma.post.findMany({
@@ -321,6 +342,7 @@ const posts = await prisma.post.findMany({ where: { userId } });
 ```
 
 3. **Select specific fields:**
+
 ```typescript
 // ✅ Good: Select only needed fields
 const posts = await prisma.post.findMany({
@@ -334,6 +356,7 @@ const posts = await prisma.post.findMany();
 ### Caching
 
 1. **HTTP caching:**
+
 ```typescript
 return json(data, {
   headers: {
@@ -343,6 +366,7 @@ return json(data, {
 ```
 
 2. **Application-level caching:**
+
 ```typescript
 // Cache expensive operations
 const cacheKey = `user:${userId}`;
@@ -357,11 +381,13 @@ if (cached) return cached;
 ### Code Quality
 
 1. **Type Safety:**
+
    - Use TypeScript throughout
    - Avoid `any` types
    - Use type guards
 
 2. **Error Handling:**
+
    - Use custom error classes
    - Handle errors gracefully
    - Log errors appropriately
@@ -374,11 +400,13 @@ if (cached) return cached;
 ### Security
 
 1. **Input Validation:**
+
    - Validate all user input
    - Sanitize data
    - Use parameterized queries
 
 2. **Authentication:**
+
    - Always check authentication
    - Verify permissions
    - Use secure session management
@@ -391,11 +419,13 @@ if (cached) return cached;
 ### Documentation
 
 1. **Code Comments:**
+
    - Explain why, not what
    - Document complex logic
    - Keep comments current
 
 2. **Type Definitions:**
+
    - Use descriptive types
    - Document interfaces
    - Export public types
@@ -418,4 +448,3 @@ if (cached) return cached;
 ---
 
 **Next:** [API Development Guide](./api-development.md) → Learn to build API endpoints
-

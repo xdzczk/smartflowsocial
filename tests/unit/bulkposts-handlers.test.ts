@@ -1,6 +1,6 @@
 /**
  * Unit tests for bulk posts handlers
- * 
+ *
  * Tests the pure utility functions in app/features/posts/bulkposts.handlers.ts
  * Note: Functions that require React state or fetch are tested separately or in E2E tests
  */
@@ -47,23 +47,17 @@ describe("Bulk Posts Handlers", () => {
     });
 
     it("should handle empty caption", () => {
-      const posts: BulkPost[] = [
-        createBulkPost({ caption: "Post 1" }),
-      ];
+      const posts: BulkPost[] = [createBulkPost({ caption: "Post 1" })];
 
       const setPosts = vi.fn();
 
       handleCaptionChange(0, "", posts, setPosts);
 
-      expect(setPosts).toHaveBeenCalledWith([
-        createBulkPost({ caption: "" }),
-      ]);
+      expect(setPosts).toHaveBeenCalledWith([createBulkPost({ caption: "" })]);
     });
 
     it("should handle first post", () => {
-      const posts: BulkPost[] = [
-        createBulkPost({ caption: "Post 1" }),
-      ];
+      const posts: BulkPost[] = [createBulkPost({ caption: "Post 1" })];
 
       const setPosts = vi.fn();
 
@@ -292,9 +286,7 @@ describe("Bulk Posts Handlers", () => {
     });
 
     it("should handle posts without isRecyclable field", () => {
-      const posts: BulkPost[] = [
-        createBulkPost({ caption: "Post 1" }),
-      ];
+      const posts: BulkPost[] = [createBulkPost({ caption: "Post 1" })];
 
       const setPosts = vi.fn();
 
@@ -318,22 +310,43 @@ describe("Bulk Posts Handlers", () => {
 
       handleScheduleIntervalClick(2, posts, setPosts, false); // 2 hour interval
 
-      const calls = Array.isArray(setPosts.mock.calls) && setPosts.mock.calls[0] ? setPosts.mock.calls[0] : [];
+      const calls =
+        Array.isArray(setPosts.mock.calls) && setPosts.mock.calls[0]
+          ? setPosts.mock.calls[0]
+          : [];
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const updatedPostsRaw = Array.isArray(calls) && calls[0] ? calls[0] : null;
-      const updatedPosts = Array.isArray(updatedPostsRaw) ? updatedPostsRaw : [];
+      const updatedPostsRaw =
+        Array.isArray(calls) && calls[0] ? calls[0] : null;
+      const updatedPosts = Array.isArray(updatedPostsRaw)
+        ? updatedPostsRaw
+        : [];
       expect(updatedPosts).toHaveLength(3);
 
       // First post should keep its time (base)
-      const firstPost = updatedPosts[0] && typeof updatedPosts[0] === "object" && !Array.isArray(updatedPosts[0]) ? updatedPosts[0] as { scheduledFor?: string } : {};
+      const firstPost =
+        updatedPosts[0] &&
+        typeof updatedPosts[0] === "object" &&
+        !Array.isArray(updatedPosts[0])
+          ? (updatedPosts[0] as { scheduledFor?: string })
+          : {};
       expect(firstPost.scheduledFor).toMatch(/2024-01-15T10:00/);
 
       // Second post should be 2 hours after first
-      const secondPost = updatedPosts[1] && typeof updatedPosts[1] === "object" && !Array.isArray(updatedPosts[1]) ? updatedPosts[1] as { scheduledFor?: string } : {};
+      const secondPost =
+        updatedPosts[1] &&
+        typeof updatedPosts[1] === "object" &&
+        !Array.isArray(updatedPosts[1])
+          ? (updatedPosts[1] as { scheduledFor?: string })
+          : {};
       expect(secondPost.scheduledFor).toMatch(/2024-01-15T12:00/);
 
       // Third post should be 4 hours after first
-      const thirdPost = updatedPosts[2] && typeof updatedPosts[2] === "object" && !Array.isArray(updatedPosts[2]) ? updatedPosts[2] as { scheduledFor?: string } : {};
+      const thirdPost =
+        updatedPosts[2] &&
+        typeof updatedPosts[2] === "object" &&
+        !Array.isArray(updatedPosts[2])
+          ? (updatedPosts[2] as { scheduledFor?: string })
+          : {};
       expect(thirdPost.scheduledFor).toMatch(/2024-01-15T14:00/);
     });
 
@@ -347,12 +360,28 @@ describe("Bulk Posts Handlers", () => {
 
       handleScheduleIntervalClick(1, posts, setPosts, false);
 
-      const calls = Array.isArray(setPosts.mock.calls) && setPosts.mock.calls[0] ? setPosts.mock.calls[0] : [];
+      const calls =
+        Array.isArray(setPosts.mock.calls) && setPosts.mock.calls[0]
+          ? setPosts.mock.calls[0]
+          : [];
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const updatedPostsRaw = Array.isArray(calls) && calls[0] ? calls[0] : null;
-      const updatedPosts = Array.isArray(updatedPostsRaw) ? updatedPostsRaw : [];
-      const firstPost = updatedPosts[0] && typeof updatedPosts[0] === "object" && !Array.isArray(updatedPosts[0]) ? updatedPosts[0] as { scheduledFor?: string } : {};
-      const secondPost = updatedPosts[1] && typeof updatedPosts[1] === "object" && !Array.isArray(updatedPosts[1]) ? updatedPosts[1] as { scheduledFor?: string } : {};
+      const updatedPostsRaw =
+        Array.isArray(calls) && calls[0] ? calls[0] : null;
+      const updatedPosts = Array.isArray(updatedPostsRaw)
+        ? updatedPostsRaw
+        : [];
+      const firstPost =
+        updatedPosts[0] &&
+        typeof updatedPosts[0] === "object" &&
+        !Array.isArray(updatedPosts[0])
+          ? (updatedPosts[0] as { scheduledFor?: string })
+          : {};
+      const secondPost =
+        updatedPosts[1] &&
+        typeof updatedPosts[1] === "object" &&
+        !Array.isArray(updatedPosts[1])
+          ? (updatedPosts[1] as { scheduledFor?: string })
+          : {};
       expect(firstPost.scheduledFor).toMatch(/2024-01-15T10:00/);
       expect(secondPost.scheduledFor).toMatch(/2024-01-15T11:00/);
     });
@@ -367,12 +396,28 @@ describe("Bulk Posts Handlers", () => {
 
       handleScheduleIntervalClick(1, posts, setPosts, true);
 
-      const calls = Array.isArray(setPosts.mock.calls) && setPosts.mock.calls[0] ? setPosts.mock.calls[0] : [];
+      const calls =
+        Array.isArray(setPosts.mock.calls) && setPosts.mock.calls[0]
+          ? setPosts.mock.calls[0]
+          : [];
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const updatedPostsRaw = Array.isArray(calls) && calls[0] ? calls[0] : null;
-      const updatedPosts = Array.isArray(updatedPostsRaw) ? updatedPostsRaw : [];
-      const firstPost = updatedPosts[0] && typeof updatedPosts[0] === "object" && !Array.isArray(updatedPosts[0]) ? updatedPosts[0] as { scheduledFor?: string } : {};
-      const secondPost = updatedPosts[1] && typeof updatedPosts[1] === "object" && !Array.isArray(updatedPosts[1]) ? updatedPosts[1] as { scheduledFor?: string } : {};
+      const updatedPostsRaw =
+        Array.isArray(calls) && calls[0] ? calls[0] : null;
+      const updatedPosts = Array.isArray(updatedPostsRaw)
+        ? updatedPostsRaw
+        : [];
+      const firstPost =
+        updatedPosts[0] &&
+        typeof updatedPosts[0] === "object" &&
+        !Array.isArray(updatedPosts[0])
+          ? (updatedPosts[0] as { scheduledFor?: string })
+          : {};
+      const secondPost =
+        updatedPosts[1] &&
+        typeof updatedPosts[1] === "object" &&
+        !Array.isArray(updatedPosts[1])
+          ? (updatedPosts[1] as { scheduledFor?: string })
+          : {};
       expect(firstPost.scheduledFor).toMatch(/2024-01-15T10:00/);
       expect(secondPost.scheduledFor).toMatch(/2024-01-15T11:00/);
     });
@@ -387,11 +432,22 @@ describe("Bulk Posts Handlers", () => {
 
       handleScheduleIntervalClick(1, posts, setPosts, false);
 
-      const calls = Array.isArray(setPosts.mock.calls) && setPosts.mock.calls[0] ? setPosts.mock.calls[0] : [];
+      const calls =
+        Array.isArray(setPosts.mock.calls) && setPosts.mock.calls[0]
+          ? setPosts.mock.calls[0]
+          : [];
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const updatedPostsRaw = Array.isArray(calls) && calls[0] ? calls[0] : null;
-      const updatedPosts = Array.isArray(updatedPostsRaw) ? updatedPostsRaw : [];
-      const firstPost = updatedPosts[0] && typeof updatedPosts[0] === "object" && !Array.isArray(updatedPosts[0]) ? updatedPosts[0] as { scheduledFor?: string } : {};
+      const updatedPostsRaw =
+        Array.isArray(calls) && calls[0] ? calls[0] : null;
+      const updatedPosts = Array.isArray(updatedPostsRaw)
+        ? updatedPostsRaw
+        : [];
+      const firstPost =
+        updatedPosts[0] &&
+        typeof updatedPosts[0] === "object" &&
+        !Array.isArray(updatedPosts[0])
+          ? (updatedPosts[0] as { scheduledFor?: string })
+          : {};
       // First post should have a time set (based on current time)
       expect(firstPost.scheduledFor).toBeTruthy();
       // Should be in datetime-local format
@@ -417,16 +473,33 @@ describe("Bulk Posts Handlers", () => {
 
       handleScheduleIntervalClick(3, posts, setPosts, false);
 
-      const calls = Array.isArray(setPosts.mock.calls) && setPosts.mock.calls[0] ? setPosts.mock.calls[0] : [];
+      const calls =
+        Array.isArray(setPosts.mock.calls) && setPosts.mock.calls[0]
+          ? setPosts.mock.calls[0]
+          : [];
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const updatedPostsRaw = Array.isArray(calls) && calls[0] ? calls[0] : null;
-      const updatedPosts = Array.isArray(updatedPostsRaw) ? updatedPostsRaw : [];
-      const firstPost = updatedPosts[0] && typeof updatedPosts[0] === "object" && !Array.isArray(updatedPosts[0]) ? updatedPosts[0] as { scheduledFor?: string } : {};
-      const secondPost = updatedPosts[1] && typeof updatedPosts[1] === "object" && !Array.isArray(updatedPosts[1]) ? updatedPosts[1] as { scheduledFor?: string } : {};
+      const updatedPostsRaw =
+        Array.isArray(calls) && calls[0] ? calls[0] : null;
+      const updatedPosts = Array.isArray(updatedPostsRaw)
+        ? updatedPostsRaw
+        : [];
+      const firstPost =
+        updatedPosts[0] &&
+        typeof updatedPosts[0] === "object" &&
+        !Array.isArray(updatedPosts[0])
+          ? (updatedPosts[0] as { scheduledFor?: string })
+          : {};
+      const secondPost =
+        updatedPosts[1] &&
+        typeof updatedPosts[1] === "object" &&
+        !Array.isArray(updatedPosts[1])
+          ? (updatedPosts[1] as { scheduledFor?: string })
+          : {};
       // Should be in YYYY-MM-DDTHH:mm format
       expect(firstPost.scheduledFor).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/);
-      expect(secondPost.scheduledFor).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/);
+      expect(secondPost.scheduledFor).toMatch(
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/,
+      );
     });
   });
 });
-

@@ -3,10 +3,14 @@ import { isVideoFile } from "~/lib/helpers";
 
 import { PostBadges } from "./PostBadges";
 import type { PostBlockBaseProps, QueueColorStyle } from "./PostBlock.types";
-import { getPostPreview, getFirstImage, getStatusColor, getDisplayTime } from "./PostBlock.utils";
+import {
+  getPostPreview,
+  getFirstImage,
+  getStatusColor,
+  getDisplayTime,
+} from "./PostBlock.utils";
 import { PostIcon } from "./PostIcon";
 import { PostStatusBadges } from "./PostStatusIcons";
-
 
 interface FullPostBlockProps extends PostBlockBaseProps {
   queueColorStyle: QueueColorStyle | null;
@@ -32,7 +36,11 @@ export function FullPostBlock({
 }: FullPostBlockProps) {
   const firstImage = getFirstImage(post, isLongform ?? false);
   const postPreview = getPostPreview(post, isLongform ?? false);
-  const displayTime = getDisplayTime(post, isLongform ?? false, isPast ?? false);
+  const displayTime = getDisplayTime(
+    post,
+    isLongform ?? false,
+    isPast ?? false,
+  );
 
   return (
     <div
@@ -108,7 +116,7 @@ export function FullPostBlock({
       ) : null}
 
       <p className="text-sm text-gray-600 dark:text-gray-300">
-        {isLongform ? post.summary ?? postPreview : postPreview}
+        {isLongform ? (post.summary ?? postPreview) : postPreview}
       </p>
 
       {!isLongform &&
@@ -125,4 +133,3 @@ export function FullPostBlock({
     </div>
   );
 }
-

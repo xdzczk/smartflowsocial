@@ -37,7 +37,10 @@ export function usePaymentPolling({
       const responseText = await response.text();
       let data: { success?: boolean; paid?: boolean };
       try {
-        data = JSON.parse(responseText) as { success?: boolean; paid?: boolean };
+        data = JSON.parse(responseText) as {
+          success?: boolean;
+          paid?: boolean;
+        };
       } catch (_parseError) {
         return;
       }
@@ -83,44 +86,47 @@ export function usePaymentPolling({
 
       void (async () => {
         try {
-        const formData = new FormData();
-        formData.append("paymentId", paymentId);
+          const formData = new FormData();
+          formData.append("paymentId", paymentId);
 
-        const response = await fetch("/api/payment-status", {
-          method: "POST",
-          body: formData,
-        });
+          const response = await fetch("/api/payment-status", {
+            method: "POST",
+            body: formData,
+          });
 
-        if (!response.ok) {
-          return;
-        }
-
-        const responseText = await response.text();
-        let data: { success?: boolean; paid?: boolean };
-        try {
-          data = JSON.parse(responseText) as { success?: boolean; paid?: boolean };
-        } catch (_parseError) {
-          return;
-        }
-
-        if (data.success && data.paid) {
-          // Stop this specific interval immediately
-          clearInterval(interval);
-          setPollingInterval(null);
-          setIsPolling(false);
-          shouldStopPolling.current = true;
-          onPaymentComplete();
-
-          // Also clear the stored interval reference to prevent any issues
-          if (pollingInterval && pollingInterval !== interval) {
-            clearInterval(pollingInterval);
+          if (!response.ok) {
+            return;
           }
 
-          // Redirect to dashboard after showing success message
-          setTimeout(() => {
-            navigate("/dashboard", { replace: true });
-          }, 2000);
-        }
+          const responseText = await response.text();
+          let data: { success?: boolean; paid?: boolean };
+          try {
+            data = JSON.parse(responseText) as {
+              success?: boolean;
+              paid?: boolean;
+            };
+          } catch (_parseError) {
+            return;
+          }
+
+          if (data.success && data.paid) {
+            // Stop this specific interval immediately
+            clearInterval(interval);
+            setPollingInterval(null);
+            setIsPolling(false);
+            shouldStopPolling.current = true;
+            onPaymentComplete();
+
+            // Also clear the stored interval reference to prevent any issues
+            if (pollingInterval && pollingInterval !== interval) {
+              clearInterval(pollingInterval);
+            }
+
+            // Redirect to dashboard after showing success message
+            setTimeout(() => {
+              navigate("/dashboard", { replace: true });
+            }, 2000);
+          }
         } catch (_error) {
           // Silently handle polling errors
         }
@@ -159,7 +165,3 @@ export function usePaymentPolling({
     checkPaymentStatusNow,
   };
 }
-
-
-
-

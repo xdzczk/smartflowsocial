@@ -2,7 +2,11 @@ import { useFetcher, useLocation } from "@remix-run/react";
 import { useState, useEffect, useRef } from "react";
 
 import { type Asset, type AssetFetcher } from "~/features/assets";
-import { resizeImageClient, uploadFile, uploadMultipleFiles } from "~/features/upload";
+import {
+  resizeImageClient,
+  uploadFile,
+  uploadMultipleFiles,
+} from "~/features/upload";
 
 import type { Template, ScheduleData, TemplateFetcher } from "../types";
 
@@ -14,7 +18,9 @@ interface UseTemplatesStateProps {
  * Custom hook for managing templates/assets state and operations
  */
 export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
-  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(
+    null,
+  );
   const [activeTab, setActiveTab] = useState<"assets" | "upload">("assets");
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
   const [searchInput, setSearchInput] = useState(searchTerm ?? "");
@@ -30,8 +36,14 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
   const location = useLocation();
 
   const deleteFetcher = useFetcher();
-  const scheduleFetcher: TemplateFetcher = useFetcher<{ scheduleData?: ScheduleData[] }>();
-  const assetFetcher = useFetcher<{ success?: boolean; asset?: Asset; assets?: Asset[] }>() as AssetFetcher;
+  const scheduleFetcher: TemplateFetcher = useFetcher<{
+    scheduleData?: ScheduleData[];
+  }>();
+  const assetFetcher = useFetcher<{
+    success?: boolean;
+    asset?: Asset;
+    assets?: Asset[];
+  }>() as AssetFetcher;
 
   // Fetch upload provider on component mount
   useEffect(() => {
@@ -39,8 +51,14 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
       try {
         const res = await fetch("/api/user-upload-provider");
         const dataRaw: unknown = await res.json();
-        const data = typeof dataRaw === "object" && dataRaw !== null && !Array.isArray(dataRaw) ? dataRaw as { provider?: unknown } : {};
-        const provider = typeof data.provider === "string" ? data.provider : null;
+        const data =
+          typeof dataRaw === "object" &&
+          dataRaw !== null &&
+          !Array.isArray(dataRaw)
+            ? (dataRaw as { provider?: unknown })
+            : {};
+        const provider =
+          typeof data.provider === "string" ? data.provider : null;
         setUploadProvider(provider);
       } catch (err) {
         console.error("Failed to get upload provider:", err);
@@ -54,12 +72,15 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
   // Handle schedule data response
   useEffect(() => {
     const fetcherData = scheduleFetcher.data;
-    const scheduleData = fetcherData && typeof fetcherData === "object" && fetcherData !== null && "scheduleData" in fetcherData ? fetcherData.scheduleData : undefined;
+    const scheduleData =
+      fetcherData &&
+      typeof fetcherData === "object" &&
+      fetcherData !== null &&
+      "scheduleData" in fetcherData
+        ? fetcherData.scheduleData
+        : undefined;
     if (scheduleData && Array.isArray(scheduleData)) {
-      sessionStorage.setItem(
-        "repostData",
-        JSON.stringify(scheduleData),
-      );
+      sessionStorage.setItem("repostData", JSON.stringify(scheduleData));
       window.location.href = "/dashboard/bulkposts?mode=recycle";
     }
   }, [scheduleFetcher.data]);
@@ -67,9 +88,23 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
   // Handle successful asset creation
   useEffect(() => {
     const fetcherData = assetFetcher.data;
-    if (fetcherData && typeof fetcherData === "object" && fetcherData !== null && "success" in fetcherData && fetcherData.success) {
-      if ("asset" in fetcherData && fetcherData.asset && typeof fetcherData.asset === "object" && "assetType" in fetcherData.asset) {
-        const assetType = typeof fetcherData.asset.assetType === "string" ? fetcherData.asset.assetType : "asset";
+    if (
+      fetcherData &&
+      typeof fetcherData === "object" &&
+      fetcherData !== null &&
+      "success" in fetcherData &&
+      fetcherData.success
+    ) {
+      if (
+        "asset" in fetcherData &&
+        fetcherData.asset &&
+        typeof fetcherData.asset === "object" &&
+        "assetType" in fetcherData.asset
+      ) {
+        const assetType =
+          typeof fetcherData.asset.assetType === "string"
+            ? fetcherData.asset.assetType
+            : "asset";
         setToastMessage(
           `${assetType.toLowerCase()} asset created successfully!`,
         );
@@ -120,7 +155,7 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
     );
 
     const assetData = selectedAssetData.map((asset) => ({
-      caption: asset.assetType === "TEXT" ? asset.content : asset.title ?? "",
+      caption: asset.assetType === "TEXT" ? asset.content : (asset.title ?? ""),
       fileUrl:
         asset.assetType === "IMAGE" || asset.assetType === "VIDEO"
           ? asset.fileUrl
@@ -179,7 +214,10 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
     window.location.href = url.toString();
   };
 
-  const handleDeleteAsset = (e: React.MouseEvent<HTMLButtonElement>, _assetId: string) => {
+  const handleDeleteAsset = (
+    e: React.MouseEvent<HTMLButtonElement>,
+    _assetId: string,
+  ) => {
     if (!confirm("Are you sure you want to dele?? this asset?")) {
       e.preventDefault();
     }
@@ -223,7 +261,8 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
       assetFetcher.submit(serverFormData, { method: "post" });
     } catch (error: unknown) {
       console.error("Upload error:", error);
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       setToastMessage(`Upload failed: ${errorMessage}`);
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
@@ -268,7 +307,8 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
       assetFetcher.submit(serverFormData, { method: "post" });
     } catch (error: unknown) {
       console.error("Bulk upload error:", error);
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       setToastMessage(`Bulk upload failed: ${errorMessage}`);
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
@@ -332,4 +372,3 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
     handleBulkFileChange,
   };
 }
-

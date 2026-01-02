@@ -3,7 +3,10 @@
  * Handles signing and scheduling logic for draft posts
  */
 
-import type { NostrEvent as NostrEventType, SignedEvent } from "~/features/nostr/types";
+import type {
+  NostrEvent as NostrEventType,
+  SignedEvent,
+} from "~/features/nostr/types";
 import { logError } from "~/lib/error-logger.server";
 import { signEventFn } from "~/lib/nostr";
 
@@ -55,8 +58,12 @@ async function getEffectiveHashtags(
 
       if (response.ok) {
         const dataRaw: unknown = await response.json();
-        const data = (dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)) ? dataRaw as { hashtags?: unknown } : {};
-        const hashtags = typeof data.hashtags === "string" ? data.hashtags : null;
+        const data =
+          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+            ? (dataRaw as { hashtags?: unknown })
+            : {};
+        const hashtags =
+          typeof data.hashtags === "string" ? data.hashtags : null;
         return hashtags ?? "";
       } else {
         // Fallback to user's default hashtags
@@ -86,7 +93,9 @@ function getImageUrls(fileUrl: string[] | null | undefined): string[] {
   if (typeof fileUrl[0] === "string" && fileUrl[0].startsWith("[")) {
     try {
       const parsed: unknown = JSON.parse(fileUrl[0]);
-      return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
+      return Array.isArray(parsed)
+        ? parsed.filter((item): item is string => typeof item === "string")
+        : [];
     } catch (e) {
       logError(e instanceof Error ? e : new Error(String(e)), {
         fileUrl: fileUrl[0],
@@ -129,9 +138,11 @@ function calculateScheduledTime(
 /**
  * Sign and prepare draft for scheduling
  */
-export async function signDraftForScheduling(
-  params: SignDraftParams,
-): Promise<{ signedEvent: SignedEvent; nostrEvent: NostrEventType; scheduledForUnix: number }> {
+export async function signDraftForScheduling(params: SignDraftParams): Promise<{
+  signedEvent: SignedEvent;
+  nostrEvent: NostrEventType;
+  scheduledForUnix: number;
+}> {
   const {
     content,
     caption,
@@ -144,7 +155,13 @@ export async function signDraftForScheduling(
     post,
   } = params;
 
-  const userTimezone = currentUser && typeof currentUser === "object" && "timezone" in currentUser && typeof currentUser.timezone === "string" ? currentUser.timezone : "UTC";
+  const userTimezone =
+    currentUser &&
+    typeof currentUser === "object" &&
+    "timezone" in currentUser &&
+    typeof currentUser.timezone === "string"
+      ? currentUser.timezone
+      : "UTC";
   const scheduledForUnix = calculateScheduledTime(scheduledFor, userTimezone);
 
   // Get effective hashtags
@@ -185,4 +202,3 @@ export async function signDraftForScheduling(
 
   return { signedEvent, nostrEvent, scheduledForUnix };
 }
-

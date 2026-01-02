@@ -1,5 +1,6 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
-import { json ,
+import {
+  json,
   unstable_composeUploadHandlers as composeUploadHandlers,
   unstable_createMemoryUploadHandler as createMemoryUploadHandler,
   unstable_parseMultipartFormData as parseMultipartFormData,
@@ -7,18 +8,20 @@ import { json ,
 
 import { requireUserId } from "~/features/auth";
 import { createUploadHandler } from "~/features/upload/s3.server";
-import {
-  ExternalServiceError,
-} from "~/lib/errors";
+import { ExternalServiceError } from "~/lib/errors";
 
-type AssertFunction = (condition: boolean, message: string, context?: Record<string, unknown>) => asserts condition;
+type AssertFunction = (
+  condition: boolean,
+  message: string,
+  context?: Record<string, unknown>,
+) => asserts condition;
 
 export async function action({ request }: ActionFunctionArgs) {
   try {
     const errorHandler = await import("~/lib/error-handler.server");
     const assert: AssertFunction = errorHandler.assert;
     const { createSuccessResponse } = errorHandler;
-    
+
     // Ensure user is authenticated
     const userId = await requireUserId(request);
 

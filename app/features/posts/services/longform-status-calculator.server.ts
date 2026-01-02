@@ -1,6 +1,6 @@
 /**
  * Longform Post Status Calculator
- * 
+ *
  * Business logic for determining longform post status and publishedAt dates.
  * This logic was moved from the model layer to maintain clear boundaries.
  */
@@ -65,8 +65,15 @@ export function calculateLongFormStatus({
       const publishedAtTag = signedEvent.tags.find(
         (tag: unknown) => Array.isArray(tag) && tag[0] === "published_at",
       );
-      if (publishedAtTag && Array.isArray(publishedAtTag) && publishedAtTag[1]) {
-        publishedAtTimestamp = typeof publishedAtTag[1] === "number" ? publishedAtTag[1] : parseInt(String(publishedAtTag[1]), 10);
+      if (
+        publishedAtTag &&
+        Array.isArray(publishedAtTag) &&
+        publishedAtTag[1]
+      ) {
+        publishedAtTimestamp =
+          typeof publishedAtTag[1] === "number"
+            ? publishedAtTag[1]
+            : parseInt(String(publishedAtTag[1]), 10);
       }
     }
     publishedAt = publishedAtTimestamp
@@ -86,6 +93,3 @@ export function calculateLongFormStatus({
     finalScheduledFor: finalScheduledFor ?? null,
   };
 }
-
-
-

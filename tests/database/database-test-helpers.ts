@@ -1,6 +1,6 @@
 /**
  * Database Test Helpers
- * 
+ *
  * Utilities for writing database-integrated tests
  */
 
@@ -30,7 +30,7 @@ export async function teardownDatabaseTests(): Promise<void> {
 
 /**
  * Create a test suite with database support
- * 
+ *
  * @example
  * ```typescript
  * describeDatabase("User Model", () => {
@@ -53,8 +53,10 @@ export function describeDatabase(
     teardown?: () => Promise<void>;
   },
 ): void {
-  const testDatabaseUrl = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL;
-  const shouldSkip = !testDatabaseUrl || process.env.SKIP_DATABASE_TESTS === "true";
+  const testDatabaseUrl =
+    process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL;
+  const shouldSkip =
+    !testDatabaseUrl || process.env.SKIP_DATABASE_TESTS === "true";
 
   // Skip the entire suite if database is not configured
   // This prevents beforeAll from failing and marking the suite as failed
@@ -100,7 +102,7 @@ export function describeDatabase(
 /**
  * Helper to run a test with database access
  * Uses a separate test database for isolation
- * 
+ *
  * Note: For true isolation, use a separate TEST_DATABASE_URL.
  * This ensures tests don't interfere with each other.
  */
@@ -135,5 +137,8 @@ export async function withDatabaseNoTransaction<T>(
 /**
  * Create test data using factories
  */
-export { createMinimalFixtures, createCompleteFixtures, fixtures } from "./fixtures";
-
+export {
+  createMinimalFixtures,
+  createCompleteFixtures,
+  fixtures,
+} from "./fixtures";

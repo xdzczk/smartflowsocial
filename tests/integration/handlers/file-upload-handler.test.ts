@@ -19,7 +19,10 @@ vi.mock("~/lib/error-handler.client", () => ({
 
 vi.mock("~/utils/media-helpers", () => ({
   isVideoFile: vi.fn((file: File) => {
-    return file.type.startsWith("video/") || /\.(mp4|webm|ogg|mov|avi|mkv|m4v|3gp|flv)$/i.test(file.name);
+    return (
+      file.type.startsWith("video/") ||
+      /\.(mp4|webm|ogg|mov|avi|mkv|m4v|3gp|flv)$/i.test(file.name)
+    );
   }),
 }));
 
@@ -42,7 +45,9 @@ describe("File Upload Handler Integration Tests", () => {
       return file;
     };
 
-    const createMockEvent = (files: File[]): React.ChangeEvent<HTMLInputElement> => {
+    const createMockEvent = (
+      files: File[],
+    ): React.ChangeEvent<HTMLInputElement> => {
       // Create a mock input element without using DOM APIs
       const input = {
         files: files,
@@ -56,13 +61,15 @@ describe("File Upload Handler Integration Tests", () => {
       const posts: BulkPost[] = [];
       return {
         posts,
-        setPosts: vi.fn((newPosts: BulkPost[] | ((prev: BulkPost[]) => BulkPost[])) => {
-          if (typeof newPosts === "function") {
-            posts.splice(0, posts.length, ...newPosts(posts));
-          } else {
-            posts.splice(0, posts.length, ...newPosts);
-          }
-        }),
+        setPosts: vi.fn(
+          (newPosts: BulkPost[] | ((prev: BulkPost[]) => BulkPost[])) => {
+            if (typeof newPosts === "function") {
+              posts.splice(0, posts.length, ...newPosts(posts));
+            } else {
+              posts.splice(0, posts.length, ...newPosts);
+            }
+          },
+        ),
         user: {
           id: "user-1",
           timezone: "America/New_York",
@@ -76,7 +83,11 @@ describe("File Upload Handler Integration Tests", () => {
 
     it("should reject files exceeding total size limit", async () => {
       const deps = createMockDeps();
-      const largeFile = createMockFile("large.jpg", 101 * 1024 * 1024, "image/jpeg");
+      const largeFile = createMockFile(
+        "large.jpg",
+        101 * 1024 * 1024,
+        "image/jpeg",
+      );
       const event = createMockEvent([largeFile]);
 
       await handleFileChange(event, deps);
@@ -98,7 +109,11 @@ describe("File Upload Handler Integration Tests", () => {
       // Let's test the individual check with a smaller file that's still over video limit
       // But wait, MAX_VIDEO_SIZE is 100MB, so we can't test individual > 100MB without hitting total limit
       // Let's just verify the total size check works for videos
-      const oversizedVideo = createMockFile("large.mp4", 101 * 1024 * 1024, "video/mp4");
+      const oversizedVideo = createMockFile(
+        "large.mp4",
+        101 * 1024 * 1024,
+        "video/mp4",
+      );
       const event = createMockEvent([oversizedVideo]);
 
       await handleFileChange(event, deps);
@@ -112,7 +127,11 @@ describe("File Upload Handler Integration Tests", () => {
 
     it("should reject image files exceeding image size limit", async () => {
       const deps = createMockDeps();
-      const largeImage = createMockFile("large.jpg", 11 * 1024 * 1024, "image/jpeg");
+      const largeImage = createMockFile(
+        "large.jpg",
+        11 * 1024 * 1024,
+        "image/jpeg",
+      );
       const event = createMockEvent([largeImage]);
 
       await handleFileChange(event, deps);
@@ -131,14 +150,21 @@ describe("File Upload Handler Integration Tests", () => {
       await handleFileChange(event, deps);
 
       expect(deps.setIsProcessing).toHaveBeenCalledWith(true);
-      expect(deps.setProcessingProgress).toHaveBeenCalledWith({ current: 0, total: 1 });
+      expect(deps.setProcessingProgress).toHaveBeenCalledWith({
+        current: 0,
+        total: 1,
+      });
       expect(deps.setPosts).toHaveBeenCalled();
       expect(deps.setIsProcessing).toHaveBeenCalledWith(false);
     });
 
     it("should process valid video files without resizing", async () => {
       const deps = createMockDeps();
-      const videoFile = createMockFile("test.mp4", 50 * 1024 * 1024, "video/mp4");
+      const videoFile = createMockFile(
+        "test.mp4",
+        50 * 1024 * 1024,
+        "video/mp4",
+      );
       const event = createMockEvent([videoFile]);
 
       await handleFileChange(event, deps);
@@ -214,7 +240,12 @@ describe("File Upload Handler Integration Tests", () => {
       const callArgs = deps.setPosts.mock.calls[0][0];
       expect(Array.isArray(callArgs)).toBe(true);
       if (Array.isArray(callArgs) && callArgs.length > 0) {
-        const post = callArgs[0] as { file: File; caption: string; queueType: string; scheduledFor: string };
+        const post = callArgs[0] as {
+          file: File;
+          caption: string;
+          queueType: string;
+          scheduledFor: string;
+        };
         expect(post.file).toBeDefined();
         expect(post.caption).toBe("");
         expect(post.queueType).toBe("unassigned");
@@ -299,4 +330,3 @@ describe("File Upload Handler Integration Tests", () => {
     });
   });
 });
-

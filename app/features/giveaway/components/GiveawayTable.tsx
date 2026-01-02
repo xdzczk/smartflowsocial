@@ -39,13 +39,7 @@ export function GiveawayTable({
   onRequestSort,
   onPostClick,
 }: GiveawayTableProps) {
-  const SortableHeader = ({
-    key,
-    label,
-  }: {
-    key: string;
-    label: string;
-  }) => (
+  const SortableHeader = ({ key, label }: { key: string; label: string }) => (
     <th
       className="cursor-pointer bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50"
       onClick={() => onRequestSort(key)}
@@ -204,7 +198,9 @@ export function GiveawayTable({
                       : post.caption}
                   </p>
                 </td>
-                <td className="p-3">{post.postedAt ? formatDate(post.postedAt) : "—"}</td>
+                <td className="p-3">
+                  {post.postedAt ? formatDate(post.postedAt) : "—"}
+                </td>
                 <td className="p-3 font-bold">{post.totalEngagement}</td>
                 <td className="p-3">{post.stats.likes}</td>
                 <td className="p-3">{post.stats.replies}</td>
@@ -250,7 +246,3 @@ export function GiveawayTable({
     </>
   );
 }
-
-
-
-

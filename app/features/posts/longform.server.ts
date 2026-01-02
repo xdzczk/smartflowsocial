@@ -36,16 +36,16 @@ export function createLongFormEvent({
     } else {
       // Assume hex string
       privateKeyBytes = new Uint8Array(
-        privateKey.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) ?? []
+        privateKey.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) ?? [],
       );
     }
   } catch {
     // Fallback: treat as hex string
     privateKeyBytes = new Uint8Array(
-      privateKey.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) ?? []
+      privateKey.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) ?? [],
     );
   }
-  
+
   const publicKey = getPublicKey(privateKeyBytes);
 
   const eventTags = [];
@@ -109,7 +109,8 @@ export function convertEditorJSToMarkdown(editorData: EditorJSOutput): string {
   editorData.blocks.forEach((block: EditorJSBlock) => {
     switch (block.type) {
       case "header": {
-        const level = typeof block.data.level === "number" ? block.data.level : 1;
+        const level =
+          typeof block.data.level === "number" ? block.data.level : 1;
         const text = typeof block.data.text === "string" ? block.data.text : "";
         markdown += `${"#".repeat(level)} ${text}\n\n`;
         break;
@@ -161,9 +162,12 @@ export function convertEditorJSToMarkdown(editorData: EditorJSOutput): string {
 
       case "linkTool": {
         const link = typeof block.data.link === "string" ? block.data.link : "";
-        const meta = block.data.meta && typeof block.data.meta === "object" && "title" in block.data.meta
-          ? block.data.meta as { title?: string }
-          : { title: undefined };
+        const meta =
+          block.data.meta &&
+          typeof block.data.meta === "object" &&
+          "title" in block.data.meta
+            ? (block.data.meta as { title?: string })
+            : { title: undefined };
         if (meta.title) {
           markdown += `[${meta.title}](${link})\n\n`;
         } else {
@@ -186,12 +190,19 @@ export function convertEditorJSToMarkdown(editorData: EditorJSOutput): string {
       }
 
       case "image": {
-        const file = block.data.file && typeof block.data.file === "object" && "url" in block.data.file
-          ? block.data.file as { url?: string }
-          : { url: undefined };
-        const url = typeof block.data.url === "string" ? block.data.url : undefined;
+        const file =
+          block.data.file &&
+          typeof block.data.file === "object" &&
+          "url" in block.data.file
+            ? (block.data.file as { url?: string })
+            : { url: undefined };
+        const url =
+          typeof block.data.url === "string" ? block.data.url : undefined;
         const imageUrl = file.url ?? url;
-        const caption = typeof block.data.caption === "string" ? block.data.caption : undefined;
+        const caption =
+          typeof block.data.caption === "string"
+            ? block.data.caption
+            : undefined;
         if (imageUrl) {
           if (caption?.trim()) {
             markdown += `![${caption}](${imageUrl})\n\n`;

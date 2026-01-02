@@ -50,11 +50,17 @@ export async function uploadFile(file: File): Promise<UploadResult> {
       return await uploadFileToS3(file);
     }
   } catch (error) {
-    const { handleAsyncError, getErrorMessage } = await import("~/lib/error-handler.client");
-    handleAsyncError(error, {
-      component: "upload.client",
-      action: "uploadFile",
-    }, false); // Don't show toast, return error instead
+    const { handleAsyncError, getErrorMessage } = await import(
+      "~/lib/error-handler.client"
+    );
+    handleAsyncError(
+      error,
+      {
+        component: "upload.client",
+        action: "uploadFile",
+      },
+      false,
+    ); // Don't show toast, return error instead
     return {
       success: false,
       error: getErrorMessage(error) || "Upload failed",
@@ -192,12 +198,18 @@ async function uploadFileToBlossom(
       };
     }
   } catch (error) {
-    const { handleAsyncError, getErrorMessage } = await import("~/lib/error-handler.client");
-    handleAsyncError(error, {
-      component: "upload.client",
-      action: "uploadFileToBlossom",
-      provider,
-    }, false); // Don't show toast, return error instead
+    const { handleAsyncError, getErrorMessage } = await import(
+      "~/lib/error-handler.client"
+    );
+    handleAsyncError(
+      error,
+      {
+        component: "upload.client",
+        action: "uploadFileToBlossom",
+        provider,
+      },
+      false,
+    ); // Don't show toast, return error instead
     return {
       success: false,
       error: getErrorMessage(error) || "Blossom upload failed",
@@ -261,10 +273,14 @@ export async function uploadEditorJSImage(
     }
   } catch (error) {
     const { handleAsyncError } = await import("~/lib/error-handler.client");
-    handleAsyncError(error, {
-      component: "upload.client",
-      action: "uploadEditorJSImage",
-    }, false); // Don't show toast, return error code instead
+    handleAsyncError(
+      error,
+      {
+        component: "upload.client",
+        action: "uploadEditorJSImage",
+      },
+      false,
+    ); // Don't show toast, return error code instead
     return {
       success: 0,
     };

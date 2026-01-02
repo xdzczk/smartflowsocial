@@ -1,9 +1,9 @@
 /**
  * Integration tests for subscription/billing loader
- * 
+ *
  * Tests the loader function logic directly, without requiring a browser.
  * For UI rendering tests, see tests/e2e/subscription/billing-loader.cy.ts
- * 
+ *
  * Migrated from: tests/e2e/subscription/billing-loader.cy.ts
  */
 
@@ -30,18 +30,25 @@ vi.mock("~/features/settings/settings-loader.server", () => ({
 }));
 
 import { requireUserId } from "~/features/auth/session.server";
-import { requireAnySubscription, requireFeatureAccess } from "~/features/payments/subscriptions.server";
+import {
+  requireAnySubscription,
+  requireFeatureAccess,
+} from "~/features/payments/subscriptions.server";
 import { loadSettingsData } from "~/features/settings/settings-loader.server";
 import { loader } from "~/routes/dashboard.settings";
 
 describe("Subscription/Billing Loader Integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Default mocks
     (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue("user-123");
-    (requireAnySubscription as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
-    (requireFeatureAccess as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    (requireAnySubscription as ReturnType<typeof vi.fn>).mockResolvedValue(
+      undefined,
+    );
+    (requireFeatureAccess as ReturnType<typeof vi.fn>).mockResolvedValue(
+      undefined,
+    );
     (loadSettingsData as ReturnType<typeof vi.fn>).mockResolvedValue({
       timezone: "UTC",
       relays: [],
@@ -69,11 +76,20 @@ describe("Subscription/Billing Loader Integration", () => {
 
   describe("Subscription Settings Loader", () => {
     it("should load subscription settings data for authenticated user", async () => {
-      const request = new Request("http://localhost:3000/dashboard/settings?tab=subscription");
-      const loaderArgs: { request: Request; params?: Record<string, string>; context?: Record<string, unknown> } = { request };
+      const request = new Request(
+        "http://localhost:3000/dashboard/settings?tab=subscription",
+      );
+      const loaderArgs: {
+        request: Request;
+        params?: Record<string, string>;
+        context?: Record<string, unknown>;
+      } = { request };
       const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as Record<string, unknown>)
+          : {};
 
       expect(response.status).toBe(200);
       expect(requireUserId).toHaveBeenCalledWith(request);
@@ -112,9 +128,7 @@ describe("Subscription/Billing Loader Integration", () => {
           { id: "basic", name: "Basic", price: 1000 },
           { id: "premium", name: "Premium", price: 2000 },
         ],
-        paymentHistory: [
-          { id: "pay-1", amount: 2000, createdAt: new Date() },
-        ],
+        paymentHistory: [{ id: "pay-1", amount: 2000, createdAt: new Date() }],
         isChild: false,
         hasAccountsAccess: false,
         accounts: [],
@@ -123,13 +137,24 @@ describe("Subscription/Billing Loader Integration", () => {
         hidePostsFromLowTrustUsers: false,
       };
 
-      (loadSettingsData as ReturnType<typeof vi.fn>).mockResolvedValue(mockData);
+      (loadSettingsData as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockData,
+      );
 
-      const request = new Request("http://localhost:3000/dashboard/settings?tab=subscription");
-      const loaderArgs: { request: Request; params?: Record<string, string>; context?: Record<string, unknown> } = { request };
+      const request = new Request(
+        "http://localhost:3000/dashboard/settings?tab=subscription",
+      );
+      const loaderArgs: {
+        request: Request;
+        params?: Record<string, string>;
+        context?: Record<string, unknown>;
+      } = { request };
       const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as Record<string, unknown>)
+          : {};
 
       expect(data.subscription).toHaveProperty("status", "ACTIVE");
       expect(data.subscription).toHaveProperty("planId", "premium");
@@ -166,13 +191,24 @@ describe("Subscription/Billing Loader Integration", () => {
         hidePostsFromLowTrustUsers: false,
       };
 
-      (loadSettingsData as ReturnType<typeof vi.fn>).mockResolvedValue(mockData);
+      (loadSettingsData as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockData,
+      );
 
-      const request = new Request("http://localhost:3000/dashboard/settings?tab=subscription");
-      const loaderArgs: { request: Request; params?: Record<string, string>; context?: Record<string, unknown> } = { request };
+      const request = new Request(
+        "http://localhost:3000/dashboard/settings?tab=subscription",
+      );
+      const loaderArgs: {
+        request: Request;
+        params?: Record<string, string>;
+        context?: Record<string, unknown>;
+      } = { request };
       const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as Record<string, unknown>)
+          : {};
 
       expect(data.subscription).toBeNull();
       expect(data.availablePlans).toHaveLength(2);
@@ -216,13 +252,24 @@ describe("Subscription/Billing Loader Integration", () => {
         hidePostsFromLowTrustUsers: false,
       };
 
-      (loadSettingsData as ReturnType<typeof vi.fn>).mockResolvedValue(mockData);
+      (loadSettingsData as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockData,
+      );
 
-      const request = new Request("http://localhost:3000/dashboard/settings?tab=subscription");
-      const loaderArgs: { request: Request; params?: Record<string, string>; context?: Record<string, unknown> } = { request };
+      const request = new Request(
+        "http://localhost:3000/dashboard/settings?tab=subscription",
+      );
+      const loaderArgs: {
+        request: Request;
+        params?: Record<string, string>;
+        context?: Record<string, unknown>;
+      } = { request };
       const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as Record<string, unknown>)
+          : {};
 
       expect(data.subscription).toHaveProperty("status", "EXPIRED");
     });
@@ -264,15 +311,29 @@ describe("Subscription/Billing Loader Integration", () => {
         hidePostsFromLowTrustUsers: false,
       };
 
-      (loadSettingsData as ReturnType<typeof vi.fn>).mockResolvedValue(mockData);
+      (loadSettingsData as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockData,
+      );
 
-      const request = new Request("http://localhost:3000/dashboard/settings?tab=subscription");
-      const loaderArgs: { request: Request; params?: Record<string, string>; context?: Record<string, unknown> } = { request };
+      const request = new Request(
+        "http://localhost:3000/dashboard/settings?tab=subscription",
+      );
+      const loaderArgs: {
+        request: Request;
+        params?: Record<string, string>;
+        context?: Record<string, unknown>;
+      } = { request };
       const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as Record<string, unknown> : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as Record<string, unknown>)
+          : {};
 
-      const paymentHistory = data.paymentHistory as Array<{ amount: number; [key: string]: unknown }>;
+      const paymentHistory = data.paymentHistory as Array<{
+        amount: number;
+        [key: string]: unknown;
+      }>;
       expect(paymentHistory).toHaveLength(3);
       expect(paymentHistory[0]).toHaveProperty("amount", 2000);
     });
@@ -281,51 +342,56 @@ describe("Subscription/Billing Loader Integration", () => {
   describe("Error Handling", () => {
     it("should handle authentication errors", async () => {
       (requireUserId as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Authentication required")
+        new Error("Authentication required"),
       );
 
-      const request = new Request("http://localhost:3000/dashboard/settings?tab=subscription");
-      
+      const request = new Request(
+        "http://localhost:3000/dashboard/settings?tab=subscription",
+      );
+
       await expect(loader({ request })).rejects.toThrow(
-        "Authentication required"
+        "Authentication required",
       );
     });
 
     it("should handle subscription requirement errors", async () => {
       (requireAnySubscription as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Subscription required")
+        new Error("Subscription required"),
       );
 
-      const request = new Request("http://localhost:3000/dashboard/settings?tab=subscription");
-      
+      const request = new Request(
+        "http://localhost:3000/dashboard/settings?tab=subscription",
+      );
+
       await expect(loader({ request })).rejects.toThrow(
-        "Subscription required"
+        "Subscription required",
       );
     });
 
     it("should handle feature access errors", async () => {
       (requireFeatureAccess as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Feature access denied")
+        new Error("Feature access denied"),
       );
 
-      const request = new Request("http://localhost:3000/dashboard/settings?tab=subscription");
-      
+      const request = new Request(
+        "http://localhost:3000/dashboard/settings?tab=subscription",
+      );
+
       await expect(loader({ request })).rejects.toThrow(
-        "Feature access denied"
+        "Feature access denied",
       );
     });
 
     it("should handle data loading errors", async () => {
       (loadSettingsData as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Database error")
+        new Error("Database error"),
       );
 
-      const request = new Request("http://localhost:3000/dashboard/settings?tab=subscription");
-      
-      await expect(loader({ request })).rejects.toThrow(
-        "Database error"
+      const request = new Request(
+        "http://localhost:3000/dashboard/settings?tab=subscription",
       );
+
+      await expect(loader({ request })).rejects.toThrow("Database error");
     });
   });
 });
-

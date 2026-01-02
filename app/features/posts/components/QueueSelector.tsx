@@ -17,17 +17,28 @@ export function QueueSelector({
 }: QueueSelectorProps) {
   const getQueueTypeId = (queueName: string): string => {
     const selectedQueueType = queueTypes.find((qt) =>
-      typeof qt === "string" ? qt === queueName : qt.name === queueName
+      typeof qt === "string" ? qt === queueName : qt.name === queueName,
     );
-    return typeof selectedQueueType === "object" ? selectedQueueType.id ?? "" : "";
+    return typeof selectedQueueType === "object"
+      ? (selectedQueueType.id ?? "")
+      : "";
   };
 
   return (
     <div className={className}>
-      <label id="queue-type-label" htmlFor="queue-type-selector" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+      <label
+        id="queue-type-label"
+        htmlFor="queue-type-selector"
+        className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+      >
         Queue Type
       </label>
-      <div id="queue-type-selector" className="flex flex-wrap gap-2" role="group" aria-labelledby="queue-type-label">
+      <div
+        id="queue-type-selector"
+        className="flex flex-wrap gap-2"
+        role="group"
+        aria-labelledby="queue-type-label"
+      >
         {/* Unassigned option */}
         <button
           type="button"
@@ -76,7 +87,3 @@ export function QueueSelector({
     </div>
   );
 }
-
-
-
-

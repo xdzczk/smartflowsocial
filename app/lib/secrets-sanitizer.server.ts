@@ -1,6 +1,6 @@
 /**
  * Secrets Sanitization Utility
- * 
+ *
  * Prevents sensitive data (NWC strings, secrets, etc.) from appearing in logs or error messages
  */
 
@@ -52,7 +52,7 @@ export function sanitizeObject<T>(obj: T): T {
     const sanitized: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(obj)) {
       const lowerKey = key.toLowerCase();
-      
+
       // Check if key indicates sensitive data
       if (
         lowerKey.includes("nwc") ||
@@ -98,10 +98,7 @@ export function sanitizeError(error: Error | unknown): {
 /**
  * Safe console.error that sanitizes sensitive data
  */
-export function safeConsoleError(
-  message: string,
-  ...args: unknown[]
-): void {
+export function safeConsoleError(message: string, ...args: unknown[]): void {
   const sanitizedMessage = sanitizeString(message);
   const sanitizedArgs = args.map((arg) => {
     if (typeof arg === "string") {
@@ -119,10 +116,7 @@ export function safeConsoleError(
 /**
  * Safe console.log that sanitizes sensitive data
  */
-export function safeConsoleLog(
-  message: string,
-  ...args: unknown[]
-): void {
+export function safeConsoleLog(message: string, ...args: unknown[]): void {
   const sanitizedMessage = sanitizeString(message);
   const sanitizedArgs = args.map((arg) => {
     if (typeof arg === "string") {
@@ -136,8 +130,3 @@ export function safeConsoleLog(
 
   console.log(sanitizedMessage, ...sanitizedArgs);
 }
-
-
-
-
-

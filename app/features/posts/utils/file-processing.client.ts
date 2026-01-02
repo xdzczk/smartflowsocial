@@ -1,6 +1,6 @@
 /**
  * File Processing Utilities
- * 
+ *
  * Client-side utilities for processing media files before upload.
  * Handles validation, size checking, and image resizing.
  */
@@ -104,14 +104,11 @@ export async function processMediaFiles(
       original: files,
     };
   } catch (error) {
-    logClientError(
-      error instanceof Error ? error : new Error(String(error)),
-      {
-        component: "file-processing",
-        action: "processMediaFiles",
-        fileCount: files.length,
-      },
-    );
+    logClientError(error instanceof Error ? error : new Error(String(error)), {
+      component: "file-processing",
+      action: "processMediaFiles",
+      fileCount: files.length,
+    });
     toast.error("Error processing files. Using original files.");
     return {
       processed: files,
@@ -150,7 +147,3 @@ export async function validateAndProcessFiles(
   const { processed } = await processMediaFiles(validFiles);
   return processed;
 }
-
-
-
-

@@ -1,12 +1,11 @@
 /**
  * Client-side Error Display Component
- * 
+ *
  * Displays user-friendly error messages in the UI
  */
 
 import { showErrorToast as showErrorToastUtil } from "~/lib/error-handler.client";
 import type { ErrorResponse } from "~/lib/error-handler.server";
-
 
 interface ErrorDisplayProps {
   error: ErrorResponse["error"] | string;
@@ -66,9 +65,6 @@ export function ErrorDisplay({ error, variant = "alert" }: ErrorDisplayProps) {
 
   // Inline variant
   return (
-    <div className="text-sm text-red-600 dark:text-red-400">
-      {errorMessage}
-    </div>
+    <div className="text-sm text-red-600 dark:text-red-400">{errorMessage}</div>
   );
 }
-

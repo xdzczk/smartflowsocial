@@ -1,6 +1,6 @@
 /**
  * Edge Case Tests for Database Connection Failures
- * 
+ *
  * Tests how the application handles database failures:
  * - Connection timeouts
  * - Connection lost during operation
@@ -53,7 +53,7 @@ describe("Database Failure Edge Cases", () => {
   describe("Connection Failures", () => {
     it("should handle database connection timeout", async () => {
       (mockPrisma.post.findMany as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Connection timeout after 30s")
+        new Error("Connection timeout after 30s"),
       );
 
       await expect(
@@ -62,13 +62,15 @@ describe("Database Failure Edge Cases", () => {
     });
 
     it("should handle connection lost during query", async () => {
-      (mockPrisma.user.findUnique as ReturnType<typeof vi.fn>).mockRejectedValue(
+      (
+        mockPrisma.user.findUnique as ReturnType<typeof vi.fn>
+      ).mockRejectedValue(
         new Error("Connection lost: server closed the connection unexpectedly"),
       );
 
-      await expect(
-        getUserById(TEST_USER_ID),
-      ).rejects.toThrow("Connection lost");
+      await expect(getUserById(TEST_USER_ID)).rejects.toThrow(
+        "Connection lost",
+      );
     });
 
     it("should handle database unavailable error", async () => {
@@ -110,10 +112,7 @@ describe("Database Failure Edge Cases", () => {
     it("should handle transaction timeout", async () => {
       mockPrisma.post.update.mockImplementation(() => {
         return new Promise((_, reject) => {
-          setTimeout(
-            () => reject(new Error("Transaction timeout")),
-            100,
-          );
+          setTimeout(() => reject(new Error("Transaction timeout")), 100);
         });
       });
 
@@ -130,7 +129,7 @@ describe("Database Failure Edge Cases", () => {
   describe("Query Failures", () => {
     it("should handle query timeout", async () => {
       (mockPrisma.post.findMany as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Query timeout")
+        new Error("Query timeout"),
       );
 
       await expect(
@@ -180,18 +179,21 @@ describe("Database Failure Edge Cases", () => {
       // First call fails, second succeeds
       (mockPrisma.user.findUnique as ReturnType<typeof vi.fn>)
         .mockRejectedValueOnce(new Error("Connection lost"))
-        .mockResolvedValueOnce({ 
-          id: TEST_USER_ID, 
+        .mockResolvedValueOnce({
+          id: TEST_USER_ID,
           npub: "npub123",
           hashTagPresets: [],
         });
 
       // Mock subscription.findUnique (called by getUserById) - succeeds on retry
-      (mockPrisma.subscription.findUnique as ReturnType<typeof vi.fn>)
-        .mockResolvedValue(null);
+      (
+        mockPrisma.subscription.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(null);
 
       // First attempt fails
-      await expect(getUserById(TEST_USER_ID)).rejects.toThrow("Connection lost");
+      await expect(getUserById(TEST_USER_ID)).rejects.toThrow(
+        "Connection lost",
+      );
 
       // Second attempt succeeds (simulating reconnection)
       const result = await getUserById(TEST_USER_ID);
@@ -202,4 +204,3 @@ describe("Database Failure Edge Cases", () => {
     });
   });
 });
-

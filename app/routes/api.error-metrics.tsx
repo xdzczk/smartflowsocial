@@ -12,7 +12,7 @@ import {
 /**
  * API endpoint to get error metrics
  * GET /api/error-metrics
- * 
+ *
  * Requires authentication and should be restricted to admins in production
  */
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -65,20 +65,3 @@ export async function loader({ request }: LoaderFunctionArgs) {
     errorRate: getErrorRate(),
   });
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

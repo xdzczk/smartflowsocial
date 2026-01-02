@@ -6,27 +6,50 @@
 import { json } from "@remix-run/node";
 
 import type { ProfileData } from "~/features/nostr/types";
-import { getConfirmedChildrenForParent, getUserBasicInfo } from "~/features/user";
+import {
+  getConfirmedChildrenForParent,
+  getUserBasicInfo,
+} from "~/features/user";
 import { logError } from "~/lib/error-logger.server";
 import { normalizeError } from "~/lib/errors";
 import { getUserSubscription } from "~/models/payment.server";
 function extractProfileBits(nostrProfile: ProfileData | null | undefined) {
   if (!nostrProfile) {
-    return { name: undefined, display_name: undefined, picture: undefined } as const;
+    return {
+      name: undefined,
+      display_name: undefined,
+      picture: undefined,
+    } as const;
   }
   try {
     if (typeof nostrProfile === "string") {
-      const p = JSON.parse(nostrProfile) as { name?: string; display_name?: string; picture?: string };
-      return { name: p?.name, display_name: p?.display_name, picture: p?.picture } as const;
+      const p = JSON.parse(nostrProfile) as {
+        name?: string;
+        display_name?: string;
+        picture?: string;
+      };
+      return {
+        name: p?.name,
+        display_name: p?.display_name,
+        picture: p?.picture,
+      } as const;
     }
     if (typeof nostrProfile === "object") {
       const p = nostrProfile;
-      return { name: p?.name, display_name: p?.display_name, picture: p?.picture } as const;
+      return {
+        name: p?.name,
+        display_name: p?.display_name,
+        picture: p?.picture,
+      } as const;
     }
   } catch {
     // Silently ignore parse errors - return defaults
   }
-  return { name: undefined, display_name: undefined, picture: undefined } as const;
+  return {
+    name: undefined,
+    display_name: undefined,
+    picture: undefined,
+  } as const;
 }
 
 /**
@@ -36,7 +59,7 @@ function extractProfileBits(nostrProfile: ProfileData | null | undefined) {
 export async function loadChildrenData(userId: string) {
   // Fetch minimal user info
   const me = await getUserBasicInfo(userId);
-  
+
   if (!me?.npub) {
     return json({ children: [] });
   }
@@ -50,17 +73,21 @@ export async function loadChildrenData(userId: string) {
   const sub = await getUserSubscription(userId);
   const planId = (sub?.planId ?? "").toLowerCase();
   const planName = (sub?.Plan?.name ?? "").toLowerCase();
-  const hasAccountsAccess = planId === "premium" || planName === "premium" || planName === "founder";
-  
+  const hasAccountsAccess =
+    planId === "premium" || planName === "premium" || planName === "founder";
+
   if (!hasAccountsAccess) {
     return json({ children: [] });
   }
 
   const confirmed = await getConfirmedChildrenForParent(me.npub);
   const children = confirmed.map((c) => {
-    const profile = c.nostrProfile && typeof c.nostrProfile === "object" && !Array.isArray(c.nostrProfile)
-      ? (c.nostrProfile as ProfileData)
-      : null;
+    const profile =
+      c.nostrProfile &&
+      typeof c.nostrProfile === "object" &&
+      !Array.isArray(c.nostrProfile)
+        ? (c.nostrProfile as ProfileData)
+        : null;
     const bits = extractProfileBits(profile);
     return {
       npub: c.npub,
@@ -81,12 +108,9 @@ export function handleChildrenApiError(error: unknown, requestUrl: string) {
   if (error instanceof Response) {
     throw error;
   }
-  
+
   // Gracefully handle other errors by returning empty array
   // Log error but don't expose it to client
   logError(normalizeError(error), { path: requestUrl });
   return json({ children: [] });
 }
-
-
-

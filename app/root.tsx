@@ -26,7 +26,7 @@ export const links: LinksFunction = () => [
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
-    return json({ 
+    return json({
       user: await getUser(request),
       // Expose Sentry DSN to client (safe - it's a public key)
       ENV: {
@@ -36,8 +36,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     });
   } catch (error) {
     // Handle root loader errors gracefully
-    return handleLoaderError(error, { 
-      user: null, 
+    return handleLoaderError(error, {
+      user: null,
       ENV: {
         SENTRY_DSN: null,
         NODE_ENV: "development",
@@ -81,9 +81,14 @@ type LoaderData = Awaited<ReturnType<typeof loader>>;
 
 export default function App() {
   const loaderData = useLoaderData<LoaderData>();
-  const ENV = loaderData && typeof loaderData === "object" && "ENV" in loaderData && loaderData.ENV && typeof loaderData.ENV === "object" 
-    ? loaderData.ENV as { SENTRY_DSN: string | null; NODE_ENV: string }
-    : { SENTRY_DSN: null, NODE_ENV: "development" };
+  const ENV =
+    loaderData &&
+    typeof loaderData === "object" &&
+    "ENV" in loaderData &&
+    loaderData.ENV &&
+    typeof loaderData.ENV === "object"
+      ? (loaderData.ENV as { SENTRY_DSN: string | null; NODE_ENV: string })
+      : { SENTRY_DSN: null, NODE_ENV: "development" };
 
   return (
     <html lang="en" className="h-full">
@@ -163,14 +168,16 @@ export function ErrorBoundary() {
                   Go back home
                 </a>
               </div>
-              {isDevelopment && error instanceof Error ? <details className="mt-10 text-left">
+              {isDevelopment && error instanceof Error ? (
+                <details className="mt-10 text-left">
                   <summary className="cursor-pointer text-sm font-semibold text-gray-700 dark:text-gray-300">
                     Error Details (Development Only)
                   </summary>
                   <pre className="mt-4 overflow-auto rounded-lg bg-gray-100 p-4 text-xs text-gray-800 dark:bg-gray-800 dark:text-gray-200">
                     {error.stack ?? error.toString()}
                   </pre>
-                </details> : null}
+                </details>
+              ) : null}
             </div>
           </main>
         </div>

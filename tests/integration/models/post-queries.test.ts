@@ -57,7 +57,16 @@ describe("Post Queries", () => {
 
       const result = await getPostStatistics({ userId: TEST_USER_ID });
 
-      const firstCall = (prisma.post.count as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as { where?: { userId?: string; isScheduled?: boolean; isPosted?: boolean } } | undefined;
+      const firstCall = (prisma.post.count as ReturnType<typeof vi.fn>).mock
+        .calls[0]?.[0] as
+        | {
+            where?: {
+              userId?: string;
+              isScheduled?: boolean;
+              isPosted?: boolean;
+            };
+          }
+        | undefined;
       expect(firstCall?.where?.userId).toBe(TEST_USER_ID);
       expect(firstCall?.where?.isScheduled).toBe(true);
       expect(firstCall?.where?.isPosted).toBe(false);
@@ -94,8 +103,12 @@ describe("Post Queries", () => {
         isPosted: false,
       };
 
-      (prisma.queueType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueType);
-      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
+      (
+        prisma.queueType.findFirst as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockQueueType);
+      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockPost,
+      );
 
       const result = await getLastPostTimeForQueue({
         userId: TEST_USER_ID,
@@ -128,8 +141,12 @@ describe("Post Queries", () => {
         isPosted: true,
       };
 
-      (prisma.queueType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueType);
-      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
+      (
+        prisma.queueType.findFirst as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockQueueType);
+      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockPost,
+      );
 
       const result = await getLastPostTimeForQueue({
         userId: TEST_USER_ID,
@@ -151,7 +168,9 @@ describe("Post Queries", () => {
     });
 
     it("should return null if queue type doesn't exist", async () => {
-      (prisma.queueType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (
+        prisma.queueType.findFirst as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(null);
 
       const result = await getLastPostTimeForQueue({
         userId: TEST_USER_ID,
@@ -168,15 +187,20 @@ describe("Post Queries", () => {
         scheduleType: "INTERVAL" as const,
         name: "Test Queue",
       };
-      (prisma.queueType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueType);
-      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (
+        prisma.queueType.findFirst as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockQueueType);
+      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
+        null,
+      );
 
       await getLastPostTimeForQueue({
         userId: TEST_USER_ID,
         queueTypeId: "queue-123",
       });
 
-      const callArgs = (prisma.post.findFirst as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as { where?: { isPosted?: boolean } } | undefined;
+      const callArgs = (prisma.post.findFirst as ReturnType<typeof vi.fn>).mock
+        .calls[0]?.[0] as { where?: { isPosted?: boolean } } | undefined;
       expect(callArgs?.where?.isPosted).toBe(false);
     });
 
@@ -186,15 +210,20 @@ describe("Post Queries", () => {
         scheduleType: "FIXED_SLOTS" as const,
         name: "Test Queue",
       };
-      (prisma.queueType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueType);
-      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (
+        prisma.queueType.findFirst as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockQueueType);
+      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
+        null,
+      );
 
       await getLastPostTimeForQueue({
         userId: TEST_USER_ID,
         queueTypeId: "queue-123",
       });
 
-      const callArgs = (prisma.post.findFirst as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as { where?: { isPosted?: boolean } } | undefined;
+      const callArgs = (prisma.post.findFirst as ReturnType<typeof vi.fn>).mock
+        .calls[0]?.[0] as { where?: { isPosted?: boolean } } | undefined;
       expect(callArgs?.where?.isPosted).toBeUndefined();
     });
 
@@ -204,8 +233,12 @@ describe("Post Queries", () => {
         scheduleType: "INTERVAL" as const,
         name: "Test Queue",
       };
-      (prisma.queueType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueType);
-      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (
+        prisma.queueType.findFirst as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockQueueType);
+      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
+        null,
+      );
 
       const result = await getLastPostTimeForQueue({
         userId: TEST_USER_ID,
@@ -222,7 +255,9 @@ describe("Post Queries", () => {
         { id: "post-1", userId: TEST_USER_ID },
         { id: "post-2", userId: TEST_USER_ID },
       ];
-      (prisma.post.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
+      (prisma.post.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockPosts,
+      );
 
       const result = await getPostsByIds({
         ids: ["post-1", "post-2"],
@@ -272,14 +307,21 @@ describe("Post Queries", () => {
         { id: "post-1", isPosted: true },
         { id: "post-2", isPosted: true },
       ];
-      (prisma.post.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
+      (prisma.post.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockPosts,
+      );
 
       const result = await getRecentPostedPosts({
         userId: TEST_USER_ID,
         days: 7,
       });
 
-      const callArgs = (prisma.post.findMany as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as { where?: { userId?: string; isPosted?: boolean; postedAt?: unknown } } | undefined;
+      const callArgs = (prisma.post.findMany as ReturnType<typeof vi.fn>).mock
+        .calls[0]?.[0] as
+        | {
+            where?: { userId?: string; isPosted?: boolean; postedAt?: unknown };
+          }
+        | undefined;
       expect(callArgs?.where?.userId).toBe(TEST_USER_ID);
       expect(callArgs?.where?.isPosted).toBe(true);
       expect(callArgs?.where?.postedAt).toBeDefined();
@@ -295,7 +337,10 @@ describe("Post Queries", () => {
         queueType: "queue1",
       });
 
-      const callArgs = (prisma.post.findMany as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as { where?: { queueType?: { name?: string } } } | undefined;
+      const callArgs = (prisma.post.findMany as ReturnType<typeof vi.fn>).mock
+        .calls[0]?.[0] as
+        | { where?: { queueType?: { name?: string } } }
+        | undefined;
       expect(callArgs?.where?.queueType).toEqual({ name: "queue1" });
     });
   });
@@ -307,7 +352,9 @@ describe("Post Queries", () => {
         { id: "post-1", scheduledFor: String(now - 100) },
         { id: "post-2", scheduledFor: String(now - 50) },
       ];
-      (prisma.post.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
+      (prisma.post.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockPosts,
+      );
 
       const result = await getCronDueScheduledPosts();
 
@@ -325,4 +372,3 @@ describe("Post Queries", () => {
     });
   });
 });
-

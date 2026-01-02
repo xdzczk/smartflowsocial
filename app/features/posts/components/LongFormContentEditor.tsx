@@ -24,10 +24,11 @@ export function LongFormContentEditor({
             <div className="flex items-center gap-1 text-xs text-gray-500">
               <span>Images upload via:</span>
               <span
-                className={`rounded px-2 py-1 text-xs font-medium ${uploadProvider.includes("BLOSSOM")
-                  ? "bg-purple-100 text-purple-800"
-                  : "bg-blue-100 text-blue-800"
-                  }`}
+                className={`rounded px-2 py-1 text-xs font-medium ${
+                  uploadProvider.includes("BLOSSOM")
+                    ? "bg-purple-100 text-purple-800"
+                    : "bg-blue-100 text-blue-800"
+                }`}
               >
                 {uploadProvider.includes("BLOSSOM")
                   ? `🌸 ${uploadProvider === "BLOSSOM_PRIMAL" ? "Primal" : "Blosstr"}`
@@ -72,4 +73,3 @@ export function LongFormContentEditor({
     </div>
   );
 }
-

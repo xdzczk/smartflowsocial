@@ -232,7 +232,10 @@ describe("Longform Status Calculator", () => {
         pubkey: "pubkey-123",
         created_at: Math.floor(Date.now() / 1000),
         kind: 30023,
-        tags: [["t", "tag1"], ["t", "tag2"]],
+        tags: [
+          ["t", "tag1"],
+          ["t", "tag2"],
+        ],
         content: "Test content",
         sig: "sig-123",
       };
@@ -248,4 +251,3 @@ describe("Longform Status Calculator", () => {
     });
   });
 });
-

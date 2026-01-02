@@ -1,4 +1,8 @@
-import { json, type LoaderFunctionArgs, type ActionFunctionArgs } from "@remix-run/node";
+import {
+  json,
+  type LoaderFunctionArgs,
+  type ActionFunctionArgs,
+} from "@remix-run/node";
 import { useLoaderData, Outlet } from "@remix-run/react";
 
 import {
@@ -43,11 +47,11 @@ export async function action({ request }: ActionFunctionArgs) {
     const userId = await requireUserId(request);
     const formData = await request.formData();
     const result = await handleTemplatesAction(formData, userId);
-    
+
     if (result.error) {
       return json(result, { status: 400 });
     }
-    
+
     return json(result);
   } catch (error) {
     const { handleActionError } = await import("~/lib/error-handler.server");
@@ -57,11 +61,26 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function Templates() {
   const loaderData = useLoaderData<typeof loader>();
-  const assets = "assets" in loaderData && Array.isArray(loaderData.assets) ? loaderData.assets : [];
-  const totalCount = "totalCount" in loaderData && typeof loaderData.totalCount === "number" ? loaderData.totalCount : 0;
-  const totalPages = "totalPages" in loaderData && typeof loaderData.totalPages === "number" ? loaderData.totalPages : 0;
-  const currentPage = "currentPage" in loaderData && typeof loaderData.currentPage === "number" ? loaderData.currentPage : 1;
-  const searchTerm = "searchTerm" in loaderData && typeof loaderData.searchTerm === "string" ? loaderData.searchTerm : "";
+  const assets =
+    "assets" in loaderData && Array.isArray(loaderData.assets)
+      ? loaderData.assets
+      : [];
+  const totalCount =
+    "totalCount" in loaderData && typeof loaderData.totalCount === "number"
+      ? loaderData.totalCount
+      : 0;
+  const totalPages =
+    "totalPages" in loaderData && typeof loaderData.totalPages === "number"
+      ? loaderData.totalPages
+      : 0;
+  const currentPage =
+    "currentPage" in loaderData && typeof loaderData.currentPage === "number"
+      ? loaderData.currentPage
+      : 1;
+  const searchTerm =
+    "searchTerm" in loaderData && typeof loaderData.searchTerm === "string"
+      ? loaderData.searchTerm
+      : "";
 
   const {
     selectedTemplate,
@@ -108,40 +127,97 @@ export default function Templates() {
           {activeTab === "assets" ? (
             <>
               <AssetsTab
-                assets={Array.isArray(assets) ? assets
-                  .filter((asset: unknown): asset is { id: string; title?: unknown; content?: unknown; fileUrl?: unknown; tags?: unknown; assetType?: unknown; createdAt?: unknown; updatedAt?: unknown } => 
-                    typeof asset === "object" && asset !== null && "id" in asset && typeof (asset as { id: unknown }).id === "string"
-                  )
-                  .map((asset) => ({
-                    id: asset.id,
-                    assetType: typeof asset.assetType === "string" ? asset.assetType : "IMAGE",
-                    fileUrl: typeof asset.fileUrl === "string" ? asset.fileUrl : undefined,
-                    content: typeof asset.content === "string" ? asset.content : asset.content === null ? null : undefined,
-                    title: typeof asset.title === "string" ? asset.title : asset.title === null ? null : undefined,
-                    tags: Array.isArray(asset.tags) ? asset.tags.filter((tag): tag is string => typeof tag === "string") : [],
-                    createdAt: (() => {
-                      const createdAtValue: unknown = asset.createdAt;
-                      if (createdAtValue instanceof Date) return createdAtValue.toISOString();
-                      if (typeof createdAtValue === "string") return createdAtValue;
-                      return new Date().toISOString();
-                    })(),
-                    updatedAt: (() => {
-                      const updatedAtValue: unknown = asset.updatedAt;
-                      if (updatedAtValue instanceof Date) return updatedAtValue.toISOString();
-                      if (typeof updatedAtValue === "string") return updatedAtValue;
-                      return new Date().toISOString();
-                    })(),
-                  })) : []}
+                assets={
+                  Array.isArray(assets)
+                    ? assets
+                        .filter(
+                          (
+                            asset: unknown,
+                          ): asset is {
+                            id: string;
+                            title?: unknown;
+                            content?: unknown;
+                            fileUrl?: unknown;
+                            tags?: unknown;
+                            assetType?: unknown;
+                            createdAt?: unknown;
+                            updatedAt?: unknown;
+                          } =>
+                            typeof asset === "object" &&
+                            asset !== null &&
+                            "id" in asset &&
+                            typeof (asset as { id: unknown }).id === "string",
+                        )
+                        .map((asset) => ({
+                          id: asset.id,
+                          assetType:
+                            typeof asset.assetType === "string"
+                              ? asset.assetType
+                              : "IMAGE",
+                          fileUrl:
+                            typeof asset.fileUrl === "string"
+                              ? asset.fileUrl
+                              : undefined,
+                          content:
+                            typeof asset.content === "string"
+                              ? asset.content
+                              : asset.content === null
+                                ? null
+                                : undefined,
+                          title:
+                            typeof asset.title === "string"
+                              ? asset.title
+                              : asset.title === null
+                                ? null
+                                : undefined,
+                          tags: Array.isArray(asset.tags)
+                            ? asset.tags.filter(
+                                (tag): tag is string => typeof tag === "string",
+                              )
+                            : [],
+                          createdAt: (() => {
+                            const createdAtValue: unknown = asset.createdAt;
+                            if (createdAtValue instanceof Date)
+                              return createdAtValue.toISOString();
+                            if (typeof createdAtValue === "string")
+                              return createdAtValue;
+                            return new Date().toISOString();
+                          })(),
+                          updatedAt: (() => {
+                            const updatedAtValue: unknown = asset.updatedAt;
+                            if (updatedAtValue instanceof Date)
+                              return updatedAtValue.toISOString();
+                            if (typeof updatedAtValue === "string")
+                              return updatedAtValue;
+                            return new Date().toISOString();
+                          })(),
+                        }))
+                    : []
+                }
                 selectedAssets={selectedAssets}
                 searchInput={searchInput}
                 onSearchInputChange={setSearchInput}
                 onSearch={handleSearch}
                 onAssetSelect={handleAssetSelect}
-                onSelectAllAssets={() => handleSelectAllAssets(Array.isArray(assets) ? assets as unknown as Asset[] : [])}
-                onBulkPostAssets={() => handleBulkPostAssets(Array.isArray(assets) ? assets as unknown as Asset[] : [])}
+                onSelectAllAssets={() =>
+                  handleSelectAllAssets(
+                    Array.isArray(assets) ? (assets as unknown as Asset[]) : [],
+                  )
+                }
+                onBulkPostAssets={() =>
+                  handleBulkPostAssets(
+                    Array.isArray(assets) ? (assets as unknown as Asset[]) : [],
+                  )
+                }
                 onBulkDeleteAssets={handleBulkDeleteAssets}
                 deleteFetcherState={deleteFetcher.state}
-                deleteFetcherForm={deleteFetcher.Form as unknown as React.ComponentType<{ children: React.ReactNode; method: string; className?: string }>}
+                deleteFetcherForm={
+                  deleteFetcher.Form as unknown as React.ComponentType<{
+                    children: React.ReactNode;
+                    method: string;
+                    className?: string;
+                  }>
+                }
                 onDeleteAsset={handleDeleteAsset}
               />
               <AssetPagination
@@ -156,14 +232,20 @@ export default function Templates() {
               textAssetFormRef={textAssetFormRef}
               imageAssetFormRef={imageAssetFormRef}
               assetFetcher={{
-                Form: assetFetcher.Form as unknown as React.ComponentType<{ children: React.ReactNode; method: string; className?: string }>,
+                Form: assetFetcher.Form as unknown as React.ComponentType<{
+                  children: React.ReactNode;
+                  method: string;
+                  className?: string;
+                }>,
                 state: assetFetcher.state,
               }}
               uploadProvider={uploadProvider}
               bulkUploadFiles={bulkUploadFiles}
               singleFileUploading={singleFileUploading}
               bulkFileUploading={bulkFileUploading}
-              onSingleFileUpload={(e, form) => void handleSingleFileUpload(e, form)}
+              onSingleFileUpload={(e, form) =>
+                void handleSingleFileUpload(e, form)
+              }
               onBulkFileUpload={() => void handleBulkFileUpload()}
               onBulkFileChange={(e) => void handleBulkFileChange(e)}
             />
@@ -187,7 +269,10 @@ export default function Templates() {
                 name: selectedTemplate.name ?? "",
                 text: null,
                 imageUrl: null,
-                createdAt: selectedTemplate.createdAt instanceof Date ? selectedTemplate.createdAt : new Date(selectedTemplate.createdAt),
+                createdAt:
+                  selectedTemplate.createdAt instanceof Date
+                    ? selectedTemplate.createdAt
+                    : new Date(selectedTemplate.createdAt),
               }}
               onClose={() => setSelectedTemplate(null)}
             />

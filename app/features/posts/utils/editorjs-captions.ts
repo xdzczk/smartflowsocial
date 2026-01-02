@@ -39,19 +39,3 @@ export function setupCaptionObserver(
 
   return captionObserver;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -1,6 +1,6 @@
 /**
  * Query Performance Metrics
- * 
+ *
  * Provides Prometheus metrics for database query performance monitoring.
  * Metrics are automatically registered with the default Prometheus registry
  * and will be exposed via the /metrics endpoint.
@@ -27,7 +27,7 @@ function getOrCreateMetric<T extends promClient.Metric>(
     } catch {
       // Metric doesn't exist, continue to create it
     }
-    
+
     try {
       return factory();
     } catch (error) {
@@ -49,7 +49,7 @@ function getOrCreateMetric<T extends promClient.Metric>(
 /**
  * Query duration histogram
  * Tracks how long queries take, broken down by model and action
- * 
+ *
  * Example PromQL queries:
  * - Average query time: rate(prisma_query_duration_ms_sum[5m]) / rate(prisma_query_duration_ms_count[5m])
  * - P95 query time: histogram_quantile(0.95, rate(prisma_query_duration_ms_bucket[5m]))
@@ -120,7 +120,7 @@ export function recordQueryMetrics(
   error?: Error,
 ): void {
   const status = success ? "success" : "error";
-  
+
   // Record duration
   queryDurationHistogram.observe(
     {
@@ -130,14 +130,14 @@ export function recordQueryMetrics(
     },
     duration,
   );
-  
+
   // Increment query counter
   queryCounter.inc({
     model,
     action,
     status,
   });
-  
+
   // Record slow queries
   if (duration > 100) {
     slowQueryCounter.inc({
@@ -145,7 +145,7 @@ export function recordQueryMetrics(
       action,
     });
   }
-  
+
   // Record errors
   if (!success && error) {
     const errorType = error.constructor.name ?? "UnknownError";
@@ -156,4 +156,3 @@ export function recordQueryMetrics(
     });
   }
 }
-

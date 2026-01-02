@@ -1,5 +1,6 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
-import { json ,
+import {
+  json,
   unstable_composeUploadHandlers as composeUploadHandlers,
   unstable_createMemoryUploadHandler as createMemoryUploadHandler,
   unstable_parseMultipartFormData as parseMultipartFormData,
@@ -13,18 +14,19 @@ import {
 } from "~/features/upload/image-resize.server";
 import { uploadEditorJSImage } from "~/features/upload/s3.server";
 import { loadUploadProviderSettings } from "~/features/user";
-import {
-  ValidationError,
-  ExternalServiceError,
-} from "~/lib/errors";
+import { ValidationError, ExternalServiceError } from "~/lib/errors";
 
-type AssertFunction = (condition: boolean, message: string, context?: Record<string, unknown>) => asserts condition;
+type AssertFunction = (
+  condition: boolean,
+  message: string,
+  context?: Record<string, unknown>,
+) => asserts condition;
 
 export async function action({ request }: ActionFunctionArgs) {
   try {
     const errorHandler = await import("~/lib/error-handler.server");
     const assert: AssertFunction = errorHandler.assert;
-    
+
     // Ensure user is authenticated
     const userId = await requireUserId(request);
 
@@ -75,11 +77,9 @@ export async function action({ request }: ActionFunctionArgs) {
     // Handle File object
     if (imageFile instanceof File) {
       // Validate file type
-      assert(
-        imageFile.type.startsWith("image/"),
-        "File must be an image",
-        { fileType: imageFile.type },
-      );
+      assert(imageFile.type.startsWith("image/"), "File must be an image", {
+        fileType: imageFile.type,
+      });
 
       // Validate file size (5MB limit)
       assert(
@@ -109,14 +109,10 @@ export async function action({ request }: ActionFunctionArgs) {
           format: "jpeg",
         });
       } catch (error) {
-        throw new ExternalServiceError(
-          "Failed to process image",
-          500,
-          {
-            service: "ImageProcessing",
-            originalError: error instanceof Error ? error.message : String(error),
-          },
-        );
+        throw new ExternalServiceError("Failed to process image", 500, {
+          service: "ImageProcessing",
+          originalError: error instanceof Error ? error.message : String(error),
+        });
       }
 
       // Upload to S3 using EditorJS-specific function
@@ -134,7 +130,8 @@ export async function action({ request }: ActionFunctionArgs) {
           {
             service: "S3",
             fileName: imageFile.name,
-            originalError: error instanceof Error ? error.message : String(error),
+            originalError:
+              error instanceof Error ? error.message : String(error),
           },
         );
       }
@@ -165,7 +162,11 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     // Check if it's a File object
-    const isFile = typeof imageFile === "object" && imageFile !== null && "name" in imageFile && "size" in imageFile;
+    const isFile =
+      typeof imageFile === "object" &&
+      imageFile !== null &&
+      "name" in imageFile &&
+      "size" in imageFile;
     throw new ValidationError("Invalid file format", {
       fileType: typeof imageFile,
       isFile,

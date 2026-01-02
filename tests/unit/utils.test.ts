@@ -1,6 +1,6 @@
 /**
  * Unit tests for utility functions
- * 
+ *
  * Tests the utility functions in app/lib/utils.ts
  */
 
@@ -49,9 +49,9 @@ describe("Utility Functions", () => {
 
     it("should handle objects with boolean values", () => {
       const result = cn({
-        "class1": true,
-        "class2": false,
-        "class3": true,
+        class1: true,
+        class2: false,
+        class3: true,
       });
 
       expect(result).toContain("class1");
@@ -101,15 +101,3 @@ describe("Utility Functions", () => {
     });
   });
 });
-
-
-
-
-
-
-
-
-
-
-
-

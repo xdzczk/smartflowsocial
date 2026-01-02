@@ -38,7 +38,16 @@ export function parseThreadViewNotifications(
   // First pass: collect all user profiles (kind 0) and stats (kind 10000100)
   for (const item of threadViewResponse) {
     if (!Array.isArray(item) || item[0] !== "EVENT") continue;
-    const event = item[2] as { kind?: number; content?: string; pubkey?: string; id?: string; tags?: string[][]; created_at?: number } | undefined;
+    const event = item[2] as
+      | {
+          kind?: number;
+          content?: string;
+          pubkey?: string;
+          id?: string;
+          tags?: string[][];
+          created_at?: number;
+        }
+      | undefined;
     if (!event) continue;
 
     // Collect user profiles (kind 0)
@@ -82,16 +91,27 @@ export function parseThreadViewNotifications(
   // Second pass: collect notifications
   for (const item of threadViewResponse) {
     if (!Array.isArray(item) || item[0] !== "EVENT") continue;
-    const event = item[2] as { kind?: number; content?: string; pubkey?: string; id?: string; tags?: string[][]; created_at?: number } | undefined;
+    const event = item[2] as
+      | {
+          kind?: number;
+          content?: string;
+          pubkey?: string;
+          id?: string;
+          tags?: string[][];
+          created_at?: number;
+        }
+      | undefined;
     if (!event) continue;
 
     // Replies and Mentions (kind 1 events that reference the original event)
     if (event.kind === 1 && event.id && event.id !== originalEventId) {
       // Check if this event replies to or mentions the original event
-      const eTags = (event.tags?.filter((tag: string[]) => tag[0] === "e") ?? []);
-      const pTags = (event.tags?.filter((tag: string[]) => tag[0] === "p") ?? []);
+      const eTags = event.tags?.filter((tag: string[]) => tag[0] === "e") ?? [];
+      const pTags = event.tags?.filter((tag: string[]) => tag[0] === "p") ?? [];
 
-      const targetETag = eTags.find((tag: string[]) => tag[1] === originalEventId);
+      const targetETag = eTags.find(
+        (tag: string[]) => tag[1] === originalEventId,
+      );
       const referencesOriginal = !!targetETag;
       const mentionsUser = pTags.some((tag: string[]) => tag[1] === userPubkey);
 
@@ -118,7 +138,13 @@ export function parseThreadViewNotifications(
           hasNostrReference;
         const isReply = marker === "reply" || marker === "root";
 
-        if (isQuote && !isReply && event.id && event.pubkey && event.created_at !== undefined) {
+        if (
+          isQuote &&
+          !isReply &&
+          event.id &&
+          event.pubkey &&
+          event.created_at !== undefined
+        ) {
           // This is a quote post/mention
           notifications.push({
             type: "mention",
@@ -127,7 +153,7 @@ export function parseThreadViewNotifications(
             content: eventContent,
             createdAt: event.created_at,
             pubkey: event.pubkey,
-            authorName: (profile?.display_name ?? profile?.name),
+            authorName: profile?.display_name ?? profile?.name,
             authorPicture: profile?.picture as string | null | undefined,
             authorNip05: profile?.nip05 as string | undefined,
             originalEventId,
@@ -142,14 +168,21 @@ export function parseThreadViewNotifications(
             content: eventContent,
             createdAt: event.created_at,
             pubkey: event.pubkey,
-            authorName: (profile?.display_name ?? profile?.name),
+            authorName: profile?.display_name ?? profile?.name,
             authorPicture: profile?.picture as string | null | undefined,
             authorNip05: profile?.nip05 as string | undefined,
             originalEventId,
             stats,
           });
         }
-      } else if (mentionsUser && !referencesOriginal && event.pubkey && event.pubkey !== userPubkey && event.id && event.created_at !== undefined) {
+      } else if (
+        mentionsUser &&
+        !referencesOriginal &&
+        event.pubkey &&
+        event.pubkey !== userPubkey &&
+        event.id &&
+        event.created_at !== undefined
+      ) {
         // This is a mention via p tag (user was tagged but not replying to their post)
         const profile = userProfiles.get(event.pubkey);
         const stats = eventStats.get(event.id);
@@ -160,7 +193,7 @@ export function parseThreadViewNotifications(
           content: event.content ?? "",
           createdAt: event.created_at,
           pubkey: event.pubkey,
-          authorName: (profile?.display_name ?? profile?.name),
+          authorName: profile?.display_name ?? profile?.name,
           authorPicture: profile?.picture as string | null | undefined,
           authorNip05: profile?.nip05 as string | undefined,
           originalEventId,
@@ -170,14 +203,27 @@ export function parseThreadViewNotifications(
     }
 
     // Zaps (kind 9735)
-    if (event.kind === 9735 && event.tags && event.id && event.created_at !== undefined) {
+    if (
+      event.kind === 9735 &&
+      event.tags &&
+      event.id &&
+      event.created_at !== undefined
+    ) {
       try {
         // Parse the description tag to get zap request details
-        const descTag = event.tags?.find((tag: string[]) => tag[0] === "description");
+        const descTag = event.tags?.find(
+          (tag: string[]) => tag[0] === "description",
+        );
         if (!descTag?.[1] || typeof descTag[1] !== "string") continue;
 
-        const zapRequest = JSON.parse(descTag[1]) as { tags?: string[][]; pubkey?: string; content?: string };
-        const eTags = (event.tags ?? []).filter((tag: string[]) => tag[0] === "e");
+        const zapRequest = JSON.parse(descTag[1]) as {
+          tags?: string[][];
+          pubkey?: string;
+          content?: string;
+        };
+        const eTags = (event.tags ?? []).filter(
+          (tag: string[]) => tag[0] === "e",
+        );
 
         // Check if this zap is for our original event
         const zapForOriginal = eTags.some(
@@ -192,24 +238,26 @@ export function parseThreadViewNotifications(
           const amountMsats = amountTag?.[1] ? parseInt(amountTag[1], 10) : 0;
           const amountSats = Math.floor(amountMsats / 1000);
 
-          const senderPubkey = (zapRequest.pubkey ?? event.pubkey) ?? "";
-          const profile = senderPubkey ? userProfiles.get(senderPubkey) : undefined;
+          const senderPubkey = zapRequest.pubkey ?? event.pubkey ?? "";
+          const profile = senderPubkey
+            ? userProfiles.get(senderPubkey)
+            : undefined;
           const stats = eventStats.get(event.id);
 
           notifications.push({
             type: "zap",
             id: event.id,
             eventId: event.id,
-            content: (event.content ?? zapRequest.content) ?? "",
+            content: event.content ?? zapRequest.content ?? "",
             createdAt: event.created_at,
             senderPubkey,
             receiverPubkey: userPubkey,
             amountSats,
-            senderName: (profile?.display_name ?? profile?.name),
+            senderName: profile?.display_name ?? profile?.name,
             senderPicture: profile?.picture as string | null | undefined,
             senderNip05: profile?.nip05 as string | undefined,
             pubkey: senderPubkey, // For compatibility
-            authorName: (profile?.display_name ?? profile?.name),
+            authorName: profile?.display_name ?? profile?.name,
             authorPicture: profile?.picture as string | null | undefined,
             authorNip05: profile?.nip05 as string | undefined,
             originalEventId,
@@ -260,7 +308,9 @@ export function groupNotificationsByParent(
       eventId,
       pubkey: post.signedEvent.pubkey,
       caption: post.caption ?? null,
-      fileUrl: Array.isArray(post.fileUrl) ? post.fileUrl[0] ?? null : post.fileUrl ?? null,
+      fileUrl: Array.isArray(post.fileUrl)
+        ? (post.fileUrl[0] ?? null)
+        : (post.fileUrl ?? null),
       postedAt: post.postedAt ?? new Date(),
       isLongform: false,
       stats: stats[eventId],
@@ -273,9 +323,17 @@ export function groupNotificationsByParent(
     if (!eventId) return;
     // Extract pubkey from signedEvent or nostrEvent
     let pubkey = "";
-    if (post.signedEvent && typeof post.signedEvent === "object" && "pubkey" in post.signedEvent) {
+    if (
+      post.signedEvent &&
+      typeof post.signedEvent === "object" &&
+      "pubkey" in post.signedEvent
+    ) {
       pubkey = post.signedEvent.pubkey;
-    } else if (post.nostrEvent && typeof post.nostrEvent === "object" && "pubkey" in post.nostrEvent) {
+    } else if (
+      post.nostrEvent &&
+      typeof post.nostrEvent === "object" &&
+      "pubkey" in post.nostrEvent
+    ) {
       pubkey = post.nostrEvent.pubkey as string;
     }
     postMap.set(eventId, {
@@ -342,7 +400,9 @@ export async function processQuoteReposts(
   const _eventStats = new Map<string, EventStats>();
 
   // First pass: collect all unique pubkeys to fetch profiles
-  const uniquePubkeys = [...new Set(quoteRepostEvents.map((event) => event.pubkey))];
+  const uniquePubkeys = [
+    ...new Set(quoteRepostEvents.map((event) => event.pubkey)),
+  ];
 
   // Fetch user profiles in parallel
   try {
@@ -355,14 +415,25 @@ export async function processQuoteReposts(
         // Find the profile event (kind 0)
         const profileEvent = (profileData as PrimalEvent[])?.find(
           (item: PrimalEvent) => {
-            if (!Array.isArray(item) || item[0] !== "EVENT" || !item[2]) return false;
+            if (!Array.isArray(item) || item[0] !== "EVENT" || !item[2])
+              return false;
             const eventData = item[2];
-            if (typeof eventData !== "object" || Array.isArray(eventData)) return false;
-            return "kind" in eventData && (eventData as { kind?: unknown }).kind === 0;
-          }
+            if (typeof eventData !== "object" || Array.isArray(eventData))
+              return false;
+            return (
+              "kind" in eventData &&
+              (eventData as { kind?: unknown }).kind === 0
+            );
+          },
         );
 
-        if (profileEvent && Array.isArray(profileEvent) && profileEvent[2] && typeof profileEvent[2] === "object" && !Array.isArray(profileEvent[2])) {
+        if (
+          profileEvent &&
+          Array.isArray(profileEvent) &&
+          profileEvent[2] &&
+          typeof profileEvent[2] === "object" &&
+          !Array.isArray(profileEvent[2])
+        ) {
           const eventData = profileEvent[2] as { content?: string };
           if (eventData.content && typeof eventData.content === "string") {
             const profile = JSON.parse(eventData.content) as UserProfile;
@@ -389,7 +460,9 @@ export async function processQuoteReposts(
     try {
       // Extract the quoted event ID from the "e" tags with "mention" marker
       const eTags = event.tags?.filter((tag: NostrTag) => tag[0] === "e") ?? [];
-      const quotedEventTag = eTags.find((tag: NostrTag) => tag[3] === "mention");
+      const quotedEventTag = eTags.find(
+        (tag: NostrTag) => tag[3] === "mention",
+      );
 
       if (!quotedEventTag?.[1]) {
         return null;
@@ -416,17 +489,23 @@ export async function processQuoteReposts(
         // Find the stats event
         const statsEvent = (threadViewData as PrimalEvent[])?.find(
           (item: PrimalEvent) => {
-            if (!Array.isArray(item) || item[0] !== "EVENT" || !item[2]) return false;
+            if (!Array.isArray(item) || item[0] !== "EVENT" || !item[2])
+              return false;
             const eventData = item[2] as { kind?: number; content?: string };
-            return eventData.kind === 10000100 &&
+            return (
+              eventData.kind === 10000100 &&
               eventData.content &&
               typeof eventData.content === "string" &&
-              eventData.content.includes(event.id);
-          }
+              eventData.content.includes(event.id)
+            );
+          },
         );
 
         if (statsEvent && Array.isArray(statsEvent) && statsEvent[2]) {
-          const eventData = statsEvent[2] as { kind?: number; content?: string };
+          const eventData = statsEvent[2] as {
+            kind?: number;
+            content?: string;
+          };
           if (eventData.content) {
             try {
               const content = JSON.parse(eventData.content) as {
@@ -461,7 +540,7 @@ export async function processQuoteReposts(
         content: event.content,
         createdAt: event.created_at,
         pubkey: event.pubkey,
-        authorName: (profile?.display_name ?? profile?.name),
+        authorName: profile?.display_name ?? profile?.name,
         authorPicture: profile?.picture as string | null | undefined,
         authorNip05: profile?.nip05 as string | undefined,
         originalEventId,
@@ -482,8 +561,14 @@ export async function processQuoteReposts(
   // Filter out nulls and sort by created_at descending
   const validNotifications = results.filter(
     (n): n is NotificationQuoteRepost => {
-      return n !== null && n !== undefined && typeof n === "object" && "type" in n && n.type === "quote";
-    }
+      return (
+        n !== null &&
+        n !== undefined &&
+        typeof n === "object" &&
+        "type" in n &&
+        n.type === "quote"
+      );
+    },
   );
 
   return validNotifications.sort((a, b) => b.createdAt - a.createdAt);

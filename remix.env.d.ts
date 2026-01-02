@@ -6,17 +6,21 @@ declare global {
   interface Window {
     nostr?: {
       getPublicKey(): Promise<string>;
-      signEvent(event: {
-        kind?: number;
-        content: string;
-        tags?: string[][];
-        created_at: number;
-      } | {
-        kind: number;
-        content: string;
-        tags: string[][];
-        created_at: number;
-      }): Promise<{
+      signEvent(
+        event:
+          | {
+              kind?: number;
+              content: string;
+              tags?: string[][];
+              created_at: number;
+            }
+          | {
+              kind: number;
+              content: string;
+              tags: string[][];
+              created_at: number;
+            },
+      ): Promise<{
         id: string;
         pubkey: string;
         sig: string;

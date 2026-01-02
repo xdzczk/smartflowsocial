@@ -1,6 +1,6 @@
 /**
  * Test Database Isolation Utilities
- * 
+ *
  * Provides utilities for true transaction-based test isolation
  * using database savepoints and rollbacks
  */
@@ -16,7 +16,7 @@ export async function withIsolatedTransaction<T>(
   testFn: (prisma: PrismaClient) => Promise<T>,
 ): Promise<T> {
   const prisma = getTestPrisma();
-  
+
   // Use Prisma's transaction with a workaround for test isolation
   // We'll use a separate test database approach instead
   return await prisma.$transaction(
@@ -36,8 +36,9 @@ export async function withIsolatedTransaction<T>(
  * This provides true isolation between tests
  */
 export function createIsolatedTestClient(databaseName: string): PrismaClient {
-  const testDatabaseUrl = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL;
-  
+  const testDatabaseUrl =
+    process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL;
+
   if (!testDatabaseUrl) {
     throw new Error("TEST_DATABASE_URL or DATABASE_URL must be set");
   }
@@ -61,7 +62,7 @@ export function createIsolatedTestClient(databaseName: string): PrismaClient {
  */
 export async function resetTestDatabaseBetweenTests(): Promise<void> {
   const prisma = getTestPrisma();
-  
+
   // Delete all data in reverse dependency order
   await prisma.post.deleteMany({});
   await prisma.longFormPost.deleteMany({});
@@ -74,10 +75,3 @@ export async function resetTestDatabaseBetweenTests(): Promise<void> {
   await prisma.plan.deleteMany({});
   await prisma.user.deleteMany({});
 }
-
-
-
-
-
-
-

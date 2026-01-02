@@ -2,7 +2,7 @@ import { TEST_NPUB } from "./support/nostr-test-keys";
 
 /**
  * Authentication Flow Tests
- * 
+ *
  * Tests the complete authentication flow:
  * - Landing page navigation
  * - Login page access
@@ -54,16 +54,14 @@ describe("Authentication Flow", () => {
     it("should maintain session across page navigations", () => {
       cy.visitAndCheck("/dashboard");
       cy.location("pathname").should("include", "dashboard");
-      
+
       // Navigate to another page
       cy.visitAndCheck("/dashboard/newpost");
       cy.location("pathname").should("include", "newpost");
-      
+
       // Navigate back to dashboard
       cy.visitAndCheck("/dashboard");
       cy.location("pathname").should("include", "dashboard");
     });
   });
 });
-
-

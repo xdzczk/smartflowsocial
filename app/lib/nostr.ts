@@ -7,7 +7,10 @@ import type {
   SignEventResult,
   SignedEvent,
 } from "~/features/nostr/types";
-import type { EditorJSBlock, EditorJSOutput } from "~/features/posts/types/editorjs.types";
+import type {
+  EditorJSBlock,
+  EditorJSOutput,
+} from "~/features/posts/types/editorjs.types";
 
 // This file uses a compatible nostr type - see upload.client.ts for the primary declaration
 
@@ -67,7 +70,7 @@ export const signEventFn = async (
           sig:
             typeof signResult === "string"
               ? signResult
-              : signResult?.sig ?? "unknown",
+              : (signResult?.sig ?? "unknown"),
         };
 
         return { nostrEvent, signedEvent };
@@ -172,7 +175,7 @@ export const signLongFormEvent = async (
           sig:
             typeof signResult === "string"
               ? signResult
-              : signResult?.sig ?? "unknown",
+              : (signResult?.sig ?? "unknown"),
         };
 
         return { nostrEvent, signedEvent };
@@ -215,7 +218,9 @@ export function generateArticleIdentifier(title: string): string {
     .substring(0, 64);
 }
 
-export function convertEditorJSToMarkdown(editorData: EditorJSOutput | string | null | undefined): string {
+export function convertEditorJSToMarkdown(
+  editorData: EditorJSOutput | string | null | undefined,
+): string {
   // Handle string input (JSON string)
   let parsedData: EditorJSOutput | null = null;
   if (typeof editorData === "string") {
@@ -236,10 +241,12 @@ export function convertEditorJSToMarkdown(editorData: EditorJSOutput | string | 
 
   parsedData.blocks.forEach((block: EditorJSBlock) => {
     const data = block.data;
-    
+
     switch (block.type) {
       case "header": {
-        const level = "#".repeat((typeof data.level === "number" ? data.level : 1));
+        const level = "#".repeat(
+          typeof data.level === "number" ? data.level : 1,
+        );
         const text = typeof data.text === "string" ? data.text : "";
         markdown += `${level} ${text}\n\n`;
         break;
@@ -289,7 +296,10 @@ export function convertEditorJSToMarkdown(editorData: EditorJSOutput | string | 
 
       case "linkTool": {
         const link = typeof data.link === "string" ? data.link : "";
-        const meta = data.meta && typeof data.meta === "object" ? data.meta as Record<string, unknown> : {};
+        const meta =
+          data.meta && typeof data.meta === "object"
+            ? (data.meta as Record<string, unknown>)
+            : {};
         const title = typeof meta.title === "string" ? meta.title : null;
         if (title) {
           markdown += `[${title}](${link})\n\n`;
@@ -311,7 +321,10 @@ export function convertEditorJSToMarkdown(editorData: EditorJSOutput | string | 
       }
 
       case "image": {
-        const file = data.file && typeof data.file === "object" ? data.file as Record<string, unknown> : null;
+        const file =
+          data.file && typeof data.file === "object"
+            ? (data.file as Record<string, unknown>)
+            : null;
         const fileUrl = file && typeof file.url === "string" ? file.url : null;
         const url = typeof data.url === "string" ? data.url : null;
         const imageUrl = fileUrl ?? url;

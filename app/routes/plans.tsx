@@ -20,7 +20,8 @@ export const meta: MetaFunction = () => {
     { title: "Pricing Plans - SmartFlow Social" },
     {
       name: "description",
-      content: "Choose the perfect plan for your social media automation needs.",
+      content:
+        "Choose the perfect plan for your social media automation needs.",
     },
   ];
 };
@@ -43,7 +44,7 @@ export async function action({ request }: ActionFunctionArgs) {
 export const loader = async ({ request }: { request: Request }) => {
   const data = await loadPlansData(request);
   return json(data);
-}
+};
 
 export default function Plans() {
   const { plans, user, currentSubscription } = useLoaderData<typeof loader>();
@@ -61,27 +62,40 @@ export default function Plans() {
     isPolling,
     handlePlanSelection,
     copyToClipboard,
-  } = usePlansState({ 
-    user, 
-    actionData: actionData && typeof actionData === "object" && !Array.isArray(actionData) ? {
-      success: "success" in actionData ? actionData.success : undefined,
-      paid: "paid" in actionData ? actionData.paid : undefined,
-      invoice: "invoice" in actionData ? actionData.invoice : undefined,
-      paymentHash: "paymentHash" in actionData ? actionData.paymentHash : undefined,
-      amount: "amount" in actionData ? actionData.amount : undefined,
-      amountUsd: "amountUsd" in actionData ? actionData.amountUsd : undefined,
-      paymentId: "paymentId" in actionData ? actionData.paymentId : undefined,
-      expiresAt: "expiresAt" in actionData ? (() => {
-        const expiresAtValue: unknown = actionData.expiresAt;
-        if (expiresAtValue === null || expiresAtValue === undefined) return undefined;
-        if (expiresAtValue instanceof Date) return expiresAtValue.toISOString();
-        if (typeof expiresAtValue === "string") return expiresAtValue;
-        return undefined;
-      })() : undefined,
-      planName: "planName" in actionData ? actionData.planName : undefined,
-      planId: "planId" in actionData ? actionData.planId : undefined,
-      error: "error" in actionData ? actionData.error : undefined,
-    } : null 
+  } = usePlansState({
+    user,
+    actionData:
+      actionData && typeof actionData === "object" && !Array.isArray(actionData)
+        ? {
+            success: "success" in actionData ? actionData.success : undefined,
+            paid: "paid" in actionData ? actionData.paid : undefined,
+            invoice: "invoice" in actionData ? actionData.invoice : undefined,
+            paymentHash:
+              "paymentHash" in actionData ? actionData.paymentHash : undefined,
+            amount: "amount" in actionData ? actionData.amount : undefined,
+            amountUsd:
+              "amountUsd" in actionData ? actionData.amountUsd : undefined,
+            paymentId:
+              "paymentId" in actionData ? actionData.paymentId : undefined,
+            expiresAt:
+              "expiresAt" in actionData
+                ? (() => {
+                    const expiresAtValue: unknown = actionData.expiresAt;
+                    if (expiresAtValue === null || expiresAtValue === undefined)
+                      return undefined;
+                    if (expiresAtValue instanceof Date)
+                      return expiresAtValue.toISOString();
+                    if (typeof expiresAtValue === "string")
+                      return expiresAtValue;
+                    return undefined;
+                  })()
+                : undefined,
+            planName:
+              "planName" in actionData ? actionData.planName : undefined,
+            planId: "planId" in actionData ? actionData.planId : undefined,
+            error: "error" in actionData ? actionData.error : undefined,
+          }
+        : null,
   });
 
   return (
@@ -148,7 +162,13 @@ export default function Plans() {
       {/* Payment Success Message */}
       <PaymentSuccessModal
         isOpen={paymentComplete}
-        message={(actionData && typeof actionData === "object" && "message" in actionData) ? String(actionData.message) : undefined}
+        message={
+          actionData &&
+          typeof actionData === "object" &&
+          "message" in actionData
+            ? String(actionData.message)
+            : undefined
+        }
       />
 
       {/* Invoice Modal */}
@@ -163,7 +183,13 @@ export default function Plans() {
       ) : null}
 
       {/* Error Message */}
-      <ErrorMessage message={(actionData && typeof actionData === "object" && "error" in actionData) ? String(actionData.error) : ""} />
+      <ErrorMessage
+        message={
+          actionData && typeof actionData === "object" && "error" in actionData
+            ? String(actionData.error)
+            : ""
+        }
+      />
 
       <Footer />
     </>

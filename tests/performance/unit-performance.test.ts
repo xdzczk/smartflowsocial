@@ -1,6 +1,6 @@
 /**
  * Unit Performance Tests
- * 
+ *
  * Tests performance of individual functions using Vitest
  * These tests verify that functions meet performance benchmarks
  */
@@ -18,7 +18,10 @@ describe("Performance: combineContent()", () => {
     const longforms = longFormPostFactory.many(50);
 
     const start = performance.now();
-    const result = combineContent(posts as PostData[], longforms as LongFormPostData[]);
+    const result = combineContent(
+      posts as PostData[],
+      longforms as LongFormPostData[],
+    );
     const duration = performance.now() - start;
 
     expect(result).toBeDefined();
@@ -30,7 +33,10 @@ describe("Performance: combineContent()", () => {
     const longforms = longFormPostFactory.many(500);
 
     const start = performance.now();
-    const result = combineContent(posts as PostData[], longforms as LongFormPostData[]);
+    const result = combineContent(
+      posts as PostData[],
+      longforms as LongFormPostData[],
+    );
     const duration = performance.now() - start;
 
     expect(result).toBeDefined();
@@ -42,7 +48,10 @@ describe("Performance: combineContent()", () => {
     const longforms = longFormPostFactory.many(1000);
 
     const start = performance.now();
-    const result = combineContent(posts as PostData[], longforms as LongFormPostData[]);
+    const result = combineContent(
+      posts as PostData[],
+      longforms as LongFormPostData[],
+    );
     const duration = performance.now() - start;
 
     expect(result).toBeDefined();
@@ -54,7 +63,11 @@ describe("Performance: combineContent()", () => {
     const longforms = longFormPostFactory.many(1000);
 
     const start = performance.now();
-    const result = combineContent(posts as PostData[], longforms as LongFormPostData[], "createdAt");
+    const result = combineContent(
+      posts as PostData[],
+      longforms as LongFormPostData[],
+      "createdAt",
+    );
     const duration = performance.now() - start;
 
     expect(result).toBeDefined();
@@ -66,7 +79,12 @@ describe("Performance: combineContent()", () => {
     const longforms = longFormPostFactory.many(1000);
 
     const start = performance.now();
-    const result = combineContent(posts as PostData[], longforms as LongFormPostData[], "createdAt", "asc");
+    const result = combineContent(
+      posts as PostData[],
+      longforms as LongFormPostData[],
+      "createdAt",
+      "asc",
+    );
     const duration = performance.now() - start;
 
     expect(result).toBeDefined();
@@ -86,7 +104,14 @@ describe("Performance: getPostStats()", () => {
     const mockResponse: Response = {
       ok: true,
       json: async () => [
-        ["EVENT", "", { kind: 10000100, content: JSON.stringify({ replies: 5, reposts: 2, likes: 10 }) }],
+        [
+          "EVENT",
+          "",
+          {
+            kind: 10000100,
+            content: JSON.stringify({ replies: 5, reposts: 2, likes: 10 }),
+          },
+        ],
       ],
     } as unknown as Response;
     global.fetch = vi.fn(async () => mockResponse);
@@ -105,11 +130,15 @@ describe("Performance: getPostStats()", () => {
     // Mock fetch
     const mockResponse: Response = {
       ok: true,
-      json: async () => eventIds.map((_id) => [
-        "EVENT",
-        "",
-        { kind: 10000100, content: JSON.stringify({ replies: 5, reposts: 2, likes: 10 }) },
-      ]),
+      json: async () =>
+        eventIds.map((_id) => [
+          "EVENT",
+          "",
+          {
+            kind: 10000100,
+            content: JSON.stringify({ replies: 5, reposts: 2, likes: 10 }),
+          },
+        ]),
     } as unknown as Response;
     global.fetch = vi.fn(async () => mockResponse);
 
@@ -126,11 +155,15 @@ describe("Performance: getPostStats()", () => {
     // Mock fetch
     const mockResponse: Response = {
       ok: true,
-      json: async () => eventIds.map((_id) => [
-        "EVENT",
-        "",
-        { kind: 10000100, content: JSON.stringify({ replies: 5, reposts: 2, likes: 10 }) },
-      ]),
+      json: async () =>
+        eventIds.map((_id) => [
+          "EVENT",
+          "",
+          {
+            kind: 10000100,
+            content: JSON.stringify({ replies: 5, reposts: 2, likes: 10 }),
+          },
+        ]),
     } as unknown as Response;
     global.fetch = vi.fn(async () => mockResponse);
 
@@ -174,4 +207,3 @@ describe("Performance: Bulk Operations", () => {
     expect(duration).toBeLessThan(100);
   });
 });
-

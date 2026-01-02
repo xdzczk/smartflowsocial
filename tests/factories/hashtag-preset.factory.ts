@@ -103,10 +103,3 @@ export const hashTagPresetFactory = {
     );
   },
 };
-
-
-
-
-
-
-

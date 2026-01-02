@@ -8,8 +8,16 @@ import {
   convertMarkdownToEditorJS,
 } from "~/lib/nostr";
 
-import type { PostData, LongFormPostData, UserData, HashTagPreset } from "../types";
-import type { EditorJSInstance as EditorJSInstanceType, EditorJSAPI } from "../types/editorjs.types";
+import type {
+  PostData,
+  LongFormPostData,
+  UserData,
+  HashTagPreset,
+} from "../types";
+import type {
+  EditorJSInstance as EditorJSInstanceType,
+  EditorJSAPI,
+} from "../types/editorjs.types";
 
 interface UseEditPostModalProps {
   post: PostData | LongFormPostData;
@@ -25,18 +33,51 @@ export function useEditPostModal({
   isLongform,
 }: UseEditPostModalProps) {
   // Form fields for regular posts
-  const captionValue = post && typeof post === "object" && "caption" in post && typeof post.caption === "string" ? post.caption : "";
+  const captionValue =
+    post &&
+    typeof post === "object" &&
+    "caption" in post &&
+    typeof post.caption === "string"
+      ? post.caption
+      : "";
   const [caption, setCaption] = useState(captionValue);
-  const queueTypeId = post && typeof post === "object" && "queueType" in post && post.queueType && typeof post.queueType === "object" && "id" in post.queueType && typeof post.queueType.id === "string" ? post.queueType.id : "";
+  const queueTypeId =
+    post &&
+    typeof post === "object" &&
+    "queueType" in post &&
+    post.queueType &&
+    typeof post.queueType === "object" &&
+    "id" in post.queueType &&
+    typeof post.queueType.id === "string"
+      ? post.queueType.id
+      : "";
   const [selectedQueueType, setSelectedQueueType] = useState(queueTypeId);
 
   // Form fields for longform posts
-  const titleValue = post && typeof post === "object" && "title" in post && typeof post.title === "string" ? post.title : "";
+  const titleValue =
+    post &&
+    typeof post === "object" &&
+    "title" in post &&
+    typeof post.title === "string"
+      ? post.title
+      : "";
   const [title, setTitle] = useState(titleValue);
-  const summaryValue = post && typeof post === "object" && "summary" in post && typeof post.summary === "string" ? post.summary : "";
+  const summaryValue =
+    post &&
+    typeof post === "object" &&
+    "summary" in post &&
+    typeof post.summary === "string"
+      ? post.summary
+      : "";
   const [summary, setSummary] = useState(summaryValue);
   const [content, setContent] = useState("");
-  const imageValue = post && typeof post === "object" && "image" in post && typeof post.image === "string" ? post.image : "";
+  const imageValue =
+    post &&
+    typeof post === "object" &&
+    "image" in post &&
+    typeof post.image === "string"
+      ? post.image
+      : "";
   const [image, setImage] = useState(imageValue);
 
   // Schedule fields
@@ -66,21 +107,44 @@ export function useEditPostModal({
     if (post) {
       if (isLongform && post && typeof post === "object" && "title" in post) {
         const postTitle = typeof post.title === "string" ? post.title : "";
-        const postSummary = typeof post.summary === "string" ? post.summary : "";
+        const postSummary =
+          typeof post.summary === "string" ? post.summary : "";
         const postImage = typeof post.image === "string" ? post.image : "";
-        const postContent = typeof post.content === "string" ? post.content : "";
+        const postContent =
+          typeof post.content === "string" ? post.content : "";
         setTitle(postTitle);
         setSummary(postSummary);
         setImage(postImage);
         setContent(postContent);
-        const publishedAt = post && typeof post === "object" && "publishedAt" in post ? post.publishedAt : null;
+        const publishedAt =
+          post && typeof post === "object" && "publishedAt" in post
+            ? post.publishedAt
+            : null;
         setScheduledFor(publishedAt ? new Date(publishedAt) : null);
-      } else if (!isLongform && post && typeof post === "object" && "caption" in post) {
-        const postCaption = typeof post.caption === "string" ? post.caption : "";
+      } else if (
+        !isLongform &&
+        post &&
+        typeof post === "object" &&
+        "caption" in post
+      ) {
+        const postCaption =
+          typeof post.caption === "string" ? post.caption : "";
         setCaption(postCaption);
-        const queueType = post && typeof post === "object" && "queueType" in post && post.queueType && typeof post.queueType === "object" && "id" in post.queueType && typeof post.queueType.id === "string" ? post.queueType.id : "";
+        const queueType =
+          post &&
+          typeof post === "object" &&
+          "queueType" in post &&
+          post.queueType &&
+          typeof post.queueType === "object" &&
+          "id" in post.queueType &&
+          typeof post.queueType.id === "string"
+            ? post.queueType.id
+            : "";
         setSelectedQueueType(queueType);
-        const scheduledForValue = post && typeof post === "object" && "scheduledFor" in post ? (post as { scheduledFor?: unknown }).scheduledFor : null;
+        const scheduledForValue =
+          post && typeof post === "object" && "scheduledFor" in post
+            ? (post as { scheduledFor?: unknown }).scheduledFor
+            : null;
         setScheduledFor(
           scheduledForValue && typeof scheduledForValue === "string"
             ? new Date(parseInt(scheduledForValue, 10) * 1000)
@@ -88,42 +152,66 @@ export function useEditPostModal({
         );
 
         // Parse existing images
-        const fileUrl = post && typeof post === "object" && "fileUrl" in post ? post.fileUrl : null;
+        const fileUrl =
+          post && typeof post === "object" && "fileUrl" in post
+            ? post.fileUrl
+            : null;
         if (fileUrl && Array.isArray(fileUrl)) {
           const urls = fileUrl
             .map((url: unknown) => {
               if (typeof url === "string" && url.startsWith("[")) {
                 try {
                   const parsed: unknown = JSON.parse(url);
-                  return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [url];
+                  return Array.isArray(parsed)
+                    ? parsed.filter(
+                        (item): item is string => typeof item === "string",
+                      )
+                    : [url];
                 } catch {
                   return [url];
                 }
               }
-              return Array.isArray(url) ? url.filter((item): item is string => typeof item === "string") : (typeof url === "string" ? [url] : []);
+              return Array.isArray(url)
+                ? url.filter((item): item is string => typeof item === "string")
+                : typeof url === "string"
+                  ? [url]
+                  : [];
             })
             .flat();
           setExistingImages(
-            urls.filter((url): url is string => typeof url === "string" && url.length > 0),
+            urls.filter(
+              (url): url is string => typeof url === "string" && url.length > 0,
+            ),
           );
         }
 
         // Parse existing hashtags
-        const existingHashtags = post && typeof post === "object" && "hashtags" in post && typeof post.hashtags === "string" ? post.hashtags : "";
+        const existingHashtags =
+          post &&
+          typeof post === "object" &&
+          "hashtags" in post &&
+          typeof post.hashtags === "string"
+            ? post.hashtags
+            : "";
         if (existingHashtags) {
           setManualHashtags(existingHashtags);
         }
 
         // Check if post uses hashtag preset
-        const hashTagPresetId = post && typeof post === "object" && "hashTagPresetId" in post && typeof post.hashTagPresetId === "string" ? post.hashTagPresetId : null;
+        const hashTagPresetId =
+          post &&
+          typeof post === "object" &&
+          "hashTagPresetId" in post &&
+          typeof post.hashTagPresetId === "string"
+            ? post.hashTagPresetId
+            : null;
         if (hashTagPresetId && hashTagPresets.length > 0) {
-          const preset = hashTagPresets.find(
-            (p) => p.id === hashTagPresetId,
-          );
+          const preset = hashTagPresets.find((p) => p.id === hashTagPresetId);
           if (preset) {
             setUseHashtagPresets(true);
             setSelectedHashtagPresetId(preset.id);
-            const presetTags = typeof preset.tags === "string" ? preset.tags : "";
+            const presetTags =
+              typeof preset.tags === "string" ? preset.tags : "";
             setSelectedHashtagPresetTags(presetTags);
           }
         }
@@ -218,11 +306,34 @@ export function useEditPostModal({
                       }
 
                       const resultRaw: unknown = await response.json();
-                      const result = resultRaw && typeof resultRaw === "object" && !Array.isArray(resultRaw) ? resultRaw as { success?: unknown; file?: unknown; error?: unknown } : {};
-                      const success = typeof result.success === "number" ? result.success : undefined;
-                      const fileResult = result.file && typeof result.file === "object" && !Array.isArray(result.file) ? result.file as { url?: unknown } : undefined;
-                      const fileUrl = fileResult && typeof fileResult.url === "string" ? fileResult.url : undefined;
-                      const error = typeof result.error === "string" ? result.error : undefined;
+                      const result =
+                        resultRaw &&
+                        typeof resultRaw === "object" &&
+                        !Array.isArray(resultRaw)
+                          ? (resultRaw as {
+                              success?: unknown;
+                              file?: unknown;
+                              error?: unknown;
+                            })
+                          : {};
+                      const success =
+                        typeof result.success === "number"
+                          ? result.success
+                          : undefined;
+                      const fileResult =
+                        result.file &&
+                        typeof result.file === "object" &&
+                        !Array.isArray(result.file)
+                          ? (result.file as { url?: unknown })
+                          : undefined;
+                      const fileUrl =
+                        fileResult && typeof fileResult.url === "string"
+                          ? fileResult.url
+                          : undefined;
+                      const error =
+                        typeof result.error === "string"
+                          ? result.error
+                          : undefined;
 
                       if (success === 1 && fileUrl) {
                         return {
@@ -235,11 +346,17 @@ export function useEditPostModal({
                         throw new Error(error ?? "Upload failed");
                       }
                     } catch (error: unknown) {
-                      const { handleAsyncError } = await import("~/lib/error-handler.client");
-                      handleAsyncError(error, {
-                        component: "EditPostModal",
-                        action: "uploadImage",
-                      }, false);
+                      const { handleAsyncError } = await import(
+                        "~/lib/error-handler.client"
+                      );
+                      handleAsyncError(
+                        error,
+                        {
+                          component: "EditPostModal",
+                          action: "uploadImage",
+                        },
+                        false,
+                      );
                       throw error;
                     }
                   },
@@ -325,7 +442,13 @@ export function useEditPostModal({
   }, [isLongform, editorReady, content]);
 
   const formatDateTimeForInput = (date: Date) => {
-    const userTimezone = user && typeof user === "object" && "timezone" in user && typeof user.timezone === "string" ? user.timezone : "UTC";
+    const userTimezone =
+      user &&
+      typeof user === "object" &&
+      "timezone" in user &&
+      typeof user.timezone === "string"
+        ? user.timezone
+        : "UTC";
     const dateInUserTz = new Date(
       date.toLocaleString("en-US", { timeZone: userTimezone }),
     );
@@ -409,4 +532,3 @@ export function useEditPostModal({
     formatDateTimeForInput,
   };
 }
-

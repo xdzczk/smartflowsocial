@@ -35,28 +35,51 @@ function displayLabel(user: UserWithProfile | null | undefined): string {
     let p: ProfileData | null | undefined;
     if (typeof user?.nostrProfile === "string") {
       const parsed: unknown = JSON.parse(user.nostrProfile);
-      p = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as ProfileData : null;
+      p =
+        parsed && typeof parsed === "object" && !Array.isArray(parsed)
+          ? (parsed as ProfileData)
+          : null;
     } else {
       p = user?.nostrProfile;
     }
-    const name = p && typeof p === "object" && "name" in p && typeof p.name === "string" ? p.name : undefined;
-    const displayName = p && typeof p === "object" && "display_name" in p && typeof p.display_name === "string" ? p.display_name : undefined;
+    const name =
+      p && typeof p === "object" && "name" in p && typeof p.name === "string"
+        ? p.name
+        : undefined;
+    const displayName =
+      p &&
+      typeof p === "object" &&
+      "display_name" in p &&
+      typeof p.display_name === "string"
+        ? p.display_name
+        : undefined;
     return name ?? displayName ?? formatNpubShort(user?.npub);
   } catch {
     return formatNpubShort(user?.npub);
   }
 }
 
-function displayPicture(user: UserWithProfile | null | undefined): string | undefined {
+function displayPicture(
+  user: UserWithProfile | null | undefined,
+): string | undefined {
   try {
     let p: ProfileData | null | undefined;
     if (typeof user?.nostrProfile === "string") {
       const parsed: unknown = JSON.parse(user.nostrProfile);
-      p = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as ProfileData : null;
+      p =
+        parsed && typeof parsed === "object" && !Array.isArray(parsed)
+          ? (parsed as ProfileData)
+          : null;
     } else {
       p = user?.nostrProfile;
     }
-    const picture = p && typeof p === "object" && "picture" in p && typeof p.picture === "string" ? p.picture : undefined;
+    const picture =
+      p &&
+      typeof p === "object" &&
+      "picture" in p &&
+      typeof p.picture === "string"
+        ? p.picture
+        : undefined;
     return picture ?? undefined;
   } catch {
     return undefined;
@@ -67,7 +90,7 @@ function formatNpubShort(hexOrNpub?: string): string {
   if (!hexOrNpub) return "";
   const np = hexOrNpub.startsWith("npub")
     ? hexOrNpub
-    : hexToNpub(hexOrNpub) ?? hexOrNpub;
+    : (hexToNpub(hexOrNpub) ?? hexOrNpub);
   if (!np) return "";
   if (np.length <= 20) return np; // already short
   return `${np.slice(0, 8)}...${np.slice(-8)}`;
@@ -81,12 +104,14 @@ export default function AccountSwitchMenu() {
   const [children, setChildren] = React.useState<ChildAccount[]>([]);
 
   // Safely handle potentially undefined subscription values
-  const planId = (
-    subscription?.currentSubscription?.planId ?? ""
-  )?.toString?.().toLowerCase?.() ?? "";
-  const planName = (
-    subscription?.currentSubscription?.Plan?.name ?? ""
-  )?.toString?.().toLowerCase?.() ?? "";
+  const planId =
+    (subscription?.currentSubscription?.planId ?? "")
+      ?.toString?.()
+      .toLowerCase?.() ?? "";
+  const planName =
+    (subscription?.currentSubscription?.Plan?.name ?? "")
+      ?.toString?.()
+      .toLowerCase?.() ?? "";
   const isChild = !!user?.isChild;
   const parentNpub = user?.parentNpub as string | undefined;
   const hasAccountsAccess =
@@ -138,15 +163,22 @@ export default function AccountSwitchMenu() {
               formData.append("event", JSON.stringify(signedEvent));
               formData.append("contentSign", contentSign);
               formData.append("redirectTo", "/dashboard");
-              fetcher.submit(formData, { method: "post", action: "/nostr-auth" });
+              fetcher.submit(formData, {
+                method: "post",
+                action: "/nostr-auth",
+              });
             }
           })();
         },
       });
       document.dispatchEvent(new CustomEvent("nlLaunch", { detail: "switch" }));
     } catch (e) {
-       
-      const { handleErrorSafely } = require("~/lib/error-handler.client") as { handleErrorSafely: (error: unknown, context: { component: string; action: string }) => void };
+      const { handleErrorSafely } = require("~/lib/error-handler.client") as {
+        handleErrorSafely: (
+          error: unknown,
+          context: { component: string; action: string },
+        ) => void;
+      };
       handleErrorSafely(e, {
         component: "AccountSwitchMenu",
         action: "onSwitchAccount",
@@ -182,15 +214,22 @@ export default function AccountSwitchMenu() {
               formData.append("event", JSON.stringify(signedEvent));
               formData.append("contentSign", contentSign);
               formData.append("redirectTo", "/dashboard");
-              fetcher.submit(formData, { method: "post", action: "/nostr-auth" });
+              fetcher.submit(formData, {
+                method: "post",
+                action: "/nostr-auth",
+              });
             }
           })();
         },
       });
       document.dispatchEvent(new CustomEvent("nlLaunch", { detail: "switch" }));
     } catch (e) {
-       
-      const { handleErrorSafely } = require("~/lib/error-handler.client") as { handleErrorSafely: (error: unknown, context: { component: string; action: string }) => void };
+      const { handleErrorSafely } = require("~/lib/error-handler.client") as {
+        handleErrorSafely: (
+          error: unknown,
+          context: { component: string; action: string },
+        ) => void;
+      };
       handleErrorSafely(e, {
         component: "AccountSwitchMenu",
         action: "onSwitchParent",
@@ -248,7 +287,8 @@ export default function AccountSwitchMenu() {
                 ) : (
                   children.map((c) => {
                     const label =
-                      (c.name ?? c.displayName) ??
+                      c.name ??
+                      c.displayName ??
                       `${c.npub.slice(0, 8)}...${c.npub.slice(-8)}`;
                     return (
                       <div
@@ -272,7 +312,9 @@ export default function AccountSwitchMenu() {
                         </div>
                         <Button
                           size="sm"
-                          onClick={() => { void onSwitch(c.npub); }}
+                          onClick={() => {
+                            void onSwitch(c.npub);
+                          }}
                           disabled={fetcher.state !== "idle"}
                         >
                           {fetcher.state !== "idle" ? "Switching..." : "Switch"}
@@ -296,7 +338,9 @@ export default function AccountSwitchMenu() {
                 </div>
                 <Button
                   size="sm"
-                  onClick={() => { void onSwitchParent(); }}
+                  onClick={() => {
+                    void onSwitchParent();
+                  }}
                   disabled={fetcher.state !== "idle"}
                 >
                   {fetcher.state !== "idle"

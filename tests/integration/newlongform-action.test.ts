@@ -1,6 +1,6 @@
 /**
  * Integration tests for new longform action handler
- * 
+ *
  * Tests the action handler in app/features/posts/services/newlongform-action.server.ts
  */
 
@@ -26,7 +26,9 @@ vi.mock("~/lib/prisma.server", () => ({
 
 // Mock dependencies
 vi.mock("~/features/posts/longform.server", () => ({
-  convertEditorJSToMarkdown: vi.fn((data) => `Markdown: ${JSON.stringify(data)}`),
+  convertEditorJSToMarkdown: vi.fn(
+    (data) => `Markdown: ${JSON.stringify(data)}`,
+  ),
 }));
 
 vi.mock("~/features/upload/s3.server", () => ({
@@ -63,10 +65,20 @@ vi.mock("@remix-run/node", async () => {
     ...actual,
     unstable_composeUploadHandlers: vi.fn((...handlers) => {
       // Return a handler that processes files through the first handler
-      return async (part: { filename?: string; name?: string; data: AsyncIterable<Uint8Array> }) => {
+      return async (part: {
+        filename?: string;
+        name?: string;
+        data: AsyncIterable<Uint8Array>;
+      }) => {
         if (part.filename) {
           // It's a file - process through the first handler (S3 upload handler)
-          const firstHandler = handlers[0] as ((part: { filename?: string; name?: string; data: AsyncIterable<Uint8Array> }) => Promise<unknown>) | undefined;
+          const firstHandler = handlers[0] as
+            | ((part: {
+                filename?: string;
+                name?: string;
+                data: AsyncIterable<Uint8Array>;
+              }) => Promise<unknown>)
+            | undefined;
           if (firstHandler) {
             return await firstHandler(part);
           }
@@ -76,33 +88,60 @@ vi.mock("@remix-run/node", async () => {
       };
     }),
     unstable_createMemoryUploadHandler: vi.fn(() => vi.fn()),
-    unstable_parseMultipartFormData: vi.fn(async (request: { url?: string; formData?: () => Promise<FormData> }, _uploadHandler: unknown) => {
-      // Try to get FormData from store first (set by test using request URL as key)
-      const url = request && typeof request === "object" && "url" in request && typeof request.url === "string" ? request.url : String(request?.url ?? "");
-      const storedFormData = formDataStore.get(url);
-      if (storedFormData) {
-        formDataStore.delete(url); // Clean up after use
-        return storedFormData;
-      }
-      
-      // Fallback: try to parse from request
-      try {
-        const formData = request && typeof request === "object" && "formData" in request && typeof request.formData === "function" ? await request.formData() : new FormData();
-        return formData;
-      } catch (_error) {
-        // If parsing fails, return empty FormData
-        return new FormData();
-      }
-    }),
+    unstable_parseMultipartFormData: vi.fn(
+      async (
+        request: { url?: string; formData?: () => Promise<FormData> },
+        _uploadHandler: unknown,
+      ) => {
+        // Try to get FormData from store first (set by test using request URL as key)
+        const url =
+          request &&
+          typeof request === "object" &&
+          "url" in request &&
+          typeof request.url === "string"
+            ? request.url
+            : String(request?.url ?? "");
+        const storedFormData = formDataStore.get(url);
+        if (storedFormData) {
+          formDataStore.delete(url); // Clean up after use
+          return storedFormData;
+        }
+
+        // Fallback: try to parse from request
+        try {
+          const formData =
+            request &&
+            typeof request === "object" &&
+            "formData" in request &&
+            typeof request.formData === "function"
+              ? await request.formData()
+              : new FormData();
+          return formData;
+        } catch (_error) {
+          // If parsing fails, return empty FormData
+          return new FormData();
+        }
+      },
+    ),
   };
 });
 
 import { handleNewLongFormAction } from "~/features/posts/services/newlongform-action.server";
 import { uploadBufferToS3 } from "~/features/upload/s3.server";
 import { createLongFormPost } from "~/models/longformpost.server";
-import { getUserById, getQueueTypes, getHashTagPresetById, getQueueTypeByNameForUser } from "~/models/user.server";
+import {
+  getUserById,
+  getQueueTypes,
+  getHashTagPresetById,
+  getQueueTypeByNameForUser,
+} from "~/models/user.server";
 
-import { TEST_USER_ID, createMockUser, createMockQueueType, createMockFormData } from "../utils/test-helpers";
+import {
+  TEST_USER_ID,
+  createMockUser,
+  createMockQueueType,
+  createMockFormData,
+} from "../utils/test-helpers";
 
 describe("New Longform Action Handler", () => {
   beforeEach(() => {
@@ -128,14 +167,20 @@ describe("New Longform Action Handler", () => {
         imageFile: "https://example.com/image.jpg",
       });
 
-      const request = new Request("http://localhost:3000/dashboard/newlongform", {
-        method: "POST",
-        body: formData,
-      });
+      const request = new Request(
+        "http://localhost:3000/dashboard/newlongform",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
       const response = await handleNewLongFormAction(TEST_USER_ID, request);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as { success?: unknown; error?: unknown })
+          : {};
 
       expect(data).toEqual({
         success: true,
@@ -145,7 +190,9 @@ describe("New Longform Action Handler", () => {
 
     it("should upload File object to S3", async () => {
       const mockFile = new File(["test"], "image.jpg", { type: "image/jpeg" });
-      (uploadBufferToS3 as ReturnType<typeof vi.fn>).mockResolvedValue("https://s3.example.com/image.jpg");
+      (uploadBufferToS3 as ReturnType<typeof vi.fn>).mockResolvedValue(
+        "https://s3.example.com/image.jpg",
+      );
 
       const formData = new FormData();
       formData.append("_action", "upload-image");
@@ -163,8 +210,18 @@ describe("New Longform Action Handler", () => {
 
       const response = await handleNewLongFormAction(TEST_USER_ID, request);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; imageUrl?: unknown; error?: unknown } : {};
-      const success = typeof data.success === "boolean" ? data.success : data.success === true || data.success === 1;
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              success?: unknown;
+              imageUrl?: unknown;
+              error?: unknown;
+            })
+          : {};
+      const success =
+        typeof data.success === "boolean"
+          ? data.success
+          : data.success === true || data.success === 1;
 
       expect(uploadBufferToS3).toHaveBeenCalled();
       expect(success).toBe(true);
@@ -173,7 +230,9 @@ describe("New Longform Action Handler", () => {
 
     it("should handle S3 upload errors", async () => {
       const mockFile = new File(["test"], "image.jpg", { type: "image/jpeg" });
-      (uploadBufferToS3 as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Upload failed"));
+      (uploadBufferToS3 as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error("Upload failed"),
+      );
 
       const formData = new FormData();
       formData.append("_action", "upload-image");
@@ -191,8 +250,18 @@ describe("New Longform Action Handler", () => {
 
       const response = await handleNewLongFormAction(TEST_USER_ID, request);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; imageUrl?: unknown; error?: unknown } : {};
-      const success = typeof data.success === "boolean" ? data.success : data.success === 0 || data.success === false;
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              success?: unknown;
+              imageUrl?: unknown;
+              error?: unknown;
+            })
+          : {};
+      const success =
+        typeof data.success === "boolean"
+          ? data.success
+          : data.success === 0 || data.success === false;
 
       expect(response.status).toBeGreaterThanOrEqual(400);
       expect(success).toBe(false);
@@ -204,7 +273,9 @@ describe("New Longform Action Handler", () => {
       (getQueueTypeByNameForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
         createMockQueueType({ id: "queue-1", name: "posts" }),
       );
-      (mockPrisma.queueType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (
+        mockPrisma.queueType.findFirst as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({
         id: "queue-1",
       });
       // Mock getQueueTypes for when useHashtagPresets is "off"
@@ -219,17 +290,22 @@ describe("New Longform Action Handler", () => {
       const formData = createMockFormData({
         _action: "save-draft",
         title: "Test Post",
-        content: JSON.stringify({ blocks: [{ type: "paragraph", data: { text: "Content" } }] }),
+        content: JSON.stringify({
+          blocks: [{ type: "paragraph", data: { text: "Content" } }],
+        }),
         summary: "Test summary",
         tags: "tag1,tag2",
         queueType: "posts",
         useHashtagPresets: "off",
       });
 
-      const request = new Request("http://localhost:3000/dashboard/newlongform", {
-        method: "POST",
-        body: formData,
-      });
+      const request = new Request(
+        "http://localhost:3000/dashboard/newlongform",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
       const response = await handleNewLongFormAction(TEST_USER_ID, request);
 
@@ -250,14 +326,24 @@ describe("New Longform Action Handler", () => {
         content: "Test content",
       });
 
-      const request = new Request("http://localhost:3000/dashboard/newlongform", {
-        method: "POST",
-        body: formData,
-      });
+      const request = new Request(
+        "http://localhost:3000/dashboard/newlongform",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
       const response = await handleNewLongFormAction(TEST_USER_ID, request);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; imageUrl?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              success?: unknown;
+              imageUrl?: unknown;
+              error?: unknown;
+            })
+          : {};
       const error = typeof data.error === "string" ? data.error : "";
 
       expect(response.status).toBe(400);
@@ -270,14 +356,24 @@ describe("New Longform Action Handler", () => {
         title: "Test Post",
       });
 
-      const request = new Request("http://localhost:3000/dashboard/newlongform", {
-        method: "POST",
-        body: formData,
-      });
+      const request = new Request(
+        "http://localhost:3000/dashboard/newlongform",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
       const response = await handleNewLongFormAction(TEST_USER_ID, request);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; imageUrl?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              success?: unknown;
+              imageUrl?: unknown;
+              error?: unknown;
+            })
+          : {};
       const error = typeof data.error === "string" ? data.error : "";
 
       expect(response.status).toBe(400);
@@ -297,10 +393,13 @@ describe("New Longform Action Handler", () => {
         customTags: "tag3,tag4",
       });
 
-      const request = new Request("http://localhost:3000/dashboard/newlongform", {
-        method: "POST",
-        body: formData,
-      });
+      const request = new Request(
+        "http://localhost:3000/dashboard/newlongform",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
       await handleNewLongFormAction(TEST_USER_ID, request);
 
@@ -321,10 +420,13 @@ describe("New Longform Action Handler", () => {
         queueType: "Unassigned",
       });
 
-      const request = new Request("http://localhost:3000/dashboard/newlongform", {
-        method: "POST",
-        body: formData,
-      });
+      const request = new Request(
+        "http://localhost:3000/dashboard/newlongform",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
       await handleNewLongFormAction(TEST_USER_ID, request);
 
@@ -353,7 +455,9 @@ describe("New Longform Action Handler", () => {
     });
 
     it("should publish post with all required fields", async () => {
-      (mockPrisma.queueType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (
+        mockPrisma.queueType.findFirst as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({
         id: "queue-1",
       });
       const mockSignedEvent = { id: "event-123", kind: 30023 };
@@ -362,7 +466,9 @@ describe("New Longform Action Handler", () => {
       const formData = createMockFormData({
         _action: "publish",
         title: "Test Post",
-        content: JSON.stringify({ blocks: [{ type: "paragraph", data: { text: "Content" } }] }),
+        content: JSON.stringify({
+          blocks: [{ type: "paragraph", data: { text: "Content" } }],
+        }),
         summary: "Test summary",
         image: "https://example.com/image.jpg",
         signedEvent: JSON.stringify(mockSignedEvent),
@@ -372,10 +478,13 @@ describe("New Longform Action Handler", () => {
         useHashtagPresets: "off",
       });
 
-      const request = new Request("http://localhost:3000/dashboard/newlongform", {
-        method: "POST",
-        body: formData,
-      });
+      const request = new Request(
+        "http://localhost:3000/dashboard/newlongform",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
       const response = await handleNewLongFormAction(TEST_USER_ID, request);
 
@@ -406,14 +515,24 @@ describe("New Longform Action Handler", () => {
         nostrEvent: JSON.stringify({ id: "event-123" }),
       });
 
-      const request = new Request("http://localhost:3000/dashboard/newlongform", {
-        method: "POST",
-        body: formData,
-      });
+      const request = new Request(
+        "http://localhost:3000/dashboard/newlongform",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
       const response = await handleNewLongFormAction(TEST_USER_ID, request);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; imageUrl?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              success?: unknown;
+              imageUrl?: unknown;
+              error?: unknown;
+            })
+          : {};
       const error = typeof data.error === "string" ? data.error : "";
 
       expect(response.status).toBe(400);
@@ -430,14 +549,24 @@ describe("New Longform Action Handler", () => {
         nostrEvent: JSON.stringify({ id: "event-123" }),
       });
 
-      const request = new Request("http://localhost:3000/dashboard/newlongform", {
-        method: "POST",
-        body: formData,
-      });
+      const request = new Request(
+        "http://localhost:3000/dashboard/newlongform",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
       const response = await handleNewLongFormAction(TEST_USER_ID, request);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; imageUrl?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              success?: unknown;
+              imageUrl?: unknown;
+              error?: unknown;
+            })
+          : {};
       const error = typeof data.error === "string" ? data.error : "";
 
       expect(response.status).toBe(400);
@@ -453,14 +582,24 @@ describe("New Longform Action Handler", () => {
         image: "https://example.com/image.jpg",
       });
 
-      const request = new Request("http://localhost:3000/dashboard/newlongform", {
-        method: "POST",
-        body: formData,
-      });
+      const request = new Request(
+        "http://localhost:3000/dashboard/newlongform",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
       const response = await handleNewLongFormAction(TEST_USER_ID, request);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; imageUrl?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              success?: unknown;
+              imageUrl?: unknown;
+              error?: unknown;
+            })
+          : {};
       const error = typeof data.error === "string" ? data.error : "";
 
       expect(response.status).toBe(400);
@@ -485,7 +624,9 @@ describe("New Longform Action Handler", () => {
       const formData = createMockFormData({
         _action: "publish",
         title: "Test Post",
-        content: JSON.stringify({ blocks: [{ type: "paragraph", data: { text: "Content" } }] }),
+        content: JSON.stringify({
+          blocks: [{ type: "paragraph", data: { text: "Content" } }],
+        }),
         summary: "Test summary",
         image: "https://example.com/image.jpg",
         signedEvent: JSON.stringify(mockSignedEvent),
@@ -494,10 +635,13 @@ describe("New Longform Action Handler", () => {
         useHashtagPresets: "off",
       });
 
-      const request = new Request("http://localhost:3000/dashboard/newlongform", {
-        method: "POST",
-        body: formData,
-      });
+      const request = new Request(
+        "http://localhost:3000/dashboard/newlongform",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
       await handleNewLongFormAction(TEST_USER_ID, request);
 
@@ -530,12 +674,17 @@ describe("New Longform Action Handler", () => {
         nostrEvent: JSON.stringify(mockNostrEvent),
       });
 
-      const request = new Request("http://localhost:3000/dashboard/newlongform", {
-        method: "POST",
-        body: formData,
-      });
+      const request = new Request(
+        "http://localhost:3000/dashboard/newlongform",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
-      await expect(handleNewLongFormAction(TEST_USER_ID, request)).rejects.toThrow();
+      await expect(
+        handleNewLongFormAction(TEST_USER_ID, request),
+      ).rejects.toThrow();
     });
   });
 
@@ -547,7 +696,9 @@ describe("New Longform Action Handler", () => {
     });
 
     it("should schedule post with published_at tag", async () => {
-      (mockPrisma.queueType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (
+        mockPrisma.queueType.findFirst as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({
         id: "queue-1",
       });
       const mockSignedEvent = {
@@ -569,10 +720,13 @@ describe("New Longform Action Handler", () => {
         useHashtagPresets: "off",
       });
 
-      const request = new Request("http://localhost:3000/dashboard/newlongform", {
-        method: "POST",
-        body: formData,
-      });
+      const request = new Request(
+        "http://localhost:3000/dashboard/newlongform",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
       const response = await handleNewLongFormAction(TEST_USER_ID, request);
 
@@ -593,14 +747,24 @@ describe("New Longform Action Handler", () => {
         content: "Test content",
       });
 
-      const request = new Request("http://localhost:3000/dashboard/newlongform", {
-        method: "POST",
-        body: formData,
-      });
+      const request = new Request(
+        "http://localhost:3000/dashboard/newlongform",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
       const response = await handleNewLongFormAction(TEST_USER_ID, request);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; imageUrl?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              success?: unknown;
+              imageUrl?: unknown;
+              error?: unknown;
+            })
+          : {};
 
       expect(response.status).toBe(400);
       expect(data.error).toBeDefined();
@@ -609,7 +773,9 @@ describe("New Longform Action Handler", () => {
 
   describe("Hashtag Preset Handling", () => {
     it("should use manual hashtag preset when enabled", async () => {
-      (mockPrisma.queueType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (
+        mockPrisma.queueType.findFirst as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({
         id: "queue-1",
       });
       (getHashTagPresetById as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -626,14 +792,20 @@ describe("New Longform Action Handler", () => {
         queueType: "posts",
       });
 
-      const request = new Request("http://localhost:3000/dashboard/newlongform", {
-        method: "POST",
-        body: formData,
-      });
+      const request = new Request(
+        "http://localhost:3000/dashboard/newlongform",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
       await handleNewLongFormAction(TEST_USER_ID, request);
 
-      expect(getHashTagPresetById).toHaveBeenCalledWith(TEST_USER_ID, "preset-1");
+      expect(getHashTagPresetById).toHaveBeenCalledWith(
+        TEST_USER_ID,
+        "preset-1",
+      );
       expect(createLongFormPost).toHaveBeenCalledWith(
         // expect.objectContaining returns 'any' - acceptable for test mocks
         expect.objectContaining({
@@ -643,7 +815,9 @@ describe("New Longform Action Handler", () => {
     });
 
     it("should use queue type default when manual presets disabled", async () => {
-      (mockPrisma.queueType.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (
+        mockPrisma.queueType.findFirst as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({
         id: "queue-1",
       });
       (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([
@@ -665,10 +839,13 @@ describe("New Longform Action Handler", () => {
         queueType: "posts",
       });
 
-      const request = new Request("http://localhost:3000/dashboard/newlongform", {
-        method: "POST",
-        body: formData,
-      });
+      const request = new Request(
+        "http://localhost:3000/dashboard/newlongform",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
       await handleNewLongFormAction(TEST_USER_ID, request);
 
@@ -682,4 +859,3 @@ describe("New Longform Action Handler", () => {
     });
   });
 });
-

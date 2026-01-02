@@ -19,6 +19,7 @@ Learn how to schedule posts for future publication to maintain a consistent post
 ## Why Schedule Posts?
 
 **Benefits:**
+
 - **Consistency** - Maintain regular posting schedule
 - **Time Management** - Create content when convenient
 - **Audience Timing** - Post when your audience is active
@@ -61,6 +62,7 @@ Learn how to schedule posts for future publication to maintain a consistent post
    - Uses your timezone
 
 **Example:**
+
 - Date: Tomorrow
 - Time: 9:00 AM
 - Timezone: America/New_York
@@ -84,6 +86,7 @@ Learn how to schedule posts for future publication to maintain a consistent post
 ## Step 5: Review Scheduled Time
 
 1. **Check scheduled time:**
+
    - Date and time displayed
    - Timezone shown
    - Verify it's correct
@@ -98,6 +101,7 @@ Learn how to schedule posts for future publication to maintain a consistent post
 
 1. **Click "Schedule Post"** button
 2. **Sign with Nostr Extension:**
+
    - Extension popup appears
    - Review event details
    - Event signed with scheduled timestamp
@@ -114,6 +118,7 @@ Learn how to schedule posts for future publication to maintain a consistent post
 
 1. **Go to Dashboard → Scheduled**
 2. **Find your post:**
+
    - See scheduled date/time
    - Preview post content
    - Status shows "Scheduled"
@@ -167,6 +172,7 @@ Learn how to schedule posts for future publication to maintain a consistent post
 ### Best Times to Post
 
 **Consider:**
+
 - **Your audience** - When are they active?
 - **Time zones** - Where is your audience?
 - **Content type** - News vs. evergreen
@@ -175,16 +181,19 @@ Learn how to schedule posts for future publication to maintain a consistent post
 ### Scheduling Strategies
 
 **Consistent Schedule:**
+
 - Same time daily
 - Example: 9 AM every day
 - Builds audience expectations
 
 **Peak Times:**
+
 - Post during high activity
 - Example: Morning and evening
 - Maximizes engagement
 
 **Content Batching:**
+
 - Schedule multiple posts
 - Plan week in advance
 - Maintain consistency
@@ -205,6 +214,7 @@ Learn how to schedule posts for future publication to maintain a consistent post
    - Or use as-is
 
 **Example:**
+
 - Current time: 10:00 AM
 - Click "4h"
 - Scheduled for: 2:00 PM
@@ -217,6 +227,7 @@ Learn how to schedule posts for future publication to maintain a consistent post
 
 1. **Go to Dashboard → Calendar**
 2. **See scheduled posts:**
+
    - On calendar grid
    - Visual representation
    - Easy to spot gaps
@@ -237,6 +248,7 @@ See [Calendar Guide](../../guides/user-guides/calendar.md) for details.
 **Problem:** Date picker won't allow past dates
 
 **Solution:**
+
 - This is expected behavior
 - Can only schedule future posts
 - Use "Post Now" for immediate posting
@@ -246,6 +258,7 @@ See [Calendar Guide](../../guides/user-guides/calendar.md) for details.
 **Problem:** Scheduled time in wrong timezone
 
 **Solution:**
+
 - Check Settings → General → Timezone
 - Update timezone if needed
 - Re-schedule post
@@ -255,6 +268,7 @@ See [Calendar Guide](../../guides/user-guides/calendar.md) for details.
 **Problem:** Scheduled post didn't publish at time
 
 **Solutions:**
+
 - Check system is running
 - Verify scheduled time passed
 - Check "Posted" section
@@ -268,7 +282,7 @@ See [Calendar Guide](../../guides/user-guides/calendar.md) for details.
 ✅ How to select date and time  
 ✅ How to manage scheduled posts  
 ✅ Scheduling best practices  
-✅ Using schedule intervals  
+✅ Using schedule intervals
 
 ---
 
@@ -289,4 +303,3 @@ See [Calendar Guide](../../guides/user-guides/calendar.md) for details.
 ---
 
 **Next Tutorial:** [Creating Your First Queue](./creating-your-first-queue.md) → Organize your posts
-

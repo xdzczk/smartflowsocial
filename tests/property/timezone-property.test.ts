@@ -1,6 +1,6 @@
 /**
  * Property-based tests for timezone handling
- * 
+ *
  * Uses fast-check to verify timezone conversion properties:
  * - Round-trip conversions
  * - Consistency across timezones
@@ -56,7 +56,9 @@ describe("Property-Based Tests: Timezone Handling", () => {
           (timezone: string, date: Date) => {
             try {
               // Create date in timezone (simplified check)
-              const dateStr = date.toLocaleString("en-US", { timeZone: timezone });
+              const dateStr = date.toLocaleString("en-US", {
+                timeZone: timezone,
+              });
               return dateStr.length > 0;
             } catch {
               return false;
@@ -87,7 +89,11 @@ describe("Property-Based Tests: Timezone Handling", () => {
     it("should handle DST transitions correctly (date remains valid)", () => {
       fc.assert(
         fc.property(
-          fc.constantFrom("America/New_York", "Europe/London", "Australia/Sydney"),
+          fc.constantFrom(
+            "America/New_York",
+            "Europe/London",
+            "Australia/Sydney",
+          ),
           fc.date({ min: new Date("2020-01-01"), max: new Date("2030-12-31") }),
           (timezone: string, date: Date) => {
             try {
@@ -108,25 +114,22 @@ describe("Property-Based Tests: Timezone Handling", () => {
   describe("Timezone String Properties", () => {
     it("should validate timezone format", () => {
       fc.assert(
-        fc.property(
-          fc.constantFrom(...validTimezones),
-          (timezone: string) => {
-            // Valid timezone should match IANA format: Continent/City
-            return /^[A-Z][a-z]+\/[A-Z][a-zA-Z_]+$/.test(timezone) || timezone === "UTC";
-          },
-        ),
+        fc.property(fc.constantFrom(...validTimezones), (timezone: string) => {
+          // Valid timezone should match IANA format: Continent/City
+          return (
+            /^[A-Z][a-z]+\/[A-Z][a-zA-Z_]+$/.test(timezone) ||
+            timezone === "UTC"
+          );
+        }),
       );
     });
 
     it("should handle timezone normalization (trim, case)", () => {
       fc.assert(
-        fc.property(
-          fc.constantFrom(...validTimezones),
-          (timezone: string) => {
-            const normalized = timezone.trim();
-            return validTimezones.includes(normalized);
-          },
-        ),
+        fc.property(fc.constantFrom(...validTimezones), (timezone: string) => {
+          const normalized = timezone.trim();
+          return validTimezones.includes(normalized);
+        }),
       );
     });
   });
@@ -139,7 +142,9 @@ describe("Property-Based Tests: Timezone Handling", () => {
           fc.date({ min: new Date(), max: new Date("2030-12-31") }),
           fc.integer({ min: 1, max: 168 }), // Hours in future (up to 1 week)
           (timezone: string, baseTime: Date, hoursAhead: number) => {
-            const scheduledTime = new Date(baseTime.getTime() + hoursAhead * 60 * 60 * 1000);
+            const scheduledTime = new Date(
+              baseTime.getTime() + hoursAhead * 60 * 60 * 1000,
+            );
             return scheduledTime > baseTime && scheduledTime >= new Date();
           },
         ),
@@ -166,9 +171,3 @@ describe("Property-Based Tests: Timezone Handling", () => {
     });
   });
 });
-
-
-
-
-
-

@@ -1,7 +1,7 @@
 import { webcrypto as nodeWebcrypto } from "node:crypto";
 // Ensure Web Crypto API exists for server-side code that expects browser crypto
-if (!((globalThis as { crypto?: Crypto }).crypto?.getRandomValues)) {
-  ((globalThis as { crypto: Crypto })).crypto = nodeWebcrypto as Crypto;
+if (!(globalThis as { crypto?: Crypto }).crypto?.getRandomValues) {
+  (globalThis as { crypto: Crypto }).crypto = nodeWebcrypto as Crypto;
 }
 
 // Import and initialize the queue workers

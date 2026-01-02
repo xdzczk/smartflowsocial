@@ -13,6 +13,7 @@ The payment system uses the owner's Lightning wallet (via NWC - Nostr Wallet Con
 ## Architecture
 
 ### Models (`app/models/payment.server.ts`)
+
 - `createPlanInvoice()` - Generates Lightning invoices using owner's NWC
 - `handlePaymentCompleted()` - Processes successful payments
 - `updateUserSubscription()` - Updates user's plan and enables account
@@ -21,6 +22,7 @@ The payment system uses the owner's Lightning wallet (via NWC - Nostr Wallet Con
 - `getAllPlans()` - Fetches available plans from database
 
 ### Payment Flow
+
 1. **User selects plan** → Creates invoice via owner's NWC
 2. **User pays invoice** → Lightning payment to owner's wallet
 3. **Payment detected** → Triggers `onPaid()` callback
@@ -37,13 +39,14 @@ OWNER_NWC=nostr+walletconnect://...
 ## Usage Examples
 
 ### Basic Invoice Creation
+
 ```typescript
 import { createPlanInvoice } from "~/models/payment.server";
 
 const invoice = await createPlanInvoice({
   planId: "basic", // plan ID from database
   userId: "user123",
-  description: "SmartFlow Social Basic Plan"
+  description: "SmartFlow Social Basic Plan",
 });
 
 // Returns:
@@ -58,6 +61,7 @@ const invoice = await createPlanInvoice({
 ```
 
 ### Check Payment Status
+
 ```typescript
 import { checkPaymentStatus } from "~/models/payment.server";
 
@@ -72,6 +76,7 @@ const status = await checkPaymentStatus("basic_1697123456_user123");
 ```
 
 ### Get User Subscription
+
 ```typescript
 import { getUserSubscription } from "~/models/payment.server";
 
@@ -91,7 +96,7 @@ request
     // Automatically triggered when payment is received
     await handlePaymentCompleted(paymentId, userId, planId);
   })
-  .onTimeout(30 * 60, async () => { 
+  .onTimeout(30 * 60, async () => {
     // Triggered if no payment after 30 minutes
     await handlePaymentTimeout(paymentId);
   });
@@ -100,6 +105,7 @@ request
 ## Database Schema
 
 ### Payment Model
+
 - `id` - Unique payment identifier
 - `userId` - User making the payment
 - `amount` - Amount in satoshis
@@ -111,6 +117,7 @@ request
 - `expiresAt` - Invoice expiration time
 
 ### Subscription Model
+
 - `userId` - User ID (unique)
 - `planId` - Selected plan ID
 - `status` - ACTIVE, INACTIVE, CANCELED, etc.
@@ -129,6 +136,7 @@ The `/plans` route handles the complete user flow:
 6. **Success State** - Shows success message and reloads page
 
 ### Key UI Components
+
 - Plan cards with feature comparison
 - Lightning invoice modal with copy functionality
 - Payment status checking
@@ -146,6 +154,7 @@ The `/plans` route handles the complete user flow:
 ## Testing
 
 ### Test with Free Plan
+
 The free plan bypasses Lightning payments and immediately activates:
 
 ```typescript
@@ -159,6 +168,7 @@ const freeInvoice = await createPlanInvoice({
 ```
 
 ### Test Environment Setup
+
 1. Set up a test Lightning wallet with NWC
 2. Configure `OWNER_NWC` environment variable
 3. Seed database with test plans: `pnpm db:seed`
@@ -177,6 +187,7 @@ The system handles various error scenarios:
 ## Monitoring
 
 Key metrics to monitor:
+
 - Payment completion rates
 - Invoice expiration rates
 - Average time to payment

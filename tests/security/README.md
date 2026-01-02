@@ -5,6 +5,7 @@ This directory contains security tests to ensure the application is protected ag
 ## Overview
 
 Security testing ensures that the application is protected against:
+
 - **XSS (Cross-Site Scripting)** - Malicious scripts injected into web pages
 - **SQL Injection** - Malicious SQL code injected into database queries
 - **CSRF (Cross-Site Request Forgery)** - Unauthorized actions performed on behalf of users
@@ -104,6 +105,7 @@ npm run test tests/security/xss-prevention.test.ts
 ### 1. Input Sanitization
 
 Always sanitize user input before:
+
 - Displaying in HTML
 - Storing in database
 - Using in database queries
@@ -112,12 +114,14 @@ Always sanitize user input before:
 ### 2. Parameterized Queries
 
 Always use parameterized queries (Prisma does this automatically):
+
 - ✅ `prisma.user.findUnique({ where: { id: userId } })`
-- ❌ `prisma.$queryRaw(\`SELECT * FROM users WHERE id = '${userId}'\`)`
+- ❌ `prisma.$queryRaw(\`SELECT \* FROM users WHERE id = '${userId}'\`)`
 
 ### 3. Authentication & Authorization
 
 Always verify:
+
 - User is authenticated
 - User owns the resource OR has admin permissions
 - Operation is allowed for the user's role
@@ -125,6 +129,7 @@ Always verify:
 ### 4. File Uploads
 
 Always validate:
+
 - File type (MIME type, not just extension)
 - File size
 - File content (magic bytes)
@@ -133,6 +138,7 @@ Always validate:
 ### 5. Security Headers
 
 Set appropriate security headers:
+
 - Content-Security-Policy
 - X-Frame-Options
 - X-Content-Type-Options
@@ -143,12 +149,14 @@ Set appropriate security headers:
 ### XSS (Cross-Site Scripting)
 
 **Prevention:**
+
 - Sanitize all user input
 - Use Content-Security-Policy
 - Escape HTML entities
 - Use React's built-in XSS protection
 
 **Example:**
+
 ```typescript
 // Vulnerable
 <div>{userInput}</div>
@@ -160,11 +168,13 @@ Set appropriate security headers:
 ### SQL Injection
 
 **Prevention:**
+
 - Use parameterized queries (Prisma)
 - Never concatenate user input into SQL
 - Validate input types
 
 **Example:**
+
 ```typescript
 // Vulnerable (if using raw SQL)
 const query = `SELECT * FROM users WHERE id = '${userId}'`;
@@ -176,6 +186,7 @@ const user = await prisma.user.findUnique({ where: { id: userId } });
 ### CSRF (Cross-Site Request Forgery)
 
 **Prevention:**
+
 - Use Remix's built-in CSRF protection
 - Use SameSite cookies
 - Validate request origin
@@ -184,6 +195,7 @@ const user = await prisma.user.findUnique({ where: { id: userId } });
 ### File Upload Attacks
 
 **Prevention:**
+
 - Validate file types (MIME, not just extension)
 - Enforce file size limits
 - Store files outside web root
@@ -197,19 +209,3 @@ const user = await prisma.user.findUnique({ where: { id: userId } });
 - [OWASP SQL Injection Prevention](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html)
 - [OWASP CSRF Prevention](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html)
 - [Remix Security](https://remix.run/docs/en/main/guides/security)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

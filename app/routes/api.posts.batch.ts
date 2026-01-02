@@ -1,19 +1,20 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
-import {
-  getBatchPosts,
-  parseBatchPostsRequest,
-} from "~/features/posts";
+import { getBatchPosts, parseBatchPostsRequest } from "~/features/posts";
 import { ValidationError } from "~/lib/errors";
 
-type AssertFunction = (condition: boolean, message: string, context?: Record<string, unknown>) => asserts condition;
+type AssertFunction = (
+  condition: boolean,
+  message: string,
+  context?: Record<string, unknown>,
+) => asserts condition;
 
 export async function action({ request }: ActionFunctionArgs) {
   try {
     const errorHandler = await import("~/lib/error-handler.server");
     const assert: AssertFunction = errorHandler.assert;
-    
+
     assert(request.method === "POST", "Method not allowed", {
       method: request.method,
     });
@@ -22,7 +23,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     let body: unknown;
     try {
-      body = await request.json() as unknown;
+      body = (await request.json()) as unknown;
     } catch (error) {
       throw new ValidationError("Invalid JSON in request body", {
         originalError: error instanceof Error ? error.message : String(error),

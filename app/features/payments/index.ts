@@ -1,12 +1,12 @@
 /**
  * Payments Feature Public API
- * 
+ *
  * This module exports the public API for payment and subscription-related operations.
  * Internal implementation details are kept in services/, hooks/, and components/ directories.
- * 
+ *
  * Usage:
  *   import { getUserPlanType, hasFeatureAccess, requireFeatureAccess } from "~/features/payments";
- * 
+ *
  * Do NOT import from internal paths like:
  *   import { ... } from "./services/..."  // ❌ Bad
  *   import { ... } from "./hooks/..."      // ❌ Bad
@@ -27,11 +27,7 @@ export type {
 // Plan Features & Access Control
 // ============================================================================
 
-export {
-  PLAN_FEATURES,
-  getUserPlanType,
-  hasFeatureAccess,
-} from "./types";
+export { PLAN_FEATURES, getUserPlanType, hasFeatureAccess } from "./types";
 
 // ============================================================================
 // Subscription Management
@@ -44,21 +40,15 @@ export {
   getSubscriptionData,
 } from "./subscriptions.server";
 
-export {
-  isNewUserWithoutSubscription,
-} from "./types";
+export { isNewUserWithoutSubscription } from "./types";
 
 // ============================================================================
 // Plans Actions & Loaders
 // ============================================================================
 
-export {
-  handlePlansAction,
-} from "./services/plans-action.server";
+export { handlePlansAction } from "./services/plans-action.server";
 
-export {
-  loadPlansData,
-} from "./services/plans-loader.server";
+export { loadPlansData } from "./services/plans-loader.server";
 
 // ============================================================================
 // NWC (Nostr Wallet Connect)
@@ -74,9 +64,7 @@ export {
 // Bitcoin Rate
 // ============================================================================
 
-export {
-  getBitcoinRate,
-} from "./btc.rate";
+export { getBitcoinRate } from "./btc.rate";
 
 // ============================================================================
 // Payment Status

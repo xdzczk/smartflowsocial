@@ -4,13 +4,8 @@ import { getScheduleInterval } from "~/features/user";
 import { logError } from "~/lib/error-logger.server";
 import { getLastPostTimeForQueue } from "~/models/post.queries.server";
 
-import {
-  isIntervalScheduleConfig,
-  isFixedSlotsScheduleConfig,
-} from "./types";
-import type {
-  QueueType as TypedQueueType,
-} from "./types";
+import { isIntervalScheduleConfig, isFixedSlotsScheduleConfig } from "./types";
+import type { QueueType as TypedQueueType } from "./types";
 
 interface CalculateNextScheduleTimeParams {
   queueType: QueueType | TypedQueueType;
@@ -26,10 +21,11 @@ export async function calculateNextScheduleTime({
   baseTime,
 }: CalculateNextScheduleTimeParams): Promise<Date> {
   // Wrapper to ensure we always return a valid Date
-  const fallbackDate = baseTime && baseTime instanceof Date && !isNaN(baseTime.getTime()) 
-    ? baseTime 
-    : new Date();
-  
+  const fallbackDate =
+    baseTime && baseTime instanceof Date && !isNaN(baseTime.getTime())
+      ? baseTime
+      : new Date();
+
   try {
     const result = await calculateNextScheduleTimeInternal({
       queueType,
@@ -39,12 +35,23 @@ export async function calculateNextScheduleTime({
     });
     // Validate that result is a valid Date object
     if (!result || !(result instanceof Date) || isNaN(result.getTime())) {
-      const queueTypeId = queueType && typeof queueType === "object" && "id" in queueType && typeof queueType.id === "string" ? queueType.id : undefined;
-      logError(new Error("Invalid date returned from calculateNextScheduleTimeInternal"), {
-        userId,
-        queueTypeId,
-        result: result ? String(result) : "null",
-      });
+      const queueTypeId =
+        queueType &&
+        typeof queueType === "object" &&
+        "id" in queueType &&
+        typeof queueType.id === "string"
+          ? queueType.id
+          : undefined;
+      logError(
+        new Error(
+          "Invalid date returned from calculateNextScheduleTimeInternal",
+        ),
+        {
+          userId,
+          queueTypeId,
+          result: result ? String(result) : "null",
+        },
+      );
       return fallbackDate;
     }
     return result;
@@ -100,16 +107,30 @@ async function calculateNextScheduleTimeInternal({
       return new Date(now.getTime() + 1000);
     }
 
-    const scheduleType = queueType && typeof queueType === "object" && "scheduleType" in queueType ? queueType.scheduleType : null;
+    const scheduleType =
+      queueType && typeof queueType === "object" && "scheduleType" in queueType
+        ? queueType.scheduleType
+        : null;
     if (scheduleType === "INTERVAL") {
-      const config = queueType && typeof queueType === "object" && "scheduleConfig" in queueType ? queueType.scheduleConfig : null;
+      const config =
+        queueType &&
+        typeof queueType === "object" &&
+        "scheduleConfig" in queueType
+          ? queueType.scheduleConfig
+          : null;
 
       // Handle missing scheduleConfig
       if (!config || !isIntervalScheduleConfig(config)) {
         // Default to 4 hours if no config
-        if (lastPostTime && lastPostTime instanceof Date && !isNaN(lastPostTime.getTime())) {
+        if (
+          lastPostTime &&
+          lastPostTime instanceof Date &&
+          !isNaN(lastPostTime.getTime())
+        ) {
           // Add 4 hours using milliseconds to avoid date calculation issues
-          const nextTime = new Date(lastPostTime.getTime() + 4 * 60 * 60 * 1000);
+          const nextTime = new Date(
+            lastPostTime.getTime() + 4 * 60 * 60 * 1000,
+          );
           // Ensure the date is valid
           if (!(nextTime instanceof Date) || isNaN(nextTime.getTime())) {
             return new Date(now.getTime() + 1000);
@@ -143,13 +164,24 @@ async function calculateNextScheduleTimeInternal({
           scheduleIntervals = null;
         }
         // Convert string to number if needed (scheduleIntervals is array of strings)
-        const intervalsArray = Array.isArray(scheduleIntervals) ? scheduleIntervals : null;
-        const firstInterval: unknown = intervalsArray && intervalsArray.length > 0 ? intervalsArray[0] : null;
+        const intervalsArray = Array.isArray(scheduleIntervals)
+          ? scheduleIntervals
+          : null;
+        const firstInterval: unknown =
+          intervalsArray && intervalsArray.length > 0
+            ? intervalsArray[0]
+            : null;
         const interval = firstInterval ? Number(firstInterval) : 4; // Default to 4 hours
 
-        if (lastPostTime && lastPostTime instanceof Date && !isNaN(lastPostTime.getTime())) {
+        if (
+          lastPostTime &&
+          lastPostTime instanceof Date &&
+          !isNaN(lastPostTime.getTime())
+        ) {
           // Add interval to last post time using milliseconds to avoid date calculation issues
-          const nextTime = new Date(lastPostTime.getTime() + interval * 60 * 60 * 1000);
+          const nextTime = new Date(
+            lastPostTime.getTime() + interval * 60 * 60 * 1000,
+          );
           // Ensure the date is valid
           if (!(nextTime instanceof Date) || isNaN(nextTime.getTime())) {
             return now;
@@ -163,13 +195,23 @@ async function calculateNextScheduleTimeInternal({
         }
       } else {
         // Use queue-specific interval
-        const intervalHours = config && typeof config === "object" && "intervalHours" in config && typeof config.intervalHours === "number"
-          ? config.intervalHours 
-          : 4;
+        const intervalHours =
+          config &&
+          typeof config === "object" &&
+          "intervalHours" in config &&
+          typeof config.intervalHours === "number"
+            ? config.intervalHours
+            : 4;
 
-        if (lastPostTime && lastPostTime instanceof Date && !isNaN(lastPostTime.getTime())) {
+        if (
+          lastPostTime &&
+          lastPostTime instanceof Date &&
+          !isNaN(lastPostTime.getTime())
+        ) {
           // Add interval to last post time using milliseconds to avoid date calculation issues
-          const nextTime = new Date(lastPostTime.getTime() + intervalHours * 60 * 60 * 1000);
+          const nextTime = new Date(
+            lastPostTime.getTime() + intervalHours * 60 * 60 * 1000,
+          );
           // Ensure the date is valid
           if (!(nextTime instanceof Date) || isNaN(nextTime.getTime())) {
             return now;
@@ -189,10 +231,20 @@ async function calculateNextScheduleTimeInternal({
         }
       }
     } else if (scheduleType === "FIXED_SLOTS") {
-      const config = queueType && typeof queueType === "object" && "scheduleConfig" in queueType ? queueType.scheduleConfig : null;
-      const slots = config && isFixedSlotsScheduleConfig(config) && typeof config === "object" && "slots" in config && Array.isArray(config.slots)
-        ? config.slots
-        : [];
+      const config =
+        queueType &&
+        typeof queueType === "object" &&
+        "scheduleConfig" in queueType
+          ? queueType.scheduleConfig
+          : null;
+      const slots =
+        config &&
+        isFixedSlotsScheduleConfig(config) &&
+        typeof config === "object" &&
+        "slots" in config &&
+        Array.isArray(config.slots)
+          ? config.slots
+          : [];
 
       if (slots.length === 0) {
         // No slots configured, fallback to now + 1 second to ensure it's in the future
@@ -201,45 +253,147 @@ async function calculateNextScheduleTimeInternal({
 
       // Sort slots to ensure consistent ordering
       const sortedSlots = slots
-      .map((slot: unknown) => {
-        const slotStr = typeof slot === "string" ? slot : String(slot);
-        try {
-          if (!slotStr.includes(":")) {
+        .map((slot: unknown) => {
+          const slotStr = typeof slot === "string" ? slot : String(slot);
+          try {
+            if (!slotStr.includes(":")) {
+              return null;
+            }
+            const parts = slotStr.split(":");
+            if (parts.length !== 2) {
+              return null;
+            }
+            const hours = Number(parts[0]);
+            const minutes = Number(parts[1]);
+            if (
+              isNaN(hours) ||
+              isNaN(minutes) ||
+              hours < 0 ||
+              hours > 23 ||
+              (minutes ?? 0) < 0 ||
+              minutes > 59
+            ) {
+              return null;
+            }
+            return {
+              slot: slotStr,
+              hours,
+              minutes,
+              totalMinutes: hours * 60 + minutes,
+            };
+          } catch (error) {
+            logError(
+              error instanceof Error ? error : new Error(String(error)),
+              {
+                userId,
+                slot: slotStr,
+                message: "Error parsing slot",
+              },
+            );
             return null;
           }
-          const parts = slotStr.split(":");
-          if (parts.length !== 2) {
-            return null;
-          }
-          const hours = Number(parts[0]);
-          const minutes = Number(parts[1]);
-          if (isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 23 || (minutes ?? 0) < 0 || minutes > 59) {
-            return null;
-          }
-          return { slot: slotStr, hours, minutes, totalMinutes: hours * 60 + minutes };
-        } catch (error) {
-          logError(error instanceof Error ? error : new Error(String(error)), {
-            userId,
-            slot: slotStr,
-            message: "Error parsing slot",
-          });
-          return null;
-        }
-      })
-      .filter((slot): slot is NonNullable<typeof slot> => slot !== null)
-      .sort((a, b) => a.totalMinutes - b.totalMinutes);
+        })
+        .filter((slot): slot is NonNullable<typeof slot> => slot !== null)
+        .sort((a, b) => a.totalMinutes - b.totalMinutes);
 
       // Create slot times in user's timezone and convert to UTC
       const createSlotInUserTimezone = (
-      hours: number,
-      minutes: number,
-      baseDate?: Date,
-    ): Date => {
-      // Use provided baseDate or current time (not captured 'now' to avoid stale time)
-      const actualBaseDate = baseDate ?? new Date();
-      try {
-        // For UTC/GMT timezones, no conversion needed
-        if (userTimezone === "UTC" || userTimezone === "Etc/GMT") {
+        hours: number,
+        minutes: number,
+        baseDate?: Date,
+      ): Date => {
+        // Use provided baseDate or current time (not captured 'now' to avoid stale time)
+        const actualBaseDate = baseDate ?? new Date();
+        try {
+          // For UTC/GMT timezones, no conversion needed
+          if (userTimezone === "UTC" || userTimezone === "Etc/GMT") {
+            const utcSlot = new Date(actualBaseDate);
+            utcSlot.setUTCHours(hours, minutes, 0, 0);
+            // Ensure the date is valid
+            if (isNaN(utcSlot.getTime())) {
+              return new Date(now.getTime() + 1000);
+            }
+            return utcSlot;
+          }
+
+          // Get the date string in the user's timezone (YYYY-MM-DD format)
+          const userDateStr = actualBaseDate.toLocaleDateString("en-CA", {
+            timeZone: userTimezone,
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          });
+
+          // Create a datetime string representing the desired time in user's timezone
+          const timeStr = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:00`;
+          const _dateTimeStr = `${userDateStr}T${timeStr}`;
+
+          // Simpler and more reliable approach using inverse timezone conversion
+
+          // Start with a UTC date for the desired time
+          const [year, month, day] = userDateStr.split("-").map(Number);
+          let testUTC = new Date(
+            Date.UTC(year, month - 1, day, hours, minutes, 0, 0),
+          );
+
+          // Check what this UTC time looks like in the user's timezone
+          let attempts = 0;
+          const maxAttempts = 24; // Max 24 hours adjustment
+
+          while (attempts < maxAttempts) {
+            const testInUserTz = testUTC.toLocaleString("en-US", {
+              timeZone: userTimezone,
+              hour12: false,
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+
+            const [testHours, testMinutes] = testInUserTz
+              .split(":")
+              .map(Number);
+
+            // Check if we got the desired time
+            if (testHours === hours && testMinutes === minutes) {
+              // Ensure the date is valid
+              if (isNaN(testUTC.getTime())) {
+                return new Date(now.getTime() + 1000);
+              }
+              return testUTC;
+            }
+
+            // Calculate the difference and adjust
+            const hourDiff = hours - testHours;
+            const minuteDiff = minutes - testMinutes;
+            const totalMinuteDiff = hourDiff * 60 + minuteDiff;
+
+            // Adjust by the difference
+            testUTC = new Date(testUTC.getTime() + totalMinuteDiff * 60 * 1000);
+            attempts++;
+
+            // Handle day boundary crossing
+            if (Math.abs(hourDiff) > 12) {
+              // Likely crossed midnight, adjust by 24 hours in the opposite direction
+              const dayAdjust = hourDiff > 0 ? -24 : 24;
+              testUTC = new Date(
+                testUTC.getTime() + dayAdjust * 60 * 60 * 1000,
+              );
+            }
+          }
+
+          // Ensure the date is valid before returning
+          if (isNaN(testUTC.getTime())) {
+            return new Date(now.getTime() + 1000);
+          }
+          return testUTC;
+        } catch (error) {
+          logError(error instanceof Error ? error : new Error(String(error)), {
+            userId,
+            hours,
+            minutes,
+            message: "Error in createSlotInUserTimezone",
+            userTimezone,
+          });
+          // Fallback to UTC
           const utcSlot = new Date(actualBaseDate);
           utcSlot.setUTCHours(hours, minutes, 0, 0);
           // Ensure the date is valid
@@ -248,122 +402,45 @@ async function calculateNextScheduleTimeInternal({
           }
           return utcSlot;
         }
-
-        // Get the date string in the user's timezone (YYYY-MM-DD format)
-        const userDateStr = actualBaseDate.toLocaleDateString('en-CA', {
-          timeZone: userTimezone,
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit'
-        });
-
-        // Create a datetime string representing the desired time in user's timezone
-        const timeStr = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
-        const _dateTimeStr = `${userDateStr}T${timeStr}`;
-
-        // Simpler and more reliable approach using inverse timezone conversion
-
-        // Start with a UTC date for the desired time
-        const [year, month, day] = userDateStr.split('-').map(Number);
-        let testUTC = new Date(Date.UTC(year, month - 1, day, hours, minutes, 0, 0));
-
-        // Check what this UTC time looks like in the user's timezone
-        let attempts = 0;
-        const maxAttempts = 24; // Max 24 hours adjustment
-
-        while (attempts < maxAttempts) {
-          const testInUserTz = testUTC.toLocaleString('en-US', {
-            timeZone: userTimezone,
-            hour12: false,
-            hour: '2-digit',
-            minute: '2-digit'
-          });
-
-          const [testHours, testMinutes] = testInUserTz.split(':').map(Number);
-
-          // Check if we got the desired time
-          if (testHours === hours && testMinutes === minutes) {
-            // Ensure the date is valid
-            if (isNaN(testUTC.getTime())) {
-              return new Date(now.getTime() + 1000);
-            }
-            return testUTC;
-          }
-
-          // Calculate the difference and adjust
-          const hourDiff = hours - testHours;
-          const minuteDiff = minutes - testMinutes;
-          const totalMinuteDiff = hourDiff * 60 + minuteDiff;
-
-          // Adjust by the difference
-          testUTC = new Date(testUTC.getTime() + totalMinuteDiff * 60 * 1000);
-          attempts++;
-
-          // Handle day boundary crossing
-          if (Math.abs(hourDiff) > 12) {
-            // Likely crossed midnight, adjust by 24 hours in the opposite direction
-            const dayAdjust = hourDiff > 0 ? -24 : 24;
-            testUTC = new Date(testUTC.getTime() + dayAdjust * 60 * 60 * 1000);
-          }
-        }
-
-        // Ensure the date is valid before returning
-        if (isNaN(testUTC.getTime())) {
-          return new Date(now.getTime() + 1000);
-        }
-        return testUTC;
-      } catch (error) {
-        logError(error instanceof Error ? error : new Error(String(error)), {
-          userId,
-          hours,
-          minutes,
-          message: "Error in createSlotInUserTimezone",
-          userTimezone,
-        });
-        // Fallback to UTC
-        const utcSlot = new Date(actualBaseDate);
-        utcSlot.setUTCHours(hours, minutes, 0, 0);
-        // Ensure the date is valid
-        if (isNaN(utcSlot.getTime())) {
-          return new Date(now.getTime() + 1000);
-        }
-        return utcSlot;
-      }
-    };
+      };
 
       // Convert slots to today's dates in user's timezone
       // Only include slots that are actually today and in the future
       const todaySlots = sortedSlots
-      .map((slotInfo) => {
-        const slotTime = createSlotInUserTimezone(
-          slotInfo.hours,
-          slotInfo.minutes,
-          now,
-        );
-        return slotTime;
-      })
-      .filter((slot) => {
-        // Only keep slots that are valid, today (same day as now), and in the future or present
-        if (!(slot instanceof Date) || isNaN(slot.getTime()) || slot < now) {
-          return false;
-        }
-        // Check if slot is on the same day as now
-        const slotDate = new Date(slot);
-        const nowDate = new Date(now);
-        return (
-          slotDate.getUTCFullYear() === nowDate.getUTCFullYear() &&
-          slotDate.getUTCMonth() === nowDate.getUTCMonth() &&
-          slotDate.getUTCDate() === nowDate.getUTCDate()
-        );
-      });
+        .map((slotInfo) => {
+          const slotTime = createSlotInUserTimezone(
+            slotInfo.hours,
+            slotInfo.minutes,
+            now,
+          );
+          return slotTime;
+        })
+        .filter((slot) => {
+          // Only keep slots that are valid, today (same day as now), and in the future or present
+          if (!(slot instanceof Date) || isNaN(slot.getTime()) || slot < now) {
+            return false;
+          }
+          // Check if slot is on the same day as now
+          const slotDate = new Date(slot);
+          const nowDate = new Date(now);
+          return (
+            slotDate.getUTCFullYear() === nowDate.getUTCFullYear() &&
+            slotDate.getUTCMonth() === nowDate.getUTCMonth() &&
+            slotDate.getUTCDate() === nowDate.getUTCDate()
+          );
+        });
 
       // If there's a last post time, find the next chronological slot after it
-      if (lastPostTime && lastPostTime instanceof Date && !isNaN(lastPostTime.getTime())) {
+      if (
+        lastPostTime &&
+        lastPostTime instanceof Date &&
+        !isNaN(lastPostTime.getTime())
+      ) {
         // If lastPostTime is in the past (more than 1 day ago), start from baseTime instead
         // to avoid creating slots in the distant past
         const oneDayAgo = new Date(now);
         oneDayAgo.setDate(oneDayAgo.getDate() - 1);
-        
+
         const lastPostDate = new Date(lastPostTime);
         // If last post was more than 1 day ago, use baseTime as the base date
         const baseDate = lastPostTime < oneDayAgo ? now : lastPostDate;
@@ -428,7 +505,11 @@ async function calculateNextScheduleTimeInternal({
           );
           // Ensure the fallback slot is valid and in the future or present
           // Check against baseTime (now) to ensure consistent test behavior
-          if (!(fallbackSlot instanceof Date) || isNaN(fallbackSlot.getTime()) || fallbackSlot < now) {
+          if (
+            !(fallbackSlot instanceof Date) ||
+            isNaN(fallbackSlot.getTime()) ||
+            fallbackSlot < now
+          ) {
             return new Date(now.getTime() + 1000);
           }
           return fallbackSlot;
@@ -442,7 +523,11 @@ async function calculateNextScheduleTimeInternal({
           const firstFutureSlot = todaySlots[0];
           // Double-check it's valid and in the future or present
           // Check against baseTime (now) to ensure consistent test behavior
-          if (firstFutureSlot instanceof Date && !isNaN(firstFutureSlot.getTime()) && firstFutureSlot >= now) {
+          if (
+            firstFutureSlot instanceof Date &&
+            !isNaN(firstFutureSlot.getTime()) &&
+            firstFutureSlot >= now
+          ) {
             return firstFutureSlot;
           }
         }
@@ -458,7 +543,11 @@ async function calculateNextScheduleTimeInternal({
           );
           // Ensure the tomorrow slot is valid and in the future or present
           // Check against baseTime (now) to ensure consistent test behavior
-          if (tomorrowSlot instanceof Date && !isNaN(tomorrowSlot.getTime()) && tomorrowSlot >= now) {
+          if (
+            tomorrowSlot instanceof Date &&
+            !isNaN(tomorrowSlot.getTime()) &&
+            tomorrowSlot >= now
+          ) {
             return tomorrowSlot;
           }
         }
@@ -473,9 +562,10 @@ async function calculateNextScheduleTimeInternal({
     return new Date(now.getTime() + 1000);
   } catch (error) {
     // Ensure we always return a valid Date, even if there's an error
-    const fallbackTime = baseTime && baseTime instanceof Date && !isNaN(baseTime.getTime())
-      ? baseTime
-      : new Date();
+    const fallbackTime =
+      baseTime && baseTime instanceof Date && !isNaN(baseTime.getTime())
+        ? baseTime
+        : new Date();
     logError(error instanceof Error ? error : new Error(String(error)), {
       queueTypeId: queueType?.id,
       userId,

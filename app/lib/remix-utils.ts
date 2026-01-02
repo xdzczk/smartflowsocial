@@ -61,7 +61,12 @@ export function useOptionalUser(): User | undefined {
   const data = useMatchesData("root");
 
   // Type guard: ensure data is not an error type and has user property
-  if (!data || typeof data !== "object" || "error" in data || !("user" in data)) {
+  if (
+    !data ||
+    typeof data !== "object" ||
+    "error" in data ||
+    !("user" in data)
+  ) {
     return undefined;
   }
 

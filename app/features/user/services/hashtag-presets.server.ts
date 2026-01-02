@@ -238,19 +238,3 @@ export async function getEffectiveHashtags(
   // Otherwise, return empty string (no default hashtags)
   return "";
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

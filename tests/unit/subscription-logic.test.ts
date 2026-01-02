@@ -1,7 +1,7 @@
 /**
  * Unit tests for subscription and plan enforcement logic
  * Tests real exported functions from app/features/payments/types.ts
- * 
+ *
  * Migrated from tests/e2e/unit/subscription-logic.cy.ts
  */
 
@@ -130,7 +130,9 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
       const freeSubscription: UserSubscription | null = null;
 
       it("should allow basicScheduling for free users", () => {
-        expect(hasFeatureAccess(freeSubscription, "basicScheduling")).toBe(true);
+        expect(hasFeatureAccess(freeSubscription, "basicScheduling")).toBe(
+          true,
+        );
       });
 
       it("should allow newPost for free users", () => {
@@ -150,7 +152,9 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
       });
 
       it("should deny bulkScheduling for free users", () => {
-        expect(hasFeatureAccess(freeSubscription, "bulkScheduling")).toBe(false);
+        expect(hasFeatureAccess(freeSubscription, "bulkScheduling")).toBe(
+          false,
+        );
       });
 
       it("should deny longformPosts for free users", () => {
@@ -170,7 +174,9 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
       };
 
       it("should allow all free features for basic users", () => {
-        expect(hasFeatureAccess(basicSubscription, "basicScheduling")).toBe(true);
+        expect(hasFeatureAccess(basicSubscription, "basicScheduling")).toBe(
+          true,
+        );
         expect(hasFeatureAccess(basicSubscription, "newPost")).toBe(true);
         expect(hasFeatureAccess(basicSubscription, "dashboard")).toBe(true);
       });
@@ -178,7 +184,9 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
       it("should allow premium features for basic users", () => {
         expect(hasFeatureAccess(basicSubscription, "drafts")).toBe(true);
         expect(hasFeatureAccess(basicSubscription, "calendar")).toBe(true);
-        expect(hasFeatureAccess(basicSubscription, "bulkScheduling")).toBe(true);
+        expect(hasFeatureAccess(basicSubscription, "bulkScheduling")).toBe(
+          true,
+        );
         expect(hasFeatureAccess(basicSubscription, "longformPosts")).toBe(true);
         expect(hasFeatureAccess(basicSubscription, "templates")).toBe(true);
       });
@@ -194,11 +202,15 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
       it("should only have free-tier access when expired", () => {
         expect(hasFeatureAccess(expiredSubscription, "drafts")).toBe(false);
         expect(hasFeatureAccess(expiredSubscription, "calendar")).toBe(false);
-        expect(hasFeatureAccess(expiredSubscription, "bulkScheduling")).toBe(false);
+        expect(hasFeatureAccess(expiredSubscription, "bulkScheduling")).toBe(
+          false,
+        );
       });
 
       it("should still allow basic features when expired", () => {
-        expect(hasFeatureAccess(expiredSubscription, "basicScheduling")).toBe(true);
+        expect(hasFeatureAccess(expiredSubscription, "basicScheduling")).toBe(
+          true,
+        );
         expect(hasFeatureAccess(expiredSubscription, "newPost")).toBe(true);
         expect(hasFeatureAccess(expiredSubscription, "dashboard")).toBe(true);
       });
@@ -341,4 +353,3 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
     });
   });
 });
-

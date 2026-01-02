@@ -8,14 +8,14 @@ export interface NwcSettings {
 }
 
 export function getNwcSettings(_userId: string) {
-    // Logic to get NWC settings for a user
-    // This is a placeholder since I haven't seen existing NWC logic yet,
-    // but the user requested this file. I'll implement basic stubs or
-    // move any found logic here later.
-    return null;
+  // Logic to get NWC settings for a user
+  // This is a placeholder since I haven't seen existing NWC logic yet,
+  // but the user requested this file. I'll implement basic stubs or
+  // move any found logic here later.
+  return null;
 }
 
 export function saveNwcSettings(_userId: string, _settings: NwcSettings) {
-    // Logic to save NWC settings
-    return null;
+  // Logic to save NWC settings
+  return null;
 }

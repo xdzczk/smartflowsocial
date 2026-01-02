@@ -154,7 +154,9 @@ export function SimpleRescheduleModal({
 
       fetcher.submit(formData, { method: "post" });
     } catch (error: unknown) {
-      const { handleAsyncErrorWithMessage, getErrorMessage } = await import("~/lib/error-handler.client");
+      const { handleAsyncErrorWithMessage, getErrorMessage } = await import(
+        "~/lib/error-handler.client"
+      );
       handleAsyncErrorWithMessage(
         error,
         "Failed to sign event. Please try again.",
@@ -165,7 +167,9 @@ export function SimpleRescheduleModal({
         false, // Don't show toast, we set signingError instead
       );
       setIsSigningEvent(false);
-      setSigningError(getErrorMessage(error) || "Failed to sign event. Please try again.");
+      setSigningError(
+        getErrorMessage(error) || "Failed to sign event. Please try again.",
+      );
     }
   };
 
@@ -260,9 +264,13 @@ export function SimpleRescheduleModal({
 
               <div className="text-sm text-gray-600 dark:text-gray-300">
                 {isLongform && "title" in post
-                  ? post.title ?? "Untitled Article"
-                  : "caption" in post ? (post.caption ?? "No caption") : "No caption"}
-                {"fileUrl" in post && post.fileUrl && post.fileUrl.length > 0 ? (
+                  ? (post.title ?? "Untitled Article")
+                  : "caption" in post
+                    ? (post.caption ?? "No caption")
+                    : "No caption"}
+                {"fileUrl" in post &&
+                post.fileUrl &&
+                post.fileUrl.length > 0 ? (
                   <span className="ml-2 text-xs text-gray-500">
                     ({post.fileUrl.length} file
                     {post.fileUrl.length > 1 ? "s" : ""})
@@ -273,7 +281,10 @@ export function SimpleRescheduleModal({
 
             {/* New time */}
             <div className="space-y-2">
-              <label htmlFor="simple-reschedule-datetime" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label
+                htmlFor="simple-reschedule-datetime"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
                 New scheduled time:
               </label>
               <div className="flex items-center space-x-2">
@@ -310,7 +321,10 @@ export function SimpleRescheduleModal({
             {/* Queue Type Selection for regular posts */}
             {!isLongform ? (
               <div className="space-y-2">
-                <label htmlFor="simple-reschedule-queue-type" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label
+                  htmlFor="simple-reschedule-queue-type"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
                   Queue Type:
                 </label>
                 <select
@@ -367,7 +381,7 @@ export function SimpleRescheduleModal({
             ) : null}
 
             {/* Error display */}
-            {fetcher.data?.error ?? signingError ? (
+            {(fetcher.data?.error ?? signingError) ? (
               <div className="rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
                 <div className="text-sm text-red-800 dark:text-red-200">
                   {fetcher.data?.error ?? signingError}

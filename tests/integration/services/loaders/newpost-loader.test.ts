@@ -23,7 +23,11 @@ vi.mock("~/models/user.server", () => ({
 import { requireAnySubscription } from "~/features/payments/subscriptions.server";
 import { loadNewPostData } from "~/features/posts/services/newpost-loader.server";
 import { getAssets } from "~/models/asset.server";
-import { getScheduleInterval, getQueueTypes, getUserHashTagPresets } from "~/models/user.server";
+import {
+  getScheduleInterval,
+  getQueueTypes,
+  getUserHashTagPresets,
+} from "~/models/user.server";
 
 import { TEST_USER_ID } from "../../../utils/test-helpers";
 
@@ -43,10 +47,18 @@ describe("New Post Loader", () => {
       currentPage: 1,
     };
 
-    (requireAnySubscription as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
-    (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(mockScheduleIntervals);
-    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueTypes);
-    (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue(mockHashTagPresets);
+    (requireAnySubscription as ReturnType<typeof vi.fn>).mockResolvedValue(
+      undefined,
+    );
+    (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockScheduleIntervals,
+    );
+    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockQueueTypes,
+    );
+    (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockHashTagPresets,
+    );
     (getAssets as ReturnType<typeof vi.fn>).mockResolvedValue(mockAssets);
 
     const result = await loadNewPostData(TEST_USER_ID);
@@ -59,13 +71,21 @@ describe("New Post Loader", () => {
   });
 
   it("should require subscription before loading", async () => {
-    (requireAnySubscription as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Subscription required"));
+    (requireAnySubscription as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error("Subscription required"),
+    );
     (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-    (getAssets as ReturnType<typeof vi.fn>).mockResolvedValue({ assets: [], totalCount: 0, totalPages: 0, currentPage: 1 });
+    (getAssets as ReturnType<typeof vi.fn>).mockResolvedValue({
+      assets: [],
+      totalCount: 0,
+      totalPages: 0,
+      currentPage: 1,
+    });
 
-    await expect(loadNewPostData(TEST_USER_ID)).rejects.toThrow("Subscription required");
+    await expect(loadNewPostData(TEST_USER_ID)).rejects.toThrow(
+      "Subscription required",
+    );
   });
 });
-

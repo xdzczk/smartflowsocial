@@ -174,69 +174,69 @@ export default function AssetBrowser({
                     role="button"
                     tabIndex={0}
                   >
-                  <div className="flex items-start gap-3">
-                    <input
-                      type="checkbox"
-                      checked={selectedAssets.includes(asset.id)}
-                      onChange={() => handleAssetSelect(asset.id)}
-                      className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
+                    <div className="flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedAssets.includes(asset.id)}
+                        onChange={() => handleAssetSelect(asset.id)}
+                        className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
 
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-2 flex items-center gap-2">
-                        {asset.assetType === "IMAGE" ? (
-                          <img
-                            src={asset.fileUrl ?? undefined}
-                            alt={asset.title ?? "Asset"}
-                            className="h-8 w-8 flex-shrink-0 rounded object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded bg-gray-200 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-                            T
-                          </div>
-                        )}
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-2 flex items-center gap-2">
+                          {asset.assetType === "IMAGE" ? (
+                            <img
+                              src={asset.fileUrl ?? undefined}
+                              alt={asset.title ?? "Asset"}
+                              className="h-8 w-8 flex-shrink-0 rounded object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded bg-gray-200 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                              T
+                            </div>
+                          )}
 
-                        <span
-                          className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                            asset.assetType === "IMAGE"
-                              ? "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
-                              : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                          }`}
-                        >
-                          {asset.assetType}
-                        </span>
-                      </div>
-
-                      <h3 className="truncate font-medium text-gray-900 dark:text-gray-100">
-                        {asset.title ?? "Untitled"}
-                      </h3>
-
-                      {asset.assetType === "TEXT" && asset.content ? (
-                        <p className="mt-1 line-clamp-2 text-sm text-gray-600 dark:text-gray-400">
-                          {asset.content}
-                        </p>
-                      ) : null}
-
-                      {asset.tags && asset.tags.length > 0 ? (
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {asset.tags.slice(0, 2).map((tag, index) => (
-                            <span
-                              key={index}
-                              className="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800 dark:bg-gray-700 dark:text-gray-200"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                          {asset.tags.length > 2 ? (
-                            <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800 dark:bg-gray-700 dark:text-gray-200">
-                              +{asset.tags.length - 2}
-                            </span>
-                          ) : null}
+                          <span
+                            className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                              asset.assetType === "IMAGE"
+                                ? "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+                                : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                            }`}
+                          >
+                            {asset.assetType}
+                          </span>
                         </div>
-                      ) : null}
+
+                        <h3 className="truncate font-medium text-gray-900 dark:text-gray-100">
+                          {asset.title ?? "Untitled"}
+                        </h3>
+
+                        {asset.assetType === "TEXT" && asset.content ? (
+                          <p className="mt-1 line-clamp-2 text-sm text-gray-600 dark:text-gray-400">
+                            {asset.content}
+                          </p>
+                        ) : null}
+
+                        {asset.tags && asset.tags.length > 0 ? (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {asset.tags.slice(0, 2).map((tag, index) => (
+                              <span
+                                key={index}
+                                className="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800 dark:bg-gray-700 dark:text-gray-200"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                            {asset.tags.length > 2 ? (
+                              <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                                +{asset.tags.length - 2}
+                              </span>
+                            ) : null}
+                          </div>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
-                </div>
                 );
               })}
             </div>

@@ -161,6 +161,7 @@ describe("Effective Hashtags API", () => {
 ### When to Mock
 
 **Always Mock:**
+
 - Database (Prisma)
 - External APIs (fetch, HTTP clients)
 - File system operations
@@ -168,6 +169,7 @@ describe("Effective Hashtags API", () => {
 - Third-party services
 
 **Don't Mock:**
+
 - Functions you're testing
 - Pure utility functions
 - Business logic functions
@@ -672,7 +674,10 @@ Extract common test logic into helpers:
 
 ```typescript
 // tests/utils/test-helpers.ts
-export function createActionFormData(action: string, data: Record<string, string>) {
+export function createActionFormData(
+  action: string,
+  data: Record<string, string>,
+) {
   const formData = new FormData();
   formData.append("_action", action);
   // ... add data
@@ -685,6 +690,7 @@ export function createActionFormData(action: string, data: Record<string, string
 ### 1. Testing Implementation Details
 
 **Don't:**
+
 ```typescript
 it("should call prisma.post.findUnique", () => {
   // Testing internal implementation
@@ -692,6 +698,7 @@ it("should call prisma.post.findUnique", () => {
 ```
 
 **Do:**
+
 ```typescript
 it("should return post by ID", () => {
   // Testing behavior
@@ -701,6 +708,7 @@ it("should return post by ID", () => {
 ### 2. Shared Test State
 
 **Don't:**
+
 ```typescript
 let sharedPost; // Shared state between tests
 
@@ -715,6 +723,7 @@ it("test 2", () => {
 ```
 
 **Do:**
+
 ```typescript
 it("test 1", () => {
   const post = createPost();
@@ -730,6 +739,7 @@ it("test 2", () => {
 ### 3. Over-Mocking
 
 **Don't:**
+
 ```typescript
 // Mocking everything
 vi.mock("~/lib/helpers");
@@ -738,6 +748,7 @@ vi.mock("~/lib/date");
 ```
 
 **Do:**
+
 ```typescript
 // Only mock external dependencies
 vi.mock("~/lib/prisma.server");
@@ -747,6 +758,7 @@ vi.mock("~/features/auth/session.server");
 ### 4. Mocking What You're Testing
 
 **Don't:**
+
 ```typescript
 vi.mock("~/lib/helpers", () => ({
   formatDate: vi.fn(),
@@ -756,6 +768,7 @@ vi.mock("~/lib/helpers", () => ({
 ```
 
 **Do:**
+
 ```typescript
 // Test the actual function
 import { formatDate } from "~/lib/helpers";
@@ -764,6 +777,7 @@ import { formatDate } from "~/lib/helpers";
 ### 5. Not Clearing Mocks
 
 **Don't:**
+
 ```typescript
 // Mocks accumulate between tests
 it("test 1", () => { ... });
@@ -771,6 +785,7 @@ it("test 2", () => { ... }); // May have stale mock data
 ```
 
 **Do:**
+
 ```typescript
 beforeEach(() => {
   vi.clearAllMocks();
@@ -781,7 +796,3 @@ beforeEach(() => {
 
 - [Test Strategy](./test-strategy.md) - Overall testing strategy
 - [Test Troubleshooting](./test-troubleshooting.md) - Common issues
-
-
-
-

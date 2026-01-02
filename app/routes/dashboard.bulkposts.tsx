@@ -33,13 +33,12 @@ import { isVideoFile } from "~/utils/media-helpers";
 
 export { bulkPostsAction as action } from "~/features/posts/bulkposts.action.server";
 
-
 export async function loader({ request }: { request: Request }) {
   try {
     const userId = await requireUserId(request);
 
     // Check if user has access to bulk scheduling feature
-    await requireFeatureAccess(userId, 'bulkScheduling');
+    await requireFeatureAccess(userId, "bulkScheduling");
     const data = await getBulkPostsDashboardData(userId);
 
     return json(data);
@@ -54,8 +53,6 @@ export async function loader({ request }: { request: Request }) {
   }
 }
 
-
-
 export default function BulkPosts() {
   const data = useLoaderData<{
     tags: string[];
@@ -64,20 +61,33 @@ export default function BulkPosts() {
     mode: string | null;
   }>();
   const tags = "tags" in data && Array.isArray(data.tags) ? data.tags : [];
-  const queueTypes = "queueTypes" in data && Array.isArray(data.queueTypes) ? data.queueTypes : [];
-  const hashTagPresets = "hashTagPresets" in data && Array.isArray(data.hashTagPresets) ? data.hashTagPresets : [];
+  const queueTypes =
+    "queueTypes" in data && Array.isArray(data.queueTypes)
+      ? data.queueTypes
+      : [];
+  const hashTagPresets =
+    "hashTagPresets" in data && Array.isArray(data.hashTagPresets)
+      ? data.hashTagPresets
+      : [];
   const mode = "mode" in data ? data.mode : null;
   const [posts, setPosts] = useState<BulkPost[]>([]);
-  const [displayedHashtags, setDisplayedHashtags] = useState<string | string[]>(tags);
+  const [displayedHashtags, setDisplayedHashtags] = useState<string | string[]>(
+    tags,
+  );
   const [_selectedQueueType, setSelectedQueueType] = useState("unassigned");
-  const fetcher = useFetcher<{ success?: boolean; fileUrls?: { fileUrl: string; scheduledFor: string; queueType: string }[] }>();
+  const fetcher = useFetcher<{
+    success?: boolean;
+    fileUrls?: { fileUrl: string; scheduledFor: string; queueType: string }[];
+  }>();
   const isSubmitting = fetcher.state !== "idle";
   const userOptional = useOptionalUser();
   const user = userOptional ?? null;
-  const scheduleIntervals = user?.scheduleInterval 
-    ? (Array.isArray(user.scheduleInterval) 
-        ? user.scheduleInterval.map(s => typeof s === "string" ? parseInt(s, 10) : s).filter((n): n is number => !isNaN(n)) 
-        : []) 
+  const scheduleIntervals = user?.scheduleInterval
+    ? Array.isArray(user.scheduleInterval)
+      ? user.scheduleInterval
+          .map((s) => (typeof s === "string" ? parseInt(s, 10) : s))
+          .filter((n): n is number => !isNaN(n))
+      : []
     : undefined;
 
   const [preparedEvents, setPreparedEvents] = useState<PreparedEvent[]>([]);
@@ -113,7 +123,7 @@ export default function BulkPosts() {
     setPreparedEvents,
     setShowConfirmation,
     setIsPreviewSubmitting,
-    setIsProcessing
+    setIsProcessing,
   });
 
   // Fetch upload provider on component mount
@@ -121,12 +131,23 @@ export default function BulkPosts() {
     void fetch("/api/user-upload-provider")
       .then((res) => res.json())
       .then((data: unknown) => {
-        const provider = data && typeof data === "object" && !Array.isArray(data) && "provider" in data && typeof (data as { provider?: unknown }).provider === "string" ? (data as { provider: string }).provider : null;
+        const provider =
+          data &&
+          typeof data === "object" &&
+          !Array.isArray(data) &&
+          "provider" in data &&
+          typeof (data as { provider?: unknown }).provider === "string"
+            ? (data as { provider: string }).provider
+            : null;
         setUploadProvider(provider);
       })
       .catch((err: unknown) => {
-         
-        const { handleErrorSafely } = require("~/lib/error-handler.client") as { handleErrorSafely: (error: unknown, context: { component: string; action: string }) => void };
+        const { handleErrorSafely } = require("~/lib/error-handler.client") as {
+          handleErrorSafely: (
+            error: unknown,
+            context: { component: string; action: string },
+          ) => void;
+        };
         handleErrorSafely(err, {
           component: "BulkPosts",
           action: "fetchUploadProvider",
@@ -134,10 +155,15 @@ export default function BulkPosts() {
       });
   }, []);
 
-
   // Wrapper functions that delegate to extracted handlers
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const userDeps = user ? { id: user.id, timezone: user.timezone ?? undefined, scheduleInterval: scheduleIntervals } : null;
+    const userDeps = user
+      ? {
+          id: user.id,
+          timezone: user.timezone ?? undefined,
+          scheduleInterval: scheduleIntervals,
+        }
+      : null;
     void handleFileChangeHandler(e, {
       posts,
       setPosts,
@@ -154,7 +180,13 @@ export default function BulkPosts() {
   };
 
   const handleDateChange = (index: number, value: string) => {
-    handleDateChangeHandler(index, value, posts, setPosts, setFirstItemTimeManuallyChanged);
+    handleDateChangeHandler(
+      index,
+      value,
+      posts,
+      setPosts,
+      setFirstItemTimeManuallyChanged,
+    );
   };
 
   const handleIsRecyclableChange = (index: number, checked: boolean) => {
@@ -184,7 +216,13 @@ export default function BulkPosts() {
   };
 
   const handleQueueTypeChange = async (index: number, value: string) => {
-    const userDeps = user ? { id: user.id, timezone: user.timezone ?? undefined, scheduleInterval: scheduleIntervals } : null;
+    const userDeps = user
+      ? {
+          id: user.id,
+          timezone: user.timezone ?? undefined,
+          scheduleInterval: scheduleIntervals,
+        }
+      : null;
     await handleQueueTypeChangeHandler(index, value, {
       posts,
       setPosts,
@@ -201,11 +239,22 @@ export default function BulkPosts() {
   };
 
   const handleScheduleIntervalClick = (interval: number) => {
-    handleScheduleIntervalClickHandler(interval, posts, setPosts, firstItemTimeManuallyChanged);
+    handleScheduleIntervalClickHandler(
+      interval,
+      posts,
+      setPosts,
+      firstItemTimeManuallyChanged,
+    );
   };
 
   const handleBulkQueueUpdate = async (queueType: string) => {
-    const userDeps = user ? { id: user.id, timezone: user.timezone ?? undefined, scheduleInterval: scheduleIntervals } : null;
+    const userDeps = user
+      ? {
+          id: user.id,
+          timezone: user.timezone ?? undefined,
+          scheduleInterval: scheduleIntervals,
+        }
+      : null;
     await handleBulkQueueUpdateHandler(queueType, {
       posts,
       setPosts,
@@ -225,7 +274,10 @@ export default function BulkPosts() {
 
   // Memoize preview URLs and file types to prevent recreation on every render
   const previewData = useMemo(() => {
-    const data = new Map<number, { url: string; isVideo: boolean; file: File }>();
+    const data = new Map<
+      number,
+      { url: string; isVideo: boolean; file: File }
+    >();
     posts.forEach((post, index) => {
       if (post.file) {
         const url = URL.createObjectURL(post.file);
@@ -240,7 +292,12 @@ export default function BulkPosts() {
   useEffect(() => {
     return () => {
       previewData.forEach((data) => {
-        if (data && typeof data === "object" && data !== null && "url" in data) {
+        if (
+          data &&
+          typeof data === "object" &&
+          data !== null &&
+          "url" in data
+        ) {
           const url = data.url;
           if (typeof url === "string") {
             URL.revokeObjectURL(url);
@@ -281,7 +338,9 @@ export default function BulkPosts() {
 
       {!showConfirmation ? (
         <fetcher.Form
-          onSubmit={(e) => { void prepareEvents(e); }}
+          onSubmit={(e) => {
+            void prepareEvents(e);
+          }}
           className="w-full"
           encType="multipart/form-data"
         >
@@ -303,7 +362,9 @@ export default function BulkPosts() {
             selectedHashtagPresetId={selectedHashtagPresetId}
             useHashtagPresets={useHashtagPresets}
             handleScheduleIntervalClick={handleScheduleIntervalClick}
-            handleBulkQueueUpdate={(queueType) => void handleBulkQueueUpdate(queueType)}
+            handleBulkQueueUpdate={(queueType) =>
+              void handleBulkQueueUpdate(queueType)
+            }
             handleHashtagPresetSelect={handleHashtagPresetSelect}
             setUseHashtagPresets={setUseHashtagPresets}
             handleBulkRecyclableToggle={handleBulkRecyclableToggle}
@@ -319,7 +380,9 @@ export default function BulkPosts() {
                 handleDateChange={handleDateChange}
                 handleIsRecyclableChange={handleIsRecyclableChange}
                 handleRemovePost={handleRemovePost}
-                handleQueueTypeChange={(index, value) => void handleQueueTypeChange(index, value)}
+                handleQueueTypeChange={(index, value) =>
+                  void handleQueueTypeChange(index, value)
+                }
                 handleMediaClick={handleMediaClick}
               />
 
@@ -385,9 +448,7 @@ export default function BulkPosts() {
       )}
 
       {/* Toast Notification */}
-      {toast ? (
-        <Toast toast={toast} onClose={() => setToast(null)} />
-      ) : null}
+      {toast ? <Toast toast={toast} onClose={() => setToast(null)} /> : null}
 
       {/* Media Modal */}
       {selectedMedia ? (

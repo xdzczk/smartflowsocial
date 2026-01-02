@@ -3,9 +3,7 @@
  * Centralized action processing for dashboard index page
  */
 
-import {
-  deleteLongFormPost,
-} from "~/models/longformpost.server";
+import { deleteLongFormPost } from "~/models/longformpost.server";
 import { deletePost } from "~/models/post.commands.server";
 
 export async function handleDashboardAction(
@@ -44,13 +42,18 @@ export async function handleDashboardAction(
         throw new ValidationError("Post IDs are required");
       }
       const parsed: unknown = JSON.parse(postIdsStr);
-      const postIds = Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string") : [];
-      await Promise.all(postIds.map((id: string) => deletePost({ id, userId })));
+      const postIds = Array.isArray(parsed)
+        ? parsed.filter((id): id is string => typeof id === "string")
+        : [];
+      await Promise.all(
+        postIds.map((id: string) => deletePost({ id, userId })),
+      );
       return { success: true };
     } catch (parseError) {
       const { ValidationError } = await import("~/lib/errors");
       throw new ValidationError("Invalid postIds format", {
-        error: parseError instanceof Error ? parseError.message : String(parseError),
+        error:
+          parseError instanceof Error ? parseError.message : String(parseError),
       });
     }
   }
@@ -64,20 +67,21 @@ export async function handleDashboardAction(
         throw new ValidationError("Post IDs are required");
       }
       const parsed: unknown = JSON.parse(postIdsStr);
-      const postIds = Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string") : [];
-      await Promise.all(postIds.map((id: string) => deleteLongFormPost({ id, userId })));
+      const postIds = Array.isArray(parsed)
+        ? parsed.filter((id): id is string => typeof id === "string")
+        : [];
+      await Promise.all(
+        postIds.map((id: string) => deleteLongFormPost({ id, userId })),
+      );
       return { success: true };
     } catch (parseError) {
       const { ValidationError } = await import("~/lib/errors");
       throw new ValidationError("Invalid postIds format", {
-        error: parseError instanceof Error ? parseError.message : String(parseError),
+        error:
+          parseError instanceof Error ? parseError.message : String(parseError),
       });
     }
   }
 
   return { error: "Invalid action" };
 }
-
-
-
-

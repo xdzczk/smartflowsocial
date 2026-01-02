@@ -13,7 +13,11 @@ vi.mock("~/features/user", () => ({
 }));
 
 import { getBulkPostsDashboardData } from "~/features/posts/services/bulk-posts.server";
-import { getUserHashTags, getQueueTypes, getUserHashTagPresets } from "~/features/user";
+import {
+  getUserHashTags,
+  getQueueTypes,
+  getUserHashTagPresets,
+} from "~/features/user";
 
 import { TEST_USER_ID } from "../../utils/test-helpers";
 
@@ -23,7 +27,9 @@ describe("Bulk Posts Service", () => {
   });
 
   it("should return dashboard data with tags, queue types, and presets", async () => {
-    (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue("tag1 tag2 tag3");
+    (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue(
+      "tag1 tag2 tag3",
+    );
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([
       { id: "queue-1", name: "Queue 1", isEnabled: true },
       { id: "queue-2", name: "Queue 2", isEnabled: false },
@@ -44,7 +50,9 @@ describe("Bulk Posts Service", () => {
   });
 
   it("should set mode to 'manual' when no hash tag presets exist", async () => {
-    (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue("tag1 tag2");
+    (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue(
+      "tag1 tag2",
+    );
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
@@ -55,7 +63,9 @@ describe("Bulk Posts Service", () => {
   });
 
   it("should sort tags alphabetically", async () => {
-    (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue("zebra apple banana");
+    (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue(
+      "zebra apple banana",
+    );
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
@@ -65,7 +75,9 @@ describe("Bulk Posts Service", () => {
   });
 
   it("should filter out empty tags", async () => {
-    (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue("tag1   tag2  tag3");
+    (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue(
+      "tag1   tag2  tag3",
+    );
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
@@ -114,7 +126,9 @@ describe("Bulk Posts Service", () => {
 
   it("should handle non-array queue types", async () => {
     (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue("");
-    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue("not-an-array");
+    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
+      "not-an-array",
+    );
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
     const result = await getBulkPostsDashboardData(TEST_USER_ID);
@@ -125,7 +139,9 @@ describe("Bulk Posts Service", () => {
   it("should handle non-array hash tag presets", async () => {
     (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue("");
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-    (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue("not-an-array");
+    (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue(
+      "not-an-array",
+    );
 
     const result = await getBulkPostsDashboardData(TEST_USER_ID);
 
@@ -133,4 +149,3 @@ describe("Bulk Posts Service", () => {
     expect(result.mode).toBe("manual");
   });
 });
-

@@ -1,16 +1,13 @@
 /**
  * Queue Type Handlers for Bulk Posts
- * 
+ *
  * Handles queue type changes for individual and bulk posts
  */
 
 import { logClientError } from "~/lib/error-handler.client";
 
 import type { BulkPostsHandlerDeps } from "../types";
-import {
-  isIntervalScheduleConfig,
-  isFixedSlotsScheduleConfig,
-} from "../types";
+import { isIntervalScheduleConfig, isFixedSlotsScheduleConfig } from "../types";
 
 import { updateDisplayedHashtags } from "./hashtag.handler";
 
@@ -68,7 +65,9 @@ export async function handleQueueTypeChange(
       });
 
       if (response.ok) {
-        const responseData = (await response.json()) as { scheduledTime?: string };
+        const responseData = (await response.json()) as {
+          scheduledTime?: string;
+        };
         const { scheduledTime } = responseData;
         if (scheduledTime) {
           updatedPosts[index].scheduledFor = scheduledTime;
@@ -181,7 +180,9 @@ export async function handleBulkQueueUpdate(
       });
 
       if (response.ok) {
-        const responseData = (await response.json()) as { scheduledTime?: string };
+        const responseData = (await response.json()) as {
+          scheduledTime?: string;
+        };
         const { scheduledTime } = responseData;
         baseTime = scheduledTime ?? null;
       }
@@ -189,9 +190,7 @@ export async function handleBulkQueueUpdate(
   }
 
   // Find the queue type configuration for bulk scheduling
-  const queueTypeConfig = queueTypes.find(
-    (qt) => qt.name === queueType,
-  );
+  const queueTypeConfig = queueTypes.find((qt) => qt.name === queueType);
 
   const updatedPosts = posts.map((post, index) => {
     let scheduledFor = post.scheduledFor;
@@ -300,6 +299,3 @@ export async function handleBulkQueueUpdate(
 
   setPosts(updatedPosts);
 }
-
-
-

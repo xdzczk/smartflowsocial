@@ -1,12 +1,12 @@
 /**
  * Giveaway Feature Public API
- * 
+ *
  * This module exports the public API for giveaway-related operations.
  * Internal implementation details are kept in hooks/ and components/ directories.
- * 
+ *
  * Usage:
  *   import { loadGiveawayData, handleGiveawayAction } from "~/features/giveaway";
- * 
+ *
  * Do NOT import from internal paths like:
  *   import { ... } from "./hooks/..."  // ❌ Bad
  *   import { ... } from "./components/..."  // ❌ Bad
@@ -35,9 +35,7 @@ export type {
 // Giveaway Loader
 // ============================================================================
 
-export {
-  loadGiveawayData,
-} from "./giveaway-loader.server";
+export { loadGiveawayData } from "./giveaway-loader.server";
 
 // ============================================================================
 // Components (Public API)
@@ -54,4 +52,3 @@ export { GiveawayTable } from "./components/GiveawayTable";
 // ============================================================================
 
 export { useGiveawayState } from "./hooks/useGiveawayState";
-

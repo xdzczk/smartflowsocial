@@ -11,13 +11,3 @@ export async function loadSearchData(userId: string) {
   const user = await getUserById(userId);
   return { user };
 }
-
-
-
-
-
-
-
-
-
-

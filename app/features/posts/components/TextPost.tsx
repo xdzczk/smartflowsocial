@@ -44,7 +44,9 @@ export default function TextPost({
   const [content, setContent] = useState("");
   const [isRecyclable, setIsRecyclable] = useState(false);
   const [useHashtagPresets, setUseHashtagPresets] = useState(false);
-  const [selectedHashtagPresetId, setSelectedHashtagPresetId] = useState<string | undefined>(
+  const [selectedHashtagPresetId, setSelectedHashtagPresetId] = useState<
+    string | undefined
+  >(
     // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- Ternary is appropriate here; ?? undefined would be redundant
     selectedHashTagPresetId ? selectedHashTagPresetId : undefined,
   );
@@ -74,7 +76,8 @@ export default function TextPost({
     const formData = new FormData(form);
     const contentValue = formData.get("content");
     const scheduledFor = formData.get("scheduledFor");
-    const submitter = (e.nativeEvent as SubmitEvent).submitter as HTMLButtonElement;
+    const submitter = (e.nativeEvent as SubmitEvent)
+      .submitter as HTMLButtonElement;
     const submitType = submitter?.value ?? "";
 
     // Ensure queueType is set from current state
@@ -92,7 +95,8 @@ export default function TextPost({
     // Check if content is empty (except for draft saves)
     if (
       submitType !== "draft-text" &&
-      (!contentValue || (typeof contentValue === "string" && contentValue.trim() === ""))
+      (!contentValue ||
+        (typeof contentValue === "string" && contentValue.trim() === ""))
     ) {
       setContentError("Post content cannot be empty");
       toast.error("Post content cannot be empty");
@@ -115,16 +119,20 @@ export default function TextPost({
       if (submitType === "post-text") {
         scheduledTime = Date.now();
       } else {
-        const scheduledForStr = typeof scheduledFor === "string" ? scheduledFor : "";
+        const scheduledForStr =
+          typeof scheduledFor === "string" ? scheduledFor : "";
 
         // Only convert timezone if not UTC/Etc/GMT
         if (userTimezone !== "UTC" && userTimezone !== "Etc/GMT") {
           const utcDate = new Date(scheduledForStr);
 
           // Get timezone offset in minutes between user timezone and UTC
-          const userDateStr = new Date(scheduledForStr).toLocaleString("en-US", {
-            timeZone: userTimezone,
-          });
+          const userDateStr = new Date(scheduledForStr).toLocaleString(
+            "en-US",
+            {
+              timeZone: userTimezone,
+            },
+          );
           const userDate = new Date(userDateStr);
           const scheduledDate = new Date(scheduledForStr);
           const userOffset =
@@ -156,11 +164,12 @@ export default function TextPost({
       } else {
         // Manual hashtag presets are disabled, use queue type's default hashtags
         // Find the queue type object to get its ID
-        const selectedQueueType = queueTypes.find(qt => 
-          (typeof qt === "string" ? qt : qt.name) === selectedQueue
+        const selectedQueueType = queueTypes.find(
+          (qt) => (typeof qt === "string" ? qt : qt.name) === selectedQueue,
         );
-        const queueTypeId = typeof selectedQueueType === "object" ? selectedQueueType.id : null;
-        
+        const queueTypeId =
+          typeof selectedQueueType === "object" ? selectedQueueType.id : null;
+
         try {
           const response = await fetch("/api/effective-hashtags", {
             method: "POST",
@@ -181,16 +190,20 @@ export default function TextPost({
             // Fallback to user's default hashtags
             effectiveHashtags = Array.isArray(tags)
               ? tags.join(" ")
-              : tags ?? "";
+              : (tags ?? "");
           }
         } catch (error) {
-          const { handleErrorSafely } = await import("~/lib/error-handler.client");
+          const { handleErrorSafely } = await import(
+            "~/lib/error-handler.client"
+          );
           handleErrorSafely(error, {
             component: "TextPost",
             action: "fetchEffectiveHashtags",
           });
           // Fallback to user's default hashtags
-          effectiveHashtags = Array.isArray(tags) ? tags.join(" ") : tags ?? "";
+          effectiveHashtags = Array.isArray(tags)
+            ? tags.join(" ")
+            : (tags ?? "");
         }
       }
 
@@ -201,7 +214,9 @@ export default function TextPost({
 
       const contentToSign = user?.showHashTagsinPosts
         ? `${typeof contentValue === "string" ? contentValue : ""}\n${effectiveHashtags}`
-        : (typeof contentValue === "string" ? contentValue : "");
+        : typeof contentValue === "string"
+          ? contentValue
+          : "";
 
       const { nostrEvent, signedEvent } = await signEventFn({
         content: contentToSign,
@@ -218,13 +233,16 @@ export default function TextPost({
       fetcher.submit(formData, { method: "post" });
     } catch (error) {
       const { handleAsyncError } = await import("~/lib/error-handler.client");
-      handleAsyncError(error, {
-        component: "TextPost",
-        action: "handleSubmit",
-      }, false); // Don't show toast, let component handle it
+      handleAsyncError(
+        error,
+        {
+          component: "TextPost",
+          action: "handleSubmit",
+        },
+        false,
+      ); // Don't show toast, let component handle it
     }
   };
-
 
   const handleHashtagPresetSelect = (
     presetId: string | null,
@@ -244,7 +262,7 @@ export default function TextPost({
 
     selectedAssets.forEach((asset) => {
       if (asset.assetType === "TEXT") {
-        const textContent = (asset.content ?? asset.title) ?? "";
+        const textContent = asset.content ?? asset.title ?? "";
         if (textContent) {
           textAssets.push(textContent);
         }
@@ -271,7 +289,11 @@ export default function TextPost({
   };
 
   return (
-    <fetcher.Form method="post" className="w-full" onSubmit={(e) => void handleSubmit(e)}>
+    <fetcher.Form
+      method="post"
+      className="w-full"
+      onSubmit={(e) => void handleSubmit(e)}
+    >
       <div className="relative">
         <Textarea
           ref={textareaRef}
@@ -334,9 +356,11 @@ export default function TextPost({
             useHashtagPresets={useHashtagPresets}
             onUseHashtagPresetsChange={setUseHashtagPresets}
             showQueuePreset={selectedQueue !== "unassigned"}
-            queueType={queueTypes.find(
-              (q) => (typeof q === "string" ? q : q.name) === selectedQueue,
-            ) as QueueType | undefined}
+            queueType={
+              queueTypes.find(
+                (q) => (typeof q === "string" ? q : q.name) === selectedQueue,
+              ) as QueueType | undefined
+            }
           />
           <div className="flex items-center gap-2">
             <input
@@ -398,7 +422,9 @@ export default function TextPost({
               scheduleIntervals={scheduleIntervals}
               queueTypes={queueTypes}
               selectedQueue={selectedQueue}
-              onScheduleIntervalClick={(intervalHours) => void handleScheduleIntervalClick(intervalHours)}
+              onScheduleIntervalClick={(intervalHours) =>
+                void handleScheduleIntervalClick(intervalHours)
+              }
               onCalculateNextSlot={() => {
                 void calculateQueueScheduleTime(selectedQueue);
               }}

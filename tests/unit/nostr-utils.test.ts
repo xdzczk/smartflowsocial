@@ -246,7 +246,9 @@ describe("Nostr Utils", () => {
         ],
       };
       const result = convertEditorJSToMarkdown(editorData);
-      expect(result).toContain("![Image caption](https://example.com/image.jpg)");
+      expect(result).toContain(
+        "![Image caption](https://example.com/image.jpg)",
+      );
     });
 
     it("should return empty string for invalid JSON", () => {
@@ -307,16 +309,19 @@ describe("Nostr Utils", () => {
     });
 
     it("should convert images", () => {
-      const result = convertMarkdownToEditorJS("![alt](https://example.com/image.jpg)");
+      const result = convertMarkdownToEditorJS(
+        "![alt](https://example.com/image.jpg)",
+      );
       expect(result.blocks).toHaveLength(1);
       expect(result.blocks[0]?.type).toBe("image");
     });
 
     it("should convert links", () => {
-      const result = convertMarkdownToEditorJS("[Link Text](https://example.com)");
+      const result = convertMarkdownToEditorJS(
+        "[Link Text](https://example.com)",
+      );
       expect(result.blocks).toHaveLength(1);
       expect(result.blocks[0]?.type).toBe("linkTool");
     });
   });
 });
-

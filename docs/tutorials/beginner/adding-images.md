@@ -46,13 +46,15 @@ Learn how to add images to your posts to make them more engaging and visually ap
 
 1. **Click in caption field** (below image)
 2. **Type your caption:**
+
    ```
    Beautiful sunset from my window 🌅
-   
+
    #photography #sunset #nostr
    ```
 
 **Tips:**
+
 - Describe what's in the image
 - Add context or story
 - Include relevant hashtags
@@ -70,6 +72,7 @@ Learn how to add images to your posts to make them more engaging and visually ap
 5. **All images** appear in preview
 
 **Carousel Tips:**
+
 - Maximum images: Check your plan limits
 - Order matters: First image is the cover
 - Use consistent style for series
@@ -82,10 +85,12 @@ Learn how to add images to your posts to make them more engaging and visually ap
 **Before posting, you can:**
 
 1. **Remove image:**
+
    - Click "Remove" on image
    - Image removed from post
 
 2. **Reorder images:**
+
    - Drag images to reorder
    - First image is the cover
 
@@ -98,10 +103,12 @@ Learn how to add images to your posts to make them more engaging and visually ap
 ## Step 6: Configure Post Settings
 
 1. **Hashtags:**
+
    - Add manually or use preset
    - Include relevant tags
 
 2. **Queue (Optional):**
+
    - Select queue type
    - Helps organize content
 
@@ -134,6 +141,7 @@ Learn how to add images to your posts to make them more engaging and visually ap
 ### File Formats
 
 **Supported:**
+
 - **JPEG/JPG** - Best for photos
 - **PNG** - Best for graphics, transparency
 - **WebP** - Modern, efficient format
@@ -142,11 +150,13 @@ Learn how to add images to your posts to make them more engaging and visually ap
 ### File Size
 
 **Recommendations:**
+
 - **Optimal:** Under 2MB
 - **Maximum:** 10MB (may vary by plan)
 - **Large files:** May upload slowly
 
 **Optimization Tips:**
+
 - Compress images before upload
 - Use appropriate dimensions
 - Consider file format
@@ -154,11 +164,13 @@ Learn how to add images to your posts to make them more engaging and visually ap
 ### Image Dimensions
 
 **Recommended:**
+
 - **Square:** 1080x1080px (Instagram-style)
 - **Landscape:** 1920x1080px (16:9)
 - **Portrait:** 1080x1350px (4:5)
 
 **Tips:**
+
 - Consistent dimensions look better
 - Square works well for most platforms
 - Consider your audience
@@ -172,6 +184,7 @@ Learn how to add images to your posts to make them more engaging and visually ap
 **Problem:** Image won't upload
 
 **Solutions:**
+
 - Check file size (too large?)
 - Verify file format (supported?)
 - Check internet connection
@@ -183,6 +196,7 @@ Learn how to add images to your posts to make them more engaging and visually ap
 **Problem:** Image uploaded but not showing
 
 **Solutions:**
+
 - Check image preview appears
 - Verify upload completed
 - Try removing and re-uploading
@@ -193,6 +207,7 @@ Learn how to add images to your posts to make them more engaging and visually ap
 **Problem:** Images upload very slowly
 
 **Solutions:**
+
 - Compress images before upload
 - Check internet connection speed
 - Use smaller file sizes
@@ -219,7 +234,7 @@ See [Assets Management Guide](../../guides/user-guides/assets.md) for details.
 ✅ How to create carousel posts  
 ✅ How to add captions  
 ✅ Image best practices  
-✅ Troubleshooting tips  
+✅ Troubleshooting tips
 
 ---
 
@@ -240,4 +255,3 @@ See [Assets Management Guide](../../guides/user-guides/assets.md) for details.
 ---
 
 **Next Tutorial:** [Scheduling Posts](./scheduling-posts.md) → Plan your content in advance
-

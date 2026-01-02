@@ -87,7 +87,11 @@ async function fetchAuthorInfo(pubkey: string): Promise<{
 
     if (userMetadataEvent?.[2]) {
       const event = userMetadataEvent[2];
-      const metadata = JSON.parse(event.content) as { name?: string; display_name?: string; picture?: string };
+      const metadata = JSON.parse(event.content) as {
+        name?: string;
+        display_name?: string;
+        picture?: string;
+      };
       authorName = metadata.name ?? metadata.display_name ?? authorName;
       authorImage = metadata.picture ?? null;
     }
@@ -168,7 +172,8 @@ async function fetchEventStats(eventId: string): Promise<{
  * Extract media URLs from event content
  */
 function extractMediaUrls(content: string): string[] {
-  const urlRegex = /(https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp|mp4|webm|mov))/gi;
+  const urlRegex =
+    /(https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp|mp4|webm|mov))/gi;
   return content.match(urlRegex) ?? [];
 }
 
@@ -211,7 +216,8 @@ export async function handleSearchEvent(eventInput: string) {
   // Find the EVENT response
   const eventResponse = Array.isArray(responses)
     ? responses.find(
-        (res): res is [string, string, NostrEventWithMetadata] => Array.isArray(res) && res[0] === "EVENT" && res[2] !== undefined,
+        (res): res is [string, string, NostrEventWithMetadata] =>
+          Array.isArray(res) && res[0] === "EVENT" && res[2] !== undefined,
       )
     : null;
 
@@ -246,7 +252,7 @@ export async function handleSearchEvent(eventInput: string) {
   return {
     success: true,
     event: {
-      id: (typeof event.id === "string" ? event.id : eventId),
+      id: typeof event.id === "string" ? event.id : eventId,
       pubkey: eventPubkey,
       created_at: typeof event.created_at === "number" ? event.created_at : 0,
       kind: typeof event.kind === "number" ? event.kind : 1,
@@ -259,7 +265,3 @@ export async function handleSearchEvent(eventInput: string) {
     stats,
   };
 }
-
-
-
-

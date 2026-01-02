@@ -174,6 +174,7 @@ railway init
 #### 4. Add PostgreSQL Service
 
 In Railway dashboard:
+
 - Click "New" → "Database" → "PostgreSQL"
 - Railway automatically sets `DATABASE_URL`
 
@@ -732,6 +733,7 @@ Test posting to Nostr.
 ### Vertical Scaling
 
 Increase resources (CPU, RAM) for:
+
 - Database server
 - Redis instance
 - Application servers
@@ -789,7 +791,3 @@ upstream smartflow {
 - [Operations Guide](./operations.md)
 - [Troubleshooting Guide](./troubleshooting.md)
 - [Architecture Documentation](./architecture.md)
-
-
-
-

@@ -2,7 +2,7 @@ import { TEST_NPUB } from "./support/nostr-test-keys";
 
 /**
  * Detailed Interaction Tests
- * 
+ *
  * Tests detailed user interactions:
  * - Clicking buttons and links
  * - Typing in forms
@@ -27,7 +27,7 @@ describe("Detailed User Interactions", () => {
 
     it("should handle textarea input with typing", () => {
       const testContent = "This is a test post with #hashtags and @mentions";
-      
+
       cy.get("textarea").first().should("be.visible");
       cy.get("textarea").first().clear();
       cy.get("textarea").first().type(testContent);
@@ -35,8 +35,9 @@ describe("Detailed User Interactions", () => {
     });
 
     it("should handle textarea input with special characters", () => {
-      const specialContent = "Test with special chars: !@#$%^&*()_+-=[]{}|;':\",./<>?";
-      
+      const specialContent =
+        "Test with special chars: !@#$%^&*()_+-=[]{}|;':\",./<>?";
+
       cy.get("textarea").first().clear();
       cy.get("textarea").first().type(specialContent);
       cy.get("textarea").first().should("have.value", specialContent);
@@ -44,7 +45,7 @@ describe("Detailed User Interactions", () => {
 
     it("should handle textarea input with line breaks", () => {
       const multiLineContent = "Line 1\nLine 2\nLine 3";
-      
+
       cy.get("textarea").first().clear();
       cy.get("textarea").first().type(multiLineContent);
       cy.get("textarea").first().should("contain.value", "Line 1");
@@ -54,20 +55,22 @@ describe("Detailed User Interactions", () => {
       cy.get("textarea").first().type("Test content");
       // Wait for the value to be set
       cy.get("textarea").first().should("have.value", "Test content");
-      
+
       // Test that backspace removes characters
       // Move cursor to end and backspace once
       cy.get("textarea").first().type("{moveToEnd}{backspace}");
-      
+
       // Verify that at least one character was removed
       cy.get("textarea").first().should("have.value", "Test conten");
-      
+
       // Verify the length decreased
-      cy.get("textarea").first().then(($textarea) => {
-        const value = $textarea.val() as string;
-        expect(value.length).to.be.lessThan("Test content".length);
-        expect(value).to.equal("Test conten");
-      });
+      cy.get("textarea")
+        .first()
+        .then(($textarea) => {
+          const value = $textarea.val() as string;
+          expect(value.length).to.be.lessThan("Test content".length);
+          expect(value).to.equal("Test conten");
+        });
     });
   });
 
@@ -83,20 +86,20 @@ describe("Detailed User Interactions", () => {
         .should("be.visible")
         .should("not.be.disabled")
         .click();
-      
+
       // Should process submission
       cy.location("pathname", { timeout: 10000 }).should((pathname) => {
-        expect(pathname).to.satisfy((p: string) => 
-          p.includes("dashboard") || p.includes("newpost")
+        expect(pathname).to.satisfy(
+          (p: string) => p.includes("dashboard") || p.includes("newpost"),
         );
       });
     });
 
     it("should handle disabled button state", () => {
       cy.get("body").then(($body) => {
-        const disabledButtons = $body.find('button:disabled');
+        const disabledButtons = $body.find("button:disabled");
         if (disabledButtons.length > 0) {
-          cy.get('button:disabled').first().should("be.disabled");
+          cy.get("button:disabled").first().should("be.disabled");
         }
       });
     });
@@ -155,7 +158,10 @@ describe("Detailed User Interactions", () => {
         if (fileInput.length > 0) {
           cy.uploadTestFile('input[type="file"]', 0);
           // Wait for navigation after file upload
-          cy.location("pathname", { timeout: 10000 }).should("include", "newpost");
+          cy.location("pathname", { timeout: 10000 }).should(
+            "include",
+            "newpost",
+          );
         }
       });
     });
@@ -166,7 +172,10 @@ describe("Detailed User Interactions", () => {
         if (fileInput.length > 0 && fileInput.attr("multiple")) {
           cy.uploadTestFile('input[type="file"]', [0, 1, 2]);
           // Wait for navigation after file upload
-          cy.location("pathname", { timeout: 10000 }).should("include", "newpost");
+          cy.location("pathname", { timeout: 10000 }).should(
+            "include",
+            "newpost",
+          );
         }
       });
     });
@@ -185,7 +194,10 @@ describe("Detailed User Interactions", () => {
         .then(() => {
           // Use force:true for fixed sidebar links
           cy.get('a[href*="newpost"]').first().click({ force: true });
-          cy.location("pathname", { timeout: 10000 }).should("include", "newpost");
+          cy.location("pathname", { timeout: 10000 }).should(
+            "include",
+            "newpost",
+          );
         });
     });
 
@@ -212,11 +224,13 @@ describe("Detailed User Interactions", () => {
     it("should handle Tab key navigation", () => {
       cy.get("textarea").first().focus();
       cy.focused().should("exist");
-      
+
       // Verify focus can move to other elements (simulating Tab navigation)
       // Since cy.type doesn't support {tab}, we verify focus navigation differently
       cy.get("body").then(($body) => {
-        const focusableElements = $body.find("a, button, input, textarea, select").filter(":visible");
+        const focusableElements = $body
+          .find("a, button, input, textarea, select")
+          .filter(":visible");
         if (focusableElements.length > 1) {
           // Focus the next focusable element to verify navigation works
           cy.wrap(focusableElements.eq(1)).scrollIntoView();
@@ -230,4 +244,3 @@ describe("Detailed User Interactions", () => {
     });
   });
 });
-

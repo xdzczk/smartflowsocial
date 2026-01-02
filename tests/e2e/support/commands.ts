@@ -10,11 +10,14 @@ export const TEST_FILES = [
 ];
 
 // Subscription status for testing different plan states
-export type TestSubscriptionStatus = "FREE" | "ACTIVE" | "EXPIRED" | "CANCELED" | "PAST_DUE";
-
+export type TestSubscriptionStatus =
+  | "FREE"
+  | "ACTIVE"
+  | "EXPIRED"
+  | "CANCELED"
+  | "PAST_DUE";
 
 declare global {
-   
   namespace Cypress {
     interface Chainable {
       /**
@@ -137,13 +140,16 @@ function login({
 function loginNostr({ npub = TEST_NPUB }: { npub?: string } = {}) {
   cy.then(() => ({ npub })).as("user");
   // Delete user first to ensure fresh state, then create
-    cy.exec(`npx tsx ./tests/e2e/support/delete-nostr-user.ts "${npub}"`, {
+  cy.exec(`npx tsx ./tests/e2e/support/delete-nostr-user.ts "${npub}"`, {
     failOnNonZeroExit: false,
   }).then(() => {
     cy.exec(`npx tsx ./tests/e2e/support/create-nostr-user.ts "${npub}"`).then(
       ({ stdout }) => {
         const cookieValue = stdout
-          .replace(/.*<cookie>(?<cookieValue>.*)<\/cookie>.*/s, "$<cookieValue>")
+          .replace(
+            /.*<cookie>(?<cookieValue>.*)<\/cookie>.*/s,
+            "$<cookieValue>",
+          )
           .trim();
         cy.setCookie("__session", cookieValue);
       },
@@ -177,7 +183,9 @@ function cleanupNostrUser({ npub }: { npub?: string } = {}) {
       interface CypressState {
         state: (key: string) => unknown;
       }
-      const aliases = ((cy as unknown) as CypressState).state("aliases") as Record<string, unknown> | undefined;
+      const aliases = (cy as unknown as CypressState).state("aliases") as
+        | Record<string, unknown>
+        | undefined;
       if (aliases?.user) {
         cy.get("@user", { log: false }).then((user) => {
           const userNpub = (user as { npub?: string }).npub;
@@ -229,7 +237,9 @@ function uploadTestFile(
   fileIndex: number | number[] = 0,
 ): void {
   const indices = Array.isArray(fileIndex) ? fileIndex : [fileIndex];
-  const filePaths = indices.map((i) => `tests/e2e/memes_test_files/${TEST_FILES[i]}`);
+  const filePaths = indices.map(
+    (i) => `tests/e2e/memes_test_files/${TEST_FILES[i]}`,
+  );
 
   cy.get(selector).selectFile(filePaths, { force: true });
 }
@@ -255,16 +265,18 @@ function setSubscriptionStatus(status: TestSubscriptionStatus): void {
   cy.get("@user").then((user) => {
     const npub = (user as { npub?: string }).npub;
     if (!npub) {
-      throw new Error("No npub found on user. Make sure to call cy.loginNostr() first.");
+      throw new Error(
+        "No npub found on user. Make sure to call cy.loginNostr() first.",
+      );
     }
-    cy.exec(`npx tsx ./tests/e2e/support/update-subscription-status.ts "${npub}" "${status}"`).then(
-      ({ stdout }) => {
-        const resultStatus = stdout
-          .replace(/.*<status>(?<statusValue>.*)<\/status>.*/s, "$<statusValue>")
-          .trim();
-        cy.log(`Subscription status set to: ${resultStatus}`);
-      },
-    );
+    cy.exec(
+      `npx tsx ./tests/e2e/support/update-subscription-status.ts "${npub}" "${status}"`,
+    ).then(({ stdout }) => {
+      const resultStatus = stdout
+        .replace(/.*<status>(?<statusValue>.*)<\/status>.*/s, "$<statusValue>")
+        .trim();
+      cy.log(`Subscription status set to: ${resultStatus}`);
+    });
   });
 }
 
@@ -278,4 +290,3 @@ export const registerCommands = () => {
   Cypress.Commands.add("signNostrEvent", signNostrEvent);
   Cypress.Commands.add("setSubscriptionStatus", setSubscriptionStatus);
 };
-

@@ -1,6 +1,6 @@
 /**
  * File Upload Handler for Bulk Posts
- * 
+ *
  * Handles file selection, validation, and processing for bulk uploads
  */
 
@@ -98,14 +98,11 @@ export async function handleFileChange(
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
   } catch (error) {
-    logClientError(
-      error instanceof Error ? error : new Error(String(error)),
-      {
-        component: "bulkposts",
-        action: "handleFileChange",
-        fileCount: selectedFiles.length,
-      },
-    );
+    logClientError(error instanceof Error ? error : new Error(String(error)), {
+      component: "bulkposts",
+      action: "handleFileChange",
+      fileCount: selectedFiles.length,
+    });
     alert("Error processing media files. Please try again.");
     setIsProcessing(false);
     return Promise.resolve();
@@ -148,7 +145,3 @@ export async function handleFileChange(
   // Reset flag when new files are uploaded
   setFirstItemTimeManuallyChanged(false);
 }
-
-
-
-

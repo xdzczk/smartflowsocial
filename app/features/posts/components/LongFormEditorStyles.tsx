@@ -1,8 +1,8 @@
 export function LongFormEditorStyles() {
-    return (
-        <style
-            dangerouslySetInnerHTML={{
-                __html: `
+  return (
+    <style
+      dangerouslySetInnerHTML={{
+        __html: `
         #editorjs {
           font-family: inherit;
         }
@@ -140,7 +140,7 @@ export function LongFormEditorStyles() {
           opacity: 1;
         }
       `,
-            }}
-        />
-    );
+      }}
+    />
+  );
 }

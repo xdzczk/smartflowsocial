@@ -15,14 +15,17 @@ interface Post {
   status?: string;
 }
 
-type Stats = Record<string, {
+type Stats = Record<
+  string,
+  {
     likes?: number;
     replies?: number;
     mentions?: number;
     reposts?: number;
     zaps?: number;
     satszapped?: number;
-  }>;
+  }
+>;
 
 interface RecyclablesTableProps {
   posts: Post[];
@@ -54,13 +57,7 @@ export function RecyclablesTable({
   individualRepostFetcher,
   bulkDeleteFetcher,
 }: RecyclablesTableProps) {
-  const SortableHeader = ({
-    key,
-    label,
-  }: {
-    key: string;
-    label: string;
-  }) => (
+  const SortableHeader = ({ key, label }: { key: string; label: string }) => (
     <th
       className="cursor-pointer bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50"
       onClick={() => onRequestSort(key)}
@@ -152,7 +149,9 @@ export function RecyclablesTable({
                       : post.caption}
                   </p>
                 </td>
-                <td className="p-3">{post.postedAt ? formatDate(post.postedAt) : "—"}</td>
+                <td className="p-3">
+                  {post.postedAt ? formatDate(post.postedAt) : "—"}
+                </td>
                 <td className="p-3">{postStats.likes}</td>
                 <td className="p-3">{postStats.replies}</td>
                 <td className="p-3">{postStats.mentions}</td>
@@ -205,7 +204,9 @@ export function RecyclablesTable({
                         disabled={individualRepostFetcher.state !== "idle"}
                         className="inline-flex items-center justify-center gap-2 rounded-lg border border-purple-200 bg-white px-2 py-1 text-sm font-semibold leading-5 text-purple-800 hover:border-purple-300 hover:text-purple-900 hover:shadow-sm focus:ring focus:ring-purple-300/25 active:border-purple-200 active:shadow-none disabled:opacity-50 dark:border-purple-700 dark:bg-gray-800 dark:text-purple-300 dark:hover:border-purple-600 dark:hover:text-purple-200 dark:focus:ring-purple-600/40 dark:active:border-purple-700"
                       >
-                        {individualRepostFetcher.state !== "idle" ? "Reposting..." : "Repost"}
+                        {individualRepostFetcher.state !== "idle"
+                          ? "Reposting..."
+                          : "Repost"}
                       </button>
                     </individualRepostFetcher.Form>
                     <individualRepostFetcher.Form
@@ -219,7 +220,9 @@ export function RecyclablesTable({
                         disabled={individualRepostFetcher.state !== "idle"}
                         className="inline-flex items-center justify-center gap-2 rounded-lg border border-green-200 bg-white px-2 py-1 text-sm font-semibold leading-5 text-green-800 hover:border-green-300 hover:text-green-900 hover:shadow-sm focus:ring focus:ring-green-300/25 active:border-green-200 active:shadow-none disabled:opacity-50 dark:border-green-700 dark:bg-gray-800 dark:text-green-300 dark:hover:border-green-600 dark:hover:text-green-200 dark:focus:ring-green-600/40 dark:active:border-green-700"
                       >
-                        {individualRepostFetcher.state !== "idle" ? "Quoting..." : "Quote Post"}
+                        {individualRepostFetcher.state !== "idle"
+                          ? "Quoting..."
+                          : "Quote Post"}
                       </button>
                     </individualRepostFetcher.Form>
                     <deleteFetcher.Form
@@ -236,7 +239,9 @@ export function RecyclablesTable({
                         }
                         className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-2 py-1 text-sm font-semibold leading-5 text-red-800 hover:border-red-300 hover:text-red-900 hover:shadow-sm focus:ring focus:ring-red-300/25 active:border-red-200 active:shadow-none disabled:opacity-50 dark:border-red-700 dark:bg-gray-800 dark:text-red-300 dark:hover:border-red-600 dark:hover:text-red-200 dark:focus:ring-red-600/40 dark:active:border-red-700"
                       >
-                        {deleteFetcher.state !== "idle" ? "Deleting..." : "Delete"}
+                        {deleteFetcher.state !== "idle"
+                          ? "Deleting..."
+                          : "Delete"}
                       </button>
                     </deleteFetcher.Form>
                   </div>
@@ -249,4 +254,3 @@ export function RecyclablesTable({
     </div>
   );
 }
-

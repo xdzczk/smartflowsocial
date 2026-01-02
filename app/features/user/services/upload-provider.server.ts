@@ -15,7 +15,7 @@ import {
  */
 export async function loadUploadProviderSettings(userId: string) {
   let provider, enableMirrorBlossom, mirrorUploadUrls;
-  
+
   try {
     [provider, enableMirrorBlossom, mirrorUploadUrls] = await Promise.all([
       getUserUploadProvider(userId),
@@ -35,16 +35,3 @@ export async function loadUploadProviderSettings(userId: string) {
     mirrorUploadUrls,
   };
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

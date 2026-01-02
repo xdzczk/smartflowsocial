@@ -7,18 +7,13 @@ interface ToastNotificationProps {
   onClose: () => void;
 }
 
-export function ToastNotification({ message, onClose: _onClose }: ToastNotificationProps) {
+export function ToastNotification({
+  message,
+  onClose: _onClose,
+}: ToastNotificationProps) {
   return (
     <div className="fixed bottom-4 right-4 rounded-lg bg-green-500 px-4 py-3 text-white shadow-lg">
       {message}
     </div>
   );
 }
-
-
-
-
-
-
-
-

@@ -198,9 +198,7 @@ export async function requireActiveSubscription(
         : null,
   };
 
-  if (
-    subscriptionData.currentSubscription?.status !== "ACTIVE"
-  ) {
+  if (subscriptionData.currentSubscription?.status !== "ACTIVE") {
     throw redirect(redirectTo);
   }
 

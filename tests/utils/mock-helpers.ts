@@ -1,6 +1,6 @@
 /**
  * Shared mock helpers for integration tests
- * 
+ *
  * These helpers provide common mock setup patterns to reduce duplication
  * across large integration tests.
  */
@@ -72,7 +72,7 @@ export function setupUserMocks(mocks: {
 
   // Default mock responses
   if (!getUserById.mock.calls.length) {
-    (getUserById).mockResolvedValue({
+    getUserById.mockResolvedValue({
       id: TEST_USER_ID,
       userRelays: ["wss://relay1.com", "wss://relay2.com"],
       showHashTagsinPosts: true,
@@ -80,7 +80,7 @@ export function setupUserMocks(mocks: {
   }
 
   if (!getQueueTypes.mock.calls.length) {
-    (getQueueTypes).mockResolvedValue([
+    getQueueTypes.mockResolvedValue([
       {
         id: TEST_QUEUE_TYPE_ID,
         name: "posts",
@@ -90,7 +90,7 @@ export function setupUserMocks(mocks: {
   }
 
   if (!getHashTagPresetById.mock.calls.length) {
-    (getHashTagPresetById).mockResolvedValue({
+    getHashTagPresetById.mockResolvedValue({
       id: "preset-1",
       tags: "#custom #tags",
     });
@@ -115,7 +115,7 @@ export function setupPostMocks(mocks: {
 
   // Default mock responses
   if (!createPost.mock.calls.length) {
-    (createPost).mockResolvedValue({
+    createPost.mockResolvedValue({
       id: TEST_POST_ID,
       signedEvent: { id: "event-123" },
     });
@@ -127,10 +127,14 @@ export function setupPostMocks(mocks: {
 /**
  * Setup default mocks for fetch (Nostr publisher, etc.)
  */
-export function setupFetchMock(status = 200, ok = true, jsonResponse: unknown = {}) {
+export function setupFetchMock(
+  status = 200,
+  ok = true,
+  jsonResponse: unknown = {},
+) {
   const mockFetch = vi.fn();
   global.fetch = mockFetch as unknown as typeof fetch;
-  
+
   // Default successful response
   mockFetch.mockResolvedValue({
     ok,
@@ -198,4 +202,3 @@ export function createMockPost(overrides: Record<string, unknown> = {}) {
 export function clearAllMocks() {
   vi.clearAllMocks();
 }
-

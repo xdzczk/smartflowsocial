@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       test_suite:
-        description: 'Test suite to check for flaky tests'
+        description: "Test suite to check for flaky tests"
         required: true
         type: choice
         options:
@@ -14,9 +14,9 @@ on:
           - security
           - performance
       runs:
-        description: 'Number of test runs'
+        description: "Number of test runs"
         required: false
-        default: '10'
+        default: "10"
         type: string
 
 jobs:
@@ -27,7 +27,7 @@ jobs:
       fail-fast: false
       matrix:
         run: ${{ fromJSON(format('[{0}]', join(range(1, fromJSON(inputs.runs || '10') + 1), ','))) }}
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -40,8 +40,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'pnpm'
+          node-version: "20"
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -71,9 +71,6 @@ jobs:
             property)
               pnpm test:property
               ;;
-        env:
-          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
             security)
               pnpm test:security
               ;;
@@ -81,6 +78,9 @@ jobs:
               pnpm test:performance
               ;;
           esac
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
         id: test-run
         continue-on-error: true
 
@@ -103,7 +103,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: detect-flaky-tests
     if: always()
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -111,7 +111,7 @@ jobs:
       - name: Download all test results
         uses: actions/download-artifact@v4
         with:
-          pattern: 'flaky-test-results-*'
+          pattern: "flaky-test-results-*"
           merge-multiple: true
           path: flaky-test-results
 
@@ -121,16 +121,16 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Analyzing test results for ${{ inputs.test_suite }} tests..." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           total_runs=$(ls flaky-test-results/*.txt 2>/dev/null | wc -l || echo "0")
           success_count=$(grep -c "success" flaky-test-results/*.txt 2>/dev/null || echo "0")
           failure_count=$(grep -c "failure" flaky-test-results/*.txt 2>/dev/null || echo "0")
-          
+
           echo "Total runs: $total_runs" >> $GITHUB_STEP_SUMMARY
           echo "Successful: $success_count" >> $GITHUB_STEP_SUMMARY
           echo "Failed: $failure_count" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ "$failure_count" -gt 0 ] && [ "$success_count" -gt 0 ]; then
             echo "⚠️ **Flaky tests detected!** Some tests passed and some failed across multiple runs." >> $GITHUB_STEP_SUMMARY
           elif [ "$failure_count" -eq 0 ]; then
@@ -138,10 +138,3 @@ jobs:
           else
             echo "❌ All test runs failed. This may indicate a real issue, not flakiness." >> $GITHUB_STEP_SUMMARY
           fi
-
-
-
-
-
-
-

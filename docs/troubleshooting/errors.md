@@ -21,6 +21,7 @@ This guide helps you diagnose and resolve common issues with SmartFlowSocial.
 ### Application Won't Start
 
 **Symptoms:**
+
 - Server fails to start
 - Port already in use error
 - Module not found errors
@@ -28,27 +29,30 @@ This guide helps you diagnose and resolve common issues with SmartFlowSocial.
 **Solutions:**
 
 1. **Check Port Availability:**
+
    ```bash
    # Check if port 3000 is in use
    lsof -i :3000
-   
+
    # Kill process if needed
    kill -9 <PID>
-   
+
    # Or use a different port
    PORT=3001 pnpm start
    ```
 
 2. **Check Environment Variables:**
+
    ```bash
    # Verify all required variables are set
    cat .env
-   
+
    # Check for missing variables
    node -e "console.log(process.env.DATABASE_URL)"
    ```
 
 3. **Reinstall Dependencies:**
+
    ```bash
    rm -rf node_modules pnpm-lock.yaml
    pnpm install
@@ -63,6 +67,7 @@ This guide helps you diagnose and resolve common issues with SmartFlowSocial.
 ### Application Crashes
 
 **Symptoms:**
+
 - Application stops responding
 - Process exits unexpectedly
 - Memory errors
@@ -70,6 +75,7 @@ This guide helps you diagnose and resolve common issues with SmartFlowSocial.
 **Solutions:**
 
 1. **Check Logs:**
+
    ```bash
    pm2 logs
    # or
@@ -77,10 +83,11 @@ This guide helps you diagnose and resolve common issues with SmartFlowSocial.
    ```
 
 2. **Check Memory:**
+
    ```bash
    # Monitor memory usage
    pm2 monit
-   
+
    # Increase Node.js memory limit
    NODE_OPTIONS="--max-old-space-size=4096" pnpm start
    ```
@@ -94,18 +101,21 @@ This guide helps you diagnose and resolve common issues with SmartFlowSocial.
 ### Health Check Failing
 
 **Symptoms:**
+
 - `/healthcheck` returns 500
 - Monitoring alerts triggered
 
 **Solutions:**
 
 1. **Check Database Connection:**
+
    ```bash
    # Test database connection
    pnpm exec prisma db execute --stdin <<< "SELECT 1"
    ```
 
 2. **Check Database URL:**
+
    ```bash
    echo $DATABASE_URL
    # Verify format: postgresql://user:pass@host:port/db
@@ -123,6 +133,7 @@ This guide helps you diagnose and resolve common issues with SmartFlowSocial.
 ### Connection Errors
 
 **Symptoms:**
+
 - "Connection refused" errors
 - "Timeout" errors
 - "Authentication failed" errors
@@ -130,15 +141,17 @@ This guide helps you diagnose and resolve common issues with SmartFlowSocial.
 **Solutions:**
 
 1. **Verify Database is Running:**
+
    ```bash
    # PostgreSQL
    pg_isready -h localhost -p 5432
-   
+
    # Docker
    docker ps | grep postgres
    ```
 
 2. **Check Connection String:**
+
    ```bash
    # Verify DATABASE_URL format
    echo $DATABASE_URL
@@ -146,10 +159,11 @@ This guide helps you diagnose and resolve common issues with SmartFlowSocial.
    ```
 
 3. **Test Connection:**
+
    ```bash
    # Using psql
    psql $DATABASE_URL -c "SELECT 1"
-   
+
    # Using Prisma
    pnpm exec prisma db execute --stdin <<< "SELECT 1"
    ```
@@ -163,6 +177,7 @@ This guide helps you diagnose and resolve common issues with SmartFlowSocial.
 ### Migration Issues
 
 **Symptoms:**
+
 - Migrations fail
 - Schema out of sync
 - Migration conflicts
@@ -170,16 +185,19 @@ This guide helps you diagnose and resolve common issues with SmartFlowSocial.
 **Solutions:**
 
 1. **Check Migration Status:**
+
    ```bash
    pnpm exec prisma migrate status
    ```
 
 2. **Reset Database (Development Only):**
+
    ```bash
    pnpm exec prisma migrate reset
    ```
 
 3. **Create New Migration:**
+
    ```bash
    pnpm exec prisma migrate dev --name migration_name
    ```
@@ -192,6 +210,7 @@ This guide helps you diagnose and resolve common issues with SmartFlowSocial.
 ### Slow Queries
 
 **Symptoms:**
+
 - Slow page loads
 - Timeout errors
 - High database CPU
@@ -199,10 +218,11 @@ This guide helps you diagnose and resolve common issues with SmartFlowSocial.
 **Solutions:**
 
 1. **Identify Slow Queries:**
+
    ```sql
    -- Enable query logging
    SET log_min_duration_statement = 1000; -- Log queries > 1s
-   
+
    -- View slow queries
    SELECT query, mean_exec_time, calls
    FROM pg_stat_statements
@@ -211,6 +231,7 @@ This guide helps you diagnose and resolve common issues with SmartFlowSocial.
    ```
 
 2. **Add Indexes:**
+
    ```sql
    -- Example: Add index on frequently queried column
    CREATE INDEX idx_posts_user_id ON posts(user_id);
@@ -228,6 +249,7 @@ This guide helps you diagnose and resolve common issues with SmartFlowSocial.
 ### Jobs Not Processing
 
 **Symptoms:**
+
 - Jobs stuck in queue
 - No worker activity
 - Scheduled posts not publishing
@@ -235,15 +257,17 @@ This guide helps you diagnose and resolve common issues with SmartFlowSocial.
 **Solutions:**
 
 1. **Check Worker Status:**
+
    ```bash
    pm2 list
    # Verify worker is running
-   
+
    # Check worker logs
    pm2 logs smartflow-worker
    ```
 
 2. **Check Redis Connection:**
+
    ```bash
    # Test Redis connection
    redis-cli -u $REDIS_URL ping
@@ -251,6 +275,7 @@ This guide helps you diagnose and resolve common issues with SmartFlowSocial.
    ```
 
 3. **Check Queue Status:**
+
    ```bash
    redis-cli -u $REDIS_URL
    > KEYS bull:*
@@ -267,17 +292,20 @@ See [Queue System Documentation](./queue-system.md) for more details.
 ### Jobs Failing
 
 **Symptoms:**
+
 - Jobs in "failed" state
 - Error logs in worker
 
 **Solutions:**
 
 1. **Check Worker Logs:**
+
    ```bash
    pm2 logs smartflow-worker --err
    ```
 
 2. **Check External Services:**
+
    - Verify Nostr Publisher is accessible
    - Check database connection
    - Verify user data exists
@@ -298,6 +326,7 @@ See [Queue System Documentation](./queue-system.md) for more details.
 ### Login Not Working
 
 **Symptoms:**
+
 - Login button does nothing
 - Redirects to login page
 - Session not persisting
@@ -305,17 +334,20 @@ See [Queue System Documentation](./queue-system.md) for more details.
 **Solutions:**
 
 1. **Check Nostr Extension:**
+
    - Verify Nostr extension is installed
    - Check extension permissions
    - Try different extension (Alby, nos2x)
 
 2. **Check Session Configuration:**
+
    ```typescript
    // Verify SESSION_SECRET is set
    console.log(process.env.SESSION_SECRET);
    ```
 
 3. **Check Cookies:**
+
    - Verify cookies are enabled
    - Check browser console for errors
    - Clear cookies and try again
@@ -327,12 +359,14 @@ See [Queue System Documentation](./queue-system.md) for more details.
 ### Session Expiring Too Quickly
 
 **Symptoms:**
+
 - Users logged out frequently
 - Session expires unexpectedly
 
 **Solutions:**
 
 1. **Check Session Configuration:**
+
    ```typescript
    // Verify maxAge is set correctly
    maxAge: 60 * 60 * 24 * 7, // 7 days
@@ -349,6 +383,7 @@ See [Queue System Documentation](./queue-system.md) for more details.
 ### Slow Page Loads
 
 **Symptoms:**
+
 - Pages take long to load
 - Timeout errors
 - High server CPU
@@ -356,6 +391,7 @@ See [Queue System Documentation](./queue-system.md) for more details.
 **Solutions:**
 
 1. **Check Database Queries:**
+
    ```sql
    -- Find slow queries
    SELECT query, mean_exec_time
@@ -365,18 +401,20 @@ See [Queue System Documentation](./queue-system.md) for more details.
    ```
 
 2. **Check N+1 Queries:**
+
    ```typescript
    // ❌ Bad: N+1 queries
    for (const post of posts) {
      const user = await getUserById(post.userId);
    }
-   
+
    // ✅ Good: Batch queries
-   const userIds = posts.map(p => p.userId);
+   const userIds = posts.map((p) => p.userId);
    const users = await getUsersByIds(userIds);
    ```
 
 3. **Add Caching:**
+
    ```typescript
    // Cache frequently accessed data
    const cached = await cache.get(key);
@@ -391,6 +429,7 @@ See [Queue System Documentation](./queue-system.md) for more details.
 ### High Memory Usage
 
 **Symptoms:**
+
 - Application crashes
 - Out of memory errors
 - Slow performance
@@ -398,6 +437,7 @@ See [Queue System Documentation](./queue-system.md) for more details.
 **Solutions:**
 
 1. **Monitor Memory:**
+
    ```bash
    pm2 monit
    # or
@@ -405,11 +445,13 @@ See [Queue System Documentation](./queue-system.md) for more details.
    ```
 
 2. **Increase Memory Limit:**
+
    ```bash
    NODE_OPTIONS="--max-old-space-size=4096" pnpm start
    ```
 
 3. **Check for Memory Leaks:**
+
    ```bash
    node --inspect server.ts
    # Use Chrome DevTools to analyze
@@ -427,6 +469,7 @@ See [Queue System Documentation](./queue-system.md) for more details.
 ### Build Failures
 
 **Symptoms:**
+
 - Build errors
 - TypeScript errors
 - Missing dependencies
@@ -434,12 +477,14 @@ See [Queue System Documentation](./queue-system.md) for more details.
 **Solutions:**
 
 1. **Check Build Logs:**
+
    ```bash
    pnpm run build
    # Review error messages
    ```
 
 2. **Check TypeScript:**
+
    ```bash
    pnpm exec tsc --noEmit
    ```
@@ -453,6 +498,7 @@ See [Queue System Documentation](./queue-system.md) for more details.
 ### Deployment Errors
 
 **Symptoms:**
+
 - Deployment fails
 - Application not accessible
 - Environment variables missing
@@ -460,6 +506,7 @@ See [Queue System Documentation](./queue-system.md) for more details.
 **Solutions:**
 
 1. **Check Environment Variables:**
+
    ```bash
    # Verify all required variables are set
    fly secrets list
@@ -468,6 +515,7 @@ See [Queue System Documentation](./queue-system.md) for more details.
    ```
 
 2. **Check Logs:**
+
    ```bash
    fly logs
    # or
@@ -486,6 +534,7 @@ See [Queue System Documentation](./queue-system.md) for more details.
 ### Image Upload Failing
 
 **Symptoms:**
+
 - Upload errors
 - Images not saving
 - 403/500 errors
@@ -493,6 +542,7 @@ See [Queue System Documentation](./queue-system.md) for more details.
 **Solutions:**
 
 1. **Check Storage Configuration:**
+
    ```bash
    echo $STORAGE_ACCESS_KEY
    echo $STORAGE_SECRET
@@ -500,15 +550,19 @@ See [Queue System Documentation](./queue-system.md) for more details.
    ```
 
 2. **Test Storage Connection:**
+
    ```typescript
    // Test S3 connection
    import { S3Client, ListBucketsCommand } from "@aws-sdk/client-s3";
-   
-   const client = new S3Client({ /* config */ });
+
+   const client = new S3Client({
+     /* config */
+   });
    const result = await client.send(new ListBucketsCommand({}));
    ```
 
 3. **Check Bucket Permissions:**
+
    - Verify bucket exists
    - Check IAM permissions
    - Verify CORS configuration
@@ -524,6 +578,7 @@ See [Queue System Documentation](./queue-system.md) for more details.
 ### Posts Not Publishing
 
 **Symptoms:**
+
 - Posts scheduled but not published
 - Nostr Publisher errors
 - Event not appearing on relays
@@ -531,12 +586,14 @@ See [Queue System Documentation](./queue-system.md) for more details.
 **Solutions:**
 
 1. **Check Nostr Publisher:**
+
    ```bash
    # Test publisher endpoint
    curl -X POST $NOSTR_PUBLISHER_URL/health
    ```
 
 2. **Check User Relays:**
+
    ```typescript
    // Verify user has relays configured
    const user = await getUserById(userId);
@@ -544,6 +601,7 @@ See [Queue System Documentation](./queue-system.md) for more details.
    ```
 
 3. **Check Signed Events:**
+
    ```typescript
    // Verify event is properly signed
    console.log(post.signedEvent);
@@ -558,6 +616,7 @@ See [Queue System Documentation](./queue-system.md) for more details.
 ### Relay Connection Issues
 
 **Symptoms:**
+
 - Can't fetch profiles
 - Events not loading
 - WebSocket errors
@@ -565,6 +624,7 @@ See [Queue System Documentation](./queue-system.md) for more details.
 **Solutions:**
 
 1. **Check Primal Cache URL:**
+
    ```bash
    echo $PRIMAL_CACHING_URL
    # Verify WebSocket URL format: wss://...
@@ -574,8 +634,8 @@ See [Queue System Documentation](./queue-system.md) for more details.
    ```typescript
    // Test WebSocket connection
    const ws = new WebSocket(process.env.PRIMAL_CACHING_URL!);
-   ws.on('open', () => console.log('Connected'));
-   ws.on('error', (err) => console.error('Error:', err));
+   ws.on("open", () => console.log("Connected"));
+   ws.on("error", (err) => console.error("Error:", err));
    ```
 
 ---
@@ -654,7 +714,3 @@ If you're still experiencing issues:
 - [Queue System Documentation](./queue-system.md)
 - [Operations Guide](./operations.md)
 - [Error Handling Guide](./error-handling.md)
-
-
-
-

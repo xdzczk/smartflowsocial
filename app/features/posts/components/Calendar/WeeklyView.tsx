@@ -82,7 +82,9 @@ export function WeeklyView({
     // Process scheduled posts
     scheduledPosts.forEach((post) => {
       // Determine if this specific post is longform when in All tab
-      const postIsLongform = isAll ? !!post.title && post.publishedAt : isLongform;
+      const postIsLongform = isAll
+        ? !!post.title && post.publishedAt
+        : isLongform;
       // For longform posts, use publishedAt, for regular posts use scheduledFor
       const timestamp = postIsLongform ? post.publishedAt : post.scheduledFor;
       if (timestamp) {
@@ -140,16 +142,26 @@ export function WeeklyView({
     return grid;
   }, [scheduledPosts, pastPosts, weekDays, user?.timezone, isLongform, isAll]);
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>, date: string, time: string) => {
+  const handleDragOver = (
+    e: React.DragEvent<HTMLDivElement>,
+    date: string,
+    time: string,
+  ) => {
     e.preventDefault();
     setDragOverSlot(`${date}-${time}`);
   };
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>, date: string, time: string) => {
+  const handleDrop = (
+    e: React.DragEvent<HTMLDivElement>,
+    date: string,
+    time: string,
+  ) => {
     e.preventDefault();
     setDragOverSlot(null);
 
-    const postData = JSON.parse(e.dataTransfer.getData("text/plain")) as CalendarPost;
+    const postData = JSON.parse(
+      e.dataTransfer.getData("text/plain"),
+    ) as CalendarPost;
     const [hours, minutes] = time.split(":").map(Number);
 
     // Create the datetime that represents the intended time in the user's timezone
@@ -176,14 +188,18 @@ export function WeeklyView({
 
       onPostDrop(postData, newDateTime);
     } catch (error) {
-      handleErrorSafely(error, {
-        component: "WeeklyView",
-        action: "handleDrop",
-      }, () => {
-        // Fallback to simple date creation
-        const newDateTime = new Date(isoString);
-        onPostDrop(postData, newDateTime);
-      });
+      handleErrorSafely(
+        error,
+        {
+          component: "WeeklyView",
+          action: "handleDrop",
+        },
+        () => {
+          // Fallback to simple date creation
+          const newDateTime = new Date(isoString);
+          onPostDrop(postData, newDateTime);
+        },
+      );
     }
   };
 
@@ -254,7 +270,7 @@ export function WeeklyView({
                     key={`${dateKey}-${time}`}
                     role="gridcell"
                     tabIndex={-1}
-                    className={`relative min-w-0 flex-1 border-r border-gray-100 p-1 last:border-r-0 dark:border-gray-800 overflow-visible ${
+                    className={`relative min-w-0 flex-1 overflow-visible border-r border-gray-100 p-1 last:border-r-0 dark:border-gray-800 ${
                       isDragOver
                         ? "bg-blue-100 dark:bg-blue-900/30"
                         : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
@@ -271,14 +287,25 @@ export function WeeklyView({
                         user={user}
                         queueTypes={queueTypes}
                         onEdit={onPostEdit}
-                        isLongform={isAll ? Boolean(posts[0].title && posts[0].publishedAt) : isLongform}
-                        isPast={typeof posts[0].isPast === "boolean" ? posts[0].isPast : false}
+                        isLongform={
+                          isAll
+                            ? Boolean(posts[0].title && posts[0].publishedAt)
+                            : isLongform
+                        }
+                        isPast={
+                          typeof posts[0].isPast === "boolean"
+                            ? posts[0].isPast
+                            : false
+                        }
                       />
                     ) : posts.length <= 6 ? (
                       // 2-6 posts - dynamic equal width distribution with smaller labels
                       <div className="flex h-full space-x-0.5">
                         {posts.map((post, postIndex) => (
-                          <div key={`${post.id}-${postIndex}`} className="flex-1 min-w-0">
+                          <div
+                            key={`${post.id}-${postIndex}`}
+                            className="min-w-0 flex-1"
+                          >
                             <PostBlock
                               post={post}
                               compact={true}
@@ -286,8 +313,16 @@ export function WeeklyView({
                               user={user}
                               queueTypes={queueTypes}
                               onEdit={onPostEdit}
-                              isLongform={isAll ? Boolean(post.title && post.publishedAt) : isLongform}
-                              isPast={typeof post.isPast === "boolean" ? post.isPast : false}
+                              isLongform={
+                                isAll
+                                  ? Boolean(post.title && post.publishedAt)
+                                  : isLongform
+                              }
+                              isPast={
+                                typeof post.isPast === "boolean"
+                                  ? post.isPast
+                                  : false
+                              }
                               multipleInCell={true}
                             />
                           </div>
@@ -297,7 +332,10 @@ export function WeeklyView({
                       // More than 6 posts - show first 5 with overflow indicator
                       <div className="flex h-full space-x-0.5">
                         {posts.slice(0, 5).map((post, postIndex) => (
-                          <div key={`${post.id}-${postIndex}`} className="flex-1 min-w-0">
+                          <div
+                            key={`${post.id}-${postIndex}`}
+                            className="min-w-0 flex-1"
+                          >
                             <PostBlock
                               post={post}
                               compact={true}
@@ -305,13 +343,21 @@ export function WeeklyView({
                               user={user}
                               queueTypes={queueTypes}
                               onEdit={onPostEdit}
-                              isLongform={isAll ? Boolean(post.title && post.publishedAt) : isLongform}
-                              isPast={typeof post.isPast === "boolean" ? post.isPast : false}
+                              isLongform={
+                                isAll
+                                  ? Boolean(post.title && post.publishedAt)
+                                  : isLongform
+                              }
+                              isPast={
+                                typeof post.isPast === "boolean"
+                                  ? post.isPast
+                                  : false
+                              }
                               multipleInCell={true}
                             />
                           </div>
                         ))}
-                        <div className="flex flex-1 items-center justify-center bg-gray-100 dark:bg-gray-700 rounded text-xs text-gray-500 dark:text-gray-400">
+                        <div className="flex flex-1 items-center justify-center rounded bg-gray-100 text-xs text-gray-500 dark:bg-gray-700 dark:text-gray-400">
                           +{posts.length - 5}
                         </div>
                       </div>
@@ -367,4 +413,3 @@ function CurrentTimeIndicator({ user, weekDays }: CurrentTimeIndicatorProps) {
     </div>
   );
 }
-

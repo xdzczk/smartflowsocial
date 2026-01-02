@@ -16,20 +16,29 @@ vi.mock("~/lib/error-handler.server", () => ({
 
 vi.mock("~/lib/errors", () => ({
   ValidationError: class extends Error {
-    constructor(message: string, public details?: unknown) {
+    constructor(
+      message: string,
+      public details?: unknown,
+    ) {
       super(message);
       this.name = "ValidationError";
     }
   },
   DatabaseError: class extends Error {
-    constructor(message: string, public details?: unknown) {
+    constructor(
+      message: string,
+      public details?: unknown,
+    ) {
       super(message);
       this.name = "DatabaseError";
     }
   },
 }));
 
-import { getBatchPosts, parseBatchPostsRequest } from "~/features/posts/services/batch-posts.server";
+import {
+  getBatchPosts,
+  parseBatchPostsRequest,
+} from "~/features/posts/services/batch-posts.server";
 import { ValidationError } from "~/lib/errors";
 import { getPostsByIds } from "~/models/post.queries.server";
 
@@ -59,21 +68,27 @@ describe("Batch Posts Service", () => {
     });
 
     it("should throw ValidationError for non-array postIds", async () => {
-      await expect(getBatchPosts(TEST_USER_ID, "not-an-array" as unknown as string[])).rejects.toThrow(
-        ValidationError,
-      );
+      await expect(
+        getBatchPosts(TEST_USER_ID, "not-an-array" as unknown as string[]),
+      ).rejects.toThrow(ValidationError);
       expect(getPostsByIds).not.toHaveBeenCalled();
     });
 
     it("should throw ValidationError for null postIds", async () => {
-      await expect(getBatchPosts(TEST_USER_ID, null as unknown as string[])).rejects.toThrow(ValidationError);
+      await expect(
+        getBatchPosts(TEST_USER_ID, null as unknown as string[]),
+      ).rejects.toThrow(ValidationError);
       expect(getPostsByIds).not.toHaveBeenCalled();
     });
 
     it("should handle database errors", async () => {
-      (getPostsByIds as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Database connection failed"));
+      (getPostsByIds as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error("Database connection failed"),
+      );
 
-      await expect(getBatchPosts(TEST_USER_ID, ["post-1"])).rejects.toThrow("Failed to fetch posts");
+      await expect(getBatchPosts(TEST_USER_ID, ["post-1"])).rejects.toThrow(
+        "Failed to fetch posts",
+      );
     });
 
     it("should handle empty array", async () => {
@@ -102,7 +117,9 @@ describe("Batch Posts Service", () => {
     });
 
     it("should throw ValidationError for non-object body", () => {
-      expect(() => parseBatchPostsRequest("not-an-object")).toThrow(ValidationError);
+      expect(() => parseBatchPostsRequest("not-an-object")).toThrow(
+        ValidationError,
+      );
       expect(() => parseBatchPostsRequest(null)).toThrow(ValidationError);
       expect(() => parseBatchPostsRequest(123)).toThrow(ValidationError);
     });
@@ -112,9 +129,15 @@ describe("Batch Posts Service", () => {
     });
 
     it("should throw ValidationError for non-array postIds", () => {
-      expect(() => parseBatchPostsRequest({ postIds: "not-an-array" })).toThrow(ValidationError);
-      expect(() => parseBatchPostsRequest({ postIds: null })).toThrow(ValidationError);
-      expect(() => parseBatchPostsRequest({ postIds: 123 })).toThrow(ValidationError);
+      expect(() => parseBatchPostsRequest({ postIds: "not-an-array" })).toThrow(
+        ValidationError,
+      );
+      expect(() => parseBatchPostsRequest({ postIds: null })).toThrow(
+        ValidationError,
+      );
+      expect(() => parseBatchPostsRequest({ postIds: 123 })).toThrow(
+        ValidationError,
+      );
     });
 
     it("should handle empty postIds array", () => {
@@ -124,4 +147,3 @@ describe("Batch Posts Service", () => {
     });
   });
 });
-

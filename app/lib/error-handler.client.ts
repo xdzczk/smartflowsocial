@@ -1,6 +1,6 @@
 /**
  * Client-side Error Handling Utilities
- * 
+ *
  * Provides standardized error handling for client-side code
  */
 
@@ -35,7 +35,8 @@ export function logClientError(
     message: errorMessage,
     ...(errorStack && { stack: errorStack }),
     ...(context && { context }),
-    environment: typeof window !== "undefined" ? window.location.href : "unknown",
+    environment:
+      typeof window !== "undefined" ? window.location.href : "unknown",
   };
 
   if (process.env.NODE_ENV === "production") {
@@ -44,11 +45,9 @@ export function logClientError(
   } else {
     // In development, use readable format
     const emoji = level === "error" ? "❌" : level === "warning" ? "⚠️" : "ℹ️";
-    console[level === "error" ? "error" : level === "warning" ? "warn" : "info"](
-      `${emoji} [CLIENT ${level.toUpperCase()}]`,
-      errorMessage,
-      context ?? "",
-    );
+    console[
+      level === "error" ? "error" : level === "warning" ? "warn" : "info"
+    ](`${emoji} [CLIENT ${level.toUpperCase()}]`, errorMessage, context ?? "");
     if (errorStack && level === "error") {
       console.error("Stack:", errorStack);
     }
@@ -67,7 +66,8 @@ export function logClientError(
       tags,
       extra: context,
       user: context?.userId ? { id: context.userId } : undefined,
-      level: level === "error" ? "error" : level === "warning" ? "warning" : "info",
+      level:
+        level === "error" ? "error" : level === "warning" ? "warning" : "info",
     });
   }
 }
@@ -100,7 +100,13 @@ export function showErrorToast(
   error: ErrorResponse["error"] | Error | string,
   options?: {
     duration?: number;
-    position?: "top-left" | "top-center" | "top-right" | "bottom-left" | "bottom-center" | "bottom-right";
+    position?:
+      | "top-left"
+      | "top-center"
+      | "top-right"
+      | "bottom-left"
+      | "bottom-center"
+      | "bottom-right";
   },
 ): void {
   let message: string;
@@ -226,8 +232,3 @@ export function isTimeoutError(error: unknown): boolean {
   }
   return false;
 }
-
-
-
-
-

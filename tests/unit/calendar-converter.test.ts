@@ -14,7 +14,6 @@ import {
   mixedPostsToCalendarPosts,
 } from "~/features/posts/utils/calendar-post-converter";
 
-
 describe("Calendar Post Converter", () => {
   describe("postDataToCalendarPost", () => {
     it("should convert PostData to CalendarPost", () => {
@@ -208,4 +207,3 @@ describe("Calendar Post Converter", () => {
     });
   });
 });
-

@@ -5,7 +5,11 @@ interface PostIconProps {
   className?: string;
 }
 
-export function PostIcon({ post, isLongform, className = "h-3 w-3" }: PostIconProps) {
+export function PostIcon({
+  post,
+  isLongform,
+  className = "h-3 w-3",
+}: PostIconProps) {
   if (isLongform) {
     return (
       <svg
@@ -76,19 +80,3 @@ export function PostIcon({ post, isLongform, className = "h-3 w-3" }: PostIconPr
     </svg>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

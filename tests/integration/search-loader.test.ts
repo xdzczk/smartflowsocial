@@ -1,6 +1,6 @@
 /**
  * Integration tests for search loader
- * 
+ *
  * Tests the loader in app/features/search/services/search-loader.server.ts
  */
 
@@ -85,18 +85,3 @@ describe("Search Loader", () => {
     });
   });
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

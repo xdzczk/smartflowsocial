@@ -3,119 +3,133 @@ import { useState, useCallback } from "react";
 
 import { resizeImage } from "~/features/upload/image-resize";
 interface UseCoverImageUploadOptions {
-    uploadProvider: string | null;
-    initialImage?: string;
+  uploadProvider: string | null;
+  initialImage?: string;
 }
 
 interface SelectedAsset {
-    assetType: string;
-    fileUrl?: string;
+  assetType: string;
+  fileUrl?: string;
 }
 
 export function useCoverImageUpload({
-    uploadProvider,
-    initialImage = "",
+  uploadProvider,
+  initialImage = "",
 }: UseCoverImageUploadOptions) {
-    const uploadFetcher = useFetcher<{ success?: boolean; imageUrl?: string; error?: string }>();
-    const [image, setImage] = useState(initialImage);
-    const [uploadError, setUploadError] = useState("");
+  const uploadFetcher = useFetcher<{
+    success?: boolean;
+    imageUrl?: string;
+    error?: string;
+  }>();
+  const [image, setImage] = useState(initialImage);
+  const [uploadError, setUploadError] = useState("");
 
-    const handleImageUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
+  const handleImageUpload = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
 
-        if (!file.type.startsWith("image/")) {
-            setUploadError("Please select an image file");
-            return;
+      if (!file.type.startsWith("image/")) {
+        setUploadError("Please select an image file");
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        setUploadError("Image size must be less than 5MB");
+        return;
+      }
+
+      setUploadError("");
+
+      try {
+        // Process the image to remove all metadata for privacy
+        const processedFile = await resizeImage(file);
+
+        // Check if user has Blossom provider selected
+        if (uploadProvider?.includes("BLOSSOM")) {
+          // Use client-side upload for Blossom
+          const { uploadFile } = await import(
+            "~/features/upload/upload.client"
+          );
+          const uploadResult = await uploadFile(processedFile);
+
+          if (uploadResult.success && uploadResult.file) {
+            setImage(uploadResult.file.url);
+            setUploadError("");
+          } else {
+            setUploadError(uploadResult.error ?? "Upload failed");
+          }
+        } else {
+          // Use server-side upload for S3
+          const formData = new FormData();
+          formData.append("imageFile", processedFile);
+          formData.append("_action", "upload-image");
+
+          uploadFetcher.submit(formData, {
+            method: "post",
+            encType: "multipart/form-data",
+          });
         }
-
-        if (file.size > 5 * 1024 * 1024) {
-            setUploadError("Image size must be less than 5MB");
-            return;
-        }
-
-        setUploadError("");
-
-        try {
-            // Process the image to remove all metadata for privacy
-            const processedFile = await resizeImage(file);
-
-            // Check if user has Blossom provider selected
-            if (uploadProvider?.includes("BLOSSOM")) {
-                // Use client-side upload for Blossom
-                const { uploadFile } = await import("~/features/upload/upload.client");
-                const uploadResult = await uploadFile(processedFile);
-
-                if (uploadResult.success && uploadResult.file) {
-                    setImage(uploadResult.file.url);
-                    setUploadError("");
-                } else {
-                    setUploadError(uploadResult.error ?? "Upload failed");
-                }
-            } else {
-                // Use server-side upload for S3
-                const formData = new FormData();
-                formData.append("imageFile", processedFile);
-                formData.append("_action", "upload-image");
-
-                uploadFetcher.submit(formData, {
-                    method: "post",
-                    encType: "multipart/form-data",
-                });
-            }
-        } catch (error) {
-            const { handleAsyncErrorWithMessage } = await import("~/lib/error-handler.client");
-            handleAsyncErrorWithMessage(
-                error,
-                "Error uploading image. Please try again.",
-                {
-                    component: "useCoverImageUpload",
-                    action: "handleImageUpload",
-                },
-                false, // Don't show toast, we set uploadError instead
-            );
-            setUploadError("Error uploading image. Please try again.");
-        }
-    }, [uploadProvider, uploadFetcher]);
-
-    const handleCoverImageAssets = useCallback((selectedAssets: SelectedAsset[]) => {
-        // For cover image, only use the first selected image asset
-        const imageAssets = selectedAssets.filter(
-            (asset) => asset.assetType === "IMAGE",
+      } catch (error) {
+        const { handleAsyncErrorWithMessage } = await import(
+          "~/lib/error-handler.client"
         );
-        if (imageAssets.length > 0 && imageAssets[0].fileUrl) {
-            setImage(imageAssets[0].fileUrl);
-            setUploadError("");
-        }
-    }, []);
+        handleAsyncErrorWithMessage(
+          error,
+          "Error uploading image. Please try again.",
+          {
+            component: "useCoverImageUpload",
+            action: "handleImageUpload",
+          },
+          false, // Don't show toast, we set uploadError instead
+        );
+        setUploadError("Error uploading image. Please try again.");
+      }
+    },
+    [uploadProvider, uploadFetcher],
+  );
 
-    // Handle upload fetcher responses
-    const handleFetcherData = useCallback(() => {
-        if (uploadFetcher.data) {
-            if (uploadFetcher.data.success && uploadFetcher.data.imageUrl) {
-                setImage(uploadFetcher.data.imageUrl);
-                setUploadError("");
-            } else if (uploadFetcher.data.error) {
-                setUploadError(uploadFetcher.data.error);
-            }
-        }
-    }, [uploadFetcher.data]);
+  const handleCoverImageAssets = useCallback(
+    (selectedAssets: SelectedAsset[]) => {
+      // For cover image, only use the first selected image asset
+      const imageAssets = selectedAssets.filter(
+        (asset) => asset.assetType === "IMAGE",
+      );
+      if (imageAssets.length > 0 && imageAssets[0].fileUrl) {
+        setImage(imageAssets[0].fileUrl);
+        setUploadError("");
+      }
+    },
+    [],
+  );
 
-    // Clear upload errors when fetcher state changes
-    const handleFetcherStateChange = useCallback(() => {
-        if (uploadFetcher.state === "submitting") {
-            setUploadError("");
-        }
-    }, [uploadFetcher.state]);
+  // Handle upload fetcher responses
+  const handleFetcherData = useCallback(() => {
+    if (uploadFetcher.data) {
+      if (uploadFetcher.data.success && uploadFetcher.data.imageUrl) {
+        setImage(uploadFetcher.data.imageUrl);
+        setUploadError("");
+      } else if (uploadFetcher.data.error) {
+        setUploadError(uploadFetcher.data.error);
+      }
+    }
+  }, [uploadFetcher.data]);
 
-    return {
-        image,
-        setImage,
-        uploadError,
-        uploadFetcherState: uploadFetcher.state,
-        handleImageUpload,
-        handleCoverImageAssets,
-        handleFetcherData,
-        handleFetcherStateChange,
-    };
+  // Clear upload errors when fetcher state changes
+  const handleFetcherStateChange = useCallback(() => {
+    if (uploadFetcher.state === "submitting") {
+      setUploadError("");
+    }
+  }, [uploadFetcher.state]);
+
+  return {
+    image,
+    setImage,
+    uploadError,
+    uploadFetcherState: uploadFetcher.state,
+    handleImageUpload,
+    handleCoverImageAssets,
+    handleFetcherData,
+    handleFetcherStateChange,
+  };
 }

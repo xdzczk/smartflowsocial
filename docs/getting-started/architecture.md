@@ -22,6 +22,7 @@ This document describes the folder structure, code organization, design patterns
 ## Overview
 
 SmartFlowSocial is built as a full-stack Remix application with a focus on:
+
 - **Type Safety**: TypeScript throughout
 - **Modularity**: Feature-based organization
 - **Scalability**: Queue-based background processing
@@ -30,14 +31,14 @@ SmartFlowSocial is built as a full-stack Remix application with a focus on:
 
 ## Technology Stack
 
-| Layer | Technology |
-|-------|------------|
-| Framework | [Remix](https://remix.run) (Full-stack React) |
-| Database | PostgreSQL with [Prisma](https://prisma.io) ORM |
-| Styling | [TailwindCSS](https://tailwindcss.com) |
-| Queue System | [BullMQ](https://docs.bullmq.io/) with Redis |
-| Authentication | Nostr-based (NIP-07 browser extensions) |
-| Payments | Lightning Network via NWC |
+| Layer          | Technology                                      |
+| -------------- | ----------------------------------------------- |
+| Framework      | [Remix](https://remix.run) (Full-stack React)   |
+| Database       | PostgreSQL with [Prisma](https://prisma.io) ORM |
+| Styling        | [TailwindCSS](https://tailwindcss.com)          |
+| Queue System   | [BullMQ](https://docs.bullmq.io/) with Redis    |
+| Authentication | Nostr-based (NIP-07 browser extensions)         |
+| Payments       | Lightning Network via NWC                       |
 
 ## System Architecture Diagram
 
@@ -47,25 +48,25 @@ graph TB
         Browser[Browser/User Interface]
         Extension[Nostr Extension<br/>NIP-07]
     end
-    
+
     subgraph "Application Layer"
         Remix[Remix Server<br/>HTTP Handler]
         Routes[Route Handlers<br/>Loaders & Actions]
         Models[Data Models<br/>Prisma Wrappers]
         Services[Business Logic<br/>Services]
     end
-    
+
     subgraph "Background Processing"
         Worker[Worker Process<br/>BullMQ Worker]
         Queue[Job Queue<br/>Redis/BullMQ]
         Scheduler[Post Scheduler<br/>Queue Manager]
     end
-    
+
     subgraph "Data Layer"
         DB[(PostgreSQL<br/>User Data & Posts)]
         Redis[(Redis<br/>Queue Storage & Cache)]
     end
-    
+
     subgraph "External Services"
         Publisher[HTTP Nostr Publisher<br/>Event Publishing]
         Primal[Primal Cache<br/>Profile/Event Lookups]
@@ -73,7 +74,7 @@ graph TB
         Relays[Nostr Relays<br/>Event Distribution]
         NWC[NWC Service<br/>Lightning Payments]
     end
-    
+
     Browser -->|HTTP Requests| Remix
     Browser -->|Sign Events| Extension
     Extension -->|Signed Events| Remix
@@ -91,7 +92,7 @@ graph TB
     Routes -->|Process Payments| NWC
     Scheduler --> Queue
     Scheduler --> DB
-    
+
     style Browser fill:#e1f5ff
     style Extension fill:#fff4e1
     style Remix fill:#c8e6c9
@@ -178,19 +179,23 @@ smartflow-social/
 ## Key Conventions
 
 ### File Naming
+
 - **Routes**: Lowercase with dots for nesting (`dashboard.settings.tsx`)
 - **Components**: PascalCase (`PostBlock.tsx`)
 - **Utilities**: camelCase (`helpers.ts`)
 - **Server-only**: `.server.ts` suffix
 
 ### Route Structure
+
 Remix uses file-based routing with dot notation:
+
 - `dashboard.tsx` → Layout wrapper for `/dashboard/*`
 - `dashboard._index.tsx` → `/dashboard` (index)
 - `dashboard.settings.tsx` → `/dashboard/settings`
 - `dashboard.calendar.$queueType.tsx` → `/dashboard/calendar/:queueType`
 
 ### Server vs Client Code
+
 - Files with `.server.ts` run only on the server
 - Keep Prisma database operations in `models/` directory
 - Use `loader` functions for data fetching, `action` functions for mutations
@@ -200,6 +205,7 @@ Remix uses file-based routing with dot notation:
 This project follows the standard **Remix Run** pattern where route files contain two key server-side functions:
 
 #### `loader` Function
+
 - Runs on **GET requests** before the component renders
 - Fetches data from the database via model functions
 - Returns data that the component receives via `useLoaderData()`
@@ -208,13 +214,14 @@ This project follows the standard **Remix Run** pattern where route files contai
 ```typescript
 // Example: app/routes/dashboard.posts.tsx
 export async function loader({ request }: LoaderFunctionArgs) {
-  const user = await requireUser(request);           // Auth check
+  const user = await requireUser(request); // Auth check
   const posts = await getScheduledPosts({ userId: user.id }); // Model call
-  return json({ posts, user });                      // Return to component
+  return json({ posts, user }); // Return to component
 }
 ```
 
 #### `action` Function
+
 - Runs on **POST/PUT/DELETE requests** (form submissions)
 - Handles mutations (create, update, delete operations)
 - Contains business logic for validation and processing
@@ -226,7 +233,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const user = await requireUser(request);
   const formData = await request.formData();
   const intent = formData.get("intent");
-  
+
   if (intent === "delete") {
     await deletePost({ id: formData.get("postId"), userId: user.id });
     return json({ success: true });
@@ -237,12 +244,12 @@ export async function action({ request }: ActionFunctionArgs) {
 
 #### Where Logic Lives
 
-| Layer | Responsibility | Example |
-|-------|----------------|--------|
+| Layer                        | Responsibility                            | Example                                            |
+| ---------------------------- | ----------------------------------------- | -------------------------------------------------- |
 | **Routes (loaders/actions)** | Business logic, validation, orchestration | Auth checks, permission validation, combining data |
-| **Models** | Database operations (Prisma wrappers) | `createPost()`, `getUserById()`, `deletePost()` |
-| **Features** | Reusable domain logic | Post publishing, payment processing |
-| **Lib** | Utilities and helpers | Encryption, date formatting, Nostr utilities |
+| **Models**                   | Database operations (Prisma wrappers)     | `createPost()`, `getUserById()`, `deletePost()`    |
+| **Features**                 | Reusable domain logic                     | Post publishing, payment processing                |
+| **Lib**                      | Utilities and helpers                     | Encryption, date formatting, Nostr utilities       |
 
 ## Data Flow
 
@@ -285,26 +292,26 @@ graph LR
         Calendar[Calendar View]
         Dashboard[Dashboard]
     end
-    
+
     subgraph "Feature Modules"
         Posts[Posts Feature]
         Auth[Auth Feature]
         Payments[Payments Feature]
         Templates[Templates Feature]
     end
-    
+
     subgraph "Core Services"
         API[API Routes]
         Models[Data Models]
         Services[Business Services]
     end
-    
+
     subgraph "Infrastructure"
         DB[(Database)]
         Cache[(Cache)]
         Queue[Queue System]
     end
-    
+
     UI --> Forms
     Forms --> Posts
     Calendar --> Posts
@@ -338,7 +345,7 @@ sequenceDiagram
     participant Worker
     participant Publisher
     participant Relays
-    
+
     User->>Browser: Create Post
     Browser->>Remix: POST /api/posts
     Remix->>Database: Store Post (DRAFT)
@@ -347,7 +354,7 @@ sequenceDiagram
     Extension->>Browser: Signed Event
     Browser->>Remix: POST /api/publish
     Remix->>Database: Update Post (SIGNED)
-    
+
     alt Scheduled Post
         Remix->>Queue: Enqueue Job
         Queue->>Worker: Process Job (at scheduled time)
@@ -381,6 +388,7 @@ app/features/
 ```
 
 **Benefits:**
+
 - Easy to locate feature code
 - Clear feature boundaries
 - Simplified refactoring
@@ -389,17 +397,20 @@ app/features/
 ### Server vs Client Code
 
 **Server-Only Files:**
+
 - Files with `.server.ts` suffix
 - Database operations
 - Authentication logic
 - External API calls
 
 **Client-Side Files:**
+
 - React components (`.tsx`)
 - Client-side utilities
 - UI logic
 
 **Shared Code:**
+
 - Type definitions
 - Constants
 - Utility functions (if safe)
@@ -414,13 +425,13 @@ Loaders fetch data before rendering:
 export async function loader({ request }: LoaderFunctionArgs) {
   // 1. Authenticate
   const user = await requireUser(request);
-  
+
   // 2. Fetch data
   const posts = await getScheduledPosts({ userId: user.id });
-  
+
   // 3. Transform if needed
   const formattedPosts = posts.map(formatPost);
-  
+
   // 4. Return data
   return json({ posts: formattedPosts, user });
 }
@@ -434,21 +445,21 @@ Actions handle mutations:
 export async function action({ request }: ActionFunctionArgs) {
   // 1. Authenticate
   const user = await requireUser(request);
-  
+
   // 2. Parse form data
   const formData = await request.formData();
   const intent = formData.get("intent");
-  
+
   // 3. Validate
   if (!intent) {
     throw new ValidationError("Intent required");
   }
-  
+
   // 4. Process
   if (intent === "create") {
     await createPost({ userId: user.id, ...data });
   }
-  
+
   // 5. Return response
   return json({ success: true });
 }
@@ -490,13 +501,16 @@ Root
 ### Component Patterns
 
 **Container/Presentational:**
+
 - Containers: Handle data fetching and logic
 - Presentational: Pure UI components
 
 **Compound Components:**
+
 - Components that work together (Card, Dialog, Tabs)
 
 **Render Props:**
+
 - Components that accept render functions
 
 ## State Management

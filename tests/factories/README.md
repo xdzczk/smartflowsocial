@@ -44,55 +44,55 @@ Each factory provides convenience functions for common scenarios:
 
 ```typescript
 // Posts
-postFactory.draft()
-postFactory.scheduled(scheduledFor)
-postFactory.posted()
-postFactory.image(urls)
-postFactory.video(url)
-postFactory.text(content)
-postFactory.recyclable()
-postFactory.many(count)
+postFactory.draft();
+postFactory.scheduled(scheduledFor);
+postFactory.posted();
+postFactory.image(urls);
+postFactory.video(url);
+postFactory.text(content);
+postFactory.recyclable();
+postFactory.many(count);
 
 // Longform Posts
-longFormPostFactory.draft()
-longFormPostFactory.scheduled(scheduledFor)
-longFormPostFactory.published()
-longFormPostFactory.many(count)
+longFormPostFactory.draft();
+longFormPostFactory.scheduled(scheduledFor);
+longFormPostFactory.published();
+longFormPostFactory.many(count);
 
 // Users
-userFactory.basic()
-userFactory.disabled()
-userFactory.child(parentNpub)
-userFactory.parent()
-userFactory.withMutedUsers(npubs)
-userFactory.many(count)
+userFactory.basic();
+userFactory.disabled();
+userFactory.child(parentNpub);
+userFactory.parent();
+userFactory.withMutedUsers(npubs);
+userFactory.many(count);
 
 // Queue Types
-queueTypeFactory.interval(intervalHours)
-queueTypeFactory.fixedSlots(slots)
-queueTypeFactory.default()
-queueTypeFactory.many(count)
+queueTypeFactory.interval(intervalHours);
+queueTypeFactory.fixedSlots(slots);
+queueTypeFactory.default();
+queueTypeFactory.many(count);
 
 // Hashtag Presets
-hashTagPresetFactory.basic()
-hashTagPresetFactory.withTags(tags)
-hashTagPresetFactory.many(count)
+hashTagPresetFactory.basic();
+hashTagPresetFactory.withTags(tags);
+hashTagPresetFactory.many(count);
 
 // Payments
-paymentFactory.pending()
-paymentFactory.paid()
-paymentFactory.failed(failureReason)
-paymentFactory.many(count)
+paymentFactory.pending();
+paymentFactory.paid();
+paymentFactory.failed(failureReason);
+paymentFactory.many(count);
 
 // Templates
-templateFactory.basic()
-templateFactory.many(count)
+templateFactory.basic();
+templateFactory.many(count);
 
 // Assets
-assetFactory.text()
-assetFactory.image(fileUrl)
-assetFactory.video(fileUrl)
-assetFactory.many(count)
+assetFactory.text();
+assetFactory.image(fileUrl);
+assetFactory.video(fileUrl);
+assetFactory.many(count);
 ```
 
 ## Examples
@@ -149,9 +149,7 @@ const drafts = postFactory.many(10, { draft: true });
 
 // Create 5 scheduled posts
 const scheduled = Array.from({ length: 5 }, (_, i) =>
-  postFactory.scheduled(
-    new Date(Date.now() + (i + 1) * 3600000).toISOString(),
-  ),
+  postFactory.scheduled(new Date(Date.now() + (i + 1) * 3600000).toISOString()),
 );
 ```
 
@@ -186,16 +184,16 @@ Example structure:
 ```typescript
 export class MyEntityFactory {
   private options: MyEntityFactoryOptions;
-  
+
   constructor(options = {}) {
     this.options = { /* defaults */, ...options };
   }
-  
+
   withField(value: string): this {
     this.options.field = value;
     return this;
   }
-  
+
   build(): MyEntity {
     return { /* build object */ } as MyEntity;
   }
@@ -206,19 +204,3 @@ export const myEntityFactory = {
   many: (count, overrides?) => /* create many */,
 };
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

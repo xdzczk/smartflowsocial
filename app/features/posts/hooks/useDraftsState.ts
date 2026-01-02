@@ -39,10 +39,8 @@ export function useDraftsState({ posts }: UseDraftsStateProps) {
     const aValue = a[sortConfig.key] as string | number | undefined;
     const bValue = b[sortConfig.key] as string | number | undefined;
     if (aValue === undefined || bValue === undefined) return 0;
-    if (aValue < bValue)
-      return sortConfig.direction === "asc" ? -1 : 1;
-    if (aValue > bValue)
-      return sortConfig.direction === "asc" ? 1 : -1;
+    if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
+    if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
     return 0;
   });
 
@@ -93,10 +91,26 @@ export function useDraftsState({ posts }: UseDraftsStateProps) {
   useEffect(() => {
     const deleteDataRaw = bulkDeleteFetcher.data;
     const resumeDataRaw = bulkResumeFetcher.data;
-    const deleteData = deleteDataRaw && typeof deleteDataRaw === "object" && !Array.isArray(deleteDataRaw) ? deleteDataRaw as { success?: unknown } : null;
-    const resumeData = resumeDataRaw && typeof resumeDataRaw === "object" && !Array.isArray(resumeDataRaw) ? resumeDataRaw as { success?: unknown } : null;
-    const deleteSuccess = deleteData && typeof deleteData.success === "boolean" && deleteData.success;
-    const resumeSuccess = resumeData && typeof resumeData.success === "boolean" && resumeData.success;
+    const deleteData =
+      deleteDataRaw &&
+      typeof deleteDataRaw === "object" &&
+      !Array.isArray(deleteDataRaw)
+        ? (deleteDataRaw as { success?: unknown })
+        : null;
+    const resumeData =
+      resumeDataRaw &&
+      typeof resumeDataRaw === "object" &&
+      !Array.isArray(resumeDataRaw)
+        ? (resumeDataRaw as { success?: unknown })
+        : null;
+    const deleteSuccess =
+      deleteData &&
+      typeof deleteData.success === "boolean" &&
+      deleteData.success;
+    const resumeSuccess =
+      resumeData &&
+      typeof resumeData.success === "boolean" &&
+      resumeData.success;
     if (deleteSuccess || resumeSuccess) {
       setSelectedPosts(new Set());
       setShowAdvancedBulkResume(false);
@@ -121,4 +135,3 @@ export function useDraftsState({ posts }: UseDraftsStateProps) {
     setShowAdvancedBulkResume,
   };
 }
-

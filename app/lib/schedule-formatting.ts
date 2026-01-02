@@ -28,13 +28,13 @@ export function formatScheduleTimeForInput(
 
     // Convert UTC date to user's timezone for display in datetime-local input
     // Use a more reliable approach: get individual date components in user timezone
-    const formatter = new Intl.DateTimeFormat('en-CA', {
+    const formatter = new Intl.DateTimeFormat("en-CA", {
       timeZone: userTimezone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
       hour12: false,
     });
 
@@ -64,4 +64,3 @@ export function formatScheduleTimeForInput(
     return `${year}-${month}-${day}T${hours}:${minutes}`;
   }
 }
-

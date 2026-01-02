@@ -19,7 +19,11 @@ function extractProfileBits(nostrProfile: ProfileData | null | undefined): {
   if (!nostrProfile) return {};
   try {
     if (typeof nostrProfile === "string") {
-      const parsed = JSON.parse(nostrProfile) as { name?: string; display_name?: string; picture?: string };
+      const parsed = JSON.parse(nostrProfile) as {
+        name?: string;
+        display_name?: string;
+        picture?: string;
+      };
       return {
         name: parsed?.name,
         display_name: parsed?.display_name,
@@ -84,11 +88,14 @@ export async function searchUsersByProfileName(
   const lowered = trimmed.toLowerCase();
   const filtered = fetched
     .map((u) => {
-      const profile = u.nostrProfile && typeof u.nostrProfile === "object" && !Array.isArray(u.nostrProfile)
-        ? (u.nostrProfile as ProfileData)
-        : null;
+      const profile =
+        u.nostrProfile &&
+        typeof u.nostrProfile === "object" &&
+        !Array.isArray(u.nostrProfile)
+          ? (u.nostrProfile as ProfileData)
+          : null;
       const bits = extractProfileBits(profile);
-      const name = (bits.name ?? bits.display_name) ?? "";
+      const name = bits.name ?? bits.display_name ?? "";
       return {
         id: u.id,
         npub: u.npub,
@@ -101,7 +108,7 @@ export async function searchUsersByProfileName(
         profilePicture: bits.picture,
         _match:
           u.npub.toLowerCase().includes(lowered) ||
-          (name?.toLowerCase().includes(lowered)),
+          name?.toLowerCase().includes(lowered),
       };
     })
     .filter((u) => u._match)
@@ -128,12 +135,18 @@ export async function requestChildLink(
 
   if (!/^[0-9a-fA-F]{64}$/.test(parent) || !/^[0-9a-fA-F]{64}$/.test(child)) {
     logWarning("[requestChildLink] Invalid hex key(s)", { parent, child });
-    return Promise.resolve({ ok: false, reason: "Invalid hex public key provided." });
+    return Promise.resolve({
+      ok: false,
+      reason: "Invalid hex public key provided.",
+    });
   }
 
   if (parent === child) {
     logWarning("[requestChildLink] Attempt to add self as child", { parent });
-    return Promise.resolve({ ok: false, reason: "You cannot add yourself as a child." });
+    return Promise.resolve({
+      ok: false,
+      reason: "You cannot add yourself as a child.",
+    });
   }
 
   const childUser = await prisma.user.findUnique({ where: { npub: child } });
@@ -180,15 +193,22 @@ export async function cancelChildLinkRequest(
   const child = (childHex ?? "").trim();
 
   if (!/^[0-9a-fA-F]{64}$/.test(parent) || !/^[0-9a-fA-F]{64}$/.test(child)) {
-    return Promise.resolve({ ok: false, reason: "Invalid hex public key provided." });
+    return Promise.resolve({
+      ok: false,
+      reason: "Invalid hex public key provided.",
+    });
   }
 
   const childUser = await prisma.user.findUnique({ where: { npub: child } });
-  if (!childUser) return Promise.resolve({ ok: false, reason: "Child account not found." });
+  if (!childUser)
+    return Promise.resolve({ ok: false, reason: "Child account not found." });
 
   const pending = childUser.pendingParentRequests ?? [];
   if (!pending.includes(parent)) {
-    return Promise.resolve({ ok: false, reason: "No pending request to cancel." });
+    return Promise.resolve({
+      ok: false,
+      reason: "No pending request to cancel.",
+    });
   }
 
   await prisma.user.update({
@@ -323,4 +343,3 @@ export async function unlinkChildByParent(
   });
   return { ok: true };
 }
-

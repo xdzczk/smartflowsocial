@@ -3,7 +3,7 @@
  * Tests real exported functions from:
  * - app/features/engagement/engagement.server.ts
  * - app/features/engagement/trustScore.ts
- * 
+ *
  * Migrated from tests/e2e/unit/engagement-logic.cy.ts
  */
 
@@ -17,7 +17,10 @@ vi.mock("~/lib/prisma.server", () => ({
   },
 }));
 
-import { groupNotificationsByType, type Notification } from "~/features/engagement/engagement.server";
+import {
+  groupNotificationsByType,
+  type Notification,
+} from "~/features/engagement/engagement.server";
 import {
   calculateTrustScore,
   getTrustLevel,
@@ -26,14 +29,39 @@ import {
   type User,
 } from "~/features/engagement/trustScore";
 
-
 describe("Engagement Logic Unit Tests", () => {
   describe("groupNotificationsByType", () => {
     it("should correctly categorize reply notifications", () => {
       const notifications = [
-        { type: "reply", id: "1", content: "reply content", eventId: "e1", createdAt: 1000, pubkey: "p1", originalEventId: "o1" },
-        { type: "mention", id: "2", content: "mention content", eventId: "e2", createdAt: 1000, pubkey: "p2", originalEventId: "o1" },
-        { type: "zap", id: "3", content: "", eventId: "e3", createdAt: 1000, senderPubkey: "p3", receiverPubkey: "p4", amountSats: 100, originalEventId: "o1" },
+        {
+          type: "reply",
+          id: "1",
+          content: "reply content",
+          eventId: "e1",
+          createdAt: 1000,
+          pubkey: "p1",
+          originalEventId: "o1",
+        },
+        {
+          type: "mention",
+          id: "2",
+          content: "mention content",
+          eventId: "e2",
+          createdAt: 1000,
+          pubkey: "p2",
+          originalEventId: "o1",
+        },
+        {
+          type: "zap",
+          id: "3",
+          content: "",
+          eventId: "e3",
+          createdAt: 1000,
+          senderPubkey: "p3",
+          receiverPubkey: "p4",
+          amountSats: 100,
+          originalEventId: "o1",
+        },
       ] as Notification[];
 
       const grouped = groupNotificationsByType(notifications);
@@ -45,8 +73,24 @@ describe("Engagement Logic Unit Tests", () => {
 
     it("should correctly categorize mention notifications", () => {
       const notifications = [
-        { type: "mention", id: "1", content: "tagged you", eventId: "e1", createdAt: 1000, pubkey: "p1", originalEventId: "o1" },
-        { type: "mention", id: "2", content: "also tagged you", eventId: "e2", createdAt: 1000, pubkey: "p2", originalEventId: "o1" },
+        {
+          type: "mention",
+          id: "1",
+          content: "tagged you",
+          eventId: "e1",
+          createdAt: 1000,
+          pubkey: "p1",
+          originalEventId: "o1",
+        },
+        {
+          type: "mention",
+          id: "2",
+          content: "also tagged you",
+          eventId: "e2",
+          createdAt: 1000,
+          pubkey: "p2",
+          originalEventId: "o1",
+        },
       ] as Notification[];
 
       const grouped = groupNotificationsByType(notifications);
@@ -56,8 +100,28 @@ describe("Engagement Logic Unit Tests", () => {
 
     it("should correctly categorize zap notifications", () => {
       const notifications = [
-        { type: "zap", id: "1", content: "", eventId: "e1", createdAt: 1000, senderPubkey: "abc123", receiverPubkey: "p1", amountSats: 1000, originalEventId: "o1" },
-        { type: "zap", id: "2", content: "", eventId: "e2", createdAt: 1000, senderPubkey: "def456", receiverPubkey: "p1", amountSats: 5000, originalEventId: "o1" },
+        {
+          type: "zap",
+          id: "1",
+          content: "",
+          eventId: "e1",
+          createdAt: 1000,
+          senderPubkey: "abc123",
+          receiverPubkey: "p1",
+          amountSats: 1000,
+          originalEventId: "o1",
+        },
+        {
+          type: "zap",
+          id: "2",
+          content: "",
+          eventId: "e2",
+          createdAt: 1000,
+          senderPubkey: "def456",
+          receiverPubkey: "p1",
+          amountSats: 5000,
+          originalEventId: "o1",
+        },
       ] as Notification[];
 
       const grouped = groupNotificationsByType(notifications);
@@ -67,7 +131,15 @@ describe("Engagement Logic Unit Tests", () => {
 
     it("should correctly categorize quote reposts", () => {
       const notifications = [
-        { type: "quote", id: "1", content: "quoted your post", eventId: "e1", createdAt: 1000, pubkey: "p1", originalEventId: "o1" },
+        {
+          type: "quote",
+          id: "1",
+          content: "quoted your post",
+          eventId: "e1",
+          createdAt: 1000,
+          pubkey: "p1",
+          originalEventId: "o1",
+        },
       ] as Notification[];
 
       const grouped = groupNotificationsByType(notifications);
@@ -118,7 +190,8 @@ describe("Engagement Logic Unit Tests", () => {
         pubkey: "test-pubkey-2",
         name: "TestUser",
         displayName: "Test User",
-        about: "This is a meaningful about section with more than 20 characters",
+        about:
+          "This is a meaningful about section with more than 20 characters",
         picture: "https://example.com/pic.jpg",
         nip05: "test@example.com",
         timeJoined: 0,
@@ -142,7 +215,7 @@ describe("Engagement Logic Unit Tests", () => {
     it("should give higher score for older accounts", () => {
       // Create user with account that's 400 days old
       const now = Math.floor(Date.now() / 1000);
-      const fourHundredDaysAgo = now - (400 * 24 * 60 * 60);
+      const fourHundredDaysAgo = now - 400 * 24 * 60 * 60;
 
       const newUser: User = {
         pubkey: "new-user-pubkey",
@@ -279,4 +352,3 @@ describe("Engagement Logic Unit Tests", () => {
     });
   });
 });
-

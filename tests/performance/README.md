@@ -14,11 +14,13 @@ Performance testing ensures that the application can handle expected load and me
 ### Install k6
 
 **macOS:**
+
 ```bash
 brew install k6
 ```
 
 **Linux:**
+
 ```bash
 sudo gpg -k
 sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
@@ -28,6 +30,7 @@ sudo apt-get install k6
 ```
 
 **Windows:**
+
 ```bash
 choco install k6
 ```
@@ -45,6 +48,7 @@ npm run test:performance
 ```
 
 These tests verify that individual functions meet performance benchmarks:
+
 - `combineContent()` with various array sizes
 - `getPostStats()` with different numbers of event IDs
 - Bulk operations performance
@@ -91,34 +95,34 @@ npm run test:performance:all
 
 ### API Endpoints
 
-| Endpoint | Target p95 | Target p99 |
-|----------|-----------|------------|
-| `/api/effective-hashtags` | < 1s | < 2s |
-| `/api/queue-schedule` | < 500ms | < 1s |
-| `/api/upload` | < 5s | < 10s |
-| `/api/publish` | < 3s | < 5s |
-| `/api/payment-status` | < 2s | < 4s |
-| `/api/thread-view` | < 2s | < 4s |
-| `/api/link-preview` | < 3s | < 5s |
+| Endpoint                  | Target p95 | Target p99 |
+| ------------------------- | ---------- | ---------- |
+| `/api/effective-hashtags` | < 1s       | < 2s       |
+| `/api/queue-schedule`     | < 500ms    | < 1s       |
+| `/api/upload`             | < 5s       | < 10s      |
+| `/api/publish`            | < 3s       | < 5s       |
+| `/api/payment-status`     | < 2s       | < 4s       |
+| `/api/thread-view`        | < 2s       | < 4s       |
+| `/api/link-preview`       | < 3s       | < 5s       |
 
 ### Loaders
 
-| Loader | Target p95 | Target p99 |
-|--------|-----------|------------|
-| `/dashboard` | < 2s | < 4s |
-| `/dashboard/scheduled` | < 2s | < 4s |
-| `/dashboard/calendar` | < 3s | < 5s |
-| `/dashboard/drafts` | < 2s | < 4s |
-| `/dashboard/posted` | < 2s | < 4s |
+| Loader                 | Target p95 | Target p99 |
+| ---------------------- | ---------- | ---------- |
+| `/dashboard`           | < 2s       | < 4s       |
+| `/dashboard/scheduled` | < 2s       | < 4s       |
+| `/dashboard/calendar`  | < 3s       | < 5s       |
+| `/dashboard/drafts`    | < 2s       | < 4s       |
+| `/dashboard/posted`    | < 2s       | < 4s       |
 
 ### Unit Functions
 
-| Function | Small (< 100) | Medium (100-1000) | Large (1000+) |
-|----------|---------------|-------------------|---------------|
-| `combineContent()` | < 50ms | < 200ms | < 1000ms |
-| `getPostStats()` (single) | < 500ms | - | - |
-| `getPostStats()` (10-50) | - | < 2000ms | - |
-| `getPostStats()` (50-100) | - | - | < 5000ms |
+| Function                  | Small (< 100) | Medium (100-1000) | Large (1000+) |
+| ------------------------- | ------------- | ----------------- | ------------- |
+| `combineContent()`        | < 50ms        | < 200ms           | < 1000ms      |
+| `getPostStats()` (single) | < 500ms       | -                 | -             |
+| `getPostStats()` (10-50)  | -             | < 2000ms          | -             |
+| `getPostStats()` (50-100) | -             | -                 | < 5000ms      |
 
 ## Test Scenarios
 
@@ -127,6 +131,7 @@ npm run test:performance:all
 **Purpose**: Test critical API endpoints under realistic load
 
 **Scenarios**:
+
 - Effective hashtags resolution
 - Queue schedule calculation
 - Payment status checks
@@ -134,6 +139,7 @@ npm run test:performance:all
 - Link preview generation
 
 **Load Pattern**:
+
 - Ramp up to 10 users over 30s
 - Stay at 10 users for 1m
 - Ramp up to 20 users over 30s
@@ -145,11 +151,13 @@ npm run test:performance:all
 **Purpose**: Test bulk post operations performance
 
 **Scenarios**:
+
 - Bulk delete posts (10 posts)
 - Bulk schedule posts (5 posts)
 - Bulk sign & resume drafts (5 posts)
 
 **Load Pattern**:
+
 - Ramp up to 5 users over 30s
 - Stay at 5 users for 1m
 - Ramp up to 10 users over 30s
@@ -161,6 +169,7 @@ npm run test:performance:all
 **Purpose**: Test Remix loader performance under load
 
 **Scenarios**:
+
 - Dashboard loader
 - Scheduled posts loader
 - Calendar loader
@@ -168,6 +177,7 @@ npm run test:performance:all
 - Posted posts loader
 
 **Load Pattern**:
+
 - Ramp up to 10 users over 30s
 - Stay at 10 users for 1m
 - Ramp up to 20 users over 30s
@@ -186,6 +196,7 @@ k6 provides detailed metrics:
 - **vus**: Virtual users (concurrent users)
 
 Key metrics to watch:
+
 - **p(95)**: 95th percentile response time
 - **p(99)**: 99th percentile response time
 - **rate**: Error rate (should be < 1%)
@@ -193,6 +204,7 @@ Key metrics to watch:
 ### Thresholds
 
 Tests fail if thresholds are not met:
+
 - Response time thresholds (p95, p99)
 - Error rate thresholds (< 1%)
 - Custom metric thresholds
@@ -246,19 +258,3 @@ Install k6 using the instructions above.
 - [ ] Database query performance tests
 - [ ] Memory leak detection
 - [ ] CPU profiling during load tests
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

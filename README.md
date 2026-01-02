@@ -11,25 +11,47 @@
 [![Coverage](https://img.shields.io/badge/Coverage-70%25-brightgreen)](./docs/guides/testing.md#coverage)
 [![Node.js](https://img.shields.io/badge/Node.js-20.0.0+-green?logo=node.js)](https://nodejs.org/)
 
-**Professional-grade social media management platform for Nostr. Schedule, manage, and optimize your decentralized social presence.**
+**Professional Nostr Social Media Management Platform**
 
-[Features](#-features) • [Quick Start](#-quick-start) • [API](./docs/reference/api.md) • [Documentation](./docs/README.md) • [Contributing](./CONTRIBUTING.md)
+Schedule, manage, and optimize your decentralized social presence with enterprise-level features. Open source and self-hostable for maximum trust and transparency.
+
+<div align="center" style="margin: 2rem 0;">
+
+### 🚀 [**Start Free Trial**](https://smartflow.social) • [**View Pricing**](#-pricing) • [**Self-Host**](#-quick-start)
+
+**Start managing your Nostr presence in 30 seconds — No credit card required**
+
+<small>🔓 **Open Source** • 🔐 **Your Keys, Your Control** • ⚡ **Lightning-Native**</small>
+
+</div>
+
+[Features](#-features) • [Pricing](#-pricing) • [Why Hosted?](#-why-hosted) • [API](./docs/reference/api.md) • [Documentation](./docs/README.md)
 
 </div>
 
 ---
 
-## 🌐 Get Started
+## 🎯 What is SmartFlowSocial?
 
-**Choose your path:**
+SmartFlowSocial is a **professional-grade social media management platform** for the Nostr protocol. Available as a fully managed hosted service or self-hostable open source software, it empowers creators, businesses, and communities to manage their decentralized social presence with enterprise-level features.
 
-- 🚀 **[Try Hosted Version](https://smartflow.social)** - No setup required, start in seconds
-- 🏠 **[Self-Host](#-quick-start)** - Full control, free forever
-- 🔓 **[Contribute](./CONTRIBUTING.md)** - Open source, MIT licensed
+**Available at:** [smartflow.social](https://smartflow.social) • [smartflowsocial.com](https://smartflowsocial.com)
 
-**New to SmartFlowSocial?** Start with our [hosted instance](https://smartflow.social) to explore features, then self-host if you want full control over your data and infrastructure.
+### Why SmartFlowSocial?
 
-> 💡 **Note**: SmartFlowSocial is also available at [smartflowsocial.com](https://smartflowsocial.com)
+**For Hosted Users:**
+- ⚡ **Start in 30 seconds** — No setup, no configuration, just sign in and go
+- 🔄 **Automatic updates** — Always on the latest version with new features
+- 🛡️ **Managed infrastructure** — We handle servers, databases, and maintenance
+- 📞 **Professional support** — Get help when you need it
+- 🔐 **Privacy-first** — Your keys never leave your browser (client-side signing)
+- 💰 **Free plan available** — Start free, upgrade as you grow
+
+**For Self-Hosters:**
+- 🔓 **Open Source** — MIT licensed, fully auditable code
+- 🏠 **Full control** — Own your infrastructure and data completely
+- 🆓 **Free forever** — No vendor lock-in, no recurring costs
+- 🔧 **Extensible** — Full code access and [REST API](./docs/reference/api.md) for customization
 
 ---
 
@@ -48,12 +70,112 @@ SmartFlowSocial is a **self-hosted, professional-grade social media management p
 
 ### Who is it for?
 
-- **Content Creators**: Schedule posts, manage multiple accounts, track engagement
-- **Businesses**: Professional social media management for Nostr
-- **Communities**: Manage community accounts and engagement
-- **Developers**: Self-hosted alternative with [full REST API](./docs/reference/api.md) for automation and integrations
+- **Content Creators**: Schedule posts, manage multiple accounts, track engagement — start free
+- **Businesses**: Professional social media management for Nostr with managed infrastructure
+- **Communities**: Manage community accounts and engagement with team features
+- **Developers**: [Full REST API](./docs/reference/api.md) for automation, or self-host for complete control
 - **Bitcoiners**: Native Lightning payments and Nostr integration
-- **Privacy-Conscious Users**: Self-host for complete data control, or use our hosted instance with client-side signing
+- **Privacy-Conscious Users**: Client-side signing means your keys never leave your browser, or self-host for maximum control
+
+---
+
+## 🌟 Why Hosted?
+
+Choose our hosted service to focus on creating content, not managing infrastructure:
+
+- ✅ **Zero setup time** — Start in 30 seconds, no technical knowledge required
+- ✅ **Automatic updates** — Always on the latest version with new features and security patches
+- ✅ **Managed infrastructure** — We handle servers, databases, backups, and monitoring
+- ✅ **Professional support** — Get help when you need it from our team
+- ✅ **High availability** — Reliable uptime with redundant infrastructure
+- ✅ **Scalable** — Handles growth automatically, no capacity planning needed
+- ✅ **Secure by default** — Security best practices implemented and maintained
+- ✅ **Free plan** — Start free, upgrade only when you need advanced features
+
+**Prefer full control?** [Self-host](#-quick-start) the open source version — it's free forever and gives you complete control over your data and infrastructure.
+
+---
+
+## 💰 Pricing
+
+SmartFlowSocial offers flexible pricing to fit your needs:
+
+### Free Plan — $0/month
+**Perfect for getting started**
+
+- ✅ Basic scheduling and posting
+- ✅ Dashboard and content management
+- ✅ Giveaways
+- ✅ All core features
+- ❌ Advanced features (drafts, calendar, bulk upload, etc.)
+
+**[Start Free →](https://smartflow.social)**
+
+### Basic Plan — Starting at $X/month
+**For regular content creators**
+
+- ✅ Everything in Free
+- ✅ Drafts and templates
+- ✅ Calendar view
+- ✅ Bulk scheduling
+- ✅ Long-form articles
+- ✅ Recyclable posts
+- ✅ Engagement feed
+
+### Premium Plan — Starting at $X/month
+**For power users and businesses**
+
+- ✅ Everything in Basic
+- ✅ Multiple queues
+- ✅ Reposts & quotes
+- ✅ Advanced analytics
+
+### Pro Plan — Starting at $X/month
+**For professional teams**
+
+- ✅ Everything in Premium
+- ✅ Multi-account switching
+- ✅ Native S3/Blossom storage
+- ✅ Wolf filtering & Vortex
+- ✅ Advanced analytics
+
+### Enterprise — Custom pricing
+**For large organizations**
+
+- ✅ Everything in Pro
+- ✅ Relay blast
+- ✅ Visual perks
+- ✅ Custom integrations
+- ✅ Dedicated support
+
+**📖 [View Full Feature Comparison](./docs/reference/plan-features.md)** — Detailed plan comparison with all features
+
+**💡 All plans include:**
+- Client-side signing (your keys never leave your browser)
+- No credit card required for free plan
+- Cancel anytime
+- Lightning payments via NWC
+
+**[View Pricing & Sign Up →](https://smartflow.social)**
+
+---
+
+## 🔐 Why Open Source?
+
+We open-sourced SmartFlowSocial to build trust and give back to the Nostr community:
+
+- 🔍 **Transparency** — Audit the code yourself, see exactly what we're doing
+- 🛡️ **Security** — Community reviews and security audits make it more secure
+- 🔓 **No vendor lock-in** — Self-host anytime, export your data, stay in control
+- 🤝 **Community-driven** — Contributions from the community make it better for everyone
+- 📚 **Learning resource** — Learn from production-quality Nostr application code
+
+**Your privacy is protected regardless of hosting choice:**
+- 🔐 **Client-side signing** — Private keys never leave your browser (NIP-07)
+- 🔒 **No key storage** — We never see or store your private keys
+- 🛡️ **Transparent code** — Verify our security practices yourself
+
+**Self-hosting option:** Want complete control? [Self-host the open source version](#-quick-start) — it's free forever and gives you full control over your infrastructure.
 
 ---
 
@@ -108,16 +230,17 @@ SmartFlowSocial is a **self-hosted, professional-grade social media management p
 - **Webhook Support** — Integrate with external services
 
 **Quick API Example:**
+
 ```typescript
 // Publish a post via API
-const response = await fetch('https://your-domain.com/api/publish', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  credentials: 'include', // Includes session cookie for authentication
+const response = await fetch("https://your-domain.com/api/publish", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  credentials: "include", // Includes session cookie for authentication
   body: JSON.stringify({
     signedEvent: nostrEvent, // Signed with NIP-07 extension
-    postId: 'post-123'
-  })
+    postId: "post-123",
+  }),
 });
 
 const result = await response.json();
@@ -125,6 +248,7 @@ const result = await response.json();
 ```
 
 **Available Endpoints:**
+
 - `POST /api/publish` - Publish posts to Nostr
 - `POST /api/upload` - Upload images/files
 - `POST /api/queue-schedule` - Get queue schedule times
@@ -204,30 +328,30 @@ graph TB
         Browser[Browser/User]
         Extension[Nostr Extension<br/>NIP-07]
     end
-    
+
     subgraph "Application Layer"
         Remix[Remix Server<br/>HTTP Handler]
         Routes[Route Handlers<br/>Loaders & Actions]
         Models[Data Models<br/>Prisma Wrappers]
     end
-    
+
     subgraph "Background Processing"
         Worker[Worker Process<br/>BullMQ]
         Queue[Job Queue<br/>Redis/BullMQ]
     end
-    
+
     subgraph "Data Layer"
         DB[(PostgreSQL<br/>User Data & Posts)]
         Redis[(Redis<br/>Queue Storage)]
     end
-    
+
     subgraph "External Services"
         Publisher[HTTP Nostr Publisher<br/>Event Publishing]
         Primal[Primal Cache<br/>Profile/Event Lookups]
         Storage[S3 Storage<br/>Image Uploads]
         Relays[Nostr Relays<br/>Event Distribution]
     end
-    
+
     Browser -->|HTTP Requests| Remix
     Browser -->|Sign Events| Extension
     Extension -->|Signed Events| Remix
@@ -242,7 +366,7 @@ graph TB
     Routes -->|Upload Images| Storage
     Worker --> DB
     Worker --> Redis
-    
+
     style Browser fill:#e1f5ff
     style Extension fill:#fff4e1
     style Remix fill:#c8e6c9
@@ -277,17 +401,17 @@ See [Architecture Documentation](./docs/getting-started/architecture.md) for det
 
 ## ⚙️ Tech Stack
 
-| Layer | Technology | Why |
-|-------|-----------|-----|
-| **Framework** | [Remix](https://remix.run) | Full-stack React with excellent DX |
-| **Database** | PostgreSQL + [Prisma](https://prisma.io) | Type-safe database access |
-| **Styling** | [TailwindCSS](https://tailwindcss.com) | Rapid UI development |
-| **UI Components** | [Headless UI](https://headlessui.com) + [Radix UI](https://radix-ui.com) | Accessible, unstyled components |
-| **Queue System** | [BullMQ](https://docs.bullmq.io/) + Redis | Reliable background job processing |
-| **Protocol** | [Nostr](https://nostr.com) | Decentralized social protocol |
-| **Payments** | Lightning Network (NWC) | Native Bitcoin payments |
-| **API** | REST API | Full programmatic access ([docs](./docs/reference/api.md)) |
-| **Runtime** | Node.js >= 20.0.0 | Modern JavaScript runtime |
+| Layer             | Technology                                                               | Why                                                        |
+| ----------------- | ------------------------------------------------------------------------ | ---------------------------------------------------------- |
+| **Framework**     | [Remix](https://remix.run)                                               | Full-stack React with excellent DX                         |
+| **Database**      | PostgreSQL + [Prisma](https://prisma.io)                                 | Type-safe database access                                  |
+| **Styling**       | [TailwindCSS](https://tailwindcss.com)                                   | Rapid UI development                                       |
+| **UI Components** | [Headless UI](https://headlessui.com) + [Radix UI](https://radix-ui.com) | Accessible, unstyled components                            |
+| **Queue System**  | [BullMQ](https://docs.bullmq.io/) + Redis                                | Reliable background job processing                         |
+| **Protocol**      | [Nostr](https://nostr.com)                                               | Decentralized social protocol                              |
+| **Payments**      | Lightning Network (NWC)                                                  | Native Bitcoin payments                                    |
+| **API**           | REST API                                                                 | Full programmatic access ([docs](./docs/reference/api.md)) |
+| **Runtime**       | Node.js >= 20.0.0                                                        | Modern JavaScript runtime                                  |
 
 ---
 
@@ -295,65 +419,76 @@ See [Architecture Documentation](./docs/getting-started/architecture.md) for det
 
 SmartFlowSocial vs. other Nostr scheduling and management tools:
 
-| Feature | SmartFlowSocial | [Primal Studio](https://studio.primal.net/) | [Shipyard](https://shipyard.pub/) |
-|---------|----------------|--------------------------------------------|-----------------------------------|
-| **Deployment** | ✅ Self-hosted (Open Source) | ❌ Cloud-hosted only | ❌ Cloud-hosted only |
-| **Open Source** | ✅ MIT License | ❌ Proprietary | ❌ Proprietary |
-| **Data Ownership** | ✅ Full control | ⚠️ Hosted by provider | ⚠️ Hosted by provider |
-| **Pricing** | ✅ Free (self-hosted) + Optional paid plans | 💰 Paid subscription | 💰 Paid subscription |
-| **Post Scheduling** | ✅ Advanced (queues, intervals, fixed slots | ✅ Basic scheduling | ✅ Basic scheduling |
-| **Calendar View** | ✅ Drag-and-drop (weekly/monthly) | ❌ List view only | ❌ List view only |
-| **Bulk Upload** | ✅ Multiple images with auto-scheduling | ❌ Not available | ❌ Not available |
-| **Long-form Posts** | ✅ Full NIP-23 support | ⚠️ Limited | ⚠️ Limited |
-| **Multiple Queues** | ✅ Advanced queue management | ❌ Single queue | ❌ Single queue |
-| **Templates** | ✅ Reusable post templates | ❌ Not available | ❌ Not available |
-| **Recyclable Posts** | ✅ Reuse evergreen content | ❌ Not available | ❌ Not available |
-| **Engagement Feed** | ✅ Track replies, mentions | ⚠️ Basic | ⚠️ Basic |
-| **Giveaways** | ✅ Native Nostr giveaways | ❌ Not available | ❌ Not available |
-| **Multi-Account** | ✅ Parent/child accounts | ❌ Not available | ❌ Not available |
-| **Lightning Payments** | ✅ Native NWC integration | ⚠️ Limited | ⚠️ Limited |
-| **Storage Options** | ✅ S3, Blossom, multiple providers | ⚠️ Provider-specific | ⚠️ Provider-specific |
-| **API Access** | ✅ [Full API available](./docs/reference/api.md) | ❌ Not available | ❌ Not available |
-| **Customization** | ✅ Full code access | ❌ Limited | ❌ Limited |
-| **Privacy** | ✅ Keys never leave browser | ⚠️ Depends on provider | ⚠️ Depends on provider |
-| **Offline Support** | ✅ Self-hosted = always available | ⚠️ Requires internet | ⚠️ Requires internet |
-| **Community** | ✅ Open source community | ⚠️ Limited | ⚠️ Limited |
+| Feature                | SmartFlowSocial Hosted                           | SmartFlowSocial Self-Hosted                    | [Primal Studio](https://studio.primal.net/) | [Shipyard](https://shipyard.pub/) |
+| ---------------------- | ------------------------------------------------- | ---------------------------------------------- | ------------------------------------------- | --------------------------------- |
+| **Setup Time**         | ✅ 30 seconds                                      | ⚠️ 15-30 minutes                                | ✅ Quick                                    | ✅ Quick                          |
+| **Open Source**        | ✅ MIT License (audit the code)                   | ✅ MIT License                                  | ❌ Proprietary                              | ❌ Proprietary                    |
+| **Pricing**            | ✅ Free plan + paid plans                          | ✅ Free forever                                 | 💰 Paid subscription                        | 💰 Paid subscription              |
+| **Managed Infrastructure** | ✅ Yes (automatic updates, backups)            | ❌ Self-managed                                 | ✅ Yes                                      | ✅ Yes                            |
+| **Data Ownership**     | ✅ Full control (export anytime)                  | ✅ Complete control                             | ⚠️ Hosted by provider                       | ⚠️ Hosted by provider             |
+| **Post Scheduling**    | ✅ Advanced (queues, intervals, fixed slots)       | ✅ Advanced (queues, intervals, fixed slots)    | ✅ Basic scheduling                         | ✅ Basic scheduling               |
+| **Calendar View**      | ✅ Drag-and-drop (weekly/monthly)                 | ✅ Drag-and-drop (weekly/monthly)               | ❌ List view only                           | ❌ List view only                 |
+| **Bulk Upload**        | ✅ Multiple images with auto-scheduling           | ✅ Multiple images with auto-scheduling          | ❌ Not available                            | ❌ Not available                  |
+| **Long-form Posts**    | ✅ Full NIP-23 support                            | ✅ Full NIP-23 support                          | ⚠️ Limited                                  | ⚠️ Limited                        |
+| **Multiple Queues**    | ✅ Advanced queue management                      | ✅ Advanced queue management                    | ❌ Single queue                             | ❌ Single queue                   |
+| **Templates**         | ✅ Reusable post templates                         | ✅ Reusable post templates                      | ❌ Not available                            | ❌ Not available                  |
+| **Recyclable Posts**   | ✅ Reuse evergreen content                        | ✅ Reuse evergreen content                      | ❌ Not available                            | ❌ Not available                  |
+| **Engagement Feed**    | ✅ Track replies, mentions                        | ✅ Track replies, mentions                       | ⚠️ Basic                                    | ⚠️ Basic                          |
+| **Giveaways**          | ✅ Native Nostr giveaways                         | ✅ Native Nostr giveaways                       | ❌ Not available                            | ❌ Not available                  |
+| **Multi-Account**      | ✅ Parent/child accounts                          | ✅ Parent/child accounts                        | ❌ Not available                            | ❌ Not available                  |
+| **Lightning Payments** | ✅ Native NWC integration                         | ✅ Native NWC integration                       | ⚠️ Limited                                  | ⚠️ Limited                        |
+| **Storage Options**    | ✅ S3, Blossom, multiple providers                | ✅ S3, Blossom, multiple providers              | ⚠️ Provider-specific                        | ⚠️ Provider-specific              |
+| **API Access**         | ✅ [Full API available](./docs/reference/api.md) | ✅ [Full API available](./docs/reference/api.md) | ❌ Not available                            | ❌ Not available                  |
+| **Privacy**            | ✅ Keys never leave browser                       | ✅ Keys never leave browser                     | ⚠️ Depends on provider                      | ⚠️ Depends on provider            |
+| **Vendor Lock-in**     | ✅ No (self-host anytime)                         | ✅ No                                           | ⚠️ Yes                                      | ⚠️ Yes                            |
+| **Community**          | ✅ Open source community                          | ✅ Open source community                        | ⚠️ Limited                                  | ⚠️ Limited                        |
 
 ### Key Differentiators
 
 **SmartFlowSocial Advantages:**
-- 🏠 **Self-Hosted**: Complete control over your data and infrastructure
-- 🔓 **Open Source**: MIT licensed, fully auditable code
-- 🚀 **Advanced Features**: Calendar view, bulk upload, queues, templates
+
+- 🚀 **Hosted Service**: Start in 30 seconds, managed infrastructure, automatic updates
+- 🔓 **Open Source**: MIT licensed, fully auditable code — build trust through transparency
+- 🏠 **Self-Hostable**: Free forever, complete control, no vendor lock-in
+- 🚀 **Advanced Features**: Calendar view, bulk upload, queues, templates, giveaways
 - 🔐 **Privacy-First**: Client-side signing, keys never leave browser
-- 💰 **Cost-Effective**: Free to self-host, optional paid features
+- 💰 **Flexible Pricing**: Free plan available, pay only for what you need
 - 🔧 **Extensible**: Full code access and [REST API](./docs/reference/api.md) for customization
 
-**When to Choose SmartFlowSocial:**
-- You want full control over your data
+**When to Choose SmartFlowSocial Hosted:**
+
+- You want to start immediately (30 seconds setup)
+- You prefer managed infrastructure and automatic updates
+- You want professional support
 - You need advanced scheduling features
-- You prefer self-hosting
-- You want to customize/extend functionality with [API access](./docs/reference/api.md)
-- You value privacy and data ownership
-- You're comfortable with self-hosting
-- You need to integrate with external services or automate workflows
+- You value privacy (keys never leave browser)
+- You want the option to self-host later (no vendor lock-in)
+
+**When to Choose SmartFlowSocial Self-Hosted:**
+
+- You want complete control over your infrastructure
+- You prefer free, open source solutions
+- You have technical expertise
+- You want to customize/extend functionality
+- You need to integrate with external services
 
 **When to Consider Alternatives:**
-- You prefer managed/hosted solutions
-- You don't want to manage infrastructure
+
 - You need simpler, basic scheduling only
-- You prefer cloud-based convenience
+- You prefer proprietary solutions
 
 ---
 
 ## 📚 Documentation
 
 ### Quick Start
+
 - **[5-Minute Quick Start](./docs/getting-started/quickstart.md)** - Get running fast
 - **[Installation Guide](./docs/getting-started/installation.md)** - Complete setup
 - **[First Steps](./docs/getting-started/first-steps.md)** - Your first 30 minutes
 
 ### Getting Started
+
 - [Quick Start](./docs/getting-started/quickstart.md) - 5-minute setup
 - [Installation](./docs/getting-started/installation.md) - Complete installation guide
 - [First Steps](./docs/getting-started/first-steps.md) - Learn the basics
@@ -361,22 +496,26 @@ SmartFlowSocial vs. other Nostr scheduling and management tools:
 - [Architecture](./docs/getting-started/architecture.md) - System design
 
 ### User Guides
+
 - [Posting Guide](./docs/guides/user-guides/posting.md) - Create and schedule posts
 - [Calendar Guide](./docs/guides/user-guides/calendar.md) - Visual scheduling
 - [Payments Guide](./docs/guides/user-guides/payments.md) - Subscription management
 
 ### Developer Guides
+
 - [Developer Guide](./docs/guides/developer-guide.md) - Development workflow
 - **[API Development](./docs/guides/api-development.md)** - Building API endpoints
 - [Testing Guide](./docs/guides/testing.md) - Testing strategies
 - [Contributing Guide](./CONTRIBUTING.md) - How to contribute
 
 ### Operations
+
 - [Deployment Guide](./docs/guides/deployment.md) - Production deployment
 - [Operations Guide](./docs/guides/operations.md) - Monitoring and maintenance
 - [Security Guide](./docs/guides/security.md) - Security best practices
 
 ### Reference
+
 - **[API Reference](./docs/reference/api.md)** - Complete API documentation with examples and authentication
 - [Configuration](./docs/reference/configuration.md) - Environment variables
 - [Database Schema](./docs/reference/database-schema.md) - Data models
@@ -384,6 +523,7 @@ SmartFlowSocial vs. other Nostr scheduling and management tools:
 - [Performance](./docs/reference/performance.md) - Optimization strategies
 
 ### Troubleshooting
+
 - [Common Issues](./docs/troubleshooting/common-issues.md) - Frequently asked questions
 - [Error Solutions](./docs/troubleshooting/errors.md) - Error resolution
 
@@ -419,19 +559,19 @@ See [Testing Guide](./docs/guides/testing.md) for detailed information.
 
 ## 📜 Available Scripts
 
-| Script | Description |
-|--------|-------------|
-| `pnpm dev` | Start development server |
-| `pnpm build` | Build for production |
-| `pnpm start` | Start production server |
-| `pnpm start:worker` | Start background worker |
-| `pnpm lint` | Run ESLint |
-| `pnpm format` | Format code with Prettier |
-| `pnpm test` | Run all tests |
-| `pnpm test:coverage` | Run tests with coverage |
-| `pnpm db:seed` | Seed database |
-| `pnpm docker` | Start PostgreSQL/Redis via Docker |
-| `pnpm precheck` | Run lint, tests, and type check |
+| Script               | Description                       |
+| -------------------- | --------------------------------- |
+| `pnpm dev`           | Start development server          |
+| `pnpm build`         | Build for production              |
+| `pnpm start`         | Start production server           |
+| `pnpm start:worker`  | Start background worker           |
+| `pnpm lint`          | Run ESLint                        |
+| `pnpm format`        | Format code with Prettier         |
+| `pnpm test`          | Run all tests                     |
+| `pnpm test:coverage` | Run tests with coverage           |
+| `pnpm db:seed`       | Seed database                     |
+| `pnpm docker`        | Start PostgreSQL/Redis via Docker |
+| `pnpm precheck`      | Run lint, tests, and type check   |
 
 ---
 
@@ -439,13 +579,13 @@ See [Testing Guide](./docs/guides/testing.md) for detailed information.
 
 SmartFlowSocial integrates with several external services:
 
-| Service | Purpose | Required | Setup Guide |
-|---------|---------|----------|-------------|
-| [HTTP Nostr Publisher](https://github.com/getAlby/http-nostr-publisher) | Signs and publishes Nostr events | ✅ Yes | [Deployment Guide](./docs/guides/deployment.md) |
-| [Primal Caching Service](https://github.com/PrimalHQ/primal-caching-service) | Profile/event lookups | ⚠️ Optional | Uses public endpoints by default |
-| Redis | Background job processing | ✅ Yes | [Operations Guide](./docs/guides/operations.md) |
-| PostgreSQL | Database | ✅ Yes | [Installation Guide](./docs/getting-started/installation.md) |
-| S3-Compatible Storage | Image uploads | ✅ Yes | [Installation Guide](./docs/getting-started/installation.md) |
+| Service                                                                      | Purpose                          | Required    | Setup Guide                                                  |
+| ---------------------------------------------------------------------------- | -------------------------------- | ----------- | ------------------------------------------------------------ |
+| [HTTP Nostr Publisher](https://github.com/getAlby/http-nostr-publisher)      | Signs and publishes Nostr events | ✅ Yes      | [Deployment Guide](./docs/guides/deployment.md)              |
+| [Primal Caching Service](https://github.com/PrimalHQ/primal-caching-service) | Profile/event lookups            | ⚠️ Optional | Uses public endpoints by default                             |
+| Redis                                                                        | Background job processing        | ✅ Yes      | [Operations Guide](./docs/guides/operations.md)              |
+| PostgreSQL                                                                   | Database                         | ✅ Yes      | [Installation Guide](./docs/getting-started/installation.md) |
+| S3-Compatible Storage                                                        | Image uploads                    | ✅ Yes      | [Installation Guide](./docs/getting-started/installation.md) |
 
 ---
 
@@ -510,6 +650,25 @@ See [Security Guide](./docs/guides/security.md) for best practices and reporting
 
 ---
 
+## 👥 Trusted by the Community
+
+SmartFlowSocial is built for the Nostr community, by the Nostr community:
+
+- 🌟 **Open Source** — MIT licensed, fully auditable code
+- 🔐 **Privacy-First** — Your keys never leave your browser
+- 🤝 **Community-Driven** — Contributions welcome, transparent development
+- ✅ **Production Ready** — Stable, battle-tested, actively maintained
+- 📊 **Well Tested** — 70%+ test coverage with comprehensive test suites
+- 📚 **Well Documented** — Complete documentation for users and developers
+
+**Join the community:**
+- ⭐ **Star us on GitHub** — Show your support
+- 🐛 **Report bugs** — Help us improve
+- 💡 **Suggest features** — Shape the roadmap
+- 🔧 **Contribute code** — Make it better for everyone
+
+---
+
 ## 📊 Project Status
 
 - ✅ **Production Ready**: Stable and battle-tested
@@ -535,12 +694,28 @@ Yes! We offer a hosted instance at [smartflow.social](https://smartflow.social) 
 
 ### How do I sign up for the hosted version?
 
-Visit [smartflow.social](https://smartflow.social) and sign up with your Nostr extension. No credit card required for the free plan.
+Visit [smartflow.social](https://smartflow.social) and sign up with your Nostr extension. No credit card required for the free plan. Start managing your Nostr presence in 30 seconds!
 
 ### What's the difference between hosted and self-hosted?
 
-- **Hosted**: Managed by us, no setup required, optional paid plans for advanced features
-- **Self-Hosted**: Full control, free forever, requires technical setup
+**Hosted:**
+- ✅ Start in 30 seconds, no setup required
+- ✅ Automatic updates and managed infrastructure
+- ✅ Professional support available
+- ✅ Free plan available, paid plans for advanced features
+- ✅ Your keys still never leave your browser (client-side signing)
+
+**Self-Hosted:**
+- ✅ Free forever, complete control
+- ✅ Full customization and code access
+- ✅ Requires technical setup (15-30 minutes)
+- ✅ You manage infrastructure and updates
+- ✅ Perfect for maximum privacy and control
+
+**Both options:**
+- 🔐 Client-side signing (keys never leave browser)
+- 🔓 Open source code (audit anytime)
+- 🚫 No vendor lock-in (export data, self-host anytime)
 
 ### Do I need to host it myself?
 
@@ -557,6 +732,7 @@ Yes! SmartFlowSocial supports parent/child account relationships, allowing you t
 ### What Nostr extensions are supported?
 
 Any NIP-07 compatible extension works:
+
 - Alby (recommended)
 - nos2x
 - Amber
@@ -579,6 +755,7 @@ Yes! SmartFlowSocial provides a full REST API for programmatic access. You can a
 ## 🗺️ Roadmap
 
 **Upcoming Features:**
+
 - Enhanced analytics
 - Team collaboration features
 - Mobile app

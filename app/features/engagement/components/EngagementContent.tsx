@@ -47,7 +47,8 @@ export function EngagementContent({
         ) : null}
 
         {/* Quote Reposts Section */}
-        {groupedNotifications.quotes && groupedNotifications.quotes.length > 0 ? (
+        {groupedNotifications.quotes &&
+        groupedNotifications.quotes.length > 0 ? (
           <div>
             <h4 className="mb-3 font-medium text-gray-900 dark:text-gray-100">
               Repost with Quote
@@ -103,7 +104,8 @@ export function EngagementContent({
   if (activeTab === "quotes") {
     return (
       <>
-        {groupedNotifications.quotes && groupedNotifications.quotes.length > 0 ? (
+        {groupedNotifications.quotes &&
+        groupedNotifications.quotes.length > 0 ? (
           <GroupedNotificationList
             groupedNotifications={groupedNotifications.quotes}
             userTimezone={userTimezone ?? undefined}
@@ -123,4 +125,3 @@ export function EngagementContent({
 
   return null;
 }
-

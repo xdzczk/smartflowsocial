@@ -18,7 +18,6 @@ vi.mock("~/lib/error-handler.client", () => ({
 
 // Setup window.nostr mock
 beforeEach(() => {
-
   global.window = {
     nostr: mockWindowNostr,
   } as unknown as Window & typeof globalThis;
@@ -71,7 +70,6 @@ describe("Nostr Edge Cases", () => {
     });
 
     it("should throw error after max retries", async () => {
-
       global.window = {
         nostr: undefined,
       } as unknown as Window & typeof globalThis;
@@ -94,7 +92,9 @@ describe("Nostr Edge Cases", () => {
         await vi.advanceTimersByTimeAsync(500);
       }
 
-      await expect(promise).rejects.toThrow("Nostr extension not found after retries");
+      await expect(promise).rejects.toThrow(
+        "Nostr extension not found after retries",
+      );
       vi.useRealTimers();
     });
 
@@ -206,10 +206,19 @@ describe("Nostr Edge Cases", () => {
 
       expect(result.nostrEvent.kind).toBe(30023);
       expect(result.nostrEvent.tags).toContainEqual(["title", "Test Title"]);
-      expect(result.nostrEvent.tags).toContainEqual(["summary", "Test Summary"]);
-      expect(result.nostrEvent.tags).toContainEqual(["image", "https://example.com/image.jpg"]);
+      expect(result.nostrEvent.tags).toContainEqual([
+        "summary",
+        "Test Summary",
+      ]);
+      expect(result.nostrEvent.tags).toContainEqual([
+        "image",
+        "https://example.com/image.jpg",
+      ]);
       expect(result.nostrEvent.tags).toContainEqual(["d", "test-identifier"]);
-      expect(result.nostrEvent.tags).toContainEqual(["published_at", String(eventData.publishedAt)]);
+      expect(result.nostrEvent.tags).toContainEqual([
+        "published_at",
+        String(eventData.publishedAt),
+      ]);
       expect(result.nostrEvent.tags).toContainEqual(["t", "tag1"]);
       expect(result.nostrEvent.tags).toContainEqual(["t", "tag2"]);
     });
@@ -231,10 +240,17 @@ describe("Nostr Edge Cases", () => {
 
       const result = await signLongFormEvent(eventData);
 
-      expect(result.nostrEvent.tags).toContainEqual(["r", "wss://relay.primal.net/"]);
+      expect(result.nostrEvent.tags).toContainEqual([
+        "r",
+        "wss://relay.primal.net/",
+      ]);
       expect(result.nostrEvent.tags).toContainEqual(["client", "SmartFlow"]);
-      expect(result.nostrEvent.tags).not.toContainEqual(expect.arrayContaining(["title"]));
-      expect(result.nostrEvent.tags).not.toContainEqual(expect.arrayContaining(["summary"]));
+      expect(result.nostrEvent.tags).not.toContainEqual(
+        expect.arrayContaining(["title"]),
+      );
+      expect(result.nostrEvent.tags).not.toContainEqual(
+        expect.arrayContaining(["summary"]),
+      );
     });
 
     it("should trim and lowercase topic tags", async () => {
@@ -328,7 +344,8 @@ code block
     it("should handle markdown with special characters in links", async () => {
       const { convertMarkdownToEditorJS } = await import("~/lib/nostr");
 
-      const markdown = "[Link with spaces](https://example.com/path with spaces)";
+      const markdown =
+        "[Link with spaces](https://example.com/path with spaces)";
 
       const result = convertMarkdownToEditorJS(markdown);
 
@@ -371,4 +388,3 @@ code block
     });
   });
 });
-

@@ -1,6 +1,6 @@
 /**
  * Rate Limiting Middleware
- * 
+ *
  * Provides rate limiting functionality to protect against abuse, DDoS attacks, and API exhaustion.
  * Uses both in-memory (express-rate-limit) and Redis-based (rate-limiter-flexible) rate limiting.
  */
@@ -22,7 +22,7 @@ function isTestEnvironment(): boolean {
   const cypress = process.env.CYPRESS;
   const e2eTest = process.env.E2E_TEST;
   const disableRateLimit = process.env.DISABLE_RATE_LIMIT;
-  
+
   return (
     nodeEnv === "test" ||
     cypress === "true" ||
@@ -46,7 +46,10 @@ export const apiLimiter = rateLimit({
     res.status(429).json({
       error: "Rate limit exceeded",
       message: "Too many requests, please try again later.",
-      retryAfter: Math.ceil((req.rateLimit?.resetTime ?? Date.now() + 15 * 60 * 1000 - Date.now()) / 1000),
+      retryAfter: Math.ceil(
+        (req.rateLimit?.resetTime ?? Date.now() + 15 * 60 * 1000 - Date.now()) /
+          1000,
+      ),
     });
   },
   skip: (_req: Request) => isTestEnvironment(), // Skip rate limiting entirely in test environments
@@ -67,7 +70,10 @@ export const strictLimiter = rateLimit({
     res.status(429).json({
       error: "Rate limit exceeded",
       message: "Rate limit exceeded for this endpoint. Please try again later.",
-      retryAfter: Math.ceil((req.rateLimit?.resetTime ?? Date.now() + 15 * 60 * 1000 - Date.now()) / 1000),
+      retryAfter: Math.ceil(
+        (req.rateLimit?.resetTime ?? Date.now() + 15 * 60 * 1000 - Date.now()) /
+          1000,
+      ),
     });
   },
   skip: (_req: Request) => isTestEnvironment(), // Skip rate limiting entirely in test environments
@@ -88,7 +94,10 @@ export const authLimiter = rateLimit({
     res.status(429).json({
       error: "Rate limit exceeded",
       message: "Too many authentication attempts, please try again later.",
-      retryAfter: Math.ceil((req.rateLimit?.resetTime ?? Date.now() + 15 * 60 * 1000 - Date.now()) / 1000),
+      retryAfter: Math.ceil(
+        (req.rateLimit?.resetTime ?? Date.now() + 15 * 60 * 1000 - Date.now()) /
+          1000,
+      ),
     });
   },
   skip: (_req: Request) => isTestEnvironment(), // Skip rate limiting entirely in test environments
@@ -104,18 +113,15 @@ function isRedisAvailable(): boolean {
 /**
  * Per-user rate limiting middleware
  * Uses Redis for distributed rate limiting across multiple server instances
- * 
+ *
  * @param points - Number of requests allowed
  * @param duration - Time window in seconds
  */
-export function createUserRateLimiter(
-  points = 100,
-  duration = 60,
-) {
+export function createUserRateLimiter(points = 100, duration = 60) {
   return async (req: Request, res: Response, next: NextFunction) => {
     // Get user ID from request (set by auth middleware)
     const userId = req.user?.id;
-    
+
     if (!userId) {
       // No user ID, skip rate limiting (will be handled by IP-based limiter)
       return next();
@@ -142,7 +148,7 @@ export function createUserRateLimiter(
       // Rate limit exceeded
       // rate-limiter-flexible throws errors with msBeforeNext property
       const rateLimitError = error as { msBeforeNext?: number };
-      const retryAfter = rateLimitError.msBeforeNext 
+      const retryAfter = rateLimitError.msBeforeNext
         ? Math.ceil(rateLimitError.msBeforeNext / 1000)
         : duration;
 
@@ -159,10 +165,7 @@ export function createUserRateLimiter(
  * Per-IP rate limiting using Redis (for distributed systems)
  * Falls back to in-memory limiter if Redis is not available
  */
-export function createIPRateLimiter(
-  points = 100,
-  duration = 60,
-) {
+export function createIPRateLimiter(points = 100, duration = 60) {
   return async (req: Request, res: Response, next: NextFunction) => {
     if (!isRedisAvailable()) {
       // Redis not available, skip Redis-based rate limiting
@@ -170,7 +173,7 @@ export function createIPRateLimiter(
       return next();
     }
 
-    const ip = (req.ip ?? req.socket.remoteAddress) ?? "unknown";
+    const ip = req.ip ?? req.socket.remoteAddress ?? "unknown";
 
     try {
       const ipLimiter = new RateLimiterRedis({
@@ -187,7 +190,7 @@ export function createIPRateLimiter(
       // Rate limit exceeded
       // rate-limiter-flexible throws errors with msBeforeNext property
       const rateLimitError = error as { msBeforeNext?: number };
-      const retryAfter = rateLimitError.msBeforeNext 
+      const retryAfter = rateLimitError.msBeforeNext
         ? Math.ceil(rateLimitError.msBeforeNext / 1000)
         : duration;
 
@@ -221,7 +224,7 @@ export async function getRateLimitInfo(userId: string): Promise<{
     });
 
     const info = await userLimiter.get(userId);
-    
+
     if (!info) {
       return Promise.resolve({
         remaining: 100, // Default points
@@ -238,4 +241,3 @@ export async function getRateLimitInfo(userId: string): Promise<{
     return Promise.resolve(null);
   }
 }
-

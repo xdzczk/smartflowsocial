@@ -41,10 +41,7 @@ export class UserFactory {
       npub: `npub${Math.random().toString(36).substring(2, 15)}`,
       isEnabled: true,
       timezone: "America/New_York",
-      userRelays: [
-        "wss://relay.bullishbounty.com",
-        "wss://relay.snort.social",
-      ],
+      userRelays: ["wss://relay.bullishbounty.com", "wss://relay.snort.social"],
       giveawayBlackListed: [],
       uploadProvider: "S3",
       showHashTagsinPosts: false,
@@ -157,13 +154,16 @@ export class UserFactory {
       uploadProvider: this.options.uploadProvider ?? "S3",
       showHashTagsinPosts: this.options.showHashTagsinPosts ?? false,
       scheduleInterval: this.options.scheduleInterval ?? [],
-      nostrProfile: (this.options.nostrProfile ?? null) as unknown as Prisma.JsonValue,
+      nostrProfile: (this.options.nostrProfile ??
+        null) as unknown as Prisma.JsonValue,
       enableMirrorBlossom: this.options.enableMirrorBlossom ?? false,
       mirrorUploadUrls: this.options.mirrorUploadUrls ?? [],
       encryptedNwc: this.options.encryptedNwc ?? null,
       nwcEnabled: this.options.nwcEnabled ?? false,
       nwcLastUsed: null,
-      mutedList: (this.options.mutedList ?? { npubs: [] }) as unknown as Prisma.JsonValue,
+      mutedList: (this.options.mutedList ?? {
+        npubs: [],
+      }) as unknown as Prisma.JsonValue,
       filterMuted: this.options.filterMuted ?? false,
       hidePostsFromLowTrustUsers:
         this.options.hidePostsFromLowTrustUsers ?? false,
@@ -224,10 +224,3 @@ export const userFactory = {
     );
   },
 };
-
-
-
-
-
-
-

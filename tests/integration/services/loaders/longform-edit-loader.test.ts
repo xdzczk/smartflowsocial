@@ -61,9 +61,15 @@ describe("Longform Edit Loader", () => {
     (getLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
     (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue(mockTags);
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
-    (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(mockScheduleIntervals);
-    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(mockQueueTypes);
-    (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue(mockHashTagPresets);
+    (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockScheduleIntervals,
+    );
+    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockQueueTypes,
+    );
+    (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockHashTagPresets,
+    );
     (getAssets as ReturnType<typeof vi.fn>).mockResolvedValue(mockAssets);
 
     const result = await loadLongFormEditData(TEST_USER_ID, TEST_LONGFORM_ID);
@@ -81,13 +87,22 @@ describe("Longform Edit Loader", () => {
   it("should throw 404 if post not found", async () => {
     (getLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(null);
     (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue("");
-    (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: TEST_USER_ID });
+    (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: TEST_USER_ID,
+    });
     (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-    (getAssets as ReturnType<typeof vi.fn>).mockResolvedValue({ assets: [], totalCount: 0, totalPages: 0, currentPage: 1 });
+    (getAssets as ReturnType<typeof vi.fn>).mockResolvedValue({
+      assets: [],
+      totalCount: 0,
+      totalPages: 0,
+      currentPage: 1,
+    });
 
-    await expect(loadLongFormEditData(TEST_USER_ID, TEST_LONGFORM_ID)).rejects.toThrow();
+    await expect(
+      loadLongFormEditData(TEST_USER_ID, TEST_LONGFORM_ID),
+    ).rejects.toThrow();
   });
 
   it("should use default timezone if user timezone is missing", async () => {
@@ -100,11 +115,15 @@ describe("Longform Edit Loader", () => {
     (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-    (getAssets as ReturnType<typeof vi.fn>).mockResolvedValue({ assets: [], totalCount: 0, totalPages: 0, currentPage: 1 });
+    (getAssets as ReturnType<typeof vi.fn>).mockResolvedValue({
+      assets: [],
+      totalCount: 0,
+      totalPages: 0,
+      currentPage: 1,
+    });
 
     const result = await loadLongFormEditData(TEST_USER_ID, TEST_LONGFORM_ID);
 
     expect(result.userTimezone).toBe("Etc/GMT");
   });
 });
-

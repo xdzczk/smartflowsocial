@@ -60,9 +60,9 @@ class BullMQClient implements QueueClient {
   ): Promise<QueueOperationResult> {
     try {
       const queue = getQueue(queueName);
-      
+
       let delay: number | undefined;
-      
+
       if (options?.scheduledFor !== undefined) {
         // Calculate delay from scheduled timestamp (in seconds) to now
         delay = options.scheduledFor * 1000 - Date.now();
@@ -78,13 +78,14 @@ class BullMQClient implements QueueClient {
       }
 
       const job = await queue.add(jobName, data, { delay });
-      
+
       return {
         success: true,
         jobId: job.id,
       };
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "Failed to enqueue job";
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to enqueue job";
       return {
         success: false,
         error: errorMessage,
@@ -102,7 +103,12 @@ class BullMQClient implements QueueClient {
       const jobs = await queue.getJobs(["waiting", "delayed"]);
       const job = jobs.find((j) => {
         const jobData: unknown = j.data;
-        if (jobData && typeof jobData === "object" && !Array.isArray(jobData) && dataKey in jobData) {
+        if (
+          jobData &&
+          typeof jobData === "object" &&
+          !Array.isArray(jobData) &&
+          dataKey in jobData
+        ) {
           const dataValueInJob = (jobData as Record<string, unknown>)[dataKey];
           return String(dataValueInJob) === dataValue;
         }
@@ -127,18 +133,24 @@ class BullMQClient implements QueueClient {
   async getJobs(
     queueName: QueueType,
     statuses: JobStatus[],
-  ): Promise<{ id: string; data: PostJobData | LongFormPostJobData; status: JobStatus }[]> {
+  ): Promise<
+    { id: string; data: PostJobData | LongFormPostJobData; status: JobStatus }[]
+  > {
     try {
       const queue = getQueue(queueName);
       // BullMQ's getJobs accepts an array of status strings
       const jobs = await queue.getJobs(statuses);
-      
+
       return jobs.map((job) => {
         const jobId: unknown = job.id;
         const jobData: unknown = job.data;
         const id = typeof jobId === "string" ? jobId : String(jobId ?? "");
-        const data: PostJobData | LongFormPostJobData = jobData as PostJobData | LongFormPostJobData;
-        const status: JobStatus = (job.opts.delay && job.opts.delay > 0 ? "delayed" : "waiting") as JobStatus;
+        const data: PostJobData | LongFormPostJobData = jobData as
+          | PostJobData
+          | LongFormPostJobData;
+        const status: JobStatus = (
+          job.opts.delay && job.opts.delay > 0 ? "delayed" : "waiting"
+        ) as JobStatus;
         return { id, data, status };
       });
     } catch (error) {
@@ -155,12 +167,12 @@ class BullMQClient implements QueueClient {
     try {
       const queue = getQueue(queueName);
       const job = await queue.getJob(jobId);
-      
+
       if (job) {
         await job.remove();
         return true;
       }
-      
+
       return false;
     } catch (error) {
       logError(error instanceof Error ? error : new Error(String(error)), {
@@ -191,4 +203,3 @@ export async function closeAllQueues(): Promise<void> {
   }
   await redis.quit();
 }
-

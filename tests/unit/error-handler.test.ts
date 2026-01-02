@@ -19,7 +19,12 @@ import {
   assert,
   assertExists,
 } from "~/lib/error-handler.server";
-import { ValidationError, NotFoundError, normalizeError, getUserFriendlyMessage } from "~/lib/errors";
+import {
+  ValidationError,
+  NotFoundError,
+  normalizeError,
+  getUserFriendlyMessage,
+} from "~/lib/errors";
 
 describe("Error Handler Utilities", () => {
   beforeEach(() => {
@@ -38,14 +43,18 @@ describe("Error Handler Utilities", () => {
     });
 
     it("should include context when provided", () => {
-      const error = new ValidationError("Validation failed", { field: "email" });
+      const error = new ValidationError("Validation failed", {
+        field: "email",
+      });
       const [response] = createErrorResponse(error, { includeContext: true });
 
       expect(response.error.context).toBeDefined();
     });
 
     it("should exclude context when requested", () => {
-      const error = new ValidationError("Validation failed", { field: "email" });
+      const error = new ValidationError("Validation failed", {
+        field: "email",
+      });
       const [response] = createErrorResponse(error, { includeContext: false });
 
       expect(response.error.context).toBeUndefined();
@@ -98,7 +107,12 @@ describe("Error Handler Utilities", () => {
 
       expect(response).toBeInstanceOf(Response);
       const jsonDataRaw: unknown = await response.json();
-      const jsonData = jsonDataRaw && typeof jsonDataRaw === "object" && !Array.isArray(jsonDataRaw) ? jsonDataRaw as { success?: boolean; error?: { message?: string } } : {};
+      const jsonData =
+        jsonDataRaw &&
+        typeof jsonDataRaw === "object" &&
+        !Array.isArray(jsonDataRaw)
+          ? (jsonDataRaw as { success?: boolean; error?: { message?: string } })
+          : {};
       expect(jsonData.success).toBe(false);
       const normalized = normalizeError(error);
       expect(jsonData.error?.message).toBe(getUserFriendlyMessage(normalized));
@@ -109,7 +123,12 @@ describe("Error Handler Utilities", () => {
       const response = handleActionError(error);
 
       const jsonDataRaw: unknown = await response.json();
-      const jsonData = jsonDataRaw && typeof jsonDataRaw === "object" && !Array.isArray(jsonDataRaw) ? jsonDataRaw as { success?: boolean; error?: { message?: string } } : {};
+      const jsonData =
+        jsonDataRaw &&
+        typeof jsonDataRaw === "object" &&
+        !Array.isArray(jsonDataRaw)
+          ? (jsonDataRaw as { success?: boolean; error?: { message?: string } })
+          : {};
       expect(jsonData.success).toBe(false);
       const normalized = normalizeError(error);
       expect(jsonData.error?.message).toBe(getUserFriendlyMessage(normalized));
@@ -120,7 +139,12 @@ describe("Error Handler Utilities", () => {
       const response = handleActionError(error);
 
       const jsonDataRaw: unknown = await response.json();
-      const jsonData = jsonDataRaw && typeof jsonDataRaw === "object" && !Array.isArray(jsonDataRaw) ? jsonDataRaw as { success?: boolean; error?: { message?: string } } : {};
+      const jsonData =
+        jsonDataRaw &&
+        typeof jsonDataRaw === "object" &&
+        !Array.isArray(jsonDataRaw)
+          ? (jsonDataRaw as { success?: boolean; error?: { message?: string } })
+          : {};
       expect(jsonData.success).toBe(false);
       const normalized = normalizeError(error);
       expect(jsonData.error?.message).toBe(getUserFriendlyMessage(normalized));
@@ -158,7 +182,9 @@ describe("Error Handler Utilities", () => {
     });
 
     it("should throw NotFoundError when value is undefined", () => {
-      expect(() => assertExists(undefined, "Should throw")).toThrow(NotFoundError);
+      expect(() => assertExists(undefined, "Should throw")).toThrow(
+        NotFoundError,
+      );
     });
 
     it("should use default message when not provided", () => {
@@ -180,4 +206,3 @@ describe("Error Handler Utilities", () => {
     });
   });
 });
-

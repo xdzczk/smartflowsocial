@@ -1,6 +1,6 @@
 /**
  * Integration tests for parent API route
- * 
+ *
  * Tests the API endpoint in app/routes/api.parent.tsx
  */
 import { json } from "@remix-run/node";
@@ -17,9 +17,7 @@ const { mockLoadParentData, mockHandleParentApiError } = vi.hoisted(() => ({
 
 // Mock only loadParentData - we'll inject the error handler via dependency injection
 vi.mock("~/features/user", async () => {
-  // Dynamic import() type annotation needed for vi.importActual
-  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
-  const actual = await vi.importActual<typeof import("~/features/user")>("~/features/user");
+  const actual = await vi.importActual("~/features/user");
   return {
     ...actual,
     loadParentData: mockLoadParentData,
@@ -81,7 +79,17 @@ describe("API: Parent", () => {
       const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
       const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { parent?: { npub?: string; name?: string; displayName?: string; picture?: string } | null } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              parent?: {
+                npub?: string;
+                name?: string;
+                displayName?: string;
+                picture?: string;
+              } | null;
+            })
+          : {};
 
       expect(requireUserId).toHaveBeenCalledWith(request);
       expect(loadParentData).toHaveBeenCalledWith(TEST_USER_ID);
@@ -117,7 +125,17 @@ describe("API: Parent", () => {
       const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
       const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { parent?: { npub?: string; name?: string; displayName?: string; picture?: string } | null } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              parent?: {
+                npub?: string;
+                name?: string;
+                displayName?: string;
+                picture?: string;
+              } | null;
+            })
+          : {};
 
       expect(loadParentData).toHaveBeenCalledWith(TEST_USER_ID);
       expect(data.parent?.name).toBe("Parent User");
@@ -146,7 +164,17 @@ describe("API: Parent", () => {
       const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
       const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { parent?: { npub?: string; name?: string; displayName?: string; picture?: string } | null } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              parent?: {
+                npub?: string;
+                name?: string;
+                displayName?: string;
+                picture?: string;
+              } | null;
+            })
+          : {};
 
       expect(loadParentData).toHaveBeenCalledWith(TEST_USER_ID);
       expect(data.parent).toEqual({
@@ -172,7 +200,17 @@ describe("API: Parent", () => {
       const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
       const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { parent?: { npub?: string; name?: string; displayName?: string; picture?: string } | null } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              parent?: {
+                npub?: string;
+                name?: string;
+                displayName?: string;
+                picture?: string;
+              } | null;
+            })
+          : {};
 
       expect(loadParentData).toHaveBeenCalledWith(TEST_USER_ID);
       expect(data).toEqual({ parent: null });
@@ -191,7 +229,17 @@ describe("API: Parent", () => {
       const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
       const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { parent?: { npub?: string; name?: string; displayName?: string; picture?: string } | null } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              parent?: {
+                npub?: string;
+                name?: string;
+                displayName?: string;
+                picture?: string;
+              } | null;
+            })
+          : {};
 
       expect(loadParentData).toHaveBeenCalledWith(TEST_USER_ID);
       expect(data).toEqual({ parent: null });
@@ -210,7 +258,17 @@ describe("API: Parent", () => {
       const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
       const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { parent?: { npub?: string; name?: string; displayName?: string; picture?: string } | null } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              parent?: {
+                npub?: string;
+                name?: string;
+                displayName?: string;
+                picture?: string;
+              } | null;
+            })
+          : {};
 
       expect(loadParentData).toHaveBeenCalledWith(TEST_USER_ID);
       expect(data).toEqual({ parent: null });
@@ -256,16 +314,16 @@ describe("API: Parent", () => {
       // When loadParentData fails, the loader should catch it and call
       // the injected error handler, which returns null parent
       mockLoadParentData.mockRejectedValue(new Error("Database error"));
-      
+
       // Mock the error handler to return a graceful response
       mockHandleParentApiError.mockReturnValue(json({ parent: null }));
 
       const request = new Request("http://localhost:3000/api/parent");
       const loaderArgs = { request, params: {}, context: {} };
-      
+
       // The loader should catch the error and return a graceful response
       const response = await loader(loaderArgs);
-      const data = await response.json() as { parent?: unknown | null };
+      const data = (await response.json()) as { parent?: unknown | null };
 
       // Verify graceful error handling - returns null parent instead of throwing
       expect(response.status).toBe(200);
@@ -298,13 +356,32 @@ describe("API: Parent", () => {
       const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
       const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { parent?: { npub?: string; name?: string; displayName?: string; picture?: string } | null } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              parent?: {
+                npub?: string;
+                name?: string;
+                displayName?: string;
+                picture?: string;
+              } | null;
+            })
+          : {};
 
       expect(loadParentData).toHaveBeenCalledWith(TEST_USER_ID);
       // Should handle parse error gracefully
-      const parent = data.parent && typeof data.parent === "object" && !Array.isArray(data.parent) ? data.parent as { name?: string; displayName?: string; picture?: string; npub?: string } : null;
+      const parent =
+        data.parent &&
+        typeof data.parent === "object" &&
+        !Array.isArray(data.parent)
+          ? (data.parent as {
+              name?: string;
+              displayName?: string;
+              picture?: string;
+              npub?: string;
+            })
+          : null;
       expect(parent?.name).toBeUndefined();
     });
   });
 });
-

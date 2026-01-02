@@ -5,12 +5,16 @@ declare global {
   interface Window {
     nostr?: {
       getPublicKey(): Promise<string>;
-      signEvent(event: NostrEventData | {
-        kind: number;
-        content: string;
-        tags: string[][];
-        created_at: number;
-      }): Promise<SignedEvent>;
+      signEvent(
+        event:
+          | NostrEventData
+          | {
+              kind: number;
+              content: string;
+              tags: string[][];
+              created_at: number;
+            },
+      ): Promise<SignedEvent>;
       signSchnorr?(message: string): Promise<string>;
       nip04?: {
         encrypt(pubkey: string, plaintext: string): Promise<string>;
@@ -26,4 +30,3 @@ declare global {
 
 // Make this file a module
 export {};
-

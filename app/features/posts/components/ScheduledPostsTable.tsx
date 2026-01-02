@@ -102,7 +102,9 @@ export function ScheduledPostsTable({
             <th className="bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
               <input
                 type="checkbox"
-                checked={posts.length > 0 ? selectedPosts.size === posts.length : false}
+                checked={
+                  posts.length > 0 ? selectedPosts.size === posts.length : false
+                }
                 onChange={onToggleSelectAll}
                 className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
               />
@@ -188,7 +190,9 @@ export function ScheduledPostsTable({
                       </svg>
                     </div>
                   ) : null}
-                  {post.isQuotedPost && post.fileUrl && post.fileUrl.length > 0 ? (
+                  {post.isQuotedPost &&
+                  post.fileUrl &&
+                  post.fileUrl.length > 0 ? (
                     <div className="absolute -right-1 -top-1 rounded-full bg-green-500 p-1">
                       <svg
                         className="h-3 w-3 text-white"
@@ -286,7 +290,7 @@ export function ScheduledPostsTable({
                       className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-2 py-1 text-sm font-semibold leading-5 text-red-800 hover:border-red-300 hover:text-red-900 hover:shadow-sm focus:ring focus:ring-red-300/25 active:border-red-200 active:shadow-none disabled:opacity-50 dark:border-red-700 dark:bg-gray-800 dark:text-red-300 dark:hover:border-red-600 dark:hover:text-red-200 dark:focus:ring-red-600/40 dark:active:border-red-700"
                     >
                       {deleteFetcher.state !== "idle" &&
-                        deleteFetcher.formData?.get("postId") === post.id
+                      deleteFetcher.formData?.get("postId") === post.id
                         ? "Deleting..."
                         : "Delete"}
                     </button>
@@ -300,7 +304,3 @@ export function ScheduledPostsTable({
     </div>
   );
 }
-
-
-
-

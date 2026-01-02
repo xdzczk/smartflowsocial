@@ -3,10 +3,14 @@ import { isVideoFile } from "~/lib/helpers";
 
 import { PostBadges } from "./PostBadges";
 import type { PostBlockBaseProps, QueueColorStyle } from "./PostBlock.types";
-import { getPostPreview, getFirstImage, getStatusColor, getDisplayTime } from "./PostBlock.utils";
+import {
+  getPostPreview,
+  getFirstImage,
+  getStatusColor,
+  getDisplayTime,
+} from "./PostBlock.utils";
 import { PostIcon } from "./PostIcon";
 import { PostStatusIcons } from "./PostStatusIcons";
-
 
 interface CompactPostBlockProps extends PostBlockBaseProps {
   queueColorStyle: QueueColorStyle | null;
@@ -30,7 +34,11 @@ export function CompactPostBlock({
 }: CompactPostBlockProps) {
   const firstImage = getFirstImage(post, isLongform ?? false);
   const postPreview = getPostPreview(post, isLongform ?? false);
-  const displayTime = getDisplayTime(post, isLongform ?? false, isPast ?? false);
+  const displayTime = getDisplayTime(
+    post,
+    isLongform ?? false,
+    isPast ?? false,
+  );
 
   return (
     <div
@@ -98,20 +106,17 @@ export function CompactPostBlock({
             />
             <PostBadges post={post} size="md" position="absolute-large" />
           </div>
-          {post.caption ?? (isLongform && post.summary) ? (
+          {(post.caption ?? (isLongform && post.summary)) ? (
             <p className="truncate-2-lines text-xs leading-relaxed text-gray-600 dark:text-gray-400">
-              {isLongform
-                ? post.summary ?? postPreview
-                : postPreview}
+              {isLongform ? (post.summary ?? postPreview) : postPreview}
             </p>
           ) : null}
         </div>
       ) : (
         <p className="truncate-2-lines text-xs leading-relaxed">
-          {isLongform ? post.summary ?? postPreview : postPreview}
+          {isLongform ? (post.summary ?? postPreview) : postPreview}
         </p>
       )}
     </div>
   );
 }
-

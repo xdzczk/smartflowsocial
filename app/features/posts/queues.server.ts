@@ -1,6 +1,6 @@
 /**
  * Queue workers and initialization
- * 
+ *
  * This file handles the worker processes that process queue jobs.
  * For enqueueing/canceling jobs, use the queue abstraction layer:
  *   import { enqueuePostJob, cancelPostJob } from "~/infra/queue";
@@ -12,23 +12,13 @@ import type { Job } from "bullmq";
 
 import type { SignedEvent } from "~/features/nostr/types";
 import { getUserById } from "~/features/user";
-import {
-  getQueueInstance,
-  redis,
-  closeAllQueues,
-} from "~/infra/queue";
-import type {
-  PostJobData,
-  LongFormPostJobData,
-} from "~/infra/queue";
+import { getQueueInstance, redis, closeAllQueues } from "~/infra/queue";
+import type { PostJobData, LongFormPostJobData } from "~/infra/queue";
 import { env } from "~/lib/env.server";
 import { logError, logInfo } from "~/lib/error-logger.server";
 import { fetchWithRetry } from "~/lib/fetch.server";
 import { prisma } from "~/lib/prisma.server";
-import {
-  recordJobMetrics,
-  updateActiveJobs,
-} from "~/lib/queue-metrics.server";
+import { recordJobMetrics, updateActiveJobs } from "~/lib/queue-metrics.server";
 import {
   updateLongFormPostStatus,
   getCronDueScheduledLongFormPosts,
@@ -56,7 +46,9 @@ function isSignedEvent(value: unknown): value is SignedEvent {
 /**
  * Convert Prisma JsonValue to SignedEvent if valid
  */
-function toSignedEvent(value: Prisma.JsonValue | null | undefined): SignedEvent | null {
+function toSignedEvent(
+  value: Prisma.JsonValue | null | undefined,
+): SignedEvent | null {
   if (!value || typeof value !== "object") {
     return null;
   }
@@ -65,7 +57,9 @@ function toSignedEvent(value: Prisma.JsonValue | null | undefined): SignedEvent 
 
 // Get queue instances using the abstraction
 const _scheduledPostsQueue = getQueueInstance("scheduled-posts");
-const _scheduledLongFormPostsQueue = getQueueInstance("scheduled-longform-posts");
+const _scheduledLongFormPostsQueue = getQueueInstance(
+  "scheduled-longform-posts",
+);
 const postCheckerQueue = getQueueInstance("post-checker");
 
 // Worker to process scheduled posts
@@ -109,7 +103,10 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
       if (!user) {
         throw new Error(`User ${userId} not found`);
       }
-      const userRelays = user && typeof user === "object" && "userRelays" in user ? user.userRelays : null;
+      const userRelays =
+        user && typeof user === "object" && "userRelays" in user
+          ? user.userRelays
+          : null;
       const relaysArray = Array.isArray(userRelays) ? userRelays : [];
       const sanitizedRelays = relaysArray.map((relay: unknown) => {
         const relayStr = typeof relay === "string" ? relay : String(relay);
@@ -118,7 +115,8 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
 
       // Post to nostr publisher endpoint
       // Read directly from process.env to support test environment changes
-      const publisherUrl = process.env.NOSTR_PUBLISHER_URL ?? env.NOSTR_PUBLISHER_URL;
+      const publisherUrl =
+        process.env.NOSTR_PUBLISHER_URL ?? env.NOSTR_PUBLISHER_URL;
       if (!publisherUrl) {
         throw new Error("NOSTR_PUBLISHER_URL environment variable is not set");
       }
@@ -205,7 +203,10 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
       if (!user) {
         throw new Error(`User ${userId} not found`);
       }
-      const userRelays = user && typeof user === "object" && "userRelays" in user ? user.userRelays : null;
+      const userRelays =
+        user && typeof user === "object" && "userRelays" in user
+          ? user.userRelays
+          : null;
       const relaysArray = Array.isArray(userRelays) ? userRelays : [];
       const sanitizedRelays = relaysArray.map((relay: unknown) => {
         const relayStr = typeof relay === "string" ? relay : String(relay);
@@ -214,7 +215,8 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
 
       // Post to nostr publisher endpoint
       // Read directly from process.env to support test environment changes
-      const publisherUrl = process.env.NOSTR_PUBLISHER_URL ?? env.NOSTR_PUBLISHER_URL;
+      const publisherUrl =
+        process.env.NOSTR_PUBLISHER_URL ?? env.NOSTR_PUBLISHER_URL;
       if (!publisherUrl) {
         throw new Error("NOSTR_PUBLISHER_URL environment variable is not set");
       }
@@ -274,16 +276,24 @@ export const postCheckerWorker = new Worker(
       // Process regular posts
       for (const post of posts) {
         if (!post || typeof post !== "object") continue;
-        const postId = "id" in post && typeof post.id === "string" ? post.id : null;
-        const postUserId = "userId" in post && typeof post.userId === "string" ? post.userId : null;
+        const postId =
+          "id" in post && typeof post.id === "string" ? post.id : null;
+        const postUserId =
+          "userId" in post && typeof post.userId === "string"
+            ? post.userId
+            : null;
         const postSignedEvent = "signedEvent" in post ? post.signedEvent : null;
-        const postScheduledFor = "scheduledFor" in post && typeof post.scheduledFor === "string" ? post.scheduledFor : null;
-        
-        if (!postUserId || !postSignedEvent || !postScheduledFor || !postId) continue;
-        
+        const postScheduledFor =
+          "scheduledFor" in post && typeof post.scheduledFor === "string"
+            ? post.scheduledFor
+            : null;
+
+        if (!postUserId || !postSignedEvent || !postScheduledFor || !postId)
+          continue;
+
         const signedEvent = toSignedEvent(postSignedEvent);
         if (!signedEvent) continue;
-        
+
         const scheduledTime = parseInt(postScheduledFor, 10);
         if (isNaN(scheduledTime)) continue;
         const timeDiff = scheduledTime - now;
@@ -304,16 +314,33 @@ export const postCheckerWorker = new Worker(
       // Process longform posts
       for (const longformPost of longformPosts) {
         if (!longformPost || typeof longformPost !== "object") continue;
-        const longformPostId = "id" in longformPost && typeof longformPost.id === "string" ? longformPost.id : null;
-        const longformPostUserId = "userId" in longformPost && typeof longformPost.userId === "string" ? longformPost.userId : null;
-        const longformPostSignedEvent = "signedEvent" in longformPost ? longformPost.signedEvent : null;
-        const longformPostScheduledFor = "scheduledFor" in longformPost && typeof longformPost.scheduledFor === "string" ? longformPost.scheduledFor : null;
-        
-        if (!longformPostUserId || !longformPostSignedEvent || !longformPostScheduledFor || !longformPostId) continue;
-        
+        const longformPostId =
+          "id" in longformPost && typeof longformPost.id === "string"
+            ? longformPost.id
+            : null;
+        const longformPostUserId =
+          "userId" in longformPost && typeof longformPost.userId === "string"
+            ? longformPost.userId
+            : null;
+        const longformPostSignedEvent =
+          "signedEvent" in longformPost ? longformPost.signedEvent : null;
+        const longformPostScheduledFor =
+          "scheduledFor" in longformPost &&
+          typeof longformPost.scheduledFor === "string"
+            ? longformPost.scheduledFor
+            : null;
+
+        if (
+          !longformPostUserId ||
+          !longformPostSignedEvent ||
+          !longformPostScheduledFor ||
+          !longformPostId
+        )
+          continue;
+
         const signedEvent = toSignedEvent(longformPostSignedEvent);
         if (!signedEvent) continue;
-        
+
         const scheduledTime = parseInt(longformPostScheduledFor, 10);
         if (isNaN(scheduledTime)) continue;
         const timeDiff = scheduledTime - now;

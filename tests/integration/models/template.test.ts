@@ -43,7 +43,9 @@ describe("Template Model", () => {
         name: "Test Template",
         posts: [{ id: TEST_POST_ID }],
       };
-      (prisma.template.create as ReturnType<typeof vi.fn>).mockResolvedValue(mockTemplate);
+      (prisma.template.create as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockTemplate,
+      );
 
       const result = await createTemplate({
         userId: TEST_USER_ID,
@@ -73,7 +75,9 @@ describe("Template Model", () => {
         name: "Test Template",
         posts: [{ id: "post-1" }, { id: "post-2" }],
       };
-      (prisma.template.create as ReturnType<typeof vi.fn>).mockResolvedValue(mockTemplate);
+      (prisma.template.create as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockTemplate,
+      );
 
       const result = await createTemplate({
         userId: TEST_USER_ID,
@@ -103,7 +107,9 @@ describe("Template Model", () => {
         name: "Test Template",
         posts: [],
       };
-      (prisma.template.create as ReturnType<typeof vi.fn>).mockResolvedValue(mockTemplate);
+      (prisma.template.create as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockTemplate,
+      );
 
       const result = await createTemplate({
         userId: TEST_USER_ID,
@@ -133,7 +139,9 @@ describe("Template Model", () => {
         { id: "template-1", userId: TEST_USER_ID, name: "Template 1" },
         { id: "template-2", userId: TEST_USER_ID, name: "Template 2" },
       ];
-      (prisma.template.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(mockTemplates);
+      (prisma.template.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockTemplates,
+      );
 
       const result = await getTemplates({ userId: TEST_USER_ID });
 
@@ -158,7 +166,9 @@ describe("Template Model", () => {
         name: "Test Template",
         posts: [],
       };
-      (prisma.template.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockTemplate);
+      (prisma.template.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockTemplate,
+      );
 
       const result = await getTemplateById({
         id: "template-123",
@@ -175,7 +185,9 @@ describe("Template Model", () => {
     });
 
     it("should return null if template not found", async () => {
-      (prisma.template.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (prisma.template.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
+        null,
+      );
 
       const result = await getTemplateById({
         id: "nonexistent",
@@ -193,7 +205,9 @@ describe("Template Model", () => {
         name: "Updated Template",
         posts: [],
       };
-      (prisma.template.update as ReturnType<typeof vi.fn>).mockResolvedValue(mockTemplate);
+      (prisma.template.update as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockTemplate,
+      );
 
       const result = await updateTemplate({
         id: "template-123",
@@ -219,7 +233,9 @@ describe("Template Model", () => {
         name: "Test Template",
         posts: [{ id: "post-1" }, { id: "post-2" }],
       };
-      (prisma.template.update as ReturnType<typeof vi.fn>).mockResolvedValue(mockTemplate);
+      (prisma.template.update as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockTemplate,
+      );
 
       const result = await updateTemplate({
         id: "template-123",
@@ -247,7 +263,9 @@ describe("Template Model", () => {
         name: "Updated Template",
         posts: [{ id: "post-1" }],
       };
-      (prisma.template.update as ReturnType<typeof vi.fn>).mockResolvedValue(mockTemplate);
+      (prisma.template.update as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockTemplate,
+      );
 
       const result = await updateTemplate({
         id: "template-123",
@@ -275,7 +293,9 @@ describe("Template Model", () => {
   describe("deleteTemplate", () => {
     it("should delete a template", async () => {
       const mockTemplate = { id: "template-123", userId: TEST_USER_ID };
-      (prisma.template.delete as ReturnType<typeof vi.fn>).mockResolvedValue(mockTemplate);
+      (prisma.template.delete as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockTemplate,
+      );
 
       const result = await deleteTemplate({
         id: "template-123",
@@ -296,7 +316,9 @@ describe("Template Model", () => {
         userId: TEST_USER_ID,
         posts: [],
       };
-      (prisma.template.update as ReturnType<typeof vi.fn>).mockResolvedValue(mockTemplate);
+      (prisma.template.update as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockTemplate,
+      );
 
       const result = await removePostFromTemplate({
         templateId: "template-123",
@@ -319,4 +341,3 @@ describe("Template Model", () => {
     });
   });
 });
-

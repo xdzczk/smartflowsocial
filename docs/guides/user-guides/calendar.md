@@ -71,21 +71,21 @@ flowchart TD
     Start[User Drags Post] --> Check{Post Type?}
     Check -->|Manual| Simple[Show Simple Modal]
     Check -->|Auto-Scheduled| Advanced[Show Advanced Modal]
-    
+
     Simple --> Confirm[Confirm New Time]
     Confirm --> Update[Update Post Time]
     Update --> Resign[Re-sign Event]
     Resign --> Save[Save to Database]
-    
+
     Advanced --> Choice{User Choice?}
     Choice -->|Cancel| End1[No Changes]
     Choice -->|Keep Queue| UpdateTime[Update Time Only]
     Choice -->|Convert Manual| Convert[Disable Auto-Scheduling]
-    
+
     UpdateTime --> CancelJob[Cancel Old Queue Job]
     CancelJob --> Update
     Convert --> CancelJob
-    
+
     Save --> End2[Post Rescheduled]
     End1 --> End3[End]
     End2 --> End3
@@ -155,10 +155,12 @@ app/routes/
 ### Accessing the Calendar
 
 1. **Navigate to Calendar**
+
    - Click "Calendar" in dashboard navigation
    - Or go to `/dashboard/calendar`
 
 2. **Select Queue Type** (Optional)
+
    - Choose specific queue to view
    - Or view all queues together
 
@@ -169,17 +171,20 @@ app/routes/
 ### Weekly View
 
 **Layout:**
+
 - Horizontal timeline (Monday-Sunday)
 - Hourly time slots (00:00-23:59)
 - Current time indicator (red line)
 - Post blocks positioned by time
 
 **Navigation:**
+
 - Previous/Next week buttons
 - "Today" button to jump to current week
 - Date range display
 
 **Interactions:**
+
 - Click post block to view details
 - Drag post to reschedule
 - Hover for quick preview
@@ -187,17 +192,20 @@ app/routes/
 ### Monthly View
 
 **Layout:**
+
 - Traditional calendar grid
 - Days of the month
 - Post cards under each date
 - Color-coded by queue
 
 **Navigation:**
+
 - Previous/Next month buttons
 - "Today" button
 - Month/year selector
 
 **Interactions:**
+
 - Click date to see all posts
 - Click post card for details
 - Drag posts between dates
@@ -207,11 +215,13 @@ app/routes/
 **Simple Reschedule (Manual Posts):**
 
 1. **Drag Post Block**
+
    - Click and hold post
    - Drag to new time slot
    - Release to drop
 
 2. **Confirm Reschedule**
+
    - Modal appears with new time
    - Review changes
    - Click "Confirm"
@@ -224,9 +234,11 @@ app/routes/
 **Advanced Reschedule (Auto-scheduled Posts):**
 
 1. **Drag Post Block**
+
    - Same as above
 
 2. **Choose Option**
+
    - **Cancel**: No changes
    - **Keep Queue Rule**: Update time, keep auto-scheduling
    - **Convert to Manual**: Update time, disable auto-scheduling
@@ -243,11 +255,13 @@ app/routes/
 ### Organizing Content
 
 1. **Use Queue Colors**
+
    - Assign colors to queues
    - Visual organization
    - Easy identification
 
 2. **Group Related Posts**
+
    - Schedule related content together
    - Use consistent times
    - Create content blocks
@@ -260,11 +274,13 @@ app/routes/
 ### Time Management
 
 1. **Peak Times**
+
    - Schedule during peak engagement
    - Use analytics to find best times
    - Test different times
 
 2. **Consistency**
+
    - Post at regular intervals
    - Use queues for automation
    - Maintain schedule
@@ -277,6 +293,7 @@ app/routes/
 ### Visual Organization
 
 1. **Queue Colors**
+
    - Use distinct colors
    - Match brand colors if possible
    - Keep consistent
@@ -293,11 +310,13 @@ app/routes/
 ### Calendar Not Loading
 
 **Symptoms:**
+
 - Calendar view is blank
 - Posts not appearing
 - Loading spinner stuck
 
 **Solutions:**
+
 1. Refresh the page
 2. Check browser console for errors
 3. Verify you have scheduled posts
@@ -307,11 +326,13 @@ app/routes/
 ### Drag and Drop Not Working
 
 **Symptoms:**
+
 - Can't drag posts
 - Drop doesn't work
 - No feedback
 
 **Solutions:**
+
 1. Check browser compatibility
 2. Disable browser extensions
 3. Try different browser
@@ -321,11 +342,13 @@ app/routes/
 ### Posts Not Rescheduling
 
 **Symptoms:**
+
 - Reschedule doesn't save
 - Time doesn't update
 - Error messages
 
 **Solutions:**
+
 1. Check post has signed event
 2. Verify new time is in future
 3. Check network connection
@@ -335,11 +358,13 @@ app/routes/
 ### Performance Issues
 
 **Symptoms:**
+
 - Calendar loads slowly
 - Lag when dragging
 - Browser freezes
 
 **Solutions:**
+
 1. Reduce number of posts visible
 2. Use queue filters
 3. Close other browser tabs

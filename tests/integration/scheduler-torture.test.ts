@@ -36,7 +36,7 @@ describe("Scheduler Torture Tests", () => {
       // Spring 2024 DST transition in Europe/Riga: March 31, 2024 3:00 AM -> 4:00 AM
       // The hour from 3:00 to 4:00 doesn't exist
       const baseTime = new Date("2024-03-31T02:00:00.000Z"); // 1 hour before transition
-      
+
       const queueType = {
         id: "queue-1",
         name: "test-queue",
@@ -46,7 +46,9 @@ describe("Scheduler Torture Tests", () => {
         },
       };
 
-      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+        null,
+      );
 
       const result = await calculateNextScheduleTime({
         queueType,
@@ -65,7 +67,7 @@ describe("Scheduler Torture Tests", () => {
       // Fall 2024 DST transition in Europe/Riga: October 27, 2024 3:00 AM -> 2:00 AM
       // The hour from 2:00 to 3:00 happens twice
       const baseTime = new Date("2024-10-27T01:00:00.000Z"); // 1 hour before transition
-      
+
       const queueType = {
         id: "queue-1",
         name: "test-queue",
@@ -75,7 +77,9 @@ describe("Scheduler Torture Tests", () => {
         },
       };
 
-      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+        null,
+      );
 
       const result = await calculateNextScheduleTime({
         queueType,
@@ -93,7 +97,7 @@ describe("Scheduler Torture Tests", () => {
     it("should handle DST transition with interval scheduling", async () => {
       // Test interval scheduling across DST boundary
       const baseTime = new Date("2024-03-31T01:00:00.000Z"); // Just before spring DST
-      
+
       const queueType = {
         id: "queue-1",
         name: "test-queue",
@@ -106,7 +110,9 @@ describe("Scheduler Torture Tests", () => {
 
       // Last post was 1 hour ago (before DST transition)
       const lastPostTime = new Date("2024-03-31T00:00:00.000Z");
-      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(lastPostTime);
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+        lastPostTime,
+      );
 
       const result = await calculateNextScheduleTime({
         queueType,
@@ -124,14 +130,14 @@ describe("Scheduler Torture Tests", () => {
     it("should handle multiple DST transitions in different timezones", async () => {
       const timezones = [
         "America/New_York", // US Eastern
-        "Europe/London",    // UK
+        "Europe/London", // UK
         "Australia/Sydney", // Australian Eastern
-        "Asia/Tokyo",       // No DST
+        "Asia/Tokyo", // No DST
       ];
 
       for (const tz of timezones) {
         const baseTime = new Date("2024-03-31T12:00:00.000Z");
-        
+
         const queueType = {
           id: "queue-1",
           name: "test-queue",
@@ -141,7 +147,9 @@ describe("Scheduler Torture Tests", () => {
           },
         };
 
-        (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+        (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+          null,
+        );
 
         const result = await calculateNextScheduleTime({
           queueType,
@@ -162,7 +170,7 @@ describe("Scheduler Torture Tests", () => {
       // If last post was very old, adding interval might still be in the past
       const now = new Date("2024-01-01T12:00:00.000Z");
       const veryOldLastPost = new Date("2020-01-01T00:00:00.000Z"); // 4 years ago
-      
+
       const queueType = {
         id: "queue-1",
         name: "test-queue",
@@ -173,7 +181,9 @@ describe("Scheduler Torture Tests", () => {
         },
       };
 
-      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(veryOldLastPost);
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+        veryOldLastPost,
+      );
 
       const result = await calculateNextScheduleTime({
         queueType,
@@ -191,7 +201,7 @@ describe("Scheduler Torture Tests", () => {
     it("should handle interval calculation when last post + interval < now", async () => {
       const now = new Date("2024-06-15T14:00:00.000Z");
       const lastPost = new Date("2024-06-15T12:00:00.000Z"); // 2 hours ago
-      
+
       const queueType = {
         id: "queue-1",
         name: "test-queue",
@@ -202,7 +212,9 @@ describe("Scheduler Torture Tests", () => {
         },
       };
 
-      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(lastPost);
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+        lastPost,
+      );
 
       const result = await calculateNextScheduleTime({
         queueType,
@@ -219,7 +231,7 @@ describe("Scheduler Torture Tests", () => {
 
     it("should handle slot scheduling when all slots are in the past", async () => {
       const now = new Date("2024-06-15T23:00:00.000Z"); // 11 PM
-      
+
       const queueType = {
         id: "queue-1",
         name: "test-queue",
@@ -229,7 +241,9 @@ describe("Scheduler Torture Tests", () => {
         },
       };
 
-      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+        null,
+      );
 
       const result = await calculateNextScheduleTime({
         queueType,
@@ -248,7 +262,7 @@ describe("Scheduler Torture Tests", () => {
   describe("Concurrency and Duplicate Prevention", () => {
     it("should produce consistent results when called simultaneously", async () => {
       const baseTime = new Date("2024-06-15T12:00:00.000Z");
-      
+
       const queueType = {
         id: "queue-1",
         name: "test-queue",
@@ -259,7 +273,9 @@ describe("Scheduler Torture Tests", () => {
         },
       };
 
-      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+        null,
+      );
 
       // Simulate concurrent calls
       const results = await Promise.all([
@@ -299,7 +315,7 @@ describe("Scheduler Torture Tests", () => {
 
     it("should handle rapid successive calls without race conditions", async () => {
       const baseTime = new Date("2024-06-15T12:00:00.000Z");
-      
+
       const queueType = {
         id: "queue-1",
         name: "test-queue",
@@ -309,7 +325,9 @@ describe("Scheduler Torture Tests", () => {
         },
       };
 
-      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+        null,
+      );
 
       // Rapid successive calls
       const promises = Array.from({ length: 10 }, () =>
@@ -370,7 +388,9 @@ describe("Scheduler Torture Tests", () => {
         },
       };
 
-      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+        null,
+      );
 
       // Invalid timezone should fallback to UTC
       const result = await calculateNextScheduleTime({
@@ -393,7 +413,9 @@ describe("Scheduler Torture Tests", () => {
         },
       };
 
-      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+        null,
+      );
 
       const result = await calculateNextScheduleTime({
         queueType,
@@ -410,7 +432,7 @@ describe("Scheduler Torture Tests", () => {
   describe("Boundary Conditions", () => {
     it("should handle midnight boundary correctly", async () => {
       const baseTime = new Date("2024-06-15T23:55:00.000Z"); // 5 minutes before midnight
-      
+
       const queueType = {
         id: "queue-1",
         name: "test-queue",
@@ -420,7 +442,9 @@ describe("Scheduler Torture Tests", () => {
         },
       };
 
-      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+        null,
+      );
 
       const result = await calculateNextScheduleTime({
         queueType,
@@ -437,7 +461,7 @@ describe("Scheduler Torture Tests", () => {
 
     it("should handle year boundary correctly", async () => {
       const baseTime = new Date("2024-12-31T23:00:00.000Z");
-      
+
       const queueType = {
         id: "queue-1",
         name: "test-queue",
@@ -447,7 +471,9 @@ describe("Scheduler Torture Tests", () => {
         },
       };
 
-      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+        null,
+      );
 
       const result = await calculateNextScheduleTime({
         queueType,
@@ -463,6 +489,3 @@ describe("Scheduler Torture Tests", () => {
     });
   });
 });
-
-
-

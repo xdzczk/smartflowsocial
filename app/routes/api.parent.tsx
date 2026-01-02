@@ -1,10 +1,7 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
-import {
-  loadParentData,
-  handleParentApiError,
-} from "~/features/user";
+import { loadParentData, handleParentApiError } from "~/features/user";
 
 /**
  * Creates a loader function with dependency injection
@@ -29,4 +26,3 @@ export const loader = createLoader(loadParentData, handleParentApiError);
 
 // Export the factory for testing
 export { createLoader };
-

@@ -29,11 +29,13 @@ Complete reference of subscription plans, features, pricing, and limitations in 
 ### Plan Types
 
 **Monthly Plans:**
+
 - Recurring monthly payments
 - Cancel anytime
 - Access until period end
 
 **Lifetime Plans:**
+
 - One-time payment
 - Lifetime access
 - No recurring fees
@@ -44,40 +46,40 @@ Complete reference of subscription plans, features, pricing, and limitations in 
 
 ### Core Features
 
-| Feature | Free | Basic | Premium | Pro | Enterprise |
-|---------|------|-------|---------|-----|------------|
-| Basic Scheduling | ✅ | ✅ | ✅ | ✅ | ✅ |
-| New Post | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Dashboard | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Scheduled Posts | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Posted Content | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Giveaways | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Settings | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Feature          | Free | Basic | Premium | Pro | Enterprise |
+| ---------------- | ---- | ----- | ------- | --- | ---------- |
+| Basic Scheduling | ✅   | ✅    | ✅      | ✅  | ✅         |
+| New Post         | ✅   | ✅    | ✅      | ✅  | ✅         |
+| Dashboard        | ✅   | ✅    | ✅      | ✅  | ✅         |
+| Scheduled Posts  | ✅   | ✅    | ✅      | ✅  | ✅         |
+| Posted Content   | ✅   | ✅    | ✅      | ✅  | ✅         |
+| Giveaways        | ✅   | ✅    | ✅      | ✅  | ✅         |
+| Settings         | ✅   | ✅    | ✅      | ✅  | ✅         |
 
 ### Advanced Features
 
-| Feature | Free | Basic | Premium | Pro | Enterprise |
-|---------|------|-------|---------|-----|------------|
-| Drafts | ❌ | ✅ | ✅ | ✅ | ✅ |
-| Calendar View | ❌ | ✅ | ✅ | ✅ | ✅ |
-| Bulk Scheduling | ❌ | ✅ | ✅ | ✅ | ✅ |
-| Longform Posts | ❌ | ✅ | ✅ | ✅ | ✅ |
-| Templates | ❌ | ✅ | ✅ | ✅ | ✅ |
-| Recyclables | ❌ | ✅ | ✅ | ✅ | ✅ |
-| Engagement Feed | ❌ | ✅ | ✅ | ✅ | ✅ |
+| Feature         | Free | Basic | Premium | Pro | Enterprise |
+| --------------- | ---- | ----- | ------- | --- | ---------- |
+| Drafts          | ❌   | ✅    | ✅      | ✅  | ✅         |
+| Calendar View   | ❌   | ✅    | ✅      | ✅  | ✅         |
+| Bulk Scheduling | ❌   | ✅    | ✅      | ✅  | ✅         |
+| Longform Posts  | ❌   | ✅    | ✅      | ✅  | ✅         |
+| Templates       | ❌   | ✅    | ✅      | ✅  | ✅         |
+| Recyclables     | ❌   | ✅    | ✅      | ✅  | ✅         |
+| Engagement Feed | ❌   | ✅    | ✅      | ✅  | ✅         |
 
 ### Premium Features
 
-| Feature | Free | Basic | Premium | Pro | Enterprise |
-|---------|------|-------|---------|-----|------------|
-| Multiple Queues | ❌ | ❌ | ✅ | ✅ | ✅ |
-| Reposts & Quotes | ❌ | ❌ | ✅ | ✅ | ✅ |
-| Advanced Analytics | ❌ | ❌ | ❌ | ✅ | ✅ |
-| Multi-Account Switching | ❌ | ❌ | ❌ | ✅ | ✅ |
-| Wolf Filtering & Vortex | ❌ | ❌ | ❌ | ✅ | ✅ |
-| Native S3/Blossom Storage | ❌ | ❌ | ❌ | ✅ | ✅ |
-| Relay Blast | ❌ | ❌ | ❌ | ❌ | ✅ |
-| Visual Perks | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Feature                   | Free | Basic | Premium | Pro | Enterprise |
+| ------------------------- | ---- | ----- | ------- | --- | ---------- |
+| Multiple Queues           | ❌   | ❌    | ✅      | ✅  | ✅         |
+| Reposts & Quotes          | ❌   | ❌    | ✅      | ✅  | ✅         |
+| Advanced Analytics        | ❌   | ❌    | ❌      | ✅  | ✅         |
+| Multi-Account Switching   | ❌   | ❌    | ❌      | ✅  | ✅         |
+| Wolf Filtering & Vortex   | ❌   | ❌    | ❌      | ✅  | ✅         |
+| Native S3/Blossom Storage | ❌   | ❌    | ❌      | ✅  | ✅         |
+| Relay Blast               | ❌   | ❌    | ❌      | ❌  | ✅         |
+| Visual Perks              | ❌   | ❌    | ❌      | ❌  | ✅         |
 
 ---
 
@@ -89,6 +91,7 @@ Complete reference of subscription plans, features, pricing, and limitations in 
 **Best for:** Getting started, basic posting
 
 **Features:**
+
 - Basic scheduling
 - New post creation
 - Dashboard access
@@ -98,6 +101,7 @@ Complete reference of subscription plans, features, pricing, and limitations in 
 - Settings access
 
 **Limitations:**
+
 - No drafts
 - No calendar view
 - No bulk scheduling
@@ -112,6 +116,7 @@ Complete reference of subscription plans, features, pricing, and limitations in 
 **Best for:** Regular users, content creators
 
 **Features:**
+
 - All Free features
 - Drafts
 - Calendar view
@@ -122,6 +127,7 @@ Complete reference of subscription plans, features, pricing, and limitations in 
 - Engagement feed
 
 **Limitations:**
+
 - No multiple queues
 - No reposts & quotes
 - No advanced analytics
@@ -133,12 +139,14 @@ Complete reference of subscription plans, features, pricing, and limitations in 
 **Best for:** Power users, businesses
 
 **Features:**
+
 - All Basic features
 - Multiple queues
 - Reposts & quotes
 - Enhanced features
 
 **Limitations:**
+
 - No advanced analytics
 - No multi-account switching
 - No Wolf filtering
@@ -150,6 +158,7 @@ Complete reference of subscription plans, features, pricing, and limitations in 
 **Best for:** Professional users, agencies
 
 **Features:**
+
 - All Premium features
 - Advanced analytics
 - Multi-account switching
@@ -157,6 +166,7 @@ Complete reference of subscription plans, features, pricing, and limitations in 
 - Native S3/Blossom storage
 
 **Limitations:**
+
 - No relay blast
 - No visual perks
 
@@ -166,6 +176,7 @@ Complete reference of subscription plans, features, pricing, and limitations in 
 **Best for:** Large organizations, custom needs
 
 **Features:**
+
 - All Pro features
 - Relay blast
 - Visual perks
@@ -183,6 +194,7 @@ Complete reference of subscription plans, features, pricing, and limitations in 
 **Available in:** All plans
 
 **Features:**
+
 - Set date and time
 - Choose queue
 - Schedule single posts
@@ -194,6 +206,7 @@ Complete reference of subscription plans, features, pricing, and limitations in 
 **Available in:** Basic, Premium, Pro, Enterprise
 
 **Features:**
+
 - Save incomplete posts
 - Edit drafts later
 - Multiple drafts
@@ -206,6 +219,7 @@ Complete reference of subscription plans, features, pricing, and limitations in 
 **Available in:** Basic, Premium, Pro, Enterprise
 
 **Features:**
+
 - Monthly calendar view
 - Post scheduling visualization
 - Drag-and-drop scheduling
@@ -218,6 +232,7 @@ Complete reference of subscription plans, features, pricing, and limitations in 
 **Available in:** Basic, Premium, Pro, Enterprise
 
 **Features:**
+
 - Upload multiple posts
 - Batch scheduling
 - Queue assignment
@@ -230,6 +245,7 @@ Complete reference of subscription plans, features, pricing, and limitations in 
 **Available in:** Basic, Premium, Pro, Enterprise
 
 **Features:**
+
 - Extended post length
 - Rich text formatting
 - Media attachments
@@ -242,6 +258,7 @@ Complete reference of subscription plans, features, pricing, and limitations in 
 **Available in:** Basic, Premium, Pro, Enterprise
 
 **Features:**
+
 - Create templates
 - Reuse templates
 - Template variables
@@ -254,6 +271,7 @@ Complete reference of subscription plans, features, pricing, and limitations in 
 **Available in:** Basic, Premium, Pro, Enterprise
 
 **Features:**
+
 - Recycle old posts
 - Repost content
 - Schedule recycling
@@ -266,6 +284,7 @@ Complete reference of subscription plans, features, pricing, and limitations in 
 **Available in:** Basic, Premium, Pro, Enterprise
 
 **Features:**
+
 - View likes, reposts, comments
 - Filter engagement
 - Engagement statistics
@@ -278,6 +297,7 @@ Complete reference of subscription plans, features, pricing, and limitations in 
 **Available in:** Premium, Pro, Enterprise
 
 **Features:**
+
 - Create custom queues
 - Queue-specific settings
 - Queue scheduling rules
@@ -290,6 +310,7 @@ Complete reference of subscription plans, features, pricing, and limitations in 
 **Available in:** Premium, Pro, Enterprise
 
 **Features:**
+
 - Repost (Kind 6)
 - Quote posts
 - Schedule reposts
@@ -302,6 +323,7 @@ Complete reference of subscription plans, features, pricing, and limitations in 
 **Available in:** Pro, Enterprise
 
 **Features:**
+
 - Engagement analytics
 - Performance metrics
 - Trend analysis
@@ -314,6 +336,7 @@ Complete reference of subscription plans, features, pricing, and limitations in 
 **Available in:** Pro, Enterprise
 
 **Features:**
+
 - Parent/child accounts
 - Account switching
 - Account management
@@ -326,6 +349,7 @@ Complete reference of subscription plans, features, pricing, and limitations in 
 **Available in:** Pro, Enterprise
 
 **Features:**
+
 - Content filtering
 - Trust score filtering
 - Spam detection
@@ -338,6 +362,7 @@ Complete reference of subscription plans, features, pricing, and limitations in 
 **Available in:** Pro, Enterprise
 
 **Features:**
+
 - S3 upload integration
 - Blossom protocol support
 - Storage management
@@ -350,6 +375,7 @@ Complete reference of subscription plans, features, pricing, and limitations in 
 **Available in:** Enterprise
 
 **Features:**
+
 - Multi-relay publishing
 - Relay management
 - Broadcast optimization
@@ -362,6 +388,7 @@ Complete reference of subscription plans, features, pricing, and limitations in 
 **Available in:** Enterprise
 
 **Features:**
+
 - Custom themes
 - Enhanced UI
 - Visual customization
@@ -382,16 +409,19 @@ Complete reference of subscription plans, features, pricing, and limitations in 
 ### Plan Changes
 
 **Upgrading:**
+
 - Immediate access to new features
 - Prorated billing (if applicable)
 - No data loss
 
 **Downgrading:**
+
 - Access until period end
 - Features removed after period
 - Data preserved
 
 **Canceling:**
+
 - Access until period end
 - No refunds (check policy)
 - Can reactivate anytime
@@ -399,11 +429,13 @@ Complete reference of subscription plans, features, pricing, and limitations in 
 ### Payment Methods
 
 **Supported:**
+
 - Lightning payments (NWC)
 - Bitcoin payments
 - Other methods (check pricing page)
 
 **Billing:**
+
 - Monthly recurring
 - One-time (lifetime plans)
 - Automatic renewal
@@ -413,30 +445,35 @@ Complete reference of subscription plans, features, pricing, and limitations in 
 ## Plan Selection Guide
 
 ### Choose Free If:
+
 - Just getting started
 - Posting occasionally
 - Basic needs only
 - Testing the platform
 
 ### Choose Basic If:
+
 - Regular posting schedule
 - Need drafts and calendar
 - Bulk scheduling needed
 - Content creation workflow
 
 ### Choose Premium If:
+
 - Multiple content types
 - Need multiple queues
 - Repost and quote content
 - Business use case
 
 ### Choose Pro If:
+
 - Professional content creation
 - Multiple accounts
 - Advanced analytics needed
 - Agency or team use
 
 ### Choose Enterprise If:
+
 - Large organization
 - Custom requirements
 - Priority support needed
@@ -453,4 +490,3 @@ Complete reference of subscription plans, features, pricing, and limitations in 
 ---
 
 **Next:** [Configuration Reference](./configuration.md) → Environment configuration
-

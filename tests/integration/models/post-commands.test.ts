@@ -17,7 +17,13 @@ vi.mock("~/lib/prisma.server", () => ({
 }));
 
 import { prisma } from "~/lib/prisma.server";
-import { createPost, updatePost, reschedulePost, updatePostStatus, deletePost } from "~/models/post.commands.server";
+import {
+  createPost,
+  updatePost,
+  reschedulePost,
+  updatePostStatus,
+  deletePost,
+} from "~/models/post.commands.server";
 
 import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 
@@ -28,8 +34,14 @@ describe("Post Commands", () => {
 
   describe("createPost", () => {
     it("should create a post with all fields", async () => {
-      const mockPost = { id: TEST_POST_ID, userId: TEST_USER_ID, content: "Test content" };
-      (prisma.post.create as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
+      const mockPost = {
+        id: TEST_POST_ID,
+        userId: TEST_USER_ID,
+        content: "Test content",
+      };
+      (prisma.post.create as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockPost,
+      );
 
       const postData = {
         userId: TEST_USER_ID,
@@ -68,7 +80,9 @@ describe("Post Commands", () => {
 
     it("should create a post with queue type connection", async () => {
       const mockPost = { id: TEST_POST_ID, userId: TEST_USER_ID };
-      (prisma.post.create as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
+      (prisma.post.create as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockPost,
+      );
 
       const postData = {
         userId: TEST_USER_ID,
@@ -97,7 +111,9 @@ describe("Post Commands", () => {
 
     it("should create a post with hashtag preset connection", async () => {
       const mockPost = { id: TEST_POST_ID, userId: TEST_USER_ID };
-      (prisma.post.create as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
+      (prisma.post.create as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockPost,
+      );
 
       const postData = {
         userId: TEST_USER_ID,
@@ -126,7 +142,9 @@ describe("Post Commands", () => {
 
     it("should handle scheduled post with scheduledFor", async () => {
       const mockPost = { id: TEST_POST_ID, userId: TEST_USER_ID };
-      (prisma.post.create as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
+      (prisma.post.create as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockPost,
+      );
 
       const scheduledFor = new Date("2024-12-31T12:00:00Z");
       const postData = {
@@ -156,8 +174,14 @@ describe("Post Commands", () => {
 
   describe("updatePostStatus", () => {
     it("should update post status to posted", async () => {
-      const mockPost = { id: TEST_POST_ID, isPosted: true, postedAt: new Date() };
-      (prisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
+      const mockPost = {
+        id: TEST_POST_ID,
+        isPosted: true,
+        postedAt: new Date(),
+      };
+      (prisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockPost,
+      );
 
       const result = await updatePostStatus({
         id: TEST_POST_ID,
@@ -180,8 +204,14 @@ describe("Post Commands", () => {
     });
 
     it("should update post status to not posted", async () => {
-      const mockPost = { id: TEST_POST_ID, isPosted: false, postedAt: new Date() };
-      (prisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
+      const mockPost = {
+        id: TEST_POST_ID,
+        isPosted: false,
+        postedAt: new Date(),
+      };
+      (prisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockPost,
+      );
 
       await updatePostStatus({
         id: TEST_POST_ID,
@@ -206,7 +236,9 @@ describe("Post Commands", () => {
   describe("reschedulePost", () => {
     it("should reschedule post with new time", async () => {
       const mockPost = { id: TEST_POST_ID, scheduledFor: "1234567890" };
-      (prisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
+      (prisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockPost,
+      );
 
       const result = await reschedulePost({
         id: TEST_POST_ID,
@@ -238,10 +270,27 @@ describe("Post Commands", () => {
 
     it("should update signed events when provided", async () => {
       const mockPost = { id: TEST_POST_ID };
-      (prisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
+      (prisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockPost,
+      );
 
-      const signedEvent = { id: "event-123", pubkey: "pk-123", created_at: 1234567890, kind: 1, content: "test", tags: [], sig: "sig-123" };
-      const nostrEvent = { id: "event-123", pubkey: "pk-123", created_at: 1234567890, kind: 1, content: "test", tags: [] };
+      const signedEvent = {
+        id: "event-123",
+        pubkey: "pk-123",
+        created_at: 1234567890,
+        kind: 1,
+        content: "test",
+        tags: [],
+        sig: "sig-123",
+      };
+      const nostrEvent = {
+        id: "event-123",
+        pubkey: "pk-123",
+        created_at: 1234567890,
+        kind: 1,
+        content: "test",
+        tags: [],
+      };
 
       await reschedulePost({
         id: TEST_POST_ID,
@@ -268,7 +317,9 @@ describe("Post Commands", () => {
 
     it("should connect queue type when queueTypeId is provided", async () => {
       const mockPost = { id: TEST_POST_ID };
-      (prisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
+      (prisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockPost,
+      );
 
       await reschedulePost({
         id: TEST_POST_ID,
@@ -294,7 +345,9 @@ describe("Post Commands", () => {
 
     it("should disconnect queue type when queueTypeId is null", async () => {
       const mockPost = { id: TEST_POST_ID };
-      (prisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
+      (prisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockPost,
+      );
 
       await reschedulePost({
         id: TEST_POST_ID,
@@ -322,7 +375,9 @@ describe("Post Commands", () => {
   describe("updatePost", () => {
     it("should update post with partial data", async () => {
       const mockPost = { id: TEST_POST_ID, content: "Updated content" };
-      (prisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
+      (prisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockPost,
+      );
 
       const result = await updatePost({
         id: TEST_POST_ID,
@@ -351,7 +406,9 @@ describe("Post Commands", () => {
 
     it("should handle queue type connection", async () => {
       const mockPost = { id: TEST_POST_ID };
-      (prisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
+      (prisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockPost,
+      );
 
       await updatePost({
         id: TEST_POST_ID,
@@ -377,7 +434,9 @@ describe("Post Commands", () => {
 
     it("should handle queue type disconnection", async () => {
       const mockPost = { id: TEST_POST_ID };
-      (prisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
+      (prisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockPost,
+      );
 
       await updatePost({
         id: TEST_POST_ID,
@@ -403,7 +462,9 @@ describe("Post Commands", () => {
 
     it("should handle hashtag preset connection", async () => {
       const mockPost = { id: TEST_POST_ID };
-      (prisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
+      (prisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockPost,
+      );
 
       await updatePost({
         id: TEST_POST_ID,
@@ -431,7 +492,9 @@ describe("Post Commands", () => {
   describe("deletePost", () => {
     it("should delete a post", async () => {
       const mockPost = { id: TEST_POST_ID, userId: TEST_USER_ID };
-      (prisma.post.delete as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
+      (prisma.post.delete as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockPost,
+      );
 
       const result = await deletePost({
         id: TEST_POST_ID,
@@ -448,4 +511,3 @@ describe("Post Commands", () => {
     });
   });
 });
-

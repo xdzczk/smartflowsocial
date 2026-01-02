@@ -20,7 +20,10 @@ export function EditLongFormFormFields({
   return (
     <>
       <div>
-        <label htmlFor="longform-title" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label
+          htmlFor="longform-title"
+          className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+        >
           Title
         </label>
         <input
@@ -34,7 +37,10 @@ export function EditLongFormFormFields({
       </div>
 
       <div>
-        <label htmlFor="longform-summary" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label
+          htmlFor="longform-summary"
+          className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+        >
           Summary
         </label>
         <textarea
@@ -48,7 +54,10 @@ export function EditLongFormFormFields({
       </div>
 
       <div>
-        <label htmlFor="longform-editorjs" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label
+          htmlFor="longform-editorjs"
+          className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+        >
           Content
         </label>
         <div className="rounded-md border border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 dark:border-gray-600 dark:bg-gray-800">
@@ -67,7 +76,10 @@ export function EditLongFormFormFields({
       </div>
 
       <div>
-        <label htmlFor="longform-cover-image" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label
+          htmlFor="longform-cover-image"
+          className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+        >
           Cover Image URL (optional)
         </label>
         <input
@@ -82,7 +94,3 @@ export function EditLongFormFormFields({
     </>
   );
 }
-
-
-
-

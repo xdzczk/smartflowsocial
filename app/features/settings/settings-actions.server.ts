@@ -1,7 +1,7 @@
 /**
  * Settings action handlers
  * Centralized router for all settings-related actions
- * 
+ *
  * Individual action handlers are split by domain in the actions/ directory
  */
 
@@ -19,10 +19,7 @@ import { handleSubscriptionAction } from "./actions/subscription-actions.server"
  * Main settings action handler
  * Routes actions to appropriate handlers
  */
-export async function handleSettingsAction(
-  userId: string,
-  formData: FormData,
-) {
+export async function handleSettingsAction(userId: string, formData: FormData) {
   const _action = formData.get("_action") as string;
 
   if (!_action) {
@@ -50,4 +47,3 @@ export async function handleSettingsAction(
 
   return json({ error: "Invalid action type" }, { status: 400 });
 }
-

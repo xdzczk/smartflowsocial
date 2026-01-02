@@ -11,27 +11,26 @@ installGlobals();
 const prisma = new PrismaClient();
 
 async function deleteNostrUser(npub: string) {
-    if (!npub) {
-        throw new Error("npub required");
-    }
+  if (!npub) {
+    throw new Error("npub required");
+  }
 
-    try {
-        await prisma.user.delete({ where: { npub } });
-         
-        console.log("User deleted successfully");
-    } catch (error) {
-        if (
-            error instanceof PrismaClientKnownRequestError &&
-            error.code === "P2025"
-        ) {
-             
-            console.log("User not found, so no need to delete");
-        } else {
-            throw error;
-        }
-    } finally {
-        await prisma.$disconnect();
+  try {
+    await prisma.user.delete({ where: { npub } });
+
+    console.log("User deleted successfully");
+  } catch (error) {
+    if (
+      error instanceof PrismaClientKnownRequestError &&
+      error.code === "P2025"
+    ) {
+      console.log("User not found, so no need to delete");
+    } else {
+      throw error;
     }
+  } finally {
+    await prisma.$disconnect();
+  }
 }
 
 void deleteNostrUser(process.argv[2]);

@@ -5,7 +5,6 @@
 
 import { json } from "@remix-run/node";
 
-
 import { getUsersByNpubs } from "~/features/user";
 import { logWarning } from "~/lib/error-logger.server";
 import { updateUserSubscription } from "~/models/payment.server";
@@ -14,7 +13,11 @@ import { respondToChildRequest } from "./parent-child.server";
 /**
  * Load dashboard data including pending parent requests
  */
-export async function loadDashboardData(userId: string, userNpub: string, pendingParentRequests: string[] = []) {
+export async function loadDashboardData(
+  userId: string,
+  userNpub: string,
+  pendingParentRequests: string[] = [],
+) {
   const pendingParentUsers = await getUsersByNpubs(pendingParentRequests);
 
   return {
@@ -68,10 +71,3 @@ export async function handleDashboardAction(
 
   return json({ error: "Invalid action" }, { status: 400 });
 }
-
-
-
-
-
-
-

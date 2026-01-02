@@ -18,11 +18,11 @@ We follow the **test pyramid** principle:
        /  \      E2E Tests (Cypress)
       /    \     - ~40% of user flows
      /      \    - Full browser interactions
-    /--------\   
+    /--------\
    /          \  Integration Tests (Vitest)
   /            \ - ~70% of loaders, 100% of action handlers
  /              \ - ~90% of API routes, ~70% of model functions
-/----------------\ 
+/----------------\
                   Unit Tests (Vitest)
                   - ~40% of business logic
                   - Fast, isolated tests
@@ -44,12 +44,14 @@ We follow the **test pyramid** principle:
 ### Unit Tests
 
 **When to Use:**
+
 - Pure functions (no side effects)
 - Business logic calculations
 - Data transformations
 - Utility functions
 
 **Examples:**
+
 - Scheduling algorithms
 - Date formatting
 - String manipulation
@@ -64,6 +66,7 @@ We follow the **test pyramid** principle:
 ### Integration Tests
 
 **When to Use:**
+
 - Remix loaders and actions
 - API routes
 - Database operations (via mocked Prisma)
@@ -71,6 +74,7 @@ We follow the **test pyramid** principle:
 - Queue workers
 
 **Examples:**
+
 - Dashboard loader
 - Post creation action
 - API endpoint handlers
@@ -85,12 +89,14 @@ We follow the **test pyramid** principle:
 ### Property-Based Tests
 
 **When to Use:**
+
 - Functions with many possible inputs
 - Edge case discovery
 - Round-trip conversions
 - Mathematical operations
 
 **Examples:**
+
 - Date formatting with random dates
 - URL parsing with random strings
 - Key conversions (npub ↔ hex)
@@ -105,6 +111,7 @@ We follow the **test pyramid** principle:
 ### Security Tests
 
 **When to Use:**
+
 - Input sanitization
 - Authentication/authorization
 - SQL injection prevention
@@ -112,6 +119,7 @@ We follow the **test pyramid** principle:
 - File upload validation
 
 **Examples:**
+
 - Markdown sanitization
 - Session management
 - Parameterized queries
@@ -126,12 +134,14 @@ We follow the **test pyramid** principle:
 ### Performance Tests
 
 **When to Use:**
+
 - Critical performance paths
 - Load testing
 - Benchmarking
 - Performance regression detection
 
 **Examples:**
+
 - Content combining with large arrays
 - Statistics fetching with many IDs
 - API endpoint load tests
@@ -146,12 +156,14 @@ We follow the **test pyramid** principle:
 ### E2E Tests (Cypress)
 
 **When to Use:**
+
 - Critical user flows
 - Browser-specific behavior
 - Full integration scenarios
 - UI interactions
 
 **Examples:**
+
 - User authentication flow
 - Post creation flow
 - Dashboard navigation
@@ -175,14 +187,14 @@ We follow the **test pyramid** principle:
 
 #### By Test Type
 
-| Test Type | Current | Target | Status |
-|-----------|---------|--------|--------|
-| Unit Tests | 40% | 60-70% | 🟡 In Progress |
-| Integration Tests | 70% | 80-90% | 🟢 Good |
-| E2E Tests | 40% | 50-60% | 🟡 In Progress |
-| Property-Based | 3 functions | 10+ functions | 🟡 In Progress |
-| Security Tests | 7 areas | 7 areas | ✅ Complete |
-| Performance Tests | 3 areas | 5+ areas | 🟡 In Progress |
+| Test Type         | Current     | Target        | Status         |
+| ----------------- | ----------- | ------------- | -------------- |
+| Unit Tests        | 40%         | 60-70%        | 🟡 In Progress |
+| Integration Tests | 70%         | 80-90%        | 🟢 Good        |
+| E2E Tests         | 40%         | 50-60%        | 🟡 In Progress |
+| Property-Based    | 3 functions | 10+ functions | 🟡 In Progress |
+| Security Tests    | 7 areas     | 7 areas       | ✅ Complete    |
+| Performance Tests | 3 areas     | 5+ areas      | 🟡 In Progress |
 
 ### Coverage Thresholds
 
@@ -190,27 +202,30 @@ We follow the **test pyramid** principle:
 
 Coverage thresholds are enforced in CI/CD and `vitest.config.ts`:
 
-| Metric | Threshold | Rationale |
-|--------|-----------|-----------|
-| **Lines** | 70% | Ensures most code paths are tested |
-| **Functions** | 65% | Ensures most functions have tests |
-| **Branches** | 60% | Ensures conditional logic is tested |
-| **Statements** | 70% | Ensures most statements execute |
+| Metric         | Threshold | Rationale                           |
+| -------------- | --------- | ----------------------------------- |
+| **Lines**      | 70%       | Ensures most code paths are tested  |
+| **Functions**  | 65%       | Ensures most functions have tests   |
+| **Branches**   | 60%       | Ensures conditional logic is tested |
+| **Statements** | 70%       | Ensures most statements execute     |
 
 #### Threshold Rationale
 
 **Why 70% for Lines and Statements?**
+
 - High enough to catch most bugs
 - Achievable without excessive effort
 - Leaves room for hard-to-test code
 - Industry standard for most projects
 
 **Why 65% for Functions?**
+
 - Functions are easier to test than branches
 - Some functions are simple getters/setters
 - Focus on testing complex functions
 
 **Why 60% for Branches?**
+
 - Branches are harder to test (conditionals, error paths)
 - Some branches are defensive (unlikely to execute)
 - Focus on critical decision points
@@ -220,6 +235,7 @@ Coverage thresholds are enforced in CI/CD and `vitest.config.ts`:
 #### Critical Paths (95%+)
 
 **Areas:**
+
 - Authentication/authorization
 - Payment processing
 - Post publishing
@@ -231,6 +247,7 @@ Coverage thresholds are enforced in CI/CD and `vitest.config.ts`:
 #### High Priority (80-90%)
 
 **Areas:**
+
 - API routes
 - Action handlers
 - Loaders
@@ -242,6 +259,7 @@ Coverage thresholds are enforced in CI/CD and `vitest.config.ts`:
 #### Medium Priority (70-80%)
 
 **Areas:**
+
 - Utility functions
 - Helper functions
 - Data transformations
@@ -252,6 +270,7 @@ Coverage thresholds are enforced in CI/CD and `vitest.config.ts`:
 #### Low Priority (50-60%)
 
 **Areas:**
+
 - Configuration files
 - Type definitions
 - Simple getters/setters
@@ -262,6 +281,7 @@ Coverage thresholds are enforced in CI/CD and `vitest.config.ts`:
 ### What to Test
 
 **High Priority:**
+
 - Business logic functions
 - Critical user flows
 - Security-sensitive code
@@ -269,12 +289,14 @@ Coverage thresholds are enforced in CI/CD and `vitest.config.ts`:
 - Data transformations
 
 **Medium Priority:**
+
 - API routes
 - Loaders and actions
 - Model functions
 - Utility functions
 
 **Low Priority:**
+
 - Simple getters/setters
 - Configuration files
 - Type definitions
@@ -282,6 +304,7 @@ Coverage thresholds are enforced in CI/CD and `vitest.config.ts`:
 ### What NOT to Test
 
 **Excluded from Coverage:**
+
 - Third-party library code
 - Framework code (Remix, Prisma)
 - Generated code
@@ -322,6 +345,7 @@ Coverage is configured in `vitest.config.ts` with the following settings:
 #### Coverage Exclusions
 
 The following are excluded from coverage:
+
 - `node_modules/`
 - `build/`
 - `tests/e2e/`
@@ -337,18 +361,21 @@ The following are excluded from coverage:
 #### Coverage Reports
 
 **HTML Report**:
+
 ```bash
 pnpm test:coverage
 open coverage/index.html
 ```
 
 Shows:
+
 - File-by-file coverage
 - Line-by-line highlighting
 - Branch coverage details
 - Function coverage details
 
 **JSON Summary** (`coverage/coverage-summary.json`):
+
 - Overall coverage percentages
 - Per-file coverage
 - Per-directory coverage
@@ -357,6 +384,7 @@ Useful for CI/CD integration and coverage tracking tools.
 
 **LCOV Report** (`coverage/lcov.info`):
 Compatible with:
+
 - Codecov
 - Coveralls
 - SonarQube
@@ -375,6 +403,7 @@ node scripts/coverage-trend.js report
 ```
 
 The trend tracking:
+
 - Records coverage snapshots over time
 - Keeps last 100 snapshots
 - Shows coverage trends (increasing/decreasing)
@@ -384,6 +413,7 @@ The trend tracking:
 
 **GitHub Actions**:
 A GitHub Actions workflow (`.github/workflows/coverage.yml`) is configured to:
+
 1. Run tests with coverage on PRs and pushes
 2. Check coverage thresholds
 3. Upload coverage to Codecov (if configured)
@@ -392,6 +422,7 @@ A GitHub Actions workflow (`.github/workflows/coverage.yml`) is configured to:
 
 **Codecov Integration**:
 To enable Codecov:
+
 1. Sign up at [codecov.io](https://codecov.io)
 2. Add your repository
 3. Get your Codecov token
@@ -414,6 +445,7 @@ coverage: {
 ```
 
 **Threshold Strategy**:
+
 1. **Start Low**: Begin with achievable thresholds (50-60%)
 2. **Gradually Increase**: Raise thresholds as coverage improves
 3. **Maintain**: Keep thresholds at sustainable levels
@@ -429,16 +461,19 @@ coverage: {
 #### Troubleshooting
 
 **Coverage Not Generating**:
+
 1. Check that `@vitest/coverage-v8` is installed
 2. Verify coverage provider in `vitest.config.ts`
 3. Check that tests are actually running
 
 **Thresholds Not Enforced**:
+
 1. Verify thresholds in `vitest.config.ts`
 2. Check that coverage is actually below threshold
 3. Ensure `reportOnFailure: true` is set
 
 **Coverage Reports Missing Files**:
+
 1. Check exclusion patterns in `vitest.config.ts`
 2. Verify files are in included directories
 3. Check that files are actually executed by tests
@@ -465,6 +500,7 @@ pnpm test:coverage:trend
 ```
 
 The trend tracking:
+
 - Records coverage snapshots over time
 - Keeps last 100 snapshots
 - Shows coverage trends (increasing/decreasing)
@@ -474,6 +510,7 @@ The trend tracking:
 
 **GitHub Actions**:
 A GitHub Actions workflow (`.github/workflows/coverage.yml`) is configured to:
+
 1. Run tests with coverage on PRs and pushes
 2. Check coverage thresholds
 3. Upload coverage to Codecov (if configured)
@@ -482,6 +519,7 @@ A GitHub Actions workflow (`.github/workflows/coverage.yml`) is configured to:
 
 **Codecov Integration**:
 To enable Codecov:
+
 1. Sign up at [codecov.io](https://codecov.io)
 2. Add your repository
 3. Get your Codecov token
@@ -511,6 +549,7 @@ coverage: {
 ```
 
 **Threshold Strategy:**
+
 1. **Start Low**: Begin with achievable thresholds (50-60%)
 2. **Gradually Increase**: Raise thresholds as coverage improves
 3. **Maintain**: Keep thresholds at sustainable levels
@@ -541,6 +580,7 @@ node scripts/coverage-trend.js report
 ```
 
 The trend tracking:
+
 - Records coverage snapshots over time
 - Keeps last 100 snapshots
 - Shows coverage trends (increasing/decreasing)
@@ -549,6 +589,7 @@ The trend tracking:
 ### Coverage Goals
 
 Set coverage goals and track progress:
+
 - **Current**: ~70-75% overall coverage
 - **Short-term Goal**: 75% overall coverage
 - **Long-term Goal**: 80% overall coverage
@@ -654,4 +695,3 @@ tests/
 - [Vitest Coverage Documentation](https://vitest.dev/guide/coverage.html) - Official Vitest coverage docs
 - [Codecov Documentation](https://docs.codecov.com/) - Codecov integration guide
 - [Coverage Best Practices](https://testing.googleblog.com/2020/08/code-coverage-best-practices.html) - Google's coverage best practices
-

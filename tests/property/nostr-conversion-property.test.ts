@@ -1,6 +1,6 @@
 /**
  * Property-based tests for Nostr conversion functions
- * 
+ *
  * Uses fast-check to generate random inputs and verify properties
  */
 
@@ -12,13 +12,10 @@ describe("Property-Based Tests: Nostr Conversion", () => {
   describe("convertToHex", () => {
     it("should return null or string for any input", () => {
       fc.assert(
-        fc.property(
-          fc.string(),
-          (input: string) => {
-            const result = convertToHex(input);
-            return result === null || typeof result === "string";
-          },
-        ),
+        fc.property(fc.string(), (input: string) => {
+          const result = convertToHex(input);
+          return result === null || typeof result === "string";
+        }),
         { numRuns: 100 },
       );
     });
@@ -26,7 +23,9 @@ describe("Property-Based Tests: Nostr Conversion", () => {
     it("should return null for invalid npub strings", () => {
       fc.assert(
         fc.property(
-          fc.string({ minLength: 1, maxLength: 100 }).filter((s: string) => !s.startsWith("npub")),
+          fc
+            .string({ minLength: 1, maxLength: 100 })
+            .filter((s: string) => !s.startsWith("npub")),
           (invalidInput: string) => {
             const result = convertToHex(invalidInput);
             return result === null;
@@ -46,7 +45,10 @@ describe("Property-Based Tests: Nostr Conversion", () => {
             // For property testing, we test the function's behavior with various inputs
             const result = convertToHex(`npub${hexString}`);
             // Result should be null (invalid) or a string
-            return result === null || (typeof result === "string" && result.length > 0);
+            return (
+              result === null ||
+              (typeof result === "string" && result.length > 0)
+            );
           },
         ),
         { numRuns: 30 },
@@ -59,7 +61,9 @@ describe("Property-Based Tests: Nostr Conversion", () => {
       fc.assert(
         fc.property(
           // Only test with even-length hex strings (required for proper encoding)
-          fc.hexaString({ minLength: 32, maxLength: 64 }).filter((s: string) => s.length % 2 === 0),
+          fc
+            .hexaString({ minLength: 32, maxLength: 64 })
+            .filter((s: string) => s.length % 2 === 0),
           (hexString: string) => {
             try {
               const result = convertHexToNpub(hexString);
@@ -78,7 +82,9 @@ describe("Property-Based Tests: Nostr Conversion", () => {
       fc.assert(
         fc.property(
           // Only test with even-length hex strings (required for proper encoding)
-          fc.hexaString({ minLength: 1, maxLength: 128 }).filter((s: string) => s.length % 2 === 0),
+          fc
+            .hexaString({ minLength: 1, maxLength: 128 })
+            .filter((s: string) => s.length % 2 === 0),
           (hexString: string) => {
             try {
               const result = convertHexToNpub(hexString);
@@ -117,7 +123,10 @@ describe("Property-Based Tests: Nostr Conversion", () => {
             if (npub?.startsWith("npub")) {
               const backToHex = convertToHex(npub);
               // For valid conversions, should get back original or valid hex
-              return backToHex === null || (typeof backToHex === "string" && backToHex.length > 0);
+              return (
+                backToHex === null ||
+                (typeof backToHex === "string" && backToHex.length > 0)
+              );
             }
             return true; // Skip invalid npubs
           },
@@ -127,4 +136,3 @@ describe("Property-Based Tests: Nostr Conversion", () => {
     });
   });
 });
-

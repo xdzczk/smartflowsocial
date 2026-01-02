@@ -214,4 +214,3 @@ describe("EditorJS Content Utils", () => {
     });
   });
 });
-

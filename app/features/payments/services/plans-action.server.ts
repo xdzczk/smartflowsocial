@@ -5,15 +5,9 @@
 
 import { requireUser } from "~/features/auth/session.server";
 import { logError } from "~/lib/error-logger.server";
-import {
-  checkPaymentStatus,
-  createPlanInvoice,
-} from "~/models/payment.server";
+import { checkPaymentStatus, createPlanInvoice } from "~/models/payment.server";
 
-export async function handlePlansAction(
-  formData: FormData,
-  request: Request,
-) {
+export async function handlePlansAction(formData: FormData, request: Request) {
   const intent = formData.get("intent");
 
   // For payment polling, we don't need user authentication
@@ -48,8 +42,16 @@ export async function handlePlansAction(
       const { handleActionError } = await import("~/lib/error-handler.server");
       // For payment polling, we want to return error info, not throw
       const errorResponse = handleActionError(error);
-      const errorData: unknown = errorResponse instanceof Response ? await errorResponse.json() : null;
-      const errorMessage = errorData && typeof errorData === "object" && !Array.isArray(errorData) && "message" in errorData && typeof (errorData as { message?: unknown }).message === "string" ? (errorData as { message: string }).message : "Failed to check payment status";
+      const errorData: unknown =
+        errorResponse instanceof Response ? await errorResponse.json() : null;
+      const errorMessage =
+        errorData &&
+        typeof errorData === "object" &&
+        !Array.isArray(errorData) &&
+        "message" in errorData &&
+        typeof (errorData as { message?: unknown }).message === "string"
+          ? (errorData as { message: string }).message
+          : "Failed to check payment status";
       return {
         success: false,
         error: errorMessage,
@@ -112,7 +114,3 @@ export async function handlePlansAction(
 
   return { error: "Invalid intent" };
 }
-
-
-
-

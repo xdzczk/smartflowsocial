@@ -15,7 +15,7 @@ jobs:
     name: Smoke Test (Lint + Typecheck + Unit + Integration)
     runs-on: ubuntu-latest
     timeout-minutes: 15 # Fail fast if something is broken
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -28,8 +28,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'pnpm'
+          node-version: "20"
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -100,9 +100,3 @@ jobs:
           echo "- ✅ Type Check" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Unit Tests" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Integration Tests" >> $GITHUB_STEP_SUMMARY
-
-
-
-
-
-

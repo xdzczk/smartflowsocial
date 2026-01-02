@@ -1,6 +1,6 @@
 /**
  * Property-based tests for scheduling algorithms
- * 
+ *
  * Uses fast-check to generate random inputs and verify properties
  */
 
@@ -26,7 +26,9 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
     vi.clearAllMocks();
     // Default mock return values - ensure they're always set
     (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(["4"]);
-    (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+      null,
+    );
   });
 
   // Simple unit test to verify the function works with the exact counterexample
@@ -42,7 +44,9 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
     };
 
     const pastDate = new Date("2020-01-01T00:00:00.000Z");
-    (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(pastDate);
+    (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+      pastDate,
+    );
 
     const result = await calculateNextScheduleTime({
       queueType,
@@ -66,7 +70,9 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
       },
     };
 
-    (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+      null,
+    );
 
     const result = await calculateNextScheduleTime({
       queueType,
@@ -88,7 +94,9 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
       },
     };
 
-    (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+      null,
+    );
 
     const result = await calculateNextScheduleTime({
       queueType,
@@ -113,7 +121,9 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
       };
 
       const pastDate = new Date("2020-01-01T00:00:00.000Z");
-      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(pastDate);
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+        pastDate,
+      );
 
       const result = await calculateNextScheduleTime({
         queueType,
@@ -136,7 +146,9 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
         },
       };
 
-      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+        null,
+      );
 
       const result = await calculateNextScheduleTime({
         queueType,
@@ -153,20 +165,34 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
         fc.asyncProperty(
           fc.integer({ min: 1, max: 24 }), // intervalHours
           fc.oneof(
-            fc.date({ min: new Date("2020-01-01"), max: new Date("2030-12-31") }),
+            fc.date({
+              min: new Date("2020-01-01"),
+              max: new Date("2030-12-31"),
+            }),
             fc.constant(null),
           ), // lastPostTime or null
-          fc.constantFrom("UTC", "America/New_York", "Europe/London", "Asia/Tokyo"), // timezone
-          async (intervalHours: number, lastPostTime: Date | null, timezone: string) => {
+          fc.constantFrom(
+            "UTC",
+            "America/New_York",
+            "Europe/London",
+            "Asia/Tokyo",
+          ), // timezone
+          async (
+            intervalHours: number,
+            lastPostTime: Date | null,
+            timezone: string,
+          ) => {
             try {
               // Reset mocks for this test run to ensure clean state
               vi.clearAllMocks();
               // Ensure mocks are set up for this test run
-              (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(["4"]);
-              (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
-                lastPostTime,
-              );
-              
+              (
+                getScheduleInterval as ReturnType<typeof vi.fn>
+              ).mockResolvedValue(["4"]);
+              (
+                getLastPostTimeForQueue as ReturnType<typeof vi.fn>
+              ).mockResolvedValue(lastPostTime);
+
               const queueType = {
                 id: "queue-1",
                 name: "test-queue",
@@ -185,20 +211,39 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
 
               // Ensure result is a valid Date
               if (!result) {
-                console.error("Result is null/undefined", { intervalHours, lastPostTime, timezone });
+                console.error("Result is null/undefined", {
+                  intervalHours,
+                  lastPostTime,
+                  timezone,
+                });
                 return false;
               }
               if (!(result instanceof Date)) {
-                console.error("Result is not a Date", { result, intervalHours, lastPostTime, timezone, resultType: typeof result });
+                console.error("Result is not a Date", {
+                  result,
+                  intervalHours,
+                  lastPostTime,
+                  timezone,
+                  resultType: typeof result,
+                });
                 return false;
               }
               if (isNaN(result.getTime())) {
-                console.error("Result is invalid Date", { result, intervalHours, lastPostTime, timezone });
+                console.error("Result is invalid Date", {
+                  result,
+                  intervalHours,
+                  lastPostTime,
+                  timezone,
+                });
                 return false;
               }
               return true;
             } catch (_error) {
-              console.error("Error in test:", _error, { intervalHours, lastPostTime, timezone });
+              console.error("Error in test:", _error, {
+                intervalHours,
+                lastPostTime,
+                timezone,
+              });
               return false;
             }
           },
@@ -220,9 +265,13 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
               // Reset mocks for this test run to ensure clean state
               vi.clearAllMocks();
               // Ensure mocks are set up for this test run
-              (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(["4"]);
-              (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(lastPostTime);
-              
+              (
+                getScheduleInterval as ReturnType<typeof vi.fn>
+              ).mockResolvedValue(["4"]);
+              (
+                getLastPostTimeForQueue as ReturnType<typeof vi.fn>
+              ).mockResolvedValue(lastPostTime);
+
               const queueType = {
                 id: "queue-1",
                 name: "test-queue",
@@ -242,7 +291,11 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
               const _afterCall = Date.now();
 
               // Result should be a valid Date
-              if (!result || !(result instanceof Date) || isNaN(result.getTime())) {
+              if (
+                !result ||
+                !(result instanceof Date) ||
+                isNaN(result.getTime())
+              ) {
                 return false;
               }
 
@@ -251,7 +304,10 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
               const resultTime = result.getTime();
               return resultTime >= beforeCall - 5000;
             } catch (_error) {
-              console.error("Error in test:", _error, { intervalHours, lastPostTime });
+              console.error("Error in test:", _error, {
+                intervalHours,
+                lastPostTime,
+              });
               return false;
             }
           },
@@ -269,8 +325,10 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
               // Reset mocks for this test run to ensure clean state
               vi.clearAllMocks();
               // Ensure mocks are set up for this test run
-              (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(["4"]);
-              
+              (
+                getScheduleInterval as ReturnType<typeof vi.fn>
+              ).mockResolvedValue(["4"]);
+
               const queueType = {
                 id: "queue-1",
                 name: "test-queue",
@@ -286,8 +344,12 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
               lastPostTime.setUTCHours(lastPostTime.getUTCHours() - 1);
 
               // Ensure mocks are set up for this test run
-              (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(["4"]);
-              (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(lastPostTime);
+              (
+                getScheduleInterval as ReturnType<typeof vi.fn>
+              ).mockResolvedValue(["4"]);
+              (
+                getLastPostTimeForQueue as ReturnType<typeof vi.fn>
+              ).mockResolvedValue(lastPostTime);
 
               const result = await calculateNextScheduleTime({
                 queueType,
@@ -301,11 +363,17 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
                 return false;
               }
               if (!(result instanceof Date)) {
-                console.error("Result is not a Date", { result, intervalHours });
+                console.error("Result is not a Date", {
+                  result,
+                  intervalHours,
+                });
                 return false;
               }
               if (isNaN(result.getTime())) {
-                console.error("Result is invalid Date", { result, intervalHours });
+                console.error("Result is invalid Date", {
+                  result,
+                  intervalHours,
+                });
                 return false;
               }
               return true;
@@ -336,26 +404,28 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
             try {
               // Reset mocks for this test run
               vi.clearAllMocks();
-              (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(["4"]);
-              
+              (
+                getScheduleInterval as ReturnType<typeof vi.fn>
+              ).mockResolvedValue(["4"]);
+
               // Ensure slots is a flat array of tuples
               if (!Array.isArray(slots) || slots.length === 0) {
                 return false;
               }
-              
+
               const slotStrings = slots.map((slot) => {
                 // Handle tuple format [h, m]
                 // slot should be [h, m] directly from fc.tuple
                 if (!Array.isArray(slot) || slot.length !== 2) {
-                  throw new Error('Invalid slot format');
+                  throw new Error("Invalid slot format");
                 }
                 const [h, m] = slot;
-                if (typeof h !== 'number' || typeof m !== 'number') {
-                  throw new Error('Invalid slot format');
+                if (typeof h !== "number" || typeof m !== "number") {
+                  throw new Error("Invalid slot format");
                 }
-                return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
               });
-              
+
               const queueType = {
                 id: "queue-1",
                 name: "test-queue",
@@ -365,7 +435,9 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
                 },
               };
 
-              (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+              (
+                getLastPostTimeForQueue as ReturnType<typeof vi.fn>
+              ).mockResolvedValue(null);
 
               const result = await calculateNextScheduleTime({
                 queueType,
@@ -378,11 +450,19 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
                 return false;
               }
               if (!(result instanceof Date)) {
-                console.error("Result is not a Date", { result, slots, timezone });
+                console.error("Result is not a Date", {
+                  result,
+                  slots,
+                  timezone,
+                });
                 return false;
               }
               if (isNaN(result.getTime())) {
-                console.error("Result is invalid Date", { result, slots, timezone });
+                console.error("Result is invalid Date", {
+                  result,
+                  slots,
+                  timezone,
+                });
                 return false;
               }
               return true;
@@ -411,26 +491,28 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
               // Reset mocks for this test run to ensure clean state
               vi.clearAllMocks();
               // Ensure mocks are set up for this test run
-              (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(["4"]);
-              
+              (
+                getScheduleInterval as ReturnType<typeof vi.fn>
+              ).mockResolvedValue(["4"]);
+
               // Ensure slots is a flat array of tuples
               if (!Array.isArray(slots) || slots.length === 0) {
                 return false;
               }
-              
+
               const slotStrings = slots.map((slot) => {
                 // Handle tuple format [h, m]
                 // slot should be [h, m] directly from fc.tuple
                 if (!Array.isArray(slot) || slot.length !== 2) {
-                  throw new Error('Invalid slot format');
+                  throw new Error("Invalid slot format");
                 }
                 const [h, m] = slot;
-                if (typeof h !== 'number' || typeof m !== 'number') {
-                  throw new Error('Invalid slot format');
+                if (typeof h !== "number" || typeof m !== "number") {
+                  throw new Error("Invalid slot format");
                 }
-                return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
               });
-              
+
               const queueType = {
                 id: "queue-1",
                 name: "test-queue",
@@ -440,7 +522,9 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
                 },
               };
 
-              (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+              (
+                getLastPostTimeForQueue as ReturnType<typeof vi.fn>
+              ).mockResolvedValue(null);
 
               const beforeCall = Date.now();
               const result = await calculateNextScheduleTime({
@@ -451,7 +535,11 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
               const _afterCall = Date.now();
 
               // Result should be a valid Date
-              if (!result || !(result instanceof Date) || isNaN(result.getTime())) {
+              if (
+                !result ||
+                !(result instanceof Date) ||
+                isNaN(result.getTime())
+              ) {
                 return false;
               }
 
@@ -470,14 +558,22 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
     it("should handle various timezone inputs correctly", async () => {
       await fc.assert(
         fc.asyncProperty(
-          fc.constantFrom("UTC", "America/New_York", "Europe/London", "Asia/Tokyo", "Australia/Sydney"),
+          fc.constantFrom(
+            "UTC",
+            "America/New_York",
+            "Europe/London",
+            "Asia/Tokyo",
+            "Australia/Sydney",
+          ),
           async (timezone: string) => {
             try {
               // Reset mocks for this test run to ensure clean state
               vi.clearAllMocks();
               // Ensure mocks are set up for this test run
-              (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(["4"]);
-              
+              (
+                getScheduleInterval as ReturnType<typeof vi.fn>
+              ).mockResolvedValue(["4"]);
+
               const queueType = {
                 id: "queue-1",
                 name: "test-queue",
@@ -487,7 +583,9 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
                 },
               };
 
-              (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+              (
+                getLastPostTimeForQueue as ReturnType<typeof vi.fn>
+              ).mockResolvedValue(null);
 
               const result = await calculateNextScheduleTime({
                 queueType,
@@ -530,7 +628,9 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
         },
       };
 
-      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+        null,
+      );
 
       const result = await calculateNextScheduleTime({
         queueType,
@@ -552,7 +652,9 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
         },
       };
 
-      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
+        null,
+      );
 
       const result = await calculateNextScheduleTime({
         queueType,
@@ -566,63 +668,65 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
 
     it("should handle empty slot arrays gracefully", async () => {
       await fc.assert(
-        fc.asyncProperty(
-          fc.constant([]),
-          async (slots: [number, number][]) => {
-            try {
-              // Reset mocks for this test run to ensure clean state
-              vi.clearAllMocks();
-              // Ensure mocks are set up for this test run
-              (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(["4"]);
-              (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(null);
-              
-              // Convert slots to string format (e.g., "09:00")
-              const slotStrings = slots.map(
-                (slot) => `${String(slot[0]).padStart(2, '0')}:${String(slot[1]).padStart(2, '0')}`
-              );
-              
-              const queueType = {
-                id: "queue-1",
-                name: "test-queue",
-                scheduleType: "FIXED_SLOTS" as const,
-                scheduleConfig: {
-                  slots: slotStrings,
-                },
-                userId: TEST_USER_ID,
-                isEnabled: true,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                color: null,
-                description: null,
-                hashTagPresetId: null,
-              };
+        fc.asyncProperty(fc.constant([]), async (slots: [number, number][]) => {
+          try {
+            // Reset mocks for this test run to ensure clean state
+            vi.clearAllMocks();
+            // Ensure mocks are set up for this test run
+            (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(
+              ["4"],
+            );
+            (
+              getLastPostTimeForQueue as ReturnType<typeof vi.fn>
+            ).mockResolvedValue(null);
 
-              const result = await calculateNextScheduleTime({
-                queueType,
-                userId: TEST_USER_ID,
-                userTimezone: "UTC",
-              });
+            // Convert slots to string format (e.g., "09:00")
+            const slotStrings = slots.map(
+              (slot) =>
+                `${String(slot[0]).padStart(2, "0")}:${String(slot[1]).padStart(2, "0")}`,
+            );
 
-              // Should return current time for empty slots
-              if (!result) {
-                console.error("Result is null/undefined", { slots });
-                return false;
-              }
-              if (!(result instanceof Date)) {
-                console.error("Result is not a Date", { result, slots });
-                return false;
-              }
-              if (isNaN(result.getTime())) {
-                console.error("Result is invalid Date", { result, slots });
-                return false;
-              }
-              return true;
-            } catch (_error) {
-              console.error("Error in test:", _error, { slots });
+            const queueType = {
+              id: "queue-1",
+              name: "test-queue",
+              scheduleType: "FIXED_SLOTS" as const,
+              scheduleConfig: {
+                slots: slotStrings,
+              },
+              userId: TEST_USER_ID,
+              isEnabled: true,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              color: null,
+              description: null,
+              hashTagPresetId: null,
+            };
+
+            const result = await calculateNextScheduleTime({
+              queueType,
+              userId: TEST_USER_ID,
+              userTimezone: "UTC",
+            });
+
+            // Should return current time for empty slots
+            if (!result) {
+              console.error("Result is null/undefined", { slots });
               return false;
             }
-          },
-        ),
+            if (!(result instanceof Date)) {
+              console.error("Result is not a Date", { result, slots });
+              return false;
+            }
+            if (isNaN(result.getTime())) {
+              console.error("Result is invalid Date", { result, slots });
+              return false;
+            }
+            return true;
+          } catch (_error) {
+            console.error("Error in test:", _error, { slots });
+            return false;
+          }
+        }),
         { verbose: true },
       );
     });
@@ -636,8 +740,10 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
               // Reset mocks for this test run to ensure clean state
               vi.clearAllMocks();
               // Ensure mocks are set up for this test run
-              (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(["4"]);
-              
+              (
+                getScheduleInterval as ReturnType<typeof vi.fn>
+              ).mockResolvedValue(["4"]);
+
               const queueType = {
                 id: "queue-1",
                 name: "test-queue",
@@ -651,7 +757,9 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
               // Use a time in the past to ensure the calculated time is in the future
               const lastPostTime = new Date();
               lastPostTime.setUTCHours(lastPostTime.getUTCHours() - 1);
-              (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(lastPostTime);
+              (
+                getLastPostTimeForQueue as ReturnType<typeof vi.fn>
+              ).mockResolvedValue(lastPostTime);
 
               const result = await calculateNextScheduleTime({
                 queueType,
@@ -664,11 +772,17 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
                 return false;
               }
               if (!(result instanceof Date)) {
-                console.error("Result is not a Date", { result, intervalHours });
+                console.error("Result is not a Date", {
+                  result,
+                  intervalHours,
+                });
                 return false;
               }
               if (isNaN(result.getTime())) {
-                console.error("Result is invalid Date", { result, intervalHours });
+                console.error("Result is invalid Date", {
+                  result,
+                  intervalHours,
+                });
                 return false;
               }
               return true;
@@ -683,4 +797,3 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
     });
   });
 });
-

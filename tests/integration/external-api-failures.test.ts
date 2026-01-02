@@ -1,6 +1,6 @@
 /**
  * Edge Case Tests for External API Failures
- * 
+ *
  * Tests how the application handles external service failures:
  * - Nostr publisher failures
  * - S3 storage failures
@@ -47,7 +47,9 @@ describe("External API Failure Edge Cases", () => {
     });
 
     it("should handle Nostr publisher timeout", async () => {
-      (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Request timeout"));
+      (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error("Request timeout"),
+      );
 
       await expect(
         fetch(process.env.NOSTR_PUBLISHER_URL!, {
@@ -103,9 +105,11 @@ describe("External API Failure Edge Cases", () => {
 
       // Mock S3 client to throw connection error
       const mockS3Client = {
-        send: vi.fn().mockRejectedValue(
-          new Error("ECONNREFUSED: Unable to connect to S3"),
-        ),
+        send: vi
+          .fn()
+          .mockRejectedValue(
+            new Error("ECONNREFUSED: Unable to connect to S3"),
+          ),
       };
 
       const command = new PutObjectCommand({
@@ -119,9 +123,11 @@ describe("External API Failure Edge Cases", () => {
 
     it("should handle S3 access denied error", async () => {
       const mockS3Client = {
-        send: vi.fn().mockRejectedValue(
-          new Error("Access Denied: Insufficient permissions"),
-        ),
+        send: vi
+          .fn()
+          .mockRejectedValue(
+            new Error("Access Denied: Insufficient permissions"),
+          ),
       };
 
       const { PutObjectCommand } = await import("@aws-sdk/client-s3");
@@ -136,9 +142,11 @@ describe("External API Failure Edge Cases", () => {
 
     it("should handle S3 bucket not found", async () => {
       const mockS3Client = {
-        send: vi.fn().mockRejectedValue(
-          new Error("NoSuchBucket: The specified bucket does not exist"),
-        ),
+        send: vi
+          .fn()
+          .mockRejectedValue(
+            new Error("NoSuchBucket: The specified bucket does not exist"),
+          ),
       };
 
       const { PutObjectCommand } = await import("@aws-sdk/client-s3");
@@ -154,20 +162,24 @@ describe("External API Failure Edge Cases", () => {
 
   describe("Primal Cache Failures", () => {
     it("should handle Primal cache connection failure", async () => {
-      const { connectToPrimalCache } = await import("~/features/cache/primalCache.server");
+      const { connectToPrimalCache } = await import(
+        "~/features/cache/primalCache.server"
+      );
 
       // Mock connection failure
       mockConnectToPrimalCache.mockRejectedValue(
         new Error("WebSocket connection failed: ECONNREFUSED"),
       );
 
-      await expect(connectToPrimalCache("thread_view", { event_id: "test" })).rejects.toThrow(
-        "WebSocket connection failed",
-      );
+      await expect(
+        connectToPrimalCache("thread_view", { event_id: "test" }),
+      ).rejects.toThrow("WebSocket connection failed");
     });
 
     it("should handle Primal cache timeout", async () => {
-      const { connectToPrimalCache } = await import("~/features/cache/primalCache.server");
+      const { connectToPrimalCache } = await import(
+        "~/features/cache/primalCache.server"
+      );
 
       // Mock timeout
       mockConnectToPrimalCache.mockImplementation(() => {
@@ -176,33 +188,35 @@ describe("External API Failure Edge Cases", () => {
         });
       });
 
-      await expect(connectToPrimalCache("thread_view", { event_id: "test" })).rejects.toThrow(
-        "Connection timeout",
-      );
+      await expect(
+        connectToPrimalCache("thread_view", { event_id: "test" }),
+      ).rejects.toThrow("Connection timeout");
     });
   });
 
   describe("API Rate Limiting", () => {
     it("should handle rate limit from external API", async () => {
       let callCount = 0;
-      // eslint-disable-next-line @typescript-eslint/no-misused-promises
-      (global.fetch as ReturnType<typeof vi.fn>).mockImplementation((): Promise<Response> => {
-        callCount++;
-        if (callCount > 10) {
-          const rateLimitResponse: Response = {
-            ok: false,
-            status: 429,
-            statusText: "Too Many Requests",
+      (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
+        (): Promise<Response> => {
+          callCount++;
+          if (callCount > 10) {
+            const rateLimitResponse: Response = {
+              ok: false,
+              status: 429,
+              statusText: "Too Many Requests",
+            } as unknown as Response;
+            return Promise.resolve(rateLimitResponse);
+          }
+          const successResponse: Response = {
+            ok: true,
+            status: 200,
+            json: async () => ({ success: true }),
           } as unknown as Response;
-          return Promise.resolve(rateLimitResponse);
-        }
-        const successResponse: Response = {
-          ok: true,
-          status: 200,
-          json: async () => ({ success: true }),
-        } as unknown as Response;
-        return Promise.resolve(successResponse);
-      });
+          return Promise.resolve(successResponse);
+        },
+      );
 
       // Simulate multiple rapid requests
       const requests = Array.from({ length: 15 }, () =>
@@ -218,11 +232,13 @@ describe("External API Failure Edge Cases", () => {
 
   describe("Network Interruption", () => {
     it("should handle network interruption during request", async () => {
-      (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Network error: ENOTFOUND"));
+      (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error("Network error: ENOTFOUND"),
+      );
 
-      await expect(
-        fetch("https://api.example.com/endpoint"),
-      ).rejects.toThrow("Network error");
+      await expect(fetch("https://api.example.com/endpoint")).rejects.toThrow(
+        "Network error",
+      );
     });
 
     it("should handle DNS resolution failure", async () => {
@@ -230,10 +246,9 @@ describe("External API Failure Edge Cases", () => {
         new Error("getaddrinfo ENOTFOUND api.example.com"),
       );
 
-      await expect(
-        fetch("https://api.example.com/endpoint"),
-      ).rejects.toThrow("ENOTFOUND");
+      await expect(fetch("https://api.example.com/endpoint")).rejects.toThrow(
+        "ENOTFOUND",
+      );
     });
   });
 });
-

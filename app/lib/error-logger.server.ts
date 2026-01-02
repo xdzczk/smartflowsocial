@@ -1,6 +1,6 @@
 /**
  * Error Logging Service
- * 
+ *
  * Centralized error logging with different log levels and structured output
  */
 
@@ -109,7 +109,8 @@ export function logError(
       path: logEntry.request?.path,
       method: logEntry.request?.method,
       userId: logEntry.user?.id,
-      ...(context.includeStack && sanitizedError.stack && { stack: sanitizedError.stack }),
+      ...(context.includeStack &&
+        sanitizedError.stack && { stack: sanitizedError.stack }),
     });
   }
 
@@ -128,7 +129,7 @@ export function logError(
     extra: {
       ...sanitizedLogEntry,
       // Include sanitized context
-      context: (sanitizedLogEntry.request ?? sanitizedLogEntry.user) ?? {},
+      context: sanitizedLogEntry.request ?? sanitizedLogEntry.user ?? {},
     },
     user: context.userId ? { id: context.userId } : undefined,
     level: logEntry.error.isOperational ? "warning" : "error",
@@ -138,10 +139,7 @@ export function logError(
 /**
  * Log a warning
  */
-export function logWarning(
-  message: string,
-  context: LogContext = {},
-): void {
+export function logWarning(message: string, context: LogContext = {}): void {
   const logEntry = {
     timestamp: new Date().toISOString(),
     level: "warn" as LogLevel,
@@ -160,10 +158,7 @@ export function logWarning(
 /**
  * Log info
  */
-export function logInfo(
-  message: string,
-  context: LogContext = {},
-): void {
+export function logInfo(message: string, context: LogContext = {}): void {
   const logEntry = {
     timestamp: new Date().toISOString(),
     level: "info" as LogLevel,
@@ -185,4 +180,3 @@ export function logInfo(
 function isAppError(error: AppError | Error): error is AppError {
   return "code" in error && "statusCode" in error;
 }
-

@@ -2,7 +2,7 @@ import { TEST_NPUB } from "./support/nostr-test-keys";
 
 /**
  * Posted Posts Queue Tests
- * 
+ *
  * Tests the posted posts queue:
  * - View posted posts
  * - Filter by queue type
@@ -44,21 +44,24 @@ describe("Posted Posts Queue", () => {
     it("should display posted posts list or empty state", () => {
       // Wait for page to load
       cy.get("body").should("be.visible");
-      
+
       // Check for posts or empty state with better selectors
       cy.get("body", { timeout: 10000 }).then(($body) => {
         const hasPosts =
-          $body.find('table tbody tr, [data-testid="posted-post"], .post-item, tbody tr').length > 0;
+          $body.find(
+            'table tbody tr, [data-testid="posted-post"], .post-item, tbody tr',
+          ).length > 0;
         const hasEmptyState =
           $body.find('[data-testid="empty-state"]').length > 0 ||
           $body.text().toLowerCase().includes("no posts") ||
           $body.text().toLowerCase().includes("no posted posts") ||
           $body.text().toLowerCase().includes("empty") ||
           $body.text().toLowerCase().includes("no items");
-        
+
         // If page loaded and has content (even if it's just headers), consider it valid
-        const hasContent = $body.find('h1, h2, h3, table, .container, main').length > 0;
-        
+        const hasContent =
+          $body.find("h1, h2, h3, table, .container, main").length > 0;
+
         expect(hasPosts || hasEmptyState || hasContent).to.be.true;
       });
     });
@@ -78,7 +81,7 @@ describe("Posted Posts Queue", () => {
   describe("Queue Type Filtering", () => {
     it("should filter posted posts by queue type", () => {
       cy.visitAndCheck("/dashboard/posted");
-      
+
       cy.get("body").then(($body) => {
         const queueTabs = $body.find('[role="tab"], a[href*="/posted/"]');
         if (queueTabs.length > 0) {
@@ -89,5 +92,3 @@ describe("Posted Posts Queue", () => {
     });
   });
 });
-
-

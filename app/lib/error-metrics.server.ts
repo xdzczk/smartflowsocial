@@ -1,6 +1,6 @@
 /**
  * Error Metrics Service
- * 
+ *
  * Tracks error rates, types, and patterns for monitoring and alerting
  */
 
@@ -189,9 +189,7 @@ export function getErrorRate(): number {
 /**
  * Get recent errors
  */
-export function getRecentErrors(
-  limit = 20,
-): {
+export function getRecentErrors(limit = 20): {
   code: string;
   message: string;
   timestamp: string;
@@ -233,20 +231,3 @@ export function getTopErrorCodes(limit = 10): {
       statusCode: metric.statusCode,
     }));
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

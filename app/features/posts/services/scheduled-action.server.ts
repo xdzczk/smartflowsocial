@@ -3,9 +3,7 @@
  * Centralized action processing for scheduled posts page
  */
 
-import {
-  deleteLongFormPost,
-} from "~/models/longformpost.server";
+import { deleteLongFormPost } from "~/models/longformpost.server";
 import { deletePost } from "~/models/post.commands.server";
 
 export async function handleScheduledAction(
@@ -33,12 +31,17 @@ export async function handleScheduledAction(
 
   if (_action === "bulkDeleteLongForm") {
     const postIds = JSON.parse(formData.get("postIds") as string) as string[];
-    await Promise.all(postIds.map((id: string) => deleteLongFormPost({ id, userId })));
+    await Promise.all(
+      postIds.map((id: string) => deleteLongFormPost({ id, userId })),
+    );
     return { success: true };
   }
 
   if (_action === "bulkDeleteMixed") {
-    const itemData = JSON.parse(formData.get("itemData") as string) as { id: string; type: string }[];
+    const itemData = JSON.parse(formData.get("itemData") as string) as {
+      id: string;
+      type: string;
+    }[];
     const promises = itemData.map((item: { id: string; type: string }) => {
       if (item.type === "post") {
         return deletePost({ id: item.id, userId });
@@ -52,7 +55,3 @@ export async function handleScheduledAction(
 
   return { error: "Invalid action" };
 }
-
-
-
-

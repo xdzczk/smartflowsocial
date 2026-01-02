@@ -37,11 +37,13 @@ Templates allow you to create reusable post structures with placeholders for dyn
 1. Go to **Settings** → **Templates**
 2. Click **"Create Template"**
 3. Enter template details:
+
    - **Name** - Template identifier
    - **Content** - Template text with variables
    - **Description** - What this template is for
 
 4. **Example:**
+
 ```
 Weekly Update: {{week}}
 
@@ -105,16 +107,19 @@ Get it now: {{link}}
 ### Common Variables
 
 **Date/Time:**
+
 - `{{date}}` - Current date
 - `{{time}}` - Current time
 - `{{week}}` - Week number
 
 **Content:**
+
 - `{{title}}` - Post title
 - `{{description}}` - Post description
 - `{{link}}` - URL link
 
 **Custom:**
+
 - `{{productName}}` - Product name
 - `{{eventName}}` - Event name
 - `{{category}}` - Category
@@ -126,11 +131,13 @@ Get it now: {{link}}
 ### Text Templates
 
 **Use for:**
+
 - Announcements
 - Updates
 - News
 
 **Example:**
+
 ```
 {{title}}
 
@@ -142,11 +149,13 @@ Get it now: {{link}}
 ### Image Templates
 
 **Use for:**
+
 - Product showcases
 - Event promotions
 - Visual content
 
 **Example:**
+
 ```
 {{caption}}
 
@@ -158,11 +167,13 @@ Get it now: {{link}}
 ### Link Templates
 
 **Use for:**
+
 - Article shares
 - Resource links
 - External content
 
 **Example:**
+
 ```
 {{title}}
 
@@ -180,11 +191,13 @@ Read more: {{link}}
 ### Template Design
 
 1. **Keep it flexible:**
+
    - Use variables for dynamic content
    - Allow customization
    - Don't over-constrain
 
 2. **Make it reusable:**
+
    - Generic enough for multiple uses
    - Specific enough to be useful
    - Clear variable names
@@ -197,11 +210,13 @@ Read more: {{link}}
 ### Variable Naming
 
 **Good names:**
+
 - `{{productName}}` - Clear and descriptive
 - `{{eventDate}}` - Specific purpose
 - `{{link}}` - Simple and clear
 
 **Bad names:**
+
 - `{{var1}}` - Not descriptive
 - `{{data}}` - Too generic
 - `{{x}}` - Unclear purpose
@@ -209,11 +224,13 @@ Read more: {{link}}
 ### Template Organization
 
 1. **Group by purpose:**
+
    - Weekly updates
    - Product launches
    - Event promotions
 
 2. **Name clearly:**
+
    - "Weekly Update Template"
    - "Product Launch Template"
    - "Event Promotion Template"
@@ -232,6 +249,7 @@ Read more: {{link}}
 Create base templates and extend them:
 
 **Base Template:**
+
 ```
 {{content}}
 
@@ -239,6 +257,7 @@ Create base templates and extend them:
 ```
 
 **Extended Template:**
+
 ```
 {{title}}
 
@@ -274,4 +293,3 @@ Use variables to conditionally include content:
 ---
 
 **Next:** [Posting Guide](./posting.md) → Learn advanced posting features
-

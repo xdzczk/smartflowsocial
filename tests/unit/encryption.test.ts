@@ -12,7 +12,7 @@ vi.mock("~/lib/secrets-sanitizer.server", () => {
   const mockSafeConsoleError = vi.fn(() => {
     // Silently handle errors in tests - don't actually log
   });
-  
+
   return {
     safeConsoleError: mockSafeConsoleError,
     sanitizeObject: vi.fn((obj: unknown) => obj),
@@ -20,14 +20,20 @@ vi.mock("~/lib/secrets-sanitizer.server", () => {
   };
 });
 
-import { encrypt, decrypt, validateNWCString, maskNWCString } from "~/lib/encryption.server";
+import {
+  encrypt,
+  decrypt,
+  validateNWCString,
+  maskNWCString,
+} from "~/lib/encryption.server";
 
 describe("Encryption Functions", () => {
   const originalEnv = process.env.SESSION_SECRET;
 
   beforeEach(() => {
     // Set a test session secret
-    process.env.SESSION_SECRET = "test-session-secret-min-32-chars-long-for-testing";
+    process.env.SESSION_SECRET =
+      "test-session-secret-min-32-chars-long-for-testing";
   });
 
   afterEach(() => {
@@ -43,14 +49,14 @@ describe("Encryption Functions", () => {
     it("should encrypt and decrypt text correctly", () => {
       const plaintext = "test-secret-data";
       const encrypted = encrypt(plaintext);
-      
+
       // More specific assertions
       expect(encrypted).toBeTruthy();
       expect(encrypted).not.toBe(plaintext);
       expect(typeof encrypted).toBe("string");
       expect(encrypted.length).toBeGreaterThan(0);
       expect(encrypted).toMatch(/^[A-Za-z0-9+/=]+$/); // Base64 format
-      
+
       const decrypted = decrypt(encrypted);
       expect(decrypted).toBe(plaintext);
       expect(decrypted.length).toBe(plaintext.length);
@@ -60,10 +66,10 @@ describe("Encryption Functions", () => {
       const plaintext = "same-text";
       const encrypted1 = encrypt(plaintext);
       const encrypted2 = encrypt(plaintext);
-      
+
       // Should be different due to random IV
       expect(encrypted1).not.toBe(encrypted2);
-      
+
       // But both should decrypt to the same value
       expect(decrypt(encrypted1)).toBe(plaintext);
       expect(decrypt(encrypted2)).toBe(plaintext);
@@ -73,7 +79,7 @@ describe("Encryption Functions", () => {
       const plaintext = "";
       const encrypted = encrypt(plaintext);
       const decrypted = decrypt(encrypted);
-      
+
       expect(decrypted).toBe(plaintext);
     });
 
@@ -81,7 +87,7 @@ describe("Encryption Functions", () => {
       const plaintext = "a".repeat(10000);
       const encrypted = encrypt(plaintext);
       const decrypted = decrypt(encrypted);
-      
+
       expect(decrypted).toBe(plaintext);
     });
 
@@ -89,7 +95,7 @@ describe("Encryption Functions", () => {
       const plaintext = "test!@#$%^&*()_+-=[]{}|;':\",./<>?`~";
       const encrypted = encrypt(plaintext);
       const decrypted = decrypt(encrypted);
-      
+
       expect(decrypted).toBe(plaintext);
     });
 
@@ -97,17 +103,17 @@ describe("Encryption Functions", () => {
       const plaintext = "测试 🚀 ñoño";
       const encrypted = encrypt(plaintext);
       const decrypted = decrypt(encrypted);
-      
+
       expect(decrypted).toBe(plaintext);
     });
 
     it("should throw error when SESSION_SECRET is missing", () => {
       // Save original secret
       const originalSecret = process.env.SESSION_SECRET;
-      
+
       // Delete SESSION_SECRET to trigger error
       delete process.env.SESSION_SECRET;
-      
+
       // When SESSION_SECRET is missing, encrypt() should throw an error.
       // The error could be:
       // 1. Direct SESSION_SECRET error from deriveKey()
@@ -115,13 +121,14 @@ describe("Encryption Functions", () => {
       // 3. Module error if the require() fails (which is also acceptable - it means the function failed)
       // All of these indicate the function correctly fails when SESSION_SECRET is missing
       expect(() => encrypt("test")).toThrow();
-      
+
       // Restore original secret
       if (originalSecret) {
         process.env.SESSION_SECRET = originalSecret;
       } else {
         // Ensure it's set for other tests
-        process.env.SESSION_SECRET = "test-session-secret-min-32-chars-long-for-testing";
+        process.env.SESSION_SECRET =
+          "test-session-secret-min-32-chars-long-for-testing";
       }
     });
 
@@ -134,7 +141,7 @@ describe("Encryption Functions", () => {
       const plaintext = "test-data";
       const encrypted = encrypt(plaintext);
       const buffer = Buffer.from(encrypted, "base64");
-      
+
       // First byte should be version 2 (GCM)
       expect(buffer[0]).toBe(0x02);
     });
@@ -146,10 +153,10 @@ describe("Encryption Functions", () => {
       // the legacy format structure (no version byte)
       // Note: We can't easily create a real legacy encrypted value without
       // the old code, but we can verify the detection logic works
-      
+
       const plaintext = "legacy-test";
       const encrypted = encrypt(plaintext);
-      
+
       // Verify new format can be decrypted
       const decrypted = decrypt(encrypted);
       expect(decrypted).toBe(plaintext);
@@ -158,7 +165,8 @@ describe("Encryption Functions", () => {
 
   describe("validateNWCString", () => {
     it("should validate correct NWC string format", () => {
-      const validNWC = "nostr+walletconnect://pubkey?relay=wss://relay.example.com&secret=abc123";
+      const validNWC =
+        "nostr+walletconnect://pubkey?relay=wss://relay.example.com&secret=abc123";
       expect(validateNWCString(validNWC)).toBe(true);
     });
 
@@ -171,9 +179,10 @@ describe("Encryption Functions", () => {
 
   describe("maskNWCString", () => {
     it("should mask NWC string for display", () => {
-      const nwc = "nostr+walletconnect://pubkey?relay=wss://relay.example.com&secret=abc123def456";
+      const nwc =
+        "nostr+walletconnect://pubkey?relay=wss://relay.example.com&secret=abc123def456";
       const masked = maskNWCString(nwc);
-      
+
       expect(masked).toContain("nostr+walletconnect://");
       expect(masked).toContain("...");
       expect(masked.length).toBeLessThan(nwc.length);
@@ -185,4 +194,3 @@ describe("Encryption Functions", () => {
     });
   });
 });
-

@@ -32,7 +32,9 @@ describe("Queue Types Action Handler - Edge Cases", () => {
 
   describe("create_queue_type", () => {
     it("should handle 'none' as hashtag preset ID", async () => {
-      (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined,
+      );
 
       const formData = createFormData({
         _action: "create_queue_type",
@@ -43,10 +45,22 @@ describe("Queue Types Action Handler - Edge Cases", () => {
         hashTagPresetId: "none",
       });
 
-      const result = await handleQueueTypeAction(TEST_USER_ID, "create_queue_type", formData);
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const result = await handleQueueTypeAction(
+        TEST_USER_ID,
+        "create_queue_type",
+        formData,
+      );
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as { success?: boolean; error?: string })
+          : {};
 
       expect(updateQueueType).toHaveBeenCalledWith(
         TEST_USER_ID,
@@ -58,7 +72,9 @@ describe("Queue Types Action Handler - Edge Cases", () => {
     });
 
     it("should handle empty hashtag preset ID", async () => {
-      (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined,
+      );
 
       const formData = createFormData({
         _action: "create_queue_type",
@@ -69,10 +85,22 @@ describe("Queue Types Action Handler - Edge Cases", () => {
         hashTagPresetId: "",
       });
 
-      const result = await handleQueueTypeAction(TEST_USER_ID, "create_queue_type", formData);
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const result = await handleQueueTypeAction(
+        TEST_USER_ID,
+        "create_queue_type",
+        formData,
+      );
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as { success?: boolean; error?: string })
+          : {};
 
       expect(updateQueueType).toHaveBeenCalledWith(
         TEST_USER_ID,
@@ -84,7 +112,9 @@ describe("Queue Types Action Handler - Edge Cases", () => {
     });
 
     it("should handle useGlobalInterval flag for INTERVAL schedule", async () => {
-      (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined,
+      );
 
       const formData = createFormData({
         _action: "create_queue_type",
@@ -94,10 +124,22 @@ describe("Queue Types Action Handler - Edge Cases", () => {
         color: "#FF0000",
       });
 
-      const result = await handleQueueTypeAction(TEST_USER_ID, "create_queue_type", formData);
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const result = await handleQueueTypeAction(
+        TEST_USER_ID,
+        "create_queue_type",
+        formData,
+      );
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as { success?: boolean; error?: string })
+          : {};
 
       expect(updateQueueType).toHaveBeenCalledWith(
         TEST_USER_ID,
@@ -109,7 +151,9 @@ describe("Queue Types Action Handler - Edge Cases", () => {
     });
 
     it("should handle FIXED_SLOTS with comma-separated slots", async () => {
-      (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined,
+      );
 
       const formData = createFormData({
         _action: "create_queue_type",
@@ -119,10 +163,22 @@ describe("Queue Types Action Handler - Edge Cases", () => {
         color: "#FF0000",
       });
 
-      const result = await handleQueueTypeAction(TEST_USER_ID, "create_queue_type", formData);
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const result = await handleQueueTypeAction(
+        TEST_USER_ID,
+        "create_queue_type",
+        formData,
+      );
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as { success?: boolean; error?: string })
+          : {};
 
       expect(updateQueueType).toHaveBeenCalledWith(
         TEST_USER_ID,
@@ -134,7 +190,9 @@ describe("Queue Types Action Handler - Edge Cases", () => {
     });
 
     it("should filter out empty slots", async () => {
-      (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined,
+      );
 
       const formData = createFormData({
         _action: "create_queue_type",
@@ -144,10 +202,22 @@ describe("Queue Types Action Handler - Edge Cases", () => {
         color: "#FF0000",
       });
 
-      const result = await handleQueueTypeAction(TEST_USER_ID, "create_queue_type", formData);
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const result = await handleQueueTypeAction(
+        TEST_USER_ID,
+        "create_queue_type",
+        formData,
+      );
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as { success?: boolean; error?: string })
+          : {};
 
       expect(updateQueueType).toHaveBeenCalledWith(
         TEST_USER_ID,
@@ -161,7 +231,9 @@ describe("Queue Types Action Handler - Edge Cases", () => {
 
   describe("update_queue_type", () => {
     it("should handle isEnabled flag", async () => {
-      (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined,
+      );
 
       const formData = createFormData({
         _action: "update_queue_type",
@@ -173,10 +245,22 @@ describe("Queue Types Action Handler - Edge Cases", () => {
         isEnabled: "on",
       });
 
-      const result = await handleQueueTypeAction(TEST_USER_ID, "update_queue_type", formData);
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const result = await handleQueueTypeAction(
+        TEST_USER_ID,
+        "update_queue_type",
+        formData,
+      );
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as { success?: boolean; error?: string })
+          : {};
 
       expect(updateQueueType).toHaveBeenCalledWith(
         TEST_USER_ID,
@@ -189,7 +273,9 @@ describe("Queue Types Action Handler - Edge Cases", () => {
     });
 
     it("should handle isEnabled as false when not 'on'", async () => {
-      (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined,
+      );
 
       const formData = createFormData({
         _action: "update_queue_type",
@@ -201,10 +287,22 @@ describe("Queue Types Action Handler - Edge Cases", () => {
         isEnabled: "off",
       });
 
-      const result = await handleQueueTypeAction(TEST_USER_ID, "update_queue_type", formData);
-      const responseObj = result instanceof Response ? result : new Response(JSON.stringify(result));
+      const result = await handleQueueTypeAction(
+        TEST_USER_ID,
+        "update_queue_type",
+        formData,
+      );
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
       const jsonResultRaw: unknown = await responseObj.json();
-      const jsonResult = jsonResultRaw && typeof jsonResultRaw === "object" && !Array.isArray(jsonResultRaw) ? jsonResultRaw as { success?: boolean; error?: string } : {};
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as { success?: boolean; error?: string })
+          : {};
 
       expect(updateQueueType).toHaveBeenCalledWith(
         TEST_USER_ID,
@@ -222,10 +320,13 @@ describe("Queue Types Action Handler - Edge Cases", () => {
         _action: "unknown_action",
       });
 
-      const result = await handleQueueTypeAction(TEST_USER_ID, "unknown_action", formData);
+      const result = await handleQueueTypeAction(
+        TEST_USER_ID,
+        "unknown_action",
+        formData,
+      );
 
       expect(result).toBeNull();
     });
   });
 });
-

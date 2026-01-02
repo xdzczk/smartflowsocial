@@ -73,16 +73,19 @@ flowchart TD
 Plain text posts without media attachments.
 
 **Use Cases:**
+
 - Quick thoughts and updates
 - Text-only announcements
 - Thread starters
 - Status updates
 
 **Limitations:**
+
 - No media attachments
 - Text only
 
 **Example:**
+
 ```
 Just shipped a new feature! 🚀
 
@@ -94,22 +97,26 @@ Just shipped a new feature! 🚀
 Single image with optional caption.
 
 **Supported Formats:**
+
 - JPEG/JPG
 - PNG
 - WebP
 - GIF
 
 **File Size Limits:**
+
 - Recommended: < 10MB
 - Maximum: Depends on storage provider
 
 **Use Cases:**
+
 - Photo sharing
 - Screenshots
 - Infographics
 - Memes
 
 **Best Practices:**
+
 - Optimize images before upload
 - Use descriptive captions
 - Include relevant hashtags
@@ -120,17 +127,20 @@ Single image with optional caption.
 Multiple images in a single post.
 
 **Limitations:**
+
 - Maximum images: Varies by plan
 - All images in one post
 - Shared caption
 
 **Use Cases:**
+
 - Product showcases
 - Step-by-step guides
 - Photo series
 - Before/after comparisons
 
 **How to Create:**
+
 1. Select "Carousel" post type
 2. Upload multiple images
 3. Arrange images in desired order
@@ -142,11 +152,13 @@ Multiple images in a single post.
 Video URL embedded in post.
 
 **Supported Platforms:**
+
 - YouTube
 - Vimeo
 - Direct video URLs (MP4, WebM)
 
 **Format:**
+
 ```
 Check out this video: https://youtube.com/watch?v=...
 
@@ -160,6 +172,7 @@ Check out this video: https://youtube.com/watch?v=...
 Full articles with rich text formatting (NIP-23).
 
 **Features:**
+
 - Rich text editor (EditorJS)
 - Headers, paragraphs, lists
 - Code blocks
@@ -170,6 +183,7 @@ Full articles with rich text formatting (NIP-23).
 - Topic tags
 
 **Use Cases:**
+
 - Blog posts
 - Tutorials
 - Documentation
@@ -189,29 +203,35 @@ Publish immediately to Nostr.
 **Steps:**
 
 1. **Click "New Post"**
+
    - From dashboard header
    - Or use keyboard shortcut (if configured)
 
 2. **Select Post Type**
+
    - Text, Image, Carousel, or Video
    - Choose based on your content
 
 3. **Enter Content**
+
    - Type your post text
    - Add hashtags manually or select preset
    - Attach images if needed
 
 4. **Preview**
+
    - Review how post will appear
    - Check formatting
    - Verify media attachments
 
 5. **Click "Post Now"**
+
    - Confirmation dialog appears
    - Review post one more time
    - Click "Post Now" to confirm
 
 6. **Sign Event**
+
    - Nostr extension prompts you
    - Review event details:
      - Content
@@ -226,6 +246,7 @@ Publish immediately to Nostr.
    - View on Nostr clients
 
 **What Happens:**
+
 - Event is signed with your private key
 - Signed event is sent to HTTP Nostr Publisher
 - Publisher distributes to your configured relays
@@ -306,6 +327,7 @@ Assign posts to queues with automatic scheduling rules.
 **Queue Types:**
 
 1. **Interval Scheduling**
+
    - Posts every X hours
    - Calculated from last post time
    - Example: Every 4 hours
@@ -339,6 +361,7 @@ See [Queue Types](#queue-types) for detailed information.
 Upload multiple images and schedule them automatically.
 
 **Use Cases:**
+
 - Content creators with many images
 - Product catalogs
 - Photo series
@@ -347,29 +370,35 @@ Upload multiple images and schedule them automatically.
 **Steps:**
 
 1. **Click "Bulk Posts"**
+
    - From dashboard navigation
    - Or go to `/dashboard/bulk`
 
 2. **Upload Images**
+
    - Drag and drop multiple files
    - Or click to select files
    - Supports: JPG, PNG, WebP, GIF
 
 3. **Set Start Date and Time**
+
    - When to start posting
    - First image posts at this time
 
 4. **Select Posting Interval**
+
    - Choose from: 2h, 4h, 6h, 12h, 24h
    - Or custom interval
    - Images spaced by this interval
 
 5. **Add Captions** (Optional)
+
    - Add caption for each image
    - Or use template captions
    - Can edit individually
 
 6. **Preview Posts**
+
    - Click "Preview X Posts"
    - Review all scheduled posts
    - Check times and captions
@@ -490,6 +519,7 @@ Reuse evergreen content.
 **What are Recyclables?**
 
 Posts marked as recyclable can be:
+
 - Rescheduled for future dates
 - Reused multiple times
 - Great for evergreen content
@@ -531,24 +561,24 @@ graph TB
         Interval[Interval Queue<br/>Every X hours]
         Fixed[Fixed Slots Queue<br/>Specific times daily]
     end
-    
+
     subgraph "Post Assignment"
         Post1[Post 1]
         Post2[Post 2]
         Post3[Post 3]
     end
-    
+
     subgraph "Scheduling Logic"
         Calc[Calculate Next Time]
         Schedule[Schedule Post]
     end
-    
+
     subgraph "Execution"
         Queue[(Job Queue)]
         Worker[Worker Process]
         Publish[Publish to Nostr]
     end
-    
+
     Interval --> Post1
     Fixed --> Post1
     Post1 --> Calc
@@ -664,17 +694,21 @@ Full articles with rich text formatting (NIP-23).
 **Steps:**
 
 1. **Click "New Long-form Post"**
+
    - From dashboard navigation
 
 2. **Enter Title**
+
    - Article title
    - Used in NIP-23 event
 
 3. **Add Summary** (Optional)
+
    - Brief description
    - Shown in previews
 
 4. **Write Content**
+
    - Use rich text editor
    - Supports:
      - Headers (H1-H6)
@@ -686,14 +720,17 @@ Full articles with rich text formatting (NIP-23).
      - Images
 
 5. **Add Cover Image** (Optional)
+
    - Upload cover image
    - Shown in article previews
 
 6. **Add Topic Tags**
+
    - Enter topic tags
    - Used for categorization
 
 7. **Schedule or Publish**
+
    - Publish immediately
    - Or schedule for later
 
@@ -839,6 +876,7 @@ Track post performance (if available).
 **Problem: Can't Upload Images**
 
 **Solutions:**
+
 - Check file size (should be < 10MB)
 - Verify file format (JPG, PNG, WebP)
 - Check storage provider configuration
@@ -848,6 +886,7 @@ Track post performance (if available).
 **Problem: Signing Fails**
 
 **Solutions:**
+
 - Check extension is unlocked
 - Verify extension permissions
 - Try signing again
@@ -857,6 +896,7 @@ Track post performance (if available).
 **Problem: Post Not Publishing**
 
 **Solutions:**
+
 - Check relay configuration
 - Verify relays are accessible
 - Check network connection
@@ -868,6 +908,7 @@ Track post performance (if available).
 **Problem: Posts Not Publishing at Scheduled Time**
 
 **Solutions:**
+
 - Check worker process is running
 - Verify Redis connection
 - Check post has signed event
@@ -877,6 +918,7 @@ Track post performance (if available).
 **Problem: Can't Reschedule**
 
 **Solutions:**
+
 - Verify post is in Scheduled section
 - Check post hasn't already published
 - Ensure new time is in future

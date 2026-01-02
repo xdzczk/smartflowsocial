@@ -1,6 +1,6 @@
 /**
  * Recyclable Posts Service
- * 
+ *
  * Handles recyclable posts data loading and actions (repost, quote, delete)
  */
 
@@ -9,7 +9,10 @@ import { json } from "@remix-run/node";
 import type { UserWithHashTagPresets } from "~/features/user";
 import { getUserById, getQueueTypes } from "~/features/user";
 import { deletePost } from "~/models/post.commands.server";
-import { getRecyclablePosts, getPostsByIds } from "~/models/post.queries.server";
+import {
+  getRecyclablePosts,
+  getPostsByIds,
+} from "~/models/post.queries.server";
 
 import { getPostStats } from "../stats.server";
 /**
@@ -28,16 +31,17 @@ export async function getRecyclableDashboardData({
   const limit = 50;
   const queueType = params.queueType ?? "all";
 
-  const [{ posts, pagination }, userResult, queueTypesResult] = await Promise.all([
-    getRecyclablePosts({
-      userId,
-      page,
-      limit,
-      queueType,
-    }),
-    getUserById(userId),
-    getQueueTypes(userId),
-  ]);
+  const [{ posts, pagination }, userResult, queueTypesResult] =
+    await Promise.all([
+      getRecyclablePosts({
+        userId,
+        page,
+        limit,
+        queueType,
+      }),
+      getUserById(userId),
+      getQueueTypes(userId),
+    ]);
 
   if (!userResult) {
     throw new Error("User not found");
@@ -50,7 +54,12 @@ export async function getRecyclableDashboardData({
   const eventIds = posts
     .map((post) => {
       const signedEvent = post.signedEvent;
-      if (signedEvent && typeof signedEvent === "object" && "id" in signedEvent && typeof signedEvent.id === "string") {
+      if (
+        signedEvent &&
+        typeof signedEvent === "object" &&
+        "id" in signedEvent &&
+        typeof signedEvent.id === "string"
+      ) {
         return signedEvent.id;
       }
       return "";
@@ -65,8 +74,12 @@ export async function getRecyclableDashboardData({
     pagination,
     stats,
     user,
-    queueTypes: queueTypes.filter((qt: unknown) => 
-      typeof qt === "object" && qt !== null && "isEnabled" in qt && qt.isEnabled !== false
+    queueTypes: queueTypes.filter(
+      (qt: unknown) =>
+        typeof qt === "object" &&
+        qt !== null &&
+        "isEnabled" in qt &&
+        qt.isEnabled !== false,
     ),
     selectedQueueType: queueType,
   };
@@ -93,7 +106,9 @@ export async function handleRecyclablePostAction(
     let postIds: string[] = [];
     try {
       const parsed: unknown = JSON.parse(postIdsStr);
-      postIds = Array.isArray(parsed) ? parsed.filter((id: unknown): id is string => typeof id === "string") : [];
+      postIds = Array.isArray(parsed)
+        ? parsed.filter((id: unknown): id is string => typeof id === "string")
+        : [];
     } catch {
       postIds = [];
     }
@@ -107,7 +122,9 @@ export async function handleRecyclablePostAction(
     let postIds: string[] = [];
     try {
       const parsed: unknown = JSON.parse(postIdsStr);
-      postIds = Array.isArray(parsed) ? parsed.filter((id: unknown): id is string => typeof id === "string") : [];
+      postIds = Array.isArray(parsed)
+        ? parsed.filter((id: unknown): id is string => typeof id === "string")
+        : [];
     } catch {
       postIds = [];
     }
@@ -121,7 +138,9 @@ export async function handleRecyclablePostAction(
     let postIds: string[] = [];
     try {
       const parsed: unknown = JSON.parse(postIdsStr);
-      postIds = Array.isArray(parsed) ? parsed.filter((id: unknown): id is string => typeof id === "string") : [];
+      postIds = Array.isArray(parsed)
+        ? parsed.filter((id: unknown): id is string => typeof id === "string")
+        : [];
     } catch {
       postIds = [];
     }
@@ -135,7 +154,9 @@ export async function handleRecyclablePostAction(
     let postIds: string[] = [];
     try {
       const parsed: unknown = JSON.parse(postIdsStr);
-      postIds = Array.isArray(parsed) ? parsed.filter((id: unknown): id is string => typeof id === "string") : [];
+      postIds = Array.isArray(parsed)
+        ? parsed.filter((id: unknown): id is string => typeof id === "string")
+        : [];
     } catch {
       postIds = [];
     }
@@ -146,8 +167,12 @@ export async function handleRecyclablePostAction(
       const signedEvent = post.signedEvent;
       let eventId = "";
       let eventPubkey = "";
-      
-      if (signedEvent && typeof signedEvent === "object" && !Array.isArray(signedEvent)) {
+
+      if (
+        signedEvent &&
+        typeof signedEvent === "object" &&
+        !Array.isArray(signedEvent)
+      ) {
         if ("id" in signedEvent && typeof signedEvent.id === "string") {
           eventId = signedEvent.id;
         }
@@ -155,14 +180,24 @@ export async function handleRecyclablePostAction(
           eventPubkey = signedEvent.pubkey;
         }
       }
-      
-      const fileUrl = Array.isArray(post.fileUrl) ? post.fileUrl : typeof post.fileUrl === "string" ? [post.fileUrl] : [];
+
+      const fileUrl = Array.isArray(post.fileUrl)
+        ? post.fileUrl
+        : typeof post.fileUrl === "string"
+          ? [post.fileUrl]
+          : [];
       const caption = typeof post.caption === "string" ? post.caption : "";
-      const queueTypeName = post.queueType && typeof post.queueType === "object" && "name" in post.queueType && typeof post.queueType.name === "string" ? post.queueType.name : "unassigned";
-      
+      const queueTypeName =
+        post.queueType &&
+        typeof post.queueType === "object" &&
+        "name" in post.queueType &&
+        typeof post.queueType.name === "string"
+          ? post.queueType.name
+          : "unassigned";
+
       return {
         caption: "", // Empty caption - user can add content
-        fileUrl: fileUrl.length > 0 ? fileUrl[0] ?? "" : "",
+        fileUrl: fileUrl.length > 0 ? (fileUrl[0] ?? "") : "",
         queueType: queueTypeName,
         scheduledFor: "",
         originalPostId: post.id,
@@ -188,12 +223,23 @@ export async function handleRecyclablePostAction(
       const originalPost = postsData[0];
       const originalEvent = originalPost.signedEvent;
 
-      if (!originalEvent || typeof originalEvent !== "object" || !("id" in originalEvent) || !("pubkey" in originalEvent)) {
+      if (
+        !originalEvent ||
+        typeof originalEvent !== "object" ||
+        !("id" in originalEvent) ||
+        !("pubkey" in originalEvent)
+      ) {
         return json({ error: "Invalid event data" }, { status: 400 });
       }
 
-      const eventId = typeof originalEvent.id === "string" ? originalEvent.id : String(originalEvent.id);
-      const eventPubkey = typeof originalEvent.pubkey === "string" ? originalEvent.pubkey : String(originalEvent.pubkey);
+      const eventId =
+        typeof originalEvent.id === "string"
+          ? originalEvent.id
+          : String(originalEvent.id);
+      const eventPubkey =
+        typeof originalEvent.pubkey === "string"
+          ? originalEvent.pubkey
+          : String(originalEvent.pubkey);
 
       // Create kind 6 repost event structure according to NIP-18
       const kind6EventData = {
@@ -231,19 +277,49 @@ export async function handleRecyclablePostAction(
       const originalPost = postsData[0];
       const originalEvent = originalPost.signedEvent;
 
-      if (!originalEvent || typeof originalEvent !== "object" || !("id" in originalEvent) || !("pubkey" in originalEvent)) {
+      if (
+        !originalEvent ||
+        typeof originalEvent !== "object" ||
+        !("id" in originalEvent) ||
+        !("pubkey" in originalEvent)
+      ) {
         return json({ error: "Invalid event data" }, { status: 400 });
       }
 
-      const eventId = typeof originalEvent.id === "string" ? originalEvent.id : String(originalEvent.id);
-      const eventPubkey = typeof originalEvent.pubkey === "string" ? originalEvent.pubkey : String(originalEvent.pubkey);
+      const eventId =
+        typeof originalEvent.id === "string"
+          ? originalEvent.id
+          : String(originalEvent.id);
+      const eventPubkey =
+        typeof originalEvent.pubkey === "string"
+          ? originalEvent.pubkey
+          : String(originalEvent.pubkey);
 
       // Create quote post data for bulk posts page
-      const fileUrl = "fileUrl" in originalPost ? (Array.isArray(originalPost.fileUrl) ? originalPost.fileUrl[0] : typeof originalPost.fileUrl === "string" ? originalPost.fileUrl : "") : "";
-      const queueTypeName = originalPost.queueType && typeof originalPost.queueType === "object" && "name" in originalPost.queueType && typeof originalPost.queueType.name === "string" ? originalPost.queueType.name : "unassigned";
-      const caption = "caption" in originalPost && typeof originalPost.caption === "string" ? originalPost.caption : "";
-      const originalPostId = "id" in originalPost && typeof originalPost.id === "string" ? originalPost.id : "";
-      
+      const fileUrl =
+        "fileUrl" in originalPost
+          ? Array.isArray(originalPost.fileUrl)
+            ? originalPost.fileUrl[0]
+            : typeof originalPost.fileUrl === "string"
+              ? originalPost.fileUrl
+              : ""
+          : "";
+      const queueTypeName =
+        originalPost.queueType &&
+        typeof originalPost.queueType === "object" &&
+        "name" in originalPost.queueType &&
+        typeof originalPost.queueType.name === "string"
+          ? originalPost.queueType.name
+          : "unassigned";
+      const caption =
+        "caption" in originalPost && typeof originalPost.caption === "string"
+          ? originalPost.caption
+          : "";
+      const originalPostId =
+        "id" in originalPost && typeof originalPost.id === "string"
+          ? originalPost.id
+          : "";
+
       const quotePostData = {
         caption: "", // Empty caption - user can add content
         fileUrl,
@@ -265,4 +341,3 @@ export async function handleRecyclablePostAction(
 
   return json({ error: "Invalid action" }, { status: 400 });
 }
-

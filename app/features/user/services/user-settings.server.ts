@@ -4,7 +4,6 @@ import type { MutedListData } from "~/features/engagement/types";
 import { prisma } from "~/lib/prisma.server";
 import { blastrRelay } from "~/lib/relays";
 
-
 /**
  * Updates user's timezone
  */
@@ -305,12 +304,13 @@ export async function getUserMutedList(userId: string): Promise<{
   if (!mutedList || typeof mutedList !== "object") {
     return null;
   }
-  
+
   return {
     npubs: Array.isArray(mutedList.npubs) ? mutedList.npubs : [],
-    lastSynced: typeof mutedList.lastSynced === "string" 
-      ? mutedList.lastSynced 
-      : new Date().toISOString(),
+    lastSynced:
+      typeof mutedList.lastSynced === "string"
+        ? mutedList.lastSynced
+        : new Date().toISOString(),
   };
 }
 
@@ -358,11 +358,12 @@ export function updateUserHidePostsFromLowTrustUsers(
 /**
  * Gets the hidePostsFromLowTrustUsers setting
  */
-export async function getUserHidePostsFromLowTrustUsers(userId: string): Promise<boolean> {
+export async function getUserHidePostsFromLowTrustUsers(
+  userId: string,
+): Promise<boolean> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { hidePostsFromLowTrustUsers: true },
   });
   return user?.hidePostsFromLowTrustUsers ?? false;
 }
-

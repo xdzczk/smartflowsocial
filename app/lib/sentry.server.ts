@@ -1,6 +1,6 @@
 /**
  * Sentry Server-side Initialization
- * 
+ *
  * Initializes Sentry for server-side error tracking
  * Only initializes if SENTRY_DSN is configured
  */
@@ -19,7 +19,7 @@ export function initSentry(): void {
 
   try {
     // Dynamic import to avoid bundling Sentry in production if not configured
-     
+
     const Sentry = require("@sentry/remix") as {
       init: (options: {
         dsn?: string;
@@ -33,7 +33,7 @@ export function initSentry(): void {
       captureMessage: (message: string, level?: string) => void;
       setUser: (user: { id?: string; email?: string }) => void;
     };
-    
+
     Sentry.init({
       dsn: process.env.SENTRY_DSN,
       environment: process.env.NODE_ENV ?? "development",
@@ -89,11 +89,10 @@ export function captureException(
   }
 
   try {
-     
     const Sentry = require("@sentry/remix") as {
       captureException: (error: Error, options?: unknown) => void;
     };
-    
+
     Sentry.captureException(error, {
       tags: context?.tags,
       extra: context?.extra,
@@ -123,11 +122,10 @@ export function captureMessage(
   }
 
   try {
-     
     const Sentry = require("@sentry/remix") as {
       captureMessage: (message: string, options?: unknown) => void;
     };
-    
+
     Sentry.captureMessage(message, {
       level,
       tags: context?.tags,
@@ -142,15 +140,22 @@ export function captureMessage(
 /**
  * Set user context for Sentry
  */
-export function setUser(user: { id?: string; email?: string; username?: string }): void {
+export function setUser(user: {
+  id?: string;
+  email?: string;
+  username?: string;
+}): void {
   if (!sentryInitialized || !process.env.SENTRY_DSN) {
     return;
   }
 
   try {
-     
     const Sentry = require("@sentry/remix") as {
-      setUser: (user: { id?: string; email?: string; username?: string }) => void;
+      setUser: (user: {
+        id?: string;
+        email?: string;
+        username?: string;
+      }) => void;
     };
     Sentry.setUser(user);
   } catch (err) {
@@ -168,7 +173,6 @@ export function clearUser(): void {
   }
 
   try {
-     
     const Sentry = require("@sentry/remix") as {
       setUser: (user: null) => void;
     };
@@ -178,4 +182,3 @@ export function clearUser(): void {
     console.error("Failed to clear user in Sentry:", err);
   }
 }
-

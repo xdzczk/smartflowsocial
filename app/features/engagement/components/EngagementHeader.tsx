@@ -14,7 +14,3 @@ export function EngagementHeader() {
     </div>
   );
 }
-
-
-
-

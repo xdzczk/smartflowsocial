@@ -108,6 +108,7 @@ docker-compose exec app pnpm exec prisma migrate deploy
 ### Method 3: Production Deployment
 
 See [Deployment Guide](../guides/deployment.md) for production deployment on:
+
 - Fly.io
 - Railway
 - AWS/EC2
@@ -198,6 +199,7 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/smartflow
 ### Option 3: Managed PostgreSQL
 
 Use a managed service:
+
 - **Supabase** (free tier available)
 - **Railway** (PostgreSQL addon)
 - **Render** (PostgreSQL service)
@@ -284,9 +286,11 @@ Access MinIO console at http://localhost:9001
 Required for publishing posts to Nostr relays.
 
 **Deploy your own:**
+
 - [HTTP Nostr Publisher](https://github.com/getAlby/http-nostr-publisher)
 
 **Or use a hosted service:**
+
 - Configure `NOSTR_PUBLISHER_URL` in `.env`
 
 ### Primal Caching Service (Optional)
@@ -294,9 +298,11 @@ Required for publishing posts to Nostr relays.
 For profile and event lookups.
 
 **Default (public endpoints):**
+
 - Uses public Primal cache if not configured
 
 **Self-hosted:**
+
 - [Primal Caching Service](https://github.com/PrimalHQ/primal-caching-service)
 - Configure `PRIMAL_CACHING_URL` in `.env`
 
@@ -324,6 +330,7 @@ docker run -d \
 ```
 
 **Managed Redis:**
+
 - **Upstash** (serverless Redis)
 - **Redis Cloud**
 - **AWS ElastiCache**
@@ -413,16 +420,19 @@ pnpm start:worker
 ### Common Issues
 
 **Database connection failed:**
+
 - Verify PostgreSQL is running
 - Check `DATABASE_URL` format
 - Ensure database exists
 
 **Redis connection failed:**
+
 - Verify Redis is running
 - Check `REDIS_URL` format
 - Test with `redis-cli ping`
 
 **Storage upload failed:**
+
 - Verify storage credentials
 - Check bucket exists and is accessible
 - Verify IAM permissions (AWS S3)
@@ -441,4 +451,3 @@ See [Troubleshooting Guide](../troubleshooting/common-issues.md) for more soluti
 ---
 
 **Next:** [First Steps Guide](./first-steps.md) → Learn the basics
-

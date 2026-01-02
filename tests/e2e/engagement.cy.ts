@@ -2,7 +2,7 @@ import { TEST_NPUB } from "./support/nostr-test-keys";
 
 /**
  * Engagement Feed Tests
- * 
+ *
  * Tests engagement feed functionality:
  * - Navigate to engagement feed
  * - View engagement feed
@@ -25,7 +25,10 @@ describe("Engagement Feed", () => {
         .first()
         .should("exist")
         .click({ force: true });
-      cy.location("pathname", { timeout: 10000 }).should("include", "engagement");
+      cy.location("pathname", { timeout: 10000 }).should(
+        "include",
+        "engagement",
+      );
     });
 
     it("should load engagement feed page directly", () => {
@@ -47,11 +50,9 @@ describe("Engagement Feed", () => {
           $body.find('[data-testid="empty-state"]').length > 0 ||
           $body.text().toLowerCase().includes("engagement") ||
           $body.text().toLowerCase().includes("feed");
-        
+
         expect(hasContent).to.be.true;
       });
     });
   });
 });
-
-

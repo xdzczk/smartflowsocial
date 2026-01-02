@@ -48,43 +48,43 @@ class SmartFlowSocialClient {
     const response = await fetch(`${this.baseUrl}/api/${endpoint}`, {
       ...options,
       headers: {
-        'Content-Type': 'application/json',
-        'Cookie': this.sessionCookie,
+        "Content-Type": "application/json",
+        Cookie: this.sessionCookie,
         ...options.headers,
       },
-      credentials: 'include',
+      credentials: "include",
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error || 'Request failed');
+      throw new Error(error.error || "Request failed");
     }
 
     return await response.json();
   }
 
   async publishEvent(event: any, relays: string[]) {
-    return this.request('publish', {
-      method: 'POST',
+    return this.request("publish", {
+      method: "POST",
       body: JSON.stringify({ event, relays }),
     });
   }
 
   async uploadFile(file: File) {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append("file", file);
 
     const response = await fetch(`${this.baseUrl}/api/upload`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Cookie': this.sessionCookie,
+        Cookie: this.sessionCookie,
       },
-      credentials: 'include',
+      credentials: "include",
       body: formData,
     });
 
     if (!response.ok) {
-      throw new Error('Upload failed');
+      throw new Error("Upload failed");
     }
 
     const result = await response.json();
@@ -92,15 +92,15 @@ class SmartFlowSocialClient {
   }
 
   async getEffectiveHashtags(queueTypeName: string, queueTypeId?: string) {
-    return this.request('effective-hashtags', {
-      method: 'POST',
+    return this.request("effective-hashtags", {
+      method: "POST",
       body: JSON.stringify({ queueTypeName, queueTypeId }),
     });
   }
 
   async getQueueSchedule(queueTypeName: string, queueTypeId?: string) {
-    return this.request('queue-schedule', {
-      method: 'POST',
+    return this.request("queue-schedule", {
+      method: "POST",
       body: JSON.stringify({ queueTypeName, queueTypeId }),
     });
   }
@@ -108,16 +108,16 @@ class SmartFlowSocialClient {
 
 // Usage
 const client = new SmartFlowSocialClient(
-  'https://your-domain.com',
-  'session=your-session-cookie'
+  "https://your-domain.com",
+  "session=your-session-cookie",
 );
 
 // Upload an image
-const file = new File(['...'], 'image.jpg', { type: 'image/jpeg' });
+const file = new File(["..."], "image.jpg", { type: "image/jpeg" });
 const imageUrl = await client.uploadFile(file);
 
 // Get effective hashtags for a queue
-const hashtags = await client.getEffectiveHashtags('Bitcoin News');
+const hashtags = await client.getEffectiveHashtags("Bitcoin News");
 console.log(hashtags.effectiveHashtags);
 ```
 
@@ -136,7 +136,7 @@ class SmartFlowSocialClient:
             'Content-Type': 'application/json'
         })
 
-    def request(self, endpoint: str, method: str = 'GET', 
+    def request(self, endpoint: str, method: str = 'GET',
                 data: Optional[Dict] = None) -> Dict[str, Any]:
         url = f"{self.base_url}/api/{endpoint}"
         response = self.session.request(method, url, json=data)
@@ -158,7 +158,7 @@ class SmartFlowSocialClient:
             'relays': relays
         })
 
-    def get_effective_hashtags(self, queue_type_name: str, 
+    def get_effective_hashtags(self, queue_type_name: str,
                               queue_type_id: Optional[str] = None) -> Dict:
         return self.request('effective-hashtags', 'POST', {
             'queueTypeName': queue_type_name,
@@ -191,7 +191,7 @@ print(f"Hashtags: {hashtags['effectiveHashtags']}")
 ```typescript
 // Webhook payload structure
 interface WebhookPayload {
-  event: 'post.published' | 'post.scheduled' | 'post.failed';
+  event: "post.published" | "post.scheduled" | "post.failed";
   timestamp: string;
   data: {
     postId: string;
@@ -205,28 +205,28 @@ interface WebhookPayload {
 // Webhook handler example
 async function handleWebhook(payload: WebhookPayload) {
   switch (payload.event) {
-    case 'post.published':
-      console.log('Post published:', payload.data.eventId);
+    case "post.published":
+      console.log("Post published:", payload.data.eventId);
       // Send notification, update external system, etc.
       break;
-    
-    case 'post.scheduled':
-      console.log('Post scheduled:', payload.data.scheduledFor);
+
+    case "post.scheduled":
+      console.log("Post scheduled:", payload.data.scheduledFor);
       // Log to analytics, update calendar, etc.
       break;
-    
-    case 'post.failed':
-      console.error('Post failed:', payload.data.error);
+
+    case "post.failed":
+      console.error("Post failed:", payload.data.error);
       // Send alert, retry logic, etc.
       break;
   }
 }
 
 // Express.js webhook endpoint
-app.post('/webhook', express.json(), async (req, res) => {
+app.post("/webhook", express.json(), async (req, res) => {
   const payload = req.body as WebhookPayload;
   await handleWebhook(payload);
-  res.status(200).send('OK');
+  res.status(200).send("OK");
 });
 ```
 
@@ -239,13 +239,13 @@ app.post('/webhook', express.json(), async (req, res) => {
 **Using nostr-tools:**
 
 ```typescript
-import { finalizeEvent, getPublicKey } from 'nostr-tools';
-import { SmartFlowSocialClient } from './client';
+import { finalizeEvent, getPublicKey } from "nostr-tools";
+import { SmartFlowSocialClient } from "./client";
 
 async function publishToSmartFlowSocial(
   privateKey: string,
   content: string,
-  relays: string[]
+  relays: string[],
 ) {
   // Create Nostr event
   const event = {
@@ -260,17 +260,17 @@ async function publishToSmartFlowSocial(
 
   // Publish via SmartFlowSocial API
   const client = new SmartFlowSocialClient(
-    'https://your-domain.com',
-    'session-cookie'
+    "https://your-domain.com",
+    "session-cookie",
   );
 
   return await client.publishEvent(signedEvent, relays);
 }
 
 // Usage
-const privateKey = 'your-hex-private-key';
-const content = 'Hello from SmartFlowSocial!';
-const relays = ['wss://relay.example.com'];
+const privateKey = "your-hex-private-key";
+const content = "Hello from SmartFlowSocial!";
+const relays = ["wss://relay.example.com"];
 
 await publishToSmartFlowSocial(privateKey, content, relays);
 ```
@@ -280,11 +280,11 @@ await publishToSmartFlowSocial(privateKey, content, relays);
 **Using nostr-tools to read events:**
 
 ```typescript
-import { SimplePool } from 'nostr-tools';
+import { SimplePool } from "nostr-tools";
 
 async function readUserPosts(pubkey: string, relays: string[]) {
   const pool = new SimplePool();
-  
+
   const events = await pool.list(relays, [
     {
       kinds: [1],
@@ -297,8 +297,8 @@ async function readUserPosts(pubkey: string, relays: string[]) {
 }
 
 // Usage
-const pubkey = 'user-pubkey';
-const relays = ['wss://relay.example.com'];
+const pubkey = "user-pubkey";
+const relays = ["wss://relay.example.com"];
 const posts = await readUserPosts(pubkey, relays);
 ```
 
@@ -311,17 +311,17 @@ const posts = await readUserPosts(pubkey, relays);
 **Node.js script for automated posting:**
 
 ```typescript
-import { SmartFlowSocialClient } from './client';
-import { finalizeEvent } from 'nostr-tools';
+import { SmartFlowSocialClient } from "./client";
+import { finalizeEvent } from "nostr-tools";
 
 async function automatedPosting() {
   const client = new SmartFlowSocialClient(
     process.env.SMARTFLOW_URL!,
-    process.env.SESSION_COOKIE!
+    process.env.SESSION_COOKIE!,
   );
 
   const privateKey = process.env.NOSTR_PRIVATE_KEY!;
-  const relays = process.env.RELAYS!.split(',');
+  const relays = process.env.RELAYS!.split(",");
 
   // Get content from external source (RSS, API, etc.)
   const content = await fetchContentFromSource();
@@ -331,20 +331,20 @@ async function automatedPosting() {
     kind: 1,
     content,
     created_at: Math.floor(Date.now() / 1000),
-    tags: [['t', 'automated']],
+    tags: [["t", "automated"]],
   };
 
   const signedEvent = finalizeEvent(event, privateKey);
 
   // Publish
   await client.publishEvent(signedEvent, relays);
-  console.log('Posted:', signedEvent.id);
+  console.log("Posted:", signedEvent.id);
 }
 
 // Run on schedule (using node-cron)
-import cron from 'node-cron';
+import cron from "node-cron";
 
-cron.schedule('0 9 * * *', async () => {
+cron.schedule("0 9 * * *", async () => {
   await automatedPosting();
 });
 ```
@@ -352,28 +352,29 @@ cron.schedule('0 9 * * *', async () => {
 ### Bulk Upload Automation
 
 ```typescript
-import { SmartFlowSocialClient } from './client';
-import * as fs from 'fs';
-import * as path from 'path';
+import { SmartFlowSocialClient } from "./client";
+import * as fs from "fs";
+import * as path from "path";
 
 async function bulkUploadImages(directory: string) {
   const client = new SmartFlowSocialClient(
     process.env.SMARTFLOW_URL!,
-    process.env.SESSION_COOKIE!
+    process.env.SESSION_COOKIE!,
   );
 
-  const files = fs.readdirSync(directory)
-    .filter(f => /\.(jpg|jpeg|png|webp)$/i.test(f));
+  const files = fs
+    .readdirSync(directory)
+    .filter((f) => /\.(jpg|jpeg|png|webp)$/i.test(f));
 
   const uploads = await Promise.all(
     files.map(async (file) => {
       const filePath = path.join(directory, file);
       const fileBuffer = fs.readFileSync(filePath);
       const blob = new Blob([fileBuffer]);
-      const fileObj = new File([blob], file, { type: 'image/jpeg' });
-      
+      const fileObj = new File([blob], file, { type: "image/jpeg" });
+
       return await client.uploadFile(fileObj);
-    })
+    }),
   );
 
   console.log(`Uploaded ${uploads.length} images`);
@@ -391,12 +392,12 @@ async function bulkUploadImages(directory: string) {
 
 ```typescript
 // Zapier webhook receives data and posts to SmartFlowSocial
-app.post('/zapier-webhook', express.json(), async (req, res) => {
+app.post("/zapier-webhook", express.json(), async (req, res) => {
   const { content, imageUrl, hashtags } = req.body;
 
   const client = new SmartFlowSocialClient(
     process.env.SMARTFLOW_URL!,
-    process.env.SESSION_COOKIE!
+    process.env.SESSION_COOKIE!,
   );
 
   // Create post content
@@ -417,11 +418,8 @@ app.post('/zapier-webhook', express.json(), async (req, res) => {
   };
 
   const signedEvent = finalizeEvent(event, process.env.NOSTR_PRIVATE_KEY!);
-  
-  await client.publishEvent(
-    signedEvent,
-    process.env.RELAYS!.split(',')
-  );
+
+  await client.publishEvent(signedEvent, process.env.RELAYS!.split(","));
 
   res.json({ success: true });
 });
@@ -432,7 +430,7 @@ app.post('/zapier-webhook', express.json(), async (req, res) => {
 **IFTTT webhook example:**
 
 ```typescript
-app.post('/ifttt-webhook', express.json(), async (req, res) => {
+app.post("/ifttt-webhook", express.json(), async (req, res) => {
   const { value1, value2, value3 } = req.body;
 
   // value1 = content
@@ -441,11 +439,11 @@ app.post('/ifttt-webhook', express.json(), async (req, res) => {
 
   const client = new SmartFlowSocialClient(
     process.env.SMARTFLOW_URL!,
-    process.env.SESSION_COOKIE!
+    process.env.SESSION_COOKIE!,
   );
 
   // Build post content
-  let content = value1 || '';
+  let content = value1 || "";
   if (value2) content += `\n\n${value2}`;
   if (value3) content += `\n\n${value3}`;
 
@@ -459,8 +457,8 @@ app.post('/ifttt-webhook', express.json(), async (req, res) => {
 ### Discord Bot Integration
 
 ```typescript
-import { Client, GatewayIntentBits } from 'discord.js';
-import { SmartFlowSocialClient } from './client';
+import { Client, GatewayIntentBits } from "discord.js";
+import { SmartFlowSocialClient } from "./client";
 
 const discordClient = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
@@ -468,13 +466,13 @@ const discordClient = new Client({
 
 const smartflowClient = new SmartFlowSocialClient(
   process.env.SMARTFLOW_URL!,
-  process.env.SESSION_COOKIE!
+  process.env.SESSION_COOKIE!,
 );
 
-discordClient.on('messageCreate', async (message) => {
-  if (message.content.startsWith('!post')) {
+discordClient.on("messageCreate", async (message) => {
+  if (message.content.startsWith("!post")) {
     const content = message.content.slice(5).trim();
-    
+
     // Get image if attached
     let imageUrl = null;
     if (message.attachments.size > 0) {
@@ -495,7 +493,7 @@ discordClient.on('messageCreate', async (message) => {
     // Publish (similar to previous examples)
     // ...
 
-    await message.reply('Posted to Nostr!');
+    await message.reply("Posted to Nostr!");
   }
 });
 
@@ -509,23 +507,20 @@ discordClient.login(process.env.DISCORD_TOKEN!);
 **Robust error handling example:**
 
 ```typescript
-async function safeApiCall<T>(
-  fn: () => Promise<T>,
-  retries = 3
-): Promise<T> {
+async function safeApiCall<T>(fn: () => Promise<T>, retries = 3): Promise<T> {
   for (let i = 0; i < retries; i++) {
     try {
       return await fn();
     } catch (error) {
       if (i === retries - 1) throw error;
-      
+
       // Exponential backoff
-      await new Promise(resolve => 
-        setTimeout(resolve, 1000 * Math.pow(2, i))
+      await new Promise((resolve) =>
+        setTimeout(resolve, 1000 * Math.pow(2, i)),
       );
     }
   }
-  throw new Error('Max retries exceeded');
+  throw new Error("Max retries exceeded");
 }
 
 // Usage
@@ -545,4 +540,3 @@ const result = await safeApiCall(async () => {
 ---
 
 **Next:** [Code Samples](./code-samples.md) → More code examples
-

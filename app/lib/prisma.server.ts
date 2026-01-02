@@ -21,7 +21,7 @@ function getPrismaClient() {
 
   if (!isLocalHost) {
     if (databaseUrl.host.endsWith(".internal")) {
-      databaseUrl.host = `${String(FLY_REGION ?? '')}.${databaseUrl.host}`;
+      databaseUrl.host = `${String(FLY_REGION ?? "")}.${databaseUrl.host}`;
     }
 
     if (!isReadReplicaRegion) {
@@ -41,11 +41,12 @@ function getPrismaClient() {
       },
     },
     // Enable query logging in development for performance monitoring
-    log: process.env.NODE_ENV === "development" 
-      ? ["query", "info", "warn", "error"]
-      : ["error"],
+    log:
+      process.env.NODE_ENV === "development"
+        ? ["query", "info", "warn", "error"]
+        : ["error"],
   });
-  
+
   // Add query performance monitoring middleware using $extends (Prisma 5+)
   const client = baseClient.$extends({
     query: {
@@ -53,23 +54,17 @@ function getPrismaClient() {
         async $allOperations({ model, operation, args, query }) {
           const before = Date.now();
           let error: Error | undefined;
-          
+
           try {
             const result = await query(args);
             const after = Date.now();
             const duration = after - before;
-            
+
             // Record metrics
-            recordQueryMetrics(
-              model ?? "unknown",
-              operation,
-              duration,
-              true,
-            );
-            
+            recordQueryMetrics(model ?? "unknown", operation, duration, true);
+
             // Log slow queries (over 100ms)
             if (duration > 100) {
-               
               console.warn(
                 `⚠️ Slow query detected: ${model}.${operation} took ${duration}ms`,
                 {
@@ -80,13 +75,13 @@ function getPrismaClient() {
                 },
               );
             }
-            
+
             return result;
           } catch (err) {
             error = err instanceof Error ? err : new Error(String(err));
             const after = Date.now();
             const duration = after - before;
-            
+
             // Record error metrics
             recordQueryMetrics(
               model ?? "unknown",
@@ -95,9 +90,9 @@ function getPrismaClient() {
               false,
               error,
             );
-            
+
             // Log query errors
-             
+
             console.error(
               `❌ Query error: ${model}.${operation} failed after ${duration}ms`,
               {
@@ -107,14 +102,14 @@ function getPrismaClient() {
                 duration,
               },
             );
-            
+
             throw err;
           }
         },
       },
     },
   });
-  
+
   // connect eagerly
   void client.$connect();
 

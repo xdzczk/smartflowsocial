@@ -1,6 +1,6 @@
 /**
  * Integration tests for scheduled posts action handlers
- * 
+ *
  * Tests the action handler logic directly, without requiring a browser.
  * For UI interaction tests, see tests/e2e/posts/scheduled-posts.cy.ts
  */
@@ -19,7 +19,13 @@ import { handleScheduledAction } from "~/features/posts/services/scheduled-actio
 import { deleteLongFormPost } from "~/models/longformpost.server";
 import { deletePost } from "~/models/post.commands.server";
 
-import { createActionFormData, TEST_USER_ID, TEST_POST_ID, TEST_LONGFORM_ID, createPostIds } from "../utils/test-helpers";
+import {
+  createActionFormData,
+  TEST_USER_ID,
+  TEST_POST_ID,
+  TEST_LONGFORM_ID,
+  createPostIds,
+} from "../utils/test-helpers";
 
 describe("Scheduled Action Handler", () => {
   beforeEach(() => {
@@ -46,7 +52,9 @@ describe("Scheduled Action Handler", () => {
 
   describe("Delete Longform Post Action", () => {
     it("should delete a single scheduled longform post", async () => {
-      (deleteLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (deleteLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined,
+      );
 
       const formData = createActionFormData("deleteLongForm", {
         postId: TEST_LONGFORM_ID,
@@ -99,7 +107,9 @@ describe("Scheduled Action Handler", () => {
 
   describe("Bulk Delete Longform Posts Action", () => {
     it("should delete multiple scheduled longform posts", async () => {
-      (deleteLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (deleteLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined,
+      );
 
       const postIds = [TEST_LONGFORM_ID, "longform-2", "longform-3"];
       const formData = createActionFormData("bulkDeleteLongForm", {
@@ -122,7 +132,9 @@ describe("Scheduled Action Handler", () => {
   describe("Bulk Delete Mixed Content Action", () => {
     it("should delete mixed posts and longform posts", async () => {
       (deletePost as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
-      (deleteLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (deleteLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined,
+      );
 
       const itemData = [
         { id: "post-1", type: "post" },
@@ -180,7 +192,9 @@ describe("Scheduled Action Handler", () => {
     });
 
     it("should handle only longform posts in mixed delete", async () => {
-      (deleteLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (deleteLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined,
+      );
 
       const itemData = [
         { id: "longform-1", type: "longform" },
@@ -278,4 +292,3 @@ describe("Scheduled Action Handler", () => {
     });
   });
 });
-

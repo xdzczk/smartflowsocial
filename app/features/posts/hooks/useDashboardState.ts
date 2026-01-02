@@ -25,11 +25,16 @@ export function useDashboardState({
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
   const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
 
-  const [selectedLongFormPost, setSelectedLongFormPost] = useState<LongFormPostData | null>(null);
+  const [selectedLongFormPost, setSelectedLongFormPost] =
+    useState<LongFormPostData | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
-  const [postToEdit, setPostToEdit] = useState<PostData | LongFormPostData | null>(null);
-  const [postToReschedule, setPostToReschedule] = useState<PostData | LongFormPostData | null>(null);
+  const [postToEdit, setPostToEdit] = useState<
+    PostData | LongFormPostData | null
+  >(null);
+  const [postToReschedule, setPostToReschedule] = useState<
+    PostData | LongFormPostData | null
+  >(null);
   interface FetcherData {
     success?: boolean;
   }
@@ -46,7 +51,10 @@ export function useDashboardState({
 
       scheduledPosts.forEach((post) => {
         const scheduledFor = post.scheduledFor;
-        const scheduledForValue = typeof scheduledFor === "string" || typeof scheduledFor === "number" ? scheduledFor : "0";
+        const scheduledForValue =
+          typeof scheduledFor === "string" || typeof scheduledFor === "number"
+            ? scheduledFor
+            : "0";
         const utcTime = parseInt(String(scheduledForValue ?? 0)) * 1000;
         const userTime = new Date(utcTime).toLocaleString("en-US", {
           timeZone: tz,
@@ -79,7 +87,10 @@ export function useDashboardState({
   // Clear selected posts after bulk delete
   useEffect(() => {
     const dataRaw = bulkDeleteFetcher.data;
-    const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown } : null;
+    const data =
+      dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+        ? (dataRaw as { success?: unknown })
+        : null;
     if (data && typeof data.success === "boolean" && data.success) {
       setSelectedPosts(new Set());
     }
@@ -90,8 +101,14 @@ export function useDashboardState({
     if (sortConfig.key === "scheduledFor") {
       const aScheduled = a.scheduledFor;
       const bScheduled = b.scheduledFor;
-      const aValue = typeof aScheduled === "string" || typeof aScheduled === "number" ? aScheduled : "0";
-      const bValue = typeof bScheduled === "string" || typeof bScheduled === "number" ? bScheduled : "0";
+      const aValue =
+        typeof aScheduled === "string" || typeof aScheduled === "number"
+          ? aScheduled
+          : "0";
+      const bValue =
+        typeof bScheduled === "string" || typeof bScheduled === "number"
+          ? bScheduled
+          : "0";
       const dateA = parseInt(String(aValue)) * 1000;
       const dateB = parseInt(String(bValue)) * 1000;
       return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
@@ -101,10 +118,8 @@ export function useDashboardState({
     const aValue = a[key] as string | number | undefined;
     const bValue = b[key] as string | number | undefined;
     if (aValue === undefined || bValue === undefined) return 0;
-    if (aValue < bValue)
-      return sortConfig.direction === "asc" ? -1 : 1;
-    if (aValue > bValue)
-      return sortConfig.direction === "asc" ? 1 : -1;
+    if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
+    if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
     return 0;
   });
 
@@ -216,4 +231,3 @@ export function useDashboardState({
     handleModalSuccess,
   };
 }
-

@@ -1,6 +1,6 @@
 /**
  * Post Model - Query Operations (Reads)
- * 
+ *
  * This module provides read-only database query operations for Post entities.
  * All functions in this file perform SELECT operations only.
  */
@@ -454,12 +454,10 @@ export async function getLastPostTimeForQueue({
   } catch (error) {
     logError(error instanceof Error ? error : new Error(String(error)), {
       postId: "id" in lastPost ? String(lastPost.id) : "unknown",
-      scheduledFor: "scheduledFor" in lastPost ? String(lastPost.scheduledFor) : "unknown",
+      scheduledFor:
+        "scheduledFor" in lastPost ? String(lastPost.scheduledFor) : "unknown",
       message: "Error parsing scheduledFor",
     });
     return null;
   }
 }
-
-
-

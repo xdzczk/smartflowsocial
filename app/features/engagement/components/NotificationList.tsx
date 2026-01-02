@@ -2,9 +2,7 @@ import { Link } from "@remix-run/react";
 
 import { formatDate } from "~/lib/helpers";
 
-import type {
-  Notification,
-} from "../engagement.server";
+import type { Notification } from "../engagement.server";
 import type {
   NotificationReply,
   NotificationZap,
@@ -130,9 +128,11 @@ function ReplyNotification({
             <span className="font-semibold text-gray-900 dark:text-gray-100">
               {displayName}
             </span>
-            {notification.authorNip05 ? <span className="text-xs text-gray-500 dark:text-gray-400">
-              @{notification.authorNip05.split("@")[0]}
-            </span> : null}
+            {notification.authorNip05 ? (
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                @{notification.authorNip05.split("@")[0]}
+              </span>
+            ) : null}
             <span className="text-sm text-gray-500 dark:text-gray-400">
               replied
             </span>
@@ -144,7 +144,9 @@ function ReplyNotification({
 
           <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
             <span>
-              {formatDate(new Date(notification.createdAt * 1000).toISOString())}
+              {formatDate(
+                new Date(notification.createdAt * 1000).toISOString(),
+              )}
             </span>
             <Link
               to={`https://primal.net/e/${String(notification.eventId)}`}
@@ -171,8 +173,8 @@ function ZapNotification({
   const displayName =
     notification.senderName ??
     notification.senderPubkey.substring(0, 8) +
-    "..." +
-    notification.senderPubkey.slice(-4);
+      "..." +
+      notification.senderPubkey.slice(-4);
 
   return (
     <div className="bg-white p-4 transition-colors hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700/50">
@@ -205,9 +207,11 @@ function ZapNotification({
             <span className="font-semibold text-gray-900 dark:text-gray-100">
               {displayName}
             </span>
-            {notification.senderNip05 ? <span className="text-xs text-gray-500 dark:text-gray-400">
-              @{notification.senderNip05.split("@")[0]}
-            </span> : null}
+            {notification.senderNip05 ? (
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                @{notification.senderNip05.split("@")[0]}
+              </span>
+            ) : null}
             <span className="text-sm text-gray-500 dark:text-gray-400">
               zapped you
             </span>
@@ -216,13 +220,17 @@ function ZapNotification({
             </span>
           </div>
 
-          {notification.content ? <p className="mb-2 whitespace-pre-wrap break-words text-sm text-gray-700 dark:text-gray-300">
-            {notification.content}
-          </p> : null}
+          {notification.content ? (
+            <p className="mb-2 whitespace-pre-wrap break-words text-sm text-gray-700 dark:text-gray-300">
+              {notification.content}
+            </p>
+          ) : null}
 
           <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
             <span>
-              {formatDate(new Date(notification.createdAt * 1000).toISOString())}
+              {formatDate(
+                new Date(notification.createdAt * 1000).toISOString(),
+              )}
             </span>
             <Link
               to={`https://primal.net/e/${String(notification.originalEventId)}`}
@@ -287,9 +295,11 @@ function MentionNotification({
             <span className="font-semibold text-gray-900 dark:text-gray-100">
               {displayName}
             </span>
-            {notification.authorNip05 ? <span className="text-xs text-gray-500 dark:text-gray-400">
-              @{notification.authorNip05.split("@")[0]}
-            </span> : null}
+            {notification.authorNip05 ? (
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                @{notification.authorNip05.split("@")[0]}
+              </span>
+            ) : null}
             <span className="text-sm text-gray-500 dark:text-gray-400">
               mentioned you
             </span>
@@ -301,7 +311,9 @@ function MentionNotification({
 
           <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
             <span>
-              {formatDate(new Date(notification.createdAt * 1000).toISOString())}
+              {formatDate(
+                new Date(notification.createdAt * 1000).toISOString(),
+              )}
             </span>
             <Link
               to={`https://primal.net/e/${String(notification.eventId)}`}

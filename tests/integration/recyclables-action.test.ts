@@ -1,6 +1,6 @@
 /**
  * Integration tests for recyclables action handler
- * 
+ *
  * Tests app/routes/dashboard.recyclables.tsx action
  * Tests handleRecyclablePostAction function
  */
@@ -63,8 +63,22 @@ describe("Recyclables Action Handler", () => {
 
       const result = await handleRecyclablePostAction(formData, TEST_USER_ID);
       const dataRaw: unknown = await result.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; repostData?: unknown; scheduledRepostData?: unknown; quotePostData?: unknown; repostEventData?: unknown; originalPost?: unknown; error?: unknown } : {};
-      const success = typeof data.success === "boolean" ? data.success : data.success === true || data.success === 1;
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              success?: unknown;
+              repostData?: unknown;
+              scheduledRepostData?: unknown;
+              quotePostData?: unknown;
+              repostEventData?: unknown;
+              originalPost?: unknown;
+              error?: unknown;
+            })
+          : {};
+      const success =
+        typeof data.success === "boolean"
+          ? data.success
+          : data.success === true || data.success === 1;
 
       expect(deletePost).toHaveBeenCalledWith({
         id: TEST_POST_ID,
@@ -85,8 +99,22 @@ describe("Recyclables Action Handler", () => {
 
       const result = await handleRecyclablePostAction(formData, TEST_USER_ID);
       const dataRaw: unknown = await result.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; repostData?: unknown; scheduledRepostData?: unknown; quotePostData?: unknown; repostEventData?: unknown; originalPost?: unknown; error?: unknown } : {};
-      const success = typeof data.success === "boolean" ? data.success : data.success === true || data.success === 1;
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              success?: unknown;
+              repostData?: unknown;
+              scheduledRepostData?: unknown;
+              quotePostData?: unknown;
+              repostEventData?: unknown;
+              originalPost?: unknown;
+              error?: unknown;
+            })
+          : {};
+      const success =
+        typeof data.success === "boolean"
+          ? data.success
+          : data.success === true || data.success === 1;
 
       expect(deletePost).toHaveBeenCalledTimes(3);
       postIds.forEach((id) => {
@@ -118,7 +146,18 @@ describe("Recyclables Action Handler", () => {
 
       const result = await handleRecyclablePostAction(formData, TEST_USER_ID);
       const dataRaw: unknown = await result.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; repostData?: unknown; scheduledRepostData?: unknown; quotePostData?: unknown; repostEventData?: unknown; originalPost?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              success?: unknown;
+              repostData?: unknown;
+              scheduledRepostData?: unknown;
+              quotePostData?: unknown;
+              repostEventData?: unknown;
+              originalPost?: unknown;
+              error?: unknown;
+            })
+          : {};
       const repostData = Array.isArray(data.repostData) ? data.repostData : [];
 
       expect(getPostsByIds).toHaveBeenCalledWith({
@@ -154,8 +193,21 @@ describe("Recyclables Action Handler", () => {
 
       const result = await handleRecyclablePostAction(formData, TEST_USER_ID);
       const dataRaw: unknown = await result.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; repostData?: unknown; scheduledRepostData?: unknown; quotePostData?: unknown; repostEventData?: unknown; originalPost?: unknown; error?: unknown } : {};
-      const scheduledRepostData = Array.isArray(data.scheduledRepostData) ? data.scheduledRepostData : [];
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              success?: unknown;
+              repostData?: unknown;
+              scheduledRepostData?: unknown;
+              quotePostData?: unknown;
+              repostEventData?: unknown;
+              originalPost?: unknown;
+              error?: unknown;
+            })
+          : {};
+      const scheduledRepostData = Array.isArray(data.scheduledRepostData)
+        ? data.scheduledRepostData
+        : [];
 
       // Dates are serialized to strings in JSON responses
       const expectedPosts = mockPosts.map((post) => ({
@@ -188,10 +240,28 @@ describe("Recyclables Action Handler", () => {
 
       const result = await handleRecyclablePostAction(formData, TEST_USER_ID);
       const dataRaw: unknown = await result.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; repostData?: unknown; scheduledRepostData?: unknown; quotePostData?: unknown; repostEventData?: unknown; originalPost?: unknown; error?: unknown } : {};
-      const quotePostData = Array.isArray(data.quotePostData) ? data.quotePostData : [];
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              success?: unknown;
+              repostData?: unknown;
+              scheduledRepostData?: unknown;
+              quotePostData?: unknown;
+              repostEventData?: unknown;
+              originalPost?: unknown;
+              error?: unknown;
+            })
+          : {};
+      const quotePostData = Array.isArray(data.quotePostData)
+        ? data.quotePostData
+        : [];
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const firstQuotePost = quotePostData[0] && typeof quotePostData[0] === "object" && !Array.isArray(quotePostData[0]) ? quotePostData[0] : {};
+      const firstQuotePost =
+        quotePostData[0] &&
+        typeof quotePostData[0] === "object" &&
+        !Array.isArray(quotePostData[0])
+          ? quotePostData[0]
+          : {};
 
       expect(quotePostData).toHaveLength(2);
       expect(firstQuotePost).toMatchObject({
@@ -227,9 +297,30 @@ describe("Recyclables Action Handler", () => {
 
       const result = await handleRecyclablePostAction(formData, TEST_USER_ID);
       const dataRaw: unknown = await result.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; repostData?: unknown; scheduledRepostData?: unknown; quotePostData?: unknown; repostEventData?: unknown; originalPost?: unknown; error?: unknown } : {};
-      const repostEventData = data.repostEventData && typeof data.repostEventData === "object" && !Array.isArray(data.repostEventData) ? data.repostEventData : {};
-      const originalPost = data.originalPost && typeof data.originalPost === "object" && !Array.isArray(data.originalPost) ? data.originalPost : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              success?: unknown;
+              repostData?: unknown;
+              scheduledRepostData?: unknown;
+              quotePostData?: unknown;
+              repostEventData?: unknown;
+              originalPost?: unknown;
+              error?: unknown;
+            })
+          : {};
+      const repostEventData =
+        data.repostEventData &&
+        typeof data.repostEventData === "object" &&
+        !Array.isArray(data.repostEventData)
+          ? data.repostEventData
+          : {};
+      const originalPost =
+        data.originalPost &&
+        typeof data.originalPost === "object" &&
+        !Array.isArray(data.originalPost)
+          ? data.originalPost
+          : {};
 
       expect(repostEventData).toMatchObject({
         kind: 6,
@@ -284,10 +375,28 @@ describe("Recyclables Action Handler", () => {
 
       const result = await handleRecyclablePostAction(formData, TEST_USER_ID);
       const dataRaw: unknown = await result.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; repostData?: unknown; scheduledRepostData?: unknown; quotePostData?: unknown; repostEventData?: unknown; originalPost?: unknown; error?: unknown } : {};
-      const quotePostData = Array.isArray(data.quotePostData) ? data.quotePostData : [];
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              success?: unknown;
+              repostData?: unknown;
+              scheduledRepostData?: unknown;
+              quotePostData?: unknown;
+              repostEventData?: unknown;
+              originalPost?: unknown;
+              error?: unknown;
+            })
+          : {};
+      const quotePostData = Array.isArray(data.quotePostData)
+        ? data.quotePostData
+        : [];
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const firstQuotePost = quotePostData[0] && typeof quotePostData[0] === "object" && !Array.isArray(quotePostData[0]) ? quotePostData[0] : {};
+      const firstQuotePost =
+        quotePostData[0] &&
+        typeof quotePostData[0] === "object" &&
+        !Array.isArray(quotePostData[0])
+          ? quotePostData[0]
+          : {};
 
       expect(quotePostData).toHaveLength(1);
       expect(firstQuotePost).toMatchObject({
@@ -322,7 +431,18 @@ describe("Recyclables Action Handler", () => {
 
       const result = await handleRecyclablePostAction(formData, TEST_USER_ID);
       const dataRaw: unknown = await result.json();
-      const data = dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw) ? dataRaw as { success?: unknown; repostData?: unknown; scheduledRepostData?: unknown; quotePostData?: unknown; repostEventData?: unknown; originalPost?: unknown; error?: unknown } : {};
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              success?: unknown;
+              repostData?: unknown;
+              scheduledRepostData?: unknown;
+              quotePostData?: unknown;
+              repostEventData?: unknown;
+              originalPost?: unknown;
+              error?: unknown;
+            })
+          : {};
       const error = typeof data.error === "string" ? data.error : "";
 
       expect(result.status).toBe(400);
@@ -330,4 +450,3 @@ describe("Recyclables Action Handler", () => {
     });
   });
 });
-

@@ -19,12 +19,14 @@ Learn how to create and configure queues to organize your posts and automate sch
 ## What is a Queue?
 
 **A queue is a way to:**
+
 - Organize posts by topic or type
 - Automate scheduling with rules
 - Maintain consistent posting times
 - Group related content together
 
 **Example queues:**
+
 - "Bitcoin News" - Daily Bitcoin updates
 - "Memes" - Fun content
 - "Product Updates" - Company announcements
@@ -53,11 +55,13 @@ Learn how to create and configure queues to organize your posts and automate sch
 **Fill in basic information:**
 
 1. **Name:**
+
    - Enter descriptive name
    - Example: "Bitcoin News"
    - This appears in dropdowns
 
 2. **Description (Optional):**
+
    - Add description
    - Example: "Daily Bitcoin and Lightning news"
    - Helps remember queue purpose
@@ -78,11 +82,13 @@ Learn how to create and configure queues to organize your posts and automate sch
 **Best for:** Regular, consistent posting
 
 **How it works:**
+
 - Posts every X hours
 - Calculated from last post time
 - Example: Every 4 hours
 
 **Configuration:**
+
 1. **Select "Interval"**
 2. **Set interval:**
    - Hours between posts
@@ -92,6 +98,7 @@ Learn how to create and configure queues to organize your posts and automate sch
    - Example: 9:00 AM
 
 **Example:**
+
 - Interval: 4 hours
 - First post: 9:00 AM
 - Next posts: 1:00 PM, 5:00 PM, 9:00 PM
@@ -101,10 +108,12 @@ Learn how to create and configure queues to organize your posts and automate sch
 **Best for:** Specific posting times
 
 **How it works:**
+
 - Posts at exact times daily
 - Example: 9am, 2pm, 7pm
 
 **Configuration:**
+
 1. **Select "Fixed Slots"**
 2. **Add time slots:**
    - Click "Add Slot"
@@ -114,6 +123,7 @@ Learn how to create and configure queues to organize your posts and automate sch
    - Click "Remove" on slot
 
 **Example:**
+
 - Slot 1: 9:00 AM
 - Slot 2: 2:00 PM
 - Slot 3: 7:00 PM
@@ -131,6 +141,7 @@ Learn how to create and configure queues to organize your posts and automate sch
 3. **Preset automatically applied** to posts in this queue
 
 **Benefits:**
+
 - Consistent hashtags
 - Saves time
 - Better organization
@@ -142,6 +153,7 @@ Learn how to create and configure queues to organize your posts and automate sch
 ## Step 6: Save Queue
 
 1. **Review settings:**
+
    - Name, description, color
    - Schedule type and rules
    - Hashtag preset
@@ -220,6 +232,7 @@ Learn how to create and configure queues to organize your posts and automate sch
 ### Naming Conventions
 
 **Use clear, descriptive names:**
+
 - "Bitcoin News" ✅
 - "Memes" ✅
 - "Product Updates" ✅
@@ -228,6 +241,7 @@ Learn how to create and configure queues to organize your posts and automate sch
 ### Organization
 
 **Group by:**
+
 - **Topic** - Bitcoin, Lightning, Nostr
 - **Content Type** - News, Memes, Educational
 - **Frequency** - Daily, Weekly, Monthly
@@ -236,6 +250,7 @@ Learn how to create and configure queues to organize your posts and automate sch
 ### Schedule Planning
 
 **Consider:**
+
 - **Audience activity** - When are they online?
 - **Content type** - News vs. evergreen
 - **Frequency** - How often to post?
@@ -244,6 +259,7 @@ Learn how to create and configure queues to organize your posts and automate sch
 ### Multiple Queues
 
 **Create queues for:**
+
 - Different topics
 - Different posting frequencies
 - Different content types
@@ -258,6 +274,7 @@ Learn how to create and configure queues to organize your posts and automate sch
 **Problem:** Queue created but not in dropdown
 
 **Solutions:**
+
 - Refresh page
 - Check queue is enabled
 - Verify plan includes queues
@@ -268,6 +285,7 @@ Learn how to create and configure queues to organize your posts and automate sch
 **Problem:** Posts not scheduling correctly
 
 **Solutions:**
+
 - Check schedule rules
 - Verify timezone settings
 - Review queue configuration
@@ -278,6 +296,7 @@ Learn how to create and configure queues to organize your posts and automate sch
 **Problem:** "Create Queue" button disabled
 
 **Solutions:**
+
 - Check plan includes queues
 - Verify account status
 - Check queue limits
@@ -291,7 +310,7 @@ Learn how to create and configure queues to organize your posts and automate sch
 ✅ How to create a queue  
 ✅ How to configure schedule types  
 ✅ How to assign posts to queues  
-✅ Queue management best practices  
+✅ Queue management best practices
 
 ---
 
@@ -312,4 +331,3 @@ Learn how to create and configure queues to organize your posts and automate sch
 ---
 
 **Next Tutorial:** [Using Hashtag Presets](./using-hashtag-presets.md) → Automate your hashtags
-

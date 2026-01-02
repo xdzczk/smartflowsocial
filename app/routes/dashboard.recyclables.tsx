@@ -77,7 +77,10 @@ export default function RecyclablesPosts() {
   const pagination = "pagination" in data ? data.pagination : undefined;
   const stats = "stats" in data ? data.stats : undefined;
   const user = "user" in data ? data.user : null;
-  const queueTypes = "queueTypes" in data && Array.isArray(data.queueTypes) ? data.queueTypes : [];
+  const queueTypes =
+    "queueTypes" in data && Array.isArray(data.queueTypes)
+      ? data.queueTypes
+      : [];
   const params = useParams();
 
   const deleteFetcher = useFetcher();
@@ -86,35 +89,69 @@ export default function RecyclablesPosts() {
   const individualRepostFetcher = useFetcher<IndividualRepostFetcherData>();
 
   // Type assertions for posts - ensure they match Post[] | PostData[]
-  const typedPosts: PostData[] = Array.isArray(posts) ? posts.map((post: unknown) => {
-    const p = post as { id: string; createdAt?: string | Date; postedAt?: string | Date | null; [key: string]: unknown };
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    const result = {
-      ...p,
-      createdAt: p.createdAt instanceof Date ? p.createdAt : typeof p.createdAt === "string" ? new Date(p.createdAt) : new Date(),
-      postedAt: p.postedAt instanceof Date ? p.postedAt : typeof p.postedAt === "string" ? new Date(p.postedAt) : p.postedAt === null ? null : null,
-    } as PostData;
-    return result;
-  }) : [];
-  
+  const typedPosts: PostData[] = Array.isArray(posts)
+    ? posts.map((post: unknown) => {
+        const p = post as {
+          id: string;
+          createdAt?: string | Date;
+          postedAt?: string | Date | null;
+          [key: string]: unknown;
+        };
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+        const result = {
+          ...p,
+          createdAt:
+            p.createdAt instanceof Date
+              ? p.createdAt
+              : typeof p.createdAt === "string"
+                ? new Date(p.createdAt)
+                : new Date(),
+          postedAt:
+            p.postedAt instanceof Date
+              ? p.postedAt
+              : typeof p.postedAt === "string"
+                ? new Date(p.postedAt)
+                : p.postedAt === null
+                  ? null
+                  : null,
+        } as PostData;
+        return result;
+      })
+    : [];
+
   // Type assertions for stats - ensure it matches Stats type
-  const typedStats: Record<string, {
-    likes?: number;
-    replies?: number;
-    mentions?: number;
-    reposts?: number;
-    zaps?: number;
-    satszapped?: number;
-  }> = stats && typeof stats === "object" && !Array.isArray(stats) ? stats : {};
-  
+  const typedStats: Record<
+    string,
+    {
+      likes?: number;
+      replies?: number;
+      mentions?: number;
+      reposts?: number;
+      zaps?: number;
+      satszapped?: number;
+    }
+  > = stats && typeof stats === "object" && !Array.isArray(stats) ? stats : {};
+
   // Type assertion for pagination
-  const typedPagination = pagination && typeof pagination === "object" && !Array.isArray(pagination) && "total" in pagination && "pages" in pagination && "currentPage" in pagination && "limit" in pagination ? {
-    total: typeof pagination.total === "number" ? pagination.total : 0,
-    pages: typeof pagination.pages === "number" ? pagination.pages : 0,
-    currentPage: typeof pagination.currentPage === "number" ? pagination.currentPage : 1,
-    limit: typeof pagination.limit === "number" ? pagination.limit : 50,
-  } : { total: 0, pages: 0, currentPage: 1, limit: 50 };
-  
+  const typedPagination =
+    pagination &&
+    typeof pagination === "object" &&
+    !Array.isArray(pagination) &&
+    "total" in pagination &&
+    "pages" in pagination &&
+    "currentPage" in pagination &&
+    "limit" in pagination
+      ? {
+          total: typeof pagination.total === "number" ? pagination.total : 0,
+          pages: typeof pagination.pages === "number" ? pagination.pages : 0,
+          currentPage:
+            typeof pagination.currentPage === "number"
+              ? pagination.currentPage
+              : 1,
+          limit: typeof pagination.limit === "number" ? pagination.limit : 50,
+        }
+      : { total: 0, pages: 0, currentPage: 1, limit: 50 };
+
   const {
     sortConfig,
     searchTerm,
@@ -172,30 +209,77 @@ export default function RecyclablesPosts() {
       />
 
       <RecyclablesTable
-        posts={filteredPosts.map((post): { id: string; caption?: string | null; postedAt: Date | null; fileUrl: string[]; signedEvent: { id: string }; queueType?: { name: string; color?: string | null } | null; status?: string } => ({
-          id: post.id,
-          caption: post.caption ?? null,
-          postedAt: post.postedAt instanceof Date ? post.postedAt : typeof post.postedAt === "string" ? new Date(post.postedAt) : post.postedAt === null ? null : null,
-          fileUrl: Array.isArray(post.fileUrl) ? post.fileUrl : post.fileUrl ? [post.fileUrl] : [],
-          signedEvent: post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent ? { id: String(post.signedEvent.id) } : { id: "" },
-          queueType: post.queueType ? { name: post.queueType.name, color: post.queueType.color ?? null } : null,
-          status: typeof post.status === "string" ? post.status : undefined,
-        }))}
+        posts={filteredPosts.map(
+          (
+            post,
+          ): {
+            id: string;
+            caption?: string | null;
+            postedAt: Date | null;
+            fileUrl: string[];
+            signedEvent: { id: string };
+            queueType?: { name: string; color?: string | null } | null;
+            status?: string;
+          } => ({
+            id: post.id,
+            caption: post.caption ?? null,
+            postedAt:
+              post.postedAt instanceof Date
+                ? post.postedAt
+                : typeof post.postedAt === "string"
+                  ? new Date(post.postedAt)
+                  : post.postedAt === null
+                    ? null
+                    : null,
+            fileUrl: Array.isArray(post.fileUrl)
+              ? post.fileUrl
+              : post.fileUrl
+                ? [post.fileUrl]
+                : [],
+            signedEvent:
+              post.signedEvent &&
+              typeof post.signedEvent === "object" &&
+              "id" in post.signedEvent
+                ? { id: String(post.signedEvent.id) }
+                : { id: "" },
+            queueType: post.queueType
+              ? {
+                  name: post.queueType.name,
+                  color: post.queueType.color ?? null,
+                }
+              : null,
+            status: typeof post.status === "string" ? post.status : undefined,
+          }),
+        )}
         stats={typedStats}
         sortConfig={sortConfig}
         selectedPosts={selectedPosts}
         onRequestSort={requestSort}
         onPostClick={(post) => {
           // Find the original PostData from typedPosts array
-          const originalPostData = typedPosts.find(p => p.id === post.id);
+          const originalPostData = typedPosts.find((p) => p.id === post.id);
           if (originalPostData) {
             // Convert to the Post format expected by useRecyclablesState
             // useRecyclablesState expects Post with postedAt: Date | null, fileUrl: string[], signedEvent: { id: string }
             setSelectedPost({
               ...originalPostData,
-              postedAt: originalPostData.postedAt instanceof Date ? originalPostData.postedAt : typeof originalPostData.postedAt === "string" ? new Date(originalPostData.postedAt) : null,
-              fileUrl: Array.isArray(originalPostData.fileUrl) ? originalPostData.fileUrl : typeof originalPostData.fileUrl === "string" ? [originalPostData.fileUrl] : [],
-              signedEvent: originalPostData.signedEvent && typeof originalPostData.signedEvent === "object" && "id" in originalPostData.signedEvent ? { id: String(originalPostData.signedEvent.id) } : { id: "" },
+              postedAt:
+                originalPostData.postedAt instanceof Date
+                  ? originalPostData.postedAt
+                  : typeof originalPostData.postedAt === "string"
+                    ? new Date(originalPostData.postedAt)
+                    : null,
+              fileUrl: Array.isArray(originalPostData.fileUrl)
+                ? originalPostData.fileUrl
+                : typeof originalPostData.fileUrl === "string"
+                  ? [originalPostData.fileUrl]
+                  : [],
+              signedEvent:
+                originalPostData.signedEvent &&
+                typeof originalPostData.signedEvent === "object" &&
+                "id" in originalPostData.signedEvent
+                  ? { id: String(originalPostData.signedEvent.id) }
+                  : { id: "" },
             });
           }
         }}
@@ -210,20 +294,29 @@ export default function RecyclablesPosts() {
 
       {selectedPost ? (
         <PostDetailsModal
-               
-              post={selectedPost as unknown as PostData | CombinedContent}
+          post={selectedPost as unknown as PostData | CombinedContent}
           stats={(() => {
-            const eventId = (selectedPost && typeof selectedPost === "object" && "signedEvent" in selectedPost && selectedPost.signedEvent && typeof selectedPost.signedEvent === "object" && "id" in selectedPost.signedEvent) ? String((selectedPost.signedEvent as { id?: string }).id) : "";
+            const eventId =
+              selectedPost &&
+              typeof selectedPost === "object" &&
+              "signedEvent" in selectedPost &&
+              selectedPost.signedEvent &&
+              typeof selectedPost.signedEvent === "object" &&
+              "id" in selectedPost.signedEvent
+                ? String((selectedPost.signedEvent as { id?: string }).id)
+                : "";
             const statsEntry = typedStats[eventId];
             // Ensure all required properties are present with defaults
-            return statsEntry ? {
-              likes: statsEntry.likes ?? 0,
-              replies: statsEntry.replies ?? 0,
-              mentions: statsEntry.mentions ?? 0,
-              reposts: statsEntry.reposts ?? 0,
-              zaps: statsEntry.zaps ?? 0,
-              satszapped: statsEntry.satszapped ?? 0,
-            } : undefined;
+            return statsEntry
+              ? {
+                  likes: statsEntry.likes ?? 0,
+                  replies: statsEntry.replies ?? 0,
+                  mentions: statsEntry.mentions ?? 0,
+                  reposts: statsEntry.reposts ?? 0,
+                  zaps: statsEntry.zaps ?? 0,
+                  satszapped: statsEntry.satszapped ?? 0,
+                }
+              : undefined;
           })()}
           onClose={() => setSelectedPost(null)}
           showStats={true}

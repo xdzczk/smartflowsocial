@@ -4,7 +4,12 @@ import { prisma } from "~/lib/prisma.server";
 import { blastrRelay } from "~/lib/relays";
 
 export type UserWithHashTagPresets = User & {
-  hashTagPresets: { id: string; name: string; tags: string; description?: string | null }[];
+  hashTagPresets: {
+    id: string;
+    name: string;
+    tags: string;
+    description?: string | null;
+  }[];
 };
 
 interface UpdateUserProfileParams {
@@ -69,7 +74,13 @@ export async function getUserById(
       subscription.Plan.name.toLowerCase() === "founder")
   ) {
     // Add blastrRelay if not already present
-    const userRelays = user && typeof user === "object" && "userRelays" in user && Array.isArray(user.userRelays) ? user.userRelays : [];
+    const userRelays =
+      user &&
+      typeof user === "object" &&
+      "userRelays" in user &&
+      Array.isArray(user.userRelays)
+        ? user.userRelays
+        : [];
     if (!userRelays.includes(blastrRelay)) {
       return {
         ...user,
@@ -91,10 +102,7 @@ export function getUserByNpub(npub: string): Promise<User | null> {
 /**
  * Creates a new user or updates existing user's profile
  */
-export function createUser(
-  npub: string,
-  nostrProfile: string,
-): Promise<User> {
+export function createUser(npub: string, nostrProfile: string): Promise<User> {
   return prisma.user.upsert({
     where: { npub },
     update: { nostrProfile },
@@ -104,10 +112,3 @@ export function createUser(
     },
   });
 }
-
-
-
-
-
-
-

@@ -2,7 +2,7 @@ import { TEST_NPUB } from "./support/nostr-test-keys";
 
 /**
  * Calendar View Tests
- * 
+ *
  * Tests calendar functionality:
  * - Navigate to calendar page
  * - Display calendar view
@@ -47,7 +47,7 @@ describe("Calendar View", () => {
           $body.find(".fc, .calendar, [class*='calendar']").length > 0 ||
           $body.text().match(/\b(Sun|Mon|Tue|Wed|Thu|Fri|Sat)\b/i) !== null ||
           $body.text().toLowerCase().includes("calendar");
-        
+
         expect(hasCalendarView).to.be.true;
       });
     });
@@ -55,20 +55,27 @@ describe("Calendar View", () => {
     it("should display calendar navigation", () => {
       // Wait for calendar to load
       cy.get("body").should("be.visible");
-      
+
       cy.get("body", { timeout: 10000 }).then(($body) => {
         // Look for calendar navigation elements
         const hasNavigation =
-          $body.find('button').filter((_, el) => {
+          $body.find("button").filter((_, el) => {
             const text = Cypress.$(el).text().toLowerCase();
-            return text.includes('prev') || text.includes('next') || text.includes('today');
+            return (
+              text.includes("prev") ||
+              text.includes("next") ||
+              text.includes("today")
+            );
           }).length > 0 ||
           $body.find('[data-testid="calendar-nav"]').length > 0 ||
-          $body.find('.fc-header-toolbar, .calendar-nav, [class*="calendar-nav"]').length > 0 ||
+          $body.find(
+            '.fc-header-toolbar, .calendar-nav, [class*="calendar-nav"]',
+          ).length > 0 ||
           // Calendar might be rendered, so check if calendar container exists
           $body.find('.fc, .calendar, [class*="calendar"]').length > 0;
-        
-        expect(hasNavigation || $body.text().toLowerCase().includes("calendar")).to.be.true;
+
+        expect(hasNavigation || $body.text().toLowerCase().includes("calendar"))
+          .to.be.true;
       });
     });
   });
@@ -76,7 +83,7 @@ describe("Calendar View", () => {
   describe("Queue Type Filtering", () => {
     it("should filter calendar by queue type", () => {
       cy.visitAndCheck("/dashboard/calendar");
-      
+
       cy.get("body").then(($body) => {
         const queueTabs = $body.find('[role="tab"], a[href*="/calendar/"]');
         if (queueTabs.length > 0) {
@@ -87,5 +94,3 @@ describe("Calendar View", () => {
     });
   });
 });
-
-

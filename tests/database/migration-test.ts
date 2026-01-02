@@ -1,6 +1,6 @@
 /**
  * Migration Testing Utilities
- * 
+ *
  * Tests database migrations to ensure they work correctly
  */
 
@@ -19,8 +19,9 @@ describe("Database Migrations", () => {
   });
 
   it("should run migrations successfully", async () => {
-    const testDatabaseUrl = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL;
-    
+    const testDatabaseUrl =
+      process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL;
+
     if (!testDatabaseUrl) {
       throw new Error("TEST_DATABASE_URL or DATABASE_URL must be set");
     }
@@ -30,7 +31,7 @@ describe("Database Migrations", () => {
         env: { ...process.env, DATABASE_URL: testDatabaseUrl },
         stdio: "pipe",
       });
-      
+
       // If we get here, migrations succeeded
       expect(true).toBe(true);
     } catch (error) {
@@ -40,7 +41,7 @@ describe("Database Migrations", () => {
 
   it("should have all required tables", async () => {
     const prisma = getTestPrisma();
-    
+
     // Check that we can query each table
     const tables = [
       "user",
@@ -58,7 +59,9 @@ describe("Database Migrations", () => {
     for (const table of tables) {
       try {
         // Try to query the table (this will fail if table doesn't exist)
-        const prismaModel = prisma[table as keyof typeof prisma] as unknown as { findMany: (args: { take: number }) => Promise<unknown[]> } | undefined;
+        const prismaModel = prisma[table as keyof typeof prisma] as unknown as
+          | { findMany: (args: { take: number }) => Promise<unknown[]> }
+          | undefined;
         if (!prismaModel || typeof prismaModel.findMany !== "function") {
           throw new Error(`Table ${table} does not exist or is not accessible`);
         }
@@ -71,20 +74,20 @@ describe("Database Migrations", () => {
 
   it("should have correct indexes", async () => {
     const prisma = getTestPrisma();
-    
+
     // Test that indexes work (by querying with indexed fields)
     // User has unique index on npub
     const user = await prisma.user.findUnique({
       where: { npub: "test-npub" },
     });
-    
+
     // Should not throw - index exists
     expect(user).toBeNull(); // User doesn't exist, but query should work
   });
 
   it("should handle foreign key constraints", async () => {
     const prisma = getTestPrisma();
-    
+
     // Create user
     const user = await prisma.user.create({
       data: {
@@ -112,7 +115,7 @@ describe("Database Migrations", () => {
 
   it("should handle cascade deletes", async () => {
     const prisma = getTestPrisma();
-    
+
     // Create user
     const user = await prisma.user.create({
       data: {
@@ -138,14 +141,7 @@ describe("Database Migrations", () => {
     const deletedQueue = await prisma.queueType.findUnique({
       where: { id: queue.id },
     });
-    
+
     expect(deletedQueue).toBeNull();
   });
 });
-
-
-
-
-
-
-

@@ -1,6 +1,6 @@
 /**
  * Schedule Interval Handler for Bulk Posts
- * 
+ *
  * Handles applying schedule intervals to all posts
  */
 
@@ -48,16 +48,3 @@ export function handleScheduleIntervalClick(
 
   setPosts(updatedPosts);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

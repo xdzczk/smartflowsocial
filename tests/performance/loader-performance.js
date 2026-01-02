@@ -1,6 +1,6 @@
 /**
  * k6 Load Test: Loader Performance
- * 
+ *
  * Tests performance of Remix loaders under load
  */
 
@@ -27,7 +27,12 @@ export default function () {
   const session = createSession();
 
   // Test: Dashboard Loader
-  const dashboardResponse = authenticatedRequest("GET", "/dashboard", null, session);
+  const dashboardResponse = authenticatedRequest(
+    "GET",
+    "/dashboard",
+    null,
+    session,
+  );
   check(dashboardResponse, {
     "dashboard: status 200": (r) => r.status === 200,
     "dashboard: response time < 2s": (r) => r.timings.duration < 2000,
@@ -65,7 +70,12 @@ export default function () {
   sleep(1);
 
   // Test: Drafts Loader
-  const draftsResponse = authenticatedRequest("GET", "/dashboard/drafts", null, session);
+  const draftsResponse = authenticatedRequest(
+    "GET",
+    "/dashboard/drafts",
+    null,
+    session,
+  );
   check(draftsResponse, {
     "drafts: status 200": (r) => r.status === 200,
     "drafts: response time < 2s": (r) => r.timings.duration < 2000,
@@ -74,7 +84,12 @@ export default function () {
   sleep(1);
 
   // Test: Posted Loader
-  const postedResponse = authenticatedRequest("GET", "/dashboard/posted", null, session);
+  const postedResponse = authenticatedRequest(
+    "GET",
+    "/dashboard/posted",
+    null,
+    session,
+  );
   check(postedResponse, {
     "posted: status 200": (r) => r.status === 200,
     "posted: response time < 2s": (r) => r.timings.duration < 2000,
@@ -82,7 +97,3 @@ export default function () {
 
   sleep(1);
 }
-
-
-
-

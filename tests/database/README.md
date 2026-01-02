@@ -80,7 +80,7 @@ import { withDatabase, fixtures } from "~/tests/database/database-test-helpers";
 
 it("should get user with queues", async () => {
   const testFixtures = fixtures.userWithQueues();
-  
+
   await withDatabase(async (prisma) => {
     const user = await prisma.user.findUnique({
       where: { id: testFixtures.users![0].id },
@@ -95,7 +95,10 @@ it("should get user with queues", async () => {
 ### Using describeDatabase Helper
 
 ```typescript
-import { describeDatabase, withDatabase } from "~/tests/database/database-test-helpers";
+import {
+  describeDatabase,
+  withDatabase,
+} from "~/tests/database/database-test-helpers";
 
 describeDatabase("Post Model", () => {
   it("should create a post", async () => {
@@ -163,28 +166,31 @@ Each test runs in a database transaction:
 import { fixtures } from "~/tests/database/database-test-helpers";
 
 // Single user
-fixtures.singleUser()
+fixtures.singleUser();
 
 // User with queue types
-fixtures.userWithQueues()
+fixtures.userWithQueues();
 
 // User with posts
-fixtures.userWithPosts()
+fixtures.userWithPosts();
 
 // User with scheduled posts
-fixtures.userWithScheduledPosts()
+fixtures.userWithScheduledPosts();
 
 // User with hashtag presets
-fixtures.userWithHashtagPresets()
+fixtures.userWithHashtagPresets();
 
 // User with payments
-fixtures.userWithPayments()
+fixtures.userWithPayments();
 ```
 
 ### Creating Custom Fixtures
 
 ```typescript
-import { createMinimalFixtures, createCompleteFixtures } from "~/tests/database/database-test-helpers";
+import {
+  createMinimalFixtures,
+  createCompleteFixtures,
+} from "~/tests/database/database-test-helpers";
 
 const customFixtures = {
   users: [userFactory.basic({ id: "custom-user" })],
@@ -284,6 +290,7 @@ Ensure PostgreSQL is running and accessible.
 ### "Migration failed"
 
 Run migrations manually:
+
 ```bash
 TEST_DATABASE_URL=postgresql://... npx prisma migrate deploy
 ```
@@ -291,10 +298,14 @@ TEST_DATABASE_URL=postgresql://... npx prisma migrate deploy
 ### "Transaction timeout"
 
 Increase transaction timeout:
+
 ```typescript
-await prisma.$transaction(async (tx) => {
-  // Test code
-}, { timeout: 60000 }); // 60 seconds
+await prisma.$transaction(
+  async (tx) => {
+    // Test code
+  },
+  { timeout: 60000 },
+); // 60 seconds
 ```
 
 ## When to Use Database Tests
@@ -319,7 +330,3 @@ await prisma.$transaction(async (tx) => {
 - [Test Strategy](../docs/TEST_STRATEGY.md) - Overall testing strategy
 - [Testing Patterns](../docs/TESTING_PATTERNS.md) - Common testing patterns
 - [Prisma Testing Guide](https://www.prisma.io/docs/guides/testing) - Prisma testing best practices
-
-
-
-

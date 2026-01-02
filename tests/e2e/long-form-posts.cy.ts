@@ -2,7 +2,7 @@ import { TEST_NPUB } from "./support/nostr-test-keys";
 
 /**
  * Long Form Posts Tests
- * 
+ *
  * Tests long form post functionality:
  * - Navigate to new long form post page
  * - Create long form post
@@ -25,7 +25,10 @@ describe("Long Form Posts", () => {
         .first()
         .should("exist")
         .click({ force: true });
-      cy.location("pathname", { timeout: 10000 }).should("include", "newlongformpost");
+      cy.location("pathname", { timeout: 10000 }).should(
+        "include",
+        "newlongformpost",
+      );
     });
 
     it("should load new long form post page directly", () => {
@@ -38,9 +41,9 @@ describe("Long Form Posts", () => {
       cy.visitAndCheck("/dashboard/newlongformpost");
       cy.get("body").then(($body) => {
         const hasEditor =
-          $body.find('[data-testid="editor"], .editor, [class*="editor"]').length > 0 ||
-          $body.find("textarea, [contenteditable]").length > 0;
-        
+          $body.find('[data-testid="editor"], .editor, [class*="editor"]')
+            .length > 0 || $body.find("textarea, [contenteditable]").length > 0;
+
         expect(hasEditor).to.be.true;
       });
     });
@@ -53,11 +56,10 @@ describe("Long Form Posts", () => {
         // Check for long form posts (may or may not be present)
         $body.find('[data-testid="longform-post"]').length > 0 ||
           $body.text().toLowerCase().includes("long form");
-        
+
         // May or may not have posts, but page should load
         expect($body.length).to.be.greaterThan(0);
       });
     });
   });
 });
-

@@ -185,8 +185,8 @@ export function MediaThumbnail({
 
   return (
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- onClick is optional, role and tabIndex are conditionally set
-    <div 
-      className="group relative cursor-pointer" 
+    <div
+      className="group relative cursor-pointer"
       onClick={onClick}
       onKeyDown={onClick ? handleKeyDown : undefined}
       {...(onClick && { role: "button", tabIndex: 0 })}

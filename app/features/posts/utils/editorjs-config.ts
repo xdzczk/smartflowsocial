@@ -15,7 +15,11 @@ export async function createEditorJSToolsConfig(uploadProvider: string | null) {
 
   return {
     header: {
-      class: Header as unknown as new (config?: { placeholder?: string; levels?: number[]; defaultLevel?: number }) => unknown,
+      class: Header as unknown as new (config?: {
+        placeholder?: string;
+        levels?: number[];
+        defaultLevel?: number;
+      }) => unknown,
       config: {
         placeholder: "Enter a header",
         levels: [2, 3, 4],
@@ -121,7 +125,8 @@ async function createImageUploadHandler(uploadProvider: string | null) {
               url: uploadResult.file.url,
               size: uploadResult.file.size || file.size,
               name: uploadResult.file.name || file.name,
-              extension: uploadResult.file.extension || file.name.split(".").pop(),
+              extension:
+                uploadResult.file.extension || file.name.split(".").pop(),
             },
           };
         } else {
@@ -142,13 +147,10 @@ async function createImageUploadHandler(uploadProvider: string | null) {
         const formData = new FormData();
         formData.append("image", file);
 
-        const response = await fetch(
-          "/api/upload-editorjs-image",
-          {
-            method: "POST",
-            body: formData,
-          },
-        );
+        const response = await fetch("/api/upload-editorjs-image", {
+          method: "POST",
+          body: formData,
+        });
 
         if (!response.ok) {
           const errorText = await response.text();
@@ -168,7 +170,12 @@ async function createImageUploadHandler(uploadProvider: string | null) {
 
         const result = (await response.json()) as {
           success?: number;
-          file?: { url?: string; size?: number; name?: string; extension?: string };
+          file?: {
+            url?: string;
+            size?: number;
+            name?: string;
+            extension?: string;
+          };
           error?: string;
         };
         logClientError(
@@ -199,9 +206,7 @@ async function createImageUploadHandler(uploadProvider: string | null) {
               url: result.file.url,
               size: result.file.size ?? file.size,
               name: result.file.name ?? file.name,
-              extension:
-                result.file.extension ??
-                file.name.split(".").pop(),
+              extension: result.file.extension ?? file.name.split(".").pop(),
             },
           };
         } else {
@@ -220,15 +225,15 @@ async function createImageUploadHandler(uploadProvider: string | null) {
       }
     } catch (error) {
       const { handleAsyncError } = await import("~/lib/error-handler.client");
-      handleAsyncError(error, {
-        component: "useLongFormEditor",
-        action: "uploadImage",
-      }, false); // Don't show toast, let EditorJS handle it
+      handleAsyncError(
+        error,
+        {
+          component: "useLongFormEditor",
+          action: "uploadImage",
+        },
+        false,
+      ); // Don't show toast, let EditorJS handle it
       throw error;
     }
   };
 }
-
-
-
-

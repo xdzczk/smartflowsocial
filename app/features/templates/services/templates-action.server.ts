@@ -5,10 +5,7 @@
 
 import { AssetType } from "@prisma/client";
 
-import {
-  createAsset,
-  deleteAsset,
-} from "~/models/asset.server";
+import { createAsset, deleteAsset } from "~/models/asset.server";
 import { deleteTemplate, getTemplates } from "~/models/template.server";
 
 export async function handleTemplatesAction(
@@ -58,14 +55,22 @@ export async function handleTemplatesAction(
   ) {
     const title = formData.get("title") as string;
     const uploadResultRaw = formData.get("uploadResult");
-    const uploadResultParsed: unknown = typeof uploadResultRaw === "string" ? JSON.parse(uploadResultRaw) : null;
-    
-    if (!uploadResultParsed || typeof uploadResultParsed !== "object" || Array.isArray(uploadResultParsed)) {
+    const uploadResultParsed: unknown =
+      typeof uploadResultRaw === "string" ? JSON.parse(uploadResultRaw) : null;
+
+    if (
+      !uploadResultParsed ||
+      typeof uploadResultParsed !== "object" ||
+      Array.isArray(uploadResultParsed)
+    ) {
       return { error: "Invalid upload result format" };
     }
-    
-    const uploadResult = uploadResultParsed as unknown as { success?: unknown; file?: { url?: string; mimeType?: string } };
-    
+
+    const uploadResult = uploadResultParsed as unknown as {
+      success?: unknown;
+      file?: { url?: string; mimeType?: string };
+    };
+
     const tagsString = formData.get("tags") as string;
     const tags = tagsString
       ? tagsString
@@ -84,8 +89,12 @@ export async function handleTemplatesAction(
     }
 
     // Determine asset type based on file URL extension or mime type
-    let assetType: typeof AssetType.IMAGE | typeof AssetType.VIDEO = AssetType.IMAGE;
-    const mimeType = typeof uploadResult.file.mimeType === "string" ? uploadResult.file.mimeType : "";
+    let assetType: typeof AssetType.IMAGE | typeof AssetType.VIDEO =
+      AssetType.IMAGE;
+    const mimeType =
+      typeof uploadResult.file.mimeType === "string"
+        ? uploadResult.file.mimeType
+        : "";
     const lower = fileUrl.toLowerCase();
     const videoExtensions = [
       ".mp4",
@@ -120,13 +129,20 @@ export async function handleTemplatesAction(
     _action === "bulk_create_media_assets"
   ) {
     const uploadResultsRaw = formData.get("uploadResults");
-    const uploadResultsParsed: unknown = typeof uploadResultsRaw === "string" ? JSON.parse(uploadResultsRaw) : null;
-    
+    const uploadResultsParsed: unknown =
+      typeof uploadResultsRaw === "string"
+        ? JSON.parse(uploadResultsRaw)
+        : null;
+
     if (!Array.isArray(uploadResultsParsed)) {
       return { error: "Invalid upload results format" };
     }
-    
-    const uploadResults = uploadResultsParsed as unknown as { success?: unknown; file?: { url?: string; mimeType?: string } | undefined; error?: string }[];
+
+    const uploadResults = uploadResultsParsed as unknown as {
+      success?: unknown;
+      file?: { url?: string; mimeType?: string } | undefined;
+      error?: string;
+    }[];
     const titles = formData.getAll("titles") as string[];
     const tagsInputs = formData.getAll("tags") as string[];
 
@@ -135,9 +151,7 @@ export async function handleTemplatesAction(
     }
 
     // Check for failed uploads
-    const failedUploads = uploadResults.filter(
-      (result) => !result.success,
-    );
+    const failedUploads = uploadResults.filter((result) => !result.success);
     if (failedUploads.length > 0) {
       return { error: "Some uploads failed" };
     }
@@ -151,10 +165,14 @@ export async function handleTemplatesAction(
         if (typeof fileUrl !== "string") {
           throw new Error("Invalid file URL");
         }
-        const mimeType = typeof uploadResult.file.mimeType === "string" ? uploadResult.file.mimeType : "";
+        const mimeType =
+          typeof uploadResult.file.mimeType === "string"
+            ? uploadResult.file.mimeType
+            : "";
 
         // Determine asset type based on file URL extension or mime type
-        let assetType: typeof AssetType.IMAGE | typeof AssetType.VIDEO = AssetType.IMAGE;
+        let assetType: typeof AssetType.IMAGE | typeof AssetType.VIDEO =
+          AssetType.IMAGE;
         const lower = fileUrl.toLowerCase();
         const videoExtensions = [
           ".mp4",
@@ -250,4 +268,3 @@ export async function handleTemplatesAction(
 
   return { error: "Invalid action" };
 }
-

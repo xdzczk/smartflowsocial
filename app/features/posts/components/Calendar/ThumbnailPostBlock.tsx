@@ -1,10 +1,14 @@
-
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { isVideoFile } from "~/lib/helpers";
 
 import { PostBadges } from "./PostBadges";
 import type { PostBlockBaseProps, QueueColorStyle } from "./PostBlock.types";
-import { getPostPreview, getFirstImage, getStatusColor, getDisplayTime } from "./PostBlock.utils";
+import {
+  getPostPreview,
+  getFirstImage,
+  getStatusColor,
+  getDisplayTime,
+} from "./PostBlock.utils";
 import { PostIcon } from "./PostIcon";
 interface ThumbnailPostBlockProps extends PostBlockBaseProps {
   queueColorStyle: QueueColorStyle | null;
@@ -26,7 +30,11 @@ export function ThumbnailPostBlock({
 }: ThumbnailPostBlockProps) {
   const firstImage = getFirstImage(post, isLongform ?? false);
   const postPreview = getPostPreview(post, isLongform ?? false);
-  const displayTime = getDisplayTime(post, isLongform ?? false, isPast ?? false);
+  const displayTime = getDisplayTime(
+    post,
+    isLongform ?? false,
+    isPast ?? false,
+  );
 
   return (
     <div
@@ -69,11 +77,3 @@ export function ThumbnailPostBlock({
     </div>
   );
 }
-
-
-
-
-
-
-
-

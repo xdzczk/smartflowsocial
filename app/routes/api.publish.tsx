@@ -2,24 +2,23 @@ import { json } from "@remix-run/node";
 import type { ActionFunctionArgs } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
-import {
-  ValidationError,
-  ExternalServiceError,
-} from "~/lib/errors";
+import { ValidationError, ExternalServiceError } from "~/lib/errors";
 
-type AssertFunction = (condition: boolean, message: string, context?: Record<string, unknown>) => asserts condition;
+type AssertFunction = (
+  condition: boolean,
+  message: string,
+  context?: Record<string, unknown>,
+) => asserts condition;
 
 export async function action({ request }: ActionFunctionArgs) {
   try {
     const errorHandler = await import("~/lib/error-handler.server");
     const assert: AssertFunction = errorHandler.assert;
-    
+
     // Validate HTTP method
-    assert(
-      request.method === "POST",
-      "Method not allowed",
-      { method: request.method },
-    );
+    assert(request.method === "POST", "Method not allowed", {
+      method: request.method,
+    });
 
     // Ensure user is authenticated
     await requireUserId(request);
@@ -34,7 +33,10 @@ export async function action({ request }: ActionFunctionArgs) {
       });
     }
 
-    const body = bodyRaw && typeof bodyRaw === "object" && bodyRaw !== null ? bodyRaw as { relays?: unknown; event?: unknown } : {};
+    const body =
+      bodyRaw && typeof bodyRaw === "object" && bodyRaw !== null
+        ? (bodyRaw as { relays?: unknown; event?: unknown })
+        : {};
     const { relays, event } = body;
 
     // Validate event
@@ -81,7 +83,9 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     if (!publishResponse.ok) {
-      const errorText = await publishResponse.text().catch(() => "Unknown error");
+      const errorText = await publishResponse
+        .text()
+        .catch(() => "Unknown error");
       throw new ExternalServiceError(
         `Failed to publish to nostr: ${publishResponse.status}`,
         publishResponse.status >= 500 ? 502 : publishResponse.status,
@@ -99,7 +103,11 @@ export async function action({ request }: ActionFunctionArgs) {
     let result: unknown;
 
     try {
-      if (contentType && typeof contentType === "string" && contentType.includes("application/json")) {
+      if (
+        contentType &&
+        typeof contentType === "string" &&
+        contentType.includes("application/json")
+      ) {
         const jsonResult: unknown = await publishResponse.json();
         result = jsonResult;
       } else {

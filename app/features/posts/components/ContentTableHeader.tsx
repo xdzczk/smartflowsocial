@@ -92,7 +92,3 @@ export function ContentTableHeader({
     </thead>
   );
 }
-
-
-
-

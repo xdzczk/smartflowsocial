@@ -1,7 +1,14 @@
 import { handleErrorSafely } from "~/lib/error-handler.client";
 
-import type { CalendarPost, QueueColorStyle, QueueType } from "./PostBlock.types";
-export function getPostPreview(post: CalendarPost, isLongform: boolean): string {
+import type {
+  CalendarPost,
+  QueueColorStyle,
+  QueueType,
+} from "./PostBlock.types";
+export function getPostPreview(
+  post: CalendarPost,
+  isLongform: boolean,
+): string {
   if (isLongform) {
     if (post.title) {
       return post.title.length > 30
@@ -31,7 +38,10 @@ export function getPostPreview(post: CalendarPost, isLongform: boolean): string 
   return "Text post";
 }
 
-export function getFirstImage(post: CalendarPost, isLongform: boolean): string | null {
+export function getFirstImage(
+  post: CalendarPost,
+  isLongform: boolean,
+): string | null {
   if (isLongform) {
     return post.image ?? null;
   }
@@ -63,7 +73,11 @@ export function getFirstImage(post: CalendarPost, isLongform: boolean): string |
   return null;
 }
 
-export function getStatusColor(post: CalendarPost, isLongform: boolean, isPast: boolean): string {
+export function getStatusColor(
+  post: CalendarPost,
+  isLongform: boolean,
+  isPast: boolean,
+): string {
   // Past posts get grayed out styling regardless of other conditions
   if (isPast) {
     return "bg-gray-50 text-gray-400 dark:bg-gray-800 dark:text-gray-600 opacity-60";
@@ -152,9 +166,3 @@ export function getDisplayTime(
       : new Date(Number(post.scheduledFor) * 1000);
   }
 }
-
-
-
-
-
-

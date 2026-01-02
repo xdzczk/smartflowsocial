@@ -72,8 +72,10 @@ export default function LongFormPreviewModal({
             break;
           }
           case "quote": {
-            const text = typeof block.data.text === "string" ? block.data.text : "";
-            const caption = typeof block.data.caption === "string" ? block.data.caption : "";
+            const text =
+              typeof block.data.text === "string" ? block.data.text : "";
+            const caption =
+              typeof block.data.caption === "string" ? block.data.caption : "";
             html += `<blockquote class="border-l-4 border-blue-500 pl-4 py-2 mb-4 italic text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded-r">
               <p>${text}</p>
               ${caption ? `<footer class="text-sm mt-2">— ${caption}</footer>` : ""}
@@ -81,13 +83,18 @@ export default function LongFormPreviewModal({
             break;
           }
           case "code": {
-            const code = typeof block.data.code === "string" ? block.data.code : "";
+            const code =
+              typeof block.data.code === "string" ? block.data.code : "";
             html += `<pre class="bg-gray-900 dark:bg-gray-800 text-green-400 p-4 rounded-lg mb-4 overflow-x-auto"><code>${code}</code></pre>`;
             break;
           }
           case "linkTool": {
-            const link = typeof block.data.link === "string" ? block.data.link : "";
-            const meta = block.data.meta && typeof block.data.meta === "object" ? block.data.meta as { title?: string; description?: string } : null;
+            const link =
+              typeof block.data.link === "string" ? block.data.link : "";
+            const meta =
+              block.data.meta && typeof block.data.meta === "object"
+                ? (block.data.meta as { title?: string; description?: string })
+                : null;
             html += `<div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4">
               <a href="${link}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:underline">
                 <div class="font-semibold">${meta?.title ?? link}</div>
@@ -97,17 +104,23 @@ export default function LongFormPreviewModal({
             break;
           }
           case "embed": {
-            const embed = typeof block.data.embed === "string" ? block.data.embed : "";
+            const embed =
+              typeof block.data.embed === "string" ? block.data.embed : "";
             html += `<div class="mb-4">
               <iframe src="${embed}" class="w-full aspect-video rounded-lg" frameborder="0" allowfullscreen></iframe>
             </div>`;
             break;
           }
           case "image": {
-            const file = block.data.file && typeof block.data.file === "object" ? block.data.file as { url?: string } : null;
-            const url = typeof block.data.url === "string" ? block.data.url : "";
+            const file =
+              block.data.file && typeof block.data.file === "object"
+                ? (block.data.file as { url?: string })
+                : null;
+            const url =
+              typeof block.data.url === "string" ? block.data.url : "";
             const imageUrl = file?.url ?? url;
-            const caption = typeof block.data.caption === "string" ? block.data.caption : "";
+            const caption =
+              typeof block.data.caption === "string" ? block.data.caption : "";
             if (imageUrl) {
               html += `<figure class="mb-6">
                 <img src="${imageUrl}" alt="${caption}" class="w-full rounded-lg shadow-sm" style="max-height: 500px; object-fit: contain;" />
@@ -120,7 +133,10 @@ export default function LongFormPreviewModal({
             if (typeof block.data.text === "string") {
               html += `<p class="mb-4 text-gray-700 dark:text-gray-300">${block.data.text}</p>`;
             } else {
-              const file = block.data.file && typeof block.data.file === "object" ? block.data.file as { url?: string } : null;
+              const file =
+                block.data.file && typeof block.data.file === "object"
+                  ? (block.data.file as { url?: string })
+                  : null;
               if (file?.url) {
                 // Handle any other block types that might have images
                 html += `<div class="mb-4">
@@ -132,7 +148,8 @@ export default function LongFormPreviewModal({
       });
 
       return (
-        html ?? '<p class="text-gray-500 italic">Content could not be rendered</p>'
+        html ??
+        '<p class="text-gray-500 italic">Content could not be rendered</p>'
       );
     } catch (error) {
       handleErrorSafely(error, {

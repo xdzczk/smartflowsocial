@@ -39,7 +39,7 @@ export function RescheduleModal({
     needsSigning?: boolean;
     error?: string;
   }
-  
+
   const fetcher = useFetcher<FetcherData>();
   const loaderData = useLoaderData<{ user?: UserData }>();
   const user = userProp ?? loaderData?.user;
@@ -47,7 +47,9 @@ export function RescheduleModal({
   const [signingError, setSigningError] = useState<string | null>(null);
   const [editableDateTime, setEditableDateTime] = useState<Date | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [selectedQueueType, setSelectedQueueType] = useState<string | null>(null);
+  const [selectedQueueType, setSelectedQueueType] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     if (fetcher.data?.success) {
@@ -167,7 +169,9 @@ export function RescheduleModal({
       setIsSigningEvent(true);
 
       // Use the exact same content and tags from the original signed event
-      const originalSignedEvent = post.signedEvent as { content: string; kind?: number; tags?: string[][] } | undefined;
+      const originalSignedEvent = post.signedEvent as
+        | { content: string; kind?: number; tags?: string[][] }
+        | undefined;
       const originalNostrEvent = post.nostrEvent;
 
       if (!originalSignedEvent || !originalNostrEvent) {
@@ -201,7 +205,9 @@ export function RescheduleModal({
       console.error("Error re-signing event:", error);
       setIsSigningEvent(false);
       const errorMessage =
-        error instanceof Error ? error.message : "Failed to sign event. Please try again.";
+        error instanceof Error
+          ? error.message
+          : "Failed to sign event. Please try again.";
       setSigningError(errorMessage);
       toast.error(errorMessage);
     }
@@ -300,7 +306,10 @@ export function RescheduleModal({
 
             {/* New time */}
             <div className="space-y-2">
-              <label htmlFor="reschedule-datetime" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label
+                htmlFor="reschedule-datetime"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
                 {isEdit ? "Edit scheduled time:" : "New time:"}
               </label>
               <div className="flex items-center space-x-2">
@@ -338,7 +347,10 @@ export function RescheduleModal({
 
             {/* Queue Type Selection */}
             <div className="space-y-2">
-              <label htmlFor="reschedule-queue-type" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label
+                htmlFor="reschedule-queue-type"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
                 Queue Type:
               </label>
               <select
@@ -400,7 +412,7 @@ export function RescheduleModal({
             ) : null}
 
             {/* Error display */}
-            {fetcher.data?.error ?? signingError ? (
+            {(fetcher.data?.error ?? signingError) ? (
               <div className="rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
                 <div className="text-sm text-red-800 dark:text-red-200">
                   {fetcher.data?.error ?? signingError}
@@ -452,7 +464,3 @@ export function RescheduleModal({
     </div>
   );
 }
-
-
-
-

@@ -94,19 +94,19 @@ import { requireUserId } from "~/features/auth";
 export async function loader({ request }: LoaderFunctionArgs) {
   // 1. Authenticate
   const userId = await requireUserId(request);
-  
+
   // 2. Parse query parameters
   const url = new URL(request.url);
   const param = url.searchParams.get("param");
-  
+
   // 3. Validate input
   if (!param) {
     return json({ error: "Param required" }, { status: 400 });
   }
-  
+
   // 4. Process request
   const data = await processRequest(userId, param);
-  
+
   // 5. Return response
   return json({ data });
 }
@@ -124,18 +124,18 @@ import { ValidationError } from "~/lib/errors";
 export async function action({ request }: ActionFunctionArgs) {
   // 1. Authenticate
   const userId = await requireUserId(request);
-  
+
   // 2. Parse request body
   const body = await request.json();
-  
+
   // 3. Validate input
   if (!body.field) {
     throw new ValidationError("Field required");
   }
-  
+
   // 4. Process request
   const result = await processMutation(userId, body);
-  
+
   // 5. Return response
   return json({ success: true, data: result });
 }
@@ -152,7 +152,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const param1 = url.searchParams.get("param1");
   const param2 = url.searchParams.get("param2");
-  
+
   // Handle parameters
 }
 ```
@@ -163,7 +163,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   // JSON body
   const body = await request.json();
-  
+
   // Form data
   const formData = await request.formData();
   const field = formData.get("field");
@@ -177,14 +177,14 @@ export async function action({ request }: ActionFunctionArgs) {
   const userId = await requireUserId(request);
   const formData = await request.formData();
   const file = formData.get("file") as File;
-  
+
   if (!file) {
     return json({ error: "File required" }, { status: 400 });
   }
-  
+
   // Upload file
   const url = await uploadFile(file, userId);
-  
+
   return json({ url });
 }
 ```
@@ -309,13 +309,13 @@ const schema = z.object({
 
 export async function action({ request }: ActionFunctionArgs) {
   const body = await request.json();
-  
+
   // Validate
   const result = schema.safeParse(body);
   if (!result.success) {
     return json({ error: result.error.message }, { status: 400 });
   }
-  
+
   // Use validated data
   const { field, number } = result.data;
 }
@@ -327,11 +327,11 @@ export async function action({ request }: ActionFunctionArgs) {
 export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const id = url.searchParams.get("id");
-  
+
   if (!id || !isValidId(id)) {
     return json({ error: "Invalid ID" }, { status: 400 });
   }
-  
+
   // Use validated ID
 }
 ```
@@ -352,7 +352,7 @@ describe("API Example", () => {
     const request = new Request("http://localhost/api/example?param=value");
     const response = await loader({ request } as LoaderFunctionArgs);
     const data = await response.json();
-    
+
     expect(data).toHaveProperty("data");
   });
 });
@@ -393,4 +393,3 @@ See [Testing Guide](./testing.md) for more examples.
 ---
 
 **Next:** [API Reference](../reference/api.md) → View all API endpoints
-

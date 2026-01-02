@@ -43,23 +43,23 @@ export function MutedListSettings({
   const toggleLowTrustFetcher = useFetcher<FetcherData>();
 
   const [isFilterEnabled, setIsFilterEnabled] = useState(filterMuted);
-  const [isHideLowTrustEnabled, setIsHideLowTrustEnabled] = useState(hidePostsFromLowTrustUsers);
+  const [isHideLowTrustEnabled, setIsHideLowTrustEnabled] = useState(
+    hidePostsFromLowTrustUsers,
+  );
 
   const isSyncing = syncFetcher.state === "submitting";
   const isToggling = toggleFetcher.state === "submitting";
   const isTogglingLowTrust = toggleLowTrustFetcher.state === "submitting";
 
   // Update local state when fetcher data changes
-  const actualFilterState =
-    toggleFetcher.data?.filterMuted ?? isFilterEnabled;
+  const actualFilterState = toggleFetcher.data?.filterMuted ?? isFilterEnabled;
 
   const actualLowTrustState =
-    toggleLowTrustFetcher.data?.hidePostsFromLowTrustUsers ?? isHideLowTrustEnabled;
+    toggleLowTrustFetcher.data?.hidePostsFromLowTrustUsers ??
+    isHideLowTrustEnabled;
 
   const mutedCount =
-    (syncFetcher.data?.mutedList?.npubs?.length ??
-    mutedList?.npubs?.length) ??
-    0;
+    syncFetcher.data?.mutedList?.npubs?.length ?? mutedList?.npubs?.length ?? 0;
 
   const lastSyncedDate = syncFetcher.data?.mutedList?.lastSynced
     ? new Date(syncFetcher.data.mutedList.lastSynced)
@@ -99,7 +99,7 @@ export function MutedListSettings({
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Muted List Info */}
-        <div className="rounded-lg border p-4 space-y-2">
+        <div className="space-y-2 rounded-lg border p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium">Muted Users</p>
@@ -112,24 +112,29 @@ export function MutedListSettings({
               size="sm"
             >
               <RefreshCw
-                className={`h-4 w-4 mr-2 ${isSyncing ? "animate-spin" : ""}`}
+                className={`mr-2 h-4 w-4 ${isSyncing ? "animate-spin" : ""}`}
               />
               {isSyncing ? "Syncing..." : "Sync Now"}
             </Button>
           </div>
 
-          {lastSyncedDate ? <p className="text-xs text-muted-foreground">
-              Last synced:{" "}
-              {lastSyncedDate.toLocaleDateString()}{" "}
+          {lastSyncedDate ? (
+            <p className="text-xs text-muted-foreground">
+              Last synced: {lastSyncedDate.toLocaleDateString()}{" "}
               {lastSyncedDate.toLocaleTimeString()}
-            </p> : null}
+            </p>
+          ) : null}
         </div>
 
         {/* Success/Error Messages */}
-        {syncFetcher.data?.success ? <p className="text-sm text-green-600">
+        {syncFetcher.data?.success ? (
+          <p className="text-sm text-green-600">
             Muted list synced successfully! Found {mutedCount} muted users.
-          </p> : null}
-        {syncFetcher.data?.error ? <p className="text-sm text-destructive">{syncFetcher.data.error}</p> : null}
+          </p>
+        ) : null}
+        {syncFetcher.data?.error ? (
+          <p className="text-sm text-destructive">{syncFetcher.data.error}</p>
+        ) : null}
 
         {/* Filter Toggle */}
         <div className="flex items-center justify-between space-x-2 rounded-lg border p-4">
@@ -149,12 +154,14 @@ export function MutedListSettings({
           />
         </div>
 
-        {toggleFetcher.data?.success ? <p className="text-sm text-green-600">
+        {toggleFetcher.data?.success ? (
+          <p className="text-sm text-green-600">
             Filter setting updated successfully!
-          </p> : null}
-        {toggleFetcher.data?.error ? <p className="text-sm text-destructive">
-            {toggleFetcher.data.error}
-          </p> : null}
+          </p>
+        ) : null}
+        {toggleFetcher.data?.error ? (
+          <p className="text-sm text-destructive">{toggleFetcher.data.error}</p>
+        ) : null}
 
         {/* Hide Low Trust Users Toggle */}
         <div className="flex items-center justify-between space-x-2 rounded-lg border p-4">
@@ -163,7 +170,8 @@ export function MutedListSettings({
               Hide Posts from Low Trust Users
             </Label>
             <p className="text-sm text-muted-foreground">
-              Filter out content from users with low trust scores in your engagement feed
+              Filter out content from users with low trust scores in your
+              engagement feed
             </p>
           </div>
           <Switch
@@ -174,12 +182,16 @@ export function MutedListSettings({
           />
         </div>
 
-        {toggleLowTrustFetcher.data?.success ? <p className="text-sm text-green-600">
+        {toggleLowTrustFetcher.data?.success ? (
+          <p className="text-sm text-green-600">
             Low trust filter setting updated successfully!
-          </p> : null}
-        {toggleLowTrustFetcher.data?.error ? <p className="text-sm text-destructive">
+          </p>
+        ) : null}
+        {toggleLowTrustFetcher.data?.error ? (
+          <p className="text-sm text-destructive">
             {toggleLowTrustFetcher.data.error}
-          </p> : null}
+          </p>
+        ) : null}
       </CardContent>
     </Card>
   );

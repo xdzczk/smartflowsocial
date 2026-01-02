@@ -3,13 +3,17 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 
 import { checkPaymentStatusById } from "~/features/payments";
 
-type AssertFunction = (condition: boolean, message: string, context?: Record<string, unknown>) => asserts condition;
+type AssertFunction = (
+  condition: boolean,
+  message: string,
+  context?: Record<string, unknown>,
+) => asserts condition;
 
 export async function action({ request }: ActionFunctionArgs) {
   try {
     const errorHandler = await import("~/lib/error-handler.server");
     const assert: AssertFunction = errorHandler.assert;
-    
+
     assert(request.method === "POST", "Method not allowed", {
       method: request.method,
     });
@@ -42,6 +46,6 @@ export async function loader() {
       headers: {
         "Content-Type": "application/json",
       },
-    }
+    },
   );
 }

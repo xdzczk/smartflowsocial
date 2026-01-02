@@ -52,16 +52,19 @@ SmartFlowSocial settings are organized into tabs:
 **Purpose:** Set your timezone for scheduling posts.
 
 **How to configure:**
+
 1. Go to **Settings** → **General**
 2. Select your timezone from dropdown
 3. Click **"Save"**
 
 **Impact:**
+
 - Scheduled posts use your timezone
 - Calendar view displays in your timezone
 - Queue scheduling respects timezone
 
 **Example:**
+
 - Timezone: `America/New_York`
 - Post scheduled for 9:00 AM → 9:00 AM EST/EDT
 
@@ -70,6 +73,7 @@ SmartFlowSocial settings are organized into tabs:
 **Purpose:** Configure Nostr relays for publishing.
 
 **How to configure:**
+
 1. Go to **Settings** → **General**
 2. Add relay URLs (one per line):
    ```
@@ -79,11 +83,13 @@ SmartFlowSocial settings are organized into tabs:
 3. Click **"Save"**
 
 **Impact:**
+
 - Posts published to configured relays
 - Relays used for event distribution
 - Multiple relays for redundancy
 
 **Best practices:**
+
 - Use multiple relays
 - Choose reliable relays
 - Include public relays
@@ -93,11 +99,13 @@ SmartFlowSocial settings are organized into tabs:
 **Purpose:** Automatically append hashtags to posts.
 
 **How to configure:**
+
 1. Go to **Settings** → **General**
 2. Toggle **"Show Hashtags in Posts"**
 3. Click **"Save"**
 
 **Impact:**
+
 - Hashtags automatically added to posts
 - Uses queue default or selected preset
 - Can be overridden per post
@@ -111,6 +119,7 @@ SmartFlowSocial settings are organized into tabs:
 1. Go to **Settings** → **Queues**
 2. Click **"Create Queue"**
 3. Configure:
+
    - **Name** - Queue identifier
    - **Color** - Visual identifier
    - **Description** - Queue purpose
@@ -146,6 +155,7 @@ SmartFlowSocial settings are organized into tabs:
 1. Go to **Settings** → **Hashtags**
 2. Click **"Create Preset"**
 3. Enter:
+
    - **Name** - Preset identifier
    - **Tags** - Hashtags (space or comma separated)
    - **Description** - Preset purpose
@@ -153,6 +163,7 @@ SmartFlowSocial settings are organized into tabs:
 4. Click **"Save"**
 
 **Example:**
+
 ```
 Name: Bitcoin Content
 Tags: #bitcoin #lightning #nostr #plebchain
@@ -168,6 +179,7 @@ Description: For Bitcoin-related content
 5. Click **"Save"**
 
 **Impact:**
+
 - Preset automatically applied to posts in queue
 - Can be overridden per post
 - Saves time on repetitive hashtags
@@ -175,12 +187,14 @@ Description: For Bitcoin-related content
 ### Managing Presets
 
 **Edit preset:**
+
 1. Find preset in list
 2. Click **"Edit"**
 3. Modify tags or description
 4. Click **"Save"**
 
 **Delete preset:**
+
 1. Find preset in list
 2. Click **"Delete"**
 3. Confirm deletion
@@ -196,16 +210,19 @@ Description: For Bitcoin-related content
 **Purpose:** Choose where images are uploaded.
 
 **Options:**
+
 - **S3** - AWS S3 or compatible
 - **Blossom** - Blossom protocol storage
 
 **How to configure:**
+
 1. Go to **Settings** → **Storage**
 2. Select **"Upload Provider"**
 3. Choose S3 or Blossom
 4. Click **"Save"**
 
 **Impact:**
+
 - All new uploads use selected provider
 - Existing uploads unchanged
 - Provider-specific features available
@@ -215,16 +232,19 @@ Description: For Bitcoin-related content
 **Purpose:** Configure Blossom protocol storage.
 
 **Settings:**
+
 - **Enable Mirror Blossom** - Mirror uploads to Blossom
 - **Mirror Upload URLs** - Blossom server URLs
 
 **How to configure:**
+
 1. Go to **Settings** → **Storage**
 2. Toggle **"Enable Mirror Blossom"**
 3. Add Blossom server URLs (one per line)
 4. Click **"Save"**
 
 **Use cases:**
+
 - Decentralized storage
 - Censorship resistance
 - Multiple storage locations
@@ -238,8 +258,10 @@ Description: For Bitcoin-related content
 **Purpose:** Filter out specific accounts or keywords from engagement feed.
 
 **How to configure:**
+
 1. Go to **Settings** → **Engagement**
 2. **Muted Accounts:**
+
    - Add npub addresses
    - One per line
    - Click **"Save"**
@@ -250,6 +272,7 @@ Description: For Bitcoin-related content
    - Click **"Save"**
 
 **Impact:**
+
 - Muted accounts hidden from engagement feed
 - Posts with muted keywords filtered
 - Giveaway participants filtered
@@ -259,11 +282,13 @@ Description: For Bitcoin-related content
 **Purpose:** Hide posts from low-trust users.
 
 **How to configure:**
+
 1. Go to **Settings** → **Engagement**
 2. Toggle **"Hide Posts from Low Trust Users"**
 3. Click **"Save"**
 
 **Impact:**
+
 - Low-trust users filtered from engagement
 - Reduces spam and bot interactions
 - Improves feed quality
@@ -273,11 +298,13 @@ Description: For Bitcoin-related content
 **Purpose:** Automatically filter muted accounts.
 
 **How to configure:**
+
 1. Go to **Settings** → **Engagement**
 2. Toggle **"Filter Muted"**
 3. Click **"Save"**
 
 **Impact:**
+
 - Muted accounts automatically filtered
 - Applies to engagement feed
 - Applies to giveaways
@@ -327,12 +354,14 @@ Description: For Bitcoin-related content
 ### Parent/Child Accounts
 
 **For Parent Accounts:**
+
 - Search for child accounts
 - Request child links
 - Manage child accounts
 - Unlink child accounts
 
 **For Child Accounts:**
+
 - View parent account
 - Accept/reject parent requests
 - Unlink from parent
@@ -348,21 +377,25 @@ See [Multi-Account Guide](./multi-account.md) for details.
 **Purpose:** Configure NWC for Lightning payments.
 
 **Settings:**
+
 - **NWC Enabled** - Enable/disable NWC
 - **NWC String** - Connection string (masked)
 - **Last Used** - Last usage timestamp
 
 **How to configure:**
+
 1. Go to **Settings** → **NWC**
 2. Enter NWC connection string
 3. Click **"Save"**
 
 **Format:**
+
 ```
 nostr+walletconnect://pubkey?relay=wss://relay.example.com&secret=...
 ```
 
 **Use cases:**
+
 - Receiving subscription payments
 - Lightning payments
 - Wallet integration
@@ -374,20 +407,24 @@ nostr+walletconnect://pubkey?relay=wss://relay.example.com&secret=...
 ### Settings Organization
 
 1. **Configure timezone first:**
+
    - Ensures correct scheduling
    - Affects all time-based features
 
 2. **Set up queues:**
+
    - Create queues before posting
    - Assign hashtag presets
    - Configure scheduling rules
 
 3. **Create hashtag presets:**
+
    - Organize by content type
    - Assign to queues
    - Reuse across posts
 
 4. **Configure storage:**
+
    - Choose provider
    - Set up Blossom if needed
    - Test uploads
@@ -400,11 +437,13 @@ nostr+walletconnect://pubkey?relay=wss://relay.example.com&secret=...
 ### Settings Maintenance
 
 1. **Review regularly:**
+
    - Check settings quarterly
    - Update as needed
    - Remove unused presets
 
 2. **Organize queues:**
+
    - Clear naming
    - Logical grouping
    - Remove unused queues
@@ -421,11 +460,13 @@ nostr+walletconnect://pubkey?relay=wss://relay.example.com&secret=...
 ### Settings Not Saving
 
 **Possible causes:**
+
 - Form validation errors
 - Network issues
 - Permission problems
 
 **Solutions:**
+
 - Check for error messages
 - Verify form fields
 - Try again
@@ -434,11 +475,13 @@ nostr+walletconnect://pubkey?relay=wss://relay.example.com&secret=...
 ### Settings Not Applying
 
 **Possible causes:**
+
 - Cache issues
 - Settings not saved
 - Feature not enabled
 
 **Solutions:**
+
 - Refresh page
 - Verify settings saved
 - Check feature access
@@ -456,4 +499,3 @@ nostr+walletconnect://pubkey?relay=wss://relay.example.com&secret=...
 ---
 
 **Next:** [Search Guide](./search.md) → Search for Nostr events
-

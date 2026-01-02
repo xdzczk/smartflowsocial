@@ -20,6 +20,7 @@ Learn advanced strategies for optimizing your posting schedule, maximizing engag
 ## Overview
 
 **Advanced scheduling strategies help you:**
+
 - Maximize audience engagement
 - Optimize posting times
 - Batch content efficiently
@@ -35,11 +36,13 @@ Learn advanced strategies for optimizing your posting schedule, maximizing engag
 **Analyze your audience:**
 
 1. **Review engagement data:**
+
    - Check when posts get most engagement
    - Identify patterns
    - Note time zones
 
 2. **Test different times:**
+
    - Schedule posts at various times
    - Track engagement
    - Compare results
@@ -53,12 +56,14 @@ Learn advanced strategies for optimizing your posting schedule, maximizing engag
 ### Common Peak Times
 
 **General patterns:**
+
 - **Morning:** 7-9 AM (local time)
 - **Lunch:** 12-1 PM
 - **Evening:** 5-7 PM
 - **Weekends:** Varies by audience
 
 **Nostr-specific:**
+
 - Bitcoin community: Often active during market hours
 - Global audience: Multiple time zones
 - Tech community: Evening hours common
@@ -87,6 +92,7 @@ Learn advanced strategies for optimizing your posting schedule, maximizing engag
 ### What is Content Batching?
 
 **Batching involves:**
+
 - Creating multiple posts at once
 - Scheduling them in advance
 - Maintaining consistent posting
@@ -97,6 +103,7 @@ Learn advanced strategies for optimizing your posting schedule, maximizing engag
 **Step 1: Plan Content**
 
 1. **Create content calendar:**
+
    - Plan week/month in advance
    - Identify content themes
    - Assign to queues
@@ -109,6 +116,7 @@ Learn advanced strategies for optimizing your posting schedule, maximizing engag
 **Step 2: Create Content**
 
 1. **Dedicate time block:**
+
    - Set aside 2-3 hours
    - Focus on content creation
    - Minimize distractions
@@ -121,6 +129,7 @@ Learn advanced strategies for optimizing your posting schedule, maximizing engag
 **Step 3: Schedule Batch**
 
 1. **Use bulk upload:**
+
    - Upload multiple images
    - Set intervals
    - Schedule all at once
@@ -133,12 +142,14 @@ Learn advanced strategies for optimizing your posting schedule, maximizing engag
 ### Batching Best Practices
 
 **Time management:**
+
 - Batch similar content together
 - Use templates for efficiency
 - Reuse assets when possible
 - Plan ahead
 
 **Content variety:**
+
 - Mix content types
 - Vary posting times
 - Include different topics
@@ -153,11 +164,13 @@ Learn advanced strategies for optimizing your posting schedule, maximizing engag
 **Create specialized queues:**
 
 1. **By content type:**
+
    - News queue (frequent updates)
    - Educational queue (weekly)
    - Memes queue (daily)
 
 2. **By frequency:**
+
    - Daily queue (high frequency)
    - Weekly queue (low frequency)
    - Campaign queue (temporary)
@@ -170,18 +183,21 @@ Learn advanced strategies for optimizing your posting schedule, maximizing engag
 ### Queue Configuration Tips
 
 **Interval Queues:**
+
 - Use for consistent posting
 - Set intervals based on capacity
 - Consider content creation time
 - Balance frequency and quality
 
 **Fixed Slot Queues:**
+
 - Use for peak engagement
 - Set slots at optimal times
 - Consider day of week
 - Adjust based on performance
 
 **Queue Limits:**
+
 - Don't overload queues
 - Balance queue count
 - Monitor queue performance
@@ -194,6 +210,7 @@ Learn advanced strategies for optimizing your posting schedule, maximizing engag
 ### Understanding Your Audience
 
 **Identify audience locations:**
+
 - Check engagement patterns
 - Review follower locations
 - Consider content topics
@@ -204,6 +221,7 @@ Learn advanced strategies for optimizing your posting schedule, maximizing engag
 **If global audience:**
 
 1. **Create time zone queues:**
+
    - US East Coast queue
    - European queue
    - Asian queue
@@ -229,16 +247,19 @@ Learn advanced strategies for optimizing your posting schedule, maximizing engag
 **Content variety:**
 
 1. **News/Updates:**
+
    - Time-sensitive
    - Post when relevant
    - Higher frequency
 
 2. **Educational:**
+
    - Evergreen content
    - Can schedule ahead
    - Lower frequency
 
 3. **Entertainment:**
+
    - Memes, fun content
    - Regular posting
    - Medium frequency
@@ -273,6 +294,7 @@ Learn advanced strategies for optimizing your posting schedule, maximizing engag
 ### Finding Optimal Frequency
 
 **Consider:**
+
 - Audience expectations
 - Content creation capacity
 - Engagement patterns
@@ -293,18 +315,21 @@ Learn advanced strategies for optimizing your posting schedule, maximizing engag
 ### Frequency Guidelines
 
 **High frequency (3+ posts/day):**
+
 - News feeds
 - Real-time updates
 - Active communities
 - Requires more content
 
 **Medium frequency (1-2 posts/day):**
+
 - Most content creators
 - Balanced approach
 - Sustainable long-term
 - Good engagement
 
 **Low frequency (<1 post/day):**
+
 - Quality over quantity
 - Thoughtful content
 - Less time investment
@@ -319,12 +344,14 @@ Learn advanced strategies for optimizing your posting schedule, maximizing engag
 **Upcoming events:**
 
 1. **Identify key dates:**
+
    - Holidays
    - Industry events
    - Product launches
    - Campaign dates
 
 2. **Schedule in advance:**
+
    - Create content early
    - Schedule posts
    - Prepare multiple options
@@ -337,12 +364,14 @@ Learn advanced strategies for optimizing your posting schedule, maximizing engag
 ### Seasonal Content
 
 **Evergreen content:**
+
 - Schedule reusable content
 - Mark as recyclable
 - Reuse seasonally
 - Update as needed
 
 **Time-sensitive content:**
+
 - Schedule close to event
 - Update if needed
 - Remove if outdated
@@ -357,11 +386,13 @@ Learn advanced strategies for optimizing your posting schedule, maximizing engag
 **Method:**
 
 1. **Create test schedule:**
+
    - Post at different times
    - Same content type
    - Track engagement
 
 2. **Compare results:**
+
    - Which times perform best?
    - What patterns emerge?
    - Adjust schedule
@@ -376,6 +407,7 @@ Learn advanced strategies for optimizing your posting schedule, maximizing engag
 **Method:**
 
 1. **Schedule different content:**
+
    - Vary by type
    - Same time slots
    - Track performance
@@ -394,11 +426,13 @@ Learn advanced strategies for optimizing your posting schedule, maximizing engag
 **Using multiple queues:**
 
 1. **Primary queue:**
+
    - Main content
    - Regular posting
    - Consistent schedule
 
 2. **Secondary queue:**
+
    - Additional content
    - Different frequency
    - Complementary schedule
@@ -413,6 +447,7 @@ Learn advanced strategies for optimizing your posting schedule, maximizing engag
 **Manual adjustments:**
 
 1. **Reschedule from calendar:**
+
    - Drag posts to new times
    - Override queue rules
    - Maintain flexibility
@@ -429,12 +464,14 @@ Learn advanced strategies for optimizing your posting schedule, maximizing engag
 ### Track Performance
 
 **Metrics to monitor:**
+
 - Engagement rates
 - Best posting times
 - Content type performance
 - Queue effectiveness
 
 **Tools:**
+
 - Engagement feed
 - Posted section analytics
 - Calendar view patterns
@@ -443,12 +480,14 @@ Learn advanced strategies for optimizing your posting schedule, maximizing engag
 ### Continuous Improvement
 
 **Regular review:**
+
 - Weekly schedule review
 - Monthly performance analysis
 - Quarterly strategy adjustment
 - Annual planning
 
 **Adjustments:**
+
 - Optimize based on data
 - Test new strategies
 - Refine queues
@@ -463,6 +502,7 @@ Learn advanced strategies for optimizing your posting schedule, maximizing engag
 **Problem:** Posts not getting engagement
 
 **Solutions:**
+
 - Review posting times
 - Check content quality
 - Adjust frequency
@@ -474,6 +514,7 @@ Learn advanced strategies for optimizing your posting schedule, maximizing engag
 **Problem:** Too many posts scheduled
 
 **Solutions:**
+
 - Reduce queue frequency
 - Space out posts
 - Use calendar to visualize
@@ -484,6 +525,7 @@ Learn advanced strategies for optimizing your posting schedule, maximizing engag
 **Problem:** Running out of content
 
 **Solutions:**
+
 - Use recyclables
 - Create content batches
 - Use templates
@@ -499,7 +541,7 @@ Learn advanced strategies for optimizing your posting schedule, maximizing engag
 ✅ How to optimize queue configurations  
 ✅ How to handle multiple time zones  
 ✅ How to balance content types  
-✅ How to test and optimize schedules  
+✅ How to test and optimize schedules
 
 ---
 
@@ -520,4 +562,3 @@ Learn advanced strategies for optimizing your posting schedule, maximizing engag
 ---
 
 **Next Tutorial:** [Long-form Articles](./long-form-articles.md) → Create detailed content
-

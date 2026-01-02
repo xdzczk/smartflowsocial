@@ -119,7 +119,7 @@ const MediaThumbnail: React.FC<MediaThumbnailProps> = ({
       onKeyDown={onClick ? handleKeyDown : undefined}
       {...(onClick && { role: "button", tabIndex: 0 })}
     >
-      { }
+      {}
       <video
         src={src}
         className="h-full w-full object-cover"
@@ -130,11 +130,13 @@ const MediaThumbnail: React.FC<MediaThumbnailProps> = ({
         onError={handleImageError}
         onLoadedData={handleImageLoad}
       />
-      {!hidePlayButton ? <div className="absolute inset-0 flex items-center justify-center">
+      {!hidePlayButton ? (
+        <div className="absolute inset-0 flex items-center justify-center">
           <div className="rounded-full bg-black bg-opacity-60 p-2 shadow-lg">
             <PlayIcon className="h-6 w-6 text-white drop-shadow-sm" />
           </div>
-        </div> : null}
+        </div>
+      ) : null}
     </div>
   );
 };

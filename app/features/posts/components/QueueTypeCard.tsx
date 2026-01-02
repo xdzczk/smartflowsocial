@@ -8,7 +8,10 @@ import { Card, CardContent } from "~/components/ui/card";
 import { isIntervalScheduleConfig, isFixedSlotsScheduleConfig } from "../types";
 import type { QueueType } from "../types";
 interface QueueTypeCardProps {
-  queueType: QueueType & { isDefault?: boolean; hashTagPreset?: { id: string; name: string } | null };
+  queueType: QueueType & {
+    isDefault?: boolean;
+    hashTagPreset?: { id: string; name: string } | null;
+  };
   onEdit: (queueType: QueueType) => void;
   isDeletingQueueType: boolean;
   deleteFetcher: FetcherWithComponents<{ success?: boolean; error?: string }>;
@@ -30,7 +33,10 @@ export function QueueTypeCard({
   const getScheduleDescription = () => {
     if (!queueType.scheduleConfig) return "No schedule configured";
     if (queueType.scheduleType === "INTERVAL") {
-      if (isIntervalScheduleConfig(queueType.scheduleConfig) && queueType.scheduleConfig.useGlobalInterval) {
+      if (
+        isIntervalScheduleConfig(queueType.scheduleConfig) &&
+        queueType.scheduleConfig.useGlobalInterval
+      ) {
         return "Uses global schedule intervals";
       }
       if (isIntervalScheduleConfig(queueType.scheduleConfig)) {

@@ -32,7 +32,7 @@ const uploadStreamToS3 = async (
     const command = new PutObjectCommand(params);
     await s3Client.send(command);
     // Construct the URL manually since v3 doesn't return Location
-    return `https://${String(env.STORAGE_BUCKET ?? '')}.s3.${String(env.STORAGE_REGION ?? '')}.amazonaws.com/${key}`;
+    return `https://${String(env.STORAGE_BUCKET ?? "")}.s3.${String(env.STORAGE_REGION ?? "")}.amazonaws.com/${key}`;
   } catch (error) {
     logError(error instanceof Error ? error : new Error(String(error)), {
       key,
@@ -183,6 +183,8 @@ export async function uploadEditorJSImage(
       filename,
       message: "EditorJS S3 upload error",
     });
-    throw new Error(`Failed to upload image: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(
+      `Failed to upload image: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 }

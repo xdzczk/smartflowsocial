@@ -23,6 +23,7 @@ Complete reference of all error codes, error types, and error handling patterns 
 **Base class** for all application errors.
 
 **Properties:**
+
 - `statusCode: number` - HTTP status code
 - `code: string` - Error code
 - `isOperational: boolean` - Whether error is operational
@@ -30,6 +31,7 @@ Complete reference of all error codes, error types, and error handling patterns 
 - `timestamp: string` - Error timestamp
 
 **Usage:**
+
 ```typescript
 throw new AppError("Something went wrong", 500, "INTERNAL_ERROR");
 ```
@@ -41,6 +43,7 @@ throw new AppError("Something went wrong", 500, "INTERNAL_ERROR");
 **Use case:** Input validation failures
 
 **Example:**
+
 ```typescript
 throw new ValidationError("Invalid email format", { field: "email" });
 ```
@@ -52,6 +55,7 @@ throw new ValidationError("Invalid email format", { field: "email" });
 **Use case:** Authentication required
 
 **Example:**
+
 ```typescript
 throw new AuthenticationError("Please log in to continue");
 ```
@@ -63,8 +67,11 @@ throw new AuthenticationError("Please log in to continue");
 **Use case:** Insufficient permissions
 
 **Example:**
+
 ```typescript
-throw new AuthorizationError("You don't have permission to access this resource");
+throw new AuthorizationError(
+  "You don't have permission to access this resource",
+);
 ```
 
 ### NotFoundError
@@ -74,6 +81,7 @@ throw new AuthorizationError("You don't have permission to access this resource"
 **Use case:** Resource not found
 
 **Example:**
+
 ```typescript
 throw new NotFoundError("Post not found", { postId: "123" });
 ```
@@ -85,6 +93,7 @@ throw new NotFoundError("Post not found", { postId: "123" });
 **Use case:** Resource conflicts (duplicates, etc.)
 
 **Example:**
+
 ```typescript
 throw new ConflictError("A record with this information already exists");
 ```
@@ -96,6 +105,7 @@ throw new ConflictError("A record with this information already exists");
 **Use case:** Rate limit exceeded
 
 **Example:**
+
 ```typescript
 throw new RateLimitError("Too many requests. Please try again later.");
 ```
@@ -107,6 +117,7 @@ throw new RateLimitError("Too many requests. Please try again later.");
 **Use case:** External service failures
 
 **Example:**
+
 ```typescript
 throw new ExternalServiceError("Failed to connect to Nostr relay", 502, {
   service: "NostrRelay",
@@ -120,8 +131,11 @@ throw new ExternalServiceError("Failed to connect to Nostr relay", 502, {
 **Use case:** Database operation failures
 
 **Example:**
+
 ```typescript
-throw new DatabaseError("Database query failed", { query: "SELECT * FROM posts" });
+throw new DatabaseError("Database query failed", {
+  query: "SELECT * FROM posts",
+});
 ```
 
 ---
@@ -130,18 +144,18 @@ throw new DatabaseError("Database query failed", { query: "SELECT * FROM posts" 
 
 ### Complete List
 
-| Code | Description | Status Code |
-|------|-------------|-------------|
-| `VALIDATION_ERROR` | Input validation failed | 400 |
-| `AUTHENTICATION_ERROR` | Authentication required | 401 |
-| `AUTHORIZATION_ERROR` | Insufficient permissions | 403 |
-| `NOT_FOUND_ERROR` | Resource not found | 404 |
-| `CONFLICT_ERROR` | Resource conflict | 409 |
-| `RATE_LIMIT_ERROR` | Rate limit exceeded | 429 |
-| `EXTERNAL_SERVICE_ERROR` | External service failure | 502/503/504 |
-| `DATABASE_ERROR` | Database operation failed | 500 |
-| `INTERNAL_ERROR` | Internal server error | 500 |
-| `UNKNOWN_ERROR` | Unknown error type | 500 |
+| Code                     | Description               | Status Code |
+| ------------------------ | ------------------------- | ----------- |
+| `VALIDATION_ERROR`       | Input validation failed   | 400         |
+| `AUTHENTICATION_ERROR`   | Authentication required   | 401         |
+| `AUTHORIZATION_ERROR`    | Insufficient permissions  | 403         |
+| `NOT_FOUND_ERROR`        | Resource not found        | 404         |
+| `CONFLICT_ERROR`         | Resource conflict         | 409         |
+| `RATE_LIMIT_ERROR`       | Rate limit exceeded       | 429         |
+| `EXTERNAL_SERVICE_ERROR` | External service failure  | 502/503/504 |
+| `DATABASE_ERROR`         | Database operation failed | 500         |
+| `INTERNAL_ERROR`         | Internal server error     | 500         |
+| `UNKNOWN_ERROR`          | Unknown error type        | 500         |
 
 ### Error Code Enum
 
@@ -208,25 +222,30 @@ export const ErrorCodes = {
 ### Error Response Fields
 
 **message:**
+
 - User-friendly error message
 - Safe to display to users
 - May be sanitized in production
 
 **code:**
+
 - Error code string
 - Used for error handling logic
 - Consistent across application
 
 **statusCode:**
+
 - HTTP status code
 - Matches HTTP response status
 
 **timestamp:**
+
 - ISO 8601 timestamp
 - When error occurred
 - Useful for debugging
 
 **context:**
+
 - Additional error context
 - May include sensitive data (sanitized)
 - Useful for debugging
@@ -238,6 +257,7 @@ export const ErrorCodes = {
 ### Server-Side Error Handling
 
 **Error normalization:**
+
 ```typescript
 import { normalizeError } from "~/lib/errors";
 
@@ -250,6 +270,7 @@ try {
 ```
 
 **Error response creation:**
+
 ```typescript
 import { createErrorResponse } from "~/lib/error-handler.server";
 
@@ -260,6 +281,7 @@ return json(errorResponse, { status: statusCode });
 ### Client-Side Error Handling
 
 **Error logging:**
+
 ```typescript
 import { logClientError } from "~/lib/error-handler.client";
 
@@ -270,6 +292,7 @@ logClientError(error, {
 ```
 
 **API error handling:**
+
 ```typescript
 import { handleApiError } from "~/lib/error-handler.client";
 
@@ -280,12 +303,14 @@ const errorMessage = handleApiError(response);
 ### Error Logging
 
 **Server-side logging:**
+
 - Structured JSON logs in production
 - Readable format in development
 - Automatic sanitization of sensitive data
 - Error metrics recording
 
 **Client-side logging:**
+
 - Console logging in development
 - Optional external service integration
 - Context preservation
@@ -298,12 +323,14 @@ const errorMessage = handleApiError(response);
 ### Validation Errors
 
 **When they occur:**
+
 - Invalid input format
 - Missing required fields
 - Value out of range
 - Invalid data type
 
 **How to handle:**
+
 - Display field-specific errors
 - Highlight invalid fields
 - Show validation messages
@@ -312,12 +339,14 @@ const errorMessage = handleApiError(response);
 ### Authentication Errors
 
 **When they occur:**
+
 - User not logged in
 - Session expired
 - Invalid credentials
 - Token invalid
 
 **How to handle:**
+
 - Redirect to login
 - Show login prompt
 - Refresh session
@@ -326,12 +355,14 @@ const errorMessage = handleApiError(response);
 ### Authorization Errors
 
 **When they occur:**
+
 - Insufficient permissions
 - Feature not available
 - Plan upgrade required
 - Access denied
 
 **How to handle:**
+
 - Show upgrade prompt
 - Hide unavailable features
 - Display permission message
@@ -340,12 +371,14 @@ const errorMessage = handleApiError(response);
 ### Not Found Errors
 
 **When they occur:**
+
 - Resource deleted
 - Invalid ID
 - URL not found
 - Route not found
 
 **How to handle:**
+
 - Show 404 page
 - Display not found message
 - Provide navigation options
@@ -354,12 +387,14 @@ const errorMessage = handleApiError(response);
 ### External Service Errors
 
 **When they occur:**
+
 - Nostr relay unavailable
 - Primal cache down
 - S3 upload failed
 - Network issues
 
 **How to handle:**
+
 - Show retry option
 - Display service status
 - Queue for retry
@@ -372,11 +407,13 @@ const errorMessage = handleApiError(response);
 ### Error Messages
 
 1. **User-friendly:**
+
    - Clear and understandable
    - Actionable when possible
    - Avoid technical jargon
 
 2. **Contextual:**
+
    - Include relevant details
    - Show what went wrong
    - Suggest solutions
@@ -389,11 +426,13 @@ const errorMessage = handleApiError(response);
 ### Error Handling
 
 1. **Catch early:**
+
    - Validate input early
    - Check permissions first
    - Handle errors at boundaries
 
 2. **Log appropriately:**
+
    - Log all errors
    - Include context
    - Sanitize sensitive data
@@ -414,4 +453,3 @@ const errorMessage = handleApiError(response);
 ---
 
 **Next:** [Plan Features Reference](./plan-features.md) → Subscription plan details
-

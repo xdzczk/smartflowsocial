@@ -37,11 +37,13 @@ SmartFlowSocial integrates with the Nostr protocol to enable decentralized socia
 SmartFlowSocial uses NIP-07 for client-side authentication and event signing.
 
 **Implementation:**
+
 - Users connect via Nostr browser extensions (Alby, nos2x, Amber)
 - Events are signed client-side using `window.nostr.signEvent()`
 - Private keys never leave the user's browser
 
 **Code Location:**
+
 - `app/lib/nostr.ts` - Event signing functions
 - `app/features/auth/components/NostrAuthButton.tsx` - Authentication UI
 - `app/routes/nostr-auth.tsx` - Authentication handler
@@ -53,6 +55,7 @@ SmartFlowSocial uses NIP-07 for client-side authentication and event signing.
 Used for encoding/decoding Nostr keys (npub/hex conversion).
 
 **Implementation:**
+
 ```typescript
 import { nip19 } from "nostr-tools";
 
@@ -65,6 +68,7 @@ const hexKey = data as string;
 ```
 
 **Code Location:**
+
 - `app/lib/nostr.ts` - `hexToNpub()`, `npubToHex()`
 - `app/lib/nostr-conversion.ts` - Conversion utilities
 
@@ -75,6 +79,7 @@ const hexKey = data as string;
 SmartFlowSocial supports NIP-23 for publishing long-form articles.
 
 **Event Structure:**
+
 ```typescript
 {
   kind: 30023, // NIP-23 long-form content
@@ -92,12 +97,14 @@ SmartFlowSocial supports NIP-23 for publishing long-form articles.
 ```
 
 **Implementation:**
+
 - Long-form posts use kind `30023`
 - Content stored as markdown
 - Supports replaceable events (using `d` tag)
 - Includes title, summary, image, and tags
 
 **Code Location:**
+
 - `app/lib/nostr.ts` - `signLongFormEvent()`
 - `app/features/posts/services/newlongform-action.server.ts` - Long-form creation
 - `app/models/longformpost.server.ts` - Long-form post model
@@ -109,6 +116,7 @@ SmartFlowSocial supports NIP-23 for publishing long-form articles.
 Standard Nostr event structure and relay communication.
 
 **Event Kinds Used:**
+
 - `kind: 1` - Short notes/posts
 - `kind: 30023` - Long-form articles (NIP-23)
 
@@ -119,15 +127,18 @@ Standard Nostr event structure and relay communication.
 ### How It Works
 
 1. **User Clicks Login**
+
    - Application requests Nostr extension access
    - Extension prompts user for permission
 
 2. **Get Public Key**
+
    ```typescript
    const pubkey = await window.nostr.getPublicKey();
    ```
 
 3. **Sign Challenge**
+
    ```typescript
    const event = {
      kind: 1,
@@ -158,16 +169,16 @@ const signEventFn = async (eventData: NostrEventData) => {
   if (!window.nostr) {
     throw new Error("Nostr extension not found");
   }
-  
+
   const nostrEvent: NostrEvent = {
     content: eventData.content,
     created_at: eventData.created_at,
     kind: eventData.kind || 1,
     tags: eventData.tags || [],
   };
-  
+
   const signResult = await window.nostr.signEvent(nostrEvent);
-  
+
   return {
     nostrEvent,
     signedEvent: {
@@ -189,6 +200,7 @@ const signEventFn = async (eventData: NostrEventData) => {
 Standard Nostr posts/notes.
 
 **Structure:**
+
 ```typescript
 {
   kind: 1,
@@ -203,6 +215,7 @@ Standard Nostr posts/notes.
 ```
 
 **Usage:**
+
 - Regular posts
 - Scheduled posts
 - Recyclable posts
@@ -212,6 +225,7 @@ Standard Nostr posts/notes.
 NIP-23 long-form content.
 
 **Structure:**
+
 ```typescript
 {
   kind: 30023,
@@ -230,6 +244,7 @@ NIP-23 long-form content.
 ```
 
 **Features:**
+
 - Replaceable events (can be updated)
 - Rich content (markdown)
 - Cover images
@@ -281,6 +296,7 @@ const response = await fetch(process.env.NOSTR_PUBLISHER_URL!, {
 ### Rescheduling
 
 When posts are rescheduled:
+
 1. Original signed event is cleared
 2. New timestamp is set
 3. User must re-sign with new timestamp
@@ -295,18 +311,21 @@ When posts are rescheduled:
 Users can configure their preferred relays in settings.
 
 **Default Relays:**
+
 - `wss://relay.primal.net`
 - `wss://relay.damus.io`
 - `wss://relay.nostr.band`
 - `wss://relay.snort.social`
 
 **Code Location:**
+
 - `app/components/settings/RelaysSettings.tsx` - Relay settings UI
 - `app/lib/relays.ts` - Relay utilities
 
 ### Relay Selection
 
 When publishing:
+
 1. User's configured relays are used
 2. If no relays configured, defaults are used
 3. Events are published to all specified relays
@@ -314,6 +333,7 @@ When publishing:
 ### Relay Health
 
 Monitor relay health:
+
 - Check connection status
 - Track publish success rates
 - Fallback to alternative relays if needed
@@ -345,11 +365,13 @@ const profile = await getCompleteProfile({ npub });
 ### Profile Caching
 
 Profiles are cached in database:
+
 - Stored in `User.nostrProfile` (JSON field)
 - Updated periodically
 - Used for display without fetching
 
 **Code Location:**
+
 - `app/features/nostr/types.ts` - Profile types
 - `app/features/auth/profile.server.ts` - Profile fetching
 - `app/models/user.server.ts` - User model
@@ -393,6 +415,7 @@ const thread = await fetchThreadView(eventId);
 ```
 
 **Code Location:**
+
 - `app/routes/api.thread-view.tsx` - Thread fetching endpoint
 - `app/features/engagement/engagement.server.ts` - Engagement handling
 
@@ -444,6 +467,7 @@ const thread = await fetchThreadView(eventId);
 **Error**: "Nostr extension not found"
 
 **Solutions:**
+
 1. Check if extension is installed
 2. Refresh page
 3. Check extension permissions
@@ -454,6 +478,7 @@ const thread = await fetchThreadView(eventId);
 **Error**: "Failed to sign event"
 
 **Solutions:**
+
 1. Check extension is unlocked
 2. Verify extension permissions
 3. Check event structure
@@ -464,6 +489,7 @@ const thread = await fetchThreadView(eventId);
 **Error**: "Failed to publish to relay"
 
 **Solutions:**
+
 1. Check relay URL format
 2. Verify relay is accessible
 3. Try alternative relays
@@ -492,12 +518,12 @@ const thread = await fetchThreadView(eventId);
 
 ## Implementation Status
 
-| NIP | Status | Description |
-|-----|--------|-------------|
-| NIP-01 | ✅ | Basic protocol flow |
-| NIP-07 | ✅ | Browser extension auth |
-| NIP-19 | ✅ | bech32 encoding |
-| NIP-23 | ✅ | Long-form content |
+| NIP    | Status | Description            |
+| ------ | ------ | ---------------------- |
+| NIP-01 | ✅     | Basic protocol flow    |
+| NIP-07 | ✅     | Browser extension auth |
+| NIP-19 | ✅     | bech32 encoding        |
+| NIP-23 | ✅     | Long-form content      |
 
 ---
 
@@ -509,7 +535,3 @@ Potential future implementations:
 - **NIP-57**: Lightning Zaps
 - **NIP-65**: Relay List Metadata
 - **NIP-98**: HTTP Auth
-
-
-
-

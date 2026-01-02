@@ -33,7 +33,9 @@ function saveTrendData(data) {
 function getCurrentCoverage() {
   const summaryFile = path.join(COVERAGE_DIR, "coverage-summary.json");
   if (!fs.existsSync(summaryFile)) {
-    console.error("Coverage summary not found. Run 'npm run test:coverage' first.");
+    console.error(
+      "Coverage summary not found. Run 'npm run test:coverage' first.",
+    );
     process.exit(1);
   }
 
@@ -122,14 +124,12 @@ function main() {
     generateTrendReport(trendData);
   } else {
     console.log("Usage:");
-    console.log("  node scripts/coverage-trend.js record  - Record current coverage");
+    console.log(
+      "  node scripts/coverage-trend.js record  - Record current coverage",
+    );
     console.log("  node scripts/coverage-trend.js report  - Show trend report");
     process.exit(1);
   }
 }
 
 main();
-
-
-
-

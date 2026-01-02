@@ -1,13 +1,18 @@
 /**
  * Property-based tests for helper functions
- * 
+ *
  * Uses fast-check to generate random inputs and verify properties
  */
 
 import fc from "fast-check";
 import { describe, it } from "vitest";
 
-import { getTimeRemaining, formatDate, getImageUrls, isVideoFile } from "~/lib/helpers";
+import {
+  getTimeRemaining,
+  formatDate,
+  getImageUrls,
+  isVideoFile,
+} from "~/lib/helpers";
 describe("Property-Based Tests: Helpers", () => {
   describe("getTimeRemaining", () => {
     it("should always return a non-empty string for valid date inputs", () => {
@@ -26,14 +31,11 @@ describe("Property-Based Tests: Helpers", () => {
 
     it("should return positive time remaining when scheduled date is in the future", () => {
       fc.assert(
-        fc.property(
-          fc.date({ min: new Date() }),
-          (futureDate: Date) => {
-            const result = getTimeRemaining(futureDate, new Date());
-            // Should contain at least one time unit (d, h, m, or s)
-            return /[\d]+[dhms]/.test(result);
-          },
-        ),
+        fc.property(fc.date({ min: new Date() }), (futureDate: Date) => {
+          const result = getTimeRemaining(futureDate, new Date());
+          // Should contain at least one time unit (d, h, m, or s)
+          return /[\d]+[dhms]/.test(result);
+        }),
         { numRuns: 50 },
       );
     });
@@ -61,12 +63,17 @@ describe("Property-Based Tests: Helpers", () => {
           fc.integer({ min: 1, max: 86400 * 365 }), // Seconds in the future (1 second to 1 year)
           (secondsInFuture: number) => {
             const currentTime = new Date();
-            const futureDate = new Date(currentTime.getTime() + secondsInFuture * 1000);
+            const futureDate = new Date(
+              currentTime.getTime() + secondsInFuture * 1000,
+            );
             const result = getTimeRemaining(futureDate, currentTime);
             // Should match format: "Xd Xh" or "Xh Xm" or "Xm Xs" or "Xs"
             // Allow for edge cases where time might be exactly 0 or very small
             if (secondsInFuture === 0) {
-              return result === "0s" || /^(\d+d \d+h|\d+h \d+m|\d+m \d+s|\d+s)$/.test(result);
+              return (
+                result === "0s" ||
+                /^(\d+d \d+h|\d+h \d+m|\d+m \d+s|\d+s)$/.test(result)
+              );
             }
             return /^(\d+d \d+h|\d+h \d+m|\d+m \d+s|\d+s)$/.test(result);
           },
@@ -100,7 +107,12 @@ describe("Property-Based Tests: Helpers", () => {
             const result1 = formatDate(dateObj);
             const result2 = formatDate(dateStr);
             // Both should be valid strings
-            return typeof result1 === "string" && typeof result2 === "string" && result1.length > 0 && result2.length > 0;
+            return (
+              typeof result1 === "string" &&
+              typeof result2 === "string" &&
+              result1.length > 0 &&
+              result2.length > 0
+            );
           },
         ),
         { numRuns: 50 },
@@ -125,26 +137,20 @@ describe("Property-Based Tests: Helpers", () => {
   describe("getImageUrls", () => {
     it("should always return an array", () => {
       fc.assert(
-        fc.property(
-          fc.array(fc.string()),
-          (urls: string[]) => {
-            const result = getImageUrls(urls);
-            return Array.isArray(result);
-          },
-        ),
+        fc.property(fc.array(fc.string()), (urls: string[]) => {
+          const result = getImageUrls(urls);
+          return Array.isArray(result);
+        }),
         { numRuns: 100 },
       );
     });
 
     it("should return empty array for empty input", () => {
       fc.assert(
-        fc.property(
-          fc.constant([]),
-          (urls: string[]) => {
-            const result = getImageUrls(urls);
-            return Array.isArray(result) && result.length === 0;
-          },
-        ),
+        fc.property(fc.constant([]), (urls: string[]) => {
+          const result = getImageUrls(urls);
+          return Array.isArray(result) && result.length === 0;
+        }),
       );
     });
 
@@ -180,20 +186,28 @@ describe("Property-Based Tests: Helpers", () => {
   describe("isVideoFile", () => {
     it("should return boolean for any string input", () => {
       fc.assert(
-        fc.property(
-          fc.string(),
-          (url: string) => {
-            const result = isVideoFile(url);
-            return typeof result === "boolean";
-          },
-        ),
+        fc.property(fc.string(), (url: string) => {
+          const result = isVideoFile(url);
+          return typeof result === "boolean";
+        }),
         { numRuns: 100 },
       );
     });
 
     it("should return true for URLs with video extensions", () => {
-      const videoExtensions = [".mp4", ".mov", ".webm", ".ogg", ".avi", ".mkv", ".m4v", ".3gp", ".flv", ".wmv"];
-      
+      const videoExtensions = [
+        ".mp4",
+        ".mov",
+        ".webm",
+        ".ogg",
+        ".avi",
+        ".mkv",
+        ".m4v",
+        ".3gp",
+        ".flv",
+        ".wmv",
+      ];
+
       fc.assert(
         fc.property(
           fc.webUrl(),
@@ -208,8 +222,15 @@ describe("Property-Based Tests: Helpers", () => {
     });
 
     it("should return false for URLs without video extensions", () => {
-      const nonVideoExtensions = [".jpg", ".png", ".gif", ".pdf", ".txt", ".html"];
-      
+      const nonVideoExtensions = [
+        ".jpg",
+        ".png",
+        ".gif",
+        ".pdf",
+        ".txt",
+        ".html",
+      ];
+
       fc.assert(
         fc.property(
           fc.webUrl(),
@@ -246,7 +267,13 @@ describe("Property-Based Tests: Helpers", () => {
     it("should return false for non-string inputs", () => {
       fc.assert(
         fc.property(
-          fc.oneof(fc.integer(), fc.float(), fc.boolean(), fc.constant(null), fc.constant(undefined)),
+          fc.oneof(
+            fc.integer(),
+            fc.float(),
+            fc.boolean(),
+            fc.constant(null),
+            fc.constant(undefined),
+          ),
           (input: number | boolean | null | undefined) => {
             // Testing invalid input types - function should handle gracefully
             return isVideoFile(input as unknown as string) === false;
@@ -257,10 +284,3 @@ describe("Property-Based Tests: Helpers", () => {
     });
   });
 });
-
-
-
-
-
-
-

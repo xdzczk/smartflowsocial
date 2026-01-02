@@ -40,7 +40,12 @@ export async function fetchUserProfile(pubkey: string): Promise<User | null> {
     for (const item of profileData) {
       if (!Array.isArray(item) || item[0] !== "EVENT" || !item[2]) continue;
       const eventData: unknown = item[2] as unknown;
-      if (!eventData || typeof eventData !== "object" || Array.isArray(eventData)) continue;
+      if (
+        !eventData ||
+        typeof eventData !== "object" ||
+        Array.isArray(eventData)
+      )
+        continue;
       const event = eventData as { kind?: number; content?: string };
       if (!event) continue;
 
@@ -82,12 +87,29 @@ export async function fetchUserProfile(pubkey: string): Promise<User | null> {
     }
 
     // Convert to User type
-    const profileTyped = profile as { name?: unknown; display_name?: unknown; about?: unknown; picture?: unknown; nip05?: unknown; lud16?: unknown };
-    const statsTyped = stats as { follows_count?: unknown; followers_count?: unknown; note_count?: unknown; reply_count?: unknown; time_joined?: unknown; total_zap_count?: unknown; total_satszapped?: unknown; media_count?: unknown };
+    const profileTyped = profile as {
+      name?: unknown;
+      display_name?: unknown;
+      about?: unknown;
+      picture?: unknown;
+      nip05?: unknown;
+      lud16?: unknown;
+    };
+    const statsTyped = stats as {
+      follows_count?: unknown;
+      followers_count?: unknown;
+      note_count?: unknown;
+      reply_count?: unknown;
+      time_joined?: unknown;
+      total_zap_count?: unknown;
+      total_satszapped?: unknown;
+      media_count?: unknown;
+    };
     const user: User = {
       pubkey,
       name: (profileTyped.name as string | undefined) ?? undefined,
-      displayName: (profileTyped.display_name as string | undefined) ?? undefined,
+      displayName:
+        (profileTyped.display_name as string | undefined) ?? undefined,
       about: (profileTyped.about as string | undefined) ?? undefined,
       picture: (profileTyped.picture as string | undefined) ?? undefined,
       nip05: (profileTyped.nip05 as string | undefined) ?? undefined,
@@ -107,7 +129,7 @@ export async function fetchUserProfile(pubkey: string): Promise<User | null> {
     // Log error but return null (non-critical - just means we can't calculate trust score)
     const { ExternalServiceError } = await import("~/lib/errors");
     const { logError } = await import("~/lib/error-logger.server");
-    
+
     const serviceError = new ExternalServiceError(
       `Failed to fetch user profile for ${pubkey}`,
       502,
@@ -117,7 +139,7 @@ export async function fetchUserProfile(pubkey: string): Promise<User | null> {
         originalError: error instanceof Error ? error.message : String(error),
       },
     );
-    
+
     logError(serviceError, { pubkey });
     return null;
   }
@@ -126,14 +148,19 @@ export async function fetchUserProfile(pubkey: string): Promise<User | null> {
 /**
  * Fetch post stats from Primal cache
  */
-async function fetchPostStats(eventIds: string[]): Promise<Record<string, {
-  likes: number;
-  replies: number;
-  mentions: number;
-  reposts: number;
-  zaps: number;
-  satszapped: number;
-}>> {
+async function fetchPostStats(eventIds: string[]): Promise<
+  Record<
+    string,
+    {
+      likes: number;
+      replies: number;
+      mentions: number;
+      reposts: number;
+      zaps: number;
+      satszapped: number;
+    }
+  >
+> {
   if (eventIds.length === 0) {
     return {};
   }
@@ -167,22 +194,34 @@ async function fetchPostStats(eventIds: string[]): Promise<Record<string, {
         throw new Error("Failed to fetch stats");
       }
 
-      const data = await response.json() as PrimalEvent[];
+      const data = (await response.json()) as PrimalEvent[];
       // Find the stats event in the response array
-      const statsEvent = data.find(
-        (event: PrimalEvent) => {
-          if (!Array.isArray(event) || event[0] !== "EVENT" || !event[2]) return false;
-          const eventData = event[2];
-          if (!eventData || typeof eventData !== "object" || Array.isArray(eventData)) return false;
-          const eventTyped = eventData as { kind?: number; content?: string };
-          return eventTyped.kind === 10000100 &&
-            eventTyped.content &&
-            typeof eventTyped.content === "string" &&
-            eventTyped.content.includes(eventId);
-        },
-      );
+      const statsEvent = data.find((event: PrimalEvent) => {
+        if (!Array.isArray(event) || event[0] !== "EVENT" || !event[2])
+          return false;
+        const eventData = event[2];
+        if (
+          !eventData ||
+          typeof eventData !== "object" ||
+          Array.isArray(eventData)
+        )
+          return false;
+        const eventTyped = eventData as { kind?: number; content?: string };
+        return (
+          eventTyped.kind === 10000100 &&
+          eventTyped.content &&
+          typeof eventTyped.content === "string" &&
+          eventTyped.content.includes(eventId)
+        );
+      });
 
-      if (statsEvent && Array.isArray(statsEvent) && statsEvent[2] && typeof statsEvent[2] === "object" && !Array.isArray(statsEvent[2])) {
+      if (
+        statsEvent &&
+        Array.isArray(statsEvent) &&
+        statsEvent[2] &&
+        typeof statsEvent[2] === "object" &&
+        !Array.isArray(statsEvent[2])
+      ) {
         const eventData = statsEvent[2] as { kind?: number; content?: string };
         if (eventData.content && typeof eventData.content === "string") {
           const content = JSON.parse(eventData.content) as {
@@ -226,7 +265,7 @@ async function fetchPostStats(eventIds: string[]): Promise<Record<string, {
     // Use centralized error handling but provide safe defaults
     const { ExternalServiceError } = await import("~/lib/errors");
     const { logError } = await import("~/lib/error-logger.server");
-    
+
     // Log the error but continue with empty stats
     const serviceError = new ExternalServiceError(
       "Failed to fetch stats from Primal cache",
@@ -237,28 +276,34 @@ async function fetchPostStats(eventIds: string[]): Promise<Record<string, {
         originalError: error instanceof Error ? error.message : String(error),
       },
     );
-    
+
     logError(serviceError, { eventIdsCount: eventIds.length, userId: "" });
-    
+
     // Initialize empty stats object with 0 values for each post
-    return eventIds.reduce((acc, eventId) => {
-      acc[eventId] = {
-        likes: 0,
-        replies: 0,
-        mentions: 0,
-        reposts: 0,
-        zaps: 0,
-        satszapped: 0,
-      };
-      return acc;
-    }, ((): Record<string, {
-      likes: number;
-      replies: number;
-      mentions: number;
-      reposts: number;
-      zaps: number;
-      satszapped: number;
-    }> => ({}))());
+    return eventIds.reduce(
+      (acc, eventId) => {
+        acc[eventId] = {
+          likes: 0,
+          replies: 0,
+          mentions: 0,
+          reposts: 0,
+          zaps: 0,
+          satszapped: 0,
+        };
+        return acc;
+      },
+      ((): Record<
+        string,
+        {
+          likes: number;
+          replies: number;
+          mentions: number;
+          reposts: number;
+          zaps: number;
+          satszapped: number;
+        }
+      > => ({}))(),
+    );
   }
 }
 
@@ -268,7 +313,13 @@ async function fetchPostStats(eventIds: string[]): Promise<Record<string, {
 async function processGiveawayParticipants(
   relatedEvents: RelatedEvent[],
   userId: string,
-  user: { id: string; npub?: string; filterMuted?: boolean; mutedList?: { npubs?: string[] }; [key: string]: unknown },
+  user: {
+    id: string;
+    npub?: string;
+    filterMuted?: boolean;
+    mutedList?: { npubs?: string[] };
+    [key: string]: unknown;
+  },
 ): Promise<RelatedEvent[]> {
   if (relatedEvents.length === 0) {
     return [];
@@ -294,7 +345,11 @@ async function processGiveawayParticipants(
 
   // Get muted pubkeys if filtering is enabled
   const mutedSet = new Set<string>();
-  if (user.filterMuted && user.mutedList?.npubs && Array.isArray(user.mutedList.npubs)) {
+  if (
+    user.filterMuted &&
+    user.mutedList?.npubs &&
+    Array.isArray(user.mutedList.npubs)
+  ) {
     user.mutedList.npubs.forEach((pubkey: string) => {
       mutedSet.add(pubkey);
     });
@@ -324,9 +379,15 @@ async function processGiveawayParticipants(
       // Find user profile event (kind 0)
       const userProfile = (userProfileResponse as PrimalEvent[]).find(
         (data: PrimalEvent) => {
-          if (!Array.isArray(data) || data[0] !== "EVENT" || !data[2]) return false;
+          if (!Array.isArray(data) || data[0] !== "EVENT" || !data[2])
+            return false;
           const eventData = data[2];
-          if (!eventData || typeof eventData !== "object" || Array.isArray(eventData)) return false;
+          if (
+            !eventData ||
+            typeof eventData !== "object" ||
+            Array.isArray(eventData)
+          )
+            return false;
           const eventTyped = eventData as { kind?: number };
           return eventTyped.kind === 0;
         },
@@ -335,9 +396,15 @@ async function processGiveawayParticipants(
       // Find stats event (kind 10000105)
       const statsEvent = (userProfileResponse as PrimalEvent[]).find(
         (data: PrimalEvent) => {
-          if (!Array.isArray(data) || data[0] !== "EVENT" || !data[2]) return false;
+          if (!Array.isArray(data) || data[0] !== "EVENT" || !data[2])
+            return false;
           const eventData = data[2];
-          if (!eventData || typeof eventData !== "object" || Array.isArray(eventData)) return false;
+          if (
+            !eventData ||
+            typeof eventData !== "object" ||
+            Array.isArray(eventData)
+          )
+            return false;
           const eventTyped = eventData as { kind?: number };
           return eventTyped.kind === 10000105;
         },
@@ -350,7 +417,9 @@ async function processGiveawayParticipants(
       if (userProfile && Array.isArray(userProfile) && userProfile[2]) {
         const profileEvent = userProfile[2] as { content?: string };
         if (profileEvent.content && typeof profileEvent.content === "string") {
-          const profileContent = JSON.parse(profileEvent.content) as { lud16?: string };
+          const profileContent = JSON.parse(profileEvent.content) as {
+            lud16?: string;
+          };
           lud16 = profileContent.lud16 ?? null;
         }
       }
@@ -358,8 +427,13 @@ async function processGiveawayParticipants(
       // Extract zap stats
       if (statsEvent && Array.isArray(statsEvent) && statsEvent[2]) {
         const statsEventData = statsEvent[2] as { content?: string };
-        if (statsEventData.content && typeof statsEventData.content === "string") {
-          const stats = JSON.parse(statsEventData.content) as { total_zap_count?: number };
+        if (
+          statsEventData.content &&
+          typeof statsEventData.content === "string"
+        ) {
+          const stats = JSON.parse(statsEventData.content) as {
+            total_zap_count?: number;
+          };
           totalZapped = stats.total_zap_count ?? 0;
         }
       }
@@ -421,7 +495,12 @@ export async function loadGiveawayData(
 
   // Get event IDs from signedEvent.id
   const eventIds = posts
-    .filter((post) => post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent)
+    .filter(
+      (post) =>
+        post.signedEvent &&
+        typeof post.signedEvent === "object" &&
+        "id" in post.signedEvent,
+    )
     .map((post) => {
       const signedEvent = post.signedEvent as { id: string };
       return signedEvent.id;
@@ -432,24 +511,29 @@ export async function loadGiveawayData(
 
   // Add total engagement to each post
   const postsWithEngagement = posts.map((post) => {
-    const eventId = post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent
-      ? (post.signedEvent as { id: string }).id
-      : null;
-    const postStats = eventId ? (stats[eventId] ?? {
-      likes: 0,
-      replies: 0,
-      mentions: 0,
-      reposts: 0,
-      zaps: 0,
-      satszapped: 0,
-    }) : {
-      likes: 0,
-      replies: 0,
-      mentions: 0,
-      reposts: 0,
-      zaps: 0,
-      satszapped: 0,
-    };
+    const eventId =
+      post.signedEvent &&
+      typeof post.signedEvent === "object" &&
+      "id" in post.signedEvent
+        ? (post.signedEvent as { id: string }).id
+        : null;
+    const postStats = eventId
+      ? (stats[eventId] ?? {
+          likes: 0,
+          replies: 0,
+          mentions: 0,
+          reposts: 0,
+          zaps: 0,
+          satszapped: 0,
+        })
+      : {
+          likes: 0,
+          replies: 0,
+          mentions: 0,
+          reposts: 0,
+          zaps: 0,
+          satszapped: 0,
+        };
 
     const totalEngagement =
       postStats.likes +
@@ -473,7 +557,11 @@ export async function loadGiveawayData(
   // Extract all post IDs into an array
   const postIds = postsWithNonZeroEngagement
     .map((post) => {
-      if (post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent) {
+      if (
+        post.signedEvent &&
+        typeof post.signedEvent === "object" &&
+        "id" in post.signedEvent
+      ) {
         return (post.signedEvent as { id: string }).id;
       }
       return null;
@@ -491,18 +579,26 @@ export async function loadGiveawayData(
   if (!user) {
     throw new Error("User not found");
   }
-  
+
   // Ensure user has required properties with safe defaults
   const userWithDefaults = {
     ...user,
     id: user.id,
     npub: user.npub ?? "",
     filterMuted: user.filterMuted ?? false,
-    mutedList: user.mutedList && typeof user.mutedList === "object" && !Array.isArray(user.mutedList) && "npubs" in user.mutedList
-      ? { npubs: Array.isArray((user.mutedList as { npubs?: unknown }).npubs) ? (user.mutedList as { npubs?: unknown }).npubs as string[] : [] }
-      : { npubs: [] },
+    mutedList:
+      user.mutedList &&
+      typeof user.mutedList === "object" &&
+      !Array.isArray(user.mutedList) &&
+      "npubs" in user.mutedList
+        ? {
+            npubs: Array.isArray((user.mutedList as { npubs?: unknown }).npubs)
+              ? ((user.mutedList as { npubs?: unknown }).npubs as string[])
+              : [],
+          }
+        : { npubs: [] },
   };
-  
+
   const processedEvents = await processGiveawayParticipants(
     relatedEvents,
     userId,
@@ -518,4 +614,3 @@ export async function loadGiveawayData(
     selectedQueueType: queueType,
   };
 }
-

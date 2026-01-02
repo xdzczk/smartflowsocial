@@ -2,7 +2,7 @@ import { TEST_NPUB } from "./support/nostr-test-keys";
 
 /**
  * Settings Tests
- * 
+ *
  * Tests user settings functionality:
  * - Accessing settings page
  * - Viewing settings sections
@@ -44,22 +44,22 @@ describe("User Settings", () => {
       cy.get("body").should("be.visible");
       // Should have some form of settings content
       cy.get("body").then(($body) => {
-        const hasContent = 
+        const hasContent =
           $body.find("form").length > 0 ||
           $body.find('[data-testid="settings-section"]').length > 0 ||
           $body.find("h1, h2").length > 0;
-        
+
         expect(hasContent).to.be.true;
       });
     });
 
     it("should display settings sections or tabs", () => {
       cy.get("body").then(($body) => {
-        const hasSections = 
+        const hasSections =
           $body.find('[data-testid="settings-section"]').length > 0 ||
           $body.find('[role="tablist"]').length > 0 ||
           $body.find(".settings-section, .card").length > 0;
-        
+
         expect(hasSections).to.be.true;
       });
     });
@@ -73,19 +73,17 @@ describe("User Settings", () => {
     it("should display queue settings tab", () => {
       cy.get("body").then(($body) => {
         // Check for queue tab or queue settings
-        const hasQueueTab = 
-          $body.find('[role="tab"]:contains("Queue"), a[href*="queue"]').length > 0 ||
-          $body.find('button:contains("Queue")').length > 0;
-        
+        const hasQueueTab =
+          $body.find('[role="tab"]:contains("Queue"), a[href*="queue"]')
+            .length > 0 || $body.find('button:contains("Queue")').length > 0;
+
         // Or check if queue settings are visible
-        const hasQueueSettings = 
+        const hasQueueSettings =
           $body.find('[data-testid="queue-settings"]').length > 0 ||
           $body.text().toLowerCase().includes("queue");
-        
+
         expect(hasQueueTab || hasQueueSettings).to.be.true;
       });
     });
   });
 });
-
-

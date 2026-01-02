@@ -3,7 +3,8 @@
  * Centralized action processing for new post page
  */
 
-import { redirect ,
+import {
+  redirect,
   unstable_composeUploadHandlers as composeUploadHandlers,
   unstable_createMemoryUploadHandler as createMemoryUploadHandler,
   unstable_parseMultipartFormData as parseMultipartFormData,
@@ -37,7 +38,8 @@ function isVideoFile(fileUrl: string | string[]): boolean {
   ];
 
   try {
-    const urls = typeof fileUrl === "string" ? JSON.parse(fileUrl) as string[] : fileUrl;
+    const urls =
+      typeof fileUrl === "string" ? (JSON.parse(fileUrl) as string[]) : fileUrl;
     if (Array.isArray(urls) && urls.length > 0) {
       const firstUrl = urls[0];
       const lower = firstUrl.toLowerCase();
@@ -45,7 +47,8 @@ function isVideoFile(fileUrl: string | string[]): boolean {
     }
   } catch (_e) {
     // If parsing fails, try direct string
-    const fileUrlStr = typeof fileUrl === "string" ? fileUrl : fileUrl[0] ?? "";
+    const fileUrlStr =
+      typeof fileUrl === "string" ? fileUrl : (fileUrl[0] ?? "");
     const lower = fileUrlStr.toLowerCase();
     return videoExtensions.some((ext) => lower.includes(ext));
   }
@@ -69,7 +72,13 @@ async function getHashtagPresetTags(
   if (useHashtagPresets && manualHashTagPresetId) {
     // Use manually selected hashtag preset
     const preset = await getHashTagPresetById(userId, manualHashTagPresetId);
-    hashTagPresetTags = (preset && typeof preset === "object" && "tags" in preset && typeof preset.tags === "string") ? preset.tags : "";
+    hashTagPresetTags =
+      preset &&
+      typeof preset === "object" &&
+      "tags" in preset &&
+      typeof preset.tags === "string"
+        ? preset.tags
+        : "";
     hashTagPresetId = manualHashTagPresetId;
   } else if (!useHashtagPresets && queueType !== "unassigned") {
     // Use queue type's default hashtag preset
@@ -84,12 +93,27 @@ async function getHashtagPresetTags(
       selectedQueueType = queueTypes.find((qt) => qt.name === queueType);
     }
 
-    if (selectedQueueType && typeof selectedQueueType === "object" && "hashTagPreset" in selectedQueueType && selectedQueueType.hashTagPreset) {
+    if (
+      selectedQueueType &&
+      typeof selectedQueueType === "object" &&
+      "hashTagPreset" in selectedQueueType &&
+      selectedQueueType.hashTagPreset
+    ) {
       const preset = selectedQueueType.hashTagPreset;
-      if (preset && typeof preset === "object" && "tags" in preset && typeof preset.tags === "string") {
+      if (
+        preset &&
+        typeof preset === "object" &&
+        "tags" in preset &&
+        typeof preset.tags === "string"
+      ) {
         hashTagPresetTags = preset.tags ?? "";
       }
-      if (preset && typeof preset === "object" && "id" in preset && typeof preset.id === "string") {
+      if (
+        preset &&
+        typeof preset === "object" &&
+        "id" in preset &&
+        typeof preset.id === "string"
+      ) {
         hashTagPresetId = preset.id;
       }
     }
@@ -119,7 +143,8 @@ async function publishToNostr(
   signedEvent: SignedEvent,
 ): Promise<void> {
   // Read directly from process.env to support test environment changes
-  const publisherUrl = process.env.NOSTR_PUBLISHER_URL ?? env.NOSTR_PUBLISHER_URL;
+  const publisherUrl =
+    process.env.NOSTR_PUBLISHER_URL ?? env.NOSTR_PUBLISHER_URL;
   if (!publisherUrl) {
     throw new Error("NOSTR_PUBLISHER_URL environment variable is not set");
   }
@@ -160,7 +185,11 @@ async function handleDraftText(
   const content = contentValue ? String(contentValue) : "";
 
   // Resolve queue type ID in feature layer (business logic)
-  const resolvedQueueTypeId = await resolveQueueTypeId(userId, queueTypeId, queueType);
+  const resolvedQueueTypeId = await resolveQueueTypeId(
+    userId,
+    queueTypeId,
+    queueType,
+  );
 
   await createPost({
     userId,
@@ -198,11 +227,11 @@ async function handlePostOrScheduleText(
   const contentValue = formData.get("content");
   const signedEventValue = formData.get("signedEvent");
   const nostrEventValue = formData.get("nostrEvent");
-  
+
   const content = contentValue ? String(contentValue) : "";
   const signedEventStr = signedEventValue ? String(signedEventValue) : "";
   const nostrEventStr = nostrEventValue ? String(nostrEventValue) : "";
-  
+
   let signedEventRaw: SignedEvent;
   let nostrEventRaw: NostrEvent;
   try {
@@ -211,15 +240,19 @@ async function handlePostOrScheduleText(
   } catch {
     throw new Error("Invalid signedEvent or nostrEvent format");
   }
-  
+
   const signedEvent: SignedEvent = signedEventRaw;
   const nostrEvent: NostrEvent = nostrEventRaw;
   const signedEventJson = signedEvent;
 
   if (action === "post-text") {
     // Resolve queue type ID in feature layer (business logic)
-    const resolvedQueueTypeId = await resolveQueueTypeId(userId, queueTypeId, queueType);
-    
+    const resolvedQueueTypeId = await resolveQueueTypeId(
+      userId,
+      queueTypeId,
+      queueType,
+    );
+
     const post = await createPost({
       userId,
       content: applyHashtags(content, hashTagPresetTags, showHashTagsinPosts),
@@ -238,14 +271,21 @@ async function handlePostOrScheduleText(
       hashTagPresetId,
     });
 
-    await publishToNostr(sanitizedRelays, post.signedEvent as unknown as SignedEvent);
+    await publishToNostr(
+      sanitizedRelays,
+      post.signedEvent as unknown as SignedEvent,
+    );
 
     return redirect("/dashboard/posted");
   } else {
     // schedule-text
     // Resolve queue type ID in feature layer (business logic)
-    const resolvedQueueTypeId = await resolveQueueTypeId(userId, queueTypeId, queueType);
-    
+    const resolvedQueueTypeId = await resolveQueueTypeId(
+      userId,
+      queueTypeId,
+      queueType,
+    );
+
     await createPost({
       userId,
       content: applyHashtags(content, hashTagPresetTags, showHashTagsinPosts),
@@ -270,14 +310,16 @@ async function handlePostOrScheduleText(
 /**
  * Handle upload preview action
  */
-function handleUploadPreview(
-  formData: FormData,
-): { success: boolean; fileUrls?: string[]; error?: string } {
+function handleUploadPreview(formData: FormData): {
+  success: boolean;
+  fileUrls?: string[];
+  error?: string;
+} {
   const files = formData.getAll("files");
   const scheduledForValue = formData.get("scheduledFor");
   const captionValue = formData.get("caption");
   const queueTypeValue = formData.get("queueType");
-  
+
   const scheduledFor = scheduledForValue ? String(scheduledForValue) : null;
   const caption = captionValue ? String(captionValue) : null;
   const queueType = queueTypeValue ? String(queueTypeValue) : null;
@@ -285,7 +327,12 @@ function handleUploadPreview(
   // Validate files are not empty and are valid URLs
   const hasValidFiles = files.some((file) => {
     try {
-      const fileStr = typeof file === "string" ? file : file instanceof File ? file.name : String(file);
+      const fileStr =
+        typeof file === "string"
+          ? file
+          : file instanceof File
+            ? file.name
+            : String(file);
       new URL(fileStr); // Check if valid URL
       return true;
     } catch {
@@ -306,7 +353,12 @@ function handleUploadPreview(
     caption: string | null;
     queueType: string | null;
   }[] = files.map((fileUrl) => {
-    const fileUrlStr = typeof fileUrl === "string" ? fileUrl : fileUrl instanceof File ? fileUrl.name : String(fileUrl);
+    const fileUrlStr =
+      typeof fileUrl === "string"
+        ? fileUrl
+        : fileUrl instanceof File
+          ? fileUrl.name
+          : String(fileUrl);
     return {
       fileUrl: fileUrlStr,
       scheduledFor,
@@ -336,12 +388,12 @@ async function handlePostImages(
   const nostrEventValue = formData.get("nostrEvent");
   const fileUrlValue = formData.get("fileUrl");
   const captionValue = formData.get("caption");
-  
+
   const signedEventStr = signedEventValue ? String(signedEventValue) : "";
   const nostrEventStr = nostrEventValue ? String(nostrEventValue) : "";
   const fileUrl = fileUrlValue ? String(fileUrlValue) : "";
   const caption = captionValue ? String(captionValue) : "";
-  
+
   let signedEventRaw: SignedEvent;
   let nostrEventRaw: NostrEvent;
   try {
@@ -350,14 +402,18 @@ async function handlePostImages(
   } catch {
     throw new Error("Invalid signedEvent or nostrEvent format");
   }
-  
+
   const signedEvent: SignedEvent = signedEventRaw;
   const nostrEvent: NostrEvent = nostrEventRaw;
 
   const isVideo = isVideoFile(fileUrl);
 
   // Resolve queue type ID in feature layer (business logic)
-  const resolvedQueueTypeId = await resolveQueueTypeId(userId, queueTypeId, queueType);
+  const resolvedQueueTypeId = await resolveQueueTypeId(
+    userId,
+    queueTypeId,
+    queueType,
+  );
 
   const post = await createPost({
     userId,
@@ -378,7 +434,10 @@ async function handlePostImages(
     hashTagPresetId,
   });
 
-  await publishToNostr(sanitizedRelays, post.signedEvent as unknown as SignedEvent);
+  await publishToNostr(
+    sanitizedRelays,
+    post.signedEvent as unknown as SignedEvent,
+  );
 
   return redirect("/dashboard/posted");
 }
@@ -400,12 +459,12 @@ async function handleScheduleImages(
   const nostrEventValue = formData.get("nostrEvent");
   const fileUrlValue = formData.get("fileUrl");
   const captionValue = formData.get("caption");
-  
+
   const signedEventStr = signedEventValue ? String(signedEventValue) : "";
   const nostrEventStr = nostrEventValue ? String(nostrEventValue) : "";
   const fileUrl = fileUrlValue ? String(fileUrlValue) : "";
   const caption = captionValue ? String(captionValue) : "";
-  
+
   let signedEvent: SignedEvent;
   let nostrEvent: NostrEvent;
   try {
@@ -418,7 +477,11 @@ async function handleScheduleImages(
   const isVideo = isVideoFile(fileUrl);
 
   // Resolve queue type ID in feature layer (business logic)
-  const resolvedQueueTypeId = await resolveQueueTypeId(userId, queueTypeId, queueType);
+  const resolvedQueueTypeId = await resolveQueueTypeId(
+    userId,
+    queueTypeId,
+    queueType,
+  );
 
   await createPost({
     userId,
@@ -464,7 +527,11 @@ async function handleDraftImages(
   }
 
   // Resolve queue type ID in feature layer (business logic)
-  const resolvedQueueTypeId = await resolveQueueTypeId(userId, queueTypeId, queueType);
+  const resolvedQueueTypeId = await resolveQueueTypeId(
+    userId,
+    queueTypeId,
+    queueType,
+  );
 
   await createPost({
     userId,
@@ -515,7 +582,7 @@ export async function handleNewPostAction(
   const _actionValue = formData.get("_action");
   const captionValue = formData.get("caption");
   const scheduledForValue = formData.get("scheduledFor");
-  
+
   const _action = _actionValue ? String(_actionValue) : "";
   const _caption = captionValue ? String(captionValue) : "";
   const _scheduledFor = scheduledForValue ? String(scheduledForValue) : null;
@@ -524,25 +591,40 @@ export async function handleNewPostAction(
   const isRecyclableValue = formData.get("isRecyclable");
   const useHashtagPresetsValue = formData.get("useHashtagPresets");
   const hashTagPresetIdValue = formData.get("hashTagPresetId");
-  
-  const queueType = (queueTypeValue ? String(queueTypeValue) : null) ?? "unassigned";
+
+  const queueType =
+    (queueTypeValue ? String(queueTypeValue) : null) ?? "unassigned";
   const queueTypeId = queueTypeIdValue ? String(queueTypeIdValue) : null;
-  const isRecyclable = isRecyclableValue === "on" || isRecyclableValue === "true";
-  const useHashtagPresets = useHashtagPresetsValue === "on" || useHashtagPresetsValue === "true";
-  const manualHashTagPresetId = useHashtagPresets && hashTagPresetIdValue
-    ? String(hashTagPresetIdValue)
-    : null;
+  const isRecyclable =
+    isRecyclableValue === "on" || isRecyclableValue === "true";
+  const useHashtagPresets =
+    useHashtagPresetsValue === "on" || useHashtagPresetsValue === "true";
+  const manualHashTagPresetId =
+    useHashtagPresets && hashTagPresetIdValue
+      ? String(hashTagPresetIdValue)
+      : null;
 
   // Get hashtag preset tags
   const hashtagResult = await getHashtagPresetTags(
-      userId,
-      useHashtagPresets,
-      manualHashTagPresetId,
-      queueType,
-      queueTypeId,
-    );
-  const hashTagPresetTags = typeof hashtagResult === "object" && hashtagResult !== null && "tags" in hashtagResult && typeof hashtagResult.tags === "string" ? hashtagResult.tags : "";
-  const hashTagPresetId = typeof hashtagResult === "object" && hashtagResult !== null && "presetId" in hashtagResult ? (hashtagResult.presetId) : manualHashTagPresetId;
+    userId,
+    useHashtagPresets,
+    manualHashTagPresetId,
+    queueType,
+    queueTypeId,
+  );
+  const hashTagPresetTags =
+    typeof hashtagResult === "object" &&
+    hashtagResult !== null &&
+    "tags" in hashtagResult &&
+    typeof hashtagResult.tags === "string"
+      ? hashtagResult.tags
+      : "";
+  const hashTagPresetId =
+    typeof hashtagResult === "object" &&
+    hashtagResult !== null &&
+    "presetId" in hashtagResult
+      ? hashtagResult.presetId
+      : manualHashTagPresetId;
 
   // Handle different actions
   if (_action === "draft-text") {
@@ -629,4 +711,3 @@ export async function handleNewPostAction(
 
   return Response.json({ success: false });
 }
-

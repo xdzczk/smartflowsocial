@@ -20,12 +20,14 @@ Step-by-step guide to setting up and managing parent/child account relationships
 ## What are Parent/Child Accounts?
 
 **Parent/Child relationships allow:**
+
 - Managing multiple accounts from one interface
 - Switching between accounts seamlessly
 - Sharing features between accounts
 - Organizing accounts hierarchically
 
 **Use cases:**
+
 - Business and personal accounts
 - Multiple brand identities
 - Team account management
@@ -38,11 +40,13 @@ Step-by-step guide to setting up and managing parent/child account relationships
 **Before starting, ensure:**
 
 1. **Parent account has Premium or Founder plan:**
+
    - Go to Settings → Subscription
    - Verify plan is Premium or Founder
    - Upgrade if needed
 
 2. **Parent account is not a child:**
+
    - Check account status
    - Cannot be child and parent simultaneously
 
@@ -68,11 +72,13 @@ Step-by-step guide to setting up and managing parent/child account relationships
 ## Step 3: Search for Child Account
 
 1. **In search box, enter:**
+
    - Account name
    - Profile display name
    - npub (public key)
 
 2. **Search results appear:**
+
    - Matching accounts displayed
    - Shows profile information
    - Account status indicators
@@ -83,6 +89,7 @@ Step-by-step guide to setting up and managing parent/child account relationships
    - Ensure not already linked
 
 **Search tips:**
+
 - Use npub for exact match
 - Name search is fuzzy
 - Results update as you type
@@ -93,12 +100,14 @@ Step-by-step guide to setting up and managing parent/child account relationships
 
 1. **Find child account** in search results
 2. **Review account information:**
+
    - Profile name
    - npub
    - Status (available, has parent, etc.)
 
 3. **Click "Request Link"** button
 4. **Request sent:**
+
    - Status changes to "Requesting..."
    - Then shows "Requested"
    - Request appears in "Pending Children"
@@ -116,11 +125,13 @@ Step-by-step guide to setting up and managing parent/child account relationships
 1. **Log in to child account**
 2. **Go to Settings** → **Accounts**
 3. **View "Pending Requests" section:**
+
    - See parent account request
    - Shows parent profile information
    - Request details
 
 4. **Review parent account:**
+
    - Verify parent identity
    - Check parent profile
    - Ensure trust relationship
@@ -193,6 +204,7 @@ Step-by-step guide to setting up and managing parent/child account relationships
 5. **All children appear** in "Confirmed Children"
 
 **Best practices:**
+
 - Organize by purpose
 - Use clear naming
 - Limit to necessary accounts
@@ -222,6 +234,7 @@ Step-by-step guide to setting up and managing parent/child account relationships
 ### Parent Account Permissions
 
 **Can do:**
+
 - Search for accounts
 - Request child links
 - Manage child accounts
@@ -230,18 +243,21 @@ Step-by-step guide to setting up and managing parent/child account relationships
 - Cancel pending requests
 
 **Cannot do:**
+
 - Link to another parent (if already a child)
 - Manage accounts without Premium/Founder
 
 ### Child Account Permissions
 
 **Can do:**
+
 - Accept/reject parent requests
 - Switch to parent account
 - Unlink from parent
 - Use parent's features (if granted)
 
 **Cannot do:**
+
 - Search for accounts
 - Request child links
 - Manage other child accounts
@@ -256,6 +272,7 @@ Step-by-step guide to setting up and managing parent/child account relationships
 **Problem:** Search feature not available
 
 **Solutions:**
+
 - Verify Premium/Founder plan
 - Check account is not a child
 - Refresh page
@@ -266,6 +283,7 @@ Step-by-step guide to setting up and managing parent/child account relationships
 **Problem:** Request sent but not appearing
 
 **Solutions:**
+
 - Check child account Settings
 - Verify request was sent
 - Refresh both accounts
@@ -276,6 +294,7 @@ Step-by-step guide to setting up and managing parent/child account relationships
 **Problem:** Account switcher not working
 
 **Solutions:**
+
 - Verify accounts are linked
 - Check relationship status
 - Refresh page
@@ -286,6 +305,7 @@ Step-by-step guide to setting up and managing parent/child account relationships
 **Problem:** Request accepted but link not working
 
 **Solutions:**
+
 - Verify both accounts active
 - Check for errors
 - Refresh both accounts
@@ -298,11 +318,13 @@ Step-by-step guide to setting up and managing parent/child account relationships
 ### Account Organization
 
 1. **Clear naming:**
+
    - Use descriptive account names
    - Distinguish parent from children
    - Organize by purpose
 
 2. **Limit relationships:**
+
    - Only link necessary accounts
    - Keep relationships clear
    - Avoid over-complication
@@ -315,11 +337,13 @@ Step-by-step guide to setting up and managing parent/child account relationships
 ### Security
 
 1. **Trust relationships:**
+
    - Only link trusted accounts
    - Verify account ownership
    - Monitor linked accounts
 
 2. **Access control:**
+
    - Review child account access
    - Remove unnecessary links
    - Update permissions as needed
@@ -337,7 +361,7 @@ Step-by-step guide to setting up and managing parent/child account relationships
 ✅ How to search for and request child links  
 ✅ How to accept/reject requests  
 ✅ How to switch between accounts  
-✅ How to manage multiple children  
+✅ How to manage multiple children
 
 ---
 
@@ -358,4 +382,3 @@ Step-by-step guide to setting up and managing parent/child account relationships
 ---
 
 **Next Tutorial:** [Advanced Scheduling Strategies](./advanced-scheduling-strategies.md) → Optimize your schedule
-

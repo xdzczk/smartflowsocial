@@ -1,7 +1,7 @@
 /**
  * Unit tests for scheduling/queue logic
  * Tests real exported functions from app/lib/schedule-formatting.ts
- * 
+ *
  * Migrated from tests/e2e/unit/scheduling-logic.cy.ts
  */
 
@@ -66,8 +66,14 @@ describe("Scheduling Logic Unit Tests", () => {
 
       // Test different timezones
       const tokyoResult = formatScheduleTimeForInput(testDate, "Asia/Tokyo"); // UTC+9
-      const londonResult = formatScheduleTimeForInput(testDate, "Europe/London"); // UTC+1 in July (BST)
-      const laResult = formatScheduleTimeForInput(testDate, "America/Los_Angeles"); // UTC-7 in July (PDT)
+      const londonResult = formatScheduleTimeForInput(
+        testDate,
+        "Europe/London",
+      ); // UTC+1 in July (BST)
+      const laResult = formatScheduleTimeForInput(
+        testDate,
+        "America/Los_Angeles",
+      ); // UTC-7 in July (PDT)
 
       expect(tokyoResult).toBe("2024-07-15T21:00");
       expect(londonResult).toBe("2024-07-15T13:00");
@@ -75,4 +81,3 @@ describe("Scheduling Logic Unit Tests", () => {
     });
   });
 });
-

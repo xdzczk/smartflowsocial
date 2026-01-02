@@ -1,6 +1,6 @@
 /**
  * Security Headers Tests
- * 
+ *
  * Tests to verify that security headers are properly set on responses.
  */
 
@@ -74,30 +74,30 @@ describe("Security Headers", () => {
 
 /**
  * Note: These are placeholder tests.
- * 
+ *
  * For full integration testing, you would:
  * 1. Start the Express server
  * 2. Make HTTP requests to various endpoints
  * 3. Verify headers are present and have correct values
- * 
+ *
  * Example integration test:
- * 
+ *
  * ```typescript
  * import { describe, it, expect, beforeAll, afterAll } from "vitest";
  * import request from "supertest";
  * import { app } from "~/server";
- * 
+ *
  * describe("Security Headers Integration", () => {
  *   it("should set X-Content-Type-Options header", async () => {
  *     const response = await request(app).get("/");
  *     expect(response.headers["x-content-type-options"]).toBe("nosniff");
  *   });
- * 
+ *
  *   it("should set X-Frame-Options header", async () => {
  *     const response = await request(app).get("/");
  *     expect(response.headers["x-frame-options"]).toBe("DENY");
  *   });
- * 
+ *
  *   it("should set Content-Security-Policy header", async () => {
  *     const response = await request(app).get("/");
  *     expect(response.headers["content-security-policy"]).toContain("default-src 'self'");

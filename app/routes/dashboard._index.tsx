@@ -1,8 +1,9 @@
-import { json, type LoaderFunctionArgs, type ActionFunctionArgs } from "@remix-run/node";
 import {
-  useLoaderData,
-  useSearchParams,
-} from "@remix-run/react";
+  json,
+  type LoaderFunctionArgs,
+  type ActionFunctionArgs,
+} from "@remix-run/node";
+import { useLoaderData, useSearchParams } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
 import MediaModal from "~/components/ui/MediaModal";
@@ -62,11 +63,11 @@ export async function action({ request }: ActionFunctionArgs) {
     const userId = await requireUserId(request);
     const formData = await request.formData();
     const result = await handleDashboardAction(formData, userId);
-    
+
     if (result.error) {
       return json(result, { status: 400 });
     }
-    
+
     return json(result);
   } catch (error) {
     const { handleActionError } = await import("~/lib/error-handler.server");
@@ -76,54 +77,113 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function DashboardIndex() {
   const loaderData = useLoaderData<typeof loader>();
-  const scheduledPostsRaw = "scheduledPosts" in loaderData && Array.isArray(loaderData.scheduledPosts) ? loaderData.scheduledPosts : [];
-  const longformPostsRaw = "longformPosts" in loaderData && Array.isArray(loaderData.longformPosts) ? loaderData.longformPosts : [];
-  const allContentRaw = "allContent" in loaderData && Array.isArray(loaderData.allContent) ? loaderData.allContent : [];
+  const scheduledPostsRaw =
+    "scheduledPosts" in loaderData && Array.isArray(loaderData.scheduledPosts)
+      ? loaderData.scheduledPosts
+      : [];
+  const longformPostsRaw =
+    "longformPosts" in loaderData && Array.isArray(loaderData.longformPosts)
+      ? loaderData.longformPosts
+      : [];
+  const allContentRaw =
+    "allContent" in loaderData && Array.isArray(loaderData.allContent)
+      ? loaderData.allContent
+      : [];
   const user = "user" in loaderData ? loaderData.user : null;
-  const queueTypesRaw = "queueTypes" in loaderData && Array.isArray(loaderData.queueTypes) ? loaderData.queueTypes : [];
-  const hashTagPresets = "hashTagPresets" in loaderData && Array.isArray(loaderData.hashTagPresets) ? loaderData.hashTagPresets : [];
-  const planActivated = "planActivated" in loaderData ? loaderData.planActivated : null;
-  const successMessage = "successMessage" in loaderData ? loaderData.successMessage : null;
+  const queueTypesRaw =
+    "queueTypes" in loaderData && Array.isArray(loaderData.queueTypes)
+      ? loaderData.queueTypes
+      : [];
+  const hashTagPresets =
+    "hashTagPresets" in loaderData && Array.isArray(loaderData.hashTagPresets)
+      ? loaderData.hashTagPresets
+      : [];
+  const planActivated =
+    "planActivated" in loaderData ? loaderData.planActivated : null;
+  const successMessage =
+    "successMessage" in loaderData ? loaderData.successMessage : null;
   const [searchParams] = useSearchParams();
 
   // Get current tab from URL params - default to "all"
   const currentTab = searchParams.get("tab") ?? "all";
 
-  const [showSuccessMessage, setShowSuccessMessage] = useState(!!(planActivated && typeof planActivated === "string"));
+  const [showSuccessMessage, setShowSuccessMessage] = useState(
+    !!(planActivated && typeof planActivated === "string"),
+  );
 
   // Type assertions for Remix JsonifyObject serialization
   // Remix serializes Date objects to strings, so we need to assert these types
   // The loader returns proper types, but Remix serializes them
-   
-  const scheduledPosts: PostData[] = Array.isArray(scheduledPostsRaw) ? (scheduledPostsRaw as unknown as PostData[]) : [];
-   
-  const longformPosts: LongFormPostData[] = Array.isArray(longformPostsRaw) ? (longformPostsRaw as unknown as LongFormPostData[]) : [];
-   
-  const allContent: CombinedContent[] = Array.isArray(allContentRaw) ? (allContentRaw as unknown as CombinedContent[]) : [];
-  const queueTypes: QueueType[] = Array.isArray(queueTypesRaw) ? queueTypesRaw.map((qt: unknown) => {
-    if (qt && typeof qt === "object" && qt !== null && "id" in qt && "name" in qt) {
-      const q = qt as { id?: unknown; name?: unknown; color?: unknown; scheduleType?: unknown; scheduleConfig?: unknown; isEnabled?: unknown; userId?: unknown };
-      const id = typeof q.id === "string" ? q.id : String(q.id ?? "");
-      const name = typeof q.name === "string" ? q.name : String(q.name ?? "");
-      const color = q.color !== null && q.color !== undefined ? (typeof q.color === "string" ? q.color : String(q.color)) : null;
-      const scheduleType = typeof q.scheduleType === "string" && (q.scheduleType === "INTERVAL" || q.scheduleType === "FIXED_SLOTS") ? q.scheduleType : undefined;
-      const scheduleConfig = convertJsonValueToScheduleConfig(q.scheduleConfig);
-      const isEnabled = typeof q.isEnabled === "boolean" ? q.isEnabled : q.isEnabled !== false;
-      const userId = typeof q.userId === "string" ? q.userId : "";
-      const result: QueueType = {
-        id,
-        name,
-        color,
-        description: undefined,
-        scheduleType,
-        scheduleConfig,
-        isEnabled,
-        userId,
-      };
-      return result;
-    }
-    return null;
-  }).filter((qt): qt is QueueType => qt !== null) : [];
+
+  const scheduledPosts: PostData[] = Array.isArray(scheduledPostsRaw)
+    ? (scheduledPostsRaw as unknown as PostData[])
+    : [];
+
+  const longformPosts: LongFormPostData[] = Array.isArray(longformPostsRaw)
+    ? (longformPostsRaw as unknown as LongFormPostData[])
+    : [];
+
+  const allContent: CombinedContent[] = Array.isArray(allContentRaw)
+    ? (allContentRaw as unknown as CombinedContent[])
+    : [];
+  const queueTypes: QueueType[] = Array.isArray(queueTypesRaw)
+    ? queueTypesRaw
+        .map((qt: unknown) => {
+          if (
+            qt &&
+            typeof qt === "object" &&
+            qt !== null &&
+            "id" in qt &&
+            "name" in qt
+          ) {
+            const q = qt as {
+              id?: unknown;
+              name?: unknown;
+              color?: unknown;
+              scheduleType?: unknown;
+              scheduleConfig?: unknown;
+              isEnabled?: unknown;
+              userId?: unknown;
+            };
+            const id = typeof q.id === "string" ? q.id : String(q.id ?? "");
+            const name =
+              typeof q.name === "string" ? q.name : String(q.name ?? "");
+            const color =
+              q.color !== null && q.color !== undefined
+                ? typeof q.color === "string"
+                  ? q.color
+                  : String(q.color)
+                : null;
+            const scheduleType =
+              typeof q.scheduleType === "string" &&
+              (q.scheduleType === "INTERVAL" ||
+                q.scheduleType === "FIXED_SLOTS")
+                ? q.scheduleType
+                : undefined;
+            const scheduleConfig = convertJsonValueToScheduleConfig(
+              q.scheduleConfig,
+            );
+            const isEnabled =
+              typeof q.isEnabled === "boolean"
+                ? q.isEnabled
+                : q.isEnabled !== false;
+            const userId = typeof q.userId === "string" ? q.userId : "";
+            const result: QueueType = {
+              id,
+              name,
+              color,
+              description: undefined,
+              scheduleType,
+              scheduleConfig,
+              isEnabled,
+              userId,
+            };
+            return result;
+          }
+          return null;
+        })
+        .filter((qt): qt is QueueType => qt !== null)
+    : [];
 
   const {
     sortConfig,
@@ -156,7 +216,13 @@ export default function DashboardIndex() {
     handleModalSuccess,
   } = useDashboardState({
     scheduledPosts,
-    userTimezone: user && typeof user === "object" && "timezone" in user && typeof user.timezone === "string" ? user.timezone : undefined,
+    userTimezone:
+      user &&
+      typeof user === "object" &&
+      "timezone" in user &&
+      typeof user.timezone === "string"
+        ? user.timezone
+        : undefined,
   });
 
   // Auto-hide success message after 3 seconds
@@ -220,8 +286,9 @@ export default function DashboardIndex() {
             if (content.type === "post") {
               setSelectedPost(content.originalData as PostData);
             } else {
-               
-              setSelectedLongFormPost(content.originalData as unknown as LongFormPostData);
+              setSelectedLongFormPost(
+                content.originalData as unknown as LongFormPostData,
+              );
             }
           }}
           selectedItems={selectedPosts}
@@ -252,7 +319,14 @@ export default function DashboardIndex() {
             onToggleSelection={togglePostSelection}
             onToggleSelectAll={toggleSelectAll}
             countdowns={countdowns}
-            userTimezone={user && typeof user === "object" && "timezone" in user && typeof user.timezone === "string" ? user.timezone : undefined}
+            userTimezone={
+              user &&
+              typeof user === "object" &&
+              "timezone" in user &&
+              typeof user.timezone === "string"
+                ? user.timezone
+                : undefined
+            }
             onPostClick={(post) => {
               if (post && typeof post === "object") {
                 setSelectedPost(post as PostData);
@@ -278,7 +352,14 @@ export default function DashboardIndex() {
               onClose={() => setSelectedPost(null)}
               showSignedEvent={true}
               type="scheduled"
-              userTimezone={user && typeof user === "object" && "timezone" in user && typeof user.timezone === "string" ? user.timezone : undefined}
+              userTimezone={
+                user &&
+                typeof user === "object" &&
+                "timezone" in user &&
+                typeof user.timezone === "string"
+                  ? user.timezone
+                  : undefined
+              }
             />
           ) : null}
 
@@ -302,8 +383,12 @@ export default function DashboardIndex() {
           onPostSelect={(post) => {
             setSelectedLongFormPost(post as unknown as LongFormPostData);
           }}
-          onEditPost={(post) => handleEditPost(post as unknown as PostData | LongFormPostData)}
-          onReschedulePost={(post) => handleReschedulePost(post as unknown as PostData | LongFormPostData)}
+          onEditPost={(post) =>
+            handleEditPost(post as unknown as PostData | LongFormPostData)
+          }
+          onReschedulePost={(post) =>
+            handleReschedulePost(post as unknown as PostData | LongFormPostData)
+          }
         />
       )}
 
@@ -326,7 +411,16 @@ export default function DashboardIndex() {
           onConfirm={handleModalSuccess}
           user={user as unknown as UserData | undefined}
           queueTypes={queueTypes}
-          hashTagPresets={Array.isArray(hashTagPresets) ? hashTagPresets as unknown as { id: string; name: string; tags: string; description?: string | null }[] : []}
+          hashTagPresets={
+            Array.isArray(hashTagPresets)
+              ? (hashTagPresets as unknown as {
+                  id: string;
+                  name: string;
+                  tags: string;
+                  description?: string | null;
+                }[])
+              : []
+          }
         />
       ) : null}
 
