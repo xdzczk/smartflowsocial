@@ -11,6 +11,12 @@ import { getScheduledPosts, getPastPosts } from "~/models/post.queries.server";
 import { getUserById, getQueueTypes } from "~/models/user.server";
 
 import { combineContent } from "../combined.server";
+import {
+  toPostDTOArray,
+  toLongFormPostDTOArray,
+  type PostDTO,
+  type LongFormPostDTO,
+} from "../dtos";
 import type { PostData, LongFormPostData, QueueType } from "../types";
 import { convertJsonValueToScheduleConfig } from "../types";
 
@@ -230,11 +236,21 @@ export async function loadCalendarData(userId: string, queueType: string) {
     "desc",
   );
 
+  // Serialize Date objects to strings for Remix loader response
+  const scheduledPostsDTO: PostDTO[] = toPostDTOArray(scheduledPostsData);
+  const scheduledLongFormPostsDTO: LongFormPostDTO[] = toLongFormPostDTOArray(
+    scheduledLongFormPostsData,
+  );
+  const pastPostsDTO: PostDTO[] = toPostDTOArray(pastPostsData);
+  const pastLongFormPostsDTO: LongFormPostDTO[] = toLongFormPostDTOArray(
+    pastLongFormPostsData,
+  );
+
   return {
-    scheduledPosts: filteredScheduledPosts,
-    scheduledLongFormPosts: filteredScheduledLongFormPosts,
-    pastPosts: filteredPastPosts,
-    pastLongFormPosts: filteredPastLongFormPosts,
+    scheduledPosts: scheduledPostsDTO,
+    scheduledLongFormPosts: scheduledLongFormPostsDTO,
+    pastPosts: pastPostsDTO,
+    pastLongFormPosts: pastLongFormPostsDTO,
     allContent,
     allPastContent,
     user,
@@ -258,8 +274,44 @@ export async function loadCalendarQueueData(userId: string, queueType: string) {
   // Filter posts by queue type if specific queue is selected
   const scheduledPosts = filterPostsByQueueType(allScheduledPosts, queueType);
 
+  // Convert PostWithQueueType[] to PostData[] and serialize
+  const scheduledPostsData: PostData[] = scheduledPosts.map((post) => {
+    const { queueType, ...rest } = post;
+    const convertedQueueType: QueueType | undefined = queueType
+      ? ((): QueueType => {
+          const scheduleTypeValue: "INTERVAL" | "FIXED_SLOTS" | undefined =
+            queueType.scheduleType as "INTERVAL" | "FIXED_SLOTS" | undefined;
+          return {
+            id: queueType.id,
+            name: queueType.name,
+            color: queueType.color,
+            description: queueType.description,
+            scheduleType: scheduleTypeValue,
+            scheduleConfig: convertJsonValueToScheduleConfig(
+              queueType.scheduleConfig,
+            ),
+            isEnabled: queueType.isEnabled,
+            userId: queueType.userId,
+          };
+        })()
+      : undefined;
+    const signedEventValue: PostData["signedEvent"] =
+      post.signedEvent as PostData["signedEvent"];
+    const nostrEventValue: PostData["nostrEvent"] =
+      post.nostrEvent as PostData["nostrEvent"];
+    const result: PostData = {
+      ...rest,
+      queueType: convertedQueueType,
+      signedEvent: signedEventValue,
+      nostrEvent: nostrEventValue,
+    };
+    return result;
+  });
+
+  const scheduledPostsDTO: PostDTO[] = toPostDTOArray(scheduledPostsData);
+
   return {
-    scheduledPosts,
+    scheduledPosts: scheduledPostsDTO,
     user,
     queueTypes: queueTypes.filter((qt) => qt.isEnabled !== false),
     selectedQueueType: queueType,

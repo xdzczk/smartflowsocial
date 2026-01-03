@@ -15,11 +15,13 @@ import {
   handleDraftEditAction,
   loadDraftEditData,
   convertJsonValueToScheduleConfig,
-  type PostData,
   type UserData,
   type QueueType,
   type HashTagPreset,
+  fromPostDTO,
+  type PostDTO,
 } from "~/features/posts";
+import { withCSRFProtection } from "~/lib/csrf.server";
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   const postId = params.id!;
@@ -28,7 +30,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return json(data);
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
+export const action = withCSRFProtection(async ({ request, params }: ActionFunctionArgs) => {
   try {
     const userId = await requireUserId(request);
     const postId = params.id!;
@@ -48,7 +50,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const { handleActionError } = await import("~/lib/error-handler.server");
     return handleActionError(error);
   }
-}
+});
 
 export default function EditDraft() {
   const loaderData = useLoaderData<typeof loader>();
@@ -84,10 +86,10 @@ export default function EditDraft() {
       ? loaderData.hashTagPresets
       : [];
 
-  // Type assertions for Remix JsonifyObject serialization
+  // Deserialize DTO (with string dates) back to PostData (with Date objects)
   const typedPost =
     postRaw && typeof postRaw === "object" && postRaw !== null
-      ? (postRaw as unknown as PostData)
+      ? fromPostDTO(postRaw as PostDTO)
       : null;
   const typedUser =
     userRaw && typeof userRaw === "object" && userRaw !== null

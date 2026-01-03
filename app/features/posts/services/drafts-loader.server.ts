@@ -8,6 +8,12 @@ import { getDraftPosts } from "~/models/post.queries.server";
 import { getUserById, getQueueTypes } from "~/models/user.server";
 
 import { combineContent } from "../combined.server";
+import {
+  toPostDTOArray,
+  toLongFormPostDTOArray,
+  type PostDTO,
+  type LongFormPostDTO,
+} from "../dtos";
 import type { PostData, LongFormPostData } from "../types";
 import { convertPrismaQueueTypeToQueueType } from "../types";
 
@@ -68,9 +74,15 @@ export async function loadDraftsData(userId: string, queueType: string) {
     "desc",
   );
 
+  // Serialize Date objects to strings for Remix loader response
+  const postsDTO: PostDTO[] = toPostDTOArray(postsData);
+  const longformPostsDTO: LongFormPostDTO[] = toLongFormPostDTOArray(
+    longformPostsData,
+  );
+
   return {
-    posts,
-    longformPosts,
+    posts: postsDTO,
+    longformPosts: longformPostsDTO,
     allContent,
     user,
     queueTypes: queueTypes.filter((qt) => qt.isEnabled !== false),

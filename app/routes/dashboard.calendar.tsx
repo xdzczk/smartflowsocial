@@ -25,7 +25,13 @@ import {
   mixedPostsToCalendarPosts,
   postsToCalendarPosts,
   longFormPostsToCalendarPosts,
+  fromPostDTOArray,
+  fromLongFormPostDTOArray,
+  type PostDTO,
+  type LongFormPostDTO,
 } from "~/features/posts";
+import { withCSRFProtection } from "~/lib/csrf.server";
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
     const userId = await requireUserId(request);
@@ -49,7 +55,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 }
 
-export async function action({ request }: ActionFunctionArgs) {
+export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs) => {
   try {
     const userId = await requireUserId(request);
     const formData = await request.formData();
@@ -63,7 +69,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const { handleActionError } = await import("~/lib/error-handler.server");
     return handleActionError(error);
   }
-}
+});
 
 type LoaderData = Exclude<Awaited<ReturnType<typeof loader>>, Response>;
 
@@ -80,27 +86,25 @@ export default function CalendarRoute() {
     selectedQueueType: _selectedQueueType,
   } = data;
 
-  // Type assertions for Remix JsonifyObject serialization
-  // Remix serializes Date objects to strings, so we need to assert these types
-
+  // Deserialize DTOs (with string dates) back to PostData/LongFormPostData (with Date objects)
   const scheduledPosts: PostData[] = Array.isArray(scheduledPostsRaw)
-    ? (scheduledPostsRaw as unknown as PostData[])
+    ? fromPostDTOArray(scheduledPostsRaw as PostDTO[])
     : [];
 
   const scheduledLongFormPosts: LongFormPostData[] = Array.isArray(
     scheduledLongFormPostsRaw,
   )
-    ? (scheduledLongFormPostsRaw as unknown as LongFormPostData[])
+    ? fromLongFormPostDTOArray(scheduledLongFormPostsRaw as LongFormPostDTO[])
     : [];
 
   const pastPosts: PostData[] = Array.isArray(pastPostsRaw)
-    ? (pastPostsRaw as unknown as PostData[])
+    ? fromPostDTOArray(pastPostsRaw as PostDTO[])
     : [];
 
   const pastLongFormPosts: LongFormPostData[] = Array.isArray(
     pastLongFormPostsRaw,
   )
-    ? (pastLongFormPostsRaw as unknown as LongFormPostData[])
+    ? fromLongFormPostDTOArray(pastLongFormPostsRaw as LongFormPostDTO[])
     : [];
 
   const user: UserData | null | undefined = userRaw

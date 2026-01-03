@@ -14,7 +14,13 @@ import {
   getPostsByIds,
 } from "~/models/post.queries.server";
 
+import {
+  toPostDTOArray,
+  type PostDTO,
+} from "../dtos";
 import { getPostStats } from "../stats.server";
+import type { PostData } from "../types";
+import { convertPrismaQueueTypeToQueueType } from "../types";
 /**
  * Get recyclable posts dashboard data
  */
@@ -69,8 +75,26 @@ export async function getRecyclableDashboardData({
   // Use the extracted stats fetching logic
   const stats = await getPostStats(eventIds);
 
+  // Convert PostWithQueueType[] to PostData[] and serialize to DTOs
+  const postsData: PostData[] = posts.map((post) => {
+    const { queueType, ...rest } = post;
+    const signedEventValue: PostData["signedEvent"] =
+      post.signedEvent as PostData["signedEvent"];
+    const nostrEventValue: PostData["nostrEvent"] =
+      post.nostrEvent as PostData["nostrEvent"];
+    const result: PostData = {
+      ...rest,
+      queueType: convertPrismaQueueTypeToQueueType(queueType),
+      signedEvent: signedEventValue,
+      nostrEvent: nostrEventValue,
+    };
+    return result;
+  });
+
+  const postsDTO: PostDTO[] = toPostDTOArray(postsData);
+
   return {
-    posts,
+    posts: postsDTO,
     pagination,
     stats,
     user,

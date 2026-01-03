@@ -35,6 +35,19 @@ export type {
   PreparedEvent,
 } from "./types";
 
+// DTOs (Data Transfer Objects) for serialized data
+export type { PostDTO, LongFormPostDTO } from "./dtos";
+export {
+  toPostDTO,
+  toPostDTOArray,
+  fromPostDTO,
+  fromPostDTOArray,
+  toLongFormPostDTO,
+  toLongFormPostDTOArray,
+  fromLongFormPostDTO,
+  fromLongFormPostDTOArray,
+} from "./dtos";
+
 // Re-export Prisma types for convenience (when needed for type annotations)
 export type { LongFormPost as LongFormPostType } from "@prisma/client";
 

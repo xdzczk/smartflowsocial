@@ -1,7 +1,7 @@
 import { useFetcher } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
-import { signEventFn } from "~/lib/nostr";
+import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 
 import { getSelectedQueueStyle } from "../queueColors";
@@ -374,7 +374,7 @@ export default function DraftBulkResume({
             ? `${post.content ?? ""}\n${tagsString}`
             : (post.content ?? "");
 
-          const { nostrEvent, signedEvent } = await signEventFn({
+          const { nostrEvent, signedEvent } = await nostrAdapter.signEvent({
             content: contentToSign,
             created_at: scheduledForUnix,
             kind: 1,

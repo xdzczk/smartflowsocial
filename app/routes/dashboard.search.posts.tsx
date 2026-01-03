@@ -14,13 +14,14 @@ import {
   handleSearchAction,
   loadSearchData,
 } from "~/features/search";
+import { withCSRFProtection } from "~/lib/csrf.server";
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   const data = await loadSearchData(userId);
   return json(data);
 }
 
-export async function action({ request }: ActionFunctionArgs) {
+export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs) => {
   try {
     const formData = await request.formData();
     const _action = formData.get("_action");
@@ -37,7 +38,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const { handleActionError } = await import("~/lib/error-handler.server");
     return handleActionError(error);
   }
-}
+});
 
 export default function SearchPosts() {
   const { user } = useLoaderData<typeof loader>();

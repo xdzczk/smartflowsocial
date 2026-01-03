@@ -16,6 +16,7 @@ import {
   handleLongFormEditAction,
   loadLongFormEditData,
 } from "~/features/posts";
+import { withCSRFProtection } from "~/lib/csrf.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
@@ -29,7 +30,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return json(data);
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
+export const action = withCSRFProtection(async ({ request, params }: ActionFunctionArgs) => {
   try {
     const userId = await requireUserId(request);
     const postId = params.id;
@@ -43,7 +44,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const { handleActionError } = await import("~/lib/error-handler.server");
     return handleActionError(error);
   }
-}
+});
 
 type LoaderData = Awaited<ReturnType<typeof loader>>;
 type ActionData = Awaited<ReturnType<typeof action>>;

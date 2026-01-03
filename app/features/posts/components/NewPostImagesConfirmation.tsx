@@ -1,7 +1,7 @@
 import { useFetcher } from "@remix-run/react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
-import { signEventFn } from "~/lib/nostr";
+import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 interface PreparedEventData {
   content: {
@@ -176,7 +176,7 @@ export default function NewPostImagesConfirmation({
         tags: tagArray,
       };
 
-      const { signedEvent, nostrEvent } = await signEventFn(eventData);
+      const { signedEvent, nostrEvent } = await nostrAdapter.signEvent(eventData);
 
       const formData = new FormData();
       formData.append("_action", isImmediate ? "post-media" : "schedule-media");

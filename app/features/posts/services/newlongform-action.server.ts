@@ -151,7 +151,14 @@ async function handleImageUpload(
       const file = imageFile;
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
-      const imageUrl = await uploadBufferToS3(buffer, userId, file.name);
+      // Pass contentType for validation
+      const imageUrl = await uploadBufferToS3(
+        buffer,
+        userId,
+        file.name,
+        undefined,
+        file.type,
+      );
       return Response.json({ success: true, imageUrl });
     } catch (error) {
       const { ExternalServiceError } = await import("~/lib/errors");

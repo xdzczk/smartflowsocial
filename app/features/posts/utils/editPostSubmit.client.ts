@@ -4,7 +4,7 @@
  */
 
 import { uploadMultipleFiles } from "~/features/upload/upload.client";
-import { signEventFn } from "~/lib/nostr";
+import { nostrAdapter } from "~/lib/nostr-adapter.client";
 
 import type { PostData, LongFormPostData, UserData } from "../types";
 
@@ -117,7 +117,7 @@ export async function prepareEditPostSubmission({
     : Math.floor(Date.now() / 1000);
 
   // Re-sign the event with new content
-  const { nostrEvent, signedEvent } = await signEventFn({
+  const { nostrEvent, signedEvent } = await nostrAdapter.signEvent({
     content: eventContent,
     created_at: eventTime,
     kind: eventKind,

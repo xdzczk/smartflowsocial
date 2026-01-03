@@ -1,7 +1,7 @@
 import { nip19 } from "nostr-tools";
 import { useCallback, useEffect, useState } from "react";
 
-import { signEventFn } from "~/lib/nostr";
+import { nostrAdapter } from "~/lib/nostr-adapter.client";
 
 import type { NotificationEvent, NostrTag } from "../types";
 
@@ -104,7 +104,7 @@ export function useNotificationActions({
         created_at: Math.floor(Date.now() / 1000),
       };
 
-      const { signedEvent } = await signEventFn(kind1EventData);
+      const { signedEvent } = await nostrAdapter.signEvent(kind1EventData);
 
       const response = await fetch("/api/publish", {
         method: "POST",
@@ -151,7 +151,7 @@ export function useNotificationActions({
         created_at: Math.floor(Date.now() / 1000),
       };
 
-      const { signedEvent } = await signEventFn(kind6EventData);
+      const { signedEvent } = await nostrAdapter.signEvent(kind6EventData);
 
       const response = await fetch("/api/publish", {
         method: "POST",
@@ -195,7 +195,7 @@ export function useNotificationActions({
         created_at: Math.floor(Date.now() / 1000),
       };
 
-      const { signedEvent } = await signEventFn(kind7EventData);
+      const { signedEvent } = await nostrAdapter.signEvent(kind7EventData);
 
       const response = await fetch("/api/publish", {
         method: "POST",
@@ -250,7 +250,7 @@ export function useNotificationActions({
         created_at: Math.floor(Date.now() / 1000),
       };
 
-      const { signedEvent } = await signEventFn(kind1EventData);
+      const { signedEvent } = await nostrAdapter.signEvent(kind1EventData);
 
       const response = await fetch("/api/publish", {
         method: "POST",

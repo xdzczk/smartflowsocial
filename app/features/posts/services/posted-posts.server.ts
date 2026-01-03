@@ -9,6 +9,12 @@ import { getPublishedLongFormPosts } from "~/models/longformpost.server";
 import { getPostedPosts } from "~/models/post.queries.server";
 
 import { combineContent } from "../combined.server";
+import {
+  toPostDTOArray,
+  toLongFormPostDTOArray,
+  type PostDTO,
+  type LongFormPostDTO,
+} from "../dtos";
 import { getPostStats } from "../stats.server";
 import type { PostData, LongFormPostData } from "../types";
 import { convertPrismaQueueTypeToQueueType } from "../types";
@@ -179,9 +185,16 @@ export async function getPostedDashboardData({
     .filter((id) => id !== "");
   const stats = await getPostStats(eventIds);
 
+  // Serialize Date objects to strings for Remix loader response
+  // This eliminates the need for type casting in components
+  const postsDTO: PostDTO[] = toPostDTOArray(postsData);
+  const longformPostsDTO: LongFormPostDTO[] = toLongFormPostDTOArray(
+    longformPostsData,
+  );
+
   return {
-    posts,
-    longformPosts: longformResult.posts,
+    posts: postsDTO,
+    longformPosts: longformPostsDTO,
     allContent,
     longformPagination: longformResult.pagination,
     pagination,

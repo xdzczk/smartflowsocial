@@ -14,6 +14,7 @@ import {
   handlePlansAction,
   loadPlansData,
 } from "~/features/payments";
+import { withCSRFProtection } from "~/lib/csrf.server";
 
 export const meta: MetaFunction = () => {
   return [
@@ -26,7 +27,7 @@ export const meta: MetaFunction = () => {
   ];
 };
 
-export async function action({ request }: ActionFunctionArgs) {
+export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
   const result = await handlePlansAction(formData, request);
 
@@ -39,7 +40,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   return json(result);
-}
+});
 
 export const loader = async ({ request }: { request: Request }) => {
   const data = await loadPlansData(request);

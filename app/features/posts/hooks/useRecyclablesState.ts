@@ -2,7 +2,7 @@ import type { useFetcher } from "@remix-run/react";
 import { type FetcherWithComponents } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
-import { signEventFn } from "~/lib/nostr";
+import { nostrAdapter } from "~/lib/nostr-adapter.client";
 
 import type { PostData } from "../types";
 
@@ -465,7 +465,7 @@ export function useRecyclablesState({
           };
 
           // Sign the event using client-side signing
-          const { signedEvent } = await signEventFn(eventData);
+          const { signedEvent } = await nostrAdapter.signEvent(eventData);
 
           // Get user relays from user data
           const sanitizedRelays =

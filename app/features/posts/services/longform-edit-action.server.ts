@@ -126,7 +126,14 @@ async function handleImageUpload(
       const buffer = Buffer.from(arrayBuffer);
 
       // Use the shared uploadBufferToS3 function
-      const imageUrl = await uploadBufferToS3(buffer, userId, file.name);
+      // Pass contentType for validation
+      const imageUrl = await uploadBufferToS3(
+        buffer,
+        userId,
+        file.name,
+        undefined,
+        file.type,
+      );
 
       return Response.json({ success: true, imageUrl });
     } catch (error) {

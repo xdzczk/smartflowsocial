@@ -9,7 +9,7 @@ import type {
   ProfileData,
   StatsData,
 } from "~/features/nostr/types";
-import { npubToHex } from "~/lib/nostr";
+import { nostrAdapter } from "~/lib/nostr-adapter.server";
 import { connectToPrimalCache } from "~/lib/nostrwebsocket.server";
 
 /**
@@ -31,7 +31,7 @@ export async function fetchPrimalProfileData(
   npub: string,
 ): Promise<PrimalEvent[]> {
   try {
-    const pubkey = npubToHex(npub);
+    const pubkey = nostrAdapter.decodeNpub(npub);
     const responses = await connectToPrimalCache("user_profile", {
       pubkey,
     });

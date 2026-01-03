@@ -12,11 +12,13 @@ import {
   getQueueColor,
   handleCalendarAction,
   loadCalendarQueueData,
-  type PostData,
   type UserData,
   type QueueType,
   postsToCalendarPosts,
+  fromPostDTOArray,
+  type PostDTO,
 } from "~/features/posts";
+import { withCSRFProtection } from "~/lib/csrf.server";
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
     const userId = await requireUserId(request);
@@ -34,7 +36,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 }
 
-export async function action({ request }: ActionFunctionArgs) {
+export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs) => {
   try {
     const userId = await requireUserId(request);
     const formData = await request.formData();
@@ -48,7 +50,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const { handleActionError } = await import("~/lib/error-handler.server");
     return handleActionError(error);
   }
-}
+});
 
 type LoaderData = Exclude<Awaited<ReturnType<typeof loader>>, Response>;
 
@@ -156,7 +158,7 @@ export default function CalendarQueueRoute() {
 
       <Calendar
         scheduledPosts={postsToCalendarPosts(
-          scheduledPosts as unknown as PostData[],
+          fromPostDTOArray(scheduledPosts as PostDTO[]),
         )}
         user={user ? (user as unknown as UserData) : undefined}
         queueTypes={queueTypes as unknown as QueueType[]}

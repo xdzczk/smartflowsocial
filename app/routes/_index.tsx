@@ -5,6 +5,7 @@ import { validateEvent } from "nostr-tools";
 import Footer from "~/components/layout/FrontendFooter";
 import Header from "~/components/layout/FrontendHeader";
 import { getUserId } from "~/features/auth";
+import { withCSRFProtection } from "~/lib/csrf.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const userId = await getUserId(request);
@@ -12,7 +13,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return json({});
 };
 
-export async function action({ request }: ActionFunctionArgs) {
+export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs) => {
   try {
     const formData = await request.formData();
     const event = formData.get("event");
@@ -57,7 +58,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const { handleActionError } = await import("~/lib/error-handler.server");
     return handleActionError(error);
   }
-}
+});
 
 export default function Index() {
   return (

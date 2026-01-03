@@ -34,9 +34,14 @@ import {
   type CombinedContent,
   type QueueType,
   type UserData,
+  type LongFormPostType,
   convertJsonValueToScheduleConfig,
+  fromPostDTOArray,
+  fromLongFormPostDTOArray,
+  type PostDTO,
+  type LongFormPostDTO,
 } from "~/features/posts";
-import type { LongFormPostType } from "~/features/posts";
+import { withCSRFProtection } from "~/lib/csrf.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
@@ -62,7 +67,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 }
 
-export async function action({ request }: ActionFunctionArgs) {
+export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs) => {
   try {
     const userId = await requireUserId(request);
     const formData = await request.formData();
@@ -82,7 +87,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const { handleActionError } = await import("~/lib/error-handler.server");
     return handleActionError(error);
   }
-}
+});
 
 type LoaderData = Awaited<ReturnType<typeof loader>>;
 
@@ -104,15 +109,13 @@ export default function DraftPosts() {
       ? data.queueTypes
       : [];
 
-  // Type assertions for Remix JsonifyObject serialization
-  // Remix serializes Date objects to strings, so we need to assert these types
-
+  // Deserialize DTOs (with string dates) back to PostData/LongFormPostData (with Date objects)
   const posts: PostData[] = Array.isArray(postsRaw)
-    ? (postsRaw as unknown as PostData[])
+    ? fromPostDTOArray(postsRaw as PostDTO[])
     : [];
 
   const longformPosts: LongFormPostData[] = Array.isArray(longformPostsRaw)
-    ? (longformPostsRaw as unknown as LongFormPostData[])
+    ? fromLongFormPostDTOArray(longformPostsRaw as LongFormPostDTO[])
     : [];
 
   const allContent: CombinedContent[] = Array.isArray(allContentRaw)

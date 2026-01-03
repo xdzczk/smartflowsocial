@@ -5,138 +5,212 @@
  */
 
 import { describe, it, expect } from "vitest";
+
+import {
+  validateUpload,
+  ALLOWED_MIME_TYPES,
+  MAX_FILE_SIZE,
+} from "~/features/upload/validation.server";
+
+// Helper to create a valid JPEG buffer (minimal valid JPEG)
+function createValidJPEGBuffer(): Buffer {
+  // Minimal valid JPEG: SOI marker + JFIF header + EOI marker
+  const jpegHeader = Buffer.from([
+    0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01,
+    0x01, 0x01, 0x00, 0x48, 0x00, 0x48, 0x00, 0x00, 0xff, 0xd9,
+  ]);
+  return jpegHeader;
+}
+
+// Helper to create a valid PNG buffer (minimal valid PNG)
+function createValidPNGBuffer(): Buffer {
+  // Minimal valid PNG: PNG signature + IHDR chunk
+  const pngHeader = Buffer.from([
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, // PNG signature
+    0x00, 0x00, 0x00, 0x0d, // IHDR chunk length
+    0x49, 0x48, 0x44, 0x52, // IHDR
+    0x00, 0x00, 0x00, 0x01, // width
+    0x00, 0x00, 0x00, 0x01, // height
+    0x08, 0x06, 0x00, 0x00, 0x00, // bit depth, color type, compression, filter, interlace
+    0x1f, 0x15, 0xc4, 0x89, // CRC
+    0x00, 0x00, 0x00, 0x00, // IEND chunk length
+    0x49, 0x45, 0x4e, 0x44, // IEND
+    0xae, 0x42, 0x60, 0x82, // CRC
+  ]);
+  return pngHeader;
+}
+
+// Helper to create a buffer that looks like an executable
+function createExecutableBuffer(): Buffer {
+  // ELF header (Linux executable)
+  return Buffer.from([
+    0x7f, 0x45, 0x4c, 0x46, 0x02, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+  ]);
+}
+
 describe("File Upload Security: File Type Validation", () => {
-  it("should validate MIME types", () => {
-    // File uploads should validate MIME types
-    // This prevents malicious files from being uploaded
+  it("should validate MIME types using magic bytes", async () => {
+    const jpegBuffer = createValidJPEGBuffer();
+    const result = await validateUpload(jpegBuffer, "test.jpg");
 
-    // Example validation:
-    // const allowedMimeTypes = ["image/jpeg", "image/png", "image/gif"];
-    // if (!allowedMimeTypes.includes(file.type)) {
-    //   throw new ValidationError("Invalid file type");
-    // }
-
-    expect(true).toBe(true); // Documentation test
+    expect(result.valid).toBe(true);
+    expect(result.detectedMimeType).toBe("image/jpeg");
   });
 
-  it("should validate file extensions", () => {
-    // File extensions should be validated
-    // However, this should be secondary to MIME type validation
+  it("should reject files with incorrect MIME type", async () => {
+    const executableBuffer = createExecutableBuffer();
+    const result = await validateUpload(executableBuffer, "malicious.exe");
 
-    expect(true).toBe(true); // Documentation test
+    expect(result.valid).toBe(false);
+    expect(result.error).toBeDefined();
+    expect(result.error).toContain("not allowed");
   });
 
-  it("should validate file content, not just extension", () => {
-    // File validation should check actual content
-    // An attacker could rename a .exe to .jpg
+  it("should validate file content, not just extension", async () => {
+    // Try to upload an executable with a .jpg extension
+    const executableBuffer = createExecutableBuffer();
+    const result = await validateUpload(executableBuffer, "malicious.jpg");
 
-    // Example:
-    // - Check file magic bytes
-    // - Validate image dimensions
-    // - Verify file structure
-
-    expect(true).toBe(true); // Documentation test
+    expect(result.valid).toBe(false);
+    expect(result.error).toBeDefined();
+    // Should detect actual file type, not trust extension
   });
 
-  it("should reject executable files", () => {
-    // Executable files should be rejected
-    // Examples: .exe, .sh, .bat, .js (if not expected)
+  it("should reject files that cannot be detected", async () => {
+    // Empty or invalid buffer
+    const invalidBuffer = Buffer.from("not a valid file");
+    const result = await validateUpload(invalidBuffer, "test.jpg");
 
-    expect(true).toBe(true); // Documentation test
+    expect(result.valid).toBe(false);
+    expect(result.error).toBeDefined();
+    expect(result.error).toContain("Could not detect");
+  });
+
+  it("should accept valid PNG files", async () => {
+    const pngBuffer = createValidPNGBuffer();
+    const result = await validateUpload(pngBuffer, "test.png");
+
+    expect(result.valid).toBe(true);
+    expect(result.detectedMimeType).toBe("image/png");
+  });
+
+  it("should validate against Content-Type header if provided", async () => {
+    const jpegBuffer = createValidJPEGBuffer();
+    
+    // Valid: Content-Type matches detected type
+    const validResult = await validateUpload(
+      jpegBuffer,
+      "test.jpg",
+      "image/jpeg"
+    );
+    expect(validResult.valid).toBe(true);
+
+    // Invalid: Content-Type doesn't match detected type
+    const invalidResult = await validateUpload(
+      jpegBuffer,
+      "test.jpg",
+      "image/png"
+    );
+    expect(invalidResult.valid).toBe(false);
+    expect(invalidResult.error).toContain("Content-Type mismatch");
+  });
+
+  it("should only allow whitelisted MIME types", async () => {
+    // Test that only ALLOWED_MIME_TYPES are accepted
+    const jpegBuffer = createValidJPEGBuffer();
+    const result = await validateUpload(jpegBuffer, "test.jpg");
+
+    if (result.valid && result.detectedMimeType) {
+      expect(ALLOWED_MIME_TYPES).toContain(result.detectedMimeType);
+    }
   });
 });
 
 describe("File Upload Security: File Size Limits", () => {
-  it("should enforce maximum file size", () => {
-    // File uploads should have size limits
-    // This prevents DoS attacks via large files
+  it("should enforce maximum file size", async () => {
+    // Create a buffer larger than MAX_FILE_SIZE
+    const largeBuffer = Buffer.alloc(MAX_FILE_SIZE + 1);
+    const result = await validateUpload(largeBuffer, "large.jpg");
 
-    // Example:
-    // const maxSize = 10 * 1024 * 1024; // 10MB
-    // if (file.size > maxSize) {
-    //   throw new ValidationError("File too large");
-    // }
-
-    expect(true).toBe(true); // Documentation test
+    expect(result.valid).toBe(false);
+    expect(result.error).toBeDefined();
+    expect(result.error).toContain("exceeds");
+    expect(result.error).toContain("MB limit");
   });
 
-  it("should handle file size validation on server side", () => {
-    // File size should be validated on the server
-    // Client-side validation can be bypassed
+  it("should accept files within size limit", async () => {
+    const jpegBuffer = createValidJPEGBuffer();
+    const result = await validateUpload(jpegBuffer, "test.jpg");
 
-    expect(true).toBe(true); // Documentation test
-  });
-});
-
-describe("File Upload Security: File Storage", () => {
-  it("should store files outside web root", () => {
-    // Uploaded files should be stored outside the web root
-    // This prevents direct access to uploaded files
-
-    expect(true).toBe(true); // Documentation test
+    expect(result.valid).toBe(true);
   });
 
-  it("should use unique file names", () => {
-    // Uploaded files should have unique names
-    // This prevents file overwrite attacks
+  it("should validate size before MIME type detection", async () => {
+    // Very large invalid file should fail on size first
+    const largeInvalidBuffer = Buffer.alloc(MAX_FILE_SIZE + 1);
+    const result = await validateUpload(largeInvalidBuffer, "large.bin");
 
-    // Example:
-    // const uniqueName = `${userId}-${Date.now()}-${randomString()}.${ext}`;
-
-    expect(true).toBe(true); // Documentation test
-  });
-
-  it("should sanitize file names", () => {
-    // File names should be sanitized
-    // This prevents path traversal attacks
-
-    // Example:
-    // const sanitized = filename.replace(/[^a-zA-Z0-9.-]/g, "_");
-
-    expect(true).toBe(true); // Documentation test
-  });
-
-  it("should prevent path traversal attacks", () => {
-    // File paths should be validated to prevent path traversal
-    // Example attack: "../../../etc/passwd"
-
-    // Example:
-    // const resolved = path.resolve(uploadDir, filename);
-    // if (!resolved.startsWith(uploadDir)) {
-    //   throw new ValidationError("Invalid file path");
-    // }
-
-    expect(true).toBe(true); // Documentation test
+    expect(result.valid).toBe(false);
+    expect(result.error).toContain("exceeds");
+    // Should not have detectedMimeType since size check happens first
   });
 });
 
-describe("File Upload Security: Image Validation", () => {
-  it("should validate image dimensions", () => {
-    // Images should have dimension limits
-    // This prevents DoS attacks via extremely large images
-
-    // Example:
-    // const maxWidth = 5000;
-    // const maxHeight = 5000;
-    // if (width > maxWidth || height > maxHeight) {
-    //   throw new ValidationError("Image too large");
-    // }
-
-    expect(true).toBe(true); // Documentation test
+describe("File Upload Security: Constants", () => {
+  it("should have MAX_FILE_SIZE defined", () => {
+    expect(MAX_FILE_SIZE).toBeGreaterThan(0);
+    expect(MAX_FILE_SIZE).toBe(10 * 1024 * 1024); // 10MB
   });
 
-  it("should validate image format", () => {
-    // Images should be validated for correct format
-    // Check magic bytes, not just extension
-
-    expect(true).toBe(true); // Documentation test
+  it("should have ALLOWED_MIME_TYPES defined", () => {
+    expect(ALLOWED_MIME_TYPES.length).toBeGreaterThan(0);
+    expect(ALLOWED_MIME_TYPES).toContain("image/jpeg");
+    expect(ALLOWED_MIME_TYPES).toContain("image/png");
   });
 
-  it("should re-encode images to remove metadata", () => {
-    // Images should be re-encoded to remove EXIF metadata
-    // This prevents information leakage
+  it("should only allow image MIME types", () => {
+    // Verify no dangerous types are allowed
+    const dangerousTypes = [
+      "application/javascript",
+      "application/x-executable",
+      "text/html",
+      "application/x-msdownload", // .exe
+    ];
 
-    expect(true).toBe(true); // Documentation test
+    dangerousTypes.forEach((type) => {
+      expect(ALLOWED_MIME_TYPES).not.toContain(type);
+    });
   });
 });
 
+describe("File Upload Security: Edge Cases", () => {
+  it("should handle empty buffer", async () => {
+    const emptyBuffer = Buffer.alloc(0);
+    const result = await validateUpload(emptyBuffer, "empty.jpg");
+
+    expect(result.valid).toBe(false);
+    expect(result.error).toBeDefined();
+  });
+
+  it("should handle very small buffers", async () => {
+    const tinyBuffer = Buffer.from([0x01, 0x02, 0x03]);
+    const result = await validateUpload(tinyBuffer, "tiny.bin");
+
+    expect(result.valid).toBe(false);
+    // Should fail MIME detection for too-small buffer
+  });
+
+  it("should normalize Content-Type with charset", async () => {
+    const jpegBuffer = createValidJPEGBuffer();
+    
+    // Content-Type with charset should still work
+    const result = await validateUpload(
+      jpegBuffer,
+      "test.jpg",
+      "image/jpeg; charset=utf-8"
+    );
+
+    expect(result.valid).toBe(true);
+  });
+});

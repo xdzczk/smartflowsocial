@@ -16,6 +16,7 @@ import Header from "~/components/layout/DashboardHeader";
 import { requireUser } from "~/features/auth";
 import { requireActiveSubscription } from "~/features/payments";
 import { loadDashboardData, handleDashboardAction } from "~/features/user";
+import { withCSRFProtection } from "~/lib/csrf.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const user = await requireUser(request);
@@ -43,11 +44,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   });
 };
 
-export const action = async ({ request }: ActionFunctionArgs) => {
+export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs) => {
   const user = await requireUser(request);
   const formData = await request.formData();
   return handleDashboardAction(formData, user.id, user.npub);
-};
+});
 
 function ProfileBits({ nostrProfile }: { nostrProfile: unknown }) {
   let name: string | undefined;

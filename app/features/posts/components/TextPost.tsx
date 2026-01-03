@@ -9,7 +9,7 @@ import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import AssetBrowser from "~/features/assets/components/AssetBrowser";
 import type { Asset } from "~/features/assets/types";
-import { signEventFn } from "~/lib/nostr";
+import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 
 import { usePostScheduling } from "../hooks/usePostScheduling";
@@ -218,7 +218,7 @@ export default function TextPost({
           ? contentValue
           : "";
 
-      const { nostrEvent, signedEvent } = await signEventFn({
+      const { nostrEvent, signedEvent } = await nostrAdapter.signEvent({
         content: contentToSign,
         created_at: scheduledForUnix,
         kind: 1,

@@ -1,9 +1,16 @@
 import { marked } from "marked";
-const _ALLOWED_TAGS = [
+import sanitizeHtml from "sanitize-html";
+
+/**
+ * Allowed HTML tags for markdown content
+ */
+const ALLOWED_TAGS = [
   "p",
   "br",
   "strong",
   "em",
+  "b",
+  "i",
   "h1",
   "h2",
   "h3",
@@ -20,97 +27,29 @@ const _ALLOWED_TAGS = [
   "img",
 ];
 
-const ALLOWED_ATTRIBUTES: Record<string, string[]> = {
-  a: ["href", "title"],
-  img: ["src", "alt", "title"],
+/**
+ * Allowed attributes per tag
+ */
+const ALLOWED_ATTRIBUTES: sanitizeHtml.IOptions["allowedAttributes"] = {
+  a: ["href", "title", "target", "rel"],
+  img: ["src", "alt", "title", "loading"],
+  code: ["class"],
 };
 
-const DANGEROUS_PROTOCOLS = [
-  "javascript:",
-  "data:",
-  "vbscript:",
-  "file:",
-  "about:",
-];
-
-function isValidUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url);
-    return ["http:", "https:"].includes(parsed.protocol);
-  } catch {
-    return false;
-  }
-}
-
-function sanitizeAttribute(
-  tagName: string,
-  attrName: string,
-  attrValue: string,
-): string | null {
-  const allowedAttrs = ALLOWED_ATTRIBUTES[tagName];
-  if (!allowedAttrs?.includes(attrName)) {
-    return null;
-  }
-
-  if (attrName === "href" || attrName === "src") {
-    if (!isValidUrl(attrValue)) {
-      return null;
-    }
-
-    const lowerValue = attrValue.toLowerCase();
-    for (const protocol of DANGEROUS_PROTOCOLS) {
-      if (lowerValue.startsWith(protocol)) {
-        return null;
-      }
-    }
-  }
-
-  return attrValue.trim();
-}
-
-function sanitizeHtml(html: string): string {
-  return (
-    html
-      // Remove script tags and all content between them (case-insensitive)
-      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
-      .replace(/<SCRIPT\b[^>]*>[\s\S]*?<\/SCRIPT>/gi, "")
-      // Remove inline event handlers
-      .replace(/on\w+\s*=\s*["'][^"']*["']/gi, "")
-      .replace(/on\w+\s*=\s*[^>\s]*/gi, "")
-      // Remove dangerous protocols
-      .replace(/javascript:/gi, "")
-      .replace(/data:/gi, "")
-      .replace(/vbscript:/gi, "")
-      // Remove dangerous tags
-      .replace(/<iframe\b[^>]*>[\s\S]*?<\/iframe>/gi, "")
-      .replace(/<embed\b[^>]*>/gi, "")
-      .replace(/<object\b[^>]*>[\s\S]*?<\/object>/gi, "")
-      .replace(/<form\b[^>]*>[\s\S]*?<\/form>/gi, "")
-      .replace(/<input\b[^>]*>/gi, "")
-      .replace(/<textarea\b[^>]*>[\s\S]*?<\/textarea>/gi, "")
-      .replace(/<select\b[^>]*>[\s\S]*?<\/select>/gi, "")
-      .replace(/<button\b[^>]*>[\s\S]*?<\/button>/gi, "")
-      .replace(/<link\b[^>]*>/gi, "")
-      .replace(/<meta\b[^>]*>/gi, "")
-      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "")
-  );
-}
-
+/**
+ * Sanitizes markdown content by parsing it to HTML and then sanitizing the HTML
+ * Uses sanitize-html library for robust XSS protection
+ *
+ * @param markdown - The markdown string to sanitize
+ * @returns Sanitized HTML string
+ */
 export function sanitizeMarkdown(markdown: string): string {
   if (!markdown || typeof markdown !== "string") {
     return "";
   }
 
-  // Type guard for marked return values
-  const _ensureString = (value: unknown): string => {
-    if (typeof value === "string") {
-      return value;
-    }
-    return String(value ?? "");
-  };
-
   try {
-    // Parse markdown to HTML
+    // Parse markdown to HTML using marked
     const htmlResult = marked(markdown, {
       gfm: true,
       breaks: false,
@@ -118,103 +57,80 @@ export function sanitizeMarkdown(markdown: string): string {
       smartLists: true,
       smartypants: false,
     });
-    let html =
+    const html =
       typeof htmlResult === "string" ? htmlResult : String(htmlResult ?? "");
 
-    // Sanitize links and images by processing the HTML
-    html = html.replace(
-      /<a\s+([^>]*?)href=["']([^"']*?)["']([^>]*?)>(.*?)<\/a>/gi,
-      (match, before, href, after, text) => {
-        const hrefStr = typeof href === "string" ? href : String(href ?? "");
-        const textStr = typeof text === "string" ? text : String(text ?? "");
-        const sanitizedHref = sanitizeAttribute("a", "href", hrefStr);
-        if (!sanitizedHref) {
-          return textStr; // Return just the text if href is invalid
-        }
-        return `<a href="${sanitizedHref}" target="_blank" rel="noopener noreferrer">${textStr}</a>`;
-      },
-    );
-
-    html = html.replace(
-      /<img\s+([^>]*?)src=["']([^"']*?)["']([^>]*?)>/gi,
-      (match, before, src, _after) => {
-        const srcStr = typeof src === "string" ? src : String(src ?? "");
-        const sanitizedSrc = sanitizeAttribute("img", "src", srcStr);
-        if (!sanitizedSrc) {
-          return ""; // Remove image if src is invalid
-        }
-        return `<img src="${sanitizedSrc}" loading="lazy">`;
-      },
-    );
-
-    // FIRST: Remove dangerous tags and content (script tags, event handlers, etc.)
-    html = sanitizeHtml(html);
-
-    // SECOND: Escape code blocks properly - decode HTML entities first, then escape
-    html = html.replace(
-      /<pre><code(?: class="language-([^"]*)")?>([\s\S]*?)<\/code><\/pre>/gi,
-      (match, lang, code) => {
-        const codeStr = typeof code === "string" ? code : String(code ?? "");
-        const _langStr = typeof lang === "string" ? lang : String(lang ?? "");
-        // Decode HTML entities that marked might have added, then escape properly
-        const decodedCode = codeStr
-          .replace(/&amp;/g, "&")
-          .replace(/&lt;/g, "<")
-          .replace(/&gt;/g, ">")
-          .replace(/&quot;/g, '"')
-          .replace(/&#39;/g, "'")
-          .replace(/&#x27;/g, "'");
-
-        // Now escape properly
-        const escapedCode = decodedCode
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;")
-          .replace(/'/g, "&#39;");
-
-        if (lang) {
-          const langStr =
-            typeof lang === "string" ? lang : String(lang as unknown);
-          const sanitizedLang = langStr.replace(/[^a-zA-Z0-9-_]/g, "");
-          return `<pre><code class="language-${sanitizedLang}">${escapedCode}</code></pre>`;
-        }
-
-        return `<pre><code>${escapedCode}</code></pre>`;
-      },
-    );
-
-    // THIRD: Escape HTML tags that aren't in our allowed list
-    // This handles cases like <b>, <i>, etc. that aren't dangerous but should be escaped
-    // Store code blocks temporarily to avoid escaping their content
+    // Preserve code blocks before sanitization
+    // sanitize-html will escape code block content, which we want to preserve as-is
     const codeBlockPlaceholders: { placeholder: string; content: string }[] =
       [];
     let placeholderIndex = 0;
 
-    html = html.replace(
-      /<pre><code[^>]*>[\s\S]*?<\/code><\/pre>/gi,
-      (match) => {
-        const placeholder = `__CODE_BLOCK_${placeholderIndex}__`;
-        codeBlockPlaceholders.push({ placeholder, content: match });
+    // Extract code blocks and replace with placeholders
+    // Use a unique placeholder that won't be modified by sanitize-html
+    const htmlWithPlaceholders = html.replace(
+      /<pre><code(?: class="language-([^"]*)")?>([\s\S]*?)<\/code><\/pre>/gi,
+      (match, lang, code) => {
+        const placeholder = `__CODE_BLOCK_PLACEHOLDER_${placeholderIndex}__`;
+        const codeStr = typeof code === "string" ? code : String(code ?? "");
+        const langStr = typeof lang === "string" ? lang : String(lang ?? "");
+
+        // Sanitize language class name
+        const sanitizedLang = langStr.replace(/[^a-zA-Z0-9-_]/g, "");
+
+        // Preserve the code block content (it's already HTML-escaped by marked)
+        // We'll restore it after sanitization
+        codeBlockPlaceholders.push({
+          placeholder,
+          content: sanitizedLang
+            ? `<pre><code class="language-${sanitizedLang}">${codeStr}</code></pre>`
+            : `<pre><code>${codeStr}</code></pre>`,
+        });
         placeholderIndex++;
         return placeholder;
       },
     );
 
-    // Escape HTML tags that aren't in our allowed list
-    html = html.replace(
-      /<(\/?)(?!\/?(?:p|br|strong|em|h[1-6]|ul|ol|li|blockquote|pre|code|a|img)\b)[a-z][^>]*>/gi,
-      (match) => {
-        return match.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    // Sanitize HTML using sanitize-html library
+    const sanitized = sanitizeHtml(htmlWithPlaceholders, {
+      allowedTags: ALLOWED_TAGS,
+      allowedAttributes: ALLOWED_ATTRIBUTES,
+      allowedSchemes: ["http", "https"],
+      allowedSchemesByTag: {
+        img: ["http", "https", "data"], // Allow data URIs for images if needed
       },
-    );
-
-    // Restore code blocks
-    codeBlockPlaceholders.forEach(({ placeholder, content }) => {
-      html = html.replace(placeholder, content);
+      allowedSchemesAppliedToAttributes: ["href", "src"],
+      // Ensure links open in new tab with security attributes
+      transformTags: {
+        a: (tagName, attribs) => {
+          return {
+            tagName: "a",
+            attribs: {
+              ...attribs,
+              target: "_blank",
+              rel: "noopener noreferrer",
+            },
+          };
+        },
+        img: (tagName, attribs) => {
+          return {
+            tagName: "img",
+            attribs: {
+              ...attribs,
+              loading: "lazy",
+            },
+          };
+        },
+      },
     });
 
-    return html;
+    // Restore code blocks (placeholders should remain unchanged by sanitize-html)
+    let finalHtml = sanitized;
+    codeBlockPlaceholders.forEach(({ placeholder, content }) => {
+      finalHtml = finalHtml.replace(placeholder, content);
+    });
+
+    return finalHtml;
   } catch (error) {
     console.error("Error sanitizing markdown:", error);
     return "";

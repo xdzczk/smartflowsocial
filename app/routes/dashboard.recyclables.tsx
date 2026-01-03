@@ -17,9 +17,13 @@ import {
   useRecyclablesState,
   getRecyclableDashboardData,
   handleRecyclablePostAction,
+  type IndividualRepostFetcherData,
+  type PostData,
+  type CombinedContent,
+  fromPostDTOArray,
+  type PostDTO,
 } from "~/features/posts";
-import type { IndividualRepostFetcherData } from "~/features/posts";
-import type { PostData, CombinedContent } from "~/features/posts";
+import { withCSRFProtection } from "~/lib/csrf.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
@@ -46,7 +50,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 }
 
-export async function action({ request }: ActionFunctionArgs) {
+export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs) => {
   try {
     const userId = await requireUserId(request);
     const formData = await request.formData();
@@ -61,7 +65,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const { handleActionError } = await import("~/lib/error-handler.server");
     return handleActionError(error);
   }
-}
+});
 
 type LoaderData = Awaited<ReturnType<typeof loader>>;
 
@@ -88,35 +92,9 @@ export default function RecyclablesPosts() {
   const repostFetcher = useFetcher<RepostFetcherData>();
   const individualRepostFetcher = useFetcher<IndividualRepostFetcherData>();
 
-  // Type assertions for posts - ensure they match Post[] | PostData[]
+  // Deserialize DTOs (with string dates) back to PostData (with Date objects)
   const typedPosts: PostData[] = Array.isArray(posts)
-    ? posts.map((post: unknown) => {
-        const p = post as {
-          id: string;
-          createdAt?: string | Date;
-          postedAt?: string | Date | null;
-          [key: string]: unknown;
-        };
-        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-        const result = {
-          ...p,
-          createdAt:
-            p.createdAt instanceof Date
-              ? p.createdAt
-              : typeof p.createdAt === "string"
-                ? new Date(p.createdAt)
-                : new Date(),
-          postedAt:
-            p.postedAt instanceof Date
-              ? p.postedAt
-              : typeof p.postedAt === "string"
-                ? new Date(p.postedAt)
-                : p.postedAt === null
-                  ? null
-                  : null,
-        } as PostData;
-        return result;
-      })
+    ? fromPostDTOArray(posts as PostDTO[])
     : [];
 
   // Type assertions for stats - ensure it matches Stats type

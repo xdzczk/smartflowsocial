@@ -8,24 +8,48 @@ import { v4 as uuidv4 } from "uuid";
 import { env } from "~/lib/env.server";
 import { logError } from "~/lib/error-logger.server";
 
+import {
+  validateUpload,
+  getS3ContentType,
+  MAX_FILE_SIZE,
+} from "./validation.server";
+
 type UploadStream = AsyncIterable<Uint8Array>;
 
 const uploadStreamToS3 = async (
   stream: UploadStream,
   key: string,
   s3Client: S3Client,
+  filename: string,
+  contentType?: string,
 ): Promise<string> => {
-  // Convert stream to buffer
-  const chunks = [];
+  // Convert stream to buffer (required for MIME type detection)
+  const chunks: Buffer[] = [];
   for await (const chunk of stream) {
-    chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
+    chunks.push(
+      Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk),
+    );
   }
   const buffer = Buffer.concat(chunks);
+
+  // Validate upload (MIME type and size)
+  const validation = await validateUpload(buffer, filename, contentType);
+  if (!validation.valid) {
+    throw new Error(validation.error ?? "Upload validation failed");
+  }
+
+  // Get normalized content type
+  const s3ContentType = getS3ContentType(validation.detectedMimeType!);
 
   const params = {
     Bucket: env.STORAGE_BUCKET!,
     Key: key,
     Body: buffer,
+    ContentType: s3ContentType,
+    // Server-side encryption
+    ServerSideEncryption: "AES256" as const,
+    // Explicit ACL - private by default
+    ACL: "private" as const,
   };
 
   try {
@@ -45,11 +69,7 @@ const uploadStreamToS3 = async (
 
 export function createUploadHandler(userId: string) {
   return composeUploadHandlers(
-    async ({ name: _name, filename, contentType: _contentType, data }) => {
-      // if (name !== "STLFileURL" && name !== "additionalFilesURLs") {
-      //   return undefined;
-      // }
-
+    async ({ name: _name, filename, contentType, data }) => {
       // Skip if no filename is provided
       if (!filename) {
         return undefined;
@@ -60,18 +80,14 @@ export function createUploadHandler(userId: string) {
         const uniqueFilename = `${uuidv4()}.${ext}`;
         const key = `clients/${userId}/${uniqueFilename}`;
 
-        const s3Client = new S3Client({
-          credentials: {
-            accessKeyId: env.STORAGE_ACCESS_KEY!,
-            secretAccessKey: env.STORAGE_SECRET!,
-          },
-          region: env.STORAGE_REGION!,
-        });
+        const s3Client = createS3Client();
 
         const uploadedFileLocation = await uploadStreamToS3(
           data,
           key,
           s3Client,
+          filename,
+          contentType,
         );
 
         return uploadedFileLocation;
@@ -85,7 +101,7 @@ export function createUploadHandler(userId: string) {
       }
     },
     createMemoryUploadHandler({
-      maxPartSize: 100 * 1024 * 1024,
+      maxPartSize: MAX_FILE_SIZE, // Use same limit as validation
     }),
   );
 }
@@ -96,6 +112,7 @@ export async function uploadBufferToS3(
   userId: string,
   filename?: string,
   customKey?: string,
+  contentType?: string,
 ): Promise<string> {
   // Generate filename if not provided
   let finalFilename: string;
@@ -106,16 +123,30 @@ export async function uploadBufferToS3(
     finalFilename = `${Date.now()}-${Math.random().toString(36).substring(2)}.jpg`;
   }
 
+  // Validate upload (MIME type and size)
+  const validation = await validateUpload(buffer, finalFilename, contentType);
+  if (!validation.valid) {
+    throw new Error(validation.error ?? "Upload validation failed");
+  }
+
   // Use custom key or generate default one
   const key = customKey ?? `clients/${userId}/${finalFilename}`;
 
   try {
     const s3Client = createS3Client();
 
+    // Get normalized content type
+    const s3ContentType = getS3ContentType(validation.detectedMimeType!);
+
     const command = new PutObjectCommand({
       Bucket: env.STORAGE_BUCKET!,
       Key: key,
       Body: buffer,
+      ContentType: s3ContentType,
+      // Server-side encryption
+      ServerSideEncryption: "AES256",
+      // Explicit ACL - private by default
+      ACL: "private",
     });
 
     await s3Client.send(command);
@@ -153,6 +184,12 @@ export async function uploadEditorJSImage(
   filename: string,
 ): Promise<string> {
   try {
+    // Validate upload (MIME type and size)
+    const validation = await validateUpload(buffer, filename);
+    if (!validation.valid) {
+      throw new Error(validation.error ?? "Upload validation failed");
+    }
+
     // Generate a unique filename with timestamp and random string
     const ext = filename.split(".").pop()?.toLowerCase() ?? "jpg";
     const uniqueFilename = `editorjs-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
@@ -160,11 +197,18 @@ export async function uploadEditorJSImage(
 
     const s3Client = createS3Client();
 
+    // Get normalized content type
+    const s3ContentType = getS3ContentType(validation.detectedMimeType!);
+
     const command = new PutObjectCommand({
       Bucket: env.STORAGE_BUCKET!,
       Key: key,
       Body: buffer,
-      ContentType: `image/${ext === "jpg" ? "jpeg" : ext}`,
+      ContentType: s3ContentType,
+      // Server-side encryption
+      ServerSideEncryption: "AES256",
+      // Explicit ACL - private by default
+      ACL: "private",
       // Add cache control for better performance
       CacheControl: "public, max-age=31536000",
     });

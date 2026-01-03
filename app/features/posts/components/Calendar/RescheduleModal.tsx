@@ -5,7 +5,7 @@ import { toast } from "react-hot-toast";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { handleErrorSafely } from "~/lib/error-handler.client";
 import { isVideoFile } from "~/lib/helpers";
-import { signEventFn } from "~/lib/nostr";
+import { nostrAdapter } from "~/lib/nostr-adapter.client";
 
 import type { QueueType, UserData } from "../../types";
 
@@ -181,7 +181,7 @@ export function RescheduleModal({
       }
 
       // Re-sign with the same content but new timestamp
-      const { nostrEvent, signedEvent } = await signEventFn({
+      const { nostrEvent, signedEvent } = await nostrAdapter.signEvent({
         content: originalSignedEvent.content, // Use exact same content
         created_at: newTimeUnix, // Only change the timestamp
         kind: originalSignedEvent.kind ?? 1,

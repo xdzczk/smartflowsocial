@@ -5,11 +5,12 @@ import {
   getEffectiveHashtags,
   parseEffectiveHashtagsRequest,
 } from "~/features/posts";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { ValidationError } from "~/lib/errors";
 
 // Returns effective hashtags for a queue type
 // This will return the hashtag preset assigned to the queue type, or empty if none assigned
-export async function action({ request }: ActionFunctionArgs) {
+export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs) => {
   try {
     const userId = await requireUserId(request);
 
@@ -36,4 +37,4 @@ export async function action({ request }: ActionFunctionArgs) {
     const { handleActionError } = await import("~/lib/error-handler.server");
     return handleActionError(error);
   }
-}
+});

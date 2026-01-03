@@ -4,10 +4,10 @@
  */
 
 import {
-  signLongFormEvent,
   convertEditorJSToMarkdown,
   generateArticleIdentifier,
 } from "~/lib/nostr";
+import { nostrAdapter } from "~/lib/nostr-adapter.client";
 
 import type { EditorJSBlock } from "../types";
 import { generateSummaryFromContent } from "../utils/editorjs-content";
@@ -112,7 +112,7 @@ export function useLongFormSubmission({
             : scheduledTimestamp,
       };
 
-      const { nostrEvent, signedEvent } = await signLongFormEvent(eventData);
+      const { nostrEvent, signedEvent } = await nostrAdapter.signLongFormEvent(eventData);
 
       const form = document.createElement("form");
       form.method = "POST";

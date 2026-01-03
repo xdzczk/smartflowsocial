@@ -2,7 +2,7 @@ import { useFetcher } from "@remix-run/react";
 import { useEffect, useState } from "react";
 
 import { handleErrorSafely } from "~/lib/error-handler.client";
-import { signEventFn } from "~/lib/nostr";
+import { nostrAdapter } from "~/lib/nostr-adapter.client";
 
 import type { PostData, LongFormPostData, UserData, QueueType } from "../types";
 
@@ -127,7 +127,7 @@ export function SimpleRescheduleModal({
       }
 
       // Re-sign with the same content but new timestamp
-      const { nostrEvent, signedEvent } = await signEventFn({
+      const { nostrEvent, signedEvent } = await nostrAdapter.signEvent({
         content: originalSignedEvent.content, // Use exact same content
         created_at: newTimeUnix, // Only change the timestamp
         kind: originalSignedEvent.kind || (isLongform ? 30023 : 1),

@@ -74,15 +74,119 @@ async function run() {
   const app = express();
   const metricsApp = express();
 
+  // Trust proxy for accurate IP extraction (needed for Fly.io and other proxies)
+  metricsApp.set("trust proxy", true);
+
   // Import query metrics to register them
   await import("./app/lib/query-metrics.server");
 
   // Collect default metrics (CPU, memory, process info, etc.)
   promClient.collectDefaultMetrics();
 
-  // Expose Prometheus metrics endpoint
+  // Expose Prometheus metrics endpoint with security protection
   metricsApp.get("/metrics", (req, res) => {
     void (async () => {
+      // Validate token if provided
+      const token =
+        req.query.token?.toString() ??
+        req.headers.authorization?.replace("Bearer ", "");
+
+      if (env.METRICS_TOKEN) {
+        if (!token || token !== env.METRICS_TOKEN) {
+          res.status(401).json({ error: "Unauthorized" });
+          return;
+        }
+      }
+
+      // Validate IP if allowlist provided
+      if (env.METRICS_ALLOWED_IPS) {
+        // Get client IP (handles proxies)
+        const clientIp =
+          (req.headers["x-forwarded-for"] as string | undefined)?.split(",")[0]?.trim() ??
+          (req.headers["x-real-ip"] as string | undefined) ??
+          req.socket.remoteAddress ??
+          req.ip ??
+          "";
+
+        const allowedIps = env.METRICS_ALLOWED_IPS.split(",").map((ip) =>
+          ip.trim(),
+        );
+
+        // Check exact match or CIDR prefix match
+        const isAllowed = allowedIps.some((allowedIp) => {
+          // Exact match
+          if (clientIp === allowedIp) {
+            return true;
+          }
+
+          // CIDR prefix match (e.g., "10.0.0.0/8" matches "10.0.0.1")
+          if (allowedIp.includes("/")) {
+            const [prefix, mask] = allowedIp.split("/");
+            const maskBits = parseInt(mask, 10);
+            if (isNaN(maskBits)) {
+              return false;
+            }
+
+            // Simple prefix matching for common CIDR ranges
+            const prefixParts = prefix.split(".");
+            const clientParts = clientIp.split(".");
+
+            if (prefixParts.length !== 4 || clientParts.length !== 4) {
+              return false;
+            }
+
+            // Check if IP starts with the prefix for the given mask
+            const bytesToCheck = Math.floor(maskBits / 8);
+            for (let i = 0; i < bytesToCheck; i++) {
+              if (prefixParts[i] !== clientParts[i]) {
+                return false;
+              }
+            }
+
+            // Check partial byte if mask is not a multiple of 8
+            const remainingBits = maskBits % 8;
+            if (remainingBits > 0 && bytesToCheck < 4) {
+              const prefixByte = parseInt(prefixParts[bytesToCheck] || "0", 10);
+              const clientByte = parseInt(clientParts[bytesToCheck] || "0", 10);
+              const maskByte = 0xff << (8 - remainingBits);
+              if ((prefixByte & maskByte) !== (clientByte & maskByte)) {
+                return false;
+              }
+            }
+
+            return true;
+          }
+
+          // Prefix match (e.g., "10.0" matches "10.0.0.1")
+          if (clientIp.startsWith(allowedIp)) {
+            return true;
+          }
+
+          return false;
+        });
+
+        if (!isAllowed) {
+          res.status(403).json({
+            error: "Forbidden",
+            message: "IP address not allowed",
+          });
+          return;
+        }
+      }
+
+      // If neither token nor IP allowlist is configured, allow in development only
+      if (
+        !env.METRICS_TOKEN &&
+        !env.METRICS_ALLOWED_IPS &&
+        env.NODE_ENV === "production"
+      ) {
+        console.warn(
+          "⚠️  Metrics endpoint is unprotected in production. Set METRICS_TOKEN or METRICS_ALLOWED_IPS.",
+        );
+        // Still allow access but log warning
+      }
+
+      // Return metrics
       res.set("Content-Type", promClient.register.contentType);
       const metrics = await promClient.register.metrics();
       res.end(metrics);

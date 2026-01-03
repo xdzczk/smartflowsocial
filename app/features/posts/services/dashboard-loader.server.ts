@@ -15,6 +15,12 @@ import {
 } from "~/models/user.server";
 
 import { combineContent } from "../combined.server";
+import {
+  toPostDTOArray,
+  toLongFormPostDTOArray,
+  type PostDTO,
+  type LongFormPostDTO,
+} from "../dtos";
 import type { PostData, LongFormPostData } from "../types";
 import { convertPrismaQueueTypeToQueueType } from "../types";
 
@@ -85,9 +91,15 @@ export async function loadDashboardData(userId: string, queueType: string) {
     "asc",
   );
 
+  // Serialize Date objects to strings for Remix loader response
+  const scheduledPostsDTO: PostDTO[] = toPostDTOArray(scheduledPostsData);
+  const longformPostsDTO: LongFormPostDTO[] = toLongFormPostDTOArray(
+    longformPostsData,
+  );
+
   return {
-    scheduledPosts,
-    longformPosts,
+    scheduledPosts: scheduledPostsDTO,
+    longformPosts: longformPostsDTO,
     allContent,
     postStatistics,
     user,

@@ -14,7 +14,7 @@ import {
 } from "~/components/ui/dialog";
 import type { NostrEvent, ProfileData } from "~/features/nostr/types";
 import { useSubscription } from "~/features/payments/types";
-import { hexToNpub } from "~/lib/nostr";
+import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 
 interface UserWithProfile {
@@ -90,7 +90,7 @@ function formatNpubShort(hexOrNpub?: string): string {
   if (!hexOrNpub) return "";
   const np = hexOrNpub.startsWith("npub")
     ? hexOrNpub
-    : (hexToNpub(hexOrNpub) ?? hexOrNpub);
+    : (nostrAdapter.encodeNpub(hexOrNpub) ?? hexOrNpub);
   if (!np) return "";
   if (np.length <= 20) return np; // already short
   return `${np.slice(0, 8)}...${np.slice(-8)}`;

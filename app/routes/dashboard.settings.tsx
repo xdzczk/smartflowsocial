@@ -28,6 +28,7 @@ import {
   UploadProviderSettings,
 } from "~/features/upload";
 import { AccountsSettings } from "~/features/user";
+import { withCSRFProtection } from "~/lib/csrf.server";
 export async function loader({ request }: { request: Request }) {
   const userId = await requireUserId(request);
 
@@ -40,7 +41,7 @@ export async function loader({ request }: { request: Request }) {
   return json(data);
 }
 
-export async function action({ request }: { request: Request }) {
+export const action = withCSRFProtection(async ({ request }: { request: Request }) => {
   const userId = await requireUserId(request);
   const formData = await request.formData();
 
@@ -64,7 +65,7 @@ export async function action({ request }: { request: Request }) {
 
     return handleActionError(error);
   }
-}
+});
 
 type QueueTypeSettings = QueueType & {
   isDefault: boolean;

@@ -19,6 +19,7 @@ import {
   type HashTagPreset,
   convertJsonValueToScheduleConfig,
 } from "~/features/posts";
+import { withCSRFProtection } from "~/lib/csrf.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
@@ -26,7 +27,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return json(data);
 }
 
-export async function action({ request }: ActionFunctionArgs) {
+export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs) => {
   try {
     const userId = await requireUserId(request);
     return await handleNewLongFormAction(userId, request);
@@ -34,7 +35,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const { handleActionError } = await import("~/lib/error-handler.server");
     return handleActionError(error);
   }
-}
+});
 
 type LoaderData = Awaited<ReturnType<typeof loadNewLongFormData>>;
 type ActionData = Awaited<ReturnType<typeof action>>;

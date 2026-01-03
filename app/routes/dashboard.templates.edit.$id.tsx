@@ -8,6 +8,7 @@ import {
   loadTemplateEditData,
   handleTemplateEditAction,
 } from "~/features/templates";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { formatDate, getImageUrls } from "~/lib/helpers";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -32,7 +33,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
+export const action = withCSRFProtection(async ({ request, params }: ActionFunctionArgs) => {
   try {
     const userId = await requireUserId(request);
     const templateId = params.id;
@@ -53,7 +54,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const { handleActionError } = await import("~/lib/error-handler.server");
     return handleActionError(error);
   }
-}
+});
 
 type LoaderData = Awaited<ReturnType<typeof loader>>;
 

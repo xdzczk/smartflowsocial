@@ -1,9 +1,10 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
 
 import { authenticateNostrUser } from "~/features/auth";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { safeRedirect } from "~/lib/remix-utils";
 
-export async function action({ request }: ActionFunctionArgs) {
+export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs) => {
   try {
     const formData = await request.formData();
     const event = formData.get("event") as string | null;
@@ -20,4 +21,4 @@ export async function action({ request }: ActionFunctionArgs) {
     const { handleActionError } = await import("~/lib/error-handler.server");
     return handleActionError(error);
   }
-}
+});

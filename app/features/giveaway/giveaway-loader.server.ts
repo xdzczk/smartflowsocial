@@ -5,6 +5,12 @@
 
 import { calculateTrustScore } from "~/features/engagement/trustScore";
 import type { User } from "~/features/engagement/trustScore";
+import {
+  toPostDTOArray,
+  type PostDTO,
+} from "~/features/posts/dtos";
+import type { PostData } from "~/features/posts/types";
+import { convertPrismaQueueTypeToQueueType } from "~/features/posts/types";
 import { convertToHex } from "~/lib/helpers";
 import { connectToPrimalCache } from "~/lib/nostrwebsocket.server";
 import { getRecentPostedPosts } from "~/models/post.queries.server";
@@ -509,8 +515,24 @@ export async function loadGiveawayData(
   // Fetch stats
   const stats = await fetchPostStats(eventIds);
 
+  // Convert PostWithQueueType[] to PostData[] first
+  const postsData: PostData[] = posts.map((post) => {
+    const { queueType, ...rest } = post;
+    const signedEventValue: PostData["signedEvent"] =
+      post.signedEvent as PostData["signedEvent"];
+    const nostrEventValue: PostData["nostrEvent"] =
+      post.nostrEvent as PostData["nostrEvent"];
+    const result: PostData = {
+      ...rest,
+      queueType: convertPrismaQueueTypeToQueueType(queueType),
+      signedEvent: signedEventValue,
+      nostrEvent: nostrEventValue,
+    };
+    return result;
+  });
+
   // Add total engagement to each post
-  const postsWithEngagement = posts.map((post) => {
+  const postsWithEngagement = postsData.map((post) => {
     const eventId =
       post.signedEvent &&
       typeof post.signedEvent === "object" &&
@@ -605,8 +627,29 @@ export async function loadGiveawayData(
     userWithDefaults,
   );
 
+  // Serialize Date objects to strings for Remix loader response
+  // Note: postsWithNonZeroEngagement has additional fields (stats, totalEngagement)
+  // We need to preserve those while serializing dates
+  const postsDTO: PostDTO[] = toPostDTOArray(
+    postsWithNonZeroEngagement.map(({ stats: _stats, totalEngagement: _totalEngagement, ...post }) => post),
+  );
+
+  // Re-add the engagement fields to DTOs
+  const postsWithEngagementDTO = postsDTO.map((dto, index) => ({
+    ...dto,
+    stats: postsWithNonZeroEngagement[index]?.stats ?? {
+      likes: 0,
+      replies: 0,
+      mentions: 0,
+      reposts: 0,
+      zaps: 0,
+      satszapped: 0,
+    },
+    totalEngagement: postsWithNonZeroEngagement[index]?.totalEngagement ?? 0,
+  }));
+
   return {
-    posts: postsWithNonZeroEngagement,
+    posts: postsWithEngagementDTO,
     stats,
     relatedEvents: processedEvents,
     user,

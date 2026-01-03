@@ -18,6 +18,10 @@ import {
   type PostFetcher,
   convertJsonValueToScheduleConfig,
   usePostedPosts,
+  fromPostDTOArray,
+  fromLongFormPostDTOArray,
+  type PostDTO,
+  type LongFormPostDTO,
 } from "~/features/posts";
 import type { LongFormPostType } from "~/features/posts";
 import type { PostStats } from "~/features/posts/stats.server";
@@ -58,7 +62,7 @@ type LoaderData = Awaited<ReturnType<typeof loader>>;
 export default function PostedPosts() {
   const data = useLoaderData<LoaderData>();
 
-  // Type assertions for Remix JsonifyObject serialization
+  // Deserialize DTOs (with string dates) back to PostData/LongFormPostData (with Date objects)
   const postsRaw =
     "posts" in data && Array.isArray(data.posts) ? data.posts : [];
   const longformPostsRaw =
@@ -75,65 +79,13 @@ export default function PostedPosts() {
       ? data.queueTypes
       : [];
 
-  // Transform serialized dates back to Date objects and assert types
+  // Convert DTOs to PostData/LongFormPostData (deserializes date strings to Date objects)
   const posts: PostData[] = Array.isArray(postsRaw)
-    ? postsRaw.map((post: unknown) => {
-        const p = post as {
-          createdAt: string | Date;
-          updatedAt: string | Date;
-          postedAt?: string | Date | null;
-          [key: string]: unknown;
-        };
-        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-        const result = {
-          ...p,
-          createdAt:
-            p.createdAt &&
-            typeof p.createdAt === "object" &&
-            p.createdAt instanceof Date
-              ? p.createdAt
-              : new Date(p.createdAt),
-          updatedAt:
-            p.updatedAt &&
-            typeof p.updatedAt === "object" &&
-            p.updatedAt instanceof Date
-              ? p.updatedAt
-              : new Date(p.updatedAt),
-          postedAt: p.postedAt
-            ? p.postedAt &&
-              typeof p.postedAt === "object" &&
-              p.postedAt instanceof Date
-              ? p.postedAt
-              : new Date(p.postedAt)
-            : null,
-        } as PostData;
-        return result;
-      })
+    ? fromPostDTOArray(postsRaw as PostDTO[])
     : [];
 
   const longformPosts: LongFormPostData[] = Array.isArray(longformPostsRaw)
-    ? longformPostsRaw.map((post: unknown) => {
-        const p = post as {
-          createdAt: string | Date;
-          updatedAt: string | Date;
-          publishedAt?: string | Date | null;
-          [key: string]: unknown;
-        };
-        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-        const result = {
-          ...p,
-          createdAt:
-            p.createdAt instanceof Date ? p.createdAt : new Date(p.createdAt),
-          updatedAt:
-            p.updatedAt instanceof Date ? p.updatedAt : new Date(p.updatedAt),
-          publishedAt: p.publishedAt
-            ? p.publishedAt instanceof Date
-              ? p.publishedAt
-              : new Date(p.publishedAt)
-            : null,
-        } as LongFormPostData;
-        return result;
-      })
+    ? fromLongFormPostDTOArray(longformPostsRaw as LongFormPostDTO[])
     : [];
 
   // Type assertions for Remix JsonifyObject serialization

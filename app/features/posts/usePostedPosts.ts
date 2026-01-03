@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 
 import type { ToastMessage } from "~/components/types";
 import type { User } from "~/features/user";
-import { signEventFn } from "~/lib/nostr";
+import { nostrAdapter } from "~/lib/nostr-adapter.client";
 
 import type { CombinedContent, PostData, LongFormPostData } from "./types";
 
@@ -399,7 +399,7 @@ export function usePostedPosts({
           const originalPost = longformRepostFetcher.data.originalPost;
 
           // Sign the event using client-side signing
-          const { signedEvent } = await signEventFn(eventData);
+          const { signedEvent } = await nostrAdapter.signEvent(eventData);
 
           // Get user relays from user data
           const sanitizedRelays = user.userRelays ?? ["wss://relay.primal.net"];
@@ -502,7 +502,7 @@ export function usePostedPosts({
           const eventData = individualRepostFetcher.data.repostEventData;
 
           // Sign the event using client-side signing
-          const { signedEvent } = await signEventFn(eventData);
+          const { signedEvent } = await nostrAdapter.signEvent(eventData);
 
           // Get user relays from user data
           const sanitizedRelays = user.userRelays ?? ["wss://relay.primal.net"];

@@ -2,7 +2,7 @@ import { useFetcher } from "@remix-run/react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { logClientError } from "~/lib/error-handler.client";
-import { signEventFn } from "~/lib/nostr";
+import { nostrAdapter } from "~/lib/nostr-adapter.client";
 
 import { getSelectedQueueStyle } from "../queueColors";
 import type { PreparedEvent } from "../types";
@@ -24,7 +24,7 @@ export default function PostConfirmation({
       const signed = await Promise.all(
         preparedEvents.map(async (eventData: PreparedEvent, index: number) => {
           try {
-            const { nostrEvent, signedEvent } = await signEventFn(
+            const { nostrEvent, signedEvent } = await nostrAdapter.signEvent(
               eventData.events,
             );
 

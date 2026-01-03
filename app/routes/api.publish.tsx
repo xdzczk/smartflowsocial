@@ -2,6 +2,7 @@ import { json } from "@remix-run/node";
 import type { ActionFunctionArgs } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { ValidationError, ExternalServiceError } from "~/lib/errors";
 
 type AssertFunction = (
@@ -10,7 +11,7 @@ type AssertFunction = (
   context?: Record<string, unknown>,
 ) => asserts condition;
 
-export async function action({ request }: ActionFunctionArgs) {
+export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs) => {
   try {
     const errorHandler = await import("~/lib/error-handler.server");
     const assert: AssertFunction = errorHandler.assert;
@@ -140,4 +141,4 @@ export async function action({ request }: ActionFunctionArgs) {
     const { handleActionError } = await import("~/lib/error-handler.server");
     return handleActionError(error);
   }
-}
+});

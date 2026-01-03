@@ -1,3 +1,5 @@
+// Legacy file - use nostr-adapter.client.ts or nostr-adapter.server.ts instead
+// This file is kept for backward compatibility during migration
 import { nip19 } from "nostr-tools";
 
 import type {

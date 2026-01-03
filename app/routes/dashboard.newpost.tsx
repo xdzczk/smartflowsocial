@@ -20,13 +20,14 @@ import {
   type QueueType,
   type HashTagPreset,
 } from "~/features/posts";
+import { withCSRFProtection } from "~/lib/csrf.server";
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   const data = await loadNewPostData(userId);
   return json(data);
 }
 
-export async function action({ request }: ActionFunctionArgs) {
+export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs) => {
   try {
     const userId = await requireUserId(request);
     return await handleNewPostAction(userId, request);
@@ -34,7 +35,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const { handleActionError } = await import("~/lib/error-handler.server");
     return handleActionError(error);
   }
-}
+});
 
 export default function NewPost() {
   const loaderData = useLoaderData<typeof loader>();

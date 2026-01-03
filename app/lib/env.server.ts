@@ -35,6 +35,14 @@ interface EnvConfig {
   TEST_DATABASE_URL?: string;
   ENABLE_SOURCE_MAPS?: string;
   E2E_TEST?: string;
+  
+  // Security (CSRF protection)
+  APP_URL?: string; // Canonical app URL (e.g., https://yourdomain.com)
+  ALLOWED_ORIGINS?: string; // Comma-separated list of allowed origins for CSRF protection
+  
+  // Metrics endpoint security
+  METRICS_TOKEN?: string; // Token required to access /metrics endpoint
+  METRICS_ALLOWED_IPS?: string; // Comma-separated list of allowed IPs for metrics endpoint
 }
 
 interface ValidationError {
@@ -198,6 +206,20 @@ function validateAndGetEnv(): EnvConfig {
   }
   if (process.env.E2E_TEST) {
     config.E2E_TEST = process.env.E2E_TEST;
+  }
+  
+  // Add security configuration
+  if (process.env.APP_URL) {
+    config.APP_URL = process.env.APP_URL;
+  }
+  if (process.env.ALLOWED_ORIGINS) {
+    config.ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS;
+  }
+  if (process.env.METRICS_TOKEN) {
+    config.METRICS_TOKEN = process.env.METRICS_TOKEN;
+  }
+  if (process.env.METRICS_ALLOWED_IPS) {
+    config.METRICS_ALLOWED_IPS = process.env.METRICS_ALLOWED_IPS;
   }
 
   console.info("✅ Environment variables validated");
