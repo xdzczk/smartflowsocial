@@ -39,3 +39,4 @@ export function handleBulkRecyclableToggle(
 
   setPosts(updatedPosts);
 }
+

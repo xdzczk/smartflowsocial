@@ -1,3 +1,9 @@
+// Load environment variables from .env file (if it exists)
+// This must happen before any imports that use environment variables
+import { config } from "dotenv";
+import { resolve } from "node:path";
+config({ path: resolve(process.cwd(), ".env") });
+
 import { webcrypto as nodeWebcrypto } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";

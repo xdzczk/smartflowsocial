@@ -1,3 +1,9 @@
+// Load environment variables from .env file (if it exists)
+// This must happen before any imports that use environment variables
+import { config } from "dotenv";
+import { resolve } from "node:path";
+config({ path: resolve(process.cwd(), ".env") });
+
 import { webcrypto as nodeWebcrypto } from "node:crypto";
 // Ensure Web Crypto API exists for server-side code that expects browser crypto
 if (!(globalThis as { crypto?: Crypto }).crypto?.getRandomValues) {

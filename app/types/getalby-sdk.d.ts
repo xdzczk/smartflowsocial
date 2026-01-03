@@ -4,3 +4,4 @@
 declare module "@getalby/sdk/lnclient" {
   export * from "@getalby/sdk/dist/types/lnclient";
 }
+

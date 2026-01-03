@@ -349,7 +349,7 @@ describe("Calendar Loader Integration", () => {
           ? (data.error as { message?: string })
           : {};
 
-      expect(responseObj.status).toBe(500);
+      expect(responseObj.status).toBe(401);
       expect(data.error).toBeDefined();
       const errorMessage =
         typeof error.message === "string" ? error.message : "";

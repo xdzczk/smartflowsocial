@@ -486,3 +486,4 @@ await publisher.schedulePost("Scheduled post", "Bitcoin News");
 ---
 
 **Next Tutorial:** [Advanced Queue Management](./advanced-queue-management.md) → Master queue systems
+

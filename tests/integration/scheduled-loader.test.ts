@@ -286,7 +286,7 @@ describe("Scheduled Posts Loader Integration", () => {
             })
           : {};
 
-      expect(responseObj.status).toBe(500);
+      expect(responseObj.status).toBe(401);
       expect(data.error).toBeDefined();
       const error =
         data.error &&
@@ -328,7 +328,7 @@ describe("Scheduled Posts Loader Integration", () => {
             })
           : {};
 
-      expect(responseObj.status).toBe(500);
+      expect(responseObj.status).toBe(403);
       expect(data.error).toBeDefined();
       const error =
         data.error &&
@@ -370,7 +370,7 @@ describe("Scheduled Posts Loader Integration", () => {
             })
           : {};
 
-      expect(responseObj.status).toBe(500);
+      expect(responseObj.status).toBe(403);
       expect(data.error).toBeDefined();
       const error =
         data.error &&

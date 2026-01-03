@@ -98,3 +98,4 @@ export function FeatureComparisonTable({ plans }: FeatureComparisonTableProps) {
     </div>
   );
 }
+

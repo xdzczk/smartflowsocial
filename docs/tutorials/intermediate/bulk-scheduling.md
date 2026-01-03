@@ -418,3 +418,4 @@ Learn how to upload multiple images and schedule them automatically with consist
 ---
 
 **Next Tutorial:** [Creating Giveaways](./creating-giveaways.md) → Engage your audience
+

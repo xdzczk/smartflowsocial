@@ -174,15 +174,17 @@ export function normalizeError(error: unknown): AppError {
   }
 
   if (isError(error)) {
+    const message = error.message.trim();
+    
     // Check for common Prisma errors
-    if (error.message.includes("Unique constraint")) {
+    if (message.includes("Unique constraint")) {
       return new ConflictError(
         "A record with this information already exists",
         { originalError: error.message },
       );
     }
 
-    if (error.message.includes("Record to update not found")) {
+    if (message.includes("Record to update not found")) {
       return new NotFoundError(
         "The record you're trying to update doesn't exist",
         {
@@ -191,12 +193,52 @@ export function normalizeError(error: unknown): AppError {
       );
     }
 
+    // Check for authentication errors
+    if (
+      message.toLowerCase().includes("authentication required") ||
+      message.toLowerCase().includes("authentication error") ||
+      message.toLowerCase().includes("not authenticated")
+    ) {
+      return new AuthenticationError(message, {
+        originalError: error.message,
+      });
+    }
+
+    // Check for authorization/subscription errors
+    if (
+      message.toLowerCase().includes("subscription required") ||
+      message.toLowerCase().includes("subscription error")
+    ) {
+      return new AuthorizationError(message, {
+        originalError: error.message,
+      });
+    }
+
+    // Check for feature access errors
+    if (
+      message.toLowerCase().includes("feature access denied") ||
+      message.toLowerCase().includes("feature not available")
+    ) {
+      return new AuthorizationError(message, {
+        originalError: error.message,
+      });
+    }
+
+    // Check for database errors
+    if (
+      message.toLowerCase().includes("database error") ||
+      message.toLowerCase().includes("database connection failed") ||
+      message.toLowerCase().includes("database operation failed")
+    ) {
+      return new DatabaseError(message, {
+        originalError: error.message,
+      });
+    }
+
     // Generic error - use default message if empty
-    const message =
-      error.message && error.message.trim() !== ""
-        ? error.message
-        : "An unexpected error occurred";
-    return new AppError(message, 500, "INTERNAL_ERROR", false, {
+    const errorMessage =
+      message && message !== "" ? message : "An unexpected error occurred";
+    return new AppError(errorMessage, 500, "INTERNAL_ERROR", false, {
       originalError: error.message,
     });
   }
@@ -215,6 +257,14 @@ export function normalizeError(error: unknown): AppError {
  * Get user-friendly error message
  */
 export function getUserFriendlyMessage(error: AppError): string {
+  // Always return the actual message in test/development mode
+  const isTestOrDev =
+    process.env.NODE_ENV === "test" || process.env.NODE_ENV === "development";
+  
+  if (isTestOrDev) {
+    return error.message;
+  }
+
   // Don't expose internal errors to users in production
   if (!error.isOperational && process.env.NODE_ENV === "production") {
     return "An unexpected error occurred. Please try again later.";

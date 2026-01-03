@@ -340,3 +340,4 @@ SmartFlowSocial's search feature allows you to:
 ---
 
 **Next:** [Assets Management Guide](./assets.md) → Manage uploaded assets
+

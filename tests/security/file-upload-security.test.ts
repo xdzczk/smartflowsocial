@@ -139,3 +139,4 @@ describe("File Upload Security: Image Validation", () => {
     expect(true).toBe(true); // Documentation test
   });
 });
+

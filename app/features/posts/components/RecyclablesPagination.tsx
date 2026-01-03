@@ -54,3 +54,4 @@ export function RecyclablesPagination({
     </div>
   );
 }
+
