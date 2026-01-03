@@ -327,3 +327,4 @@ Description: For Bitcoin-related content
 
 **Next Tutorial:** [Using the Calendar View](./using-calendar-view.md) → Visual scheduling
 
+

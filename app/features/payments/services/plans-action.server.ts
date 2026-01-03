@@ -5,24 +5,32 @@
 
 import { requireUser } from "~/features/auth/session.server";
 import { logError } from "~/lib/error-logger.server";
+import {
+  plansActionSchema,
+  validateFormDataOrRespond,
+} from "~/lib/validation";
 import { checkPaymentStatus, createPlanInvoice } from "~/models/payment.server";
 
 export async function handlePlansAction(formData: FormData, request: Request) {
-  const intent = formData.get("intent");
+  const result = validateFormDataOrRespond(formData, plansActionSchema);
+  if (!result.success) {
+    return result.response;
+  }
+
+  const { intent } = result.data;
 
   // For payment polling, we don't need user authentication
   if (intent === "check_payment") {
-    const paymentId = formData.get("paymentId") as string;
-
-    if (!paymentId) {
+    const checkData = result.data.intent === "check_payment" ? result.data : null;
+    if (!checkData) {
       return {
         success: false,
-        error: "Payment ID is required",
+        error: "Invalid intent",
       };
     }
 
     try {
-      const paymentStatus = await checkPaymentStatus(paymentId);
+      const paymentStatus = await checkPaymentStatus(checkData.paymentId);
 
       if (paymentStatus.paid) {
         return {
@@ -63,16 +71,15 @@ export async function handlePlansAction(formData: FormData, request: Request) {
   const user = await requireUser(request);
 
   if (intent === "select_plan") {
-    const planId = formData.get("planId") as string;
-
-    if (!planId) {
-      return { error: "Plan ID is required" };
+    const selectData = result.data.intent === "select_plan" ? result.data : null;
+    if (!selectData) {
+      return { error: "Invalid intent" };
     }
 
     try {
       // Create invoice for the selected plan
       const invoice = await createPlanInvoice({
-        planId,
+        planId: selectData.planId,
         userId: user.id,
         description: `SmartFlow Social - Plan subscription`,
       });
@@ -100,7 +107,7 @@ export async function handlePlansAction(formData: FormData, request: Request) {
     } catch (error) {
       logError(error instanceof Error ? error : new Error(String(error)), {
         userId: user.id,
-        planId: formData.get("planId") as string,
+        planId: selectData.planId,
         message: "Error creating plan invoice",
       });
       return {

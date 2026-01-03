@@ -5,6 +5,13 @@
 import { json } from "@remix-run/node";
 
 import {
+  updateTimezoneSchema,
+  updateRelaysSchema,
+  updateBlacklistSchema,
+  updateScheduleIntervalsSchema,
+  validateFormDataOrRespond,
+} from "~/lib/validation";
+import {
   updateGiveawayBlacklist,
   updateScheduleInterval,
   updateUserRelays,
@@ -17,55 +24,44 @@ export async function handleGeneralSettingsAction(
   formData: FormData,
 ) {
   if (action === "update_timezone") {
-    const timezone = formData.get("timezone") as string;
-    await updateUserTimezone(userId, timezone);
+    const result = validateFormDataOrRespond(formData, updateTimezoneSchema);
+    if (!result.success) {
+      return result.response;
+    }
+    await updateUserTimezone(userId, result.data.timezone);
     return json({ success: true });
   }
 
   if (action === "update_relays") {
-    const relays = (formData.get("relays") as string)
-      .split("\n")
-      .filter((relay) => relay.trim());
-    await updateUserRelays(userId, relays);
+    const result = validateFormDataOrRespond(formData, updateRelaysSchema);
+    if (!result.success) {
+      return result.response;
+    }
+    await updateUserRelays(userId, result.data.relays);
     return json({ success: true });
   }
 
   if (action === "update_blacklist") {
-    const blacklistItems = (formData.get("blacklist") as string)
-      .split("\n")
-      .filter((item) => item.trim());
-
-    const invalidItems = blacklistItems.filter(
-      (item) => !item.startsWith("npub"),
-    );
-    if (invalidItems.length > 0) {
-      return json(
-        { error: "All blacklist items must start with npub" },
-        { status: 400 },
-      );
+    const result = validateFormDataOrRespond(formData, updateBlacklistSchema);
+    if (!result.success) {
+      return result.response;
     }
-
-    await updateGiveawayBlacklist(userId, blacklistItems);
+    await updateGiveawayBlacklist(userId, result.data.blacklist);
     return json({ success: true });
   }
 
   if (action === "update_schedule_intervals") {
-    const intervals = (formData.get("scheduleIntervals") as string)
-      .split("\n")
-      .filter((interval) => interval.trim());
-
-    const invalidIntervals = intervals.filter((interval) => {
-      const num = parseInt(interval, 10);
-      return isNaN(num) || num <= 0 || num.toString() !== interval.trim();
-    });
-
-    if (invalidIntervals.length > 0) {
-      return json(
-        { error: "All schedule intervals must be positive whole numbers" },
-        { status: 400 },
-      );
+    const result = validateFormDataOrRespond(
+      formData,
+      updateScheduleIntervalsSchema,
+    );
+    if (!result.success) {
+      return result.response;
     }
-
+    // Convert numbers back to strings for storage
+    const intervals = result.data.scheduleIntervals.map((num) =>
+      num.toString(),
+    );
     await updateScheduleInterval(userId, intervals);
     return json({ success: true });
   }

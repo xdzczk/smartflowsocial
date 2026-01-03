@@ -4,7 +4,21 @@
  * Provides MIME type validation and file size checking for secure uploads
  */
 
-import { fileTypeFromBuffer } from "file-type";
+// Dynamic import for file-type since it's ESM-only and we're bundling as CommonJS
+type FileTypeResult = {
+  mime: string;
+  ext: string;
+};
+
+let fileTypeFromBuffer: (buffer: Uint8Array | ArrayBuffer) => Promise<FileTypeResult | undefined>;
+
+async function getFileTypeFromBuffer() {
+  if (!fileTypeFromBuffer) {
+    const fileType = await import("file-type");
+    fileTypeFromBuffer = fileType.fileTypeFromBuffer;
+  }
+  return fileTypeFromBuffer;
+}
 
 /**
  * Allowed MIME types for uploads
@@ -57,7 +71,8 @@ export async function validateUpload(
   // Detect actual MIME type from buffer (magic number detection)
   let fileType;
   try {
-    fileType = await fileTypeFromBuffer(buffer);
+    const fileTypeFn = await getFileTypeFromBuffer();
+    fileType = await fileTypeFn(buffer);
   } catch (_error) {
     return {
       valid: false,

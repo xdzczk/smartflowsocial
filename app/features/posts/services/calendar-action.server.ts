@@ -11,6 +11,11 @@ import {
 } from "~/infra/queue";
 import { logWarning } from "~/lib/error-logger.server";
 import {
+  calendarRescheduleSchema,
+  calendarRescheduleLongformSchema,
+  validateFormDataOrRespond,
+} from "~/lib/validation";
+import {
   getLongFormPost,
   updateLongFormPost,
 } from "~/models/longformpost.server";
@@ -24,15 +29,16 @@ export async function handleCalendarReschedule(
   formData: FormData,
   userId: string,
 ) {
-  const postId = formData.get("postId") as string | null;
-  const newTime = formData.get("newTime") as string | null;
-  const overrideQueue = formData.get("overrideQueue") === "true";
-  const signedEvent = formData.get("signedEvent") as string | null;
-  const nostrEvent = formData.get("nostrEvent") as string | null;
-
-  if (!postId || !newTime) {
-    return json({ error: "Missing required fields" }, { status: 400 });
+  const result = validateFormDataOrRespond(
+    formData,
+    calendarRescheduleSchema,
+  );
+  if (!result.success) {
+    return result.response;
   }
+
+  const { postId, newTime, overrideQueue, signedEvent, nostrEvent } =
+    result.data;
 
   // Get the original post
   const originalPost = await getPostById({ id: postId, userId });
@@ -112,14 +118,15 @@ export async function handleCalendarRescheduleLongform(
   formData: FormData,
   userId: string,
 ) {
-  const postId = formData.get("postId") as string | null;
-  const newTime = formData.get("newTime") as string | null;
-  const signedEvent = formData.get("signedEvent") as string | null;
-  const nostrEvent = formData.get("nostrEvent") as string | null;
-
-  if (!postId || !newTime) {
-    return json({ error: "Missing required fields" }, { status: 400 });
+  const result = validateFormDataOrRespond(
+    formData,
+    calendarRescheduleLongformSchema,
+  );
+  if (!result.success) {
+    return result.response;
   }
+
+  const { postId, newTime, signedEvent, nostrEvent } = result.data;
 
   // Get the original longform post
   const originalPost = await getLongFormPost({ id: postId, userId });

@@ -7,6 +7,10 @@ import { json, redirect } from "@remix-run/node";
 
 import { ValidationError } from "~/lib/errors";
 import {
+  templateEditActionSchema,
+  validateFormDataOrRespond,
+} from "~/lib/validation";
+import {
   getTemplateById,
   updateTemplate,
   deleteTemplate,
@@ -42,32 +46,37 @@ export async function handleTemplateEditAction(
     throw new ValidationError("Template ID is required");
   }
 
-  const _action = formData.get("_action");
+  const result = validateFormDataOrRespond(formData, templateEditActionSchema);
+  if (!result.success) {
+    return result.response;
+  }
+
+  const { _action } = result.data;
 
   if (_action === "updateName") {
-    const name = formData.get("name");
-    if (!name || typeof name !== "string") {
-      return json({ error: "Template name is required" }, { status: 400 });
+    const updateData = result.data._action === "updateName" ? result.data : null;
+    if (!updateData) {
+      return json({ error: "Invalid action" }, { status: 400 });
     }
 
     await updateTemplate({
       id: templateId,
       userId,
-      name,
+      name: updateData.name,
     });
 
     return json({ success: true });
   }
 
   if (_action === "removePost") {
-    const postId = formData.get("postId");
-    if (!postId || typeof postId !== "string") {
-      return json({ error: "Post ID is required" }, { status: 400 });
+    const removeData = result.data._action === "removePost" ? result.data : null;
+    if (!removeData) {
+      return json({ error: "Invalid action" }, { status: 400 });
     }
 
     await removePostFromTemplate({
       templateId,
-      postId,
+      postId: removeData.postId,
       userId,
     });
 

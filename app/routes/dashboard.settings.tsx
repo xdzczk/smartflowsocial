@@ -28,7 +28,7 @@ import {
   UploadProviderSettings,
 } from "~/features/upload";
 import { AccountsSettings } from "~/features/user";
-import { withCSRFProtection } from "~/lib/csrf.server";
+import { withCSRFProtection } from "~/lib/csrf";
 export async function loader({ request }: { request: Request }) {
   const userId = await requireUserId(request);
 

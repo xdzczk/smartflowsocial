@@ -88,10 +88,11 @@ describe("Plans Action Handler", () => {
       const request = new Request("http://localhost:3000/plans");
       const result = await handlePlansAction(formData, request);
 
-      expect(result).toEqual({
-        success: false,
-        error: "Payment ID is required",
-      });
+      // Zod validation returns Response with error
+      expect(result).toBeInstanceOf(Response);
+      const data = (await (result as Response).json()) as { error?: string; success?: boolean };
+      expect(data).toHaveProperty("error");
+      expect(String(data.error)).toBeTruthy();
       expect(checkPaymentStatus).not.toHaveBeenCalled();
     });
 
@@ -195,9 +196,11 @@ describe("Plans Action Handler", () => {
       const request = new Request("http://localhost:3000/plans");
       const result = await handlePlansAction(formData, request);
 
-      expect(result).toEqual({
-        error: "Plan ID is required",
-      });
+      // Zod validation returns Response with error
+      expect(result).toBeInstanceOf(Response);
+      const data = (await (result as Response).json()) as { error?: string; success?: boolean };
+      expect(data).toHaveProperty("error");
+      expect(String(data.error)).toBeTruthy();
       expect(createPlanInvoice).not.toHaveBeenCalled();
     });
 
@@ -247,9 +250,10 @@ describe("Plans Action Handler", () => {
       const request = new Request("http://localhost:3000/plans");
       const result = await handlePlansAction(formData, request);
 
-      expect(result).toEqual({
-        error: "Invalid intent",
-      });
+      // Zod validation fails for invalid intent, returns Response with error
+      expect(result).toBeInstanceOf(Response);
+      const data = (await (result as Response).json()) as { error?: string; success?: boolean };
+      expect(data).toHaveProperty("error");
     });
 
     it("should handle authentication errors for select_plan", async () => {

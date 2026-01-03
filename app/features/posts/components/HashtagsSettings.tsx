@@ -1,5 +1,4 @@
 import { useFetcher } from "@remix-run/react";
-import { useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -12,6 +11,11 @@ import {
 import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
+import {
+  updateTagsClientSchema,
+  useZodForm,
+  formDataToFormData,
+} from "~/lib/validation";
 
 interface HashtagsSettingsProps {
   tags: string;
@@ -28,24 +32,23 @@ export function HashtagsSettings({
   showHashTagsInPosts,
 }: HashtagsSettingsProps) {
   const fetcher = useFetcher<FetcherData>();
-  const [hashtags, setHashtags] = useState(tags);
-  const [showHashTagsState, setShowHashTagsState] =
-    useState(showHashTagsInPosts);
+  const form = useZodForm(updateTagsClientSchema, {
+    defaultValues: {
+      hashtags: tags,
+      showHashTagsInPosts: showHashTagsInPosts,
+    },
+  });
 
   const isSubmitting = fetcher.state === "submitting";
+  const hashtags = form.watch("hashtags");
+  const showHashTagsState = form.watch("showHashTagsInPosts");
   const hasChanged =
     hashtags !== tags || showHashTagsState !== showHashTagsInPosts;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const formData = new FormData();
-    formData.set("_action", "update_tags");
-    formData.set("hashtags", hashtags);
-    if (showHashTagsState) {
-      formData.set("showHashTagsInPosts", "on");
-    }
+  const onSubmit = form.handleSubmit((data) => {
+    const formData = formDataToFormData(data, "update_tags");
     fetcher.submit(formData, { method: "post" });
-  };
+  });
 
   return (
     <Card>
@@ -56,13 +59,12 @@ export function HashtagsSettings({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={(e) => { e.preventDefault(); void onSubmit(e); }} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="hashtags">Hashtags</Label>
             <Textarea
               id="hashtags"
-              value={hashtags}
-              onChange={(e) => setHashtags(e.target.value)}
+              {...form.register("hashtags")}
               placeholder="#bitcoin #nostr #zap #sats #lightning"
               disabled={isSubmitting}
               rows={2}
@@ -73,9 +75,9 @@ export function HashtagsSettings({
             <Checkbox
               id="showHashTagsInPosts"
               checked={showHashTagsState}
-              onCheckedChange={(checked) =>
-                setShowHashTagsState(checked as boolean)
-              }
+              onCheckedChange={(checked) => {
+                form.setValue("showHashTagsInPosts", checked as boolean);
+              }}
               disabled={isSubmitting}
             />
             <Label

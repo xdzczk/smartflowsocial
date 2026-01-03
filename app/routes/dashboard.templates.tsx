@@ -3,7 +3,7 @@ import {
   type LoaderFunctionArgs,
   type ActionFunctionArgs,
 } from "@remix-run/node";
-import { useLoaderData, Outlet } from "@remix-run/react";
+import { Outlet } from "@remix-run/react";
 
 import {
   AssetPagination,
@@ -22,10 +22,11 @@ import {
   TemplatesTabs,
   ToastNotification,
   useTemplatesState,
+  useTemplatesData,
   handleTemplatesAction,
   loadTemplatesData,
 } from "~/features/templates";
-import { withCSRFProtection } from "~/lib/csrf.server";
+import { withCSRFProtection } from "~/lib/csrf";
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
 
@@ -49,7 +50,13 @@ export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs)
     const formData = await request.formData();
     const result = await handleTemplatesAction(formData, userId);
 
-    if (result.error) {
+    // Type narrowing: check if result is a Response
+    if (result instanceof Response) {
+      return result;
+    }
+
+    // Type narrowing: check if result has error property
+    if (typeof result === "object" && result !== null && "error" in result && result.error) {
       return json(result, { status: 400 });
     }
 
@@ -61,27 +68,14 @@ export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs)
 });
 
 export default function Templates() {
-  const loaderData = useLoaderData<typeof loader>();
-  const assets =
-    "assets" in loaderData && Array.isArray(loaderData.assets)
-      ? loaderData.assets
-      : [];
-  const totalCount =
-    "totalCount" in loaderData && typeof loaderData.totalCount === "number"
-      ? loaderData.totalCount
-      : 0;
-  const totalPages =
-    "totalPages" in loaderData && typeof loaderData.totalPages === "number"
-      ? loaderData.totalPages
-      : 0;
-  const currentPage =
-    "currentPage" in loaderData && typeof loaderData.currentPage === "number"
-      ? loaderData.currentPage
-      : 1;
-  const searchTerm =
-    "searchTerm" in loaderData && typeof loaderData.searchTerm === "string"
-      ? loaderData.searchTerm
-      : "";
+  // Use TanStack Query for data fetching with caching
+  const {
+    assets,
+    totalCount,
+    totalPages,
+    currentPage,
+    searchTerm,
+  } = useTemplatesData();
 
   const {
     selectedTemplate,

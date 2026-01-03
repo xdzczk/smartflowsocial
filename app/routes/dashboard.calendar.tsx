@@ -1,6 +1,5 @@
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
 import {
-  useLoaderData,
   Link,
   useParams,
   useRevalidator,
@@ -17,20 +16,12 @@ import {
   getQueueColor,
   handleCalendarAction,
   loadCalendarData,
-  type PostData,
-  type LongFormPostData,
-  type QueueType,
-  type UserData,
-  convertJsonValueToScheduleConfig,
+  useCalendarData,
   mixedPostsToCalendarPosts,
   postsToCalendarPosts,
   longFormPostsToCalendarPosts,
-  fromPostDTOArray,
-  fromLongFormPostDTOArray,
-  type PostDTO,
-  type LongFormPostDTO,
 } from "~/features/posts";
-import { withCSRFProtection } from "~/lib/csrf.server";
+import { withCSRFProtection } from "~/lib/csrf";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
@@ -71,79 +62,21 @@ export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs)
   }
 });
 
-type LoaderData = Exclude<Awaited<ReturnType<typeof loader>>, Response>;
+type _LoaderData = Exclude<Awaited<ReturnType<typeof loader>>, Response>;
 
 export default function CalendarRoute() {
-  const data = useLoaderData<LoaderData>();
+  // Use TanStack Query for data fetching with caching
   const {
-    scheduledPosts: scheduledPostsRaw,
-    scheduledLongFormPosts: scheduledLongFormPostsRaw,
-    pastPosts: pastPostsRaw,
-    pastLongFormPosts: pastLongFormPostsRaw,
+    scheduledPosts,
+    scheduledLongFormPosts,
+    pastPosts,
+    pastLongFormPosts,
     allContent,
-    user: userRaw,
-    queueTypes: queueTypesRaw,
+    user,
+    queueTypes,
     selectedQueueType: _selectedQueueType,
-  } = data;
-
-  // Deserialize DTOs (with string dates) back to PostData/LongFormPostData (with Date objects)
-  const scheduledPosts: PostData[] = Array.isArray(scheduledPostsRaw)
-    ? fromPostDTOArray(scheduledPostsRaw as PostDTO[])
-    : [];
-
-  const scheduledLongFormPosts: LongFormPostData[] = Array.isArray(
-    scheduledLongFormPostsRaw,
-  )
-    ? fromLongFormPostDTOArray(scheduledLongFormPostsRaw as LongFormPostDTO[])
-    : [];
-
-  const pastPosts: PostData[] = Array.isArray(pastPostsRaw)
-    ? fromPostDTOArray(pastPostsRaw as PostDTO[])
-    : [];
-
-  const pastLongFormPosts: LongFormPostData[] = Array.isArray(
-    pastLongFormPostsRaw,
-  )
-    ? fromLongFormPostDTOArray(pastLongFormPostsRaw as LongFormPostDTO[])
-    : [];
-
-  const user: UserData | null | undefined = userRaw
-    ? (userRaw as unknown as UserData)
-    : null;
-  const queueTypes: QueueType[] = Array.isArray(queueTypesRaw)
-    ? queueTypesRaw
-        .map((qt: unknown) => {
-          if (qt && typeof qt === "object" && "id" in qt && "name" in qt) {
-            const q = qt as {
-              id: string;
-              name: string;
-              color?: string | null;
-              scheduleType?: string;
-              scheduleConfig?: unknown;
-              isEnabled?: boolean;
-              userId?: string;
-            };
-            const result: QueueType = {
-              id: q.id,
-              name: q.name,
-              color: q.color,
-              description: undefined,
-              scheduleType: q.scheduleType as
-                | "INTERVAL"
-                | "FIXED_SLOTS"
-                | undefined,
-              scheduleConfig: convertJsonValueToScheduleConfig(
-                q.scheduleConfig,
-              ),
-              isEnabled: q.isEnabled,
-              userId: q.userId,
-            };
-            return result;
-          }
-          return null;
-        })
-        .filter((qt): qt is QueueType => qt !== null)
-    : [];
+    isLoading: _isDataLoading,
+  } = useCalendarData();
   const params = useParams();
   const revalidator = useRevalidator();
   const [searchParams] = useSearchParams();

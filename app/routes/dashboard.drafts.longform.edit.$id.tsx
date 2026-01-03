@@ -16,7 +16,7 @@ import {
   handleLongFormEditAction,
   loadLongFormEditData,
 } from "~/features/posts";
-import { withCSRFProtection } from "~/lib/csrf.server";
+import { withCSRFProtection } from "~/lib/csrf";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);

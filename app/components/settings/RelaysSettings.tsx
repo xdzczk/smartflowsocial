@@ -1,5 +1,6 @@
 import { useFetcher } from "@remix-run/react";
-import { useState } from "react";
+import { Plus, X } from "lucide-react";
+import { useFieldArray } from "react-hook-form";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -9,8 +10,13 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
-
-import { DynamicInputList } from "./DynamicInputList";
+import { Input } from "~/components/ui/input";
+import {
+  updateRelaysClientSchema,
+  useZodForm,
+  formDataToFormData,
+} from "~/lib/validation";
+import { relayUrlSchema } from "~/lib/validation/schemas/settings.schemas";
 
 interface RelaysSettingsProps {
   relays: string[];
@@ -23,51 +29,57 @@ interface FetcherData {
 
 export function RelaysSettings({ relays }: RelaysSettingsProps) {
   const fetcher = useFetcher<FetcherData>();
-  const [userRelays, setUserRelays] = useState(relays || []);
-  const [relayErrors, setRelayErrors] = useState<string[]>([]);
+  const form = useZodForm(updateRelaysClientSchema, {
+    defaultValues: {
+      relays: relays.length > 0 ? relays : [""],
+    },
+  });
+
+  // TypeScript has issues with Zod schema inference in useFieldArray
+  // We know the type is correct at runtime (relays: string[])
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    // @ts-ignore - Type inference issue with Zod + RHF
+    name: "relays",
+  }) as {
+    fields: Array<{ id: string }>;
+    append: (value: string) => void;
+    remove: (index: number) => void;
+  };
 
   const isSubmitting = fetcher.state === "submitting";
-  const hasChanged = JSON.stringify(userRelays) !== JSON.stringify(relays);
+  const watchedRelays = form.watch("relays");
+  const hasChanged = JSON.stringify(watchedRelays) !== JSON.stringify(relays);
 
-  const validateRelay = (relay: string) => {
-    const relayRegex =
-      /^wss:\/\/[a-zA-Z0-9][a-zA-Z0-9-._]+\.[a-zA-Z]{2,}(:[0-9]+)?(\/.*)?$/;
-    return relayRegex.test(relay);
-  };
-
-  const hasValidationErrors = userRelays.some(
-    (relay) => relay.trim() && !validateRelay(relay.trim()),
-  );
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const relayList = userRelays.filter((relay) => relay.trim());
-
-    if (hasValidationErrors) {
-      setRelayErrors(["Please fix validation errors before submitting"]);
-      return;
-    }
-
-    const errors: string[] = [];
-    relayList.forEach((relay, index) => {
-      if (!validateRelay(relay.trim())) {
-        errors.push(
-          `Item ${index + 1}: Invalid relay format. Must start with wss:// and have a valid domain`,
-        );
+  const onSubmit = form.handleSubmit((data) => {
+    // Filter out empty strings and validate
+    const filteredRelays = data.relays.filter((relay: string) => relay.trim());
+    
+    // Validate all non-empty relays
+    const invalidRelays = filteredRelays.filter((relay) => {
+      try {
+        relayUrlSchema.parse(relay);
+        return false;
+      } catch {
+        return true;
       }
     });
-
-    if (errors.length > 0) {
-      setRelayErrors(errors);
+    
+    if (invalidRelays.length > 0) {
+      form.setError("relays", {
+        type: "manual",
+        message: "All relay URLs must start with wss:// and have a valid domain",
+      });
       return;
     }
-
-    setRelayErrors([]);
-    const formData = new FormData();
-    formData.set("_action", "update_relays");
-    formData.set("relays", relayList.join("\n"));
+    
+    const formData = formDataToFormData(
+      { relays: filteredRelays.join("\n") },
+      "update_relays",
+    );
+    
     fetcher.submit(formData, { method: "post" });
-  };
+  });
 
   return (
     <Card>
@@ -78,33 +90,62 @@ export function RelaysSettings({ relays }: RelaysSettingsProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <DynamicInputList
-            items={userRelays}
-            setItems={(newRelays) => {
-              setUserRelays(newRelays);
-              setRelayErrors([]);
-            }}
-            placeholder="wss://relay.damus.io"
-            validate={validateRelay}
-            disabled={isSubmitting}
-            preventSpaces={true}
-            description="Add relay URLs one by one"
-          />
+        <form onSubmit={(e) => { e.preventDefault(); void onSubmit(e); }} className="space-y-4">
+          <div className="space-y-2">
+            {fields.map((field, index) => (
+              <div key={field.id} className="flex items-start space-x-2">
+                <div className="flex-1">
+                  <Input
+                    {...form.register(`relays.${index}`)}
+                    placeholder="wss://relay.damus.io"
+                    disabled={isSubmitting}
+                    onChange={(e) => {
+                      // Remove spaces from relay URLs
+                      const value = e.target.value.replace(/\s/g, "");
+                      form.setValue(`relays.${index}`, value, {
+                        shouldValidate: true,
+                      });
+                    }}
+                    className={
+                      form.formState.errors.relays?.[index]
+                        ? "border-destructive"
+                        : ""
+                    }
+                  />
+                  {form.formState.errors.relays?.[index] ? <p className="mt-1 text-sm text-destructive">
+                      {form.formState.errors.relays[index]?.message}
+                    </p> : null}
+                </div>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  onClick={() => remove(index)}
+                  disabled={isSubmitting}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => append("")}
+              disabled={isSubmitting}
+              className="w-full"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Relay
+            </Button>
+          </div>
 
-          {relayErrors.length > 0 ? (
-            <div className="space-y-1">
-              {relayErrors.map((error, index) => (
-                <p key={index} className="text-sm text-destructive">
-                  {error}
-                </p>
-              ))}
-            </div>
-          ) : null}
+          {form.formState.errors.relays ? <p className="text-sm text-destructive">
+              {form.formState.errors.relays.message}
+            </p> : null}
 
           <Button
             type="submit"
-            disabled={isSubmitting || !hasChanged || hasValidationErrors}
+            disabled={isSubmitting || !hasChanged || !form.formState.isValid}
             className="w-full"
           >
             {isSubmitting ? "Saving..." : "Save Relays"}

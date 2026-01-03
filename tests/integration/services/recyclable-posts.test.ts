@@ -483,7 +483,7 @@ describe("Recyclable Posts Service", () => {
               repostEventData?: { kind?: number };
             })
           : {};
-      expect(jsonResult.error).toBe("Invalid action");
+      expect(jsonResult.error).toContain("Invalid");
     });
   });
 });

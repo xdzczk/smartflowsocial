@@ -1,5 +1,5 @@
 import { useFetcher } from "@remix-run/react";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { toast } from "react-hot-toast";
 
 import { Button } from "~/components/ui/button";
@@ -21,6 +21,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import {
+  queueTypeClientSchema,
+  useZodForm,
+  formDataToFormData,
+} from "~/lib/validation";
 
 import type { QueueType } from "../types";
 import { isIntervalScheduleConfig, isFixedSlotsScheduleConfig } from "../types";
@@ -59,26 +64,54 @@ export function QueueTypeDialog({
     error?: string;
   }
   const fetcher = useFetcher<FetcherData>();
-  const [scheduleType, setScheduleType] = useState<"INTERVAL" | "FIXED_SLOTS">(
-    "INTERVAL",
-  );
-  const [hashTagPresetId, setHashTagPresetId] = useState<string>(
-    queueType?.hashTagPresetId ?? "none",
-  );
-
   const isEditing = !!queueType;
+
+  // Initialize form with default values
+  const getDefaultValues = () => {
+    if (queueType) {
+      const scheduleConfig = queueType.scheduleConfig;
+      return {
+        name: queueType.name ?? "",
+        description: queueType.description ?? "",
+        color: queueType.color ?? "#3B82F6",
+        hashTagPresetId: queueType.hashTagPresetId ?? "none",
+        scheduleType: (queueType.scheduleType ?? "INTERVAL"),
+        isEnabled: queueType.isEnabled ?? false,
+        useGlobalInterval:
+          scheduleConfig && isIntervalScheduleConfig(scheduleConfig)
+            ? scheduleConfig.useGlobalInterval
+            : false,
+        intervalHours:
+          scheduleConfig && isIntervalScheduleConfig(scheduleConfig)
+            ? scheduleConfig.intervalHours?.toString() ?? ""
+            : "",
+        slots:
+          scheduleConfig && isFixedSlotsScheduleConfig(scheduleConfig)
+            ? scheduleConfig.slots?.join(", ") ?? ""
+            : "",
+      };
+    }
+    return {
+      name: "",
+      description: "",
+      color: "#3B82F6",
+      hashTagPresetId: "none",
+      scheduleType: "INTERVAL" as const,
+      isEnabled: false,
+      useGlobalInterval: false,
+      intervalHours: "",
+      slots: "",
+    };
+  };
+
+  const form = useZodForm(queueTypeClientSchema, {
+    defaultValues: getDefaultValues(),
+  });
+
   const isSubmitting =
     fetcher.state === "submitting" || fetcher.state === "loading";
-
-  useEffect(() => {
-    if (queueType) {
-      setScheduleType(queueType.scheduleType ?? "INTERVAL");
-      setHashTagPresetId(queueType.hashTagPresetId ?? "none");
-    } else {
-      setScheduleType("INTERVAL");
-      setHashTagPresetId("none");
-    }
-  }, [queueType]);
+  const scheduleType = form.watch("scheduleType");
+  const hashTagPresetId = form.watch("hashTagPresetId");
 
   useEffect(() => {
     const fetcherData = fetcher.data;
@@ -98,19 +131,31 @@ export function QueueTypeDialog({
     }
   }, [fetcher.data, isEditing]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const formData = new FormData(e.target as HTMLFormElement);
+  const onSubmit = form.handleSubmit((data) => {
+    // Transform data for FormData submission
+    const submitData: Record<string, unknown> = {
+      name: data.name,
+      description: data.description ?? "",
+      color: data.color,
+      hashTagPresetId: data.hashTagPresetId === "none" || !data.hashTagPresetId ? "none" : data.hashTagPresetId,
+      scheduleType: data.scheduleType,
+      ...(data.isEnabled !== undefined ? { isEnabled: data.isEnabled } : {}),
+      ...(data.useGlobalInterval !== undefined ? { useGlobalInterval: data.useGlobalInterval } : {}),
+      ...(data.intervalHours ? { intervalHours: data.intervalHours } : {}),
+      ...(data.slots ? { slots: data.slots } : {}),
+    };
+
+    const formData = formDataToFormData(
+      submitData,
+      isEditing ? "update_queue_type" : "create_queue_type",
+    );
 
     if (isEditing) {
-      formData.set("_action", "update_queue_type");
       formData.set("id", queueType.id);
-    } else {
-      formData.set("_action", "create_queue_type");
     }
 
     fetcher.submit(formData, { method: "post" });
-  };
+  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -126,24 +171,24 @@ export function QueueTypeDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={(e) => { e.preventDefault(); void onSubmit(e); }} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>
             <Input
               id="name"
-              name="name"
-              defaultValue={queueType?.name ?? ""}
+              {...form.register("name")}
               placeholder="e.g., Tech News"
-              required
             />
+            {form.formState.errors.name ? <p className="text-sm text-destructive">
+                {form.formState.errors.name.message}
+              </p> : null}
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
             <Input
               id="description"
-              name="description"
-              defaultValue={queueType?.description ?? ""}
+              {...form.register("description")}
               placeholder="Optional description"
             />
           </div>
@@ -152,16 +197,20 @@ export function QueueTypeDialog({
             <Label htmlFor="color">Color</Label>
             <Input
               id="color"
-              name="color"
               type="color"
-              defaultValue={queueType?.color ?? "#3B82F6"}
+              {...form.register("color")}
               className="h-10 w-full"
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="hashTagPresetId">Hashtag Preset (optional)</Label>
-            <Select value={hashTagPresetId} onValueChange={setHashTagPresetId}>
+            <Select
+              value={hashTagPresetId ?? "none"}
+              onValueChange={(value) => {
+                form.setValue("hashTagPresetId", value);
+              }}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select a hashtag preset" />
               </SelectTrigger>
@@ -174,12 +223,6 @@ export function QueueTypeDialog({
                 ))}
               </SelectContent>
             </Select>
-            {/* Hidden input to ensure form submission includes the value */}
-            <input
-              type="hidden"
-              name="hashTagPresetId"
-              value={hashTagPresetId}
-            />
             <p className="text-xs text-muted-foreground">
               Posts in this queue will automatically use the selected hashtag
               preset
@@ -190,8 +233,10 @@ export function QueueTypeDialog({
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="isEnabled"
-                name="isEnabled"
-                defaultChecked={queueType?.isEnabled}
+                checked={form.watch("isEnabled")}
+                onCheckedChange={(checked) => {
+                  form.setValue("isEnabled", checked as boolean);
+                }}
               />
               <Label htmlFor="isEnabled" className="text-sm font-normal">
                 Enabled
@@ -202,11 +247,10 @@ export function QueueTypeDialog({
           <div className="space-y-2">
             <Label htmlFor="scheduleType">Schedule Type</Label>
             <Select
-              name="scheduleType"
               value={scheduleType}
-              onValueChange={(value) =>
-                setScheduleType(value as "INTERVAL" | "FIXED_SLOTS")
-              }
+              onValueChange={(value) => {
+                form.setValue("scheduleType", value as "INTERVAL" | "FIXED_SLOTS");
+              }}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -223,13 +267,10 @@ export function QueueTypeDialog({
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="useGlobalInterval"
-                  name="useGlobalInterval"
-                  defaultChecked={
-                    queueType?.scheduleConfig &&
-                    isIntervalScheduleConfig(queueType.scheduleConfig)
-                      ? queueType.scheduleConfig.useGlobalInterval
-                      : false
-                  }
+                  checked={form.watch("useGlobalInterval")}
+                  onCheckedChange={(checked) => {
+                    form.setValue("useGlobalInterval", checked as boolean);
+                  }}
                 />
                 <Label
                   htmlFor="useGlobalInterval"
@@ -242,17 +283,14 @@ export function QueueTypeDialog({
                 <Label htmlFor="intervalHours">Hours between posts</Label>
                 <Input
                   id="intervalHours"
-                  name="intervalHours"
                   type="number"
                   min="1"
                   max="168"
-                  defaultValue={
-                    queueType?.scheduleConfig &&
-                    isIntervalScheduleConfig(queueType.scheduleConfig)
-                      ? (queueType.scheduleConfig.intervalHours ?? 4)
-                      : 4
-                  }
+                  {...form.register("intervalHours")}
                 />
+                {form.formState.errors.intervalHours ? <p className="text-sm text-destructive">
+                    {form.formState.errors.intervalHours.message}
+                  </p> : null}
               </div>
             </div>
           ) : null}
@@ -264,15 +302,12 @@ export function QueueTypeDialog({
               </Label>
               <Input
                 id="slots"
-                name="slots"
-                defaultValue={
-                  queueType?.scheduleConfig &&
-                  isFixedSlotsScheduleConfig(queueType.scheduleConfig)
-                    ? queueType.scheduleConfig.slots?.join(", ") || ""
-                    : ""
-                }
+                {...form.register("slots")}
                 placeholder="08:00, 12:00, 18:00"
               />
+              {form.formState.errors.slots ? <p className="text-sm text-destructive">
+                  {form.formState.errors.slots.message}
+                </p> : null}
               <p className="text-xs text-muted-foreground">
                 Times are in your selected timezone
               </p>

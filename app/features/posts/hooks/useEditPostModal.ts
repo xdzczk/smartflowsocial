@@ -7,6 +7,11 @@ import {
   convertEditorJSToMarkdown,
   convertMarkdownToEditorJS,
 } from "~/lib/nostr";
+import {
+  editPostClientSchema,
+  editLongformPostClientSchema,
+  useZodForm,
+} from "~/lib/validation";
 
 import type {
   PostData,
@@ -29,195 +34,142 @@ interface UseEditPostModalProps {
 export function useEditPostModal({
   post,
   user,
-  hashTagPresets = [],
+  hashTagPresets: _hashTagPresets = [],
   isLongform,
 }: UseEditPostModalProps) {
-  // Form fields for regular posts
-  const captionValue =
-    post &&
-    typeof post === "object" &&
-    "caption" in post &&
-    typeof post.caption === "string"
-      ? post.caption
-      : "";
-  const [caption, setCaption] = useState(captionValue);
-  const queueTypeId =
-    post &&
-    typeof post === "object" &&
-    "queueType" in post &&
-    post.queueType &&
-    typeof post.queueType === "object" &&
-    "id" in post.queueType &&
-    typeof post.queueType.id === "string"
-      ? post.queueType.id
-      : "";
-  const [selectedQueueType, setSelectedQueueType] = useState(queueTypeId);
+  // Get initial values for form
+  const getInitialValues = () => {
+    if (isLongform && post && typeof post === "object" && "title" in post) {
+      const postTitle = typeof post.title === "string" ? post.title : "";
+      const postSummary =
+        typeof post.summary === "string" ? post.summary : "";
+      const postImage = typeof post.image === "string" ? post.image : "";
+      const publishedAt =
+        post && typeof post === "object" && "publishedAt" in post
+          ? post.publishedAt
+          : null;
+      const scheduledForStr = publishedAt
+        ? new Date(publishedAt).toISOString().slice(0, 16)
+        : "";
+      const queueType =
+        post &&
+        typeof post === "object" &&
+        "queueType" in post &&
+        post.queueType &&
+        typeof post.queueType === "object" &&
+        "name" in post.queueType &&
+        typeof post.queueType.name === "string"
+          ? post.queueType.name
+          : "";
 
-  // Form fields for longform posts
-  const titleValue =
-    post &&
-    typeof post === "object" &&
-    "title" in post &&
-    typeof post.title === "string"
-      ? post.title
-      : "";
-  const [title, setTitle] = useState(titleValue);
-  const summaryValue =
-    post &&
-    typeof post === "object" &&
-    "summary" in post &&
-    typeof post.summary === "string"
-      ? post.summary
-      : "";
-  const [summary, setSummary] = useState(summaryValue);
-  const [content, setContent] = useState("");
-  const imageValue =
-    post &&
-    typeof post === "object" &&
-    "image" in post &&
-    typeof post.image === "string"
-      ? post.image
-      : "";
-  const [image, setImage] = useState(imageValue);
+      const hashTagPresetId =
+        post &&
+        typeof post === "object" &&
+        "hashTagPresetId" in post &&
+        typeof post.hashTagPresetId === "string"
+          ? post.hashTagPresetId
+          : undefined;
 
-  // Schedule fields
-  const [scheduledFor, setScheduledFor] = useState<Date | null>(null);
+      return {
+        title: postTitle,
+        summary: postSummary,
+        content: "",
+        image: postImage,
+        scheduledFor: scheduledForStr,
+        queueType,
+        useHashtagPresets: !!hashTagPresetId,
+        hashTagPresetId,
+        customTags: "",
+      };
+    } else {
+      const postCaption =
+        post &&
+        typeof post === "object" &&
+        "caption" in post &&
+        typeof post.caption === "string"
+          ? post.caption
+          : "";
+      const queueTypeId =
+        post &&
+        typeof post === "object" &&
+        "queueType" in post &&
+        post.queueType &&
+        typeof post.queueType === "object" &&
+        "id" in post.queueType &&
+        typeof post.queueType.id === "string"
+          ? post.queueType.id
+          : "";
+      const scheduledForValue =
+        post && typeof post === "object" && "scheduledFor" in post
+          ? (post as { scheduledFor?: unknown }).scheduledFor
+          : null;
+      const scheduledForStr =
+        scheduledForValue && typeof scheduledForValue === "string"
+          ? new Date(parseInt(scheduledForValue, 10) * 1000)
+              .toISOString()
+              .slice(0, 16)
+          : "";
 
-  // Image/media handling
+      const hashTagPresetId =
+        post &&
+        typeof post === "object" &&
+        "hashTagPresetId" in post &&
+        typeof post.hashTagPresetId === "string"
+          ? post.hashTagPresetId
+          : undefined;
+
+      const existingHashtags =
+        post &&
+        typeof post === "object" &&
+        "hashtags" in post &&
+        typeof post.hashtags === "string"
+          ? post.hashtags
+          : "";
+
+      return {
+        caption: postCaption,
+        queueType: queueTypeId,
+        scheduledFor: scheduledForStr,
+        isRecyclable: false,
+        useHashtagPresets: !!hashTagPresetId,
+        hashTagPresetId,
+        manualHashtags: existingHashtags,
+      };
+    }
+  };
+
+  // Initialize form with React Hook Form
+  const schema = isLongform
+    ? editLongformPostClientSchema
+    : editPostClientSchema;
+  const form = useZodForm(schema, {
+    defaultValues: getInitialValues(),
+  });
+
+  // Image/media handling (not part of form schema)
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
 
-  // Hashtag preset handling
-  const [useHashtagPresets, setUseHashtagPresets] = useState(false);
-  const [selectedHashtagPresetId, setSelectedHashtagPresetId] = useState<
-    string | null
-  >(null);
+  // Hashtag preset tags (derived state, not form field)
   const [selectedHashtagPresetTags, setSelectedHashtagPresetTags] =
     useState("");
-  const [manualHashtags, setManualHashtags] = useState("");
 
   // EditorJS state for longform content
   const editorRef = useRef<EditorJSInstanceType | null>(null);
   const editorInitialized = useRef(false);
   const [editorReady, setEditorReady] = useState(false);
 
-  // Initialize form fields from post
+  // Load initial content for longform posts
   useEffect(() => {
-    if (post) {
-      if (isLongform && post && typeof post === "object" && "title" in post) {
-        const postTitle = typeof post.title === "string" ? post.title : "";
-        const postSummary =
-          typeof post.summary === "string" ? post.summary : "";
-        const postImage = typeof post.image === "string" ? post.image : "";
-        const postContent =
-          typeof post.content === "string" ? post.content : "";
-        setTitle(postTitle);
-        setSummary(postSummary);
-        setImage(postImage);
-        setContent(postContent);
-        const publishedAt =
-          post && typeof post === "object" && "publishedAt" in post
-            ? post.publishedAt
-            : null;
-        setScheduledFor(publishedAt ? new Date(publishedAt) : null);
-      } else if (
-        !isLongform &&
-        post &&
-        typeof post === "object" &&
-        "caption" in post
-      ) {
-        const postCaption =
-          typeof post.caption === "string" ? post.caption : "";
-        setCaption(postCaption);
-        const queueType =
-          post &&
-          typeof post === "object" &&
-          "queueType" in post &&
-          post.queueType &&
-          typeof post.queueType === "object" &&
-          "id" in post.queueType &&
-          typeof post.queueType.id === "string"
-            ? post.queueType.id
-            : "";
-        setSelectedQueueType(queueType);
-        const scheduledForValue =
-          post && typeof post === "object" && "scheduledFor" in post
-            ? (post as { scheduledFor?: unknown }).scheduledFor
-            : null;
-        setScheduledFor(
-          scheduledForValue && typeof scheduledForValue === "string"
-            ? new Date(parseInt(scheduledForValue, 10) * 1000)
-            : null,
-        );
-
-        // Parse existing images
-        const fileUrl =
-          post && typeof post === "object" && "fileUrl" in post
-            ? post.fileUrl
-            : null;
-        if (fileUrl && Array.isArray(fileUrl)) {
-          const urls = fileUrl
-            .map((url: unknown) => {
-              if (typeof url === "string" && url.startsWith("[")) {
-                try {
-                  const parsed: unknown = JSON.parse(url);
-                  return Array.isArray(parsed)
-                    ? parsed.filter(
-                        (item): item is string => typeof item === "string",
-                      )
-                    : [url];
-                } catch {
-                  return [url];
-                }
-              }
-              return Array.isArray(url)
-                ? url.filter((item): item is string => typeof item === "string")
-                : typeof url === "string"
-                  ? [url]
-                  : [];
-            })
-            .flat();
-          setExistingImages(
-            urls.filter(
-              (url): url is string => typeof url === "string" && url.length > 0,
-            ),
-          );
-        }
-
-        // Parse existing hashtags
-        const existingHashtags =
-          post &&
-          typeof post === "object" &&
-          "hashtags" in post &&
-          typeof post.hashtags === "string"
-            ? post.hashtags
-            : "";
-        if (existingHashtags) {
-          setManualHashtags(existingHashtags);
-        }
-
-        // Check if post uses hashtag preset
-        const hashTagPresetId =
-          post &&
-          typeof post === "object" &&
-          "hashTagPresetId" in post &&
-          typeof post.hashTagPresetId === "string"
-            ? post.hashTagPresetId
-            : null;
-        if (hashTagPresetId && hashTagPresets.length > 0) {
-          const preset = hashTagPresets.find((p) => p.id === hashTagPresetId);
-          if (preset) {
-            setUseHashtagPresets(true);
-            setSelectedHashtagPresetId(preset.id);
-            const presetTags =
-              typeof preset.tags === "string" ? preset.tags : "";
-            setSelectedHashtagPresetTags(presetTags);
-          }
-        }
+    if (isLongform && post && typeof post === "object" && "content" in post) {
+      const postContent =
+        typeof post.content === "string" ? post.content : "";
+      if (postContent) {
+        form.setValue("content", postContent);
       }
     }
-  }, [post, isLongform, hashTagPresets]);
+  }, [isLongform, post, form]);
 
   // Initialize EditorJS for longform posts
   useEffect(() => {
@@ -376,7 +328,7 @@ export function useEditPostModal({
               try {
                 const outputData = await api.saver.save();
                 const markdownContent = convertEditorJSToMarkdown(outputData);
-                setContent(markdownContent);
+                form.setValue("content", markdownContent);
               } catch (error: unknown) {
                 console.error("Editor save error:", error);
               }
@@ -418,17 +370,19 @@ export function useEditPostModal({
         }
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLongform]);
 
   // Load initial content into EditorJS for longform posts
+  const formContent = form.watch("content");
   useEffect(() => {
-    if (!isLongform || !editorReady || !editorRef.current || !content) return;
+    if (!isLongform || !editorReady || !editorRef.current || !formContent) return;
 
     const loadInitialContent = async () => {
       if (!editorRef.current) return;
       try {
         await editorRef.current.isReady;
-        const editorJSData = convertMarkdownToEditorJS(content);
+        const editorJSData = convertMarkdownToEditorJS(formContent);
         await editorRef.current.render(editorJSData);
       } catch (error: unknown) {
         console.error("Error loading initial content into EditorJS:", error);
@@ -439,7 +393,7 @@ export function useEditPostModal({
       void loadInitialContent();
     }, 100);
     return () => clearTimeout(timeoutId);
-  }, [isLongform, editorReady, content]);
+  }, [isLongform, editorReady, formContent]);
 
   const formatDateTimeForInput = (date: Date) => {
     const userTimezone =
@@ -492,36 +446,88 @@ export function useEditPostModal({
     presetId: string | null,
     hashtags: string,
   ) => {
-    setSelectedHashtagPresetId(presetId);
+    form.setValue("hashTagPresetId", presetId ?? undefined);
+    form.setValue("useHashtagPresets", !!presetId);
     setSelectedHashtagPresetTags(hashtags);
   };
 
+  // Watch form values for easy access
+  const caption = isLongform ? "" : (form.watch("caption") ?? "");
+  const title = isLongform ? (form.watch("title") ?? "") : "";
+  const summary = isLongform ? (form.watch("summary") ?? "") : "";
+  const content = isLongform ? (form.watch("content") ?? "") : "";
+  const image = isLongform ? (form.watch("image") ?? "") : "";
+  const scheduledForStr = form.watch("scheduledFor");
+  const scheduledFor = scheduledForStr
+    ? new Date(scheduledForStr)
+    : null;
+  const selectedQueueType = form.watch("queueType") ?? "";
+  const useHashtagPresets = form.watch("useHashtagPresets") ?? false;
+  const selectedHashtagPresetId = form.watch("hashTagPresetId") ?? null;
+  const manualHashtags = isLongform ? "" : (form.watch("manualHashtags") ?? "");
+
+  // Setter functions for backward compatibility
+  const setCaption = (value: string) => {
+    if (!isLongform) form.setValue("caption", value);
+  };
+  const setTitle = (value: string) => {
+    if (isLongform) form.setValue("title", value);
+  };
+  const setSummary = (value: string) => {
+    if (isLongform) form.setValue("summary", value);
+  };
+  const setImage = (value: string) => {
+    if (isLongform) form.setValue("image", value);
+  };
+  const setScheduledFor = (value: Date | null) => {
+    form.setValue(
+      "scheduledFor",
+      value ? value.toISOString().slice(0, 16) : "",
+    );
+  };
+  const setSelectedQueueType = (value: string) => {
+    form.setValue("queueType", value);
+  };
+  const setUseHashtagPresets = (value: boolean) => {
+    form.setValue("useHashtagPresets", value);
+  };
+  const setManualHashtags = (value: string) => {
+    if (!isLongform) form.setValue("manualHashtags", value);
+  };
+  const setContent = (value: string) => {
+    if (isLongform) form.setValue("content", value);
+  };
+
   return {
-    // State
+    // Form instance
+    form,
+    // Form values (for backward compatibility)
     caption,
-    setCaption,
-    selectedQueueType,
-    setSelectedQueueType,
     title,
-    setTitle,
     summary,
-    setSummary,
     content,
-    setContent,
     image,
-    setImage,
     scheduledFor,
+    selectedQueueType,
+    useHashtagPresets,
+    selectedHashtagPresetId,
+    selectedHashtagPresetTags,
+    manualHashtags,
+    // Setter functions (for backward compatibility)
+    setCaption,
+    setTitle,
+    setSummary,
+    setImage,
     setScheduledFor,
+    setSelectedQueueType,
+    setUseHashtagPresets,
+    setManualHashtags,
+    setContent,
+    // Non-form state
     existingImages,
     newFiles,
     isUploadingImages,
     setIsUploadingImages,
-    useHashtagPresets,
-    setUseHashtagPresets,
-    selectedHashtagPresetId,
-    selectedHashtagPresetTags,
-    manualHashtags,
-    setManualHashtags,
     editorRef,
     editorReady,
     // Handlers

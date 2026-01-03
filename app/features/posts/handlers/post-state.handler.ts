@@ -80,3 +80,4 @@ export function handleRemovePost(
   setPosts(posts.filter((_, i) => i !== index));
 }
 
+

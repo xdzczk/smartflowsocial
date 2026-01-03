@@ -1,5 +1,5 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { useLoaderData, useParams, useFetcher } from "@remix-run/react";
+import { useParams, useFetcher } from "@remix-run/react";
 
 import { requireUserId } from "~/features/auth";
 import {
@@ -15,15 +15,14 @@ import {
   RecyclablesTable,
   RecyclablesToast,
   useRecyclablesState,
+  useRecyclablesData,
   getRecyclableDashboardData,
   handleRecyclablePostAction,
   type IndividualRepostFetcherData,
   type PostData,
   type CombinedContent,
-  fromPostDTOArray,
-  type PostDTO,
 } from "~/features/posts";
-import { withCSRFProtection } from "~/lib/csrf.server";
+import { withCSRFProtection } from "~/lib/csrf";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
@@ -67,7 +66,7 @@ export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs)
   }
 });
 
-type LoaderData = Awaited<ReturnType<typeof loader>>;
+type _LoaderData = Awaited<ReturnType<typeof loader>>;
 
 interface RepostFetcherData {
   repostData?: unknown;
@@ -76,59 +75,20 @@ interface RepostFetcherData {
 }
 
 export default function RecyclablesPosts() {
-  const data = useLoaderData<LoaderData>();
-  const posts = "posts" in data && Array.isArray(data.posts) ? data.posts : [];
-  const pagination = "pagination" in data ? data.pagination : undefined;
-  const stats = "stats" in data ? data.stats : undefined;
-  const user = "user" in data ? data.user : null;
-  const queueTypes =
-    "queueTypes" in data && Array.isArray(data.queueTypes)
-      ? data.queueTypes
-      : [];
+  // Use TanStack Query for data fetching with caching
+  const {
+    posts: typedPosts,
+    pagination: typedPagination,
+    stats: typedStats,
+    user,
+    queueTypes,
+  } = useRecyclablesData();
   const params = useParams();
 
   const deleteFetcher = useFetcher();
   const bulkDeleteFetcher = useFetcher();
   const repostFetcher = useFetcher<RepostFetcherData>();
   const individualRepostFetcher = useFetcher<IndividualRepostFetcherData>();
-
-  // Deserialize DTOs (with string dates) back to PostData (with Date objects)
-  const typedPosts: PostData[] = Array.isArray(posts)
-    ? fromPostDTOArray(posts as PostDTO[])
-    : [];
-
-  // Type assertions for stats - ensure it matches Stats type
-  const typedStats: Record<
-    string,
-    {
-      likes?: number;
-      replies?: number;
-      mentions?: number;
-      reposts?: number;
-      zaps?: number;
-      satszapped?: number;
-    }
-  > = stats && typeof stats === "object" && !Array.isArray(stats) ? stats : {};
-
-  // Type assertion for pagination
-  const typedPagination =
-    pagination &&
-    typeof pagination === "object" &&
-    !Array.isArray(pagination) &&
-    "total" in pagination &&
-    "pages" in pagination &&
-    "currentPage" in pagination &&
-    "limit" in pagination
-      ? {
-          total: typeof pagination.total === "number" ? pagination.total : 0,
-          pages: typeof pagination.pages === "number" ? pagination.pages : 0,
-          currentPage:
-            typeof pagination.currentPage === "number"
-              ? pagination.currentPage
-              : 1,
-          limit: typeof pagination.limit === "number" ? pagination.limit : 50,
-        }
-      : { total: 0, pages: 0, currentPage: 1, limit: 50 };
 
   const {
     sortConfig,

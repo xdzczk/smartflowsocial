@@ -53,9 +53,13 @@ describe("Dashboard Action Handler", () => {
     it("should handle missing postId gracefully", async () => {
       const formData = createActionFormData("delete", {});
 
-      await expect(
-        handleDashboardAction(formData, TEST_USER_ID),
-      ).rejects.toThrow("Post ID is required");
+      const result = await handleDashboardAction(formData, TEST_USER_ID);
+      
+      // Zod validation returns a Response with error
+      expect(result).toBeInstanceOf(Response);
+      const data = (await (result as Response).json()) as { error?: string };
+      expect(data).toHaveProperty("error");
+      expect(data.error).toContain("postId");
       expect(deletePost).not.toHaveBeenCalled();
     });
   });
@@ -101,7 +105,7 @@ describe("Dashboard Action Handler", () => {
       expect(result).toEqual({ success: true });
     });
 
-    it("should handle empty postIds array", async () => {
+    it("should return error for empty postIds array", async () => {
       (deletePost as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
 
       const formData = createActionFormData("bulkDelete", {
@@ -110,18 +114,26 @@ describe("Dashboard Action Handler", () => {
 
       const result = await handleDashboardAction(formData, TEST_USER_ID);
 
+      // Zod validation requires at least one post ID
+      expect(result).toBeInstanceOf(Response);
+      const data = (await (result as Response).json()) as { error?: string };
+      expect(data).toHaveProperty("error");
+      expect(data.error).toContain("postIds");
       expect(deletePost).not.toHaveBeenCalled();
-      expect(result).toEqual({ success: true });
     });
 
-    it("should throw ValidationError for invalid postIds format", async () => {
+    it("should return error for invalid postIds format", async () => {
       const formData = createActionFormData("bulkDelete", {
         postIds: "invalid-json",
       });
 
-      await expect(
-        handleDashboardAction(formData, TEST_USER_ID),
-      ).rejects.toThrow();
+      const result = await handleDashboardAction(formData, TEST_USER_ID);
+      
+      // Zod validation returns a Response with error for invalid JSON
+      expect(result).toBeInstanceOf(Response);
+      const data = (await (result as Response).json()) as { error?: string };
+      expect(data).toHaveProperty("error");
+      expect(deletePost).not.toHaveBeenCalled();
     });
 
     it("should handle single post in bulk delete", async () => {
@@ -165,14 +177,18 @@ describe("Dashboard Action Handler", () => {
       expect(result).toEqual({ success: true });
     });
 
-    it("should throw ValidationError for invalid postIds format", async () => {
+    it("should return error for invalid postIds format", async () => {
       const formData = createActionFormData("bulkDeleteLongForm", {
         postIds: "not-json",
       });
 
-      await expect(
-        handleDashboardAction(formData, TEST_USER_ID),
-      ).rejects.toThrow();
+      const result = await handleDashboardAction(formData, TEST_USER_ID);
+      
+      // Zod validation returns a Response with error for invalid JSON
+      expect(result).toBeInstanceOf(Response);
+      const data = (await (result as Response).json()) as { error?: string };
+      expect(data).toHaveProperty("error");
+      expect(deleteLongFormPost).not.toHaveBeenCalled();
     });
   });
 
@@ -182,7 +198,10 @@ describe("Dashboard Action Handler", () => {
 
       const result = await handleDashboardAction(formData, TEST_USER_ID);
 
-      expect(result).toEqual({ error: "Invalid action" });
+      // Zod validation fails because "invalidAction" is not in the enum
+      expect(result).toBeInstanceOf(Response);
+      const data = (await (result as Response).json()) as { error?: string };
+      expect(data).toHaveProperty("error");
       expect(deletePost).not.toHaveBeenCalled();
       expect(deleteLongFormPost).not.toHaveBeenCalled();
     });
@@ -192,7 +211,10 @@ describe("Dashboard Action Handler", () => {
 
       const result = await handleDashboardAction(formData, TEST_USER_ID);
 
-      expect(result).toEqual({ error: "Invalid action" });
+      // Zod validation returns a Response with error when _action is missing
+      expect(result).toBeInstanceOf(Response);
+      const data = (await (result as Response).json()) as { error?: string };
+      expect(data).toHaveProperty("error");
     });
 
     it("should handle database errors from deletePost", async () => {

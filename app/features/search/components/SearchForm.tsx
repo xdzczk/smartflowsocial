@@ -3,16 +3,19 @@
  */
 
 import { useFetcher } from "@remix-run/react";
+import type { UseFormReturn } from "react-hook-form";
+import type { z } from "zod";
+
+import type { searchFormClientSchema } from "~/lib/validation";
+
 interface SearchFormProps {
-  eventInput: string;
-  onInputChange: (value: string) => void;
+  form: UseFormReturn<z.infer<typeof searchFormClientSchema>>;
   onSubmit: (e: React.FormEvent) => void;
   isSearching: boolean;
 }
 
 export function SearchForm({
-  eventInput,
-  onInputChange,
+  form,
   onSubmit,
   isSearching,
 }: SearchFormProps) {
@@ -24,16 +27,18 @@ export function SearchForm({
         <div className="flex-1">
           <input
             type="text"
-            value={eventInput}
-            onChange={(e) => onInputChange(e.target.value)}
+            {...form.register("eventInput")}
             placeholder="Enter event ID (hex), note1, or nevent1..."
             className="block w-full rounded-lg border border-gray-200 px-4 py-3 text-sm leading-6 placeholder-gray-400 focus:border-blue-500 focus:ring focus:ring-blue-500/50 dark:border-gray-700 dark:bg-gray-900 dark:focus:border-blue-500"
             disabled={isSearching}
           />
+          {form.formState.errors.eventInput ? <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+              {form.formState.errors.eventInput.message}
+            </p> : null}
         </div>
         <button
           type="submit"
-          disabled={isSearching || !eventInput.trim()}
+          disabled={isSearching || !form.formState.isValid}
           className="inline-flex items-center justify-center gap-2 rounded-lg border border-blue-700 bg-blue-700 px-6 py-3 text-sm font-semibold leading-5 text-white hover:border-blue-600 hover:bg-blue-600 hover:text-white focus:ring focus:ring-blue-400/50 active:border-blue-700 active:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSearching ? (

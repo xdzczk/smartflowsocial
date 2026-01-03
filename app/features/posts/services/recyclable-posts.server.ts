@@ -8,6 +8,10 @@ import { json } from "@remix-run/node";
 
 import type { UserWithHashTagPresets } from "~/features/user";
 import { getUserById, getQueueTypes } from "~/features/user";
+import {
+  recyclableActionSchema,
+  validateFormDataOrRespond,
+} from "~/lib/validation";
 import { deletePost } from "~/models/post.commands.server";
 import {
   getRecyclablePosts,
@@ -116,75 +120,43 @@ export async function handleRecyclablePostAction(
   formData: FormData,
   userId: string,
 ) {
-  const postId = formData.get("postId") as string;
-  const _action = formData.get("_action");
+  // Validate with Zod
+  const result = validateFormDataOrRespond(formData, recyclableActionSchema);
+  if (!result.success) {
+    return result.response;
+  }
 
-  if (_action === "delete") {
-    await deletePost({ id: postId, userId });
+  const validatedData = result.data;
+
+  // Handle delete action
+  if (validatedData._action === "delete") {
+    await deletePost({ id: validatedData.postId, userId });
     return json({ success: true });
   }
 
-  if (_action === "bulkDelete") {
-    const postIdsValue = formData.get("postIds");
-    const postIdsStr = postIdsValue ? String(postIdsValue) : "[]";
-    let postIds: string[] = [];
-    try {
-      const parsed: unknown = JSON.parse(postIdsStr);
-      postIds = Array.isArray(parsed)
-        ? parsed.filter((id: unknown): id is string => typeof id === "string")
-        : [];
-    } catch {
-      postIds = [];
-    }
-    await Promise.all(postIds.map((id: string) => deletePost({ id, userId })));
+  // Handle bulk delete
+  if (validatedData._action === "bulkDelete") {
+    await Promise.all(
+      validatedData.postIds.map((id: string) => deletePost({ id, userId })),
+    );
     return json({ success: true });
   }
 
-  if (_action === "bulkRepost") {
-    const postIdsValue = formData.get("postIds");
-    const postIdsStr = postIdsValue ? String(postIdsValue) : "[]";
-    let postIds: string[] = [];
-    try {
-      const parsed: unknown = JSON.parse(postIdsStr);
-      postIds = Array.isArray(parsed)
-        ? parsed.filter((id: unknown): id is string => typeof id === "string")
-        : [];
-    } catch {
-      postIds = [];
-    }
-    const postsData = await getPostsByIds({ ids: postIds, userId });
+  // Handle bulk repost
+  if (validatedData._action === "bulkRepost") {
+    const postsData = await getPostsByIds({ ids: validatedData.postIds, userId });
     return json({ repostData: postsData });
   }
 
-  if (_action === "bulkScheduledRepost") {
-    const postIdsValue = formData.get("postIds");
-    const postIdsStr = postIdsValue ? String(postIdsValue) : "[]";
-    let postIds: string[] = [];
-    try {
-      const parsed: unknown = JSON.parse(postIdsStr);
-      postIds = Array.isArray(parsed)
-        ? parsed.filter((id: unknown): id is string => typeof id === "string")
-        : [];
-    } catch {
-      postIds = [];
-    }
-    const postsData = await getPostsByIds({ ids: postIds, userId });
+  // Handle bulk scheduled repost
+  if (validatedData._action === "bulkScheduledRepost") {
+    const postsData = await getPostsByIds({ ids: validatedData.postIds, userId });
     return json({ scheduledRepostData: postsData });
   }
 
-  if (_action === "bulkQuote") {
-    const postIdsValue = formData.get("postIds");
-    const postIdsStr = postIdsValue ? String(postIdsValue) : "[]";
-    let postIds: string[] = [];
-    try {
-      const parsed: unknown = JSON.parse(postIdsStr);
-      postIds = Array.isArray(parsed)
-        ? parsed.filter((id: unknown): id is string => typeof id === "string")
-        : [];
-    } catch {
-      postIds = [];
-    }
-    const postsData = await getPostsByIds({ ids: postIds, userId });
+  // Handle bulk quote
+  if (validatedData._action === "bulkQuote") {
+    const postsData = await getPostsByIds({ ids: validatedData.postIds, userId });
 
     // Transform posts data into quote post format
     const quotePostsData = postsData.map((post) => {
@@ -235,13 +207,19 @@ export async function handleRecyclablePostAction(
     return json({ quotePostData: quotePostsData });
   }
 
-  if (_action === "repost") {
+  // Handle single repost
+  if (validatedData._action === "repost") {
     try {
+      // Type narrowing for repost action
+      const repostData = validatedData._action === "repost" ? validatedData : null;
+      if (!repostData) {
+        return json({ error: "Invalid action" }, { status: 400 });
+      }
       // Get the original post data
-      const postsData = await getPostsByIds({ ids: [postId], userId });
+      const postsData = await getPostsByIds({ ids: [repostData.postId], userId });
       if (!postsData || postsData.length === 0) {
         const { NotFoundError } = await import("~/lib/errors");
-        throw new NotFoundError("Post not found", { postId, userId });
+        throw new NotFoundError("Post not found", { postId: repostData.postId, userId });
       }
 
       const originalPost = postsData[0];
@@ -289,13 +267,19 @@ export async function handleRecyclablePostAction(
     }
   }
 
-  if (_action === "quote") {
+  // Handle single quote
+  if (validatedData._action === "quote") {
     try {
-      // Get the origin?? post data
-      const postsData = await getPostsByIds({ ids: [postId], userId });
+      // Type narrowing for quote action
+      const quoteData = validatedData._action === "quote" ? validatedData : null;
+      if (!quoteData) {
+        return json({ error: "Invalid action" }, { status: 400 });
+      }
+      // Get the original post data
+      const postsData = await getPostsByIds({ ids: [quoteData.postId], userId });
       if (!postsData || postsData.length === 0) {
         const { NotFoundError } = await import("~/lib/errors");
-        throw new NotFoundError("Post not found", { postId, userId });
+        throw new NotFoundError("Post not found", { postId: quoteData.postId, userId });
       }
 
       const originalPost = postsData[0];

@@ -1,0 +1,204 @@
+/**
+ * TanStack Query hooks for calendar
+ * Provides caching and background refetching for calendar page
+ */
+
+import { useFetcher, useLoaderData } from "@remix-run/react";
+import { useParams } from "@remix-run/react";
+import { useQuery } from "@tanstack/react-query";
+
+import type { PostDTO, LongFormPostDTO } from "../dtos";
+import {
+  fromPostDTOArray,
+  fromLongFormPostDTOArray,
+} from "../dtos";
+import type {
+  PostData,
+  LongFormPostData,
+  QueueType,
+  UserData,
+} from "../types";
+import { convertJsonValueToScheduleConfig } from "../types";
+
+/**
+ * Query key factory for calendar
+ */
+export const calendarKeys = {
+  all: ["calendar"] as const,
+  lists: () => [...calendarKeys.all, "list"] as const,
+  list: (queueType?: string) =>
+    [...calendarKeys.lists(), queueType] as const,
+};
+
+/**
+ * Type for calendar loader data
+ */
+export type CalendarLoaderData = {
+  scheduledPosts: PostDTO[];
+  scheduledLongFormPosts: LongFormPostDTO[];
+  pastPosts: PostDTO[];
+  pastLongFormPosts: LongFormPostDTO[];
+  allContent: unknown[];
+  user: UserData | null;
+  queueTypes: QueueType[];
+  selectedQueueType: string;
+};
+
+/**
+ * Hook to fetch calendar data with TanStack Query
+ */
+export function useCalendarQuery() {
+  const params = useParams();
+  const queueType = params.queueType ?? "all";
+  
+  const loaderData = useLoaderData();
+  const fetcher = useFetcher();
+
+  return useQuery({
+    queryKey: calendarKeys.list(queueType),
+    queryFn: async () => {
+      const url = `/dashboard/calendar${queueType !== "all" ? `/${queueType}` : ""}`;
+      fetcher.load(url);
+      
+      return new Promise<CalendarLoaderData>((resolve, reject) => {
+        const checkFetcher = () => {
+          if (fetcher.state === "idle") {
+            if (fetcher.data) {
+              resolve(fetcher.data as unknown as CalendarLoaderData);
+            } else {
+              resolve(loaderData as CalendarLoaderData);
+            }
+          } else if (fetcher.state === "loading") {
+            setTimeout(checkFetcher, 50);
+          } else {
+            reject(new Error("Failed to fetch data"));
+          }
+        };
+        checkFetcher();
+      });
+    },
+    initialData: loaderData as CalendarLoaderData,
+    staleTime: 30 * 1000, // 30 seconds
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: true,
+    refetchOnMount: false,
+  });
+}
+
+/**
+ * Hook to get processed calendar data from query
+ */
+export function useCalendarData() {
+  const { data, isLoading, error } = useCalendarQuery();
+  
+  if (!data) {
+    return {
+      scheduledPosts: [] as PostData[],
+      scheduledLongFormPosts: [] as LongFormPostData[],
+      pastPosts: [] as PostData[],
+      pastLongFormPosts: [] as LongFormPostData[],
+      allContent: [] as unknown[],
+      user: null as UserData | null,
+      queueTypes: [] as QueueType[],
+      selectedQueueType: "all",
+      isLoading,
+      error,
+    };
+  }
+
+  const typedData = data;
+  const scheduledPostsRaw =
+    "scheduledPosts" in typedData && Array.isArray(typedData.scheduledPosts)
+      ? typedData.scheduledPosts
+      : [];
+  const scheduledLongFormPostsRaw =
+    "scheduledLongFormPosts" in typedData &&
+    Array.isArray(typedData.scheduledLongFormPosts)
+      ? typedData.scheduledLongFormPosts
+      : [];
+  const pastPostsRaw =
+    "pastPosts" in typedData && Array.isArray(typedData.pastPosts)
+      ? typedData.pastPosts
+      : [];
+  const pastLongFormPostsRaw =
+    "pastLongFormPosts" in typedData &&
+    Array.isArray(typedData.pastLongFormPosts)
+      ? typedData.pastLongFormPosts
+      : [];
+  const allContentRaw =
+    "allContent" in typedData && Array.isArray(typedData.allContent)
+      ? typedData.allContent
+      : [];
+  const userRaw = "user" in typedData ? typedData.user : null;
+  const queueTypesRaw =
+    "queueTypes" in typedData && Array.isArray(typedData.queueTypes)
+      ? typedData.queueTypes
+      : [];
+  const selectedQueueTypeRaw =
+    "selectedQueueType" in typedData ? typedData.selectedQueueType : "all";
+
+  const scheduledPosts: PostData[] = Array.isArray(scheduledPostsRaw)
+    ? fromPostDTOArray(scheduledPostsRaw)
+    : [];
+  const scheduledLongFormPosts: LongFormPostData[] = Array.isArray(
+    scheduledLongFormPostsRaw,
+  )
+    ? fromLongFormPostDTOArray(scheduledLongFormPostsRaw)
+    : [];
+  const pastPosts: PostData[] = Array.isArray(pastPostsRaw)
+    ? fromPostDTOArray(pastPostsRaw)
+    : [];
+  const pastLongFormPosts: LongFormPostData[] = Array.isArray(
+    pastLongFormPostsRaw,
+  )
+    ? fromLongFormPostDTOArray(pastLongFormPostsRaw)
+    : [];
+  const queueTypes: QueueType[] = Array.isArray(queueTypesRaw)
+    ? queueTypesRaw
+        .map((qt: unknown) => {
+          if (qt && typeof qt === "object" && "id" in qt && "name" in qt) {
+            const q = qt as {
+              id: string;
+              name: string;
+              color?: string | null;
+              scheduleType?: string;
+              scheduleConfig?: unknown;
+              isEnabled?: boolean;
+              userId?: string;
+            };
+            const queueType: QueueType = {
+              id: q.id,
+              name: q.name,
+              color: q.color,
+              description: undefined,
+              scheduleType: q.scheduleType as
+                | "INTERVAL"
+                | "FIXED_SLOTS"
+                | undefined,
+              scheduleConfig: convertJsonValueToScheduleConfig(q.scheduleConfig),
+              isEnabled: q.isEnabled,
+              userId: q.userId,
+            };
+            return queueType;
+          }
+          return null;
+        })
+        .filter((qt): qt is QueueType => qt !== null)
+    : [];
+  const selectedQueueType =
+    typeof selectedQueueTypeRaw === "string" ? selectedQueueTypeRaw : "all";
+
+  return {
+    scheduledPosts,
+    scheduledLongFormPosts,
+    pastPosts,
+    pastLongFormPosts,
+    allContent: allContentRaw,
+    user: userRaw,
+    queueTypes,
+    selectedQueueType,
+    isLoading,
+    error,
+  };
+}
+

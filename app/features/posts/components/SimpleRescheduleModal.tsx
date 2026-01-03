@@ -1,8 +1,14 @@
 import { useFetcher } from "@remix-run/react";
-import { useEffect, useState } from "react";
+import React, { useEffect } from "react";
+import type { z } from "zod";
 
 import { handleErrorSafely } from "~/lib/error-handler.client";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
+import {
+  rescheduleModalClientSchema,
+  rescheduleLongformModalClientSchema,
+  useZodForm,
+} from "~/lib/validation";
 
 import type { PostData, LongFormPostData, UserData, QueueType } from "../types";
 
@@ -27,29 +33,44 @@ export function SimpleRescheduleModal({
     needsSigning?: boolean;
   }
   const fetcher = useFetcher<FetcherData>();
-  const [isSigningEvent, setIsSigningEvent] = useState(false);
-  const [signingError, setSigningError] = useState<string | null>(null);
-  const [scheduledFor, setScheduledFor] = useState<Date | null>(null);
-  const [selectedQueueType, setSelectedQueueType] = useState<string>("");
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [isSigningEvent, setIsSigningEvent] = React.useState(false);
+  const [signingError, setSigningError] = React.useState<string | null>(null);
 
   // Determine if this is a longform post
   const isLongform = "title" in post && post.title !== undefined;
 
-  useEffect(() => {
-    if (post) {
-      if (isLongform && "publishedAt" in post) {
-        setScheduledFor(post.publishedAt ? new Date(post.publishedAt) : null);
-      } else if (!isLongform && "scheduledFor" in post) {
-        setScheduledFor(
-          post.scheduledFor
-            ? new Date(parseInt(post.scheduledFor) * 1000)
-            : null,
-        );
-        setSelectedQueueType(post.queueType?.id ?? "");
-      }
-    }
-  }, [post, isLongform]);
+  // Initialize form with appropriate schema
+  const schema = isLongform
+    ? rescheduleLongformModalClientSchema
+    : rescheduleModalClientSchema;
+
+  const initialScheduledFor = post
+    ? isLongform && "publishedAt" in post
+      ? post.publishedAt
+        ? new Date(post.publishedAt)
+        : new Date()
+      : !isLongform && "scheduledFor" in post
+        ? post.scheduledFor
+          ? new Date(parseInt(post.scheduledFor) * 1000)
+          : new Date()
+        : new Date()
+    : new Date();
+
+  const form = useZodForm(schema, {
+    defaultValues: {
+      scheduledFor: initialScheduledFor,
+      ...(!isLongform && post && "queueType" in post
+        ? { queueTypeId: post.queueType?.id ?? "" }
+        : {}),
+    },
+  });
+
+  const scheduledFor = form.watch("scheduledFor");
+  // queueTypeId is conditionally in the schema, so we need to access it safely
+  // Type assertion needed because queueTypeId only exists in non-longform schema
+  type FormValues = { scheduledFor: Date; queueTypeId?: string };
+  const formValues = form.getValues() as FormValues;
+  const selectedQueueType = !isLongform ? formValues.queueTypeId : undefined;
 
   useEffect(() => {
     if (fetcher.data?.success) {
@@ -76,45 +97,14 @@ export function SimpleRescheduleModal({
     return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
-  const validateDateTime = (dateTime: Date | null) => {
-    if (!dateTime) {
-      setValidationError("Please select a date and time");
-      return false;
-    }
-
-    const now = new Date();
-    const userTimezone = user?.timezone ?? "UTC";
-    const nowInUserTz = new Date(
-      now.toLocaleString("en-US", { timeZone: userTimezone }),
-    );
-
-    if (dateTime <= nowInUserTz) {
-      setValidationError("Cannot schedule posts in the past");
-      return false;
-    }
-
-    setValidationError(null);
-    return true;
-  };
-
-  const handleDateTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value ? new Date(e.target.value) : null;
-    setScheduledFor(newValue);
-    validateDateTime(newValue);
-  };
-
-  const handleSubmit = async () => {
-    if (!post || !scheduledFor) return;
-
-    if (!validateDateTime(scheduledFor)) {
-      return;
-    }
+  const handleSubmit = form.handleSubmit(async (data) => {
+    if (!post || !data.scheduledFor) return;
 
     try {
       setIsSigningEvent(true);
       setSigningError(null);
 
-      const newTimeUnix = Math.floor(scheduledFor.getTime() / 1000);
+      const newTimeUnix = Math.floor(data.scheduledFor.getTime() / 1000);
 
       // Use the exact same content and tags from the original signed event
       const originalSignedEvent = post.signedEvent;
@@ -146,9 +136,10 @@ export function SimpleRescheduleModal({
       formData.append("nostrEvent", JSON.stringify(nostrEvent));
 
       if (!isLongform) {
+        const regularData = data as z.infer<typeof rescheduleModalClientSchema>;
         formData.append("overrideQueue", "false");
-        if (selectedQueueType) {
-          formData.append("queueTypeId", selectedQueueType);
+        if (regularData.queueTypeId) {
+          formData.append("queueTypeId", regularData.queueTypeId);
         }
       }
 
@@ -171,7 +162,7 @@ export function SimpleRescheduleModal({
         getErrorMessage(error) || "Failed to sign event. Please try again.",
       );
     }
-  };
+  });
 
   const getFirstImage = () => {
     if (post && "fileUrl" in post && post.fileUrl && post.fileUrl.length > 0) {
@@ -307,7 +298,16 @@ export function SimpleRescheduleModal({
                   value={
                     scheduledFor ? formatDateTimeForInput(scheduledFor) : ""
                   }
-                  onChange={handleDateTimeChange}
+                  onChange={(e) => {
+                    const newValue = e.target.value
+                      ? new Date(e.target.value)
+                      : null;
+                    if (newValue) {
+                      form.setValue("scheduledFor", newValue, {
+                        shouldValidate: true,
+                      });
+                    }
+                  }}
                   className="flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                 />
               </div>
@@ -329,8 +329,12 @@ export function SimpleRescheduleModal({
                 </label>
                 <select
                   id="simple-reschedule-queue-type"
-                  value={selectedQueueType}
-                  onChange={(e) => setSelectedQueueType(e.target.value)}
+                  {...(form.register("queueTypeId" as never))}
+                  value={selectedQueueType ?? ""}
+                  onChange={(e) => {
+                    // Type assertion needed because queueTypeId only exists in non-longform schema
+                    (form.setValue as (name: string, value: string) => void)("queueTypeId", e.target.value);
+                  }}
                   className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                 >
                   <option value="">Manual (No Queue)</option>
@@ -372,10 +376,10 @@ export function SimpleRescheduleModal({
             </div>
 
             {/* Validation error */}
-            {validationError ? (
+            {form.formState.errors.scheduledFor ? (
               <div className="rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
                 <div className="text-sm text-red-800 dark:text-red-200">
-                  {validationError}
+                  {form.formState.errors.scheduledFor.message}
                 </div>
               </div>
             ) : null}
@@ -403,7 +407,7 @@ export function SimpleRescheduleModal({
               disabled={
                 fetcher.state === "submitting" ||
                 isSigningEvent ||
-                !!validationError
+                !form.formState.isValid
               }
               className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
             >

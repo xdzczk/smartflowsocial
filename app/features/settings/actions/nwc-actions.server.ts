@@ -5,6 +5,10 @@
 import { json } from "@remix-run/node";
 
 import {
+  updateNWCSchema,
+  validateFormDataOrRespond,
+} from "~/lib/validation";
+import {
   updateUserNWC,
   updateUserNWCEnabled,
   clearUserNWC,
@@ -16,15 +20,17 @@ export async function handleNWCAction(
   formData: FormData,
 ) {
   if (action === "update_nwc") {
-    const nwcEnabled = formData.get("nwcEnabled") === "on";
-    const nwcString = formData.get("nwcString") as string;
+    const result = validateFormDataOrRespond(formData, updateNWCSchema);
+    if (!result.success) {
+      return result.response;
+    }
 
-    if (nwcEnabled && nwcString?.trim()) {
+    if (result.data.nwcEnabled && result.data.nwcString?.trim()) {
       // Update with new NWC string
-      await updateUserNWC(userId, nwcString.trim(), true);
+      await updateUserNWC(userId, result.data.nwcString.trim(), true);
     } else {
       // Just update enabled status
-      await updateUserNWCEnabled(userId, nwcEnabled);
+      await updateUserNWCEnabled(userId, result.data.nwcEnabled);
     }
     return json({ success: true });
   }

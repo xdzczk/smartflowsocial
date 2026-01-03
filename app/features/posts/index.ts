@@ -331,8 +331,57 @@ export { useDashboardState } from "./hooks/useDashboardState";
 export { useScheduledState } from "./hooks/useScheduledState";
 export { useDraftsState } from "./hooks/useDraftsState";
 export { usePostedPosts } from "./usePostedPosts";
+export {
+  usePostedPostsQuery,
+  usePostedPostsData,
+  useBulkDeletePostsMutation,
+  postedPostsKeys,
+} from "./hooks/usePostedPostsQuery";
+export type { PostedPostsLoaderData } from "./hooks/usePostedPostsQuery";
+export {
+  useDashboardQuery,
+  useDashboardData,
+  dashboardKeys,
+} from "./hooks/useDashboardQuery";
+export type { DashboardLoaderData } from "./hooks/useDashboardQuery";
+export {
+  useScheduledPostsQuery,
+  useScheduledPostsData,
+  scheduledPostsKeys,
+} from "./hooks/useScheduledPostsQuery";
+export type { ScheduledPostsLoaderData } from "./hooks/useScheduledPostsQuery";
+export {
+  useDraftsQuery,
+  useDraftsData,
+  draftsKeys,
+} from "./hooks/useDraftsQuery";
+export type { DraftsLoaderData } from "./hooks/useDraftsQuery";
+export {
+  useCalendarQuery,
+  useCalendarData,
+  calendarKeys,
+} from "./hooks/useCalendarQuery";
+export type { CalendarLoaderData } from "./hooks/useCalendarQuery";
+export {
+  useCalendarQueueQuery,
+  useCalendarQueueData,
+  calendarQueueKeys,
+} from "./hooks/useCalendarQueueQuery";
+export type { CalendarQueueLoaderData } from "./hooks/useCalendarQueueQuery";
+export {
+  useInvalidatePostQueries,
+  useDeletePostMutation,
+  useBulkDeleteMutation,
+  useReschedulePostMutation,
+} from "./hooks/usePostMutations";
 export { useRecyclablesState } from "./hooks/useRecyclablesState";
 export type { IndividualRepostFetcherData } from "./hooks/useRecyclablesState";
+export {
+  useRecyclablesQuery,
+  useRecyclablesData,
+  recyclablesKeys,
+} from "./hooks/useRecyclablesQuery";
+export type { RecyclablesLoaderData } from "./hooks/useRecyclablesQuery";
 export { useDraftEditState } from "./hooks/useDraftEditState";
 export { useLongFormEditState } from "./hooks/useLongFormEditState";
 export { useNewLongFormState } from "./hooks/useNewLongFormState";

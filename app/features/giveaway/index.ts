@@ -52,3 +52,9 @@ export { GiveawayTable } from "./components/GiveawayTable";
 // ============================================================================
 
 export { useGiveawayState } from "./hooks/useGiveawayState";
+export {
+  useGiveawayQuery,
+  useGiveawayData,
+  giveawayKeys,
+  type GiveawayLoaderData,
+} from "./hooks/useGiveawayQuery";

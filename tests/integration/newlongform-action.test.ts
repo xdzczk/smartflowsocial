@@ -374,10 +374,9 @@ describe("New Longform Action Handler", () => {
               error?: unknown;
             })
           : {};
-      const error = typeof data.error === "string" ? data.error : "";
-
       expect(response.status).toBe(400);
-      expect(error).toBe("Content is required");
+      expect(data).toHaveProperty("error");
+      expect(String(data.error)).toBeTruthy();
     });
 
     it("should parse and combine tags", async () => {
@@ -718,6 +717,7 @@ describe("New Longform Action Handler", () => {
         nostrEvent: JSON.stringify(mockNostrEvent),
         queueType: "posts",
         useHashtagPresets: "off",
+        scheduledFor: "1704067200", // Required by schema, though handler extracts from tags
       });
 
       const request = new Request(

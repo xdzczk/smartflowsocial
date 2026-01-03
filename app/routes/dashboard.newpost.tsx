@@ -20,7 +20,7 @@ import {
   type QueueType,
   type HashTagPreset,
 } from "~/features/posts";
-import { withCSRFProtection } from "~/lib/csrf.server";
+import { withCSRFProtection } from "~/lib/csrf";
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   const data = await loadNewPostData(userId);

@@ -5,7 +5,7 @@ import {
   getEffectiveHashtags,
   parseEffectiveHashtagsRequest,
 } from "~/features/posts";
-import { withCSRFProtection } from "~/lib/csrf.server";
+import { withCSRFProtection } from "~/lib/csrf";
 import { ValidationError } from "~/lib/errors";
 
 // Returns effective hashtags for a queue type

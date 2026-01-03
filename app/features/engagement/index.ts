@@ -64,3 +64,9 @@ export { EngagementTabs } from "./components/EngagementTabs";
 // ============================================================================
 
 export { useEngagementState } from "./hooks/useEngagementState";
+export {
+  useEngagementQuery,
+  useEngagementData,
+  engagementKeys,
+  type EngagementLoaderData,
+} from "./hooks/useEngagementQuery";

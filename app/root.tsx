@@ -17,6 +17,7 @@ import { Toaster } from "react-hot-toast";
 import { getUser } from "~/features/auth/session.server";
 import { handleLoaderError } from "~/lib/error-handler.server";
 import { normalizeError } from "~/lib/errors";
+import { QueryProvider } from "~/lib/query/QueryProvider";
 import stylesheet from "~/tailwind.css";
 
 export const links: LinksFunction = () => [
@@ -99,16 +100,18 @@ export default function App() {
         <Links />
       </head>
       <body className="h-full">
-        <Toaster position="top-right" />
-        <Outlet />
-        <ScrollRestoration />
-        <Scripts />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `window.ENV = ${JSON.stringify(ENV)}`,
-          }}
-        />
-        <LiveReload />
+        <QueryProvider>
+          <Toaster position="top-right" />
+          <Outlet />
+          <ScrollRestoration />
+          <Scripts />
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `window.ENV = ${JSON.stringify(ENV)}`,
+            }}
+          />
+          <LiveReload />
+        </QueryProvider>
       </body>
     </html>
   );

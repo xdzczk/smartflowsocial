@@ -2,7 +2,7 @@ import { json } from "@remix-run/node";
 import type { ActionFunctionArgs } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
-import { withCSRFProtection } from "~/lib/csrf.server";
+import { withCSRFProtection } from "~/lib/csrf";
 import { ValidationError, ExternalServiceError } from "~/lib/errors";
 
 type AssertFunction = (

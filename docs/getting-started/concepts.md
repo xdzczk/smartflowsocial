@@ -353,3 +353,4 @@ NIP-07 allows browser extensions to:
 
 **Next:** [Architecture Overview](./architecture.md) → Deep dive into system design
 
+

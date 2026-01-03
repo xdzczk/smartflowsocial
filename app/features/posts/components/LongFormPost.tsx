@@ -3,6 +3,10 @@ import { useState, useEffect } from "react";
 
 import { Badge } from "~/components/ui/badge";
 import { AssetBrowser, type Asset } from "~/features/assets";
+import {
+  longformPostClientSchema,
+  useZodForm,
+} from "~/lib/validation";
 
 import { useLongFormSubmission } from "../hooks/useLongFormSubmission";
 import { useCoverImageUpload } from "../useCoverImageUpload";
@@ -84,13 +88,27 @@ export default function LongFormPost({
   onHashtagPresetChange,
 }: LongFormPostProps) {
   const fetcher = useFetcher();
-  const [title, setTitle] = useState(initialData?.title ?? "");
-  const [summary, setSummary] = useState(initialData?.summary ?? "");
-  const [content, setContent] = useState(initialData?.content ?? "");
-  const [customTags, setCustomTags] = useState(
-    initialData?.tags?.join(", ") ?? "",
-  );
   const [showAssetBrowser, setShowAssetBrowser] = useState("");
+
+  // Initialize form with React Hook Form
+  const form = useZodForm(longformPostClientSchema, {
+    defaultValues: {
+      title: initialData?.title ?? "",
+      summary: initialData?.summary ?? "",
+      content: initialData?.content ?? "",
+      customTags: initialData?.tags?.join(", ") ?? "",
+      scheduledFor: "",
+      queueType: initialData?.queueType?.name ?? "Unassigned",
+      useHashtagPresets: useHashtagPresets ?? false,
+      hashTagPresetId: selectedHashtagPresetId ?? undefined,
+    },
+  });
+
+  // Watch form values
+  const title = form.watch("title") ?? "";
+  const summary = form.watch("summary") ?? "";
+  const content = form.watch("content") ?? "";
+  const customTags = form.watch("customTags") ?? "";
 
   // Use extracted hooks
   const {
@@ -100,12 +118,12 @@ export default function LongFormPost({
     generateSummaryFromContent,
   } = useLongFormEditor({
     uploadProvider,
-    onContentChange: setContent,
+    onContentChange: (newContent) => form.setValue("content", newContent),
   });
 
   const {
-    image,
-    setImage,
+    image: coverImage,
+    setImage: setCoverImage,
     uploadError,
     uploadFetcherState,
     handleImageUpload,
@@ -117,10 +135,15 @@ export default function LongFormPost({
     initialImage: initialData?.image ?? "",
   });
 
+  // Sync cover image with form (image field is not in schema, but we'll manage it separately)
+  // Note: The schema doesn't include image, but we need it for validation
+  // We'll handle it separately since it's managed by useCoverImageUpload
+  const image = coverImage;
+
   const {
-    selectedQueueType,
-    scheduledFor,
-    setScheduledFor,
+    selectedQueueType: schedulingQueueType,
+    scheduledFor: schedulingScheduledFor,
+    setScheduledFor: setSchedulingScheduledFor,
     displayedHashtags,
     updateDisplayedHashtags,
     handleScheduleIntervalClick,
@@ -133,6 +156,45 @@ export default function LongFormPost({
     initialQueueType: initialData?.queueType?.name ?? "Unassigned",
     onQueueTypeChange,
   });
+
+  // Sync scheduling hook with form
+  useEffect(() => {
+    form.setValue("queueType", schedulingQueueType);
+  }, [schedulingQueueType, form]);
+
+  useEffect(() => {
+    if (schedulingScheduledFor) {
+      form.setValue("scheduledFor", schedulingScheduledFor);
+    }
+  }, [schedulingScheduledFor, form]);
+
+  // Sync form with scheduling hook
+  const formScheduledFor = form.watch("scheduledFor");
+  const formQueueType = form.watch("queueType");
+  useEffect(() => {
+    if (formScheduledFor && formScheduledFor !== schedulingScheduledFor) {
+      setSchedulingScheduledFor(formScheduledFor);
+    }
+  }, [formScheduledFor, schedulingScheduledFor, setSchedulingScheduledFor]);
+
+  useEffect(() => {
+    if (formQueueType && formQueueType !== schedulingQueueType) {
+      void updateDisplayedHashtags(formQueueType);
+    }
+  }, [formQueueType, schedulingQueueType, updateDisplayedHashtags]);
+
+  const selectedQueueType = schedulingQueueType;
+  const scheduledFor = schedulingScheduledFor;
+  const setScheduledFor = (value: string | null) => {
+    if (value) {
+      form.setValue("scheduledFor", value);
+      setSchedulingScheduledFor(value);
+    } else {
+      form.setValue("scheduledFor", "");
+      // @ts-expect-error - useLongFormScheduling expects string but we pass null for clearing
+      setSchedulingScheduledFor(null);
+    }
+  };
 
   // Handle upload fetcher responses
   useEffect(() => {
@@ -178,7 +240,7 @@ export default function LongFormPost({
   const handleGenerateSummary = () => {
     const generatedSummary = generateSummaryFromContent(content);
     if (generatedSummary) {
-      setSummary(generatedSummary);
+      form.setValue("summary", generatedSummary);
     }
   };
 
@@ -195,12 +257,8 @@ export default function LongFormPost({
     selectedHashtags,
   });
 
-  const isFormValid = !!(
-    title.trim() &&
-    summary.trim() &&
-    content.trim() &&
-    image
-  );
+  // Form validation using Zod
+  const isFormValid = form.formState.isValid && !!image;
 
   return (
     <>
@@ -212,9 +270,9 @@ export default function LongFormPost({
           summary={summary}
           customTags={customTags}
           content={content}
-          onTitleChange={setTitle}
-          onSummaryChange={setSummary}
-          onCustomTagsChange={setCustomTags}
+          onTitleChange={(value) => form.setValue("title", value)}
+          onSummaryChange={(value) => form.setValue("summary", value)}
+          onCustomTagsChange={(value) => form.setValue("customTags", value)}
           onGenerateSummary={handleGenerateSummary}
         />
 
@@ -224,7 +282,9 @@ export default function LongFormPost({
           uploadProvider={uploadProvider}
           uploadFetcherState={uploadFetcherState}
           onImageUpload={(file) => void handleImageUpload(file)}
-          onRemove={() => setImage("")}
+          onRemove={() => {
+            setCoverImage("");
+          }}
           onOpenAssetBrowser={() => setShowAssetBrowser("cover")}
         />
 

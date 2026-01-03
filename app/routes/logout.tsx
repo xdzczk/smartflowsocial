@@ -2,7 +2,7 @@ import { redirect } from "@remix-run/node";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 
 import { logout } from "~/features/auth";
-import { withCSRFProtection } from "~/lib/csrf.server";
+import { withCSRFProtection } from "~/lib/csrf";
 
 export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs) => {
   try {

@@ -20,6 +20,10 @@ import {
   sanitizeMarkdown,
   generateSummary,
 } from "~/lib/markdown-sanitizer.server";
+import {
+  newLongformPostActionSchema,
+  validateFormDataOrRespond,
+} from "~/lib/validation";
 import { createLongFormPost } from "~/models/longformpost.server";
 import {
   getUserById,
@@ -550,17 +554,36 @@ export async function handleNewLongFormAction(
     formData = await request.formData();
   }
 
-  const _action = formData.get("_action") as string;
-  const queueType = (formData.get("queueType") as string) ?? "Unassigned";
-  const useHashtagPresets = formData.get("useHashtagPresets") === "on";
-  const manualHashTagPresetId = useHashtagPresets
-    ? ((formData.get("hashTagPresetId") as string) ?? null)
-    : null;
-
-  // Handle upload-image action first, before any validation
+  // Check for upload-image action first (handled separately)
+  const _actionValue = formData.get("_action");
+  const _action = _actionValue ? String(_actionValue) : "";
+  
   if (_action === "upload-image") {
     return handleImageUpload(userId, formData);
   }
+
+  // Validate non-file fields with Zod
+  const result = validateFormDataOrRespond(
+    formData,
+    newLongformPostActionSchema,
+  );
+  if (!result.success) {
+    return result.response;
+  }
+
+  const validatedData = result.data;
+  
+  // Type narrowing: exclude upload-image action (already handled above)
+  if (validatedData._action === "upload-image") {
+    // This shouldn't happen as we handle it above, but TypeScript needs it
+    return handleImageUpload(userId, formData);
+  }
+  
+  const queueType = validatedData.queueType || "Unassigned";
+  const useHashtagPresets = validatedData.useHashtagPresets ?? false;
+  const manualHashTagPresetId: string | null = useHashtagPresets
+    ? (validatedData.hashTagPresetId ?? null)
+    : null;
 
   // Get hashtag preset tags
   const { tags: hashTagPresetTags, presetId: hashTagPresetId } =
@@ -571,9 +594,12 @@ export async function handleNewLongFormAction(
       queueType,
     );
 
+  // Ensure hashTagPresetId is string | null (not undefined)
+  const finalHashTagPresetId: string | null = hashTagPresetId ?? null;
+
   // Handle different actions
   if (_action === "save-draft") {
-    return handleSaveDraft(userId, formData, queueType, hashTagPresetId);
+    return handleSaveDraft(userId, formData, queueType, finalHashTagPresetId);
   }
 
   if (_action === "publish") {
@@ -581,7 +607,7 @@ export async function handleNewLongFormAction(
       userId,
       formData,
       queueType,
-      hashTagPresetId,
+      finalHashTagPresetId,
       hashTagPresetTags,
       showHashTagsinPosts,
       sanitizedRelays,
@@ -593,7 +619,7 @@ export async function handleNewLongFormAction(
       userId,
       formData,
       queueType,
-      hashTagPresetId,
+      finalHashTagPresetId,
       hashTagPresetTags,
       showHashTagsinPosts,
     );

@@ -1,4 +1,3 @@
-export { DynamicInputList } from "./DynamicInputList";
 export { TimezoneSettings } from "./TimezoneSettings";
 export { RelaysSettings } from "./RelaysSettings";
 

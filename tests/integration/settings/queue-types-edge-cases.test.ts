@@ -122,6 +122,7 @@ describe("Queue Types Action Handler - Edge Cases", () => {
         scheduleType: "INTERVAL",
         useGlobalInterval: "on",
         color: "#FF0000",
+        hashTagPresetId: "none", // Optional, but schema expects it to be present or "none"
       });
 
       const result = await handleQueueTypeAction(
@@ -129,6 +130,13 @@ describe("Queue Types Action Handler - Edge Cases", () => {
         "create_queue_type",
         formData,
       );
+      
+      // Check if validation failed
+      if (result instanceof Response && result.status === 400) {
+        const data = await result.json();
+        throw new Error(`Validation failed: ${JSON.stringify(data)}`);
+      }
+      
       const responseObj =
         result instanceof Response
           ? result
@@ -161,6 +169,7 @@ describe("Queue Types Action Handler - Edge Cases", () => {
         scheduleType: "FIXED_SLOTS",
         slots: "09:00, 12:00, 15:00, 18:00",
         color: "#FF0000",
+        hashTagPresetId: "none",
       });
 
       const result = await handleQueueTypeAction(
@@ -200,6 +209,7 @@ describe("Queue Types Action Handler - Edge Cases", () => {
         scheduleType: "FIXED_SLOTS",
         slots: "09:00, , 12:00,  , 15:00",
         color: "#FF0000",
+        hashTagPresetId: "none",
       });
 
       const result = await handleQueueTypeAction(
@@ -285,6 +295,7 @@ describe("Queue Types Action Handler - Edge Cases", () => {
         intervalHours: "6",
         color: "#00FF00",
         isEnabled: "off",
+        hashTagPresetId: "none",
       });
 
       const result = await handleQueueTypeAction(

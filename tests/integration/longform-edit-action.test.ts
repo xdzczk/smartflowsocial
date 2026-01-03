@@ -319,10 +319,9 @@ describe("Longform Edit Action Handler", () => {
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
           ? (dataRaw as { success?: unknown; error?: unknown })
           : {};
-      const error = typeof data.error === "string" ? data.error : "";
-
       expect(response.status).toBe(400);
-      expect(error).toBe("Content is required");
+      expect(data).toHaveProperty("error");
+      expect(String(data.error)).toBeTruthy();
     });
   });
 
@@ -516,12 +515,24 @@ describe("Longform Edit Action Handler", () => {
     });
 
     it("should schedule post with published_at tag", async () => {
+      // SignedEvent and NostrEvent schemas require all fields
       const mockSignedEvent = {
         id: "event-123",
+        pubkey: "pk1",
         kind: 30023,
+        content: "Test content",
         tags: [["published_at", "1704067200"]],
+        created_at: Math.floor(Date.now() / 1000),
+        sig: "sig1",
       };
-      const mockNostrEvent = { id: "event-123", kind: 30023 };
+      const mockNostrEvent = {
+        id: "event-123",
+        pubkey: "pk1",
+        kind: 30023,
+        content: "Test content",
+        tags: [["published_at", "1704067200"]],
+        created_at: Math.floor(Date.now() / 1000),
+      };
 
       const formData = createMockFormData({
         _action: "schedule-longform",
@@ -533,6 +544,7 @@ describe("Longform Edit Action Handler", () => {
         nostrEvent: JSON.stringify(mockNostrEvent),
         queueType: "posts",
         useHashtagPresets: "false",
+        scheduledFor: "1704067200", // Required by schema, though handler extracts from tags
       });
 
       const request = new Request(

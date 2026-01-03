@@ -1,5 +1,5 @@
 import { useFetcher } from "@remix-run/react";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -12,6 +12,11 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
+import {
+  updateNWCClientSchema,
+  useZodForm,
+  formDataToFormData,
+} from "~/lib/validation";
 
 interface NWCSettingsProps {
   nwcEnabled: boolean;
@@ -30,26 +35,32 @@ export function NWCSettings({
   nwcLastUsed,
 }: NWCSettingsProps) {
   const fetcher = useFetcher<FetcherData>();
-  const [nwcString, setNwcString] = useState("");
-  const [enabled, setEnabled] = useState(nwcEnabled);
+  const form = useZodForm(updateNWCClientSchema, {
+    defaultValues: {
+      nwcEnabled,
+      nwcString: "",
+    },
+  });
+
   const [showInput, setShowInput] = useState(false);
 
   const isSubmitting = fetcher.state === "submitting";
-  const hasChanged = enabled !== nwcEnabled || nwcString.trim() !== "";
+  const watchedEnabled = form.watch("nwcEnabled");
+  const watchedNwcString = form.watch("nwcString");
+  const hasChanged =
+    watchedEnabled !== nwcEnabled || (watchedNwcString?.trim() ?? "") !== "";
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const formData = new FormData();
-    formData.set("_action", "update_nwc");
-    formData.set("nwcEnabled", enabled ? "on" : "off");
-
-    // Always include nwcString if it has a value, regardless of showInput state
-    if (nwcString.trim()) {
-      formData.set("nwcString", nwcString.trim());
-    }
+  const onSubmit = form.handleSubmit((data) => {
+    const formData = formDataToFormData(
+      {
+        nwcEnabled: data.nwcEnabled,
+        ...(data.nwcString?.trim() ? { nwcString: data.nwcString.trim() } : {}),
+      },
+      "update_nwc",
+    );
 
     fetcher.submit(formData, { method: "post" });
-  };
+  });
 
   const handleClear = () => {
     const formData = new FormData();
@@ -60,10 +71,10 @@ export function NWCSettings({
   // Reset form state when fetcher completes successfully
   useEffect(() => {
     if (fetcher.data?.success) {
-      setNwcString("");
+      form.setValue("nwcString", "");
       setShowInput(false);
     }
-  }, [fetcher.data?.success]);
+  }, [fetcher.data?.success, form]);
 
   return (
     <Card>
@@ -74,7 +85,7 @@ export function NWCSettings({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={(e) => { e.preventDefault(); void onSubmit(e); }} className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label htmlFor="nwc-enabled">Enable NWC</Label>
@@ -84,13 +95,15 @@ export function NWCSettings({
             </div>
             <Switch
               id="nwc-enabled"
-              checked={enabled}
-              onCheckedChange={setEnabled}
+              checked={watchedEnabled}
+              onCheckedChange={(checked) => {
+                form.setValue("nwcEnabled", checked);
+              }}
               disabled={isSubmitting}
             />
           </div>
 
-          {enabled ? (
+          {watchedEnabled ? (
             <div className="space-y-4">
               {maskedNwcString && !showInput ? (
                 <div className="space-y-2">
@@ -148,8 +161,7 @@ export function NWCSettings({
                     id="nwc-string"
                     type="text"
                     placeholder="nostr+walletconnect://..."
-                    value={nwcString}
-                    onChange={(e) => setNwcString(e.target.value)}
+                    {...form.register("nwcString")}
                     disabled={isSubmitting}
                     autoComplete="off"
                     autoCorrect="off"
@@ -170,8 +182,7 @@ export function NWCSettings({
                     id="nwc-string"
                     type="text"
                     placeholder="nostr+walletconnect://..."
-                    value={nwcString}
-                    onChange={(e) => setNwcString(e.target.value)}
+                    {...form.register("nwcString")}
                     disabled={isSubmitting}
                     autoComplete="off"
                     autoCorrect="off"

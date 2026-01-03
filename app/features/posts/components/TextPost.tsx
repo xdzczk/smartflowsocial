@@ -1,6 +1,5 @@
 import { useFetcher } from "@remix-run/react";
-import { useState, useRef } from "react";
-import { toast } from "react-hot-toast";
+import React from "react";
 
 import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
 import { Button } from "~/components/ui/button";
@@ -11,6 +10,10 @@ import AssetBrowser from "~/features/assets/components/AssetBrowser";
 import type { Asset } from "~/features/assets/types";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
+import {
+  textPostClientSchema,
+  useZodForm,
+} from "~/lib/validation";
 
 import { usePostScheduling } from "../hooks/usePostScheduling";
 import type { QueueType } from "../types";
@@ -39,26 +42,31 @@ export default function TextPost({
   const user = useOptionalUser();
   // Note: User doesn't have hashTags property - this would need to come from hashTagPresets relation
   const tags: string[] = [];
-  const [contentError, setContentError] = useState("");
-  const [showAssetBrowser, setShowAssetBrowser] = useState(false);
-  const [content, setContent] = useState("");
-  const [isRecyclable, setIsRecyclable] = useState(false);
-  const [useHashtagPresets, setUseHashtagPresets] = useState(false);
-  const [selectedHashtagPresetId, setSelectedHashtagPresetId] = useState<
-    string | undefined
-  >(
-    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- Ternary is appropriate here; ?? undefined would be redundant
-    selectedHashTagPresetId ? selectedHashTagPresetId : undefined,
-  );
-  const [selectedHashtags, setSelectedHashtags] = useState("");
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [showAssetBrowser, setShowAssetBrowser] = React.useState(false);
+  const [selectedHashtags, setSelectedHashtags] = React.useState("");
+
+  // Initialize form with React Hook Form
+  const form = useZodForm(textPostClientSchema, {
+    defaultValues: {
+      content: "",
+      scheduledFor: "",
+      queueType: "unassigned",
+      isRecyclable: false,
+      useHashtagPresets: false,
+      hashTagPresetId: selectedHashTagPresetId ?? undefined,
+    },
+  });
+
+  const content = form.watch("content");
+  const useHashtagPresets = form.watch("useHashtagPresets");
+  const selectedHashtagPresetId = form.watch("hashTagPresetId");
 
   // Use the shared scheduling hook
   const {
     selectedQueue,
     setSelectedQueue,
-    scheduledFor,
-    setScheduledFor,
+    scheduledFor: schedulingScheduledFor,
+    setScheduledFor: setSchedulingScheduledFor,
     calculateQueueScheduleTime,
     handleScheduleIntervalClick,
     scheduleIntervals,
@@ -70,57 +78,56 @@ export default function TextPost({
     onQueueTypeChange,
   });
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const form = e.target as HTMLFormElement;
-    const formData = new FormData(form);
-    const contentValue = formData.get("content");
-    const scheduledFor = formData.get("scheduledFor");
-    const submitter = (e.nativeEvent as SubmitEvent)
-      .submitter as HTMLButtonElement;
+  // Sync form's queueType with scheduling hook
+  React.useEffect(() => {
+    form.setValue("queueType", selectedQueue);
+  }, [selectedQueue, form]);
+
+  // Sync form's scheduledFor with scheduling hook
+  React.useEffect(() => {
+    if (schedulingScheduledFor) {
+      form.setValue("scheduledFor", schedulingScheduledFor);
+    }
+  }, [schedulingScheduledFor, form]);
+
+  // Sync scheduling hook when form's scheduledFor changes
+  const formScheduledFor = form.watch("scheduledFor");
+  React.useEffect(() => {
+    if (formScheduledFor && formScheduledFor !== schedulingScheduledFor) {
+      setSchedulingScheduledFor(formScheduledFor);
+    }
+  }, [formScheduledFor, schedulingScheduledFor, setSchedulingScheduledFor]);
+
+  const handleSubmit = form.handleSubmit(async (data, event) => {
+    const submitter = (event?.nativeEvent as SubmitEvent)
+      ?.submitter as HTMLButtonElement;
     const submitType = submitter?.value ?? "";
 
-    // Ensure queueType is set from current state
-    formData.set("queueType", selectedQueue);
-    // Set isRecyclable checkbox state
-    if (isRecyclable) {
-      formData.set("isRecyclable", "on");
-    }
-    // Add hashtag preset selection
-    if (useHashtagPresets && selectedHashtagPresetId) {
-      formData.set("hashTagPresetId", selectedHashtagPresetId);
-      formData.set("useHashtagPresets", "on");
-    }
-
-    // Check if content is empty (except for draft saves)
-    if (
-      submitType !== "draft-text" &&
-      (!contentValue ||
-        (typeof contentValue === "string" && contentValue.trim() === ""))
-    ) {
-      setContentError("Post content cannot be empty");
-      toast.error("Post content cannot be empty");
+    // For draft saves, we don't need to sign the event
+    if (submitType === "draft-text") {
+      const formData = new FormData();
+      formData.set("_action", submitType);
+      formData.set("content", data.content);
+      formData.set("queueType", data.queueType);
+      if (data.isRecyclable) {
+        formData.set("isRecyclable", "on");
+      }
+      if (data.useHashtagPresets && data.hashTagPresetId) {
+        formData.set("hashTagPresetId", data.hashTagPresetId);
+        formData.set("useHashtagPresets", "on");
+      }
+      fetcher.submit(formData, { method: "post" });
       return;
     }
 
-    setContentError("");
-
     try {
-      // For draft saves, we don't need to sign the event
-      if (submitType === "draft-text") {
-        formData.set("_action", submitType);
-        fetcher.submit(formData, { method: "post" });
-        return;
-      }
-
       const userTimezone = user?.timezone ?? "UTC";
       let scheduledTime;
 
       if (submitType === "post-text") {
         scheduledTime = Date.now();
       } else {
-        const scheduledForStr =
-          typeof scheduledFor === "string" ? scheduledFor : "";
+        const scheduledForStr = data.scheduledFor ?? "";
 
         // Only convert timezone if not UTC/Etc/GMT
         if (userTimezone !== "UTC" && userTimezone !== "Etc/GMT") {
@@ -153,7 +160,7 @@ export default function TextPost({
       // Get effective hashtags - prioritize manual selection over queue defaults
       let effectiveHashtags = "";
 
-      if (useHashtagPresets) {
+      if (data.useHashtagPresets) {
         // Manual hashtag presets are enabled
         if (selectedHashtags) {
           // Use manually selected hashtag preset
@@ -213,10 +220,8 @@ export default function TextPost({
         .map((tag) => ["t", tag.replace("#", "")]);
 
       const contentToSign = user?.showHashTagsinPosts
-        ? `${typeof contentValue === "string" ? contentValue : ""}\n${effectiveHashtags}`
-        : typeof contentValue === "string"
-          ? contentValue
-          : "";
+        ? `${data.content}\n${effectiveHashtags}`
+        : data.content;
 
       const { nostrEvent, signedEvent } = await nostrAdapter.signEvent({
         content: contentToSign,
@@ -225,10 +230,20 @@ export default function TextPost({
         tags: tagArray,
       });
 
+      const formData = new FormData();
+      formData.set("_action", submitType);
+      formData.set("content", data.content);
+      formData.set("queueType", data.queueType);
       formData.append("nostrEvent", JSON.stringify(nostrEvent));
       formData.append("signedEvent", JSON.stringify(signedEvent));
       formData.append("scheduledFor", scheduledForUnix.toString());
-      formData.set("_action", submitType);
+      if (data.isRecyclable) {
+        formData.set("isRecyclable", "on");
+      }
+      if (data.useHashtagPresets && data.hashTagPresetId) {
+        formData.set("hashTagPresetId", data.hashTagPresetId);
+        formData.set("useHashtagPresets", "on");
+      }
 
       fetcher.submit(formData, { method: "post" });
     } catch (error) {
@@ -242,13 +257,13 @@ export default function TextPost({
         false,
       ); // Don't show toast, let component handle it
     }
-  };
+  });
 
   const handleHashtagPresetSelect = (
     presetId: string | null,
     hashtags: string,
   ) => {
-    setSelectedHashtagPresetId(presetId ?? undefined);
+    form.setValue("hashTagPresetId", presetId ?? undefined);
     setSelectedHashtags(hashtags);
     if (onHashtagPresetChange) {
       onHashtagPresetChange(presetId, hashtags);
@@ -280,33 +295,22 @@ export default function TextPost({
 
     // Always append assets below existing content
     const updatedContent = content ? content + "\n" + newContent : newContent;
-    setContent(updatedContent);
-
-    // Update the textarea value
-    if (textareaRef.current) {
-      textareaRef.current.value = updatedContent;
-    }
+    form.setValue("content", updatedContent);
   };
 
   return (
     <fetcher.Form
       method="post"
       className="w-full"
-      onSubmit={(e) => void handleSubmit(e)}
+      onSubmit={(e) => { e.preventDefault(); void handleSubmit(e); }}
     >
       <div className="relative">
         <Textarea
-          ref={textareaRef}
-          name="content"
-          className={contentError ? "border-red-500" : ""}
+          {...form.register("content")}
+          className={form.formState.errors.content ? "border-red-500" : ""}
           placeholder="Start writing your post here..."
           rows={6}
           disabled={fetcher.state !== "idle"}
-          value={content}
-          onChange={(e) => {
-            setContent(e.target.value);
-            setContentError("");
-          }}
         />
         <Button
           type="button"
@@ -333,10 +337,14 @@ export default function TextPost({
           Assets
         </Button>
       </div>
-      {contentError ? (
-        <div className="mt-1 text-sm text-red-500">{contentError}</div>
+      {form.formState.errors.content ? (
+        <div className="mt-1 text-sm text-red-500">
+          {form.formState.errors.content.message}
+        </div>
       ) : null}
-      <div className="mt-2 text-right text-sm text-gray-500">0/2200</div>
+      <div className="mt-2 text-right text-sm text-gray-500">
+        {content.length}/5000
+      </div>
       <div className="mt-6 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-4">
           <QueueSelector
@@ -354,7 +362,9 @@ export default function TextPost({
             onSelect={handleHashtagPresetSelect}
             disabled={fetcher.state !== "idle"}
             useHashtagPresets={useHashtagPresets}
-            onUseHashtagPresetsChange={setUseHashtagPresets}
+            onUseHashtagPresetsChange={(enabled) => {
+              form.setValue("useHashtagPresets", enabled);
+            }}
             showQueuePreset={selectedQueue !== "unassigned"}
             queueType={
               queueTypes.find(
@@ -366,9 +376,7 @@ export default function TextPost({
             <input
               type="checkbox"
               id="isRecyclable"
-              name="isRecyclable"
-              checked={isRecyclable}
-              onChange={(e) => setIsRecyclable(e.target.checked)}
+              {...form.register("isRecyclable")}
               disabled={fetcher.state !== "idle"}
               className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
@@ -385,11 +393,7 @@ export default function TextPost({
               <Input
                 type="datetime-local"
                 id="scheduledFor"
-                name="scheduledFor"
-                value={scheduledFor ?? ""}
-                onChange={(e) => {
-                  setScheduledFor(e.target.value);
-                }}
+                {...form.register("scheduledFor")}
                 disabled={fetcher.state !== "idle"}
               />
               <Button
@@ -417,8 +421,11 @@ export default function TextPost({
               </Button>
             </div>
             <SchedulingSection
-              scheduledFor={scheduledFor}
-              onScheduledForChange={setScheduledFor}
+              scheduledFor={formScheduledFor ?? schedulingScheduledFor ?? ""}
+              onScheduledForChange={(value) => {
+                form.setValue("scheduledFor", value);
+                setSchedulingScheduledFor(value);
+              }}
               scheduleIntervals={scheduleIntervals}
               queueTypes={queueTypes}
               selectedQueue={selectedQueue}

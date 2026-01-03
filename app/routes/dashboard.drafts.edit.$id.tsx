@@ -21,7 +21,7 @@ import {
   fromPostDTO,
   type PostDTO,
 } from "~/features/posts";
-import { withCSRFProtection } from "~/lib/csrf.server";
+import { withCSRFProtection } from "~/lib/csrf";
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   const postId = params.id!;
@@ -37,11 +37,18 @@ export const action = withCSRFProtection(async ({ request, params }: ActionFunct
     const formData = await request.formData();
     const result = await handleDraftEditAction(formData, userId, postId);
 
-    if (result.error) {
+    // Type narrowing: check if result is a Response
+    if (result instanceof Response) {
+      return result;
+    }
+
+    // Type narrowing: check if result has error property
+    if (typeof result === "object" && result !== null && "error" in result && result.error) {
       return json(result, { status: 400 });
     }
 
-    if (result.redirect) {
+    // Type narrowing: check if result has redirect property
+    if (typeof result === "object" && result !== null && "redirect" in result && result.redirect) {
       return redirect(result.redirect);
     }
 

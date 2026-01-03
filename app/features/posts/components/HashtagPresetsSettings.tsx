@@ -1,6 +1,6 @@
 import { useFetcher } from "@remix-run/react";
 import { Plus, Edit2, Trash2, Hash } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -22,6 +22,12 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
+import {
+  createHashtagPresetClientSchema,
+  updateHashtagPresetClientSchema,
+  useZodForm,
+  formDataToFormData,
+} from "~/lib/validation";
 
 interface HashTagPreset {
   id: string;
@@ -51,48 +57,61 @@ export function HashtagPresetsSettings({
     null,
   );
 
-  const [createForm, setCreateForm] = useState({
-    name: "",
-    tags: "",
-    description: "",
+  const createForm = useZodForm(createHashtagPresetClientSchema, {
+    defaultValues: {
+      name: "",
+      tags: "",
+      description: "",
+    },
   });
 
-  const [editForm, setEditForm] = useState({
-    name: "",
-    tags: "",
-    description: "",
+  const editForm = useZodForm(updateHashtagPresetClientSchema, {
+    defaultValues: {
+      id: "",
+      name: "",
+      tags: "",
+      description: "",
+    },
   });
 
   const isSubmitting = fetcher.state === "submitting";
 
-  const handleCreateSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const formData = new FormData();
-    formData.set("_action", "create_hashtag_preset");
-    formData.set("name", createForm.name);
-    formData.set("tags", createForm.tags);
-    formData.set("description", createForm.description);
+  // Reset create form when dialog closes
+  useEffect(() => {
+    if (!isCreateDialogOpen) {
+      createForm.reset({
+        name: "",
+        tags: "",
+        description: "",
+      });
+    }
+  }, [isCreateDialogOpen, createForm]);
 
+  // Update edit form when editing preset changes
+  useEffect(() => {
+    if (editingPreset) {
+      editForm.reset({
+        id: editingPreset.id,
+        name: editingPreset.name,
+        tags: editingPreset.tags,
+        description: editingPreset.description ?? "",
+      });
+    }
+  }, [editingPreset, editForm]);
+
+  const handleCreateSubmit = createForm.handleSubmit((data) => {
+    const formData = formDataToFormData(data, "create_hashtag_preset");
     fetcher.submit(formData, { method: "post" });
-    setCreateForm({ name: "", tags: "", description: "" });
     setIsCreateDialogOpen(false);
-  };
+  });
 
-  const handleEditSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleEditSubmit = editForm.handleSubmit((data) => {
     if (!editingPreset) return;
-
-    const formData = new FormData();
-    formData.set("_action", "update_hashtag_preset");
-    formData.set("id", editingPreset.id);
-    formData.set("name", editForm.name);
-    formData.set("tags", editForm.tags);
-    formData.set("description", editForm.description);
-
+    const formData = formDataToFormData(data, "update_hashtag_preset");
     fetcher.submit(formData, { method: "post" });
     setEditingPreset(null);
     setIsEditDialogOpen(false);
-  };
+  });
 
   const handleDelete = (id: string) => {
     if (
@@ -107,11 +126,6 @@ export function HashtagPresetsSettings({
 
   const openEditDialog = (preset: HashTagPreset) => {
     setEditingPreset(preset);
-    setEditForm({
-      name: preset.name,
-      tags: preset.tags,
-      description: preset.description ?? "",
-    });
     setIsEditDialogOpen(true);
   };
 
@@ -153,40 +167,32 @@ export function HashtagPresetsSettings({
                 </DialogDescription>
               </DialogHeader>
 
-              <form onSubmit={handleCreateSubmit} className="space-y-4">
+              <form onSubmit={(e) => { e.preventDefault(); void handleCreateSubmit(e); }} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="create-name">Preset Name</Label>
                   <Input
                     id="create-name"
-                    value={createForm.name}
-                    onChange={(e) =>
-                      setCreateForm((prev) => ({
-                        ...prev,
-                        name: e.target.value,
-                      }))
-                    }
+                    {...createForm.register("name")}
                     placeholder="e.g., Tech Posts, Travel Content"
-                    required
                     disabled={isSubmitting}
                   />
+                  {createForm.formState.errors.name ? <p className="text-sm text-destructive">
+                      {createForm.formState.errors.name.message}
+                    </p> : null}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="create-tags">Hashtags</Label>
                   <Textarea
                     id="create-tags"
-                    value={createForm.tags}
-                    onChange={(e) =>
-                      setCreateForm((prev) => ({
-                        ...prev,
-                        tags: e.target.value,
-                      }))
-                    }
+                    {...createForm.register("tags")}
                     placeholder="#bitcoin #nostr #technology #coding"
-                    required
                     disabled={isSubmitting}
                     rows={3}
                   />
+                  {createForm.formState.errors.tags ? <p className="text-sm text-destructive">
+                      {createForm.formState.errors.tags.message}
+                    </p> : null}
                   <p className="text-xs text-muted-foreground">
                     Separate hashtags with spaces. Each hashtag should start
                     with #
@@ -199,16 +205,13 @@ export function HashtagPresetsSettings({
                   </Label>
                   <Input
                     id="create-description"
-                    value={createForm.description}
-                    onChange={(e) =>
-                      setCreateForm((prev) => ({
-                        ...prev,
-                        description: e.target.value,
-                      }))
-                    }
+                    {...createForm.register("description")}
                     placeholder="Brief description of when to use this preset"
                     disabled={isSubmitting}
                   />
+                  {createForm.formState.errors.description ? <p className="text-sm text-destructive">
+                      {createForm.formState.errors.description?.message}
+                    </p> : null}
                 </div>
 
                 <div className="flex justify-end gap-2">
@@ -323,34 +326,36 @@ export function HashtagPresetsSettings({
             <DialogDescription>Update your hashtag preset</DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleEditSubmit} className="space-y-4">
+          <form onSubmit={(e) => { e.preventDefault(); void handleEditSubmit(e); }} className="space-y-4">
+            <input
+              type="hidden"
+              {...editForm.register("id")}
+            />
             <div className="space-y-2">
               <Label htmlFor="edit-name">Preset Name</Label>
               <Input
                 id="edit-name"
-                value={editForm.name}
-                onChange={(e) =>
-                  setEditForm((prev) => ({ ...prev, name: e.target.value }))
-                }
+                {...editForm.register("name")}
                 placeholder="e.g., Tech Posts, Travel Content"
-                required
                 disabled={isSubmitting}
               />
+              {editForm.formState.errors.name ? <p className="text-sm text-destructive">
+                  {editForm.formState.errors.name.message}
+                </p> : null}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="edit-tags">Hashtags</Label>
               <Textarea
                 id="edit-tags"
-                value={editForm.tags}
-                onChange={(e) =>
-                  setEditForm((prev) => ({ ...prev, tags: e.target.value }))
-                }
+                {...editForm.register("tags")}
                 placeholder="#bitcoin #nostr #technology #coding"
-                required
                 disabled={isSubmitting}
                 rows={3}
               />
+              {editForm.formState.errors.tags ? <p className="text-sm text-destructive">
+                  {editForm.formState.errors.tags.message}
+                </p> : null}
               <p className="text-xs text-muted-foreground">
                 Separate hashtags with spaces. Each hashtag should start with #
               </p>
@@ -360,16 +365,13 @@ export function HashtagPresetsSettings({
               <Label htmlFor="edit-description">Description (optional)</Label>
               <Input
                 id="edit-description"
-                value={editForm.description}
-                onChange={(e) =>
-                  setEditForm((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
+                {...editForm.register("description")}
                 placeholder="Brief description of when to use this preset"
                 disabled={isSubmitting}
               />
+              {editForm.formState.errors.description ? <p className="text-sm text-destructive">
+                  {editForm.formState.errors.description?.message}
+                </p> : null}
             </div>
 
             <div className="flex justify-end gap-2">

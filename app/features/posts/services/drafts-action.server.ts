@@ -3,83 +3,75 @@
  * Centralized action processing for drafts page
  */
 
+import {
+  draftsActionSchema,
+  validateFormDataOrRespond,
+} from "~/lib/validation";
 import { deleteLongFormPost } from "~/models/longformpost.server";
 import { deletePost, updatePost } from "~/models/post.commands.server";
 
 import { resolveQueueTypeId } from "./queue-type-resolver.server";
 
 export async function handleDraftsAction(formData: FormData, userId: string) {
-  const postId = formData.get("postId");
-  const _action = formData.get("_action");
+  const result = validateFormDataOrRespond(formData, draftsActionSchema);
+  if (!result.success) {
+    return result.response;
+  }
+
+  const { _action } = result.data;
 
   if (_action === "delete") {
-    await deletePost({ id: postId as string, userId });
+    await deletePost({ id: result.data.postId, userId });
     return { success: true };
   }
 
   if (_action === "deleteLongForm") {
-    await deleteLongFormPost({ id: postId as string, userId });
+    await deleteLongFormPost({ id: result.data.postId, userId });
     return { success: true };
   }
 
   if (_action === "bulkDelete") {
-    const postIds = JSON.parse(formData.get("postIds") as string) as string[];
-    await Promise.all(postIds.map((id: string) => deletePost({ id, userId })));
+    await Promise.all(
+      result.data.postIds.map((id: string) => deletePost({ id, userId })),
+    );
     return { success: true };
   }
 
   if (_action === "bulkDeleteLongForm") {
-    const postIds = JSON.parse(formData.get("postIds") as string) as string[];
     await Promise.all(
-      postIds.map((id: string) => deleteLongFormPost({ id, userId })),
+      result.data.postIds.map((id: string) =>
+        deleteLongFormPost({ id, userId }),
+      ),
     );
     return { success: true };
   }
 
   if (_action === "bulkSignAndResume") {
-    const postIds = formData.getAll("postIds");
-    const contents = formData.getAll("contents");
-    const captions = formData.getAll("captions");
-    const queueTypes = formData.getAll("queueTypes");
-    const queueTypeIds = formData.getAll("queueTypeIds");
-    const scheduledFors = formData.getAll("scheduledFors");
-    const signedEvents = formData.getAll("signedEvents");
-    const nostrEvents = formData.getAll("nostrEvents");
-
+    // TypeScript needs explicit narrowing for discriminated unions
+    const bulkData = result.data._action === "bulkSignAndResume" ? result.data : null;
+    if (!bulkData) {
+      return { error: "Invalid action" };
+    }
+    
     await Promise.all(
-      postIds.map(async (id, index) => {
+      bulkData.postIds.map(async (id, index) => {
         // Resolve queue type ID in feature layer (business logic)
         const resolvedQueueTypeId = await resolveQueueTypeId(
           userId,
-          (queueTypeIds[index] as string) || null,
-          (queueTypes[index] as string) || null,
+          bulkData.queueTypeIds[index] || null,
+          bulkData.queueTypes[index] || null,
         );
 
         return updatePost({
-          id: id as string,
+          id,
           userId,
           data: {
-            content: contents[index] as string,
-            caption: captions[index] as string,
+            content: bulkData.contents[index],
+            caption: bulkData.captions[index],
             queueTypeId: resolvedQueueTypeId,
-            scheduledFor: scheduledFors[index] as string,
-            signedEvent: JSON.parse(signedEvents[index] as string) as {
-              id: string;
-              pubkey: string;
-              created_at: number;
-              kind: number;
-              content: string;
-              tags: string[][];
-              sig: string;
-            },
-            nostrEvent: JSON.parse(nostrEvents[index] as string) as {
-              id: string;
-              pubkey: string;
-              created_at: number;
-              kind: number;
-              content: string;
-              tags: string[][];
-            },
+            scheduledFor: bulkData.scheduledFors[index],
+            signedEvent: bulkData.signedEvents[index],
+            nostrEvent: bulkData.nostrEvents[index],
             draft: false,
             isScheduled: true,
             isPosted: false,

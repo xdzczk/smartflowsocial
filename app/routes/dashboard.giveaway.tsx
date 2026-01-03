@@ -1,5 +1,5 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
-import { useLoaderData, useParams } from "@remix-run/react";
+import { useParams } from "@remix-run/react";
 
 import { requireUserId } from "~/features/auth";
 import {
@@ -9,6 +9,7 @@ import {
   GiveawayTable,
   loadGiveawayData,
   useGiveawayState,
+  useGiveawayData,
 } from "~/features/giveaway";
 import {
   requireFeatureAccess,
@@ -41,11 +42,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 }
 
-type LoaderData = Exclude<Awaited<ReturnType<typeof loader>>, Response>;
+type _LoaderData = Exclude<Awaited<ReturnType<typeof loader>>, Response>;
 
 export default function PostedPosts() {
-  const data = useLoaderData<LoaderData>();
-  const { posts, stats, relatedEvents, user, queueTypes } = data;
+  // Use TanStack Query for data fetching with caching
+  const {
+    posts: typedPosts,
+    stats: typedStats,
+    relatedEvents,
+    user,
+    queueTypes,
+  } = useGiveawayData();
   const params = useParams();
 
   const {
@@ -60,17 +67,10 @@ export default function PostedPosts() {
     setDateRange,
     clearFilters,
   } = useGiveawayState({
-    posts: posts.map((post: (typeof posts)[0]) => ({
+    posts: typedPosts.map((post) => ({
       ...post,
-      postedAt: (() => {
-        const postedAtValue: unknown = post.postedAt;
-        if (postedAtValue === null || postedAtValue === undefined) return null;
-        if (postedAtValue instanceof Date) return postedAtValue;
-        if (typeof postedAtValue === "string") return new Date(postedAtValue);
-        return null;
-      })(),
-      totalEngagement:
-        typeof post.totalEngagement === "number" ? post.totalEngagement : 0,
+      postedAt: post.postedAt instanceof Date ? post.postedAt : null,
+      totalEngagement: post.totalEngagement ?? 0,
     })),
   });
 
@@ -101,26 +101,15 @@ export default function PostedPosts() {
         onRequestSort={requestSort}
         onPostClick={(post) => {
           // Find the original PostData from posts array
-          const originalPostData = posts.find(
-            (p: (typeof posts)[0]) => p.id === post.id,
-          );
+          const originalPostData = typedPosts.find((p) => p.id === post.id);
           if (originalPostData) {
             // Convert to the Post format expected by useGiveawayState
             setSelectedPost({
               ...originalPostData,
-              postedAt: (() => {
-                const postedAtValue: unknown = originalPostData.postedAt;
-                if (postedAtValue === null || postedAtValue === undefined)
-                  return null;
-                if (postedAtValue instanceof Date) return postedAtValue;
-                if (typeof postedAtValue === "string")
-                  return new Date(postedAtValue);
-                return null;
-              })(),
-              totalEngagement:
-                typeof originalPostData.totalEngagement === "number"
-                  ? originalPostData.totalEngagement
-                  : 0,
+              postedAt: originalPostData.postedAt instanceof Date
+                ? originalPostData.postedAt
+                : null,
+              totalEngagement: originalPostData.totalEngagement ?? 0,
             });
           }
         }}
@@ -136,11 +125,8 @@ export default function PostedPosts() {
             selectedPost.signedEvent &&
             typeof selectedPost.signedEvent === "object" &&
             "id" in selectedPost.signedEvent &&
-            typeof selectedPost.signedEvent.id === "string" &&
-            stats &&
-            typeof stats === "object" &&
-            !Array.isArray(stats)
-              ? stats[selectedPost.signedEvent.id]
+            typeof selectedPost.signedEvent.id === "string"
+              ? typedStats[selectedPost.signedEvent.id]
               : undefined
           }
           onClose={() => setSelectedPost(null)}

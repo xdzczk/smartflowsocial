@@ -3,13 +3,21 @@
  * Extracted from dashboard.bulkposts.tsx
  */
 import { json, redirect } from "@remix-run/node";
+import { z } from "zod";
 
 import { requireUserId } from "~/features/auth";
 import type { NostrEvent, SignedEvent } from "~/features/nostr/types";
 import { resolveQueueTypeId } from "~/features/posts";
 import { logInfo } from "~/lib/error-logger.server";
+import {
+  uploadImagesPreviewSchema,
+  signAndScheduleSchema,
+  saveAsDraftSchema,
+  validateFormDataOrRespond,
+} from "~/lib/validation";
 import { createPost, updatePost } from "~/models/post.commands.server";
 import { isVideoUrl } from "~/utils/media-helpers";
+
 /**
  * Upload result from client-side upload system
  */
@@ -32,32 +40,19 @@ interface UploadResult {
  */
 export async function handleUploadImagesPreview(formData: FormData) {
   try {
-    const uploadResultsStrRaw = formData.get("uploadResults");
-    const uploadResultsStr =
-      typeof uploadResultsStrRaw === "string" ? uploadResultsStrRaw : null;
-    if (!uploadResultsStr) {
-      const { ValidationError } = await import("~/lib/errors");
-      throw new ValidationError("Missing uploadResults");
+    const previewSchema = z.object({
+      _action: z.literal("_upload_images_preview"),
+    }).merge(uploadImagesPreviewSchema);
+    
+    const result = validateFormDataOrRespond(formData, previewSchema);
+    if (!result.success) {
+      return result.response;
     }
 
-    let uploadResults: UploadResult[];
-    try {
-      const parsed: unknown = JSON.parse(uploadResultsStr);
-      if (Array.isArray(parsed)) {
-        uploadResults = parsed as unknown as UploadResult[];
-      } else {
-        throw new Error("uploadResults must be an array");
-      }
-    } catch (parseError) {
-      const { ValidationError } = await import("~/lib/errors");
-      throw new ValidationError("Invalid uploadResults JSON format", {
-        error:
-          parseError instanceof Error ? parseError.message : String(parseError),
-      });
-    }
-
-    const scheduledDates = formData.getAll("scheduledDates");
-    const queueTypes = formData.getAll("queueTypes");
+    const validatedData = result.data;
+    const uploadResults = validatedData.uploadResults as UploadResult[];
+    const scheduledDates = validatedData.scheduledDates;
+    const queueTypes = validatedData.queueTypes;
 
     const fileUrls = uploadResults.map(
       (result: UploadResult, index: number) => ({
@@ -83,92 +78,23 @@ export async function handleSignAndSchedule(
   mode: string | null,
 ) {
   try {
-    // Parse signed events with error handling
-    let signedEvents: SignedEvent[];
-    try {
-      const signedEventsRaw = formData.getAll("signedEvents");
-      signedEvents = signedEventsRaw.map((event) => {
-        const parsed: unknown =
-          typeof event === "string" ? JSON.parse(event) : null;
-        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-          return parsed as unknown as SignedEvent;
-        }
-        throw new Error("Invalid signed event format");
-      });
-    } catch (parseError) {
-      const { ValidationError } = await import("~/lib/errors");
-      throw new ValidationError("Invalid signedEvents JSON format", {
-        error:
-          parseError instanceof Error ? parseError.message : String(parseError),
-      });
+    const scheduleSchema = z.object({
+      _action: z.literal("sign_and_schedule"),
+    }).merge(signAndScheduleSchema);
+    
+    const result = validateFormDataOrRespond(formData, scheduleSchema);
+    if (!result.success) {
+      return result.response;
     }
 
-    let nostrEvents: NostrEvent[];
-    try {
-      const nostrEventsRaw = formData.getAll("nostrEvent");
-      nostrEvents = nostrEventsRaw.map((event) => {
-        const parsed: unknown =
-          typeof event === "string" ? JSON.parse(event) : null;
-        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-          return parsed as unknown as NostrEvent;
-        }
-        throw new Error("Invalid nostr event format");
-      });
-    } catch (parseError) {
-      const { ValidationError } = await import("~/lib/errors");
-      throw new ValidationError("Invalid nostrEvent JSON format", {
-        error:
-          parseError instanceof Error ? parseError.message : String(parseError),
-      });
-    }
-
-    let captions: string[];
-    try {
-      const captionsRaw = formData.getAll("caption");
-      captions = captionsRaw.map((caption) => {
-        const parsed: unknown =
-          typeof caption === "string" ? JSON.parse(caption) : null;
-        if (typeof parsed === "string") {
-          return parsed;
-        }
-        if (Array.isArray(parsed)) {
-          return parsed.join(" ");
-        }
-        return String(parsed ?? "");
-      });
-    } catch (parseError) {
-      const { ValidationError } = await import("~/lib/errors");
-      throw new ValidationError("Invalid caption JSON format", {
-        error:
-          parseError instanceof Error ? parseError.message : String(parseError),
-      });
-    }
-
-    let fileUrls: string[];
-    try {
-      const fileUrlValues = formData.getAll("fileUrl");
-      fileUrls = fileUrlValues
-        .map((url) => {
-          const urlStr = typeof url === "string" ? url : String(url);
-          const parsed: unknown = JSON.parse(urlStr);
-          return Array.isArray(parsed)
-            ? parsed.filter((item): item is string => typeof item === "string")
-            : [];
-        })
-        .flat();
-    } catch (parseError) {
-      const { ValidationError } = await import("~/lib/errors");
-      throw new ValidationError("Invalid fileUrl JSON format", {
-        error:
-          parseError instanceof Error ? parseError.message : String(parseError),
-      });
-    }
-
-    const queueTypes = formData.getAll("queueType");
-    const isRecyclableFlags = formData.getAll("isRecyclable");
-    const originalPostIds = formData
-      .getAll("originalPostId")
-      .filter((id) => id && id !== "");
+    const validatedData = result.data;
+    const signedEvents = validatedData.signedEvents as SignedEvent[];
+    const nostrEvents = validatedData.nostrEvent as NostrEvent[];
+    const captions = validatedData.caption;
+    const fileUrls = validatedData.fileUrl;
+    const queueTypes = validatedData.queueType;
+    const isRecyclableFlags = validatedData.isRecyclable;
+    const originalPostIds = validatedData.originalPostId?.filter((id: string) => id && id !== "") || [];
 
     await Promise.all(
       signedEvents.map(async (signedEvent, index) => {
@@ -188,11 +114,13 @@ export async function handleSignAndSchedule(
 
         const fileUrl = fileUrls[index];
         const tags = signedEvent.tags.map((tagArray: string[]) => tagArray[1]);
-        const queueType = (queueTypes[index] as string) || "unassigned";
+        const queueType = (queueTypes[index]) || "unassigned";
         const isRecyclableFlag = isRecyclableFlags[index];
         const isRecyclable =
-          isRecyclableFlag === "true" ||
-          String(isRecyclableFlag).toLowerCase() === "true";
+          typeof isRecyclableFlag === "string"
+            ? isRecyclableFlag === "true" ||
+              String(isRecyclableFlag).toLowerCase() === "true"
+            : Boolean(isRecyclableFlag);
 
         // Enhanced detection for quote posts
         const hasEventTags = signedEvent.tags.some(
@@ -250,7 +178,7 @@ export async function handleSignAndSchedule(
     // If this is a recycle mode (posts have original post IDs), mark original posts as non-recyclable
     if (mode === "recycle" && originalPostIds.length > 0) {
       await markOriginalPostsAsNonRecyclable(
-        originalPostIds as string[],
+        originalPostIds,
         userId,
       );
     }
@@ -271,62 +199,33 @@ export async function handleSaveAsDraft(
   mode: string | null,
 ) {
   try {
-    let fileUrls: string[];
-    try {
-      const fileUrlsRaw = formData.getAll("fileUrl");
-      fileUrls = fileUrlsRaw
-        .map((url) => {
-          const parsed: unknown =
-            typeof url === "string" ? JSON.parse(url) : null;
-          if (Array.isArray(parsed)) {
-            return parsed as unknown as string[];
-          }
-          return [];
-        })
-        .flat();
-    } catch (parseError) {
-      const { ValidationError } = await import("~/lib/errors");
-      throw new ValidationError("Invalid fileUrl JSON format", {
-        error:
-          parseError instanceof Error ? parseError.message : String(parseError),
-      });
+    const draftSchema = z.object({
+      _action: z.literal("save_as_draft"),
+    }).merge(saveAsDraftSchema);
+    
+    const result = validateFormDataOrRespond(formData, draftSchema);
+    if (!result.success) {
+      return result.response;
     }
 
-    let captions: string[];
-    try {
-      const captionsRaw = formData.getAll("caption");
-      captions = captionsRaw.map((caption) => {
-        const parsed: unknown =
-          typeof caption === "string" ? JSON.parse(caption) : null;
-        if (typeof parsed === "string") {
-          return parsed;
-        }
-        if (Array.isArray(parsed)) {
-          return parsed.join(" ");
-        }
-        return String(parsed ?? "");
-      });
-    } catch (parseError) {
-      const { ValidationError } = await import("~/lib/errors");
-      throw new ValidationError("Invalid caption JSON format", {
-        error:
-          parseError instanceof Error ? parseError.message : String(parseError),
-      });
-    }
-    const queueTypes = formData.getAll("queueType");
+    const validatedData = result.data;
+    const fileUrls = validatedData.fileUrl;
+    const captions = validatedData.caption;
+    const queueTypes = validatedData.queueType;
+    const _scheduledFors = validatedData.scheduledFor;
+    const originalPostIds = validatedData.originalPostId?.filter((id: string) => id && id !== "") || [];
     const isRecyclableFlags = formData.getAll("isRecyclable");
-    const originalPostIds = formData
-      .getAll("originalPostId")
-      .filter((id) => id && id !== "");
 
     await Promise.all(
-      fileUrls.map(async (fileUrl, index) => {
-        const caption = captions[index];
-        const queueType = (queueTypes[index] as string) || "unassigned";
+      fileUrls.map(async (fileUrl: string, index: number) => {
+        const caption = captions[index] || "";
+        const queueType = (queueTypes[index]) || "unassigned";
         const isRecyclableFlag = isRecyclableFlags[index];
         const isRecyclable =
-          isRecyclableFlag === "true" ||
-          String(isRecyclableFlag).toLowerCase() === "true";
+          typeof isRecyclableFlag === "string"
+            ? isRecyclableFlag === "true" ||
+              String(isRecyclableFlag).toLowerCase() === "true"
+            : Boolean(isRecyclableFlag);
 
         // Determine post type based on file URL
         const isVideo = isVideoUrl(fileUrl);
@@ -361,7 +260,7 @@ export async function handleSaveAsDraft(
     // we might still want to mark them as non-recyclable to prevent confusion
     if (mode === "recycle" && originalPostIds.length > 0) {
       await markOriginalPostsAsNonRecyclable(
-        originalPostIds as string[],
+        originalPostIds,
         userId,
         true,
       );

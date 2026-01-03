@@ -3,7 +3,7 @@ import { json } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
 import { loadUploadProviderSettings } from "~/features/user";
-import { withCSRFProtection } from "~/lib/csrf.server";
+import { withCSRFProtection } from "~/lib/csrf";
 import { ValidationError, AuthorizationError } from "~/lib/errors";
 
 type AssertFunction = (

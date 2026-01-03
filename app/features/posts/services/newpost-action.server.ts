@@ -14,6 +14,10 @@ import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 import { createUploadHandler } from "~/features/upload/s3.server";
 import { env } from "~/lib/env.server";
 import { fetchWithRetry } from "~/lib/fetch.server";
+import {
+  newPostActionSchema,
+  validateFormDataOrRespond,
+} from "~/lib/validation";
 import { createPost } from "~/models/post.commands.server";
 import {
   getUserById,
@@ -579,30 +583,38 @@ export async function handleNewPostAction(
     formData = await request.formData();
   }
 
+  // Check for upload preview actions first (they don't need full validation)
   const _actionValue = formData.get("_action");
-  const captionValue = formData.get("caption");
-  const scheduledForValue = formData.get("scheduledFor");
-
   const _action = _actionValue ? String(_actionValue) : "";
-  const _caption = captionValue ? String(captionValue) : "";
-  const _scheduledFor = scheduledForValue ? String(scheduledForValue) : null;
-  const queueTypeValue = formData.get("queueType");
-  const queueTypeIdValue = formData.get("queueTypeId");
-  const isRecyclableValue = formData.get("isRecyclable");
-  const useHashtagPresetsValue = formData.get("useHashtagPresets");
-  const hashTagPresetIdValue = formData.get("hashTagPresetId");
+  
+  if (_action === "upload-images-preview" || _action === "upload-media-preview") {
+    const result = handleUploadPreview(formData);
+    if (!result.success) {
+      return Response.json(
+        { error: result.error ?? "Upload preview failed" },
+        { status: 400 },
+      );
+    }
+    return Response.json(result);
+  }
 
-  const queueType =
-    (queueTypeValue ? String(queueTypeValue) : null) ?? "unassigned";
-  const queueTypeId = queueTypeIdValue ? String(queueTypeIdValue) : null;
-  const isRecyclable =
-    isRecyclableValue === "on" || isRecyclableValue === "true";
-  const useHashtagPresets =
-    useHashtagPresetsValue === "on" || useHashtagPresetsValue === "true";
-  const manualHashTagPresetId =
-    useHashtagPresets && hashTagPresetIdValue
-      ? String(hashTagPresetIdValue)
-      : null;
+  // Validate non-file fields with Zod for other actions
+  // Note: File uploads are handled separately by parseMultipartFormData
+  const result = validateFormDataOrRespond(formData, newPostActionSchema);
+  if (!result.success) {
+    return result.response;
+  }
+
+  const validatedData = result.data;
+  const _caption = validatedData.caption || "";
+  const _scheduledFor = validatedData.scheduledFor;
+  const queueType = validatedData.queueType || "unassigned";
+  const queueTypeId = validatedData.queueTypeId;
+  const isRecyclable = validatedData.isRecyclable ?? false;
+  const useHashtagPresets = validatedData.useHashtagPresets ?? false;
+  const manualHashTagPresetId = useHashtagPresets
+    ? validatedData.hashTagPresetId
+    : null;
 
   // Get hashtag preset tags
   const hashtagResult = await getHashtagPresetTags(
@@ -627,6 +639,8 @@ export async function handleNewPostAction(
       : manualHashTagPresetId;
 
   // Handle different actions
+  // Note: Handlers still read from formData for backward compatibility
+  // but validation ensures data structure is correct
   if (_action === "draft-text") {
     return handleDraftText(
       userId,
@@ -669,7 +683,7 @@ export async function handleNewPostAction(
     return Response.json({ success: true, fileUrls: result.fileUrls });
   }
 
-  if (_action === "post-images" || _action === "post-media") {
+  if (_action === "post-image" || _action === "post-images" || _action === "post-media") {
     return handlePostImages(
       userId,
       formData,
@@ -683,7 +697,7 @@ export async function handleNewPostAction(
     );
   }
 
-  if (_action === "schedule-images" || _action === "schedule-media") {
+  if (_action === "schedule-image" || _action === "schedule-images" || _action === "schedule-media") {
     return handleScheduleImages(
       userId,
       formData,
@@ -696,7 +710,7 @@ export async function handleNewPostAction(
     );
   }
 
-  if (_action === "draft-images" || _action === "draft-media") {
+  if (_action === "draft-image" || _action === "draft-images" || _action === "draft-media") {
     return handleDraftImages(
       userId,
       formData,

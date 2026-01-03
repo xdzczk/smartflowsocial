@@ -16,7 +16,7 @@ import Header from "~/components/layout/DashboardHeader";
 import { requireUser } from "~/features/auth";
 import { requireActiveSubscription } from "~/features/payments";
 import { loadDashboardData, handleDashboardAction } from "~/features/user";
-import { withCSRFProtection } from "~/lib/csrf.server";
+import { withCSRFProtection } from "~/lib/csrf";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const user = await requireUser(request);

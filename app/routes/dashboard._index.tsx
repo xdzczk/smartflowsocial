@@ -3,7 +3,7 @@ import {
   type LoaderFunctionArgs,
   type ActionFunctionArgs,
 } from "@remix-run/node";
-import { useLoaderData, useSearchParams } from "@remix-run/react";
+import { useSearchParams } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
 import MediaModal from "~/components/ui/MediaModal";
@@ -27,19 +27,13 @@ import {
   useDashboardState,
   handleDashboardAction,
   loadDashboardData,
+  useDashboardData,
   type PostData,
   type LongFormPostData,
-  type CombinedContent,
-  type QueueType,
-  type UserData,
   type LongFormPostType,
-  convertJsonValueToScheduleConfig,
-  fromPostDTOArray,
-  fromLongFormPostDTOArray,
-  type PostDTO,
-  type LongFormPostDTO,
+  type UserData,
 } from "~/features/posts";
-import { withCSRFProtection } from "~/lib/csrf.server";
+import { withCSRFProtection } from "~/lib/csrf";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const userId = await requireUserId(request);
@@ -69,7 +63,13 @@ export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs)
     const formData = await request.formData();
     const result = await handleDashboardAction(formData, userId);
 
-    if (result.error) {
+    // Check if result is a Response (redirect/error response)
+    if (result instanceof Response) {
+      return result;
+    }
+
+    // Check if result has error property
+    if (result && typeof result === "object" && "error" in result && result.error) {
       return json(result, { status: 400 });
     }
 
@@ -81,33 +81,21 @@ export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs)
 });
 
 export default function DashboardIndex() {
-  const loaderData = useLoaderData<typeof loader>();
-  const scheduledPostsRaw =
-    "scheduledPosts" in loaderData && Array.isArray(loaderData.scheduledPosts)
-      ? loaderData.scheduledPosts
-      : [];
-  const longformPostsRaw =
-    "longformPosts" in loaderData && Array.isArray(loaderData.longformPosts)
-      ? loaderData.longformPosts
-      : [];
-  const allContentRaw =
-    "allContent" in loaderData && Array.isArray(loaderData.allContent)
-      ? loaderData.allContent
-      : [];
-  const user = "user" in loaderData ? loaderData.user : null;
-  const queueTypesRaw =
-    "queueTypes" in loaderData && Array.isArray(loaderData.queueTypes)
-      ? loaderData.queueTypes
-      : [];
-  const hashTagPresets =
-    "hashTagPresets" in loaderData && Array.isArray(loaderData.hashTagPresets)
-      ? loaderData.hashTagPresets
-      : [];
-  const planActivated =
-    "planActivated" in loaderData ? loaderData.planActivated : null;
-  const successMessage =
-    "successMessage" in loaderData ? loaderData.successMessage : null;
+  // Use TanStack Query for data fetching with caching
+  const {
+    scheduledPosts,
+    longformPosts,
+    allContent,
+    user,
+    queueTypes,
+    hashTagPresets,
+    isLoading: _isDataLoading,
+  } = useDashboardData();
+
+  // Get URL params for success messages (not part of query data)
   const [searchParams] = useSearchParams();
+  const planActivated = searchParams.get("planActivated");
+  const successMessage = searchParams.get("message");
 
   // Get current tab from URL params - default to "all"
   const currentTab = searchParams.get("tab") ?? "all";
@@ -115,77 +103,6 @@ export default function DashboardIndex() {
   const [showSuccessMessage, setShowSuccessMessage] = useState(
     !!(planActivated && typeof planActivated === "string"),
   );
-
-  // Deserialize DTOs (with string dates) back to PostData/LongFormPostData (with Date objects)
-  const scheduledPosts: PostData[] = Array.isArray(scheduledPostsRaw)
-    ? fromPostDTOArray(scheduledPostsRaw as PostDTO[])
-    : [];
-
-  const longformPosts: LongFormPostData[] = Array.isArray(longformPostsRaw)
-    ? fromLongFormPostDTOArray(longformPostsRaw as LongFormPostDTO[])
-    : [];
-
-  const allContent: CombinedContent[] = Array.isArray(allContentRaw)
-    ? (allContentRaw as unknown as CombinedContent[])
-    : [];
-  const queueTypes: QueueType[] = Array.isArray(queueTypesRaw)
-    ? queueTypesRaw
-        .map((qt: unknown) => {
-          if (
-            qt &&
-            typeof qt === "object" &&
-            qt !== null &&
-            "id" in qt &&
-            "name" in qt
-          ) {
-            const q = qt as {
-              id?: unknown;
-              name?: unknown;
-              color?: unknown;
-              scheduleType?: unknown;
-              scheduleConfig?: unknown;
-              isEnabled?: unknown;
-              userId?: unknown;
-            };
-            const id = typeof q.id === "string" ? q.id : String(q.id ?? "");
-            const name =
-              typeof q.name === "string" ? q.name : String(q.name ?? "");
-            const color =
-              q.color !== null && q.color !== undefined
-                ? typeof q.color === "string"
-                  ? q.color
-                  : String(q.color)
-                : null;
-            const scheduleType =
-              typeof q.scheduleType === "string" &&
-              (q.scheduleType === "INTERVAL" ||
-                q.scheduleType === "FIXED_SLOTS")
-                ? q.scheduleType
-                : undefined;
-            const scheduleConfig = convertJsonValueToScheduleConfig(
-              q.scheduleConfig,
-            );
-            const isEnabled =
-              typeof q.isEnabled === "boolean"
-                ? q.isEnabled
-                : q.isEnabled !== false;
-            const userId = typeof q.userId === "string" ? q.userId : "";
-            const result: QueueType = {
-              id,
-              name,
-              color,
-              description: undefined,
-              scheduleType,
-              scheduleConfig,
-              isEnabled,
-              userId,
-            };
-            return result;
-          }
-          return null;
-        })
-        .filter((qt): qt is QueueType => qt !== null)
-    : [];
 
   const {
     sortConfig,

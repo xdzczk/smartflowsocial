@@ -1,4 +1,4 @@
-import { Link, useLoaderData, useParams } from "@remix-run/react";
+import { Link, useParams } from "@remix-run/react";
 
 import Toast from "~/components/ui/Toast";
 import { requireUserId } from "~/features/auth";
@@ -14,16 +14,12 @@ import {
   type PostData,
   type LongFormPostData,
   type CombinedContent,
-  type QueueType,
   type PostFetcher,
-  convertJsonValueToScheduleConfig,
   usePostedPosts,
-  fromPostDTOArray,
-  fromLongFormPostDTOArray,
-  type PostDTO,
-  type LongFormPostDTO,
+  usePostedPostsData,
+  useBulkDeletePostsMutation,
+  type LongFormPostType,
 } from "~/features/posts";
-import type { LongFormPostType } from "~/features/posts";
 import type { PostStats } from "~/features/posts/stats.server";
 import type { User } from "~/features/user";
 // Re-export action from server module
@@ -57,125 +53,25 @@ export async function loader({
   }
 }
 
-type LoaderData = Awaited<ReturnType<typeof loader>>;
+type _LoaderData = Awaited<ReturnType<typeof loader>>;
 
 export default function PostedPosts() {
-  const data = useLoaderData<LoaderData>();
-
-  // Deserialize DTOs (with string dates) back to PostData/LongFormPostData (with Date objects)
-  const postsRaw =
-    "posts" in data && Array.isArray(data.posts) ? data.posts : [];
-  const longformPostsRaw =
-    "longformPosts" in data && Array.isArray(data.longformPosts)
-      ? data.longformPosts
-      : [];
-  const allContentRaw =
-    "allContent" in data && Array.isArray(data.allContent)
-      ? data.allContent
-      : [];
-  const userRaw = "user" in data ? data.user : null;
-  const queueTypesRaw =
-    "queueTypes" in data && Array.isArray(data.queueTypes)
-      ? data.queueTypes
-      : [];
-
-  // Convert DTOs to PostData/LongFormPostData (deserializes date strings to Date objects)
-  const posts: PostData[] = Array.isArray(postsRaw)
-    ? fromPostDTOArray(postsRaw as PostDTO[])
-    : [];
-
-  const longformPosts: LongFormPostData[] = Array.isArray(longformPostsRaw)
-    ? fromLongFormPostDTOArray(longformPostsRaw as LongFormPostDTO[])
-    : [];
-
-  // Type assertions for Remix JsonifyObject serialization
-  // Remix serializes Date objects to strings, so we need to assert these types
-
-  const allContent: CombinedContent[] = Array.isArray(allContentRaw)
-    ? (allContentRaw as unknown as CombinedContent[])
-    : [];
-
-  const user: User | null = userRaw ? (userRaw as unknown as User) : null;
-  const queueTypes: QueueType[] = Array.isArray(queueTypesRaw)
-    ? queueTypesRaw.map((qt: unknown) => {
-        if (typeof qt !== "object" || qt === null) {
-          throw new Error("Invalid queue type");
-        }
-        const q = qt as {
-          id?: unknown;
-          name?: unknown;
-          color?: unknown;
-          scheduleType?: unknown;
-          scheduleConfig?: unknown;
-          isEnabled?: unknown;
-          userId?: unknown;
-          createdAt?: unknown;
-          updatedAt?: unknown;
-        };
-        const id = typeof q.id === "string" ? q.id : String(q.id ?? "");
-        const name = typeof q.name === "string" ? q.name : String(q.name ?? "");
-        const color =
-          q.color !== null && q.color !== undefined
-            ? typeof q.color === "string"
-              ? q.color
-              : String(q.color)
-            : null;
-        const scheduleType =
-          typeof q.scheduleType === "string" &&
-          (q.scheduleType === "INTERVAL" || q.scheduleType === "FIXED_SLOTS")
-            ? q.scheduleType
-            : undefined;
-        const scheduleConfig = convertJsonValueToScheduleConfig(
-          q.scheduleConfig,
-        );
-        const isEnabled =
-          typeof q.isEnabled === "boolean"
-            ? q.isEnabled
-            : q.isEnabled !== false;
-        const userId = typeof q.userId === "string" ? q.userId : "";
-        const result: QueueType = {
-          id,
-          name,
-          color,
-          description: undefined,
-          scheduleType,
-          scheduleConfig,
-          isEnabled,
-          userId,
-        };
-        return result;
-      })
-    : [];
-
-  const paginationRaw = "pagination" in data ? data.pagination : undefined;
-  const pagination =
-    paginationRaw &&
-    typeof paginationRaw === "object" &&
-    !Array.isArray(paginationRaw) &&
-    "total" in paginationRaw &&
-    "pages" in paginationRaw &&
-    "currentPage" in paginationRaw &&
-    "limit" in paginationRaw
-      ? {
-          total:
-            typeof paginationRaw.total === "number" ? paginationRaw.total : 0,
-          pages:
-            typeof paginationRaw.pages === "number" ? paginationRaw.pages : 0,
-          currentPage:
-            typeof paginationRaw.currentPage === "number"
-              ? paginationRaw.currentPage
-              : 1,
-          limit:
-            typeof paginationRaw.limit === "number" ? paginationRaw.limit : 50,
-        }
-      : { total: 0, pages: 0, currentPage: 1, limit: 50 };
-  const statsRaw = "stats" in data ? data.stats : undefined;
-  const stats: Record<string, PostStats> =
-    statsRaw && typeof statsRaw === "object" && !Array.isArray(statsRaw)
-      ? (statsRaw as Record<string, PostStats>)
-      : {};
+  // Use TanStack Query for data fetching with caching
+  const {
+    posts,
+    longformPosts,
+    allContent,
+    user,
+    queueTypes,
+    pagination,
+    stats,
+    isLoading: _isLoading,
+  } = usePostedPostsData();
 
   const params = useParams();
+
+  // Use TanStack Query mutation for bulk delete with optimistic updates
+  const bulkDeleteMutation = useBulkDeletePostsMutation();
 
   const {
     currentTab,
@@ -198,7 +94,7 @@ export default function PostedPosts() {
     requestSort,
     togglePostSelection,
     toggleSelectAll,
-    handleBulkDelete,
+    handleBulkDelete: originalHandleBulkDelete,
     handleBulkRepost,
     handleBulkScheduledRepost,
     handleBulkQuote,
@@ -225,6 +121,26 @@ export default function PostedPosts() {
     allContent,
     posts,
   });
+
+  // Enhanced bulk delete with optimistic updates
+  const handleBulkDelete = () => {
+    if (selectedPosts.size === 0) return;
+
+    const postIds = Array.from(selectedPosts);
+    
+    // Use TanStack Query mutation for optimistic updates
+    bulkDeleteMutation.mutate(postIds, {
+      onSuccess: () => {
+        // Clear selection on success
+        // The optimistic update already removed items from UI
+      },
+      onError: () => {
+        // Error handling - optimistic update will be rolled back automatically
+        // Fall back to original handler if needed
+        originalHandleBulkDelete();
+      },
+    });
+  };
 
   const sortedPosts = [...posts].sort((a, b) => {
     if (sortConfig.key === "postedAt") {
@@ -277,7 +193,7 @@ export default function PostedPosts() {
         typeof stats === "object" &&
         !Array.isArray(stats) &&
         aEventId in stats
-          ? (stats[aEventId] as unknown as Record<string, unknown>)
+          ? ((stats as Record<string, PostStats>)[aEventId] as unknown as Record<string, unknown>)
           : {};
 
       const bStats =
@@ -286,7 +202,7 @@ export default function PostedPosts() {
         typeof stats === "object" &&
         !Array.isArray(stats) &&
         bEventId in stats
-          ? (stats[bEventId] as unknown as Record<string, unknown>)
+          ? ((stats as Record<string, PostStats>)[bEventId] as unknown as Record<string, unknown>)
           : {};
       const sortKey = sortConfig.key;
       const aValue =
@@ -375,7 +291,9 @@ export default function PostedPosts() {
           }
           showBulkActions={true}
           onBulkDelete={handleBulkDelete}
-          bulkDeleteState={bulkDeleteFetcher.state}
+          bulkDeleteState={
+            bulkDeleteMutation.isPending ? "submitting" : bulkDeleteFetcher.state
+          }
           // Advanced actions for posted content
           individualRepostFetcher={individualRepostFetcher}
           longformRepostFetcher={longformRepostFetcher}
@@ -492,10 +410,10 @@ export default function PostedPosts() {
                 </button>
                 <button
                   onClick={handleBulkDelete}
-                  disabled={bulkDeleteFetcher.state !== "idle"}
+                  disabled={bulkDeleteMutation.isPending || bulkDeleteFetcher.state !== "idle"}
                   className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-semibold leading-5 text-red-800 hover:border-red-300 hover:text-red-900 hover:shadow-sm focus:ring focus:ring-red-300/25 active:border-red-200 active:shadow-none disabled:opacity-50 dark:border-red-700 dark:bg-gray-800 dark:text-red-300 dark:hover:border-red-600 dark:hover:text-red-200 dark:focus:ring-red-600/40 dark:active:border-red-700"
                 >
-                  {bulkDeleteFetcher.state !== "idle"
+                  {bulkDeleteMutation.isPending || bulkDeleteFetcher.state !== "idle"
                     ? "Deleting..."
                     : `Delete ${selectedPosts.size} post${selectedPosts.size !== 1 ? "s" : ""}`}
                 </button>
@@ -564,7 +482,7 @@ export default function PostedPosts() {
                 typeof selectedPost.signedEvent === "object" &&
                 "id" in selectedPost.signedEvent &&
                 typeof selectedPost.signedEvent.id === "string"
-                  ? stats[selectedPost.signedEvent.id]
+                  ? (stats as Record<string, PostStats>)[selectedPost.signedEvent.id]
                   : undefined
               }
               onClose={() => setSelectedPost(null)}

@@ -8,7 +8,7 @@ import {
   loadTemplateEditData,
   handleTemplateEditAction,
 } from "~/features/templates";
-import { withCSRFProtection } from "~/lib/csrf.server";
+import { withCSRFProtection } from "~/lib/csrf";
 import { formatDate, getImageUrls } from "~/lib/helpers";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

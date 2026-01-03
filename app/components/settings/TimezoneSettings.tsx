@@ -1,5 +1,4 @@
 import { useFetcher } from "@remix-run/react";
-import { useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -18,6 +17,11 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { timeZonesList } from "~/lib/date";
+import {
+  updateTimezoneClientSchema,
+  useZodForm,
+  formDataToFormData,
+} from "~/lib/validation";
 
 interface TimezoneSettingsProps {
   timezone: string | null;
@@ -30,20 +34,19 @@ interface FetcherData {
 
 export function TimezoneSettings({ timezone }: TimezoneSettingsProps) {
   const fetcher = useFetcher<FetcherData>();
-  const [selectedTimezone, setSelectedTimezone] = useState(
-    timezone ?? "Etc/UTC",
-  );
+  const form = useZodForm(updateTimezoneClientSchema, {
+    defaultValues: {
+      timezone: timezone ?? "Etc/UTC",
+    },
+  });
 
   const isSubmitting = fetcher.state === "submitting";
-  const hasChanged = selectedTimezone !== timezone;
+  const hasChanged = form.watch("timezone") !== timezone;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const formData = new FormData();
-    formData.set("_action", "update_timezone");
-    formData.set("timezone", selectedTimezone);
+  const onSubmit = form.handleSubmit((data) => {
+    const formData = formDataToFormData(data, "update_timezone");
     fetcher.submit(formData, { method: "post" });
-  };
+  });
 
   return (
     <Card>
@@ -54,12 +57,14 @@ export function TimezoneSettings({ timezone }: TimezoneSettingsProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={(e) => { e.preventDefault(); void onSubmit(e); }} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="timezone">Select Timezone</Label>
             <Select
-              value={selectedTimezone}
-              onValueChange={setSelectedTimezone}
+              value={form.watch("timezone")}
+              onValueChange={(value) => {
+                form.setValue("timezone", value, { shouldValidate: true });
+              }}
               disabled={isSubmitting}
             >
               <SelectTrigger id="timezone">
@@ -73,6 +78,9 @@ export function TimezoneSettings({ timezone }: TimezoneSettingsProps) {
                 ))}
               </SelectContent>
             </Select>
+            {form.formState.errors.timezone ? <p className="text-sm text-destructive">
+                {form.formState.errors.timezone.message}
+              </p> : null}
           </div>
 
           <Button

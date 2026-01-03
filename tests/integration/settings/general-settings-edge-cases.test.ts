@@ -154,7 +154,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
 
       expect(updateGiveawayBlacklist).not.toHaveBeenCalled();
       expect(result instanceof Response ? result.status : 200).toBe(400);
-      expect(jsonResult.error).toBe("All blacklist items must start with npub");
+      expect(jsonResult.error).toContain("All blacklist items must start with npub");
     });
 
     it("should accept valid npub entries", async () => {
@@ -284,9 +284,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
 
       expect(updateScheduleInterval).not.toHaveBeenCalled();
       expect(result instanceof Response ? result.status : 200).toBe(400);
-      expect(jsonResult.error).toBe(
-        "All schedule intervals must be positive whole numbers",
-      );
+      expect(jsonResult.error).toContain("Must be a positive whole number");
     });
 
     it("should reject zero or negative intervals", async () => {
@@ -314,9 +312,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
 
       expect(updateScheduleInterval).not.toHaveBeenCalled();
       expect(result instanceof Response ? result.status : 200).toBe(400);
-      expect(jsonResult.error).toBe(
-        "All schedule intervals must be positive whole numbers",
-      );
+      expect(jsonResult.error).toContain("Must be a positive whole number");
     });
 
     it("should reject decimal intervals", async () => {
@@ -344,9 +340,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
 
       expect(updateScheduleInterval).not.toHaveBeenCalled();
       expect(result instanceof Response ? result.status : 200).toBe(400);
-      expect(jsonResult.error).toBe(
-        "All schedule intervals must be positive whole numbers",
-      );
+      expect(jsonResult.error).toContain("Must be a positive whole number");
     });
 
     it("should accept valid intervals", async () => {

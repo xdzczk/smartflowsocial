@@ -6,6 +6,13 @@ import { json } from "@remix-run/node";
 
 import { logWarning } from "~/lib/error-logger.server";
 import {
+  searchAccountsSchema,
+  requestChildSchema,
+  cancelChildRequestSchema,
+  unlinkChildSchema,
+  validateFormDataOrRespond,
+} from "~/lib/validation";
+import {
   updateUserSubscription,
   getUserSubscription,
 } from "~/models/payment.server";
@@ -46,21 +53,27 @@ export async function handleAccountsAction(
   }
 
   if (action === "search_accounts") {
-    const q = (formData.get("q") as string) || "";
+    const result = validateFormDataOrRespond(formData, searchAccountsSchema);
+    if (!result.success) {
+      return result.response;
+    }
     if (me?.isChild) {
       return json(
         { error: "Child accounts cannot search or manage child accounts." },
         { status: 403 },
       );
     }
-    const results = await searchUsersByProfileName(q, me?.npub ?? undefined);
+    const results = await searchUsersByProfileName(
+      result.data.q,
+      me?.npub ?? undefined,
+    );
     return json({ results });
   }
 
   if (action === "request_child") {
-    const childHex = (formData.get("childNpub") as string) || "";
-    if (!/^[0-9a-fA-F]{64}$/.test(childHex)) {
-      return json({ error: "Invalid child hex pubkey" }, { status: 400 });
+    const result = validateFormDataOrRespond(formData, requestChildSchema);
+    if (!result.success) {
+      return result.response;
     }
     if (me?.isChild) {
       return json(
@@ -69,7 +82,7 @@ export async function handleAccountsAction(
       );
     }
     const parentNpub = me?.npub ?? "";
-    const res = await requestChildLink(parentNpub, childHex);
+    const res = await requestChildLink(parentNpub, result.data.childNpub);
     if (!res.ok) {
       return json({ error: res.reason }, { status: 400 });
     }
@@ -77,9 +90,12 @@ export async function handleAccountsAction(
   }
 
   if (action === "cancel_child_request") {
-    const childHex = (formData.get("childNpub") as string) || "";
-    if (!/^[0-9a-fA-F]{64}$/.test(childHex)) {
-      return json({ error: "Invalid child hex pubkey" }, { status: 400 });
+    const result = validateFormDataOrRespond(
+      formData,
+      cancelChildRequestSchema,
+    );
+    if (!result.success) {
+      return result.response;
     }
     if (me?.isChild) {
       return json(
@@ -87,7 +103,10 @@ export async function handleAccountsAction(
         { status: 403 },
       );
     }
-    const res = await cancelChildLinkRequest(me?.npub ?? "", childHex);
+    const res = await cancelChildLinkRequest(
+      me?.npub ?? "",
+      result.data.childNpub,
+    );
     if (!res.ok) {
       return json({ error: res.reason }, { status: 400 });
     }
@@ -125,9 +144,9 @@ export async function handleAccountsAction(
   }
 
   if (action === "unlink_child") {
-    const childNpub = (formData.get("childNpub") as string) || "";
-    if (!/^[0-9a-fA-F]{64}$/.test(childNpub)) {
-      return json({ error: "Invalid child hex pubkey" }, { status: 400 });
+    const result = validateFormDataOrRespond(formData, unlinkChildSchema);
+    if (!result.success) {
+      return result.response;
     }
     if (!me?.npub || me.isChild) {
       return json(
@@ -135,13 +154,13 @@ export async function handleAccountsAction(
         { status: 403 },
       );
     }
-    const res = await unlinkChildByParent(me.npub ?? "", childNpub);
+    const res = await unlinkChildByParent(me.npub, result.data.childNpub);
     if (!res.ok) {
       return json({ error: res.reason }, { status: 400 });
     }
     // Demote child to free plan
     try {
-      const childId = await getUserIdByNpub(childNpub);
+      const childId = await getUserIdByNpub(result.data.childNpub);
       if (childId) {
         await updateUserSubscription(
           childId,
@@ -151,7 +170,7 @@ export async function handleAccountsAction(
       }
     } catch (e) {
       logWarning("Failed to demote unlinked child to free", {
-        childNpub,
+        childNpub: result.data.childNpub,
         error: e instanceof Error ? e.message : String(e),
       });
     }

@@ -129,24 +129,37 @@ describe("Bulk Posts Action Handler", () => {
 
   describe("Sign and Schedule Action", () => {
     it("should sign and schedule multiple posts", async () => {
+      // SignedEvent schema requires: id, pubkey, created_at, kind, content, tags, sig
       const signedEvents = [
         {
           id: "event-1",
+          pubkey: "pk1",
           kind: 1,
           content: "Post 1",
           tags: [["t", "tag1"]],
           created_at: Math.floor(Date.now() / 1000),
+          sig: "sig1",
         },
         {
           id: "event-2",
+          pubkey: "pk2",
           kind: 1,
           content: "Post 2",
           tags: [["t", "tag2"]],
           created_at: Math.floor(Date.now() / 1000),
+          sig: "sig2",
         },
       ];
 
-      const nostrEvents = signedEvents.map((e) => ({ ...e }));
+      // NostrEvent schema requires: id, pubkey, created_at, kind, content, tags (no sig)
+      const nostrEvents = signedEvents.map((e) => ({
+        id: e.id,
+        pubkey: e.pubkey,
+        created_at: e.created_at,
+        kind: e.kind,
+        content: e.content,
+        tags: e.tags,
+      }));
 
       const mockPosts = signedEvents.map((event, index) =>
         createMockPost({
@@ -198,12 +211,15 @@ describe("Bulk Posts Action Handler", () => {
     });
 
     it("should handle recycle mode and mark original posts as non-recyclable", async () => {
+      // SignedEvent schema requires: id, pubkey, created_at, kind, content, tags, sig
       const signedEvent = {
         id: "event-1",
+        pubkey: "pk1",
         kind: 1,
         content: "Recycled post",
         tags: [["t", "tag1"]],
         created_at: Math.floor(Date.now() / 1000),
+        sig: "sig1",
       };
 
       const originalPostId = "original-post-123";
@@ -218,18 +234,26 @@ describe("Bulk Posts Action Handler", () => {
       ]);
       (updatePost as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
 
+      // NostrEvent schema requires: id, pubkey, created_at, kind, content, tags (no sig)
+      const nostrEvent = {
+        id: signedEvent.id,
+        pubkey: signedEvent.pubkey,
+        created_at: signedEvent.created_at,
+        kind: signedEvent.kind,
+        content: signedEvent.content,
+        tags: signedEvent.tags,
+      };
+
       const formData = new FormData();
       formData.append("_action", "sign_and_schedule");
-      formData.append("signedEvents", JSON.stringify(signedEvent));
-      formData.append("nostrEvent", JSON.stringify(signedEvent));
-      formData.append("caption", JSON.stringify("Caption"));
-      formData.append(
-        "fileUrl",
-        JSON.stringify("https://example.com/image.jpg"),
-      );
-      formData.append("queueType", "posts");
-      formData.append("isRecyclable", "false");
-      formData.append("originalPostId", originalPostId);
+      // Schema expects arrays from FormData.getAll(), so append each item
+      [JSON.stringify(signedEvent)].forEach((event) => formData.append("signedEvents", event));
+      [JSON.stringify(nostrEvent)].forEach((event) => formData.append("nostrEvent", event));
+      [JSON.stringify("Caption")].forEach((caption) => formData.append("caption", caption));
+      [JSON.stringify(["https://example.com/image.jpg"])].forEach((url) => formData.append("fileUrl", url));
+      ["posts"].forEach((queue) => formData.append("queueType", queue));
+      ["false"].forEach((recyclable) => formData.append("isRecyclable", recyclable));
+      [originalPostId].forEach((id) => formData.append("originalPostId", id));
 
       const request = new Request(
         "http://localhost/dashboard/bulkposts?mode=recycle",
@@ -301,8 +325,10 @@ describe("Bulk Posts Action Handler", () => {
       queueTypes.forEach((queueType) => {
         formData.append("queueType", queueType);
       });
-      formData.append("isRecyclable", "false");
-      formData.append("isRecyclable", "false");
+      // scheduledFor is required as an array in saveAsDraftSchema
+      fileUrls.forEach(() => {
+        formData.append("scheduledFor", "");
+      });
 
       const request = new Request("http://localhost/dashboard/bulkposts", {
         method: "POST",

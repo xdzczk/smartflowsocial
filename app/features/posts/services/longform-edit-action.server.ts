@@ -21,6 +21,10 @@ import {
   sanitizeMarkdown,
   generateSummary,
 } from "~/lib/markdown-sanitizer.server";
+import {
+  newLongformPostActionSchema,
+  validateFormDataOrRespond,
+} from "~/lib/validation";
 import { updateLongFormPost } from "~/models/longformpost.server";
 import {
   getUserById,
@@ -531,15 +535,36 @@ export async function handleLongFormEditAction(
     formData = await request.formData();
   }
 
-  const _action = formData.get("_action") as string;
-  const queueType = (formData.get("queueType") as string) ?? "unassigned";
-  const useHashtagPresets = formData.get("useHashtagPresets") === "true";
-  const hashTagPresetId = formData.get("hashTagPresetId")?.toString() ?? null;
-
-  // Handle upload-image action first, before any validation
+  // Check for upload-image action first (handled separately)
+  const _actionValue = formData.get("_action");
+  const _action = _actionValue ? String(_actionValue) : "";
+  
   if (_action === "upload-image") {
     return handleImageUpload(userId, formData);
   }
+
+  // Validate non-file fields with Zod
+  const result = validateFormDataOrRespond(
+    formData,
+    newLongformPostActionSchema,
+  );
+  if (!result.success) {
+    return result.response;
+  }
+
+  const validatedData = result.data;
+  
+  // Type narrowing for discriminated union
+  if (validatedData._action === "upload-image") {
+    // This shouldn't happen as we handle it above, but TypeScript needs it
+    return handleImageUpload(userId, formData);
+  }
+  
+  const queueType = validatedData.queueType || "unassigned";
+  const useHashtagPresets = validatedData.useHashtagPresets ?? false;
+  const hashTagPresetId: string | null = useHashtagPresets
+    ? (validatedData.hashTagPresetId ?? null)
+    : null;
 
   // Get effective hashtags
   const effectiveHashtags = await getEffectiveHashtagsForPost(

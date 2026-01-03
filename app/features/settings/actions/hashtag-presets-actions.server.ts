@@ -5,6 +5,12 @@
 import { json } from "@remix-run/node";
 
 import {
+  createHashtagPresetSchema,
+  updateHashtagPresetSchema,
+  deleteHashtagPresetSchema,
+  validateFormDataOrRespond,
+} from "~/lib/validation";
+import {
   createHashTagPreset,
   updateHashTagPreset,
   deleteHashTagPreset,
@@ -16,40 +22,49 @@ export async function handleHashtagPresetAction(
   formData: FormData,
 ) {
   if (action === "create_hashtag_preset") {
-    const name = formData.get("name") as string;
-    const tags = formData.get("tags") as string;
-    const description = formData.get("description") as string;
-
-    if (!name.trim() || !tags.trim()) {
-      return json({ error: "Name and tags are required" }, { status: 400 });
+    const result = validateFormDataOrRespond(
+      formData,
+      createHashtagPresetSchema,
+    );
+    if (!result.success) {
+      return result.response;
     }
-
-    await createHashTagPreset(userId, name, tags, description ?? undefined);
+    await createHashTagPreset(
+      userId,
+      result.data.name,
+      result.data.tags,
+      result.data.description,
+    );
     return json({ success: true });
   }
 
   if (action === "update_hashtag_preset") {
-    const id = formData.get("id") as string;
-    const name = formData.get("name") as string;
-    const tags = formData.get("tags") as string;
-    const description = formData.get("description") as string;
-
-    if (!id || !name.trim() || !tags.trim()) {
-      return json({ error: "ID, name and tags are required" }, { status: 400 });
+    const result = validateFormDataOrRespond(
+      formData,
+      updateHashtagPresetSchema,
+    );
+    if (!result.success) {
+      return result.response;
     }
-
-    await updateHashTagPreset(userId, id, name, tags, description ?? undefined);
+    await updateHashTagPreset(
+      userId,
+      result.data.id,
+      result.data.name,
+      result.data.tags,
+      result.data.description,
+    );
     return json({ success: true });
   }
 
   if (action === "delete_hashtag_preset") {
-    const id = formData.get("id") as string;
-
-    if (!id) {
-      return json({ error: "ID is required" }, { status: 400 });
+    const result = validateFormDataOrRespond(
+      formData,
+      deleteHashtagPresetSchema,
+    );
+    if (!result.success) {
+      return result.response;
     }
-
-    await deleteHashTagPreset(userId, id);
+    await deleteHashTagPreset(userId, result.data.id);
     return json({ success: true });
   }
 

@@ -6,6 +6,11 @@ import { json } from "@remix-run/node";
 
 import { fetchMutedList } from "~/features/engagement/mutedList.server";
 import {
+  toggleFilterMutedSchema,
+  toggleHideLowTrustSchema,
+  validateFormDataOrRespond,
+} from "~/lib/validation";
+import {
   getUserBasicInfo,
   updateUserFilterMuted,
   updateUserHidePostsFromLowTrustUsers as updateUserHideLowTrust,
@@ -45,18 +50,35 @@ export async function handleEngagementAction(
   }
 
   if (action === "toggle_filter_muted") {
-    const filterMuted = formData.get("filterMuted") === "true";
-    await updateUserFilterMuted(userId, filterMuted);
+    const result = validateFormDataOrRespond(
+      formData,
+      toggleFilterMutedSchema,
+    );
+    if (!result.success) {
+      return result.response;
+    }
+    await updateUserFilterMuted(userId, result.data.filterMuted);
 
-    return json({ success: true, filterMuted });
+    return json({ success: true, filterMuted: result.data.filterMuted });
   }
 
   if (action === "toggle_hide_low_trust") {
-    const hidePostsFromLowTrustUsers =
-      formData.get("hidePostsFromLowTrustUsers") === "true";
-    await updateUserHideLowTrust(userId, hidePostsFromLowTrustUsers);
+    const result = validateFormDataOrRespond(
+      formData,
+      toggleHideLowTrustSchema,
+    );
+    if (!result.success) {
+      return result.response;
+    }
+    await updateUserHideLowTrust(
+      userId,
+      result.data.hidePostsFromLowTrustUsers,
+    );
 
-    return json({ success: true, hidePostsFromLowTrustUsers });
+    return json({
+      success: true,
+      hidePostsFromLowTrustUsers: result.data.hidePostsFromLowTrustUsers,
+    });
   }
 
   return null;

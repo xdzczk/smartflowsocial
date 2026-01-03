@@ -14,7 +14,7 @@ import {
 } from "~/features/upload/image-resize.server";
 import { uploadEditorJSImage } from "~/features/upload/s3.server";
 import { loadUploadProviderSettings } from "~/features/user";
-import { withCSRFProtection } from "~/lib/csrf.server";
+import { withCSRFProtection } from "~/lib/csrf";
 import { ValidationError, ExternalServiceError } from "~/lib/errors";
 
 type AssertFunction = (

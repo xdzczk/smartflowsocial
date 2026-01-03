@@ -45,3 +45,9 @@ export { ToastNotification } from "./components/ToastNotification";
 // ============================================================================
 
 export { useTemplatesState } from "./hooks/useTemplatesState";
+export {
+  useTemplatesQuery,
+  useTemplatesData,
+  templatesKeys,
+} from "./hooks/useTemplatesQuery";
+export type { TemplatesLoaderData } from "./hooks/useTemplatesQuery";

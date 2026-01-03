@@ -7,3 +7,4 @@ declare module "@editorjs/link" {
   export default LinkTool;
 }
 
+

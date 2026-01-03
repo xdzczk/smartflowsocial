@@ -1,7 +1,7 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
 
 import { authenticateNostrUser } from "~/features/auth";
-import { withCSRFProtection } from "~/lib/csrf.server";
+import { withCSRFProtection } from "~/lib/csrf";
 import { safeRedirect } from "~/lib/remix-utils";
 
 export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs) => {

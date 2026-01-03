@@ -1,5 +1,5 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
-import { useLoaderData, useParams } from "@remix-run/react";
+import { useParams } from "@remix-run/react";
 
 import { requireUserId } from "~/features/auth";
 import {
@@ -9,6 +9,7 @@ import {
   GiveawayTable,
   loadGiveawayData,
   useGiveawayState,
+  useGiveawayData,
 } from "~/features/giveaway";
 import {
   requireFeatureAccess,
@@ -41,12 +42,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 }
 
-type LoaderData = Exclude<Awaited<ReturnType<typeof loader>>, Response>;
+type _LoaderData = Exclude<Awaited<ReturnType<typeof loader>>, Response>;
 
 export default function GiveawayQueueRoute() {
-  const data = useLoaderData<LoaderData>();
-  const { posts, stats, relatedEvents, user, queueTypes, selectedQueueType } =
-    data;
+  // Use TanStack Query for data fetching with caching
+  const {
+    posts: typedPosts,
+    stats: typedStats,
+    relatedEvents,
+    user,
+    queueTypes,
+    selectedQueueType,
+  } = useGiveawayData();
   const params = useParams();
 
   const {
@@ -61,23 +68,11 @@ export default function GiveawayQueueRoute() {
     setDateRange,
     clearFilters,
   } = useGiveawayState({
-    posts: posts.map((post: (typeof posts)[0]) => {
-      // Convert PostData to Post format expected by useGiveawayState
-      // useGiveawayState expects Post with postedAt: Date | null and totalEngagement: number
-      return {
-        ...post,
-        postedAt: (() => {
-          const postedAtValue: unknown = post.postedAt;
-          if (postedAtValue === null || postedAtValue === undefined)
-            return null;
-          if (postedAtValue instanceof Date) return postedAtValue;
-          if (typeof postedAtValue === "string") return new Date(postedAtValue);
-          return null;
-        })(),
-        totalEngagement:
-          typeof post.totalEngagement === "number" ? post.totalEngagement : 0,
-      };
-    }),
+    posts: typedPosts.map((post) => ({
+      ...post,
+      postedAt: post.postedAt instanceof Date ? post.postedAt : null,
+      totalEngagement: post.totalEngagement ?? 0,
+    })),
   });
 
   return (
@@ -124,26 +119,15 @@ export default function GiveawayQueueRoute() {
         onRequestSort={requestSort}
         onPostClick={(post) => {
           // Find the original PostData from posts array
-          const originalPostData = posts.find(
-            (p: (typeof posts)[0]) => p.id === post.id,
-          );
+          const originalPostData = typedPosts.find((p) => p.id === post.id);
           if (originalPostData) {
             // Convert to the Post format expected by useGiveawayState
             setSelectedPost({
               ...originalPostData,
-              postedAt: (() => {
-                const postedAtValue: unknown = originalPostData.postedAt;
-                if (postedAtValue === null || postedAtValue === undefined)
-                  return null;
-                if (postedAtValue instanceof Date) return postedAtValue;
-                if (typeof postedAtValue === "string")
-                  return new Date(postedAtValue);
-                return null;
-              })(),
-              totalEngagement:
-                typeof originalPostData.totalEngagement === "number"
-                  ? originalPostData.totalEngagement
-                  : 0,
+              postedAt: originalPostData.postedAt instanceof Date
+                ? originalPostData.postedAt
+                : null,
+              totalEngagement: originalPostData.totalEngagement ?? 0,
             });
           }
         }}
@@ -160,7 +144,7 @@ export default function GiveawayQueueRoute() {
             typeof selectedPost.signedEvent === "object" &&
             "id" in selectedPost.signedEvent &&
             typeof selectedPost.signedEvent.id === "string"
-              ? stats[selectedPost.signedEvent.id]
+              ? typedStats[selectedPost.signedEvent.id]
               : undefined
           }
           onClose={() => setSelectedPost(null)}

@@ -2,6 +2,8 @@ import { useFetcher } from "@remix-run/react";
 import { useState, useEffect, useCallback } from "react";
 
 import { useOptionalUser } from "~/lib/remix-utils";
+import { useZodForm } from "~/lib/validation";
+import { draftEditClientSchema } from "~/lib/validation/schemas/posts.client.schemas";
 
 import { signDraftForScheduling } from "../services/draft-sign.server";
 import type { UserData, HashTagPreset, PostData } from "../types";
@@ -30,21 +32,33 @@ export function useDraftEditState({
 }: UseDraftEditStateProps) {
   const fetcher = useFetcher();
   const currentUser = useOptionalUser();
-  const [content, setContent] = useState(post.content ?? "");
+  
+  // Initialize form with React Hook Form
+  const form = useZodForm(draftEditClientSchema, {
+    defaultValues: {
+      content: post.content ?? "",
+      selectedQueue:
+        typeof post.queueType === "object" && post.queueType?.name
+          ? post.queueType.name
+          : typeof post.queueType === "string"
+            ? post.queueType
+            : "unassigned",
+      scheduledFor: "",
+      useHashtagPresets: !!post.hashTagPresetId,
+      hashTagPresetId: post.hashTagPresetId ?? null,
+    },
+  });
+
+  // Watch form values
+  const content = form.watch("content") ?? "";
+  const selectedQueue = form.watch("selectedQueue") ?? "unassigned";
+  const scheduledFor = form.watch("scheduledFor") ?? "";
+  const useHashtagPresets = form.watch("useHashtagPresets") ?? false;
+  const selectedHashtagPresetId = form.watch("hashTagPresetId") ?? null;
+
+  // Non-form state
   const [caption] = useState(post.caption ?? "");
-  const [selectedQueue, setSelectedQueue] = useState<string>(
-    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- Boolean OR for fallback logic; ?? would be incorrect here
-    (typeof post.queueType === "object" && post.queueType?.name) ||
-      (typeof post.queueType === "string" ? post.queueType : "unassigned"),
-  );
-  const [scheduledFor, setScheduledFor] = useState("");
   const [showResumeModal, setShowResumeModal] = useState(false);
-  const [useHashtagPresets, setUseHashtagPresets] = useState(
-    !!post.hashTagPresetId,
-  );
-  const [selectedHashtagPresetId, setSelectedHashtagPresetId] = useState(
-    post.hashTagPresetId ?? null,
-  );
   const [selectedHashtags, setSelectedHashtags] = useState("");
 
   const isSubmitting = fetcher.state !== "idle";
@@ -60,7 +74,7 @@ export function useDraftEditState({
   const calculateQueueScheduleTime = useCallback(
     async (queueTypeName: string) => {
       if (queueTypeName === "unassigned") {
-        setScheduledFor("");
+        form.setValue("scheduledFor", "");
         return;
       }
 
@@ -80,14 +94,14 @@ export function useDraftEditState({
           const data = (await response.json()) as { scheduledTime?: string };
           const scheduledTime = data.scheduledTime;
           if (scheduledTime) {
-            setScheduledFor(scheduledTime);
+            form.setValue("scheduledFor", scheduledTime);
           }
         }
       } catch (error) {
         console.error("Error calculating schedule time:", error);
       }
     },
-    [currentUser?.id],
+    [currentUser?.id, form],
   );
 
   const handleSignAndResume = async () => {
@@ -145,7 +159,8 @@ export function useDraftEditState({
   };
 
   const handleHashtagPresetSelect = (presetId: string, hashtags: string) => {
-    setSelectedHashtagPresetId(presetId);
+    form.setValue("hashTagPresetId", presetId);
+    form.setValue("useHashtagPresets", true);
     setSelectedHashtags(hashtags);
   };
 
@@ -153,9 +168,9 @@ export function useDraftEditState({
     if (selectedQueue !== "unassigned") {
       void calculateQueueScheduleTime(selectedQueue);
     } else {
-      setScheduledFor("");
+      form.setValue("scheduledFor", "");
     }
-  }, [selectedQueue, calculateQueueScheduleTime]);
+  }, [selectedQueue, calculateQueueScheduleTime, form]);
 
   // Initialize hashtag preset data on component mount
   useEffect(() => {
@@ -167,6 +182,12 @@ export function useDraftEditState({
     }
   }, [post.hashTagPresetId, hashTagPresets]);
 
+  // Provide setter wrappers for backward compatibility
+  const setContent = (value: string) => form.setValue("content", value);
+  const setSelectedQueue = (value: string) => form.setValue("selectedQueue", value);
+  const setScheduledFor = (value: string) => form.setValue("scheduledFor", value);
+  const setUseHashtagPresets = (value: boolean) => form.setValue("useHashtagPresets", value);
+
   return {
     content,
     selectedQueue,
@@ -176,6 +197,7 @@ export function useDraftEditState({
     selectedHashtagPresetId,
     isSubmitting,
     fetcher,
+    form, // Expose form for direct access if needed
     setContent,
     setSelectedQueue,
     setScheduledFor,

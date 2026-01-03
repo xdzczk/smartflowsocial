@@ -1,5 +1,7 @@
 import { useFetcher } from "@remix-run/react";
 import { useEffect, useState } from "react";
+
+import { searchFormClientSchema, useZodForm, formDataToFormData } from "~/lib/validation";
 interface User {
   timezone?: string | null;
 }
@@ -35,11 +37,16 @@ interface UseSearchStateProps {
  */
 export function useSearchState({ user, fetcherData }: UseSearchStateProps) {
   const fetcher = useFetcher();
-  const [eventInput, setEventInput] = useState("");
   const [toast, setToast] = useState<{
     type: "success" | "error";
     message: string;
   } | null>(null);
+
+  const form = useZodForm(searchFormClientSchema, {
+    defaultValues: {
+      eventInput: "",
+    },
+  });
 
   const isSearching = fetcher.state !== "idle";
   const searchResult = fetcherData?.event;
@@ -56,13 +63,10 @@ export function useSearchState({ user, fetcherData }: UseSearchStateProps) {
     }
   }, [searchError]);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    const formData = new FormData();
-    formData.append("_action", "searchEvent");
-    formData.append("eventInput", eventInput);
+  const handleSearch = form.handleSubmit((data) => {
+    const formData = formDataToFormData(data, "searchEvent");
     fetcher.submit(formData, { method: "post" });
-  };
+  });
 
   const handleScheduleQuote = () => {
     if (!searchResult) return;
@@ -137,19 +141,19 @@ export function useSearchState({ user, fetcherData }: UseSearchStateProps) {
   };
 
   const clearSearch = () => {
-    setEventInput("");
+    form.reset({ eventInput: "" });
     // Clear fetcher data by resetting the form
     fetcher.load("/dashboard/search/posts");
   };
 
   return {
-    eventInput,
+    form,
+    eventInput: form.watch("eventInput"),
     toast,
     isSearching,
     searchResult,
     searchStats,
     fetcher,
-    setEventInput,
     setToast,
     handleSearch,
     handleScheduleQuote,

@@ -8,7 +8,7 @@ import {
 
 import { requireUserId } from "~/features/auth";
 import { createUploadHandler } from "~/features/upload/s3.server";
-import { withCSRFProtection } from "~/lib/csrf.server";
+import { withCSRFProtection } from "~/lib/csrf";
 import { ExternalServiceError } from "~/lib/errors";
 
 type AssertFunction = (

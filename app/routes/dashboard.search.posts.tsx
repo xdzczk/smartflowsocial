@@ -14,7 +14,11 @@ import {
   handleSearchAction,
   loadSearchData,
 } from "~/features/search";
-import { withCSRFProtection } from "~/lib/csrf.server";
+import { withCSRFProtection } from "~/lib/csrf";
+import {
+  searchActionSchema,
+  validateFormDataOrRespond,
+} from "~/lib/validation";
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   const data = await loadSearchData(userId);
@@ -24,16 +28,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs) => {
   try {
     const formData = await request.formData();
-    const _action = formData.get("_action");
+    
+    const result = validateFormDataOrRespond(formData, searchActionSchema);
+    if (!result.success) {
+      return result.response;
+    }
 
-    if (_action === "searchEvent") {
-      const eventInput = formData.get("eventInput") as string;
-      const result = await handleSearchAction(eventInput);
-      return json(result);
+    const validatedData = result.data;
+    
+    if (validatedData._action === "searchEvent") {
+      const searchResult = await handleSearchAction(validatedData.eventInput);
+      return json(searchResult);
     }
 
     const { ValidationError } = await import("~/lib/errors");
-    throw new ValidationError("Invalid action", { action: _action });
+    throw new ValidationError("Invalid action", { action: validatedData._action });
   } catch (error) {
     const { handleActionError } = await import("~/lib/error-handler.server");
     return handleActionError(error);
@@ -45,12 +54,12 @@ export default function SearchPosts() {
   const fetcher = useFetcher();
 
   const {
-    eventInput,
+    form,
+    eventInput: _eventInput,
     toast,
     isSearching,
     searchResult,
     searchStats,
-    setEventInput,
     setToast,
     handleSearch,
     handleScheduleQuote,
@@ -93,9 +102,8 @@ export default function SearchPosts() {
       </div>
 
       <SearchForm
-        eventInput={eventInput}
-        onInputChange={setEventInput}
-        onSubmit={handleSearch}
+        form={form}
+        onSubmit={(e) => { e.preventDefault(); void handleSearch(e); }}
         isSearching={isSearching}
       />
 

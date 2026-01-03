@@ -299,3 +299,4 @@ Learn how to use the visual calendar interface to schedule and manage your posts
 
 **Next Tutorial:** [Bulk Scheduling](../intermediate/bulk-scheduling.md) → Schedule multiple posts
 
+

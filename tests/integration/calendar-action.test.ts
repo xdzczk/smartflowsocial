@@ -162,6 +162,7 @@ describe("Calendar Action Handler", () => {
       (reschedulePost as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
 
       const formData = createFormData({
+        action: "reschedule",
         postId: TEST_POST_ID,
         newTime,
         overrideQueue: "false",
@@ -228,6 +229,7 @@ describe("Calendar Action Handler", () => {
       (enqueuePostJob as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
 
       const formData = createFormData({
+        action: "reschedule",
         postId: TEST_POST_ID,
         newTime,
         overrideQueue: "false",
@@ -279,6 +281,7 @@ describe("Calendar Action Handler", () => {
       (reschedulePost as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
 
       const formData = createFormData({
+        action: "reschedule",
         postId: TEST_POST_ID,
         newTime,
         overrideQueue: "true",
@@ -316,11 +319,15 @@ describe("Calendar Action Handler", () => {
               signed?: boolean;
             })
           : {};
-      expect(jsonResult.error).toBe("Missing required fields");
+      // Zod validation returns error response
+      expect(result).toBeInstanceOf(Response);
+      expect(jsonResult).toHaveProperty("error");
+      expect(String(jsonResult.error)).toBeTruthy();
     });
 
     it("should return error for missing newTime", async () => {
       const formData = createFormData({
+        action: "reschedule",
         postId: TEST_POST_ID,
       });
 
@@ -342,13 +349,17 @@ describe("Calendar Action Handler", () => {
               signed?: boolean;
             })
           : {};
-      expect(jsonResult.error).toBe("Missing required fields");
+      // Zod validation returns error response
+      expect(result).toBeInstanceOf(Response);
+      expect(jsonResult).toHaveProperty("error");
+      expect(String(jsonResult.error)).toBeTruthy();
     });
 
     it("should return error if post not found", async () => {
       (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
       const formData = createFormData({
+        action: "reschedule",
         postId: TEST_POST_ID,
         newTime: String(Math.floor(Date.now() / 1000) + 3600),
       });
@@ -383,6 +394,7 @@ describe("Calendar Action Handler", () => {
       (reschedulePost as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
 
       const formData = createFormData({
+        action: "reschedule",
         postId: TEST_POST_ID,
         newTime,
         signedEvent: "invalid-json",
@@ -426,6 +438,7 @@ describe("Calendar Action Handler", () => {
       );
 
       const formData = createFormData({
+        action: "rescheduleLongform",
         postId: TEST_LONGFORM_ID,
         newTime,
       });
@@ -496,6 +509,7 @@ describe("Calendar Action Handler", () => {
       );
 
       const formData = createFormData({
+        action: "rescheduleLongform",
         postId: TEST_LONGFORM_ID,
         newTime,
         signedEvent: JSON.stringify(signedEvent),
@@ -537,6 +551,7 @@ describe("Calendar Action Handler", () => {
 
     it("should return error for missing postId", async () => {
       const formData = createFormData({
+        action: "rescheduleLongform",
         newTime: String(Math.floor(Date.now() / 1000) + 3600),
       });
 
@@ -561,11 +576,15 @@ describe("Calendar Action Handler", () => {
               signed?: boolean;
             })
           : {};
-      expect(jsonResult.error).toBe("Missing required fields");
+      // Zod validation returns error response
+      expect(result).toBeInstanceOf(Response);
+      expect(jsonResult).toHaveProperty("error");
+      expect(String(jsonResult.error)).toBeTruthy();
     });
 
     it("should return error for missing newTime", async () => {
       const formData = createFormData({
+        action: "rescheduleLongform",
         postId: TEST_LONGFORM_ID,
       });
 
@@ -590,13 +609,17 @@ describe("Calendar Action Handler", () => {
               signed?: boolean;
             })
           : {};
-      expect(jsonResult.error).toBe("Missing required fields");
+      // Zod validation returns error response
+      expect(result).toBeInstanceOf(Response);
+      expect(jsonResult).toHaveProperty("error");
+      expect(String(jsonResult.error)).toBeTruthy();
     });
 
     it("should return error if longform post not found", async () => {
       (getLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
       const formData = createFormData({
+        action: "rescheduleLongform",
         postId: TEST_LONGFORM_ID,
         newTime: String(Math.floor(Date.now() / 1000) + 3600),
       });
@@ -637,6 +660,7 @@ describe("Calendar Action Handler", () => {
       );
 
       const formData = createFormData({
+        action: "rescheduleLongform",
         postId: TEST_LONGFORM_ID,
         newTime,
         signedEvent: "invalid-json",

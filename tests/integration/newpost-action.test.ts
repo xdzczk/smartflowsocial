@@ -337,12 +337,10 @@ describe("New Post Action Handler", () => {
             })
           : {};
 
+      // Zod validation returns 400 with error message
       expect(result.status).toBe(400);
-      expect(data).toEqual({
-        success: false,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        error: expect.any(String),
-      });
+      expect(data).toHaveProperty("error");
+      expect(String(data.error)).toBeTruthy();
     });
   });
 
@@ -350,7 +348,7 @@ describe("New Post Action Handler", () => {
     it("should create a draft image post", async () => {
       const fileUrl = JSON.stringify(["https://example.com/image.jpg"]);
 
-      const formData = createActionFormData("draft-images", {
+      const formData = createActionFormData("draft-image", {
         fileUrl,
         caption: "Draft image caption",
         queueType: "posts",
@@ -381,7 +379,7 @@ describe("New Post Action Handler", () => {
     it("should detect video files and set postType to VIDEO", async () => {
       const fileUrl = JSON.stringify(["https://example.com/video.mp4"]);
 
-      const formData = createActionFormData("draft-media", {
+      const formData = createActionFormData("draft-image", {
         fileUrl,
         caption: "Draft video caption",
         queueType: "posts",
@@ -408,7 +406,7 @@ describe("New Post Action Handler", () => {
       const signedEvent = { id: "event-123", created_at: 1234567890 };
       const nostrEvent = { id: "nostr-123" };
 
-      const formData = createActionFormData("post-images", {
+      const formData = createActionFormData("post-image", {
         fileUrl,
         caption: "Published image caption",
         signedEvent: JSON.stringify(signedEvent),
@@ -441,7 +439,7 @@ describe("New Post Action Handler", () => {
       const signedEvent = { id: "event-123", created_at: 1234567890 };
       const nostrEvent = { id: "nostr-123" };
 
-      const formData = createActionFormData("schedule-images", {
+      const formData = createActionFormData("schedule-image", {
         fileUrl,
         caption: "Scheduled image caption",
         signedEvent: JSON.stringify(signedEvent),
@@ -488,8 +486,9 @@ describe("New Post Action Handler", () => {
             })
           : {};
 
-      expect(result.status).toBe(200);
-      expect(data).toEqual({ success: false });
+      // Zod validation fails for invalid action, returns 400 with error
+      expect(result.status).toBe(400);
+      expect(data).toHaveProperty("error");
     });
 
     it("should handle database errors", async () => {

@@ -14,7 +14,7 @@ import {
   handlePlansAction,
   loadPlansData,
 } from "~/features/payments";
-import { withCSRFProtection } from "~/lib/csrf.server";
+import { withCSRFProtection } from "~/lib/csrf";
 
 export const meta: MetaFunction = () => {
   return [
@@ -31,11 +31,18 @@ export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs)
   const formData = await request.formData();
   const result = await handlePlansAction(formData, request);
 
-  if (result.redirect) {
+  // Type narrowing: check if result is a Response
+  if (result instanceof Response) {
+    return result;
+  }
+
+  // Type narrowing: check if result has redirect property
+  if (typeof result === "object" && result !== null && "redirect" in result && result.redirect) {
     return redirect(result.redirect);
   }
 
-  if (result.error) {
+  // Type narrowing: check if result has error property
+  if (typeof result === "object" && result !== null && "error" in result && result.error) {
     return json(result, { status: 400 });
   }
 
@@ -49,10 +56,17 @@ export const loader = async ({ request }: { request: Request }) => {
 
 export default function Plans() {
   const { plans, user, currentSubscription } = useLoaderData<typeof loader>();
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
 
   const isLoading = navigation.state === "submitting";
+
+  // Type guard for actionData
+  const typedActionData =
+    actionData && typeof actionData === "object" && !Array.isArray(actionData)
+      ? (actionData as Record<string, unknown>)
+      : null;
 
   const {
     showInvoice,
@@ -65,38 +79,63 @@ export default function Plans() {
     copyToClipboard,
   } = usePlansState({
     user,
-    actionData:
-      actionData && typeof actionData === "object" && !Array.isArray(actionData)
-        ? {
-            success: "success" in actionData ? actionData.success : undefined,
-            paid: "paid" in actionData ? actionData.paid : undefined,
-            invoice: "invoice" in actionData ? actionData.invoice : undefined,
-            paymentHash:
-              "paymentHash" in actionData ? actionData.paymentHash : undefined,
-            amount: "amount" in actionData ? actionData.amount : undefined,
-            amountUsd:
-              "amountUsd" in actionData ? actionData.amountUsd : undefined,
-            paymentId:
-              "paymentId" in actionData ? actionData.paymentId : undefined,
-            expiresAt:
-              "expiresAt" in actionData
-                ? (() => {
-                    const expiresAtValue: unknown = actionData.expiresAt;
-                    if (expiresAtValue === null || expiresAtValue === undefined)
-                      return undefined;
-                    if (expiresAtValue instanceof Date)
-                      return expiresAtValue.toISOString();
-                    if (typeof expiresAtValue === "string")
-                      return expiresAtValue;
+    actionData: typedActionData
+      ? {
+          success:
+            "success" in typedActionData && typeof typedActionData.success === "boolean"
+              ? typedActionData.success
+              : undefined,
+          paid:
+            "paid" in typedActionData && typeof typedActionData.paid === "boolean"
+              ? typedActionData.paid
+              : undefined,
+          invoice:
+            "invoice" in typedActionData && typeof typedActionData.invoice === "string"
+              ? typedActionData.invoice
+              : undefined,
+          paymentHash:
+            "paymentHash" in typedActionData && typeof typedActionData.paymentHash === "string"
+              ? typedActionData.paymentHash
+              : undefined,
+          amount:
+            "amount" in typedActionData && typeof typedActionData.amount === "number"
+              ? typedActionData.amount
+              : undefined,
+          amountUsd:
+            "amountUsd" in typedActionData && typeof typedActionData.amountUsd === "number"
+              ? typedActionData.amountUsd
+              : undefined,
+          paymentId:
+            "paymentId" in typedActionData && typeof typedActionData.paymentId === "string"
+              ? typedActionData.paymentId
+              : undefined,
+          expiresAt:
+            "expiresAt" in typedActionData
+              ? (() => {
+                  const expiresAtValue = typedActionData.expiresAt;
+                  if (expiresAtValue === null || expiresAtValue === undefined)
                     return undefined;
-                  })()
-                : undefined,
-            planName:
-              "planName" in actionData ? actionData.planName : undefined,
-            planId: "planId" in actionData ? actionData.planId : undefined,
-            error: "error" in actionData ? actionData.error : undefined,
-          }
-        : null,
+                  if (expiresAtValue instanceof Date)
+                    return expiresAtValue.toISOString();
+                  if (typeof expiresAtValue === "string")
+                    return expiresAtValue;
+                  return undefined;
+                })()
+              : undefined,
+          planName:
+            "planName" in typedActionData && typeof typedActionData.planName === "string"
+              ? typedActionData.planName
+              : undefined,
+          planId:
+            "planId" in typedActionData && typeof typedActionData.planId === "string"
+              ? typedActionData.planId
+              : undefined,
+          error:
+            "error" in typedActionData && typeof typedActionData.error === "string"
+              ? typedActionData.error
+              : undefined,
+        }
+      : null,
   });
 
   return (
@@ -164,10 +203,10 @@ export default function Plans() {
       <PaymentSuccessModal
         isOpen={paymentComplete}
         message={
-          actionData &&
-          typeof actionData === "object" &&
-          "message" in actionData
-            ? String(actionData.message)
+          typedActionData && "message" in typedActionData
+            ? typeof typedActionData.message === "string"
+              ? typedActionData.message
+              : String(typedActionData.message)
             : undefined
         }
       />
@@ -186,8 +225,10 @@ export default function Plans() {
       {/* Error Message */}
       <ErrorMessage
         message={
-          actionData && typeof actionData === "object" && "error" in actionData
-            ? String(actionData.error)
+          typedActionData && "error" in typedActionData
+            ? typeof typedActionData.error === "string"
+              ? typedActionData.error
+              : String(typedActionData.error)
             : ""
         }
       />

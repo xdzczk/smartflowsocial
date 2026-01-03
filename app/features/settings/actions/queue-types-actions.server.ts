@@ -4,6 +4,12 @@
 
 import { json } from "@remix-run/node";
 
+import {
+  createQueueTypeSchema,
+  updateQueueTypeSchema,
+  deleteQueueTypeSchema,
+  validateFormDataOrRespond,
+} from "~/lib/validation";
 import { getUserSubscription } from "~/models/payment.server";
 import {
   deleteQueueType,
@@ -29,21 +35,18 @@ export async function handleQueueTypeAction(
       );
     }
 
-    const name = formData.get("name") as string;
-    const scheduleType = formData.get("scheduleType") as
-      | "INTERVAL"
-      | "FIXED_SLOTS";
-    const color = formData.get("color") as string;
-    const description = formData.get("description") as string;
-    const hashTagPresetId = formData.get("hashTagPresetId") as string;
-    const processedHashTagPresetId =
-      hashTagPresetId === "none" || !hashTagPresetId ? null : hashTagPresetId;
+    const result = validateFormDataOrRespond(formData, createQueueTypeSchema);
+    if (!result.success) {
+      return result.response;
+    }
+
+    const { data } = result;
 
     // Validate hashtag preset exists if provided
-    if (processedHashTagPresetId) {
+    if (data.hashTagPresetId) {
       const presetExists = await hashTagPresetExistsForUser(
         userId,
-        processedHashTagPresetId,
+        data.hashTagPresetId,
       );
       if (!presetExists) {
         return json(
@@ -53,53 +56,40 @@ export async function handleQueueTypeAction(
       }
     }
 
-    let scheduleConfig = {};
-    if (scheduleType === "INTERVAL") {
-      const intervalHours = parseInt(
-        formData.get("intervalHours") as string,
-        10,
-      );
-      const useGlobalInterval = formData.get("useGlobalInterval") === "on";
-      scheduleConfig = useGlobalInterval
+    // Build schedule config based on schedule type
+    let scheduleConfig: { useGlobalInterval?: boolean; intervalHours?: number; slots?: string[] } = {};
+    if (data.scheduleType === "INTERVAL") {
+      scheduleConfig = data.useGlobalInterval
         ? { useGlobalInterval: true }
-        : { intervalHours };
-    } else if (scheduleType === "FIXED_SLOTS") {
-      const slots = (formData.get("slots") as string)
-        .split(",")
-        .map((s) => s.trim())
-        .filter((s) => s);
-      scheduleConfig = { slots };
+        : { intervalHours: data.intervalHours };
+    } else if (data.scheduleType === "FIXED_SLOTS") {
+      scheduleConfig = { slots: data.slots };
     }
 
     await updateQueueType(userId, {
-      name,
-      scheduleType,
+      name: data.name,
+      scheduleType: data.scheduleType,
       scheduleConfig,
-      color,
-      description,
-      hashTagPresetId: processedHashTagPresetId,
+      color: data.color,
+      description: data.description,
+      hashTagPresetId: data.hashTagPresetId,
     });
     return json({ success: true });
   }
 
   if (action === "update_queue_type") {
-    const id = formData.get("id") as string;
-    const name = formData.get("name") as string;
-    const scheduleType = formData.get("scheduleType") as
-      | "INTERVAL"
-      | "FIXED_SLOTS";
-    const color = formData.get("color") as string;
-    const description = formData.get("description") as string;
-    const isEnabled = formData.get("isEnabled") === "on";
-    const hashTagPresetId = formData.get("hashTagPresetId") as string;
-    const processedHashTagPresetId =
-      hashTagPresetId === "none" || !hashTagPresetId ? null : hashTagPresetId;
+    const result = validateFormDataOrRespond(formData, updateQueueTypeSchema);
+    if (!result.success) {
+      return result.response;
+    }
+
+    const { data } = result;
 
     // Validate hashtag preset exists if provided
-    if (processedHashTagPresetId) {
+    if (data.hashTagPresetId) {
       const presetExists = await hashTagPresetExistsForUser(
         userId,
-        processedHashTagPresetId,
+        data.hashTagPresetId,
       );
       if (!presetExists) {
         return json(
@@ -109,40 +99,35 @@ export async function handleQueueTypeAction(
       }
     }
 
-    let scheduleConfig = {};
-    if (scheduleType === "INTERVAL") {
-      const intervalHours = parseInt(
-        formData.get("intervalHours") as string,
-        10,
-      );
-      const useGlobalInterval = formData.get("useGlobalInterval") === "on";
-      scheduleConfig = useGlobalInterval
+    // Build schedule config based on schedule type
+    let scheduleConfig: { useGlobalInterval?: boolean; intervalHours?: number; slots?: string[] } = {};
+    if (data.scheduleType === "INTERVAL") {
+      scheduleConfig = data.useGlobalInterval
         ? { useGlobalInterval: true }
-        : { intervalHours };
-    } else if (scheduleType === "FIXED_SLOTS") {
-      const slots = (formData.get("slots") as string)
-        .split(",")
-        .map((s) => s.trim())
-        .filter((s) => s);
-      scheduleConfig = { slots };
+        : { intervalHours: data.intervalHours };
+    } else if (data.scheduleType === "FIXED_SLOTS") {
+      scheduleConfig = { slots: data.slots };
     }
 
     await updateQueueType(userId, {
-      id,
-      name,
-      scheduleType,
+      id: data.id,
+      name: data.name,
+      scheduleType: data.scheduleType,
       scheduleConfig,
-      color,
-      description,
-      isEnabled,
-      hashTagPresetId: processedHashTagPresetId,
+      color: data.color,
+      description: data.description,
+      isEnabled: data.isEnabled,
+      hashTagPresetId: data.hashTagPresetId,
     });
     return json({ success: true });
   }
 
   if (action === "delete_queue_type") {
-    const id = formData.get("id") as string;
-    await deleteQueueType(userId, id);
+    const result = validateFormDataOrRespond(formData, deleteQueueTypeSchema);
+    if (!result.success) {
+      return result.response;
+    }
+    await deleteQueueType(userId, result.data.id);
     return json({ success: true });
   }
 

@@ -4,7 +4,6 @@ import {
   type ActionFunctionArgs,
 } from "@remix-run/node";
 import {
-  useLoaderData,
   useParams,
   Outlet,
   useSearchParams,
@@ -29,19 +28,12 @@ import {
   useDraftsState,
   handleDraftsAction,
   loadDraftsData,
+  useDraftsData,
   type PostData,
-  type LongFormPostData,
   type CombinedContent,
-  type QueueType,
-  type UserData,
   type LongFormPostType,
-  convertJsonValueToScheduleConfig,
-  fromPostDTOArray,
-  fromLongFormPostDTOArray,
-  type PostDTO,
-  type LongFormPostDTO,
 } from "~/features/posts";
-import { withCSRFProtection } from "~/lib/csrf.server";
+import { withCSRFProtection } from "~/lib/csrf";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
@@ -73,7 +65,13 @@ export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs)
     const formData = await request.formData();
     const result = await handleDraftsAction(formData, userId);
 
-    if (result.error) {
+    // Type narrowing: check if result is a Response
+    if (result instanceof Response) {
+      return result;
+    }
+
+    // Type narrowing: check if result has error property
+    if (typeof result === "object" && result !== null && "error" in result && result.error) {
       return json(result, { status: 400 });
     }
 
@@ -89,42 +87,19 @@ export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs)
   }
 });
 
-type LoaderData = Awaited<ReturnType<typeof loader>>;
+type _LoaderData = Awaited<ReturnType<typeof loader>>;
 
 export default function DraftPosts() {
-  const data = useLoaderData<LoaderData>();
-  const postsRaw =
-    "posts" in data && Array.isArray(data.posts) ? data.posts : [];
-  const longformPostsRaw =
-    "longformPosts" in data && Array.isArray(data.longformPosts)
-      ? data.longformPosts
-      : [];
-  const allContentRaw =
-    "allContent" in data && Array.isArray(data.allContent)
-      ? data.allContent
-      : [];
-  const userRaw = "user" in data ? data.user : null;
-  const queueTypesRaw =
-    "queueTypes" in data && Array.isArray(data.queueTypes)
-      ? data.queueTypes
-      : [];
-
-  // Deserialize DTOs (with string dates) back to PostData/LongFormPostData (with Date objects)
-  const posts: PostData[] = Array.isArray(postsRaw)
-    ? fromPostDTOArray(postsRaw as PostDTO[])
-    : [];
-
-  const longformPosts: LongFormPostData[] = Array.isArray(longformPostsRaw)
-    ? fromLongFormPostDTOArray(longformPostsRaw as LongFormPostDTO[])
-    : [];
-
-  const allContent: CombinedContent[] = Array.isArray(allContentRaw)
-    ? (allContentRaw as unknown as CombinedContent[])
-    : [];
-
-  const user: UserData | null | undefined = userRaw
-    ? (userRaw as unknown as UserData)
-    : null;
+  // Use TanStack Query for data fetching with caching
+  const {
+    posts,
+    longformPosts,
+    allContent,
+    user,
+    queueTypes,
+    selectedQueueType: _selectedQueueType,
+    isLoading: _isDataLoading,
+  } = useDraftsData();
 
   // Conversion function: PostData -> Post (for useDraftsState hook)
   // useDraftsState expects Post with createdAt: string
@@ -146,64 +121,7 @@ export default function DraftPosts() {
             : new Date().toISOString(),
     };
   };
-  const queueTypes: QueueType[] = Array.isArray(queueTypesRaw)
-    ? queueTypesRaw
-        .map((qt: unknown) => {
-          if (
-            qt &&
-            typeof qt === "object" &&
-            qt !== null &&
-            "id" in qt &&
-            "name" in qt
-          ) {
-            const q = qt as {
-              id?: unknown;
-              name?: unknown;
-              color?: unknown;
-              scheduleType?: unknown;
-              scheduleConfig?: unknown;
-              isEnabled?: unknown;
-              userId?: unknown;
-            };
-            const id = typeof q.id === "string" ? q.id : String(q.id ?? "");
-            const name =
-              typeof q.name === "string" ? q.name : String(q.name ?? "");
-            const color =
-              q.color !== null && q.color !== undefined
-                ? typeof q.color === "string"
-                  ? q.color
-                  : String(q.color)
-                : null;
-            const scheduleType =
-              typeof q.scheduleType === "string" &&
-              (q.scheduleType === "INTERVAL" ||
-                q.scheduleType === "FIXED_SLOTS")
-                ? q.scheduleType
-                : undefined;
-            const scheduleConfig = convertJsonValueToScheduleConfig(
-              q.scheduleConfig,
-            );
-            const isEnabled =
-              typeof q.isEnabled === "boolean"
-                ? q.isEnabled
-                : q.isEnabled !== false;
-            const userId = typeof q.userId === "string" ? q.userId : "";
-            const result: QueueType = {
-              id,
-              name,
-              color,
-              description: undefined,
-              scheduleType,
-              scheduleConfig,
-              isEnabled,
-              userId,
-            };
-            return result;
-          }
-          return null;
-        })
-        .filter((qt): qt is QueueType => qt !== null)
-    : [];
+
   const params = useParams();
   const [searchParams] = useSearchParams();
 

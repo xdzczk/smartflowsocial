@@ -1,6 +1,5 @@
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
 import {
-  useLoaderData,
   Link,
   useParams,
   useRevalidator,
@@ -15,10 +14,9 @@ import {
   type UserData,
   type QueueType,
   postsToCalendarPosts,
-  fromPostDTOArray,
-  type PostDTO,
+  useCalendarQueueData,
 } from "~/features/posts";
-import { withCSRFProtection } from "~/lib/csrf.server";
+import { withCSRFProtection } from "~/lib/csrf";
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
     const userId = await requireUserId(request);
@@ -52,17 +50,17 @@ export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs)
   }
 });
 
-type LoaderData = Exclude<Awaited<ReturnType<typeof loader>>, Response>;
+type _LoaderData = Exclude<Awaited<ReturnType<typeof loader>>, Response>;
 
 export default function CalendarQueueRoute() {
-  const data = useLoaderData<LoaderData>();
+  // Use TanStack Query for data fetching with caching
   const {
     scheduledPosts,
     user,
     scheduleIntervals: _scheduleIntervals,
     queueTypes,
     selectedQueueType,
-  } = data;
+  } = useCalendarQueueData();
   const params = useParams();
   const revalidator = useRevalidator();
 
@@ -157,9 +155,7 @@ export default function CalendarQueueRoute() {
       </div>
 
       <Calendar
-        scheduledPosts={postsToCalendarPosts(
-          fromPostDTOArray(scheduledPosts as PostDTO[]),
-        )}
+        scheduledPosts={postsToCalendarPosts(scheduledPosts)}
         user={user ? (user as unknown as UserData) : undefined}
         queueTypes={queueTypes as unknown as QueueType[]}
       />

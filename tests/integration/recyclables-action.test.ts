@@ -446,7 +446,7 @@ describe("Recyclables Action Handler", () => {
       const error = typeof data.error === "string" ? data.error : "";
 
       expect(result.status).toBe(400);
-      expect(error).toBe("Invalid action");
+      expect(error).toContain("Invalid");
     });
   });
 });

@@ -4,21 +4,25 @@
 
 import { json } from "@remix-run/node";
 
+import {
+  switchToFreePlanSchema,
+  validateFormDataOrRespond,
+} from "~/lib/validation";
 import { getPlanById, updateUserSubscription } from "~/models/payment.server";
+
 export async function handleSubscriptionAction(
   userId: string,
   action: string,
   formData: FormData,
 ) {
   if (action === "switch_to_free_plan") {
-    const planId = formData.get("planId") as string;
-
-    if (!planId) {
-      return json({ error: "Plan ID is required" }, { status: 400 });
+    const result = validateFormDataOrRespond(formData, switchToFreePlanSchema);
+    if (!result.success) {
+      return result.response;
     }
 
     // Get the plan to verify it's free
-    const plan = await getPlanById(planId);
+    const plan = await getPlanById(result.data.planId);
 
     if (!plan) {
       return json({ error: "Plan not found" }, { status: 400 });
@@ -34,7 +38,7 @@ export async function handleSubscriptionAction(
     // Update user subscription to free plan immediately
     await updateUserSubscription(
       userId,
-      planId,
+      result.data.planId,
       `free_${Date.now()}_${userId}`,
     );
 

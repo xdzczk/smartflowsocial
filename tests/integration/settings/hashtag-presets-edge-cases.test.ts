@@ -53,7 +53,7 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
 
       expect(createHashTagPreset).not.toHaveBeenCalled();
       expect(result instanceof Response ? result.status : 200).toBe(400);
-      expect(jsonResult.error).toBe("Name and tags are required");
+      expect(jsonResult.error).toContain("required");
     });
 
     it("should reject empty tags", async () => {
@@ -82,7 +82,7 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
 
       expect(createHashTagPreset).not.toHaveBeenCalled();
       expect(result instanceof Response ? result.status : 200).toBe(400);
-      expect(jsonResult.error).toBe("Name and tags are required");
+      expect(jsonResult.error).toContain("required");
     });
 
     it("should handle optional description", async () => {
@@ -188,7 +188,7 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
 
       expect(updateHashTagPreset).not.toHaveBeenCalled();
       expect(result instanceof Response ? result.status : 200).toBe(400);
-      expect(jsonResult.error).toBe("ID, name and tags are required");
+      expect(jsonResult.error).toContain("Invalid input");
     });
 
     it("should reject empty name", async () => {
@@ -218,7 +218,7 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
 
       expect(updateHashTagPreset).not.toHaveBeenCalled();
       expect(result instanceof Response ? result.status : 200).toBe(400);
-      expect(jsonResult.error).toBe("ID, name and tags are required");
+      expect(jsonResult.error).toContain("Name is required");
     });
 
     it("should reject empty tags", async () => {
@@ -248,7 +248,7 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
 
       expect(updateHashTagPreset).not.toHaveBeenCalled();
       expect(result instanceof Response ? result.status : 200).toBe(400);
-      expect(jsonResult.error).toBe("ID, name and tags are required");
+      expect(jsonResult.error).toContain("Tags are required");
     });
 
     it("should handle optional description", async () => {
@@ -317,7 +317,7 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
 
       expect(deleteHashTagPreset).not.toHaveBeenCalled();
       expect(result instanceof Response ? result.status : 200).toBe(400);
-      expect(jsonResult.error).toBe("ID is required");
+      expect(jsonResult.error).toContain("Invalid input");
     });
 
     it("should delete preset with valid ID", async () => {

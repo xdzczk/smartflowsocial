@@ -8,28 +8,36 @@ import { nip19 } from "nostr-tools";
 import { requireUserId } from "~/features/auth/session.server";
 import { logError } from "~/lib/error-logger.server";
 import {
+  bulkRepostSchema,
+  bulkScheduledRepostSchema,
+  bulkQuoteSchema,
+  repostSchema,
+  quoteSchema,
+  longformRepostSchema,
+  longformQuoteSchema,
+  deletePostSchema,
+  deleteLongFormPostSchema,
+  bulkDeletePostsSchema,
+  bulkDeleteLongFormPostsSchema,
+  bulkDeleteMixedSchema,
+  validateFormDataOrRespond,
+} from "~/lib/validation";
+import {
   deleteLongFormPost,
   getLongFormPostsByIds,
 } from "~/models/longformpost.server";
 import { deletePost } from "~/models/post.commands.server";
 import { getPostsByIds } from "~/models/post.queries.server";
 
-// Type for mixed content items (posts and longform posts)
-interface MixedContentItem {
-  id: string;
-  type: "post" | "longform";
-}
-
 /**
  * Handle delete post action
  */
 async function handleDelete(formData: FormData, userId: string) {
-  const postIdRaw = formData.get("postId");
-  const postId = typeof postIdRaw === "string" ? postIdRaw : "";
-  if (!postId) {
-    throw new Error("Post ID is required");
+  const result = validateFormDataOrRespond(formData, deletePostSchema);
+  if (!result.success) {
+    return result.response;
   }
-  await deletePost({ id: postId, userId });
+  await deletePost({ id: result.data.postId, userId });
   return json({ success: true });
 }
 
@@ -37,12 +45,14 @@ async function handleDelete(formData: FormData, userId: string) {
  * Handle delete longform post action
  */
 async function handleDeleteLongForm(formData: FormData, userId: string) {
-  const postIdRaw = formData.get("postId");
-  const postId = typeof postIdRaw === "string" ? postIdRaw : "";
-  if (!postId) {
-    throw new Error("Post ID is required");
+  const result = validateFormDataOrRespond(
+    formData,
+    deleteLongFormPostSchema,
+  );
+  if (!result.success) {
+    return result.response;
   }
-  await deleteLongFormPost({ id: postId, userId });
+  await deleteLongFormPost({ id: result.data.postId, userId });
   return json({ success: true });
 }
 
@@ -50,13 +60,13 @@ async function handleDeleteLongForm(formData: FormData, userId: string) {
  * Handle bulk delete posts action
  */
 async function handleBulkDelete(formData: FormData, userId: string) {
-  const postIdsRaw = formData.get("postIds");
-  const postIds =
-    typeof postIdsRaw === "string" ? (JSON.parse(postIdsRaw) as string[]) : [];
-  if (!Array.isArray(postIds)) {
-    throw new Error("Invalid postIds format");
+  const result = validateFormDataOrRespond(formData, bulkDeletePostsSchema);
+  if (!result.success) {
+    return result.response;
   }
-  await Promise.all(postIds.map((id: string) => deletePost({ id, userId })));
+  await Promise.all(
+    result.data.postIds.map((id: string) => deletePost({ id, userId })),
+  );
   return json({ success: true });
 }
 
@@ -64,16 +74,15 @@ async function handleBulkDelete(formData: FormData, userId: string) {
  * Handle bulk delete longform posts action
  */
 async function handleBulkDeleteLongForm(formData: FormData, userId: string) {
-  const postIdsRaw = formData.get("postIds");
-  const postIds =
-    typeof postIdsRaw === "string"
-      ? (JSON.parse(postIdsRaw) as unknown as string[])
-      : [];
-  if (!Array.isArray(postIds)) {
-    throw new Error("Invalid postIds format");
+  const result = validateFormDataOrRespond(
+    formData,
+    bulkDeleteLongFormPostsSchema,
+  );
+  if (!result.success) {
+    return result.response;
   }
   await Promise.all(
-    postIds.map((id: string) => deleteLongFormPost({ id, userId })),
+    result.data.postIds.map((id: string) => deleteLongFormPost({ id, userId })),
   );
   return json({ success: true });
 }
@@ -82,14 +91,11 @@ async function handleBulkDeleteLongForm(formData: FormData, userId: string) {
  * Handle bulk delete mixed content (posts and longform posts)
  */
 async function handleBulkDeleteMixed(formData: FormData, userId: string) {
-  const itemDataRaw = formData.get("itemData");
-  const itemDataParsed: unknown =
-    typeof itemDataRaw === "string" ? JSON.parse(itemDataRaw) : null;
-  if (!Array.isArray(itemDataParsed)) {
-    throw new Error("Invalid itemData format");
+  const result = validateFormDataOrRespond(formData, bulkDeleteMixedSchema);
+  if (!result.success) {
+    return result.response;
   }
-  const itemData = itemDataParsed as MixedContentItem[];
-  const promises = itemData.map((item) => {
+  const promises = result.data.itemData.map((item) => {
     if (item.type === "post") {
       return deletePost({ id: item.id, userId });
     } else {
@@ -100,17 +106,16 @@ async function handleBulkDeleteMixed(formData: FormData, userId: string) {
   return json({ success: true });
 }
 
+
 /**
  * Handle bulk repost action
  */
 async function handleBulkRepost(formData: FormData, userId: string) {
-  const postIdsRaw = formData.get("postIds");
-  const postIds =
-    typeof postIdsRaw === "string" ? (JSON.parse(postIdsRaw) as string[]) : [];
-  if (!Array.isArray(postIds)) {
-    throw new Error("Invalid postIds format");
+  const result = validateFormDataOrRespond(formData, bulkRepostSchema);
+  if (!result.success) {
+    return result.response;
   }
-  const postsData = await getPostsByIds({ ids: postIds, userId });
+  const postsData = await getPostsByIds({ ids: result.data.postIds, userId });
   return json({ repostData: postsData });
 }
 
@@ -118,13 +123,14 @@ async function handleBulkRepost(formData: FormData, userId: string) {
  * Handle bulk scheduled repost action
  */
 async function handleBulkScheduledRepost(formData: FormData, userId: string) {
-  const postIdsRaw = formData.get("postIds");
-  const postIds =
-    typeof postIdsRaw === "string" ? (JSON.parse(postIdsRaw) as string[]) : [];
-  if (!Array.isArray(postIds)) {
-    throw new Error("Invalid postIds format");
+  const result = validateFormDataOrRespond(
+    formData,
+    bulkScheduledRepostSchema,
+  );
+  if (!result.success) {
+    return result.response;
   }
-  const postsData = await getPostsByIds({ ids: postIds, userId });
+  const postsData = await getPostsByIds({ ids: result.data.postIds, userId });
   return json({ scheduledRepostData: postsData });
 }
 
@@ -132,15 +138,11 @@ async function handleBulkScheduledRepost(formData: FormData, userId: string) {
  * Handle bulk quote action
  */
 async function handleBulkQuote(formData: FormData, userId: string) {
-  const postIdsRaw = formData.get("postIds");
-  const postIds =
-    typeof postIdsRaw === "string"
-      ? (JSON.parse(postIdsRaw) as unknown as string[])
-      : [];
-  if (!Array.isArray(postIds)) {
-    throw new Error("Invalid postIds format");
+  const result = validateFormDataOrRespond(formData, bulkQuoteSchema);
+  if (!result.success) {
+    return result.response;
   }
-  const postsData = await getPostsByIds({ ids: postIds, userId });
+  const postsData = await getPostsByIds({ ids: result.data.postIds, userId });
 
   // Transform posts data into quote post format
   const quotePostsData = postsData.map((post) => {
@@ -190,7 +192,11 @@ async function handleBulkQuote(formData: FormData, userId: string) {
  * Handle single repost action
  */
 async function handleRepost(formData: FormData, userId: string) {
-  const postId = formData.get("postId") as string;
+  const result = validateFormDataOrRespond(formData, repostSchema);
+  if (!result.success) {
+    return result.response;
+  }
+  const postId = result.data.postId;
 
   try {
     // Get the original post data
@@ -260,7 +266,11 @@ async function handleRepost(formData: FormData, userId: string) {
  * Handle single quote action
  */
 async function handleQuote(formData: FormData, userId: string) {
-  const postId = formData.get("postId") as string;
+  const result = validateFormDataOrRespond(formData, quoteSchema);
+  if (!result.success) {
+    return result.response;
+  }
+  const postId = result.data.postId;
 
   try {
     // Get the original post data
@@ -328,12 +338,16 @@ async function handleQuote(formData: FormData, userId: string) {
  * Handle longform repost action
  */
 async function handleLongformRepost(formData: FormData, userId: string) {
-  const postId = formData.get("postId") as string;
+  const result = validateFormDataOrRespond(formData, longformRepostSchema);
+  if (!result.success) {
+    return result.response;
+  }
+  const longformPostId = result.data.longformPostId;
 
   try {
     // Get the original longform post data
     const longformData = await getLongFormPostsByIds({
-      ids: [postId],
+      ids: [longformPostId],
       userId,
     });
     if (!longformData || longformData.length === 0) {
@@ -404,7 +418,7 @@ async function handleLongformRepost(formData: FormData, userId: string) {
   } catch (error: unknown) {
     logError(error instanceof Error ? error : new Error(String(error)), {
       userId,
-      longformPostId: formData.get("longformPostId") as string,
+      longformPostId,
       message: "Longform repost error",
     });
     return json(
@@ -424,7 +438,11 @@ async function handleLongformRepost(formData: FormData, userId: string) {
  * Handle longform quote action
  */
 async function handleLongformQuote(formData: FormData, userId: string) {
-  const postId = formData.get("postId") as string;
+  const result = validateFormDataOrRespond(formData, longformQuoteSchema);
+  if (!result.success) {
+    return result.response;
+  }
+  const postId = result.data.postId;
 
   try {
     // Get the original longform post data

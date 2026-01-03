@@ -21,16 +21,9 @@ interface UploadResult {
 export async function uploadFile(file: File): Promise<UploadResult> {
   try {
     // First, check what upload provider the user prefers
-    const response = await fetch("/api/user-upload-provider");
-    if (!response.ok) {
-      throw new Error("Failed to get upload provider");
-    }
-
-    const data = (await response.json()) as {
-      provider?: string;
-      enableMirrorBlossom?: boolean;
-      mirrorUploadUrls?: string[];
-    };
+    // Use utility function that can work outside React components
+    const { getUploadProvider } = await import("~/lib/query");
+    const data = await getUploadProvider();
     const uploadProvider = data.provider;
     const enableMirrorBlossom = data.enableMirrorBlossom;
     const mirrorUploadUrls = data.mirrorUploadUrls;

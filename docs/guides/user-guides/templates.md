@@ -294,3 +294,4 @@ Use variables to conditionally include content:
 
 **Next:** [Posting Guide](./posting.md) → Learn advanced posting features
 
+
