@@ -341,45 +341,63 @@ describe("Subscription/Billing Loader Integration", () => {
 
   describe("Error Handling", () => {
     it("should handle authentication errors", async () => {
-      (requireUserId as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Authentication required"),
-      );
+      // requireUserId throws a Response (redirect), not an Error
+      const redirectResponse = new Response(null, {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+      (requireUserId as ReturnType<typeof vi.fn>).mockImplementation(() => {
+        throw redirectResponse;
+      });
 
       const request = new Request(
         "http://localhost:3000/dashboard/settings?tab=subscription",
       );
 
-      await expect(loader({ request })).rejects.toThrow(
-        "Authentication required",
-      );
+      // Loader catches Response errors and returns them
+      const response = await loader({ request });
+      expect(response).toBeInstanceOf(Response);
+      expect(response.status).toBe(401);
     });
 
     it("should handle subscription requirement errors", async () => {
-      (requireAnySubscription as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Subscription required"),
-      );
+      // requireAnySubscription throws a Response (redirect), not an Error
+      const redirectResponse = new Response(null, {
+        status: 403,
+        headers: { "Content-Type": "application/json" },
+      });
+      (requireAnySubscription as ReturnType<typeof vi.fn>).mockImplementation(() => {
+        throw redirectResponse;
+      });
 
       const request = new Request(
         "http://localhost:3000/dashboard/settings?tab=subscription",
       );
 
-      await expect(loader({ request })).rejects.toThrow(
-        "Subscription required",
-      );
+      // Loader catches Response errors and returns them
+      const response = await loader({ request });
+      expect(response).toBeInstanceOf(Response);
+      expect(response.status).toBe(403);
     });
 
     it("should handle feature access errors", async () => {
-      (requireFeatureAccess as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Feature access denied"),
-      );
+      // requireFeatureAccess throws a Response (redirect), not an Error
+      const redirectResponse = new Response(null, {
+        status: 403,
+        headers: { "Content-Type": "application/json" },
+      });
+      (requireFeatureAccess as ReturnType<typeof vi.fn>).mockImplementation(() => {
+        throw redirectResponse;
+      });
 
       const request = new Request(
         "http://localhost:3000/dashboard/settings?tab=subscription",
       );
 
-      await expect(loader({ request })).rejects.toThrow(
-        "Feature access denied",
-      );
+      // Loader catches Response errors and returns them
+      const response = await loader({ request });
+      expect(response).toBeInstanceOf(Response);
+      expect(response.status).toBe(403);
     });
 
     it("should handle data loading errors", async () => {
@@ -391,7 +409,30 @@ describe("Subscription/Billing Loader Integration", () => {
         "http://localhost:3000/dashboard/settings?tab=subscription",
       );
 
-      await expect(loader({ request })).rejects.toThrow("Database error");
+      const response = await loader({ request });
+      expect(response).toBeInstanceOf(Response);
+      expect(response.status).toBe(500);
+      
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as { error?: { message?: string } })
+          : {};
+      
+      expect(data.error).toBeDefined();
+      const error =
+        data.error &&
+        typeof data.error === "object" &&
+        !Array.isArray(data.error)
+          ? (data.error as { message?: string })
+          : {};
+      const errorMessage =
+        typeof error.message === "string" ? error.message : "";
+      expect(errorMessage).toContain("Database error");
     });
   });
 });
