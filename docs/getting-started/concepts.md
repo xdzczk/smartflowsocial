@@ -35,7 +35,7 @@ SmartFlowSocial is a **self-hosted, professional-grade social media management p
 
 1. **Privacy-First** - Your keys never leave your browser
 2. **Self-Hosted** - Full control over your data and infrastructure
-3. **Open Source** - MIT licensed, fully auditable
+3. **Open Source** - ELv2 licensed, fully auditable
 4. **Professional Features** - Enterprise-level scheduling and management
 
 ---

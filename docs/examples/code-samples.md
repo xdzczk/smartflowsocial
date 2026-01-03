@@ -1,8 +1,32 @@
 # Code Samples
 
-**Last updated:** 2026-01-02
+**Last updated:** 2026-01-03
 
 Working code examples for common SmartFlowSocial development tasks.
+
+---
+
+## Architecture Pattern
+
+SmartFlowSocial follows a **layered architecture**:
+
+1. **Routes** (`app/routes/*`) - HTTP handling, use feature public APIs
+2. **Features** (`app/features/*`) - Business logic, expose public APIs via `index.ts`
+3. **Models** (`app/models/*`) - Database access, used internally by features
+
+**✅ DO:** Import from feature public APIs
+```typescript
+import { loadDashboardData } from "~/features/posts";
+import { requireUserId } from "~/features/auth";
+```
+
+**❌ DON'T:** Import from models or feature internals
+```typescript
+import { createPost } from "~/models/post.commands.server"; // ❌ Bad
+import { getPosts } from "~/features/posts/services/..."; // ❌ Bad
+```
+
+See [Architecture Overview](../getting-started/architecture.md) for details.
 
 ---
 
@@ -61,76 +85,87 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 ## Database Operations
 
-### Create Record
+### Using Models (Internal Layer)
+
+**Note:** Models are internal to features. Routes should use feature public APIs, not models directly.
 
 ```typescript
-// app/models/post.server.ts
+// app/models/post.commands.server.ts
+// This is the model layer - used internally by features
+import type { CreatePostData } from "./post.types";
 import { prisma } from "~/lib/prisma.server";
 
-export async function createPost(data: {
-  userId: string;
-  content: string;
-  scheduledAt?: Date;
-}) {
+export function createPost(data: CreatePostData): Promise<Post> {
+  // Actual implementation uses CreatePostData type with all required fields
   return prisma.post.create({
     data: {
-      userId: data.userId,
       content: data.content,
-      scheduledAt: data.scheduledAt,
-      status: data.scheduledAt ? "SCHEDULED" : "DRAFT",
-    },
-  });
-}
-```
-
-### Query with Relations
-
-```typescript
-export async function getPostWithUser(postId: string) {
-  return prisma.post.findUnique({
-    where: { id: postId },
-    include: {
+      fileUrl: data.fileUrl,
+      scheduledFor: data.scheduledFor?.toString(),
+      postType: data.postType,
+      tags: data.tags,
+      isScheduled: data.isScheduled,
+      isPosted: data.isPosted,
+      // ... other fields
       user: {
-        select: {
-          id: true,
-          npub: true,
-          profile: true,
-        },
+        connect: { id: data.userId },
       },
     },
   });
 }
 ```
 
-### Pagination
+```typescript
+// app/models/post.queries.server.ts
+// Query operations (reads only)
+import { prisma } from "~/lib/prisma.server";
+
+export function getScheduledPosts({
+  userId,
+  queueType,
+}: {
+  userId: string;
+  queueType?: string;
+}): Promise<PostWithQueueType[]> {
+  const whereClause = {
+    isScheduled: true,
+    isPosted: false,
+    draft: false,
+    userId: userId,
+    ...(queueType && queueType !== "all" && {
+      queueType: { name: queueType },
+    }),
+  };
+
+  return prisma.post.findMany({
+    where: whereClause,
+    include: {
+      queueType: true,
+      hashTagPreset: true,
+      template: true,
+    },
+    orderBy: { scheduledFor: "asc" },
+  });
+}
+```
+
+### Using Features (Recommended Pattern)
+
+**Routes should use feature public APIs, not models directly:**
 
 ```typescript
-export async function getPostsPaginated(
-  userId: string,
-  page: number = 1,
-  pageSize: number = 20,
-) {
-  const skip = (page - 1) * pageSize;
+// app/routes/dashboard.posts.tsx
+import { loadDashboardData } from "~/features/posts";
+import { requireUserId } from "~/features/auth";
 
-  const [posts, total] = await Promise.all([
-    prisma.post.findMany({
-      where: { userId },
-      skip,
-      take: pageSize,
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.post.count({ where: { userId } }),
-  ]);
+export async function loader({ request }: LoaderFunctionArgs) {
+  const userId = await requireUserId(request);
+  const url = new URL(request.url);
+  const queueType = url.searchParams.get("queueType") || "all";
 
-  return {
-    posts,
-    pagination: {
-      page,
-      pageSize,
-      total,
-      totalPages: Math.ceil(total / pageSize),
-    },
-  };
+  // Use feature public API, not models directly
+  const data = await loadDashboardData(userId, queueType);
+  return json(data);
 }
 ```
 
@@ -145,20 +180,19 @@ export async function getPostsPaginated(
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { requireUserId } from "~/features/auth";
-import { getPostsByUserId } from "~/features/posts";
+import { loadDashboardData } from "~/features/posts";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   const url = new URL(request.url);
 
   // Parse query parameters
-  const status = url.searchParams.get("status");
-  const page = parseInt(url.searchParams.get("page") || "1");
+  const queueType = url.searchParams.get("queueType") || "all";
 
-  // Fetch data
-  const posts = await getPostsByUserId(userId, { status, page });
+  // Use feature loader (handles data fetching, business logic)
+  const data = await loadDashboardData(userId, queueType);
 
-  return json({ posts });
+  return json(data);
 }
 ```
 
@@ -170,7 +204,7 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { requireUserId } from "~/features/auth";
 import { ValidationError } from "~/lib/errors";
-import { createPost } from "~/features/posts";
+import { handleNewPostAction } from "~/features/posts";
 
 export async function action({ request }: ActionFunctionArgs) {
   const userId = await requireUserId(request);
@@ -179,70 +213,76 @@ export async function action({ request }: ActionFunctionArgs) {
     return json({ error: "Method not allowed" }, { status: 405 });
   }
 
-  const body = await request.json();
-
-  // Validate
-  if (!body.content) {
-    throw new ValidationError("Content is required");
-  }
-
-  // Create post
-  const post = await createPost({
-    userId,
-    content: body.content,
-    scheduledAt: body.scheduledAt ? new Date(body.scheduledAt) : undefined,
-  });
-
-  return json({ post }, { status: 201 });
+  // Use feature action handler (handles validation, business logic, etc.)
+  return handleNewPostAction({ request, userId });
 }
 ```
+
+**Note:** In practice, post creation goes through feature action handlers that:
+- Validate input
+- Resolve queue types
+- Handle business logic
+- Call models internally
+- Return appropriate responses
 
 ---
 
 ## Queue Operations
 
-### Schedule Post
+### Schedule Post (Using Queue Abstraction)
 
 ```typescript
 // app/features/posts/services/scheduling.server.ts
-import { Queue } from "bullmq";
-import { redis } from "~/lib/redis.server";
+import { enqueuePostJob } from "~/infra/queue";
+import type { PostJobData } from "~/infra/queue";
 
-const postQueue = new Queue("post-publish", {
-  connection: redis,
-});
-
-export async function schedulePost(postId: string, scheduledAt: Date) {
+export async function schedulePost(
+  postId: string,
+  userId: string,
+  signedEvent: SignedEvent,
+  scheduledAt: Date,
+) {
   const delay = scheduledAt.getTime() - Date.now();
 
-  await postQueue.add(
-    "publish-post",
-    { postId },
-    {
-      delay,
-      attempts: 3,
-      backoff: {
-        type: "exponential",
-        delay: 2000,
-      },
+  // Use queue abstraction layer (not BullMQ directly)
+  await enqueuePostJob({
+    postId,
+    userId,
+    signedEvent,
+    scheduledAt: scheduledAt.toISOString(),
+  }, {
+    delay: Math.max(0, delay), // Ensure non-negative
+    attempts: 3,
+    backoff: {
+      type: "exponential",
+      delay: 2000,
     },
-  );
+  });
 }
 ```
 
-### Process Queue Job
+### Process Queue Job (Worker Implementation)
 
 ```typescript
-// worker.ts
+// app/features/posts/queues.server.ts
 import { Worker } from "bullmq";
-import { redis } from "~/lib/redis.server";
-import { publishPost } from "~/features/posts/services/publishing.server";
+import { getQueueInstance, redis } from "~/infra/queue";
+import type { PostJobData } from "~/infra/queue";
 
-const worker = new Worker(
-  "post-publish",
+// Get queue instance using abstraction
+const scheduledPostsQueue = getQueueInstance("scheduled-posts");
+
+// Worker processes scheduled posts
+export const scheduledPostsWorker = new Worker<PostJobData>(
+  "scheduled-posts",
   async (job) => {
-    const { postId } = job.data;
-    await publishPost(postId);
+    const { postId, userId, signedEvent } = job.data;
+    
+    // Publish to Nostr via HTTP Publisher
+    await publishPostToNostr(signedEvent);
+    
+    // Update post status
+    await updatePostStatus(postId, { isPosted: true });
   },
   {
     connection: redis,
@@ -250,14 +290,17 @@ const worker = new Worker(
   },
 );
 
-worker.on("completed", (job) => {
-  console.log(`Job ${job.id} completed`);
+// Event handlers
+scheduledPostsWorker.on("completed", (job) => {
+  console.log(`Post ${job.data.postId} published successfully`);
 });
 
-worker.on("failed", (job, err) => {
-  console.error(`Job ${job.id} failed:`, err);
+scheduledPostsWorker.on("failed", (job, err) => {
+  console.error(`Post ${job?.data?.postId} failed:`, err);
 });
 ```
+
+**Note:** Workers are initialized in `worker.ts` and automatically started when the module loads.
 
 ---
 
@@ -348,7 +391,11 @@ async function signEvent(content: string) {
 
 ```typescript
 // app/features/posts/services/publishing.server.ts
+import { getPostById } from "~/models/post.queries.server";
+import { updatePost } from "~/models/post.commands.server";
+
 export async function publishPost(postId: string) {
+  // Get post from model (read)
   const post = await getPostById(postId);
 
   if (!post.signedEvent) {
@@ -361,6 +408,7 @@ export async function publishPost(postId: string) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       event: post.signedEvent,
+      relays: post.relays || [],
     }),
   });
 
@@ -368,8 +416,14 @@ export async function publishPost(postId: string) {
     throw new Error("Failed to publish");
   }
 
-  // Update post status
-  await updatePostStatus(postId, "POSTED");
+  // Update post status using model (write)
+  await updatePost({
+    id: postId,
+    data: {
+      isPosted: true,
+      postedAt: new Date(),
+    },
+  });
 }
 ```
 
@@ -499,37 +553,31 @@ export async function bulkPublishPosts(postIds: string[]) {
 ```typescript
 // app/features/posts/services/scheduling.server.ts
 import { prisma } from "~/lib/prisma.server";
+import { createPost } from "~/models/post.commands.server";
+import { resolveQueueTypeId } from "./queue-type-resolver.server";
 
 export async function schedulePostWithQueue(
   postId: string,
-  queueId: string,
+  queueTypeName: string,
   scheduledAt: Date,
 ) {
   // Use transaction to ensure consistency
   return await prisma.$transaction(async (tx) => {
-    // 1. Update post
+    // 1. Resolve queue type ID (business logic)
+    const queueTypeId = await resolveQueueTypeId(tx, queueTypeName);
+
+    // 2. Update post (using model)
     const post = await tx.post.update({
       where: { id: postId },
       data: {
-        queueId,
-        scheduledAt,
-        status: "SCHEDULED",
+        queueTypeId,
+        scheduledFor: scheduledAt.toString(),
+        isScheduled: true,
       },
     });
 
-    // 2. Create queue job
-    await createQueueJob(tx, {
-      postId,
-      scheduledAt,
-    });
-
-    // 3. Update queue stats
-    await tx.queue.update({
-      where: { id: queueId },
-      data: {
-        scheduledCount: { increment: 1 },
-      },
-    });
+    // 3. Schedule queue job (business logic)
+    await scheduleQueueJob(postId, scheduledAt);
 
     return post;
   });
@@ -538,8 +586,10 @@ export async function schedulePostWithQueue(
 // Common pitfalls:
 // ❌ Not using transactions (data inconsistency)
 // ❌ Long-running transactions (locks database)
+// ❌ Direct model access from routes (bypasses business logic)
 // ✅ Keep transactions short
 // ✅ Handle rollback on errors
+// ✅ Use feature layer, not models directly
 ```
 
 ### Caching with Invalidation
@@ -599,32 +649,55 @@ export async function updateUser(userId: string, data: UserUpdate) {
 **Real-world scenario:** Process jobs asynchronously with proper error handling.
 
 ```typescript
-// app/features/posts/workers/post-publisher.worker.ts
-import { Worker, Job } from "bullmq";
-import { redis } from "~/lib/redis.server";
-import { publishPost } from "~/features/posts/services/publishing.server";
-import { updatePostStatus } from "~/features/posts";
+// app/features/posts/queues.server.ts
+import { Worker, type Job } from "bullmq";
+import { getQueueInstance, redis } from "~/infra/queue";
+import type { PostJobData } from "~/infra/queue";
+import { updatePostStatus } from "~/models/post.commands.server";
+import { fetchWithRetry } from "~/lib/fetch.server";
+import { env } from "~/lib/env.server";
 
-const worker = new Worker(
-  "post-publish",
-  async (job: Job) => {
-    const { postId } = job.data;
+const scheduledPostsQueue = getQueueInstance("scheduled-posts");
+
+export const scheduledPostsWorker = new Worker<PostJobData>(
+  "scheduled-posts",
+  async (job: Job<PostJobData>) => {
+    const { postId, userId, signedEvent } = job.data;
 
     try {
-      // Update status to processing
-      await updatePostStatus(postId, "PROCESSING");
+      // Idempotency check: verify post exists and is not already posted
+      const existingPost = await prisma.post.findUnique({
+        where: { id: postId, userId },
+        select: { isPosted: true, nostrEventId: true },
+      });
 
-      // Publish post
-      await publishPost(postId);
+      if (existingPost?.isPosted) {
+        console.log(`Post ${postId} already posted, skipping`);
+        return { success: true, skipped: true };
+      }
 
-      // Update status to posted
-      await updatePostStatus(postId, "POSTED");
+      // Publish to Nostr via HTTP Publisher
+      const response = await fetchWithRetry(
+        `${env.NOSTR_PUBLISHER_URL}/publish`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ event: signedEvent }),
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to publish: ${response.statusText}`);
+      }
+
+      // Update post status to posted
+      await updatePostStatus(postId, {
+        isPosted: true,
+        postedAt: new Date(),
+      });
 
       return { success: true, postId };
     } catch (error) {
-      // Update status to failed
-      await updatePostStatus(postId, "FAILED");
-
       // Log error
       console.error(`Failed to publish post ${postId}:`, error);
 
@@ -643,26 +716,28 @@ const worker = new Worker(
 );
 
 // Event handlers
-worker.on("completed", (job) => {
+scheduledPostsWorker.on("completed", (job) => {
   console.log(`Post ${job.data.postId} published successfully`);
 });
 
-worker.on("failed", (job, err) => {
+scheduledPostsWorker.on("failed", (job, err) => {
   console.error(`Post ${job?.data?.postId} failed:`, err);
 
   // Send alert if too many failures
   if (job?.attemptsMade && job.attemptsMade >= 3) {
-    sendAlert(`Post ${job.data.postId} failed after 3 attempts`);
+    // Send alert logic here
+    console.error(`Post ${job.data.postId} failed after 3 attempts`);
   }
 });
 
 // Common pitfalls:
 // ❌ Not handling errors (jobs stuck)
 // ❌ No rate limiting (overwhelm services)
-// ❌ Not updating status (unclear state)
+// ❌ Not checking idempotency (duplicate posts)
 // ✅ Handle all errors
 // ✅ Implement rate limiting
-// ✅ Update status throughout process
+// ✅ Check idempotency before processing
+// ✅ Use queue abstraction layer, not BullMQ directly
 ```
 
 ### Validation and Sanitization
@@ -707,13 +782,21 @@ export function sanitizeContent(content: string): string {
     .trim();
 }
 
-// Usage in route
+// Usage in route - use feature action handler
 export async function action({ request }: ActionFunctionArgs) {
   const userId = await requireUserId(request);
-  const body = await request.json();
+  
+  // Feature action handlers handle validation, sanitization, and business logic
+  return handleNewPostAction({ request, userId });
+}
 
+// Or if you need custom validation in a feature service:
+export async function createPostWithValidation(
+  userId: string,
+  data: unknown,
+) {
   // Validate
-  const validated = validatePost(body);
+  const validated = validatePost(data);
 
   // Sanitize
   const sanitized = {
@@ -721,13 +804,17 @@ export async function action({ request }: ActionFunctionArgs) {
     content: sanitizeContent(validated.content),
   };
 
-  // Create post
+  // Resolve queue type (business logic)
+  const queueTypeId = await resolveQueueTypeId(sanitized.queueTypeName);
+
+  // Create post (using model)
   const post = await createPost({
     userId,
     ...sanitized,
+    queueTypeId,
   });
 
-  return json({ post });
+  return post;
 }
 
 // Common pitfalls:

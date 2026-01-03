@@ -447,7 +447,7 @@ const errorMessage = handleApiError(response);
 ## Related Documentation
 
 - [Configuration Reference](./configuration.md) - Environment configuration
-- [API Reference](./api-reference.md) - API error responses
+- [API Reference](./api.md) - API error responses
 - [Troubleshooting Guide](../troubleshooting/common-issues.md) - Common error solutions
 
 ---

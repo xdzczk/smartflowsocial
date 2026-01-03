@@ -11,7 +11,7 @@ Learn how to use the visual calendar interface to schedule and manage your posts
 ## Prerequisites
 
 - ✅ Account created and logged in
-- ✅ Completed [Scheduling Posts](./scheduling-posts.md)
+- ✅ Completed [Creating and Scheduling Posts](./creating-and-scheduling-posts.md)
 - ✅ Have at least one scheduled post
 
 ---
@@ -283,7 +283,7 @@ Learn how to use the visual calendar interface to schedule and manage your posts
 
 ## Next Steps
 
-1. **[Bulk Scheduling](../intermediate/bulk-scheduling.md)** - Schedule multiple posts
+1. **[Posting Guide](../../guides/user-guides/posting.md#bulk-operations)** - Bulk scheduling
 2. **[Advanced Scheduling Strategies](../intermediate/advanced-scheduling-strategies.md)** - Optimize your schedule
 3. **[Creating Your First Queue](./creating-your-first-queue.md)** - Organize with queues
 
@@ -297,6 +297,6 @@ Learn how to use the visual calendar interface to schedule and manage your posts
 
 ---
 
-**Next Tutorial:** [Bulk Scheduling](../intermediate/bulk-scheduling.md) → Schedule multiple posts
+**Next Tutorial:** [Posting Guide](../../guides/user-guides/posting.md#bulk-operations) → Bulk scheduling
 
 

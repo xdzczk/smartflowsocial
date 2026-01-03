@@ -747,6 +747,6 @@ cp /var/lib/redis/dump.rdb /backups/redis-$(date +%Y%m%d).rdb
 ## Additional Resources
 
 - [Deployment Guide](./deployment.md)
-- [Queue System Documentation](./queue-system.md)
-- [Troubleshooting Guide](./troubleshooting.md)
-- [Error Handling Guide](./error-handling.md)
+- [Posting Guide](./user-guides/posting.md#queue-types) - Queue system documentation
+- [Troubleshooting Guide](../troubleshooting/common-issues.md)
+- [Troubleshooting Errors](../troubleshooting/errors.md)

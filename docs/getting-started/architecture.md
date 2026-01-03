@@ -140,9 +140,11 @@ smartflow-social/
 │   │   ├── asset.server.ts      # Asset CRUD operations
 │   │   ├── longformpost.server.ts # Long-form post operations
 │   │   ├── payment.server.ts    # Payment processing
-│   │   ├── post.server.ts       # Post CRUD operations
+│   │   ├── post.commands.server.ts # Post write operations
+│   │   ├── post.queries.server.ts  # Post read operations
+│   │   ├── post.types.ts         # Post shared types
 │   │   ├── template.server.ts   # Template operations
-│   │   └── user.server.ts       # User management
+│   │   └── user.server.ts       # User management (deprecated, use ~/features/user)
 │   │
 │   ├── routes/                   # Remix file-based routing
 │   │   ├── _index.tsx           # Landing page
@@ -554,7 +556,7 @@ Error (base)
 4. **Error Returned**: To client
 5. **Error Displayed**: In error boundary
 
-See [Error Handling Guide](../error-handling.md) for details.
+See [Troubleshooting Guide](../troubleshooting/errors.md) for details.
 
 ## Security Architecture
 
@@ -576,7 +578,7 @@ User → Extension → Sign Challenge → Server Verify → Session
 - Server-side: Security validation
 - Database: Constraints
 
-See [Security Guide](../security/security.md) for details.
+See [Security Guide](../guides/security.md) for details.
 
 ## Performance Considerations
 
@@ -628,7 +630,7 @@ The application runs two processes:
 - Workers automatically share queue
 - Load distributed across workers
 
-See [Queue System Documentation](../operations/queue-system.md) for details.
+See [Posting Guide](../guides/user-guides/posting.md#queue-types) for queue system details.
 
 ## Best Practices
 

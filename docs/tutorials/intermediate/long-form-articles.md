@@ -11,7 +11,7 @@ Complete guide to creating, formatting, and publishing long-form articles using 
 ## Prerequisites
 
 - ✅ Account created and logged in
-- ✅ Completed [Creating Your First Post](../beginner/creating-your-first-post.md)
+- ✅ Completed [Creating and Scheduling Posts](../beginner/creating-and-scheduling-posts.md)
 - ✅ Basic plan or higher (long-form posts available on paid plans)
 - ✅ Understanding of rich text editing
 

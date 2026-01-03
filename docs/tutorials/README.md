@@ -12,9 +12,7 @@ Step-by-step tutorials organized by difficulty level to help you master SmartFlo
 
 Perfect for new users getting started with SmartFlowSocial.
 
-- [Creating Your First Post](./beginner/creating-your-first-post.md) - 10 min
-- [Adding Images to Posts](./beginner/adding-images.md) - 15 min
-- [Scheduling Posts](./beginner/scheduling-posts.md) - 15 min
+- [Creating and Scheduling Posts](./beginner/creating-and-scheduling-posts.md) - 30 min
 - [Creating Your First Queue](./beginner/creating-your-first-queue.md) - 20 min
 - [Using Hashtag Presets](./beginner/using-hashtag-presets.md) - 15 min
 - [Using the Calendar View](./beginner/using-calendar-view.md) - 10 min
@@ -23,20 +21,25 @@ Perfect for new users getting started with SmartFlowSocial.
 
 For users ready to explore advanced features and workflows.
 
-- [Bulk Scheduling](./intermediate/bulk-scheduling.md) - 25 min
-- [Multi-Account Setup](./intermediate/multi-account-setup.md) - 30 min
-- [Creating Giveaways](./intermediate/creating-giveaways.md) - 30 min
 - [Advanced Scheduling Strategies](./intermediate/advanced-scheduling-strategies.md) - 30 min
 - [Long-form Articles](./intermediate/long-form-articles.md) - 35 min
+
+**Note:** For bulk scheduling, multi-account setup, and giveaways, see the comprehensive guides:
+- [Posting Guide](../guides/user-guides/posting.md#bulk-operations) - Bulk scheduling
+- [Multi-Account Guide](../guides/user-guides/multi-account.md) - Multi-account setup
+- [Giveaways Guide](../guides/user-guides/giveaways.md) - Creating giveaways
 
 ### Advanced
 
 For power users and developers.
 
-- [Custom Integrations](./advanced/custom-integrations.md) - 45 min
 - [API Usage](./advanced/api-usage.md) - 40 min
+- [Custom Integrations](./advanced/custom-integrations.md) - 45 min
 - [Advanced Queue Management](./advanced/advanced-queue-management.md) - 35 min
-- [Performance Optimization](./advanced/performance-optimization.md) - 40 min
+
+**Note:** For performance optimization, see:
+- [Operations Guide](../guides/operations.md#performance-monitoring) - Performance monitoring and optimization
+- [Performance Troubleshooting](../troubleshooting/performance.md) - Performance issues and solutions
 
 ---
 
@@ -45,16 +48,19 @@ For power users and developers.
 ### I want to...
 
 **Get started quickly**
-→ [Creating Your First Post](./beginner/creating-your-first-post.md) → [Adding Images](./beginner/adding-images.md) → [Scheduling Posts](./beginner/scheduling-posts.md)
+→ [Creating and Scheduling Posts](./beginner/creating-and-scheduling-posts.md) → [Creating Your First Queue](./beginner/creating-your-first-queue.md) → [Using the Calendar View](./beginner/using-calendar-view.md)
 
 **Organize my content**
 → [Creating Your First Queue](./beginner/creating-your-first-queue.md) → [Using Hashtag Presets](./beginner/using-hashtag-presets.md) → [Using the Calendar View](./beginner/using-calendar-view.md)
 
 **Scale my posting**
-→ [Bulk Scheduling](./intermediate/bulk-scheduling.md) → [Advanced Scheduling Strategies](./intermediate/advanced-scheduling-strategies.md) → [Advanced Queue Management](./advanced/advanced-queue-management.md)
+→ [Posting Guide](../guides/user-guides/posting.md#bulk-operations) → [Advanced Scheduling Strategies](./intermediate/advanced-scheduling-strategies.md) → [Advanced Queue Management](./advanced/advanced-queue-management.md)
 
 **Build integrations**
 → [API Usage](./advanced/api-usage.md) → [Custom Integrations](./advanced/custom-integrations.md)
+
+**Optimize performance**
+→ [Operations Guide](../guides/operations.md#performance-monitoring) → [Performance Troubleshooting](../troubleshooting/performance.md)
 
 ---
 
@@ -78,6 +84,6 @@ Want to improve a tutorial or add a new one? See our [Documentation Contributing
 
 ---
 
-**Start Learning:** [Creating Your First Post](./beginner/creating-your-first-post.md)
+**Start Learning:** [Creating and Scheduling Posts](./beginner/creating-and-scheduling-posts.md)
 
 

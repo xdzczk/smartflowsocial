@@ -233,7 +233,7 @@ Get it now: {{link}}
 ## Related Documentation
 
 - [Posting Guide](../guides/user-guides/posting.md) - Complete posting guide
-- [Templates Guide](../guides/user-guides/templates.md) - Reusable templates
+- [Posting Guide](../guides/user-guides/posting.md#templates) - Templates (included in posting guide)
 - [Calendar Guide](../guides/user-guides/calendar.md) - Visual scheduling
 - [Code Samples](./code-samples.md) - Code examples
 

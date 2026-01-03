@@ -776,27 +776,93 @@ Full articles with rich text formatting (NIP-23).
 
 ### Templates
 
-Save reusable post structures.
+Save reusable post structures with placeholders for dynamic content.
+
+**What Templates Are:**
+
+Templates allow you to create reusable post structures with placeholders for dynamic content. Use templates for:
+
+- **Weekly announcements** - Regular updates
+- **Product launches** - Consistent format
+- **Event promotions** - Standard structure
+- **Recurring content** - Evergreen posts
 
 **Creating Templates:**
 
-1. **Create Post**
-2. **Click "Save as Template"**
-3. **Name Template**
-4. **Save**
+1. **Go to Settings → Templates**
+2. **Click "Create Template"**
+3. **Enter template details:**
+   - **Name** - Template identifier
+   - **Content** - Template text with variables
+   - **Description** - What this template is for
+4. **Use variables:** `{{variableName}}` syntax for placeholders
+5. **Click "Save Template"**
+
+**Example Template:**
+
+```
+Weekly Update: {{week}}
+
+Highlights:
+- {{highlight1}}
+- {{highlight2}}
+- {{highlight3}}
+
+Read more: {{link}}
+
+#weeklyupdate #nostr
+```
 
 **Using Templates:**
 
-1. **Click "New Post from Template"**
-2. **Select Template**
-3. **Fill in Placeholders**
-4. **Post or Schedule**
+1. **Click "New Post"**
+2. **Click "Use Template"**
+3. **Select a template**
+4. **Fill in variables:**
+   - Replace `{{variable}}` with actual values
+   - Edit content as needed
+5. **Post or schedule**
 
-**Template Features:**
+**Template Variables:**
 
-- **Placeholders**: Variables in templates
-- **Reusability**: Use multiple times
-- **Organization**: Group by category
+- **Format:** `{{variableName}}`
+- **Case-sensitive:** `{{Name}}` ≠ `{{name}}`
+- **Spaces allowed:** `{{Product Name}}`
+
+**Common Variables:**
+
+- `{{date}}` - Current date
+- `{{time}}` - Current time
+- `{{week}}` - Week number
+- `{{title}}` - Post title
+- `{{description}}` - Post description
+- `{{link}}` - URL link
+- Custom variables: `{{productName}}`, `{{eventName}}`, etc.
+
+**Template Types:**
+
+- **Text Templates** - For announcements, updates, news
+- **Image Templates** - For product showcases, visual content
+- **Link Templates** - For article shares, resource links
+
+**Template Best Practices:**
+
+1. **Keep it flexible:**
+   - Use variables for dynamic content
+   - Allow customization
+   - Don't over-constrain
+
+2. **Make it reusable:**
+   - Generic enough for multiple uses
+   - Specific enough to be useful
+   - Clear variable names
+
+3. **Organize by purpose:**
+   - Group by category (weekly updates, product launches, etc.)
+   - Name clearly ("Weekly Update Template")
+   - Keep updated and remove unused templates
+
+For more advanced template features, see the Templates section above.
 
 ### Hashtag Presets
 
@@ -924,19 +990,19 @@ Track post performance (if available).
 - Ensure new time is in future
 - Re-sign event if needed
 
-See [Troubleshooting Guide](../operations/troubleshooting.md) for more solutions.
+See [Troubleshooting Guide](../troubleshooting/common-issues.md) for more solutions.
 
 ---
 
 ## See Also
 
-- [Onboarding Guide](../getting-started/onboarding.md) - Getting started with SmartFlowSocial
-- [Calendar Feature](./calendar-feature.md) - Visual post scheduling with drag-and-drop
-- [Lightning Payments](./lightning-payments.md) - Subscription payment system
-- [Nostr Integration](../integration/nostr-integration.md) - Nostr protocol integration details
-- [API Reference](../reference/api-reference.md) - API endpoints and usage
-- [Troubleshooting Guide](../operations/troubleshooting.md) - Common issues and solutions
-- [Queue System](../operations/queue-system.md) - How posts are queued and scheduled
+- [Hosted Quick Start](../getting-started/hosted.md) - Getting started with SmartFlowSocial
+- [Calendar Guide](./calendar.md) - Visual post scheduling with drag-and-drop
+- [Payments Guide](./payments.md) - Subscription payment system
+- [Nostr Integration](../reference/nostr.md) - Nostr protocol integration details
+- [API Reference](../reference/api.md) - API endpoints and usage
+- [Troubleshooting Guide](../troubleshooting/common-issues.md) - Common issues and solutions
+- [Queue Types](#queue-types) - How posts are queued and scheduled (see above)
 
 ---
 

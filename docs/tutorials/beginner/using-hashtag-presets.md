@@ -312,7 +312,7 @@ Description: For Bitcoin-related content
 ## Next Steps
 
 1. **[Using the Calendar View](./using-calendar-view.md)** - Visual scheduling
-2. **[Bulk Scheduling](../intermediate/bulk-scheduling.md)** - Schedule multiple posts
+2. **[Posting Guide](../../guides/user-guides/posting.md#bulk-operations)** - Bulk scheduling
 3. **[Creating Your First Queue](./creating-your-first-queue.md)** - Organize with queues
 
 ---
@@ -321,7 +321,7 @@ Description: For Bitcoin-related content
 
 - [Settings Guide](../../guides/user-guides/settings.md) - Complete settings reference
 - [Posting Guide](../../guides/user-guides/posting.md) - Using presets in posts
-- [Templates Guide](../../guides/user-guides/templates.md) - Reusable content
+- [Posting Guide](../../guides/user-guides/posting.md#templates) - Templates and reusable content
 
 ---
 

@@ -371,7 +371,7 @@ app/routes/
 4. Check browser performance
 5. Update browser
 
-See [Troubleshooting Guide](../operations/troubleshooting.md) for more solutions.
+See [Troubleshooting Guide](../troubleshooting/common-issues.md) for more solutions.
 
 ---
 
@@ -435,7 +435,7 @@ Update Calendar View
 
 ## Additional Resources
 
-- [Posting Workflow](./posting.md) - How to create posts
-- [Queue System](../operations/queue-system.md) - Queue documentation
-- [Nostr Integration](../integration/nostr-integration.md) - Protocol details
-- [Troubleshooting Guide](../operations/troubleshooting.md) - Common issues
+- [Posting Guide](./posting.md) - How to create posts
+- [Queue Types](./posting.md#queue-types) - Queue documentation
+- [Nostr Integration](../reference/nostr.md) - Protocol details
+- [Troubleshooting Guide](../troubleshooting/common-issues.md) - Common issues

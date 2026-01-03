@@ -11,7 +11,7 @@ Learn how to create and configure queues to organize your posts and automate sch
 ## Prerequisites
 
 - ✅ Account created and logged in
-- ✅ Completed [Scheduling Posts](./scheduling-posts.md)
+- ✅ Completed [Creating and Scheduling Posts](./creating-and-scheduling-posts.md)
 - ✅ Basic plan or higher (queues available on all paid plans)
 
 ---
@@ -318,7 +318,7 @@ Learn how to create and configure queues to organize your posts and automate sch
 
 1. **[Using Hashtag Presets](./using-hashtag-presets.md)** - Automate hashtags
 2. **[Using the Calendar View](./using-calendar-view.md)** - Visual planning
-3. **[Bulk Scheduling](../intermediate/bulk-scheduling.md)** - Schedule multiple posts
+3. **[Posting Guide](../../guides/user-guides/posting.md#bulk-operations)** - Bulk scheduling
 
 ---
 

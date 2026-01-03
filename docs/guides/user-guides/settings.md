@@ -498,6 +498,6 @@ nostr+walletconnect://pubkey?relay=wss://relay.example.com&secret=...
 
 ---
 
-**Next:** [Search Guide](./search.md) → Search for Nostr events
+**Next:** [Engagement Guide](./engagement.md#searching-for-events) → Search for Nostr events
 
 

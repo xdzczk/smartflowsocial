@@ -304,7 +304,7 @@ await Promise.all(jobs.map((job) => processJob(job)));
 ## Related Documentation
 
 - [Common Issues](./common-issues.md) - Common problems
-- [Debugging Guide](./debugging.md) - Debugging techniques
+- [Error Troubleshooting](./errors.md) - Error resolution and debugging techniques
 - [Performance Guide](../reference/performance.md) - Performance optimization
 
 ---

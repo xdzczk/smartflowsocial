@@ -202,7 +202,7 @@ When scheduling a post:
 
 - **[Posting Guide](../guides/user-guides/posting.md)** - Advanced posting features
 - **[Calendar Guide](../guides/user-guides/calendar.md)** - Calendar features
-- **[Templates Guide](../guides/user-guides/templates.md)** - Reusable templates
+- **[Posting Guide](../guides/user-guides/posting.md#templates)** - Templates (included in posting guide)
 - **[Engagement Guide](../guides/user-guides/engagement.md)** - Track interactions
 
 ### Advanced Features

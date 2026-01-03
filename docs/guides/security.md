@@ -548,7 +548,7 @@ throw new Error(`Database error: ${dbError.message}`);
 - [Remix Security](https://remix.run/docs/en/main/guides/security)
 - [Node.js Security Best Practices](https://nodejs.org/en/docs/guides/security/)
 - [Deployment Guide](./deployment.md)
-- [Error Handling Guide](./error-handling.md)
+- [Troubleshooting Guide](../troubleshooting/errors.md)
 
 ---
 

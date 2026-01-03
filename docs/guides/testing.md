@@ -1,149 +1,181 @@
 # Testing Guide
 
-**Estimated time:** 30 minutes  
+**Estimated time:** 45 minutes  
 **Difficulty:** Intermediate  
-**Last updated:** 2026-01-02
+**Last updated:** 2026-01-03
 
-This guide covers how to run and write tests for SmartFlowSocial. The project uses **Vitest** for unit, integration, property-based, security, and performance tests, and **Cypress** for end-to-end tests.
-
-## Test Types
-
-SmartFlowSocial uses the following test types:
-
-| Type                     | Description                                     | Location                      | Framework           |
-| ------------------------ | ----------------------------------------------- | ----------------------------- | ------------------- |
-| **Unit Tests**           | Pure function tests for critical business logic | `tests/unit/*.test.ts`        | Vitest              |
-| **Integration Tests**    | Loader/API/Model tests that verify data flow    | `tests/integration/*.test.ts` | Vitest              |
-| **Property-Based Tests** | Random input generation to find edge cases      | `tests/property/*.test.ts`    | Vitest + fast-check |
-| **Security Tests**       | XSS, SQL injection, authentication, etc.        | `tests/security/*.test.ts`    | Vitest              |
-| **Performance Tests**    | Function performance benchmarks                 | `tests/performance/*.test.ts` | Vitest + k6         |
-| **E2E Tests**            | Full user flow tests (login, navigation, forms) | `tests/e2e/**/*.cy.ts`        | Cypress             |
-| **Smoke Tests**          | Quick sanity checks for critical paths          | `tests/e2e/smoke.cy.ts`       | Cypress             |
-
-> [!NOTE] > **Vitest** is used for fast unit, integration, property-based, security, and performance tests that don't require a browser. **Cypress** is used for E2E tests that need real browser interactions.
-
-## Prerequisites
-
-Before running tests, ensure you have:
-
-1. **Node.js 20+** installed
-2. **Dependencies installed**: Run `pnpm install`
-3. **Database running**: Ensure PostgreSQL is accessible (via Docker or local install)
-4. **Environment configured**: Copy `example.env` to `.env` and configure required variables
-5. **k6 installed** (optional, for load tests): See [Performance Testing Guide](./PERFORMANCE_TESTING.md)
+Comprehensive guide to testing in SmartFlowSocial, covering strategy, patterns, and best practices.
 
 ---
 
-## Vitest Setup
+## Table of Contents
 
-### Quick Answer: Unit Tests AND Integration Tests
+- [Testing Philosophy](#testing-philosophy)
+- [Test Types](#test-types)
+- [Running Tests](#running-tests)
+- [Writing Tests](#writing-tests)
+- [Testing Patterns](#testing-patterns)
+- [Coverage Strategy](#coverage-strategy)
+- [Best Practices](#best-practices)
+- [Troubleshooting](#troubleshooting)
 
-**Vitest should be used for BOTH unit tests AND integration tests.**
+---
 
-- ✅ **Unit Tests**: Pure functions, utilities, business logic (no browser needed)
-- ✅ **Integration Tests**: Remix loaders, API routes, server-side logic (no browser needed)
-- ❌ **E2E Tests**: Full browser flows, UI interactions (use Cypress)
+## Testing Philosophy
 
-### Why Vitest?
+### Test Pyramid
 
-**Benefits Over Cypress for Unit/Integration Tests**:
+We follow the **test pyramid** principle:
 
-1. **Speed**: Vitest runs tests in Node.js without browser overhead (10-100x faster)
+```
+        /\
+       /  \      E2E Tests (Cypress)
+      /    \     - ~40% of user flows
+     /      \    - Full browser interactions
+    /--------\
+   /          \  Integration Tests (Vitest)
+  /            \ - ~70% of loaders, 100% of action handlers
+ /              \ - ~90% of API routes, ~70% of model functions
+/----------------\
+                  Unit Tests (Vitest)
+                  - ~40% of business logic
+                  - Fast, isolated tests
+```
+
+**Principle**: More unit tests, fewer integration tests, even fewer E2E tests.
+
+### Testing Principles
+
+- **Fast Feedback**: Unit tests run in milliseconds
+- **Isolation**: Tests don't depend on external services
+- **Repeatability**: Tests produce consistent results
+- **Maintainability**: Tests are easy to understand and update
+- **Coverage**: Aim for 70-80% overall coverage
+- **Quality over Quantity**: Focus on meaningful tests
+
+---
+
+## Test Types
+
+SmartFlowSocial uses multiple testing frameworks and techniques:
+
+| Type                     | Description                                     | Location                      | Framework           | Speed        |
+| ------------------------ | ----------------------------------------------- | ----------------------------- | ------------------- | ------------ |
+| **Unit Tests**           | Pure function tests for critical business logic | `tests/unit/*.test.ts`        | Vitest              | < 100ms      |
+| **Integration Tests**    | Loader/API/Model tests that verify data flow    | `tests/integration/*.test.ts` | Vitest              | < 1s         |
+| **Property-Based Tests** | Random input generation to find edge cases      | `tests/property/*.test.ts`    | Vitest + fast-check | 1-5s         |
+| **Security Tests**       | XSS, SQL injection, authentication, etc.        | `tests/security/*.test.ts`    | Vitest              | < 1s         |
+| **Performance Tests**    | Function performance benchmarks                 | `tests/performance/*.test.ts` | Vitest + k6         | Variable     |
+| **E2E Tests**            | Full user flow tests (login, navigation, forms) | `tests/e2e/**/*.cy.ts`        | Cypress             | 5-30s        |
+
+### When to Use Each
+
+#### Unit Tests (Vitest)
+
+**When to Use:**
+- Pure functions (no side effects)
+- Business logic calculations
+- Data transformations
+- Utility functions
+
+**Examples:**
+- Scheduling algorithms
+- Date formatting
+- String manipulation
+- Validation logic
+
+#### Integration Tests (Vitest)
+
+**When to Use:**
+- Remix loaders and actions
+- API routes
+- Database operations (via mocked Prisma)
+- Service layer functions
+- Queue workers
+
+**Examples:**
+- Dashboard loader
+- Post creation action
+- API endpoint handlers
+- Model CRUD operations
+
+#### Property-Based Tests
+
+**When to Use:**
+- Functions with many possible inputs
+- Edge case discovery
+- Round-trip conversions
+- Mathematical operations
+
+**Examples:**
+- Date formatting with random dates
+- URL parsing with random strings
+- Key conversions (npub ↔ hex)
+- Scheduling with random intervals
+
+#### Security Tests
+
+**When to Use:**
+- Input sanitization
+- Authentication/authorization
+- SQL injection prevention
+- XSS prevention
+- File upload validation
+
+**Examples:**
+- Markdown sanitization
+- Session management
+- Parameterized queries
+- File type validation
+
+#### Performance Tests
+
+**When to Use:**
+- Critical performance paths
+- Load testing
+- Benchmarking
+- Performance regression detection
+
+**Examples:**
+- Content combining with large arrays
+- Statistics fetching with many IDs
+- API endpoint load tests
+- Loader performance tests
+
+#### E2E Tests (Cypress)
+
+**When to Use:**
+- Critical user flows
+- Browser-specific behavior
+- Full integration scenarios
+- UI interactions
+
+**Examples:**
+- User authentication flow
+- Post creation flow
+- Dashboard navigation
+- Settings updates
+
+### Why Vitest for Unit/Integration Tests?
+
+**Benefits:**
+1. **Speed**: Runs in Node.js without browser overhead (10-100x faster)
 2. **No Server Required**: Unit/integration tests don't need a running dev server
 3. **Better Developer Experience**: Fast feedback, watch mode, better error messages
 4. **Direct Function Testing**: Test functions directly without HTTP requests
 5. **Better Mocking**: Native support for mocking with `vi.mock()`
 
-### When to Use Each
-
-| Test Type                                  | Framework   | Why                        |
-| ------------------------------------------ | ----------- | -------------------------- |
-| Pure functions (utilities, business logic) | **Vitest**  | Fast, no browser needed    |
-| Remix loaders/actions                      | **Vitest**  | Test server logic directly |
-| API routes                                 | **Vitest**  | Test without HTTP overhead |
-| React components (isolated)                | **Vitest**  | Fast rendering with jsdom  |
-| Full user flows                            | **Cypress** | Real browser interactions  |
-| UI interactions                            | **Cypress** | Real DOM events            |
-| Cross-browser testing                      | **Cypress** | Multiple browser support   |
-
-### Installation
-
-Vitest and related dependencies should already be installed. If not, run:
-
-```bash
-pnpm add -D vitest @vitest/ui @vitest/coverage-v8 jsdom @testing-library/react @testing-library/jest-dom happy-dom
-```
-
-### Project Structure
-
-```
-tests/
-├── setup.ts                 # Vitest configuration
-├── unit/                    # Unit tests
-│   ├── scheduling-logic.test.ts
-│   ├── engagement-logic.test.ts
-│   ├── subscription-logic.test.ts
-│   └── error-classes.test.ts
-└── integration/            # Integration tests
-    └── example-loader.test.ts
-```
-
-### Configuration Files
-
-**`vitest.config.ts`**:
-
-- Configures test environment (Node.js)
-- Sets up path aliases (`~/*`)
-- Configures coverage reporting
-- Excludes Cypress and build directories
-
-**`tests/setup.ts`**:
-
-- Extends Vitest with jest-dom matchers
-- Sets up global test environment
-- Configures mocks and cleanup
-
-### Migration from Cypress
-
-**Before (Cypress - Slow)**:
-
-```typescript
-// tests/e2e/unit/scheduling-logic.cy.ts
-describe("Scheduling Logic", () => {
-  it("should format UTC date", () => {
-    const date = new Date(Date.UTC(2024, 2, 15, 14, 30, 0));
-    const result = formatScheduleTimeForInput(date, "UTC");
-    expect(result).to.equal("2024-03-15T14:30");
-  });
-});
-```
-
-**After (Vitest - Fast)**:
-
-```typescript
-// tests/unit/scheduling-logic.test.ts
-import { describe, it, expect } from "vitest";
-
-describe("Scheduling Logic", () => {
-  it("should format UTC date", () => {
-    const date = new Date(Date.UTC(2024, 2, 15, 14, 30, 0));
-    const result = formatScheduleTimeForInput(date, "UTC");
-    expect(result).toBe("2024-03-15T14:30");
-  });
-});
-```
-
-### Benefits Summary
-
-- ⚡ **10-100x faster** than Cypress for unit/integration tests
-- 🚀 **No server required** - tests run directly in Node.js
-- 💻 **Better DX** - watch mode, UI, better error messages
-- 🎯 **Focused testing** - test logic without browser overhead
-- 📊 **Coverage reports** - built-in coverage support
-
 ---
 
 ## Running Tests
+
+### Prerequisites
+
+1. **Node.js 20+** installed
+2. **Dependencies installed**: Run `pnpm install`
+3. **Database running**: Ensure PostgreSQL is accessible (via Docker or local install)
+4. **Environment configured**: Copy `example.env` to `.env` and configure required variables
+5. **k6 installed** (optional, for load tests)
 
 ### All Test Suites
 
@@ -159,8 +191,6 @@ pnpm test:all
 ```
 
 ### Vitest Tests (Unit & Integration)
-
-Vitest tests run **without** a development server and are much faster than Cypress tests.
 
 ```bash
 # Run all Vitest tests once
@@ -202,27 +232,10 @@ pnpm dev
 
 # Terminal 2: Run Cypress tests
 pnpm test:e2e
+
+# Open Cypress UI for interactive testing
+pnpm test:e2e:open
 ```
-
-### Available Test Commands
-
-| Command                     | Description                                  | Framework |
-| --------------------------- | -------------------------------------------- | --------- |
-| `pnpm test`                 | Run all Vitest tests                         | Vitest    |
-| `pnpm test:watch`           | Run Vitest in watch mode                     | Vitest    |
-| `pnpm test:ui`              | Open Vitest UI for interactive testing       | Vitest    |
-| `pnpm test:coverage`        | Generate coverage report                     | Vitest    |
-| `pnpm test:coverage:report` | Generate coverage and record trend           | Vitest    |
-| `pnpm test:coverage:trend`  | View coverage trend report                   | Vitest    |
-| `pnpm test:unit`            | Run unit tests only                          | Vitest    |
-| `pnpm test:integration`     | Run integration tests only                   | Vitest    |
-| `pnpm test:property`        | Run property-based tests                     | Vitest    |
-| `pnpm test:security`        | Run security tests                           | Vitest    |
-| `pnpm test:performance`     | Run performance tests                        | Vitest    |
-| `pnpm test:e2e`             | Run all Cypress E2E tests                    | Cypress   |
-| `pnpm test:e2e:open`        | Open Cypress UI for interactive testing      | Cypress   |
-| `pnpm test:e2e:dev`         | Starts dev server and opens Cypress          | Cypress   |
-| `pnpm test:all`             | Run Vitest tests + show Cypress instructions | Vitest    |
 
 ### Running Specific Tests
 
@@ -235,457 +248,100 @@ pnpm test -- --grep "dashboard"
 
 # Cypress - Run a single test file
 pnpm exec cypress run --spec "tests/e2e/smoke.cy.ts"
-
-# Cypress - Run tests in a specific folder
-pnpm exec cypress run --spec "tests/e2e/posts/**/*.cy.ts"
 ```
 
 ---
 
-## Test Structure
+## Writing Tests
+
+### Project Structure
 
 ```
-tests/                       # Vitest tests
-├── setup.ts                 # Vitest setup file
-├── unit/                    # Unit tests for pure functions
+tests/
+├── setup.ts                 # Vitest configuration
+├── unit/                    # Unit tests
 │   ├── scheduling-logic.test.ts
 │   ├── engagement-logic.test.ts
-│   ├── subscription-logic.test.ts
-│   ├── error-classes.test.ts
-│   ├── helpers.test.ts
-│   ├── nostr-conversion.test.ts
-│   ├── markdown-sanitizer.test.ts
-│   ├── utils.test.ts
-│   └── date-utils.test.ts
+│   └── error-classes.test.ts
 ├── integration/             # Integration tests
 │   ├── dashboard-loader.test.ts
-│   ├── scheduled-loader.test.ts
-│   ├── calendar-loader.test.ts
-│   ├── drafts-loader.test.ts
-│   ├── posted-loader.test.ts
-│   ├── subscription-loader.test.ts
-│   ├── dashboard-action.test.ts
-│   ├── scheduled-action.test.ts
-│   ├── drafts-action.test.ts
-│   ├── newpost-action.test.ts
-│   ├── plans-action.test.ts
-│   ├── settings-action.test.ts
-│   ├── scheduling-algorithms.test.ts
-│   ├── stats-server.test.ts
-│   ├── post-model.test.ts
-│   ├── longformpost-model.test.ts
-│   ├── payment-model.test.ts
-│   ├── user-model.test.ts
-│   ├── api-*.test.ts (9 API route tests)
-│   ├── engagement-loader.test.ts
-│   ├── giveaway-loader.test.ts
-│   ├── templates-loader.test.ts
-│   ├── search-loader.test.ts
-│   ├── queue-workers.test.ts
-│   ├── queue-operations.test.ts
-│   └── queue-client.test.ts
+│   ├── api-*.test.ts
+│   └── post-model.test.ts
 ├── property/                # Property-based tests
-│   ├── helpers-property.test.ts
-│   ├── nostr-conversion-property.test.ts
-│   └── scheduling-property.test.ts
 ├── security/                # Security tests
-│   ├── xss-prevention.test.ts
-│   ├── sql-injection.test.ts
-│   ├── authentication.test.ts
-│   ├── csrf-protection.test.ts
-│   ├── input-validation.test.ts
-│   ├── file-upload-security.test.ts
-│   └── security-headers.test.ts
-├── performance/              # Performance tests
-│   ├── unit-performance.test.ts
-│   ├── api-endpoints.js (k6)
-│   ├── bulk-operations.js (k6)
-│   └── loader-performance.js (k6)
-├── factories/                # Test data factories
-│   ├── post.factory.ts
-│   ├── longform-post.factory.ts
-│   ├── user.factory.ts
-│   ├── queue-type.factory.ts
-│   ├── hashtag-preset.factory.ts
-│   ├── payment.factory.ts
-│   ├── template.factory.ts
-│   ├── asset.factory.ts
-│   └── index.ts
-└── utils/                    # Test utilities
-    └── test-helpers.ts
+├── performance/             # Performance tests
+├── factories/               # Test data factories
+└── utils/                   # Test utilities
 
-tests/
-└── e2e/                     # Cypress E2E tests
-    ├── smoke.cy.ts
-    ├── dashboard.cy.ts
-    ├── nostr-auth.cy.ts
-    ├── engagement/
-    ├── loaders/
-    ├── posts/
-    ├── settings/
-    ├── subscription/
-    ├── fixtures/
-    ├── memes_test_files/
-    └── support/
+tests/e2e/                   # Cypress E2E tests
+├── smoke.cy.ts
+├── dashboard.cy.ts
+└── posts/
 ```
 
----
-
-## Test Types in Detail
-
-### Unit Tests
-
-Unit tests exercise pure functions independently of the UI. They run **much faster** than Cypress tests and don't require a browser or development server.
-
-**Location**: `tests/unit/*.test.ts`
-
-**Coverage**: ~40% of business logic functions
-
-**Examples**:
-
-- Scheduling logic (`scheduling-logic.test.ts`)
-- Engagement grouping (`engagement-logic.test.ts`)
-- Subscription logic (`subscription-logic.test.ts`)
-- Error handling (`error-classes.test.ts`)
-- Utility functions (`helpers.test.ts`, `nostr-conversion.test.ts`, etc.)
-
-### Integration Tests
-
-Integration tests verify Remix loaders, action handlers, API routes, and model functions without requiring a browser.
-
-**Location**: `tests/integration/*.test.ts`
-
-**Coverage**: ~70% of loaders, ~100% of action handlers, ~90% of API routes, ~70% of model functions
-
-**Examples**:
-
-- Loader tests (`dashboard-loader.test.ts`, `scheduled-loader.test.ts`, etc.)
-- Action handler tests (`dashboard-action.test.ts`, `newpost-action.test.ts`, etc.)
-- API route tests (`api-effective-hashtags.test.ts`, `api-upload.test.ts`, etc.)
-- Model tests (`post-model.test.ts`, `user-model.test.ts`, etc.)
-- Queue worker tests (`queue-workers.test.ts`, `queue-operations.test.ts`, etc.)
-
-### Property-Based Tests
-
-Property-based tests use random input generation to find edge cases automatically.
-
-**Location**: `tests/property/*.test.ts`
-
-**Tools**: `fast-check`
-
-**Examples**:
-
-- Helper functions (`helpers-property.test.ts`)
-- Nostr conversions (`nostr-conversion-property.test.ts`)
-- Scheduling algorithms (`scheduling-property.test.ts`)
-
-See [Property-Based Testing Guide](./PROPERTY_BASED_TESTING.md) for details.
-
-### Security Tests
-
-Security tests verify that the application is protected against common vulnerabilities.
-
-**Location**: `tests/security/*.test.ts`
-
-**Coverage**:
-
-- XSS prevention
-- SQL injection prevention
-- Authentication/authorization
-- CSRF protection
-- Input validation
-- File upload security
-- Security headers
-
-See [Security Testing Guide](./SECURITY_TESTING.md) for details.
-
-### Performance Tests
-
-Performance tests verify that functions meet performance benchmarks.
-
-**Location**: `tests/performance/*.test.ts` (Vitest) and `tests/performance/*.js` (k6)
-
-**Tools**: Vitest for unit performance, k6 for load tests
-
-**Examples**:
-
-- Unit performance tests (`unit-performance.test.ts`)
-- API endpoint load tests (`api-endpoints.js`)
-- Bulk operations load tests (`bulk-operations.js`)
-- Loader performance tests (`loader-performance.js`)
-
-See the [Performance Testing](#performance-testing) section above for details.
-
-### E2E Tests (Cypress)
-
-E2E tests verify full user flows in a real browser environment.
-
-**Location**: `tests/e2e/**/*.cy.ts`
-
-**Coverage**: ~40% of user flows
-
-**Examples**:
-
-- Smoke tests (`smoke.cy.ts`)
-- Dashboard tests (`dashboard.cy.ts`)
-- Post creation tests (`posts/new-post.cy.ts`)
-- Authentication tests (`nostr-auth.cy.ts`)
-
----
-
-## Vitest Setup
-
-### Overview
-
-Vitest is used for both unit tests and integration tests. It runs tests in Node.js without browser overhead, making it 10-100x faster than Cypress for these test types.
-
-### When to Use Vitest
-
-| Test Type                                  | Framework   | Why                        |
-| ------------------------------------------ | ----------- | -------------------------- |
-| Pure functions (utilities, business logic) | **Vitest**  | Fast, no browser needed    |
-| Remix loaders/actions                      | **Vitest**  | Test server logic directly |
-| API routes                                 | **Vitest**  | Test without HTTP overhead |
-| React components (isolated)                | **Vitest**  | Fast rendering with jsdom  |
-| Full user flows                            | **Cypress** | Real browser interactions  |
-| UI interactions                            | **Cypress** | Real DOM events            |
-
-### Benefits
-
-1. **Speed**: Runs in Node.js without browser overhead (10-100x faster)
-2. **No Server Required**: Unit/integration tests don't need a running dev server
-3. **Better Developer Experience**: Fast feedback, watch mode, better error messages
-4. **Direct Function Testing**: Test functions directly without HTTP requests
-5. **Better Mocking**: Native support for mocking with `vi.mock()`
-
-### Running Vitest Tests
-
-```bash
-# Run all tests once
-pnpm test
-
-# Watch mode (recommended for development)
-pnpm test:watch
-
-# Run with UI
-pnpm test:ui
-
-# Generate coverage
-pnpm test:coverage
-
-# Run only unit tests
-pnpm test:unit
-
-# Run only integration tests
-pnpm test:integration
-```
-
-### Configuration
-
-Configuration is in `vitest.config.ts`:
-
-- Test environment: Node.js (for server-side tests)
-- Path aliases: `~/*` for app imports
-- Coverage: v8 provider with thresholds
-- Exclusions: E2E tests, build files, node_modules
-
-See `tests/setup.ts` for global test setup and jest-dom matchers.
-
----
-
-## Property-Based Testing
-
-### Overview
-
-Property-based testing generates random inputs to test functions, automatically discovering edge cases that manual tests might miss. Instead of writing specific test cases, you define **properties** that should always hold true.
-
-### Installation
-
-```bash
-pnpm add -D fast-check
-```
-
-### Example
-
-Instead of:
+### Unit Test Example
 
 ```typescript
-it("should format dates correctly", () => {
-  expect(formatDate(new Date("2024-01-15"))).toBe("01/15/2024");
+import { describe, it, expect } from "vitest";
+import { formatScheduleTimeForInput } from "~/lib/schedule-formatting";
+
+describe("Scheduling Logic", () => {
+  it("should format UTC date correctly", () => {
+    const testDate = new Date(Date.UTC(2024, 2, 15, 14, 30, 0));
+    const result = formatScheduleTimeForInput(testDate, "UTC");
+    expect(result).toBe("2024-03-15T14:30");
+  });
 });
 ```
 
-Property-based testing:
+### Integration Test Example
 
 ```typescript
-import { fc } from "fast-check";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { loader } from "~/routes/dashboard._index";
 
-it("should always return a string for valid date inputs", () => {
-  fc.assert(
-    fc.property(
-      fc.date({ min: new Date("1900-01-01"), max: new Date("2100-12-31") }),
-      (date) => {
-        const result = formatDate(date);
-        return typeof result === "string" && result.length > 0;
-      },
-    ),
-    { numRuns: 100 },
-  );
+vi.mock("~/features/auth", () => ({
+  requireUserId: vi.fn().mockResolvedValue("user-123"),
+}));
+
+vi.mock("~/features/posts", () => ({
+  loadDashboardData: vi.fn().mockResolvedValue({ posts: [] }),
+}));
+
+describe("Dashboard Loader", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should load dashboard data", async () => {
+    const request = new Request("http://localhost:3000/dashboard");
+    const response = await loader({ request, params: {}, context: {} });
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data).toHaveProperty("posts");
+  });
 });
 ```
 
-### Test Files
-
-- `tests/property/helpers-property.test.ts` - Helper function properties
-- `tests/property/nostr-conversion-property.test.ts` - Nostr conversion properties
-- `tests/property/scheduling-property.test.ts` - Scheduling algorithm properties
-
-### Running Property-Based Tests
-
-```bash
-pnpm test:property
-```
-
----
-
-## Security Testing
-
-### Overview
-
-Security testing ensures that SmartFlowSocial is protected against common security vulnerabilities.
-
-### Test Coverage
-
-Located in `tests/security/`, these tests verify:
-
-1. **XSS Prevention** (`xss-prevention.test.ts`)
-
-   - Script tag removal
-   - Inline event handler removal
-   - Dangerous protocol removal
-   - Safe HTML tag preservation
-
-2. **SQL Injection Prevention** (`sql-injection.test.ts`)
-
-   - Parameterized query usage
-   - SQL injection attempt handling
-   - Special character handling
-
-3. **Authentication & Authorization** (`authentication.test.ts`)
-
-   - Session management
-   - Authentication checks
-   - Authorization checks
-   - Session cookie security
-
-4. **CSRF Protection** (`csrf-protection.test.ts`)
-
-   - Remix's built-in CSRF protection
-   - SameSite cookie usage
-
-5. **Input Validation** (`input-validation.test.ts`)
-
-   - Form data validation
-   - Query parameter validation
-   - Request body validation
-
-6. **File Upload Security** (`file-upload-security.test.ts`)
-
-   - File type validation
-   - File size limits
-   - Malicious file detection
-
-7. **Security Headers** (`security-headers.test.ts`)
-   - Content-Security-Policy
-   - X-Frame-Options
-   - X-Content-Type-Options
-
-### Running Security Tests
-
-```bash
-# Run all security tests
-pnpm test:security
-
-# Run specific security test file
-pnpm test tests/security/xss-prevention.test.ts
-```
-
----
-
-## Performance Testing
-
-### Overview
-
-Performance testing ensures that SmartFlowSocial can handle expected load and meets performance benchmarks. We use a combination of:
-
-1. **k6 Load Tests** - For API endpoints and loaders under realistic load
-2. **Vitest Unit Performance Tests** - For individual function performance benchmarks
-
-### Installing k6
-
-**macOS:**
-
-```bash
-brew install k6
-```
-
-**Linux:**
-
-```bash
-sudo gpg -k
-sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
-echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
-sudo apt-get update
-sudo apt-get install k6
-```
-
-**Windows:**
-
-```bash
-choco install k6
-```
-
-Or download from [k6.io](https://k6.io/docs/getting-started/installation/)
-
-### Running Performance Tests
-
-```bash
-# Unit performance tests
-pnpm test:performance
-
-# k6 load tests
-k6 run tests/performance/api-endpoints.js
-k6 run tests/performance/bulk-operations.js
-k6 run tests/performance/loader-performance.js
-
-# All performance tests
-pnpm test:performance:all
-```
-
-### Performance Benchmarks
-
-| Function                  | Small (< 100) | Medium (100-1000) | Large (1000+) |
-| ------------------------- | ------------- | ----------------- | ------------- |
-| `combineContent()`        | < 50ms        | < 200ms           | < 1000ms      |
-| `getPostStats()` (single) | < 500ms       | -                 | -             |
-| `getPostStats()` (10-50)  | -             | < 2000ms          | -             |
-| `getPostStats()` (50-100) | -             | -                 | < 5000ms      |
-
-### Test Files
-
-- `tests/performance/unit-performance.test.ts` - Unit performance benchmarks
-- `tests/performance/api-endpoints.js` - API endpoint load tests
-- `tests/performance/bulk-operations.js` - Bulk operations load tests
-- `tests/performance/loader-performance.js` - Loader performance tests
-
----
-
-## Test Data Factories
-
-Use test data factories to create consistent test data easily:
+### Property-Based Test Example
 
 ```typescript
-import { postFactory, userFactory, queueTypeFactory } from "~/tests/factories";
+import { fc, test } from "@fast-check/vitest";
+import { formatDate } from "~/lib/helpers";
+
+test.prop([fc.date()])("formatDate handles all dates", (date) => {
+  const result = formatDate(date);
+  expect(result).toMatch(/\d{2}\/\d{2}\/\d{4}/);
+});
+```
+
+### Test Data Factories
+
+Use test data factories for consistent test data:
+
+```typescript
+import { postFactory, userFactory } from "~/tests/factories";
 
 // Simple usage
 const post = postFactory.draft();
@@ -704,37 +360,45 @@ See [Test Factories README](../tests/factories/README.md) for details.
 
 ---
 
-## Writing Tests
+## Testing Patterns
 
-### Unit Test Example
+### Mocking Patterns
+
+#### When to Mock
+
+**Always Mock:**
+- Database (Prisma)
+- External APIs (fetch, HTTP clients)
+- File system operations
+- Environment variables
+- Third-party services
+
+**Don't Mock:**
+- Functions you're testing
+- Pure utility functions
+- Business logic functions
+- Type definitions
+
+#### Prisma Mocking
 
 ```typescript
-import { describe, it, expect } from "vitest";
+import { vi } from "vitest";
 
-import { formatScheduleTimeForInput } from "~/lib/schedule-formatting";
-
-describe("Scheduling Logic", () => {
-  it("should format UTC date correctly", () => {
-    const testDate = new Date(Date.UTC(2024, 2, 15, 14, 30, 0));
-    const result = formatScheduleTimeForInput(testDate, "UTC");
-    expect(result).toBe("2024-03-15T14:30");
-  });
-});
-```
-
-### Integration Test Example
-
-```typescript
-import { describe, it, expect, vi, beforeEach } from "vitest";
-
-import { getUserById } from "~/models/user.server";
+const mockPrisma = {
+  user: {
+    findUnique: vi.fn(),
+    findMany: vi.fn(),
+    create: vi.fn(),
+  },
+  post: {
+    findUnique: vi.fn(),
+    findMany: vi.fn(),
+    create: vi.fn(),
+  },
+};
 
 vi.mock("~/lib/prisma.server", () => ({
-  prisma: {
-    user: {
-      findUnique: vi.fn(),
-    },
-  },
+  prisma: mockPrisma,
 }));
 
 describe("User Model", () => {
@@ -743,89 +407,214 @@ describe("User Model", () => {
   });
 
   it("should get user by ID", async () => {
-    // Test implementation
+    mockPrisma.user.findUnique.mockResolvedValue({
+      id: "user-123",
+      npub: "npub123",
+    });
+
+    const user = await getUserById("user-123");
+    expect(user).toBeDefined();
   });
 });
 ```
 
-### Property-Based Test Example
+#### External API Mocking
 
 ```typescript
-import { fc, test } from "@fast-check/vitest";
+global.fetch = vi.fn();
 
-import { formatDate } from "~/lib/helpers";
+describe("getPostStats", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
-test.prop([fc.date()])("formatDate handles all dates", (date) => {
-  const result = formatDate(date);
-  expect(result).toMatch(/\d{2}\/\d{2}\/\d{4}/);
+  it("should fetch stats from external API", async () => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        "event-123": { replies: 5, reposts: 2, likes: 10 },
+      }),
+    });
+
+    const stats = await getPostStats(["event-123"]);
+    expect(stats).toHaveProperty("event-123");
+  });
 });
 ```
 
-See [Testing Patterns Guide](./testing-patterns.md) for more examples.
+#### Mocking Best Practices
+
+1. **Mock Before Imports**: Place mocks before imports
+2. **Clear Mocks in beforeEach**: Clear mocks between tests
+3. **Use Type-Safe Mocks**: Type mocks correctly
+4. **Mock Return Values Match Types**: Ensure mock return values match expected types
+5. **Use Partial Mocks When Appropriate**: Mock only what you need
+
+### Test Structure Patterns
+
+#### Arrange-Act-Assert
+
+```typescript
+it("should calculate next schedule time", () => {
+  // Arrange
+  const queue = queueTypeFactory.interval(4);
+  const now = new Date();
+
+  // Act
+  const result = calculateNextScheduleTime(queue, now);
+
+  // Assert
+  expect(result).toBeInstanceOf(Date);
+  expect(result.getTime()).toBeGreaterThan(now.getTime());
+});
+```
+
+#### Error Testing
+
+```typescript
+import { ValidationError } from "~/lib/errors";
+
+it("should throw ValidationError for invalid input", async () => {
+  await expect(loader({ request, params: {}, context: {} })).rejects.toThrow(
+    ValidationError,
+  );
+});
+```
+
+### Anti-Patterns to Avoid
+
+1. **Testing Implementation Details**: Test behavior, not implementation
+2. **Shared Test State**: Each test should be independent
+3. **Over-Mocking**: Only mock external dependencies
+4. **Mocking What You're Testing**: Don't mock the function under test
+5. **Not Clearing Mocks**: Clear mocks between tests
 
 ---
 
-## Configuration
+## Coverage Strategy
 
-### Vitest Configuration
+### Coverage Goals
 
-Configuration is in `vitest.config.ts`:
+#### Overall Coverage
 
-- **Test environment**: Node.js (for server-side tests)
-- **Setup file**: `tests/setup.ts` (runs before all tests)
-- **Coverage**: Uses V8 provider with thresholds
-- **Path aliases**: Supports `~/*` imports
-- **Reporters**: Default, JUnit XML, JSON
+- **Current**: 70-75%
+- **Target**: 80%
+- **Critical Paths**: 95%+
+
+#### By Test Type
+
+| Test Type         | Current     | Target        | Status         |
+| ----------------- | ----------- | ------------- | -------------- |
+| Unit Tests        | 40%         | 60-70%        | 🟡 In Progress |
+| Integration Tests | 70%         | 80-90%        | 🟢 Good        |
+| E2E Tests         | 40%         | 50-60%        | 🟡 In Progress |
+| Property-Based    | 3 functions | 10+ functions | 🟡 In Progress |
+| Security Tests    | 7 areas     | 7 areas       | ✅ Complete    |
+| Performance Tests | 3 areas     | 5+ areas      | 🟡 In Progress |
 
 ### Coverage Thresholds
 
-Coverage thresholds are enforced:
+Coverage thresholds are enforced in CI/CD and `vitest.config.ts`:
 
-| Metric     | Threshold |
-| ---------- | --------- |
-| Lines      | 70%       |
-| Functions  | 65%       |
-| Branches   | 60%       |
-| Statements | 70%       |
+| Metric         | Threshold | Rationale                           |
+| -------------- | --------- | ----------------------------------- |
+| **Lines**      | 70%       | Ensures most code paths are tested  |
+| **Functions**  | 65%       | Ensures most functions have tests   |
+| **Branches**   | 60%       | Ensures conditional logic is tested |
+| **Statements** | 70%       | Ensures most statements execute     |
 
-See [Test Strategy](./TEST_STRATEGY.md#coverage-strategy) for coverage details.
+### Coverage Goals by Area
 
-### Cypress Configuration
+#### Critical Paths (95%+)
 
-Configuration is in `cypress.config.ts`:
+- Authentication/authorization
+- Payment processing
+- Post publishing
+- Queue scheduling
+- Error handling
 
-- **Base URL**: Defaults to `http://localhost:3000` (or port from `PORT` env var)
-- **CI Mode**: Uses port `8811` when `CI=true`
-- **Screenshots**: Disabled in CI, enabled locally on failure
+#### High Priority (80-90%)
+
+- API routes
+- Action handlers
+- Loaders
+- Model functions
+- Business logic services
+
+#### Medium Priority (70-80%)
+
+- Utility functions
+- Helper functions
+- Data transformations
+- Formatting functions
+
+### What NOT to Test
+
+**Excluded from Coverage:**
+- Third-party library code
+- Framework code (Remix, Prisma)
+- Generated code
+- Simple pass-through functions
+- Configuration constants
+- Test files themselves
+- Build artifacts
+- Type definitions (`*.d.ts`)
+
+### Coverage Reporting
+
+```bash
+# Generate coverage report
+pnpm test:coverage
+
+# View HTML report
+open coverage/index.html
+
+# Coverage with thresholds check
+pnpm test:coverage:report
+
+# View coverage trend
+pnpm test:coverage:trend
+```
 
 ---
 
-## CI/CD Integration
+## Best Practices
 
-All tests run automatically in CI/CD:
+### Test Quality Checklist
 
-- **Lint & Type Check** - ESLint and TypeScript validation
-- **Unit Tests** - Fast unit test suite
-- **Integration Tests** - Integration test suite
-- **Property-Based Tests** - Property-based test suite
-- **Security Tests** - Security test suite
-- **Performance Tests** - Performance test suite
-- **Coverage Check** - Coverage threshold validation
+- [ ] Tests are isolated (no shared state)
+- [ ] Tests are deterministic (same input = same output)
+- [ ] Tests are fast (< 1s for unit, < 5s for integration)
+- [ ] Tests are readable (clear names, good structure)
+- [ ] Tests are maintainable (use factories, avoid duplication)
+- [ ] Tests cover edge cases
+- [ ] Tests verify both success and failure paths
 
-See [CI/CD Guide](./ci-cd.md) for details.
+### Code Quality in Tests
 
----
+- Use TypeScript for type safety
+- Use factories for test data
+- Use descriptive test names
+- Group related tests with `describe` blocks
+- Clean up after tests (`afterEach`, `afterAll`)
+- Mock external dependencies
+- Avoid test interdependencies
 
-## Documentation
+### Testing Workflow
 
-- [Test Strategy](./test-strategy.md) - Overall testing strategy, philosophy, and coverage goals
-- [Testing Patterns](./testing-patterns.md) - Common testing patterns and examples
-- [Testing Patterns](./testing-patterns.md) - Includes mocking patterns and guidelines
-- [Test Troubleshooting](./test-troubleshooting.md) - Common issues and solutions
-- [Test Database](./test-database.md) - Database integration testing guide
-- [CI/CD Guide](../ci-cd.md) - CI/CD pipeline documentation
+1. **Write Code**: Implement feature
+2. **Write Tests**: Write tests alongside code
+3. **Run Tests**: `pnpm test:watch`
+4. **Refactor**: Improve code and tests
+5. **Commit**: Commit with tests passing
 
-> **Note**: Vitest setup, property-based testing, security testing, and performance testing are now covered in this document (see sections above).
+### Pre-Commit Checklist
+
+- [ ] All tests pass locally
+- [ ] Coverage thresholds met
+- [ ] No new linting errors
+- [ ] Tests are readable and maintainable
+- [ ] Test names are descriptive
 
 ---
 
@@ -863,28 +652,36 @@ pnpm dev
 2. Clear mocks in `beforeEach` hooks
 3. Check mock return values match expected types
 
-See [Test Troubleshooting Guide](./test-troubleshooting.md) for more solutions.
+---
+
+## Configuration
+
+### Vitest Configuration
+
+Configuration is in `vitest.config.ts`:
+
+- **Test environment**: Node.js (for server-side tests)
+- **Setup file**: `tests/setup.ts` (runs before all tests)
+- **Coverage**: Uses V8 provider with thresholds
+- **Path aliases**: Supports `~/*` imports
+- **Reporters**: Default, JUnit XML, JSON
+
+### Cypress Configuration
+
+Configuration is in `cypress.config.ts`:
+
+- **Base URL**: Defaults to `http://localhost:3000` (or port from `PORT` env var)
+- **CI Mode**: Uses port `8811` when `CI=true`
+- **Screenshots**: Disabled in CI, enabled locally on failure
 
 ---
 
-## Best Practices
+## Related Documentation
 
-1. **Use Factories**: Always use test data factories instead of manually creating objects
-2. **Mock External Dependencies**: Mock Prisma, external APIs, and file system operations
-3. **Test Behavior, Not Implementation**: Focus on what functions do, not how they do it
-4. **Keep Tests Fast**: Unit tests should run in milliseconds
-5. **Write Descriptive Test Names**: Test names should clearly describe what they test
-6. **Use Property-Based Tests**: For functions with many possible inputs
-7. **Maintain Coverage**: Keep coverage above thresholds
-8. **Run Tests Locally**: Run tests before committing
-
-See [Testing Patterns Guide](./testing-patterns.md) for more best practices.
+- [Developer Guide](./developer-guide.md) - Development workflow
+- [Code Examples](../examples/code-samples.md) - Code examples including testing
+- [Architecture Overview](../getting-started/architecture.md) - System design
 
 ---
 
-## Next Steps
-
-- Read [Test Strategy](./test-strategy.md) to understand testing philosophy and coverage goals
-- Review [Testing Patterns](./testing-patterns.md) for common patterns
-- Review [Testing Patterns](./testing-patterns.md) for mocking strategies
-- See [Test Database](./test-database.md) for database testing guidance
+**Next:** [Developer Guide](./developer-guide.md) → Development workflow

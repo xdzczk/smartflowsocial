@@ -678,6 +678,6 @@ if (response.ok) {
 ## Additional Resources
 
 - [Architecture Documentation](../getting-started/architecture.md) - System architecture
-- [Nostr Integration](../integration/nostr-integration.md) - Nostr protocol details
-- [Error Handling Guide](../error-handling.md) - Error handling patterns
-- [Security Guide](../security/security.md) - Security best practices
+- [Nostr Integration](../reference/nostr.md) - Nostr protocol details
+- [Troubleshooting Guide](../troubleshooting/common-issues.md) - Common issues and solutions
+- [Security Guide](../guides/security.md) - Security best practices

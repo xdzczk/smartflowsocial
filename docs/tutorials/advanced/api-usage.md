@@ -473,7 +473,7 @@ await publisher.schedulePost("Scheduled post", "Bitcoin News");
 
 1. **[Custom Integrations](./custom-integrations.md)** - Build integrations
 2. **[Advanced Queue Management](./advanced-queue-management.md)** - Master queues
-3. **[Performance Optimization](./performance-optimization.md)** - Scale efficiently
+3. **[Operations Guide](../../guides/operations.md#performance-monitoring)** - Performance optimization
 
 ---
 

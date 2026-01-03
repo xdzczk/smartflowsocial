@@ -499,11 +499,10 @@ const thread = await fetchThreadView(eventId);
 
 ## See Also
 
-- [Posting Workflow](../features/posting.md) - How to create and publish posts
-- [Calendar Feature](../features/calendar-feature.md) - Scheduling posts
-- [API Reference](../reference/api-reference.md) - API endpoints for Nostr
+- [Posting Guide](../guides/user-guides/posting.md) - How to create and publish posts
+- [Calendar Guide](../guides/user-guides/calendar.md) - Scheduling posts
+- [API Reference](../reference/api.md) - API endpoints for Nostr
 - [Architecture Guide](../getting-started/architecture.md) - System architecture
-- [Component Library](./components.md) - UI components for Nostr integration
 
 ## Additional Resources
 
@@ -511,8 +510,8 @@ const thread = await fetchThreadView(eventId);
 - [NIP Repository](https://github.com/nostr-protocol/nips)
 - [NIP-07 Specification](https://github.com/nostr-protocol/nips/blob/master/07.md)
 - [NIP-23 Specification](https://github.com/nostr-protocol/nips/blob/master/23.md)
-- [Onboarding Guide](./onboarding.md) - User setup
-- [Posting Workflow](./posting.md) - How to create posts
+- [Hosted Quick Start](../getting-started/hosted.md) - Getting started with hosted service
+- [Posting Guide](../guides/user-guides/posting.md) - How to create posts
 
 ---
 

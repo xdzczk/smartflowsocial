@@ -11,7 +11,7 @@ Learn advanced strategies for optimizing your posting schedule, maximizing engag
 ## Prerequisites
 
 - ✅ Account created and logged in
-- ✅ Completed [Scheduling Posts](../beginner/scheduling-posts.md)
+- ✅ Completed [Creating and Scheduling Posts](../beginner/creating-and-scheduling-posts.md)
 - ✅ Completed [Creating Your First Queue](../beginner/creating-your-first-queue.md)
 - ✅ Understanding of queues and scheduling
 
@@ -549,7 +549,7 @@ Learn advanced strategies for optimizing your posting schedule, maximizing engag
 
 1. **[Long-form Articles](./long-form-articles.md)** - Create detailed content
 2. **[Advanced Queue Management](../advanced/advanced-queue-management.md)** - Master queue systems
-3. **[Performance Optimization](../advanced/performance-optimization.md)** - Scale efficiently
+3. **[Operations Guide](../../guides/operations.md#performance-monitoring)** - Performance optimization
 
 ---
 

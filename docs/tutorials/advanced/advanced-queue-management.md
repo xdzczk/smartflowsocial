@@ -455,7 +455,7 @@ Master advanced queue management techniques, complex configurations, optimizatio
 
 ## Next Steps
 
-1. **[Performance Optimization](./performance-optimization.md)** - Scale efficiently
+1. **[Operations Guide](../../guides/operations.md#performance-monitoring)** - Performance optimization
 2. **[Advanced Scheduling Strategies](../intermediate/advanced-scheduling-strategies.md)** - Optimize schedules
 3. **[API Usage](./api-usage.md)** - Automate queue management
 
@@ -469,6 +469,6 @@ Master advanced queue management techniques, complex configurations, optimizatio
 
 ---
 
-**Next Tutorial:** [Performance Optimization](./performance-optimization.md) → Scale efficiently
+**Next:** [Operations Guide](../../guides/operations.md#performance-monitoring) → Performance optimization
 
 

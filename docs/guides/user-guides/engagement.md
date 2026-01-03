@@ -11,8 +11,11 @@ Learn how to track and manage engagement with your Nostr posts, including replie
 ## Table of Contents
 
 - [Overview](#overview)
+- [Searching for Events](#searching-for-events)
 - [Engagement Feed](#engagement-feed)
 - [Types of Engagement](#types-of-engagement)
+- [Engagement Statistics](#engagement-statistics)
+- [Scheduling from Search](#scheduling-from-search)
 - [Managing Engagement](#managing-engagement)
 - [Notifications](#notifications)
 - [Best Practices](#best-practices)
@@ -27,6 +30,191 @@ The Engagement Feed helps you track and respond to interactions with your posts 
 - **Mentions** - When someone mentions your npub
 - **Reactions** - Reactions to your posts
 - **Reposts** - When someone reposts your content
+
+---
+
+## Searching for Events
+
+SmartFlowSocial's search feature allows you to find Nostr events, view engagement statistics, and schedule quote posts or reposts.
+
+### Supported Formats
+
+**Event ID:**
+- 64-character hex string
+- Example: `abc123...def456`
+
+**nevent1:**
+- Nostr event identifier (NIP-19)
+- Example: `nevent1abc123...`
+
+### How to Search
+
+1. Go to **Search** page
+2. Enter event ID or nevent1 in search box
+3. Click **"Search"** or press Enter
+4. Results appear below
+
+### Search Process
+
+**What happens:**
+
+1. Event ID is decoded (if nevent1)
+2. Event fetched from Primal cache
+3. Author profile information loaded
+4. Engagement statistics retrieved
+5. Media URLs extracted from content
+
+**If event not found:**
+
+- Error message displayed
+- Check event ID format
+- Verify event exists on Nostr
+
+### Viewing Search Results
+
+**Event Information:**
+
+- **Author Details** - Profile picture, name, creation date
+- **Event Content** - Full text content, formatted display
+- **Media Preview** - Extracted images/videos (up to 6 visible)
+- **Event ID** - Full event ID displayed, copyable
+
+**Event Metadata:**
+
+- **Created at** - When event was created
+- **Kind** - Event type (1 = note, 6 = repost, etc.)
+- **Author** - Event creator
+- **Content** - Event text content
+- **Tags** - Event tags (if any)
+
+---
+
+## Engagement Statistics
+
+### Statistics Displayed
+
+When viewing search results or your own posts, you can see:
+
+**Likes:**
+- Number of likes (kind 7, 9735, 9734)
+- Positive engagement indicator
+
+**Replies:**
+- Number of replies (kind 1)
+- Conversation engagement
+
+**Reposts:**
+- Number of reposts (kind 6)
+- Sharing engagement
+
+**Zaps:**
+- Number of zaps (kind 9735)
+- Lightning payments received
+- Total sats zapped
+
+**Mentions:**
+- Number of mentions
+- References to event
+
+**Statistics Grid:**
+
+- 3 columns on mobile
+- 6 columns on desktop
+- Large numbers for visibility
+- Labels below numbers
+
+**Use cases:**
+
+- **Content analysis** - See what performs well
+- **Engagement comparison** - Compare different posts
+- **Trend identification** - Find popular content
+
+---
+
+## Scheduling from Search
+
+### Schedule Quote Post
+
+**What it does:**
+
+- Creates a quote post (kind 1 with quote tag)
+- Includes original event reference
+- Allows you to add commentary
+
+**How to use:**
+
+1. Search for event
+2. View search results
+3. Click **"Schedule Quote Post"**
+4. Redirected to new post page
+5. Event pre-filled as quote
+6. Add your commentary
+7. Schedule or post immediately
+
+**Quote format:**
+
+- Original event referenced
+- Your commentary added
+- Posted as new event
+
+### Schedule Repost (Kind 6)
+
+**What it does:**
+
+- Creates a repost (kind 6)
+- Shares original event
+- No additional commentary
+
+**How to use:**
+
+1. Search for event
+2. View search results
+3. Click **"Schedule Repost (Kind 6)"**
+4. Redirected to new post page
+5. Repost pre-configured
+6. Schedule or post immediately
+
+**Repost format:**
+
+- Original event referenced
+- Posted as kind 6
+- No additional content
+
+### Search Best Practices
+
+**Finding Content:**
+
+1. **Use event IDs:**
+   - Copy from Nostr clients
+   - Use nevent1 format when available
+   - Verify ID before searching
+
+2. **Check engagement:**
+   - Review statistics before sharing
+   - Look for high engagement
+   - Consider content quality
+
+3. **Verify content:**
+   - Read full content
+   - Check author credibility
+   - Review media attachments
+
+**Scheduling Posts:**
+
+1. **Quote posts:**
+   - Add valuable commentary
+   - Provide context
+   - Engage with original content
+
+2. **Reposts:**
+   - Share quality content
+   - Support creators
+   - Build your feed
+
+3. **Timing:**
+   - Schedule for optimal times
+   - Consider your audience
+   - Space out reposts
 
 ---
 
@@ -235,12 +423,11 @@ The Engagement Feed helps you track and respond to interactions with your posts 
 
 ## Related Documentation
 
-- [Posting Guide](./posting.md) - Create and schedule posts
+- [Posting Guide](./posting.md) - Create and schedule posts (includes templates)
 - [Calendar Guide](./calendar.md) - Visual scheduling
-- [Templates Guide](./templates.md) - Reusable post templates
 
 ---
 
-**Next:** [Templates Guide](./templates.md) → Learn about reusable templates
+**Next:** [Posting Guide](./posting.md) → Learn about templates and advanced posting
 
 

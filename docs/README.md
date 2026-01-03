@@ -14,7 +14,13 @@
 
 **New to SmartFlowSocial?** Choose your path:
 
-### For End Users
+### For Hosted Customers (recommended)
+
+1. **[Hosted Quick Start](./getting-started/hosted.md)** - Log in and schedule your first post
+2. **[Posting Guide](./guides/user-guides/posting.md)** - Create and schedule posts
+3. **[Calendar Guide](./guides/user-guides/calendar.md)** - Visual scheduling
+
+### For Self-Hosters
 
 1. **[5-Minute Quick Start](./getting-started/quickstart.md)** - Get up and running fast
 2. **[First Steps Guide](./getting-started/first-steps.md)** - Your first 30 minutes
@@ -57,12 +63,12 @@ Comprehensive guides organized by role and topic.
 - [Posting Guide](./guides/user-guides/posting.md) - Create and schedule posts
 - [Calendar Guide](./guides/user-guides/calendar.md) - Visual scheduling
 - [Engagement Guide](./guides/user-guides/engagement.md) - Track interactions
-- [Templates Guide](./guides/user-guides/templates.md) - Reusable post templates
+- [Posting Guide](./guides/user-guides/posting.md#templates) - Templates (included in posting guide)
 - [Payments Guide](./guides/user-guides/payments.md) - Subscription management
 - [Giveaways Guide](./guides/user-guides/giveaways.md) - Create and manage giveaways
 - [Multi-Account Guide](./guides/user-guides/multi-account.md) - Manage multiple accounts
 - [Settings Guide](./guides/user-guides/settings.md) - Complete settings configuration
-- [Search Guide](./guides/user-guides/search.md) - Search for Nostr events
+- [Engagement Guide](./guides/user-guides/engagement.md#searching-for-events) - Search for events (included in engagement guide)
 - [Assets Management Guide](./guides/user-guides/assets.md) - Manage uploaded assets
 
 #### Developer Guides
@@ -112,7 +118,7 @@ Help when things go wrong.
 
 - [Common Issues](./troubleshooting/common-issues.md) - Frequently asked questions
 - [Error Solutions](./troubleshooting/errors.md) - Error resolution
-- [Debugging Guide](./troubleshooting/debugging.md) - Debugging techniques
+- [Error Troubleshooting](./troubleshooting/errors.md) - Error resolution and debugging techniques
 - [Performance Issues](./troubleshooting/performance.md) - Performance troubleshooting
 
 ---
@@ -134,7 +140,7 @@ Help when things go wrong.
 → [Core Concepts](./getting-started/concepts.md) → [Architecture](./getting-started/architecture.md) → [Nostr Integration](./reference/nostr.md)
 
 **Troubleshoot an issue**
-→ [Common Issues](./troubleshooting/common-issues.md) → [Error Solutions](./troubleshooting/errors.md) → [Debugging Guide](./troubleshooting/debugging.md)
+→ [Common Issues](./troubleshooting/common-issues.md) → [Error Troubleshooting](./troubleshooting/errors.md)
 
 ---
 
@@ -156,7 +162,7 @@ Looking for something specific? Use your browser's search (Cmd/Ctrl+F) or check:
 
 - [Common Tasks](./meta/common-tasks.md) - Quick reference
 - [Glossary](./meta/glossary.md) - Terminology
-- [FAQ](./troubleshooting/faq.md) - Frequently asked questions
+- [Common Issues](./troubleshooting/common-issues.md) - Common issues and FAQ
 
 ---
 
