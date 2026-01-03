@@ -1,9 +1,3 @@
-// Load environment variables from .env file (if it exists)
-// This must happen before any imports that use environment variables
-import { config } from "dotenv";
-import { resolve } from "node:path";
-config({ path: resolve(process.cwd(), ".env") });
-
 import { webcrypto as nodeWebcrypto } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -13,12 +7,17 @@ import { createRequestHandler } from "@remix-run/express";
 import type { ServerBuild } from "@remix-run/node";
 import { broadcastDevReady, installGlobals } from "@remix-run/node";
 import compression from "compression";
+import { config } from "dotenv";
 import type { RequestHandler } from "express";
 import express from "express";
 import helmet from "helmet";
 import morgan from "morgan";
 import * as promClient from "prom-client";
 import sourceMapSupport from "source-map-support";
+
+// Load environment variables from .env file (if it exists)
+// This must happen before any imports that use environment variables
+config({ path: path.resolve(process.cwd(), ".env") });
 
 import { env } from "./app/lib/env.server";
 import {

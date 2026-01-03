@@ -1,10 +1,11 @@
+import { webcrypto as nodeWebcrypto } from "node:crypto";
+import { resolve } from "node:path";
+
+import { config } from "dotenv";
+
 // Load environment variables from .env file (if it exists)
 // This must happen before any imports that use environment variables
-import { config } from "dotenv";
-import { resolve } from "node:path";
 config({ path: resolve(process.cwd(), ".env") });
-
-import { webcrypto as nodeWebcrypto } from "node:crypto";
 // Ensure Web Crypto API exists for server-side code that expects browser crypto
 if (!(globalThis as { crypto?: Crypto }).crypto?.getRandomValues) {
   (globalThis as { crypto: Crypto }).crypto = nodeWebcrypto as Crypto;
