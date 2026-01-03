@@ -22,9 +22,29 @@ import {
 import { withCSRFProtection } from "~/lib/csrf";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const userId = await requireUserId(request);
-  const data = await loadNewLongFormData(userId);
-  return json(data);
+  try {
+    const userId = await requireUserId(request);
+    const data = await loadNewLongFormData(userId);
+    return json(data);
+  } catch (error) {
+    // If error is a Response (e.g., redirect from requireUserId or requireFeatureAccess), return it
+    if (error instanceof Response) {
+      return error;
+    }
+    // Use dynamic import to avoid bundling issues
+    const { handleLoaderError } = await import("~/lib/error-handler.server");
+    // Provide default data structure matching what the component expects
+    return handleLoaderError(error, {
+      userId: "",
+      tags: "",
+      scheduleIntervals: [],
+      queueTypes: [],
+      hashTagPresets: [],
+      assets: [],
+      userTimezone: "Etc/GMT",
+      uploadProvider: null,
+    });
+  }
 }
 
 export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs) => {

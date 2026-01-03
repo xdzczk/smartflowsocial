@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { requireUserId } from "~/features/auth";
 import { MutedListSettings } from "~/features/engagement";
 import { GiveawayBlacklistSettings } from "~/features/giveaway";
+import type { ProfileData } from "~/features/nostr/types";
 import {
   NWCSettings,
   SubscriptionSettings,
@@ -30,15 +31,48 @@ import {
 import { AccountsSettings } from "~/features/user";
 import { withCSRFProtection } from "~/lib/csrf";
 export async function loader({ request }: { request: Request }) {
-  const userId = await requireUserId(request);
+  try {
+    const userId = await requireUserId(request);
 
-  // Require that the user has at least a subscription record
-  await requireAnySubscription(userId);
-  // Check if user has access to settings feature (requires active subscription)
-  await requireFeatureAccess(userId, "settings");
+    // Require that the user has at least a subscription record
+    await requireAnySubscription(userId);
+    // Check if user has access to settings feature (requires active subscription)
+    await requireFeatureAccess(userId, "settings");
 
-  const data = await loadSettingsData(userId);
-  return json(data);
+    const data = await loadSettingsData(userId);
+    return json(data);
+  } catch (error) {
+    // If error is a Response (e.g., redirect from requireUserId, requireAnySubscription, or requireFeatureAccess), return it
+    if (error instanceof Response) {
+      return error;
+    }
+    // Use dynamic import to avoid bundling issues
+    const { handleLoaderError } = await import("~/lib/error-handler.server");
+    // Provide default data structure matching what the component expects
+    return handleLoaderError(error, {
+      timezone: "Etc/GMT",
+      relays: [],
+      giveawayBlacklist: [],
+      scheduleIntervals: [],
+      queueTypes: [],
+      uploadProvider: null,
+      enableMirrorBlossom: false,
+      mirrorUploadUrls: [],
+      hashTagPresets: [],
+      nwcEnabled: false,
+      maskedNwcString: null,
+      nwcLastUsed: null,
+      subscription: null,
+      availablePlans: [],
+      paymentHistory: [],
+      isChild: false,
+      hasAccountsAccess: false,
+      accounts: null,
+      mutedList: { npubs: [], lastSynced: new Date().toISOString() },
+      filterMuted: false,
+      hidePostsFromLowTrustUsers: false,
+    });
+  }
 }
 
 export const action = withCSRFProtection(async ({ request }: { request: Request }) => {
@@ -79,7 +113,32 @@ type QueueTypeSettings = QueueType & {
 };
 
 export default function Settings() {
-  const data = useLoaderData<typeof loader>();
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const loaderDataRaw = useLoaderData<typeof loader>();
+  // Type assertion to avoid unsafe assignment errors from Remix JsonifyObject
+  const data = loaderDataRaw as {
+    timezone?: unknown;
+    relays?: unknown;
+    giveawayBlacklist?: unknown;
+    scheduleIntervals?: unknown;
+    queueTypes?: unknown;
+    uploadProvider?: unknown;
+    enableMirrorBlossom?: unknown;
+    mirrorUploadUrls?: unknown;
+    hashTagPresets?: unknown;
+    nwcEnabled?: unknown;
+    maskedNwcString?: unknown;
+    nwcLastUsed?: unknown;
+    subscription?: unknown;
+    availablePlans?: unknown;
+    paymentHistory?: unknown;
+    isChild?: unknown;
+    hasAccountsAccess?: unknown;
+    accounts?: unknown;
+    mutedList?: unknown;
+    filterMuted?: unknown;
+    hidePostsFromLowTrustUsers?: unknown;
+  };
   const {
     timezone,
     relays,
@@ -237,17 +296,18 @@ export default function Settings() {
         };
       })
     : [];
+  const mutedListRawTyped = mutedListRaw as { npubs?: unknown; lastSynced?: unknown } | null | undefined;
   const mutedList =
-    mutedListRaw &&
-    typeof mutedListRaw === "object" &&
-    !Array.isArray(mutedListRaw)
+    mutedListRawTyped &&
+    typeof mutedListRawTyped === "object" &&
+    !Array.isArray(mutedListRawTyped)
       ? {
-          npubs: Array.isArray(mutedListRaw.npubs)
-            ? (mutedListRaw.npubs as string[])
+          npubs: Array.isArray(mutedListRawTyped.npubs)
+            ? (mutedListRawTyped.npubs as string[])
             : [],
           lastSynced:
-            typeof mutedListRaw.lastSynced === "string"
-              ? mutedListRaw.lastSynced
+            typeof mutedListRawTyped.lastSynced === "string"
+              ? mutedListRawTyped.lastSynced
               : new Date().toISOString(),
         }
       : { npubs: [], lastSynced: new Date().toISOString() };
@@ -291,8 +351,8 @@ export default function Settings() {
 
         <TabsContent value="general" className="mt-6 space-y-6">
           <div className="grid gap-6 md:grid-cols-1">
-            <TimezoneSettings timezone={timezone} />
-            <ScheduleIntervalsSettings scheduleIntervals={scheduleIntervals} />
+            <TimezoneSettings timezone={(timezone as string | null | undefined) ?? null} />
+            <ScheduleIntervalsSettings scheduleIntervals={Array.isArray(scheduleIntervals) ? (scheduleIntervals as string[]) : []} />
           </div>
         </TabsContent>
 
@@ -332,22 +392,22 @@ export default function Settings() {
 
         <TabsContent value="network" className="mt-6 space-y-6">
           <div className="grid gap-6 md:grid-cols-1">
-            <RelaysSettings relays={relays} />
-            <GiveawayBlacklistSettings giveawayBlacklist={giveawayBlacklist} />
+            <RelaysSettings relays={Array.isArray(relays) ? (relays as string[]) : []} />
+            <GiveawayBlacklistSettings giveawayBlacklist={Array.isArray(giveawayBlacklist) ? (giveawayBlacklist as string[]) : []} />
             <MutedListSettings
               mutedList={mutedList}
-              filterMuted={filterMuted}
-              hidePostsFromLowTrustUsers={hidePostsFromLowTrustUsers}
+              filterMuted={typeof filterMuted === "boolean" ? filterMuted : false}
+              hidePostsFromLowTrustUsers={typeof hidePostsFromLowTrustUsers === "boolean" ? hidePostsFromLowTrustUsers : false}
             />
           </div>
         </TabsContent>
 
         <TabsContent value="storage" className="mt-6 space-y-6">
           <div className="grid gap-6 md:grid-cols-1">
-            <UploadProviderSettings uploadProvider={uploadProvider} />
+            <UploadProviderSettings uploadProvider={typeof uploadProvider === "string" ? uploadProvider : ""} />
             <BlossomMediaMirrorsSettings
-              enableMirrorBlossom={enableMirrorBlossom}
-              mirrorUploadUrls={mirrorUploadUrls}
+              enableMirrorBlossom={typeof enableMirrorBlossom === "boolean" ? enableMirrorBlossom : false}
+              mirrorUploadUrls={Array.isArray(mirrorUploadUrls) ? (mirrorUploadUrls as string[]) : []}
             />
           </div>
         </TabsContent>
@@ -396,9 +456,15 @@ export default function Settings() {
                 }
               />
               <NWCSettings
-                nwcEnabled={nwcEnabled}
-                maskedNwcString={maskedNwcString ?? undefined}
-                nwcLastUsed={nwcLastUsed}
+                nwcEnabled={typeof nwcEnabled === "boolean" ? nwcEnabled : false}
+                maskedNwcString={(maskedNwcString as string | null | undefined) ?? undefined}
+                nwcLastUsed={
+                  nwcLastUsed instanceof Date
+                    ? nwcLastUsed.toISOString()
+                    : typeof nwcLastUsed === "string"
+                      ? nwcLastUsed
+                      : null
+                }
               />
             </div>
           </TabsContent>
@@ -409,11 +475,11 @@ export default function Settings() {
             <div className="grid gap-6 md:grid-cols-1">
               {accounts ? (
                 <AccountsSettings
-                  parentNpub={accounts.parentNpub ?? undefined}
-                  confirmedChildren={accounts.confirmedChildren}
-                  pendingChildren={accounts.pendingChildren}
-                  isChild={accounts.isChild}
-                  parentUser={accounts.parentUser}
+                  parentNpub={((accounts as { parentNpub?: unknown }).parentNpub as string | undefined) ?? undefined}
+                  confirmedChildren={Array.isArray((accounts as { confirmedChildren?: unknown }).confirmedChildren) ? (accounts as { confirmedChildren: unknown[] }).confirmedChildren as unknown as Array<{ npub: string; nostrProfile?: ProfileData | null }> : undefined}
+                  pendingChildren={Array.isArray((accounts as { pendingChildren?: unknown }).pendingChildren) ? (accounts as { pendingChildren: unknown[] }).pendingChildren as unknown as Array<{ npub: string; nostrProfile?: ProfileData | null }> : undefined}
+                  isChild={typeof (accounts as { isChild?: unknown }).isChild === "boolean" ? (accounts as { isChild: boolean }).isChild : false}
+                  parentUser={(accounts as { parentUser?: unknown }).parentUser as { npub: string; nostrProfile?: ProfileData | null } | null | undefined}
                 />
               ) : (
                 <div className="text-sm text-muted-foreground">

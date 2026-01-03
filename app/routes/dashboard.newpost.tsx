@@ -1,3 +1,4 @@
+import type { AssetType } from "@prisma/client";
 import {
   json,
   type ActionFunctionArgs,
@@ -22,9 +23,25 @@ import {
 } from "~/features/posts";
 import { withCSRFProtection } from "~/lib/csrf";
 export async function loader({ request }: LoaderFunctionArgs) {
-  const userId = await requireUserId(request);
-  const data = await loadNewPostData(userId);
-  return json(data);
+  try {
+    const userId = await requireUserId(request);
+    const data = await loadNewPostData(userId);
+    return json(data);
+  } catch (error) {
+    // If error is a Response (e.g., redirect from requireUserId or requireAnySubscription), return it
+    if (error instanceof Response) {
+      return error;
+    }
+    // Use dynamic import to avoid bundling issues
+    const { handleLoaderError } = await import("~/lib/error-handler.server");
+    // Provide default data structure matching what the component expects
+    return handleLoaderError(error, {
+      scheduleIntervals: [],
+      queueTypes: [],
+      hashTagPresets: [],
+      assets: [],
+    });
+  }
 }
 
 export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs) => {
@@ -38,7 +55,14 @@ export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs)
 });
 
 export default function NewPost() {
-  const loaderData = useLoaderData<typeof loader>();
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const loaderDataRaw = useLoaderData<typeof loader>();
+  // Type assertion to avoid unsafe assignment errors
+  const loaderData = loaderDataRaw as {
+    queueTypes?: unknown;
+    hashTagPresets?: unknown;
+    assets?: unknown;
+  };
   const queueTypes =
     "queueTypes" in loaderData && Array.isArray(loaderData.queueTypes)
       ? loaderData.queueTypes
@@ -53,7 +77,7 @@ export default function NewPost() {
       : [];
 
   // Type assertions for Remix JsonifyObject serialization
-  const typedQueueTypes: (string | QueueType)[] = queueTypes.map(
+  const typedQueueTypes: (string | QueueType)[] = Array.isArray(queueTypes) ? queueTypes.map(
     (qt: unknown) => {
       if (typeof qt === "string") return qt;
       if (
@@ -104,8 +128,8 @@ export default function NewPost() {
       }
       return qt as string | QueueType;
     },
-  );
-  const typedHashTagPresets: HashTagPreset[] = hashTagPresets
+  ) : [];
+  const typedHashTagPresets: HashTagPreset[] = Array.isArray(hashTagPresets) ? hashTagPresets
     .filter(
       (
         preset: unknown,
@@ -130,7 +154,15 @@ export default function NewPost() {
         typeof (preset as { id: unknown; name: unknown; tags: unknown })
           .tags === "string",
     )
-    .map((preset) => ({
+    .map((preset: {
+      id: string;
+      name: string;
+      tags: string;
+      description?: unknown;
+      createdAt?: unknown;
+      updatedAt?: unknown;
+      userId?: unknown;
+    }) => ({
       id: preset.id,
       name: preset.name,
       tags: preset.tags,
@@ -157,7 +189,7 @@ export default function NewPost() {
         if (typeof updatedAtValue === "string") return new Date(updatedAtValue);
         return undefined;
       })(),
-    }));
+    })) : [];
   const typedAssets: Asset[] = Array.isArray(assets)
     ? assets
         .filter(
@@ -201,8 +233,9 @@ export default function NewPost() {
           tags: Array.isArray(asset.tags)
             ? asset.tags.filter((tag): tag is string => typeof tag === "string")
             : [],
-          assetType:
-            typeof asset.assetType === "string" ? asset.assetType : "IMAGE",
+          assetType: (
+            typeof asset.assetType === "string" ? asset.assetType : "IMAGE"
+          ) as AssetType,
           createdAt: (() => {
             const createdAtValue: unknown = asset.createdAt;
             if (createdAtValue instanceof Date) return createdAtValue;

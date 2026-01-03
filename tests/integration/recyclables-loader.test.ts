@@ -27,6 +27,7 @@ vi.mock("~/features/posts/stats.server", () => ({
   getPostStats: vi.fn(),
 }));
 
+import type { PostDTO } from "~/features/posts/dtos";
 import { getRecyclableDashboardData } from "~/features/posts/posts.server";
 import { getPostStats } from "~/features/posts/stats.server";
 import { getUserById, getQueueTypes } from "~/features/user";
@@ -108,7 +109,12 @@ describe("Recyclables Loader", () => {
       expect(post.id).toBe(mockPost.id);
       expect(post.content).toBe(mockPost.content);
       expect(post.caption).toBe(mockPost.caption);
-      expect(post.isRecyclable).toBe(mockPost.isRecyclable);
+      // Type assertion needed because PostDTO extends Post which includes isRecyclable
+      // PostDTO should include isRecyclable from Prisma Post type
+      // The mock post type doesn't include isRecyclable in its inferred type, so we use type assertions
+      const postWithRecyclable = post as PostDTO & { isRecyclable: boolean };
+      const mockPostWithRecyclable = mockPost as typeof mockPost & { isRecyclable?: boolean };
+      expect(postWithRecyclable.isRecyclable).toBe(mockPostWithRecyclable.isRecyclable);
       expect(post.isPosted).toBe(mockPost.isPosted);
       // Dates are serialized to strings in DTOs
       expect(typeof post.createdAt).toBe("string");

@@ -308,7 +308,7 @@ describe("Drafts Action Handler", () => {
       
       // Check if validation failed
       if (result instanceof Response && result.status === 400) {
-        const data = await result.json();
+        const data = await result.json() as { error?: unknown };
         throw new Error(`Validation failed: ${JSON.stringify(data)}`);
       }
 
