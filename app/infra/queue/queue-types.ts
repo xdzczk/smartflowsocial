@@ -34,6 +34,11 @@ export interface ScheduleOptions {
    * Timestamp (in seconds) when the job should be processed
    */
   scheduledFor?: number;
+  /**
+   * Optional deterministic job ID. If provided, allows O(1) cancellation by jobId.
+   * Recommended: use postId as jobId for scheduled posts.
+   */
+  jobId?: string;
 }
 
 /**
@@ -80,11 +85,21 @@ export interface QueueClient {
 
   /**
    * Cancel a job by its data identifier (e.g., postId)
+   * @deprecated Use cancelByJobId for O(1) performance. This method is O(n) and will be slow at scale.
    */
   cancelByData(
     queueName: QueueType,
     dataKey: keyof PostJobData | keyof LongFormPostJobData,
     dataValue: string,
+  ): Promise<boolean>;
+
+  /**
+   * Cancel a job by its deterministic job ID (O(1) operation)
+   * This is the preferred method for cancellation when using deterministic job IDs.
+   */
+  cancelByJobId(
+    queueName: QueueType,
+    jobId: string,
   ): Promise<boolean>;
 
   /**

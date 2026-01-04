@@ -21,7 +21,9 @@ export async function enqueuePostJob(
   scheduledFor: number,
 ): Promise<void> {
   // Handle immediate scheduling (delay: 0)
-  const options = scheduledFor === 0 ? { delay: 0 } : { scheduledFor };
+  const baseOptions = scheduledFor === 0 ? { delay: 0 } : { scheduledFor };
+  // Use postId as deterministic jobId for O(1) cancellation
+  const options = { ...baseOptions, jobId: postId };
 
   const result = await queueClient.enqueue<PostJobData>(
     "scheduled-posts",
@@ -37,11 +39,12 @@ export async function enqueuePostJob(
 
 /**
  * Cancel a scheduled post
- * @param postId - The post ID to cancel
+ * @param postId - The post ID to cancel (used as jobId for O(1) cancellation)
  * @returns true if the job was found and cancelled, false otherwise
  */
 export function cancelPostJob(postId: string): Promise<boolean> {
-  return queueClient.cancelByData("scheduled-posts", "postId", postId);
+  // Use cancelByJobId for O(1) performance since we use postId as jobId
+  return queueClient.cancelByJobId("scheduled-posts", postId);
 }
 
 /**
@@ -58,7 +61,9 @@ export async function enqueueLongFormPostJob(
   scheduledFor: number,
 ): Promise<void> {
   // Handle immediate scheduling (delay: 0)
-  const options = scheduledFor === 0 ? { delay: 0 } : { scheduledFor };
+  const baseOptions = scheduledFor === 0 ? { delay: 0 } : { scheduledFor };
+  // Use postId as deterministic jobId for O(1) cancellation
+  const options = { ...baseOptions, jobId: postId };
 
   const result = await queueClient.enqueue<LongFormPostJobData>(
     "scheduled-longform-posts",
@@ -74,11 +79,12 @@ export async function enqueueLongFormPostJob(
 
 /**
  * Cancel a scheduled longform post
- * @param postId - The longform post ID to cancel
+ * @param postId - The longform post ID to cancel (used as jobId for O(1) cancellation)
  * @returns true if the job was found and cancelled, false otherwise
  */
 export function cancelLongFormPostJob(postId: string): Promise<boolean> {
-  return queueClient.cancelByData("scheduled-longform-posts", "postId", postId);
+  // Use cancelByJobId for O(1) performance since we use postId as jobId
+  return queueClient.cancelByJobId("scheduled-longform-posts", postId);
 }
 
 /**

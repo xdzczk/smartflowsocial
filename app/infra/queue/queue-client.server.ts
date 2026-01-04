@@ -77,7 +77,13 @@ class BullMQClient implements QueueClient {
         delay = options.delay;
       }
 
-      const job = await queue.add(jobName, data, { delay });
+      // Use deterministic jobId if provided, otherwise let BullMQ generate one
+      const jobOptions: { delay?: number; jobId?: string } = { delay };
+      if (options?.jobId) {
+        jobOptions.jobId = options.jobId;
+      }
+
+      const job = await queue.add(jobName, data, jobOptions);
 
       return {
         success: true,
@@ -125,6 +131,30 @@ class BullMQClient implements QueueClient {
       logError(error instanceof Error ? error : new Error(String(error)), {
         queueName,
         message: "Error canceling job",
+      });
+      return false;
+    }
+  }
+
+  async cancelByJobId(
+    queueName: QueueType,
+    jobId: string,
+  ): Promise<boolean> {
+    try {
+      const queue = getQueue(queueName);
+      const job = await queue.getJob(jobId);
+
+      if (job) {
+        await job.remove();
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      logError(error instanceof Error ? error : new Error(String(error)), {
+        queueName,
+        jobId,
+        message: "Error canceling job by ID",
       });
       return false;
     }

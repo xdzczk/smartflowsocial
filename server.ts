@@ -11,6 +11,7 @@ import { config } from "dotenv";
 import type { RequestHandler } from "express";
 import express from "express";
 import helmet from "helmet";
+import * as ipaddr from "ipaddr.js";
 import morgan from "morgan";
 import * as promClient from "prom-client";
 import sourceMapSupport from "source-map-support";
@@ -108,62 +109,82 @@ async function run() {
           req.ip ??
           "";
 
+        if (!clientIp) {
+          res.status(403).json({
+            error: "Forbidden",
+            message: "Unable to determine client IP address",
+          });
+          return;
+        }
+
         const allowedIps = env.METRICS_ALLOWED_IPS.split(",").map((ip) =>
           ip.trim(),
         );
 
-        // Check exact match or CIDR prefix match
-        const isAllowed = allowedIps.some((allowedIp) => {
-          // Exact match
-          if (clientIp === allowedIp) {
-            return true;
-          }
+        // Use ipaddr.js for proper CIDR matching (supports IPv4 and IPv6)
+        let isAllowed = false;
 
-          // CIDR prefix match (e.g., "10.0.0.0/8" matches "10.0.0.1")
-          if (allowedIp.includes("/")) {
-            const [prefix, mask] = allowedIp.split("/");
-            const maskBits = parseInt(mask, 10);
-            if (isNaN(maskBits)) {
+        try {
+          const clientAddr = ipaddr.process(clientIp);
+
+          isAllowed = allowedIps.some((allowedIp) => {
+            try {
+              // Exact match
+              if (clientIp === allowedIp) {
+                return true;
+              }
+
+              // CIDR match (e.g., "10.0.0.0/8" or "2001:db8::/32")
+              if (allowedIp.includes("/")) {
+                const [prefix, maskStr] = allowedIp.split("/");
+                const mask = parseInt(maskStr, 10);
+
+                if (isNaN(mask) || mask < 0) {
+                  return false;
+                }
+
+                try {
+                  const prefixAddr = ipaddr.process(prefix);
+
+                  // Both must be same type (IPv4 or IPv6)
+                  if (clientAddr.kind() !== prefixAddr.kind()) {
+                    return false;
+                  }
+
+                  // Check if client IP is within the CIDR range
+                  if (clientAddr.kind() === "ipv4") {
+                    const subnet = prefixAddr as ipaddr.IPv4;
+                    const range = ipaddr.IPv4.subnetMaskFromPrefixLength(mask);
+                    const clientIPv4 = clientAddr as ipaddr.IPv4;
+                    // @ts-expect-error - ipaddr.js types may be incomplete, but match works correctly
+                    return clientIPv4.match(subnet, range);
+                  } else {
+                    // IPv6
+                    const subnet = prefixAddr as ipaddr.IPv6;
+                    const range = ipaddr.IPv6.subnetMaskFromPrefixLength(mask);
+                    const clientIPv6 = clientAddr as ipaddr.IPv6;
+                    // @ts-expect-error - ipaddr.js types may be incomplete, but match works correctly
+                    return clientIPv6.match(subnet, range);
+                  }
+                } catch {
+                  // Invalid CIDR format
+                  return false;
+                }
+              }
+
+              // Try parsing as single IP for exact match
+              const allowedAddr = ipaddr.process(allowedIp);
+              return clientAddr.toString() === allowedAddr.toString();
+            } catch {
+              // Invalid IP format in allowlist - skip this entry
               return false;
             }
-
-            // Simple prefix matching for common CIDR ranges
-            const prefixParts = prefix.split(".");
-            const clientParts = clientIp.split(".");
-
-            if (prefixParts.length !== 4 || clientParts.length !== 4) {
-              return false;
-            }
-
-            // Check if IP starts with the prefix for the given mask
-            const bytesToCheck = Math.floor(maskBits / 8);
-            for (let i = 0; i < bytesToCheck; i++) {
-              if (prefixParts[i] !== clientParts[i]) {
-                return false;
-              }
-            }
-
-            // Check partial byte if mask is not a multiple of 8
-            const remainingBits = maskBits % 8;
-            if (remainingBits > 0 && bytesToCheck < 4) {
-              const prefixByte = parseInt(prefixParts[bytesToCheck] || "0", 10);
-              const clientByte = parseInt(clientParts[bytesToCheck] || "0", 10);
-              const maskByte = 0xff << (8 - remainingBits);
-              if ((prefixByte & maskByte) !== (clientByte & maskByte)) {
-                return false;
-              }
-            }
-
-            return true;
-          }
-
-          // Prefix match (e.g., "10.0" matches "10.0.0.1")
-          if (clientIp.startsWith(allowedIp)) {
-            return true;
-          }
-
-          return false;
-        });
+          });
+        } catch (error) {
+          // Invalid client IP format
+          console.warn("Invalid client IP format:", clientIp, error);
+          isAllowed = false;
+        }
 
         if (!isAllowed) {
           res.status(403).json({
