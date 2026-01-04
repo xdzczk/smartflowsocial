@@ -47,7 +47,9 @@ export * from "./schemas/payments.schemas";
 export * from "./utils.server";
 
 // Client-side validation utilities
-export * from "./utils.client";
+// Note: Do not re-export client-only utilities through index.ts to avoid bundling issues
+// Import directly from "./utils.client" in client components
+// export * from "./utils.client";
 
 // React Hook Form hooks
 export * from "./hooks/useRemixForm";

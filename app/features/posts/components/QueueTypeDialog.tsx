@@ -21,11 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import {
-  queueTypeClientSchema,
-  useZodForm,
-  formDataToFormData,
-} from "~/lib/validation";
+import { queueTypeClientSchema } from "~/lib/validation";
+import { useZodForm, formDataToFormData } from "~/lib/validation/utils.client";
 
 import type { QueueType } from "../types";
 import { isIntervalScheduleConfig, isFixedSlotsScheduleConfig } from "../types";

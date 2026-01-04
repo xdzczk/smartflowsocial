@@ -1,6 +1,7 @@
 import { useFetcher } from "@remix-run/react";
 import { Plus, X } from "lucide-react";
-import { useFieldArray } from "react-hook-form";
+import type { UseFormReturn } from "react-hook-form";
+import type { z } from "zod";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -11,12 +12,10 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
-import {
-  updateRelaysClientSchema,
-  useZodForm,
-  formDataToFormData,
-} from "~/lib/validation";
+import { updateRelaysClientSchema } from "~/lib/validation";
+import { useZodFieldArray } from "~/lib/validation/hooks/useZodFieldArray";
 import { relayUrlSchema } from "~/lib/validation/schemas/settings.schemas";
+import { useZodForm, formDataToFormData } from "~/lib/validation/utils.client";
 
 interface RelaysSettingsProps {
   relays: string[];
@@ -35,17 +34,10 @@ export function RelaysSettings({ relays }: RelaysSettingsProps) {
     },
   });
 
-  // TypeScript has issues with Zod schema inference in useFieldArray
-  // We know the type is correct at runtime (relays: string[])
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    // @ts-ignore - Type inference issue with Zod + RHF
-    name: "relays",
-  }) as {
-    fields: Array<{ id: string }>;
-    append: (value: string) => void;
-    remove: (index: number) => void;
-  };
+  const { fields, append, remove } = useZodFieldArray<
+    z.infer<typeof updateRelaysClientSchema>,
+    "relays"
+  >(form as unknown as UseFormReturn<z.infer<typeof updateRelaysClientSchema>>, "relays");
 
   const isSubmitting = fetcher.state === "submitting";
   const watchedRelays = form.watch("relays");
@@ -56,7 +48,7 @@ export function RelaysSettings({ relays }: RelaysSettingsProps) {
     const filteredRelays = data.relays.filter((relay: string) => relay.trim());
     
     // Validate all non-empty relays
-    const invalidRelays = filteredRelays.filter((relay) => {
+    const invalidRelays = filteredRelays.filter((relay: string) => {
       try {
         relayUrlSchema.parse(relay);
         return false;

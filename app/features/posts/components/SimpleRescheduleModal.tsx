@@ -7,8 +7,8 @@ import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import {
   rescheduleModalClientSchema,
   rescheduleLongformModalClientSchema,
-  useZodForm,
 } from "~/lib/validation";
+import { useZodForm } from "~/lib/validation/utils.client";
 
 import type { PostData, LongFormPostData, UserData, QueueType } from "../types";
 

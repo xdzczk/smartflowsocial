@@ -1,6 +1,7 @@
 import { useFetcher } from "@remix-run/react";
 import { Plus, X } from "lucide-react";
-import { useFieldArray } from "react-hook-form";
+import type { UseFormReturn } from "react-hook-form";
+import type { z } from "zod";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -11,11 +12,9 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
-import {
-  updateScheduleIntervalsClientSchema,
-  useZodForm,
-  formDataToFormData,
-} from "~/lib/validation";
+import { updateScheduleIntervalsClientSchema } from "~/lib/validation";
+import { useZodFieldArray } from "~/lib/validation/hooks/useZodFieldArray";
+import { useZodForm, formDataToFormData } from "~/lib/validation/utils.client";
 
 interface ScheduleIntervalsSettingsProps {
   scheduleIntervals: string[];
@@ -37,16 +36,10 @@ export function ScheduleIntervalsSettings({
     },
   });
 
-  // TypeScript has issues with Zod schema inference in useFieldArray
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    // @ts-ignore - Type inference issue with Zod + RHF
-    name: "scheduleIntervals",
-  }) as {
-    fields: Array<{ id: string }>;
-    append: (value: string) => void;
-    remove: (index: number) => void;
-  };
+  const { fields, append, remove } = useZodFieldArray<
+    z.infer<typeof updateScheduleIntervalsClientSchema>,
+    "scheduleIntervals"
+  >(form as unknown as UseFormReturn<z.infer<typeof updateScheduleIntervalsClientSchema>>, "scheduleIntervals");
 
   const isSubmitting = fetcher.state === "submitting";
   const watchedIntervals = form.watch("scheduleIntervals");
@@ -61,7 +54,7 @@ export function ScheduleIntervalsSettings({
     );
 
     // Validate all non-empty intervals are positive integers
-    const invalidIntervals = filteredIntervals.filter((interval) => {
+    const invalidIntervals = filteredIntervals.filter((interval: string) => {
       const num = parseInt(interval, 10);
       return isNaN(num) || num <= 0 || num.toString() !== interval.trim();
     });

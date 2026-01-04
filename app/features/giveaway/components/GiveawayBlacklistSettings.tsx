@@ -1,6 +1,7 @@
 import { useFetcher } from "@remix-run/react";
 import { Plus, X } from "lucide-react";
-import { useFieldArray } from "react-hook-form";
+import type { UseFormReturn } from "react-hook-form";
+import type { z } from "zod";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -11,11 +12,9 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
-import {
-  updateBlacklistClientSchema,
-  useZodForm,
-  formDataToFormData,
-} from "~/lib/validation";
+import { updateBlacklistClientSchema } from "~/lib/validation";
+import { useZodFieldArray } from "~/lib/validation/hooks/useZodFieldArray";
+import { useZodForm, formDataToFormData } from "~/lib/validation/utils.client";
 
 interface GiveawayBlacklistSettingsProps {
   giveawayBlacklist: string[];
@@ -36,16 +35,10 @@ export function GiveawayBlacklistSettings({
     },
   });
 
-  // TypeScript has issues with Zod schema inference in useFieldArray
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    // @ts-ignore - Type inference issue with Zod + RHF
-    name: "blacklist",
-  }) as {
-    fields: Array<{ id: string }>;
-    append: (value: string) => void;
-    remove: (index: number) => void;
-  };
+  const { fields, append, remove } = useZodFieldArray<
+    z.infer<typeof updateBlacklistClientSchema>,
+    "blacklist"
+  >(form as unknown as UseFormReturn<z.infer<typeof updateBlacklistClientSchema>>, "blacklist");
 
   const isSubmitting = fetcher.state === "submitting";
   const watchedBlacklist = form.watch("blacklist");

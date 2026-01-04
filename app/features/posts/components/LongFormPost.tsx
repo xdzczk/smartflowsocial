@@ -3,10 +3,8 @@ import { useState, useEffect } from "react";
 
 import { Badge } from "~/components/ui/badge";
 import { AssetBrowser, type Asset } from "~/features/assets";
-import {
-  longformPostClientSchema,
-  useZodForm,
-} from "~/lib/validation";
+import { longformPostClientSchema } from "~/lib/validation";
+import { useZodForm } from "~/lib/validation/utils.client";
 
 import { useLongFormSubmission } from "../hooks/useLongFormSubmission";
 import { useCoverImageUpload } from "../useCoverImageUpload";

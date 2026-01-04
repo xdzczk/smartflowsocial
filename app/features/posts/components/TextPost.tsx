@@ -11,7 +11,7 @@ import type { Asset } from "~/features/assets/types";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { textPostClientSchema } from "~/lib/validation";
-import { useZodForm } from "~/lib/validation/utils.client";
+import { useZodForm } from "~/lib/validation/utils.client-safe";
 
 import { usePostScheduling } from "../hooks/usePostScheduling";
 import type { QueueType } from "../types";

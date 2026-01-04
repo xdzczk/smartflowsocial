@@ -1,6 +1,7 @@
 import { useFetcher } from "@remix-run/react";
 import { Plus, X } from "lucide-react";
-import { useFieldArray } from "react-hook-form";
+import type { UseFormReturn } from "react-hook-form";
+import type { z } from "zod";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -13,11 +14,9 @@ import {
 import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import {
-  updateBlossomMirrorsClientSchema,
-  useZodForm,
-  formDataToFormData,
-} from "~/lib/validation";
+import { updateBlossomMirrorsClientSchema } from "~/lib/validation";
+import { useZodFieldArray } from "~/lib/validation/hooks/useZodFieldArray";
+import { useZodForm, formDataToFormData } from "~/lib/validation/utils.client";
 
 interface BlossomMediaMirrorsSettingsProps {
   enableMirrorBlossom: boolean;
@@ -36,16 +35,10 @@ export function BlossomMediaMirrorsSettings({
     },
   });
 
-  // TypeScript has issues with Zod schema inference in useFieldArray
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    // @ts-ignore - Type inference issue with Zod + RHF
-    name: "mirrorUrls",
-  }) as {
-    fields: Array<{ id: string }>;
-    append: (value: string) => void;
-    remove: (index: number) => void;
-  };
+  const { fields, append, remove } = useZodFieldArray<
+    z.infer<typeof updateBlossomMirrorsClientSchema>,
+    "mirrorUrls"
+  >(form as unknown as UseFormReturn<z.infer<typeof updateBlossomMirrorsClientSchema>>, "mirrorUrls");
 
   const isSubmitting = fetcher.state === "submitting";
   const watchedMirrorUrls = form.watch("mirrorUrls");
@@ -78,7 +71,7 @@ export function BlossomMediaMirrorsSettings({
     const filteredUrls = data.mirrorUrls.filter((url: string) => url.trim());
 
     // Validate all non-empty URLs
-    const invalidUrls = filteredUrls.filter((url) => !validateUrl(url.trim()));
+    const invalidUrls = filteredUrls.filter((url: string) => !validateUrl(url.trim()));
 
     if (invalidUrls.length > 0) {
       form.setError("mirrorUrls", {

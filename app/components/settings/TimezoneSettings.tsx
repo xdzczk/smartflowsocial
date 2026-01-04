@@ -17,11 +17,8 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { timeZonesList } from "~/lib/date";
-import {
-  updateTimezoneClientSchema,
-  useZodForm,
-  formDataToFormData,
-} from "~/lib/validation";
+import { updateTimezoneClientSchema } from "~/lib/validation";
+import { useZodForm, formDataToFormData } from "~/lib/validation/utils.client";
 
 interface TimezoneSettingsProps {
   timezone: string | null;

@@ -10,8 +10,8 @@ import { logClientError } from "~/lib/error-handler.client";
 import {
   editPostClientSchema,
   editLongformPostClientSchema,
-  useZodForm,
 } from "~/lib/validation";
+import { useZodForm } from "~/lib/validation/utils.client";
 
 import type {
   PostData,

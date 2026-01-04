@@ -11,11 +11,8 @@ import {
 import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
-import {
-  updateTagsClientSchema,
-  useZodForm,
-  formDataToFormData,
-} from "~/lib/validation";
+import { updateTagsClientSchema } from "~/lib/validation";
+import { useZodForm, formDataToFormData } from "~/lib/validation/utils.client";
 
 interface HashtagsSettingsProps {
   tags: string;

@@ -7,6 +7,7 @@
  * Migrated from: tests/e2e/subscription/billing-loader.cy.ts
  */
 
+import type { LoaderFunctionArgs } from "@remix-run/node";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock Prisma to prevent $use errors
 vi.mock("~/lib/prisma.server", () => ({
@@ -79,11 +80,11 @@ describe("Subscription/Billing Loader Integration", () => {
       const request = new Request(
         "http://localhost:3000/dashboard/settings?tab=subscription",
       );
-      const loaderArgs: {
-        request: Request;
-        params?: Record<string, string>;
-        context?: Record<string, unknown>;
-      } = { request };
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
       const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data =
@@ -144,11 +145,11 @@ describe("Subscription/Billing Loader Integration", () => {
       const request = new Request(
         "http://localhost:3000/dashboard/settings?tab=subscription",
       );
-      const loaderArgs: {
-        request: Request;
-        params?: Record<string, string>;
-        context?: Record<string, unknown>;
-      } = { request };
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
       const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data =
@@ -198,11 +199,11 @@ describe("Subscription/Billing Loader Integration", () => {
       const request = new Request(
         "http://localhost:3000/dashboard/settings?tab=subscription",
       );
-      const loaderArgs: {
-        request: Request;
-        params?: Record<string, string>;
-        context?: Record<string, unknown>;
-      } = { request };
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
       const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data =
@@ -259,11 +260,11 @@ describe("Subscription/Billing Loader Integration", () => {
       const request = new Request(
         "http://localhost:3000/dashboard/settings?tab=subscription",
       );
-      const loaderArgs: {
-        request: Request;
-        params?: Record<string, string>;
-        context?: Record<string, unknown>;
-      } = { request };
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
       const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data =
@@ -318,11 +319,11 @@ describe("Subscription/Billing Loader Integration", () => {
       const request = new Request(
         "http://localhost:3000/dashboard/settings?tab=subscription",
       );
-      const loaderArgs: {
-        request: Request;
-        params?: Record<string, string>;
-        context?: Record<string, unknown>;
-      } = { request };
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
       const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data =
@@ -355,7 +356,7 @@ describe("Subscription/Billing Loader Integration", () => {
       );
 
       // Loader catches Response errors and returns them
-      const response = await loader({ request });
+      const response = await loader({ request, params: {}, context: {} });
       expect(response).toBeInstanceOf(Response);
       expect(response.status).toBe(401);
     });
@@ -375,7 +376,7 @@ describe("Subscription/Billing Loader Integration", () => {
       );
 
       // Loader catches Response errors and returns them
-      const response = await loader({ request });
+      const response = await loader({ request, params: {}, context: {} });
       expect(response).toBeInstanceOf(Response);
       expect(response.status).toBe(403);
     });
@@ -395,7 +396,7 @@ describe("Subscription/Billing Loader Integration", () => {
       );
 
       // Loader catches Response errors and returns them
-      const response = await loader({ request });
+      const response = await loader({ request, params: {}, context: {} });
       expect(response).toBeInstanceOf(Response);
       expect(response.status).toBe(403);
     });
@@ -409,7 +410,7 @@ describe("Subscription/Billing Loader Integration", () => {
         "http://localhost:3000/dashboard/settings?tab=subscription",
       );
 
-      const response = await loader({ request });
+      const response = await loader({ request, params: {}, context: {} });
       expect(response).toBeInstanceOf(Response);
       expect(response.status).toBe(500);
       

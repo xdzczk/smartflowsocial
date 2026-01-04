@@ -411,6 +411,22 @@ export default (async () => {
       },
     },
 
+    // Validation utilities - allow controlled type assertions for Zod + React Hook Form integration
+    // These files bridge type system boundaries where TypeScript can't verify types statically
+    // but runtime behavior is correct. Type assertions are documented and necessary.
+    {
+      files: [
+        "app/lib/validation/**/*.ts",
+        "app/lib/validation/**/*.tsx",
+      ],
+      rules: {
+        "@typescript-eslint/no-explicit-any": "warn", // Allow with documentation
+        "@typescript-eslint/no-unsafe-assignment": "warn", // Known limitation with Zod+RHF type inference
+        "@typescript-eslint/no-unsafe-member-access": "warn", // Known limitation with Zod+RHF type inference
+        "@typescript-eslint/no-unnecessary-type-assertion": "off", // Type assertions are necessary for type system boundaries
+      },
+    },
+
     // Markdown files - temporarily disabled for ESLint 9 compatibility
     // TODO: Re-enable when eslint-plugin-markdown has full ESLint 9 support
     {

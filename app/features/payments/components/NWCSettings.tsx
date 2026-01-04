@@ -12,11 +12,8 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
-import {
-  updateNWCClientSchema,
-  useZodForm,
-  formDataToFormData,
-} from "~/lib/validation";
+import { updateNWCClientSchema } from "~/lib/validation";
+import { useZodForm, formDataToFormData } from "~/lib/validation/utils.client";
 
 interface NWCSettingsProps {
   nwcEnabled: boolean;

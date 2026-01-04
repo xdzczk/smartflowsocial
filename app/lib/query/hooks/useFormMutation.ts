@@ -7,7 +7,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { UseFormReturn } from "react-hook-form";
 import type { z } from "zod";
 
-import { formDataToFormData } from "~/lib/validation";
+import { formDataToFormData } from "~/lib/validation/utils.client";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface UseFormMutationOptions<TData, TSchema extends z.ZodType<any, any, any> = z.ZodType<any, any, any>> {
