@@ -13,7 +13,7 @@ import { fromPostDTOArray } from "~/features/posts/dtos";
 import type { PostStats } from "~/features/posts/stats.server";
 import type { PostData, QueueType } from "~/features/posts/types";
 import type { UserWithHashTagPresets as _UserWithHashTagPresets } from "~/features/user";
-import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses.server";
+import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
 import {
   giveawayLoaderDataSchema,
   type GiveawayLoaderData,

@@ -71,13 +71,19 @@ export function ScheduledPostsTable({
     return fileUrl;
   };
 
-  const SortableHeader = ({ key, label }: { key: string; label: string }) => (
+  const SortableHeader = ({
+    sortKey,
+    label,
+  }: {
+    sortKey: string;
+    label: string;
+  }) => (
     <th
       className="cursor-pointer bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50"
-      onClick={() => onRequestSort(key)}
+      onClick={() => onRequestSort(sortKey)}
     >
       {label}{" "}
-      {sortConfig.key === key
+      {sortConfig.key === sortKey
         ? sortConfig.direction === "asc"
           ? "↑"
           : "↓"
@@ -103,8 +109,8 @@ export function ScheduledPostsTable({
             <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
               Media
             </th>
-            <SortableHeader key="caption" label="Caption" />
-            <SortableHeader key="scheduledFor" label="Scheduled For" />
+            <SortableHeader sortKey="caption" label="Caption" />
+            <SortableHeader sortKey="scheduledFor" label="Scheduled For" />
             <th className="bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
               Time Remaining
             </th>

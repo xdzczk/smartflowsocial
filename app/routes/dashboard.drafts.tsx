@@ -36,7 +36,7 @@ import {
   useDraftsData,
 } from "~/features/posts/ui";
 import { withCSRFProtection } from "~/lib/csrf";
-import { convertDraftsPostsToPostDataArray } from "~/lib/validation/drafts-post-conversion.server";
+import { convertDraftsPostsToPostDataArray } from "~/lib/validation/drafts-post-conversion";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import { draftsLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
 
@@ -49,7 +49,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     // Check if user has access to the drafts feature
     await requireFeatureAccess(userId, "drafts");
 
-    const queueType = params.queueType ?? "all";
+    // Get queueType from URL params (query string) or route params, default to "all"
+    const url = new URL(request.url);
+    const queueType = url.searchParams.get("queueType") ?? params.queueType ?? "all";
 
     const data = await loadDraftsData(userId, queueType);
     

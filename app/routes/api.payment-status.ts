@@ -3,6 +3,7 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 
 import { checkPaymentStatusById } from "~/features/payments";
 import { withCSRFProtection } from "~/lib/csrf";
+import { ValidationError } from "~/lib/errors";
 
 type AssertFunction = (
   condition: boolean,
@@ -19,8 +20,34 @@ export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs)
       method: request.method,
     });
 
-    const formData = await request.formData();
-    const paymentId = formData.get("paymentId") as string;
+    // Handle both JSON and FormData requests
+    const contentType = request.headers.get("content-type") ?? "";
+    let paymentId: string | null = null;
+
+    if (contentType.includes("application/json")) {
+      // Handle JSON request (from e2e tests)
+      const body: unknown = await request.json().catch(() => null);
+      if (!body || typeof body !== "object" || body === null) {
+        throw new ValidationError("Invalid JSON body", {
+          contentType,
+        });
+      }
+      // Type guard for body
+      const bodyObj = body as Record<string, unknown>;
+      paymentId =
+        typeof bodyObj.paymentId === "string" ? bodyObj.paymentId : null;
+    } else {
+      // Handle FormData request (from actual app usage)
+      try {
+        const formData = await request.formData();
+        paymentId = formData.get("paymentId") as string | null;
+      } catch (error) {
+        throw new ValidationError("Could not parse content as FormData", {
+          contentType,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
 
     assert(paymentId !== null && paymentId !== "", "Payment ID is required", {
       hasPaymentId: paymentId !== null,

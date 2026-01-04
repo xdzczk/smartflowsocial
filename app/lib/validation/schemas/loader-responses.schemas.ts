@@ -415,7 +415,7 @@ export const scheduledPostsLoaderDataSchema = z.object({
   longformPosts: z.array(longFormPostDTOSchema),
   user: userSchema.nullable(),
   queueTypes: z.array(queueTypeSchema),
-  selectedQueueType: z.string().optional(),
+  selectedQueueType: z.string(),
   hashTagPresets: z.array(hashTagPresetSchema),
 });
 
@@ -432,10 +432,12 @@ export const dashboardLoaderDataSchema = z.object({
   queueTypes: z.array(queueTypeSchema),
   hashTagPresets: z.array(hashTagPresetSchema),
   postStatistics: z.object({
-    totalScheduled: z.number(),
-    totalDrafts: z.number(),
-    totalPosted: z.number(),
+    scheduledCount: z.number(),
+    successCount: z.number(),
   }).optional(),
+  selectedQueueType: z.string(),
+  planActivated: z.string().nullable().optional(),
+  successMessage: z.string().nullable().optional(),
 });
 
 export type DashboardLoaderData = z.infer<typeof dashboardLoaderDataSchema>;

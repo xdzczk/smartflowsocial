@@ -1,4 +1,8 @@
-import { json } from "@remix-run/node";
+import {
+  json,
+  type ActionFunctionArgs,
+  type LoaderFunctionArgs,
+} from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 
 import { RelaysSettings } from "~/components/settings/RelaysSettings";
@@ -38,8 +42,8 @@ import {
   validatePaymentHistory,
   validateAccounts,
   validateAccountChildren as _validateAccountChildren,
-} from "~/lib/validation/settings-loader.server";
-export async function loader({ request }: { request: Request }) {
+} from "~/lib/validation/settings-loader";
+export async function loader({ request }: LoaderFunctionArgs) {
   try {
     const userId = await requireUserId(request);
 

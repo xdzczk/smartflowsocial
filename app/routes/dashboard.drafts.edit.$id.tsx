@@ -24,7 +24,7 @@ import {
   fromPostDTO,
 } from "~/features/posts/ui";
 import { withCSRFProtection } from "~/lib/csrf";
-import { validateUserData } from "~/lib/validation/user-data.server";
+import { validateUserData } from "~/lib/validation/user-data";
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   const postId = params.id!;

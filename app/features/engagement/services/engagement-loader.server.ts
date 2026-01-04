@@ -316,6 +316,27 @@ export async function loadEngagementFeedData(
   const userProfilesMap = new Map<string, User>();
   const trustScoresMap = new Map<string, number>();
 
+  // Early return if no posts - skip expensive API calls
+  if (eventIds.length === 0) {
+    return {
+      posts: [],
+      stats: {},
+      user: user ?? {},
+      notifications: {
+        all: [],
+        replies: [],
+        mentions: [],
+        zaps: [],
+        quotes: [],
+      },
+      groupedNotifications: {
+        replies: [],
+        quotes: [],
+      },
+      trustScores: {},
+    };
+  }
+
   try {
     // Batch fetch notifications and stats
     const BATCH_SIZE = 10;

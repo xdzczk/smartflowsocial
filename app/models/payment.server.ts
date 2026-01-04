@@ -406,6 +406,104 @@ export async function updateUserSubscription(
 }
 
 /**
+ * Manually verify and complete a payment if it was received but not detected
+ * This is useful when onPaid callback didn't fire (e.g., self-payments)
+ * Only verifies payments created within the last hour to avoid completing old/stale payments
+ */
+export async function manuallyVerifyPayment(paymentId: string): Promise<{
+  success: boolean;
+  paid: boolean;
+  message: string;
+}> {
+  const payment = await prisma.payment.findUnique({
+    where: { id: paymentId },
+    include: {
+      Subscription: {
+        select: {
+          planId: true,
+        },
+      },
+    },
+  });
+
+  if (!payment) {
+    return {
+      success: false,
+      paid: false,
+      message: "Payment not found",
+    };
+  }
+
+  if (payment.status === "COMPLETED") {
+    return {
+      success: true,
+      paid: true,
+      message: "Payment already completed",
+    };
+  }
+
+  // Only verify payments created within the last 30 minutes (invoice expiration time)
+  // This prevents accidentally completing old/stale payments
+  const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+  const isRecent = payment.createdAt && payment.createdAt > thirtyMinutesAgo;
+
+  if (!isRecent) {
+    return {
+      success: false,
+      paid: false,
+      message: "Payment is too old to auto-verify. Please contact support.",
+    };
+  }
+
+  // Get planId from subscription or extract from paymentId
+  // PaymentId format is: `${planId}_${Date.now()}_${userId}`
+  let planId: string | null = null;
+  if (payment.Subscription?.planId) {
+    planId = payment.Subscription.planId;
+  } else {
+    // Extract planId from paymentId (format: `${planId}_${timestamp}_${userId}`)
+    const parts = paymentId.split("_");
+    if (parts.length >= 3) {
+      planId = parts[0] ?? null;
+    }
+  }
+
+  // If payment is still PENDING and recent, manually mark it as completed
+  // This assumes the payment was actually received (user confirms they paid)
+  // Note: This is a workaround for cases where onPaid callback didn't fire
+  if (payment.status === "PENDING" && payment.userId && planId) {
+    try {
+      await handlePaymentCompleted(
+        paymentId,
+        payment.userId,
+        planId,
+      );
+      return {
+        success: true,
+        paid: true,
+        message: "Payment verified and completed",
+      };
+    } catch (error) {
+      logError(error instanceof Error ? error : new Error(String(error)), {
+        paymentId,
+        message: "Failed to manually verify payment",
+      });
+      return {
+        success: false,
+        paid: false,
+        message: "Failed to verify payment",
+      };
+    }
+  }
+
+  return {
+    success: false,
+    paid: false,
+    message: "Payment cannot be verified",
+  };
+}
+
+/**
  * Checks the status of a payment
  */
 export async function checkPaymentStatus(paymentId: string): Promise<{

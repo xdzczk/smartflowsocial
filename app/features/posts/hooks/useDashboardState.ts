@@ -1,5 +1,5 @@
 import { useFetcher } from "@remix-run/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 import type { PostData, LongFormPostData } from "../types";
 interface UseDashboardStateProps {
@@ -40,6 +40,12 @@ export function useDashboardState({
   }
   const bulkDeleteFetcher = useFetcher<FetcherData>();
 
+  // Memoize post IDs to avoid infinite loops when scheduledPosts array reference changes
+  const postIds = useMemo(
+    () => scheduledPosts.map((post) => post.id).join(","),
+    [scheduledPosts],
+  );
+
   // Update countdowns
   useEffect(() => {
     const updateCountdowns = () => {
@@ -76,13 +82,24 @@ export function useDashboardState({
         }
       });
 
-      setCountdowns(newCountdowns);
+      setCountdowns((prev) => {
+        // Only update if countdowns actually changed to prevent unnecessary re-renders
+        const hasChanged =
+          Object.keys(newCountdowns).some(
+            (id) => prev[id] !== newCountdowns[id],
+          ) ||
+          Object.keys(prev).length !== Object.keys(newCountdowns).length;
+
+        return hasChanged ? newCountdowns : prev;
+      });
     };
 
     updateCountdowns();
     const timer = setInterval(updateCountdowns, 60000);
     return () => clearInterval(timer);
-  }, [scheduledPosts, userTimezone]);
+    // Use postIds instead of scheduledPosts to avoid infinite loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [postIds, userTimezone]);
 
   // Clear selected posts after bulk delete
   useEffect(() => {

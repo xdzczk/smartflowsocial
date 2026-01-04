@@ -57,13 +57,19 @@ export function RecyclablesTable({
   individualRepostFetcher,
   bulkDeleteFetcher,
 }: RecyclablesTableProps) {
-  const SortableHeader = ({ key, label }: { key: string; label: string }) => (
+  const SortableHeader = ({
+    sortKey,
+    label,
+  }: {
+    sortKey: string;
+    label: string;
+  }) => (
     <th
       className="cursor-pointer bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50"
-      onClick={() => onRequestSort(key)}
+      onClick={() => onRequestSort(sortKey)}
     >
       {label}{" "}
-      {sortConfig.key === key
+      {sortConfig.key === sortKey
         ? sortConfig.direction === "asc"
           ? "↑"
           : "↓"
@@ -89,16 +95,16 @@ export function RecyclablesTable({
             <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
               Media
             </th>
-            <SortableHeader key="caption" label="Caption" />
-            <SortableHeader key="postedAt" label="Posted At" />
-            <SortableHeader key="likes" label="Likes" />
-            <SortableHeader key="replies" label="Replies" />
-            <SortableHeader key="mentions" label="Mentions" />
-            <SortableHeader key="reposts" label="Reposts" />
-            <SortableHeader key="zaps" label="Zaps" />
-            <SortableHeader key="satszapped" label="Zapped" />
-            <SortableHeader key="queueType" label="Queue" />
-            <SortableHeader key="status" label="Status" />
+            <SortableHeader sortKey="caption" label="Caption" />
+            <SortableHeader sortKey="postedAt" label="Posted At" />
+            <SortableHeader sortKey="likes" label="Likes" />
+            <SortableHeader sortKey="replies" label="Replies" />
+            <SortableHeader sortKey="mentions" label="Mentions" />
+            <SortableHeader sortKey="reposts" label="Reposts" />
+            <SortableHeader sortKey="zaps" label="Zaps" />
+            <SortableHeader sortKey="satszapped" label="Zapped" />
+            <SortableHeader sortKey="queueType" label="Queue" />
+            <SortableHeader sortKey="status" label="Status" />
             <th className="bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
               Actions
             </th>

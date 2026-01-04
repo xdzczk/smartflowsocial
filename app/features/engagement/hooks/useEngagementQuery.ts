@@ -10,7 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { PostDTO } from "~/features/posts/dtos";
 import { fromPostDTOArray } from "~/features/posts/dtos";
 import type { PostData } from "~/features/posts/types";
-import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses.server";
+import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
 import {
   engagementLoaderDataSchema,
   type EngagementLoaderData,

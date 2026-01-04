@@ -1,5 +1,5 @@
 import { useNavigate } from "@remix-run/react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 interface UsePaymentPollingProps {
   paymentId: string | null;
   onPaymentComplete: () => void;
@@ -63,7 +63,7 @@ export function usePaymentPolling({
   };
 
   // Start automatic payment polling
-  const startPaymentPolling = (paymentId: string) => {
+  const startPaymentPolling = useCallback((paymentId: string) => {
     // Clear any existing interval
     if (pollingInterval) {
       clearInterval(pollingInterval);
@@ -147,7 +147,7 @@ export function usePaymentPolling({
       },
       5 * 60 * 1000,
     );
-  };
+  }, [isPolling, pollingInterval, onPaymentComplete, navigate]);
 
   // Clean up polling on component unmount
   useEffect(() => {

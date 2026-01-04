@@ -8,15 +8,15 @@ import { useParams, useSearchParams } from "@remix-run/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import type { User as _User } from "~/features/user";
-import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses.server";
+import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
 import {
   postedPostsLoaderDataSchema,
   type PostedPostsLoaderData,
 } from "~/lib/validation/schemas/loader-responses.schemas";
-import { validateUserData } from "~/lib/validation/user-data.server";
-import type { UserData } from "~/lib/validation/user-data.server";
+import { validateUserData } from "~/lib/validation/user-data";
+import type { UserData } from "~/lib/validation/user-data";
 
-import { combineContent } from "../combined.client";
+import { combineContent } from "../combined";
 import type { PostDTO, LongFormPostDTO } from "../dtos";
 import {
   fromPostDTOArray,

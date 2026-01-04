@@ -10,10 +10,8 @@ import AssetBrowser from "~/features/assets/components/AssetBrowser";
 import type { Asset } from "~/features/assets/types";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
-import {
-  textPostClientSchema,
-  useZodForm,
-} from "~/lib/validation";
+import { textPostClientSchema } from "~/lib/validation";
+import { useZodForm } from "~/lib/validation/utils.client";
 
 import { usePostScheduling } from "../hooks/usePostScheduling";
 import type { QueueType } from "../types";

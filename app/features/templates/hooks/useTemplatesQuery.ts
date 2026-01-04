@@ -9,7 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import type { Asset } from "~/features/assets/types";
 import type { User as _User } from "~/features/user";
-import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses.server";
+import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
 import {
   templatesLoaderDataSchema,
   type TemplatesLoaderData,

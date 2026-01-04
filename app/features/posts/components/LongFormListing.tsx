@@ -1,5 +1,5 @@
 import { useFetcher, Link } from "@remix-run/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 import type { LongFormPostType } from "~/features/posts/server";
 
@@ -212,6 +212,12 @@ export default function LongFormListing({
     bulkDeleteFetcher.submit(formData, { method: "post" });
   };
 
+  // Memoize post IDs to avoid infinite loops when posts array reference changes
+  const postIds = useMemo(
+    () => posts.map((post) => post.id).join(","),
+    [posts],
+  );
+
   // Countdown functionality for scheduled posts
   useEffect(() => {
     if (type !== "scheduled") return;
@@ -250,7 +256,16 @@ export default function LongFormListing({
         }
       });
 
-      setCountdowns(newCountdowns);
+      setCountdowns((prev) => {
+        // Only update if countdowns actually changed to prevent unnecessary re-renders
+        const hasChanged =
+          Object.keys(newCountdowns).some(
+            (id) => prev[id] !== newCountdowns[id],
+          ) ||
+          Object.keys(prev).length !== Object.keys(newCountdowns).length;
+
+        return hasChanged ? newCountdowns : prev;
+      });
     };
 
     // Update immediately on mount
@@ -259,7 +274,9 @@ export default function LongFormListing({
     const timer = setInterval(updateCountdowns, 60000); // Update every minute
 
     return () => clearInterval(timer);
-  }, [posts, userTimezone, type]);
+    // Use postIds instead of posts to avoid infinite loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [postIds, userTimezone, type]);
 
   useEffect(() => {
     if (bulkDeleteFetcher.data?.success) {

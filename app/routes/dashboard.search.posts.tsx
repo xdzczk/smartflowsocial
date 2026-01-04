@@ -23,7 +23,7 @@ import {
   validateSearchResultData,
   validateSearchResultDisplay,
   validateSearchStats,
-} from "~/lib/validation/search-result.server";
+} from "~/lib/validation/search-result";
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   const data = await loadSearchData(userId);

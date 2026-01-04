@@ -7,14 +7,14 @@ import { useFetcher, useLoaderData } from "@remix-run/react";
 import { useParams, useSearchParams } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 
-import { validateHashTagPresets } from "~/lib/validation/hashtag-presets.server";
-import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses.server";
+import { validateHashTagPresets } from "~/lib/validation/hashtag-presets";
+import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
 import {
   dashboardLoaderDataSchema,
   type DashboardLoaderData,
 } from "~/lib/validation/schemas/loader-responses.schemas";
 
-import { combineContent } from "../combined.client";
+import { combineContent } from "../combined";
 import type { PostDTO, LongFormPostDTO } from "../dtos";
 import {
   fromPostDTOArray,

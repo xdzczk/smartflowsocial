@@ -27,10 +27,10 @@ import type { User } from "~/features/user";
 import {
   extractPostData,
   extractLongFormPostData,
-} from "~/lib/validation/combined-content.server";
+} from "~/lib/validation/combined-content";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
-import { comparePostDataByProperty } from "~/lib/validation/post-data-properties.server";
-import { getPostStats, getPostStatsValue } from "~/lib/validation/post-stats.server";
+import { comparePostDataByProperty } from "~/lib/validation/post-data-properties";
+import { getPostStats, getPostStatsValue } from "~/lib/validation/post-stats";
 import { postedPostsLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
 // Re-export action from server module
 export { postedPostsAction as action } from "~/features/posts/posted.action.server";

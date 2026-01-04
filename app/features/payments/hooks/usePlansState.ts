@@ -1,5 +1,5 @@
 import { useNavigate } from "@remix-run/react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { usePaymentPolling } from "./usePaymentPolling";
 interface InvoiceData {
@@ -42,14 +42,23 @@ export function usePlansState({ user, actionData }: UsePlansStateProps) {
   const [paymentComplete, setPaymentComplete] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
+  const processedPaymentIdRef = useRef<string | null>(null);
+
+  const handlePaymentComplete = useCallback(() => {
+    setPaymentComplete(true);
+    setShowInvoice(false);
+  }, []);
 
   const { isPolling, startPaymentPolling } = usePaymentPolling({
     paymentId: invoiceData?.paymentId ?? null,
-    onPaymentComplete: () => {
-      setPaymentComplete(true);
-      setShowInvoice(false);
-    },
+    onPaymentComplete: handlePaymentComplete,
   });
+
+  // Store startPaymentPolling in a ref to avoid dependency issues
+  const startPaymentPollingRef = useRef(startPaymentPolling);
+  useEffect(() => {
+    startPaymentPollingRef.current = startPaymentPolling;
+  }, [startPaymentPolling]);
 
   // Handle action data (invoice creation or payment status)
   useEffect(() => {
@@ -58,6 +67,7 @@ export function usePlansState({ user, actionData }: UsePlansStateProps) {
       if (actionData.paid) {
         setPaymentComplete(true);
         setShowInvoice(false);
+        processedPaymentIdRef.current = null;
         setTimeout(() => {
           navigate("/dashboard", { replace: true });
         }, 2000);
@@ -76,6 +86,13 @@ export function usePlansState({ user, actionData }: UsePlansStateProps) {
           actionData.planName &&
           actionData.planId
         ) {
+          // Only process if we haven't already processed this paymentId
+          if (processedPaymentIdRef.current === actionData.paymentId) {
+            return;
+          }
+
+          processedPaymentIdRef.current = actionData.paymentId;
+
           const invoice: InvoiceData = {
             invoice: actionData.invoice,
             paymentHash: actionData.paymentHash,
@@ -92,12 +109,23 @@ export function usePlansState({ user, actionData }: UsePlansStateProps) {
           setTimeRemaining(
             new Date(actionData.expiresAt).getTime() - Date.now(),
           );
-          // Start automatic payment status polling
-          startPaymentPolling(actionData.paymentId);
         }
       }
     }
-  }, [actionData, navigate, startPaymentPolling]);
+  }, [actionData, navigate]);
+
+  // Start polling when invoiceData is set (only once per paymentId)
+  const lastPolledPaymentIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (
+      invoiceData?.paymentId &&
+      invoiceData.paymentId === processedPaymentIdRef.current &&
+      lastPolledPaymentIdRef.current !== invoiceData.paymentId
+    ) {
+      lastPolledPaymentIdRef.current = invoiceData.paymentId;
+      startPaymentPollingRef.current(invoiceData.paymentId);
+    }
+  }, [invoiceData?.paymentId]);
 
   // Countdown timer effect
   useEffect(() => {

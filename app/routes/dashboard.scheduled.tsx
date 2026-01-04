@@ -39,10 +39,10 @@ import { withCSRFProtection } from "~/lib/csrf";
 import {
   extractPostData,
   extractLongFormPostData,
-} from "~/lib/validation/combined-content.server";
+} from "~/lib/validation/combined-content";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import { scheduledPostsLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
-import { validateUserData } from "~/lib/validation/user-data.server";
+import { validateUserData } from "~/lib/validation/user-data";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {

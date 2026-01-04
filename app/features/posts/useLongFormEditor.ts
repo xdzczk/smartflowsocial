@@ -29,6 +29,7 @@ export function useLongFormEditor({
   const editorRef = useRef<EditorJSInstance | null>(null);
   const editorInitialized = useRef(false);
   const [editorReady, setEditorReady] = useState(false);
+  const isMountedRef = useRef(true);
 
   // Disable captions function
   const disableCaptionsFn = useCallback(() => {
@@ -37,12 +38,16 @@ export function useLongFormEditor({
 
   // Main editor initialization effect
   useEffect(() => {
+    // Mark component as mounted
+    isMountedRef.current = true;
+
     const loadEditor = async () => {
       // Prevent multiple initializations more aggressively
       if (
         typeof window !== "undefined" &&
         !editorRef.current &&
-        !editorInitialized.current
+        !editorInitialized.current &&
+        isMountedRef.current
       ) {
         editorInitialized.current = true;
 
@@ -96,32 +101,84 @@ export function useLongFormEditor({
         // Add a small delay to ensure DOM is fully ready
         await new Promise((resolve) => setTimeout(resolve, 100));
 
+        // Check if component is still mounted and element exists before creating editor
+        if (!isMountedRef.current) {
+          editorInitialized.current = false;
+          return;
+        }
+
+        const editorElement = document.getElementById("editorjs");
+        if (!editorElement) {
+          editorInitialized.current = false;
+          return;
+        }
+
         // Create tools configuration
         const tools = await createEditorJSToolsConfig(uploadProvider);
 
-        const editorInstance = new EditorJS({
-          holder: "editorjs",
-          minHeight: 300,
-          // @ts-expect-error - EditorJS types don't match exactly but work at runtime
-          tools: tools,
-          data: undefined, // Initial data will be loaded separately
-          // @ts-expect-error - EditorJS onChange signature doesn't match types but works at runtime
-          // eslint-disable-next-line @typescript-eslint/no-misused-promises
-          onChange: async (api: EditorJSAPI) => {
-            try {
-              const outputData = await api.saver.save();
-              onContentChange(JSON.stringify(outputData));
-            } catch (error) {
-              const { handleErrorSafely } = await import(
-                "~/lib/error-handler.client"
-              );
-              handleErrorSafely(error, {
+        // Double-check component is still mounted before creating editor instance
+        if (!isMountedRef.current) {
+          editorInitialized.current = false;
+          return;
+        }
+
+        let editorInstance: EditorJSInstance;
+        try {
+          editorInstance = new EditorJS({
+            holder: "editorjs",
+            minHeight: 300,
+            // @ts-expect-error - EditorJS types don't match exactly but work at runtime
+            tools: tools,
+            data: undefined, // Initial data will be loaded separately
+            // @ts-expect-error - EditorJS onChange signature doesn't match types but works at runtime
+            // eslint-disable-next-line @typescript-eslint/no-misused-promises
+            onChange: async (api: EditorJSAPI) => {
+              // Check if component is still mounted and editor element exists
+              if (!isMountedRef.current) {
+                return;
+              }
+
+              const editorElement = document.getElementById("editorjs");
+              if (!editorElement) {
+                return;
+              }
+
+              try {
+                const outputData = await api.saver.save();
+                // Double-check component is still mounted before calling callback
+                if (isMountedRef.current) {
+                  onContentChange(JSON.stringify(outputData));
+                }
+              } catch (error) {
+                // Only log errors if component is still mounted
+                if (isMountedRef.current) {
+                  const { handleErrorSafely } = await import(
+                    "~/lib/error-handler.client"
+                  );
+                  handleErrorSafely(error, {
+                    component: "useLongFormEditor",
+                    action: "onChange",
+                  });
+                }
+              }
+            },
+          }) as EditorJSInstance;
+        } catch (error) {
+          // If editor creation fails, reset flag and return
+          editorInitialized.current = false;
+          if (isMountedRef.current) {
+            logClientError(
+              error instanceof Error ? error : new Error(String(error)),
+              {
                 component: "useLongFormEditor",
-                action: "onChange",
-              });
-            }
-          },
-        }) as EditorJSInstance;
+                action: "createEditor",
+                message: "Failed to create EditorJS instance",
+              },
+              "warning",
+            );
+          }
+          return;
+        }
 
         // Store the editor reference and add to global tracking
         editorRef.current = editorInstance;
@@ -130,43 +187,67 @@ export function useLongFormEditor({
         // Initialize custom drag and drop functionality after editor is ready
         void (async () => {
           try {
-            if (!editorRef.current) return;
-            await editorRef.current.isReady;
-            if (!editorRef.current) return;
+            if (!editorRef.current || !isMountedRef.current) return;
+            
+            // Check if element still exists before waiting for isReady
             const editorElement = document.getElementById("editorjs");
-            if (editorElement) {
-              const dragObserver = setupCustomDragDrop(
-                editorRef as unknown as React.RefObject<EditorJSInstance>,
-                editorElement,
-                onContentChange,
-                disableCaptionsFn,
-              );
-              editorRef.current._dragObserver = dragObserver;
-            }
-            setEditorReady(true);
-          } catch (error) {
-            logClientError(
-              error instanceof Error ? error : new Error(String(error)),
-              {
-                component: "useLongFormEditor",
-                action: "initializeDragDrop",
-              },
-              "warning",
+            if (!editorElement || !isMountedRef.current) return;
+
+            await editorRef.current.isReady;
+            
+            // Check again after isReady resolves
+            if (!editorRef.current || !isMountedRef.current) return;
+            
+            const editorElementAfterReady = document.getElementById("editorjs");
+            if (!editorElementAfterReady || !isMountedRef.current) return;
+
+            const dragObserver = setupCustomDragDrop(
+              editorRef as unknown as React.RefObject<EditorJSInstance>,
+              editorElementAfterReady,
+              onContentChange,
+              disableCaptionsFn,
             );
+            editorRef.current._dragObserver = dragObserver;
+            
+            if (isMountedRef.current) {
+              setEditorReady(true);
+            }
+          } catch (error) {
+            // Only log if component is still mounted
+            if (isMountedRef.current) {
+              logClientError(
+                error instanceof Error ? error : new Error(String(error)),
+                {
+                  component: "useLongFormEditor",
+                  action: "initializeDragDrop",
+                },
+                "warning",
+              );
+            }
           }
         })();
 
         // Run caption disabling immediately and on editor changes
-        setTimeout(disableCaptionsFn, 100);
+        // Only if component is still mounted
+        if (isMountedRef.current) {
+          setTimeout(() => {
+            if (isMountedRef.current) {
+              disableCaptionsFn();
+            }
+          }, 100);
+        }
 
         // Set up a mutation observer to remove captions whenever they appear
-        const editorElement = document.getElementById("editorjs");
-        if (editorElement) {
-          const captionObserver = setupCaptionObserver(
-            editorElement,
-            disableCaptionsFn,
-          );
-          editorRef.current._captionObserver = captionObserver;
+        // Only if component is still mounted
+        if (isMountedRef.current) {
+          const editorElement = document.getElementById("editorjs");
+          if (editorElement && editorRef.current) {
+            const captionObserver = setupCaptionObserver(
+              editorElement,
+              disableCaptionsFn,
+            );
+            editorRef.current._captionObserver = captionObserver;
+          }
         }
       }
     };
@@ -174,6 +255,9 @@ export function useLongFormEditor({
     void loadEditor();
 
     return () => {
+      // Mark component as unmounted to prevent onChange callbacks
+      isMountedRef.current = false;
+
       if (editorRef.current) {
         try {
           // Clean up mutation observers

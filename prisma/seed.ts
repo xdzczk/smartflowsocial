@@ -193,6 +193,7 @@ async function main() {
     await prisma.plan.create({
       data: {
         ...plan,
+        isActive: true, // Explicitly set to true to ensure all plans are active
         updatedAt: new Date(),
       },
     });

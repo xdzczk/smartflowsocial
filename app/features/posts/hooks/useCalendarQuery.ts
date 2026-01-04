@@ -7,14 +7,14 @@ import { useFetcher, useLoaderData } from "@remix-run/react";
 import { useParams } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 
-import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses.server";
+import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
 import {
   calendarLoaderDataSchema,
   type CalendarLoaderData,
 } from "~/lib/validation/schemas/loader-responses.schemas";
-import { validateUserData } from "~/lib/validation/user-data.server";
+import { validateUserData } from "~/lib/validation/user-data";
 
-import { combineContent } from "../combined.client";
+import { combineContent } from "../combined";
 import type { PostDTO, LongFormPostDTO } from "../dtos";
 import {
   fromPostDTOArray,

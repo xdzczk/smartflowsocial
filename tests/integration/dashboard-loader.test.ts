@@ -52,9 +52,8 @@ describe("Dashboard Loader Integration", () => {
       queueTypes: [],
       hashTagPresets: [],
       postStatistics: {
-        totalScheduled: 0,
-        totalDrafts: 0,
-        totalPosted: 0,
+        scheduledCount: 0,
+        successCount: 0,
       },
       selectedQueueType: "all",
     });
@@ -155,10 +154,10 @@ describe("Dashboard Loader Integration", () => {
         queueTypes: [{ id: "1", name: "Default", isEnabled: true }],
         hashTagPresets: [],
         postStatistics: {
-          totalScheduled: 1,
-          totalDrafts: 0,
-          totalPosted: 0,
+          scheduledCount: 1,
+          successCount: 0,
         },
+        selectedQueueType: "all",
       };
 
       (loadDashboardData as ReturnType<typeof vi.fn>).mockResolvedValue(
@@ -201,7 +200,7 @@ describe("Dashboard Loader Integration", () => {
 
   describe("Dashboard Queue Filtering", () => {
     it("should handle 'all' queue type", async () => {
-      const request = new Request("http://localhost:3000/dashboard?tab=all");
+      const request = new Request("http://localhost:3000/dashboard?queueType=all");
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
@@ -214,11 +213,12 @@ describe("Dashboard Loader Integration", () => {
     });
 
     it("should handle 'posts' queue type", async () => {
-      const request = new Request("http://localhost:3000/dashboard?tab=posts");
+      const request = new Request("http://localhost:3000/dashboard?queueType=posts");
       const loaderArgs: LoaderFunctionArgs = {
         request,
-        params: { queueType: "posts" },
-      } as unknown as LoaderFunctionArgs;
+        params: {},
+        context: {},
+      };
       const response = await loader(loaderArgs);
 
       expect(response.status).toBe(200);
@@ -227,11 +227,11 @@ describe("Dashboard Loader Integration", () => {
 
     it("should handle 'longform' queue type", async () => {
       const request = new Request(
-        "http://localhost:3000/dashboard?tab=longform",
+        "http://localhost:3000/dashboard?queueType=longform",
       );
       const loaderArgs: LoaderFunctionArgs = {
         request,
-        params: { queueType: "longform" },
+        params: {},
         context: {},
       };
       const response = await loader(loaderArgs);
@@ -244,7 +244,7 @@ describe("Dashboard Loader Integration", () => {
   describe("Error Handling", () => {
     it("should handle authentication errors", async () => {
       (requireUserId as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Authentication required"),
+        new Response("Authentication required", { status: 401 }),
       );
 
       const request = new Request("http://localhost:3000/dashboard");
@@ -254,14 +254,13 @@ describe("Dashboard Loader Integration", () => {
         context: {},
       };
 
-      await expect(loader(loaderArgs)).rejects.toThrow(
-        "Authentication required",
-      );
+      const response = await loader(loaderArgs);
+      expect(response.status).toBe(401);
     });
 
     it("should handle feature access errors", async () => {
       (requireFeatureAccess as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Feature access denied"),
+        new Response("Feature access denied", { status: 403 }),
       );
 
       const request = new Request("http://localhost:3000/dashboard");
@@ -271,7 +270,8 @@ describe("Dashboard Loader Integration", () => {
         context: {},
       };
 
-      await expect(loader(loaderArgs)).rejects.toThrow("Feature access denied");
+      const response = await loader(loaderArgs);
+      expect(response.status).toBe(403);
     });
 
     it("should handle data loading errors", async () => {
@@ -286,7 +286,8 @@ describe("Dashboard Loader Integration", () => {
         params: {},
         context: {},
       };
-      await expect(loader(loaderArgs)).rejects.toThrow("Database error");
+      const response = await loader(loaderArgs);
+      expect(response.status).toBe(500);
     });
   });
 });

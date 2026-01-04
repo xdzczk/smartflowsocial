@@ -39,35 +39,57 @@ import { withCSRFProtection } from "~/lib/csrf";
 import {
   extractPostData,
   extractLongFormPostData,
-} from "~/lib/validation/combined-content.server";
+} from "~/lib/validation/combined-content";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
-import { convertPostDataArrayToScheduledTablePosts } from "~/lib/validation/post-data-conversion.server";
+import { convertPostDataArrayToScheduledTablePosts } from "~/lib/validation/post-data-conversion";
 import { dashboardLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
-import { validateUserData } from "~/lib/validation/user-data.server";
+import { validateUserData } from "~/lib/validation/user-data";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const userId = await requireUserId(request);
+  try {
+    const userId = await requireUserId(request);
 
-  // Check if user has access to the dashboard feature
-  await requireFeatureAccess(userId, "dashboard");
+    // Check if user has access to the dashboard feature
+    await requireFeatureAccess(userId, "dashboard");
 
-  // Check for success message in URL params
-  const url = new URL(request.url);
-  const planActivated = url.searchParams.get("planActivated");
-  const successMessage = url.searchParams.get("message");
+    // Check for success message in URL params
+    const url = new URL(request.url);
+    const planActivated = url.searchParams.get("planActivated");
+    const successMessage = url.searchParams.get("message");
 
-  const queueType = params.queueType ?? "all";
+    // Get queueType from URL params (query string) or route params, default to "all"
+    const queueType = url.searchParams.get("queueType") ?? params.queueType ?? "all";
 
-  const data = await loadDashboardData(userId, queueType);
+    const data = await loadDashboardData(userId, queueType);
 
-  // Validate loader response with Zod schema
-  const validatedData = validateLoaderResponse(data, dashboardLoaderDataSchema);
+    // Add URL params to data before validation
+    const dataWithParams = {
+      ...data,
+      planActivated,
+      successMessage,
+    };
 
-  return json({
-    ...validatedData,
-    planActivated,
-    successMessage,
-  });
+    // Validate loader response with Zod schema
+    const validatedData = validateLoaderResponse(dataWithParams, dashboardLoaderDataSchema);
+
+    return json(validatedData);
+  } catch (error) {
+    // If error is a Response (e.g., redirect from requireUserId), return it
+    if (error instanceof Response) {
+      return error;
+    }
+    // Use dynamic import to avoid bundling issues
+    const { handleLoaderError } = await import("~/lib/error-handler.server");
+    return handleLoaderError(error, {
+      scheduledPosts: [],
+      longformPosts: [],
+      user: null,
+      queueTypes: [],
+      hashTagPresets: [],
+      postStatistics: undefined,
+      selectedQueueType: "all",
+    });
+  }
 };
 
 export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs) => {

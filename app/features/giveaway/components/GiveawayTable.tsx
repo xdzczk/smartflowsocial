@@ -41,13 +41,19 @@ export function GiveawayTable({
   onRequestSort,
   onPostClick,
 }: GiveawayTableProps) {
-  const SortableHeader = ({ key, label }: { key: string; label: string }) => (
+  const SortableHeader = ({
+    sortKey,
+    label,
+  }: {
+    sortKey: string;
+    label: string;
+  }) => (
     <th
       className="cursor-pointer bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50"
-      onClick={() => onRequestSort(key)}
+      onClick={() => onRequestSort(sortKey)}
     >
       {label}{" "}
-      {sortConfig.key === key
+      {sortConfig.key === sortKey
         ? sortConfig.direction === "asc"
           ? "↑"
           : "↓"
@@ -69,9 +75,9 @@ export function GiveawayTable({
               <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
                 Media
               </th>
-              <SortableHeader key="caption" label="Caption" />
-              <SortableHeader key="postedAt" label="Posted At" />
-              <SortableHeader key="totalEngagement" label="Total Engagement" />
+              <SortableHeader sortKey="caption" label="Caption" />
+              <SortableHeader sortKey="postedAt" label="Posted At" />
+              <SortableHeader sortKey="totalEngagement" label="Total Engagement" />
               <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
                 Likes
               </th>
@@ -90,7 +96,7 @@ export function GiveawayTable({
               <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
                 Zapped
               </th>
-              <SortableHeader key="queueType" label="Queue" />
+              <SortableHeader sortKey="queueType" label="Queue" />
               <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
                 Actions
               </th>

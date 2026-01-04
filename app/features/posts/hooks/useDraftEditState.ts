@@ -2,8 +2,8 @@ import { useFetcher } from "@remix-run/react";
 import { useState, useEffect, useCallback } from "react";
 
 import { useOptionalUser } from "~/lib/remix-utils";
-import { useZodForm } from "~/lib/validation";
 import { draftEditClientSchema } from "~/lib/validation/schemas/posts.client.schemas";
+import { useZodForm } from "~/lib/validation/utils.client";
 
 import { signDraftForScheduling } from "../services/draft-sign.server";
 import type { UserData, HashTagPreset, PostData } from "../types";
