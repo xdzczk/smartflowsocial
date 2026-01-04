@@ -5,13 +5,16 @@
 
 import { describe, it, expect, vi } from "vitest";
 
+import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import {
-  hexToNpub,
-  npubToHex,
   generateArticleIdentifier,
   convertEditorJSToMarkdown,
   convertMarkdownToEditorJS,
-} from "~/lib/nostr";
+} from "~/features/posts/utils/editorjs-conversion";
+
+// Re-export for compatibility with tests
+const hexToNpub = nostrAdapter.encodeNpub.bind(nostrAdapter);
+const npubToHex = nostrAdapter.decodeNpub.bind(nostrAdapter);
 
 // Mock nip19 from nostr-tools
 vi.mock("nostr-tools", () => ({

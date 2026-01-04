@@ -7,7 +7,7 @@ import { z } from "zod";
 
 import { requireUserId } from "~/features/auth";
 import type { NostrEvent, SignedEvent } from "~/features/nostr/types";
-import { resolveQueueTypeId } from "~/features/posts";
+import { resolveQueueTypeId } from "~/features/posts/server";
 import { logInfo } from "~/lib/error-logger.server";
 import {
   uploadImagesPreviewSchema,

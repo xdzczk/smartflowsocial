@@ -11,7 +11,7 @@ import {
   getQueueTypes,
   getUserTimezone,
   getQueueTypeByIdForUser,
-} from "~/models/user.server";
+} from "~/features/user";
 
 import {
   calculateNextScheduleTime,

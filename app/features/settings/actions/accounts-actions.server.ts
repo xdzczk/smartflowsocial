@@ -24,7 +24,7 @@ import {
   unlinkParent,
   unlinkChildByParent,
   getUserIdByNpub,
-} from "~/models/user.server";
+} from "~/features/user";
 
 export async function handleAccountsAction(
   userId: string,

@@ -4,7 +4,7 @@ import { requireUserId } from "~/features/auth";
 import {
   calculateQueueScheduleTime,
   parseQueueScheduleRequest,
-} from "~/features/posts";
+} from "~/features/posts/server";
 import { withCSRFProtection } from "~/lib/csrf";
 import { ValidationError } from "~/lib/errors";
 

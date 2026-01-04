@@ -36,7 +36,7 @@ vi.mock("~/models/post.queries.server", () => ({
   getPostsByIds: vi.fn(),
 }));
 
-import { handleRecyclablePostAction } from "~/features/posts/posts.server";
+import { handleRecyclablePostAction } from "~/features/posts/server";
 import { deletePost } from "~/models/post.commands.server";
 import { getPostsByIds } from "~/models/post.queries.server";
 

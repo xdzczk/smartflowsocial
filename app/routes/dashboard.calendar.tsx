@@ -14,13 +14,17 @@ import {
 import {
   Calendar,
   getQueueColor,
+  useCalendarData,
+} from "~/features/posts/ui";
+import {
   handleCalendarAction,
   loadCalendarData,
-  useCalendarData,
   mixedPostsToCalendarPosts,
   postsToCalendarPosts,
   longFormPostsToCalendarPosts,
-} from "~/features/posts";
+} from "~/features/posts/server";
+import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
+import { calendarLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
 import { withCSRFProtection } from "~/lib/csrf";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -34,7 +38,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
     const queueType = params.queueType ?? "all";
 
-    return await loadCalendarData(userId, queueType);
+    const data = await loadCalendarData(userId, queueType);
+    
+    // Validate loader response with Zod schema
+    return validateLoaderResponse(data, calendarLoaderDataSchema);
   } catch (error) {
     // If error is a Response (e.g., redirect from requireUserId), return it
     if (error instanceof Response) {

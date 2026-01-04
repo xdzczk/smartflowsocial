@@ -6,13 +6,12 @@
 import { requireFeatureAccess } from "~/features/payments/subscriptions.server";
 import { getAssets } from "~/models/asset.server";
 import {
-  getUserHashTags,
   getUserById,
   getScheduleInterval,
   getQueueTypes,
   getUserHashTagPresets,
   getUserUploadProvider,
-} from "~/models/user.server";
+} from "~/features/user";
 
 /**
  * Load new longform post page data
@@ -22,7 +21,6 @@ export async function loadNewLongFormData(userId: string) {
   await requireFeatureAccess(userId, "longformPosts");
 
   const [
-    tags,
     scheduleIntervals,
     queueTypes,
     hashTagPresets,
@@ -30,7 +28,6 @@ export async function loadNewLongFormData(userId: string) {
     assetsData,
     uploadProvider,
   ] = await Promise.all([
-    getUserHashTags(userId),
     getScheduleInterval(userId),
     getQueueTypes(userId),
     getUserHashTagPresets(userId),
@@ -38,6 +35,10 @@ export async function loadNewLongFormData(userId: string) {
     getAssets({ userId, page: 1, limit: 100 }),
     getUserUploadProvider(userId),
   ]);
+
+  // Get "Default" preset tags for backward compatibility
+  const defaultPreset = hashTagPresets.find((p) => p.name === "Default");
+  const tags = defaultPreset?.tags ?? "";
 
   return {
     userId,

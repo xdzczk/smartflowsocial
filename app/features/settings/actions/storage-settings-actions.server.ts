@@ -13,7 +13,7 @@ import {
   updateUserUploadProvider,
   updateUserEnableMirrorBlossom,
   updateUserMirrorUploadUrls,
-} from "~/models/user.server";
+} from "~/features/user";
 
 export async function handleStorageSettingsAction(
   userId: string,

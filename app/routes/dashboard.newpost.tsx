@@ -15,12 +15,14 @@ import {
   NewPostImagesConfirmation,
   TextPost,
   useNewPostState,
+} from "~/features/posts/ui";
+import {
   handleNewPostAction,
   loadNewPostData,
   convertJsonValueToScheduleConfig,
   type QueueType,
   type HashTagPreset,
-} from "~/features/posts";
+} from "~/features/posts/server";
 import { withCSRFProtection } from "~/lib/csrf";
 export async function loader({ request }: LoaderFunctionArgs) {
   try {

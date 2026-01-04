@@ -9,7 +9,7 @@ import {
   getUserById,
   getQueueTypes,
   getUserHashTagPresets,
-} from "~/models/user.server";
+} from "~/features/user";
 
 import { combineContent } from "../combined.server";
 import {
@@ -20,6 +20,10 @@ import {
 } from "../dtos";
 import type { PostData, LongFormPostData } from "../types";
 import { convertPrismaQueueTypeToQueueType } from "../types";
+import {
+  validateSignedEvent,
+  validateNostrEvent,
+} from "~/lib/validation/nostr-events.server";
 
 import { filterPostsByQueueType } from "./post-filtering.server";
 
@@ -57,30 +61,22 @@ export async function loadScheduledData(userId: string, queueType: string) {
 
   // Convert LongFormPost[] to LongFormPostData[] for combineContent
   const longformPostsData: LongFormPostData[] = longformPosts.map((post) => {
-    const signedEventValue: LongFormPostData["signedEvent"] =
-      post.signedEvent as LongFormPostData["signedEvent"];
-    const nostrEventValue: LongFormPostData["nostrEvent"] =
-      post.nostrEvent as LongFormPostData["nostrEvent"];
+    // Validate Prisma JsonValue with Zod schemas
+    const signedEventValue = validateSignedEvent(post.signedEvent);
+    const nostrEventValue = validateNostrEvent(post.nostrEvent);
     const result: LongFormPostData = {
       ...post,
       queueType: convertPrismaQueueTypeToQueueType(
         "queueType" in post ? post.queueType : undefined,
       ),
-      signedEvent: signedEventValue,
-      nostrEvent: nostrEventValue,
+      signedEvent: signedEventValue ?? undefined,
+      nostrEvent: nostrEventValue ?? undefined,
     };
     return result;
   });
 
-  // Combine posts and longform posts for the "All" tab
-  const allContent = combineContent(
-    postsData,
-    longformPostsData,
-    "scheduledFor",
-    "asc",
-  );
-
   // Serialize Date objects to strings for Remix loader response
+  // Note: allContent is removed - reconstruct on client from posts/longformPosts
   const postsDTO: PostDTO[] = toPostDTOArray(postsData);
   const longformPostsDTO: LongFormPostDTO[] = toLongFormPostDTOArray(
     longformPostsData,
@@ -89,7 +85,6 @@ export async function loadScheduledData(userId: string, queueType: string) {
   return {
     posts: postsDTO,
     longformPosts: longformPostsDTO,
-    allContent,
     user,
     queueTypes: queueTypes.filter((qt) => qt.isEnabled !== false),
     selectedQueueType: queueType,

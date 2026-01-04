@@ -10,18 +10,27 @@ import {
   PostDetailsModal,
   PostedPostsTable,
   PostedPostsTabs,
+  usePostedPosts,
+  usePostedPostsData,
+  useBulkDeletePostsMutation,
+} from "~/features/posts/ui";
+import {
   getPostedDashboardData,
   type PostData,
   type LongFormPostData,
   type CombinedContent,
   type PostFetcher,
-  usePostedPosts,
-  usePostedPostsData,
-  useBulkDeletePostsMutation,
   type LongFormPostType,
-} from "~/features/posts";
+} from "~/features/posts/server";
 import type { PostStats } from "~/features/posts/stats.server";
-import type { User } from "~/features/user";
+import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
+import { postedPostsLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
+import {
+  extractPostData,
+  extractLongFormPostData,
+} from "~/lib/validation/combined-content.server";
+import { getPostStats, getPostStatsValue } from "~/lib/validation/post-stats.server";
+import { comparePostDataByProperty } from "~/lib/validation/post-data-properties.server";
 // Re-export action from server module
 export { postedPostsAction as action } from "~/features/posts/posted.action.server";
 
@@ -41,7 +50,8 @@ export async function loader({
 
     const data = await getPostedDashboardData({ userId, params, url });
 
-    return data;
+    // Validate loader response with Zod schema
+    return validateLoaderResponse(data, postedPostsLoaderDataSchema);
   } catch (error) {
     // If error is a Response (e.g., redirect from requireUserId), return it
     if (error instanceof Response) {
@@ -73,6 +83,16 @@ export default function PostedPosts() {
   // Use TanStack Query mutation for bulk delete with optimistic updates
   const bulkDeleteMutation = useBulkDeletePostsMutation();
 
+  // Handle nullable user - if user is null, we should not render the component
+  // This is a legitimate error state that should be handled properly
+  if (!user) {
+    return (
+      <div className="p-4 text-center text-red-600">
+        Error: User data not available. Please refresh the page.
+      </div>
+    );
+  }
+
   const {
     currentTab,
     sortConfig,
@@ -99,25 +119,7 @@ export default function PostedPosts() {
     handleBulkScheduledRepost,
     handleBulkQuote,
   } = usePostedPosts({
-    user: (() => {
-      if (user) return user;
-      // Create a minimal User object with required properties
-
-      return {
-        id: "",
-        npub: "",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        isEnabled: true,
-        timezone: null,
-        userRelays: [],
-        giveawayBlackListed: [],
-        uploadProvider: "S3" as const,
-        scheduleInterval: [],
-        pendingChildRequests: [],
-        pendingParentRequests: [],
-      } as unknown as User;
-    })(),
+    user,
     allContent,
     posts,
   });
@@ -187,60 +189,27 @@ export default function PostedPosts() {
           ? b.signedEvent.id
           : "";
 
-      const aStats =
-        aEventId &&
-        stats &&
-        typeof stats === "object" &&
-        !Array.isArray(stats) &&
-        aEventId in stats
-          ? ((stats as Record<string, PostStats>)[aEventId] as unknown as Record<string, unknown>)
-          : {};
-
-      const bStats =
-        bEventId &&
-        stats &&
-        typeof stats === "object" &&
-        !Array.isArray(stats) &&
-        bEventId in stats
-          ? ((stats as Record<string, PostStats>)[bEventId] as unknown as Record<string, unknown>)
-          : {};
+      // Use type-safe PostStats accessors
+      const aStats = getPostStats(
+        stats && typeof stats === "object" && !Array.isArray(stats)
+          ? stats as Record<string, unknown>
+          : undefined,
+        aEventId,
+      );
+      const bStats = getPostStats(
+        stats && typeof stats === "object" && !Array.isArray(stats)
+          ? stats as Record<string, unknown>
+          : undefined,
+        bEventId,
+      );
       const sortKey = sortConfig.key;
-      const aValue =
-        typeof sortKey === "string" &&
-        sortKey in aStats &&
-        typeof aStats[sortKey] === "number"
-          ? aStats[sortKey]
-          : 0;
-      const bValue =
-        typeof sortKey === "string" &&
-        sortKey in bStats &&
-        typeof bStats[sortKey] === "number"
-          ? bStats[sortKey]
-          : 0;
+      const aValue = getPostStatsValue(aStats, sortKey);
+      const bValue = getPostStatsValue(bStats, sortKey);
       return sortConfig.direction === "asc" ? aValue - bValue : bValue - aValue;
     }
 
-    // Type-safe property access
-
-    const aRecord = a as unknown as Record<string, unknown>;
-
-    const bRecord = b as unknown as Record<string, unknown>;
-    const aValue = aRecord[sortConfig.key];
-    const bValue = bRecord[sortConfig.key];
-    const aTyped =
-      typeof aValue === "number" || typeof aValue === "string"
-        ? aValue
-        : undefined;
-    const bTyped =
-      typeof bValue === "number" || typeof bValue === "string"
-        ? bValue
-        : undefined;
-    if (aTyped == null && bTyped == null) return 0;
-    if (aTyped == null) return sortConfig.direction === "asc" ? -1 : 1;
-    if (bTyped == null) return sortConfig.direction === "asc" ? 1 : -1;
-    if (aTyped < bTyped) return sortConfig.direction === "asc" ? -1 : 1;
-    if (aTyped > bTyped) return sortConfig.direction === "asc" ? 1 : -1;
-    return 0;
+    // Use type-safe property accessor for PostData
+    return comparePostDataByProperty(a, b, sortConfig.key, sortConfig.direction);
   });
 
   const filteredPosts = sortedPosts.filter((post) =>
@@ -275,13 +244,17 @@ export default function PostedPosts() {
           onSearchChange={setSearchTerm}
           userTimezone={user?.timezone ?? undefined}
           onPostSelect={(content) => {
-            // Handle selection based on content type
+            // Handle selection based on content type using type guards
             if (content.type === "post") {
-              setSelectedPost(content.originalData as PostData);
+              const postData = extractPostData(content);
+              if (postData) {
+                setSelectedPost(postData);
+              }
             } else {
-              setSelectedLongFormPost(
-                content.originalData as unknown as LongFormPostData,
-              );
+              const longFormData = extractLongFormPostData(content);
+              if (longFormData) {
+                setSelectedLongFormPost(longFormData);
+              }
             }
           }}
           selectedItems={selectedPosts}
@@ -496,7 +469,7 @@ export default function PostedPosts() {
       ) : (
         /* Longform Posts Content */
         <LongFormListing
-          posts={longformPosts as unknown as LongFormPostType[]}
+          posts={longformPosts}
           type="posted"
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
@@ -504,7 +477,7 @@ export default function PostedPosts() {
           longformRepostFetcher={longformRepostFetcher}
           longformQuoteFetcher={longformQuoteFetcher}
           onPostSelect={(post) => {
-            setSelectedLongFormPost(post as unknown as LongFormPostData);
+            setSelectedLongFormPost(post as LongFormPostData);
           }}
         />
       )}
@@ -512,7 +485,7 @@ export default function PostedPosts() {
       {/* Long Form Post Details Modal */}
       {selectedLongFormPost ? (
         <LongFormDetailsModal
-          post={selectedLongFormPost as unknown as LongFormPostType}
+          post={selectedLongFormPost}
           onClose={() => setSelectedLongFormPost(null)}
           type="posted"
           showSignedEvent={true}

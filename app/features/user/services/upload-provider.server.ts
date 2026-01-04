@@ -8,7 +8,7 @@ import {
   getUserUploadProvider,
   getUserEnableMirrorBlossom,
   getUserMirrorUploadUrls,
-} from "~/models/user.server";
+} from "~/features/user";
 
 /**
  * Load user upload provider settings

@@ -28,10 +28,10 @@ import {
 import { updateLongFormPost } from "~/models/longformpost.server";
 import {
   getUserById,
-  getEffectiveHashtags,
   getHashTagPresetById,
   getQueueTypeByNameForUser,
-} from "~/models/user.server";
+  getQueueTypes,
+} from "~/features/user";
 
 import { convertEditorJSToMarkdown } from "../longform.server";
 
@@ -94,7 +94,16 @@ async function getEffectiveHashtagsForPost(
     return "";
   } else {
     // Manual hashtag presets are disabled, use queue type's default hashtag preset
-    return await getEffectiveHashtags(userId, queueType);
+    const queueTypes = await getQueueTypes(userId);
+    const queueTypeObj = queueTypes.find((qt) => qt.name === queueType);
+    if (
+      queueTypeObj &&
+      "hashTagPreset" in queueTypeObj &&
+      queueTypeObj.hashTagPreset
+    ) {
+      return (queueTypeObj.hashTagPreset as { tags: string | null })?.tags ?? "";
+    }
+    return "";
   }
 }
 

@@ -3,17 +3,18 @@ import { Link } from "@remix-run/react";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { getQueueColor } from "~/features/posts/queueColors";
 import { formatDate, getImageUrls } from "~/lib/helpers";
+
 interface Post {
   id: string;
   caption?: string | null;
   postedAt: Date | null;
   fileUrl: string[];
-  signedEvent: { id: string };
+  signedEvent?: { id: string } | null;
   queueType?: { name: string; color?: string | null } | null;
   repost?: boolean;
   isQuotedPost?: boolean;
   totalEngagement: number;
-  stats: {
+  stats?: {
     likes: number;
     replies: number;
     mentions: number;
@@ -21,6 +22,7 @@ interface Post {
     zaps: number;
     satszapped: number;
   };
+  [key: string]: unknown; // Allow additional fields
 }
 
 interface GiveawayTableProps {
@@ -202,12 +204,12 @@ export function GiveawayTable({
                   {post.postedAt ? formatDate(post.postedAt) : "—"}
                 </td>
                 <td className="p-3 font-bold">{post.totalEngagement}</td>
-                <td className="p-3">{post.stats.likes}</td>
-                <td className="p-3">{post.stats.replies}</td>
-                <td className="p-3">{post.stats.mentions}</td>
-                <td className="p-3">{post.stats.reposts}</td>
-                <td className="p-3">{post.stats.zaps}</td>
-                <td className="p-3">{post.stats.satszapped}</td>
+                <td className="p-3">{post.stats?.likes ?? 0}</td>
+                <td className="p-3">{post.stats?.replies ?? 0}</td>
+                <td className="p-3">{post.stats?.mentions ?? 0}</td>
+                <td className="p-3">{post.stats?.reposts ?? 0}</td>
+                <td className="p-3">{post.stats?.zaps ?? 0}</td>
+                <td className="p-3">{post.stats?.satszapped ?? 0}</td>
                 <td className="p-3">
                   {post.queueType?.color ? (
                     <span
@@ -229,7 +231,7 @@ export function GiveawayTable({
                 </td>
                 <td className="p-3">
                   <Link
-                    to={`https://primal.net/e/${post.signedEvent.id}`}
+                    to={`https://primal.net/e/${post.signedEvent?.id ?? ""}`}
                     target="_blank"
                     rel="noreferrer"
                     onClick={(e) => e.stopPropagation()}

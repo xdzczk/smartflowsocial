@@ -26,13 +26,18 @@ import {
   PostsSearch,
   QueueSelectionTabs,
   useDraftsState,
+  useDraftsData,
+} from "~/features/posts/ui";
+import {
   handleDraftsAction,
   loadDraftsData,
-  useDraftsData,
   type PostData,
   type CombinedContent,
   type LongFormPostType,
-} from "~/features/posts";
+} from "~/features/posts/server";
+import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
+import { draftsLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
+import { convertDraftsPostsToPostDataArray } from "~/lib/validation/drafts-post-conversion.server";
 import { withCSRFProtection } from "~/lib/csrf";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -47,7 +52,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const queueType = params.queueType ?? "all";
 
     const data = await loadDraftsData(userId, queueType);
-    return data;
+    
+    // Validate loader response with Zod schema
+    return validateLoaderResponse(data, draftsLoaderDataSchema);
   } catch (error) {
     // If error is a Response (e.g., redirect from requireUserId), return it
     if (error instanceof Response) {
@@ -242,10 +249,8 @@ export default function DraftPosts() {
                   (c) => c.id === selectedPost.id,
                 );
 
-                const fallbackPost = selectedPost as unknown as
-                  | PostData
-                  | CombinedContent;
-                const postToShow = postData ?? combinedContent ?? fallbackPost;
+                // Use type guards to safely determine post type
+                const postToShow = postData ?? combinedContent ?? selectedPost;
                 return postToShow ? (
                   <PostDetailsModal
                     post={postToShow}
@@ -261,11 +266,10 @@ export default function DraftPosts() {
           {showAdvancedBulkResume ? (
             <div className="fixed inset-0 z-50 bg-white dark:bg-gray-900">
               <DraftBulkResume
-                selectedDrafts={
-                  filteredPosts.filter((post) =>
-                    selectedPosts.has(post.id),
-                  ) as unknown as PostData[]
-                }
+                selectedDrafts={convertDraftsPostsToPostDataArray(
+                  filteredPosts.filter((post) => selectedPosts.has(post.id)),
+                  posts,
+                )}
                 queueTypes={queueTypes}
                 onCancel={() => setShowAdvancedBulkResume(false)}
               />
@@ -274,7 +278,7 @@ export default function DraftPosts() {
         </div>
       ) : (
         <LongFormListing
-          posts={longformPosts as unknown as LongFormPostType[]}
+          posts={longformPosts}
           type="draft"
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}

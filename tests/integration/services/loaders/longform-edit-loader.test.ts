@@ -31,7 +31,7 @@ import {
   getScheduleInterval,
   getQueueTypes,
   getUserHashTagPresets,
-} from "~/models/user.server";
+} from "~/features/user";
 
 import { TEST_USER_ID, TEST_LONGFORM_ID } from "../../../utils/test-helpers";
 

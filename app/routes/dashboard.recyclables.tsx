@@ -16,12 +16,16 @@ import {
   RecyclablesToast,
   useRecyclablesState,
   useRecyclablesData,
+  type IndividualRepostFetcherData,
+} from "~/features/posts/ui";
+import {
   getRecyclableDashboardData,
   handleRecyclablePostAction,
-  type IndividualRepostFetcherData,
   type PostData,
   type CombinedContent,
-} from "~/features/posts";
+} from "~/features/posts/server";
+import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
+import { recyclablesLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
 import { withCSRFProtection } from "~/lib/csrf";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -37,7 +41,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
     const data = await getRecyclableDashboardData({ userId, params, url });
 
-    return data;
+    // Validate loader response with Zod schema
+    return validateLoaderResponse(data, recyclablesLoaderDataSchema);
   } catch (error) {
     // If error is a Response (e.g., redirect from requireUserId), return it
     if (error instanceof Response) {
@@ -232,7 +237,7 @@ export default function RecyclablesPosts() {
 
       {selectedPost ? (
         <PostDetailsModal
-          post={selectedPost as unknown as PostData | CombinedContent}
+          post={selectedPost}
           stats={(() => {
             const eventId =
               selectedPost &&

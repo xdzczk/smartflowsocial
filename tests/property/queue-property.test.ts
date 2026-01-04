@@ -29,7 +29,7 @@ vi.mock("~/models/user.server", () => ({
 
 import { prisma } from "~/lib/prisma.server";
 import { updatePostStatus } from "~/models/post.commands.server";
-import { getUserById } from "~/models/user.server";
+import { getUserById } from "~/features/user";
 
 describe("Property-Based Tests: Queue Operations", () => {
   beforeEach(() => {

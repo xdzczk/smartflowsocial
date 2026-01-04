@@ -15,7 +15,11 @@ import Footer from "~/components/layout/DashboardFooter";
 import Header from "~/components/layout/DashboardHeader";
 import { requireUser } from "~/features/auth";
 import { requireActiveSubscription } from "~/features/payments";
-import { loadDashboardData, handleDashboardAction } from "~/features/user";
+import {
+  loadDashboardData,
+  handleDashboardAction,
+  getPendingParentRequestsForChild,
+} from "~/features/user";
 import { withCSRFProtection } from "~/lib/csrf";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -25,10 +29,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const subscriptionData = await requireActiveSubscription(user.id);
 
   // Pending parent link requests for this user (as child)
-
-  const pendingParentNpubs: string[] =
-    (user as unknown as { pendingParentRequests?: string[] })
-      .pendingParentRequests ?? [];
+  const pendingParentNpubs = await getPendingParentRequestsForChild(user.id);
 
   const dashboardData = await loadDashboardData(
     user.id,

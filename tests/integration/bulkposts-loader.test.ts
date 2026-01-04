@@ -28,7 +28,7 @@ vi.mock("~/features/user", () => ({
   getUserHashTagPresets: vi.fn(),
 }));
 
-import { getBulkPostsDashboardData } from "~/features/posts/posts.server";
+import { getBulkPostsDashboardData } from "~/features/posts/server";
 import {
   getQueueTypes,
   getUserHashTags,

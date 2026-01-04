@@ -12,15 +12,18 @@ import {
   DraftPreview,
   ResumeModal,
   useDraftEditState,
+  fromPostDTO,
+} from "~/features/posts/ui";
+import {
   handleDraftEditAction,
   loadDraftEditData,
   convertJsonValueToScheduleConfig,
   type UserData,
   type QueueType,
   type HashTagPreset,
-  fromPostDTO,
   type PostDTO,
-} from "~/features/posts";
+} from "~/features/posts/server";
+import { validateUserData } from "~/lib/validation/user-data.server";
 import { withCSRFProtection } from "~/lib/csrf";
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
@@ -100,7 +103,7 @@ export default function EditDraft() {
       : null;
   const typedUser =
     userRaw && typeof userRaw === "object" && userRaw !== null
-      ? (userRaw as unknown as UserData)
+      ? validateUserData(userRaw)
       : null;
   const typedQueueTypes: QueueType[] = queueTypesRaw
     .filter(

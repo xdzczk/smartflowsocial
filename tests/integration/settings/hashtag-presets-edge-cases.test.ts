@@ -17,7 +17,7 @@ import {
   createHashTagPreset,
   updateHashTagPreset,
   deleteHashTagPreset,
-} from "~/models/user.server";
+} from "~/features/user";
 
 import { createFormData, TEST_USER_ID } from "../../utils/test-helpers";
 

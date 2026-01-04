@@ -7,30 +7,19 @@ import { useFetcher, useLoaderData } from "@remix-run/react";
 import { useSearchParams } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 
+import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses.server";
+import {
+  engagementLoaderDataSchema,
+  type EngagementLoaderData,
+} from "~/lib/validation/schemas/loader-responses.schemas";
+
 import type { PostData } from "~/features/posts/types";
+import type { PostDTO } from "~/features/posts/dtos";
+import { fromPostDTOArray } from "~/features/posts/dtos";
 
 import type { EventStats, GroupedNotification } from "../types";
 
-/**
- * Type for engagement loader data
- */
-export type EngagementLoaderData = {
-  posts: PostData[];
-  stats: Record<string, EventStats>;
-  user: Record<string, unknown> | null;
-  notifications: {
-    all: unknown[];
-    replies: unknown[];
-    mentions: unknown[];
-    zaps: unknown[];
-    quotes: unknown[];
-  };
-  groupedNotifications: {
-    replies: GroupedNotification[];
-    quotes: GroupedNotification[];
-  };
-  trustScores: Record<string, number>;
-};
+// EngagementLoaderData is now exported from schemas
 
 /**
  * Query key factory for engagement
@@ -49,9 +38,14 @@ export function useEngagementQuery() {
   const [searchParams] = useSearchParams();
   const page = parseInt(searchParams.get("page") ?? "1", 10);
   
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-  const loaderData = useLoaderData() as unknown as EngagementLoaderData;
+  const loaderDataRaw = useLoaderData();
   const fetcher = useFetcher();
+
+  // Validate initial loader data
+  const validatedLoaderData = safeValidateLoaderResponse(
+    loaderDataRaw,
+    engagementLoaderDataSchema,
+  );
 
   return useQuery({
     queryKey: engagementKeys.list(page),
@@ -60,13 +54,23 @@ export function useEngagementQuery() {
       const url = `/dashboard/engagement/feed?page=${page}`;
       fetcher.load(url);
       
-      return new Promise<EngagementLoaderData>((resolve) => {
+      return new Promise<EngagementLoaderData>((resolve, reject) => {
         const checkFetcher = () => {
           if (fetcher.state === "idle") {
             if (fetcher.data) {
-              resolve(fetcher.data as unknown as EngagementLoaderData);
+              const validated = safeValidateLoaderResponse(
+                fetcher.data,
+                engagementLoaderDataSchema,
+              );
+              if (validated) {
+                resolve(validated as EngagementLoaderData);
+              } else {
+                reject(new Error("Invalid data received from fetcher"));
+              }
+            } else if (validatedLoaderData) {
+              resolve(validatedLoaderData as EngagementLoaderData);
             } else {
-              resolve(loaderData);
+              reject(new Error("Invalid loader data"));
             }
           } else {
             setTimeout(checkFetcher, 50);
@@ -75,7 +79,7 @@ export function useEngagementQuery() {
         checkFetcher();
       });
     },
-    initialData: loaderData,
+    initialData: validatedLoaderData ?? undefined,
     staleTime: 30 * 1000, // 30 seconds
     refetchOnMount: false,
   });
@@ -88,16 +92,24 @@ export function useEngagementData() {
   const query = useEngagementQuery();
   const rawData = query.data;
 
-  // Type guard for posts
+  if (!rawData) {
+    return {
+      posts: [] as PostData[],
+      stats: {} as Record<string, EventStats>,
+      user: null,
+      groupedNotifications: {
+        replies: [] as GroupedNotification[],
+        quotes: [] as GroupedNotification[],
+      },
+      trustScores: {} as Record<string, number>,
+      isLoading: query.isLoading,
+      rawData: null,
+    };
+  }
+
+  // Deserialize DTOs (with string dates) back to PostData (with Date objects)
   const posts: PostData[] = Array.isArray(rawData.posts)
-    ? rawData.posts.filter((post): post is PostData => {
-        return (
-          post !== null &&
-          typeof post === "object" &&
-          "id" in post &&
-          typeof (post as { id: unknown }).id === "string"
-        );
-      })
+    ? fromPostDTOArray(rawData.posts as PostDTO[])
     : [];
 
   // Type guard for stats
@@ -106,16 +118,16 @@ export function useEngagementData() {
       ? rawData.stats
       : {};
 
-  // Type guard for groupedNotifications
+  // Type guard for groupedNotifications - cast after validation
   const groupedNotifications: {
     replies: GroupedNotification[];
     quotes: GroupedNotification[];
   } = {
     replies: Array.isArray(rawData.groupedNotifications?.replies)
-      ? rawData.groupedNotifications.replies
+      ? (rawData.groupedNotifications.replies as unknown as GroupedNotification[])
       : [],
     quotes: Array.isArray(rawData.groupedNotifications?.quotes)
-      ? rawData.groupedNotifications.quotes
+      ? (rawData.groupedNotifications.quotes as unknown as GroupedNotification[])
       : [],
   };
 

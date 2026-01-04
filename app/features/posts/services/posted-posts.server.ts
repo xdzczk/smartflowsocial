@@ -4,11 +4,16 @@
  * Handles posted posts data loading
  */
 
+import type { Prisma } from "@prisma/client";
+
 import { getUserById, getQueueTypes } from "~/features/user";
 import { getPublishedLongFormPosts } from "~/models/longformpost.server";
 import { getPostedPosts } from "~/models/post.queries.server";
+import {
+  validateSignedEvent,
+  validateNostrEvent,
+} from "~/lib/validation/nostr-events.server";
 
-import { combineContent } from "../combined.server";
 import {
   toPostDTOArray,
   toLongFormPostDTOArray,
@@ -84,23 +89,16 @@ export async function getPostedDashboardData({
   // Convert PostWithQueueType[] to PostData[] for combineContent
   const postsData: PostData[] = posts.map((post) => {
     const { queueType, ...rest } = post;
-    const signedEvent = post.signedEvent;
-    const nostrEvent = post.nostrEvent;
-    const signedEventValue: PostData["signedEvent"] | undefined =
-      signedEvent && typeof signedEvent === "object"
-        ? (signedEvent as unknown as PostData["signedEvent"])
-        : undefined;
-    const nostrEventValue: PostData["nostrEvent"] | undefined =
-      nostrEvent && typeof nostrEvent === "object"
-        ? (nostrEvent as unknown as PostData["nostrEvent"])
-        : undefined;
+    // Validate Prisma JsonValue with Zod schemas
+    const signedEventValue = validateSignedEvent(post.signedEvent);
+    const nostrEventValue = validateNostrEvent(post.nostrEvent);
     const result: PostData = {
       ...rest,
       queueType: convertPrismaQueueTypeToQueueType(
         "queueType" in post ? post.queueType : undefined,
       ),
-      signedEvent: signedEventValue,
-      nostrEvent: nostrEventValue,
+      signedEvent: signedEventValue ?? undefined,
+      nostrEvent: nostrEventValue ?? undefined,
     };
     return result;
   });
@@ -112,18 +110,19 @@ export async function getPostedDashboardData({
         typeof post === "object" && post !== null
           ? (post as Record<string, unknown>)
           : {};
-      const signedEvent =
-        "signedEvent" in postObj ? postObj.signedEvent : undefined;
-      const nostrEvent =
-        "nostrEvent" in postObj ? postObj.nostrEvent : undefined;
-      const signedEventValue: LongFormPostData["signedEvent"] | undefined =
-        signedEvent && typeof signedEvent === "object"
-          ? (signedEvent as unknown as LongFormPostData["signedEvent"])
-          : undefined;
-      const nostrEventValue: LongFormPostData["nostrEvent"] | undefined =
-        nostrEvent && typeof nostrEvent === "object"
-          ? (nostrEvent as unknown as LongFormPostData["nostrEvent"])
-          : undefined;
+      // Validate Prisma JsonValue with Zod schemas
+      const signedEventValue = validateSignedEvent(
+        ("signedEvent" in postObj ? postObj.signedEvent : undefined) as
+          | Prisma.JsonValue
+          | null
+          | undefined,
+      );
+      const nostrEventValue = validateNostrEvent(
+        ("nostrEvent" in postObj ? postObj.nostrEvent : undefined) as
+          | Prisma.JsonValue
+          | null
+          | undefined,
+      );
       const queueTypeValue =
         "queueType" in postObj &&
         postObj.queueType &&
@@ -155,18 +154,11 @@ export async function getPostedDashboardData({
             typeof convertPrismaQueueTypeToQueueType
           >[0],
         ),
-        signedEvent: signedEventValue,
-        nostrEvent: nostrEventValue,
+        signedEvent: signedEventValue ?? undefined,
+        nostrEvent: nostrEventValue ?? undefined,
       } as LongFormPostData;
       return result;
     },
-  );
-
-  const allContent = combineContent(
-    postsData,
-    longformPostsData,
-    "postedAt",
-    "desc",
   );
 
   const eventIds = posts
@@ -186,7 +178,7 @@ export async function getPostedDashboardData({
   const stats = await getPostStats(eventIds);
 
   // Serialize Date objects to strings for Remix loader response
-  // This eliminates the need for type casting in components
+  // Note: allContent is removed - reconstruct on client from posts/longformPosts
   const postsDTO: PostDTO[] = toPostDTOArray(postsData);
   const longformPostsDTO: LongFormPostDTO[] = toLongFormPostDTOArray(
     longformPostsData,
@@ -195,7 +187,6 @@ export async function getPostedDashboardData({
   return {
     posts: postsDTO,
     longformPosts: longformPostsDTO,
-    allContent,
     longformPagination: longformResult.pagination,
     pagination,
     stats,

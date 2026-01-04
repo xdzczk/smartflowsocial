@@ -15,7 +15,8 @@ import {
   requireFeatureAccess,
   requireAnySubscription,
 } from "~/features/payments";
-import { PostDetailsModal, type PostData } from "~/features/posts";
+import { PostDetailsModal } from "~/features/posts/ui";
+import { type PostData } from "~/features/posts/server";
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
     const userId = await requireUserId(request);
@@ -92,11 +93,7 @@ export default function PostedPosts() {
       />
 
       <GiveawayTable
-        posts={
-          filteredPosts as unknown as Parameters<
-            typeof GiveawayTable
-          >[0]["posts"]
-        }
+        posts={filteredPosts}
         sortConfig={sortConfig}
         onRequestSort={requestSort}
         onPostClick={(post) => {
@@ -117,7 +114,7 @@ export default function PostedPosts() {
 
       {selectedPost ? (
         <PostDetailsModal
-          post={selectedPost as unknown as PostData}
+          post={selectedPost}
           stats={
             selectedPost &&
             typeof selectedPost === "object" &&

@@ -75,7 +75,7 @@ vi.mock("~/models/user.server", () => ({
 // Import after mocks are set up
 import { requireUserId } from "~/features/auth/session.server";
 import { getScheduledPosts } from "~/models/post.queries.server";
-import { getUserById, getQueueTypes } from "~/models/user.server";
+import { getUserById, getQueueTypes } from "~/features/user";
 import { loader } from "~/routes/dashboard.calendar.$queueType";
 
 describe("Calendar Loader Integration", () => {

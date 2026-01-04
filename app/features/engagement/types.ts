@@ -48,17 +48,6 @@ export interface NotificationEvent {
   authorImage?: string | null;
 }
 
-/**
- * Grouped notification structure (legacy - use the one below with parentPost)
- * @deprecated Use the GroupedNotification interface with parentPost instead
- */
-export interface LegacyGroupedNotification {
-  eventId: string;
-  event: NotificationEvent;
-  replies?: NotificationEvent[];
-  quotes?: NotificationEvent[];
-  mentions?: NotificationEvent[];
-}
 
 /**
  * Profile data from Primal API

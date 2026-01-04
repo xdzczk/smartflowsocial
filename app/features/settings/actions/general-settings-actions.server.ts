@@ -16,7 +16,7 @@ import {
   updateScheduleInterval,
   updateUserRelays,
   updateUserTimezone,
-} from "~/models/user.server";
+} from "~/features/user";
 
 export async function handleGeneralSettingsAction(
   userId: string,

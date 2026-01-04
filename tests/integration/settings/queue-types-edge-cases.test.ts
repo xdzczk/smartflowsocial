@@ -18,7 +18,7 @@ vi.mock("~/models/user.server", () => ({
 
 import { handleQueueTypeAction } from "~/features/settings/actions/queue-types-actions.server";
 import { getUserSubscription } from "~/models/payment.server";
-import { updateQueueType } from "~/models/user.server";
+import { updateQueueType } from "~/features/user";
 
 import { createFormData, TEST_USER_ID } from "../../utils/test-helpers";
 

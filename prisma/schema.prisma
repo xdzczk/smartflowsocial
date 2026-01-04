@@ -21,7 +21,7 @@ model User {
   scheduleInterval    String[]       @default(["2", "4", "6", "12", "24"])
   nostrProfile        Json?
   enableMirrorBlossom Boolean        @default(false)
-  mirrorUploadUrls    String[]
+  mirrorUploadUrls    String[]       @default([])
   encryptedNwc        String?
   nwcEnabled          Boolean        @default(false)
   nwcLastUsed         DateTime?

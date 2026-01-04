@@ -18,12 +18,13 @@ import {
   newPostActionSchema,
   validateFormDataOrRespond,
 } from "~/lib/validation";
+import { validateSignedEvent } from "~/lib/validation/nostr-events.server";
 import { createPost } from "~/models/post.commands.server";
 import {
   getUserById,
   getQueueTypes,
   getHashTagPresetById,
-} from "~/models/user.server";
+} from "~/features/user";
 
 import { resolveQueueTypeId } from "./queue-type-resolver.server";
 
@@ -275,10 +276,12 @@ async function handlePostOrScheduleText(
       hashTagPresetId,
     });
 
-    await publishToNostr(
-      sanitizedRelays,
-      post.signedEvent as unknown as SignedEvent,
-    );
+    // Validate Prisma JsonValue - we just created it so it should be valid
+    const validatedSignedEvent = validateSignedEvent(post.signedEvent);
+    if (!validatedSignedEvent) {
+      throw new Error("Invalid signedEvent after post creation");
+    }
+    await publishToNostr(sanitizedRelays, validatedSignedEvent);
 
     return redirect("/dashboard/posted");
   } else {
@@ -438,10 +441,12 @@ async function handlePostImages(
     hashTagPresetId,
   });
 
-  await publishToNostr(
-    sanitizedRelays,
-    post.signedEvent as unknown as SignedEvent,
-  );
+  // Validate Prisma JsonValue - we just created it so it should be valid
+  const validatedSignedEvent = validateSignedEvent(post.signedEvent);
+  if (!validatedSignedEvent) {
+    throw new Error("Invalid signedEvent after post creation");
+  }
+  await publishToNostr(sanitizedRelays, validatedSignedEvent);
 
   return redirect("/dashboard/posted");
 }

@@ -68,7 +68,7 @@ import {
 import {
   getEnabledUsersWithSubscriptions,
   disableUserAccount,
-} from "~/models/user.server";
+} from "~/features/user";
 
 describe("Cron Subscription Checker", () => {
   const TEST_USER_ID = "user-123";

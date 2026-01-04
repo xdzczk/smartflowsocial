@@ -8,7 +8,7 @@ import { installGlobals } from "@remix-run/node";
 import { parse } from "cookie";
 
 import { createUserSession } from "~/features/auth";
-import { createUser } from "~/models/user.server";
+import { createUser } from "~/features/user";
 installGlobals();
 
 async function createAndLogin(email: string) {

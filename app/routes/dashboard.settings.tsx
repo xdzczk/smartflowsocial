@@ -18,10 +18,12 @@ import {
   HashtagPresetsSettings,
   QueueTypesSettings,
   ScheduleIntervalsSettings,
+} from "~/features/posts/ui";
+import {
   type HashTagPreset,
   type QueueType,
   convertJsonValueToScheduleConfig,
-} from "~/features/posts";
+} from "~/features/posts/server";
 import { handleSettingsAction } from "~/features/settings/settings-actions.server";
 import { loadSettingsData } from "~/features/settings/settings-loader.server";
 import {
@@ -29,6 +31,13 @@ import {
   UploadProviderSettings,
 } from "~/features/upload";
 import { AccountsSettings } from "~/features/user";
+import {
+  validateSubscription,
+  validateAvailablePlans,
+  validatePaymentHistory,
+  validateAccounts,
+  validateAccountChildren,
+} from "~/lib/validation/settings-loader.server";
 import { withCSRFProtection } from "~/lib/csrf";
 export async function loader({ request }: { request: Request }) {
   try {
@@ -157,7 +166,7 @@ export default function Settings() {
     paymentHistory: paymentHistoryRaw,
     isChild,
     hasAccountsAccess,
-    accounts,
+    accounts: accountsRaw,
     mutedList: mutedListRaw,
     filterMuted,
     hidePostsFromLowTrustUsers,
@@ -207,6 +216,9 @@ export default function Settings() {
         })
         .filter((qt): qt is QueueTypeSettings => qt !== null)
     : [];
+  // Validate accounts data with Zod schema
+  const accounts = validateAccounts(accountsRaw);
+
   const hashTagPresets: HashTagPreset[] = Array.isArray(hashTagPresetsRaw)
     ? hashTagPresetsRaw
         .filter(
@@ -264,38 +276,10 @@ export default function Settings() {
           })(),
         }))
     : [];
-  const subscription =
-    subscriptionRaw && typeof subscriptionRaw === "object"
-      ? (subscriptionRaw as unknown as {
-          id: string;
-          planId: string | null;
-          status: string;
-          currentPeriodEnd: Date | string | null;
-        } | null)
-      : null;
-  const availablePlans = Array.isArray(availablePlansRaw)
-    ? (availablePlansRaw as unknown as {
-        id: string;
-        name: string;
-        price: number;
-      }[])
-    : [];
-  const paymentHistory = Array.isArray(paymentHistoryRaw)
-    ? paymentHistoryRaw.map((p: unknown) => {
-        const ph = p as {
-          id: string;
-          amount: number;
-          createdAt: Date | string;
-        };
-        return {
-          ...ph,
-          createdAt:
-            ph.createdAt instanceof Date
-              ? ph.createdAt
-              : new Date(ph.createdAt),
-        };
-      })
-    : [];
+  // Validate subscription, plans, and payment history with Zod schemas
+  const subscription = validateSubscription(subscriptionRaw);
+  const availablePlans = validateAvailablePlans(availablePlansRaw);
+  const paymentHistory = validatePaymentHistory(paymentHistoryRaw);
   const mutedListRawTyped = mutedListRaw as { npubs?: unknown; lastSynced?: unknown } | null | undefined;
   const mutedList =
     mutedListRawTyped &&
@@ -416,44 +400,9 @@ export default function Settings() {
           <TabsContent value="subscription" className="mt-6 space-y-6">
             <div className="grid gap-6 md:grid-cols-1">
               <SubscriptionSettings
-                subscription={
-                  subscription as unknown as {
-                    id: string;
-                    planId: string | null;
-                    status: string;
-                    startDate: Date;
-                    currentPeriodEnd: Date | null;
-                    nextPaymentDue: Date | null;
-                    cancelAtPeriodEnd: boolean;
-                    plan: {
-                      id: string;
-                      name: string;
-                      price: number;
-                      enableLifetimeAccess: boolean;
-                    } | null;
-                  } | null
-                }
-                availablePlans={
-                  availablePlans as unknown as {
-                    id: string;
-                    name: string;
-                    price: number;
-                    enableLifetimeAccess: boolean;
-                  }[]
-                }
-                paymentHistory={
-                  paymentHistory as unknown as {
-                    id: string;
-                    amount: number;
-                    amountUsd: number | null;
-                    description: string | null;
-                    paidAt: Date | null;
-                    paymentMethod: string | null;
-                    paymentHash: string;
-                    planName?: string;
-                    planPrice?: number;
-                  }[]
-                }
+                subscription={subscription}
+                availablePlans={availablePlans}
+                paymentHistory={paymentHistory}
               />
               <NWCSettings
                 nwcEnabled={typeof nwcEnabled === "boolean" ? nwcEnabled : false}
@@ -475,11 +424,11 @@ export default function Settings() {
             <div className="grid gap-6 md:grid-cols-1">
               {accounts ? (
                 <AccountsSettings
-                  parentNpub={((accounts as { parentNpub?: unknown }).parentNpub as string | undefined) ?? undefined}
-                  confirmedChildren={Array.isArray((accounts as { confirmedChildren?: unknown }).confirmedChildren) ? (accounts as { confirmedChildren: unknown[] }).confirmedChildren as unknown as Array<{ npub: string; nostrProfile?: ProfileData | null }> : undefined}
-                  pendingChildren={Array.isArray((accounts as { pendingChildren?: unknown }).pendingChildren) ? (accounts as { pendingChildren: unknown[] }).pendingChildren as unknown as Array<{ npub: string; nostrProfile?: ProfileData | null }> : undefined}
-                  isChild={typeof (accounts as { isChild?: unknown }).isChild === "boolean" ? (accounts as { isChild: boolean }).isChild : false}
-                  parentUser={(accounts as { parentUser?: unknown }).parentUser as { npub: string; nostrProfile?: ProfileData | null } | null | undefined}
+                  parentNpub={accounts.parentNpub ?? undefined}
+                  confirmedChildren={accounts.confirmedChildren ?? undefined}
+                  pendingChildren={accounts.pendingChildren ?? undefined}
+                  isChild={accounts.isChild ?? false}
+                  parentUser={accounts.parentUser ?? undefined}
                 />
               ) : (
                 <div className="text-sm text-muted-foreground">

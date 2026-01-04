@@ -15,7 +15,7 @@ import {
   getScheduledPosts,
   getLastPostTimeForQueue,
 } from "~/models/post.queries.server";
-import { getUserById, getScheduleInterval } from "~/models/user.server";
+import { getUserById, getScheduleInterval } from "~/features/user";
 
 import { TEST_USER_ID } from "../utils/test-helpers";
 // Mock dependencies

@@ -1,10 +1,14 @@
-/* eslint-disable no-console */
 /**
  * Example Usage of Centralized Error Handling
  *
  * This file demonstrates how to use the error handling system
  * in your routes and features.
+ *
+ * NOTE: This is an example file with intentionally unused parameters
+ * to demonstrate usage patterns.
  */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
 import {
   json,

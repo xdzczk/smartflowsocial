@@ -14,6 +14,11 @@ import {
   handleSearchAction,
   loadSearchData,
 } from "~/features/search";
+import {
+  validateSearchResultData,
+  validateSearchResultDisplay,
+  validateSearchStats,
+} from "~/lib/validation/search-result.server";
 import { withCSRFProtection } from "~/lib/csrf";
 import {
   searchActionSchema,
@@ -67,29 +72,7 @@ export default function SearchPosts() {
     clearSearch,
   } = useSearchState({
     user,
-    fetcherData:
-      fetcher.data && typeof fetcher.data === "object"
-        ? (fetcher.data as unknown as {
-            event?: {
-              id: string;
-              pubkey: string;
-              created_at: number;
-              kind: number;
-              content: string;
-              tags: string[][];
-              mediaUrls?: string[];
-            };
-            stats?: {
-              likes: number;
-              replies: number;
-              mentions: number;
-              reposts: number;
-              zaps: number;
-              satszapped: number;
-            };
-            error?: string;
-          })
-        : null,
+    fetcherData: validateSearchResultData(fetcher.data),
   });
 
   return (
@@ -110,62 +93,19 @@ export default function SearchPosts() {
       {searchResult ? (
         <SearchResult
           result={
-            searchResult && typeof searchResult === "object"
-              ? (searchResult as unknown as {
-                  id: string;
-                  pubkey: string;
-                  created_at: number;
-                  kind: number;
-                  content: string;
-                  tags: string[][];
-                  authorName: string;
-                  authorImage: string | null;
-                  mediaUrls: string[];
-                })
-              : ({
-                  id: "",
-                  pubkey: "",
-                  created_at: 0,
-                  kind: 0,
-                  content: "",
-                  tags: [],
-                  authorName: "",
-                  authorImage: null,
-                  mediaUrls: [],
-                } satisfies {
-                  id: string;
-                  pubkey: string;
-                  created_at: number;
-                  kind: number;
-                  content: string;
-                  tags: string[][];
-                  authorName: string;
-                  authorImage: string | null;
-                  mediaUrls: string[];
-                } as {
-                  id: string;
-                  pubkey: string;
-                  created_at: number;
-                  kind: number;
-                  content: string;
-                  tags: string[][];
-                  authorName: string;
-                  authorImage: string | null;
-                  mediaUrls: string[];
-                })
+            validateSearchResultDisplay(searchResult) ?? {
+              id: "",
+              pubkey: "",
+              created_at: 0,
+              kind: 0,
+              content: "",
+              tags: [],
+              authorName: "",
+              authorImage: null,
+              mediaUrls: [],
+            }
           }
-          stats={
-            searchStats && typeof searchStats === "object"
-              ? (searchStats as unknown as {
-                  likes: number;
-                  replies: number;
-                  mentions: number;
-                  reposts: number;
-                  zaps: number;
-                  satszapped: number;
-                })
-              : null
-          }
+          stats={validateSearchStats(searchStats) ?? undefined}
           onClear={clearSearch}
           onScheduleQuote={handleScheduleQuote}
           onScheduleRepost={handleScheduleRepost}

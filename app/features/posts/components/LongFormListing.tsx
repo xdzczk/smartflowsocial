@@ -1,10 +1,11 @@
 import { useFetcher, Link } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
-import type { LongFormPostType } from "~/features/posts";
+import type { LongFormPostType } from "~/features/posts/server";
 
 import type { PostFetcher } from "../types";
 import type { EditorJSBlock } from "../types/editorjs.types";
+import type { LongFormPostData } from "../types";
 
 // Helper to safely access formData from a fetcher
 function getFetcherFormData(
@@ -14,16 +15,16 @@ function getFetcherFormData(
 }
 
 interface LongFormListingProps {
-  posts: LongFormPostType[];
+  posts: (LongFormPostType | LongFormPostData)[];
   type: "draft" | "scheduled" | "posted";
-  onPostSelect?: (post: LongFormPostType) => void;
+  onPostSelect?: (post: LongFormPostType | LongFormPostData) => void;
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
   userTimezone?: string;
   longformRepostFetcher?: PostFetcher;
   longformQuoteFetcher?: PostFetcher;
-  onEditPost?: (post: LongFormPostType) => void;
-  onReschedulePost?: (post: LongFormPostType) => void;
+  onEditPost?: (post: LongFormPostType | LongFormPostData) => void;
+  onReschedulePost?: (post: LongFormPostType | LongFormPostData) => void;
 }
 
 export default function LongFormListing({

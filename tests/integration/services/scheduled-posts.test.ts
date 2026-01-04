@@ -34,7 +34,7 @@ import {
   getUserById,
   getQueueTypes,
   getUserHashTagPresets,
-} from "~/models/user.server";
+} from "~/features/user";
 
 import { TEST_USER_ID } from "../../utils/test-helpers";
 

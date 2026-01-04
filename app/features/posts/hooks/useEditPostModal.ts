@@ -6,7 +6,7 @@ import { logClientError } from "~/lib/error-handler.client";
 import {
   convertEditorJSToMarkdown,
   convertMarkdownToEditorJS,
-} from "~/lib/nostr";
+} from "~/features/posts/utils/editorjs-conversion";
 import {
   editPostClientSchema,
   editLongformPostClientSchema,

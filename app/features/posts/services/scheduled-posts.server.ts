@@ -27,7 +27,7 @@ import {
   getUserById,
   getQueueTypes,
   getUserHashTagPresets,
-} from "~/models/user.server";
+} from "~/features/user";
 
 import { combineContent } from "../combined.server";
 import { convertPrismaQueueTypeToQueueType } from "../types";

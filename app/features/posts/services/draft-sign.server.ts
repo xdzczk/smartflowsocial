@@ -8,7 +8,7 @@ import type {
   SignedEvent,
 } from "~/features/nostr/types";
 import { logError } from "~/lib/error-logger.server";
-import { signEventFn } from "~/lib/nostr";
+import { nostrAdapter } from "~/lib/nostr-adapter.client";
 
 import type { UserData, PostData } from "../types";
 
@@ -193,7 +193,7 @@ export async function signDraftForScheduling(params: SignDraftParams): Promise<{
     ? `${baseContent}\n${effectiveHashtags}`
     : baseContent;
 
-  const { nostrEvent, signedEvent } = await signEventFn({
+  const { nostrEvent, signedEvent } = await nostrAdapter.signEvent({
     content: contentToSign,
     created_at: scheduledForUnix,
     kind: 1,

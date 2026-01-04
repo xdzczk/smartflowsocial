@@ -8,7 +8,7 @@ import {
   getPastLongFormPosts,
 } from "~/models/longformpost.server";
 import { getScheduledPosts, getPastPosts } from "~/models/post.queries.server";
-import { getUserById, getQueueTypes } from "~/models/user.server";
+import { getUserById, getQueueTypes } from "~/features/user";
 
 import { combineContent } from "../combined.server";
 import {
@@ -222,21 +222,8 @@ export async function loadCalendarData(userId: string, queueType: string) {
       return result;
     });
 
-  // Combine posts and longform posts for the "All" tab
-  const allContent = combineContent(
-    scheduledPostsData,
-    scheduledLongFormPostsData,
-    "scheduledFor",
-    "asc",
-  );
-  const allPastContent = combineContent(
-    pastPostsData,
-    pastLongFormPostsData,
-    "postedAt",
-    "desc",
-  );
-
   // Serialize Date objects to strings for Remix loader response
+  // Note: allContent/allPastContent are removed - reconstruct on client from posts
   const scheduledPostsDTO: PostDTO[] = toPostDTOArray(scheduledPostsData);
   const scheduledLongFormPostsDTO: LongFormPostDTO[] = toLongFormPostDTOArray(
     scheduledLongFormPostsData,
@@ -251,8 +238,6 @@ export async function loadCalendarData(userId: string, queueType: string) {
     scheduledLongFormPosts: scheduledLongFormPostsDTO,
     pastPosts: pastPostsDTO,
     pastLongFormPosts: pastLongFormPostsDTO,
-    allContent,
-    allPastContent,
     user,
     queueTypes: queueTypes.filter((qt) => qt.isEnabled !== false),
     selectedQueueType: queueType,

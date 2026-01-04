@@ -184,14 +184,13 @@ export default function LongFormPost({
   }, [formQueueType, schedulingQueueType, updateDisplayedHashtags]);
 
   const selectedQueueType = schedulingQueueType;
-  const scheduledFor = schedulingScheduledFor;
+  const scheduledFor = schedulingScheduledFor ?? null;
   const setScheduledFor = (value: string | null) => {
     if (value) {
       form.setValue("scheduledFor", value);
       setSchedulingScheduledFor(value);
     } else {
       form.setValue("scheduledFor", "");
-      // @ts-expect-error - useLongFormScheduling expects string but we pass null for clearing
       setSchedulingScheduledFor(null);
     }
   };

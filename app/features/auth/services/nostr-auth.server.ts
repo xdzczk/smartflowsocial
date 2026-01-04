@@ -11,7 +11,7 @@ import {
   createUser,
   getUserByNpub,
   updateUserProfile,
-} from "~/models/user.server";
+} from "~/features/user";
 
 import { getCompleteProfile } from "../profile.server";
 import { createUserSession } from "../session.server";

@@ -33,7 +33,7 @@ import {
   getUserRelays,
   getUserTimezone,
   getUserUploadProvider,
-} from "~/models/user.server";
+} from "~/features/user";
 
 /**
  * User account info for parent/child relationships

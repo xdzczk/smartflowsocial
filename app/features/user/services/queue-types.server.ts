@@ -138,14 +138,6 @@ export async function getQueueTypes(userId: string): Promise<QueueType[]> {
   });
 }
 
-/**
- * @deprecated Use getQueueTypes instead
- * Legacy function for backward compatibility - returns just queue type names
- */
-export async function getQueueType(userId: string): Promise<string[]> {
-  const queueTypes = await getQueueTypes(userId);
-  return queueTypes.map((qt) => qt.name);
-}
 
 /**
  * Gets a queue type by ID for a specific user

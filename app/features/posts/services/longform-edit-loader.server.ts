@@ -6,12 +6,11 @@
 import { getAssets } from "~/models/asset.server";
 import { getLongFormPost } from "~/models/longformpost.server";
 import {
-  getUserHashTags,
   getUserById,
   getScheduleInterval,
   getQueueTypes,
   getUserHashTagPresets,
-} from "~/models/user.server";
+} from "~/features/user";
 
 /**
  * Load longform edit page data
@@ -19,7 +18,6 @@ import {
 export async function loadLongFormEditData(userId: string, postId: string) {
   const [
     post,
-    tags,
     scheduleIntervals,
     queueTypes,
     user,
@@ -27,7 +25,6 @@ export async function loadLongFormEditData(userId: string, postId: string) {
     hashtagPresets,
   ] = await Promise.all([
     getLongFormPost({ id: postId, userId }),
-    getUserHashTags(userId),
     getScheduleInterval(userId),
     getQueueTypes(userId),
     getUserById(userId),
@@ -38,6 +35,10 @@ export async function loadLongFormEditData(userId: string, postId: string) {
   if (!post) {
     throw new Response("Post not found", { status: 404 });
   }
+
+  // Get "Default" preset tags for backward compatibility
+  const defaultPreset = hashtagPresets.find((p) => p.name === "Default");
+  const tags = defaultPreset?.tags ?? "";
 
   return {
     post,

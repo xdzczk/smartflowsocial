@@ -10,7 +10,7 @@ vi.mock("~/features/auth/session.server", () => ({
   requireUserId: vi.fn(),
 }));
 
-vi.mock("~/models/user.server", () => ({
+vi.mock("~/features/user", () => ({
   getQueueTypes: vi.fn(),
   getUserTimezone: vi.fn(),
   getQueueTypeByIdForUser: vi.fn(),
@@ -30,7 +30,7 @@ import {
   getQueueTypes,
   getUserTimezone,
   getQueueTypeByIdForUser,
-} from "~/models/user.server";
+} from "~/features/user";
 import { action } from "~/routes/api.queue-schedule";
 
 import { TEST_USER_ID } from "../utils/test-helpers";

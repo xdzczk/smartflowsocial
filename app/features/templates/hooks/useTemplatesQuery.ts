@@ -7,23 +7,18 @@ import { useFetcher, useLoaderData } from "@remix-run/react";
 import { useSearchParams } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 
+import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses.server";
+import {
+  templatesLoaderDataSchema,
+  type TemplatesLoaderData,
+} from "~/lib/validation/schemas/loader-responses.schemas";
+
 import type { Asset } from "~/features/assets/types";
 import type { User } from "~/features/user";
 
 import type { Template } from "../types";
 
-/**
- * Type for templates loader data
- */
-export type TemplatesLoaderData = {
-  templates: Template[];
-  user: User | null;
-  assets: Asset[];
-  totalCount: number;
-  totalPages: number;
-  currentPage: number;
-  searchTerm: string;
-};
+// TemplatesLoaderData is now exported from schemas
 
 /**
  * Query key factory for templates
@@ -45,9 +40,14 @@ export function useTemplatesQuery() {
   const searchTerm = searchParams.get("search") ?? "";
   const page = parseInt(searchParams.get("page") ?? "1", 10);
   
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-  const loaderData = useLoaderData() as unknown as TemplatesLoaderData;
+  const loaderDataRaw = useLoaderData();
   const fetcher = useFetcher();
+
+  // Validate initial loader data
+  const validatedLoaderData = safeValidateLoaderResponse(
+    loaderDataRaw,
+    templatesLoaderDataSchema,
+  );
 
   return useQuery({
     queryKey: templatesKeys.list(searchTerm, page),
@@ -57,13 +57,23 @@ export function useTemplatesQuery() {
       fetcher.load(url);
       
       // Wait for fetcher to complete
-      return new Promise<TemplatesLoaderData>((resolve, _reject) => {
+      return new Promise<TemplatesLoaderData>((resolve, reject) => {
         const checkFetcher = () => {
           if (fetcher.state === "idle") {
             if (fetcher.data) {
-              resolve(fetcher.data as unknown as TemplatesLoaderData);
+              const validated = safeValidateLoaderResponse(
+                fetcher.data,
+                templatesLoaderDataSchema,
+              );
+              if (validated) {
+                resolve(validated as TemplatesLoaderData);
+              } else {
+                reject(new Error("Invalid data received from fetcher"));
+              }
+            } else if (validatedLoaderData) {
+              resolve(validatedLoaderData as TemplatesLoaderData);
             } else {
-              resolve(loaderData);
+              reject(new Error("Invalid loader data"));
             }
           } else {
             setTimeout(checkFetcher, 50);
@@ -72,7 +82,7 @@ export function useTemplatesQuery() {
         checkFetcher();
       });
     },
-    initialData: loaderData,
+    initialData: validatedLoaderData ?? undefined,
     staleTime: 30 * 1000, // 30 seconds
   });
 }
@@ -83,6 +93,20 @@ export function useTemplatesQuery() {
 export function useTemplatesData() {
   const query = useTemplatesQuery();
   const rawData = query.data;
+
+  if (!rawData) {
+    return {
+      templates: [] as Template[],
+      user: null,
+      assets: [] as Asset[],
+      totalCount: 0,
+      totalPages: 0,
+      currentPage: 1,
+      searchTerm: "",
+      isLoading: query.isLoading,
+      rawData: null,
+    };
+  }
 
   return {
     templates: Array.isArray(rawData.templates) ? rawData.templates : [],

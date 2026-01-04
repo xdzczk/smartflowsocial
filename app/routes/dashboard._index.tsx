@@ -25,14 +25,24 @@ import {
   Statistics,
   SuccessMessage,
   useDashboardState,
+  useDashboardData,
+} from "~/features/posts/ui";
+import {
   handleDashboardAction,
   loadDashboardData,
-  useDashboardData,
   type PostData,
   type LongFormPostData,
   type LongFormPostType,
   type UserData,
-} from "~/features/posts";
+} from "~/features/posts/server";
+import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
+import { dashboardLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
+import { validateUserData } from "~/lib/validation/user-data.server";
+import {
+  extractPostData,
+  extractLongFormPostData,
+} from "~/lib/validation/combined-content.server";
+import { convertPostDataArrayToScheduledTablePosts } from "~/lib/validation/post-data-conversion.server";
 import { withCSRFProtection } from "~/lib/csrf";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
@@ -50,8 +60,11 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
   const data = await loadDashboardData(userId, queueType);
 
+  // Validate loader response with Zod schema
+  const validatedData = validateLoaderResponse(data, dashboardLoaderDataSchema);
+
   return json({
-    ...data,
+    ...validatedData,
     planActivated,
     successMessage,
   });
@@ -202,12 +215,17 @@ export default function DashboardIndex() {
           onSearchChange={setSearchTerm}
           userTimezone={user?.timezone ?? undefined}
           onPostSelect={(content) => {
+            // Use type guards for safe type narrowing
             if (content.type === "post") {
-              setSelectedPost(content.originalData as PostData);
+              const postData = extractPostData(content);
+              if (postData) {
+                setSelectedPost(postData);
+              }
             } else {
-              setSelectedLongFormPost(
-                content.originalData as unknown as LongFormPostData,
-              );
+              const longFormData = extractLongFormPostData(content);
+              if (longFormData) {
+                setSelectedLongFormPost(longFormData);
+              }
             }
           }}
           selectedItems={selectedPosts}
@@ -230,8 +248,7 @@ export default function DashboardIndex() {
           />
 
           <ScheduledPostsTable
-            // @ts-expect-error - filteredPosts is PostData[] but ScheduledPostsTable expects Post[]
-            posts={filteredPosts}
+            posts={convertPostDataArrayToScheduledTablePosts(filteredPosts)}
             sortConfig={sortConfig}
             onRequestSort={requestSort}
             selectedPosts={selectedPosts}
@@ -294,19 +311,19 @@ export default function DashboardIndex() {
         </div>
       ) : (
         <LongFormListing
-          posts={longformPosts as unknown as LongFormPostType[]}
+          posts={longformPosts}
           type="scheduled"
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
           userTimezone={user?.timezone ?? undefined}
           onPostSelect={(post) => {
-            setSelectedLongFormPost(post as unknown as LongFormPostData);
+            setSelectedLongFormPost(post as LongFormPostData);
           }}
           onEditPost={(post) =>
-            handleEditPost(post as unknown as PostData | LongFormPostData)
+            handleEditPost(post as PostData | LongFormPostData)
           }
           onReschedulePost={(post) =>
-            handleReschedulePost(post as unknown as PostData | LongFormPostData)
+            handleReschedulePost(post as PostData | LongFormPostData)
           }
         />
       )}
@@ -314,7 +331,7 @@ export default function DashboardIndex() {
       {/* Long Form Post Details Modal */}
       {selectedLongFormPost ? (
         <LongFormDetailsModal
-          post={selectedLongFormPost as unknown as LongFormPostType}
+          post={selectedLongFormPost}
           onClose={() => setSelectedLongFormPost(null)}
           type="scheduled"
           showSignedEvent={true}
@@ -328,18 +345,9 @@ export default function DashboardIndex() {
           post={postToEdit}
           onClose={handleCloseEditModal}
           onConfirm={handleModalSuccess}
-          user={user as unknown as UserData | undefined}
+          user={user ? validateUserData(user) ?? undefined : undefined}
           queueTypes={queueTypes}
-          hashTagPresets={
-            Array.isArray(hashTagPresets)
-              ? (hashTagPresets as unknown as {
-                  id: string;
-                  name: string;
-                  tags: string;
-                  description?: string | null;
-                }[])
-              : []
-          }
+          hashTagPresets={hashTagPresets}
         />
       ) : null}
 
@@ -349,7 +357,7 @@ export default function DashboardIndex() {
           post={postToReschedule}
           onClose={handleCloseRescheduleModal}
           onConfirm={handleModalSuccess}
-          user={user ? (user as unknown as UserData) : undefined}
+          user={user ? validateUserData(user) ?? undefined : undefined}
           queueTypes={queueTypes}
         />
       ) : null}

@@ -7,6 +7,12 @@ import { useFetcher, useLoaderData } from "@remix-run/react";
 import { useParams } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 
+import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses.server";
+import {
+  calendarQueueLoaderDataSchema,
+  type CalendarQueueLoaderData,
+} from "~/lib/validation/schemas/loader-responses.schemas";
+
 import type { UserWithHashTagPresets } from "~/features/user";
 
 import type { PostDTO } from "../dtos";
@@ -16,13 +22,7 @@ import type { PostData, QueueType } from "../types";
 /**
  * Type for calendar queue loader data
  */
-export type CalendarQueueLoaderData = {
-  scheduledPosts: PostDTO[];
-  user: UserWithHashTagPresets;
-  queueTypes: QueueType[];
-  selectedQueueType: string;
-  scheduleIntervals: number[];
-};
+// CalendarQueueLoaderData is now exported from schemas
 
 /**
  * Query key factory for calendar queue
@@ -41,9 +41,14 @@ export function useCalendarQueueQuery() {
   const params = useParams();
   const queueType = params.queueType ?? "all";
   
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-  const loaderData = useLoaderData() as unknown as CalendarQueueLoaderData;
+  const loaderDataRaw = useLoaderData();
   const fetcher = useFetcher();
+
+  // Validate initial loader data
+  const validatedLoaderData = safeValidateLoaderResponse(
+    loaderDataRaw,
+    calendarQueueLoaderDataSchema,
+  );
 
   return useQuery({
     queryKey: calendarQueueKeys.list(queueType),
@@ -52,13 +57,23 @@ export function useCalendarQueueQuery() {
       const url = `/dashboard/calendar${queueType !== "all" ? `/${queueType}` : ""}`;
       fetcher.load(url);
       
-      return new Promise<CalendarQueueLoaderData>((resolve) => {
+      return new Promise<CalendarQueueLoaderData>((resolve, reject) => {
         const checkFetcher = () => {
           if (fetcher.state === "idle") {
             if (fetcher.data) {
-              resolve(fetcher.data as unknown as CalendarQueueLoaderData);
+              const validated = safeValidateLoaderResponse(
+                fetcher.data,
+                calendarQueueLoaderDataSchema,
+              );
+              if (validated) {
+                resolve(validated as CalendarQueueLoaderData);
+              } else {
+                reject(new Error("Invalid data received from fetcher"));
+              }
+            } else if (validatedLoaderData) {
+              resolve(validatedLoaderData as CalendarQueueLoaderData);
             } else {
-              resolve(loaderData);
+              reject(new Error("Invalid loader data"));
             }
           } else {
             setTimeout(checkFetcher, 50);
@@ -67,7 +82,7 @@ export function useCalendarQueueQuery() {
         checkFetcher();
       });
     },
-    initialData: loaderData,
+    initialData: validatedLoaderData ?? undefined,
     staleTime: 30 * 1000, // 30 seconds
     refetchOnMount: false,
   });
@@ -80,9 +95,21 @@ export function useCalendarQueueData() {
   const query = useCalendarQueueQuery();
   const rawData = query.data;
 
+  if (!rawData) {
+    return {
+      scheduledPosts: [] as PostData[],
+      user: null,
+      queueTypes: [] as QueueType[],
+      selectedQueueType: "all",
+      scheduleIntervals: [] as number[],
+      isLoading: query.isLoading,
+      rawData: null,
+    };
+  }
+
   // Deserialize DTOs (with string dates) back to PostData (with Date objects)
   const scheduledPosts: PostData[] = Array.isArray(rawData.scheduledPosts)
-    ? fromPostDTOArray(rawData.scheduledPosts)
+    ? fromPostDTOArray(rawData.scheduledPosts as PostDTO[])
     : [];
 
   return {

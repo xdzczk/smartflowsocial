@@ -24,8 +24,8 @@ interface LongFormPublishingOptionsProps {
   queueTypes: (string | QueueType)[];
   selectedQueueType: string;
   onQueueTypeChange: (queueTypeName: string) => void;
-  scheduledFor: string;
-  onScheduledForChange: (value: string) => void;
+  scheduledFor: string | null;
+  onScheduledForChange: (value: string | null) => void;
   scheduleIntervals: number[];
   onScheduleIntervalClick: (interval: number) => void;
   onNextSlotClick: () => void;
@@ -164,7 +164,7 @@ export function LongFormPublishingOptions({
             id="scheduledFor"
             name="scheduledFor"
             value={scheduledFor ?? ""}
-            onChange={(e) => onScheduledForChange(e.target.value)}
+            onChange={(e) => onScheduledForChange(e.target.value || null)}
             className="flex-1 bg-white dark:bg-gray-900"
             placeholder="Select date and time"
           />

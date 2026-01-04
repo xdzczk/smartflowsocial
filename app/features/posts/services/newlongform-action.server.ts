@@ -29,7 +29,7 @@ import {
   getUserById,
   getQueueTypes,
   getHashTagPresetById,
-} from "~/models/user.server";
+} from "~/features/user";
 
 import { convertEditorJSToMarkdown } from "../longform.server";
 

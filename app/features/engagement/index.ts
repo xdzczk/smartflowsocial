@@ -68,5 +68,5 @@ export {
   useEngagementQuery,
   useEngagementData,
   engagementKeys,
-  type EngagementLoaderData,
 } from "./hooks/useEngagementQuery";
+export type { EngagementLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";

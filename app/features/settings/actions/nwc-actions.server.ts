@@ -12,7 +12,7 @@ import {
   updateUserNWC,
   updateUserNWCEnabled,
   clearUserNWC,
-} from "~/models/user.server";
+} from "~/features/user";
 
 export async function handleNWCAction(
   userId: string,

@@ -12,7 +12,11 @@ import {
   getUserById,
   getQueueTypes,
   getUserHashTagPresets,
-} from "~/models/user.server";
+} from "~/features/user";
+import {
+  validateSignedEvent,
+  validateNostrEvent,
+} from "~/lib/validation/nostr-events.server";
 
 import { combineContent } from "../combined.server";
 import {
@@ -52,16 +56,15 @@ export async function loadDashboardData(userId: string, queueType: string) {
   // Convert PostWithQueueType[] to PostData[] for combineContent
   const scheduledPostsData: PostData[] = scheduledPosts.map((post) => {
     const { queueType, ...rest } = post;
-    const signedEventValue: PostData["signedEvent"] =
-      post.signedEvent as PostData["signedEvent"];
-    const nostrEventValue: PostData["nostrEvent"] =
-      post.nostrEvent as PostData["nostrEvent"];
+    // Validate Prisma JsonValue with Zod schemas
+    const signedEventValue = validateSignedEvent(post.signedEvent);
+    const nostrEventValue = validateNostrEvent(post.nostrEvent);
     const convertedQueueType = convertPrismaQueueTypeToQueueType(queueType);
     const result: PostData = {
       ...rest,
       queueType: convertedQueueType,
-      signedEvent: signedEventValue,
-      nostrEvent: nostrEventValue,
+      signedEvent: signedEventValue ?? undefined,
+      nostrEvent: nostrEventValue ?? undefined,
     };
     return result;
   });
@@ -69,29 +72,21 @@ export async function loadDashboardData(userId: string, queueType: string) {
   // Convert LongFormPost[] to LongFormPostData[] for combineContent
   const longformPostsData: LongFormPostData[] = longformPosts.map((post) => {
     const { queueType, ...rest } = post;
-    const signedEventValue: LongFormPostData["signedEvent"] =
-      post.signedEvent as LongFormPostData["signedEvent"];
-    const nostrEventValue: LongFormPostData["nostrEvent"] =
-      post.nostrEvent as LongFormPostData["nostrEvent"];
+    // Validate Prisma JsonValue with Zod schemas
+    const signedEventValue = validateSignedEvent(post.signedEvent);
+    const nostrEventValue = validateNostrEvent(post.nostrEvent);
     const convertedQueueType = convertPrismaQueueTypeToQueueType(queueType);
     const result: LongFormPostData = {
       ...rest,
       queueType: convertedQueueType,
-      signedEvent: signedEventValue,
-      nostrEvent: nostrEventValue,
+      signedEvent: signedEventValue ?? undefined,
+      nostrEvent: nostrEventValue ?? undefined,
     };
     return result;
   });
 
-  // Combine posts and longform posts for the "All" tab
-  const allContent = combineContent(
-    scheduledPostsData,
-    longformPostsData,
-    "scheduledFor",
-    "asc",
-  );
-
   // Serialize Date objects to strings for Remix loader response
+  // Note: allContent is removed - reconstruct on client from scheduledPosts/longformPosts
   const scheduledPostsDTO: PostDTO[] = toPostDTOArray(scheduledPostsData);
   const longformPostsDTO: LongFormPostDTO[] = toLongFormPostDTOArray(
     longformPostsData,
@@ -100,7 +95,6 @@ export async function loadDashboardData(userId: string, queueType: string) {
   return {
     scheduledPosts: scheduledPostsDTO,
     longformPosts: longformPostsDTO,
-    allContent,
     postStatistics,
     user,
     queueTypes: queueTypes.filter((qt) => qt.isEnabled !== false),

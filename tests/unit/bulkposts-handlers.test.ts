@@ -13,7 +13,7 @@ import {
   handleRemovePost,
   handleBulkRecyclableToggle,
   handleScheduleIntervalClick,
-} from "~/features/posts/bulkposts.handlers";
+} from "~/features/posts/server";
 import type { BulkPost } from "~/features/posts/types";
 
 // Helper to create minimal BulkPost objects for testing

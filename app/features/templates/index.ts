@@ -50,4 +50,4 @@ export {
   useTemplatesData,
   templatesKeys,
 } from "./hooks/useTemplatesQuery";
-export type { TemplatesLoaderData } from "./hooks/useTemplatesQuery";
+export type { TemplatesLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";

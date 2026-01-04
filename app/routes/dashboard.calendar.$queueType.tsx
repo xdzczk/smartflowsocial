@@ -9,20 +9,28 @@ import { requireUserId } from "~/features/auth";
 import {
   Calendar,
   getQueueColor,
+  useCalendarQueueData,
+} from "~/features/posts/ui";
+import {
   handleCalendarAction,
   loadCalendarQueueData,
+  postsToCalendarPosts,
   type UserData,
   type QueueType,
-  postsToCalendarPosts,
-  useCalendarQueueData,
-} from "~/features/posts";
+} from "~/features/posts/server";
+import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
+import { calendarQueueLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
+import { validateUserData } from "~/lib/validation/user-data.server";
 import { withCSRFProtection } from "~/lib/csrf";
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
     const userId = await requireUserId(request);
     const queueType = params.queueType ?? "all";
 
-    return await loadCalendarQueueData(userId, queueType);
+    const data = await loadCalendarQueueData(userId, queueType);
+    
+    // Validate loader response with Zod schema
+    return validateLoaderResponse(data, calendarQueueLoaderDataSchema);
   } catch (error) {
     // If error is a Response (e.g., redirect from requireUserId), return it
     if (error instanceof Response) {
@@ -156,8 +164,8 @@ export default function CalendarQueueRoute() {
 
       <Calendar
         scheduledPosts={postsToCalendarPosts(scheduledPosts)}
-        user={user ? (user as unknown as UserData) : undefined}
-        queueTypes={queueTypes as unknown as QueueType[]}
+        user={user ? validateUserData(user) ?? undefined : undefined}
+        queueTypes={queueTypes}
       />
     </div>
   );

@@ -9,7 +9,7 @@ import {
   getScheduleInterval,
   getQueueTypes,
   getUserHashTagPresets,
-} from "~/models/user.server";
+} from "~/features/user";
 
 /**
  * Load new post page data

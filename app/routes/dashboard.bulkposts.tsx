@@ -12,20 +12,30 @@ import {
   BulkPostsTable,
   BulkPostsUploadArea,
   PostConfirmation,
+} from "~/features/posts/ui";
+import {
   getBulkPostsDashboardData,
-} from "~/features/posts";
-import type { BulkPost, QueueType, PreparedEvent } from "~/features/posts";
+  type BulkPost,
+  type QueueType,
+  type PreparedEvent,
+} from "~/features/posts/server";
 import {
   handleFileChange as handleFileChangeHandler,
   handleCaptionChange as handleCaptionChangeHandler,
   handleDateChange as handleDateChangeHandler,
+  handleRemovePost as handleRemovePostHandler,
+} from "~/features/posts/server";
+import {
   handleIsRecyclableChange as handleIsRecyclableChangeHandler,
   handleBulkRecyclableToggle as handleBulkRecyclableToggleHandler,
-  handleRemovePost as handleRemovePostHandler,
+} from "~/features/posts/server";
+import {
   handleScheduleIntervalClick as handleScheduleIntervalClickHandler,
+} from "~/features/posts/server";
+import {
   handleQueueTypeChange as handleQueueTypeChangeHandler,
   handleBulkQueueUpdate as handleBulkQueueUpdateHandler,
-} from "~/features/posts/bulkposts.handlers";
+} from "~/features/posts/server";
 import { useBulkPostEvents } from "~/features/posts/useBulkPostEvents";
 import { useBulkPostsState } from "~/features/posts/useBulkPostsState";
 import { useOptionalUser } from "~/lib/remix-utils";

@@ -6,7 +6,7 @@
 import {
   convertEditorJSToMarkdown,
   generateArticleIdentifier,
-} from "~/lib/nostr";
+} from "~/features/posts/utils/editorjs-conversion";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 
 import type { EditorJSBlock } from "../types";

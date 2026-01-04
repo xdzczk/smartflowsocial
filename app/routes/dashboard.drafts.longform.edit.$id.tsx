@@ -13,9 +13,11 @@ import {
   LongFormPost,
   LongFormPreviewModal,
   useLongFormEditState,
+} from "~/features/posts/ui";
+import {
   handleLongFormEditAction,
   loadLongFormEditData,
-} from "~/features/posts";
+} from "~/features/posts/server";
 import { withCSRFProtection } from "~/lib/csrf";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -242,12 +244,6 @@ export default function EditLongFormPost() {
                   content: typedPost.content,
                   image: typedPost.image,
                   queueType: typedPost.queueType ?? undefined,
-                } as unknown as {
-                  title?: string;
-                  summary?: string;
-                  content?: string;
-                  image?: string;
-                  queueType?: { name: string };
                 })
               : null
           }

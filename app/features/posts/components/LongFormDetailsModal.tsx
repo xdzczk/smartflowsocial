@@ -3,12 +3,12 @@ import { useState } from "react";
 
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import type { LongFormPostType } from "~/features/posts";
+import type { LongFormPostType, LongFormPostData } from "~/features/posts/server";
 import { handleErrorSafely } from "~/lib/error-handler.client";
 
 import type { EditorJSBlock } from "../types/editorjs.types";
 interface LongFormDetailsModalProps {
-  post: LongFormPostType;
+  post: LongFormPostType | LongFormPostData;
   onClose: () => void;
   type: "draft" | "scheduled" | "posted";
   showSignedEvent?: boolean;

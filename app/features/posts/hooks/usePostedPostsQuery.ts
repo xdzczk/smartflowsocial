@@ -7,6 +7,12 @@ import { useFetcher, useLoaderData } from "@remix-run/react";
 import { useParams, useSearchParams } from "@remix-run/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
+import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses.server";
+import {
+  postedPostsLoaderDataSchema,
+  type PostedPostsLoaderData,
+} from "~/lib/validation/schemas/loader-responses.schemas";
+
 import type { User } from "~/features/user";
 
 import type { PostDTO, LongFormPostDTO } from "../dtos";
@@ -22,24 +28,9 @@ import type {
   QueueType,
 } from "../types";
 import { convertJsonValueToScheduleConfig } from "../types";
+import { combineContent } from "../combined.client";
 
-/**
- * Type for posted posts loader data
- */
-export type PostedPostsLoaderData = {
-  posts: PostDTO[];
-  longformPosts: LongFormPostDTO[];
-  allContent: CombinedContent[];
-  user: User | null;
-  queueTypes: QueueType[];
-  pagination: {
-    total: number;
-    pages: number;
-    currentPage: number;
-    limit: number;
-  };
-  stats: Record<string, PostStats>;
-};
+// PostedPostsLoaderData is now exported from schemas
 
 /**
  * Query key factory for posted posts
@@ -64,8 +55,14 @@ export function usePostedPostsQuery() {
   const page = parseInt(searchParams.get("page") ?? "1", 10);
   
   // Import loader dynamically to avoid circular dependency
-  const loaderData = useLoaderData();
+  const loaderDataRaw = useLoaderData();
   const fetcher = useFetcher();
+
+  // Validate initial loader data
+  const validatedLoaderData = safeValidateLoaderResponse(
+    loaderDataRaw,
+    postedPostsLoaderDataSchema,
+  );
 
   return useQuery({
     queryKey: postedPostsKeys.list(queueType, currentTab, page),
@@ -79,9 +76,19 @@ export function usePostedPostsQuery() {
         const checkFetcher = () => {
           if (fetcher.state === "idle") {
             if (fetcher.data) {
-              resolve(fetcher.data as unknown as PostedPostsLoaderData);
+              const validated = safeValidateLoaderResponse(
+                fetcher.data,
+                postedPostsLoaderDataSchema,
+              );
+              if (validated) {
+                resolve(validated as PostedPostsLoaderData);
+              } else {
+                reject(new Error("Invalid data received from fetcher"));
+              }
+            } else if (validatedLoaderData) {
+              resolve(validatedLoaderData as PostedPostsLoaderData);
             } else {
-              resolve(loaderData as PostedPostsLoaderData);
+              reject(new Error("Invalid loader data"));
             }
           } else if (fetcher.state === "loading") {
             setTimeout(checkFetcher, 50);
@@ -92,7 +99,7 @@ export function usePostedPostsQuery() {
         checkFetcher();
       });
     },
-    initialData: loaderData as PostedPostsLoaderData,
+    initialData: validatedLoaderData ?? undefined,
     staleTime: 30 * 1000, // 30 seconds - data is fresh for 30 seconds
     gcTime: 5 * 60 * 1000, // 5 minutes - keep in cache for 5 minutes
     refetchOnWindowFocus: true,
@@ -120,15 +127,12 @@ export function usePostedPostsData() {
     };
   }
 
-  const typedData = data as unknown as PostedPostsLoaderData;
+  // Data is already validated by the query hook
+  const typedData = data;
   const postsRaw = "posts" in typedData && Array.isArray(typedData.posts) ? typedData.posts : [];
   const longformPostsRaw =
     "longformPosts" in typedData && Array.isArray(typedData.longformPosts)
       ? typedData.longformPosts
-      : [];
-  const allContentRaw =
-    "allContent" in typedData && Array.isArray(typedData.allContent)
-      ? typedData.allContent
       : [];
   const userRaw = "user" in typedData ? typedData.user : null;
   const queueTypesRaw =
@@ -139,14 +143,18 @@ export function usePostedPostsData() {
   const statsRaw = "stats" in typedData ? typedData.stats : undefined;
 
   const posts: PostData[] = Array.isArray(postsRaw)
-    ? fromPostDTOArray(postsRaw)
+    ? fromPostDTOArray(postsRaw as PostDTO[])
     : [];
   const longformPosts: LongFormPostData[] = Array.isArray(longformPostsRaw)
-    ? fromLongFormPostDTOArray(longformPostsRaw)
+    ? fromLongFormPostDTOArray(longformPostsRaw as LongFormPostDTO[])
     : [];
-  const allContent: CombinedContent[] = Array.isArray(allContentRaw)
-    ? (allContentRaw as unknown as CombinedContent[])
-    : [];
+  // Reconstruct allContent on client from deserialized posts/longformPosts
+  const allContent: CombinedContent[] = combineContent(
+    posts,
+    longformPosts,
+    "postedAt",
+    "desc",
+  );
   const queueTypes: QueueType[] = Array.isArray(queueTypesRaw)
     ? queueTypesRaw.map((qt: unknown) => {
         if (typeof qt !== "object" || qt === null) {

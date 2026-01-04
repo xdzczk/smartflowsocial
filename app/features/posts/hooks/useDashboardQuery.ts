@@ -7,11 +7,19 @@ import { useFetcher, useLoaderData } from "@remix-run/react";
 import { useParams, useSearchParams } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 
+import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses.server";
+import {
+  dashboardLoaderDataSchema,
+  type DashboardLoaderData,
+} from "~/lib/validation/schemas/loader-responses.schemas";
+
 import type { PostDTO, LongFormPostDTO } from "../dtos";
 import {
   fromPostDTOArray,
   fromLongFormPostDTOArray,
 } from "../dtos";
+import { combineContent } from "../combined.client";
+import { validateHashTagPresets } from "~/lib/validation/hashtag-presets.server";
 import { convertJsonValueToScheduleConfig } from "../types";
 import type {
   PostData,
@@ -32,22 +40,7 @@ export const dashboardKeys = {
     [...dashboardKeys.lists(), queueType, tab] as const,
 };
 
-/**
- * Type for dashboard loader data
- */
-export type DashboardLoaderData = {
-  scheduledPosts: PostDTO[];
-  longformPosts: LongFormPostDTO[];
-  allContent: CombinedContent[];
-  user: UserData | null;
-  queueTypes: QueueType[];
-  hashTagPresets: HashTagPreset[];
-  postStatistics?: {
-    totalScheduled: number;
-    totalDrafts: number;
-    totalPosted: number;
-  };
-};
+// DashboardLoaderData is now exported from schemas
 
 /**
  * Hook to fetch dashboard data with TanStack Query
@@ -58,8 +51,14 @@ export function useDashboardQuery() {
   const queueType = params.queueType ?? "all";
   const currentTab = searchParams.get("tab") ?? "all";
   
-  const loaderData = useLoaderData();
+  const loaderDataRaw = useLoaderData();
   const fetcher = useFetcher();
+
+  // Validate initial loader data
+  const validatedLoaderData = safeValidateLoaderResponse(
+    loaderDataRaw,
+    dashboardLoaderDataSchema,
+  );
 
   return useQuery({
     queryKey: dashboardKeys.list(queueType, currentTab),
@@ -71,9 +70,19 @@ export function useDashboardQuery() {
         const checkFetcher = () => {
           if (fetcher.state === "idle") {
             if (fetcher.data) {
-              resolve(fetcher.data as unknown as DashboardLoaderData);
+              const validated = safeValidateLoaderResponse(
+                fetcher.data,
+                dashboardLoaderDataSchema,
+              );
+              if (validated) {
+                resolve(validated as DashboardLoaderData);
+              } else {
+                reject(new Error("Invalid data received from fetcher"));
+              }
+            } else if (validatedLoaderData) {
+              resolve(validatedLoaderData as DashboardLoaderData);
             } else {
-              resolve(loaderData as DashboardLoaderData);
+              reject(new Error("Invalid loader data"));
             }
           } else if (fetcher.state === "loading") {
             setTimeout(checkFetcher, 50);
@@ -84,7 +93,7 @@ export function useDashboardQuery() {
         checkFetcher();
       });
     },
-    initialData: loaderData as DashboardLoaderData,
+    initialData: validatedLoaderData ?? undefined,
     staleTime: 30 * 1000, // 30 seconds
     gcTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: true,
@@ -121,10 +130,6 @@ export function useDashboardData() {
     "longformPosts" in typedData && Array.isArray(typedData.longformPosts)
       ? typedData.longformPosts
       : [];
-  const allContentRaw =
-    "allContent" in typedData && Array.isArray(typedData.allContent)
-      ? typedData.allContent
-      : [];
   const userRaw = "user" in typedData ? typedData.user : null;
   const queueTypesRaw =
     "queueTypes" in typedData && Array.isArray(typedData.queueTypes)
@@ -137,14 +142,18 @@ export function useDashboardData() {
   const postStatisticsRaw = "postStatistics" in typedData ? typedData.postStatistics : undefined;
 
   const scheduledPosts: PostData[] = Array.isArray(scheduledPostsRaw)
-    ? fromPostDTOArray(scheduledPostsRaw)
+    ? fromPostDTOArray(scheduledPostsRaw as PostDTO[])
     : [];
   const longformPosts: LongFormPostData[] = Array.isArray(longformPostsRaw)
-    ? fromLongFormPostDTOArray(longformPostsRaw)
+    ? fromLongFormPostDTOArray(longformPostsRaw as LongFormPostDTO[])
     : [];
-  const allContent: CombinedContent[] = Array.isArray(allContentRaw)
-    ? (allContentRaw as unknown as CombinedContent[])
-    : [];
+  // Reconstruct allContent on client from deserialized scheduledPosts/longformPosts
+  const allContent: CombinedContent[] = combineContent(
+    scheduledPosts,
+    longformPosts,
+    "scheduledFor",
+    "asc",
+  );
   const queueTypes: QueueType[] = Array.isArray(queueTypesRaw)
     ? queueTypesRaw.map((qt: unknown) => {
         if (
@@ -201,9 +210,8 @@ export function useDashboardData() {
       })
       .filter((qt): qt is QueueType => qt !== null)
     : [];
-  const hashTagPresets: HashTagPreset[] = Array.isArray(hashTagPresetsRaw)
-    ? (hashTagPresetsRaw as unknown as HashTagPreset[])
-    : [];
+  // Validate HashTagPreset array with Zod schema
+  const hashTagPresets: HashTagPreset[] = validateHashTagPresets(hashTagPresetsRaw);
 
   return {
     scheduledPosts,

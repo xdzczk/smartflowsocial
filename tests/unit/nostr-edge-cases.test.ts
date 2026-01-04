@@ -33,7 +33,8 @@ describe("Nostr Edge Cases", () => {
   describe("signEventFn - Retry Logic", () => {
     it("should retry when window.nostr is not available initially", async () => {
       // Dynamically import to get fresh function
-      const { signEventFn } = await import("~/lib/nostr");
+      const { nostrAdapter } = await import("~/lib/nostr-adapter.client");
+      const signEventFn = nostrAdapter.signEvent;
 
       // Initially window.nostr is undefined, then becomes available
       let callCount = 0;
@@ -74,7 +75,8 @@ describe("Nostr Edge Cases", () => {
         nostr: undefined,
       } as unknown as Window & typeof globalThis;
 
-      const { signEventFn } = await import("~/lib/nostr");
+      const { nostrAdapter } = await import("~/lib/nostr-adapter.client");
+      const signEventFn = nostrAdapter.signEvent;
 
       const eventData = {
         content: "Test content",
@@ -101,7 +103,8 @@ describe("Nostr Edge Cases", () => {
     it("should handle string return type from signEvent", async () => {
       mockWindowNostr.signEvent.mockResolvedValue("signature-string");
 
-      const { signEventFn } = await import("~/lib/nostr");
+      const { nostrAdapter } = await import("~/lib/nostr-adapter.client");
+      const signEventFn = nostrAdapter.signEvent;
 
       const eventData = {
         content: "Test content",
@@ -123,7 +126,8 @@ describe("Nostr Edge Cases", () => {
         // Missing pubkey and sig
       });
 
-      const { signEventFn } = await import("~/lib/nostr");
+      const { nostrAdapter } = await import("~/lib/nostr-adapter.client");
+      const signEventFn = nostrAdapter.signEvent;
 
       const eventData = {
         content: "Test content",
@@ -146,7 +150,8 @@ describe("Nostr Edge Cases", () => {
         sig: "sig-123",
       });
 
-      const { signEventFn } = await import("~/lib/nostr");
+      const { nostrAdapter } = await import("~/lib/nostr-adapter.client");
+      const signEventFn = nostrAdapter.signEvent;
 
       const eventData = {
         content: "Test content",
@@ -167,7 +172,8 @@ describe("Nostr Edge Cases", () => {
         sig: "sig-123",
       });
 
-      const { signEventFn } = await import("~/lib/nostr");
+      const { nostrAdapter } = await import("~/lib/nostr-adapter.client");
+      const signEventFn = nostrAdapter.signEvent;
 
       const eventData = {
         content: "Test content",
@@ -190,7 +196,8 @@ describe("Nostr Edge Cases", () => {
         sig: "sig-123",
       });
 
-      const { signLongFormEvent } = await import("~/lib/nostr");
+      const { nostrAdapter } = await import("~/lib/nostr-adapter.client");
+      const signLongFormEvent = nostrAdapter.signLongFormEvent;
 
       const eventData = {
         content: "Test content",
@@ -230,7 +237,8 @@ describe("Nostr Edge Cases", () => {
         sig: "sig-123",
       });
 
-      const { signLongFormEvent } = await import("~/lib/nostr");
+      const { nostrAdapter } = await import("~/lib/nostr-adapter.client");
+      const signLongFormEvent = nostrAdapter.signLongFormEvent;
 
       const eventData = {
         title: "", // Empty title - required by type but should not result in title tag
@@ -260,7 +268,8 @@ describe("Nostr Edge Cases", () => {
         sig: "sig-123",
       });
 
-      const { signLongFormEvent } = await import("~/lib/nostr");
+      const { nostrAdapter } = await import("~/lib/nostr-adapter.client");
+      const signLongFormEvent = nostrAdapter.signLongFormEvent;
 
       const eventData = {
         title: "Test Title",
@@ -282,7 +291,8 @@ describe("Nostr Edge Cases", () => {
         sig: "sig-123",
       });
 
-      const { signLongFormEvent } = await import("~/lib/nostr");
+      const { nostrAdapter } = await import("~/lib/nostr-adapter.client");
+      const signLongFormEvent = nostrAdapter.signLongFormEvent;
 
       const eventData = {
         title: "Test Title",
@@ -301,7 +311,7 @@ describe("Nostr Edge Cases", () => {
 
   describe("EditorJS Conversion Edge Cases", () => {
     it("should handle complex nested markdown structures", async () => {
-      const { convertMarkdownToEditorJS } = await import("~/lib/nostr");
+      const { convertMarkdownToEditorJS } = await import("~/features/posts/utils/editorjs-conversion");
 
       const markdown = `# Header 1
 
@@ -332,7 +342,7 @@ code block
     });
 
     it("should handle markdown with multiple consecutive empty lines", async () => {
-      const { convertMarkdownToEditorJS } = await import("~/lib/nostr");
+      const { convertMarkdownToEditorJS } = await import("~/features/posts/utils/editorjs-conversion");
 
       const markdown = "Paragraph 1\n\n\n\nParagraph 2";
 
@@ -342,7 +352,7 @@ code block
     });
 
     it("should handle markdown with special characters in links", async () => {
-      const { convertMarkdownToEditorJS } = await import("~/lib/nostr");
+      const { convertMarkdownToEditorJS } = await import("~/features/posts/utils/editorjs-conversion");
 
       const markdown =
         "[Link with spaces](https://example.com/path with spaces)";
@@ -353,7 +363,7 @@ code block
     });
 
     it("should handle EditorJS with unknown block types gracefully", async () => {
-      const { convertEditorJSToMarkdown } = await import("~/lib/nostr");
+      const { convertEditorJSToMarkdown } = await import("~/features/posts/utils/editorjs-conversion");
 
       const editorData = {
         blocks: [
@@ -371,7 +381,7 @@ code block
     });
 
     it("should handle EditorJS blocks with missing data fields", async () => {
-      const { convertEditorJSToMarkdown } = await import("~/lib/nostr");
+      const { convertEditorJSToMarkdown } = await import("~/features/posts/utils/editorjs-conversion");
 
       const editorData = {
         blocks: [

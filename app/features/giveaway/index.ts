@@ -56,5 +56,5 @@ export {
   useGiveawayQuery,
   useGiveawayData,
   giveawayKeys,
-  type GiveawayLoaderData,
 } from "./hooks/useGiveawayQuery";
+export type { GiveawayLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";

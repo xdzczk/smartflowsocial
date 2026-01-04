@@ -25,14 +25,23 @@ import {
   ScheduledPostsTable,
   SimpleRescheduleModal,
   useScheduledState,
+  useScheduledPostsData,
+} from "~/features/posts/ui";
+import {
   handleScheduledAction,
   loadScheduledData,
-  useScheduledPostsData,
   type PostData,
   type LongFormPostData,
   type LongFormPostType,
   type UserData,
-} from "~/features/posts";
+} from "~/features/posts/server";
+import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
+import { scheduledPostsLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
+import { validateUserData } from "~/lib/validation/user-data.server";
+import {
+  extractPostData,
+  extractLongFormPostData,
+} from "~/lib/validation/combined-content.server";
 import { withCSRFProtection } from "~/lib/csrf";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -47,7 +56,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const queueType = params.queueType ?? "all";
 
     const data = await loadScheduledData(userId, queueType);
-    return data;
+    
+    // Validate loader response with Zod schema
+    return validateLoaderResponse(data, scheduledPostsLoaderDataSchema);
   } catch (error) {
     // If error is a Response (e.g., redirect from requireUserId), return it
     if (error instanceof Response) {
@@ -181,12 +192,17 @@ export default function ScheduledPosts() {
           onSearchChange={setSearchTerm}
           userTimezone={user?.timezone ?? undefined}
           onPostSelect={(content) => {
+            // Use type guards for safe type narrowing
             if (content.type === "post") {
-              setSelectedPost(content.originalData as PostData);
+              const postData = extractPostData(content);
+              if (postData) {
+                setSelectedPost(postData);
+              }
             } else {
-              setSelectedLongFormPost(
-                content.originalData as unknown as LongFormPostData,
-              );
+              const longFormData = extractLongFormPostData(content);
+              if (longFormData) {
+                setSelectedLongFormPost(longFormData);
+              }
             }
           }}
           selectedItems={selectedPosts}
@@ -288,13 +304,13 @@ export default function ScheduledPosts() {
         </div>
       ) : (
         <LongFormListing
-          posts={longformPosts as unknown as LongFormPostType[]}
+          posts={longformPosts}
           type="scheduled"
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
           userTimezone={user?.timezone ?? undefined}
           onPostSelect={(post) => {
-            setSelectedLongFormPost(post as unknown as LongFormPostData);
+            setSelectedLongFormPost(post as LongFormPostData);
           }}
           onEditPost={(post) =>
             handleEditPost(post as PostData | LongFormPostData)
@@ -308,7 +324,7 @@ export default function ScheduledPosts() {
       {/* Long Form Post Details Modal */}
       {selectedLongFormPost ? (
         <LongFormDetailsModal
-          post={selectedLongFormPost as unknown as LongFormPostType}
+          post={selectedLongFormPost}
           onClose={() => setSelectedLongFormPost(null)}
           type="scheduled"
           showSignedEvent={true}
@@ -322,7 +338,7 @@ export default function ScheduledPosts() {
           post={postToEdit}
           onClose={handleCloseEditModal}
           onConfirm={handleModalSuccess}
-          user={user ? (user as unknown as UserData) : undefined}
+          user={user ? validateUserData(user) ?? undefined : undefined}
           queueTypes={queueTypes}
           hashTagPresets={
             Array.isArray(hashTagPresets)
@@ -343,7 +359,7 @@ export default function ScheduledPosts() {
           post={postToReschedule}
           onClose={handleCloseRescheduleModal}
           onConfirm={handleModalSuccess}
-          user={user ? (user as unknown as UserData) : undefined}
+          user={user ? validateUserData(user) ?? undefined : undefined}
           queueTypes={queueTypes}
         />
       ) : null}

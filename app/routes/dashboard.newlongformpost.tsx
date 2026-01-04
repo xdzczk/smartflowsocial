@@ -13,12 +13,14 @@ import {
   LongFormPreviewModal,
   NewLongFormHeader,
   useNewLongFormState,
+} from "~/features/posts/ui";
+import {
   handleNewLongFormAction,
   loadNewLongFormData,
+  convertJsonValueToScheduleConfig,
   type QueueType,
   type HashTagPreset,
-  convertJsonValueToScheduleConfig,
-} from "~/features/posts";
+} from "~/features/posts/server";
 import { withCSRFProtection } from "~/lib/csrf";
 
 export async function loader({ request }: LoaderFunctionArgs) {

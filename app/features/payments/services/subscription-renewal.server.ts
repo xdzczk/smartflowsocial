@@ -17,7 +17,7 @@ import {
 import {
   disableUserAccount,
   getEnabledUsersWithSubscriptions,
-} from "~/models/user.server";
+} from "~/features/user";
 
 import { getBitcoinRate } from "../btc.rate";
 

@@ -15,7 +15,10 @@ import {
   requireFeatureAccess,
   requireAnySubscription,
 } from "~/features/payments";
-import { PostDetailsModal, type PostData } from "~/features/posts";
+import { PostDetailsModal } from "~/features/posts/ui";
+import { type PostData } from "~/features/posts/server";
+import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
+import { giveawayLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
     const userId = await requireUserId(request);
@@ -30,7 +33,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const days = parseInt(url.searchParams.get("days") ?? "7");
 
     const data = await loadGiveawayData(userId, queueType, days);
-    return data;
+    
+    // Validate loader response with Zod schema
+    return validateLoaderResponse(data, giveawayLoaderDataSchema);
   } catch (error) {
     // If error is a Response (e.g., redirect from requireUserId), return it
     if (error instanceof Response) {
@@ -110,11 +115,7 @@ export default function GiveawayQueueRoute() {
       </div>
 
       <GiveawayTable
-        posts={
-          filteredPosts as unknown as Parameters<
-            typeof GiveawayTable
-          >[0]["posts"]
-        }
+        posts={filteredPosts}
         sortConfig={sortConfig}
         onRequestSort={requestSort}
         onPostClick={(post) => {
@@ -135,7 +136,7 @@ export default function GiveawayQueueRoute() {
 
       {selectedPost ? (
         <PostDetailsModal
-          post={selectedPost as unknown as PostData}
+          post={selectedPost}
           stats={
             selectedPost &&
             typeof selectedPost === "object" &&

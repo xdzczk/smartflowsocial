@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /**
  * Server-side Error Handling Utilities
  *
@@ -14,15 +13,12 @@ import {
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
 } from "@remix-run/node";
+
 import { logError } from "./error-logger.server";
-
-import type { ErrorCode } from "./errors";
-
 import {
   AuthenticationError,
   AuthorizationError,
   getUserFriendlyMessage,
-  isAppError,
   normalizeError,
   NotFoundError,
   ValidationError,

@@ -7,6 +7,12 @@ import { useFetcher, useLoaderData } from "@remix-run/react";
 import { useParams, useSearchParams } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 
+import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses.server";
+import {
+  giveawayLoaderDataSchema,
+  type GiveawayLoaderData,
+} from "~/lib/validation/schemas/loader-responses.schemas";
+
 import type { PostDTO } from "~/features/posts/dtos";
 import { fromPostDTOArray } from "~/features/posts/dtos";
 import type { PostStats } from "~/features/posts/stats.server";
@@ -15,20 +21,7 @@ import type { UserWithHashTagPresets } from "~/features/user";
 
 import type { RelatedEvent } from "../types";
 
-/**
- * Type for giveaway loader data
- */
-export type GiveawayLoaderData = {
-  posts: (PostDTO & {
-    stats?: PostStats;
-    totalEngagement?: number;
-  })[];
-  stats: Record<string, PostStats>;
-  relatedEvents: RelatedEvent[]; // Uses RelatedEvent from ../types
-  user: UserWithHashTagPresets;
-  queueTypes: QueueType[];
-  selectedQueueType: string;
-};
+// GiveawayLoaderData is now exported from schemas
 
 /**
  * Query key factory for giveaway
@@ -50,9 +43,14 @@ export function useGiveawayQuery() {
   const queueType = params.queueType ?? "all";
   const days = parseInt(searchParams.get("days") ?? "7", 10);
   
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-  const loaderData = useLoaderData() as unknown as GiveawayLoaderData;
+  const loaderDataRaw = useLoaderData();
   const fetcher = useFetcher();
+
+  // Validate initial loader data
+  const validatedLoaderData = safeValidateLoaderResponse(
+    loaderDataRaw,
+    giveawayLoaderDataSchema,
+  );
 
   return useQuery({
     queryKey: giveawayKeys.list(queueType, days),
@@ -61,13 +59,23 @@ export function useGiveawayQuery() {
       const url = `/dashboard/giveaway${queueType !== "all" ? `/${queueType}` : ""}?days=${days}`;
       fetcher.load(url);
       
-      return new Promise<GiveawayLoaderData>((resolve) => {
+      return new Promise<GiveawayLoaderData>((resolve, reject) => {
         const checkFetcher = () => {
           if (fetcher.state === "idle") {
             if (fetcher.data) {
-              resolve(fetcher.data as unknown as GiveawayLoaderData);
+              const validated = safeValidateLoaderResponse(
+                fetcher.data,
+                giveawayLoaderDataSchema,
+              );
+              if (validated) {
+                resolve(validated as GiveawayLoaderData);
+              } else {
+                reject(new Error("Invalid data received from fetcher"));
+              }
+            } else if (validatedLoaderData) {
+              resolve(validatedLoaderData as GiveawayLoaderData);
             } else {
-              resolve(loaderData);
+              reject(new Error("Invalid loader data"));
             }
           } else {
             setTimeout(checkFetcher, 50);
@@ -76,7 +84,7 @@ export function useGiveawayQuery() {
         checkFetcher();
       });
     },
-    initialData: loaderData,
+    initialData: validatedLoaderData ?? undefined,
     staleTime: 30 * 1000, // 30 seconds
     refetchOnMount: false,
   });
@@ -88,6 +96,19 @@ export function useGiveawayQuery() {
 export function useGiveawayData() {
   const query = useGiveawayQuery();
   const rawData = query.data;
+
+  if (!rawData) {
+    return {
+      posts: [] as (PostData & { stats?: PostStats; totalEngagement?: number })[],
+      stats: {} as Record<string, PostStats>,
+      relatedEvents: [] as RelatedEvent[],
+      user: null,
+      queueTypes: [] as QueueType[],
+      selectedQueueType: "all",
+      isLoading: query.isLoading,
+      rawData: null,
+    };
+  }
 
   // Deserialize DTOs (with string dates) back to PostData (with Date objects)
   const posts: (PostData & {

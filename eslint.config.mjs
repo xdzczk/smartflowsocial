@@ -38,8 +38,6 @@ export default (async () => {
     {
       ignores: [
         "**/*.md",
-        "app/lib/error-handler.example.ts",
-        "app/lib/error-handler.server.ts",
         "node_modules/**",
         "build/**",
         "public/build/**",

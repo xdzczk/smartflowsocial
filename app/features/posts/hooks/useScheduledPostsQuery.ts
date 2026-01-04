@@ -7,11 +7,19 @@ import { useFetcher, useLoaderData } from "@remix-run/react";
 import { useParams, useSearchParams } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 
+import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses.server";
+import {
+  scheduledPostsLoaderDataSchema,
+  type ScheduledPostsLoaderData,
+} from "~/lib/validation/schemas/loader-responses.schemas";
+
 import type { PostDTO, LongFormPostDTO } from "../dtos";
 import {
   fromPostDTOArray,
   fromLongFormPostDTOArray,
 } from "../dtos";
+import { combineContent } from "../combined.client";
+import { validateHashTagPresets } from "~/lib/validation/hashtag-presets.server";
 import type {
   PostData,
   LongFormPostData,
@@ -32,17 +40,7 @@ export const scheduledPostsKeys = {
     [...scheduledPostsKeys.lists(), queueType, tab] as const,
 };
 
-/**
- * Type for scheduled posts loader data
- */
-export type ScheduledPostsLoaderData = {
-  posts: PostDTO[];
-  longformPosts: LongFormPostDTO[];
-  allContent: CombinedContent[];
-  user: UserData | null;
-  queueTypes: QueueType[];
-  hashTagPresets: HashTagPreset[];
-};
+// ScheduledPostsLoaderData is now exported from schemas
 
 /**
  * Hook to fetch scheduled posts with TanStack Query
@@ -53,8 +51,14 @@ export function useScheduledPostsQuery() {
   const queueType = params.queueType ?? "all";
   const currentTab = searchParams.get("tab") ?? "all";
   
-  const loaderData = useLoaderData();
+  const loaderDataRaw = useLoaderData();
   const fetcher = useFetcher();
+
+  // Validate initial loader data
+  const validatedLoaderData = safeValidateLoaderResponse(
+    loaderDataRaw,
+    scheduledPostsLoaderDataSchema,
+  );
 
   return useQuery({
     queryKey: scheduledPostsKeys.list(queueType, currentTab),
@@ -66,9 +70,19 @@ export function useScheduledPostsQuery() {
         const checkFetcher = () => {
           if (fetcher.state === "idle") {
             if (fetcher.data) {
-              resolve(fetcher.data as unknown as ScheduledPostsLoaderData);
+              const validated = safeValidateLoaderResponse(
+                fetcher.data,
+                scheduledPostsLoaderDataSchema,
+              );
+              if (validated) {
+                resolve(validated as ScheduledPostsLoaderData);
+              } else {
+                reject(new Error("Invalid data received from fetcher"));
+              }
+            } else if (validatedLoaderData) {
+              resolve(validatedLoaderData as ScheduledPostsLoaderData);
             } else {
-              resolve(loaderData as ScheduledPostsLoaderData);
+              reject(new Error("Invalid loader data"));
             }
           } else if (fetcher.state === "loading") {
             setTimeout(checkFetcher, 50);
@@ -79,7 +93,7 @@ export function useScheduledPostsQuery() {
         checkFetcher();
       });
     },
-    initialData: loaderData as ScheduledPostsLoaderData,
+    initialData: validatedLoaderData ?? undefined,
     staleTime: 30 * 1000, // 30 seconds
     gcTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: true,
@@ -113,10 +127,6 @@ export function useScheduledPostsData() {
     "longformPosts" in typedData && Array.isArray(typedData.longformPosts)
       ? typedData.longformPosts
       : [];
-  const allContentRaw =
-    "allContent" in typedData && Array.isArray(typedData.allContent)
-      ? typedData.allContent
-      : [];
   const userRaw = "user" in typedData ? typedData.user : null;
   const queueTypesRaw =
     "queueTypes" in typedData && Array.isArray(typedData.queueTypes)
@@ -128,14 +138,18 @@ export function useScheduledPostsData() {
       : [];
 
   const posts: PostData[] = Array.isArray(postsRaw)
-    ? fromPostDTOArray(postsRaw)
+    ? fromPostDTOArray(postsRaw as PostDTO[])
     : [];
   const longformPosts: LongFormPostData[] = Array.isArray(longformPostsRaw)
-    ? fromLongFormPostDTOArray(longformPostsRaw)
+    ? fromLongFormPostDTOArray(longformPostsRaw as LongFormPostDTO[])
     : [];
-  const allContent: CombinedContent[] = Array.isArray(allContentRaw)
-    ? (allContentRaw as unknown as CombinedContent[])
-    : [];
+  // Reconstruct allContent on client from deserialized posts/longformPosts
+  const allContent: CombinedContent[] = combineContent(
+    posts,
+    longformPosts,
+    "scheduledFor",
+    "asc",
+  );
   const queueTypes: QueueType[] = Array.isArray(queueTypesRaw)
     ? queueTypesRaw
         .map((qt: unknown) => {
@@ -193,9 +207,8 @@ export function useScheduledPostsData() {
         })
         .filter((qt): qt is QueueType => qt !== null)
     : [];
-  const hashTagPresets: HashTagPreset[] = Array.isArray(hashTagPresetsRaw)
-    ? (hashTagPresetsRaw as unknown as HashTagPreset[])
-    : [];
+  // Validate HashTagPreset array with Zod schema
+  const hashTagPresets: HashTagPreset[] = validateHashTagPresets(hashTagPresetsRaw);
 
   return {
     posts,

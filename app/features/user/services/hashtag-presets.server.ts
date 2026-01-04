@@ -106,45 +106,6 @@ export async function hashTagPresetExistsForUser(
   return !!preset;
 }
 
-// Legacy functions for backward compatibility
-
-/**
- * @deprecated Use createHashTagPreset or updateHashTagPreset instead
- * Updates or creates a "Default" hashtag preset for backward compatibility
- */
-export async function updateUserHashTags(
-  userId: string,
-  tags: string,
-): Promise<HashTagPreset | null> {
-  // For backward compatibility, we'll create or update a "Default" preset
-  const existingDefault = await prisma.hashTagPreset.findFirst({
-    where: {
-      userId,
-      name: "Default",
-    },
-  });
-
-  if (existingDefault) {
-    return prisma.hashTagPreset.update({
-      where: {
-        id: existingDefault.id,
-      },
-      data: {
-        tags,
-      },
-    });
-  } else {
-    return prisma.hashTagPreset.create({
-      data: {
-        userId,
-        name: "Default",
-        tags,
-        description: "Default hashtags",
-      },
-    });
-  }
-}
-
 /**
  * Updates user's hashtag settings
  */
@@ -161,21 +122,6 @@ export function updateUserHashTagsAndSettings(
       showHashTagsinPosts: showHashTagsInPosts,
     },
   });
-}
-
-/**
- * @deprecated Use getUserHashTagPresets instead
- * Gets the "Default" hashtag preset tags for backward compatibility
- */
-export async function getUserHashTags(userId: string): Promise<string> {
-  // For backward compatibility, try to get "Default" preset
-  const defaultPreset = await prisma.hashTagPreset.findFirst({
-    where: {
-      userId,
-      name: "Default",
-    },
-  });
-  return defaultPreset?.tags ?? "";
 }
 
 /**
@@ -210,34 +156,6 @@ export function updateShowHashTagsInPosts(
   });
 }
 
-/**
- * @deprecated Use hashtag presets instead
- * Gets effective hashtags for a user (legacy function)
- */
-export async function getEffectiveHashtags(
-  userId: string,
-  hashTagPresetId?: string,
-): Promise<string> {
-  // If hashtag preset is specified, get its tags
-  if (hashTagPresetId) {
-    const preset = await prisma.hashTagPreset.findFirst({
-      where: {
-        id: hashTagPresetId,
-        userId: userId,
-      },
-      select: {
-        tags: true,
-      },
-    });
-
-    if (preset?.tags) {
-      return preset.tags;
-    }
-  }
-
-  // Otherwise, return empty string (no default hashtags)
-  return "";
-}
 
 
 

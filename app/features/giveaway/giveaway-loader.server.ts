@@ -18,7 +18,7 @@ import {
   getGiveawayBlacklist,
   getUserById,
   getQueueTypes,
-} from "~/models/user.server";
+} from "~/features/user";
 
 import { fetchGiveawayParticipants } from "./giveaway.server";
 import type {

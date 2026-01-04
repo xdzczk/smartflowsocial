@@ -25,7 +25,6 @@ import {
   updateQueueType,
   deleteQueueType,
   getQueueTypes,
-  getQueueType,
   getQueueTypeByIdForUser,
   getQueueTypeByNameForUser,
 } from "~/features/user/services/queue-types.server";
@@ -238,7 +237,8 @@ describe("Queue Types Service", () => {
         mockQueueTypes,
       );
 
-      const result = await getQueueType(TEST_USER_ID);
+      const queueTypes = await getQueueTypes(TEST_USER_ID);
+      const result = queueTypes.map((qt) => qt.name);
 
       expect(result).toEqual(["Queue 1", "Queue 2"]);
     });

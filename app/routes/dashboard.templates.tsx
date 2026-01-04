@@ -26,6 +26,8 @@ import {
   handleTemplatesAction,
   loadTemplatesData,
 } from "~/features/templates";
+import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
+import { templatesLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
 import { withCSRFProtection } from "~/lib/csrf";
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
@@ -41,7 +43,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const limit = 100;
 
   const data = await loadTemplatesData(userId, searchTerm, page, limit);
-  return json(data);
+  
+  // Validate loader response with Zod schema
+  return json(validateLoaderResponse(data, templatesLoaderDataSchema));
 }
 
 export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs) => {
@@ -195,14 +199,10 @@ export default function Templates() {
                 onSearch={handleSearch}
                 onAssetSelect={handleAssetSelect}
                 onSelectAllAssets={() =>
-                  handleSelectAllAssets(
-                    Array.isArray(assets) ? (assets as unknown as Asset[]) : [],
-                  )
+                  handleSelectAllAssets(assets)
                 }
                 onBulkPostAssets={() =>
-                  handleBulkPostAssets(
-                    Array.isArray(assets) ? (assets as unknown as Asset[]) : [],
-                  )
+                  handleBulkPostAssets(assets)
                 }
                 onBulkDeleteAssets={handleBulkDeleteAssets}
                 deleteFetcherState={deleteFetcher.state}

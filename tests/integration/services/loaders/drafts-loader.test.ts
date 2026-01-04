@@ -29,7 +29,7 @@ vi.mock("~/features/posts/services/combined.server", () => ({
 import { loadDraftsData } from "~/features/posts/services/drafts-loader.server";
 import { getDraftLongFormPosts } from "~/models/longformpost.server";
 import { getDraftPosts } from "~/models/post.queries.server";
-import { getUserById, getQueueTypes } from "~/models/user.server";
+import { getUserById, getQueueTypes } from "~/features/user";
 
 import { TEST_USER_ID } from "../../../utils/test-helpers";
 

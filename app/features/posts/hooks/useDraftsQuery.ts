@@ -7,11 +7,18 @@ import { useFetcher, useLoaderData } from "@remix-run/react";
 import { useParams } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 
+import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses.server";
+import {
+  draftsLoaderDataSchema,
+  type DraftsLoaderData,
+} from "~/lib/validation/schemas/loader-responses.schemas";
+
 import type { PostDTO, LongFormPostDTO } from "../dtos";
 import {
   fromPostDTOArray,
   fromLongFormPostDTOArray,
 } from "../dtos";
+import { combineContent } from "../combined.client";
 import type {
   PostData,
   LongFormPostData,
@@ -31,17 +38,7 @@ export const draftsKeys = {
     [...draftsKeys.lists(), queueType] as const,
 };
 
-/**
- * Type for drafts loader data
- */
-export type DraftsLoaderData = {
-  posts: PostDTO[];
-  longformPosts: LongFormPostDTO[];
-  allContent: CombinedContent[];
-  user: UserData | null;
-  queueTypes: QueueType[];
-  selectedQueueType: string;
-};
+// DraftsLoaderData is now exported from schemas
 
 /**
  * Hook to fetch drafts data with TanStack Query
@@ -50,8 +47,14 @@ export function useDraftsQuery() {
   const params = useParams();
   const queueType = params.queueType ?? "all";
   
-  const loaderData = useLoaderData();
+  const loaderDataRaw = useLoaderData();
   const fetcher = useFetcher();
+
+  // Validate initial loader data
+  const validatedLoaderData = safeValidateLoaderResponse(
+    loaderDataRaw,
+    draftsLoaderDataSchema,
+  );
 
   return useQuery({
     queryKey: draftsKeys.list(queueType),
@@ -63,9 +66,19 @@ export function useDraftsQuery() {
         const checkFetcher = () => {
           if (fetcher.state === "idle") {
             if (fetcher.data) {
-              resolve(fetcher.data as unknown as DraftsLoaderData);
+              const validated = safeValidateLoaderResponse(
+                fetcher.data,
+                draftsLoaderDataSchema,
+              );
+              if (validated) {
+                resolve(validated as DraftsLoaderData);
+              } else {
+                reject(new Error("Invalid data received from fetcher"));
+              }
+            } else if (validatedLoaderData) {
+              resolve(validatedLoaderData as DraftsLoaderData);
             } else {
-              resolve(loaderData as DraftsLoaderData);
+              reject(new Error("Invalid loader data"));
             }
           } else if (fetcher.state === "loading") {
             setTimeout(checkFetcher, 50);
@@ -76,7 +89,7 @@ export function useDraftsQuery() {
         checkFetcher();
       });
     },
-    initialData: loaderData as DraftsLoaderData,
+    initialData: validatedLoaderData ?? undefined,
     staleTime: 30 * 1000, // 30 seconds
     gcTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: true,
@@ -110,10 +123,6 @@ export function useDraftsData() {
     "longformPosts" in typedData && Array.isArray(typedData.longformPosts)
       ? typedData.longformPosts
       : [];
-  const allContentRaw =
-    "allContent" in typedData && Array.isArray(typedData.allContent)
-      ? typedData.allContent
-      : [];
   const userRaw = "user" in typedData ? typedData.user : null;
   const queueTypesRaw =
     "queueTypes" in typedData && Array.isArray(typedData.queueTypes)
@@ -122,14 +131,18 @@ export function useDraftsData() {
   const selectedQueueTypeRaw = "selectedQueueType" in typedData ? typedData.selectedQueueType : "all";
 
   const posts: PostData[] = Array.isArray(postsRaw)
-    ? fromPostDTOArray(postsRaw)
+    ? fromPostDTOArray(postsRaw as PostDTO[])
     : [];
   const longformPosts: LongFormPostData[] = Array.isArray(longformPostsRaw)
-    ? fromLongFormPostDTOArray(longformPostsRaw)
+    ? fromLongFormPostDTOArray(longformPostsRaw as LongFormPostDTO[])
     : [];
-  const allContent: CombinedContent[] = Array.isArray(allContentRaw)
-    ? (allContentRaw as unknown as CombinedContent[])
-    : [];
+  // Reconstruct allContent on client from deserialized posts/longformPosts
+  const allContent: CombinedContent[] = combineContent(
+    posts,
+    longformPosts,
+    "createdAt",
+    "desc",
+  );
   const queueTypes: QueueType[] = Array.isArray(queueTypesRaw)
     ? queueTypesRaw
         .map((qt: unknown) => {

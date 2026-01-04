@@ -31,13 +31,9 @@ export {
   getUserHashTagPresets,
   getHashTagPresetById,
   hashTagPresetExistsForUser,
-  // Legacy functions
-  updateUserHashTags,
   updateUserHashTagsAndSettings,
-  getUserHashTags,
   getShowHashTagsInPosts,
   updateShowHashTagsInPosts,
-  getEffectiveHashtags,
 } from "./services/hashtag-presets.server";
 
 // User Settings
@@ -70,7 +66,6 @@ export {
   updateQueueType,
   deleteQueueType,
   getQueueTypes,
-  getQueueType,
   getQueueTypeByIdForUser,
   getQueueTypeByNameForUser,
 } from "./services/queue-types.server";

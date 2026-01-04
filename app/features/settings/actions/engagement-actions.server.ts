@@ -15,7 +15,7 @@ import {
   updateUserFilterMuted,
   updateUserHidePostsFromLowTrustUsers as updateUserHideLowTrust,
   updateUserMutedList,
-} from "~/models/user.server";
+} from "~/features/user";
 
 export async function handleEngagementAction(
   userId: string,

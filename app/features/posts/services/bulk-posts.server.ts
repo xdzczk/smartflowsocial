@@ -7,20 +7,19 @@
 import {
   getQueueTypes,
   getUserHashTagPresets,
-  getUserHashTags,
 } from "~/features/user";
 /**
  * Get bulk posts dashboard data
  */
 export async function getBulkPostsDashboardData(userId: string) {
-  const [tagsRaw, queueTypesRaw, hashTagPresetsRaw] = await Promise.all([
-    getUserHashTags(userId),
-    getQueueTypes(userId),
+  const [hashTagPresetsRaw, queueTypesRaw] = await Promise.all([
     getUserHashTagPresets(userId),
+    getQueueTypes(userId),
   ]);
 
-  const tags =
-    typeof tagsRaw === "string" ? tagsRaw : tagsRaw ? String(tagsRaw) : "";
+  // Get "Default" preset tags for backward compatibility
+  const defaultPreset = hashTagPresetsRaw.find((p) => p.name === "Default");
+  const tags = defaultPreset?.tags ?? "";
   const queueTypes = Array.isArray(queueTypesRaw) ? queueTypesRaw : [];
   const hashTagPresets = Array.isArray(hashTagPresetsRaw)
     ? hashTagPresetsRaw

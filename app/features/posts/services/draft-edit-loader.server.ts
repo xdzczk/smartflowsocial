@@ -8,7 +8,7 @@ import {
   getUserById,
   getQueueTypes,
   getUserHashTagPresets,
-} from "~/models/user.server";
+} from "~/features/user";
 
 import { toPostDTO, type PostDTO } from "../dtos";
 import type { PostData } from "../types";

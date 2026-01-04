@@ -7,19 +7,10 @@ import { useFetcher } from "@remix-run/react";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 
 import { getQueueColor } from "../queueColors";
-interface Post {
-  id: string;
-  caption?: string | null;
-  scheduledFor: string;
-  fileUrl?: string[] | null;
-  queueType?: { name: string; color?: string | null } | null;
-  repost?: boolean;
-  isQuotedPost?: boolean;
-  isPostSigned?: boolean;
-}
+import type { ScheduledPostTablePost } from "~/lib/validation/post-data-conversion.server";
 
 interface ScheduledPostsTableProps {
-  posts: Post[];
+  posts: ScheduledPostTablePost[];
   sortConfig: { key: string; direction: "asc" | "desc" };
   onRequestSort: (key: string) => void;
   selectedPosts: Set<string>;
@@ -27,9 +18,9 @@ interface ScheduledPostsTableProps {
   onToggleSelectAll: () => void;
   countdowns: Record<string, string>;
   userTimezone?: string | null;
-  onPostClick: (post: Post) => void;
-  onEditPost: (post: Post) => void;
-  onReschedulePost: (post: Post) => void;
+  onPostClick: (post: ScheduledPostTablePost) => void;
+  onEditPost: (post: ScheduledPostTablePost) => void;
+  onReschedulePost: (post: ScheduledPostTablePost) => void;
   onMediaClick: (src: string) => void;
   bulkDeleteState: string;
 }

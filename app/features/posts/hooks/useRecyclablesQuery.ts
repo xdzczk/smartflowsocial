@@ -7,6 +7,12 @@ import { useFetcher, useLoaderData } from "@remix-run/react";
 import { useParams } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 
+import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses.server";
+import {
+  recyclablesLoaderDataSchema,
+  type RecyclablesLoaderData,
+} from "~/lib/validation/schemas/loader-responses.schemas";
+
 import type { UserWithHashTagPresets } from "~/features/user";
 
 import type { PostDTO } from "../dtos";
@@ -17,22 +23,7 @@ import type {
   QueueType,
 } from "../types";
 
-/**
- * Type for recyclables loader data
- */
-export type RecyclablesLoaderData = {
-  posts: PostDTO[];
-  pagination: {
-    total: number;
-    pages: number;
-    currentPage: number;
-    limit: number;
-  };
-  stats: Record<string, PostStats>;
-  user: UserWithHashTagPresets;
-  queueTypes: QueueType[];
-  selectedQueueType: string;
-};
+// RecyclablesLoaderData is now exported from schemas
 
 /**
  * Query key factory for recyclables
@@ -54,9 +45,14 @@ export function useRecyclablesQuery() {
   const queueType = params.queueType ?? "all";
   const page = 1; // Recyclables doesn't use pagination in URL currently, but we'll support it
   
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-  const loaderData = useLoaderData() as unknown as RecyclablesLoaderData;
+  const loaderDataRaw = useLoaderData();
   const fetcher = useFetcher();
+
+  // Validate initial loader data
+  const validatedLoaderData = safeValidateLoaderResponse(
+    loaderDataRaw,
+    recyclablesLoaderDataSchema,
+  );
 
   return useQuery({
     queryKey: recyclablesKeys.list(queueType, page),
@@ -66,13 +62,23 @@ export function useRecyclablesQuery() {
       fetcher.load(url);
       
       // Wait for fetcher to complete
-      return new Promise<RecyclablesLoaderData>((resolve, _reject) => {
+      return new Promise<RecyclablesLoaderData>((resolve, reject) => {
         const checkFetcher = () => {
           if (fetcher.state === "idle") {
             if (fetcher.data) {
-              resolve(fetcher.data as unknown as RecyclablesLoaderData);
+              const validated = safeValidateLoaderResponse(
+                fetcher.data,
+                recyclablesLoaderDataSchema,
+              );
+              if (validated) {
+                resolve(validated as RecyclablesLoaderData);
+              } else {
+                reject(new Error("Invalid data received from fetcher"));
+              }
+            } else if (validatedLoaderData) {
+              resolve(validatedLoaderData as RecyclablesLoaderData);
             } else {
-              resolve(loaderData);
+              reject(new Error("Invalid loader data"));
             }
           } else {
             setTimeout(checkFetcher, 50);
@@ -81,7 +87,7 @@ export function useRecyclablesQuery() {
         checkFetcher();
       });
     },
-    initialData: loaderData,
+    initialData: validatedLoaderData ?? undefined,
     staleTime: 30 * 1000, // 30 seconds
   });
 }
@@ -93,9 +99,32 @@ export function useRecyclablesData() {
   const query = useRecyclablesQuery();
   const rawData = query.data;
 
+  if (!rawData) {
+    return {
+      posts: [] as PostData[],
+      pagination: { total: 0, pages: 0, currentPage: 1, limit: 50 },
+      stats: {} as Record<
+        string,
+        {
+          likes?: number;
+          replies?: number;
+          mentions?: number;
+          reposts?: number;
+          zaps?: number;
+          satszapped?: number;
+        }
+      >,
+      user: null,
+      queueTypes: [] as QueueType[],
+      selectedQueueType: "all",
+      isLoading: query.isLoading,
+      rawData: null,
+    };
+  }
+
   // Deserialize DTOs (with string dates) back to PostData (with Date objects)
   const posts: PostData[] = Array.isArray(rawData.posts)
-    ? fromPostDTOArray(rawData.posts)
+    ? fromPostDTOArray(rawData.posts as PostDTO[])
     : [];
 
   // Type assertions for stats

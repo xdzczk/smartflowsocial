@@ -156,37 +156,37 @@ export {
   useBulkDeletePostsMutation,
   postedPostsKeys,
 } from "./hooks/usePostedPostsQuery";
-export type { PostedPostsLoaderData } from "./hooks/usePostedPostsQuery";
+export type { PostedPostsLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";
 export {
   useDashboardQuery,
   useDashboardData,
   dashboardKeys,
 } from "./hooks/useDashboardQuery";
-export type { DashboardLoaderData } from "./hooks/useDashboardQuery";
+export type { DashboardLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";
 export {
   useScheduledPostsQuery,
   useScheduledPostsData,
   scheduledPostsKeys,
 } from "./hooks/useScheduledPostsQuery";
-export type { ScheduledPostsLoaderData } from "./hooks/useScheduledPostsQuery";
+export type { ScheduledPostsLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";
 export {
   useDraftsQuery,
   useDraftsData,
   draftsKeys,
 } from "./hooks/useDraftsQuery";
-export type { DraftsLoaderData } from "./hooks/useDraftsQuery";
+export type { DraftsLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";
 export {
   useCalendarQuery,
   useCalendarData,
   calendarKeys,
 } from "./hooks/useCalendarQuery";
-export type { CalendarLoaderData } from "./hooks/useCalendarQuery";
+export type { CalendarLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";
 export {
   useCalendarQueueQuery,
   useCalendarQueueData,
   calendarQueueKeys,
 } from "./hooks/useCalendarQueueQuery";
-export type { CalendarQueueLoaderData } from "./hooks/useCalendarQueueQuery";
+export type { CalendarQueueLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";
 export {
   useInvalidatePostQueries,
   useDeletePostMutation,
@@ -200,7 +200,7 @@ export {
   useRecyclablesData,
   recyclablesKeys,
 } from "./hooks/useRecyclablesQuery";
-export type { RecyclablesLoaderData } from "./hooks/useRecyclablesQuery";
+export type { RecyclablesLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";
 export { useDraftEditState } from "./hooks/useDraftEditState";
 export { useLongFormEditState } from "./hooks/useLongFormEditState";
 export { useNewLongFormState } from "./hooks/useNewLongFormState";

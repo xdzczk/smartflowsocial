@@ -15,7 +15,7 @@ import {
   deleteQueueType,
   hashTagPresetExistsForUser,
   updateQueueType,
-} from "~/models/user.server";
+} from "~/features/user";
 
 export async function handleQueueTypeAction(
   userId: string,

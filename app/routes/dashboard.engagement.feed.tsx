@@ -10,7 +10,10 @@ import {
   useEngagementData,
 } from "~/features/engagement";
 import { requireAnySubscription } from "~/features/payments";
-import { PostDetailsModal, type PostData } from "~/features/posts";
+import { PostDetailsModal } from "~/features/posts/ui";
+import { type PostData } from "~/features/posts/server";
+import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
+import { engagementLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
 async function loaderImpl({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
 
@@ -23,7 +26,8 @@ async function loaderImpl({ request }: LoaderFunctionArgs) {
 
   const data = await loadEngagementFeedData(userId, page, limit);
 
-  return json(data);
+  // Validate loader response with Zod schema
+  return json(validateLoaderResponse(data, engagementLoaderDataSchema));
 }
 
 export const loader = async (args: LoaderFunctionArgs) => {

@@ -38,7 +38,7 @@ import {
   getUserById,
   getQueueTypes,
   getHashTagPresetById,
-} from "~/models/user.server";
+} from "~/features/user";
 
 import { createActionFormData, TEST_USER_ID } from "../utils/test-helpers";
 
