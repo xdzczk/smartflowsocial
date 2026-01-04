@@ -17,13 +17,15 @@ export async function getBulkPostsDashboardData(userId: string) {
     getQueueTypes(userId),
   ]);
 
-  // Get "Default" preset tags for backward compatibility
-  const defaultPreset = hashTagPresetsRaw.find((p) => p.name === "Default");
-  const tags = defaultPreset?.tags ?? "";
-  const queueTypes = Array.isArray(queueTypesRaw) ? queueTypesRaw : [];
+  // Ensure hashTagPresetsRaw is an array before using array methods
   const hashTagPresets = Array.isArray(hashTagPresetsRaw)
     ? hashTagPresetsRaw
     : [];
+
+  // Get "Default" preset tags for backward compatibility
+  const defaultPreset = hashTagPresets.find((p) => p.name === "Default");
+  const tags = defaultPreset?.tags ?? "";
+  const queueTypes = Array.isArray(queueTypesRaw) ? queueTypesRaw : [];
 
   // Split tags string into array and sort alphabetically
   const tagsArray = tags

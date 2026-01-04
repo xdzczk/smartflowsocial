@@ -68,8 +68,9 @@ export function getPostStatsValue(
   key: string,
 ): number {
   if (key in stats && typeof stats[key as keyof PostStats] === "number") {
-    return stats[key as keyof PostStats] as number;
+    return stats[key as keyof PostStats];
   }
   return 0;
 }
+
 

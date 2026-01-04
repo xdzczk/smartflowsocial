@@ -14,7 +14,7 @@ vi.mock("~/models/asset.server", () => ({
   getAssets: vi.fn(),
 }));
 
-vi.mock("~/models/user.server", () => ({
+vi.mock("~/features/user", () => ({
   getScheduleInterval: vi.fn(),
   getQueueTypes: vi.fn(),
   getUserHashTagPresets: vi.fn(),
@@ -22,12 +22,12 @@ vi.mock("~/models/user.server", () => ({
 
 import { requireAnySubscription } from "~/features/payments/subscriptions.server";
 import { loadNewPostData } from "~/features/posts/services/newpost-loader.server";
-import { getAssets } from "~/models/asset.server";
 import {
   getScheduleInterval,
   getQueueTypes,
   getUserHashTagPresets,
 } from "~/features/user";
+import { getAssets } from "~/models/asset.server";
 
 import { TEST_USER_ID } from "../../../utils/test-helpers";
 
@@ -89,6 +89,7 @@ describe("New Post Loader", () => {
     );
   });
 });
+
 
 
 

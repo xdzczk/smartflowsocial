@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import type { LongFormPostType } from "~/features/posts/server";
 
 import type { PostFetcher } from "../types";
-import type { EditorJSBlock } from "../types/editorjs.types";
 import type { LongFormPostData } from "../types";
+import type { EditorJSBlock } from "../types/editorjs.types";
 
 // Helper to safely access formData from a fetcher
 function getFetcherFormData(
@@ -267,7 +267,7 @@ export default function LongFormListing({
     }
   }, [bulkDeleteFetcher.data]);
 
-  const getStatusBadge = (_post: LongFormPostType) => {
+  const getStatusBadge = (_post: LongFormPostType | LongFormPostData) => {
     if (type === "draft") {
       return (
         <div className="inline-flex rounded-full border border-transparent bg-orange-100 px-2 py-1 text-xs font-semibold leading-4 text-orange-900 dark:border-orange-900/75 dark:bg-orange-700/10 dark:text-orange-200">

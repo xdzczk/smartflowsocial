@@ -10,7 +10,7 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock all dependencies
-vi.mock("~/models/user.server", () => ({
+vi.mock("~/features/user", () => ({
   updateUserTimezone: vi.fn(),
   updateUserRelays: vi.fn(),
   updateGiveawayBlacklist: vi.fn(),
@@ -21,7 +21,6 @@ vi.mock("~/models/user.server", () => ({
   updateHashTagPreset: vi.fn(),
   deleteHashTagPreset: vi.fn(),
   hashTagPresetExistsForUser: vi.fn(),
-  getUserSubscription: vi.fn(),
 }));
 
 vi.mock("~/models/payment.server", () => ({
@@ -29,7 +28,6 @@ vi.mock("~/models/payment.server", () => ({
 }));
 
 import { handleSettingsAction } from "~/features/settings/settings-actions.server";
-import { getUserSubscription } from "~/models/payment.server";
 import {
   updateUserTimezone,
   updateUserRelays,
@@ -42,6 +40,7 @@ import {
   deleteHashTagPreset,
   hashTagPresetExistsForUser,
 } from "~/features/user";
+import { getUserSubscription } from "~/models/payment.server";
 
 import { createFormData, TEST_USER_ID } from "../utils/test-helpers";
 

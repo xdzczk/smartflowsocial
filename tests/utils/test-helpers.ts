@@ -85,3 +85,95 @@ export {
  * Note: TEST_USER_ID, TEST_POST_ID, TEST_LONGFORM_ID are exported from mock-helpers
  */
 export * from "./mock-helpers";
+
+/**
+ * Create a valid user object that matches userSchema
+ */
+export function createValidUserMock(overrides: Partial<{
+  id: string;
+  npub: string;
+  timezone: string | null;
+  scheduleInterval: (string | number)[];
+}> = {}): {
+  id: string;
+  npub: string;
+  createdAt: string;
+  updatedAt: string;
+  isEnabled: boolean;
+  timezone: string | null;
+  userRelays: string[];
+  giveawayBlackListed: string[];
+  uploadProvider: "S3" | "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR";
+  scheduleInterval: (string | number)[];
+  pendingParentRequests: string[];
+} {
+  return {
+    id: overrides.id ?? "user-123",
+    npub: overrides.npub ?? "npub123",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    isEnabled: true,
+    timezone: overrides.timezone ?? "UTC",
+    userRelays: [],
+    giveawayBlackListed: [],
+    uploadProvider: "S3",
+    scheduleInterval: overrides.scheduleInterval ?? [],
+    pendingParentRequests: [],
+  };
+}
+
+/**
+ * Create a minimal valid post DTO that matches postDTOSchema
+ */
+export function createValidPostDTOMock(overrides: Partial<{
+  id: string;
+  userId: string;
+  caption: string | null;
+  content: string | null;
+  postType: "IMAGE" | "CAROUSEL" | "TEXT" | "VIDEO";
+  status: "DRAFT" | "ACTIVE" | "SCHEDULED" | "PAUSED" | "POSTED" | "FAILED";
+  scheduledFor: string | null;
+  postedAt: string | null;
+}> = {}): {
+  id: string;
+  fileUrl: string[];
+  scheduledFor: string | null;
+  postedAt: string | null;
+  isPosted: boolean;
+  isScheduled: boolean;
+  postType: "IMAGE" | "CAROUSEL" | "TEXT" | "VIDEO";
+  repost: boolean;
+  isQuotedPost: boolean;
+  isRecyclable: boolean;
+  createdAt: string;
+  updatedAt: string;
+  draft: boolean;
+  status: "DRAFT" | "ACTIVE" | "SCHEDULED" | "PAUSED" | "POSTED" | "FAILED";
+  tags: string[];
+  manual_override: boolean;
+  userId: string;
+  caption: string | null;
+  content: string | null;
+} {
+  return {
+    id: overrides.id ?? "post-1",
+    fileUrl: [],
+    scheduledFor: overrides.scheduledFor ?? null,
+    postedAt: overrides.postedAt ?? null,
+    isPosted: false,
+    isScheduled: overrides.status === "SCHEDULED",
+    postType: overrides.postType ?? "TEXT",
+    repost: false,
+    isQuotedPost: false,
+    isRecyclable: false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    draft: overrides.status === "DRAFT",
+    status: overrides.status ?? "SCHEDULED",
+    tags: [],
+    manual_override: false,
+    userId: overrides.userId ?? "user-123",
+    caption: overrides.caption ?? null,
+    content: overrides.content ?? null,
+  };
+}

@@ -34,6 +34,8 @@ import { requireAnySubscription } from "~/features/payments/subscriptions.server
 import { getPostedDashboardData } from "~/features/posts/services/posted-posts.server";
 import { loader } from "~/routes/dashboard.posted";
 
+import { createValidUserMock, createValidPostDTOMock } from "../utils/test-helpers";
+
 describe("Posted Posts Loader Integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -46,10 +48,16 @@ describe("Posted Posts Loader Integration", () => {
     (getPostedDashboardData as ReturnType<typeof vi.fn>).mockResolvedValue({
       posts: [],
       longformPosts: [],
-      allContent: [],
-      user: { id: "user-123", timezone: "UTC" },
+      user: createValidUserMock(),
       queueTypes: [],
       selectedQueueType: "all",
+      pagination: {
+        total: 0,
+        pages: 0,
+        currentPage: 1,
+        limit: 50,
+      },
+      stats: {},
     });
   });
 
@@ -86,19 +94,24 @@ describe("Posted Posts Loader Integration", () => {
       expect(getPostedDashboardData).toHaveBeenCalled();
       expect(data).toHaveProperty("posts");
       expect(data).toHaveProperty("longformPosts");
-      expect(data).toHaveProperty("allContent");
       expect(data).toHaveProperty("user");
       expect(data).toHaveProperty("queueTypes");
     });
 
     it("should handle queue type parameter", async () => {
       const mockData = {
-        posts: [{ id: "1", caption: "Posted post", postedAt: new Date() }],
+        posts: [createValidPostDTOMock({ id: "1", caption: "Posted post", postedAt: new Date().toISOString() })],
         longformPosts: [],
-        allContent: [{ id: "1", caption: "Posted post", postedAt: new Date() }],
-        user: { id: "user-123", timezone: "UTC" },
+        user: createValidUserMock(),
         queueTypes: [{ id: "1", name: "Default" }],
         selectedQueueType: "posts",
+        pagination: {
+          total: 1,
+          pages: 1,
+          currentPage: 1,
+          limit: 50,
+        },
+        stats: {},
       };
 
       (getPostedDashboardData as ReturnType<typeof vi.fn>).mockResolvedValue(
@@ -147,28 +160,42 @@ describe("Posted Posts Loader Integration", () => {
     it("should return proper data structure with posted posts", async () => {
       const mockData = {
         posts: [
-          { id: "1", caption: "Post 1", postedAt: new Date("2024-01-01") },
-          { id: "2", caption: "Post 2", postedAt: new Date("2024-01-02") },
+          createValidPostDTOMock({ id: "1", caption: "Post 1", postedAt: new Date("2024-01-01").toISOString() }),
+          createValidPostDTOMock({ id: "2", caption: "Post 2", postedAt: new Date("2024-01-02").toISOString() }),
         ],
         longformPosts: [
           {
             id: "3",
             title: "Longform Post",
-            publishedAt: new Date("2024-01-03"),
+            summary: null,
+            content: null,
+            image: null,
+            scheduledFor: null,
+            isScheduled: false,
+            postedAt: null,
+            publishedAt: new Date("2024-01-03").toISOString(),
+            updatedAt: new Date("2024-01-03").toISOString(),
+            createdAt: new Date("2024-01-03").toISOString(),
+            isPublished: true,
+            draft: false,
+            status: "POSTED",
+            queueTypeId: null,
+            tags: [],
+            userId: "user-123",
+            hashTagPresetId: null,
+            queueType: null,
           },
         ],
-        allContent: [
-          { id: "1", caption: "Post 1", postedAt: new Date("2024-01-01") },
-          { id: "2", caption: "Post 2", postedAt: new Date("2024-01-02") },
-          {
-            id: "3",
-            title: "Longform Post",
-            publishedAt: new Date("2024-01-03"),
-          },
-        ],
-        user: { id: "user-123", timezone: "America/New_York" },
+        user: createValidUserMock({ timezone: "America/New_York" }),
         queueTypes: [{ id: "1", name: "Default", isEnabled: true }],
         selectedQueueType: "all",
+        pagination: {
+          total: 2,
+          pages: 1,
+          currentPage: 1,
+          limit: 50,
+        },
+        stats: {},
       };
 
       (getPostedDashboardData as ReturnType<typeof vi.fn>).mockResolvedValue(
@@ -204,14 +231,12 @@ describe("Posted Posts Loader Integration", () => {
       const longformPosts = Array.isArray(data.longformPosts)
         ? data.longformPosts
         : [];
-      const allContent = Array.isArray(data.allContent) ? data.allContent : [];
       const user =
         data.user && typeof data.user === "object" && !Array.isArray(data.user)
           ? (data.user as { timezone?: string })
           : {};
       expect(posts).toHaveLength(2);
       expect(longformPosts).toHaveLength(1);
-      expect(allContent).toHaveLength(3);
       expect(user).toHaveProperty("timezone", "America/New_York");
     });
 

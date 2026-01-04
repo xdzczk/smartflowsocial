@@ -14,7 +14,7 @@ vi.mock("~/models/post.queries.server", () => ({
   getScheduledPosts: vi.fn(),
 }));
 
-vi.mock("~/models/user.server", () => ({
+vi.mock("~/features/user", () => ({
   getUserById: vi.fn(),
   getQueueTypes: vi.fn(),
   getUserHashTagPresets: vi.fn(),
@@ -28,13 +28,13 @@ vi.mock("~/features/posts/services/combined.server", () => ({
 }));
 
 import { getScheduledDashboardData } from "~/features/posts/services/scheduled-posts.server";
-import { getScheduledLongFormPosts } from "~/models/longformpost.server";
-import { getScheduledPosts } from "~/models/post.queries.server";
 import {
   getUserById,
   getQueueTypes,
   getUserHashTagPresets,
 } from "~/features/user";
+import { getScheduledLongFormPosts } from "~/models/longformpost.server";
+import { getScheduledPosts } from "~/models/post.queries.server";
 
 import { TEST_USER_ID } from "../../utils/test-helpers";
 

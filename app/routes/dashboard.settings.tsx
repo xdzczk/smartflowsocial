@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { requireUserId } from "~/features/auth";
 import { MutedListSettings } from "~/features/engagement";
 import { GiveawayBlacklistSettings } from "~/features/giveaway";
-import type { ProfileData } from "~/features/nostr/types";
+import type { ProfileData as _ProfileData } from "~/features/nostr/types";
 import {
   NWCSettings,
   SubscriptionSettings,
@@ -15,15 +15,15 @@ import {
   requireAnySubscription,
 } from "~/features/payments";
 import {
-  HashtagPresetsSettings,
-  QueueTypesSettings,
-  ScheduleIntervalsSettings,
-} from "~/features/posts/ui";
-import {
   type HashTagPreset,
   type QueueType,
   convertJsonValueToScheduleConfig,
 } from "~/features/posts/server";
+import {
+  HashtagPresetsSettings,
+  QueueTypesSettings,
+  ScheduleIntervalsSettings,
+} from "~/features/posts/ui";
 import { handleSettingsAction } from "~/features/settings/settings-actions.server";
 import { loadSettingsData } from "~/features/settings/settings-loader.server";
 import {
@@ -31,14 +31,14 @@ import {
   UploadProviderSettings,
 } from "~/features/upload";
 import { AccountsSettings } from "~/features/user";
+import { withCSRFProtection } from "~/lib/csrf";
 import {
   validateSubscription,
   validateAvailablePlans,
   validatePaymentHistory,
   validateAccounts,
-  validateAccountChildren,
+  validateAccountChildren as _validateAccountChildren,
 } from "~/lib/validation/settings-loader.server";
-import { withCSRFProtection } from "~/lib/csrf";
 export async function loader({ request }: { request: Request }) {
   try {
     const userId = await requireUserId(request);

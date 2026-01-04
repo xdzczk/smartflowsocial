@@ -7,12 +7,12 @@
 import type { Prisma } from "@prisma/client";
 
 import { getUserById, getQueueTypes } from "~/features/user";
-import { getPublishedLongFormPosts } from "~/models/longformpost.server";
-import { getPostedPosts } from "~/models/post.queries.server";
 import {
   validateSignedEvent,
   validateNostrEvent,
 } from "~/lib/validation/nostr-events.server";
+import { getPublishedLongFormPosts } from "~/models/longformpost.server";
+import { getPostedPosts } from "~/models/post.queries.server";
 
 import {
   toPostDTOArray,

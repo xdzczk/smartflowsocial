@@ -5,13 +5,13 @@
 
 import { validateEvent } from "nostr-tools";
 
-import { AuthenticationError, ValidationError } from "~/lib/errors";
-import { safeRedirect } from "~/lib/remix-utils";
 import {
   createUser,
   getUserByNpub,
   updateUserProfile,
 } from "~/features/user";
+import { AuthenticationError, ValidationError } from "~/lib/errors";
+import { safeRedirect } from "~/lib/remix-utils";
 
 import { getCompleteProfile } from "../profile.server";
 import { createUserSession } from "../session.server";

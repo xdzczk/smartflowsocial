@@ -5,12 +5,12 @@
 
 import { describe, it, expect, vi } from "vitest";
 
-import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import {
   generateArticleIdentifier,
   convertEditorJSToMarkdown,
   convertMarkdownToEditorJS,
 } from "~/features/posts/utils/editorjs-conversion";
+import { nostrAdapter } from "~/lib/nostr-adapter.client";
 
 // Re-export for compatibility with tests
 const hexToNpub = nostrAdapter.encodeNpub.bind(nostrAdapter);

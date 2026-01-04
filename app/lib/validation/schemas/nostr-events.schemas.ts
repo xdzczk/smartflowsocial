@@ -34,3 +34,4 @@ export const signedEventSchema = z.object({
 export type NostrEvent = z.infer<typeof nostrEventSchema>;
 export type SignedEvent = z.infer<typeof signedEventSchema>;
 
+

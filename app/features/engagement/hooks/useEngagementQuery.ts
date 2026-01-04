@@ -7,15 +7,15 @@ import { useFetcher, useLoaderData } from "@remix-run/react";
 import { useSearchParams } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 
+import type { PostDTO } from "~/features/posts/dtos";
+import { fromPostDTOArray } from "~/features/posts/dtos";
+import type { PostData } from "~/features/posts/types";
 import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import {
   engagementLoaderDataSchema,
   type EngagementLoaderData,
 } from "~/lib/validation/schemas/loader-responses.schemas";
 
-import type { PostData } from "~/features/posts/types";
-import type { PostDTO } from "~/features/posts/dtos";
-import { fromPostDTOArray } from "~/features/posts/dtos";
 
 import type { EventStats, GroupedNotification } from "../types";
 
@@ -63,12 +63,12 @@ export function useEngagementQuery() {
                 engagementLoaderDataSchema,
               );
               if (validated) {
-                resolve(validated as EngagementLoaderData);
+                resolve(validated);
               } else {
                 reject(new Error("Invalid data received from fetcher"));
               }
             } else if (validatedLoaderData) {
-              resolve(validatedLoaderData as EngagementLoaderData);
+              resolve(validatedLoaderData);
             } else {
               reject(new Error("Invalid loader data"));
             }
@@ -93,15 +93,22 @@ export function useEngagementData() {
   const rawData = query.data;
 
   if (!rawData) {
+    const emptyPosts: PostData[] = [];
+    const emptyStats: Record<string, EventStats> = {};
+    const emptyGroupedNotifications: {
+      replies: GroupedNotification[];
+      quotes: GroupedNotification[];
+    } = {
+      replies: [],
+      quotes: [],
+    };
+    const emptyTrustScores: Record<string, number> = {};
     return {
-      posts: [] as PostData[],
-      stats: {} as Record<string, EventStats>,
+      posts: emptyPosts,
+      stats: emptyStats,
       user: null,
-      groupedNotifications: {
-        replies: [] as GroupedNotification[],
-        quotes: [] as GroupedNotification[],
-      },
-      trustScores: {} as Record<string, number>,
+      groupedNotifications: emptyGroupedNotifications,
+      trustScores: emptyTrustScores,
       isLoading: query.isLoading,
       rawData: null,
     };

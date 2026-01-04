@@ -17,6 +17,9 @@ type LoaderData = {
   user?: unknown;
   queueTypes?: unknown;
   error?: { message?: string };
+  scheduledLongFormPosts?: unknown;
+  pastPosts?: unknown;
+  pastLongFormPosts?: unknown;
 };
 
 // Mock client-side dependencies FIRST (before route import)
@@ -58,8 +61,20 @@ vi.mock("~/features/auth/session.server", () => ({
   requireUserId: vi.fn(),
 }));
 
+vi.mock("~/features/payments", () => ({
+  requireAnySubscription: vi.fn(),
+  requireFeatureAccess: vi.fn(),
+}));
+
+vi.mock("~/features/posts/services/calendar-loader.server", () => ({
+  loadCalendarQueueData: vi.fn(),
+}));
+
 vi.mock("~/models/post.queries.server", () => ({
   getScheduledPosts: vi.fn(),
+  getScheduledLongFormPosts: vi.fn(),
+  getPastPosts: vi.fn(),
+  getPastLongFormPosts: vi.fn(),
   getPostById: vi.fn(),
 }));
 
@@ -67,16 +82,18 @@ vi.mock("~/models/post.commands.server", () => ({
   reschedulePost: vi.fn(),
 }));
 
-vi.mock("~/models/user.server", () => ({
+vi.mock("~/features/user", () => ({
   getUserById: vi.fn(),
   getQueueTypes: vi.fn(),
 }));
 
 // Import after mocks are set up
 import { requireUserId } from "~/features/auth/session.server";
-import { getScheduledPosts } from "~/models/post.queries.server";
-import { getUserById, getQueueTypes } from "~/features/user";
+import { requireAnySubscription, requireFeatureAccess } from "~/features/payments";
+import { loadCalendarQueueData } from "~/features/posts/services/calendar-loader.server";
 import { loader } from "~/routes/dashboard.calendar.$queueType";
+
+import { createValidUserMock, createValidPostDTOMock } from "../utils/test-helpers";
 
 describe("Calendar Loader Integration", () => {
   beforeEach(() => {
@@ -84,23 +101,33 @@ describe("Calendar Loader Integration", () => {
 
     // Default mocks
     (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue("user-123");
-    (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-    (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
-      id: "user-123",
-      timezone: "UTC",
-      scheduleInterval: ["09:00", "12:00", "15:00"],
+    (requireAnySubscription as ReturnType<typeof vi.fn>).mockResolvedValue(
+      undefined,
+    );
+    (requireFeatureAccess as ReturnType<typeof vi.fn>).mockResolvedValue(
+      undefined,
+    );
+    (loadCalendarQueueData as ReturnType<typeof vi.fn>).mockResolvedValue({
+      scheduledPosts: [],
+      user: {
+        ...createValidUserMock({
+          timezone: "UTC",
+          scheduleInterval: ["4", "6", "8"],
+        }),
+        hashTagPresets: [],
+      },
+      queueTypes: [{ id: "1", name: "Default", isEnabled: true }],
+      selectedQueueType: "all",
+      scheduleIntervals: [4, 6, 8],
     });
-    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([
-      { id: "1", name: "Default", isEnabled: true },
-    ]);
   });
 
   describe("Calendar Loader", () => {
     it("should load calendar data for authenticated user", async () => {
-      const request = new Request("http://localhost:3000/dashboard/calendar");
+      const request = new Request("http://localhost:3000/dashboard/calendar/all");
       const loaderArgs: LoaderFunctionArgs = {
         request,
-        params: {},
+        params: { queueType: "all" },
         context: {},
       };
       const response = await loader(loaderArgs);
@@ -116,25 +143,29 @@ describe("Calendar Loader Integration", () => {
 
       expect(responseObj.status).toBe(200);
       expect(requireUserId).toHaveBeenCalledWith(request);
-      expect(getScheduledPosts).toHaveBeenCalledWith({ userId: "user-123" });
-      expect(getUserById).toHaveBeenCalledWith("user-123");
-      expect(getQueueTypes).toHaveBeenCalledWith("user-123");
+      expect(loadCalendarQueueData).toHaveBeenCalledWith("user-123", "all");
       expect(data).toHaveProperty("scheduledPosts");
       expect(data).toHaveProperty("user");
       expect(data).toHaveProperty("queueTypes");
       expect(data).toHaveProperty("selectedQueueType");
       expect(data).toHaveProperty("scheduleIntervals");
+      expect(data.selectedQueueType).toBe("all");
     });
 
     it("should handle queue type parameter", async () => {
-      const mockPosts = [
-        { id: "1", caption: "Post 1", queueType: { name: "posts" } },
-        { id: "2", caption: "Post 2", queueType: { name: "posts" } },
-      ];
-
-      (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPosts,
-      );
+      (loadCalendarQueueData as ReturnType<typeof vi.fn>).mockResolvedValue({
+        scheduledPosts: [
+          createValidPostDTOMock({ id: "1", caption: "Post 1" }),
+          createValidPostDTOMock({ id: "2", caption: "Post 2" }),
+        ],
+        user: {
+          ...createValidUserMock(),
+          hashTagPresets: [],
+        },
+        queueTypes: [{ id: "1", name: "Default", isEnabled: true }],
+        selectedQueueType: "posts",
+        scheduleIntervals: [4, 6, 8],
+      });
 
       const request = new Request(
         "http://localhost:3000/dashboard/calendar/posts",
@@ -142,6 +173,7 @@ describe("Calendar Loader Integration", () => {
       const response = await loader({
         request,
         params: { queueType: "posts" },
+        context: {},
       } as unknown as LoaderFunctionArgs);
       const responseObj =
         response instanceof Response
@@ -160,20 +192,25 @@ describe("Calendar Loader Integration", () => {
         ? data.scheduledPosts
         : [];
 
+      expect(loadCalendarQueueData).toHaveBeenCalledWith("user-123", "posts");
       expect(selectedQueueType).toBe("posts");
       expect(scheduledPosts).toHaveLength(2);
     });
 
     it("should filter posts by queue type when specified", async () => {
-      const allPosts = [
-        { id: "1", caption: "Post 1", queueType: { name: "posts" } },
-        { id: "2", caption: "Post 2", queueType: { name: "marketing" } },
-        { id: "3", caption: "Post 3", queueType: { name: "posts" } },
-      ];
-
-      (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-        allPosts,
-      );
+      (loadCalendarQueueData as ReturnType<typeof vi.fn>).mockResolvedValue({
+        scheduledPosts: [
+          createValidPostDTOMock({ id: "1", caption: "Post 1" }),
+          createValidPostDTOMock({ id: "3", caption: "Post 3" }),
+        ],
+        user: {
+          ...createValidUserMock(),
+          hashTagPresets: [],
+        },
+        queueTypes: [{ id: "1", name: "Default", isEnabled: true }],
+        selectedQueueType: "posts",
+        scheduleIntervals: [4, 6, 8],
+      });
 
       const request = new Request(
         "http://localhost:3000/dashboard/calendar/posts",
@@ -181,6 +218,7 @@ describe("Calendar Loader Integration", () => {
       const response = await loader({
         request,
         params: { queueType: "posts" },
+        context: {},
       } as unknown as LoaderFunctionArgs);
       const responseObj =
         response instanceof Response
@@ -195,31 +233,30 @@ describe("Calendar Loader Integration", () => {
         ? data.scheduledPosts
         : [];
 
-      // Should filter to only posts with queueType "posts"
-      const filteredPosts = scheduledPosts.filter((post: unknown) => {
-        if (post && typeof post === "object" && !Array.isArray(post)) {
-          const p = post as { queueType?: { name?: string } };
-          return p.queueType?.name === "posts";
-        }
-        return false;
-      });
-      expect(filteredPosts.length).toBeGreaterThan(0);
+      expect(loadCalendarQueueData).toHaveBeenCalledWith("user-123", "posts");
+      expect(scheduledPosts.length).toBeGreaterThan(0);
     });
 
     it("should return all posts when queueType is 'all'", async () => {
-      const allPosts = [
-        { id: "1", caption: "Post 1", queueType: { name: "posts" } },
-        { id: "2", caption: "Post 2", queueType: { name: "marketing" } },
-      ];
-
-      (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-        allPosts,
-      );
+      (loadCalendarQueueData as ReturnType<typeof vi.fn>).mockResolvedValue({
+        scheduledPosts: [
+          createValidPostDTOMock({ id: "1", caption: "Post 1" }),
+          createValidPostDTOMock({ id: "2", caption: "Post 2" }),
+        ],
+        user: {
+          ...createValidUserMock(),
+          hashTagPresets: [],
+        },
+        queueTypes: [{ id: "1", name: "Default", isEnabled: true }],
+        selectedQueueType: "all",
+        scheduleIntervals: [4, 6, 8],
+      });
 
       const request = new Request("http://localhost:3000/dashboard/calendar");
       const response = await loader({
         request,
         params: { queueType: "all" },
+        context: {},
       } as unknown as LoaderFunctionArgs);
       const responseObj =
         response instanceof Response
@@ -238,25 +275,32 @@ describe("Calendar Loader Integration", () => {
         ? data.scheduledPosts
         : [];
 
+      expect(loadCalendarQueueData).toHaveBeenCalledWith("user-123", "all");
       expect(selectedQueueType).toBe("all");
       expect(scheduledPosts).toHaveLength(2);
     });
 
     it("should include schedule intervals from user", async () => {
-      const userWithIntervals = {
-        id: "user-123",
+      const userWithIntervals = createValidUserMock({
         timezone: "America/New_York",
-        scheduleInterval: ["08:00", "12:00", "16:00", "20:00"],
-      };
+        scheduleInterval: ["4", "6", "8", "12"],
+      });
 
-      (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(
-        userWithIntervals,
-      );
+      (loadCalendarQueueData as ReturnType<typeof vi.fn>).mockResolvedValue({
+        scheduledPosts: [],
+        user: {
+          ...userWithIntervals,
+          hashTagPresets: [],
+        },
+        queueTypes: [{ id: "1", name: "Default", isEnabled: true }],
+        selectedQueueType: "posts",
+        scheduleIntervals: [4, 6, 8, 12],
+      });
 
-      const request = new Request("http://localhost:3000/dashboard/calendar");
+      const request = new Request("http://localhost:3000/dashboard/calendar/posts");
       const loaderArgs: LoaderFunctionArgs = {
         request,
-        params: {},
+        params: { queueType: "posts" },
         context: {},
       };
       const response = await loader(loaderArgs);
@@ -277,20 +321,24 @@ describe("Calendar Loader Integration", () => {
           ? (data.user as { timezone?: string })
           : {};
 
-      expect(scheduleIntervals).toEqual(["08:00", "12:00", "16:00", "20:00"]);
+      expect(scheduleIntervals).toEqual([4, 6, 8, 12]);
       expect(user).toHaveProperty("timezone", "America/New_York");
     });
 
     it("should filter queue types to only enabled ones", async () => {
-      const mockQueueTypes = [
-        { id: "1", name: "Default", isEnabled: true },
-        { id: "2", name: "Disabled", isEnabled: false },
-        { id: "3", name: "Marketing", isEnabled: true },
-      ];
-
-      (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockQueueTypes,
-      );
+      (loadCalendarQueueData as ReturnType<typeof vi.fn>).mockResolvedValue({
+        scheduledPosts: [],
+        user: {
+          ...createValidUserMock(),
+          hashTagPresets: [],
+        },
+        queueTypes: [
+          { id: "1", name: "Default", isEnabled: true },
+          { id: "3", name: "Marketing", isEnabled: true },
+        ],
+        selectedQueueType: "all",
+        scheduleIntervals: [4, 6, 8],
+      });
 
       const request = new Request("http://localhost:3000/dashboard/calendar");
       const loaderArgs: LoaderFunctionArgs = {
@@ -357,7 +405,7 @@ describe("Calendar Loader Integration", () => {
     });
 
     it("should handle data loading errors", async () => {
-      (getScheduledPosts as ReturnType<typeof vi.fn>).mockRejectedValue(
+      (loadCalendarQueueData as ReturnType<typeof vi.fn>).mockRejectedValue(
         new Error("Database error"),
       );
 

@@ -38,7 +38,8 @@ export const subscriptionSchema = z.object({
       enableLifetimeAccess: z.boolean(),
     })
     .nullable()
-    .optional(),
+    .optional()
+    .transform((val) => val ?? null),
 }).nullable();
 
 /**
@@ -58,14 +59,14 @@ export const paymentHistoryItemSchema = z.object({
   id: z.string(),
   amount: z.number(),
   amountUsd: z.preprocess((val) => val ?? null, z.number().nullable()),
-  description: z.string().nullable().optional(),
+  description: z.string().nullish().transform(val => val ?? null),
   paidAt: z.preprocess((val) => {
     if (val === null || val === undefined) return null;
     if (val instanceof Date) return val;
     if (typeof val === "string") return new Date(val);
     return val;
   }, z.date().nullable()),
-  paymentMethod: z.string().nullable().optional(),
+  paymentMethod: z.string().nullish().transform(val => val ?? null),
   paymentHash: z.string(),
   planName: z.string().optional(),
   planPrice: z.number().optional(),

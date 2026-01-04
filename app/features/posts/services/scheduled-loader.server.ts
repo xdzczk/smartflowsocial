@@ -3,15 +3,19 @@
  * Centralized data fetching for scheduled posts page
  */
 
-import { getScheduledLongFormPosts } from "~/models/longformpost.server";
-import { getScheduledPosts } from "~/models/post.queries.server";
 import {
   getUserById,
   getQueueTypes,
   getUserHashTagPresets,
 } from "~/features/user";
+import {
+  validateSignedEvent,
+  validateNostrEvent,
+} from "~/lib/validation/nostr-events.server";
+import { getScheduledLongFormPosts } from "~/models/longformpost.server";
+import { getScheduledPosts } from "~/models/post.queries.server";
 
-import { combineContent } from "../combined.server";
+import { combineContent as _combineContent } from "../combined.server";
 import {
   toPostDTOArray,
   toLongFormPostDTOArray,
@@ -20,10 +24,7 @@ import {
 } from "../dtos";
 import type { PostData, LongFormPostData } from "../types";
 import { convertPrismaQueueTypeToQueueType } from "../types";
-import {
-  validateSignedEvent,
-  validateNostrEvent,
-} from "~/lib/validation/nostr-events.server";
+
 
 import { filterPostsByQueueType } from "./post-filtering.server";
 

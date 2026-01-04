@@ -7,6 +7,12 @@ import {
   requireAnySubscription,
 } from "~/features/payments";
 import {
+  getRecyclableDashboardData,
+  handleRecyclablePostAction,
+  type PostData,
+  type CombinedContent,
+} from "~/features/posts/server";
+import {
   PostDetailsModal,
   RecyclablesBulkActions,
   RecyclablesPagination,
@@ -18,15 +24,9 @@ import {
   useRecyclablesData,
   type IndividualRepostFetcherData,
 } from "~/features/posts/ui";
-import {
-  getRecyclableDashboardData,
-  handleRecyclablePostAction,
-  type PostData,
-  type CombinedContent,
-} from "~/features/posts/server";
+import { withCSRFProtection } from "~/lib/csrf";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import { recyclablesLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
-import { withCSRFProtection } from "~/lib/csrf";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
@@ -237,7 +237,7 @@ export default function RecyclablesPosts() {
 
       {selectedPost ? (
         <PostDetailsModal
-          post={selectedPost}
+          post={selectedPost as unknown as PostData | CombinedContent}
           stats={(() => {
             const eventId =
               selectedPost &&

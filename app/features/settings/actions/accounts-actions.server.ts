@@ -4,6 +4,15 @@
 
 import { json } from "@remix-run/node";
 
+import {
+  getUserBasicInfo,
+  searchUsersByProfileName,
+  requestChildLink,
+  cancelChildLinkRequest,
+  unlinkParent,
+  unlinkChildByParent,
+  getUserIdByNpub,
+} from "~/features/user";
 import { logWarning } from "~/lib/error-logger.server";
 import {
   searchAccountsSchema,
@@ -16,15 +25,6 @@ import {
   updateUserSubscription,
   getUserSubscription,
 } from "~/models/payment.server";
-import {
-  getUserBasicInfo,
-  searchUsersByProfileName,
-  requestChildLink,
-  cancelChildLinkRequest,
-  unlinkParent,
-  unlinkChildByParent,
-  getUserIdByNpub,
-} from "~/features/user";
 
 export async function handleAccountsAction(
   userId: string,

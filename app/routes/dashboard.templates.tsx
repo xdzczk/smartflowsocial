@@ -9,7 +9,7 @@ import {
   AssetPagination,
   AssetsTab,
   UploadTab,
-  type Asset,
+  type Asset as _Asset,
 } from "~/features/assets";
 import { requireUserId } from "~/features/auth";
 import {
@@ -26,9 +26,9 @@ import {
   handleTemplatesAction,
   loadTemplatesData,
 } from "~/features/templates";
+import { withCSRFProtection } from "~/lib/csrf";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import { templatesLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
-import { withCSRFProtection } from "~/lib/csrf";
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
 

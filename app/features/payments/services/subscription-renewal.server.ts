@@ -6,6 +6,10 @@
 import { NWCClient } from "@getalby/sdk";
 import { LN, USD } from "@getalby/sdk/lnclient";
 
+import {
+  disableUserAccount,
+  getEnabledUsersWithSubscriptions,
+} from "~/features/user";
 import { decrypt } from "~/lib/encryption.server";
 import { createErrorResponse } from "~/lib/error-handler.server";
 import { normalizeError } from "~/lib/errors";
@@ -14,10 +18,6 @@ import {
   createRenewalPayment,
   updateUserSubscription,
 } from "~/models/payment.server";
-import {
-  disableUserAccount,
-  getEnabledUsersWithSubscriptions,
-} from "~/features/user";
 
 import { getBitcoinRate } from "../btc.rate";
 

@@ -3,12 +3,12 @@
  * Centralized data fetching for draft edit page
  */
 
-import { getPostById } from "~/models/post.queries.server";
 import {
   getUserById,
   getQueueTypes,
   getUserHashTagPresets,
 } from "~/features/user";
+import { getPostById } from "~/models/post.queries.server";
 
 import { toPostDTO, type PostDTO } from "../dtos";
 import type { PostData } from "../types";

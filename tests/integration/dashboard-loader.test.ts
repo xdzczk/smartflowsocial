@@ -34,6 +34,8 @@ import { requireFeatureAccess } from "~/features/payments/subscriptions.server";
 import { loadDashboardData } from "~/features/posts/services/dashboard-loader.server";
 import { loader } from "~/routes/dashboard._index";
 
+import { createValidUserMock, createValidPostDTOMock } from "../utils/test-helpers";
+
 describe("Dashboard Loader Integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -46,10 +48,15 @@ describe("Dashboard Loader Integration", () => {
     (loadDashboardData as ReturnType<typeof vi.fn>).mockResolvedValue({
       scheduledPosts: [],
       longformPosts: [],
-      allContent: [],
-      user: { id: "user-123", timezone: "UTC" },
+      user: createValidUserMock(),
       queueTypes: [],
       hashTagPresets: [],
+      postStatistics: {
+        totalScheduled: 0,
+        totalDrafts: 0,
+        totalPosted: 0,
+      },
+      selectedQueueType: "all",
     });
   });
 
@@ -77,7 +84,6 @@ describe("Dashboard Loader Integration", () => {
       expect(loadDashboardData).toHaveBeenCalledWith("user-123", "all");
       expect(data).toHaveProperty("scheduledPosts");
       expect(data).toHaveProperty("longformPosts");
-      expect(data).toHaveProperty("allContent");
       expect(data).toHaveProperty("user");
       expect(data).toHaveProperty("queueTypes");
     });
@@ -143,12 +149,16 @@ describe("Dashboard Loader Integration", () => {
 
     it("should return proper data structure", async () => {
       const mockData = {
-        scheduledPosts: [{ id: "1", caption: "Test post" }],
+        scheduledPosts: [createValidPostDTOMock({ id: "1", caption: "Test post" })],
         longformPosts: [],
-        allContent: [{ id: "1", caption: "Test post" }],
-        user: { id: "user-123", timezone: "America/New_York" },
-        queueTypes: [{ id: "1", name: "Default" }],
+        user: createValidUserMock({ timezone: "America/New_York" }),
+        queueTypes: [{ id: "1", name: "Default", isEnabled: true }],
         hashTagPresets: [],
+        postStatistics: {
+          totalScheduled: 1,
+          totalDrafts: 0,
+          totalPosted: 0,
+        },
       };
 
       (loadDashboardData as ReturnType<typeof vi.fn>).mockResolvedValue(

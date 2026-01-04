@@ -47,3 +47,4 @@ psql -d your_database -f scripts/VERIFY_INDEXES.sql
 
 
 
+

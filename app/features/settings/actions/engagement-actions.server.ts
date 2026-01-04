@@ -6,16 +6,16 @@ import { json } from "@remix-run/node";
 
 import { fetchMutedList } from "~/features/engagement/mutedList.server";
 import {
-  toggleFilterMutedSchema,
-  toggleHideLowTrustSchema,
-  validateFormDataOrRespond,
-} from "~/lib/validation";
-import {
   getUserBasicInfo,
   updateUserFilterMuted,
   updateUserHidePostsFromLowTrustUsers as updateUserHideLowTrust,
   updateUserMutedList,
 } from "~/features/user";
+import {
+  toggleFilterMutedSchema,
+  toggleHideLowTrustSchema,
+  validateFormDataOrRespond,
+} from "~/lib/validation";
 
 export async function handleEngagementAction(
   userId: string,

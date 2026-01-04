@@ -38,6 +38,8 @@ import {
 import { loadDraftsData } from "~/features/posts/services/drafts-loader.server";
 import { loader } from "~/routes/dashboard.drafts";
 
+import { createValidUserMock, createValidPostDTOMock } from "../utils/test-helpers";
+
 describe("Drafts Loader Integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -53,11 +55,9 @@ describe("Drafts Loader Integration", () => {
     (loadDraftsData as ReturnType<typeof vi.fn>).mockResolvedValue({
       posts: [],
       longformPosts: [],
-      allContent: [],
-      user: { id: "user-123", timezone: "UTC" },
+      user: createValidUserMock(),
       queueTypes: [],
       selectedQueueType: "all",
-      hashTagPresets: [],
     });
   });
 
@@ -95,20 +95,17 @@ describe("Drafts Loader Integration", () => {
       expect(loadDraftsData).toHaveBeenCalledWith("user-123", "all");
       expect(data).toHaveProperty("posts");
       expect(data).toHaveProperty("longformPosts");
-      expect(data).toHaveProperty("allContent");
       expect(data).toHaveProperty("user");
       expect(data).toHaveProperty("queueTypes");
     });
 
     it("should handle queue type parameter", async () => {
       const mockData = {
-        posts: [{ id: "1", caption: "Draft post" }],
+        posts: [createValidPostDTOMock({ id: "1", caption: "Draft post", status: "DRAFT" })],
         longformPosts: [],
-        allContent: [{ id: "1", caption: "Draft post" }],
-        user: { id: "user-123", timezone: "UTC" },
+        user: createValidUserMock(),
         queueTypes: [{ id: "1", name: "Default" }],
         selectedQueueType: "posts",
-        hashTagPresets: [],
       };
 
       (loadDraftsData as ReturnType<typeof vi.fn>).mockResolvedValue(mockData);
@@ -117,6 +114,7 @@ describe("Drafts Loader Integration", () => {
       const response = await loader({
         request,
         params: { queueType: "posts" },
+        context: {},
       } as unknown as LoaderFunctionArgs);
       const responseObj =
         response instanceof Response
@@ -149,19 +147,33 @@ describe("Drafts Loader Integration", () => {
     it("should return proper data structure with drafts", async () => {
       const mockData = {
         posts: [
-          { id: "1", caption: "Draft 1", isDraft: true },
-          { id: "2", caption: "Draft 2", isDraft: true },
+          createValidPostDTOMock({ id: "1", caption: "Draft 1", status: "DRAFT" }),
+          createValidPostDTOMock({ id: "2", caption: "Draft 2", status: "DRAFT" }),
         ],
-        longformPosts: [{ id: "3", title: "Longform Draft", isDraft: true }],
-        allContent: [
-          { id: "1", caption: "Draft 1", isDraft: true },
-          { id: "2", caption: "Draft 2", isDraft: true },
-          { id: "3", title: "Longform Draft", isDraft: true },
-        ],
-        user: { id: "user-123", timezone: "America/New_York" },
+        longformPosts: [{
+          id: "3",
+          title: "Longform Draft",
+          summary: null,
+          content: null,
+          image: null,
+          scheduledFor: null,
+          isScheduled: false,
+          postedAt: null,
+          publishedAt: null,
+          updatedAt: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          isPublished: false,
+          draft: true,
+          status: "DRAFT",
+          queueTypeId: null,
+          tags: [],
+          userId: "user-123",
+          hashTagPresetId: null,
+          queueType: null,
+        }],
+        user: createValidUserMock({ timezone: "America/New_York" }),
         queueTypes: [{ id: "1", name: "Default", isEnabled: true }],
         selectedQueueType: "all",
-        hashTagPresets: [],
       };
 
       (loadDraftsData as ReturnType<typeof vi.fn>).mockResolvedValue(mockData);
@@ -195,14 +207,12 @@ describe("Drafts Loader Integration", () => {
       const longformPosts = Array.isArray(data.longformPosts)
         ? data.longformPosts
         : [];
-      const allContent = Array.isArray(data.allContent) ? data.allContent : [];
       const user =
         data.user && typeof data.user === "object" && !Array.isArray(data.user)
           ? (data.user as { timezone?: string })
           : {};
       expect(posts).toHaveLength(2);
       expect(longformPosts).toHaveLength(1);
-      expect(allContent).toHaveLength(3);
       expect(user).toHaveProperty("timezone", "America/New_York");
     });
   });

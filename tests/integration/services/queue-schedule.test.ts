@@ -6,7 +6,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock dependencies
-vi.mock("~/models/user.server", () => ({
+vi.mock("~/features/user", () => ({
   getQueueTypes: vi.fn(),
   getUserTimezone: vi.fn(),
   getQueueTypeByIdForUser: vi.fn(),
@@ -25,12 +25,12 @@ import {
   calculateQueueScheduleTime,
   parseQueueScheduleRequest,
 } from "~/features/posts/services/queue-schedule.server";
-import { NotFoundError, ValidationError } from "~/lib/errors";
 import {
   getQueueTypes,
   getUserTimezone,
   getQueueTypeByIdForUser,
 } from "~/features/user";
+import { NotFoundError, ValidationError } from "~/lib/errors";
 
 import { TEST_USER_ID } from "../../utils/test-helpers";
 

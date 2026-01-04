@@ -48,7 +48,7 @@ vi.mock("~/models/longformpost.server", () => ({
   createLongFormPost: vi.fn(),
 }));
 
-vi.mock("~/models/user.server", () => ({
+vi.mock("~/features/user", () => ({
   getUserById: vi.fn(),
   getQueueTypes: vi.fn(),
   getHashTagPresetById: vi.fn(),
@@ -128,13 +128,13 @@ vi.mock("@remix-run/node", async () => {
 
 import { handleNewLongFormAction } from "~/features/posts/services/newlongform-action.server";
 import { uploadBufferToS3 } from "~/features/upload/s3.server";
-import { createLongFormPost } from "~/models/longformpost.server";
 import {
   getUserById,
   getQueueTypes,
   getHashTagPresetById,
   getQueueTypeByNameForUser,
 } from "~/features/user";
+import { createLongFormPost } from "~/models/longformpost.server";
 
 import {
   TEST_USER_ID,

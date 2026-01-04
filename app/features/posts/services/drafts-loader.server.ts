@@ -3,15 +3,15 @@
  * Centralized data fetching for drafts page
  */
 
-import { getDraftLongFormPosts } from "~/models/longformpost.server";
-import { getDraftPosts } from "~/models/post.queries.server";
 import { getUserById, getQueueTypes } from "~/features/user";
 import {
   validateSignedEvent,
   validateNostrEvent,
 } from "~/lib/validation/nostr-events.server";
+import { getDraftLongFormPosts } from "~/models/longformpost.server";
+import { getDraftPosts } from "~/models/post.queries.server";
 
-import { combineContent } from "../combined.server";
+import { combineContent as _combineContent } from "../combined.server";
 import {
   toPostDTOArray,
   toLongFormPostDTOArray,

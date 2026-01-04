@@ -38,6 +38,8 @@ import {
 import { loadScheduledData } from "~/features/posts/services/scheduled-loader.server";
 import { loader } from "~/routes/dashboard.scheduled";
 
+import { createValidUserMock, createValidPostDTOMock } from "../utils/test-helpers";
+
 describe("Scheduled Posts Loader Integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -53,8 +55,7 @@ describe("Scheduled Posts Loader Integration", () => {
     (loadScheduledData as ReturnType<typeof vi.fn>).mockResolvedValue({
       posts: [],
       longformPosts: [],
-      allContent: [],
-      user: { id: "user-123", timezone: "UTC" },
+      user: createValidUserMock(),
       queueTypes: [],
       selectedQueueType: "all",
       hashTagPresets: [],
@@ -98,17 +99,15 @@ describe("Scheduled Posts Loader Integration", () => {
       expect(loadScheduledData).toHaveBeenCalledWith("user-123", "all");
       expect(data).toHaveProperty("posts");
       expect(data).toHaveProperty("longformPosts");
-      expect(data).toHaveProperty("allContent");
       expect(data).toHaveProperty("user");
       expect(data).toHaveProperty("queueTypes");
     });
 
     it("should handle queue type parameter", async () => {
       const mockData = {
-        posts: [{ id: "1", caption: "Test post" }],
+        posts: [createValidPostDTOMock({ id: "1", caption: "Test post" })],
         longformPosts: [],
-        allContent: [{ id: "1", caption: "Test post" }],
-        user: { id: "user-123", timezone: "UTC" },
+        user: createValidUserMock(),
         queueTypes: [{ id: "1", name: "Default" }],
         selectedQueueType: "posts",
         hashTagPresets: [],
@@ -149,15 +148,11 @@ describe("Scheduled Posts Loader Integration", () => {
     it("should return proper data structure with posts", async () => {
       const mockData = {
         posts: [
-          { id: "1", caption: "Post 1", scheduledFor: new Date() },
-          { id: "2", caption: "Post 2", scheduledFor: new Date() },
+          createValidPostDTOMock({ id: "1", caption: "Post 1", scheduledFor: new Date().toISOString() }),
+          createValidPostDTOMock({ id: "2", caption: "Post 2", scheduledFor: new Date().toISOString() }),
         ],
         longformPosts: [],
-        allContent: [
-          { id: "1", caption: "Post 1", scheduledFor: new Date() },
-          { id: "2", caption: "Post 2", scheduledFor: new Date() },
-        ],
-        user: { id: "user-123", timezone: "America/New_York" },
+        user: createValidUserMock({ timezone: "America/New_York" }),
         queueTypes: [
           { id: "1", name: "Default", isEnabled: true },
           { id: "2", name: "Marketing", isEnabled: true },
@@ -196,7 +191,7 @@ describe("Scheduled Posts Loader Integration", () => {
           : {};
 
       expect(data.posts).toHaveLength(2);
-      expect(data.allContent).toHaveLength(2);
+      expect(data.longformPosts).toHaveLength(0);
       expect(data.queueTypes).toHaveLength(2);
       expect(data.user).toHaveProperty("timezone", "America/New_York");
     });
@@ -205,8 +200,7 @@ describe("Scheduled Posts Loader Integration", () => {
       const mockData = {
         posts: [],
         longformPosts: [],
-        allContent: [],
-        user: { id: "user-123", timezone: "UTC" },
+        user: createValidUserMock(),
         queueTypes: [
           { id: "1", name: "Default", isEnabled: true },
           { id: "2", name: "Disabled", isEnabled: false },

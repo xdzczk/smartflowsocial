@@ -12,22 +12,23 @@ import {
   calendarLoaderDataSchema,
   type CalendarLoaderData,
 } from "~/lib/validation/schemas/loader-responses.schemas";
+import { validateUserData } from "~/lib/validation/user-data.server";
 
+import { combineContent } from "../combined.client";
 import type { PostDTO, LongFormPostDTO } from "../dtos";
 import {
   fromPostDTOArray,
   fromLongFormPostDTOArray,
 } from "../dtos";
-import { combineContent } from "../combined.client";
 import type {
   PostData,
   LongFormPostData,
-  CombinedContent,
+  CombinedContent as _CombinedContent,
   QueueType,
   UserData,
 } from "../types";
 import { convertJsonValueToScheduleConfig } from "../types";
-import { validateUserData } from "~/lib/validation/user-data.server";
+
 
 /**
  * Query key factory for calendar
@@ -72,12 +73,12 @@ export function useCalendarQuery() {
                 calendarLoaderDataSchema,
               );
               if (validated) {
-                resolve(validated as CalendarLoaderData);
+                resolve(validated);
               } else {
                 reject(new Error("Invalid data received from fetcher"));
               }
             } else if (validatedLoaderData) {
-              resolve(validatedLoaderData as CalendarLoaderData);
+              resolve(validatedLoaderData);
             } else {
               reject(new Error("Invalid loader data"));
             }

@@ -13,12 +13,12 @@ import {
   type DraftsLoaderData,
 } from "~/lib/validation/schemas/loader-responses.schemas";
 
+import { combineContent } from "../combined.client";
 import type { PostDTO, LongFormPostDTO } from "../dtos";
 import {
   fromPostDTOArray,
   fromLongFormPostDTOArray,
 } from "../dtos";
-import { combineContent } from "../combined.client";
 import type {
   PostData,
   LongFormPostData,
@@ -71,12 +71,12 @@ export function useDraftsQuery() {
                 draftsLoaderDataSchema,
               );
               if (validated) {
-                resolve(validated as DraftsLoaderData);
+                resolve(validated);
               } else {
                 reject(new Error("Invalid data received from fetcher"));
               }
             } else if (validatedLoaderData) {
-              resolve(validatedLoaderData as DraftsLoaderData);
+              resolve(validatedLoaderData);
             } else {
               reject(new Error("Invalid loader data"));
             }

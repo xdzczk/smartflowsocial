@@ -3,11 +3,6 @@
  * Centralized data fetching for dashboard index page
  */
 
-import { getScheduledLongFormPosts } from "~/models/longformpost.server";
-import {
-  getScheduledPosts,
-  getPostStatistics,
-} from "~/models/post.queries.server";
 import {
   getUserById,
   getQueueTypes,
@@ -17,8 +12,13 @@ import {
   validateSignedEvent,
   validateNostrEvent,
 } from "~/lib/validation/nostr-events.server";
+import { getScheduledLongFormPosts } from "~/models/longformpost.server";
+import {
+  getScheduledPosts,
+  getPostStatistics,
+} from "~/models/post.queries.server";
 
-import { combineContent } from "../combined.server";
+import { combineContent as _combineContent } from "../combined.server";
 import {
   toPostDTOArray,
   toLongFormPostDTOArray,

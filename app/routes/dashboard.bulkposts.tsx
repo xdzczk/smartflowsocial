@@ -8,12 +8,6 @@ import Toast from "~/components/ui/Toast";
 import { requireUserId } from "~/features/auth";
 import { requireFeatureAccess } from "~/features/payments";
 import {
-  BulkPostsActionButtons,
-  BulkPostsTable,
-  BulkPostsUploadArea,
-  PostConfirmation,
-} from "~/features/posts/ui";
-import {
   getBulkPostsDashboardData,
   type BulkPost,
   type QueueType,
@@ -36,6 +30,12 @@ import {
   handleQueueTypeChange as handleQueueTypeChangeHandler,
   handleBulkQueueUpdate as handleBulkQueueUpdateHandler,
 } from "~/features/posts/server";
+import {
+  BulkPostsActionButtons,
+  BulkPostsTable,
+  BulkPostsUploadArea,
+  PostConfirmation,
+} from "~/features/posts/ui";
 import { useBulkPostEvents } from "~/features/posts/useBulkPostEvents";
 import { useBulkPostsState } from "~/features/posts/useBulkPostsState";
 import { useOptionalUser } from "~/lib/remix-utils";

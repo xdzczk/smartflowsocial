@@ -7,17 +7,17 @@ import { useFetcher, useLoaderData } from "@remix-run/react";
 import { useParams } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 
+import type { UserWithHashTagPresets as _UserWithHashTagPresets } from "~/features/user";
 import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import {
   recyclablesLoaderDataSchema,
   type RecyclablesLoaderData,
 } from "~/lib/validation/schemas/loader-responses.schemas";
 
-import type { UserWithHashTagPresets } from "~/features/user";
 
 import type { PostDTO } from "../dtos";
 import { fromPostDTOArray } from "../dtos";
-import type { PostStats } from "../stats.server";
+import type { PostStats as _PostStats } from "../stats.server";
 import type {
   PostData,
   QueueType,
@@ -71,12 +71,12 @@ export function useRecyclablesQuery() {
                 recyclablesLoaderDataSchema,
               );
               if (validated) {
-                resolve(validated as RecyclablesLoaderData);
+                resolve(validated);
               } else {
                 reject(new Error("Invalid data received from fetcher"));
               }
             } else if (validatedLoaderData) {
-              resolve(validatedLoaderData as RecyclablesLoaderData);
+              resolve(validatedLoaderData);
             } else {
               reject(new Error("Invalid loader data"));
             }
@@ -100,22 +100,25 @@ export function useRecyclablesData() {
   const rawData = query.data;
 
   if (!rawData) {
+    const emptyPosts: PostData[] = [];
+    const emptyStats: Record<
+      string,
+      {
+        likes?: number;
+        replies?: number;
+        mentions?: number;
+        reposts?: number;
+        zaps?: number;
+        satszapped?: number;
+      }
+    > = {};
+    const emptyQueueTypes: QueueType[] = [];
     return {
-      posts: [] as PostData[],
+      posts: emptyPosts,
       pagination: { total: 0, pages: 0, currentPage: 1, limit: 50 },
-      stats: {} as Record<
-        string,
-        {
-          likes?: number;
-          replies?: number;
-          mentions?: number;
-          reposts?: number;
-          zaps?: number;
-          satszapped?: number;
-        }
-      >,
+      stats: emptyStats,
       user: null,
-      queueTypes: [] as QueueType[],
+      queueTypes: emptyQueueTypes,
       selectedQueueType: "all",
       isLoading: query.isLoading,
       rawData: null,

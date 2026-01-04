@@ -15,6 +15,13 @@ import {
   requireAnySubscription,
 } from "~/features/payments";
 import {
+  handleDraftsAction,
+  loadDraftsData,
+  type PostData,
+  type CombinedContent,
+  type LongFormPostType as _LongFormPostType,
+} from "~/features/posts/server";
+import {
   AllContentListing,
   DraftBulkResume,
   DraftsBulkActions,
@@ -28,17 +35,10 @@ import {
   useDraftsState,
   useDraftsData,
 } from "~/features/posts/ui";
-import {
-  handleDraftsAction,
-  loadDraftsData,
-  type PostData,
-  type CombinedContent,
-  type LongFormPostType,
-} from "~/features/posts/server";
+import { withCSRFProtection } from "~/lib/csrf";
+import { convertDraftsPostsToPostDataArray } from "~/lib/validation/drafts-post-conversion.server";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import { draftsLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
-import { convertDraftsPostsToPostDataArray } from "~/lib/validation/drafts-post-conversion.server";
-import { withCSRFProtection } from "~/lib/csrf";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
@@ -250,10 +250,11 @@ export default function DraftPosts() {
                 );
 
                 // Use type guards to safely determine post type
+                // PostDetailsModal accepts Post | PostData | CombinedContent
                 const postToShow = postData ?? combinedContent ?? selectedPost;
                 return postToShow ? (
                   <PostDetailsModal
-                    post={postToShow}
+                    post={postToShow as PostData | CombinedContent}
                     onClose={() => setSelectedPost(null)}
                     type="draft"
                     userTimezone={user?.timezone ?? undefined}

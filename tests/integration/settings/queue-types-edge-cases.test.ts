@@ -10,15 +10,15 @@ vi.mock("~/models/payment.server", () => ({
   getUserSubscription: vi.fn(),
 }));
 
-vi.mock("~/models/user.server", () => ({
+vi.mock("~/features/user", () => ({
   updateQueueType: vi.fn(),
   deleteQueueType: vi.fn(),
   hashTagPresetExistsForUser: vi.fn(),
 }));
 
 import { handleQueueTypeAction } from "~/features/settings/actions/queue-types-actions.server";
-import { getUserSubscription } from "~/models/payment.server";
 import { updateQueueType } from "~/features/user";
+import { getUserSubscription } from "~/models/payment.server";
 
 import { createFormData, TEST_USER_ID } from "../../utils/test-helpers";
 

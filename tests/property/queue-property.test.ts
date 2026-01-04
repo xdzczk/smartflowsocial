@@ -23,13 +23,13 @@ vi.mock("~/models/post.commands.server", () => ({
   updatePostStatus: vi.fn(),
 }));
 
-vi.mock("~/models/user.server", () => ({
+vi.mock("~/features/user", () => ({
   getUserById: vi.fn(),
 }));
 
+import { getUserById } from "~/features/user";
 import { prisma } from "~/lib/prisma.server";
 import { updatePostStatus } from "~/models/post.commands.server";
-import { getUserById } from "~/features/user";
 
 describe("Property-Based Tests: Queue Operations", () => {
   beforeEach(() => {

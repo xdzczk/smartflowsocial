@@ -11,11 +11,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { calculateNextScheduleTime } from "~/features/posts/schedulers";
+import { getUserById, getScheduleInterval } from "~/features/user";
 import {
   getScheduledPosts,
   getLastPostTimeForQueue,
 } from "~/models/post.queries.server";
-import { getUserById, getScheduleInterval } from "~/features/user";
 
 import { TEST_USER_ID } from "../utils/test-helpers";
 // Mock dependencies
@@ -24,7 +24,7 @@ vi.mock("~/models/post.queries.server", () => ({
   getLastPostTimeForQueue: vi.fn(),
 }));
 
-vi.mock("~/models/user.server", () => ({
+vi.mock("~/features/user", () => ({
   getUserById: vi.fn(),
   getScheduleInterval: vi.fn(),
 }));

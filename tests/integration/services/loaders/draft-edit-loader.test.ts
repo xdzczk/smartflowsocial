@@ -10,19 +10,19 @@ vi.mock("~/models/post.queries.server", () => ({
   getPostById: vi.fn(),
 }));
 
-vi.mock("~/models/user.server", () => ({
+vi.mock("~/features/user", () => ({
   getUserById: vi.fn(),
   getQueueTypes: vi.fn(),
   getUserHashTagPresets: vi.fn(),
 }));
 
 import { loadDraftEditData } from "~/features/posts/services/draft-edit-loader.server";
-import { getPostById } from "~/models/post.queries.server";
 import {
   getUserById,
   getQueueTypes,
   getUserHashTagPresets,
 } from "~/features/user";
+import { getPostById } from "~/models/post.queries.server";
 
 import { TEST_USER_ID, TEST_POST_ID } from "../../../utils/test-helpers";
 

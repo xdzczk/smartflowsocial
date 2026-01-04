@@ -5,9 +5,11 @@
 import type React from "react";
 
 import { handleErrorSafely, logClientError } from "~/lib/error-handler.client";
-import { convertMarkdownToEditorJS } from "./editorjs-conversion";
 
 import type { EditorJSInstance, EditorJSBlock } from "../types/editorjs.types";
+
+import { convertMarkdownToEditorJS } from "./editorjs-conversion";
+
 /**
  * Load initial content into EditorJS
  */

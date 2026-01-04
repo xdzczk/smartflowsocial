@@ -4,6 +4,15 @@ import Toast from "~/components/ui/Toast";
 import { requireUserId } from "~/features/auth";
 import { requireAnySubscription } from "~/features/payments";
 import {
+  getPostedDashboardData,
+  type PostData,
+  type LongFormPostData,
+  type CombinedContent,
+  type PostFetcher,
+  type LongFormPostType as _LongFormPostType,
+} from "~/features/posts/server";
+import type { PostStats as _PostStats } from "~/features/posts/stats.server";
+import {
   AllContentListing,
   LongFormDetailsModal,
   LongFormListing,
@@ -14,23 +23,15 @@ import {
   usePostedPostsData,
   useBulkDeletePostsMutation,
 } from "~/features/posts/ui";
-import {
-  getPostedDashboardData,
-  type PostData,
-  type LongFormPostData,
-  type CombinedContent,
-  type PostFetcher,
-  type LongFormPostType,
-} from "~/features/posts/server";
-import type { PostStats } from "~/features/posts/stats.server";
-import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
-import { postedPostsLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
+import type { User } from "~/features/user";
 import {
   extractPostData,
   extractLongFormPostData,
 } from "~/lib/validation/combined-content.server";
-import { getPostStats, getPostStatsValue } from "~/lib/validation/post-stats.server";
+import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import { comparePostDataByProperty } from "~/lib/validation/post-data-properties.server";
+import { getPostStats, getPostStatsValue } from "~/lib/validation/post-stats.server";
+import { postedPostsLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
 // Re-export action from server module
 export { postedPostsAction as action } from "~/features/posts/posted.action.server";
 
@@ -83,16 +84,7 @@ export default function PostedPosts() {
   // Use TanStack Query mutation for bulk delete with optimistic updates
   const bulkDeleteMutation = useBulkDeletePostsMutation();
 
-  // Handle nullable user - if user is null, we should not render the component
-  // This is a legitimate error state that should be handled properly
-  if (!user) {
-    return (
-      <div className="p-4 text-center text-red-600">
-        Error: User data not available. Please refresh the page.
-      </div>
-    );
-  }
-
+  // Call hook unconditionally - hooks must be called at the top level
   const {
     currentTab,
     sortConfig,
@@ -119,10 +111,20 @@ export default function PostedPosts() {
     handleBulkScheduledRepost,
     handleBulkQuote,
   } = usePostedPosts({
-    user,
+    user: user as unknown as User,
     allContent,
     posts,
   });
+
+  // Handle nullable user - if user is null, we should not render the component
+  // This is a legitimate error state that should be handled properly
+  if (!user) {
+    return (
+      <div className="p-4 text-center text-red-600">
+        Error: User data not available. Please refresh the page.
+      </div>
+    );
+  }
 
   // Enhanced bulk delete with optimistic updates
   const handleBulkDelete = () => {
@@ -209,7 +211,7 @@ export default function PostedPosts() {
     }
 
     // Use type-safe property accessor for PostData
-    return comparePostDataByProperty(a, b, sortConfig.key, sortConfig.direction);
+    return comparePostDataByProperty(a, b, sortConfig.key, sortConfig.direction as "asc" | "desc");
   });
 
   const filteredPosts = sortedPosts.filter((post) =>
@@ -455,7 +457,7 @@ export default function PostedPosts() {
                 typeof selectedPost.signedEvent === "object" &&
                 "id" in selectedPost.signedEvent &&
                 typeof selectedPost.signedEvent.id === "string"
-                  ? (stats as Record<string, PostStats>)[selectedPost.signedEvent.id]
+                  ? (stats)[selectedPost.signedEvent.id]
                   : undefined
               }
               onClose={() => setSelectedPost(null)}

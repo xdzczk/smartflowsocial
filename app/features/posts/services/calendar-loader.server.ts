@@ -3,14 +3,14 @@
  * Centralized data fetching for calendar pages
  */
 
+import { getUserById, getQueueTypes } from "~/features/user";
 import {
   getScheduledLongFormPosts,
   getPastLongFormPosts,
 } from "~/models/longformpost.server";
 import { getScheduledPosts, getPastPosts } from "~/models/post.queries.server";
-import { getUserById, getQueueTypes } from "~/features/user";
 
-import { combineContent } from "../combined.server";
+import { combineContent as _combineContent } from "../combined.server";
 import {
   toPostDTOArray,
   toLongFormPostDTOArray,
@@ -295,11 +295,19 @@ export async function loadCalendarQueueData(userId: string, queueType: string) {
 
   const scheduledPostsDTO: PostDTO[] = toPostDTOArray(scheduledPostsData);
 
+  // Convert scheduleInterval strings to numbers for schema compliance
+  const scheduleIntervals = user?.scheduleInterval
+    ? user.scheduleInterval.map((interval) => {
+        const num = typeof interval === "string" ? parseInt(interval, 10) : interval;
+        return isNaN(num) ? 0 : num;
+      })
+    : [];
+
   return {
     scheduledPosts: scheduledPostsDTO,
     user,
     queueTypes: queueTypes.filter((qt) => qt.isEnabled !== false),
     selectedQueueType: queueType,
-    scheduleIntervals: user?.scheduleInterval ?? [],
+    scheduleIntervals,
   };
 }

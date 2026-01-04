@@ -5,14 +5,14 @@
 import { json } from "@remix-run/node";
 
 import {
-  updateNWCSchema,
-  validateFormDataOrRespond,
-} from "~/lib/validation";
-import {
   updateUserNWC,
   updateUserNWCEnabled,
   clearUserNWC,
 } from "~/features/user";
+import {
+  updateNWCSchema,
+  validateFormDataOrRespond,
+} from "~/lib/validation";
 
 export async function handleNWCAction(
   userId: string,

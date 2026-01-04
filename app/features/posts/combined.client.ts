@@ -3,11 +3,11 @@
  * Reconstructs CombinedContent from DTOs on the client side
  */
 
-import type { CombinedContent, PostData, LongFormPostData } from "./types";
 import {
   postToCombinedContent,
   longFormPostToCombinedContent,
 } from "./combined.server";
+import type { CombinedContent, PostData, LongFormPostData } from "./types";
 
 /**
  * Combines posts and longform posts into a single sorted array
@@ -67,4 +67,5 @@ export function combineContent(
     }
   });
 }
+
 

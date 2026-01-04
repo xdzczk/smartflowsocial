@@ -7,14 +7,12 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock dependencies
 vi.mock("~/features/user", () => ({
-  getUserHashTags: vi.fn(),
   getQueueTypes: vi.fn(),
   getUserHashTagPresets: vi.fn(),
 }));
 
 import { getBulkPostsDashboardData } from "~/features/posts/services/bulk-posts.server";
 import {
-  getUserHashTags,
   getQueueTypes,
   getUserHashTagPresets,
 } from "~/features/user";
@@ -27,16 +25,14 @@ describe("Bulk Posts Service", () => {
   });
 
   it("should return dashboard data with tags, queue types, and presets", async () => {
-    (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue(
-      "tag1 tag2 tag3",
-    );
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([
       { id: "queue-1", name: "Queue 1", isEnabled: true },
       { id: "queue-2", name: "Queue 2", isEnabled: false },
       { id: "queue-3", name: "Queue 3", isEnabled: true },
     ]);
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([
-      { id: "preset-1", name: "Preset 1" },
+      { id: "preset-1", name: "Default", tags: "tag1 tag2 tag3" },
+      { id: "preset-2", name: "Preset 1" },
     ]);
 
     const result = await getBulkPostsDashboardData(TEST_USER_ID);
@@ -45,14 +41,11 @@ describe("Bulk Posts Service", () => {
     expect(result.queueTypes).toHaveLength(2); // Only enabled ones
     expect(result.queueTypes[0].id).toBe("queue-1");
     expect(result.queueTypes[1].id).toBe("queue-3");
-    expect(result.hashTagPresets).toHaveLength(1);
+    expect(result.hashTagPresets).toHaveLength(2); // All presets are returned
     expect(result.mode).toBe("preset");
   });
 
   it("should set mode to 'manual' when no hash tag presets exist", async () => {
-    (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue(
-      "tag1 tag2",
-    );
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
@@ -63,11 +56,10 @@ describe("Bulk Posts Service", () => {
   });
 
   it("should sort tags alphabetically", async () => {
-    (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue(
-      "zebra apple banana",
-    );
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-    (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { id: "preset-1", name: "Default", tags: "zebra apple banana" },
+    ]);
 
     const result = await getBulkPostsDashboardData(TEST_USER_ID);
 
@@ -75,11 +67,10 @@ describe("Bulk Posts Service", () => {
   });
 
   it("should filter out empty tags", async () => {
-    (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue(
-      "tag1   tag2  tag3",
-    );
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-    (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { id: "preset-1", name: "Default", tags: "tag1   tag2  tag3" },
+    ]);
 
     const result = await getBulkPostsDashboardData(TEST_USER_ID);
 
@@ -87,28 +78,29 @@ describe("Bulk Posts Service", () => {
   });
 
   it("should handle empty tags string", async () => {
-    (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue("");
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-    (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { id: "preset-1", name: "Default", tags: "" },
+    ]);
 
     const result = await getBulkPostsDashboardData(TEST_USER_ID);
 
     expect(result.tags).toEqual([]);
   });
 
-  it("should handle non-string tags by converting to string", async () => {
-    (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue(123);
+  it("should handle empty default preset", async () => {
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-    (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { id: "preset-1", name: "Custom", tags: "custom tags" },
+    ]);
 
     const result = await getBulkPostsDashboardData(TEST_USER_ID);
 
-    // The code converts non-string to string, so 123 becomes "123"
-    expect(result.tags).toEqual(["123"]);
+    // No Default preset, so tags should be empty
+    expect(result.tags).toEqual([]);
   });
 
   it("should filter out disabled queue types", async () => {
-    (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue("");
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([
       { id: "queue-1", name: "Queue 1", isEnabled: true },
       { id: "queue-2", name: "Queue 2", isEnabled: false },
@@ -125,7 +117,7 @@ describe("Bulk Posts Service", () => {
   });
 
   it("should handle non-array queue types", async () => {
-    (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue("");
+    (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
       "not-an-array",
     );
@@ -137,7 +129,6 @@ describe("Bulk Posts Service", () => {
   });
 
   it("should handle non-array hash tag presets", async () => {
-    (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue("");
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue(
       "not-an-array",

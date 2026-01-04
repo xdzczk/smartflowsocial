@@ -10,7 +10,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock dependencies
-vi.mock("~/models/user.server", () => ({
+vi.mock("~/features/user", () => ({
   getUserById: vi.fn(),
   getQueueTypes: vi.fn(),
   getHashTagPresetById: vi.fn(),
@@ -33,12 +33,12 @@ global.fetch = vi.fn();
 
 import { handleNewPostAction } from "~/features/posts/services/newpost-action.server";
 import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
-import { createPost } from "~/models/post.commands.server";
 import {
   getUserById,
   getQueueTypes,
   getHashTagPresetById,
 } from "~/features/user";
+import { createPost } from "~/models/post.commands.server";
 
 import { createActionFormData, TEST_USER_ID } from "../utils/test-helpers";
 
@@ -65,7 +65,15 @@ describe("New Post Action Handler", () => {
     });
     (createPost as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: "post-123",
-      signedEvent: { id: "event-123" },
+      signedEvent: {
+        id: "event-123",
+        pubkey: "test-pubkey",
+        created_at: 1234567890,
+        kind: 1,
+        tags: [],
+        content: "test content",
+        sig: "test-sig",
+      },
     });
     (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockImplementation(
       // eslint-disable-next-line @typescript-eslint/no-misused-promises
@@ -200,8 +208,22 @@ describe("New Post Action Handler", () => {
 
   describe("Post Text Action", () => {
     it("should create and publish a text post immediately", async () => {
-      const signedEvent = { id: "event-123", created_at: 1234567890 };
-      const nostrEvent = { id: "nostr-123" };
+      const signedEvent = {
+        id: "event-123",
+        pubkey: "test-pubkey",
+        created_at: 1234567890,
+        kind: 1,
+        tags: [],
+        content: "This is a published post",
+        sig: "test-sig",
+      };
+      const nostrEvent = {
+        id: "nostr-123",
+        pubkey: "test-pubkey",
+        created_at: 1234567890,
+        kind: 1,
+        content: "test content",
+      };
 
       const formData = createActionFormData("post-text", {
         content: "This is a published post",
@@ -243,8 +265,22 @@ describe("New Post Action Handler", () => {
 
   describe("Schedule Text Action", () => {
     it("should schedule a text post", async () => {
-      const signedEvent = { id: "event-123", created_at: 1234567890 };
-      const nostrEvent = { id: "nostr-123" };
+      const signedEvent = {
+        id: "event-123",
+        pubkey: "test-pubkey",
+        created_at: 1234567890,
+        kind: 1,
+        tags: [],
+        content: "test content",
+        sig: "test-sig",
+      };
+      const nostrEvent = {
+        id: "nostr-123",
+        pubkey: "test-pubkey",
+        created_at: 1234567890,
+        kind: 1,
+        content: "test content",
+      };
 
       const formData = createActionFormData("schedule-text", {
         content: "This is a scheduled post",
@@ -403,8 +439,22 @@ describe("New Post Action Handler", () => {
   describe("Post Images Action", () => {
     it("should create and publish an image post immediately", async () => {
       const fileUrl = JSON.stringify(["https://example.com/image.jpg"]);
-      const signedEvent = { id: "event-123", created_at: 1234567890 };
-      const nostrEvent = { id: "nostr-123" };
+      const signedEvent = {
+        id: "event-123",
+        pubkey: "test-pubkey",
+        created_at: 1234567890,
+        kind: 1,
+        tags: [],
+        content: "test content",
+        sig: "test-sig",
+      };
+      const nostrEvent = {
+        id: "nostr-123",
+        pubkey: "test-pubkey",
+        created_at: 1234567890,
+        kind: 1,
+        content: "test content",
+      };
 
       const formData = createActionFormData("post-image", {
         fileUrl,
@@ -436,8 +486,22 @@ describe("New Post Action Handler", () => {
   describe("Schedule Images Action", () => {
     it("should schedule an image post", async () => {
       const fileUrl = JSON.stringify(["https://example.com/image.jpg"]);
-      const signedEvent = { id: "event-123", created_at: 1234567890 };
-      const nostrEvent = { id: "nostr-123" };
+      const signedEvent = {
+        id: "event-123",
+        pubkey: "test-pubkey",
+        created_at: 1234567890,
+        kind: 1,
+        tags: [],
+        content: "test content",
+        sig: "test-sig",
+      };
+      const nostrEvent = {
+        id: "nostr-123",
+        pubkey: "test-pubkey",
+        created_at: 1234567890,
+        kind: 1,
+        content: "test content",
+      };
 
       const formData = createActionFormData("schedule-image", {
         fileUrl,
@@ -517,8 +581,22 @@ describe("New Post Action Handler", () => {
         statusText: "Internal Server Error",
       });
 
-      const signedEvent = { id: "event-123", created_at: 1234567890 };
-      const nostrEvent = { id: "nostr-123" };
+      const signedEvent = {
+        id: "event-123",
+        pubkey: "test-pubkey",
+        created_at: 1234567890,
+        kind: 1,
+        tags: [],
+        content: "test content",
+        sig: "test-sig",
+      };
+      const nostrEvent = {
+        id: "nostr-123",
+        pubkey: "test-pubkey",
+        created_at: 1234567890,
+        kind: 1,
+        content: "test content",
+      };
 
       const formData = createActionFormData("post-text", {
         content: "Test post",

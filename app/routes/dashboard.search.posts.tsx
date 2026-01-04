@@ -14,16 +14,16 @@ import {
   handleSearchAction,
   loadSearchData,
 } from "~/features/search";
-import {
-  validateSearchResultData,
-  validateSearchResultDisplay,
-  validateSearchStats,
-} from "~/lib/validation/search-result.server";
 import { withCSRFProtection } from "~/lib/csrf";
 import {
   searchActionSchema,
   validateFormDataOrRespond,
 } from "~/lib/validation";
+import {
+  validateSearchResultData,
+  validateSearchResultDisplay,
+  validateSearchStats,
+} from "~/lib/validation/search-result.server";
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   const data = await loadSearchData(userId);
@@ -105,7 +105,7 @@ export default function SearchPosts() {
               mediaUrls: [],
             }
           }
-          stats={validateSearchStats(searchStats) ?? undefined}
+          stats={validateSearchStats(searchStats) ?? null}
           onClear={clearSearch}
           onScheduleQuote={handleScheduleQuote}
           onScheduleRepost={handleScheduleRepost}

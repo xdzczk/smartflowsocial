@@ -7,14 +7,14 @@ import { useFetcher, useLoaderData } from "@remix-run/react";
 import { useSearchParams } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 
+import type { Asset } from "~/features/assets/types";
+import type { User as _User } from "~/features/user";
 import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import {
   templatesLoaderDataSchema,
   type TemplatesLoaderData,
 } from "~/lib/validation/schemas/loader-responses.schemas";
 
-import type { Asset } from "~/features/assets/types";
-import type { User } from "~/features/user";
 
 import type { Template } from "../types";
 
@@ -66,12 +66,12 @@ export function useTemplatesQuery() {
                 templatesLoaderDataSchema,
               );
               if (validated) {
-                resolve(validated as TemplatesLoaderData);
+                resolve(validated);
               } else {
                 reject(new Error("Invalid data received from fetcher"));
               }
             } else if (validatedLoaderData) {
-              resolve(validatedLoaderData as TemplatesLoaderData);
+              resolve(validatedLoaderData);
             } else {
               reject(new Error("Invalid loader data"));
             }
@@ -111,7 +111,23 @@ export function useTemplatesData() {
   return {
     templates: Array.isArray(rawData.templates) ? rawData.templates : [],
     user: rawData.user,
-    assets: Array.isArray(rawData.assets) ? rawData.assets : [],
+    assets: Array.isArray(rawData.assets)
+      ? rawData.assets.map((asset) => ({
+          ...asset,
+          createdAt:
+            asset.createdAt instanceof Date
+              ? asset.createdAt
+              : typeof asset.createdAt === "string"
+                ? new Date(asset.createdAt)
+                : new Date(),
+          updatedAt:
+            asset.updatedAt instanceof Date
+              ? asset.updatedAt
+              : typeof asset.updatedAt === "string"
+                ? new Date(asset.updatedAt)
+                : new Date(),
+        }))
+      : [],
     totalCount: typeof rawData.totalCount === "number" ? rawData.totalCount : 0,
     totalPages: typeof rawData.totalPages === "number" ? rawData.totalPages : 0,
     currentPage: typeof rawData.currentPage === "number" ? rawData.currentPage : 1,

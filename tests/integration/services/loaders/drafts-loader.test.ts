@@ -14,7 +14,7 @@ vi.mock("~/models/post.queries.server", () => ({
   getDraftPosts: vi.fn(),
 }));
 
-vi.mock("~/models/user.server", () => ({
+vi.mock("~/features/user", () => ({
   getUserById: vi.fn(),
   getQueueTypes: vi.fn(),
 }));
@@ -27,9 +27,9 @@ vi.mock("~/features/posts/services/combined.server", () => ({
 }));
 
 import { loadDraftsData } from "~/features/posts/services/drafts-loader.server";
+import { getUserById, getQueueTypes } from "~/features/user";
 import { getDraftLongFormPosts } from "~/models/longformpost.server";
 import { getDraftPosts } from "~/models/post.queries.server";
-import { getUserById, getQueueTypes } from "~/features/user";
 
 import { TEST_USER_ID } from "../../../utils/test-helpers";
 

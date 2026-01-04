@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { toast } from "react-hot-toast";
 
-import { resizeImage } from "~/features/upload/image-resize";
-import { logClientError } from "~/lib/error-handler.client";
 import {
   convertEditorJSToMarkdown,
   convertMarkdownToEditorJS,
 } from "~/features/posts/utils/editorjs-conversion";
+import { resizeImage } from "~/features/upload/image-resize";
+import { logClientError } from "~/lib/error-handler.client";
 import {
   editPostClientSchema,
   editLongformPostClientSchema,

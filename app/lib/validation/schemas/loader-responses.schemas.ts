@@ -170,7 +170,7 @@ const longFormPostDTOSchema = z.object({
 /**
  * Schema for CombinedContent (simplified - just validates structure)
  */
-const combinedContentSchema = z.object({
+const _combinedContentSchema = z.object({
   id: z.string(),
   type: z.enum(["post", "longform"]),
   title: z.string().optional(),
@@ -415,6 +415,7 @@ export const scheduledPostsLoaderDataSchema = z.object({
   longformPosts: z.array(longFormPostDTOSchema),
   user: userSchema.nullable(),
   queueTypes: z.array(queueTypeSchema),
+  selectedQueueType: z.string().optional(),
   hashTagPresets: z.array(hashTagPresetSchema),
 });
 
@@ -451,6 +452,7 @@ export const calendarLoaderDataSchema = z.object({
   user: userSchema.nullable(),
   queueTypes: z.array(queueTypeSchema),
   selectedQueueType: z.string(),
+  scheduleIntervals: z.array(z.union([z.string(), z.number()])).optional(),
 });
 
 export type CalendarLoaderData = z.infer<typeof calendarLoaderDataSchema>;

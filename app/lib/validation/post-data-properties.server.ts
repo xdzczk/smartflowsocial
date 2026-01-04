@@ -21,11 +21,12 @@ export function getPostDataProperty(
       return post.caption ?? undefined;
       case "scheduledFor":
         if (post.scheduledFor) {
-          if (post.scheduledFor instanceof Date) {
-            return post.scheduledFor;
+          const scheduledFor = post.scheduledFor as Date | string | null | undefined;
+          if (scheduledFor instanceof Date) {
+            return scheduledFor;
           }
-          if (typeof post.scheduledFor === "string") {
-            return new Date(post.scheduledFor);
+          if (typeof scheduledFor === "string") {
+            return new Date(scheduledFor);
           }
         }
         return undefined;
@@ -47,13 +48,14 @@ export function getPostDataProperty(
         : typeof post.updatedAt === "string"
           ? new Date(post.updatedAt)
           : undefined;
-    default:
+    default: {
       // For other properties, try safe access
       const value = (post as unknown as Record<string, unknown>)[key];
       if (typeof value === "string" || typeof value === "number" || (value && typeof value === "object" && value instanceof Date)) {
         return value;
       }
       return undefined;
+    }
   }
 }
 

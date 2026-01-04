@@ -6,7 +6,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock dependencies
-vi.mock("~/models/user.server", () => ({
+vi.mock("~/features/user", () => ({
   updateUserTimezone: vi.fn(),
   updateUserRelays: vi.fn(),
   updateGiveawayBlacklist: vi.fn(),

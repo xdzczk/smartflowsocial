@@ -24,14 +24,12 @@ vi.mock("~/lib/prisma.server", () => ({
 // Mock dependencies - mock the actual module being used
 vi.mock("~/features/user", () => ({
   getQueueTypes: vi.fn(),
-  getUserHashTags: vi.fn(),
   getUserHashTagPresets: vi.fn(),
 }));
 
 import { getBulkPostsDashboardData } from "~/features/posts/server";
 import {
   getQueueTypes,
-  getUserHashTags,
   getUserHashTagPresets,
 } from "~/features/user";
 
@@ -43,17 +41,16 @@ describe("Bulk Posts Loader", () => {
   });
 
   it("should load bulk posts dashboard data", async () => {
-    const mockTags = "#tag1 #tag2 #tag3";
+    const _mockTags = "#tag1 #tag2 #tag3";
     const mockQueueTypes = [
       createMockQueueType({ id: "queue-1", name: "posts" }),
       createMockQueueType({ id: "queue-2", name: "all" }),
     ];
     const mockHashTagPresets = [
-      { id: "preset-1", name: "Default", hashtags: "#default #tags" },
-      { id: "preset-2", name: "Custom", hashtags: "#custom #hashtags" },
+      { id: "preset-1", name: "Default", tags: "#tag1 #tag2 #tag3" },
+      { id: "preset-2", name: "Custom", tags: "#custom #hashtags" },
     ];
 
-    (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue(mockTags);
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
       mockQueueTypes,
     );
@@ -62,8 +59,6 @@ describe("Bulk Posts Loader", () => {
     );
 
     const result = await getBulkPostsDashboardData(TEST_USER_ID);
-
-    expect(getUserHashTags).toHaveBeenCalledWith(TEST_USER_ID);
     expect(getQueueTypes).toHaveBeenCalledWith(TEST_USER_ID);
     expect(getUserHashTagPresets).toHaveBeenCalledWith(TEST_USER_ID);
 
@@ -76,9 +71,6 @@ describe("Bulk Posts Loader", () => {
   });
 
   it("should set mode to 'manual' when no hash tag presets exist", async () => {
-    (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue(
-      "#tag1 #tag2",
-    );
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
@@ -89,11 +81,10 @@ describe("Bulk Posts Loader", () => {
 
   it("should sort tags alphabetically", async () => {
     const unsortedTags = "#zebra #apple #banana";
-    (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue(
-      unsortedTags,
-    );
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-    (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { id: "preset-1", name: "Default", tags: unsortedTags },
+    ]);
 
     const result = await getBulkPostsDashboardData(TEST_USER_ID);
 
@@ -102,11 +93,10 @@ describe("Bulk Posts Loader", () => {
 
   it("should filter out empty tags", async () => {
     const tagsWithSpaces = "#tag1   #tag2  #tag3";
-    (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue(
-      tagsWithSpaces,
-    );
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-    (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { id: "preset-1", name: "Default", tags: tagsWithSpaces },
+    ]);
 
     const result = await getBulkPostsDashboardData(TEST_USER_ID);
 
@@ -115,9 +105,10 @@ describe("Bulk Posts Loader", () => {
   });
 
   it("should handle null or empty tags", async () => {
-    (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue(null);
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-    (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { id: "preset-1", name: "Default", tags: null },
+    ]);
 
     const result = await getBulkPostsDashboardData(TEST_USER_ID);
 
@@ -135,7 +126,6 @@ describe("Bulk Posts Loader", () => {
       createMockQueueType({ id: "queue-3", name: "enabled", isEnabled: true }),
     ];
 
-    (getUserHashTags as ReturnType<typeof vi.fn>).mockResolvedValue("");
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
       mockQueueTypes,
     );

@@ -7,17 +7,17 @@ import { useFetcher, useLoaderData } from "@remix-run/react";
 import { useParams, useSearchParams } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 
-import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses.server";
-import {
-  giveawayLoaderDataSchema,
-  type GiveawayLoaderData,
-} from "~/lib/validation/schemas/loader-responses.schemas";
 
 import type { PostDTO } from "~/features/posts/dtos";
 import { fromPostDTOArray } from "~/features/posts/dtos";
 import type { PostStats } from "~/features/posts/stats.server";
 import type { PostData, QueueType } from "~/features/posts/types";
-import type { UserWithHashTagPresets } from "~/features/user";
+import type { UserWithHashTagPresets as _UserWithHashTagPresets } from "~/features/user";
+import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses.server";
+import {
+  giveawayLoaderDataSchema,
+  type GiveawayLoaderData,
+} from "~/lib/validation/schemas/loader-responses.schemas";
 
 import type { RelatedEvent } from "../types";
 
@@ -68,12 +68,12 @@ export function useGiveawayQuery() {
                 giveawayLoaderDataSchema,
               );
               if (validated) {
-                resolve(validated as GiveawayLoaderData);
+                resolve(validated);
               } else {
                 reject(new Error("Invalid data received from fetcher"));
               }
             } else if (validatedLoaderData) {
-              resolve(validatedLoaderData as GiveawayLoaderData);
+              resolve(validatedLoaderData);
             } else {
               reject(new Error("Invalid loader data"));
             }
@@ -98,12 +98,16 @@ export function useGiveawayData() {
   const rawData = query.data;
 
   if (!rawData) {
+    const emptyPosts: (PostData & { stats?: PostStats; totalEngagement?: number })[] = [];
+    const emptyStats: Record<string, PostStats> = {};
+    const emptyRelatedEvents: RelatedEvent[] = [];
+    const emptyQueueTypes: QueueType[] = [];
     return {
-      posts: [] as (PostData & { stats?: PostStats; totalEngagement?: number })[],
-      stats: {} as Record<string, PostStats>,
-      relatedEvents: [] as RelatedEvent[],
+      posts: emptyPosts,
+      stats: emptyStats,
+      relatedEvents: emptyRelatedEvents,
       user: null,
-      queueTypes: [] as QueueType[],
+      queueTypes: emptyQueueTypes,
       selectedQueueType: "all",
       isLoading: query.isLoading,
       rawData: null,

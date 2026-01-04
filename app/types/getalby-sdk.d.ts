@@ -7,3 +7,4 @@ declare module "@getalby/sdk/lnclient" {
 
 
 
+

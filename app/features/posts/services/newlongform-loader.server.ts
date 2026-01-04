@@ -4,7 +4,6 @@
  */
 
 import { requireFeatureAccess } from "~/features/payments/subscriptions.server";
-import { getAssets } from "~/models/asset.server";
 import {
   getUserById,
   getScheduleInterval,
@@ -12,6 +11,7 @@ import {
   getUserHashTagPresets,
   getUserUploadProvider,
 } from "~/features/user";
+import { getAssets } from "~/models/asset.server";
 
 /**
  * Load new longform post page data

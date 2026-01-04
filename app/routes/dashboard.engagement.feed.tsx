@@ -10,8 +10,8 @@ import {
   useEngagementData,
 } from "~/features/engagement";
 import { requireAnySubscription } from "~/features/payments";
-import { PostDetailsModal } from "~/features/posts/ui";
 import { type PostData } from "~/features/posts/server";
+import { PostDetailsModal } from "~/features/posts/ui";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import { engagementLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
 async function loaderImpl({ request }: LoaderFunctionArgs) {

@@ -6,7 +6,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock dependencies
-vi.mock("~/models/user.server", () => ({
+vi.mock("~/features/user", () => ({
   createHashTagPreset: vi.fn(),
   updateHashTagPreset: vi.fn(),
   deleteHashTagPreset: vi.fn(),

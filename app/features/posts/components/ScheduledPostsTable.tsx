@@ -5,9 +5,9 @@
 import { useFetcher } from "@remix-run/react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
+import type { ScheduledPostTablePost } from "~/lib/validation/post-data-conversion.server";
 
 import { getQueueColor } from "../queueColors";
-import type { ScheduledPostTablePost } from "~/lib/validation/post-data-conversion.server";
 
 interface ScheduledPostsTableProps {
   posts: ScheduledPostTablePost[];

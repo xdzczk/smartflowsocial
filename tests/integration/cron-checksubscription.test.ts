@@ -10,7 +10,7 @@
 import { LN } from "@getalby/sdk/lnclient";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock dependencies
-vi.mock("~/models/user.server", () => ({
+vi.mock("~/features/user", () => ({
   getEnabledUsersWithSubscriptions: vi.fn(),
   disableUserAccount: vi.fn(),
 }));
@@ -59,16 +59,16 @@ vi.mock("~/features/payments/btc.rate", () => ({
   getBitcoinRate: vi.fn(),
 }));
 
+import {
+  getEnabledUsersWithSubscriptions,
+  disableUserAccount,
+} from "~/features/user";
 import { decrypt } from "~/lib/encryption.server";
 import { sendNostrDirectMessage } from "~/lib/nostr.messenger.server";
 import {
   createRenewalPayment,
   updateUserSubscription,
 } from "~/models/payment.server";
-import {
-  getEnabledUsersWithSubscriptions,
-  disableUserAccount,
-} from "~/features/user";
 
 describe("Cron Subscription Checker", () => {
   const TEST_USER_ID = "user-123";

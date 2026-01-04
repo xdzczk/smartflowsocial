@@ -7,14 +7,16 @@ import { useFetcher, useLoaderData } from "@remix-run/react";
 import { useParams, useSearchParams } from "@remix-run/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
+import type { User as _User } from "~/features/user";
 import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import {
   postedPostsLoaderDataSchema,
   type PostedPostsLoaderData,
 } from "~/lib/validation/schemas/loader-responses.schemas";
+import { validateUserData } from "~/lib/validation/user-data.server";
+import type { UserData } from "~/lib/validation/user-data.server";
 
-import type { User } from "~/features/user";
-
+import { combineContent } from "../combined.client";
 import type { PostDTO, LongFormPostDTO } from "../dtos";
 import {
   fromPostDTOArray,
@@ -28,7 +30,6 @@ import type {
   QueueType,
 } from "../types";
 import { convertJsonValueToScheduleConfig } from "../types";
-import { combineContent } from "../combined.client";
 
 // PostedPostsLoaderData is now exported from schemas
 
@@ -81,12 +82,12 @@ export function usePostedPostsQuery() {
                 postedPostsLoaderDataSchema,
               );
               if (validated) {
-                resolve(validated as PostedPostsLoaderData);
+                resolve(validated);
               } else {
                 reject(new Error("Invalid data received from fetcher"));
               }
             } else if (validatedLoaderData) {
-              resolve(validatedLoaderData as PostedPostsLoaderData);
+              resolve(validatedLoaderData);
             } else {
               reject(new Error("Invalid loader data"));
             }
@@ -135,6 +136,7 @@ export function usePostedPostsData() {
       ? typedData.longformPosts
       : [];
   const userRaw = "user" in typedData ? typedData.user : null;
+  const user: UserData | null = userRaw ? validateUserData(userRaw) : null;
   const queueTypesRaw =
     "queueTypes" in typedData && Array.isArray(typedData.queueTypes)
       ? typedData.queueTypes
@@ -226,7 +228,7 @@ export function usePostedPostsData() {
     posts,
     longformPosts,
     allContent,
-    user: userRaw,
+    user,
     queueTypes,
     pagination,
     stats,

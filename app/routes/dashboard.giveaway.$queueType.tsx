@@ -15,8 +15,8 @@ import {
   requireFeatureAccess,
   requireAnySubscription,
 } from "~/features/payments";
+import { type PostData, type CombinedContent } from "~/features/posts/server";
 import { PostDetailsModal } from "~/features/posts/ui";
-import { type PostData } from "~/features/posts/server";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import { giveawayLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -115,7 +115,26 @@ export default function GiveawayQueueRoute() {
       </div>
 
       <GiveawayTable
-        posts={filteredPosts}
+        posts={filteredPosts as Array<{
+          id: string;
+          caption?: string | null;
+          postedAt: Date | null;
+          fileUrl: string[];
+          signedEvent?: { id: string } | null;
+          queueType?: { name: string; color?: string | null } | null;
+          repost?: boolean;
+          isQuotedPost?: boolean;
+          totalEngagement: number;
+          stats?: {
+            likes: number;
+            replies: number;
+            mentions: number;
+            reposts: number;
+            zaps: number;
+            satszapped: number;
+          };
+          [key: string]: unknown;
+        }>}
         sortConfig={sortConfig}
         onRequestSort={requestSort}
         onPostClick={(post) => {
@@ -136,7 +155,7 @@ export default function GiveawayQueueRoute() {
 
       {selectedPost ? (
         <PostDetailsModal
-          post={selectedPost}
+          post={selectedPost as unknown as PostData | CombinedContent}
           stats={
             selectedPost &&
             typeof selectedPost === "object" &&

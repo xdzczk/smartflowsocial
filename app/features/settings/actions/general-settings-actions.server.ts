@@ -5,18 +5,18 @@
 import { json } from "@remix-run/node";
 
 import {
+  updateGiveawayBlacklist,
+  updateScheduleInterval,
+  updateUserRelays,
+  updateUserTimezone,
+} from "~/features/user";
+import {
   updateTimezoneSchema,
   updateRelaysSchema,
   updateBlacklistSchema,
   updateScheduleIntervalsSchema,
   validateFormDataOrRespond,
 } from "~/lib/validation";
-import {
-  updateGiveawayBlacklist,
-  updateScheduleInterval,
-  updateUserRelays,
-  updateUserTimezone,
-} from "~/features/user";
 
 export async function handleGeneralSettingsAction(
   userId: string,

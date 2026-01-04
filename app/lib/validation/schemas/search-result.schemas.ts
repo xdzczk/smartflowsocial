@@ -54,3 +54,4 @@ export const searchResultDisplaySchema = z.object({
   mediaUrls: z.array(z.string()),
 });
 
+
