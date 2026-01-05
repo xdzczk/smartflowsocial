@@ -8,7 +8,7 @@
 import type { Post, LongFormPost } from "@prisma/client";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
-import { serializeDates, deserializeDates } from "~/lib/serialization.server";
+import { serializeDates } from "~/lib/serialization.server";
 
 import type {
   PostData,
@@ -77,9 +77,26 @@ export function toPostDTOArray(posts: PostData[]): PostDTO[] {
 /**
  * Converts PostDTO back to PostData (deserializes date strings to Date objects)
  * Use this in components when receiving data from loaders
+ * 
+ * Note: This function manually deserializes dates to work on both client and server
  */
 export function fromPostDTO(dto: PostDTO): PostData {
-  return deserializeDates(dto as unknown as Record<string, unknown>) as unknown as PostData;
+  const {
+    createdAt: _createdAt,
+    updatedAt: _updatedAt,
+    postedAt: _postedAt,
+    scheduledFor: _scheduledFor,
+    ...rest
+  } = dto;
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+  const result = {
+    ...rest,
+    createdAt: new Date(dto.createdAt),
+    updatedAt: new Date(dto.updatedAt),
+    postedAt: dto.postedAt ? new Date(dto.postedAt) : null,
+    scheduledFor: dto.scheduledFor ? new Date(dto.scheduledFor) : null,
+  } as PostData;
+  return result;
 }
 
 /**
@@ -108,9 +125,26 @@ export function toLongFormPostDTOArray(
 /**
  * Converts LongFormPostDTO back to LongFormPostData (deserializes date strings to Date objects)
  * Use this in components when receiving data from loaders
+ * 
+ * Note: This function manually deserializes dates to work on both client and server
  */
 export function fromLongFormPostDTO(dto: LongFormPostDTO): LongFormPostData {
-  return deserializeDates(dto as unknown as Record<string, unknown>) as unknown as LongFormPostData;
+  const {
+    createdAt: _createdAt,
+    updatedAt: _updatedAt,
+    publishedAt: _publishedAt,
+    scheduledFor: _scheduledFor,
+    ...rest
+  } = dto;
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+  const result = {
+    ...rest,
+    createdAt: new Date(dto.createdAt),
+    updatedAt: new Date(dto.updatedAt),
+    publishedAt: dto.publishedAt ? new Date(dto.publishedAt) : null,
+    scheduledFor: dto.scheduledFor ? new Date(dto.scheduledFor) : null,
+  } as LongFormPostData;
+  return result;
 }
 
 /**

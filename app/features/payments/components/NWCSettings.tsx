@@ -13,7 +13,7 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
 import { updateNWCClientSchema } from "~/lib/validation";
-import { useZodForm, formDataToFormData } from "~/lib/validation/utils.client";
+import { useZodForm, formDataToFormData } from "~/lib/validation/utils.client-safe";
 
 interface NWCSettingsProps {
   nwcEnabled: boolean;

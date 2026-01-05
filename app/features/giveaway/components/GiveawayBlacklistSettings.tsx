@@ -14,7 +14,7 @@ import {
 import { Input } from "~/components/ui/input";
 import { updateBlacklistClientSchema } from "~/lib/validation";
 import { useZodFieldArray } from "~/lib/validation/hooks/useZodFieldArray";
-import { useZodForm, formDataToFormData } from "~/lib/validation/utils.client";
+import { useZodForm, formDataToFormData } from "~/lib/validation/utils.client-safe";
 
 interface GiveawayBlacklistSettingsProps {
   giveawayBlacklist: string[];

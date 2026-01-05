@@ -26,7 +26,7 @@ import {
   createHashtagPresetClientSchema,
   updateHashtagPresetClientSchema,
 } from "~/lib/validation";
-import { useZodForm, formDataToFormData } from "~/lib/validation/utils.client";
+import { useZodForm, formDataToFormData } from "~/lib/validation/utils.client-safe";
 
 interface HashTagPreset {
   id: string;

@@ -131,8 +131,12 @@ export function useZodForm<TSchema extends z.ZodTypeAny>(
   // During SSR, we'll override the return value
   // The zodResolver returns a resolver for z.input<TSchema>, but we need it for z.output<TSchema>
   // This is safe because Zod's input and output types are compatible for most schemas
+  // Type assertion is necessary because zodResolver's type constraints don't align with
+  // our generic z.ZodTypeAny constraint, but runtime behavior is correct
   const zodResolverInstance = typeof window !== "undefined" 
-    ? (zodResolver(schema as z.ZodType<FormValues>) as unknown as Resolver<FormValues>)
+    // @ts-expect-error - zodResolver's type constraints are too strict for our generic z.ZodTypeAny.
+    // Runtime behavior is correct - the schema validates FormValues at runtime.
+    ? (zodResolver(schema) as unknown as Resolver<FormValues>)
     : undefined;
   
   const form = useForm<FormValues>({

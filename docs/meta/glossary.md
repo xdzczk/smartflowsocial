@@ -187,3 +187,4 @@ A reusable post structure with placeholders (variables) for dynamic content.
 
 
 
+

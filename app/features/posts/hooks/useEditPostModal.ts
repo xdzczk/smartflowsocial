@@ -382,7 +382,8 @@ export function useEditPostModal({
       if (!editorRef.current) return;
       try {
         await editorRef.current.isReady;
-        const editorJSData = convertMarkdownToEditorJS(formContent);
+        const contentString = typeof formContent === "string" ? formContent : "";
+        const editorJSData = convertMarkdownToEditorJS(contentString);
         await editorRef.current.render(editorJSData);
       } catch (error: unknown) {
         console.error("Error loading initial content into EditorJS:", error);
@@ -452,19 +453,19 @@ export function useEditPostModal({
   };
 
   // Watch form values for easy access
-  const caption = isLongform ? "" : (form.watch("caption") ?? "");
-  const title = isLongform ? (form.watch("title") ?? "") : "";
-  const summary = isLongform ? (form.watch("summary") ?? "") : "";
-  const content = isLongform ? (form.watch("content") ?? "") : "";
-  const image = isLongform ? (form.watch("image") ?? "") : "";
+  const caption = isLongform ? "" : (String(form.watch("caption") ?? ""));
+  const title = isLongform ? (String(form.watch("title") ?? "")) : "";
+  const summary = isLongform ? (String(form.watch("summary") ?? "")) : "";
+  const content = isLongform ? (String(form.watch("content") ?? "")) : "";
+  const image = isLongform ? (String(form.watch("image") ?? "")) : "";
   const scheduledForStr = form.watch("scheduledFor");
   const scheduledFor = scheduledForStr
     ? new Date(scheduledForStr)
     : null;
-  const selectedQueueType = form.watch("queueType") ?? "";
-  const useHashtagPresets = form.watch("useHashtagPresets") ?? false;
+  const selectedQueueType = String(form.watch("queueType") ?? "");
+  const useHashtagPresets = Boolean(form.watch("useHashtagPresets") ?? false);
   const selectedHashtagPresetId = form.watch("hashTagPresetId") ?? null;
-  const manualHashtags = isLongform ? "" : (form.watch("manualHashtags") ?? "");
+  const manualHashtags = isLongform ? "" : (String(form.watch("manualHashtags") ?? ""));
 
   // Setter functions for backward compatibility
   const setCaption = (value: string) => {

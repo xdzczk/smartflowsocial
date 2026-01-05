@@ -15,7 +15,7 @@ import { Input } from "~/components/ui/input";
 import { updateRelaysClientSchema } from "~/lib/validation";
 import { useZodFieldArray } from "~/lib/validation/hooks/useZodFieldArray";
 import { relayUrlSchema } from "~/lib/validation/schemas/settings.schemas";
-import { useZodForm, formDataToFormData } from "~/lib/validation/utils.client";
+import { useZodForm, formDataToFormData } from "~/lib/validation/utils.client-safe";
 
 interface RelaysSettingsProps {
   relays: string[];
