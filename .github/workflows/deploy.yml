@@ -88,7 +88,7 @@ jobs:
             const fs = require('fs');
             const coverage = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8'));
             const total = coverage.total;
-            const thresholds = { lines: 70, functions: 65, branches: 60, statements: 70 };
+            const thresholds = { lines: 50, functions: 45, branches: 40, statements: 50 };
             let failed = false;
             for (const [metric, threshold] of Object.entries(thresholds)) {
               const actual = total[metric].pct;

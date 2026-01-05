@@ -72,6 +72,16 @@ export default defineConfig({
         "app/infra/queue/index.ts",
         // Exclude React hooks that require browser environment
         "app/lib/useLocalStorage.ts",
+        // Exclude client-side React Query hooks (require browser environment)
+        "app/lib/query/**",
+        // Exclude client-side validation hooks (require React context)
+        "app/lib/validation/hooks/**",
+        // Exclude client-safe wrapper files (tested via their server counterparts)
+        "app/**/*.client-safe.ts",
+        // Exclude client-safe loader-responses wrapper (tested via loader-responses.server.ts)
+        "app/lib/validation/loader-responses.ts",
+        // Exclude re-export/index files that only export types
+        "app/lib/validation/index.ts",
         // Exclude EditorJS utilities that require DOM
         "app/features/**/utils/editorjs-captions.ts",
         "app/features/**/utils/editorjs-config.ts",
