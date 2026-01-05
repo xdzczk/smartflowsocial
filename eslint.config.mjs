@@ -46,6 +46,7 @@ export default (async () => {
         "mocks/**",
         "*.config.js",
         ".eslintrc.js",
+        "coverage/**", // Exclude coverage report files (generated)
         "tests/e2e/cypress.config.mobile.ts", // Exclude from all linting (parser limitation)
       ],
     },
