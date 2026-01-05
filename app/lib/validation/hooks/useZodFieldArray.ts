@@ -44,21 +44,110 @@ function createSSRFieldArray<TFormValues extends Record<string, unknown>, TField
 }
 
 /**
- * Typed wrapper for useFieldArray that properly handles Zod schema types
- * 
- * This function bridges the gap between Zod's type inference and React Hook Form's
- * type system. The type assertion is necessary because:
- * 1. The form return type from useZodForm is a union type
- * 2. TypeScript can't statically verify the Control type compatibility
- * 3. Runtime behavior is correct - the form and schema match
- * 
- * During SSR, this returns a mock field array that allows components to render
- * without errors. The form will be properly initialized on the client during hydration.
- * 
- * @param form - The form instance from useZodForm
- * @param name - The field array name (must be a valid path in the schema)
- * @returns The useFieldArray return value with proper types
+ * Create a minimal control object for SSR that won't cause useFieldArray to fail
  */
+function createSSRControl<TFormValues extends Record<string, unknown>>(): Control<TFormValues> {
+  // Create a more robust Proxy that handles all property access patterns
+  const defaultFieldValue = { array: [] };
+  
+  const emptyRecord: Record<string, { array: unknown[] }> = {};
+  const fieldsProxy = new Proxy(emptyRecord, {
+    get: (_target, _prop) => {
+      // Return an object with an array property for any field name access
+      return defaultFieldValue;
+    },
+    has: () => true, // Handle 'in' operator checks
+    ownKeys: () => [], // Handle Object.keys() and similar
+    getOwnPropertyDescriptor: (_target, _prop) => ({
+      enumerable: true,
+      configurable: true,
+      value: defaultFieldValue,
+    }),
+    defineProperty: () => true,
+    deleteProperty: () => true,
+  });
+
+  // Create mock subjects/observables that useFieldArray might subscribe to
+  // These need to be synchronous and not cause any blocking operations
+  const mockSubject = {
+    next: () => {},
+    subscribe: () => ({ unsubscribe: () => {} }),
+    complete: () => {},
+    error: () => {},
+  };
+
+  // Create a more complete control object with all possible internal properties
+  // that useFieldArray might access during initialization
+  return {
+    _getFieldArray: () => [],
+    _fields: fieldsProxy,
+    _formValues: {},
+    _defaultValues: {},
+    _stateFlags: {
+      action: false,
+      mount: false,
+      watch: false,
+    },
+    _subjects: {
+      values: mockSubject,
+      array: mockSubject,
+      state: mockSubject,
+    },
+    _options: {
+      mode: 'onChange',
+      reValidateMode: 'onChange',
+      defaultValues: {},
+    },
+    _names: {
+      mount: new Set(),
+      unMount: new Set(),
+      array: new Set(),
+      values: new Set(),
+      state: new Set(),
+    },
+    _formState: {
+      isDirty: false,
+      isValidating: false,
+      isValid: true,
+      isSubmitted: false,
+      isSubmitSuccessful: false,
+      submitCount: 0,
+      dirtyFields: {},
+      touchedFields: {},
+      validatingFields: {},
+      errors: {},
+    },
+    register: () => ({
+      name: '',
+      onChange: () => {},
+      onBlur: () => {},
+      ref: () => {},
+    }),
+    unregister: () => {},
+    getFieldState: () => ({
+      invalid: false,
+      isDirty: false,
+      isTouched: false,
+      isValidating: false,
+    }),
+    _updateValid: () => {},
+    _updateFieldArray: () => {},
+    _getDirty: () => ({}),
+    _proxyFormState: {
+      isDirty: false,
+      isValidating: false,
+      isValid: true,
+      isSubmitted: false,
+      isSubmitSuccessful: false,
+      submitCount: 0,
+      dirtyFields: {},
+      touchedFields: {},
+      validatingFields: {},
+      errors: {},
+    },
+  } as unknown as Control<TFormValues>;
+}
+
 export function useZodFieldArray<
   TFormValues extends Record<string, unknown>,
   TFieldArrayName extends string
@@ -72,23 +161,27 @@ export function useZodFieldArray<
   // The types are correct at runtime, but TypeScript can't verify this statically.
   // We assert the form to the expected type, then extract the control.
   const typedForm = form as unknown as UseFormReturn<TFormValues>;
-  const control = typedForm.control as unknown as Control<TFormValues>;
+  const originalControl = typedForm.control as unknown as Control<TFormValues>;
   
-  // Check if control has the required method (client-side only)
-  // During SSR, the control from useZodForm's SSR form won't have _getFieldArray
+  // Check if we're on the server
   const isServer = typeof window === "undefined";
-  const hasValidControl = !isServer && control && typeof (control as { _getFieldArray?: unknown })._getFieldArray === "function";
+  
+  // During SSR, use a minimal control object that won't cause useFieldArray to fail
+  // On the client, use the real control
+  const control = isServer 
+    ? createSSRControl<TFormValues>()
+    : originalControl;
   
   // Always call useFieldArray to satisfy React hooks rules
-  // We'll use the result only if we have a valid control
+  // The enhanced control object should prevent it from hanging during SSR
   const fieldArrayResult = useFieldArray({
     control,
     name: name as FieldArrayPath<TFormValues>,
   });
   
-  // During SSR or if control is invalid, return the mock field array
-  // This satisfies React's rules because we always call the hook above
-  if (!hasValidControl) {
+  // During SSR, return the mock field array instead of the result from useFieldArray
+  // This ensures components can render during SSR without errors
+  if (isServer) {
     return createSSRFieldArray(typedForm, name);
   }
   
