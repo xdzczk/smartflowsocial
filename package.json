@@ -10,6 +10,7 @@
   ],
   "scripts": {
     "postinstall": "prisma generate",
+    "prepare": "husky",
     "build": "remix build && esbuild --platform=node --format=cjs ./server.ts --outdir=build --bundle --external:fsevents --external:file-type && esbuild --platform=node --format=cjs ./worker.ts --outdir=build --bundle --external:fsevents --external:file-type",
     "dev": "npm-run-all2 --parallel dev:*",
     "dev:remix": "remix dev --manual -c \"node --watch-path ./build/server.js --watch ./build/server.js\"",
@@ -18,7 +19,7 @@
     "docker": "docker compose up -d",
     "format": "prettier --write .",
     "lint": "eslint --cache --cache-location ./node_modules/.cache/eslint .; LINT_EXIT=$?; eslint --format json . > eslint-report.json 2>&1; exit $LINT_EXIT",
-    "lint:ci": "eslint . --format json > eslint-report.json 2>&1; eslint . || exit 1",
+    "lint:ci": "eslint . --format json --output-file eslint-report.json || exit 1",
     "start": "cross-env NODE_ENV=production node ./build/server.js",
     "start:worker": "cross-env NODE_ENV=production node ./build/worker.js",
     "db:seed": "tsx prisma/seed.ts",
@@ -164,17 +165,24 @@
     "eslint-config-prettier": "^9.1.0",
     "eslint-import-resolver-typescript": "^3.6.3",
     "eslint-plugin-cypress": "^4.3.0",
+    "eslint-plugin-eslint-comments": "^3.2.0",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-jest": "^28.8.3",
     "eslint-plugin-jest-dom": "^5.4.0",
     "eslint-plugin-jsx-a11y": "^6.10.0",
+    "eslint-plugin-no-secrets": "^2.2.1",
+    "eslint-plugin-promise": "^7.2.1",
     "eslint-plugin-react": "^7.37.1",
     "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-sonarjs": "^3.0.5",
     "eslint-plugin-testing-library": "^7.0.0",
+    "eslint-plugin-unicorn": "^62.0.0",
     "fast-check": "^3.22.0",
     "globals": "^15.14.0",
     "happy-dom": "^20.0.11",
+    "husky": "^9.1.7",
     "jsdom": "^27.3.0",
+    "lint-staged": "^15.5.2",
     "npm-run-all2": "^6.2.3",
     "postcss": "^8.4.47",
     "prettier": "3.3.3",
@@ -186,6 +194,15 @@
     "vite": "^5.4.8",
     "vite-tsconfig-paths": "^4.3.2",
     "vitest": "^4.0.16"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{js,jsx,json,md,yml,yaml}": [
+      "prettier --write"
+    ]
   },
   "engines": {
     "node": ">=20.0.0"

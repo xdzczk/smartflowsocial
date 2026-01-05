@@ -26,20 +26,21 @@ jobs:
           node-version: "20"
           cache: "pnpm"
 
+      - name: Cache TypeScript build info
+        uses: actions/cache@v4
+        with:
+          path: |
+            .tsbuildinfo
+            **/*.tsbuildinfo
+          key: ts-${{ runner.os }}-${{ hashFiles('**/*.ts', '**/*.tsx', 'tsconfig.json', 'tests/e2e/tsconfig.json') }}
+          restore-keys: |
+            ts-${{ runner.os }}-
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Generate Prisma Client
         run: pnpm exec prisma generate
-
-      - name: Generate TypeScript type information
-        run: |
-          ERRORS=$(pnpm exec tsc --noEmit --skipLibCheck 2>&1 | grep -E "^(app/|tests/|prisma/|server\.ts|worker\.ts)" || true)
-          if [ -n "$ERRORS" ]; then
-            echo "$ERRORS"
-            exit 1
-          fi
-          echo "✅ TypeScript type check passed (node_modules errors ignored)"
 
       - name: Setup PostgreSQL
         uses: ankane/setup-postgres@v1
@@ -80,13 +81,35 @@ jobs:
 
       - name: Run type check
         run: |
-          # Check if there are any errors in our code (excluding node_modules)
-          ERRORS=$(pnpm exec tsc --noEmit --skipLibCheck 2>&1 | grep -E "^(app/|tests/|prisma/|server\.ts|worker\.ts)" || true)
+          set +e  # Don't exit on error, we'll handle it manually
+
+          # Run type check and capture output
+          pnpm exec tsc --noEmit --skipLibCheck > /tmp/tsc-output.log 2>&1
+          TSC_EXIT=$?
+
+          # Filter errors from our codebase (exclude node_modules)
+          ERRORS=$(grep -E "error TS" /tmp/tsc-output.log | grep -E "(app/|tests/|prisma/|server\.ts|worker\.ts)" || true)
+
           if [ -n "$ERRORS" ]; then
+            echo "❌ TypeScript errors found in codebase:"
             echo "$ERRORS"
             exit 1
           fi
-          echo "✅ TypeScript type check passed (node_modules errors ignored)"
+
+          # Check e2e tsconfig
+          if [ -f "tests/e2e/tsconfig.json" ]; then
+            pnpm exec tsc -p tests/e2e/tsconfig.json --noEmit --skipLibCheck > /tmp/tsc-e2e-output.log 2>&1
+            TSC_E2E_EXIT=$?
+            E2E_ERRORS=$(grep -E "error TS" /tmp/tsc-e2e-output.log | grep -v "node_modules" || true)
+            
+            if [ -n "$E2E_ERRORS" ]; then
+              echo "❌ TypeScript errors found in e2e tests:"
+              echo "$E2E_ERRORS"
+              exit 1
+            fi
+          fi
+
+          echo "✅ TypeScript type check passed (all configs)"
 
       - name: Run tests
         run: pnpm test

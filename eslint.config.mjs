@@ -1,6 +1,6 @@
 /**
  * ESLint v9 Flat Config
- * Migrated from .eslintrc.js
+ * Balanced world-class configuration: strict on correctness, reasonable on style
  */
 
 import js from "@eslint/js";
@@ -13,26 +13,247 @@ import importPlugin from "eslint-plugin-import";
 import jest from "eslint-plugin-jest";
 import jestDom from "eslint-plugin-jest-dom";
 import testingLibrary from "eslint-plugin-testing-library";
-// Markdown plugin - may need adjustment for ESLint 9
+import unicorn from "eslint-plugin-unicorn";
+import sonarjs from "eslint-plugin-sonarjs";
+import promise from "eslint-plugin-promise";
+import noSecrets from "eslint-plugin-no-secrets";
+import eslintComments from "eslint-plugin-eslint-comments";
 import prettier from "eslint-config-prettier";
 import globals from "globals";
 
-// ESLint 9 supports async config exports
+// ============================================================================
+// Shared Rule Sets
+// ============================================================================
+
+/**
+ * Tier 1: Critical correctness & safety rules (always errors)
+ */
+const tier1Rules = {
+  "@typescript-eslint/no-explicit-any": "error",
+  "@typescript-eslint/no-unsafe-assignment": "error",
+  "@typescript-eslint/no-unsafe-member-access": "error",
+  "@typescript-eslint/no-unsafe-call": "error",
+  "@typescript-eslint/no-floating-promises": "error",
+  "@typescript-eslint/await-thenable": "error",
+  "@typescript-eslint/no-misused-promises": "error",
+  "@typescript-eslint/no-unnecessary-type-assertion": "error",
+  "@typescript-eslint/consistent-type-assertions": [
+    "error",
+    { assertionStyle: "as", objectLiteralTypeAssertions: "never" },
+  ],
+  "@typescript-eslint/restrict-template-expressions": [
+    "error",
+    { allowNumber: true, allowBoolean: true, allowAny: false, allowNullish: false },
+  ],
+};
+
+/**
+ * Tier 2: Critical code quality (errors) + Style preferences (warnings)
+ */
+const tier2Rules = {
+  // Critical: errors
+  "@typescript-eslint/no-unused-vars": [
+    "error",
+    {
+      argsIgnorePattern: "^_",
+      varsIgnorePattern: "^_",
+      caughtErrorsIgnorePattern: "^_",
+      args: "after-used",
+      ignoreRestSiblings: true,
+    },
+  ],
+  "no-unused-vars": "off",
+  "@typescript-eslint/consistent-type-imports": [
+    "error",
+    { prefer: "type-imports", fixStyle: "separate-type-imports" },
+  ],
+  // Style: warnings
+  "@typescript-eslint/prefer-nullish-coalescing": "warn",
+  "@typescript-eslint/prefer-optional-chain": "warn",
+  "@typescript-eslint/no-inferrable-types": "warn",
+  "@typescript-eslint/prefer-readonly": "warn",
+  "@typescript-eslint/prefer-reduce-type-parameter": "warn",
+  "@typescript-eslint/no-unnecessary-condition": "warn",
+  "@typescript-eslint/ban-ts-comment": [
+    "warn",
+    {
+      "ts-expect-error": "allow-with-description",
+      "ts-ignore": "allow-with-description",
+      "ts-nocheck": "allow-with-description",
+      "ts-check": false,
+    },
+  ],
+  // TypeScript consistency rules
+  "@typescript-eslint/consistent-type-definitions": ["warn", "interface"],
+  "@typescript-eslint/array-type": ["warn", { default: "array-simple" }],
+  "@typescript-eslint/no-confusing-void-expression": ["warn", { ignoreArrowShorthand: true }],
+  "@typescript-eslint/no-meaningless-void-operator": "warn",
+  "@typescript-eslint/no-redundant-type-constituents": "warn",
+};
+
+/**
+ * Import ordering (error for consistency)
+ */
+const importOrderRule = [
+  "error",
+  {
+    alphabetize: { caseInsensitive: true, order: "asc" },
+    groups: ["builtin", "external", "internal", "parent", "sibling"],
+    "newlines-between": "always",
+  },
+];
+
+/**
+ * Feature boundary restrictions (error for architecture enforcement)
+ */
+const featureBoundaryRestrictions = [
+  {
+    target: "app/routes/**/*",
+    from: "app/models/**",
+    message: "Routes cannot import from ~/models/* directly. Use feature service layers instead.",
+  },
+  {
+    target: "app/routes/**/*",
+    from: "app/features/**/services/**",
+    message: "Routes must use feature public API (index.ts), not internal services",
+  },
+  {
+    target: "app/routes/**/*",
+    from: "app/features/**/hooks/**",
+    message: "Routes must use feature public API (index.ts), not internal hooks",
+  },
+  {
+    target: "app/routes/**/*",
+    from: "app/features/**/components/**",
+    message: "Routes must use feature public API (index.ts), not internal components",
+  },
+  {
+    target: "app/routes/**/*",
+    from: "app/features/**/utils/**",
+    message: "Routes must use feature public API (index.ts), not internal utils",
+  },
+  {
+    target: ["app/features/**/*.{ts,tsx}", "!app/features/**/index.{ts,tsx}"],
+    from: "~/features/*/services/**",
+    except: ["app/features/*/services/**", "app/features/**/services/**"],
+    message: "Features must use other features' public API (index.ts), not internal services. Use relative imports for same-feature imports.",
+  },
+  {
+    target: ["app/features/**/*.{ts,tsx}", "!app/features/**/index.{ts,tsx}"],
+    from: "~/features/*/hooks/**",
+    except: ["app/features/*/hooks/**", "app/features/**/hooks/**"],
+    message: "Features must use other features' public API (index.ts), not internal hooks. Use relative imports for same-feature imports.",
+  },
+  {
+    target: ["app/features/**/*.{ts,tsx}", "!app/features/**/index.{ts,tsx}"],
+    from: "~/features/*/components/**",
+    except: ["app/features/*/components/**", "app/features/**/components/**"],
+    message: "Features must use other features' public API (index.ts), not internal components. Use relative imports for same-feature imports.",
+  },
+  {
+    target: ["app/features/**/*.{ts,tsx}", "!app/features/**/index.{ts,tsx}"],
+    from: "~/features/*/utils/**",
+    except: ["app/features/*/utils/**", "app/features/**/utils/**"],
+    message: "Features must use other features' public API (index.ts), not internal utils. Use relative imports for same-feature imports.",
+  },
+  {
+    target: "app/models/**/*",
+    from: "app/features/**/services/**",
+    message: "Models must use feature public API (index.ts), not internal services",
+  },
+  {
+    target: "app/models/**/*",
+    from: "app/features/**/hooks/**",
+    message: "Models must use feature public API (index.ts), not internal hooks",
+  },
+  {
+    target: "app/models/**/*",
+    from: "app/features/**/components/**",
+    message: "Models must use feature public API (index.ts), not internal components",
+  },
+];
+
+/**
+ * Quality improvement rules (warnings - code quality, not correctness)
+ */
+const qualityRules = {
+  // Unicorn
+  "unicorn/prevent-abbreviations": "off",
+  "unicorn/filename-case": [
+    "warn",
+    {
+      case: "kebabCase",
+      ignore: [/^[A-Z]/, /\.server\.ts$/, /\.client\.ts$/, /^use[A-Z]/],
+    },
+  ],
+  "unicorn/no-array-callback-reference": "warn",
+  "unicorn/no-array-method-this-argument": "warn",
+  "unicorn/no-array-reduce": "off",
+  "unicorn/no-useless-undefined": "warn",
+  "unicorn/prefer-array-find": "warn",
+  "unicorn/prefer-array-some": "warn",
+  "unicorn/prefer-array-index-of": "warn",
+  "unicorn/prefer-includes": "warn",
+  "unicorn/prefer-string-starts-ends-with": "warn",
+  "unicorn/prefer-string-trim-start-end": "warn",
+  "unicorn/prefer-top-level-await": "off",
+  // SonarJS
+  "sonarjs/cognitive-complexity": ["warn", 15],
+  "sonarjs/no-duplicate-string": ["warn", { threshold: 3 }],
+  "sonarjs/no-identical-functions": "warn",
+  "sonarjs/no-small-switch": "off",
+  "sonarjs/prefer-immediate-return": "warn",
+  "sonarjs/prefer-single-boolean-return": "warn",
+  // Promise
+  "promise/always-return": "warn",
+  "promise/catch-or-return": "warn",
+  "promise/no-nesting": "warn",
+  "promise/no-promise-in-callback": "warn",
+  "promise/no-return-in-finally": "error",
+  "promise/prefer-await-to-callbacks": "warn",
+  "promise/prefer-await-to-then": "warn",
+  // Security
+  "no-secrets/no-secrets": [
+    "warn",
+    {
+      tolerance: 4.2,
+      ignoreContent: [
+        "^[a-f0-9]{32,64}$",
+        "^[A-Za-z0-9+/=]{20,}$",
+        "^[A-Za-z]{26,}$",
+      ],
+    },
+  ],
+};
+
+// ============================================================================
+// Main Config
+// ============================================================================
+
 export default (async () => {
-  // Conditionally import cypress plugin to avoid module resolution issues
   let cypressPlugin;
   try {
     const cypressModule = await import("eslint-plugin-cypress");
     cypressPlugin = cypressModule.default;
   } catch {
-    // Plugin not available or module resolution issue - will be undefined
-    // This prevents the config from failing when the plugin can't be resolved
     cypressPlugin = undefined;
   }
 
   return [
-    // Base config
     js.configs.recommended,
+
+    // ESLint comment best practices (global)
+    {
+      plugins: {
+        "eslint-comments": eslintComments,
+      },
+      rules: {
+        "eslint-comments/disable-enable-pair": "warn",
+        "eslint-comments/no-unlimited-disable": "error",
+        "eslint-comments/no-unused-disable": "error",
+        "eslint-comments/require-description": ["warn", { ignore: ["eslint-enable"] }],
+      },
+    },
 
     // Ignore patterns
     {
@@ -42,16 +263,12 @@ export default (async () => {
         "build/**",
         "public/build/**",
         "postgres-data/**",
-        "scripts/**",
-        "mocks/**",
-        "*.config.js",
-        ".eslintrc.js",
-        "coverage/**", // Exclude coverage report files (generated)
-        "tests/e2e/cypress.config.mobile.ts", // Exclude from all linting (parser limitation)
+        "coverage/**",
+        "tests/e2e/cypress.config.mobile.ts",
       ],
     },
 
-    // React config for all JS/TS files
+    // Base: React & JSX for all files
     {
       files: ["**/*.{js,jsx,ts,tsx}"],
       plugins: {
@@ -62,33 +279,22 @@ export default (async () => {
       languageOptions: {
         ecmaVersion: "latest",
         sourceType: "module",
-        parserOptions: {
-          ecmaFeatures: {
-            jsx: true,
-          },
-        },
-        globals: {
-          ...globals.browser,
-          ...globals.node,
-        },
+        parserOptions: { ecmaFeatures: { jsx: true } },
+        globals: { ...globals.browser, ...globals.node },
       },
-      settings: {
-        react: {
-          version: "detect",
-        },
-      },
+      settings: { react: { version: "detect" } },
       rules: {
         ...reactPlugin.configs.recommended.rules,
         ...reactPlugin.configs["jsx-runtime"].rules,
         ...reactHooks.configs.recommended.rules,
         ...jsxA11y.configs.recommended.rules,
-        "react/jsx-no-leaked-render": [
-          "warn",
-          { validStrategies: ["ternary"] },
-        ],
+        "react/jsx-no-leaked-render": ["warn", { validStrategies: ["ternary"] }],
         "react/prop-types": "off",
-        // Disable no-undef for TypeScript files (TypeScript handles this)
         "no-undef": "off",
+        // React performance rules
+        "react/jsx-no-constructed-context-values": "warn",
+        "react/no-array-index-key": "warn",
+        "react/no-unstable-nested-components": "warn",
         "jsx-a11y/click-events-have-key-events": "warn",
         "jsx-a11y/no-static-element-interactions": "warn",
         "jsx-a11y/media-has-caption": "warn",
@@ -99,312 +305,81 @@ export default (async () => {
       },
     },
 
-    // E2E test config files (no type-aware parsing) - MUST come before general TypeScript config
-    {
-      files: ["tests/e2e/**/*.config.ts"],
-      plugins: {
-        "@typescript-eslint": tseslintPlugin,
-        import: importPlugin,
-      },
-      languageOptions: {
-        parser: tseslintParser,
-        // Explicitly set parserOptions to empty object to prevent type-aware parsing
-        parserOptions: {},
-        globals: {
-          ...globals.node,
-        },
-      },
-      rules: {
-        // Only non-type-aware rules for config files
-        "@typescript-eslint/no-explicit-any": "off", // Requires type info
-        "@typescript-eslint/no-unsafe-assignment": "off", // Requires type info
-        "@typescript-eslint/no-unsafe-member-access": "off", // Requires type info
-        "@typescript-eslint/no-unsafe-call": "off", // Requires type info
-        "no-console": "off",
-        "@typescript-eslint/no-unused-vars": [
-          "warn",
-          { argsIgnorePattern: "^_" },
-        ],
-        "import/order": "off", // Config files don't need strict import ordering
-        "import/no-restricted-paths": "off",
-        "no-restricted-imports": "off",
-      },
-    },
-
-    // TypeScript config
+    // Production TypeScript: Strict rules for correctness & safety
     {
       files: ["**/*.{ts,tsx}"],
-      ignores: ["tailwind.config.ts", "tests/e2e/**/*.config.ts"], // Exclude from type-aware parsing
+      ignores: [
+        "tailwind.config.ts",
+        "tests/**",
+        "cypress/**",
+        "**/*.test.{ts,tsx}",
+        "**/*.config.ts",
+        "scripts/**",
+        "mocks/**",
+        "**/seed*.ts",
+        "**/*factory*.ts",
+        "prisma/**",
+        "server.ts",
+        "worker.ts",
+      ],
       plugins: {
         "@typescript-eslint": tseslintPlugin,
         import: importPlugin,
+        unicorn,
+        sonarjs,
+        promise,
+        "no-secrets": noSecrets,
+        "eslint-comments": eslintComments,
       },
       languageOptions: {
         parser: tseslintParser,
         parserOptions: {
           project: "./tsconfig.json",
           tsconfigRootDir: import.meta.dirname,
+          isolatedModules: true, // Match tsconfig.json setting
         },
       },
       settings: {
         "import/internal-regex": "^~/",
         "import/resolver": {
-          node: {
-            extensions: [".ts", ".tsx"],
-          },
-          typescript: {
-            alwaysTryTypes: true,
-          },
+          node: { extensions: [".ts", ".tsx"] },
+          typescript: { alwaysTryTypes: true },
         },
       },
       rules: {
-        // Tier 1 — Must be zero (non-negotiable for correctness, safety, and valuation)
-        "@typescript-eslint/no-explicit-any": "error",
-        "@typescript-eslint/no-unsafe-assignment": "error",
-        "@typescript-eslint/no-unsafe-member-access": "error",
-        "@typescript-eslint/no-unsafe-call": "error",
-        "@typescript-eslint/no-floating-promises": "error",
-        "@typescript-eslint/await-thenable": "error",
-        "@typescript-eslint/no-misused-promises": "error",
-        "@typescript-eslint/no-unnecessary-type-assertion": "error",
-        "@typescript-eslint/consistent-type-assertions": [
-          "error",
-          {
-            assertionStyle: "as",
-            objectLiteralTypeAssertions: "never",
-          },
-        ],
-        "@typescript-eslint/restrict-template-expressions": [
-          "error",
-          {
-            allowNumber: true,
-            allowBoolean: true,
-            allowAny: false,
-            allowNullish: false,
-          },
-        ],
-        // Tier 2 — Strongly preferred to be zero
-        "@typescript-eslint/consistent-type-imports": [
-          "warn",
-          {
-            prefer: "type-imports",
-            fixStyle: "separate-type-imports",
-          },
-        ],
-        "@typescript-eslint/no-unused-vars": [
-          "warn",
-          {
-            argsIgnorePattern: "^_",
-            varsIgnorePattern: "^_",
-            caughtErrorsIgnorePattern: "^_",
-            args: "after-used",
-            ignoreRestSiblings: true,
-          },
-        ],
-        // Allow unused parameter names in function type definitions
-        "no-unused-vars": "off", // Use @typescript-eslint/no-unused-vars instead
-        "@typescript-eslint/prefer-nullish-coalescing": "warn",
-        "@typescript-eslint/prefer-optional-chain": "warn",
-        "@typescript-eslint/no-inferrable-types": "warn",
-        "@typescript-eslint/ban-ts-comment": [
-          "warn",
-          {
-            "ts-expect-error": "allow-with-description",
-            "ts-ignore": "allow-with-description",
-            "ts-nocheck": "allow-with-description",
-            "ts-check": false,
-          },
-        ],
-        "import/order": [
-          "error",
-          {
-            alphabetize: { caseInsensitive: true, order: "asc" },
-            groups: ["builtin", "external", "internal", "parent", "sibling"],
-            "newlines-between": "always",
-          },
-        ],
-        // Disallow console.log/warn/info, but allow console.error
-        "no-console": [
-          "error",
-          {
-            allow: ["error", "warn", "info"],
-          },
-        ],
-        // Enforce feature boundaries
-        "import/no-restricted-paths": [
-          "warn",
-          {
-            zones: [
-              // Routes restrictions
-              {
-                target: "app/routes/**/*",
-                from: "app/models/**",
-                message:
-                  "Routes cannot import from ~/models/* directly. Use feature service layers instead (e.g., ~/features/*/services/*.server.ts)",
-              },
-              {
-                target: "app/routes/**/*",
-                from: "app/features/**/services/**",
-                message:
-                  "Routes must use feature public API (index.ts), not internal services",
-              },
-              {
-                target: "app/routes/**/*",
-                from: "app/features/**/hooks/**",
-                message:
-                  "Routes must use feature public API (index.ts), not internal hooks",
-              },
-              {
-                target: "app/routes/**/*",
-                from: "app/features/**/components/**",
-                message:
-                  "Routes must use feature public API (index.ts), not internal components",
-              },
-              {
-                target: "app/routes/**/*",
-                from: "app/features/**/utils/**",
-                message:
-                  "Routes must use feature public API (index.ts), not internal utils",
-              },
-              // Feature restrictions (excluding index.ts files which are the public API)
-              // Note: index.ts files are allowed to import from their own internals
-              // We use a more specific target pattern to exclude index.ts files
-              // IMPORTANT: The `except` patterns allow same-feature imports (when the importing file
-              // and imported file are in the same feature directory). The `*` wildcard matches any
-              // feature name, so `app/features/*/services/**` will match imports from the same feature.
-              // However, this also allows cross-feature imports, so we rely on the pattern matching
-              // to only allow when both are in the same feature (which the rule checks automatically).
-              {
-                target: ["app/features/**/*.ts", "!app/features/**/index.ts"],
-                // Only check absolute imports (starting with ~/features/)
-                // Relative imports (./ or ../) are allowed for same-feature imports
-                from: "~/features/*/services/**",
-                except: [
-                  "app/features/*/services/**",
-                  "app/features/**/services/**",
-                ],
-                message:
-                  "Features must use other features' public API (index.ts), not internal services. Use relative imports (../services/ServiceName) for same-feature imports.",
-              },
-              {
-                target: ["app/features/**/*.ts", "!app/features/**/index.ts"],
-                // Only check absolute imports (starting with ~/features/)
-                // Relative imports (./ or ../) are allowed for same-feature imports
-                from: "~/features/*/hooks/**",
-                except: ["app/features/*/hooks/**", "app/features/**/hooks/**"],
-                message:
-                  "Features must use other features' public API (index.ts), not internal hooks. Use relative imports (../hooks/useHookName) for same-feature imports.",
-              },
-              {
-                target: ["app/features/**/*.ts", "!app/features/**/index.ts"],
-                // Only check absolute imports (starting with ~/features/)
-                // Relative imports (./ or ../) are allowed for same-feature imports
-                from: "~/features/*/components/**",
-                except: [
-                  "app/features/*/components/**",
-                  "app/features/**/components/**",
-                ],
-                message:
-                  "Features must use other features' public API (index.ts), not internal components. Use relative imports (./ComponentName) for same-feature imports.",
-              },
-              {
-                target: ["app/features/**/*.ts", "!app/features/**/index.ts"],
-                // Only check absolute imports (starting with ~/features/)
-                // Relative imports (./ or ../) are allowed for same-feature imports
-                from: "~/features/*/utils/**",
-                except: ["app/features/*/utils/**", "app/features/**/utils/**"],
-                message:
-                  "Features must use other features' public API (index.ts), not internal utils. Use relative imports (../utils/utilName) for same-feature imports.",
-              },
-              {
-                target: ["app/features/**/*.tsx", "!app/features/**/index.tsx"],
-                // Only check absolute imports (starting with ~/features/)
-                // Relative imports (./ or ../) are allowed for same-feature imports
-                from: "~/features/*/services/**",
-                except: [
-                  "app/features/*/services/**",
-                  "app/features/**/services/**",
-                ],
-                message:
-                  "Features must use other features' public API (index.ts), not internal services. Use relative imports (../services/ServiceName) for same-feature imports.",
-              },
-              {
-                target: ["app/features/**/*.tsx", "!app/features/**/index.tsx"],
-                // Only check absolute imports (starting with ~/features/)
-                // Relative imports (./ or ../) are allowed for same-feature imports
-                from: "~/features/*/hooks/**",
-                except: ["app/features/*/hooks/**", "app/features/**/hooks/**"],
-                message:
-                  "Features must use other features' public API (index.ts), not internal hooks. Use relative imports (../hooks/useHookName) for same-feature imports.",
-              },
-              {
-                target: ["app/features/**/*.tsx", "!app/features/**/index.tsx"],
-                // Only check absolute imports (starting with ~/features/)
-                // Relative imports (./ or ../) are allowed for same-feature imports
-                from: "~/features/*/components/**",
-                except: [
-                  "app/features/*/components/**",
-                  "app/features/**/components/**",
-                ],
-                message:
-                  "Features must use other features' public API (index.ts), not internal components. Use relative imports (./ComponentName) for same-feature imports.",
-              },
-              {
-                target: ["app/features/**/*.tsx", "!app/features/**/index.tsx"],
-                // Only check absolute imports (starting with ~/features/)
-                // Relative imports (./ or ../) are allowed for same-feature imports
-                from: "~/features/*/utils/**",
-                except: ["app/features/*/utils/**", "app/features/**/utils/**"],
-                message:
-                  "Features must use other features' public API (index.ts), not internal utils. Use relative imports (../utils/utilName) for same-feature imports.",
-              },
-              {
-                target: "app/models/**/*",
-                from: "app/features/**/services/**",
-                message:
-                  "Models must use feature public API (index.ts), not internal services",
-              },
-              {
-                target: "app/models/**/*",
-                from: "app/features/**/hooks/**",
-                message:
-                  "Models must use feature public API (index.ts), not internal hooks",
-              },
-              {
-                target: "app/models/**/*",
-                from: "app/features/**/components/**",
-                message:
-                  "Models must use feature public API (index.ts), not internal components",
-              },
-            ],
-          },
-        ],
-        // Prevent Prisma imports in routes (features/services can import prisma.server)
-        // This rule is scoped to routes only via a separate config block below
-        "no-restricted-imports": "off",
+        ...tier1Rules,
+        ...tier2Rules,
+        "import/order": importOrderRule,
+        "no-console": ["error", { allow: ["error", "warn", "info"] }],
+        "import/no-restricted-paths": ["error", { zones: featureBoundaryRestrictions }],
+        "no-restricted-imports": "off", // Handled in routes-specific block
+        // Import quality rules
+        "import/no-cycle": ["error", { maxDepth: 10 }],
+        "import/no-duplicates": "error",
+        "import/no-self-import": "error",
+        "import/no-useless-path-segments": ["warn", { noUselessIndex: true }],
+        ...qualityRules,
       },
     },
 
-    // Routes-specific rules - restrict Prisma imports (features/services can import prisma.server)
+    // Routes: Additional Prisma restrictions
     {
       files: ["app/routes/**/*.{ts,tsx}"],
       rules: {
         "no-restricted-imports": [
-          "warn",
+          "error",
           {
             paths: [
               {
                 name: "@prisma/client",
                 importNames: ["PrismaClient"],
-                message:
-                  "Routes should not import PrismaClient directly. Use models layer instead (e.g., ~/models/*.server.ts)",
+                message: "Routes should not import PrismaClient directly. Use models layer instead.",
               },
             ],
             patterns: [
               {
                 group: ["**/prisma.server"],
-                message:
-                  "Routes should not import prisma.server directly. Use models layer instead.",
+                message: "Routes should not import prisma.server directly. Use models layer instead.",
               },
             ],
           },
@@ -412,49 +387,74 @@ export default (async () => {
       },
     },
 
-    // Validation utilities - allow controlled type assertions for Zod + React Hook Form integration
-    // These files bridge type system boundaries where TypeScript can't verify types statically
-    // but runtime behavior is correct. Type assertions are documented and necessary.
+    // Validation utilities: Allow type assertions for Zod boundaries
     {
-      files: [
-        "app/lib/validation/**/*.ts",
-        "app/lib/validation/**/*.tsx",
-      ],
+      files: ["app/lib/validation/**/*.{ts,tsx}"],
       rules: {
-        "@typescript-eslint/no-explicit-any": "warn", // Allow with documentation
-        "@typescript-eslint/no-unsafe-assignment": "warn", // Known limitation with Zod+RHF type inference
-        "@typescript-eslint/no-unsafe-member-access": "warn", // Known limitation with Zod+RHF type inference
-        "@typescript-eslint/no-unnecessary-type-assertion": "off", // Type assertions are necessary for type system boundaries
+        "@typescript-eslint/no-explicit-any": "warn",
+        "@typescript-eslint/no-unsafe-assignment": "warn",
+        "@typescript-eslint/no-unsafe-member-access": "warn",
+        "@typescript-eslint/no-unnecessary-type-assertion": "off",
       },
     },
 
-    // Markdown files - temporarily disabled for ESLint 9 compatibility
-    // TODO: Re-enable when eslint-plugin-markdown has full ESLint 9 support
+    // Feature index files: Allow importing from own internals
     {
-      files: ["**/*.md"],
+      files: ["app/features/**/index.{ts,tsx}"],
+      rules: {
+        "import/no-restricted-paths": "off",
+      },
+    },
+
+    // Tests: Same strictness as production, but relaxed for testing needs
+    {
+      files: ["**/*.test.{ts,tsx}", "tests/**/*.{ts,tsx}", "cypress/**/*.ts"],
+      ignores: ["tests/e2e/**/*.config.ts"],
       plugins: {
         "@typescript-eslint": tseslintPlugin,
+        jest,
+        "jest-dom": jestDom,
+        "testing-library": testingLibrary,
+        import: importPlugin,
+        promise,
+        ...(cypressPlugin && { cypress: cypressPlugin }),
       },
+      languageOptions: {
+        parser: tseslintParser,
+        parserOptions: {
+          project: ["./tsconfig.json", "./tests/e2e/tsconfig.json"],
+          tsconfigRootDir: import.meta.dirname,
+          isolatedModules: true, // Match tsconfig.json setting
+        },
+        globals: { ...globals.jest },
+      },
+      settings: { jest: { version: 28 } },
       rules: {
-        "@typescript-eslint/no-unused-vars": "off",
-        "@typescript-eslint/no-explicit-any": "off",
-        "@typescript-eslint/ban-ts-comment": "off",
+        ...jest.configs.recommended.rules,
+        ...jestDom.configs.recommended.rules,
+        ...testingLibrary.configs.react.rules,
+        ...(cypressPlugin?.configs?.recommended?.rules || {}),
+        ...tier1Rules,
+        ...tier2Rules,
+        "import/order": importOrderRule,
         "no-console": "off",
-        "import/order": "off",
-        "import/no-unresolved": "off",
-        "react/jsx-no-undef": "off",
-        "no-unused-labels": "off",
-        "no-empty": "off",
-        "no-debugger": "off",
-        "no-undef": "off",
-        "jsx-a11y/alt-text": "off",
+        "import/no-restricted-paths": "off",
+        "no-restricted-imports": "off",
+        "promise/always-return": "off",
+        "promise/catch-or-return": "off",
+        ...(cypressPlugin && { "cypress/no-unnecessary-waiting": "warn" }),
+        "jest/valid-expect": "off",
+        "jest/expect-expect": "off",
+        // Test quality rules
+        "jest/no-focused-tests": "error",
+        "jest/no-disabled-tests": "warn",
+        "jest/no-standalone-expect": "error",
       },
     },
 
-    // JavaScript test files (no TypeScript type-aware rules)
+    // JavaScript tests
     {
       files: ["**/*.test.{js,jsx}", "tests/**/*.{js,jsx}"],
-      ignores: ["scripts/**"],
       plugins: {
         "@typescript-eslint": tseslintPlugin,
         jest,
@@ -462,329 +462,56 @@ export default (async () => {
         "testing-library": testingLibrary,
         import: importPlugin,
       },
-      languageOptions: {
-        globals: {
-          ...globals.jest,
-        },
-      },
-      settings: {
-        jest: {
-          version: 28,
-        },
-      },
+      languageOptions: { globals: { ...globals.jest } },
+      settings: { jest: { version: 28 } },
       rules: {
         ...jest.configs.recommended.rules,
         ...jestDom.configs.recommended.rules,
         ...testingLibrary.configs.react.rules,
-        // Only non-type-aware rules for JS test files
-        "@typescript-eslint/no-explicit-any": "off", // Not applicable to JS
-        "@typescript-eslint/no-unused-vars": "off", // Use no-unused-vars for JS
+        "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/no-unused-vars": "off",
         "no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
         "no-console": "off",
         "import/order": "warn",
-        "import/no-restricted-paths": "off", // Tests can import from anywhere
-        "no-restricted-imports": "off", // Tests can import anything
+        "import/no-restricted-paths": "off",
+        "no-restricted-imports": "off",
+        // Test quality rules
+        "jest/no-focused-tests": "error",
+        "jest/no-disabled-tests": "warn",
+        "jest/no-standalone-expect": "error",
       },
     },
 
-    // TypeScript test files (with type-aware rules)
-    {
-      files: ["**/*.test.{ts,tsx}", "tests/**/*.{ts,tsx}"],
-      plugins: {
-        "@typescript-eslint": tseslintPlugin,
-        jest,
-        "jest-dom": jestDom,
-        "testing-library": testingLibrary,
-        import: importPlugin,
-      },
-      languageOptions: {
-        parser: tseslintParser,
-        parserOptions: {
-          project: "./tsconfig.json",
-          tsconfigRootDir: import.meta.dirname,
-        },
-        globals: {
-          ...globals.jest,
-        },
-      },
-      settings: {
-        jest: {
-          version: 28,
-        },
-      },
-      rules: {
-        ...jest.configs.recommended.rules,
-        ...jestDom.configs.recommended.rules,
-        ...testingLibrary.configs.react.rules,
-        // Tier 1 — Must be zero (same strictness as production code)
-        "@typescript-eslint/no-explicit-any": "error",
-        "@typescript-eslint/no-unsafe-assignment": "error",
-        "@typescript-eslint/no-unsafe-member-access": "error",
-        "@typescript-eslint/no-unsafe-call": "error",
-        "@typescript-eslint/no-floating-promises": "error",
-        "@typescript-eslint/await-thenable": "error",
-        "@typescript-eslint/no-misused-promises": "error",
-        "@typescript-eslint/no-unnecessary-type-assertion": "error",
-        "@typescript-eslint/consistent-type-assertions": [
-          "error",
-          {
-            assertionStyle: "as",
-            objectLiteralTypeAssertions: "never",
-          },
-        ],
-        "@typescript-eslint/restrict-template-expressions": [
-          "error",
-          {
-            allowNumber: true,
-            allowBoolean: true,
-            allowAny: false,
-            allowNullish: false,
-          },
-        ],
-        // Tier 2 — Strongly preferred to be zero (same as production)
-        "@typescript-eslint/consistent-type-imports": [
-          "warn",
-          {
-            prefer: "type-imports",
-            fixStyle: "separate-type-imports",
-          },
-        ],
-        "@typescript-eslint/no-unused-vars": [
-          "warn",
-          {
-            argsIgnorePattern: "^_",
-            varsIgnorePattern: "^_",
-            caughtErrorsIgnorePattern: "^_",
-            args: "after-used",
-            ignoreRestSiblings: true,
-          },
-        ],
-        "no-unused-vars": "off", // Use @typescript-eslint/no-unused-vars instead
-        "@typescript-eslint/prefer-nullish-coalescing": "warn",
-        "@typescript-eslint/prefer-optional-chain": "warn",
-        "@typescript-eslint/no-inferrable-types": "warn",
-        "@typescript-eslint/ban-ts-comment": [
-          "warn",
-          {
-            "ts-expect-error": "allow-with-description",
-            "ts-ignore": "allow-with-description",
-            "ts-nocheck": "allow-with-description",
-            "ts-check": false,
-          },
-        ],
-        "import/order": [
-          "error",
-          {
-            alphabetize: { caseInsensitive: true, order: "asc" },
-            groups: ["builtin", "external", "internal", "parent", "sibling"],
-            "newlines-between": "always",
-          },
-        ],
-        "no-console": "off", // Tests may need console for debugging
-        "import/no-restricted-paths": "off", // Tests can import from anywhere for testing
-        "no-restricted-imports": "off", // Tests can import anything for testing
-      },
-    },
-
-    // Cypress E2E tests - cypress directory
-    {
-      files: ["cypress/**/*.ts"],
-      plugins: {
-        "@typescript-eslint": tseslintPlugin,
-        import: importPlugin,
-        jest,
-        ...(cypressPlugin && { cypress: cypressPlugin }),
-      },
-      rules: {
-        ...(cypressPlugin?.configs?.recommended?.rules || {}),
-        // Tier 1 — Must be zero (same strictness as production code)
-        "@typescript-eslint/no-explicit-any": "error",
-        "@typescript-eslint/no-unsafe-assignment": "error",
-        "@typescript-eslint/no-unsafe-member-access": "error",
-        "@typescript-eslint/no-unsafe-call": "error",
-        "@typescript-eslint/no-floating-promises": "error",
-        "@typescript-eslint/await-thenable": "error",
-        "@typescript-eslint/no-misused-promises": "error",
-        "@typescript-eslint/no-unnecessary-type-assertion": "error",
-        "@typescript-eslint/consistent-type-assertions": [
-          "error",
-          {
-            assertionStyle: "as",
-            objectLiteralTypeAssertions: "never",
-          },
-        ],
-        "@typescript-eslint/restrict-template-expressions": [
-          "error",
-          {
-            allowNumber: true,
-            allowBoolean: true,
-            allowAny: false,
-            allowNullish: false,
-          },
-        ],
-        // Tier 2 — Strongly preferred to be zero (same as production)
-        "@typescript-eslint/consistent-type-imports": [
-          "warn",
-          {
-            prefer: "type-imports",
-            fixStyle: "separate-type-imports",
-          },
-        ],
-        "@typescript-eslint/no-unused-vars": [
-          "warn",
-          {
-            argsIgnorePattern: "^_",
-            varsIgnorePattern: "^_",
-            caughtErrorsIgnorePattern: "^_",
-            args: "after-used",
-            ignoreRestSiblings: true,
-          },
-        ],
-        "no-unused-vars": "off", // Use @typescript-eslint/no-unused-vars instead
-        "@typescript-eslint/prefer-nullish-coalescing": "warn",
-        "@typescript-eslint/prefer-optional-chain": "warn",
-        "@typescript-eslint/no-inferrable-types": "warn",
-        "@typescript-eslint/ban-ts-comment": [
-          "warn",
-          {
-            "ts-expect-error": "allow-with-description",
-            "ts-ignore": "allow-with-description",
-            "ts-nocheck": "allow-with-description",
-            "ts-check": false,
-          },
-        ],
-        "import/order": [
-          "error",
-          {
-            alphabetize: { caseInsensitive: true, order: "asc" },
-            groups: ["builtin", "external", "internal", "parent", "sibling"],
-            "newlines-between": "always",
-          },
-        ],
-        "no-console": "off", // E2E tests may need console for debugging
-        "import/no-restricted-paths": "off", // E2E tests can import from anywhere
-        "no-restricted-imports": "off", // E2E tests can import anything
-        ...(cypressPlugin && { "cypress/no-unnecessary-waiting": "warn" }),
-        "jest/valid-expect": "off", // Cypress uses different assertion syntax (.to.be.true)
-        "jest/expect-expect": "off", // Cypress tests use implicit assertions
-      },
-    },
-
-    // E2E tests - tests/e2e directory (uses separate tsconfig)
-    {
-      files: ["tests/e2e/**/*.ts"],
-      ignores: ["tests/e2e/**/*.config.ts"], // Exclude config files
-      plugins: {
-        "@typescript-eslint": tseslintPlugin,
-        import: importPlugin,
-        jest,
-        ...(cypressPlugin && { cypress: cypressPlugin }),
-      },
-      languageOptions: {
-        parser: tseslintParser,
-        parserOptions: {
-          project: "./tests/e2e/tsconfig.json",
-          tsconfigRootDir: import.meta.dirname,
-        },
-      },
-      rules: {
-        ...(cypressPlugin?.configs?.recommended?.rules || {}),
-        // Tier 1 — Must be zero (same strictness as production code)
-        "@typescript-eslint/no-explicit-any": "error",
-        "@typescript-eslint/no-unsafe-assignment": "error",
-        "@typescript-eslint/no-unsafe-member-access": "error",
-        "@typescript-eslint/no-unsafe-call": "error",
-        "@typescript-eslint/no-floating-promises": "error",
-        "@typescript-eslint/await-thenable": "error",
-        "@typescript-eslint/no-misused-promises": "error",
-        "@typescript-eslint/no-unnecessary-type-assertion": "error",
-        "@typescript-eslint/consistent-type-assertions": [
-          "error",
-          {
-            assertionStyle: "as",
-            objectLiteralTypeAssertions: "never",
-          },
-        ],
-        "@typescript-eslint/restrict-template-expressions": [
-          "error",
-          {
-            allowNumber: true,
-            allowBoolean: true,
-            allowAny: false,
-            allowNullish: false,
-          },
-        ],
-        // Tier 2 — Strongly preferred to be zero (same as production)
-        "@typescript-eslint/consistent-type-imports": [
-          "warn",
-          {
-            prefer: "type-imports",
-            fixStyle: "separate-type-imports",
-          },
-        ],
-        "@typescript-eslint/no-unused-vars": [
-          "warn",
-          {
-            argsIgnorePattern: "^_",
-            varsIgnorePattern: "^_",
-            caughtErrorsIgnorePattern: "^_",
-            args: "after-used",
-            ignoreRestSiblings: true,
-          },
-        ],
-        "no-unused-vars": "off", // Use @typescript-eslint/no-unused-vars instead
-        "@typescript-eslint/prefer-nullish-coalescing": "warn",
-        "@typescript-eslint/prefer-optional-chain": "warn",
-        "@typescript-eslint/no-inferrable-types": "warn",
-        "@typescript-eslint/ban-ts-comment": [
-          "warn",
-          {
-            "ts-expect-error": "allow-with-description",
-            "ts-ignore": "allow-with-description",
-            "ts-nocheck": "allow-with-description",
-            "ts-check": false,
-          },
-        ],
-        "import/order": [
-          "warn", // E2E tests: warning instead of error (best practice - less critical for test files)
-          {
-            alphabetize: { caseInsensitive: true, order: "asc" },
-            groups: ["builtin", "external", "internal", "parent", "sibling"],
-            "newlines-between": "always",
-          },
-        ],
-        "no-console": "off", // E2E tests may need console for debugging
-        "import/no-restricted-paths": "off", // E2E tests can import from anywhere
-        "no-restricted-imports": "off", // E2E tests can import anything
-        ...(cypressPlugin && { "cypress/no-unnecessary-waiting": "warn" }),
-        "jest/valid-expect": "off", // Cypress uses different assertion syntax (.to.be.true)
-        "jest/expect-expect": "off", // Cypress tests use implicit assertions
-      },
-    },
-
-    // JavaScript config files (no TypeScript type-aware rules)
+    // Config & script files: Minimal rules (no type-aware parsing)
     {
       files: [
-        ".eslintrc.js",
-        "mocks/**/*.js",
-        "scripts/**/*.js",
-        "*.config.js",
+        "**/*.config.{js,ts}",
+        "scripts/**",
+        "mocks/**",
+        "**/seed*.ts",
+        "**/*factory*.ts",
+        "prisma/**",
+        "server.ts",
+        "worker.ts",
+        "tailwind.config.ts",
+        "tests/e2e/**/*.config.ts",
       ],
       plugins: {
         "@typescript-eslint": tseslintPlugin,
         import: importPlugin,
       },
       languageOptions: {
-        globals: {
-          ...globals.node,
-        },
+        parser: tseslintParser,
+        parserOptions: {},
+        globals: { ...globals.node },
       },
       rules: {
-        // Only non-type-aware rules for JS files
-        "@typescript-eslint/no-explicit-any": "off", // Not applicable to JS
+        "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/no-unsafe-assignment": "off",
+        "@typescript-eslint/no-unsafe-member-access": "off",
+        "@typescript-eslint/no-unsafe-call": "off",
         "no-console": "off",
-        "no-undef": "off",
-        "@typescript-eslint/no-unused-vars": "off", // Use no-unused-vars for JS
+        "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
         "no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
         "import/order": "warn",
         "import/no-restricted-paths": "off",
@@ -792,178 +519,18 @@ export default (async () => {
       },
     },
 
-    // TypeScript scripts and config files (with type-aware rules)
-    {
-      files: ["scripts/**/*.ts", "cypress.config.ts", "vitest.config.ts"],
-      plugins: {
-        "@typescript-eslint": tseslintPlugin,
-        import: importPlugin,
-        jest,
-      },
-      languageOptions: {
-        parser: tseslintParser,
-        parserOptions: {
-          project: "./tsconfig.json",
-          tsconfigRootDir: import.meta.dirname,
-        },
-        globals: {
-          ...globals.node,
-        },
-      },
-      rules: {
-        // Relax Tier 1 rules for scripts
-        "@typescript-eslint/no-explicit-any": "warn",
-        "@typescript-eslint/no-unsafe-assignment": "warn",
-        "@typescript-eslint/no-unsafe-member-access": "warn",
-        "@typescript-eslint/no-unsafe-call": "warn",
-        "@typescript-eslint/no-floating-promises": "warn",
-        "@typescript-eslint/await-thenable": "warn",
-        "jest/valid-title": "off",
-        "jest/valid-describe-callback": "off",
-        "no-console": "off",
-        "@typescript-eslint/no-misused-promises": "warn",
-        "@typescript-eslint/no-unnecessary-type-assertion": "warn",
-        "@typescript-eslint/consistent-type-assertions": "warn",
-        "@typescript-eslint/restrict-template-expressions": [
-          "warn",
-          {
-            allowNumber: true,
-            allowBoolean: true,
-            allowAny: true,
-            allowNullish: true,
-          },
-        ],
-        "no-undef": "off",
-        "@typescript-eslint/no-unused-vars": [
-          "warn",
-          { argsIgnorePattern: "^_" },
-        ],
-        "import/order": "warn",
-        "import/no-restricted-paths": "off",
-        "no-restricted-imports": "off",
-      },
-    },
-
-    // Allow console in error-logger and error-handler
+    // Error handlers: Allow console
     {
       files: [
-        "app/lib/error-logger.server.ts",
-        "app/lib/error-handler.client.ts",
-        "app/lib/error-handler.server.ts",
-        "app/lib/error-handler.example.ts",
+        "app/lib/error-*.{ts,tsx}",
         "app/lib/secrets-sanitizer.server.ts",
-        "**/*.example.ts",
-        "**/*.example.tsx",
+        "**/*.example.{ts,tsx}",
       ],
-      plugins: {
-        "@typescript-eslint": tseslintPlugin,
-        import: importPlugin,
-      },
       rules: {
         "no-console": "off",
-        "@typescript-eslint/no-unused-vars": [
-          "warn",
-          { argsIgnorePattern: "^_" },
-        ],
-        "@typescript-eslint/no-explicit-any": "warn",
-        "import/order": "warn",
       },
     },
 
-    // Seed files and factories
-    {
-      files: ["**/seed*.ts", "**/*factory*.ts", "prisma/**/*.ts"],
-      plugins: {
-        "@typescript-eslint": tseslintPlugin,
-        import: importPlugin,
-      },
-      rules: {
-        // Relax Tier 1 rules for seed/factory files
-        "@typescript-eslint/no-explicit-any": "warn",
-        "@typescript-eslint/no-unsafe-assignment": "warn",
-        "@typescript-eslint/no-unsafe-member-access": "warn",
-        "@typescript-eslint/no-unsafe-call": "warn",
-        "@typescript-eslint/no-floating-promises": "warn",
-        "@typescript-eslint/await-thenable": "warn",
-        "@typescript-eslint/no-misused-promises": "warn",
-        "@typescript-eslint/no-unnecessary-type-assertion": "warn",
-        "@typescript-eslint/consistent-type-assertions": "warn",
-        "@typescript-eslint/restrict-template-expressions": [
-          "warn",
-          {
-            allowNumber: true,
-            allowBoolean: true,
-            allowAny: true,
-            allowNullish: true,
-          },
-        ],
-        "no-console": "off",
-        "@typescript-eslint/no-unused-vars": [
-          "warn",
-          { argsIgnorePattern: "^_" },
-        ],
-        "import/order": "warn",
-        "import/no-restricted-paths": "off",
-        "no-restricted-imports": "off",
-      },
-    },
-
-    // Feature index.ts files - allow importing from own internals
-    {
-      files: ["app/features/**/index.ts", "app/features/**/index.tsx"],
-      plugins: {
-        "@typescript-eslint": tseslintPlugin,
-        import: importPlugin,
-      },
-      rules: {
-        "import/no-restricted-paths": "off", // Index.ts files are the public API and should import from their own internals
-      },
-    },
-
-    // Config files without type-aware parsing (not in tsconfig)
-    {
-      files: ["tailwind.config.ts"],
-      plugins: {
-        "@typescript-eslint": tseslintPlugin,
-        import: importPlugin,
-      },
-      languageOptions: {
-        parser: tseslintParser,
-        // No parserOptions.project - not in tsconfig, so no type-aware rules
-        globals: {
-          ...globals.node,
-        },
-      },
-      rules: {
-        // Only non-type-aware rules
-        "@typescript-eslint/no-explicit-any": "off", // Requires type info
-        "@typescript-eslint/no-unsafe-assignment": "off", // Requires type info
-        "@typescript-eslint/no-unsafe-member-access": "off", // Requires type info
-        "@typescript-eslint/no-unsafe-call": "off", // Requires type info
-        "no-console": "off",
-        "@typescript-eslint/no-unused-vars": [
-          "warn",
-          { argsIgnorePattern: "^_" },
-        ],
-        "import/order": "warn",
-        "import/no-restricted-paths": "off",
-        "no-restricted-imports": "off",
-      },
-    },
-
-    // Server entry files
-    {
-      files: ["server.ts", "worker.ts"],
-      plugins: {
-        "@typescript-eslint": tseslintPlugin,
-      },
-      rules: {
-        "no-console": "off",
-        "@typescript-eslint/no-explicit-any": "warn",
-      },
-    },
-
-    // Prettier config (must be last)
     prettier,
   ];
 })();

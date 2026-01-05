@@ -1,0 +1,75 @@
+version: 2
+updates:
+  # Enable version updates for npm (pnpm)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "xdzczk" # Update with your GitHub username
+    labels:
+      - "dependencies"
+      - "automated"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    # Group updates for better PR management
+    groups:
+      # Group all ESLint-related packages
+      eslint:
+        patterns:
+          - "@typescript-eslint/*"
+          - "eslint*"
+          - "eslint-plugin-*"
+          - "eslint-config-*"
+      # Group all testing-related packages
+      testing:
+        patterns:
+          - "@vitest/*"
+          - "vitest"
+          - "cypress"
+          - "fast-check"
+          - "@testing-library/*"
+      # Group all TypeScript-related packages
+      typescript:
+        patterns:
+          - "typescript"
+          - "@types/*"
+      # Group all build tools
+      build-tools:
+        patterns:
+          - "esbuild"
+          - "vite"
+          - "tailwindcss"
+          - "postcss"
+          - "autoprefixer"
+    # Ignore major version updates for critical packages (review manually)
+    ignore:
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "prisma"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@prisma/client"
+        update-types: ["version-update:semver-major"]
+
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "github-actions"
+      - "automated"
+    commit-message:
+      prefix: "ci"
+      include: "scope"

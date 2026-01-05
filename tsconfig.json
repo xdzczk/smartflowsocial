@@ -15,23 +15,50 @@
     "cypress.config.ts"
   ],
   "compilerOptions": {
-    "lib": ["DOM", "DOM.Iterable", "ES2020", "ES2021"],
-    "isolatedModules": true,
-    "esModuleInterop": true,
-    "jsx": "react-jsx",
+    // Modern lib support
+    "lib": ["DOM", "DOM.Iterable", "ES2022", "ES2023"],
+
+    // Module system
+    // Note: Using "node" resolution for Remix compatibility
+    // "bundler" requires module: "preserve" or ESM, "node16" requires module: "Node16"
+    // Remix may require CommonJS, so we keep "node" resolution for compatibility
     "module": "CommonJS",
     "moduleResolution": "node",
-    "resolveJsonModule": true,
+
+    // Target
     "target": "ES2020",
+
+    // JSX
+    "jsx": "react-jsx",
+
+    // Strict mode (enables all strict checks)
     "strict": true,
-    "allowJs": true,
-    "forceConsistentCasingInFileNames": true,
+
+    // Additional strict flags (world-class safety)
+    "noUncheckedIndexedAccess": true, // ✅ Critical: Prevents undefined array access
+    "noImplicitOverride": true, // ✅ Critical: Requires explicit override keyword
+    "noPropertyAccessFromIndexSignature": true, // ✅ Critical: Requires bracket notation for index signatures
+
+    // Module interop
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "isolatedModules": true,
+
+    // Path mappings
     "baseUrl": ".",
     "paths": {
       "~/*": ["./app/*"],
       "~/tests/*": ["./tests/*"]
     },
+
+    // File handling
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "forceConsistentCasingInFileNames": true,
+
+    // Performance
     "skipLibCheck": true,
+    "incremental": true, // Enable incremental compilation for faster builds and CI caching
 
     // Remix takes care of building everything in `remix build`.
     "noEmit": true
