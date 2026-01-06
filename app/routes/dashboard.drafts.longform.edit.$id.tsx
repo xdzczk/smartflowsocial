@@ -22,7 +22,7 @@ import { withCSRFProtection } from "~/lib/csrf";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
-  const postId = params.id;
+  const postId = params["id"];
 
   if (!postId) {
     throw new Response("Post not found", { status: 404 });
@@ -32,21 +32,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return json(data);
 }
 
-export const action = withCSRFProtection(async ({ request, params }: ActionFunctionArgs) => {
-  try {
-    const userId = await requireUserId(request);
-    const postId = params.id;
+export const action = withCSRFProtection(
+  async ({ request, params }: ActionFunctionArgs) => {
+    try {
+      const userId = await requireUserId(request);
+      const postId = params["id"];
 
-    if (!postId) {
-      throw new Response("Post not found", { status: 404 });
+      if (!postId) {
+        throw new Response("Post not found", { status: 404 });
+      }
+
+      return await handleLongFormEditAction(userId, postId, request);
+    } catch (error) {
+      const { handleActionError } = await import("~/lib/error-handler.server");
+      return handleActionError(error);
     }
-
-    return await handleLongFormEditAction(userId, postId, request);
-  } catch (error) {
-    const { handleActionError } = await import("~/lib/error-handler.server");
-    return handleActionError(error);
   }
-});
+);
 
 type LoaderData = Awaited<ReturnType<typeof loader>>;
 type ActionData = Awaited<ReturnType<typeof action>>;
@@ -129,7 +131,7 @@ export default function EditLongFormPost() {
             ? parseInt(s, 10)
             : typeof s === "number"
               ? s
-              : null,
+              : null
         )
         .filter((n): n is number => n !== null && !isNaN(n))
     : [];
@@ -138,7 +140,7 @@ export default function EditLongFormPost() {
       typeof asset === "object" &&
       asset !== null &&
       "id" in asset &&
-      typeof (asset as { id: unknown }).id === "string",
+      typeof (asset as { id: unknown }).id === "string"
   );
   const typedPost =
     post &&
@@ -157,7 +159,7 @@ export default function EditLongFormPost() {
       : null;
   const queueTypes = queueTypesRaw.filter(
     (
-      qt: unknown,
+      qt: unknown
     ): qt is {
       id: string;
       name: string;
@@ -171,11 +173,11 @@ export default function EditLongFormPost() {
       "id" in qt &&
       "name" in qt &&
       typeof (qt as { id: unknown; name: unknown }).id === "string" &&
-      typeof (qt as { id: unknown; name: unknown }).name === "string",
+      typeof (qt as { id: unknown; name: unknown }).name === "string"
   );
   const hashtagPresets = hashtagPresetsRaw.filter(
     (
-      preset: unknown,
+      preset: unknown
     ): preset is {
       id: string;
       name: string;
@@ -192,7 +194,7 @@ export default function EditLongFormPost() {
       typeof (preset as { id: unknown; name: unknown; tags: unknown }).name ===
         "string" &&
       typeof (preset as { id: unknown; name: unknown; tags: unknown }).tags ===
-        "string",
+        "string"
   );
 
   const {
@@ -238,13 +240,13 @@ export default function EditLongFormPost() {
           onPreview={handlePreview}
           initialData={
             typedPost
-              ? ({
+              ? {
                   title: typedPost.title,
                   summary: typedPost.summary,
                   content: typedPost.content,
                   image: typedPost.image,
                   queueType: typedPost.queueType ?? undefined,
-                })
+                }
               : null
           }
           isEditing={true}

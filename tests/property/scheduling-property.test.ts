@@ -7,11 +7,12 @@
 import fc from "fast-check";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+import { TEST_USER_ID } from "../utils/test-helpers";
+
 import { calculateNextScheduleTime } from "~/features/posts/schedulers";
 import { getScheduleInterval } from "~/features/user";
 import { getLastPostTimeForQueue } from "~/models/post.queries.server";
 
-import { TEST_USER_ID } from "../utils/test-helpers";
 // Mock dependencies
 vi.mock("~/models/post.queries.server", () => ({
   getLastPostTimeForQueue: vi.fn(),
@@ -27,7 +28,7 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
     // Default mock return values - ensure they're always set
     (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(["4"]);
     (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
-      null,
+      null
     );
   });
 
@@ -45,7 +46,7 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
 
     const pastDate = new Date("2020-01-01T00:00:00.000Z");
     (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
-      pastDate,
+      pastDate
     );
 
     const result = await calculateNextScheduleTime({
@@ -71,7 +72,7 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
     };
 
     (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
-      null,
+      null
     );
 
     const result = await calculateNextScheduleTime({
@@ -95,7 +96,7 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
     };
 
     (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
-      null,
+      null
     );
 
     const result = await calculateNextScheduleTime({
@@ -122,7 +123,7 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
 
       const pastDate = new Date("2020-01-01T00:00:00.000Z");
       (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
-        pastDate,
+        pastDate
       );
 
       const result = await calculateNextScheduleTime({
@@ -147,7 +148,7 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
       };
 
       (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null,
+        null
       );
 
       const result = await calculateNextScheduleTime({
@@ -169,18 +170,18 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
               min: new Date("2020-01-01"),
               max: new Date("2030-12-31"),
             }),
-            fc.constant(null),
+            fc.constant(null)
           ), // lastPostTime or null
           fc.constantFrom(
             "UTC",
             "America/New_York",
             "Europe/London",
-            "Asia/Tokyo",
+            "Asia/Tokyo"
           ), // timezone
           async (
             intervalHours: number,
             lastPostTime: Date | null,
-            timezone: string,
+            timezone: string
           ) => {
             try {
               // Reset mocks for this test run to ensure clean state
@@ -246,9 +247,9 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
               });
               return false;
             }
-          },
+          }
         ),
-        { numRuns: 30, verbose: true },
+        { numRuns: 30, verbose: true }
       );
     });
 
@@ -258,7 +259,7 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
           fc.integer({ min: 1, max: 24 }),
           fc.oneof(
             fc.date({ min: new Date("2020-01-01"), max: new Date() }), // Past or present date
-            fc.constant(null),
+            fc.constant(null)
           ),
           async (intervalHours: number, lastPostTime: Date | null) => {
             try {
@@ -310,9 +311,9 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
               });
               return false;
             }
-          },
+          }
         ),
-        { numRuns: 30, verbose: true },
+        { numRuns: 30, verbose: true }
       );
     });
 
@@ -381,9 +382,9 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
               console.error("Error in test:", _error, { intervalHours });
               return false;
             }
-          },
+          }
         ),
-        { numRuns: 30, verbose: true },
+        { numRuns: 30, verbose: true }
       );
     });
   });
@@ -395,12 +396,12 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
           fc.array(
             fc.tuple(
               fc.integer({ min: 0, max: 23 }), // hours
-              fc.integer({ min: 0, max: 59 }), // minutes
+              fc.integer({ min: 0, max: 59 }) // minutes
             ),
-            { minLength: 1, maxLength: 10 },
+            { minLength: 1, maxLength: 10 }
           ),
           fc.constantFrom("UTC", "America/New_York", "Europe/London"),
-          async (slots: [number, number][], timezone: string) => {
+          async (slots: Array<[number, number]>, timezone: string) => {
             try {
               // Reset mocks for this test run
               vi.clearAllMocks();
@@ -470,9 +471,9 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
               console.error("Error in test:", _error, { slots, timezone });
               return false;
             }
-          },
+          }
         ),
-        { numRuns: 30, verbose: true },
+        { numRuns: 30, verbose: true }
       );
     });
 
@@ -482,11 +483,11 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
           fc.array(
             fc.tuple(
               fc.integer({ min: 0, max: 23 }),
-              fc.integer({ min: 0, max: 59 }),
+              fc.integer({ min: 0, max: 59 })
             ),
-            { minLength: 1, maxLength: 5 },
+            { minLength: 1, maxLength: 5 }
           ),
-          async (slots: [number, number][]) => {
+          async (slots: Array<[number, number]>) => {
             try {
               // Reset mocks for this test run to ensure clean state
               vi.clearAllMocks();
@@ -549,9 +550,9 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
               console.error("Error in test:", _error, { slots });
               return false;
             }
-          },
+          }
         ),
-        { numRuns: 30, verbose: true },
+        { numRuns: 30, verbose: true }
       );
     });
 
@@ -563,7 +564,7 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
             "America/New_York",
             "Europe/London",
             "Asia/Tokyo",
-            "Australia/Sydney",
+            "Australia/Sydney"
           ),
           async (timezone: string) => {
             try {
@@ -610,9 +611,9 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
               console.error("Error in test:", _error, { timezone });
               return false;
             }
-          },
+          }
         ),
-        { numRuns: 20, verbose: true },
+        { numRuns: 20, verbose: true }
       );
     });
   });
@@ -629,7 +630,7 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
       };
 
       (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null,
+        null
       );
 
       const result = await calculateNextScheduleTime({
@@ -653,7 +654,7 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
       };
 
       (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null,
+        null
       );
 
       const result = await calculateNextScheduleTime({
@@ -668,66 +669,69 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
 
     it("should handle empty slot arrays gracefully", async () => {
       await fc.assert(
-        fc.asyncProperty(fc.constant([]), async (slots: [number, number][]) => {
-          try {
-            // Reset mocks for this test run to ensure clean state
-            vi.clearAllMocks();
-            // Ensure mocks are set up for this test run
-            (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(
-              ["4"],
-            );
-            (
-              getLastPostTimeForQueue as ReturnType<typeof vi.fn>
-            ).mockResolvedValue(null);
+        fc.asyncProperty(
+          fc.constant([]),
+          async (slots: Array<[number, number]>) => {
+            try {
+              // Reset mocks for this test run to ensure clean state
+              vi.clearAllMocks();
+              // Ensure mocks are set up for this test run
+              (
+                getScheduleInterval as ReturnType<typeof vi.fn>
+              ).mockResolvedValue(["4"]);
+              (
+                getLastPostTimeForQueue as ReturnType<typeof vi.fn>
+              ).mockResolvedValue(null);
 
-            // Convert slots to string format (e.g., "09:00")
-            const slotStrings = slots.map(
-              (slot) =>
-                `${String(slot[0]).padStart(2, "0")}:${String(slot[1]).padStart(2, "0")}`,
-            );
+              // Convert slots to string format (e.g., "09:00")
+              const slotStrings = slots.map(
+                (slot) =>
+                  `${String(slot[0]).padStart(2, "0")}:${String(slot[1]).padStart(2, "0")}`
+              );
 
-            const queueType = {
-              id: "queue-1",
-              name: "test-queue",
-              scheduleType: "FIXED_SLOTS" as const,
-              scheduleConfig: {
-                slots: slotStrings,
-              },
-              userId: TEST_USER_ID,
-              isEnabled: true,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-              color: null,
-              description: null,
-              hashTagPresetId: null,
-            };
+              const queueType = {
+                id: "queue-1",
+                name: "test-queue",
+                scheduleType: "FIXED_SLOTS" as const,
+                scheduleConfig: {
+                  slots: slotStrings,
+                },
+                userId: TEST_USER_ID,
+                isEnabled: true,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                color: null,
+                description: null,
+                hashTagPresetId: null,
+              };
 
-            const result = await calculateNextScheduleTime({
-              queueType,
-              userId: TEST_USER_ID,
-              userTimezone: "UTC",
-            });
+              const result = await calculateNextScheduleTime({
+                queueType,
+                userId: TEST_USER_ID,
+                userTimezone: "UTC",
+              });
 
-            // Should return current time for empty slots
-            if (!result) {
-              console.error("Result is null/undefined", { slots });
+              // Should return current time for empty slots
+              if (!result) {
+                console.error("Result is null/undefined", { slots });
+                return false;
+              }
+              if (!(result instanceof Date)) {
+                console.error("Result is not a Date", { result, slots });
+                return false;
+              }
+              if (isNaN(result.getTime())) {
+                console.error("Result is invalid Date", { result, slots });
+                return false;
+              }
+              return true;
+            } catch (_error) {
+              console.error("Error in test:", _error, { slots });
               return false;
             }
-            if (!(result instanceof Date)) {
-              console.error("Result is not a Date", { result, slots });
-              return false;
-            }
-            if (isNaN(result.getTime())) {
-              console.error("Result is invalid Date", { result, slots });
-              return false;
-            }
-            return true;
-          } catch (_error) {
-            console.error("Error in test:", _error, { slots });
-            return false;
           }
-        }),
-        { verbose: true },
+        ),
+        { verbose: true }
       );
     });
 
@@ -790,9 +794,9 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
               console.error("Error in test:", _error, { intervalHours });
               return false;
             }
-          },
+          }
         ),
-        { numRuns: 20, verbose: true },
+        { numRuns: 20, verbose: true }
       );
     });
   });

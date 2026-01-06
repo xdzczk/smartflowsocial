@@ -44,13 +44,13 @@ export async function calculateNextScheduleTime({
           : undefined;
       logError(
         new Error(
-          "Invalid date returned from calculateNextScheduleTimeInternal",
+          "Invalid date returned from calculateNextScheduleTimeInternal"
         ),
         {
           userId,
           queueTypeId,
           result: result ? String(result) : "null",
-        },
+        }
       );
       return fallbackDate;
     }
@@ -129,7 +129,7 @@ async function calculateNextScheduleTimeInternal({
         ) {
           // Add 4 hours using milliseconds to avoid date calculation issues
           const nextTime = new Date(
-            lastPostTime.getTime() + 4 * 60 * 60 * 1000,
+            lastPostTime.getTime() + 4 * 60 * 60 * 1000
           );
           // Ensure the date is valid
           if (!(nextTime instanceof Date) || isNaN(nextTime.getTime())) {
@@ -180,7 +180,7 @@ async function calculateNextScheduleTimeInternal({
         ) {
           // Add interval to last post time using milliseconds to avoid date calculation issues
           const nextTime = new Date(
-            lastPostTime.getTime() + interval * 60 * 60 * 1000,
+            lastPostTime.getTime() + interval * 60 * 60 * 1000
           );
           // Ensure the date is valid
           if (!(nextTime instanceof Date) || isNaN(nextTime.getTime())) {
@@ -210,7 +210,7 @@ async function calculateNextScheduleTimeInternal({
         ) {
           // Add interval to last post time using milliseconds to avoid date calculation issues
           const nextTime = new Date(
-            lastPostTime.getTime() + intervalHours * 60 * 60 * 1000,
+            lastPostTime.getTime() + intervalHours * 60 * 60 * 1000
           );
           // Ensure the date is valid
           if (!(nextTime instanceof Date) || isNaN(nextTime.getTime())) {
@@ -288,7 +288,7 @@ async function calculateNextScheduleTimeInternal({
                 userId,
                 slot: slotStr,
                 message: "Error parsing slot",
-              },
+              }
             );
             return null;
           }
@@ -300,7 +300,7 @@ async function calculateNextScheduleTimeInternal({
       const createSlotInUserTimezone = (
         hours: number,
         minutes: number,
-        baseDate?: Date,
+        baseDate?: Date
       ): Date => {
         // Use provided baseDate or current time (not captured 'now' to avoid stale time)
         const actualBaseDate = baseDate ?? new Date();
@@ -332,8 +332,18 @@ async function calculateNextScheduleTimeInternal({
 
           // Start with a UTC date for the desired time
           const [year, month, day] = userDateStr.split("-").map(Number);
+          const safeHours = hours ?? 0;
+          const safeMinutes = minutes ?? 0;
           let testUTC = new Date(
-            Date.UTC(year, month - 1, day, hours, minutes, 0, 0),
+            Date.UTC(
+              year ?? 0,
+              (month ?? 1) - 1,
+              day ?? 1,
+              safeHours,
+              safeMinutes,
+              0,
+              0
+            )
           );
 
           // Check what this UTC time looks like in the user's timezone
@@ -353,7 +363,12 @@ async function calculateNextScheduleTimeInternal({
               .map(Number);
 
             // Check if we got the desired time
-            if (testHours === hours && testMinutes === minutes) {
+            const safeTestHours = testHours ?? 0;
+            const safeTestMinutes = testMinutes ?? 0;
+            if (
+              safeTestHours === safeHours &&
+              safeTestMinutes === safeMinutes
+            ) {
               // Ensure the date is valid
               if (isNaN(testUTC.getTime())) {
                 return new Date(now.getTime() + 1000);
@@ -362,8 +377,8 @@ async function calculateNextScheduleTimeInternal({
             }
 
             // Calculate the difference and adjust
-            const hourDiff = hours - testHours;
-            const minuteDiff = minutes - testMinutes;
+            const hourDiff = safeHours - safeTestHours;
+            const minuteDiff = safeMinutes - safeTestMinutes;
             const totalMinuteDiff = hourDiff * 60 + minuteDiff;
 
             // Adjust by the difference
@@ -375,7 +390,7 @@ async function calculateNextScheduleTimeInternal({
               // Likely crossed midnight, adjust by 24 hours in the opposite direction
               const dayAdjust = hourDiff > 0 ? -24 : 24;
               testUTC = new Date(
-                testUTC.getTime() + dayAdjust * 60 * 60 * 1000,
+                testUTC.getTime() + dayAdjust * 60 * 60 * 1000
               );
             }
           }
@@ -408,12 +423,11 @@ async function calculateNextScheduleTimeInternal({
       // Only include slots that are actually today and in the future
       const todaySlots = sortedSlots
         .map((slotInfo) => {
-          const slotTime = createSlotInUserTimezone(
+          return createSlotInUserTimezone(
             slotInfo.hours,
             slotInfo.minutes,
-            now,
+            now
           );
-          return slotTime;
         })
         .filter((slot) => {
           // Only keep slots that are valid, today (same day as now), and in the future or present
@@ -449,22 +463,20 @@ async function calculateNextScheduleTimeInternal({
 
         // Create slots for the base date (last post date or today)
         const baseDateSlots = sortedSlots.map((slotInfo) => {
-          const baseDateSlot = createSlotInUserTimezone(
+          return createSlotInUserTimezone(
             slotInfo.hours,
             slotInfo.minutes,
-            baseDate,
+            baseDate
           );
-          return baseDateSlot;
         });
 
         // Create slots for the day after the base date
         const dayAfterBaseSlots = sortedSlots.map((slotInfo) => {
-          const dayAfterSlot = createSlotInUserTimezone(
+          return createSlotInUserTimezone(
             slotInfo.hours,
             slotInfo.minutes,
-            dayAfterBase,
+            dayAfterBase
           );
-          return dayAfterSlot;
         });
 
         // Combine base date and day after slots for chronological searching
@@ -498,10 +510,14 @@ async function calculateNextScheduleTimeInternal({
         if (sortedSlots.length > 0) {
           const twoDaysAfterBase = new Date(baseDate);
           twoDaysAfterBase.setDate(twoDaysAfterBase.getDate() + 2);
+          const firstSlot = sortedSlots[0];
+          if (!firstSlot) {
+            return new Date(now.getTime() + 1000);
+          }
           const fallbackSlot = createSlotInUserTimezone(
-            sortedSlots[0].hours,
-            sortedSlots[0].minutes,
-            twoDaysAfterBase,
+            firstSlot.hours,
+            firstSlot.minutes,
+            twoDaysAfterBase
           );
           // Ensure the fallback slot is valid and in the future or present
           // Check against baseTime (now) to ensure consistent test behavior
@@ -536,10 +552,14 @@ async function calculateNextScheduleTimeInternal({
         if (sortedSlots.length > 0) {
           const tomorrow = new Date(now);
           tomorrow.setDate(tomorrow.getDate() + 1);
+          const firstSlot = sortedSlots[0];
+          if (!firstSlot) {
+            return new Date(now.getTime() + 1000);
+          }
           const tomorrowSlot = createSlotInUserTimezone(
-            sortedSlots[0].hours,
-            sortedSlots[0].minutes,
-            tomorrow,
+            firstSlot.hours,
+            firstSlot.minutes,
+            tomorrow
           );
           // Ensure the tomorrow slot is valid and in the future or present
           // Check against baseTime (now) to ensure consistent test behavior

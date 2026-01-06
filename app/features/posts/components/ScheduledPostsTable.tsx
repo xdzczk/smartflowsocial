@@ -149,7 +149,10 @@ export function ScheduledPostsTable({
                       alt="Post preview"
                       className="h-12 w-12 rounded object-cover"
                       onClick={() => {
-                        onMediaClick(getImageUrls(post.fileUrl)[0]);
+                        const imageUrl = getImageUrls(post.fileUrl)[0];
+                        if (imageUrl) {
+                          onMediaClick(imageUrl);
+                        }
                       }}
                       fallback={
                         <div className="flex h-12 w-12 items-center justify-center rounded bg-gray-100 text-xs font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-400">
@@ -218,7 +221,7 @@ export function ScheduledPostsTable({
               <td className="p-3">{formatDate(post.scheduledFor)}</td>
               <td className="p-3 text-center">
                 <div className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                  {countdowns[post.id] || "—"}
+                  {countdowns[post.id] ?? "—"}
                 </div>
               </td>
               <td className="p-3 text-center">
@@ -234,11 +237,18 @@ export function ScheduledPostsTable({
                     {post.queueType?.name ?? "unassigned"}
                   </div>
                 ) : (
-                  <div
-                    className={`inline-flex rounded-full border-2 px-3 py-1 text-xs font-semibold leading-4 ${getQueueColor(post.queueType?.name ?? "unassigned").bg} ${getQueueColor(post.queueType?.name ?? "unassigned").text} ${getQueueColor(post.queueType?.name ?? "unassigned").border} shadow-sm`}
-                  >
-                    {post.queueType?.name ?? "unassigned"}
-                  </div>
+                  (() => {
+                    const colors = getQueueColor(
+                      post.queueType?.name ?? "unassigned"
+                    );
+                    return (
+                      <div
+                        className={`inline-flex rounded-full border-2 px-3 py-1 text-xs font-semibold leading-4 ${colors?.bg ?? ""} ${colors?.text ?? ""} ${colors?.border ?? ""} shadow-sm`}
+                      >
+                        {post.queueType?.name ?? "unassigned"}
+                      </div>
+                    );
+                  })()
                 )}
               </td>
               <td className="p-3 text-center">

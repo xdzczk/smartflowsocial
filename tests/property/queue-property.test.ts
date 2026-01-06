@@ -69,9 +69,9 @@ describe("Property-Based Tests: Queue Operations", () => {
             // All should succeed or all should fail the same way
             const successCount = results.filter((r) => r.success).length;
             return successCount === 0 || successCount === results.length;
-          },
+          }
         ),
-        { numRuns: 20 },
+        { numRuns: 20 }
       );
     });
 
@@ -134,12 +134,12 @@ describe("Property-Based Tests: Queue Operations", () => {
           }) => {
             // Job data should remain unchanged
             const serialized = JSON.stringify(jobData);
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
             const deserialized = JSON.parse(serialized);
             return JSON.stringify(deserialized) === serialized;
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
 
@@ -151,13 +151,13 @@ describe("Property-Based Tests: Queue Operations", () => {
               fc.string().filter((s: string) => s.trim().length > 0), // Non-empty, non-whitespace strings
               fc.constant(null),
               fc.constant(undefined),
-              fc.constant(""), // Explicitly allow empty strings
+              fc.constant("") // Explicitly allow empty strings
             ),
             userId: fc.oneof(
               fc.string().filter((s: string) => s.trim().length > 0), // Non-empty, non-whitespace strings
               fc.constant(null),
               fc.constant(undefined),
-              fc.constant(""), // Explicitly allow empty strings
+              fc.constant("") // Explicitly allow empty strings
             ),
           }),
           (jobData: {
@@ -182,9 +182,9 @@ describe("Property-Based Tests: Queue Operations", () => {
 
             // The property holds: valid and invalid are mutually exclusive and cover all cases
             return isValid !== isInvalid; // XOR: exactly one must be true
-          },
+          }
         ),
-        { numRuns: 30 },
+        { numRuns: 30 }
       );
     });
   });
@@ -197,12 +197,12 @@ describe("Property-Based Tests: Queue Operations", () => {
           fc.integer({ min: 0, max: 86400 * 365 }), // Delay in seconds (up to 1 year)
           (baseTime: Date, delaySeconds: number) => {
             const scheduledTime = new Date(
-              baseTime.getTime() + delaySeconds * 1000,
+              baseTime.getTime() + delaySeconds * 1000
             );
             return scheduledTime >= baseTime;
-          },
+          }
         ),
-        { numRuns: 100 },
+        { numRuns: 100 }
       );
     });
 
@@ -217,9 +217,9 @@ describe("Property-Based Tests: Queue Operations", () => {
               return time1.getTime() < time2.getTime();
             }
             return true;
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
   });

@@ -5,7 +5,7 @@ import { ValidationError, ExternalServiceError } from "~/lib/errors";
 type AssertFunction = (
   condition: boolean,
   message: string,
-  context?: Record<string, unknown>,
+  context?: Record<string, unknown>
 ) => asserts condition;
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -32,7 +32,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     assert(
       targetUrl.startsWith("http://") || targetUrl.startsWith("https://"),
       "URL must start with http:// or https://",
-      { targetUrl },
+      { targetUrl }
     );
 
     // Fetch the URL
@@ -61,7 +61,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
           targetUrl,
           status: response.status,
           statusText: response.statusText,
-        },
+        }
       );
     }
 
@@ -79,22 +79,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
     const descriptionMatch =
       html.match(
-        /<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["'][^>]*>/i,
+        /<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["'][^>]*>/i
       ) || // eslint-disable-line @typescript-eslint/prefer-nullish-coalescing -- Boolean OR for trying multiple regex patterns
       html.match(
-        /<meta[^>]*content=["']([^"']+)["'][^>]*name=["']description["'][^>]*>/i,
+        /<meta[^>]*content=["']([^"']+)["'][^>]*name=["']description["'][^>]*>/i
       );
     const imageMatch =
       html.match(
-        /<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["'][^>]*>/i,
+        /<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["'][^>]*>/i
       ) || // eslint-disable-line @typescript-eslint/prefer-nullish-coalescing -- Boolean OR for trying multiple regex patterns
       html.match(
-        /<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:image["'][^>]*>/i,
+        /<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:image["'][^>]*>/i
       );
 
-    const title = titleMatch ? titleMatch[1].trim() : "";
-    const description = descriptionMatch ? descriptionMatch[1].trim() : "";
-    const image = imageMatch ? imageMatch[1].trim() : "";
+    const title = titleMatch?.[1] ? titleMatch[1].trim() : "";
+    const description = descriptionMatch?.[1] ? descriptionMatch[1].trim() : "";
+    const image = imageMatch?.[1] ? imageMatch[1].trim() : "";
 
     return {
       success: 1,
@@ -116,7 +116,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const [errorResponse, statusCode] = createErrorResponse(error);
     return json(
       { success: false, error: errorResponse.error },
-      { status: statusCode },
+      { status: statusCode }
     );
   }
 }

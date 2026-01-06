@@ -28,7 +28,7 @@ interface MediaPostProps {
   setFiles: React.Dispatch<React.SetStateAction<File[]>>;
   setShowImagePreview: (show: boolean) => void;
   setPreparedImageEvent: (data: PreparedEventData[]) => void;
-  queueTypes?: (string | QueueType)[];
+  queueTypes?: Array<string | QueueType>;
   hashTagPresets?: HashTagPreset[];
   selectedQueueType?: string;
   onQueueTypeChange?: (queueType: string) => void;
@@ -61,7 +61,7 @@ export default function MediaPost({
   const [isRecyclable, setIsRecyclable] = useState(false);
   const [useHashtagPresets, setUseHashtagPresets] = useState(false);
   const [selectedHashtagPresetId, setSelectedHashtagPresetId] = useState(
-    selectedHashTagPresetId ?? null,
+    selectedHashTagPresetId ?? null
   );
   const [_selectedHashtags, setSelectedHashtags] = useState("");
   const [timeError, setTimeError] = useState<string | null>(null);
@@ -136,7 +136,7 @@ export default function MediaPost({
           require("~/lib/error-handler.client") as unknown as {
             handleErrorSafely: (
               error: unknown,
-              context: { component: string; action: string },
+              context: { component: string; action: string }
             ) => void;
           };
         handleErrorSafely(err, {
@@ -234,7 +234,7 @@ export default function MediaPost({
           component: "MediaPost",
           action: "handleImagePreview",
         },
-        false,
+        false
       ); // Don't show toast, we call toast.error instead
       toast.error(`Upload failed: ${errorMessage}`);
       setIsUploading(false);
@@ -243,7 +243,7 @@ export default function MediaPost({
 
   const handleHashtagPresetSelect = (
     presetId: string | null,
-    hashtags: string,
+    hashtags: string
   ) => {
     setSelectedHashtagPresetId(presetId);
     setSelectedHashtags(hashtags);
@@ -383,7 +383,7 @@ export default function MediaPost({
             showQueuePreset={selectedQueue !== "unassigned"}
             queueType={
               (queueTypes.find(
-                (q) => (typeof q === "string" ? q : q.name) === selectedQueue,
+                (q) => (typeof q === "string" ? q : q.name) === selectedQueue
               ) ?? null) as QueueType | null | undefined
             }
           />

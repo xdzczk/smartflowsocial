@@ -11,16 +11,16 @@ type CacheResponse = unknown[];
  */
 export async function fetchFromCache(
   requestType: string,
-  params: CacheParams,
+  params: CacheParams
 ): Promise<CacheResponse> {
   // Read directly from process.env to support test environment changes
-  const primalUrl = process.env.PRIMAL_CACHING_URL ?? env.PRIMAL_CACHING_URL;
+  const primalUrl = process.env["PRIMAL_CACHING_URL"] ?? env.PRIMAL_CACHING_URL;
   if (!primalUrl) {
     throw new Error("PRIMAL_CACHING_URL environment variable is not set");
   }
 
   try {
-    const data = await fetchJsonWithRetry<CacheResponse>(primalUrl, {
+    return await fetchJsonWithRetry<CacheResponse>(primalUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -33,8 +33,6 @@ export async function fetchFromCache(
       maxRetries: 2,
       retryOn5xx: true,
     });
-
-    return data;
   } catch (error) {
     logError(error instanceof Error ? error : new Error(String(error)), {
       requestType,
@@ -60,14 +58,14 @@ export async function fetchFromCache(
  */
 export async function connectToPrimalCache(
   requestType: string,
-  params: CacheParams,
+  params: CacheParams
 ): Promise<CacheResponse> {
   try {
     const responses = await fetchFromCache(requestType, params);
 
     // Check if we got valid responses (at least one non-EOSE event)
     const nonEose = responses?.filter(
-      (res): res is unknown[] => Array.isArray(res) && res[0] !== "EOSE",
+      (res): res is unknown[] => Array.isArray(res) && res[0] !== "EOSE"
     );
 
     if (nonEose && nonEose.length > 0) {

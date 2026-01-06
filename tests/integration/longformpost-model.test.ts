@@ -77,9 +77,9 @@ describe("LongFormPost Model Functions", () => {
       const result = await createLongFormPost(postData);
 
       expect(
-        mockPrisma.longFormPost.create as ReturnType<typeof vi.fn>,
+        mockPrisma.longFormPost.create as ReturnType<typeof vi.fn>
       ).toHaveBeenCalledWith({
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         data: expect.objectContaining({
           title: "Test Article",
           content: "Article content",
@@ -116,9 +116,9 @@ describe("LongFormPost Model Functions", () => {
       const result = await createLongFormPost(postData);
 
       expect(
-        mockPrisma.longFormPost.create as ReturnType<typeof vi.fn>,
+        mockPrisma.longFormPost.create as ReturnType<typeof vi.fn>
       ).toHaveBeenCalledWith({
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         data: expect.objectContaining({
           draft: true,
         }),
@@ -148,9 +148,9 @@ describe("LongFormPost Model Functions", () => {
       const result = await createLongFormPost(postData);
 
       expect(
-        mockPrisma.longFormPost.create as ReturnType<typeof vi.fn>,
+        mockPrisma.longFormPost.create as ReturnType<typeof vi.fn>
       ).toHaveBeenCalledWith({
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         data: expect.objectContaining({
           isScheduled: true,
           scheduledFor: scheduledDate.toString(),
@@ -178,7 +178,7 @@ describe("LongFormPost Model Functions", () => {
       });
 
       expect(
-        mockPrisma.longFormPost.delete as ReturnType<typeof vi.fn>,
+        mockPrisma.longFormPost.delete as ReturnType<typeof vi.fn>
       ).toHaveBeenCalledWith({
         where: {
           id: TEST_LONGFORM_ID,
@@ -212,18 +212,18 @@ describe("LongFormPost Model Functions", () => {
       });
 
       expect(
-        mockPrisma.longFormPost.update as ReturnType<typeof vi.fn>,
+        mockPrisma.longFormPost.update as ReturnType<typeof vi.fn>
       ).toHaveBeenCalledWith({
         where: {
           id: TEST_LONGFORM_ID,
           userId: TEST_USER_ID,
         },
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         data: expect.objectContaining({
           title: "Updated Article",
           content: "Updated content",
           summary: "Updated summary",
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
           updatedAt: expect.any(Date),
         }),
       });
@@ -250,7 +250,7 @@ describe("LongFormPost Model Functions", () => {
       });
 
       expect(
-        mockPrisma.longFormPost.findFirst as ReturnType<typeof vi.fn>,
+        mockPrisma.longFormPost.findFirst as ReturnType<typeof vi.fn>
       ).toHaveBeenCalledWith({
         where: {
           id: TEST_LONGFORM_ID,
@@ -285,7 +285,7 @@ describe("LongFormPost Model Functions", () => {
       });
 
       expect(
-        mockPrisma.longFormPost.findMany as ReturnType<typeof vi.fn>,
+        mockPrisma.longFormPost.findMany as ReturnType<typeof vi.fn>
       ).toHaveBeenCalledWith({
         where: {
           userId: TEST_USER_ID,
@@ -326,7 +326,7 @@ describe("LongFormPost Model Functions", () => {
       });
 
       expect(
-        mockPrisma.longFormPost.findMany as ReturnType<typeof vi.fn>,
+        mockPrisma.longFormPost.findMany as ReturnType<typeof vi.fn>
       ).toHaveBeenCalledWith({
         where: {
           userId: TEST_USER_ID,
@@ -339,7 +339,7 @@ describe("LongFormPost Model Functions", () => {
         take: 50,
       });
       expect(
-        mockPrisma.longFormPost.count as ReturnType<typeof vi.fn>,
+        mockPrisma.longFormPost.count as ReturnType<typeof vi.fn>
       ).toHaveBeenCalledWith({
         where: {
           userId: TEST_USER_ID,
@@ -371,7 +371,7 @@ describe("LongFormPost Model Functions", () => {
       });
 
       expect(
-        mockPrisma.longFormPost.findMany as ReturnType<typeof vi.fn>,
+        mockPrisma.longFormPost.findMany as ReturnType<typeof vi.fn>
       ).toHaveBeenCalledWith({
         where: {
           userId: TEST_USER_ID,
@@ -408,7 +408,7 @@ describe("LongFormPost Model Functions", () => {
       });
 
       expect(
-        mockPrisma.longFormPost.update as ReturnType<typeof vi.fn>,
+        mockPrisma.longFormPost.update as ReturnType<typeof vi.fn>
       ).toHaveBeenCalledWith({
         where: {
           id: TEST_LONGFORM_ID,
@@ -417,7 +417,7 @@ describe("LongFormPost Model Functions", () => {
         data: {
           isPublished: true,
           status: "ACTIVE",
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
           postedAt: expect.any(Date),
         },
       });

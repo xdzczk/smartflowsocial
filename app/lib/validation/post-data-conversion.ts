@@ -43,17 +43,17 @@ export function convertPostDataToScheduledTablePost(
 
   return {
     id: post.id,
-    caption: post.caption ?? null,
+    caption: post.caption,
     scheduledFor: scheduledForString,
-    fileUrl: post.fileUrl ?? null,
+    fileUrl: post.fileUrl,
     queueType: post.queueType
       ? {
           name: post.queueType.name,
           color: post.queueType.color ?? null,
         }
       : null,
-    repost: post.repost ?? false,
-    isQuotedPost: post.isQuotedPost ?? false,
+    repost: post.repost,
+    isQuotedPost: post.isQuotedPost,
     isPostSigned: post.signedEvent ? true : false,
   };
 }
@@ -64,5 +64,5 @@ export function convertPostDataToScheduledTablePost(
 export function convertPostDataArrayToScheduledTablePosts(
   posts: PostData[]
 ): ScheduledPostTablePost[] {
-  return posts.map(convertPostDataToScheduledTablePost);
+  return posts.map((post) => convertPostDataToScheduledTablePost(post));
 }

@@ -45,27 +45,35 @@ export async function loadPlansData(request: Request) {
       description: plan.description ?? "",
       features: {
         basicScheduling:
-          features?.basicScheduling ?? plan.enableBasicScheduling,
-        multipleQueues: features?.multipleQueues ?? plan.enableMultipleQueues,
-        bulkScheduling: features?.bulkScheduling ?? plan.enableBulkScheduling,
+          features?.["basicScheduling"] ?? plan.enableBasicScheduling,
+        multipleQueues:
+          features?.["multipleQueues"] ?? plan.enableMultipleQueues,
+        bulkScheduling:
+          features?.["bulkScheduling"] ?? plan.enableBulkScheduling,
         repostsAndQuotes:
-          features?.repostsAndQuotes ?? plan.enableRepostsAndQuotes,
-        engagementFeed: features?.engagementFeed ?? plan.enableEngagementFeed,
-        giveaways: features?.giveaways ?? plan.enableGiveaways,
+          features?.["repostsAndQuotes"] ?? plan.enableRepostsAndQuotes,
+        engagementFeed:
+          features?.["engagementFeed"] ?? plan.enableEngagementFeed,
+        giveaways: features?.["giveaways"] ?? plan.enableGiveaways,
         commissions:
-          features?.commissions ?? (plan.enableCommissions ? "Low" : "High"),
-        leaderboards: features?.leaderboards ?? plan.enableLeaderboards,
+          features?.["commissions"] ??
+          (plan.enableCommissions ? "Low" : "High"),
+        leaderboards: features?.["leaderboards"] ?? plan.enableLeaderboards,
         advancedAnalytics:
-          features?.advancedAnalytics ?? plan.enableAdvancedAnalytics,
+          features?.["advancedAnalytics"] ?? plan.enableAdvancedAnalytics,
         multiAccountSwitching:
-          features?.multiAccountSwitching ?? plan.enableMultiAccountSwitching,
+          features?.["multiAccountSwitching"] ??
+          plan.enableMultiAccountSwitching,
         wolfFilteringAndVortex:
-          features?.wolfFilteringAndVortex ?? plan.enableWolfFilteringAndVortex,
+          features?.["wolfFilteringAndVortex"] ??
+          plan.enableWolfFilteringAndVortex,
         nativeS3BlossomStorage:
-          features?.nativeS3BlossomStorage ?? plan.enableNativeS3BlossomStorage,
-        relayBlast: features?.relayBlast ?? plan.enableRelayBlast,
-        visualPerks: features?.visualPerks ?? plan.enableVisualPerks,
-        lifetimeAccess: features?.lifetimeAccess ?? plan.enableLifetimeAccess,
+          features?.["nativeS3BlossomStorage"] ??
+          plan.enableNativeS3BlossomStorage,
+        relayBlast: features?.["relayBlast"] ?? plan.enableRelayBlast,
+        visualPerks: features?.["visualPerks"] ?? plan.enableVisualPerks,
+        lifetimeAccess:
+          features?.["lifetimeAccess"] ?? plan.enableLifetimeAccess,
       },
       isPopular: plan.id === "basic", // You can make this dynamic based on your business logic
     };

@@ -14,6 +14,8 @@ vi.mock("~/infra/queue/queue-client.server", () => ({
   },
 }));
 
+import { TEST_USER_ID } from "../utils/test-helpers";
+
 import type { SignedEvent } from "~/features/nostr/types";
 import { queueClient } from "~/infra/queue/queue-client.server";
 import {
@@ -23,8 +25,6 @@ import {
   cancelLongFormPostJob,
   enqueuePostCheckerJob,
 } from "~/infra/queue/queue-operations.server";
-
-import { TEST_USER_ID } from "../utils/test-helpers";
 
 describe("Queue Operations", () => {
   beforeEach(() => {
@@ -53,7 +53,7 @@ describe("Queue Operations", () => {
         "post-123",
         TEST_USER_ID,
         mockSignedEvent,
-        scheduledFor,
+        scheduledFor
       );
 
       expect(queueClient.enqueue).toHaveBeenCalledWith(
@@ -64,7 +64,7 @@ describe("Queue Operations", () => {
           userId: TEST_USER_ID,
           signedEvent: mockSignedEvent,
         },
-        { scheduledFor, jobId: "post-123" },
+        { scheduledFor, jobId: "post-123" }
       );
     });
 
@@ -94,7 +94,7 @@ describe("Queue Operations", () => {
           userId: TEST_USER_ID,
           signedEvent: mockSignedEvent,
         },
-        { delay: 0, jobId: "post-123" },
+        { delay: 0, jobId: "post-123" }
       );
     });
 
@@ -115,27 +115,27 @@ describe("Queue Operations", () => {
       });
 
       await expect(
-        enqueuePostJob("post-123", TEST_USER_ID, mockSignedEvent, 0),
+        enqueuePostJob("post-123", TEST_USER_ID, mockSignedEvent, 0)
       ).rejects.toThrow("Queue error");
     });
 
     it("should cancel post job by postId", async () => {
       (queueClient.cancelByJobId as ReturnType<typeof vi.fn>).mockResolvedValue(
-        true,
+        true
       );
 
       const result = await cancelPostJob("post-123");
 
       expect(queueClient.cancelByJobId).toHaveBeenCalledWith(
         "scheduled-posts",
-        "post-123",
+        "post-123"
       );
       expect(result).toBe(true);
     });
 
     it("should return false when post job not found", async () => {
       (queueClient.cancelByJobId as ReturnType<typeof vi.fn>).mockResolvedValue(
-        false,
+        false
       );
 
       const result = await cancelPostJob("post-123");
@@ -166,7 +166,7 @@ describe("Queue Operations", () => {
         "longform-123",
         TEST_USER_ID,
         mockSignedEvent,
-        scheduledFor,
+        scheduledFor
       );
 
       expect(queueClient.enqueue).toHaveBeenCalledWith(
@@ -177,7 +177,7 @@ describe("Queue Operations", () => {
           userId: TEST_USER_ID,
           signedEvent: mockSignedEvent,
         },
-        { scheduledFor, jobId: "longform-123" },
+        { scheduledFor, jobId: "longform-123" }
       );
     });
 
@@ -201,7 +201,7 @@ describe("Queue Operations", () => {
         "longform-123",
         TEST_USER_ID,
         mockSignedEvent,
-        0,
+        0
       );
 
       expect(queueClient.enqueue).toHaveBeenCalledWith(
@@ -212,7 +212,7 @@ describe("Queue Operations", () => {
           userId: TEST_USER_ID,
           signedEvent: mockSignedEvent,
         },
-        { delay: 0, jobId: "longform-123" },
+        { delay: 0, jobId: "longform-123" }
       );
     });
 
@@ -233,32 +233,27 @@ describe("Queue Operations", () => {
       });
 
       await expect(
-        enqueueLongFormPostJob(
-          "longform-123",
-          TEST_USER_ID,
-          mockSignedEvent,
-          0,
-        ),
+        enqueueLongFormPostJob("longform-123", TEST_USER_ID, mockSignedEvent, 0)
       ).rejects.toThrow("Queue error");
     });
 
     it("should cancel longform post job by postId", async () => {
       (queueClient.cancelByJobId as ReturnType<typeof vi.fn>).mockResolvedValue(
-        true,
+        true
       );
 
       const result = await cancelLongFormPostJob("longform-123");
 
       expect(queueClient.cancelByJobId).toHaveBeenCalledWith(
         "scheduled-longform-posts",
-        "longform-123",
+        "longform-123"
       );
       expect(result).toBe(true);
     });
 
     it("should return false when longform post job not found", async () => {
       (queueClient.cancelByJobId as ReturnType<typeof vi.fn>).mockResolvedValue(
-        false,
+        false
       );
 
       const result = await cancelLongFormPostJob("longform-123");
@@ -285,7 +280,7 @@ describe("Queue Operations", () => {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.any returns any type
           signedEvent: expect.any(Object),
         }),
-        { delay: 0 },
+        { delay: 0 }
       );
     });
 
@@ -306,7 +301,7 @@ describe("Queue Operations", () => {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.any returns any type
           signedEvent: expect.any(Object),
         }),
-        { delay: 5000 },
+        { delay: 5000 }
       );
     });
 

@@ -36,7 +36,7 @@ export const createTextAssetSchema = z.object({
             .split(",")
             .map((tag) => tag.trim())
             .filter(Boolean)
-        : [],
+        : []
     )
     .pipe(z.array(z.string())),
 });
@@ -49,30 +49,31 @@ const uploadResultSchema = z
   .transform((val) => {
     try {
       const parsed = JSON.parse(val) as unknown;
-      if (
-        !parsed ||
-        typeof parsed !== "object" ||
-        Array.isArray(parsed)
-      ) {
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
         throw new Error("Invalid upload result");
       }
       const parsedObj = parsed as Record<string, unknown>;
       if (
-        typeof parsedObj.success !== "boolean" ||
-        !parsedObj.file ||
-        typeof parsedObj.file !== "object" ||
-        Array.isArray(parsedObj.file) ||
-        typeof (parsedObj.file as Record<string, unknown>).url !== "string"
+        typeof parsedObj["success"] !== "boolean" ||
+        !parsedObj["file"] ||
+        typeof parsedObj["file"] !== "object" ||
+        Array.isArray(parsedObj["file"]) ||
+        typeof (parsedObj["file"] as Record<string, unknown>)["url"] !==
+          "string"
       ) {
         throw new Error("Invalid upload result");
       }
       return {
-        success: parsedObj.success,
+        success: parsedObj["success"],
         file: {
-          url: (parsedObj.file as Record<string, unknown>).url as string,
+          url: (parsedObj["file"] as Record<string, unknown>)["url"] as string,
           mimeType:
-            typeof (parsedObj.file as Record<string, unknown>).mimeType === "string"
-              ? ((parsedObj.file as Record<string, unknown>).mimeType as string)
+            typeof (parsedObj["file"] as Record<string, unknown>)[
+              "mimeType"
+            ] === "string"
+              ? ((parsedObj["file"] as Record<string, unknown>)[
+                  "mimeType"
+                ] as string)
               : undefined,
         },
       };
@@ -87,7 +88,7 @@ const uploadResultSchema = z
         url: z.string().url(),
         mimeType: z.union([z.string(), z.undefined()]),
       }),
-    }),
+    })
   );
 
 /**
@@ -110,7 +111,7 @@ export const createMediaAssetSchema = z.object({
             .split(",")
             .map((tag) => tag.trim())
             .filter(Boolean)
-        : [],
+        : []
     )
     .pipe(z.array(z.string())),
 });
@@ -147,16 +148,13 @@ const bulkUploadResultSchema = z
             })
             .optional(),
           error: z.string().optional(),
-        }),
+        })
       )
-      .min(1, "At least one upload result is required"),
+      .min(1, "At least one upload result is required")
   );
 
 export const bulkCreateMediaAssetsSchema = z.object({
-  _action: z.enum([
-    "bulk_create_image_assets",
-    "bulk_create_media_assets",
-  ]),
+  _action: z.enum(["bulk_create_image_assets", "bulk_create_media_assets"]),
   uploadResults: bulkUploadResultSchema,
   titles: z.array(z.string()),
   tags: z.array(z.string()),
@@ -167,7 +165,9 @@ export const bulkCreateMediaAssetsSchema = z.object({
  */
 export const bulkDeleteAssetsSchema = z.object({
   _action: z.literal("bulk_delete_assets"),
-  assetIds: z.array(z.string().min(1)).min(1, "At least one asset ID is required"),
+  assetIds: z
+    .array(z.string().min(1))
+    .min(1, "At least one asset ID is required"),
 });
 
 /**
@@ -226,4 +226,3 @@ export const templateEditActionSchema = z.discriminatedUnion("_action", [
   deleteTemplateRedirectSchema,
   scheduleTemplateEditSchema,
 ]);
-

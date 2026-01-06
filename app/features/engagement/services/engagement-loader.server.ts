@@ -92,18 +92,18 @@ async function fetchUserProfile(pubkey: string): Promise<User | null> {
       pubkey,
       name: profileTyped.name ?? undefined,
       displayName: profileTyped.display_name ?? undefined,
-      about: (profileTyped.about as string | undefined) ?? undefined,
+      about: (profileTyped["about"] as string | undefined) ?? undefined,
       picture: profileTyped.picture ?? undefined,
-      nip05: (profileTyped.nip05 as string | undefined) ?? undefined,
-      lud16: (profileTyped.lud16 as string | undefined) ?? undefined,
+      nip05: (profileTyped["nip05"] as string | undefined) ?? undefined,
+      lud16: (profileTyped["lud16"] as string | undefined) ?? undefined,
       followsCount: statsTyped.follows_count ?? 0,
       followersCount: statsTyped.followers_count ?? 0,
       noteCount: statsTyped.note_count ?? 0,
-      replyCount: (statsTyped.reply_count as number | undefined) ?? 0,
-      timeJoined: (statsTyped.time_joined as number | undefined) ?? 0,
+      replyCount: (statsTyped["reply_count"] as number | undefined) ?? 0,
+      timeJoined: (statsTyped["time_joined"] as number | undefined) ?? 0,
       zapCount: statsTyped.total_zap_count ?? 0,
       totalSatsZapped: statsTyped.total_satszapped ?? 0,
-      mediaCount: (statsTyped.media_count as number | undefined) ?? 0,
+      mediaCount: (statsTyped["media_count"] as number | undefined) ?? 0,
     };
 
     return user;
@@ -118,7 +118,7 @@ async function fetchUserProfile(pubkey: string): Promise<User | null> {
  */
 async function fetchThreadViewWithTimeout(eventId: string, timeout = 5000) {
   const timeoutPromise = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error("Request timeout")), timeout),
+    setTimeout(() => reject(new Error("Request timeout")), timeout)
   );
 
   const fetchPromise = connectToPrimalCache("thread_view", {
@@ -138,7 +138,7 @@ async function processEventBatch(batchIds: string[], userNpub: string) {
       const notifications = parseThreadViewNotifications(
         Array.isArray(threadViewData) ? threadViewData : [],
         eventId,
-        userNpub,
+        userNpub
       );
 
       const statsEvent = (threadViewData as PrimalEvent[]).find(
@@ -155,7 +155,7 @@ async function processEventBatch(batchIds: string[], userNpub: string) {
             typeof eventTyped.content === "string" &&
             eventTyped.content.includes(eventId)
           );
-        },
+        }
       );
 
       let eventStats = {
@@ -222,7 +222,7 @@ async function processEventBatch(batchIds: string[], userNpub: string) {
  */
 function filterMutedNotifications(
   notifications: Notification[],
-  mutedPubkeys: string[],
+  mutedPubkeys: string[]
 ): Notification[] {
   return notifications.filter((notification) => {
     const pubkeyToCheck =
@@ -238,7 +238,7 @@ function filterMutedNotifications(
  */
 function filterLowTrustNotifications(
   notifications: Notification[],
-  trustScoresMap: Map<string, number>,
+  trustScoresMap: Map<string, number>
 ): Notification[] {
   return notifications.filter((notification) => {
     const pubkeyToCheck =
@@ -256,7 +256,7 @@ function filterLowTrustNotifications(
 export async function loadEngagementFeedData(
   userId: string,
   page = 1,
-  limit = 50,
+  limit = 50
 ) {
   const [{ posts }, userResult] = await Promise.all([
     getPostedPosts({
@@ -321,7 +321,7 @@ export async function loadEngagementFeedData(
     return {
       posts: [],
       stats: {},
-      user: user ?? {},
+      user,
       notifications: {
         all: [],
         replies: [],
@@ -347,7 +347,7 @@ export async function loadEngagementFeedData(
 
     // Process batches in parallel
     const batchPromises = batches.map((batchIds) =>
-      processEventBatch(batchIds, userNpub),
+      processEventBatch(batchIds, userNpub)
     );
 
     const allBatchResults = await Promise.all(batchPromises);
@@ -356,14 +356,14 @@ export async function loadEngagementFeedData(
     // Combine stats and notifications
     const initialStats: Record<string, EventStats> = {};
     stats = results.reduce((acc, result) => {
-      if (result?.eventId && result?.stats) {
+      if (result.eventId && result.stats) {
         acc[result.eventId] = result.stats;
       }
       return acc;
     }, initialStats);
 
     allNotifications = results.flatMap((result) =>
-      result && Array.isArray(result.notifications) ? result.notifications : [],
+      result && Array.isArray(result.notifications) ? result.notifications : []
     );
 
     // Filter out muted users if enabled
@@ -377,9 +377,9 @@ export async function loadEngagementFeedData(
         allNotifications.map((notification) =>
           notification.type === "zap"
             ? notification.senderPubkey
-            : notification.pubkey,
-        ),
-      ),
+            : notification.pubkey
+        )
+      )
     );
 
     const profilePromises = uniquePubkeys.map(async (pubkey) => {
@@ -397,7 +397,7 @@ export async function loadEngagementFeedData(
     if (userHidePostsFromLowTrustUsers) {
       allNotifications = filterLowTrustNotifications(
         allNotifications,
-        trustScoresMap,
+        trustScoresMap
       );
     }
   } catch (error) {
@@ -422,7 +422,7 @@ export async function loadEngagementFeedData(
             typeof se === "object" &&
             !Array.isArray(se) &&
             "id" in se &&
-            typeof se.id === "string"
+            typeof se["id"] === "string"
           ) {
             const result: Record<string, EventStats> = acc;
             const eventStats: EventStats = {
@@ -433,12 +433,12 @@ export async function loadEngagementFeedData(
               zaps: 0,
               satszapped: 0,
             };
-            result[se.id] = eventStats;
+            result[se["id"]] = eventStats;
             return result;
           }
           return acc;
         },
-        ((): Record<string, EventStats> => ({}))(),
+        ((): Record<string, EventStats> => ({}))()
       );
   }
 
@@ -460,19 +460,18 @@ export async function loadEngagementFeedData(
             | "FIXED_SLOTS"
             | undefined,
           scheduleConfig: convertJsonValueToScheduleConfig(
-            queueType.scheduleConfig,
+            queueType.scheduleConfig
           ),
           isEnabled: queueType.isEnabled,
           userId: queueType.userId,
         }
       : null;
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    const result = {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Type assertion needed for Prisma query result compatibility
+    return {
       ...rest,
       signedEvent: post.signedEvent as SignedEvent | null | undefined,
       queueType: convertedQueueType,
     } as PostData;
-    return result;
   });
 
   const groupedByParent = {
@@ -480,7 +479,7 @@ export async function loadEngagementFeedData(
       groupedNotifications.replies,
       postsAsPostData,
       [], // No longform posts in this feed
-      stats,
+      stats
     ),
   };
 
@@ -547,7 +546,7 @@ export async function loadEngagementFeedData(
             }
 
             const tags =
-              ((eventTyped as { tags?: unknown }).tags as NostrTag[]) ?? [];
+              ((eventTyped as { tags?: unknown }).tags as NostrTag[]) || [];
 
             // Skip if it's the user's own post
             if (eventTyped.pubkey === userNpub) {
@@ -556,13 +555,13 @@ export async function loadEngagementFeedData(
 
             // Check if it has both "e" and "p" tags with mention marker
             const eMentionTags = tags.filter(
-              (tag: NostrTag) => tag[0] === "e" && tag[3] === "mention",
+              (tag: NostrTag) => tag[0] === "e" && tag[3] === "mention"
             );
             const hasEMention = eMentionTags.length > 0;
 
             const pMentionTags = tags.filter(
               (tag: NostrTag) =>
-                tag[0] === "p" && (tag[3] === "mention" || tag[3] === ""),
+                tag[0] === "p" && (tag[3] === "mention" || tag[3] === "")
             );
             const hasPMention = pMentionTags.length > 0;
 
@@ -573,11 +572,9 @@ export async function loadEngagementFeedData(
             // Check if the mentioned user (p tag) is the current user
             const mentionedUserPubkey = tags.find(
               (tag: NostrTag) =>
-                tag[0] === "p" && (tag[3] === "mention" || tag[3] === ""),
+                tag[0] === "p" && (tag[3] === "mention" || tag[3] === "")
             )?.[1];
-            const isMentioningUser = mentionedUserPubkey === userNpub;
-
-            return isMentioningUser;
+            return mentionedUserPubkey === userNpub;
           }
           return false;
         })
@@ -592,22 +589,22 @@ export async function loadEngagementFeedData(
       if (rawQuoteReposts.length > 0) {
         quoteRepostNotifications = await processQuoteReposts(
           rawQuoteReposts,
-          connectToPrimalCache,
+          connectToPrimalCache
         );
 
         // Filter out muted users if enabled
         if (userFilterMuted && mutedNpubs.length > 0) {
           quoteRepostNotifications = filterMutedNotifications(
             quoteRepostNotifications,
-            mutedNpubs,
+            mutedNpubs
           );
         }
 
         // Fetch user profiles and calculate trust scores for quote reposts
         const quoteUniquePubkeys = Array.from(
           new Set(
-            quoteRepostNotifications.map((notification) => notification.pubkey),
-          ),
+            quoteRepostNotifications.map((notification) => notification.pubkey)
+          )
         );
 
         const quoteProfilePromises = quoteUniquePubkeys.map(async (pubkey) => {
@@ -627,7 +624,7 @@ export async function loadEngagementFeedData(
         if (userHidePostsFromLowTrustUsers) {
           quoteRepostNotifications = filterLowTrustNotifications(
             quoteRepostNotifications,
-            trustScoresMap,
+            trustScoresMap
           );
         }
 
@@ -636,14 +633,14 @@ export async function loadEngagementFeedData(
           quoteRepostNotifications,
           postsAsPostData,
           [], // No longform posts in this feed
-          stats,
+          stats
         );
       }
     }
   } catch (error) {
     console.error(
       "🔍 [QUOTE REPOST DEBUG] Error fetching quote reposts:",
-      error,
+      error
     );
   }
 
@@ -656,7 +653,7 @@ export async function loadEngagementFeedData(
   return {
     posts: postsWithReplies ?? [],
     stats: stats ?? {},
-    user: user ?? {},
+    user,
     notifications: groupedNotifications ?? {
       all: [],
       replies: [],
@@ -665,7 +662,7 @@ export async function loadEngagementFeedData(
       quotes: [],
     },
     groupedNotifications: {
-      replies: groupedByParent?.replies ?? [],
+      replies: groupedByParent.replies ?? [],
       quotes: groupedQuoteReposts ?? [],
     },
     trustScores: trustScores ?? {},

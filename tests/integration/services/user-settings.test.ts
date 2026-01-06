@@ -22,6 +22,8 @@ vi.mock("~/lib/relays", () => ({
   blastrRelay: "wss://relay.example.com",
 }));
 
+import { TEST_USER_ID } from "../../utils/test-helpers";
+
 import {
   updateUserTimezone,
   getUserTimezone,
@@ -46,8 +48,6 @@ import {
 } from "~/features/user/services/user-settings.server";
 import { prisma } from "~/lib/prisma.server";
 
-import { TEST_USER_ID } from "../../utils/test-helpers";
-
 describe("User Settings", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -57,7 +57,7 @@ describe("User Settings", () => {
     it("should update user timezone", async () => {
       const mockUser = { id: TEST_USER_ID, timezone: "America/New_York" };
       (prisma.user.update as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockUser,
+        mockUser
       );
 
       const result = await updateUserTimezone(TEST_USER_ID, "America/New_York");
@@ -94,7 +94,7 @@ describe("User Settings", () => {
     it("should update user relays", async () => {
       const mockUser = { id: TEST_USER_ID, userRelays: ["wss://relay1.com"] };
       (prisma.user.update as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockUser,
+        mockUser
       );
 
       const result = await updateUserRelays(TEST_USER_ID, ["wss://relay1.com"]);
@@ -192,7 +192,7 @@ describe("User Settings", () => {
         giveawayBlackListed: ["npub1", "npub2"],
       };
       (prisma.user.update as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockUser,
+        mockUser
       );
 
       const result = await updateGiveawayBlacklist(TEST_USER_ID, [
@@ -232,7 +232,7 @@ describe("User Settings", () => {
     it("should update schedule interval", async () => {
       const mockUser = { id: TEST_USER_ID, scheduleInterval: ["4", "6", "8"] };
       (prisma.user.update as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockUser,
+        mockUser
       );
 
       const result = await updateScheduleInterval(TEST_USER_ID, [
@@ -273,7 +273,7 @@ describe("User Settings", () => {
     it("should update upload provider", async () => {
       const mockUser = { id: TEST_USER_ID, uploadProvider: "S3" };
       (prisma.user.update as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockUser,
+        mockUser
       );
 
       const result = await updateUserUploadProvider(TEST_USER_ID, "S3");
@@ -321,7 +321,7 @@ describe("User Settings", () => {
     it("should update mirror blossom enabled status", async () => {
       const mockUser = { id: TEST_USER_ID, enableMirrorBlossom: true };
       (prisma.user.update as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockUser,
+        mockUser
       );
 
       const result = await updateUserEnableMirrorBlossom(TEST_USER_ID, true);
@@ -351,7 +351,7 @@ describe("User Settings", () => {
         mirrorUploadUrls: ["https://mirror1.com"],
       };
       (prisma.user.update as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockUser,
+        mockUser
       );
 
       const result = await updateUserMirrorUploadUrls(TEST_USER_ID, [
@@ -389,7 +389,7 @@ describe("User Settings", () => {
       };
       const mockUser = { id: TEST_USER_ID, mutedList: mockMutedList };
       (prisma.user.update as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockUser,
+        mockUser
       );
 
       const result = await updateUserMutedList(TEST_USER_ID, mockMutedList);
@@ -416,7 +416,7 @@ describe("User Settings", () => {
     it("should update filter muted setting", async () => {
       const mockUser = { id: TEST_USER_ID, filterMuted: true };
       (prisma.user.update as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockUser,
+        mockUser
       );
 
       const result = await updateUserFilterMuted(TEST_USER_ID, true);
@@ -443,12 +443,12 @@ describe("User Settings", () => {
     it("should update hide posts from low trust users setting", async () => {
       const mockUser = { id: TEST_USER_ID, hidePostsFromLowTrustUsers: true };
       (prisma.user.update as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockUser,
+        mockUser
       );
 
       const result = await updateUserHidePostsFromLowTrustUsers(
         TEST_USER_ID,
-        true,
+        true
       );
 
       expect(prisma.user.update).toHaveBeenCalledWith({

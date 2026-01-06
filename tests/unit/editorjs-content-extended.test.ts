@@ -35,12 +35,12 @@ import {
 import { convertMarkdownToEditorJS } from "~/features/posts/utils/editorjs-conversion";
 import { handleAsyncError, logClientError } from "~/lib/error-handler.client";
 
-type EditorJSData = {
+interface EditorJSData {
   blocks?: Array<{
     type: string;
     data?: Record<string, unknown> & { text?: string };
   }>;
-};
+}
 
 describe("EditorJS Content Utils - Extended", () => {
   beforeEach(() => {
@@ -55,7 +55,7 @@ describe("EditorJS Content Utils - Extended", () => {
       await loadEditorJSContent(
         editorRef as unknown as React.RefObject<EditorJSInstance>,
         "some content",
-        onContentChange,
+        onContentChange
       );
 
       expect(onContentChange).not.toHaveBeenCalled();
@@ -69,7 +69,11 @@ describe("EditorJS Content Utils - Extended", () => {
       const editorRef = { current: mockEditor };
       const onContentChange = vi.fn();
 
-      await loadEditorJSContent(editorRef as unknown as React.RefObject<EditorJSInstance>, "", onContentChange);
+      await loadEditorJSContent(
+        editorRef as unknown as React.RefObject<EditorJSInstance>,
+        "",
+        onContentChange
+      );
 
       expect(onContentChange).not.toHaveBeenCalled();
     });
@@ -93,7 +97,11 @@ describe("EditorJS Content Utils - Extended", () => {
         version: "2.0",
       });
 
-      await loadEditorJSContent(editorRef as unknown as React.RefObject<EditorJSInstance>, jsonContent, onContentChange);
+      await loadEditorJSContent(
+        editorRef as unknown as React.RefObject<EditorJSInstance>,
+        jsonContent,
+        onContentChange
+      );
 
       expect(mockEditor.render).toHaveBeenCalled();
       expect(onContentChange).toHaveBeenCalled();
@@ -114,7 +122,7 @@ describe("EditorJS Content Utils - Extended", () => {
       await loadEditorJSContent(
         editorRef as unknown as React.RefObject<EditorJSInstance>,
         markdownContent,
-        onContentChange,
+        onContentChange
       );
 
       expect(convertMarkdownToEditorJS).toHaveBeenCalledWith(markdownContent);
@@ -132,7 +140,11 @@ describe("EditorJS Content Utils - Extended", () => {
 
       const invalidJson = "{ invalid json }";
 
-      await loadEditorJSContent(editorRef as unknown as React.RefObject<EditorJSInstance>, invalidJson, onContentChange);
+      await loadEditorJSContent(
+        editorRef as unknown as React.RefObject<EditorJSInstance>,
+        invalidJson,
+        onContentChange
+      );
 
       expect(logClientError).toHaveBeenCalled();
       expect(convertMarkdownToEditorJS).toHaveBeenCalled();
@@ -149,7 +161,11 @@ describe("EditorJS Content Utils - Extended", () => {
 
       const invalidJson = JSON.stringify({ time: 1234567890 });
 
-      await loadEditorJSContent(editorRef as unknown as React.RefObject<EditorJSInstance>, invalidJson, onContentChange);
+      await loadEditorJSContent(
+        editorRef as unknown as React.RefObject<EditorJSInstance>,
+        invalidJson,
+        onContentChange
+      );
 
       expect(logClientError).toHaveBeenCalled();
       expect(convertMarkdownToEditorJS).toHaveBeenCalled();
@@ -167,7 +183,11 @@ describe("EditorJS Content Utils - Extended", () => {
         blocks: [{ type: "paragraph", data: { text: "Test" } }],
       });
 
-      await loadEditorJSContent(editorRef as unknown as React.RefObject<EditorJSInstance>, content, onContentChange);
+      await loadEditorJSContent(
+        editorRef as unknown as React.RefObject<EditorJSInstance>,
+        content,
+        onContentChange
+      );
 
       expect(handleAsyncError).toHaveBeenCalled();
       // Should attempt fallback render
@@ -191,7 +211,11 @@ describe("EditorJS Content Utils - Extended", () => {
         blocks: [{ type: "paragraph", data: { text: "Test" } }],
       });
 
-      await loadEditorJSContent(editorRef as unknown as React.RefObject<EditorJSInstance>, content, onContentChange);
+      await loadEditorJSContent(
+        editorRef as unknown as React.RefObject<EditorJSInstance>,
+        content,
+        onContentChange
+      );
 
       expect(handleAsyncError).toHaveBeenCalledTimes(2);
     });
@@ -202,7 +226,11 @@ describe("EditorJS Content Utils - Extended", () => {
       const editorRef = { current: null };
       const onContentChange = vi.fn();
 
-      await insertAssetsIntoEditor(editorRef as unknown as React.RefObject<EditorJSInstance>, [], onContentChange);
+      await insertAssetsIntoEditor(
+        editorRef as unknown as React.RefObject<EditorJSInstance>,
+        [],
+        onContentChange
+      );
 
       expect(onContentChange).not.toHaveBeenCalled();
     });
@@ -230,16 +258,18 @@ describe("EditorJS Content Utils - Extended", () => {
         },
       ];
 
-      await insertAssetsIntoEditor(editorRef as unknown as React.RefObject<EditorJSInstance>, assets, onContentChange);
+      await insertAssetsIntoEditor(
+        editorRef as unknown as React.RefObject<EditorJSInstance>,
+        assets,
+        onContentChange
+      );
 
       expect(mockEditor.render).toHaveBeenCalled();
       const renderCall = mockEditor.render.mock.calls[0]?.[0] as {
         blocks?: Array<{ type: string }>;
       };
       expect(renderCall.blocks).toBeDefined();
-      expect(
-        renderCall.blocks?.some((b) => b.type === "paragraph"),
-      ).toBe(true);
+      expect(renderCall.blocks?.some((b) => b.type === "paragraph")).toBe(true);
       expect(onContentChange).toHaveBeenCalled();
     });
 
@@ -265,7 +295,11 @@ describe("EditorJS Content Utils - Extended", () => {
         },
       ];
 
-      await insertAssetsIntoEditor(editorRef as unknown as React.RefObject<EditorJSInstance>, assets, onContentChange);
+      await insertAssetsIntoEditor(
+        editorRef as unknown as React.RefObject<EditorJSInstance>,
+        assets,
+        onContentChange
+      );
 
       expect(mockEditor.render).toHaveBeenCalled();
       const renderCall = mockEditor.render.mock.calls[0]?.[0] as EditorJSData;
@@ -295,7 +329,11 @@ describe("EditorJS Content Utils - Extended", () => {
         },
       ];
 
-      await insertAssetsIntoEditor(editorRef as unknown as React.RefObject<EditorJSInstance>, assets, onContentChange);
+      await insertAssetsIntoEditor(
+        editorRef as unknown as React.RefObject<EditorJSInstance>,
+        assets,
+        onContentChange
+      );
 
       expect(mockEditor.render).toHaveBeenCalled();
       const renderCall = mockEditor.render.mock.calls[0]?.[0] as EditorJSData;
@@ -324,7 +362,11 @@ describe("EditorJS Content Utils - Extended", () => {
         },
       ];
 
-      await insertAssetsIntoEditor(editorRef as unknown as React.RefObject<EditorJSInstance>, assets, onContentChange);
+      await insertAssetsIntoEditor(
+        editorRef as unknown as React.RefObject<EditorJSInstance>,
+        assets,
+        onContentChange
+      );
 
       expect(mockEditor.render).toHaveBeenCalled();
       const renderCall = mockEditor.render.mock.calls[0]?.[0] as EditorJSData;
@@ -358,7 +400,11 @@ describe("EditorJS Content Utils - Extended", () => {
         },
       ];
 
-      await insertAssetsIntoEditor(editorRef as unknown as React.RefObject<EditorJSInstance>, assets, onContentChange);
+      await insertAssetsIntoEditor(
+        editorRef as unknown as React.RefObject<EditorJSInstance>,
+        assets,
+        onContentChange
+      );
 
       expect(mockEditor.render).toHaveBeenCalled();
       const renderCall = mockEditor.render.mock.calls[0]?.[0] as EditorJSData;
@@ -392,7 +438,11 @@ describe("EditorJS Content Utils - Extended", () => {
         },
       ];
 
-      await insertAssetsIntoEditor(editorRef as unknown as React.RefObject<EditorJSInstance>, assets, onContentChange);
+      await insertAssetsIntoEditor(
+        editorRef as unknown as React.RefObject<EditorJSInstance>,
+        assets,
+        onContentChange
+      );
 
       expect(logClientError).toHaveBeenCalled();
       expect(mockEditor.render).toHaveBeenCalled();
@@ -424,7 +474,11 @@ describe("EditorJS Content Utils - Extended", () => {
         },
       ];
 
-      await insertAssetsIntoEditor(editorRef as unknown as React.RefObject<EditorJSInstance>, assets, onContentChange);
+      await insertAssetsIntoEditor(
+        editorRef as unknown as React.RefObject<EditorJSInstance>,
+        assets,
+        onContentChange
+      );
 
       expect(handleAsyncError).toHaveBeenCalled();
       expect(mockEditor.blocks.insert).toHaveBeenCalledWith("paragraph", {
@@ -457,7 +511,11 @@ describe("EditorJS Content Utils - Extended", () => {
         },
       ];
 
-      await insertAssetsIntoEditor(editorRef as unknown as React.RefObject<EditorJSInstance>, assets, onContentChange);
+      await insertAssetsIntoEditor(
+        editorRef as unknown as React.RefObject<EditorJSInstance>,
+        assets,
+        onContentChange
+      );
 
       expect(handleAsyncError).toHaveBeenCalledTimes(2);
     });
@@ -485,7 +543,11 @@ describe("EditorJS Content Utils - Extended", () => {
         },
       ];
 
-      await insertAssetsIntoEditor(editorRef as unknown as React.RefObject<EditorJSInstance>, assets, onContentChange);
+      await insertAssetsIntoEditor(
+        editorRef as unknown as React.RefObject<EditorJSInstance>,
+        assets,
+        onContentChange
+      );
 
       expect(mockEditor.blocks.insert).toHaveBeenCalledWith("image", {
         file: {
@@ -500,4 +562,3 @@ describe("EditorJS Content Utils - Extended", () => {
     });
   });
 });
-

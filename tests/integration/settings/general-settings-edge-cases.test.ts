@@ -13,14 +13,14 @@ vi.mock("~/features/user", () => ({
   updateScheduleInterval: vi.fn(),
 }));
 
+import { createFormData, TEST_USER_ID } from "../../utils/test-helpers";
+
 import { handleGeneralSettingsAction } from "~/features/settings/actions/general-settings-actions.server";
 import {
   updateUserRelays,
   updateGiveawayBlacklist,
   updateScheduleInterval,
 } from "~/features/user";
-
-import { createFormData, TEST_USER_ID } from "../../utils/test-helpers";
 
 describe("General Settings Action Handler - Edge Cases", () => {
   beforeEach(() => {
@@ -30,7 +30,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
   describe("update_relays", () => {
     it("should filter out empty relay lines", async () => {
       (updateUserRelays as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
 
       const formData = createFormData({
@@ -41,7 +41,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
       const result = await handleGeneralSettingsAction(
         TEST_USER_ID,
         "update_relays",
-        formData,
+        formData
       );
       const responseObj =
         result instanceof Response
@@ -65,7 +65,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
 
     it("should handle single relay", async () => {
       (updateUserRelays as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
 
       const formData = createFormData({
@@ -76,7 +76,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
       const result = await handleGeneralSettingsAction(
         TEST_USER_ID,
         "update_relays",
-        formData,
+        formData
       );
       const responseObj =
         result instanceof Response
@@ -98,7 +98,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
 
     it("should handle empty relays string", async () => {
       (updateUserRelays as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
 
       const formData = createFormData({
@@ -109,7 +109,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
       const result = await handleGeneralSettingsAction(
         TEST_USER_ID,
         "update_relays",
-        formData,
+        formData
       );
       const responseObj =
         result instanceof Response
@@ -138,7 +138,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
       const result = await handleGeneralSettingsAction(
         TEST_USER_ID,
         "update_blacklist",
-        formData,
+        formData
       );
       const responseObj =
         result instanceof Response
@@ -154,12 +154,14 @@ describe("General Settings Action Handler - Edge Cases", () => {
 
       expect(updateGiveawayBlacklist).not.toHaveBeenCalled();
       expect(result instanceof Response ? result.status : 200).toBe(400);
-      expect(jsonResult.error).toContain("All blacklist items must start with npub");
+      expect(jsonResult.error).toContain(
+        "All blacklist items must start with npub"
+      );
     });
 
     it("should accept valid npub entries", async () => {
       (updateGiveawayBlacklist as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
 
       const formData = createFormData({
@@ -170,7 +172,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
       const result = await handleGeneralSettingsAction(
         TEST_USER_ID,
         "update_blacklist",
-        formData,
+        formData
       );
       const responseObj =
         result instanceof Response
@@ -194,7 +196,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
 
     it("should filter out empty lines", async () => {
       (updateGiveawayBlacklist as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
 
       const formData = createFormData({
@@ -205,7 +207,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
       const result = await handleGeneralSettingsAction(
         TEST_USER_ID,
         "update_blacklist",
-        formData,
+        formData
       );
       const responseObj =
         result instanceof Response
@@ -228,7 +230,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
 
     it("should handle empty blacklist", async () => {
       (updateGiveawayBlacklist as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
 
       const formData = createFormData({
@@ -239,7 +241,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
       const result = await handleGeneralSettingsAction(
         TEST_USER_ID,
         "update_blacklist",
-        formData,
+        formData
       );
       const responseObj =
         result instanceof Response
@@ -268,7 +270,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
       const result = await handleGeneralSettingsAction(
         TEST_USER_ID,
         "update_schedule_intervals",
-        formData,
+        formData
       );
       const responseObj =
         result instanceof Response
@@ -296,7 +298,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
       const result = await handleGeneralSettingsAction(
         TEST_USER_ID,
         "update_schedule_intervals",
-        formData,
+        formData
       );
       const responseObj =
         result instanceof Response
@@ -324,7 +326,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
       const result = await handleGeneralSettingsAction(
         TEST_USER_ID,
         "update_schedule_intervals",
-        formData,
+        formData
       );
       const responseObj =
         result instanceof Response
@@ -345,7 +347,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
 
     it("should accept valid intervals", async () => {
       (updateScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
 
       const formData = createFormData({
@@ -356,7 +358,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
       const result = await handleGeneralSettingsAction(
         TEST_USER_ID,
         "update_schedule_intervals",
-        formData,
+        formData
       );
       const responseObj =
         result instanceof Response
@@ -380,7 +382,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
 
     it("should filter out empty lines", async () => {
       (updateScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
 
       const formData = createFormData({
@@ -391,7 +393,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
       const result = await handleGeneralSettingsAction(
         TEST_USER_ID,
         "update_schedule_intervals",
-        formData,
+        formData
       );
       const responseObj =
         result instanceof Response
@@ -414,7 +416,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
 
     it("should handle single interval", async () => {
       (updateScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
 
       const formData = createFormData({
@@ -425,7 +427,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
       const result = await handleGeneralSettingsAction(
         TEST_USER_ID,
         "update_schedule_intervals",
-        formData,
+        formData
       );
       const responseObj =
         result instanceof Response
@@ -453,7 +455,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
       const result = await handleGeneralSettingsAction(
         TEST_USER_ID,
         "unknown_action",
-        formData,
+        formData
       );
 
       expect(result).toBeNull();

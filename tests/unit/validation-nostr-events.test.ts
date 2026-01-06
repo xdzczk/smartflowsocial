@@ -34,8 +34,12 @@ describe("Nostr Event Validation", () => {
     });
 
     it("should return null for non-object input", () => {
-      expect(validateSignedEvent("string" as unknown as Prisma.JsonValue)).toBeNull();
-      expect(validateSignedEvent(123 as unknown as Prisma.JsonValue)).toBeNull();
+      expect(
+        validateSignedEvent("string" as unknown as Prisma.JsonValue)
+      ).toBeNull();
+      expect(
+        validateSignedEvent(123 as unknown as Prisma.JsonValue)
+      ).toBeNull();
       expect(validateSignedEvent([] as unknown as Prisma.JsonValue)).toBeNull();
     });
 
@@ -103,8 +107,8 @@ describe("Nostr Event Validation", () => {
 
       expect(logError).toHaveBeenCalled();
       const callArgs = vi.mocked(logError).mock.calls[0];
-      expect(callArgs?.[1]?.message).toContain("Invalid SignedEvent");
-      expect(callArgs?.[1]?.context).toBeDefined();
+      expect(callArgs?.[1]?.["message"]).toContain("Invalid SignedEvent");
+      expect(callArgs?.[1]?.["context"]).toBeDefined();
     });
 
     it("should handle SignedEvent with empty tags", () => {
@@ -163,7 +167,9 @@ describe("Nostr Event Validation", () => {
     });
 
     it("should return null for non-object input", () => {
-      expect(validateNostrEvent("string" as unknown as Prisma.JsonValue)).toBeNull();
+      expect(
+        validateNostrEvent("string" as unknown as Prisma.JsonValue)
+      ).toBeNull();
       expect(validateNostrEvent(123 as unknown as Prisma.JsonValue)).toBeNull();
       expect(validateNostrEvent([] as unknown as Prisma.JsonValue)).toBeNull();
     });
@@ -223,8 +229,8 @@ describe("Nostr Event Validation", () => {
 
       expect(logError).toHaveBeenCalled();
       const callArgs = vi.mocked(logError).mock.calls[0];
-      expect(callArgs?.[1]?.message).toContain("Invalid NostrEvent");
-      expect(callArgs?.[1]?.context).toBeDefined();
+      expect(callArgs?.[1]?.["message"]).toContain("Invalid NostrEvent");
+      expect(callArgs?.[1]?.["context"]).toBeDefined();
     });
 
     it("should handle NostrEvent with empty tags", () => {
@@ -270,4 +276,3 @@ describe("Nostr Event Validation", () => {
     });
   });
 });
-

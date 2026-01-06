@@ -3,8 +3,12 @@
  * Provides caching and background refetching for dashboard index
  */
 
-import { useFetcher, useLoaderData } from "@remix-run/react";
-import { useParams, useSearchParams } from "@remix-run/react";
+import {
+  useFetcher,
+  useLoaderData,
+  useParams,
+  useSearchParams,
+} from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 
 import { validateHashTagPresets } from "~/lib/validation/hashtag-presets";
@@ -16,19 +20,16 @@ import {
 
 import { combineContent } from "../combined";
 import type { PostDTO, LongFormPostDTO } from "../dtos";
-import {
-  fromPostDTOArray,
-  fromLongFormPostDTOArray,
-} from "../dtos";
+import { fromPostDTOArray, fromLongFormPostDTOArray } from "../dtos";
 import { convertJsonValueToScheduleConfig } from "../types";
 import type {
   PostData,
   LongFormPostData,
   CombinedContent,
   QueueType,
+  UserData,
+  HashTagPreset,
 } from "../types";
-import type { UserData } from "../types";
-import type { HashTagPreset } from "../types";
 
 /**
  * Query key factory for dashboard data
@@ -48,16 +49,16 @@ export const dashboardKeys = {
 export function useDashboardQuery() {
   const params = useParams();
   const [searchParams] = useSearchParams();
-  const queueType = params.queueType ?? "all";
+  const queueType = params["queueType"] ?? "all";
   const currentTab = searchParams.get("tab") ?? "all";
-  
+
   const loaderDataRaw = useLoaderData();
   const fetcher = useFetcher();
 
   // Validate initial loader data
   const validatedLoaderData = safeValidateLoaderResponse(
     loaderDataRaw,
-    dashboardLoaderDataSchema,
+    dashboardLoaderDataSchema
   );
 
   return useQuery({
@@ -65,14 +66,14 @@ export function useDashboardQuery() {
     queryFn: async () => {
       const url = `/dashboard${queueType !== "all" ? `/${queueType}` : ""}?tab=${currentTab}`;
       fetcher.load(url);
-      
+
       return new Promise<DashboardLoaderData>((resolve, reject) => {
         const checkFetcher = () => {
           if (fetcher.state === "idle") {
             if (fetcher.data) {
               const validated = safeValidateLoaderResponse(
                 fetcher.data,
-                dashboardLoaderDataSchema,
+                dashboardLoaderDataSchema
               );
               if (validated) {
                 resolve(validated);
@@ -106,7 +107,7 @@ export function useDashboardQuery() {
  */
 export function useDashboardData() {
   const { data, isLoading, error } = useDashboardQuery();
-  
+
   if (!data) {
     return {
       scheduledPosts: [] as PostData[],
@@ -139,7 +140,8 @@ export function useDashboardData() {
     "hashTagPresets" in typedData && Array.isArray(typedData.hashTagPresets)
       ? typedData.hashTagPresets
       : [];
-  const postStatisticsRaw = "postStatistics" in typedData ? typedData.postStatistics : undefined;
+  const postStatisticsRaw =
+    "postStatistics" in typedData ? typedData.postStatistics : undefined;
 
   const scheduledPosts: PostData[] = Array.isArray(scheduledPostsRaw)
     ? fromPostDTOArray(scheduledPostsRaw as PostDTO[])
@@ -152,66 +154,69 @@ export function useDashboardData() {
     scheduledPosts,
     longformPosts,
     "scheduledFor",
-    "asc",
+    "asc"
   );
   const queueTypes: QueueType[] = Array.isArray(queueTypesRaw)
-    ? queueTypesRaw.map((qt: unknown) => {
-        if (
-          qt &&
-          typeof qt === "object" &&
-          qt !== null &&
-          "id" in qt &&
-          "name" in qt
-        ) {
-          const q = qt as {
-            id?: unknown;
-            name?: unknown;
-            color?: unknown;
-            scheduleType?: unknown;
-            scheduleConfig?: unknown;
-            isEnabled?: unknown;
-            userId?: unknown;
-          };
-          const id = typeof q.id === "string" ? q.id : String(q.id ?? "");
-          const name =
-            typeof q.name === "string" ? q.name : String(q.name ?? "");
-          const color =
-            q.color !== null && q.color !== undefined
-              ? typeof q.color === "string"
-                ? q.color
-                : String(q.color)
-              : null;
-          const scheduleType =
-            typeof q.scheduleType === "string" &&
-            (q.scheduleType === "INTERVAL" || q.scheduleType === "FIXED_SLOTS")
-              ? q.scheduleType
-              : undefined;
-          const scheduleConfig = convertJsonValueToScheduleConfig(
-            q.scheduleConfig,
-          );
-          const isEnabled =
-            typeof q.isEnabled === "boolean"
-              ? q.isEnabled
-              : q.isEnabled !== false;
-          const userId = typeof q.userId === "string" ? q.userId : "";
-          const queueType: QueueType = {
-            id,
-            name,
-            color,
-            description: undefined,
-            scheduleType,
-            scheduleConfig,
-            isEnabled,
-            userId,
-          };
-          return queueType;
-        }
-        return null;
-      })
-      .filter((qt): qt is QueueType => qt !== null)
+    ? queueTypesRaw
+        .map((qt: unknown) => {
+          if (
+            qt &&
+            typeof qt === "object" &&
+            qt !== null &&
+            "id" in qt &&
+            "name" in qt
+          ) {
+            const q = qt as {
+              id?: unknown;
+              name?: unknown;
+              color?: unknown;
+              scheduleType?: unknown;
+              scheduleConfig?: unknown;
+              isEnabled?: unknown;
+              userId?: unknown;
+            };
+            const id = typeof q.id === "string" ? q.id : String(q.id ?? "");
+            const name =
+              typeof q.name === "string" ? q.name : String(q.name ?? "");
+            const color =
+              q.color !== null && q.color !== undefined
+                ? typeof q.color === "string"
+                  ? q.color
+                  : String(q.color)
+                : null;
+            const scheduleType =
+              typeof q.scheduleType === "string" &&
+              (q.scheduleType === "INTERVAL" ||
+                q.scheduleType === "FIXED_SLOTS")
+                ? q.scheduleType
+                : undefined;
+            const scheduleConfig = convertJsonValueToScheduleConfig(
+              q.scheduleConfig
+            );
+            const isEnabled =
+              typeof q.isEnabled === "boolean"
+                ? q.isEnabled
+                : q.isEnabled !== false;
+            const userId = typeof q.userId === "string" ? q.userId : "";
+            const queueType: QueueType = {
+              id,
+              name,
+              color,
+              description: undefined,
+              scheduleType,
+              scheduleConfig,
+              isEnabled,
+              userId,
+            };
+            return queueType;
+          }
+          return null;
+        })
+        .filter((qt): qt is QueueType => qt !== null)
     : [];
   // Validate HashTagPreset array with Zod schema
-  const hashTagPresets: HashTagPreset[] = validateHashTagPresets(hashTagPresetsRaw);
+  const hashTagPresets: HashTagPreset[] =
+    validateHashTagPresets(hashTagPresetsRaw);
 
   return {
     scheduledPosts,
@@ -225,4 +230,3 @@ export function useDashboardData() {
     error,
   };
 }
-

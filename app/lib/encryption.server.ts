@@ -19,10 +19,10 @@ const VERSION_LENGTH = 1;
  * Derive encryption key from SESSION_SECRET
  */
 function deriveKey(salt: Buffer): Buffer {
-  const sessionSecret = process.env.SESSION_SECRET;
+  const sessionSecret = process.env["SESSION_SECRET"];
   if (!sessionSecret) {
     throw new Error(
-      "SESSION_SECRET environment variable is required for encryption",
+      "SESSION_SECRET environment variable is required for encryption"
     );
   }
 
@@ -102,7 +102,7 @@ export function decrypt(encryptedData: string): string {
         authTag = combined.subarray(combined.length - AUTH_TAG_LENGTH);
         encrypted = combined.subarray(
           offset,
-          combined.length - AUTH_TAG_LENGTH,
+          combined.length - AUTH_TAG_LENGTH
         );
       } else {
         // Legacy CBC format (no version byte)

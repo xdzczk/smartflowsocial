@@ -14,7 +14,7 @@ import { deleteTemplate, getTemplates } from "~/models/template.server";
 
 export async function handleTemplatesAction(
   formData: FormData,
-  userId: string,
+  userId: string
 ) {
   const result = validateFormDataOrRespond(formData, templatesActionSchema);
   if (!result.success) {
@@ -33,7 +33,8 @@ export async function handleTemplatesAction(
   }
 
   if (_action === "delete_asset") {
-    const deleteData = result.data._action === "delete_asset" ? result.data : null;
+    const deleteData =
+      result.data._action === "delete_asset" ? result.data : null;
     if (!deleteData) {
       return { error: "Invalid action" };
     }
@@ -42,7 +43,8 @@ export async function handleTemplatesAction(
   }
 
   if (_action === "create_text_asset") {
-    const textData = result.data._action === "create_text_asset" ? result.data : null;
+    const textData =
+      result.data._action === "create_text_asset" ? result.data : null;
     if (!textData) {
       return { error: "Invalid action" };
     }
@@ -123,7 +125,7 @@ export async function handleTemplatesAction(
 
     // Check for failed uploads
     const failedUploads = bulkData.uploadResults.filter(
-      (result) => !result.success,
+      (result) => !result.success
     );
     if (failedUploads.length > 0) {
       return { error: "Some uploads failed" };
@@ -160,9 +162,9 @@ export async function handleTemplatesAction(
         }
 
         const title =
-          bulkData.titles[index] ||
+          bulkData.titles[index] ??
           `${assetType === AssetType.VIDEO ? "Video" : "Image"} ${index + 1}`;
-        const tagsString = bulkData.tags[index] || "";
+        const tagsString = bulkData.tags[index] ?? "";
         const tags = tagsString
           ? tagsString
               .split(",")
@@ -177,7 +179,7 @@ export async function handleTemplatesAction(
           tags,
           assetType,
         });
-      }),
+      })
     );
 
     return { success: true, assets };
@@ -192,8 +194,8 @@ export async function handleTemplatesAction(
 
     await Promise.all(
       bulkDeleteData.assetIds.map((assetId) =>
-        deleteAsset({ id: assetId, userId }),
-      ),
+        deleteAsset({ id: assetId, userId })
+      )
     );
 
     return { success: true, deletedCount: bulkDeleteData.assetIds.length };

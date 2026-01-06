@@ -20,7 +20,7 @@ vi.mock("bullmq", () => {
     constructor(
       queueName: string,
       processor: (job: Job) => Promise<unknown>,
-      _options?: unknown,
+      _options?: unknown
     ) {
       this.queueName = queueName;
       // Store the processor function so tests can call it
@@ -88,6 +88,8 @@ vi.mock("~/lib/prisma.server", () => ({
   prisma: mockPrisma,
 }));
 
+import { TEST_USER_ID } from "../utils/test-helpers";
+
 import { getUserById } from "~/features/user";
 import { enqueuePostJob } from "~/infra/queue";
 import { prisma } from "~/lib/prisma.server";
@@ -98,8 +100,6 @@ import {
 } from "~/models/longformpost.server";
 import { updatePostStatus } from "~/models/post.commands.server";
 import { getCronDueScheduledPosts } from "~/models/post.queries.server";
-
-import { TEST_USER_ID } from "../utils/test-helpers";
 
 // Import workers after mocks are set up
 interface MockWorkerType {
@@ -113,7 +113,8 @@ let postCheckerWorker: MockWorkerType | undefined;
 describe("Queue Workers", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
-    process.env.NOSTR_PUBLISHER_URL = "https://api.nostr-publisher.com/publish";
+    process.env["NOSTR_PUBLISHER_URL"] =
+      "https://api.nostr-publisher.com/publish";
 
     // Dynamically import workers after mocks
     const module = await import("~/features/posts/queues.server");
@@ -153,7 +154,7 @@ describe("Queue Workers", () => {
 
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (updatePostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
@@ -175,6 +176,9 @@ describe("Queue Workers", () => {
       expect(global.fetch).toHaveBeenCalled();
       const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock
         .calls[0];
+      if (!fetchCall) {
+        throw new Error("fetch was not called");
+      }
       expect(fetchCall[0]).toBe("https://api.nostr-publisher.com/publish");
       const fetchOptions = fetchCall[1] as RequestInit;
       expect(fetchOptions.method).toBe("POST");
@@ -186,7 +190,7 @@ describe("Queue Workers", () => {
         JSON.stringify({
           relays: ["wss://relay1.com", "wss://relay2.com"],
           event: mockJobData.signedEvent,
-        }),
+        })
       );
       expect(result).toEqual({ success: true, postId: "post-123" });
     });
@@ -208,7 +212,7 @@ describe("Queue Workers", () => {
 
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (updatePostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
@@ -224,12 +228,15 @@ describe("Queue Workers", () => {
       expect(global.fetch).toHaveBeenCalled();
       const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock
         .calls[0];
+      if (!fetchCall) {
+        throw new Error("fetch was not called");
+      }
       const fetchOptions = fetchCall[1] as RequestInit;
       expect(fetchOptions.body).toBe(
         JSON.stringify({
           relays: ["wss://relay1.com", "wss://relay2.com"],
           event: mockJobData.signedEvent,
-        }),
+        })
       );
     });
 
@@ -256,7 +263,7 @@ describe("Queue Workers", () => {
         throw new Error("scheduledPostsWorker.process is not defined");
       }
       await expect(scheduledPostsWorker.process(mockJob)).rejects.toThrow(
-        `User ${TEST_USER_ID} not found`,
+        `User ${TEST_USER_ID} not found`
       );
     });
 
@@ -277,7 +284,7 @@ describe("Queue Workers", () => {
 
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (updatePostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
@@ -293,12 +300,15 @@ describe("Queue Workers", () => {
       expect(global.fetch).toHaveBeenCalled();
       const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock
         .calls[0];
+      if (!fetchCall) {
+        throw new Error("fetch was not called");
+      }
       const fetchOptions = fetchCall[1] as RequestInit;
       expect(fetchOptions.body as string).toBe(
         JSON.stringify({
           relays: [],
           event: mockJobData.signedEvent,
-        }),
+        })
       );
     });
 
@@ -326,7 +336,7 @@ describe("Queue Workers", () => {
 
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (updatePostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: false,
@@ -338,7 +348,7 @@ describe("Queue Workers", () => {
         throw new Error("scheduledPostsWorker.process is not defined");
       }
       await expect(scheduledPostsWorker.process(mockJob)).rejects.toThrow(
-        "Failed to post to nostr publisher",
+        "Failed to post to nostr publisher"
       );
     });
 
@@ -359,17 +369,17 @@ describe("Queue Workers", () => {
 
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (updatePostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
       (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Network error"),
+        new Error("Network error")
       );
 
       if (!scheduledPostsWorker?.process) {
         throw new Error("scheduledPostsWorker.process is not defined");
       }
       await expect(scheduledPostsWorker.process(mockJob)).rejects.toThrow(
-        "Network error",
+        "Network error"
       );
     });
   });
@@ -405,7 +415,7 @@ describe("Queue Workers", () => {
 
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (updateLongFormPostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
@@ -441,7 +451,7 @@ describe("Queue Workers", () => {
         throw new Error("scheduledLongFormPostsWorker.process is not defined");
       }
       await expect(
-        scheduledLongFormPostsWorker.process(mockJob),
+        scheduledLongFormPostsWorker.process(mockJob)
       ).rejects.toThrow(`User ${TEST_USER_ID} not found`);
     });
 
@@ -471,7 +481,7 @@ describe("Queue Workers", () => {
 
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (updateLongFormPostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: false,
@@ -483,7 +493,7 @@ describe("Queue Workers", () => {
         throw new Error("scheduledLongFormPostsWorker.process is not defined");
       }
       await expect(
-        scheduledLongFormPostsWorker.process(mockJob),
+        scheduledLongFormPostsWorker.process(mockJob)
       ).rejects.toThrow("Failed to post longform to nostr publisher");
     });
   });
@@ -509,12 +519,13 @@ describe("Queue Workers", () => {
       ];
 
       // Dynamic import() type annotation needed for type reference
-      // eslint-disable-next-line @typescript-eslint/consistent-type-imports
-      const mockLongformPosts: import("~/features/posts/types").LongFormPostData[] =
-        [];
+      // eslint-disable-next-line @typescript-eslint/consistent-type-imports -- Dynamic import requires value import
+      const mockLongformPosts: Array<
+        import("~/features/posts/types").LongFormPostData
+      > = [];
 
       (getCronDueScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPosts,
+        mockPosts
       );
       (
         getCronDueScheduledLongFormPosts as ReturnType<typeof vi.fn>
@@ -525,7 +536,7 @@ describe("Queue Workers", () => {
         throw new Error("postCheckerWorker.process is not defined");
       }
       const result = (await postCheckerWorker.process(
-        {} as unknown as Job,
+        {} as unknown as Job
       )) as { processed: number };
 
       expect(getCronDueScheduledPosts).toHaveBeenCalled();
@@ -556,7 +567,7 @@ describe("Queue Workers", () => {
       ];
 
       (getCronDueScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPosts,
+        mockPosts
       );
       (
         getCronDueScheduledLongFormPosts as ReturnType<typeof vi.fn>
@@ -577,8 +588,8 @@ describe("Queue Workers", () => {
       const dueTime = now - 10;
 
       // Dynamic import() type annotation needed for type reference
-      // eslint-disable-next-line @typescript-eslint/consistent-type-imports
-      const mockPosts: import("~/features/posts/types").PostData[] = [];
+      // eslint-disable-next-line @typescript-eslint/consistent-type-imports -- Dynamic import requires value import
+      const mockPosts: Array<import("~/features/posts/types").PostData> = [];
       const mockLongformPosts = [
         {
           id: "longform-1",
@@ -589,7 +600,7 @@ describe("Queue Workers", () => {
       ];
 
       (getCronDueScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPosts,
+        mockPosts
       );
       (
         getCronDueScheduledLongFormPosts as ReturnType<typeof vi.fn>
@@ -599,7 +610,7 @@ describe("Queue Workers", () => {
         throw new Error("postCheckerWorker.process is not defined");
       }
       const result = (await postCheckerWorker.process(
-        {} as unknown as Job,
+        {} as unknown as Job
       )) as { processed: number };
 
       expect(result.processed).toBe(1);
@@ -619,7 +630,7 @@ describe("Queue Workers", () => {
       ];
 
       (getCronDueScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPosts,
+        mockPosts
       );
       (
         getCronDueScheduledLongFormPosts as ReturnType<typeof vi.fn>
@@ -629,7 +640,7 @@ describe("Queue Workers", () => {
         throw new Error("postCheckerWorker.process is not defined");
       }
       const result = (await postCheckerWorker.process(
-        {} as unknown as Job,
+        {} as unknown as Job
       )) as { processed: number };
 
       expect(result.processed).toBe(1);
@@ -637,7 +648,7 @@ describe("Queue Workers", () => {
 
     it("should handle database errors gracefully", async () => {
       (getCronDueScheduledPosts as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Database error"),
+        new Error("Database error")
       );
       (
         getCronDueScheduledLongFormPosts as ReturnType<typeof vi.fn>
@@ -647,13 +658,13 @@ describe("Queue Workers", () => {
         throw new Error("postCheckerWorker.process is not defined");
       }
       await expect(
-        postCheckerWorker.process({} as unknown as Job),
+        postCheckerWorker.process({} as unknown as Job)
       ).rejects.toThrow("Database error");
     });
 
     it("should handle empty results", async () => {
       (getCronDueScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-        [],
+        []
       );
       (
         getCronDueScheduledLongFormPosts as ReturnType<typeof vi.fn>
@@ -663,7 +674,7 @@ describe("Queue Workers", () => {
         throw new Error("postCheckerWorker.process is not defined");
       }
       const result = (await postCheckerWorker.process(
-        {} as unknown as Job,
+        {} as unknown as Job
       )) as { processed: number };
 
       expect(result.processed).toBe(0);

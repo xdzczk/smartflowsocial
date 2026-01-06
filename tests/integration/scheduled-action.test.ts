@@ -15,10 +15,6 @@ vi.mock("~/models/longformpost.server", () => ({
   deleteLongFormPost: vi.fn(),
 }));
 
-import { handleScheduledAction } from "~/features/posts/services/scheduled-action.server";
-import { deleteLongFormPost } from "~/models/longformpost.server";
-import { deletePost } from "~/models/post.commands.server";
-
 import {
   createActionFormData,
   TEST_USER_ID,
@@ -26,6 +22,10 @@ import {
   TEST_LONGFORM_ID,
   createPostIds,
 } from "../utils/test-helpers";
+
+import { handleScheduledAction } from "~/features/posts/services/scheduled-action.server";
+import { deleteLongFormPost } from "~/models/longformpost.server";
+import { deletePost } from "~/models/post.commands.server";
 
 describe("Scheduled Action Handler", () => {
   beforeEach(() => {
@@ -53,7 +53,7 @@ describe("Scheduled Action Handler", () => {
   describe("Delete Longform Post Action", () => {
     it("should delete a single scheduled longform post", async () => {
       (deleteLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
 
       const formData = createActionFormData("deleteLongForm", {
@@ -112,7 +112,7 @@ describe("Scheduled Action Handler", () => {
   describe("Bulk Delete Longform Posts Action", () => {
     it("should delete multiple scheduled longform posts", async () => {
       (deleteLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
 
       const postIds = [TEST_LONGFORM_ID, "longform-2", "longform-3"];
@@ -137,7 +137,7 @@ describe("Scheduled Action Handler", () => {
     it("should delete mixed posts and longform posts", async () => {
       (deletePost as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
       (deleteLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
 
       const itemData = [
@@ -197,7 +197,7 @@ describe("Scheduled Action Handler", () => {
 
     it("should handle only longform posts in mixed delete", async () => {
       (deleteLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
 
       const itemData = [
@@ -247,7 +247,7 @@ describe("Scheduled Action Handler", () => {
 
     it("should handle database errors from deletePost", async () => {
       (deletePost as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Database error"),
+        new Error("Database error")
       );
 
       const formData = createActionFormData("delete", {
@@ -255,13 +255,13 @@ describe("Scheduled Action Handler", () => {
       });
 
       await expect(
-        handleScheduledAction(formData, TEST_USER_ID),
+        handleScheduledAction(formData, TEST_USER_ID)
       ).rejects.toThrow("Database error");
     });
 
     it("should handle database errors from deleteLongFormPost", async () => {
       (deleteLongFormPost as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Database error"),
+        new Error("Database error")
       );
 
       const formData = createActionFormData("deleteLongForm", {
@@ -269,13 +269,13 @@ describe("Scheduled Action Handler", () => {
       });
 
       await expect(
-        handleScheduledAction(formData, TEST_USER_ID),
+        handleScheduledAction(formData, TEST_USER_ID)
       ).rejects.toThrow("Database error");
     });
 
     it("should handle errors in bulk delete", async () => {
       (deletePost as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Delete failed"),
+        new Error("Delete failed")
       );
 
       const formData = createActionFormData("bulkDelete", {
@@ -283,13 +283,13 @@ describe("Scheduled Action Handler", () => {
       });
 
       await expect(
-        handleScheduledAction(formData, TEST_USER_ID),
+        handleScheduledAction(formData, TEST_USER_ID)
       ).rejects.toThrow("Delete failed");
     });
 
     it("should handle errors in bulk delete mixed", async () => {
       (deletePost as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Delete failed"),
+        new Error("Delete failed")
       );
 
       const itemData = [{ id: "post-1", type: "post" }];
@@ -298,7 +298,7 @@ describe("Scheduled Action Handler", () => {
       });
 
       await expect(
-        handleScheduledAction(formData, TEST_USER_ID),
+        handleScheduledAction(formData, TEST_USER_ID)
       ).rejects.toThrow("Delete failed");
     });
   });

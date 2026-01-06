@@ -21,7 +21,7 @@ interface HashTagPreset {
 }
 
 interface LongFormPublishingOptionsProps {
-  queueTypes: (string | QueueType)[];
+  queueTypes: Array<string | QueueType>;
   selectedQueueType: string;
   onQueueTypeChange: (queueTypeName: string) => void;
   scheduledFor: string | null;
@@ -55,7 +55,7 @@ export function LongFormPublishingOptions({
 }: LongFormPublishingOptionsProps) {
   // Find the currently selected queue type
   const currentQueueType = queueTypes?.find(
-    (qt) => (typeof qt === "string" ? qt : qt.name) === selectedQueueType,
+    (qt) => (typeof qt === "string" ? qt : qt.name) === selectedQueueType
   );
 
   const isFixedSlotQueue =
@@ -77,9 +77,9 @@ export function LongFormPublishingOptions({
         <div className="flex flex-wrap gap-2">
           {queueTypes
             ?.filter((queue) => {
-              const isEnabled =
-                typeof queue === "object" ? queue.isEnabled !== false : true;
-              return isEnabled;
+              return typeof queue === "object"
+                ? queue.isEnabled !== false
+                : true;
             })
             .map((queue) => {
               const queueName = typeof queue === "string" ? queue : queue.name;
@@ -124,7 +124,7 @@ export function LongFormPublishingOptions({
         showQueuePreset={true}
         queueType={(() => {
           const qt = queueTypes?.find(
-            (q) => (typeof q === "string" ? q : q.name) === selectedQueueType,
+            (q) => (typeof q === "string" ? q : q.name) === selectedQueueType
           );
           // Only pass QueueType objects with the necessary properties
           if (qt && typeof qt === "object" && qt.id) {

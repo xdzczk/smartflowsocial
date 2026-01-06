@@ -54,7 +54,7 @@ const GiveawayPost = ({ randomUsers }: GiveawayPostProps) => {
       .map((user: RandomUser) => formatNpub(user.pubkey))
       .join(", ");
 
-    const template = `Thanks to everyone who shared, zapped, liked and commented on our memes lately 🫡
+    return `Thanks to everyone who shared, zapped, liked and commented on our memes lately 🫡
 
 ✅ 3 random reposts from last week each got 2,000 sats - congrats to ${reposters} 🎉
 
@@ -65,8 +65,6 @@ const GiveawayPost = ({ randomUsers }: GiveawayPostProps) => {
 Enjoy your memes and have a nice day!
 
 #bitcoin #plebchain #giveaway`;
-
-    return template;
   };
 
   const handleGenerateMessage = () => {

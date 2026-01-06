@@ -10,7 +10,7 @@ export async function processImageForWeb(
     maxHeight?: number;
     quality?: number;
     format?: "jpeg" | "png" | "webp";
-  } = {},
+  } = {}
 ): Promise<Buffer> {
   const {
     maxWidth = 1200,
@@ -54,9 +54,7 @@ export async function processImageForWeb(
         sharpInstance = sharpInstance.jpeg({ quality });
     }
 
-    const processedBuffer = await sharpInstance.toBuffer();
-
-    return processedBuffer;
+    return await sharpInstance.toBuffer();
   } catch (error) {
     console.error("Sharp image processing error:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);

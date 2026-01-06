@@ -68,7 +68,7 @@ describe("Engagement Logic Unit Tests", () => {
 
       expect(grouped.all.length).toBe(3);
       expect(grouped.replies.length).toBe(1);
-      expect(grouped.replies[0].id).toBe("1");
+      expect(grouped.replies[0]?.["id"]).toBe("1");
     });
 
     it("should correctly categorize mention notifications", () => {

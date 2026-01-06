@@ -68,7 +68,10 @@ export function SimpleRescheduleModal({
   const scheduledFor = form.watch("scheduledFor");
   // queueTypeId is conditionally in the schema, so we need to access it safely
   // Type assertion needed because queueTypeId only exists in non-longform schema
-  type FormValues = { scheduledFor: Date; queueTypeId?: string };
+  interface FormValues {
+    scheduledFor: Date;
+    queueTypeId?: string;
+  }
   const formValues = form.getValues() as FormValues;
   const selectedQueueType = !isLongform ? formValues.queueTypeId : undefined;
 
@@ -87,7 +90,7 @@ export function SimpleRescheduleModal({
   const formatDateTimeForInput = (date: Date) => {
     const userTimezone = user?.timezone ?? "UTC";
     const dateInUserTz = new Date(
-      date.toLocaleString("en-US", { timeZone: userTimezone }),
+      date.toLocaleString("en-US", { timeZone: userTimezone })
     );
     const year = dateInUserTz.getFullYear();
     const month = String(dateInUserTz.getMonth() + 1).padStart(2, "0");
@@ -112,7 +115,7 @@ export function SimpleRescheduleModal({
 
       if (!originalSignedEvent || !originalNostrEvent) {
         throw new Error(
-          "Original event not found. Cannot reschedule unsigned posts.",
+          "Original event not found. Cannot reschedule unsigned posts."
         );
       }
 
@@ -128,7 +131,7 @@ export function SimpleRescheduleModal({
       const formData = new FormData();
       formData.append(
         "_action",
-        isLongform ? "rescheduleLongform" : "reschedule",
+        isLongform ? "rescheduleLongform" : "reschedule"
       );
       formData.append("postId", post.id);
       formData.append("newTime", newTimeUnix.toString());
@@ -155,11 +158,11 @@ export function SimpleRescheduleModal({
           component: "SimpleRescheduleModal",
           action: "handleReschedule",
         },
-        false, // Don't show toast, we set signingError instead
+        false // Don't show toast, we set signingError instead
       );
       setIsSigningEvent(false);
       setSigningError(
-        getErrorMessage(error) || "Failed to sign event. Please try again.",
+        getErrorMessage(error) || "Failed to sign event. Please try again."
       );
     }
   });
@@ -329,11 +332,14 @@ export function SimpleRescheduleModal({
                 </label>
                 <select
                   id="simple-reschedule-queue-type"
-                  {...(form.register("queueTypeId" as never))}
+                  {...form.register("queueTypeId" as never)}
                   value={selectedQueueType ?? ""}
                   onChange={(e) => {
                     // Type assertion needed because queueTypeId only exists in non-longform schema
-                    (form.setValue as (name: string, value: string) => void)("queueTypeId", e.target.value);
+                    (form.setValue as (name: string, value: string) => void)(
+                      "queueTypeId",
+                      e.target.value
+                    );
                   }}
                   className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                 >

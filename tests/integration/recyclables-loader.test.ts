@@ -27,18 +27,18 @@ vi.mock("~/features/posts/stats.server", () => ({
   getPostStats: vi.fn(),
 }));
 
-import type { PostDTO } from "~/features/posts/dtos";
-import { getRecyclableDashboardData } from "~/features/posts/server";
-import { getPostStats } from "~/features/posts/stats.server";
-import { getUserById, getQueueTypes } from "~/features/user";
-import { getRecyclablePosts } from "~/models/post.queries.server";
-
 import {
   TEST_USER_ID,
   createMockUser,
   createMockQueueType,
   createMockPost,
 } from "../utils/test-helpers";
+
+import type { PostDTO } from "~/features/posts/dtos";
+import { getRecyclableDashboardData } from "~/features/posts/server";
+import { getPostStats } from "~/features/posts/stats.server";
+import { getUserById, getQueueTypes } from "~/features/user";
+import { getRecyclablePosts } from "~/models/post.queries.server";
 
 describe("Recyclables Loader", () => {
   beforeEach(() => {
@@ -83,7 +83,7 @@ describe("Recyclables Loader", () => {
     });
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockQueueTypes,
+      mockQueueTypes
     );
     (getPostStats as ReturnType<typeof vi.fn>).mockResolvedValue(mockStats);
 
@@ -106,6 +106,9 @@ describe("Recyclables Loader", () => {
     expect(result.posts).toHaveLength(mockPosts.length);
     result.posts.forEach((post, index) => {
       const mockPost = mockPosts[index];
+      if (!mockPost) {
+        throw new Error(`Mock post not found at index ${index}`);
+      }
       expect(post.id).toBe(mockPost.id);
       expect(post.content).toBe(mockPost.content);
       expect(post.caption).toBe(mockPost.caption);
@@ -113,8 +116,12 @@ describe("Recyclables Loader", () => {
       // PostDTO should include isRecyclable from Prisma Post type
       // The mock post type doesn't include isRecyclable in its inferred type, so we use type assertions
       const postWithRecyclable = post as PostDTO & { isRecyclable: boolean };
-      const mockPostWithRecyclable = mockPost as typeof mockPost & { isRecyclable?: boolean };
-      expect(postWithRecyclable.isRecyclable).toBe(mockPostWithRecyclable.isRecyclable);
+      const mockPostWithRecyclable = mockPost as typeof mockPost & {
+        isRecyclable?: boolean;
+      };
+      expect(postWithRecyclable.isRecyclable).toBe(
+        mockPostWithRecyclable.isRecyclable
+      );
       expect(post.isPosted).toBe(mockPost.isPosted);
       // Dates are serialized to strings in DTOs
       expect(typeof post.createdAt).toBe("string");
@@ -141,7 +148,7 @@ describe("Recyclables Loader", () => {
       pagination: mockPagination,
     });
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(
-      createMockUser(),
+      createMockUser()
     );
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getPostStats as ReturnType<typeof vi.fn>).mockResolvedValue({});
@@ -185,10 +192,10 @@ describe("Recyclables Loader", () => {
       },
     });
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(
-      createMockUser(),
+      createMockUser()
     );
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockQueueTypes,
+      mockQueueTypes
     );
     (getPostStats as ReturnType<typeof vi.fn>).mockResolvedValue({});
 
@@ -227,7 +234,7 @@ describe("Recyclables Loader", () => {
       },
     });
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(
-      createMockUser(),
+      createMockUser()
     );
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getPostStats as ReturnType<typeof vi.fn>).mockResolvedValue({

@@ -26,12 +26,12 @@ vi.mock("~/features/posts/services/combined.server", () => ({
   ]),
 }));
 
+import { TEST_USER_ID } from "../../../utils/test-helpers";
+
 import { loadDraftsData } from "~/features/posts/services/drafts-loader.server";
 import { getUserById, getQueueTypes } from "~/features/user";
 import { getDraftLongFormPosts } from "~/models/longformpost.server";
 import { getDraftPosts } from "~/models/post.queries.server";
-
-import { TEST_USER_ID } from "../../../utils/test-helpers";
 
 describe("Drafts Loader", () => {
   beforeEach(() => {
@@ -52,11 +52,11 @@ describe("Drafts Loader", () => {
 
     (getDraftPosts as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
     (getDraftLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockLongformPosts,
+      mockLongformPosts
     );
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockQueueTypes,
+      mockQueueTypes
     );
 
     const result = await loadDraftsData(TEST_USER_ID, "all");
@@ -79,7 +79,7 @@ describe("Drafts Loader", () => {
 
     (getDraftPosts as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
     (getDraftLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockLongformPosts,
+      mockLongformPosts
     );
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: TEST_USER_ID,
@@ -89,7 +89,7 @@ describe("Drafts Loader", () => {
     const result = await loadDraftsData(TEST_USER_ID, "Queue 1");
 
     expect(result.longformPosts).toHaveLength(1);
-    expect(result.longformPosts[0].id).toBe("longform-1");
+    expect(result.longformPosts[0]?.id).toBe("longform-1");
     expect(result.selectedQueueType).toBe("Queue 1");
   });
 
@@ -101,7 +101,7 @@ describe("Drafts Loader", () => {
 
     (getDraftPosts as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getDraftLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockLongformPosts,
+      mockLongformPosts
     );
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: TEST_USER_ID,

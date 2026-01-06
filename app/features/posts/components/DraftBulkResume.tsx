@@ -33,12 +33,12 @@ export default function DraftBulkResume({
       const now = new Date();
       const userTimezone = user?.timezone ?? "UTC";
       const localDate = new Date(
-        now.toLocaleString("en-US", { timeZone: userTimezone }),
+        now.toLocaleString("en-US", { timeZone: userTimezone })
       );
 
       // Schedule posts with 2-hour intervals by default
       localDate.setHours(
-        localDate.getHours() + index * (Number(scheduleIntervals?.[0]) || 2),
+        localDate.getHours() + index * (Number(scheduleIntervals?.[0]) || 2)
       );
       return {
         id: draft.id,
@@ -58,12 +58,12 @@ export default function DraftBulkResume({
           })
           .replace(/(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+)/, "$3-$1-$2T$4:$5"),
       };
-    }),
+    })
   );
 
   const calculateQueueScheduleTime = async (
     queueTypeName: string,
-    baseIndex = 0,
+    baseIndex = 0
   ): Promise<string> => {
     if (queueTypeName === "unassigned") {
       return "";
@@ -140,7 +140,7 @@ export default function DraftBulkResume({
               }
 
               baseDate.setHours(
-                baseDate.getHours() + baseIndex * intervalHours,
+                baseDate.getHours() + baseIndex * intervalHours
               );
             } else if (queueType.scheduleType === "FIXED_SLOTS") {
               const config =
@@ -158,7 +158,9 @@ export default function DraftBulkResume({
                 // Sort slots to ensure consistent ordering
                 const sortedSlots = slots
                   .map((slot: string) => {
-                    const [hours, minutes] = slot.split(":").map(Number);
+                    const parts = slot.split(":");
+                    const hours = parts[0] ? Number(parts[0]) : 0;
+                    const minutes = parts[1] ? Number(parts[1]) : 0;
                     return {
                       slot,
                       hours,
@@ -169,8 +171,8 @@ export default function DraftBulkResume({
                   .sort(
                     (
                       a: { totalMinutes: number },
-                      b: { totalMinutes: number },
-                    ) => a.totalMinutes - b.totalMinutes,
+                      b: { totalMinutes: number }
+                    ) => a.totalMinutes - b.totalMinutes
                   );
 
                 // Get the current slot index based on the base time
@@ -180,7 +182,8 @@ export default function DraftBulkResume({
 
                 let currentSlotIndex = 0;
                 for (let i = 0; i < sortedSlots.length; i++) {
-                  if (sortedSlots[i].totalMinutes >= baseTotalMinutes) {
+                  const slot = sortedSlots[i];
+                  if (slot && slot.totalMinutes >= baseTotalMinutes) {
                     currentSlotIndex = i;
                     break;
                   }
@@ -191,14 +194,16 @@ export default function DraftBulkResume({
                   (currentSlotIndex + baseIndex) % sortedSlots.length;
                 const targetSlot = sortedSlots[targetSlotIndex];
 
-                // Calculate how many days to add
-                const daysToAdd = Math.floor(
-                  (currentSlotIndex + baseIndex) / sortedSlots.length,
-                );
+                if (targetSlot) {
+                  // Calculate how many days to add
+                  const daysToAdd = Math.floor(
+                    (currentSlotIndex + baseIndex) / sortedSlots.length
+                  );
 
-                // Set the time to the target slot
-                baseDate.setHours(targetSlot.hours, targetSlot.minutes, 0, 0);
-                baseDate.setDate(baseDate.getDate() + daysToAdd);
+                  // Set the time to the target slot
+                  baseDate.setHours(targetSlot.hours, targetSlot.minutes, 0, 0);
+                  baseDate.setDate(baseDate.getDate() + daysToAdd);
+                }
               }
             }
 
@@ -228,20 +233,22 @@ export default function DraftBulkResume({
 
   const handleQueueTypeChange = async (
     index: number,
-    value: string | QueueType,
+    value: string | QueueType
   ) => {
     const updatedPosts = [...posts];
-    updatedPosts[index].queueType = value;
+    const postToUpdate = updatedPosts[index];
+    if (!postToUpdate) return;
+    postToUpdate.queueType = value;
 
     // Auto-calculate schedule time if not unassigned
     const queueTypeName = typeof value === "string" ? value : value.name;
     if (queueTypeName !== "unassigned") {
       const scheduledTime = await calculateQueueScheduleTime(queueTypeName, 0);
       if (scheduledTime) {
-        updatedPosts[index].scheduledFor = scheduledTime;
+        postToUpdate.scheduledFor = scheduledTime;
       }
     } else {
-      updatedPosts[index].scheduledFor = "";
+      postToUpdate.scheduledFor = "";
     }
 
     setPosts(updatedPosts);
@@ -249,7 +256,9 @@ export default function DraftBulkResume({
 
   const handleDateChange = (index: number, value: string) => {
     const updatedPosts = [...posts];
-    updatedPosts[index].scheduledFor = value;
+    const postToUpdate = updatedPosts[index];
+    if (!postToUpdate) return;
+    postToUpdate.scheduledFor = value;
     setPosts(updatedPosts);
   };
 
@@ -257,7 +266,9 @@ export default function DraftBulkResume({
     if (posts.length === 0) return;
 
     const updatedPosts = [...posts];
-    const baseDate = new Date(updatedPosts[0].scheduledFor);
+    const firstPost = updatedPosts[0];
+    if (!firstPost?.scheduledFor) return;
+    const baseDate = new Date(firstPost.scheduledFor);
 
     updatedPosts.forEach((post, index) => {
       const newDate = new Date(baseDate);
@@ -288,7 +299,7 @@ export default function DraftBulkResume({
         if (queueTypeName !== "unassigned") {
           const calculatedTime = await calculateQueueScheduleTime(
             queueTypeName,
-            index,
+            index
           );
           if (calculatedTime) {
             scheduledFor = calculatedTime;
@@ -302,7 +313,7 @@ export default function DraftBulkResume({
           queueType,
           scheduledFor,
         };
-      }),
+      })
     );
 
     setPosts(updatedPosts);
@@ -322,7 +333,7 @@ export default function DraftBulkResume({
               "en-US",
               {
                 timeZone: userTimezone,
-              },
+              }
             );
             const userOffset =
               (new Date(userDate).getTime() -
@@ -390,7 +401,7 @@ export default function DraftBulkResume({
             signedEvent: JSON.stringify(signedEvent),
             nostrEvent: JSON.stringify(nostrEvent),
           };
-        }),
+        })
       );
 
       const formData = new FormData();
@@ -472,7 +483,7 @@ export default function DraftBulkResume({
                       handleScheduleIntervalClick(
                         typeof interval === "string"
                           ? parseInt(interval, 10)
-                          : interval,
+                          : interval
                       )
                     }
                     disabled={isSubmitting}

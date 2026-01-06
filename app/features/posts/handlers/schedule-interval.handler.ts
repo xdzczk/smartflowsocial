@@ -21,14 +21,19 @@ export function handleScheduleIntervalClick(
   let baseDate: Date;
 
   // If first item time was manually changed, use it as base
-  if (firstItemTimeManuallyChanged && updatedPosts[0].scheduledFor) {
-    baseDate = new Date(updatedPosts[0].scheduledFor);
+  const firstPost = updatedPosts[0];
+  if (firstItemTimeManuallyChanged && firstPost?.scheduledFor) {
+    baseDate = new Date(firstPost.scheduledFor);
   } else {
     // Original behavior - use first post's scheduled time or current time
     const firstPost = updatedPosts[0];
-    baseDate = firstPost.scheduledFor
-      ? new Date(firstPost.scheduledFor)
-      : new Date();
+    if (!firstPost) {
+      baseDate = new Date();
+    } else {
+      baseDate = firstPost.scheduledFor
+        ? new Date(firstPost.scheduledFor)
+        : new Date();
+    }
   }
 
   // Update each post's scheduled time based on the interval

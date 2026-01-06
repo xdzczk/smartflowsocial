@@ -42,7 +42,7 @@ export function EditPostModal({
   const [signingError, setSigningError] = useState<string | null>(null);
 
   // Determine if this is a longform post
-  const isLongform = "title" in post && post.title !== undefined;
+  const isLongform = "title" in post;
 
   // Use custom hook for form state management
   const {
@@ -234,7 +234,7 @@ export function EditPostModal({
                   }
                   onChange={(e) =>
                     setScheduledFor(
-                      e.target.value ? new Date(e.target.value) : null,
+                      e.target.value ? new Date(e.target.value) : null
                     )
                   }
                   className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"

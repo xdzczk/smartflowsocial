@@ -14,7 +14,7 @@ import { encrypt, decrypt } from "~/lib/encryption.server";
 describe("Property-Based Tests: Encryption", () => {
   beforeEach(() => {
     // Ensure SESSION_SECRET is set for tests
-    process.env.SESSION_SECRET =
+    process.env["SESSION_SECRET"] =
       "test-session-secret-very-long-and-secure-32-chars";
   });
 
@@ -31,9 +31,9 @@ describe("Property-Based Tests: Encryption", () => {
             } catch (_error) {
               return false;
             }
-          },
+          }
         ),
-        { numRuns: 50, timeout: 30000 }, // Reduced runs and increased timeout
+        { numRuns: 50, timeout: 30000 } // Reduced runs and increased timeout
       );
     }, 60000); // 60 second test timeout
 
@@ -44,7 +44,7 @@ describe("Property-Based Tests: Encryption", () => {
           const decrypted = decrypt(encrypted);
           return decrypted === plaintext;
         }),
-        { timeout: 30000 },
+        { timeout: 30000 }
       );
     }, 60000); // 60 second test timeout
 
@@ -56,9 +56,9 @@ describe("Property-Based Tests: Encryption", () => {
             const encrypted = encrypt(plaintext);
             const decrypted = decrypt(encrypted);
             return decrypted === plaintext;
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
 
@@ -70,9 +70,9 @@ describe("Property-Based Tests: Encryption", () => {
             const encrypted = encrypt(plaintext);
             const decrypted = decrypt(encrypted);
             return decrypted === plaintext;
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
   });
@@ -87,9 +87,9 @@ describe("Property-Based Tests: Encryption", () => {
             const encrypted2 = encrypt(plaintext);
             // Should be different (very high probability)
             return encrypted1 !== encrypted2;
-          },
+          }
         ),
-        { numRuns: 20 }, // Lower runs since this is probabilistic
+        { numRuns: 20 } // Lower runs since this is probabilistic
       );
     });
   });
@@ -106,8 +106,10 @@ describe("Property-Based Tests: Encryption", () => {
 
             // Tamper with the data
             if (encryptedBuffer.length > tamperIndex) {
-              encryptedBuffer[tamperIndex] =
-                (encryptedBuffer[tamperIndex] + 1) % 256;
+              const tamperValue = encryptedBuffer[tamperIndex];
+              if (tamperValue !== undefined) {
+                encryptedBuffer[tamperIndex] = (tamperValue + 1) % 256;
+              }
               const tampered = encryptedBuffer.toString("base64");
 
               // Should throw error on decryption
@@ -119,9 +121,9 @@ describe("Property-Based Tests: Encryption", () => {
               }
             }
             return true;
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
   });
@@ -140,9 +142,9 @@ describe("Property-Based Tests: Encryption", () => {
             } catch {
               return false;
             }
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
 
@@ -154,9 +156,9 @@ describe("Property-Based Tests: Encryption", () => {
             const encrypted = encrypt(plaintext);
             // Encrypted should be longer (base64 encoding + overhead)
             return encrypted.length >= plaintext.length;
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
   });

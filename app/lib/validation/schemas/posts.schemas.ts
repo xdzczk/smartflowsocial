@@ -6,6 +6,17 @@
 import { z } from "zod";
 
 /**
+ * Validation error messages
+ */
+const VALIDATION_MESSAGES = {
+  POST_CONTENT_EMPTY: "Post content cannot be empty",
+  CONTENT_REQUIRED: "Content is required",
+  CONTENT_TOO_LONG: "Content too long",
+  DEFAULT_QUEUE_TYPE: "unassigned",
+  DEFAULT_QUEUE_TYPE_CAPITALIZED: "Unassigned",
+} as const;
+
+/**
  * Base post action schema
  */
 export const postActionSchema = z.enum([
@@ -26,9 +37,12 @@ export const postActionSchema = z.enum([
  */
 export const textPostSchema = z.object({
   _action: postActionSchema,
-  content: z.string().min(1, "Post content cannot be empty").max(5000, "Content too long"),
+  content: z
+    .string()
+    .min(1, VALIDATION_MESSAGES.POST_CONTENT_EMPTY)
+    .max(5000, VALIDATION_MESSAGES.CONTENT_TOO_LONG),
   scheduledFor: z.string().nullable().optional(),
-  queueType: z.string().default("unassigned"),
+  queueType: z.string().default(VALIDATION_MESSAGES.DEFAULT_QUEUE_TYPE),
   queueTypeId: z.string().nullable().optional(),
   isRecyclable: z.boolean().default(false),
   useHashtagPresets: z.boolean().default(false),
@@ -42,7 +56,7 @@ export const imagePostSchema = z.object({
   _action: postActionSchema,
   caption: z.string().max(5000, "Caption too long").optional(),
   scheduledFor: z.string().nullable().optional(),
-  queueType: z.string().default("unassigned"),
+  queueType: z.string().default(VALIDATION_MESSAGES.DEFAULT_QUEUE_TYPE),
   queueTypeId: z.string().nullable().optional(),
   isRecyclable: z.boolean().default(false),
   useHashtagPresets: z.boolean().default(false),
@@ -54,10 +68,19 @@ export const imagePostSchema = z.object({
  */
 export const longformPostSchema = z.object({
   _action: postActionSchema,
-  title: z.string().min(1, "Title is required").max(200, "Title too long").optional(),
-  content: z.string().min(1, "Content is required").max(50000, "Content too long"),
+  title: z
+    .string()
+    .min(1, "Title is required")
+    .max(200, "Title too long")
+    .optional(),
+  content: z
+    .string()
+    .min(1, VALIDATION_MESSAGES.CONTENT_REQUIRED)
+    .max(50000, VALIDATION_MESSAGES.CONTENT_TOO_LONG),
   scheduledFor: z.string().nullable().optional(),
-  queueType: z.string().default("Unassigned"),
+  queueType: z
+    .string()
+    .default(VALIDATION_MESSAGES.DEFAULT_QUEUE_TYPE_CAPITALIZED),
   hashTagPresetId: z.string().nullable().optional(),
   useHashtagPresets: z.boolean().default(false),
 });
@@ -68,11 +91,14 @@ export const longformPostSchema = z.object({
 export const bulkPostSchema = z.object({
   posts: z.array(
     z.object({
-      content: z.string().min(1, "Post content cannot be empty").max(5000, "Content too long"),
+      content: z
+        .string()
+        .min(1, VALIDATION_MESSAGES.POST_CONTENT_EMPTY)
+        .max(5000, VALIDATION_MESSAGES.CONTENT_TOO_LONG),
       scheduledFor: z.string().nullable().optional(),
       queueType: z.string().optional(),
       queueTypeId: z.string().nullable().optional(),
-    }),
+    })
   ),
 });
 
@@ -103,7 +129,7 @@ export const uploadPreviewSchema = z.object({
  */
 export const draftTextPostSchema = newPostBaseSchema.extend({
   _action: z.literal("draft-text"),
-  content: z.string().min(1, "Post content cannot be empty"),
+  content: z.string().min(1, VALIDATION_MESSAGES.POST_CONTENT_EMPTY),
 });
 
 /**
@@ -111,7 +137,7 @@ export const draftTextPostSchema = newPostBaseSchema.extend({
  */
 export const postOrScheduleTextSchema = newPostBaseSchema.extend({
   _action: z.enum(["post-text", "schedule-text"]),
-  content: z.string().min(1, "Post content cannot be empty"),
+  content: z.string().min(1, VALIDATION_MESSAGES.POST_CONTENT_EMPTY),
 });
 
 /**
@@ -127,7 +153,14 @@ export const draftImagePostSchema = newPostBaseSchema.extend({
  * Note: Handler accepts both singular and plural forms, and "media" variants
  */
 export const postOrScheduleImageSchema = newPostBaseSchema.extend({
-  _action: z.enum(["post-image", "post-images", "post-media", "schedule-image", "schedule-images", "schedule-media"]),
+  _action: z.enum([
+    "post-image",
+    "post-images",
+    "post-media",
+    "schedule-image",
+    "schedule-images",
+    "schedule-media",
+  ]),
 });
 
 /**
@@ -155,19 +188,19 @@ export const newLongformPostBaseSchema = z.object({
 export const saveDraftLongformSchema = newLongformPostBaseSchema.extend({
   _action: z.literal("save-draft"),
   title: z.string().optional(),
-  content: z.string().min(1, "Content is required"),
+  content: z.string().min(1, VALIDATION_MESSAGES.CONTENT_REQUIRED),
 });
 
 export const publishLongformSchema = newLongformPostBaseSchema.extend({
   _action: z.literal("publish"),
   title: z.string().optional(),
-  content: z.string().min(1, "Content is required"),
+  content: z.string().min(1, VALIDATION_MESSAGES.CONTENT_REQUIRED),
 });
 
 export const scheduleLongformSchema = newLongformPostBaseSchema.extend({
   _action: z.literal("schedule-longform"),
   title: z.string().optional(),
-  content: z.string().min(1, "Content is required"),
+  content: z.string().min(1, VALIDATION_MESSAGES.CONTENT_REQUIRED),
   scheduledFor: z.string().min(1, "Scheduled time is required"),
 });
 
@@ -234,13 +267,15 @@ export const uploadImagesPreviewSchema = z.object({
                 extension: z.string().optional(),
                 sha256: z.string().optional(),
                 mimeType: z.string().optional(),
-                provider: z.enum(["S3", "BLOSSOM_PRIMAL", "BLOSSOM_BLOSSTR"]).optional(),
+                provider: z
+                  .enum(["S3", "BLOSSOM_PRIMAL", "BLOSSOM_BLOSSTR"])
+                  .optional(),
               })
               .optional(),
             error: z.string().optional(),
-          }),
+          })
         )
-        .min(1, "At least one upload result is required"),
+        .min(1, "At least one upload result is required")
     ),
   scheduledDates: z.array(z.string()),
   queueTypes: z.array(z.string()),
@@ -263,7 +298,7 @@ export const signAndScheduleSchema = z.object({
         } catch {
           throw new Error("Invalid signed event format");
         }
-      }),
+      })
     )
     .pipe(z.array(signedEventSchema).min(1)),
   nostrEvent: z
@@ -279,48 +314,44 @@ export const signAndScheduleSchema = z.object({
         } catch {
           throw new Error("Invalid nostr event format");
         }
-      }),
+      })
     )
     .pipe(z.array(nostrEventSchema).min(1)),
-  caption: z
-    .array(z.string())
-    .transform((arr) =>
-      arr.map((str) => {
+  caption: z.array(z.string()).transform((arr) =>
+    arr.map((str) => {
+      try {
+        const parsed = JSON.parse(str) as unknown;
+        if (typeof parsed === "string") {
+          return parsed;
+        }
+        if (Array.isArray(parsed)) {
+          return parsed.join(" ");
+        }
+        return String(parsed ?? "");
+      } catch {
+        return str;
+      }
+    })
+  ),
+  fileUrl: z.array(z.string()).transform((arr) =>
+    arr
+      .map((str) => {
         try {
           const parsed = JSON.parse(str) as unknown;
-          if (typeof parsed === "string") {
-            return parsed;
-          }
-          if (Array.isArray(parsed)) {
-            return parsed.join(" ");
-          }
-          return String(parsed ?? "");
+          return Array.isArray(parsed)
+            ? parsed.filter((item): item is string => typeof item === "string")
+            : [];
         } catch {
-          return str;
+          return [];
         }
-      }),
-    ),
-  fileUrl: z
-    .array(z.string())
-    .transform((arr) =>
-      arr
-        .map((str) => {
-          try {
-          const parsed = JSON.parse(str) as unknown;
-            return Array.isArray(parsed)
-              ? parsed.filter((item): item is string => typeof item === "string")
-              : [];
-          } catch {
-            return [];
-          }
-        })
-        .flat(),
-    ),
+      })
+      .flat()
+  ),
   queueType: z.array(z.string()),
   isRecyclable: z
     .array(z.string())
     .transform((arr) =>
-      arr.map((val) => val === "true" || String(val).toLowerCase() === "true"),
+      arr.map((val) => val === "true" || String(val).toLowerCase() === "true")
     ),
   originalPostId: z.array(z.string()).optional().default([]),
 });
@@ -335,15 +366,17 @@ export const saveAsDraftSchema = z.object({
       arr
         .map((str) => {
           try {
-          const parsed = JSON.parse(str) as unknown;
+            const parsed = JSON.parse(str) as unknown;
             return Array.isArray(parsed)
-              ? parsed.filter((item): item is string => typeof item === "string")
+              ? parsed.filter(
+                  (item): item is string => typeof item === "string"
+                )
               : [];
           } catch {
             return [];
           }
         })
-        .flat(),
+        .flat()
     )
     .pipe(z.array(z.string()).min(1, "At least one file URL is required")),
   caption: z.array(z.string()),
@@ -356,14 +389,19 @@ export const saveAsDraftSchema = z.object({
  * Union schema for bulk posts actions
  */
 export const bulkPostsActionSchema = z.discriminatedUnion("_action", [
-  z.object({
-    _action: z.literal("_upload_images_preview"),
-  }).merge(uploadImagesPreviewSchema),
-  z.object({
-    _action: z.literal("sign_and_schedule"),
-  }).merge(signAndScheduleSchema),
-  z.object({
-    _action: z.literal("save_as_draft"),
-  }).merge(saveAsDraftSchema),
+  z
+    .object({
+      _action: z.literal("_upload_images_preview"),
+    })
+    .merge(uploadImagesPreviewSchema),
+  z
+    .object({
+      _action: z.literal("sign_and_schedule"),
+    })
+    .merge(signAndScheduleSchema),
+  z
+    .object({
+      _action: z.literal("save_as_draft"),
+    })
+    .merge(saveAsDraftSchema),
 ]);
-

@@ -16,11 +16,11 @@ vi.mock("~/features/user", () => ({
   hashTagPresetExistsForUser: vi.fn(),
 }));
 
+import { createFormData, TEST_USER_ID } from "../../utils/test-helpers";
+
 import { handleQueueTypeAction } from "~/features/settings/actions/queue-types-actions.server";
 import { updateQueueType } from "~/features/user";
 import { getUserSubscription } from "~/models/payment.server";
-
-import { createFormData, TEST_USER_ID } from "../../utils/test-helpers";
 
 describe("Queue Types Action Handler - Edge Cases", () => {
   beforeEach(() => {
@@ -33,7 +33,7 @@ describe("Queue Types Action Handler - Edge Cases", () => {
   describe("create_queue_type", () => {
     it("should handle 'none' as hashtag preset ID", async () => {
       (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
 
       const formData = createFormData({
@@ -48,7 +48,7 @@ describe("Queue Types Action Handler - Edge Cases", () => {
       const result = await handleQueueTypeAction(
         TEST_USER_ID,
         "create_queue_type",
-        formData,
+        formData
       );
       const responseObj =
         result instanceof Response
@@ -66,14 +66,14 @@ describe("Queue Types Action Handler - Edge Cases", () => {
         TEST_USER_ID,
         expect.objectContaining({
           hashTagPresetId: null,
-        }),
+        })
       );
       expect(jsonResult).toEqual({ success: true });
     });
 
     it("should handle empty hashtag preset ID", async () => {
       (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
 
       const formData = createFormData({
@@ -88,7 +88,7 @@ describe("Queue Types Action Handler - Edge Cases", () => {
       const result = await handleQueueTypeAction(
         TEST_USER_ID,
         "create_queue_type",
-        formData,
+        formData
       );
       const responseObj =
         result instanceof Response
@@ -106,14 +106,14 @@ describe("Queue Types Action Handler - Edge Cases", () => {
         TEST_USER_ID,
         expect.objectContaining({
           hashTagPresetId: null,
-        }),
+        })
       );
       expect(jsonResult).toEqual({ success: true });
     });
 
     it("should handle useGlobalInterval flag for INTERVAL schedule", async () => {
       (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
 
       const formData = createFormData({
@@ -128,15 +128,15 @@ describe("Queue Types Action Handler - Edge Cases", () => {
       const result = await handleQueueTypeAction(
         TEST_USER_ID,
         "create_queue_type",
-        formData,
+        formData
       );
-      
+
       // Check if validation failed
       if (result instanceof Response && result.status === 400) {
-        const data = await result.json() as { error?: unknown };
+        const data = (await result.json()) as { error?: unknown };
         throw new Error(`Validation failed: ${JSON.stringify(data)}`);
       }
-      
+
       const responseObj =
         result instanceof Response
           ? result
@@ -153,14 +153,14 @@ describe("Queue Types Action Handler - Edge Cases", () => {
         TEST_USER_ID,
         expect.objectContaining({
           scheduleConfig: { useGlobalInterval: true },
-        }),
+        })
       );
       expect(jsonResult).toEqual({ success: true });
     });
 
     it("should handle FIXED_SLOTS with comma-separated slots", async () => {
       (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
 
       const formData = createFormData({
@@ -175,7 +175,7 @@ describe("Queue Types Action Handler - Edge Cases", () => {
       const result = await handleQueueTypeAction(
         TEST_USER_ID,
         "create_queue_type",
-        formData,
+        formData
       );
       const responseObj =
         result instanceof Response
@@ -193,14 +193,14 @@ describe("Queue Types Action Handler - Edge Cases", () => {
         TEST_USER_ID,
         expect.objectContaining({
           scheduleConfig: { slots: ["09:00", "12:00", "15:00", "18:00"] },
-        }),
+        })
       );
       expect(jsonResult).toEqual({ success: true });
     });
 
     it("should filter out empty slots", async () => {
       (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
 
       const formData = createFormData({
@@ -215,7 +215,7 @@ describe("Queue Types Action Handler - Edge Cases", () => {
       const result = await handleQueueTypeAction(
         TEST_USER_ID,
         "create_queue_type",
-        formData,
+        formData
       );
       const responseObj =
         result instanceof Response
@@ -233,7 +233,7 @@ describe("Queue Types Action Handler - Edge Cases", () => {
         TEST_USER_ID,
         expect.objectContaining({
           scheduleConfig: { slots: ["09:00", "12:00", "15:00"] },
-        }),
+        })
       );
       expect(jsonResult).toEqual({ success: true });
     });
@@ -242,7 +242,7 @@ describe("Queue Types Action Handler - Edge Cases", () => {
   describe("update_queue_type", () => {
     it("should handle isEnabled flag", async () => {
       (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
 
       const formData = createFormData({
@@ -258,7 +258,7 @@ describe("Queue Types Action Handler - Edge Cases", () => {
       const result = await handleQueueTypeAction(
         TEST_USER_ID,
         "update_queue_type",
-        formData,
+        formData
       );
       const responseObj =
         result instanceof Response
@@ -277,14 +277,14 @@ describe("Queue Types Action Handler - Edge Cases", () => {
         expect.objectContaining({
           id: "queue-123",
           isEnabled: true,
-        }),
+        })
       );
       expect(jsonResult).toEqual({ success: true });
     });
 
     it("should handle isEnabled as false when not 'on'", async () => {
       (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
 
       const formData = createFormData({
@@ -301,7 +301,7 @@ describe("Queue Types Action Handler - Edge Cases", () => {
       const result = await handleQueueTypeAction(
         TEST_USER_ID,
         "update_queue_type",
-        formData,
+        formData
       );
       const responseObj =
         result instanceof Response
@@ -319,7 +319,7 @@ describe("Queue Types Action Handler - Edge Cases", () => {
         TEST_USER_ID,
         expect.objectContaining({
           isEnabled: false,
-        }),
+        })
       );
       expect(jsonResult).toEqual({ success: true });
     });
@@ -334,7 +334,7 @@ describe("Queue Types Action Handler - Edge Cases", () => {
       const result = await handleQueueTypeAction(
         TEST_USER_ID,
         "unknown_action",
-        formData,
+        formData
       );
 
       expect(result).toBeNull();

@@ -16,6 +16,8 @@ vi.mock("~/features/user", () => ({
   getUserHashTagPresets: vi.fn(),
 }));
 
+import { TEST_USER_ID, TEST_POST_ID } from "../../../utils/test-helpers";
+
 import { loadDraftEditData } from "~/features/posts/services/draft-edit-loader.server";
 import {
   getUserById,
@@ -23,8 +25,6 @@ import {
   getUserHashTagPresets,
 } from "~/features/user";
 import { getPostById } from "~/models/post.queries.server";
-
-import { TEST_USER_ID, TEST_POST_ID } from "../../../utils/test-helpers";
 
 describe("Draft Edit Loader", () => {
   beforeEach(() => {
@@ -48,10 +48,10 @@ describe("Draft Edit Loader", () => {
     (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockQueueTypes,
+      mockQueueTypes
     );
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockHashTagPresets,
+      mockHashTagPresets
     );
 
     const result = await loadDraftEditData(TEST_USER_ID, TEST_POST_ID);
@@ -77,7 +77,7 @@ describe("Draft Edit Loader", () => {
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
     await expect(
-      loadDraftEditData(TEST_USER_ID, TEST_POST_ID),
+      loadDraftEditData(TEST_USER_ID, TEST_POST_ID)
     ).rejects.toThrow();
   });
 
@@ -90,7 +90,7 @@ describe("Draft Edit Loader", () => {
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
     await expect(
-      loadDraftEditData(TEST_USER_ID, TEST_POST_ID),
+      loadDraftEditData(TEST_USER_ID, TEST_POST_ID)
     ).rejects.toThrow();
   });
 
@@ -107,7 +107,7 @@ describe("Draft Edit Loader", () => {
       id: TEST_USER_ID,
     });
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockQueueTypes,
+      mockQueueTypes
     );
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 

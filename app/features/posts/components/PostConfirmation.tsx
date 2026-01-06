@@ -25,7 +25,7 @@ export default function PostConfirmation({
         preparedEvents.map(async (eventData: PreparedEvent, index: number) => {
           try {
             const { nostrEvent, signedEvent } = await nostrAdapter.signEvent(
-              eventData.events,
+              eventData.events
             );
 
             return {
@@ -48,11 +48,11 @@ export default function PostConfirmation({
                 action: "signEvent",
                 eventIndex: index,
               },
-              false,
+              false
             ); // Don't show toast, throw to outer catch
             throw eventError;
           }
-        }),
+        })
       );
 
       const finalFormData = new FormData();
@@ -64,7 +64,7 @@ export default function PostConfirmation({
         finalFormData.append("queueType", data.queueType);
         finalFormData.append(
           "isRecyclable",
-          data.isRecyclable ? "true" : "false",
+          data.isRecyclable ? "true" : "false"
         );
         finalFormData.append("originalPostId", data.originalPostId ?? "");
       });
@@ -87,7 +87,7 @@ export default function PostConfirmation({
           component: "PostConfirmation",
           action: "handleSignAndSubmit",
         },
-        false,
+        false
       ); // Don't show toast, let component handle it
     }
   };
@@ -100,7 +100,7 @@ export default function PostConfirmation({
       finalFormData.append("queueType", eventData.queueType);
       finalFormData.append(
         "isRecyclable",
-        eventData.isRecyclable ? "true" : "false",
+        eventData.isRecyclable ? "true" : "false"
       );
       finalFormData.append("originalPostId", eventData.originalPostId ?? "");
     });
@@ -162,7 +162,7 @@ export default function PostConfirmation({
                   kind: eventsKind,
                   tags: eventsTags,
                 },
-                "info",
+                "info"
               );
             }
 
@@ -188,23 +188,23 @@ export default function PostConfirmation({
                   : undefined;
               if (eventsContent && typeof eventsContent === "string") {
                 const contentParts = eventsContent.split(" ");
-                const mediaUrls = contentParts.filter(
+                const mediaUrl_ = contentParts.find(
                   (part) =>
                     part &&
                     part.trim() !== "" &&
                     part !== "null" &&
-                    part.startsWith("http"),
+                    part.startsWith("http")
                 );
                 const captionParts = contentParts.filter(
                   (part) =>
                     part &&
                     part.trim() !== "" &&
                     part !== "null" &&
-                    !part.startsWith("http"),
+                    !part.startsWith("http")
                 );
 
                 caption = captionParts.join(" ");
-                mediaUrl = mediaUrls[0] || "";
+                mediaUrl = mediaUrl_ || "";
               } else {
                 // Fallback to eventData.caption if content is not available
                 caption = eventData.caption ?? "";
@@ -220,7 +220,7 @@ export default function PostConfirmation({
                 .map((tag) =>
                   Array.isArray(tag) && tag[1] && typeof tag[1] === "string"
                     ? `#${tag[1]}`
-                    : "",
+                    : ""
                 )
                 .filter((t) => t !== "")
                 .join(" ");
@@ -338,7 +338,7 @@ export default function PostConfirmation({
                         typeof (eventsData as { created_at?: unknown })
                           .created_at === "number"
                           ? (eventsData as { created_at: number }).created_at
-                          : 0) * 1000,
+                          : 0) * 1000
                       ).toLocaleDateString("en-US", {
                         weekday: "short",
                         month: "short",

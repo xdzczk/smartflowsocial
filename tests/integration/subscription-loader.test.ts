@@ -45,10 +45,10 @@ describe("Subscription/Billing Loader Integration", () => {
     // Default mocks
     (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue("user-123");
     (requireAnySubscription as ReturnType<typeof vi.fn>).mockResolvedValue(
-      undefined,
+      undefined
     );
     (requireFeatureAccess as ReturnType<typeof vi.fn>).mockResolvedValue(
-      undefined,
+      undefined
     );
     (loadSettingsData as ReturnType<typeof vi.fn>).mockResolvedValue({
       timezone: "UTC",
@@ -78,7 +78,7 @@ describe("Subscription/Billing Loader Integration", () => {
   describe("Subscription Settings Loader", () => {
     it("should load subscription settings data for authenticated user", async () => {
       const request = new Request(
-        "http://localhost:3000/dashboard/settings?tab=subscription",
+        "http://localhost:3000/dashboard/settings?tab=subscription"
       );
       const loaderArgs: LoaderFunctionArgs = {
         request,
@@ -139,11 +139,11 @@ describe("Subscription/Billing Loader Integration", () => {
       };
 
       (loadSettingsData as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockData,
+        mockData
       );
 
       const request = new Request(
-        "http://localhost:3000/dashboard/settings?tab=subscription",
+        "http://localhost:3000/dashboard/settings?tab=subscription"
       );
       const loaderArgs: LoaderFunctionArgs = {
         request,
@@ -157,10 +157,10 @@ describe("Subscription/Billing Loader Integration", () => {
           ? (dataRaw as Record<string, unknown>)
           : {};
 
-      expect(data.subscription).toHaveProperty("status", "ACTIVE");
-      expect(data.subscription).toHaveProperty("planId", "premium");
-      expect(data.availablePlans).toHaveLength(2);
-      const paymentHistory = data.paymentHistory as Array<unknown>;
+      expect(data["subscription"]).toHaveProperty("status", "ACTIVE");
+      expect(data["subscription"]).toHaveProperty("planId", "premium");
+      expect(data["availablePlans"]).toHaveLength(2);
+      const paymentHistory = data["paymentHistory"] as unknown[];
       expect(paymentHistory).toHaveLength(1);
     });
 
@@ -193,11 +193,11 @@ describe("Subscription/Billing Loader Integration", () => {
       };
 
       (loadSettingsData as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockData,
+        mockData
       );
 
       const request = new Request(
-        "http://localhost:3000/dashboard/settings?tab=subscription",
+        "http://localhost:3000/dashboard/settings?tab=subscription"
       );
       const loaderArgs: LoaderFunctionArgs = {
         request,
@@ -211,9 +211,9 @@ describe("Subscription/Billing Loader Integration", () => {
           ? (dataRaw as Record<string, unknown>)
           : {};
 
-      expect(data.subscription).toBeNull();
-      expect(data.availablePlans).toHaveLength(2);
-      const paymentHistory = data.paymentHistory as Array<unknown>;
+      expect(data["subscription"]).toBeNull();
+      expect(data["availablePlans"]).toHaveLength(2);
+      const paymentHistory = data["paymentHistory"] as unknown[];
       expect(paymentHistory).toHaveLength(0);
     });
 
@@ -254,11 +254,11 @@ describe("Subscription/Billing Loader Integration", () => {
       };
 
       (loadSettingsData as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockData,
+        mockData
       );
 
       const request = new Request(
-        "http://localhost:3000/dashboard/settings?tab=subscription",
+        "http://localhost:3000/dashboard/settings?tab=subscription"
       );
       const loaderArgs: LoaderFunctionArgs = {
         request,
@@ -272,7 +272,7 @@ describe("Subscription/Billing Loader Integration", () => {
           ? (dataRaw as Record<string, unknown>)
           : {};
 
-      expect(data.subscription).toHaveProperty("status", "EXPIRED");
+      expect(data["subscription"]).toHaveProperty("status", "EXPIRED");
     });
 
     it("should include payment history when available", async () => {
@@ -313,11 +313,11 @@ describe("Subscription/Billing Loader Integration", () => {
       };
 
       (loadSettingsData as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockData,
+        mockData
       );
 
       const request = new Request(
-        "http://localhost:3000/dashboard/settings?tab=subscription",
+        "http://localhost:3000/dashboard/settings?tab=subscription"
       );
       const loaderArgs: LoaderFunctionArgs = {
         request,
@@ -331,7 +331,7 @@ describe("Subscription/Billing Loader Integration", () => {
           ? (dataRaw as Record<string, unknown>)
           : {};
 
-      const paymentHistory = data.paymentHistory as Array<{
+      const paymentHistory = data["paymentHistory"] as Array<{
         amount: number;
         [key: string]: unknown;
       }>;
@@ -352,7 +352,7 @@ describe("Subscription/Billing Loader Integration", () => {
       });
 
       const request = new Request(
-        "http://localhost:3000/dashboard/settings?tab=subscription",
+        "http://localhost:3000/dashboard/settings?tab=subscription"
       );
 
       // Loader catches Response errors and returns them
@@ -367,12 +367,14 @@ describe("Subscription/Billing Loader Integration", () => {
         status: 403,
         headers: { "Content-Type": "application/json" },
       });
-      (requireAnySubscription as ReturnType<typeof vi.fn>).mockImplementation(() => {
-        throw redirectResponse;
-      });
+      (requireAnySubscription as ReturnType<typeof vi.fn>).mockImplementation(
+        () => {
+          throw redirectResponse;
+        }
+      );
 
       const request = new Request(
-        "http://localhost:3000/dashboard/settings?tab=subscription",
+        "http://localhost:3000/dashboard/settings?tab=subscription"
       );
 
       // Loader catches Response errors and returns them
@@ -387,12 +389,14 @@ describe("Subscription/Billing Loader Integration", () => {
         status: 403,
         headers: { "Content-Type": "application/json" },
       });
-      (requireFeatureAccess as ReturnType<typeof vi.fn>).mockImplementation(() => {
-        throw redirectResponse;
-      });
+      (requireFeatureAccess as ReturnType<typeof vi.fn>).mockImplementation(
+        () => {
+          throw redirectResponse;
+        }
+      );
 
       const request = new Request(
-        "http://localhost:3000/dashboard/settings?tab=subscription",
+        "http://localhost:3000/dashboard/settings?tab=subscription"
       );
 
       // Loader catches Response errors and returns them
@@ -403,17 +407,17 @@ describe("Subscription/Billing Loader Integration", () => {
 
     it("should handle data loading errors", async () => {
       (loadSettingsData as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Database error"),
+        new Error("Database error")
       );
 
       const request = new Request(
-        "http://localhost:3000/dashboard/settings?tab=subscription",
+        "http://localhost:3000/dashboard/settings?tab=subscription"
       );
 
       const response = await loader({ request, params: {}, context: {} });
       expect(response).toBeInstanceOf(Response);
       expect(response.status).toBe(500);
-      
+
       const responseObj =
         response instanceof Response
           ? response
@@ -423,7 +427,7 @@ describe("Subscription/Billing Loader Integration", () => {
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
           ? (dataRaw as { error?: { message?: string } })
           : {};
-      
+
       expect(data.error).toBeDefined();
       const error =
         data.error &&

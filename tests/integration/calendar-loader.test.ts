@@ -10,7 +10,7 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-type LoaderData = {
+interface LoaderData {
   selectedQueueType?: unknown;
   scheduledPosts?: unknown;
   scheduleIntervals?: unknown;
@@ -20,7 +20,7 @@ type LoaderData = {
   scheduledLongFormPosts?: unknown;
   pastPosts?: unknown;
   pastLongFormPosts?: unknown;
-};
+}
 
 // Mock client-side dependencies FIRST (before route import)
 vi.mock("~/lib/error-handler.client", () => ({
@@ -88,12 +88,18 @@ vi.mock("~/features/user", () => ({
 }));
 
 // Import after mocks are set up
+import {
+  createValidUserMock,
+  createValidPostDTOMock,
+} from "../utils/test-helpers";
+
 import { requireUserId } from "~/features/auth/session.server";
-import { requireAnySubscription, requireFeatureAccess } from "~/features/payments";
+import {
+  requireAnySubscription,
+  requireFeatureAccess,
+} from "~/features/payments";
 import { loadCalendarQueueData } from "~/features/posts/services/calendar-loader.server";
 import { loader } from "~/routes/dashboard.calendar.$queueType";
-
-import { createValidUserMock, createValidPostDTOMock } from "../utils/test-helpers";
 
 describe("Calendar Loader Integration", () => {
   beforeEach(() => {
@@ -102,10 +108,10 @@ describe("Calendar Loader Integration", () => {
     // Default mocks
     (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue("user-123");
     (requireAnySubscription as ReturnType<typeof vi.fn>).mockResolvedValue(
-      undefined,
+      undefined
     );
     (requireFeatureAccess as ReturnType<typeof vi.fn>).mockResolvedValue(
-      undefined,
+      undefined
     );
     (loadCalendarQueueData as ReturnType<typeof vi.fn>).mockResolvedValue({
       scheduledPosts: [],
@@ -124,7 +130,9 @@ describe("Calendar Loader Integration", () => {
 
   describe("Calendar Loader", () => {
     it("should load calendar data for authenticated user", async () => {
-      const request = new Request("http://localhost:3000/dashboard/calendar/all");
+      const request = new Request(
+        "http://localhost:3000/dashboard/calendar/all"
+      );
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: { queueType: "all" },
@@ -168,7 +176,7 @@ describe("Calendar Loader Integration", () => {
       });
 
       const request = new Request(
-        "http://localhost:3000/dashboard/calendar/posts",
+        "http://localhost:3000/dashboard/calendar/posts"
       );
       const response = await loader({
         request,
@@ -213,7 +221,7 @@ describe("Calendar Loader Integration", () => {
       });
 
       const request = new Request(
-        "http://localhost:3000/dashboard/calendar/posts",
+        "http://localhost:3000/dashboard/calendar/posts"
       );
       const response = await loader({
         request,
@@ -297,7 +305,9 @@ describe("Calendar Loader Integration", () => {
         scheduleIntervals: [4, 6, 8, 12],
       });
 
-      const request = new Request("http://localhost:3000/dashboard/calendar/posts");
+      const request = new Request(
+        "http://localhost:3000/dashboard/calendar/posts"
+      );
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: { queueType: "posts" },
@@ -371,7 +381,7 @@ describe("Calendar Loader Integration", () => {
   describe("Error Handling", () => {
     it("should handle authentication errors", async () => {
       (requireUserId as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Authentication required"),
+        new Error("Authentication required")
       );
 
       const request = new Request("http://localhost:3000/dashboard/calendar");
@@ -406,7 +416,7 @@ describe("Calendar Loader Integration", () => {
 
     it("should handle data loading errors", async () => {
       (loadCalendarQueueData as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Database error"),
+        new Error("Database error")
       );
 
       const request = new Request("http://localhost:3000/dashboard/calendar");

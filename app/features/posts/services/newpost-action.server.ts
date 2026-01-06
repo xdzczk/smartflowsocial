@@ -47,6 +47,7 @@ function isVideoFile(fileUrl: string | string[]): boolean {
       typeof fileUrl === "string" ? (JSON.parse(fileUrl) as string[]) : fileUrl;
     if (Array.isArray(urls) && urls.length > 0) {
       const firstUrl = urls[0];
+      if (!firstUrl) return false;
       const lower = firstUrl.toLowerCase();
       return videoExtensions.some((ext) => lower.includes(ext));
     }
@@ -69,7 +70,7 @@ async function getHashtagPresetTags(
   useHashtagPresets: boolean,
   manualHashTagPresetId: string | null,
   queueType: string,
-  queueTypeId: string | null,
+  queueTypeId: string | null
 ): Promise<{ tags: string; presetId: string | null }> {
   let hashTagPresetTags = "";
   let hashTagPresetId = null;
@@ -133,7 +134,7 @@ async function getHashtagPresetTags(
 function applyHashtags(
   content: string,
   hashTagPresetTags: string,
-  showHashTagsinPosts: boolean,
+  showHashTagsinPosts: boolean
 ): string {
   return showHashTagsinPosts && hashTagPresetTags
     ? `${content}\n${hashTagPresetTags}`
@@ -145,11 +146,11 @@ function applyHashtags(
  */
 async function publishToNostr(
   relays: string[],
-  signedEvent: SignedEvent,
+  signedEvent: SignedEvent
 ): Promise<void> {
   // Read directly from process.env to support test environment changes
   const publisherUrl =
-    process.env.NOSTR_PUBLISHER_URL ?? env.NOSTR_PUBLISHER_URL;
+    process.env["NOSTR_PUBLISHER_URL"] ?? env.NOSTR_PUBLISHER_URL;
   if (!publisherUrl) {
     throw new Error("NOSTR_PUBLISHER_URL environment variable is not set");
   }
@@ -168,7 +169,7 @@ async function publishToNostr(
 
   if (!response.ok) {
     throw new Error(
-      `Failed to post to nostr publisher: ${response.statusText}`,
+      `Failed to post to nostr publisher: ${response.statusText}`
     );
   }
 }
@@ -184,7 +185,7 @@ async function handleDraftText(
   queueType: string,
   queueTypeId: string | null,
   isRecyclable: boolean,
-  hashTagPresetId: string | null,
+  hashTagPresetId: string | null
 ): Promise<Response> {
   const contentValue = formData.get("content");
   const content = contentValue ? String(contentValue) : "";
@@ -193,7 +194,7 @@ async function handleDraftText(
   const resolvedQueueTypeId = await resolveQueueTypeId(
     userId,
     queueTypeId,
-    queueType,
+    queueType
   );
 
   await createPost({
@@ -227,7 +228,7 @@ async function handlePostOrScheduleText(
   isRecyclable: boolean,
   hashTagPresetId: string | null,
   sanitizedRelays: string[],
-  action: "post-text" | "schedule-text",
+  action: "post-text" | "schedule-text"
 ): Promise<Response> {
   const contentValue = formData.get("content");
   const signedEventValue = formData.get("signedEvent");
@@ -255,7 +256,7 @@ async function handlePostOrScheduleText(
     const resolvedQueueTypeId = await resolveQueueTypeId(
       userId,
       queueTypeId,
-      queueType,
+      queueType
     );
 
     const post = await createPost({
@@ -290,7 +291,7 @@ async function handlePostOrScheduleText(
     const resolvedQueueTypeId = await resolveQueueTypeId(
       userId,
       queueTypeId,
-      queueType,
+      queueType
     );
 
     await createPost({
@@ -354,12 +355,12 @@ function handleUploadPreview(formData: FormData): {
     };
   }
 
-  const fileUrls: {
+  const fileUrls: Array<{
     fileUrl: string;
     scheduledFor: string | null;
     caption: string | null;
     queueType: string | null;
-  }[] = files.map((fileUrl) => {
+  }> = files.map((fileUrl) => {
     const fileUrlStr =
       typeof fileUrl === "string"
         ? fileUrl
@@ -389,7 +390,7 @@ async function handlePostImages(
   queueTypeId: string | null,
   isRecyclable: boolean,
   hashTagPresetId: string | null,
-  sanitizedRelays: string[],
+  sanitizedRelays: string[]
 ): Promise<Response> {
   const signedEventValue = formData.get("signedEvent");
   const nostrEventValue = formData.get("nostrEvent");
@@ -419,7 +420,7 @@ async function handlePostImages(
   const resolvedQueueTypeId = await resolveQueueTypeId(
     userId,
     queueTypeId,
-    queueType,
+    queueType
   );
 
   const post = await createPost({
@@ -462,7 +463,7 @@ async function handleScheduleImages(
   queueType: string,
   queueTypeId: string | null,
   isRecyclable: boolean,
-  hashTagPresetId: string | null,
+  hashTagPresetId: string | null
 ): Promise<Response> {
   const signedEventValue = formData.get("signedEvent");
   const nostrEventValue = formData.get("nostrEvent");
@@ -489,7 +490,7 @@ async function handleScheduleImages(
   const resolvedQueueTypeId = await resolveQueueTypeId(
     userId,
     queueTypeId,
-    queueType,
+    queueType
   );
 
   await createPost({
@@ -523,7 +524,7 @@ async function handleDraftImages(
   queueType: string,
   queueTypeId: string | null,
   isRecyclable: boolean,
-  hashTagPresetId: string | null,
+  hashTagPresetId: string | null
 ): Promise<Response> {
   const fileUrl = formData.get("fileUrl") as string;
   const caption = formData.get("caption") as string;
@@ -539,7 +540,7 @@ async function handleDraftImages(
   const resolvedQueueTypeId = await resolveQueueTypeId(
     userId,
     queueTypeId,
-    queueType,
+    queueType
   );
 
   await createPost({
@@ -565,7 +566,7 @@ async function handleDraftImages(
  */
 export async function handleNewPostAction(
   userId: string,
-  request: Request,
+  request: Request
 ): Promise<Response> {
   const user = await getUserById(userId);
   if (!user) {
@@ -581,7 +582,7 @@ export async function handleNewPostAction(
   if (contentType.includes("multipart/form-data")) {
     const uploadHandler = composeUploadHandlers(
       createUploadHandler(userId),
-      createMemoryUploadHandler(),
+      createMemoryUploadHandler()
     );
     formData = await parseMultipartFormData(request, uploadHandler);
   } else {
@@ -591,13 +592,16 @@ export async function handleNewPostAction(
   // Check for upload preview actions first (they don't need full validation)
   const _actionValue = formData.get("_action");
   const _action = _actionValue ? String(_actionValue) : "";
-  
-  if (_action === "upload-images-preview" || _action === "upload-media-preview") {
+
+  if (
+    _action === "upload-images-preview" ||
+    _action === "upload-media-preview"
+  ) {
     const result = handleUploadPreview(formData);
     if (!result.success) {
       return Response.json(
         { error: result.error ?? "Upload preview failed" },
-        { status: 400 },
+        { status: 400 }
       );
     }
     return Response.json(result);
@@ -627,7 +631,7 @@ export async function handleNewPostAction(
     useHashtagPresets,
     manualHashTagPresetId,
     queueType,
-    queueTypeId,
+    queueTypeId
   );
   const hashTagPresetTags =
     typeof hashtagResult === "object" &&
@@ -655,7 +659,7 @@ export async function handleNewPostAction(
       queueType,
       queueTypeId,
       isRecyclable,
-      hashTagPresetId,
+      hashTagPresetId
     );
   }
 
@@ -670,7 +674,7 @@ export async function handleNewPostAction(
       isRecyclable,
       hashTagPresetId,
       sanitizedRelays,
-      _action,
+      _action
     );
   }
 
@@ -682,13 +686,17 @@ export async function handleNewPostAction(
     if (!result.success) {
       return Response.json(
         { success: false, error: result.error },
-        { status: 400 },
+        { status: 400 }
       );
     }
     return Response.json({ success: true, fileUrls: result.fileUrls });
   }
 
-  if (_action === "post-image" || _action === "post-images" || _action === "post-media") {
+  if (
+    _action === "post-image" ||
+    _action === "post-images" ||
+    _action === "post-media"
+  ) {
     return handlePostImages(
       userId,
       formData,
@@ -698,11 +706,15 @@ export async function handleNewPostAction(
       queueTypeId,
       isRecyclable,
       hashTagPresetId,
-      sanitizedRelays,
+      sanitizedRelays
     );
   }
 
-  if (_action === "schedule-image" || _action === "schedule-images" || _action === "schedule-media") {
+  if (
+    _action === "schedule-image" ||
+    _action === "schedule-images" ||
+    _action === "schedule-media"
+  ) {
     return handleScheduleImages(
       userId,
       formData,
@@ -711,11 +723,15 @@ export async function handleNewPostAction(
       queueType,
       queueTypeId,
       isRecyclable,
-      hashTagPresetId,
+      hashTagPresetId
     );
   }
 
-  if (_action === "draft-image" || _action === "draft-images" || _action === "draft-media") {
+  if (
+    _action === "draft-image" ||
+    _action === "draft-images" ||
+    _action === "draft-media"
+  ) {
     return handleDraftImages(
       userId,
       formData,
@@ -724,7 +740,7 @@ export async function handleNewPostAction(
       queueType,
       queueTypeId,
       isRecyclable,
-      hashTagPresetId,
+      hashTagPresetId
     );
   }
 

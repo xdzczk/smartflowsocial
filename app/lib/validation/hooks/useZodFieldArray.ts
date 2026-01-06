@@ -1,24 +1,36 @@
 /**
  * Typed wrapper for useFieldArray that works properly with Zod schemas
  * This solves the type inference issues between Zod and React Hook Form
- * 
+ *
  * This hook is SSR-safe and provides a fallback during server-side rendering.
  */
 
-import { useFieldArray, type Control, type FieldArrayPath, type UseFieldArrayReturn, type UseFormReturn } from "react-hook-form";
+import {
+  useFieldArray,
+  type Control,
+  type FieldArrayPath,
+  type UseFieldArrayReturn,
+  type UseFormReturn,
+} from "react-hook-form";
 
 /**
  * Create a mock field array for SSR
  */
-function createSSRFieldArray<TFormValues extends Record<string, unknown>, TFieldArrayName extends string>(
+function createSSRFieldArray<
+  TFormValues extends Record<string, unknown>,
+  TFieldArrayName extends string,
+>(
   form: UseFormReturn<TFormValues>,
-  name: TFieldArrayName,
-): UseFieldArrayReturn<TFormValues, TFieldArrayName & FieldArrayPath<TFormValues>> {
+  name: TFieldArrayName
+): UseFieldArrayReturn<
+  TFormValues,
+  TFieldArrayName & FieldArrayPath<TFormValues>
+> {
   // Get default values from the form
   const defaultValues = form.getValues();
   const fieldArrayValue = (defaultValues as Record<string, unknown>)[name];
   const arrayValue = Array.isArray(fieldArrayValue) ? fieldArrayValue : [];
-  
+
   // Create mock fields with unique IDs
   const fields = arrayValue.map((item, index) => {
     const field: { id: string; value?: unknown } = {
@@ -28,8 +40,11 @@ function createSSRFieldArray<TFormValues extends Record<string, unknown>, TField
       field.value = item;
     }
     return field;
-  }) as UseFieldArrayReturn<TFormValues, TFieldArrayName & FieldArrayPath<TFormValues>>["fields"];
-  
+  }) as UseFieldArrayReturn<
+    TFormValues,
+    TFieldArrayName & FieldArrayPath<TFormValues>
+  >["fields"];
+
   return {
     fields,
     append: () => {},
@@ -40,16 +55,21 @@ function createSSRFieldArray<TFormValues extends Record<string, unknown>, TField
     update: () => {},
     replace: () => {},
     remove: () => {},
-  } as unknown as UseFieldArrayReturn<TFormValues, TFieldArrayName & FieldArrayPath<TFormValues>>;
+  } as unknown as UseFieldArrayReturn<
+    TFormValues,
+    TFieldArrayName & FieldArrayPath<TFormValues>
+  >;
 }
 
 /**
  * Create a minimal control object for SSR that won't cause useFieldArray to fail
  */
-function createSSRControl<TFormValues extends Record<string, unknown>>(): Control<TFormValues> {
+function createSSRControl<
+  TFormValues extends Record<string, unknown>,
+>(): Control<TFormValues> {
   // Create a more robust Proxy that handles all property access patterns
   const defaultFieldValue = { array: [] };
-  
+
   const emptyRecord: Record<string, { array: unknown[] }> = {};
   const fieldsProxy = new Proxy(emptyRecord, {
     get: (_target, _prop) => {
@@ -94,8 +114,8 @@ function createSSRControl<TFormValues extends Record<string, unknown>>(): Contro
       state: mockSubject,
     },
     _options: {
-      mode: 'onChange',
-      reValidateMode: 'onChange',
+      mode: "onChange",
+      reValidateMode: "onChange",
       defaultValues: {},
     },
     _names: {
@@ -118,7 +138,7 @@ function createSSRControl<TFormValues extends Record<string, unknown>>(): Contro
       errors: {},
     },
     register: () => ({
-      name: '',
+      name: "",
       onChange: () => {},
       onBlur: () => {},
       ref: () => {},
@@ -150,40 +170,41 @@ function createSSRControl<TFormValues extends Record<string, unknown>>(): Contro
 
 export function useZodFieldArray<
   TFormValues extends Record<string, unknown>,
-  TFieldArrayName extends string
+  TFieldArrayName extends string,
 >(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React Hook Form type is complex and requires any
   form: any,
   name: TFieldArrayName
-): UseFieldArrayReturn<TFormValues, TFieldArrayName & FieldArrayPath<TFormValues>> {
+): UseFieldArrayReturn<
+  TFormValues,
+  TFieldArrayName & FieldArrayPath<TFormValues>
+> {
   // Type assertion is necessary here due to the mismatch between
   // Zod's inferred types and React Hook Form's Control type expectations.
   // The types are correct at runtime, but TypeScript can't verify this statically.
   // We assert the form to the expected type, then extract the control.
   const typedForm = form as unknown as UseFormReturn<TFormValues>;
   const originalControl = typedForm.control as unknown as Control<TFormValues>;
-  
+
   // Check if we're on the server
   const isServer = typeof window === "undefined";
-  
+
   // During SSR, use a minimal control object that won't cause useFieldArray to fail
   // On the client, use the real control
-  const control = isServer 
-    ? createSSRControl<TFormValues>()
-    : originalControl;
-  
+  const control = isServer ? createSSRControl<TFormValues>() : originalControl;
+
   // Always call useFieldArray to satisfy React hooks rules
   // The enhanced control object should prevent it from hanging during SSR
   const fieldArrayResult = useFieldArray({
     control,
     name: name as FieldArrayPath<TFormValues>,
   });
-  
+
   // During SSR, return the mock field array instead of the result from useFieldArray
   // This ensures components can render during SSR without errors
   if (isServer) {
     return createSSRFieldArray(typedForm, name);
   }
-  
+
   return fieldArrayResult;
 }

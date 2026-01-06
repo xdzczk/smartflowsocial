@@ -20,11 +20,6 @@ vi.mock("~/features/posts/services/queue-type-resolver.server", () => ({
   resolveQueueTypeId: vi.fn(),
 }));
 
-import { handleDraftsAction } from "~/features/posts/services/drafts-action.server";
-import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
-import { deleteLongFormPost } from "~/models/longformpost.server";
-import { deletePost, updatePost } from "~/models/post.commands.server";
-
 import {
   createActionFormData,
   TEST_USER_ID,
@@ -33,18 +28,23 @@ import {
   createPostIds,
 } from "../utils/test-helpers";
 
+import { handleDraftsAction } from "~/features/posts/services/drafts-action.server";
+import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
+import { deleteLongFormPost } from "~/models/longformpost.server";
+import { deletePost, updatePost } from "~/models/post.commands.server";
+
 describe("Drafts Action Handler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Default mock for resolveQueueTypeId - returns the queueTypeId if provided, otherwise resolves from queueType name
     (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockImplementation(
-      // eslint-disable-next-line @typescript-eslint/no-misused-promises
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Test functions can be async
       (userId, queueTypeId, queueType): Promise<string | null> => {
         if (queueTypeId) return Promise.resolve(queueTypeId);
         if (queueType === "queue-1") return Promise.resolve("queue-1");
         if (queueType === "queue-2") return Promise.resolve("queue-2");
         return Promise.resolve(null);
-      },
+      }
     );
   });
 
@@ -69,7 +69,7 @@ describe("Drafts Action Handler", () => {
   describe("Delete Longform Post Action", () => {
     it("should delete a single draft longform post", async () => {
       (deleteLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
 
       const formData = createActionFormData("deleteLongForm", {
@@ -134,7 +134,9 @@ describe("Drafts Action Handler", () => {
       captions.forEach((caption) => formData.append("captions", caption));
       queueTypes.forEach((queue) => formData.append("queueTypes", queue));
       queueTypes.forEach(() => formData.append("queueTypeIds", "")); // Empty strings for queueTypeIds
-      scheduledFors.forEach((scheduled) => formData.append("scheduledFors", scheduled));
+      scheduledFors.forEach((scheduled) =>
+        formData.append("scheduledFors", scheduled)
+      );
       signedEvents.forEach((event) => formData.append("signedEvents", event));
       nostrEvents.forEach((event) => formData.append("nostrEvents", event));
 
@@ -145,12 +147,12 @@ describe("Drafts Action Handler", () => {
       expect(resolveQueueTypeId).toHaveBeenCalledWith(
         TEST_USER_ID,
         null,
-        "queue-1",
+        "queue-1"
       );
       expect(resolveQueueTypeId).toHaveBeenCalledWith(
         TEST_USER_ID,
         null,
-        "queue-2",
+        "queue-2"
       );
       expect(updatePost).toHaveBeenCalledWith({
         id: "post-1",
@@ -198,23 +200,29 @@ describe("Drafts Action Handler", () => {
       formData.append("queueTypeIds", "");
       formData.append("scheduledFors", "2024-01-01T10:00:00Z");
       // SignedEvent needs all required fields for Zod validation
-      formData.append("signedEvents", JSON.stringify({
-        id: "event-1",
-        pubkey: "pk1",
-        created_at: 1234567890,
-        kind: 1,
-        content: "Content 1",
-        tags: [],
-        sig: "sig1",
-      }));
-      formData.append("nostrEvents", JSON.stringify({
-        id: "nostr-1",
-        pubkey: "pk1",
-        created_at: 1234567890,
-        kind: 1,
-        content: "Content 1",
-        tags: [],
-      }));
+      formData.append(
+        "signedEvents",
+        JSON.stringify({
+          id: "event-1",
+          pubkey: "pk1",
+          created_at: 1234567890,
+          kind: 1,
+          content: "Content 1",
+          tags: [],
+          sig: "sig1",
+        })
+      );
+      formData.append(
+        "nostrEvents",
+        JSON.stringify({
+          id: "nostr-1",
+          pubkey: "pk1",
+          created_at: 1234567890,
+          kind: 1,
+          content: "Content 1",
+          tags: [],
+        })
+      );
 
       const result = await handleDraftsAction(formData, TEST_USER_ID);
 
@@ -241,24 +249,30 @@ describe("Drafts Action Handler", () => {
       formData.append("scheduledFors", "2024-01-01T10:00:00Z");
       formData.append("scheduledFors", "2024-01-01T11:00:00Z");
       // SignedEvents need all required fields for Zod validation
-      formData.append("signedEvents", JSON.stringify({
-        id: "event-1",
-        pubkey: "pk1",
-        created_at: 1234567890,
-        kind: 1,
-        content: "Content 1",
-        tags: [],
-        sig: "sig1",
-      }));
-      formData.append("signedEvents", JSON.stringify({
-        id: "event-2",
-        pubkey: "pk2",
-        created_at: 1234567891,
-        kind: 1,
-        content: "Content 2",
-        tags: [],
-        sig: "sig2",
-      }));
+      formData.append(
+        "signedEvents",
+        JSON.stringify({
+          id: "event-1",
+          pubkey: "pk1",
+          created_at: 1234567890,
+          kind: 1,
+          content: "Content 1",
+          tags: [],
+          sig: "sig1",
+        })
+      );
+      formData.append(
+        "signedEvents",
+        JSON.stringify({
+          id: "event-2",
+          pubkey: "pk2",
+          created_at: 1234567891,
+          kind: 1,
+          content: "Content 2",
+          tags: [],
+          sig: "sig2",
+        })
+      );
       formData.append("nostrEvents", JSON.stringify({ id: "nostr-1" }));
       formData.append("nostrEvents", JSON.stringify({ id: "nostr-2" }));
 
@@ -305,22 +319,22 @@ describe("Drafts Action Handler", () => {
       formData.append("nostrEvents", JSON.stringify(nostrEvent));
 
       const result = await handleDraftsAction(formData, TEST_USER_ID);
-      
+
       // Check if validation failed
       if (result instanceof Response && result.status === 400) {
-        const data = await result.json() as { error?: unknown };
+        const data = (await result.json()) as { error?: unknown };
         throw new Error(`Validation failed: ${JSON.stringify(data)}`);
       }
 
       expect(updatePost).toHaveBeenCalledWith(
         // expect.objectContaining returns 'any' - acceptable for test mocks
         expect.objectContaining({
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
           data: expect.objectContaining({
             signedEvent,
             nostrEvent,
           }),
-        }),
+        })
       );
     });
   });
@@ -339,7 +353,7 @@ describe("Drafts Action Handler", () => {
 
     it("should handle database errors from deletePost", async () => {
       (deletePost as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Database error"),
+        new Error("Database error")
       );
 
       const formData = createActionFormData("delete", {
@@ -347,13 +361,13 @@ describe("Drafts Action Handler", () => {
       });
 
       await expect(handleDraftsAction(formData, TEST_USER_ID)).rejects.toThrow(
-        "Database error",
+        "Database error"
       );
     });
 
     it("should handle database errors from updatePost", async () => {
       (updatePost as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Update failed"),
+        new Error("Update failed")
       );
 
       // Create FormData - validation must pass first, then Promise.all will throw
@@ -366,30 +380,36 @@ describe("Drafts Action Handler", () => {
       formData.append("queueTypeIds", "");
       formData.append("scheduledFors", "2024-01-01T10:00:00Z");
       // SignedEvent needs all required fields for Zod validation
-      formData.append("signedEvents", JSON.stringify({
-        id: "event-1",
-        pubkey: "pk1",
-        created_at: 1234567890,
-        kind: 1,
-        content: "Content 1",
-        tags: [],
-        sig: "sig1",
-      }));
-      formData.append("nostrEvents", JSON.stringify({
-        id: "nostr-1",
-        pubkey: "pk1",
-        created_at: 1234567890,
-        kind: 1,
-        content: "Content 1",
-        tags: [],
-      }));
+      formData.append(
+        "signedEvents",
+        JSON.stringify({
+          id: "event-1",
+          pubkey: "pk1",
+          created_at: 1234567890,
+          kind: 1,
+          content: "Content 1",
+          tags: [],
+          sig: "sig1",
+        })
+      );
+      formData.append(
+        "nostrEvents",
+        JSON.stringify({
+          id: "nostr-1",
+          pubkey: "pk1",
+          created_at: 1234567890,
+          kind: 1,
+          content: "Content 1",
+          tags: [],
+        })
+      );
 
       // Database errors from Promise.all will throw, not return a Response
       // Promise.all rejects if any promise rejects
       await expect(handleDraftsAction(formData, TEST_USER_ID)).rejects.toThrow(
-        "Update failed",
+        "Update failed"
       );
-      
+
       // Verify updatePost was called (validation passed)
       expect(updatePost).toHaveBeenCalledTimes(1);
     });
@@ -405,14 +425,17 @@ describe("Drafts Action Handler", () => {
       formData.append("queueTypeIds", ""); // Empty string for queueTypeId
       formData.append("scheduledFors", "2024-01-01T10:00:00Z");
       formData.append("signedEvents", "invalid-json");
-      formData.append("nostrEvents", JSON.stringify({
-        id: "nostr-1",
-        pubkey: "pk1",
-        created_at: 1234567890,
-        kind: 1,
-        content: "Content 1",
-        tags: [],
-      }));
+      formData.append(
+        "nostrEvents",
+        JSON.stringify({
+          id: "nostr-1",
+          pubkey: "pk1",
+          created_at: 1234567890,
+          kind: 1,
+          content: "Content 1",
+          tags: [],
+        })
+      );
 
       // Zod transform will throw an error when parsing invalid JSON
       const result = await handleDraftsAction(formData, TEST_USER_ID);

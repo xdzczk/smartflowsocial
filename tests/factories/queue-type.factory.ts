@@ -24,7 +24,7 @@ export interface QueueTypeFactoryOptions {
 }
 
 export class QueueTypeFactory {
-  private options: QueueTypeFactoryOptions;
+  private readonly options: QueueTypeFactoryOptions;
 
   constructor(options: QueueTypeFactoryOptions = {}) {
     this.options = {
@@ -106,7 +106,7 @@ export class QueueTypeFactory {
   }
 
   build(): QueueType {
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Factory pattern requires type assertion for partial data
     return {
       id: this.options.id!,
       userId: this.options.userId!,
@@ -161,7 +161,7 @@ export const queueTypeFactory = {
         ...overrides,
         id: `queue-${i + 1}`,
         name: `Queue ${i + 1}`,
-      }).build(),
+      }).build()
     );
   },
 };

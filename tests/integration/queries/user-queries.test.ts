@@ -99,7 +99,7 @@ describe("User Queries", () => {
         select: { npub: true, nostrProfile: true },
       });
       expect(result).toHaveLength(2);
-      expect(result[0].npub).toBe("npub1");
+      expect(result[0]?.npub).toBe("npub1");
     });
 
     it("should return empty array for empty input", async () => {
@@ -117,7 +117,7 @@ describe("User Queries", () => {
 
       const result = await getUsersByNpubs(["npub1"]);
 
-      expect(result[0].nostrProfile).toBeNull();
+      expect(result[0]?.nostrProfile).toBeNull();
     });
   });
 

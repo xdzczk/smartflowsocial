@@ -15,10 +15,6 @@ vi.mock("~/models/longformpost.server", () => ({
   deleteLongFormPost: vi.fn(),
 }));
 
-import { handleDashboardAction } from "~/features/posts/services/dashboard-action.server";
-import { deleteLongFormPost } from "~/models/longformpost.server";
-import { deletePost } from "~/models/post.commands.server";
-
 import {
   createActionFormData,
   createFormData,
@@ -27,6 +23,10 @@ import {
   TEST_LONGFORM_ID,
   createPostIds,
 } from "../utils/test-helpers";
+
+import { handleDashboardAction } from "~/features/posts/services/dashboard-action.server";
+import { deleteLongFormPost } from "~/models/longformpost.server";
+import { deletePost } from "~/models/post.commands.server";
 
 describe("Dashboard Action Handler", () => {
   beforeEach(() => {
@@ -54,7 +54,7 @@ describe("Dashboard Action Handler", () => {
       const formData = createActionFormData("delete", {});
 
       const result = await handleDashboardAction(formData, TEST_USER_ID);
-      
+
       // Zod validation returns a Response with error
       expect(result).toBeInstanceOf(Response);
       const data = (await (result as Response).json()) as { error?: string };
@@ -67,7 +67,7 @@ describe("Dashboard Action Handler", () => {
   describe("Delete Longform Post Action", () => {
     it("should delete a single longform post", async () => {
       (deleteLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
 
       const formData = createActionFormData("deleteLongForm", {
@@ -128,7 +128,7 @@ describe("Dashboard Action Handler", () => {
       });
 
       const result = await handleDashboardAction(formData, TEST_USER_ID);
-      
+
       // Zod validation returns a Response with error for invalid JSON
       expect(result).toBeInstanceOf(Response);
       const data = (await (result as Response).json()) as { error?: string };
@@ -157,7 +157,7 @@ describe("Dashboard Action Handler", () => {
   describe("Bulk Delete Longform Posts Action", () => {
     it("should delete multiple longform posts", async () => {
       (deleteLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
 
       const postIds = [TEST_LONGFORM_ID, "longform-2", "longform-3"];
@@ -183,7 +183,7 @@ describe("Dashboard Action Handler", () => {
       });
 
       const result = await handleDashboardAction(formData, TEST_USER_ID);
-      
+
       // Zod validation returns a Response with error for invalid JSON
       expect(result).toBeInstanceOf(Response);
       const data = (await (result as Response).json()) as { error?: string };
@@ -219,7 +219,7 @@ describe("Dashboard Action Handler", () => {
 
     it("should handle database errors from deletePost", async () => {
       (deletePost as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Database error"),
+        new Error("Database error")
       );
 
       const formData = createActionFormData("delete", {
@@ -227,13 +227,13 @@ describe("Dashboard Action Handler", () => {
       });
 
       await expect(
-        handleDashboardAction(formData, TEST_USER_ID),
+        handleDashboardAction(formData, TEST_USER_ID)
       ).rejects.toThrow("Database error");
     });
 
     it("should handle database errors from deleteLongFormPost", async () => {
       (deleteLongFormPost as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Database error"),
+        new Error("Database error")
       );
 
       const formData = createActionFormData("deleteLongForm", {
@@ -241,7 +241,7 @@ describe("Dashboard Action Handler", () => {
       });
 
       await expect(
-        handleDashboardAction(formData, TEST_USER_ID),
+        handleDashboardAction(formData, TEST_USER_ID)
       ).rejects.toThrow("Database error");
     });
 
@@ -260,7 +260,7 @@ describe("Dashboard Action Handler", () => {
       // But it catches parseError and throws ValidationError first
       // So we need to check for the actual error that gets thrown
       await expect(
-        handleDashboardAction(formData, TEST_USER_ID),
+        handleDashboardAction(formData, TEST_USER_ID)
       ).rejects.toThrow();
     });
   });

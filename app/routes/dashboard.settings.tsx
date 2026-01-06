@@ -1,7 +1,4 @@
-import {
-  json,
-  type LoaderFunctionArgs,
-} from "@remix-run/node";
+import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 
 import { RelaysSettings } from "~/components/settings/RelaysSettings";
@@ -87,31 +84,33 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 }
 
-export const action = withCSRFProtection(async ({ request }: { request: Request }) => {
-  const userId = await requireUserId(request);
-  const formData = await request.formData();
+export const action = withCSRFProtection(
+  async ({ request }: { request: Request }) => {
+    const userId = await requireUserId(request);
+    const formData = await request.formData();
 
-  try {
-    return await handleSettingsAction(userId, formData);
-  } catch (error) {
-    // Use centralized error handling
-    const { handleActionError } = await import("~/lib/error-handler.server");
-    const { logError } = await import("~/lib/error-logger.server");
-    const { normalizeError } = await import("~/lib/errors");
+    try {
+      return await handleSettingsAction(userId, formData);
+    } catch (error) {
+      // Use centralized error handling
+      const { handleActionError } = await import("~/lib/error-handler.server");
+      const { logError } = await import("~/lib/error-logger.server");
+      const { normalizeError } = await import("~/lib/errors");
 
-    // Log additional context for debugging
-    const normalizedError = normalizeError(error);
-    logError(normalizedError, {
-      userId,
-      path: request.url,
-      method: request.method,
-      action: formData.get("_action"),
-      formDataEntries: Object.fromEntries(formData.entries()),
-    });
+      // Log additional context for debugging
+      const normalizedError = normalizeError(error);
+      logError(normalizedError, {
+        userId,
+        path: request.url,
+        method: request.method,
+        action: formData.get("_action"),
+        formDataEntries: Object.fromEntries(formData.entries()),
+      });
 
-    return handleActionError(error);
+      return handleActionError(error);
+    }
   }
-});
+);
 
 type QueueTypeSettings = QueueType & {
   isDefault: boolean;
@@ -125,7 +124,7 @@ type QueueTypeSettings = QueueType & {
 };
 
 export default function Settings() {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Remix loader data type is complex, validated at runtime
   const loaderDataRaw = useLoaderData<typeof loader>();
   // Type assertion to avoid unsafe assignment errors from Remix JsonifyObject
   const data = loaderDataRaw as {
@@ -206,7 +205,7 @@ export default function Settings() {
                 | "FIXED_SLOTS"
                 | undefined,
               scheduleConfig: convertJsonValueToScheduleConfig(
-                q.scheduleConfig,
+                q.scheduleConfig
               ),
               isEnabled: q.isEnabled,
               isDefault: q.isDefault ?? false,
@@ -226,7 +225,7 @@ export default function Settings() {
     ? hashTagPresetsRaw
         .filter(
           (
-            preset: unknown,
+            preset: unknown
           ): preset is {
             id: string;
             name: string;
@@ -246,7 +245,7 @@ export default function Settings() {
             typeof (preset as { id: unknown; name: unknown; tags: unknown })
               .name === "string" &&
             typeof (preset as { id: unknown; name: unknown; tags: unknown })
-              .tags === "string",
+              .tags === "string"
         )
         .map((preset) => ({
           id: preset.id,
@@ -261,21 +260,19 @@ export default function Settings() {
           userId: typeof preset.userId === "string" ? preset.userId : undefined,
           createdAt: (() => {
             const createdAtValue: unknown = preset.createdAt;
-            if (createdAtValue === null || createdAtValue === undefined)
-              return undefined;
+            if (createdAtValue === null || createdAtValue === undefined) return;
             if (createdAtValue instanceof Date) return createdAtValue;
             if (typeof createdAtValue === "string")
               return new Date(createdAtValue);
-            return undefined;
+            return;
           })(),
           updatedAt: (() => {
             const updatedAtValue: unknown = preset.updatedAt;
-            if (updatedAtValue === null || updatedAtValue === undefined)
-              return undefined;
+            if (updatedAtValue === null || updatedAtValue === undefined) return;
             if (updatedAtValue instanceof Date) return updatedAtValue;
             if (typeof updatedAtValue === "string")
               return new Date(updatedAtValue);
-            return undefined;
+            return;
           })(),
         }))
     : [];
@@ -283,7 +280,10 @@ export default function Settings() {
   const subscription = validateSubscription(subscriptionRaw);
   const availablePlans = validateAvailablePlans(availablePlansRaw);
   const paymentHistory = validatePaymentHistory(paymentHistoryRaw);
-  const mutedListRawTyped = mutedListRaw as { npubs?: unknown; lastSynced?: unknown } | null | undefined;
+  const mutedListRawTyped = mutedListRaw as
+    | { npubs?: unknown; lastSynced?: unknown }
+    | null
+    | undefined;
   const mutedList =
     mutedListRawTyped &&
     typeof mutedListRawTyped === "object" &&
@@ -301,7 +301,7 @@ export default function Settings() {
 
   // Get tab from URL search params
   const searchParams = new URLSearchParams(
-    typeof window !== "undefined" ? window.location.search : "",
+    typeof window !== "undefined" ? window.location.search : ""
   );
   let defaultTab = searchParams.get("tab") ?? "general";
   if (
@@ -338,8 +338,16 @@ export default function Settings() {
 
         <TabsContent value="general" className="mt-6 space-y-6">
           <div className="grid gap-6 md:grid-cols-1">
-            <TimezoneSettings timezone={(timezone as string | null | undefined) ?? null} />
-            <ScheduleIntervalsSettings scheduleIntervals={Array.isArray(scheduleIntervals) ? (scheduleIntervals as string[]) : []} />
+            <TimezoneSettings
+              timezone={(timezone as string | null | undefined) ?? null}
+            />
+            <ScheduleIntervalsSettings
+              scheduleIntervals={
+                Array.isArray(scheduleIntervals)
+                  ? (scheduleIntervals as string[])
+                  : []
+              }
+            />
           </div>
         </TabsContent>
 
@@ -379,22 +387,48 @@ export default function Settings() {
 
         <TabsContent value="network" className="mt-6 space-y-6">
           <div className="grid gap-6 md:grid-cols-1">
-            <RelaysSettings relays={Array.isArray(relays) ? (relays as string[]) : []} />
-            <GiveawayBlacklistSettings giveawayBlacklist={Array.isArray(giveawayBlacklist) ? (giveawayBlacklist as string[]) : []} />
+            <RelaysSettings
+              relays={Array.isArray(relays) ? (relays as string[]) : []}
+            />
+            <GiveawayBlacklistSettings
+              giveawayBlacklist={
+                Array.isArray(giveawayBlacklist)
+                  ? (giveawayBlacklist as string[])
+                  : []
+              }
+            />
             <MutedListSettings
               mutedList={mutedList}
-              filterMuted={typeof filterMuted === "boolean" ? filterMuted : false}
-              hidePostsFromLowTrustUsers={typeof hidePostsFromLowTrustUsers === "boolean" ? hidePostsFromLowTrustUsers : false}
+              filterMuted={
+                typeof filterMuted === "boolean" ? filterMuted : false
+              }
+              hidePostsFromLowTrustUsers={
+                typeof hidePostsFromLowTrustUsers === "boolean"
+                  ? hidePostsFromLowTrustUsers
+                  : false
+              }
             />
           </div>
         </TabsContent>
 
         <TabsContent value="storage" className="mt-6 space-y-6">
           <div className="grid gap-6 md:grid-cols-1">
-            <UploadProviderSettings uploadProvider={typeof uploadProvider === "string" ? uploadProvider : ""} />
+            <UploadProviderSettings
+              uploadProvider={
+                typeof uploadProvider === "string" ? uploadProvider : ""
+              }
+            />
             <BlossomMediaMirrorsSettings
-              enableMirrorBlossom={typeof enableMirrorBlossom === "boolean" ? enableMirrorBlossom : false}
-              mirrorUploadUrls={Array.isArray(mirrorUploadUrls) ? (mirrorUploadUrls as string[]) : []}
+              enableMirrorBlossom={
+                typeof enableMirrorBlossom === "boolean"
+                  ? enableMirrorBlossom
+                  : false
+              }
+              mirrorUploadUrls={
+                Array.isArray(mirrorUploadUrls)
+                  ? (mirrorUploadUrls as string[])
+                  : []
+              }
             />
           </div>
         </TabsContent>
@@ -408,8 +442,12 @@ export default function Settings() {
                 paymentHistory={paymentHistory}
               />
               <NWCSettings
-                nwcEnabled={typeof nwcEnabled === "boolean" ? nwcEnabled : false}
-                maskedNwcString={(maskedNwcString as string | null | undefined) ?? undefined}
+                nwcEnabled={
+                  typeof nwcEnabled === "boolean" ? nwcEnabled : false
+                }
+                maskedNwcString={
+                  (maskedNwcString as string | null | undefined) ?? undefined
+                }
                 nwcLastUsed={
                   nwcLastUsed instanceof Date
                     ? nwcLastUsed.toISOString()

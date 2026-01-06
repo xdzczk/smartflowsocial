@@ -3,8 +3,7 @@
  * Provides caching and background refetching for recyclables page
  */
 
-import { useFetcher, useLoaderData } from "@remix-run/react";
-import { useParams } from "@remix-run/react";
+import { useFetcher, useLoaderData, useParams } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 
 import type { UserWithHashTagPresets as _UserWithHashTagPresets } from "~/features/user";
@@ -14,14 +13,10 @@ import {
   type RecyclablesLoaderData,
 } from "~/lib/validation/schemas/loader-responses.schemas";
 
-
 import type { PostDTO } from "../dtos";
 import { fromPostDTOArray } from "../dtos";
 import type { PostStats as _PostStats } from "../stats.server";
-import type {
-  PostData,
-  QueueType,
-} from "../types";
+import type { PostData, QueueType } from "../types";
 
 // RecyclablesLoaderData is now exported from schemas
 
@@ -42,16 +37,16 @@ export const recyclablesKeys = {
  */
 export function useRecyclablesQuery() {
   const params = useParams();
-  const queueType = params.queueType ?? "all";
+  const queueType = params["queueType"] ?? "all";
   const page = 1; // Recyclables doesn't use pagination in URL currently, but we'll support it
-  
+
   const loaderDataRaw = useLoaderData();
   const fetcher = useFetcher();
 
   // Validate initial loader data
   const validatedLoaderData = safeValidateLoaderResponse(
     loaderDataRaw,
-    recyclablesLoaderDataSchema,
+    recyclablesLoaderDataSchema
   );
 
   return useQuery({
@@ -60,7 +55,7 @@ export function useRecyclablesQuery() {
       // Use fetcher to refetch data
       const url = `/dashboard/recyclables${queueType !== "all" ? `/${queueType}` : ""}?page=${page}`;
       fetcher.load(url);
-      
+
       // Wait for fetcher to complete
       return new Promise<RecyclablesLoaderData>((resolve, reject) => {
         const checkFetcher = () => {
@@ -68,7 +63,7 @@ export function useRecyclablesQuery() {
             if (fetcher.data) {
               const validated = safeValidateLoaderResponse(
                 fetcher.data,
-                recyclablesLoaderDataSchema,
+                recyclablesLoaderDataSchema
               );
               if (validated) {
                 resolve(validated);
@@ -141,9 +136,12 @@ export function useRecyclablesData() {
       zaps?: number;
       satszapped?: number;
     }
-  > = rawData.stats && typeof rawData.stats === "object" && !Array.isArray(rawData.stats)
-    ? rawData.stats
-    : {};
+  > =
+    rawData.stats &&
+    typeof rawData.stats === "object" &&
+    !Array.isArray(rawData.stats)
+      ? rawData.stats
+      : {};
 
   // Type assertion for pagination
   const pagination =
@@ -155,13 +153,22 @@ export function useRecyclablesData() {
     "currentPage" in rawData.pagination &&
     "limit" in rawData.pagination
       ? {
-          total: typeof rawData.pagination.total === "number" ? rawData.pagination.total : 0,
-          pages: typeof rawData.pagination.pages === "number" ? rawData.pagination.pages : 0,
+          total:
+            typeof rawData.pagination.total === "number"
+              ? rawData.pagination.total
+              : 0,
+          pages:
+            typeof rawData.pagination.pages === "number"
+              ? rawData.pagination.pages
+              : 0,
           currentPage:
             typeof rawData.pagination.currentPage === "number"
               ? rawData.pagination.currentPage
               : 1,
-          limit: typeof rawData.pagination.limit === "number" ? rawData.pagination.limit : 50,
+          limit:
+            typeof rawData.pagination.limit === "number"
+              ? rawData.pagination.limit
+              : 50,
         }
       : { total: 0, pages: 0, currentPage: 1, limit: 50 };
 
@@ -176,4 +183,3 @@ export function useRecyclablesData() {
     rawData,
   };
 }
-

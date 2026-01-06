@@ -70,7 +70,7 @@ export function getStatusText(item: CombinedContent): string {
 export function formatDate(
   date: Date | string | undefined,
   isUnixTimestamp = false,
-  userTimezone?: string,
+  userTimezone?: string
 ): string {
   if (!date) return "-";
 
@@ -113,8 +113,17 @@ export function getQueueTypeDisplay(queueType: CombinedContent["queueType"]): {
   }
 
   const colors = getQueueColor(name);
+  // getQueueColor always returns a value (has fallback to "unassigned")
+  const safeColors = colors ?? getQueueColor("unassigned");
+  if (!safeColors) {
+    // This should never happen, but TypeScript needs this check
+    return {
+      className: `inline-flex rounded-full border-2 px-3 py-1 text-xs font-semibold leading-4 shadow-sm`,
+      name,
+    };
+  }
   return {
-    className: `inline-flex rounded-full border-2 px-3 py-1 text-xs font-semibold leading-4 ${colors.bg} ${colors.text} ${colors.border} shadow-sm`,
+    className: `inline-flex rounded-full border-2 px-3 py-1 text-xs font-semibold leading-4 ${safeColors.bg} ${safeColors.text} ${safeColors.border} shadow-sm`,
     name,
   };
 }

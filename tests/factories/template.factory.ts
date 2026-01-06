@@ -16,7 +16,7 @@ export interface TemplateFactoryOptions {
 }
 
 export class TemplateFactory {
-  private options: TemplateFactoryOptions;
+  private readonly options: TemplateFactoryOptions;
 
   constructor(options: TemplateFactoryOptions = {}) {
     this.options = {
@@ -76,7 +76,7 @@ export const templateFactory = {
         ...overrides,
         id: `template-${i + 1}`,
         name: `Template ${i + 1}`,
-      }).build(),
+      }).build()
     );
   },
 };

@@ -20,9 +20,9 @@ import { QueueSelector } from "./QueueSelector";
 import { SchedulingSection } from "./SchedulingSection";
 
 interface TextPostProps {
-  queueTypes?: (string | QueueType)[];
+  queueTypes?: Array<string | QueueType>;
   assets?: Asset[];
-  hashTagPresets?: { id: string; name: string; tags: string }[];
+  hashTagPresets?: Array<{ id: string; name: string; tags: string }>;
   onQueueTypeChange?: (queueType: string) => void;
   selectedHashTagPresetId?: string | null | undefined;
   onHashtagPresetChange?: (presetId: string | null, hashtags: string) => void;
@@ -136,7 +136,7 @@ export default function TextPost({
             "en-US",
             {
               timeZone: userTimezone,
-            },
+            }
           );
           const userDate = new Date(userDateStr);
           const scheduledDate = new Date(scheduledForStr);
@@ -170,7 +170,7 @@ export default function TextPost({
         // Manual hashtag presets are disabled, use queue type's default hashtags
         // Find the queue type object to get its ID
         const selectedQueueType = queueTypes.find(
-          (qt) => (typeof qt === "string" ? qt : qt.name) === selectedQueue,
+          (qt) => (typeof qt === "string" ? qt : qt.name) === selectedQueue
         );
         const queueTypeId =
           typeof selectedQueueType === "object" ? selectedQueueType.id : null;
@@ -252,14 +252,14 @@ export default function TextPost({
           component: "TextPost",
           action: "handleSubmit",
         },
-        false,
+        false
       ); // Don't show toast, let component handle it
     }
   });
 
   const handleHashtagPresetSelect = (
     presetId: string | null,
-    hashtags: string,
+    hashtags: string
   ) => {
     form.setValue("hashTagPresetId", presetId ?? undefined);
     setSelectedHashtags(hashtags);
@@ -300,7 +300,10 @@ export default function TextPost({
     <fetcher.Form
       method="post"
       className="w-full"
-      onSubmit={(e) => { e.preventDefault(); void handleSubmit(e); }}
+      onSubmit={(e) => {
+        e.preventDefault();
+        void handleSubmit(e);
+      }}
     >
       <div className="relative">
         <Textarea
@@ -366,7 +369,7 @@ export default function TextPost({
             showQueuePreset={selectedQueue !== "unassigned"}
             queueType={
               queueTypes.find(
-                (q) => (typeof q === "string" ? q : q.name) === selectedQueue,
+                (q) => (typeof q === "string" ? q : q.name) === selectedQueue
               ) as QueueType | undefined
             }
           />

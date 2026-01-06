@@ -10,10 +10,10 @@ vi.mock("~/features/user", () => ({
   getUserById: vi.fn(),
 }));
 
+import { TEST_USER_ID } from "../utils/test-helpers";
+
 import { loadSearchData } from "~/features/search/services/search-loader.server";
 import { getUserById } from "~/features/user";
-
-import { TEST_USER_ID } from "../utils/test-helpers";
 
 describe("Search Loader", () => {
   beforeEach(() => {

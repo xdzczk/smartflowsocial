@@ -3,8 +3,12 @@
  * Provides caching, background refetching, and optimistic updates
  */
 
-import { useFetcher, useLoaderData } from "@remix-run/react";
-import { useParams, useSearchParams } from "@remix-run/react";
+import {
+  useFetcher,
+  useLoaderData,
+  useParams,
+  useSearchParams,
+} from "@remix-run/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import type { User as _User } from "~/features/user";
@@ -18,10 +22,7 @@ import type { UserData } from "~/lib/validation/user-data";
 
 import { combineContent } from "../combined";
 import type { PostDTO, LongFormPostDTO } from "../dtos";
-import {
-  fromPostDTOArray,
-  fromLongFormPostDTOArray,
-} from "../dtos";
+import { fromPostDTOArray, fromLongFormPostDTOArray } from "../dtos";
 import type { PostStats } from "../stats.server";
 import type {
   PostData,
@@ -51,10 +52,10 @@ export const postedPostsKeys = {
 export function usePostedPostsQuery() {
   const params = useParams();
   const [searchParams] = useSearchParams();
-  const queueType = params.queueType ?? "all";
+  const queueType = params["queueType"] ?? "all";
   const currentTab = searchParams.get("tab") ?? "all";
   const page = parseInt(searchParams.get("page") ?? "1", 10);
-  
+
   // Import loader dynamically to avoid circular dependency
   const loaderDataRaw = useLoaderData();
   const fetcher = useFetcher();
@@ -62,7 +63,7 @@ export function usePostedPostsQuery() {
   // Validate initial loader data
   const validatedLoaderData = safeValidateLoaderResponse(
     loaderDataRaw,
-    postedPostsLoaderDataSchema,
+    postedPostsLoaderDataSchema
   );
 
   return useQuery({
@@ -71,7 +72,7 @@ export function usePostedPostsQuery() {
       // Use fetcher to refetch data
       const url = `/dashboard/posted${queueType !== "all" ? `/${queueType}` : ""}?tab=${currentTab}&page=${page}`;
       fetcher.load(url);
-      
+
       // Wait for fetcher to complete
       return new Promise<PostedPostsLoaderData>((resolve, reject) => {
         const checkFetcher = () => {
@@ -79,7 +80,7 @@ export function usePostedPostsQuery() {
             if (fetcher.data) {
               const validated = safeValidateLoaderResponse(
                 fetcher.data,
-                postedPostsLoaderDataSchema,
+                postedPostsLoaderDataSchema
               );
               if (validated) {
                 resolve(validated);
@@ -113,7 +114,7 @@ export function usePostedPostsQuery() {
  */
 export function usePostedPostsData() {
   const { data, isLoading, error } = usePostedPostsQuery();
-  
+
   if (!data) {
     return {
       posts: [] as PostData[],
@@ -130,7 +131,10 @@ export function usePostedPostsData() {
 
   // Data is already validated by the query hook
   const typedData = data;
-  const postsRaw = "posts" in typedData && Array.isArray(typedData.posts) ? typedData.posts : [];
+  const postsRaw =
+    "posts" in typedData && Array.isArray(typedData.posts)
+      ? typedData.posts
+      : [];
   const longformPostsRaw =
     "longformPosts" in typedData && Array.isArray(typedData.longformPosts)
       ? typedData.longformPosts
@@ -141,7 +145,8 @@ export function usePostedPostsData() {
     "queueTypes" in typedData && Array.isArray(typedData.queueTypes)
       ? typedData.queueTypes
       : [];
-  const paginationRaw = "pagination" in typedData ? typedData.pagination : undefined;
+  const paginationRaw =
+    "pagination" in typedData ? typedData.pagination : undefined;
   const statsRaw = "stats" in typedData ? typedData.stats : undefined;
 
   const posts: PostData[] = Array.isArray(postsRaw)
@@ -155,7 +160,7 @@ export function usePostedPostsData() {
     posts,
     longformPosts,
     "postedAt",
-    "desc",
+    "desc"
   );
   const queueTypes: QueueType[] = Array.isArray(queueTypesRaw)
     ? queueTypesRaw.map((qt: unknown) => {
@@ -185,7 +190,7 @@ export function usePostedPostsData() {
             ? q.scheduleType
             : undefined;
         const scheduleConfig = convertJsonValueToScheduleConfig(
-          q.scheduleConfig,
+          q.scheduleConfig
         );
         const isEnabled =
           typeof q.isEnabled === "boolean"
@@ -205,23 +210,30 @@ export function usePostedPostsData() {
         return queueType;
       })
     : [];
-  const pagination = paginationRaw &&
+  const pagination =
+    paginationRaw &&
     typeof paginationRaw === "object" &&
     !Array.isArray(paginationRaw) &&
     "total" in paginationRaw &&
     "pages" in paginationRaw &&
     "currentPage" in paginationRaw &&
     "limit" in paginationRaw
-    ? {
-        total: typeof paginationRaw.total === "number" ? paginationRaw.total : 0,
-        pages: typeof paginationRaw.pages === "number" ? paginationRaw.pages : 0,
-        currentPage: typeof paginationRaw.currentPage === "number" ? paginationRaw.currentPage : 1,
-        limit: typeof paginationRaw.limit === "number" ? paginationRaw.limit : 50,
-      }
-    : { total: 0, pages: 0, currentPage: 1, limit: 50 };
+      ? {
+          total:
+            typeof paginationRaw.total === "number" ? paginationRaw.total : 0,
+          pages:
+            typeof paginationRaw.pages === "number" ? paginationRaw.pages : 0,
+          currentPage:
+            typeof paginationRaw.currentPage === "number"
+              ? paginationRaw.currentPage
+              : 1,
+          limit:
+            typeof paginationRaw.limit === "number" ? paginationRaw.limit : 50,
+        }
+      : { total: 0, pages: 0, currentPage: 1, limit: 50 };
   const stats: Record<string, PostStats> =
     statsRaw && typeof statsRaw === "object" && !Array.isArray(statsRaw)
-      ? (statsRaw)
+      ? statsRaw
       : {};
 
   return {
@@ -245,7 +257,7 @@ export function useBulkDeletePostsMutation() {
   const queryClient = useQueryClient();
   const params = useParams();
   const [searchParams] = useSearchParams();
-  const queueType = params.queueType ?? "all";
+  const queueType = params["queueType"] ?? "all";
   const currentTab = searchParams.get("tab") ?? "all";
   const page = parseInt(searchParams.get("page") ?? "1", 10);
 
@@ -276,7 +288,7 @@ export function useBulkDeletePostsMutation() {
 
       // Snapshot previous value
       const previousData = queryClient.getQueryData<PostedPostsLoaderData>(
-        postedPostsKeys.list(queueType, currentTab, page),
+        postedPostsKeys.list(queueType, currentTab, page)
       );
 
       // Optimistically update
@@ -295,7 +307,7 @@ export function useBulkDeletePostsMutation() {
                         typeof p === "object" &&
                         "id" in p &&
                         typeof p.id === "string" &&
-                        !postIds.includes(p.id),
+                        !postIds.includes(p.id)
                     )
                   : [],
               allContent:
@@ -306,11 +318,11 @@ export function useBulkDeletePostsMutation() {
                         typeof c === "object" &&
                         "id" in c &&
                         typeof c.id === "string" &&
-                        !postIds.includes(c.id),
+                        !postIds.includes(c.id)
                     )
                   : [],
             };
-          },
+          }
         );
       }
 
@@ -321,7 +333,7 @@ export function useBulkDeletePostsMutation() {
       if (context?.previousData) {
         queryClient.setQueryData(
           postedPostsKeys.list(queueType, currentTab, page),
-          context.previousData,
+          context.previousData
         );
       }
     },
@@ -333,4 +345,3 @@ export function useBulkDeletePostsMutation() {
     },
   });
 }
-

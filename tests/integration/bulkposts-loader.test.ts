@@ -27,13 +27,10 @@ vi.mock("~/features/user", () => ({
   getUserHashTagPresets: vi.fn(),
 }));
 
-import { getBulkPostsDashboardData } from "~/features/posts/server";
-import {
-  getQueueTypes,
-  getUserHashTagPresets,
-} from "~/features/user";
-
 import { TEST_USER_ID, createMockQueueType } from "../utils/test-helpers";
+
+import { getBulkPostsDashboardData } from "~/features/posts/server";
+import { getQueueTypes, getUserHashTagPresets } from "~/features/user";
 
 describe("Bulk Posts Loader", () => {
   beforeEach(() => {
@@ -52,10 +49,10 @@ describe("Bulk Posts Loader", () => {
     ];
 
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockQueueTypes,
+      mockQueueTypes
     );
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockHashTagPresets,
+      mockHashTagPresets
     );
 
     const result = await getBulkPostsDashboardData(TEST_USER_ID);
@@ -64,7 +61,7 @@ describe("Bulk Posts Loader", () => {
 
     expect(result.tags).toEqual(["#tag1", "#tag2", "#tag3"]);
     expect(result.queueTypes).toEqual(
-      mockQueueTypes.filter((qt) => qt.isEnabled !== false),
+      mockQueueTypes.filter((qt) => qt.isEnabled !== false)
     );
     expect(result.hashTagPresets).toEqual(mockHashTagPresets);
     expect(result.mode).toBe("preset"); // Has presets, so mode is "preset"
@@ -127,7 +124,7 @@ describe("Bulk Posts Loader", () => {
     ];
 
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockQueueTypes,
+      mockQueueTypes
     );
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 

@@ -27,7 +27,7 @@ describe("Rate Limiting", () => {
       socket: {
         remoteAddress: "127.0.0.1",
         // Dynamic import() type annotation needed for type reference
-        // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+        // eslint-disable-next-line @typescript-eslint/consistent-type-imports -- Dynamic import requires value import
       } as unknown as import("net").Socket,
       path: "/api/test",
       method: "GET",
@@ -81,21 +81,21 @@ describe("Rate Limiting", () => {
       await middleware(
         mockRequest as Request,
         mockResponse as Response,
-        mockNext,
+        mockNext
       );
       expect(mockNext).toHaveBeenCalled();
     });
 
     it("should handle Redis unavailability gracefully", async () => {
       // When Redis is not available, should skip rate limiting
-      const originalEnv = process.env.REDIS_URL;
-      delete process.env.REDIS_URL;
+      const originalEnv = process.env["REDIS_URL"];
+      delete process.env["REDIS_URL"];
 
       const middleware = createUserRateLimiter(100, 60);
       await middleware(
         mockRequest as Request,
         mockResponse as Response,
-        mockNext,
+        mockNext
       );
 
       // Should call next (skip rate limiting)
@@ -103,7 +103,7 @@ describe("Rate Limiting", () => {
 
       // Restore env
       if (originalEnv) {
-        process.env.REDIS_URL = originalEnv;
+        process.env["REDIS_URL"] = originalEnv;
       }
     });
   });
@@ -115,14 +115,14 @@ describe("Rate Limiting", () => {
     });
 
     it("should handle Redis unavailability gracefully", async () => {
-      const originalEnv = process.env.REDIS_URL;
-      delete process.env.REDIS_URL;
+      const originalEnv = process.env["REDIS_URL"];
+      delete process.env["REDIS_URL"];
 
       const middleware = createIPRateLimiter(100, 60);
       await middleware(
         mockRequest as Request,
         mockResponse as Response,
-        mockNext,
+        mockNext
       );
 
       // Should call next (skip rate limiting)
@@ -130,22 +130,22 @@ describe("Rate Limiting", () => {
 
       // Restore env
       if (originalEnv) {
-        process.env.REDIS_URL = originalEnv;
+        process.env["REDIS_URL"] = originalEnv;
       }
     });
   });
 
   describe("getRateLimitInfo", () => {
     it("should return null when Redis is not available", async () => {
-      const originalEnv = process.env.REDIS_URL;
-      delete process.env.REDIS_URL;
+      const originalEnv = process.env["REDIS_URL"];
+      delete process.env["REDIS_URL"];
 
       const info = await getRateLimitInfo("test-user-id");
       expect(info).toBeNull();
 
       // Restore env
       if (originalEnv) {
-        process.env.REDIS_URL = originalEnv;
+        process.env["REDIS_URL"] = originalEnv;
       }
     });
 
@@ -157,7 +157,7 @@ describe("Rate Limiting", () => {
       // If Redis is available, should return info or null
       // If not available, should return null
       expect(
-        info === null || (info && "remaining" in info && "resetTime" in info),
+        info === null || (info && "remaining" in info && "resetTime" in info)
       ).toBe(true);
     });
   });

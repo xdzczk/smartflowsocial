@@ -13,7 +13,7 @@ let sentryInitialized = false;
  */
 export function initSentry(): void {
   // Only initialize if DSN is provided and not already initialized
-  if (sentryInitialized || !process.env.SENTRY_DSN) {
+  if (sentryInitialized || !process.env["SENTRY_DSN"]) {
     return;
   }
 
@@ -35,8 +35,8 @@ export function initSentry(): void {
     };
 
     Sentry.init({
-      dsn: process.env.SENTRY_DSN,
-      environment: process.env.NODE_ENV ?? "development",
+      dsn: process.env["SENTRY_DSN"],
+      environment: process.env["NODE_ENV"] ?? "development",
       // Adjust traces sample rate based on environment
       tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
       // Enable profiling in production (optional)
@@ -82,9 +82,9 @@ export function captureException(
     extra?: Record<string, unknown>;
     user?: { id?: string; email?: string };
     level?: "fatal" | "error" | "warning" | "info" | "debug";
-  },
+  }
 ): void {
-  if (!sentryInitialized || !process.env.SENTRY_DSN) {
+  if (!sentryInitialized || !process.env["SENTRY_DSN"]) {
     return;
   }
 
@@ -115,9 +115,9 @@ export function captureMessage(
   context?: {
     tags?: Record<string, string>;
     extra?: Record<string, unknown>;
-  },
+  }
 ): void {
-  if (!sentryInitialized || !process.env.SENTRY_DSN) {
+  if (!sentryInitialized || !process.env["SENTRY_DSN"]) {
     return;
   }
 
@@ -145,7 +145,7 @@ export function setUser(user: {
   email?: string;
   username?: string;
 }): void {
-  if (!sentryInitialized || !process.env.SENTRY_DSN) {
+  if (!sentryInitialized || !process.env["SENTRY_DSN"]) {
     return;
   }
 
@@ -168,7 +168,7 @@ export function setUser(user: {
  * Clear user context
  */
 export function clearUser(): void {
-  if (!sentryInitialized || !process.env.SENTRY_DSN) {
+  if (!sentryInitialized || !process.env["SENTRY_DSN"]) {
     return;
   }
 

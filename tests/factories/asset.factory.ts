@@ -20,7 +20,7 @@ export interface AssetFactoryOptions {
 }
 
 export class AssetFactory {
-  private options: AssetFactoryOptions;
+  private readonly options: AssetFactoryOptions;
 
   constructor(options: AssetFactoryOptions = {}) {
     this.options = {
@@ -130,7 +130,7 @@ export const assetFactory = {
    */
   many: (count: number, overrides?: AssetFactoryOptions) => {
     return Array.from({ length: count }, (_, i) =>
-      new AssetFactory({ ...overrides, id: `asset-${i + 1}` }).build(),
+      new AssetFactory({ ...overrides, id: `asset-${i + 1}` }).build()
     );
   },
 };

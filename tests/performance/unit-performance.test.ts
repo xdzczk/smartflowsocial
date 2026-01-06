@@ -7,11 +7,12 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+import { postFactory, longFormPostFactory } from "../factories";
+
 import { combineContent } from "~/features/posts/combined.server";
 import { getPostStats } from "~/features/posts/stats.server";
 import type { PostData, LongFormPostData } from "~/features/posts/types";
 
-import { postFactory, longFormPostFactory } from "../factories";
 describe("Performance: combineContent()", () => {
   it("should handle small arrays (< 100 items) in < 50ms", () => {
     const posts = postFactory.many(50);
@@ -20,7 +21,7 @@ describe("Performance: combineContent()", () => {
     const start = performance.now();
     const result = combineContent(
       posts as PostData[],
-      longforms as LongFormPostData[],
+      longforms as LongFormPostData[]
     );
     const duration = performance.now() - start;
 
@@ -35,7 +36,7 @@ describe("Performance: combineContent()", () => {
     const start = performance.now();
     const result = combineContent(
       posts as PostData[],
-      longforms as LongFormPostData[],
+      longforms as LongFormPostData[]
     );
     const duration = performance.now() - start;
 
@@ -50,7 +51,7 @@ describe("Performance: combineContent()", () => {
     const start = performance.now();
     const result = combineContent(
       posts as PostData[],
-      longforms as LongFormPostData[],
+      longforms as LongFormPostData[]
     );
     const duration = performance.now() - start;
 
@@ -66,7 +67,7 @@ describe("Performance: combineContent()", () => {
     const result = combineContent(
       posts as PostData[],
       longforms as LongFormPostData[],
-      "createdAt",
+      "createdAt"
     );
     const duration = performance.now() - start;
 
@@ -83,7 +84,7 @@ describe("Performance: combineContent()", () => {
       posts as PostData[],
       longforms as LongFormPostData[],
       "createdAt",
-      "asc",
+      "asc"
     );
     const duration = performance.now() - start;
 

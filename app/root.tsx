@@ -31,8 +31,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       user: await getUser(request),
       // Expose Sentry DSN to client (safe - it's a public key)
       ENV: {
-        SENTRY_DSN: process.env.SENTRY_DSN ?? null,
-        NODE_ENV: process.env.NODE_ENV ?? "development",
+        SENTRY_DSN: process.env["SENTRY_DSN"] ?? null,
+        NODE_ENV: process.env["NODE_ENV"] ?? "development",
       },
     });
   } catch (error) {

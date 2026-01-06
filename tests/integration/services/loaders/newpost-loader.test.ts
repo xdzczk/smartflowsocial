@@ -20,6 +20,8 @@ vi.mock("~/features/user", () => ({
   getUserHashTagPresets: vi.fn(),
 }));
 
+import { TEST_USER_ID } from "../../../utils/test-helpers";
+
 import { requireAnySubscription } from "~/features/payments/subscriptions.server";
 import { loadNewPostData } from "~/features/posts/services/newpost-loader.server";
 import {
@@ -28,8 +30,6 @@ import {
   getUserHashTagPresets,
 } from "~/features/user";
 import { getAssets } from "~/models/asset.server";
-
-import { TEST_USER_ID } from "../../../utils/test-helpers";
 
 describe("New Post Loader", () => {
   beforeEach(() => {
@@ -48,16 +48,16 @@ describe("New Post Loader", () => {
     };
 
     (requireAnySubscription as ReturnType<typeof vi.fn>).mockResolvedValue(
-      undefined,
+      undefined
     );
     (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockScheduleIntervals,
+      mockScheduleIntervals
     );
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockQueueTypes,
+      mockQueueTypes
     );
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockHashTagPresets,
+      mockHashTagPresets
     );
     (getAssets as ReturnType<typeof vi.fn>).mockResolvedValue(mockAssets);
 
@@ -72,7 +72,7 @@ describe("New Post Loader", () => {
 
   it("should require subscription before loading", async () => {
     (requireAnySubscription as ReturnType<typeof vi.fn>).mockRejectedValue(
-      new Error("Subscription required"),
+      new Error("Subscription required")
     );
     (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
@@ -85,11 +85,7 @@ describe("New Post Loader", () => {
     });
 
     await expect(loadNewPostData(TEST_USER_ID)).rejects.toThrow(
-      "Subscription required",
+      "Subscription required"
     );
   });
 });
-
-
-
-

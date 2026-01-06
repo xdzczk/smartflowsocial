@@ -60,7 +60,7 @@ function displayLabel(user: UserWithProfile | null | undefined): string {
 }
 
 function displayPicture(
-  user: UserWithProfile | null | undefined,
+  user: UserWithProfile | null | undefined
 ): string | undefined {
   try {
     let p: ProfileData | null | undefined;
@@ -106,14 +106,14 @@ export default function AccountSwitchMenu() {
   // Safely handle potentially undefined subscription values
   const planId =
     (subscription?.currentSubscription?.planId ?? "")
-      ?.toString?.()
-      .toLowerCase?.() ?? "";
+      .toString()
+      .toLowerCase() ?? "";
   const planName =
     (subscription?.currentSubscription?.Plan?.name ?? "")
-      ?.toString?.()
-      .toLowerCase?.() ?? "";
-  const isChild = !!user?.isChild;
-  const parentNpub = user?.parentNpub as string | undefined;
+      .toString()
+      .toLowerCase() ?? "";
+  const isChild = !!user?.["isChild"];
+  const parentNpub = user?.["parentNpub"] as string | undefined;
   const hasAccountsAccess =
     !isChild &&
     (planId === "premium" || planName === "premium" || planName === "founder");
@@ -176,7 +176,7 @@ export default function AccountSwitchMenu() {
       const { handleErrorSafely } = require("~/lib/error-handler.client") as {
         handleErrorSafely: (
           error: unknown,
-          context: { component: string; action: string },
+          context: { component: string; action: string }
         ) => void;
       };
       handleErrorSafely(e, {
@@ -227,7 +227,7 @@ export default function AccountSwitchMenu() {
       const { handleErrorSafely } = require("~/lib/error-handler.client") as {
         handleErrorSafely: (
           error: unknown,
-          context: { component: string; action: string },
+          context: { component: string; action: string }
         ) => void;
       };
       handleErrorSafely(e, {
@@ -262,7 +262,7 @@ export default function AccountSwitchMenu() {
               {currentAvatar ? (
                 <AvatarImage src={currentAvatar} alt={currentLabel} />
               ) : (
-                <AvatarFallback>{currentLabel?.[0] || "U"}</AvatarFallback>
+                <AvatarFallback>{currentLabel?.[0] ?? "U"}</AvatarFallback>
               )}
             </Avatar>
             <div className="min-w-0">

@@ -14,13 +14,13 @@ interface SendNostrDirectMessageResult {
 
 export async function sendNostrDirectMessage(
   receiverPubkey: string,
-  content: string,
+  content: string
 ): Promise<SendNostrDirectMessageResult | false> {
   try {
     if (!content) {
       return Promise.resolve(false);
     }
-    const nsecEnv = process.env.NOSTR_NSEC;
+    const nsecEnv = process.env["NOSTR_NSEC"];
     if (!nsecEnv) {
       return Promise.resolve({
         success: false,
@@ -49,13 +49,13 @@ export async function sendNostrDirectMessage(
       } else {
         // Assume hex string
         privateKeyBytes = new Uint8Array(
-          nsecHex.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) ?? [],
+          nsecHex.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) ?? []
         );
       }
     } catch {
       // Fallback: treat as hex string
       privateKeyBytes = new Uint8Array(
-        nsecHex.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) ?? [],
+        nsecHex.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) ?? []
       );
     }
 
@@ -75,7 +75,7 @@ export async function sendNostrDirectMessage(
         {
           receiverPubkey,
           error: e instanceof Error ? e.message : String(e),
-        },
+        }
       );
     }
 
@@ -83,7 +83,7 @@ export async function sendNostrDirectMessage(
     const encryptedContent: string = nip04.encrypt(
       nsecHex,
       receiverHex,
-      content,
+      content
     );
 
     // Create event template
@@ -100,7 +100,7 @@ export async function sendNostrDirectMessage(
     const signedEvent = finalizeEvent(eventTemplate, privateKeyBytes);
 
     // Send the event to the publisher
-    const publisherUrl = process.env.NOSTR_PUBLISHER_URL;
+    const publisherUrl = process.env["NOSTR_PUBLISHER_URL"];
     if (!publisherUrl) {
       return {
         success: false,

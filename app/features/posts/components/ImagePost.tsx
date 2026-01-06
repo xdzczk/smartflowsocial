@@ -19,7 +19,7 @@ interface ImagePostProps {
   setFiles: React.Dispatch<React.SetStateAction<File[]>>;
   setShowImagePreview: (show: boolean) => void;
   setPreparedImageEvent: (data: PreparedEventData[]) => void;
-  queueTypes?: (string | QueueType)[];
+  queueTypes?: Array<string | QueueType>;
   onQueueTypeChange?: (queueType: string) => void;
 }
 
@@ -33,7 +33,11 @@ export default function ImagePost({
 }: ImagePostProps) {
   interface FetcherData {
     success?: boolean;
-    fileUrls?: { fileUrl: string; scheduledFor: string; queueType: string }[];
+    fileUrls?: Array<{
+      fileUrl: string;
+      scheduledFor: string;
+      queueType: string;
+    }>;
     error?: string;
   }
 
@@ -66,7 +70,7 @@ export default function ImagePost({
             return await resizeImage(file);
           }
           return file;
-        }),
+        })
       );
       setFiles((prev: File[]) => [...prev, ...processedFiles]);
     } catch (error: unknown) {
@@ -80,7 +84,7 @@ export default function ImagePost({
           component: "ImagePost",
           action: "handleFileChange",
         },
-        false, // Don't show toast, we call toast.error instead
+        false // Don't show toast, we call toast.error instead
       );
       toast.error("Error processing images. Using original files.");
       setFiles((prev: File[]) => [...prev, ...selectedFiles]);
@@ -93,7 +97,7 @@ export default function ImagePost({
     if (droppedFiles.length > 0) {
       // Check if files are images
       const imageFiles = droppedFiles.filter((file) =>
-        file.type.startsWith("image/"),
+        file.type.startsWith("image/")
       );
       if (imageFiles.length === 0) {
         toast.error("Please drop only image files");
@@ -103,7 +107,7 @@ export default function ImagePost({
       // Process files to remove metadata for privacy
       try {
         const processedFiles = await Promise.all(
-          imageFiles.map(async (file) => await resizeImage(file)),
+          imageFiles.map(async (file) => await resizeImage(file))
         );
         setFiles((prev: File[]) => [...prev, ...processedFiles]);
       } catch (error: unknown) {
@@ -117,7 +121,7 @@ export default function ImagePost({
             component: "ImagePost",
             action: "handleDrop",
           },
-          false, // Don't show toast, we call toast.error instead
+          false // Don't show toast, we call toast.error instead
         );
         toast.error("Error processing images. Using original files.");
         setFiles((prev: File[]) => [...prev, ...imageFiles]);
@@ -231,7 +235,7 @@ export default function ImagePost({
         console.error("Error calculating schedule time:", error);
       }
     },
-    [queueTypes, user],
+    [queueTypes, user]
   );
 
   useEffect(() => {
@@ -279,7 +283,7 @@ export default function ImagePost({
         ? parseInt(intervalHours, 10)
         : intervalHours;
     const hoursLater = new Date(
-      now.getTime() + intervalHoursNum * 60 * 60 * 1000,
+      now.getTime() + intervalHoursNum * 60 * 60 * 1000
     );
 
     // Format the date in the user's timezone
@@ -302,10 +306,13 @@ export default function ImagePost({
 
     // Parse the formatted date back into components
     const [datePart, timePart] = formattedDate.split(", ");
-    const [month, day, year] = datePart.split("/");
-    const [hours, minutes] = timePart.split(":");
+    const [month, day, year] = datePart?.split("/") ?? ["", "", ""];
+    const [hours, minutes] = timePart?.split(":") ?? ["", ""];
 
     // Create the datetime-local format (YYYY-MM-DDTHH:mm)
+    if (!year || !month || !day || !hours || !minutes) {
+      return "";
+    }
     const formattedForInput = `${year}-${month}-${day}T${hours}:${minutes}`;
 
     setScheduledFor(formattedForInput);
@@ -384,7 +391,7 @@ export default function ImagePost({
       className="w-full"
       encType="multipart/form-data"
       onSubmit={(e) => {
-        void handleImagePreview(e);
+        handleImagePreview(e);
       }}
     >
       <input type="hidden" name="_action" value="upload-images-preview" />
@@ -500,11 +507,9 @@ export default function ImagePost({
               {/* Queue types */}
               {queueTypes
                 .filter((queue) => {
-                  const isEnabled =
-                    typeof queue === "object"
-                      ? queue.isEnabled !== false
-                      : true;
-                  return isEnabled;
+                  return typeof queue === "object"
+                    ? queue.isEnabled !== false
+                    : true;
                 })
                 .map((queue) => {
                   const queueName =

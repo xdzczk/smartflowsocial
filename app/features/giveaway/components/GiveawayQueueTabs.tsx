@@ -42,6 +42,7 @@ export function GiveawayQueueTabs({
           const queueColor =
             typeof queueType === "object" ? queueType.color : null;
           const colors = getQueueColor(queueName, queueColor);
+          const safeColors = colors ?? getQueueColor("unassigned");
           const isSelected = currentQueueType === queueName;
 
           const baseClasses =
@@ -76,7 +77,7 @@ export function GiveawayQueueTabs({
               onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
               className={`${baseClasses} ${
                 isSelected
-                  ? `border-blue-500 ${colors.text}`
+                  ? `border-blue-500 ${safeColors?.text ?? ""}`
                   : unselectedClasses
               }`}
             >

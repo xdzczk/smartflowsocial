@@ -11,7 +11,7 @@ export interface PostStats {
 }
 
 export async function getPostStats(
-  eventIds: string[],
+  eventIds: string[]
 ): Promise<Record<string, PostStats>> {
   let stats: Record<string, PostStats> = {};
 
@@ -27,7 +27,7 @@ export async function getPostStats(
     const statsPromises = eventIds.map(async (eventId) => {
       // Read directly from process.env to support test environment changes
       const primalUrl =
-        process.env.PRIMAL_CACHING_URL ?? env.PRIMAL_CACHING_URL;
+        process.env["PRIMAL_CACHING_URL"] ?? env.PRIMAL_CACHING_URL;
       if (!primalUrl) {
         throw new Error("PRIMAL_CACHING_URL environment variable is not set");
       }
@@ -99,28 +99,28 @@ export async function getPostStats(
               const parsedObj = parsed as Record<string, unknown>;
               content = {
                 likes:
-                  typeof parsedObj.likes === "number"
-                    ? parsedObj.likes
+                  typeof parsedObj["likes"] === "number"
+                    ? parsedObj["likes"]
                     : undefined,
                 replies:
-                  typeof parsedObj.replies === "number"
-                    ? parsedObj.replies
+                  typeof parsedObj["replies"] === "number"
+                    ? parsedObj["replies"]
                     : undefined,
                 mentions:
-                  typeof parsedObj.mentions === "number"
-                    ? parsedObj.mentions
+                  typeof parsedObj["mentions"] === "number"
+                    ? parsedObj["mentions"]
                     : undefined,
                 reposts:
-                  typeof parsedObj.reposts === "number"
-                    ? parsedObj.reposts
+                  typeof parsedObj["reposts"] === "number"
+                    ? parsedObj["reposts"]
                     : undefined,
                 zaps:
-                  typeof parsedObj.zaps === "number"
-                    ? parsedObj.zaps
+                  typeof parsedObj["zaps"] === "number"
+                    ? parsedObj["zaps"]
                     : undefined,
                 satszapped:
-                  typeof parsedObj.satszapped === "number"
-                    ? parsedObj.satszapped
+                  typeof parsedObj["satszapped"] === "number"
+                    ? parsedObj["satszapped"]
                     : undefined,
               };
             }

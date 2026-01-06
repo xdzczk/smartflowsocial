@@ -16,7 +16,10 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { updateBlossomMirrorsClientSchema } from "~/lib/validation";
 import { useZodFieldArray } from "~/lib/validation/hooks/useZodFieldArray";
-import { useZodForm, formDataToFormData } from "~/lib/validation/utils.client-safe";
+import {
+  useZodForm,
+  formDataToFormData,
+} from "~/lib/validation/utils.client-safe";
 
 interface BlossomMediaMirrorsSettingsProps {
   enableMirrorBlossom: boolean;
@@ -38,7 +41,12 @@ export function BlossomMediaMirrorsSettings({
   const { fields, append, remove } = useZodFieldArray<
     z.infer<typeof updateBlossomMirrorsClientSchema>,
     "mirrorUrls"
-  >(form as unknown as UseFormReturn<z.infer<typeof updateBlossomMirrorsClientSchema>>, "mirrorUrls");
+  >(
+    form as unknown as UseFormReturn<
+      z.infer<typeof updateBlossomMirrorsClientSchema>
+    >,
+    "mirrorUrls"
+  );
 
   const isSubmitting = fetcher.state === "submitting";
   const watchedMirrorUrls = form.watch("mirrorUrls");
@@ -71,7 +79,9 @@ export function BlossomMediaMirrorsSettings({
     const filteredUrls = data.mirrorUrls.filter((url: string) => url.trim());
 
     // Validate all non-empty URLs
-    const invalidUrls = filteredUrls.filter((url: string) => !validateUrl(url.trim()));
+    const invalidUrls = filteredUrls.filter(
+      (url: string) => !validateUrl(url.trim())
+    );
 
     if (invalidUrls.length > 0) {
       form.setError("mirrorUrls", {
@@ -82,21 +92,21 @@ export function BlossomMediaMirrorsSettings({
     }
 
     // Clean URLs by removing trailing slashes
-    const cleanedUrls = filteredUrls.map(cleanUrl);
+    const cleanedUrls = filteredUrls.map((url) => cleanUrl(url));
 
     const formData = formDataToFormData(
       {
         enableMirrorBlossom: data.enableMirrorBlossom,
         mirrorUrls: cleanedUrls.join("\n"),
       },
-      "update_blossom_mirrors",
+      "update_blossom_mirrors"
     );
 
     fetcher.submit(formData, { method: "post" });
   });
 
   const hasValidationErrors = watchedMirrorUrls.some(
-    (url) => url.trim() && !validateUrl(url.trim()),
+    (url) => url.trim() && !validateUrl(url.trim())
   );
 
   return (
@@ -110,7 +120,13 @@ export function BlossomMediaMirrorsSettings({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={(e) => { e.preventDefault(); void onSubmit(e); }} className="space-y-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void onSubmit(e);
+          }}
+          className="space-y-4"
+        >
           <div className="flex items-center space-x-2">
             <Checkbox
               id="enableMirrorBlossom"
@@ -144,7 +160,8 @@ export function BlossomMediaMirrorsSettings({
                         if (value.trim() && !validateUrl(value.trim())) {
                           form.setError(`mirrorUrls.${index}`, {
                             type: "manual",
-                            message: "Must start with https:// and be a valid URL",
+                            message:
+                              "Must start with https:// and be a valid URL",
                           });
                         } else {
                           form.clearErrors(`mirrorUrls.${index}`);
@@ -182,10 +199,12 @@ export function BlossomMediaMirrorsSettings({
                   Add Mirror URL
                 </Button>
               </div>
-              {form.formState.errors.mirrorUrls ? <p className="text-sm text-destructive">
+              {form.formState.errors.mirrorUrls ? (
+                <p className="text-sm text-destructive">
                   {form.formState.errors.mirrorUrls.message ??
                     "Please fix validation errors"}
-                </p> : null}
+                </p>
+              ) : null}
               <p className="text-xs text-muted-foreground">
                 Add Blossom mirror URLs one by one
               </p>

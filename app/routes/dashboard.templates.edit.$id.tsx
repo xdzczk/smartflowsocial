@@ -14,7 +14,7 @@ import { formatDate, getImageUrls } from "~/lib/helpers";
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
     const userId = await requireUserId(request);
-    const templateId = params.id;
+    const templateId = params["id"];
 
     if (!templateId) {
       const { ValidationError } = await import("~/lib/errors");
@@ -33,28 +33,30 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 }
 
-export const action = withCSRFProtection(async ({ request, params }: ActionFunctionArgs) => {
-  try {
-    const userId = await requireUserId(request);
-    const templateId = params.id;
+export const action = withCSRFProtection(
+  async ({ request, params }: ActionFunctionArgs) => {
+    try {
+      const userId = await requireUserId(request);
+      const templateId = params["id"];
 
-    if (!templateId) {
-      const { ValidationError } = await import("~/lib/errors");
-      throw new ValidationError("Template ID is required");
-    }
+      if (!templateId) {
+        const { ValidationError } = await import("~/lib/errors");
+        throw new ValidationError("Template ID is required");
+      }
 
-    const formData = await request.formData();
-    return handleTemplateEditAction(formData, templateId, userId);
-  } catch (error) {
-    // If error is a Response (e.g., redirect from requireUserId), return it
-    if (error instanceof Response) {
-      return error;
+      const formData = await request.formData();
+      return handleTemplateEditAction(formData, templateId, userId);
+    } catch (error) {
+      // If error is a Response (e.g., redirect from requireUserId), return it
+      if (error instanceof Response) {
+        return error;
+      }
+      // Use dynamic import to avoid bundling issues
+      const { handleActionError } = await import("~/lib/error-handler.server");
+      return handleActionError(error);
     }
-    // Use dynamic import to avoid bundling issues
-    const { handleActionError } = await import("~/lib/error-handler.server");
-    return handleActionError(error);
   }
-});
+);
 
 type LoaderData = Awaited<ReturnType<typeof loader>>;
 
@@ -75,12 +77,12 @@ export default function EditTemplate() {
   const removePostFetcher = useFetcher();
   const deleteTemplateFetcher = useFetcher();
   const scheduleFetcher = useFetcher<{
-    scheduleData?: {
+    scheduleData?: Array<{
       caption: string;
       fileUrl: string[];
       queueType: string;
       scheduledFor: string;
-    }[];
+    }>;
   }>();
 
   const templateNameValue =
@@ -118,7 +120,7 @@ export default function EditTemplate() {
       // Store schedule data in sessionStorage
       sessionStorage.setItem(
         "repostData",
-        JSON.stringify(fetcherData.scheduleData),
+        JSON.stringify(fetcherData.scheduleData)
       );
       // Navigate to bulk posts page
       window.location.href = "/dashboard/bulkposts?mode=repost";
@@ -150,7 +152,7 @@ export default function EditTemplate() {
   const handleDeleteTemplate = () => {
     if (
       !confirm(
-        "Are you sure you want to delete this template? This action cannot be undone.",
+        "Are you sure you want to delete this template? This action cannot be undone."
       )
     ) {
       return;
@@ -392,7 +394,15 @@ export default function EditTemplate() {
                         <div className="flex items-center gap-2">
                           {postQueueType ? (
                             <span
-                              className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium capitalize ${getQueueColor(queueTypeName, queueTypeColor).bg} ${getQueueColor(queueTypeName, queueTypeColor).text}`}
+                              className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium capitalize ${(() => {
+                                const colors = getQueueColor(
+                                  queueTypeName,
+                                  queueTypeColor
+                                );
+                                return colors
+                                  ? `${colors.bg} ${colors.text}`
+                                  : "";
+                              })()}`}
                             >
                               {queueTypeName}
                             </span>

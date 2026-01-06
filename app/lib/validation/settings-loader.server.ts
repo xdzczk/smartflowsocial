@@ -20,7 +20,7 @@ import {
  * Returns null if validation fails
  */
 export function validateSubscription(
-  value: unknown,
+  value: unknown
 ): z.infer<typeof subscriptionSchema> | null {
   if (!value || typeof value !== "object") {
     return null;
@@ -44,13 +44,13 @@ export function validateSubscription(
  * Returns empty array if validation fails
  */
 export function validateAvailablePlans(
-  value: unknown,
-): z.infer<typeof availablePlanSchema>[] {
+  value: unknown
+): Array<z.infer<typeof availablePlanSchema>> {
   if (!Array.isArray(value)) {
     return [];
   }
 
-  const validated: z.infer<typeof availablePlanSchema>[] = [];
+  const validated: Array<z.infer<typeof availablePlanSchema>> = [];
 
   for (const item of value) {
     try {
@@ -74,13 +74,13 @@ export function validateAvailablePlans(
  * Returns empty array if validation fails
  */
 export function validatePaymentHistory(
-  value: unknown,
-): z.infer<typeof paymentHistoryItemSchema>[] {
+  value: unknown
+): Array<z.infer<typeof paymentHistoryItemSchema>> {
   if (!Array.isArray(value)) {
     return [];
   }
 
-  const validated: z.infer<typeof paymentHistoryItemSchema>[] = [];
+  const validated: Array<z.infer<typeof paymentHistoryItemSchema>> = [];
 
   for (const item of value) {
     try {
@@ -104,13 +104,13 @@ export function validatePaymentHistory(
  * Returns empty array if validation fails
  */
 export function validateAccountChildren(
-  value: unknown,
-): z.infer<typeof accountChildSchema>[] {
+  value: unknown
+): Array<z.infer<typeof accountChildSchema>> {
   if (!Array.isArray(value)) {
     return [];
   }
 
-  const validated: z.infer<typeof accountChildSchema>[] = [];
+  const validated: Array<z.infer<typeof accountChildSchema>> = [];
 
   for (const item of value) {
     try {
@@ -134,7 +134,7 @@ export function validateAccountChildren(
  * Returns null if validation fails
  */
 export function validateAccounts(
-  value: unknown,
+  value: unknown
 ): z.infer<typeof accountsSchema> {
   if (!value || typeof value !== "object") {
     return null;
@@ -152,4 +152,3 @@ export function validateAccounts(
     return null;
   }
 }
-

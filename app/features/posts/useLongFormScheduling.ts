@@ -9,7 +9,7 @@ interface QueueType {
 }
 
 interface UseLongFormSchedulingOptions {
-  queueTypes: (string | QueueType)[];
+  queueTypes: Array<string | QueueType>;
   scheduleIntervals: number[];
   userTags: string;
   userTimezone: string;
@@ -38,7 +38,7 @@ export function useLongFormScheduling({
 
       // Find the queue type object to get its ID
       const selectedQueue = queueTypes.find(
-        (qt) => (typeof qt === "string" ? qt : qt.name) === queueTypeName,
+        (qt) => (typeof qt === "string" ? qt : qt.name) === queueTypeName
       );
       const queueTypeId =
         typeof selectedQueue === "object" ? selectedQueue.id : null;
@@ -78,7 +78,7 @@ export function useLongFormScheduling({
         });
       }
     },
-    [queueTypes],
+    [queueTypes]
   );
 
   const updateDisplayedHashtags = useCallback(
@@ -135,14 +135,14 @@ export function useLongFormScheduling({
         setDisplayedHashtags(userTags);
       }
     },
-    [userTags, onQueueTypeChange, calculateQueueScheduleTime],
+    [userTags, onQueueTypeChange, calculateQueueScheduleTime]
   );
 
   const handleScheduleIntervalClick = useCallback(
     (intervalHours: number) => {
       // Find the currently selected queue type
       const currentQueueType = queueTypes.find(
-        (qt) => (typeof qt === "string" ? qt : qt.name) === selectedQueueType,
+        (qt) => (typeof qt === "string" ? qt : qt.name) === selectedQueueType
       );
 
       // If this is a fixed slot queue, use the API to get the next scheduled time instead
@@ -158,7 +158,7 @@ export function useLongFormScheduling({
 
       const now = new Date();
       const hoursLater = new Date(
-        now.getTime() + intervalHours * 60 * 60 * 1000,
+        now.getTime() + intervalHours * 60 * 60 * 1000
       );
 
       // Format the date in the user's timezone
@@ -174,15 +174,18 @@ export function useLongFormScheduling({
 
       // Parse the formatted date back into components
       const [datePart, timePart] = formattedDate.split(", ");
-      const [month, day, year] = datePart.split("/");
-      const [hours, minutes] = timePart.split(":");
+      const [month, day, year] = datePart?.split("/") ?? ["", "", ""];
+      const [hours, minutes] = timePart?.split(":") ?? ["", ""];
 
       // Create the datetime-local format (YYYY-MM-DDTHH:mm)
+      if (!year || !month || !day || !hours || !minutes) {
+        return "";
+      }
       const formattedForInput = `${year}-${month}-${day}T${hours}:${minutes}`;
 
       setScheduledFor(formattedForInput);
     },
-    [queueTypes, selectedQueueType, userTimezone, calculateQueueScheduleTime],
+    [queueTypes, selectedQueueType, userTimezone, calculateQueueScheduleTime]
   );
 
   return {

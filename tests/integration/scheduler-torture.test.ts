@@ -8,11 +8,12 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+import { TEST_USER_ID } from "../utils/test-helpers";
+
 import { calculateNextScheduleTime } from "~/features/posts/schedulers";
 import { getScheduleInterval } from "~/features/user";
 import { getLastPostTimeForQueue } from "~/models/post.queries.server";
 
-import { TEST_USER_ID } from "../utils/test-helpers";
 // Mock dependencies
 vi.mock("~/models/post.queries.server", () => ({
   getLastPostTimeForQueue: vi.fn(),
@@ -47,7 +48,7 @@ describe("Scheduler Torture Tests", () => {
       };
 
       (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null,
+        null
       );
 
       const result = await calculateNextScheduleTime({
@@ -78,7 +79,7 @@ describe("Scheduler Torture Tests", () => {
       };
 
       (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null,
+        null
       );
 
       const result = await calculateNextScheduleTime({
@@ -111,7 +112,7 @@ describe("Scheduler Torture Tests", () => {
       // Last post was 1 hour ago (before DST transition)
       const lastPostTime = new Date("2024-03-31T00:00:00.000Z");
       (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
-        lastPostTime,
+        lastPostTime
       );
 
       const result = await calculateNextScheduleTime({
@@ -148,7 +149,7 @@ describe("Scheduler Torture Tests", () => {
         };
 
         (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
-          null,
+          null
         );
 
         const result = await calculateNextScheduleTime({
@@ -182,7 +183,7 @@ describe("Scheduler Torture Tests", () => {
       };
 
       (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
-        veryOldLastPost,
+        veryOldLastPost
       );
 
       const result = await calculateNextScheduleTime({
@@ -213,7 +214,7 @@ describe("Scheduler Torture Tests", () => {
       };
 
       (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
-        lastPost,
+        lastPost
       );
 
       const result = await calculateNextScheduleTime({
@@ -242,7 +243,7 @@ describe("Scheduler Torture Tests", () => {
       };
 
       (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null,
+        null
       );
 
       const result = await calculateNextScheduleTime({
@@ -274,7 +275,7 @@ describe("Scheduler Torture Tests", () => {
       };
 
       (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null,
+        null
       );
 
       // Simulate concurrent calls
@@ -326,7 +327,7 @@ describe("Scheduler Torture Tests", () => {
       };
 
       (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null,
+        null
       );
 
       // Rapid successive calls
@@ -336,7 +337,7 @@ describe("Scheduler Torture Tests", () => {
           userId: TEST_USER_ID,
           userTimezone: "UTC",
           baseTime,
-        }),
+        })
       );
 
       const results = await Promise.all(promises);
@@ -364,7 +365,7 @@ describe("Scheduler Torture Tests", () => {
 
       // Simulate database error
       (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Database connection failed"),
+        new Error("Database connection failed")
       );
 
       const result = await calculateNextScheduleTime({
@@ -389,7 +390,7 @@ describe("Scheduler Torture Tests", () => {
       };
 
       (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null,
+        null
       );
 
       // Invalid timezone should fallback to UTC
@@ -414,7 +415,7 @@ describe("Scheduler Torture Tests", () => {
       };
 
       (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null,
+        null
       );
 
       const result = await calculateNextScheduleTime({
@@ -443,7 +444,7 @@ describe("Scheduler Torture Tests", () => {
       };
 
       (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null,
+        null
       );
 
       const result = await calculateNextScheduleTime({
@@ -472,7 +473,7 @@ describe("Scheduler Torture Tests", () => {
       };
 
       (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null,
+        null
       );
 
       const result = await calculateNextScheduleTime({

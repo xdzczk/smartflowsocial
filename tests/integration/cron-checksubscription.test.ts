@@ -77,11 +77,11 @@ describe("Cron Subscription Checker", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.OWNER_NWC = "test-owner-nwc";
+    process.env["OWNER_NWC"] = "test-owner-nwc";
     // Reset LN mock to default implementation - use function, not arrow, so it works as constructor
     const lnMock = LN as unknown as {
       mockImplementation: (
-        fn: (credentials: string) => InstanceType<typeof MockLN>,
+        fn: (credentials: string) => InstanceType<typeof MockLN>
       ) => void;
     };
     lnMock.mockImplementation(function (credentials: string) {
@@ -117,7 +117,7 @@ describe("Cron Subscription Checker", () => {
         getEnabledUsersWithSubscriptions as ReturnType<typeof vi.fn>
       ).mockResolvedValue(users);
       (disableUserAccount as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
 
       const { loader } = await import("~/routes/cron.checksubscription");
@@ -312,7 +312,7 @@ describe("Cron Subscription Checker", () => {
         status: "COMPLETED",
       });
       (updateUserSubscription as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
       (sendNostrDirectMessage as ReturnType<typeof vi.fn>).mockResolvedValue({
         success: true,
@@ -344,12 +344,12 @@ describe("Cron Subscription Checker", () => {
           amount: 0,
           amountUsd: 0,
           invoice: "free_plan_renewal",
-        }),
+        })
       );
       expect(updateUserSubscription).toHaveBeenCalledWith(
         TEST_USER_ID,
         TEST_PLAN_ID,
-        expect.stringContaining("free_renewal_"),
+        expect.stringContaining("free_renewal_")
       );
     });
 
@@ -393,7 +393,7 @@ describe("Cron Subscription Checker", () => {
       // Use a constructor function that returns the instance
       const lnMock = LN as unknown as {
         mockImplementation: (
-          fn: (credentials: string) => typeof mockLNInstance,
+          fn: (credentials: string) => typeof mockLNInstance
         ) => void;
       };
       lnMock.mockImplementation(function (_credentials: string) {
@@ -404,7 +404,7 @@ describe("Cron Subscription Checker", () => {
         getEnabledUsersWithSubscriptions as ReturnType<typeof vi.fn>
       ).mockResolvedValue(users);
       (decrypt as ReturnType<typeof vi.fn>).mockReturnValue(
-        "decrypted-user-nwc",
+        "decrypted-user-nwc"
       );
 
       const { loader } = await import("~/routes/cron.checksubscription");
@@ -517,7 +517,7 @@ describe("Cron Subscription Checker", () => {
         },
       ];
 
-      delete process.env.OWNER_NWC;
+      delete process.env["OWNER_NWC"];
 
       (
         getEnabledUsersWithSubscriptions as ReturnType<typeof vi.fn>
@@ -702,7 +702,7 @@ describe("Cron Subscription Checker", () => {
       expect(data.success).toBe(false);
       expect(data.errors).toBeDefined();
       expect(
-        errors.length > 0 && typeof errors[0] === "string" ? errors[0] : "",
+        errors.length > 0 && typeof errors[0] === "string" ? errors[0] : ""
       ).toContain("Database connection failed");
     });
   });

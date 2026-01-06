@@ -3,8 +3,7 @@
  * Provides caching and background refetching for drafts page
  */
 
-import { useFetcher, useLoaderData } from "@remix-run/react";
-import { useParams } from "@remix-run/react";
+import { useFetcher, useLoaderData, useParams } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 
 import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
@@ -15,10 +14,7 @@ import {
 
 import { combineContent } from "../combined";
 import type { PostDTO, LongFormPostDTO } from "../dtos";
-import {
-  fromPostDTOArray,
-  fromLongFormPostDTOArray,
-} from "../dtos";
+import { fromPostDTOArray, fromLongFormPostDTOArray } from "../dtos";
 import type {
   PostData,
   LongFormPostData,
@@ -34,8 +30,7 @@ import { convertJsonValueToScheduleConfig } from "../types";
 export const draftsKeys = {
   all: ["drafts"] as const,
   lists: () => [...draftsKeys.all, "list"] as const,
-  list: (queueType?: string) =>
-    [...draftsKeys.lists(), queueType] as const,
+  list: (queueType?: string) => [...draftsKeys.lists(), queueType] as const,
 };
 
 // DraftsLoaderData is now exported from schemas
@@ -45,15 +40,15 @@ export const draftsKeys = {
  */
 export function useDraftsQuery() {
   const params = useParams();
-  const queueType = params.queueType ?? "all";
-  
+  const queueType = params["queueType"] ?? "all";
+
   const loaderDataRaw = useLoaderData();
   const fetcher = useFetcher();
 
   // Validate initial loader data
   const validatedLoaderData = safeValidateLoaderResponse(
     loaderDataRaw,
-    draftsLoaderDataSchema,
+    draftsLoaderDataSchema
   );
 
   return useQuery({
@@ -61,14 +56,14 @@ export function useDraftsQuery() {
     queryFn: async () => {
       const url = `/dashboard/drafts${queueType !== "all" ? `/${queueType}` : ""}`;
       fetcher.load(url);
-      
+
       return new Promise<DraftsLoaderData>((resolve, reject) => {
         const checkFetcher = () => {
           if (fetcher.state === "idle") {
             if (fetcher.data) {
               const validated = safeValidateLoaderResponse(
                 fetcher.data,
-                draftsLoaderDataSchema,
+                draftsLoaderDataSchema
               );
               if (validated) {
                 resolve(validated);
@@ -102,7 +97,7 @@ export function useDraftsQuery() {
  */
 export function useDraftsData() {
   const { data, isLoading, error } = useDraftsQuery();
-  
+
   if (!data) {
     return {
       posts: [] as PostData[],
@@ -118,7 +113,9 @@ export function useDraftsData() {
 
   const typedData = data;
   const postsRaw =
-    "posts" in typedData && Array.isArray(typedData.posts) ? typedData.posts : [];
+    "posts" in typedData && Array.isArray(typedData.posts)
+      ? typedData.posts
+      : [];
   const longformPostsRaw =
     "longformPosts" in typedData && Array.isArray(typedData.longformPosts)
       ? typedData.longformPosts
@@ -128,7 +125,8 @@ export function useDraftsData() {
     "queueTypes" in typedData && Array.isArray(typedData.queueTypes)
       ? typedData.queueTypes
       : [];
-  const selectedQueueTypeRaw = "selectedQueueType" in typedData ? typedData.selectedQueueType : "all";
+  const selectedQueueTypeRaw =
+    "selectedQueueType" in typedData ? typedData.selectedQueueType : "all";
 
   const posts: PostData[] = Array.isArray(postsRaw)
     ? fromPostDTOArray(postsRaw as PostDTO[])
@@ -141,7 +139,7 @@ export function useDraftsData() {
     posts,
     longformPosts,
     "createdAt",
-    "desc",
+    "desc"
   );
   const queueTypes: QueueType[] = Array.isArray(queueTypesRaw)
     ? queueTypesRaw
@@ -173,11 +171,12 @@ export function useDraftsData() {
                 : null;
             const scheduleType =
               typeof q.scheduleType === "string" &&
-              (q.scheduleType === "INTERVAL" || q.scheduleType === "FIXED_SLOTS")
+              (q.scheduleType === "INTERVAL" ||
+                q.scheduleType === "FIXED_SLOTS")
                 ? q.scheduleType
                 : undefined;
             const scheduleConfig = convertJsonValueToScheduleConfig(
-              q.scheduleConfig,
+              q.scheduleConfig
             );
             const isEnabled =
               typeof q.isEnabled === "boolean"
@@ -200,7 +199,8 @@ export function useDraftsData() {
         })
         .filter((qt): qt is QueueType => qt !== null)
     : [];
-  const selectedQueueType = typeof selectedQueueTypeRaw === "string" ? selectedQueueTypeRaw : "all";
+  const selectedQueueType =
+    typeof selectedQueueTypeRaw === "string" ? selectedQueueTypeRaw : "all";
 
   return {
     posts,
@@ -213,4 +213,3 @@ export function useDraftsData() {
     error,
   };
 }
-

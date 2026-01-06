@@ -17,12 +17,12 @@ export function isPostStats(value: unknown): value is PostStats {
   // Check for PostStats structure
   const stats = value as Record<string, unknown>;
   return (
-    typeof stats.likes === "number" &&
-    typeof stats.replies === "number" &&
-    typeof stats.mentions === "number" &&
-    typeof stats.reposts === "number" &&
-    typeof stats.zaps === "number" &&
-    typeof stats.satszapped === "number"
+    typeof stats["likes"] === "number" &&
+    typeof stats["replies"] === "number" &&
+    typeof stats["mentions"] === "number" &&
+    typeof stats["reposts"] === "number" &&
+    typeof stats["zaps"] === "number" &&
+    typeof stats["satszapped"] === "number"
   );
 }
 

@@ -16,11 +16,11 @@ vi.mock("~/models/payment.server", () => ({
   checkPaymentStatus: vi.fn(),
 }));
 
+import { createFormData, TEST_USER_ID } from "../utils/test-helpers";
+
 import { requireUser } from "~/features/auth/session.server";
 import { handlePlansAction } from "~/features/payments/services/plans-action.server";
 import { createPlanInvoice, checkPaymentStatus } from "~/models/payment.server";
-
-import { createFormData, TEST_USER_ID } from "../utils/test-helpers";
 
 describe("Plans Action Handler", () => {
   beforeEach(() => {
@@ -90,7 +90,10 @@ describe("Plans Action Handler", () => {
 
       // Zod validation returns Response with error
       expect(result).toBeInstanceOf(Response);
-      const data = (await (result as Response).json()) as { error?: string; success?: boolean };
+      const data = (await (result as Response).json()) as {
+        error?: string;
+        success?: boolean;
+      };
       expect(data).toHaveProperty("error");
       expect(String(data.error)).toBeTruthy();
       expect(checkPaymentStatus).not.toHaveBeenCalled();
@@ -98,7 +101,7 @@ describe("Plans Action Handler", () => {
 
     it("should handle payment status check errors gracefully", async () => {
       (checkPaymentStatus as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Payment not found"),
+        new Error("Payment not found")
       );
 
       const formData = createFormData({
@@ -111,7 +114,7 @@ describe("Plans Action Handler", () => {
 
       expect(result).toEqual({
         success: false,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         error: expect.any(String),
       });
     });
@@ -131,7 +134,7 @@ describe("Plans Action Handler", () => {
       };
 
       (createPlanInvoice as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockInvoice,
+        mockInvoice
       );
 
       const formData = createFormData({
@@ -198,7 +201,10 @@ describe("Plans Action Handler", () => {
 
       // Zod validation returns Response with error
       expect(result).toBeInstanceOf(Response);
-      const data = (await (result as Response).json()) as { error?: string; success?: boolean };
+      const data = (await (result as Response).json()) as {
+        error?: string;
+        success?: boolean;
+      };
       expect(data).toHaveProperty("error");
       expect(String(data.error)).toBeTruthy();
       expect(createPlanInvoice).not.toHaveBeenCalled();
@@ -206,7 +212,7 @@ describe("Plans Action Handler", () => {
 
     it("should handle invoice creation errors", async () => {
       (createPlanInvoice as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Plan not found"),
+        new Error("Plan not found")
       );
 
       const formData = createFormData({
@@ -224,7 +230,7 @@ describe("Plans Action Handler", () => {
 
     it("should handle generic errors in invoice creation", async () => {
       (createPlanInvoice as ReturnType<typeof vi.fn>).mockRejectedValue(
-        "Unknown error",
+        "Unknown error"
       );
 
       const formData = createFormData({
@@ -252,13 +258,16 @@ describe("Plans Action Handler", () => {
 
       // Zod validation fails for invalid intent, returns Response with error
       expect(result).toBeInstanceOf(Response);
-      const data = (await (result as Response).json()) as { error?: string; success?: boolean };
+      const data = (await (result as Response).json()) as {
+        error?: string;
+        success?: boolean;
+      };
       expect(data).toHaveProperty("error");
     });
 
     it("should handle authentication errors for select_plan", async () => {
       (requireUser as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Authentication required"),
+        new Error("Authentication required")
       );
 
       const formData = createFormData({
@@ -269,7 +278,7 @@ describe("Plans Action Handler", () => {
       const request = new Request("http://localhost:3000/plans");
 
       await expect(handlePlansAction(formData, request)).rejects.toThrow(
-        "Authentication required",
+        "Authentication required"
       );
     });
   });

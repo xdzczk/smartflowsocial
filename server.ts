@@ -89,7 +89,7 @@ async function run() {
     void (async () => {
       // Validate token if provided
       const token =
-        req.query.token?.toString() ??
+        req.query["token"]?.toString() ??
         req.headers.authorization?.replace("Bearer ", "");
 
       if (env.METRICS_TOKEN) {
@@ -103,7 +103,9 @@ async function run() {
       if (env.METRICS_ALLOWED_IPS) {
         // Get client IP (handles proxies)
         const clientIp =
-          (req.headers["x-forwarded-for"] as string | undefined)?.split(",")[0]?.trim() ??
+          (req.headers["x-forwarded-for"] as string | undefined)
+            ?.split(",")[0]
+            ?.trim() ??
           (req.headers["x-real-ip"] as string | undefined) ??
           req.socket.remoteAddress ??
           req.ip ??
@@ -118,7 +120,7 @@ async function run() {
         }
 
         const allowedIps = env.METRICS_ALLOWED_IPS.split(",").map((ip) =>
-          ip.trim(),
+          ip.trim()
         );
 
         // Use ipaddr.js for proper CIDR matching (supports IPv4 and IPv6)
@@ -137,9 +139,12 @@ async function run() {
               // CIDR match (e.g., "10.0.0.0/8" or "2001:db8::/32")
               if (allowedIp.includes("/")) {
                 const [prefix, maskStr] = allowedIp.split("/");
+                if (!maskStr) {
+                  return false;
+                }
                 const mask = parseInt(maskStr, 10);
 
-                if (isNaN(mask) || mask < 0) {
+                if (isNaN(mask) || mask < 0 || !prefix) {
                   return false;
                 }
 
@@ -202,7 +207,7 @@ async function run() {
         env.NODE_ENV === "production"
       ) {
         console.warn(
-          "⚠️  Metrics endpoint is unprotected in production. Set METRICS_TOKEN or METRICS_ALLOWED_IPS.",
+          "⚠️  Metrics endpoint is unprotected in production. Set METRICS_TOKEN or METRICS_ALLOWED_IPS."
         );
         // Still allow access but log warning
       }
@@ -323,7 +328,7 @@ async function run() {
           camera: ["'none'"],
         },
       },
-    }),
+    })
   );
 
   // Additional custom security headers
@@ -343,7 +348,7 @@ async function run() {
     // Permissions-Policy: Control browser features (redundant with helmet, but explicit)
     res.setHeader(
       "Permissions-Policy",
-      "geolocation=(), microphone=(), camera=()",
+      "geolocation=(), microphone=(), camera=()"
     );
 
     next();
@@ -352,7 +357,7 @@ async function run() {
   // Remix fingerprints its assets so we can cache forever.
   app.use(
     "/build",
-    express.static("public/build", { immutable: true, maxAge: "1y" }),
+    express.static("public/build", { immutable: true, maxAge: "1y" })
   );
 
   // Everything else (like favicon.ico) is cached for an hour. You may want to be
@@ -413,7 +418,7 @@ async function run() {
   }
 
   async function createDevRequestHandler(
-    initialBuild: ServerBuild,
+    initialBuild: ServerBuild
   ): Promise<RequestHandler> {
     let build = initialBuild;
     async function handleServerUpdate() {

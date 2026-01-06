@@ -29,12 +29,15 @@ vi.mock("~/features/posts/services/dashboard-loader.server", () => ({
   loadDashboardData: vi.fn(),
 }));
 
+import {
+  createValidUserMock,
+  createValidPostDTOMock,
+} from "../utils/test-helpers";
+
 import { requireUserId } from "~/features/auth/session.server";
 import { requireFeatureAccess } from "~/features/payments/subscriptions.server";
 import { loadDashboardData } from "~/features/posts/services/dashboard-loader.server";
 import { loader } from "~/routes/dashboard._index";
-
-import { createValidUserMock, createValidPostDTOMock } from "../utils/test-helpers";
 
 describe("Dashboard Loader Integration", () => {
   beforeEach(() => {
@@ -43,7 +46,7 @@ describe("Dashboard Loader Integration", () => {
     // Default mocks
     (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue("user-123");
     (requireFeatureAccess as ReturnType<typeof vi.fn>).mockResolvedValue(
-      undefined,
+      undefined
     );
     (loadDashboardData as ReturnType<typeof vi.fn>).mockResolvedValue({
       scheduledPosts: [],
@@ -78,7 +81,7 @@ describe("Dashboard Loader Integration", () => {
       expect(requireUserId).toHaveBeenCalledWith(request);
       expect(requireFeatureAccess).toHaveBeenCalledWith(
         "user-123",
-        "dashboard",
+        "dashboard"
       );
       expect(loadDashboardData).toHaveBeenCalledWith("user-123", "all");
       expect(data).toHaveProperty("scheduledPosts");
@@ -106,7 +109,7 @@ describe("Dashboard Loader Integration", () => {
 
     it("should handle planActivated query parameter", async () => {
       const request = new Request(
-        "http://localhost:3000/dashboard?planActivated=true",
+        "http://localhost:3000/dashboard?planActivated=true"
       );
       const loaderArgs: LoaderFunctionArgs = {
         request,
@@ -121,13 +124,13 @@ describe("Dashboard Loader Integration", () => {
           : {};
 
       const planActivated =
-        typeof data.planActivated === "string" ? data.planActivated : "";
+        typeof data["planActivated"] === "string" ? data["planActivated"] : "";
       expect(planActivated).toBe("true");
     });
 
     it("should handle successMessage query parameter", async () => {
       const request = new Request(
-        "http://localhost:3000/dashboard?message=success",
+        "http://localhost:3000/dashboard?message=success"
       );
       const loaderArgs: LoaderFunctionArgs = {
         request,
@@ -142,13 +145,17 @@ describe("Dashboard Loader Integration", () => {
           : {};
 
       const successMessage =
-        typeof data.successMessage === "string" ? data.successMessage : "";
+        typeof data["successMessage"] === "string"
+          ? data["successMessage"]
+          : "";
       expect(successMessage).toBe("success");
     });
 
     it("should return proper data structure", async () => {
       const mockData = {
-        scheduledPosts: [createValidPostDTOMock({ id: "1", caption: "Test post" })],
+        scheduledPosts: [
+          createValidPostDTOMock({ id: "1", caption: "Test post" }),
+        ],
         longformPosts: [],
         user: createValidUserMock({ timezone: "America/New_York" }),
         queueTypes: [{ id: "1", name: "Default", isEnabled: true }],
@@ -161,7 +168,7 @@ describe("Dashboard Loader Integration", () => {
       };
 
       (loadDashboardData as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockData,
+        mockData
       );
 
       const request = new Request("http://localhost:3000/dashboard");
@@ -177,8 +184,8 @@ describe("Dashboard Loader Integration", () => {
           ? (dataRaw as Record<string, unknown>)
           : {};
 
-      const scheduledPosts = Array.isArray(data.scheduledPosts)
-        ? data.scheduledPosts
+      const scheduledPosts = Array.isArray(data["scheduledPosts"])
+        ? data["scheduledPosts"]
         : [];
       expect(scheduledPosts).toHaveLength(1);
       const firstPost =
@@ -189,18 +196,24 @@ describe("Dashboard Loader Integration", () => {
           : {};
       expect(firstPost).toHaveProperty("id", "1");
       const user =
-        data.user && typeof data.user === "object" && !Array.isArray(data.user)
-          ? (data.user as { timezone?: unknown })
+        data["user"] &&
+        typeof data["user"] === "object" &&
+        !Array.isArray(data["user"])
+          ? (data["user"] as { timezone?: unknown })
           : {};
       expect(user).toHaveProperty("timezone", "America/New_York");
-      const queueTypes = Array.isArray(data.queueTypes) ? data.queueTypes : [];
+      const queueTypes = Array.isArray(data["queueTypes"])
+        ? data["queueTypes"]
+        : [];
       expect(queueTypes).toHaveLength(1);
     });
   });
 
   describe("Dashboard Queue Filtering", () => {
     it("should handle 'all' queue type", async () => {
-      const request = new Request("http://localhost:3000/dashboard?queueType=all");
+      const request = new Request(
+        "http://localhost:3000/dashboard?queueType=all"
+      );
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
@@ -213,7 +226,9 @@ describe("Dashboard Loader Integration", () => {
     });
 
     it("should handle 'posts' queue type", async () => {
-      const request = new Request("http://localhost:3000/dashboard?queueType=posts");
+      const request = new Request(
+        "http://localhost:3000/dashboard?queueType=posts"
+      );
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
@@ -227,7 +242,7 @@ describe("Dashboard Loader Integration", () => {
 
     it("should handle 'longform' queue type", async () => {
       const request = new Request(
-        "http://localhost:3000/dashboard?queueType=longform",
+        "http://localhost:3000/dashboard?queueType=longform"
       );
       const loaderArgs: LoaderFunctionArgs = {
         request,
@@ -244,7 +259,7 @@ describe("Dashboard Loader Integration", () => {
   describe("Error Handling", () => {
     it("should handle authentication errors", async () => {
       (requireUserId as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Response("Authentication required", { status: 401 }),
+        new Response("Authentication required", { status: 401 })
       );
 
       const request = new Request("http://localhost:3000/dashboard");
@@ -260,7 +275,7 @@ describe("Dashboard Loader Integration", () => {
 
     it("should handle feature access errors", async () => {
       (requireFeatureAccess as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Response("Feature access denied", { status: 403 }),
+        new Response("Feature access denied", { status: 403 })
       );
 
       const request = new Request("http://localhost:3000/dashboard");
@@ -276,7 +291,7 @@ describe("Dashboard Loader Integration", () => {
 
     it("should handle data loading errors", async () => {
       (loadDashboardData as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Database error"),
+        new Error("Database error")
       );
 
       const request = new Request("http://localhost:3000/dashboard");

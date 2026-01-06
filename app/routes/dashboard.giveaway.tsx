@@ -27,11 +27,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     await requireFeatureAccess(userId, "giveaways");
 
     const url = new URL(request.url);
-    const queueType = params.queueType ?? "all";
+    const queueType = params["queueType"] ?? "all";
     const days = parseInt(url.searchParams.get("days") ?? "7");
 
-    const data = await loadGiveawayData(userId, queueType, days);
-    return data;
+    return await loadGiveawayData(userId, queueType, days);
   } catch (error) {
     // If error is a Response (e.g., redirect from requireUserId), return it
     if (error instanceof Response) {
@@ -89,30 +88,32 @@ export default function PostedPosts() {
 
       <GiveawayQueueTabs
         queueTypes={queueTypes}
-        currentQueueType={params.queueType}
+        currentQueueType={params["queueType"]}
       />
 
       <GiveawayTable
-        posts={filteredPosts as Array<{
-          id: string;
-          caption?: string | null;
-          postedAt: Date | null;
-          fileUrl: string[];
-          signedEvent?: { id: string } | null;
-          queueType?: { name: string; color?: string | null } | null;
-          repost?: boolean;
-          isQuotedPost?: boolean;
-          totalEngagement: number;
-          stats?: {
-            likes: number;
-            replies: number;
-            mentions: number;
-            reposts: number;
-            zaps: number;
-            satszapped: number;
-          };
-          [key: string]: unknown;
-        }>}
+        posts={
+          filteredPosts as Array<{
+            id: string;
+            caption?: string | null;
+            postedAt: Date | null;
+            fileUrl: string[];
+            signedEvent?: { id: string } | null;
+            queueType?: { name: string; color?: string | null } | null;
+            repost?: boolean;
+            isQuotedPost?: boolean;
+            totalEngagement: number;
+            stats?: {
+              likes: number;
+              replies: number;
+              mentions: number;
+              reposts: number;
+              zaps: number;
+              satszapped: number;
+            };
+            [key: string]: unknown;
+          }>
+        }
         sortConfig={sortConfig}
         onRequestSort={requestSort}
         onPostClick={(post) => {
@@ -122,9 +123,10 @@ export default function PostedPosts() {
             // Convert to the Post format expected by useGiveawayState
             setSelectedPost({
               ...originalPostData,
-              postedAt: originalPostData.postedAt instanceof Date
-                ? originalPostData.postedAt
-                : null,
+              postedAt:
+                originalPostData.postedAt instanceof Date
+                  ? originalPostData.postedAt
+                  : null,
               totalEngagement: originalPostData.totalEngagement ?? 0,
             });
           }
@@ -138,11 +140,11 @@ export default function PostedPosts() {
             selectedPost &&
             typeof selectedPost === "object" &&
             "signedEvent" in selectedPost &&
-            selectedPost.signedEvent &&
-            typeof selectedPost.signedEvent === "object" &&
-            "id" in selectedPost.signedEvent &&
-            typeof selectedPost.signedEvent.id === "string"
-              ? typedStats[selectedPost.signedEvent.id]
+            selectedPost["signedEvent"] &&
+            typeof selectedPost["signedEvent"] === "object" &&
+            "id" in selectedPost["signedEvent"] &&
+            typeof selectedPost["signedEvent"]["id"] === "string"
+              ? typedStats[selectedPost["signedEvent"]["id"]]
               : undefined
           }
           onClose={() => setSelectedPost(null)}

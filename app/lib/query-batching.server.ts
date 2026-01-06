@@ -14,7 +14,7 @@ import { prisma } from "~/lib/prisma.server";
  * Returns a Map for O(1) lookup
  */
 export async function batchLoadUsers(
-  userIds: string[],
+  userIds: string[]
 ): Promise<
   Map<
     string,
@@ -50,11 +50,9 @@ export async function batchLoadUsers(
  * Returns a Map for O(1) lookup
  */
 export async function batchLoadQueueTypes(
-  queueTypeIds: (string | null)[],
+  queueTypeIds: Array<string | null>
 ): Promise<Map<string, QueueType>> {
-  const validIds = queueTypeIds.filter(
-    (id): id is string => id !== null && id !== undefined,
-  );
+  const validIds = queueTypeIds.filter((id): id is string => id !== null);
 
   if (validIds.length === 0) {
     return new Map();
@@ -73,11 +71,9 @@ export async function batchLoadQueueTypes(
  * Returns a Map for O(1) lookup
  */
 export async function batchLoadHashTagPresets(
-  hashTagPresetIds: (string | null)[],
+  hashTagPresetIds: Array<string | null>
 ): Promise<Map<string, HashTagPreset>> {
-  const validIds = hashTagPresetIds.filter(
-    (id): id is string => id !== null && id !== undefined,
-  );
+  const validIds = hashTagPresetIds.filter((id): id is string => id !== null);
 
   if (validIds.length === 0) {
     return new Map();
@@ -96,11 +92,9 @@ export async function batchLoadHashTagPresets(
  * Returns a Map for O(1) lookup
  */
 export async function batchLoadTemplates(
-  templateIds: (string | null)[],
+  templateIds: Array<string | null>
 ): Promise<Map<string, Template>> {
-  const validIds = templateIds.filter(
-    (id): id is string => id !== null && id !== undefined,
-  );
+  const validIds = templateIds.filter((id): id is string => id !== null);
 
   if (validIds.length === 0) {
     return new Map();
@@ -119,9 +113,9 @@ export async function batchLoadTemplates(
  * This is useful when you have posts and need to load all their relations
  */
 export async function batchLoadPostRelations(ids: {
-  queueTypeIds: (string | null)[];
-  hashTagPresetIds: (string | null)[];
-  templateIds: (string | null)[];
+  queueTypeIds: Array<string | null>;
+  hashTagPresetIds: Array<string | null>;
+  templateIds: Array<string | null>;
 }): Promise<{
   queueTypes: Map<string, QueueType>;
   hashTagPresets: Map<string, HashTagPreset>;

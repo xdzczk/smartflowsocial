@@ -67,7 +67,7 @@ export function useLongFormEditor({
                 component: "useLongFormEditor",
                 action: "loadEditor",
               },
-              "info",
+              "info"
             );
             editorInitialized.current = false; // Reset flag so it can try again if needed
             return;
@@ -131,7 +131,7 @@ export function useLongFormEditor({
             tools: tools,
             data: undefined, // Initial data will be loaded separately
             // @ts-expect-error - EditorJS onChange signature doesn't match types but works at runtime
-            // eslint-disable-next-line @typescript-eslint/no-misused-promises
+            // eslint-disable-next-line @typescript-eslint/no-misused-promises -- EditorJS onChange is async but types don't reflect this
             onChange: async (api: EditorJSAPI) => {
               // Check if component is still mounted and editor element exists
               if (!isMountedRef.current) {
@@ -174,7 +174,7 @@ export function useLongFormEditor({
                 action: "createEditor",
                 message: "Failed to create EditorJS instance",
               },
-              "warning",
+              "warning"
             );
           }
           return;
@@ -188,16 +188,16 @@ export function useLongFormEditor({
         void (async () => {
           try {
             if (!editorRef.current || !isMountedRef.current) return;
-            
+
             // Check if element still exists before waiting for isReady
             const editorElement = document.getElementById("editorjs");
             if (!editorElement || !isMountedRef.current) return;
 
             await editorRef.current.isReady;
-            
+
             // Check again after isReady resolves
             if (!editorRef.current || !isMountedRef.current) return;
-            
+
             const editorElementAfterReady = document.getElementById("editorjs");
             if (!editorElementAfterReady || !isMountedRef.current) return;
 
@@ -205,10 +205,10 @@ export function useLongFormEditor({
               editorRef as unknown as React.RefObject<EditorJSInstance>,
               editorElementAfterReady,
               onContentChange,
-              disableCaptionsFn,
+              disableCaptionsFn
             );
             editorRef.current._dragObserver = dragObserver;
-            
+
             if (isMountedRef.current) {
               setEditorReady(true);
             }
@@ -221,7 +221,7 @@ export function useLongFormEditor({
                   component: "useLongFormEditor",
                   action: "initializeDragDrop",
                 },
-                "warning",
+                "warning"
               );
             }
           }
@@ -244,7 +244,7 @@ export function useLongFormEditor({
           if (editorElement && editorRef.current) {
             const captionObserver = setupCaptionObserver(
               editorElement,
-              disableCaptionsFn,
+              disableCaptionsFn
             );
             editorRef.current._captionObserver = captionObserver;
           }
@@ -280,7 +280,7 @@ export function useLongFormEditor({
               action: "cleanup",
               message: "Error during editor cleanup",
             },
-            "warning",
+            "warning"
           );
         } finally {
           editorRef.current = null;
@@ -290,7 +290,7 @@ export function useLongFormEditor({
           // Remove from global tracking
           if (window.EditorJSInstances) {
             window.EditorJSInstances = window.EditorJSInstances.filter(
-              (instance) => instance !== editorRef.current,
+              (instance) => instance !== editorRef.current
             );
           }
 
@@ -317,22 +317,22 @@ export function useLongFormEditor({
         await loadEditorJSContent(editorRef, content, onContentChange);
       }
     },
-    [editorReady, onContentChange],
+    [editorReady, onContentChange]
   );
 
   // Insert assets into the editor
   const insertAssetIntoEditor = useCallback(
     async (
-      selectedAssets: {
+      selectedAssets: Array<{
         assetType: string;
         fileUrl?: string;
         content?: string;
         title?: string;
-      }[],
+      }>
     ) => {
       await insertAssetsIntoEditor(editorRef, selectedAssets, onContentChange);
     },
-    [onContentChange],
+    [onContentChange]
   );
 
   // Generate summary from editor content

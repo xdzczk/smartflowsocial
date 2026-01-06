@@ -21,6 +21,8 @@ vi.mock("~/features/posts/schedulers", () => ({
   formatScheduleTimeForInput: vi.fn(),
 }));
 
+import { TEST_USER_ID } from "../utils/test-helpers";
+
 import { requireUserId } from "~/features/auth/session.server";
 import {
   calculateNextScheduleTime,
@@ -33,14 +35,12 @@ import {
 } from "~/features/user";
 import { action } from "~/routes/api.queue-schedule";
 
-import { TEST_USER_ID } from "../utils/test-helpers";
-
 describe("API: Queue Schedule", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue(TEST_USER_ID);
     (getUserTimezone as ReturnType<typeof vi.fn>).mockResolvedValue(
-      "America/New_York",
+      "America/New_York"
     );
   });
 
@@ -57,13 +57,13 @@ describe("API: Queue Schedule", () => {
       const formattedTime = "2024-01-15T10:00";
 
       (getQueueTypeByIdForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockQueueType,
+        mockQueueType
       );
       (calculateNextScheduleTime as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockNextTime,
+        mockNextTime
       );
       (formatScheduleTimeForInput as ReturnType<typeof vi.fn>).mockReturnValue(
-        formattedTime,
+        formattedTime
       );
 
       const request = new Request("http://localhost:3000/api/queue-schedule", {
@@ -96,7 +96,7 @@ describe("API: Queue Schedule", () => {
       expect(requireUserId).toHaveBeenCalledWith(request);
       expect(getQueueTypeByIdForUser).toHaveBeenCalledWith(
         TEST_USER_ID,
-        "queue-1",
+        "queue-1"
       );
       expect(calculateNextScheduleTime).toHaveBeenCalledWith({
         queueType: mockQueueType,
@@ -105,7 +105,7 @@ describe("API: Queue Schedule", () => {
       });
       expect(formatScheduleTimeForInput).toHaveBeenCalledWith(
         mockNextTime,
-        "America/New_York",
+        "America/New_York"
       );
       expect(data).toEqual({
         success: true,
@@ -129,13 +129,13 @@ describe("API: Queue Schedule", () => {
       const formattedTime = "2024-01-15T10:00";
 
       (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockQueueTypes,
+        mockQueueTypes
       );
       (calculateNextScheduleTime as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockNextTime,
+        mockNextTime
       );
       (formatScheduleTimeForInput as ReturnType<typeof vi.fn>).mockReturnValue(
-        formattedTime,
+        formattedTime
       );
 
       const request = new Request("http://localhost:3000/api/queue-schedule", {
@@ -223,13 +223,13 @@ describe("API: Queue Schedule", () => {
       const formattedTime = "2024-01-15T14:00";
 
       (getQueueTypeByIdForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockQueueType,
+        mockQueueType
       );
       (calculateNextScheduleTime as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockNextTime,
+        mockNextTime
       );
       (formatScheduleTimeForInput as ReturnType<typeof vi.fn>).mockReturnValue(
-        formattedTime,
+        formattedTime
       );
 
       const request = new Request("http://localhost:3000/api/queue-schedule", {
@@ -247,7 +247,7 @@ describe("API: Queue Schedule", () => {
       });
       expect(formatScheduleTimeForInput).toHaveBeenCalledWith(
         mockNextTime,
-        "UTC",
+        "UTC"
       );
     });
 
@@ -263,13 +263,13 @@ describe("API: Queue Schedule", () => {
       const formattedTime = "2024-01-15T10:00";
 
       (getQueueTypeByIdForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockQueueType,
+        mockQueueType
       );
       (calculateNextScheduleTime as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockNextTime,
+        mockNextTime
       );
       (formatScheduleTimeForInput as ReturnType<typeof vi.fn>).mockReturnValue(
-        formattedTime,
+        formattedTime
       );
 
       const request = new Request("http://localhost:3000/api/queue-schedule", {
@@ -388,7 +388,7 @@ describe("API: Queue Schedule", () => {
 
     it("should return NotFoundError when queue type not found", async () => {
       (getQueueTypeByIdForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null,
+        null
       );
 
       const request = new Request("http://localhost:3000/api/queue-schedule", {
@@ -432,10 +432,10 @@ describe("API: Queue Schedule", () => {
       };
 
       (getQueueTypeByIdForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockQueueType,
+        mockQueueType
       );
       (calculateNextScheduleTime as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Scheduling error"),
+        new Error("Scheduling error")
       );
 
       const request = new Request("http://localhost:3000/api/queue-schedule", {

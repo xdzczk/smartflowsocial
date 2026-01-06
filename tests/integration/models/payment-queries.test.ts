@@ -21,6 +21,8 @@ vi.mock("~/lib/prisma.server", () => ({
   },
 }));
 
+import { TEST_USER_ID } from "../../utils/test-helpers";
+
 import { prisma } from "~/lib/prisma.server";
 import {
   checkPaymentStatus,
@@ -28,8 +30,6 @@ import {
   getUserPaymentHistory,
   getPlanById,
 } from "~/models/payment.server";
-
-import { TEST_USER_ID } from "../../utils/test-helpers";
 
 describe("Payment Model Queries", () => {
   beforeEach(() => {
@@ -43,7 +43,7 @@ describe("Payment Model Queries", () => {
         paidAt: new Date("2024-12-25T12:00:00Z"),
       };
       (prisma.payment.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPayment,
+        mockPayment
       );
 
       const result = await checkPaymentStatus("payment-123");
@@ -66,7 +66,7 @@ describe("Payment Model Queries", () => {
         paidAt: null,
       };
       (prisma.payment.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPayment,
+        mockPayment
       );
 
       const result = await checkPaymentStatus("payment-123");
@@ -78,11 +78,11 @@ describe("Payment Model Queries", () => {
 
     it("should throw error if payment not found", async () => {
       (prisma.payment.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null,
+        null
       );
 
       await expect(checkPaymentStatus("nonexistent")).rejects.toThrow(
-        "Payment not found",
+        "Payment not found"
       );
     });
   });
@@ -142,7 +142,7 @@ describe("Payment Model Queries", () => {
         },
       ];
       (prisma.payment.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPayments,
+        mockPayments
       );
 
       const result = await getUserPaymentHistory(TEST_USER_ID);
@@ -155,7 +155,7 @@ describe("Payment Model Queries", () => {
 
     it("should return empty array if no payments found", async () => {
       (prisma.payment.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
-        [],
+        []
       );
 
       const result = await getUserPaymentHistory(TEST_USER_ID);
@@ -173,7 +173,7 @@ describe("Payment Model Queries", () => {
         isActive: true,
       };
       (prisma.plan.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPlan,
+        mockPlan
       );
 
       const result = await getPlanById("plan-123");
@@ -186,7 +186,7 @@ describe("Payment Model Queries", () => {
 
     it("should return null if plan not found", async () => {
       (prisma.plan.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null,
+        null
       );
 
       const result = await getPlanById("nonexistent");

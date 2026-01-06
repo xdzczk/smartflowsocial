@@ -15,7 +15,9 @@ export function handleIsRecyclableChange(
   setPosts: React.Dispatch<React.SetStateAction<BulkPost[]>>
 ): void {
   const updatedPosts = [...posts];
-  updatedPosts[index].isRecyclable = checked;
+  const post = updatedPosts[index];
+  if (!post) return;
+  post.isRecyclable = checked;
   setPosts(updatedPosts);
 }
 

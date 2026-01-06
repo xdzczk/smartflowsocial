@@ -24,7 +24,7 @@ export interface ClientErrorContext {
 export function logClientError(
   error: Error | string,
   context?: ClientErrorContext,
-  level: ClientErrorLevel = "error",
+  level: ClientErrorLevel = "error"
 ): void {
   const errorMessage = error instanceof Error ? error.message : error;
   const errorStack = error instanceof Error ? error.stack : undefined;
@@ -57,10 +57,10 @@ export function logClientError(
   if (error instanceof Error) {
     const tags: Record<string, string> = { level };
     if (context?.component) {
-      tags.component = context.component;
+      tags["component"] = context["component"];
     }
     if (context?.action) {
-      tags.action = context.action;
+      tags["action"] = context["action"];
     }
     captureException(error, {
       tags,
@@ -77,7 +77,7 @@ export function logClientError(
  * Extracts error message from standardized error response format
  */
 export function handleApiError(
-  response: Response | { error?: ErrorResponse["error"]; success?: boolean },
+  response: Response | { error?: ErrorResponse["error"]; success?: boolean }
 ): string {
   // Handle Response object
   if (response instanceof Response) {
@@ -107,7 +107,7 @@ export function showErrorToast(
       | "bottom-left"
       | "bottom-center"
       | "bottom-right";
-  },
+  }
 ): void {
   let message: string;
 
@@ -131,7 +131,7 @@ export function showErrorToast(
 export function handleAsyncError(
   error: unknown,
   context?: ClientErrorContext,
-  showToast = true,
+  showToast = true
 ): void {
   const errorObj = error instanceof Error ? error : new Error(String(error));
 
@@ -151,7 +151,7 @@ export function handleAsyncErrorWithMessage(
   error: unknown,
   userMessage: string,
   context?: ClientErrorContext,
-  showToast = true,
+  showToast = true
 ): void {
   const errorObj = error instanceof Error ? error : new Error(String(error));
 
@@ -171,7 +171,7 @@ export function handleAsyncErrorWithMessage(
 export function handleErrorSafely(
   error: unknown,
   context?: ClientErrorContext,
-  fallback?: () => void,
+  fallback?: () => void
 ): void {
   try {
     handleAsyncError(error, context, false);

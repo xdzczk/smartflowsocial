@@ -36,11 +36,11 @@ vi.mock("~/lib/errors", () => ({
   })),
 }));
 
+import { TEST_USER_ID } from "../utils/test-helpers";
+
 import { requireUserId } from "~/features/auth/session.server";
 import { loadParentData } from "~/features/user";
 import { createLoader } from "~/routes/api.parent";
-
-import { TEST_USER_ID } from "../utils/test-helpers";
 
 describe("API: Parent", () => {
   // Create loader with injected error handler for testing
@@ -66,7 +66,7 @@ describe("API: Parent", () => {
             displayName: "Parent Display",
             picture: "https://example.com/parent.jpg",
           },
-        }),
+        })
       );
 
       const request = new Request("http://localhost:3000/api/parent");
@@ -112,7 +112,7 @@ describe("API: Parent", () => {
             displayName: "Parent Display",
             picture: "https://example.com/parent.jpg",
           },
-        }),
+        })
       );
 
       const request = new Request("http://localhost:3000/api/parent");
@@ -151,7 +151,7 @@ describe("API: Parent", () => {
             displayName: undefined,
             picture: undefined,
           },
-        }),
+        })
       );
 
       const request = new Request("http://localhost:3000/api/parent");
@@ -330,7 +330,7 @@ describe("API: Parent", () => {
       expect(data).toEqual({ parent: null });
       expect(mockHandleParentApiError).toHaveBeenCalledWith(
         expect.any(Error),
-        expect.any(String),
+        expect.any(String)
       );
     });
 
@@ -343,7 +343,7 @@ describe("API: Parent", () => {
             displayName: undefined,
             picture: undefined,
           },
-        }),
+        })
       );
 
       const request = new Request("http://localhost:3000/api/parent");

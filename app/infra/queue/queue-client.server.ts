@@ -56,7 +56,7 @@ class BullMQClient implements QueueClient {
     queueName: QueueType,
     jobName: string,
     data: T,
-    options?: ScheduleOptions,
+    options?: ScheduleOptions
   ): Promise<QueueOperationResult> {
     try {
       const queue = getQueue(queueName);
@@ -102,7 +102,7 @@ class BullMQClient implements QueueClient {
   async cancelByData(
     queueName: QueueType,
     dataKey: string,
-    dataValue: string,
+    dataValue: string
   ): Promise<boolean> {
     try {
       const queue = getQueue(queueName);
@@ -136,10 +136,7 @@ class BullMQClient implements QueueClient {
     }
   }
 
-  async cancelByJobId(
-    queueName: QueueType,
-    jobId: string,
-  ): Promise<boolean> {
+  async cancelByJobId(queueName: QueueType, jobId: string): Promise<boolean> {
     try {
       const queue = getQueue(queueName);
       const job = await queue.getJob(jobId);
@@ -162,9 +159,13 @@ class BullMQClient implements QueueClient {
 
   async getJobs(
     queueName: QueueType,
-    statuses: JobStatus[],
+    statuses: JobStatus[]
   ): Promise<
-    { id: string; data: PostJobData | LongFormPostJobData; status: JobStatus }[]
+    Array<{
+      id: string;
+      data: PostJobData | LongFormPostJobData;
+      status: JobStatus;
+    }>
   > {
     try {
       const queue = getQueue(queueName);

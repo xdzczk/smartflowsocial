@@ -46,7 +46,7 @@ function postToCombinedContent(post: PostData): CombinedContent {
             name:
               typeof post.queueType.name === "string"
                 ? post.queueType.name
-                : String(post.queueType.name ?? ""),
+                : String(post.queueType.name),
             ...("color" in post.queueType && post.queueType.color
               ? {
                   color:
@@ -84,7 +84,7 @@ function postToCombinedContent(post: PostData): CombinedContent {
  * Client-side version (duplicated from server to avoid importing .server.ts)
  */
 function longFormPostToCombinedContent(
-  longFormPost: LongFormPostData,
+  longFormPost: LongFormPostData
 ): CombinedContent {
   return {
     id: longFormPost.id,
@@ -128,10 +128,12 @@ export function combineContent(
   posts: PostData[] = [],
   longFormPosts: LongFormPostData[] = [],
   sortBy = "createdAt",
-  sortDirection: "asc" | "desc" = "desc",
+  sortDirection: "asc" | "desc" = "desc"
 ): CombinedContent[] {
-  const combinedPosts = posts.map(postToCombinedContent);
-  const combinedLongForm = longFormPosts.map(longFormPostToCombinedContent);
+  const combinedPosts = posts.map((post) => postToCombinedContent(post));
+  const combinedLongForm = longFormPosts.map((post) =>
+    longFormPostToCombinedContent(post)
+  );
   const combined = [...combinedPosts, ...combinedLongForm];
 
   // Sort the combined array
@@ -178,5 +180,3 @@ export function combineContent(
     }
   });
 }
-
-

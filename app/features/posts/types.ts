@@ -36,7 +36,7 @@ export type ScheduleConfig = IntervalScheduleConfig | FixedSlotsScheduleConfig;
  * Type guard to check if config is IntervalScheduleConfig
  */
 export function isIntervalScheduleConfig(
-  config: ScheduleConfig | unknown,
+  config: ScheduleConfig | unknown
 ): config is IntervalScheduleConfig {
   if (typeof config !== "object" || config === null) {
     return false;
@@ -45,7 +45,7 @@ export function isIntervalScheduleConfig(
   const cfg = config as Record<string, unknown>;
 
   // Check if it's NOT a FixedSlotsScheduleConfig (doesn't have slots array)
-  const hasSlotsArray = Array.isArray(cfg.slots);
+  const hasSlotsArray = Array.isArray(cfg["slots"]);
 
   // Must have either useGlobalInterval or intervalHours, but not slots array
   return (
@@ -57,7 +57,7 @@ export function isIntervalScheduleConfig(
  * Type guard to check if config is FixedSlotsScheduleConfig
  */
 export function isFixedSlotsScheduleConfig(
-  config: ScheduleConfig | unknown,
+  config: ScheduleConfig | unknown
 ): config is FixedSlotsScheduleConfig {
   if (typeof config !== "object" || config === null) {
     return false;
@@ -66,14 +66,14 @@ export function isFixedSlotsScheduleConfig(
   const cfg = config as Record<string, unknown>;
 
   // Must have slots array
-  return Array.isArray(cfg.slots);
+  return Array.isArray(cfg["slots"]);
 }
 
 /**
  * Converts JsonValue to ScheduleConfig
  */
 export function convertJsonValueToScheduleConfig(
-  config: unknown,
+  config: unknown
 ): ScheduleConfig | undefined {
   if (config === null || config === undefined) {
     return undefined;
@@ -86,15 +86,15 @@ export function convertJsonValueToScheduleConfig(
   const cfg = config as Record<string, unknown>;
 
   // Check if it's a FixedSlotsScheduleConfig
-  if (Array.isArray(cfg.slots)) {
-    return { slots: cfg.slots as string[] };
+  if (Array.isArray(cfg["slots"])) {
+    return { slots: cfg["slots"] as string[] };
   }
 
   // Check if it's an IntervalScheduleConfig
   if ("useGlobalInterval" in cfg || "intervalHours" in cfg) {
     return {
-      useGlobalInterval: cfg.useGlobalInterval as boolean | undefined,
-      intervalHours: cfg.intervalHours as number | undefined,
+      useGlobalInterval: cfg["useGlobalInterval"] as boolean | undefined,
+      intervalHours: cfg["intervalHours"] as number | undefined,
     };
   }
 
@@ -116,7 +116,7 @@ export function convertPrismaQueueTypeToQueueType(
         userId: string;
       })
     | null
-    | undefined,
+    | undefined
 ): QueueType | undefined {
   if (!prismaQueueType) {
     return undefined;
@@ -131,7 +131,7 @@ export function convertPrismaQueueTypeToQueueType(
       | "FIXED_SLOTS"
       | undefined,
     scheduleConfig: convertJsonValueToScheduleConfig(
-      prismaQueueType.scheduleConfig,
+      prismaQueueType.scheduleConfig
     ),
     isEnabled: prismaQueueType.isEnabled ?? undefined,
     userId: prismaQueueType.userId,
@@ -345,7 +345,7 @@ export interface HashtagPresetSelectorProps {
 export interface BulkPostCardProps {
   post: BulkPost;
   index: number;
-  queueTypes: (QueueType | string)[];
+  queueTypes: Array<QueueType | string>;
   previewData: Map<number, { url: string; isVideo: boolean; file: File }>;
   onCaptionChange: (index: number, value: string) => void;
   onDateChange: (index: number, value: string) => void;

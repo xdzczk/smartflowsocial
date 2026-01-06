@@ -62,8 +62,10 @@ export function sanitizeMarkdown(markdown: string): string {
 
     // Preserve code blocks before sanitization
     // sanitize-html will escape code block content, which we want to preserve as-is
-    const codeBlockPlaceholders: { placeholder: string; content: string }[] =
-      [];
+    const codeBlockPlaceholders: Array<{
+      placeholder: string;
+      content: string;
+    }> = [];
     let placeholderIndex = 0;
 
     // Extract code blocks and replace with placeholders
@@ -88,7 +90,7 @@ export function sanitizeMarkdown(markdown: string): string {
         });
         placeholderIndex++;
         return placeholder;
-      },
+      }
     );
 
     // Sanitize HTML using sanitize-html library

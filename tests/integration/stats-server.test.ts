@@ -13,7 +13,7 @@ global.fetch = vi.fn();
 describe("Statistics Service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.PRIMAL_CACHING_URL = "https://api.primal.net/v1/cache";
+    process.env["PRIMAL_CACHING_URL"] = "https://api.primal.net/v1/cache";
   });
 
   afterEach(() => {
@@ -59,6 +59,9 @@ describe("Statistics Service", () => {
       expect(global.fetch).toHaveBeenCalled();
       const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock
         .calls[0];
+      if (!fetchCall) {
+        throw new Error("fetch was not called");
+      }
       expect(fetchCall[0]).toBe("https://api.primal.net/v1/cache");
       const fetchOptions = fetchCall[1] as RequestInit;
       expect(fetchOptions.method).toBe("POST");
@@ -72,7 +75,7 @@ describe("Statistics Service", () => {
           params: {
             event_id: "event-1",
           },
-        }),
+        })
       );
 
       expect(result).toEqual({
@@ -247,7 +250,7 @@ describe("Statistics Service", () => {
 
     it("should handle fetch errors gracefully", async () => {
       (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Network error"),
+        new Error("Network error")
       );
 
       const result = await getPostStats(["event-1"]);
@@ -302,7 +305,7 @@ describe("Statistics Service", () => {
       }) as unknown as typeof setTimeout;
 
       (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Timeout"),
+        new Error("Timeout")
       );
 
       const result = await getPostStats(["event-1"]);

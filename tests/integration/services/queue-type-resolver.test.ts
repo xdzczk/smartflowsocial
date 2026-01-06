@@ -14,10 +14,10 @@ vi.mock("~/lib/prisma.server", () => ({
   },
 }));
 
+import { TEST_USER_ID } from "../../utils/test-helpers";
+
 import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
 import { prisma } from "~/lib/prisma.server";
-
-import { TEST_USER_ID } from "../../utils/test-helpers";
 
 describe("Queue Type Resolver Service", () => {
   beforeEach(() => {
@@ -82,7 +82,7 @@ describe("Queue Type Resolver Service", () => {
       const result = await resolveQueueTypeId(
         TEST_USER_ID,
         null,
-        "NonExistent",
+        "NonExistent"
       );
 
       expect(result).toBeNull();
@@ -101,7 +101,7 @@ describe("Queue Type Resolver Service", () => {
       const result = await resolveQueueTypeId(
         TEST_USER_ID,
         "queue-789",
-        "Morning",
+        "Morning"
       );
 
       expect(result).toBe("queue-789");

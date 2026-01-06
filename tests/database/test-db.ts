@@ -23,11 +23,11 @@ export function getTestPrisma(): PrismaClient {
   }
 
   const testDatabaseUrl =
-    process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL;
+    process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"];
 
   if (!testDatabaseUrl) {
     throw new Error(
-      "TEST_DATABASE_URL or DATABASE_URL must be set for database tests",
+      "TEST_DATABASE_URL or DATABASE_URL must be set for database tests"
     );
   }
 
@@ -37,7 +37,7 @@ export function getTestPrisma(): PrismaClient {
         url: testDatabaseUrl,
       },
     },
-    log: process.env.DEBUG ? ["query", "error", "warn"] : ["error"],
+    log: process.env["DEBUG"] ? ["query", "error", "warn"] : ["error"],
   });
 
   return testPrisma;
@@ -58,7 +58,7 @@ export async function createTransactionClient(): Promise<PrismaClient> {
     },
     {
       timeout: 10000,
-    },
+    }
   );
 
   // For Prisma, we'll use a different approach - wrap operations in transactions
@@ -70,7 +70,7 @@ export async function createTransactionClient(): Promise<PrismaClient> {
  * The transaction is rolled back after the test, ensuring test isolation
  */
 export async function withTransaction<T>(
-  testFn: (prisma: PrismaClient) => Promise<T>,
+  testFn: (prisma: PrismaClient) => Promise<T>
 ): Promise<T> {
   const prisma = getTestPrisma();
 
@@ -83,7 +83,7 @@ export async function withTransaction<T>(
     {
       timeout: 30000,
       isolationLevel: "ReadCommitted",
-    },
+    }
   );
 }
 
@@ -94,7 +94,7 @@ export async function withTransaction<T>(
  */
 export function setupTestDatabase(): Promise<void> {
   const testDatabaseUrl =
-    process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL;
+    process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"];
 
   if (!testDatabaseUrl) {
     throw new Error("TEST_DATABASE_URL or DATABASE_URL must be set");
@@ -200,7 +200,7 @@ export async function seedTestDatabase(fixtures?: TestFixtures): Promise<void> {
         env: {
           ...process.env,
           DATABASE_URL:
-            process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL,
+            process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"],
         },
         stdio: "inherit",
       });
@@ -217,8 +217,8 @@ export async function seedTestDatabase(fixtures?: TestFixtures): Promise<void> {
 async function applyFixtures(
   prisma: PrismaClient,
   // Dynamic import() type annotation needed for conditional type
-  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
-  fixtures: TestFixtures | import("./fixtures").TestFixtures,
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports -- Dynamic import requires value import
+  fixtures: TestFixtures | import("./fixtures").TestFixtures
 ): Promise<void> {
   // Apply fixtures in dependency order
   if (fixtures.users && Array.isArray(fixtures.users)) {
@@ -396,10 +396,10 @@ export async function useTestDatabase<T>(
   options?: {
     useTransaction?: boolean;
     // Dynamic import() type annotation needed for conditional type
-    // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+    // eslint-disable-next-line @typescript-eslint/consistent-type-imports -- Dynamic import requires value import
     fixtures?: import("./fixtures").TestFixtures;
     cleanup?: boolean;
-  },
+  }
 ): Promise<T> {
   const { useTransaction = false, fixtures, cleanup = true } = options ?? {};
   const prisma = getTestPrisma();

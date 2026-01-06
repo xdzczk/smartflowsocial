@@ -93,7 +93,7 @@ export function WeeklyView({
           : new Date(Number(timestamp) * 1000);
         // Convert to user's timezone for display
         const timeInUserTz = new Date(
-          postDate.toLocaleString("en-US", { timeZone: userTimezone }),
+          postDate.toLocaleString("en-US", { timeZone: userTimezone })
         );
         const year = timeInUserTz.getFullYear();
         const month = String(timeInUserTz.getMonth() + 1).padStart(2, "0");
@@ -104,9 +104,7 @@ export function WeeklyView({
         const timeSlot = `${hour.toString().padStart(2, "0")}:${minutes >= 30 ? "30" : "00"}`;
 
         if (grid[dateKey]) {
-          if (!grid[dateKey][timeSlot]) {
-            grid[dateKey][timeSlot] = [];
-          }
+          grid[dateKey][timeSlot] ??= [];
           grid[dateKey][timeSlot].push({ ...post, isPast: false });
         }
       }
@@ -120,7 +118,7 @@ export function WeeklyView({
         const postDate = new Date(timestamp as string);
         // Convert to user's timezone for display
         const timeInUserTz = new Date(
-          postDate.toLocaleString("en-US", { timeZone: userTimezone }),
+          postDate.toLocaleString("en-US", { timeZone: userTimezone })
         );
         const year = timeInUserTz.getFullYear();
         const month = String(timeInUserTz.getMonth() + 1).padStart(2, "0");
@@ -131,9 +129,7 @@ export function WeeklyView({
         const timeSlot = `${hour.toString().padStart(2, "0")}:${minutes >= 30 ? "30" : "00"}`;
 
         if (grid[dateKey]) {
-          if (!grid[dateKey][timeSlot]) {
-            grid[dateKey][timeSlot] = [];
-          }
+          grid[dateKey][timeSlot] ??= [];
           grid[dateKey][timeSlot].push({ ...post, isPast: true });
         }
       }
@@ -145,7 +141,7 @@ export function WeeklyView({
   const handleDragOver = (
     e: React.DragEvent<HTMLDivElement>,
     date: string,
-    time: string,
+    time: string
   ) => {
     e.preventDefault();
     setDragOverSlot(`${date}-${time}`);
@@ -154,21 +150,23 @@ export function WeeklyView({
   const handleDrop = (
     e: React.DragEvent<HTMLDivElement>,
     date: string,
-    time: string,
+    time: string
   ) => {
     e.preventDefault();
     setDragOverSlot(null);
 
     const postData = JSON.parse(
-      e.dataTransfer.getData("text/plain"),
+      e.dataTransfer.getData("text/plain")
     ) as CalendarPost;
     const [hours, minutes] = time.split(":").map(Number);
+    const safeHours = hours ?? 0;
+    const safeMinutes = minutes ?? 0;
 
     // Create the datetime that represents the intended time in the user's timezone
     const userTimezone = user?.timezone ?? "Etc/UTC";
 
     // Create an ISO string that represents the local time in the user's timezone
-    const isoString = `${date}T${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:00`;
+    const isoString = `${date}T${safeHours.toString().padStart(2, "0")}:${safeMinutes.toString().padStart(2, "0")}:00`;
 
     // Use a library approach - create the date as if it's in user's timezone
     // This is the reverse of how we display dates - we convert from user timezone to UTC
@@ -178,7 +176,7 @@ export function WeeklyView({
 
       // Convert to user's timezone and back to get the right UTC offset
       const userTzDate = new Date(
-        tempDate.toLocaleString("sv-SE", { timeZone: userTimezone }),
+        tempDate.toLocaleString("sv-SE", { timeZone: userTimezone })
       );
       const localTzDate = new Date(tempDate.toLocaleString("sv-SE"));
 
@@ -198,7 +196,7 @@ export function WeeklyView({
           // Fallback to simple date creation
           const newDateTime = new Date(isoString);
           onPostDrop(postData, newDateTime);
-        },
+        }
       );
     }
   };
@@ -261,7 +259,7 @@ export function WeeklyView({
                 const month = String(day.getMonth() + 1).padStart(2, "0");
                 const dayStr = String(day.getDate()).padStart(2, "0");
                 const dateKey = `${year}-${month}-${dayStr}`;
-                const posts = postsGrid[dateKey]?.[time] || [];
+                const posts = postsGrid[dateKey]?.[time] ?? [];
                 const slotKey = `${dateKey}-${time}`;
                 const isDragOver = dragOverSlot === slotKey;
 
@@ -281,23 +279,25 @@ export function WeeklyView({
                   >
                     {posts.length === 1 ? (
                       // Single post - full width
-                      <PostBlock
-                        post={posts[0]}
-                        compact={true}
-                        user={user}
-                        queueTypes={queueTypes}
-                        onEdit={onPostEdit}
-                        isLongform={
-                          isAll
-                            ? Boolean(posts[0].title && posts[0].publishedAt)
-                            : isLongform
-                        }
-                        isPast={
-                          typeof posts[0].isPast === "boolean"
-                            ? posts[0].isPast
-                            : false
-                        }
-                      />
+                      posts[0] ? (
+                        <PostBlock
+                          post={posts[0]}
+                          compact={true}
+                          user={user}
+                          queueTypes={queueTypes}
+                          onEdit={onPostEdit}
+                          isLongform={
+                            isAll
+                              ? Boolean(posts[0].title && posts[0].publishedAt)
+                              : isLongform
+                          }
+                          isPast={
+                            typeof posts[0]?.isPast === "boolean"
+                              ? posts[0].isPast
+                              : false
+                          }
+                        />
+                      ) : null
                     ) : posts.length <= 6 ? (
                       // 2-6 posts - dynamic equal width distribution with smaller labels
                       <div className="flex h-full space-x-0.5">
@@ -380,7 +380,7 @@ function CurrentTimeIndicator({ user, weekDays }: CurrentTimeIndicatorProps) {
   const userTimezone = user?.timezone ?? "Etc/UTC";
   const now = new Date();
   const nowInUserTz = new Date(
-    now.toLocaleString("en-US", { timeZone: userTimezone }),
+    now.toLocaleString("en-US", { timeZone: userTimezone })
   );
   const currentHour = nowInUserTz.getHours();
   const currentMinutes = nowInUserTz.getMinutes();
@@ -389,7 +389,7 @@ function CurrentTimeIndicator({ user, weekDays }: CurrentTimeIndicatorProps) {
   const today = new Date();
   const todayString = today.toDateString();
   const isTodayInWeek = weekDays.some(
-    (day) => day.toDateString() === todayString,
+    (day) => day.toDateString() === todayString
   );
 
   if (!isTodayInWeek) return null;

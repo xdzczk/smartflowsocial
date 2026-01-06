@@ -27,40 +27,52 @@ import { withCSRFProtection } from "~/lib/csrf";
 import { validateUserData } from "~/lib/validation/user-data";
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
-  const postId = params.id!;
+  const postId = params["id"]!;
 
   const data = await loadDraftEditData(userId, postId);
   return json(data);
 }
 
-export const action = withCSRFProtection(async ({ request, params }: ActionFunctionArgs) => {
-  try {
-    const userId = await requireUserId(request);
-    const postId = params.id!;
-    const formData = await request.formData();
-    const result = await handleDraftEditAction(formData, userId, postId);
+export const action = withCSRFProtection(
+  async ({ request, params }: ActionFunctionArgs) => {
+    try {
+      const userId = await requireUserId(request);
+      const postId = params["id"]!;
+      const formData = await request.formData();
+      const result = await handleDraftEditAction(formData, userId, postId);
 
-    // Type narrowing: check if result is a Response
-    if (result instanceof Response) {
-      return result;
+      // Type narrowing: check if result is a Response
+      if (result instanceof Response) {
+        return result;
+      }
+
+      // Type narrowing: check if result has error property
+      if (
+        typeof result === "object" &&
+        result !== null &&
+        "error" in result &&
+        result.error
+      ) {
+        return json(result, { status: 400 });
+      }
+
+      // Type narrowing: check if result has redirect property
+      if (
+        typeof result === "object" &&
+        result !== null &&
+        "redirect" in result &&
+        result.redirect
+      ) {
+        return redirect(result.redirect);
+      }
+
+      return json(result);
+    } catch (error) {
+      const { handleActionError } = await import("~/lib/error-handler.server");
+      return handleActionError(error);
     }
-
-    // Type narrowing: check if result has error property
-    if (typeof result === "object" && result !== null && "error" in result && result.error) {
-      return json(result, { status: 400 });
-    }
-
-    // Type narrowing: check if result has redirect property
-    if (typeof result === "object" && result !== null && "redirect" in result && result.redirect) {
-      return redirect(result.redirect);
-    }
-
-    return json(result);
-  } catch (error) {
-    const { handleActionError } = await import("~/lib/error-handler.server");
-    return handleActionError(error);
   }
-});
+);
 
 export default function EditDraft() {
   const loaderData = useLoaderData<typeof loader>();
@@ -108,7 +120,7 @@ export default function EditDraft() {
   const typedQueueTypes: QueueType[] = queueTypesRaw
     .filter(
       (
-        qt: unknown,
+        qt: unknown
       ): qt is {
         id: string;
         name: string;
@@ -120,7 +132,7 @@ export default function EditDraft() {
         "id" in qt &&
         "name" in qt &&
         typeof (qt as { id: unknown; name: unknown }).id === "string" &&
-        typeof (qt as { id: unknown; name: unknown }).name === "string",
+        typeof (qt as { id: unknown; name: unknown }).name === "string"
     )
     .map((qt) => ({
       id: qt.id,
@@ -140,7 +152,7 @@ export default function EditDraft() {
   const typedHashTagPresets: HashTagPreset[] = hashTagPresetsRaw
     .filter(
       (
-        preset: unknown,
+        preset: unknown
       ): preset is {
         id: string;
         name: string;
@@ -160,7 +172,7 @@ export default function EditDraft() {
         typeof (preset as { id: unknown; name: unknown; tags: unknown })
           .name === "string" &&
         typeof (preset as { id: unknown; name: unknown; tags: unknown })
-          .tags === "string",
+          .tags === "string"
     )
     .map((preset) => ({
       id: preset.id,

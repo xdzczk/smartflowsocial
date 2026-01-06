@@ -21,14 +21,12 @@ const uploadStreamToS3 = async (
   key: string,
   s3Client: S3Client,
   filename: string,
-  contentType?: string,
+  contentType?: string
 ): Promise<string> => {
   // Convert stream to buffer (required for MIME type detection)
   const chunks: Buffer[] = [];
   for await (const chunk of stream) {
-    chunks.push(
-      Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk),
-    );
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
   }
   const buffer = Buffer.concat(chunks);
 
@@ -72,7 +70,7 @@ export function createUploadHandler(userId: string) {
     async ({ name: _name, filename, contentType, data }) => {
       // Skip if no filename is provided
       if (!filename) {
-        return undefined;
+        return;
       }
 
       try {
@@ -82,15 +80,13 @@ export function createUploadHandler(userId: string) {
 
         const s3Client = createS3Client();
 
-        const uploadedFileLocation = await uploadStreamToS3(
+        return await uploadStreamToS3(
           data,
           key,
           s3Client,
           filename,
-          contentType,
+          contentType
         );
-
-        return uploadedFileLocation;
       } catch (error) {
         logError(error instanceof Error ? error : new Error(String(error)), {
           userId,
@@ -102,7 +98,7 @@ export function createUploadHandler(userId: string) {
     },
     createMemoryUploadHandler({
       maxPartSize: MAX_FILE_SIZE, // Use same limit as validation
-    }),
+    })
   );
 }
 
@@ -112,7 +108,7 @@ export async function uploadBufferToS3(
   userId: string,
   filename?: string,
   customKey?: string,
-  contentType?: string,
+  contentType?: string
 ): Promise<string> {
   // Generate filename if not provided
   let finalFilename: string;
@@ -181,7 +177,7 @@ export function createS3Client() {
 export async function uploadEditorJSImage(
   buffer: Buffer,
   userId: string,
-  filename: string,
+  filename: string
 ): Promise<string> {
   try {
     // Validate upload (MIME type and size)
@@ -218,9 +214,7 @@ export async function uploadEditorJSImage(
     // Return the full URL
     const bucket = env.STORAGE_BUCKET ?? "";
     const region = env.STORAGE_REGION ?? "";
-    const imageUrl = `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
-
-    return imageUrl;
+    return `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
   } catch (error) {
     logError(error instanceof Error ? error : new Error(String(error)), {
       userId,
@@ -228,7 +222,7 @@ export async function uploadEditorJSImage(
       message: "EditorJS S3 upload error",
     });
     throw new Error(
-      `Failed to upload image: ${error instanceof Error ? error.message : String(error)}`,
+      `Failed to upload image: ${error instanceof Error ? error.message : String(error)}`
     );
   }
 }

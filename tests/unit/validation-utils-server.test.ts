@@ -115,7 +115,7 @@ describe("Validation Utils Server", () => {
       } catch (error) {
         expect(error).toBeInstanceOf(ValidationError);
         if (error instanceof ValidationError) {
-          expect(error.context?.errors).toBeDefined();
+          expect(error.context?.["errors"]).toBeDefined();
         }
       }
     });
@@ -332,4 +332,3 @@ describe("Validation Utils Server", () => {
     });
   });
 });
-

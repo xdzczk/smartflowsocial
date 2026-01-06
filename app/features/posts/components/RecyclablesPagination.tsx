@@ -18,8 +18,8 @@ export function RecyclablesPagination({
 }: RecyclablesPaginationProps) {
   const params = useParams();
 
-  const basePath = params.queueType
-    ? `/dashboard/recyclables/${params.queueType}`
+  const basePath = params["queueType"]
+    ? `/dashboard/recyclables/${params["queueType"]}`
     : "/dashboard/recyclables";
 
   return (

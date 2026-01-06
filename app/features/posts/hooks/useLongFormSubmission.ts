@@ -47,7 +47,7 @@ export function useLongFormSubmission({
       try {
         const editorData = JSON.parse(content) as { blocks?: EditorJSBlock[] };
         markdownContent = convertEditorJSToMarkdown(
-          editorData as { blocks: EditorJSBlock[] },
+          editorData as { blocks: EditorJSBlock[] }
         );
       } catch {
         markdownContent = content;
@@ -96,7 +96,7 @@ export function useLongFormSubmission({
       const uniqueTags = allTags.filter(
         (tag, index) =>
           allTags.findIndex((t) => t.toLowerCase() === tag.toLowerCase()) ===
-          index,
+          index
       );
 
       const eventData = {
@@ -112,13 +112,14 @@ export function useLongFormSubmission({
             : scheduledTimestamp,
       };
 
-      const { nostrEvent, signedEvent } = await nostrAdapter.signLongFormEvent(eventData);
+      const { nostrEvent, signedEvent } =
+        await nostrAdapter.signLongFormEvent(eventData);
 
       const form = document.createElement("form");
       form.method = "POST";
       form.style.display = "none";
 
-      const fields: [string, string][] = [
+      const fields: Array<[string, string]> = [
         [
           "_action",
           actionType === "schedule" ? "schedule-longform" : "publish",
@@ -155,7 +156,7 @@ export function useLongFormSubmission({
           component: "LongFormPost",
           action: "handleSubmit",
         },
-        false,
+        false
       ); // Don't show toast, let component handle it
     }
   };

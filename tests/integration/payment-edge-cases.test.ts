@@ -39,7 +39,7 @@ const { mockPrisma } = vi.hoisted(() => {
           $transaction: mockPrisma.$transaction,
         };
         return await callback(tx);
-      },
+      }
     ),
   };
   return { mockPrisma };
@@ -99,7 +99,7 @@ describe("Payment Processing Edge Cases", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.OWNER_NWC = "test-nwc-credentials";
+    process.env["OWNER_NWC"] = "test-nwc-credentials";
     // Reset $transaction to default implementation
     mockPrisma.$transaction.mockImplementation(
       async (callback: (tx: typeof mockPrisma) => Promise<unknown>) => {
@@ -112,12 +112,12 @@ describe("Payment Processing Edge Cases", () => {
           $transaction: mockPrisma.$transaction,
         };
         return await callback(tx);
-      },
+      }
     );
     // Reset LN to default implementation - use function, not arrow, so it works as constructor
     const lnMock = LN as unknown as {
       mockImplementation: (
-        fn: (credentials: string) => InstanceType<typeof MockLN>,
+        fn: (credentials: string) => InstanceType<typeof MockLN>
       ) => void;
     };
     lnMock.mockImplementation(function (credentials: string) {
@@ -143,7 +143,7 @@ describe("Payment Processing Edge Cases", () => {
       // Use a constructor function that returns the instance
       const lnMock = LN as unknown as {
         mockImplementation: (
-          fn: (credentials: string) => typeof mockLNInstance,
+          fn: (credentials: string) => typeof mockLNInstance
         ) => void;
       };
       lnMock.mockImplementation(function (_credentials: string) {
@@ -155,7 +155,7 @@ describe("Payment Processing Edge Cases", () => {
         createPlanInvoice({
           planId: TEST_PLAN_ID,
           userId: TEST_USER_ID,
-        }),
+        })
       ).rejects.toThrow("Failed to create payment invoice");
 
       // Should not create payment record on failure
@@ -181,7 +181,7 @@ describe("Payment Processing Edge Cases", () => {
       // Use a constructor function that returns the instance
       const lnMock = LN as unknown as {
         mockImplementation: (
-          fn: (credentials: string) => typeof mockLNInstance,
+          fn: (credentials: string) => typeof mockLNInstance
         ) => void;
       };
       lnMock.mockImplementation(function (_credentials: string) {
@@ -193,7 +193,7 @@ describe("Payment Processing Edge Cases", () => {
         createPlanInvoice({
           planId: TEST_PLAN_ID,
           userId: TEST_USER_ID,
-        }),
+        })
       ).rejects.toThrow("Failed to create payment invoice");
     });
 
@@ -218,7 +218,7 @@ describe("Payment Processing Edge Cases", () => {
       mockPrisma.$transaction.mockImplementation(
         async (_callback: (tx: typeof mockPrisma) => Promise<unknown>) => {
           throw new Error("Database connection failed");
-        },
+        }
       );
 
       vi.resetModules();
@@ -229,8 +229,8 @@ describe("Payment Processing Edge Cases", () => {
         paymentModule.handlePaymentCompleted(
           TEST_PAYMENT_ID,
           TEST_USER_ID,
-          TEST_PLAN_ID,
-        ),
+          TEST_PLAN_ID
+        )
       ).rejects.toThrow("Database connection failed");
 
       // Payment should still be marked as completed (update happens before subscription update)
@@ -282,7 +282,7 @@ describe("Payment Processing Edge Cases", () => {
       // Use a constructor function that returns the instance
       const lnMock = LN as unknown as {
         mockImplementation: (
-          fn: (credentials: string) => typeof mockLNInstance,
+          fn: (credentials: string) => typeof mockLNInstance
         ) => void;
       };
       lnMock.mockImplementation(function (_credentials: string) {
@@ -346,14 +346,14 @@ describe("Payment Processing Edge Cases", () => {
       // Use a constructor function that returns the instance
       const lnMock = LN as unknown as {
         mockImplementation: (
-          fn: (credentials: string) => typeof mockLNInstance,
+          fn: (credentials: string) => typeof mockLNInstance
         ) => void;
       };
       lnMock.mockImplementation(function (_credentials: string) {
         return mockLNInstance;
       });
       (getBitcoinRate as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Bitcoin rate API unavailable"),
+        new Error("Bitcoin rate API unavailable")
       );
 
       mockPrisma.plan.findUnique.mockResolvedValue(mockPlan);
@@ -376,12 +376,12 @@ describe("Payment Processing Edge Cases", () => {
       expect(mockPrisma.payment.create).toHaveBeenCalledWith(
         // expect.objectContaining returns 'any' - acceptable for test mocks
         expect.objectContaining({
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
           data: expect.objectContaining({
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
             amount: expect.any(Number),
           }),
-        }),
+        })
       );
     });
 
@@ -413,7 +413,7 @@ describe("Payment Processing Edge Cases", () => {
       // Use a constructor function that returns the instance
       const lnMock = LN as unknown as {
         mockImplementation: (
-          fn: (credentials: string) => typeof mockLNInstance,
+          fn: (credentials: string) => typeof mockLNInstance
         ) => void;
       };
       lnMock.mockImplementation(function (_credentials: string) {
@@ -467,7 +467,7 @@ describe("Payment Processing Edge Cases", () => {
       // Use a constructor function that returns the instance
       const lnMock = LN as unknown as {
         mockImplementation: (
-          fn: (credentials: string) => typeof mockLNInstance,
+          fn: (credentials: string) => typeof mockLNInstance
         ) => void;
       };
       lnMock.mockImplementation(function (_credentials: string) {
@@ -528,7 +528,7 @@ describe("Payment Processing Edge Cases", () => {
       // Use a constructor function that returns the instance
       const lnMock = LN as unknown as {
         mockImplementation: (
-          fn: (credentials: string) => typeof mockLNInstance,
+          fn: (credentials: string) => typeof mockLNInstance
         ) => void;
       };
       lnMock.mockImplementation(function (_credentials: string) {
@@ -587,7 +587,7 @@ describe("Payment Processing Edge Cases", () => {
       mockPrisma.$transaction.mockImplementation(
         async (_callback: (tx: typeof mockPrisma) => Promise<unknown>) => {
           throw transactionError;
-        },
+        }
       );
 
       // Import the module - it should use the real function with mocked prisma
@@ -598,8 +598,8 @@ describe("Payment Processing Edge Cases", () => {
         paymentModule.updateUserSubscription(
           TEST_USER_ID,
           TEST_PLAN_ID,
-          TEST_PAYMENT_ID,
-        ),
+          TEST_PAYMENT_ID
+        )
       ).rejects.toThrow("Transaction failed");
 
       // Verify transaction was called
@@ -629,7 +629,7 @@ describe("Payment Processing Edge Cases", () => {
       mockPrisma.$transaction.mockImplementation(
         async (_callback: (tx: typeof mockPrisma) => Promise<unknown>) => {
           throw new Error("Transaction failed");
-        },
+        }
       );
 
       // Import the module - it should use the real function with mocked prisma
@@ -640,8 +640,8 @@ describe("Payment Processing Edge Cases", () => {
         paymentModule.updateUserSubscription(
           TEST_USER_ID,
           TEST_PLAN_ID,
-          TEST_PAYMENT_ID,
-        ),
+          TEST_PAYMENT_ID
+        )
       ).rejects.toThrow("Transaction failed");
     });
   });
@@ -678,7 +678,7 @@ describe("Payment Processing Edge Cases", () => {
       // Use a constructor function that returns the instance
       const lnMock = LN as unknown as {
         mockImplementation: (
-          fn: (credentials: string) => typeof mockLNInstance,
+          fn: (credentials: string) => typeof mockLNInstance
         ) => void;
       };
       lnMock.mockImplementation(function (_credentials: string) {
@@ -730,7 +730,7 @@ describe("Payment Processing Edge Cases", () => {
       // Use a constructor function that returns the instance
       const lnMock = LN as unknown as {
         mockImplementation: (
-          fn: (credentials: string) => typeof mockLNInstance,
+          fn: (credentials: string) => typeof mockLNInstance
         ) => void;
       };
       lnMock.mockImplementation(function (_credentials: string) {

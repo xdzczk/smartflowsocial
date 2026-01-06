@@ -124,7 +124,7 @@ class ErrorMetricsStore {
       }
 
       errorsByStatusCode[metric.statusCode] =
-        (errorsByStatusCode[metric.statusCode] || 0) + metric.count;
+        (errorsByStatusCode[metric.statusCode] ?? 0) + metric.count;
     }
 
     return {

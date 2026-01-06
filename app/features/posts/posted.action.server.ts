@@ -45,10 +45,7 @@ async function handleDelete(formData: FormData, userId: string) {
  * Handle delete longform post action
  */
 async function handleDeleteLongForm(formData: FormData, userId: string) {
-  const result = validateFormDataOrRespond(
-    formData,
-    deleteLongFormPostSchema,
-  );
+  const result = validateFormDataOrRespond(formData, deleteLongFormPostSchema);
   if (!result.success) {
     return result.response;
   }
@@ -65,7 +62,7 @@ async function handleBulkDelete(formData: FormData, userId: string) {
     return result.response;
   }
   await Promise.all(
-    result.data.postIds.map((id: string) => deletePost({ id, userId })),
+    result.data.postIds.map((id: string) => deletePost({ id, userId }))
   );
   return json({ success: true });
 }
@@ -76,13 +73,13 @@ async function handleBulkDelete(formData: FormData, userId: string) {
 async function handleBulkDeleteLongForm(formData: FormData, userId: string) {
   const result = validateFormDataOrRespond(
     formData,
-    bulkDeleteLongFormPostsSchema,
+    bulkDeleteLongFormPostsSchema
   );
   if (!result.success) {
     return result.response;
   }
   await Promise.all(
-    result.data.postIds.map((id: string) => deleteLongFormPost({ id, userId })),
+    result.data.postIds.map((id: string) => deleteLongFormPost({ id, userId }))
   );
   return json({ success: true });
 }
@@ -106,7 +103,6 @@ async function handleBulkDeleteMixed(formData: FormData, userId: string) {
   return json({ success: true });
 }
 
-
 /**
  * Handle bulk repost action
  */
@@ -123,10 +119,7 @@ async function handleBulkRepost(formData: FormData, userId: string) {
  * Handle bulk scheduled repost action
  */
 async function handleBulkScheduledRepost(formData: FormData, userId: string) {
-  const result = validateFormDataOrRespond(
-    formData,
-    bulkScheduledRepostSchema,
-  );
+  const result = validateFormDataOrRespond(formData, bulkScheduledRepostSchema);
   if (!result.success) {
     return result.response;
   }
@@ -155,11 +148,14 @@ async function handleBulkQuote(formData: FormData, userId: string) {
       typeof signedEvent === "object" &&
       !Array.isArray(signedEvent)
     ) {
-      if ("id" in signedEvent && typeof signedEvent.id === "string") {
-        eventId = signedEvent.id;
+      if ("id" in signedEvent && typeof signedEvent["id"] === "string") {
+        eventId = signedEvent["id"];
       }
-      if ("pubkey" in signedEvent && typeof signedEvent.pubkey === "string") {
-        eventPubkey = signedEvent.pubkey;
+      if (
+        "pubkey" in signedEvent &&
+        typeof signedEvent["pubkey"] === "string"
+      ) {
+        eventPubkey = signedEvent["pubkey"];
       }
     }
 
@@ -206,6 +202,9 @@ async function handleRepost(formData: FormData, userId: string) {
     }
 
     const originalPost = postsData[0];
+    if (!originalPost) {
+      return json({ error: "Post not found" }, { status: 404 });
+    }
     const originalEvent = originalPost.signedEvent;
 
     if (
@@ -218,8 +217,8 @@ async function handleRepost(formData: FormData, userId: string) {
       return json({ error: "Invalid event data" }, { status: 400 });
     }
 
-    const eventIdValue = originalEvent.id;
-    const eventPubkeyValue = originalEvent.pubkey;
+    const eventIdValue = originalEvent["id"];
+    const eventPubkeyValue = originalEvent["pubkey"];
     const eventId =
       typeof eventIdValue === "string" ? eventIdValue : String(eventIdValue);
     const eventPubkey =
@@ -257,7 +256,7 @@ async function handleRepost(formData: FormData, userId: string) {
         message:
           error instanceof Error ? error.message : "Failed to create repost",
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
@@ -280,6 +279,9 @@ async function handleQuote(formData: FormData, userId: string) {
     }
 
     const originalPost = postsData[0];
+    if (!originalPost) {
+      return json({ error: "Post not found" }, { status: 404 });
+    }
     const originalEvent = originalPost.signedEvent;
 
     if (
@@ -292,8 +294,8 @@ async function handleQuote(formData: FormData, userId: string) {
       return json({ error: "Invalid event data" }, { status: 400 });
     }
 
-    const eventIdValue = originalEvent.id;
-    const eventPubkeyValue = originalEvent.pubkey;
+    const eventIdValue = originalEvent["id"];
+    const eventPubkeyValue = originalEvent["pubkey"];
     const eventId =
       typeof eventIdValue === "string" ? eventIdValue : String(eventIdValue);
     const eventPubkey =
@@ -329,7 +331,7 @@ async function handleQuote(formData: FormData, userId: string) {
             ? error.message
             : "Failed to create quote post",
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
@@ -355,6 +357,9 @@ async function handleLongformRepost(formData: FormData, userId: string) {
     }
 
     const originalPost = longformData[0];
+    if (!originalPost) {
+      return json({ error: "Longform post not found" }, { status: 404 });
+    }
     const originalEvent = originalPost.signedEvent;
 
     if (
@@ -365,26 +370,26 @@ async function handleLongformRepost(formData: FormData, userId: string) {
     ) {
       return json(
         { error: "Longform post has no associated NOSTR event" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
     const _eventId =
-      typeof originalEvent.id === "string"
-        ? originalEvent.id
-        : String(originalEvent.id);
+      typeof originalEvent["id"] === "string"
+        ? originalEvent["id"]
+        : String(originalEvent["id"]);
     const eventPubkey =
-      typeof originalEvent.pubkey === "string"
-        ? originalEvent.pubkey
-        : String(originalEvent.pubkey);
-    const eventTags = Array.isArray(originalEvent.tags)
-      ? originalEvent.tags
+      typeof originalEvent["pubkey"] === "string"
+        ? originalEvent["pubkey"]
+        : String(originalEvent["pubkey"]);
+    const eventTags = Array.isArray(originalEvent["tags"])
+      ? originalEvent["tags"]
       : [];
 
     // Create naddr1 identifier for the longform post
     // For longform posts (kind 30023), we need to create an naddr from the event data
     const dTagMatch = eventTags.find(
-      (tag: unknown) => Array.isArray(tag) && tag[0] === "d",
+      (tag: unknown) => Array.isArray(tag) && tag[0] === "d"
     );
     const dTag =
       (Array.isArray(dTagMatch) && dTagMatch[1] ? String(dTagMatch[1]) : "") ||
@@ -429,7 +434,7 @@ async function handleLongformRepost(formData: FormData, userId: string) {
             ? error.message
             : "Failed to create longform repost",
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
@@ -455,6 +460,9 @@ async function handleLongformQuote(formData: FormData, userId: string) {
     }
 
     const originalPost = longformData[0];
+    if (!originalPost) {
+      return json({ error: "Longform post not found" }, { status: 404 });
+    }
     const originalEvent = originalPost.signedEvent;
 
     if (
@@ -465,25 +473,25 @@ async function handleLongformQuote(formData: FormData, userId: string) {
     ) {
       return json(
         { error: "Longform post has no associated NOSTR event" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
     const eventId =
-      typeof originalEvent.id === "string"
-        ? originalEvent.id
-        : String(originalEvent.id);
+      typeof originalEvent["id"] === "string"
+        ? originalEvent["id"]
+        : String(originalEvent["id"]);
     const eventPubkey =
-      typeof originalEvent.pubkey === "string"
-        ? originalEvent.pubkey
-        : String(originalEvent.pubkey);
-    const eventTags = Array.isArray(originalEvent.tags)
-      ? originalEvent.tags
+      typeof originalEvent["pubkey"] === "string"
+        ? originalEvent["pubkey"]
+        : String(originalEvent["pubkey"]);
+    const eventTags = Array.isArray(originalEvent["tags"])
+      ? originalEvent["tags"]
       : [];
 
     // Create naddr1 identifier for the longform post
     const dTagMatch = eventTags.find(
-      (tag: unknown) => Array.isArray(tag) && tag[0] === "d",
+      (tag: unknown) => Array.isArray(tag) && tag[0] === "d"
     );
     const dTag =
       (Array.isArray(dTagMatch) && dTagMatch[1] ? String(dTagMatch[1]) : "") ||
@@ -525,7 +533,7 @@ async function handleLongformQuote(formData: FormData, userId: string) {
             ? error.message
             : "Failed to create longform quote post",
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

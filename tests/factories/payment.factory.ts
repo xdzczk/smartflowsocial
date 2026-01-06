@@ -29,7 +29,7 @@ export interface PaymentFactoryOptions {
 }
 
 export class PaymentFactory {
-  private options: PaymentFactoryOptions;
+  private readonly options: PaymentFactoryOptions;
 
   constructor(options: PaymentFactoryOptions = {}) {
     const paymentId = `payment-${Date.now()}-${Math.random().toString(36).substring(7)}`;
@@ -120,7 +120,7 @@ export class PaymentFactory {
   }
 
   build(): Payment {
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Factory pattern requires type assertion for partial data
     return {
       id: this.options.id!,
       userId: this.options.userId!,
@@ -176,7 +176,7 @@ export const paymentFactory = {
    */
   many: (count: number, overrides?: PaymentFactoryOptions) => {
     return Array.from({ length: count }, (_, i) =>
-      new PaymentFactory({ ...overrides, id: `payment-${i + 1}` }).build(),
+      new PaymentFactory({ ...overrides, id: `payment-${i + 1}` }).build()
     );
   },
 };

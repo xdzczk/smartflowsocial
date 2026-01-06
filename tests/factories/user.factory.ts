@@ -33,7 +33,7 @@ export interface UserFactoryOptions {
 }
 
 export class UserFactory {
-  private options: UserFactoryOptions;
+  private readonly options: UserFactoryOptions;
 
   constructor(options: UserFactoryOptions = {}) {
     this.options = {
@@ -143,7 +143,7 @@ export class UserFactory {
   }
 
   build(): User {
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Factory pattern requires type assertion for partial data
     return {
       id: this.options.id!,
       npub: this.options.npub!,
@@ -220,7 +220,7 @@ export const userFactory = {
    */
   many: (count: number, overrides?: UserFactoryOptions) => {
     return Array.from({ length: count }, (_, i) =>
-      new UserFactory({ ...overrides, id: `user-${i + 1}` }).build(),
+      new UserFactory({ ...overrides, id: `user-${i + 1}` }).build()
     );
   },
 };

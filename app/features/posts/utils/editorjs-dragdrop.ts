@@ -7,7 +7,7 @@ export function setupCustomDragDrop(
   editorRef: React.RefObject<EditorJSInstance>,
   editorElement: HTMLElement,
   onContentChange: (content: string) => void,
-  disableCaptions: () => void,
+  disableCaptions: () => void
 ) {
   let draggedBlockIndex: number | null = null;
   let draggedBlockData: EditorJSBlock | null = null;
@@ -23,7 +23,7 @@ export function setupCustomDragDrop(
 
       // Make blocks draggable
       blockElement.draggable = true;
-      blockElement.dataset.blockIndex = String(index);
+      blockElement.dataset["blockIndex"] = String(index);
 
       // Add drag handlers
       blockElement.addEventListener("dragstart", (e) => {
@@ -44,14 +44,14 @@ export function setupCustomDragDrop(
   const handleDragStart = async (e: Event) => {
     const dragEvent = e as DragEvent;
     const blockElement = (dragEvent.target as HTMLElement).closest(
-      ".ce-block",
+      ".ce-block"
     ) as HTMLElement;
-    draggedBlockIndex = parseInt(blockElement.dataset.blockIndex ?? "0");
+    draggedBlockIndex = parseInt(blockElement.dataset["blockIndex"] ?? "0");
 
     // Get block data using EditorJS API
     try {
       const currentData = await editorRef.current!.saver.save();
-      draggedBlockData = currentData.blocks[draggedBlockIndex];
+      draggedBlockData = currentData.blocks[draggedBlockIndex] ?? null;
 
       dragEvent.dataTransfer!.effectAllowed = "move";
       dragEvent.dataTransfer!.setData("text/html", blockElement.outerHTML);
@@ -69,7 +69,7 @@ export function setupCustomDragDrop(
 
   const handleDragEnd = (e: Event) => {
     const blockElement = (e.target as HTMLElement).closest(
-      ".ce-block",
+      ".ce-block"
     ) as HTMLElement;
     if (blockElement) {
       blockElement.style.opacity = "1";
@@ -87,7 +87,7 @@ export function setupCustomDragDrop(
     dragEvent.dataTransfer!.dropEffect = "move";
 
     const blockElement = (dragEvent.target as HTMLElement).closest(
-      ".ce-block",
+      ".ce-block"
     ) as HTMLElement;
     if (blockElement && draggedBlockIndex !== null) {
       blockElement.classList.add("drag-over");
@@ -99,12 +99,12 @@ export function setupCustomDragDrop(
     e.stopPropagation();
 
     const dropBlockElement = (e.target as HTMLElement).closest(
-      ".ce-block",
+      ".ce-block"
     ) as HTMLElement;
     if (!dropBlockElement || draggedBlockIndex === null || !draggedBlockData)
       return;
 
-    const dropIndex = parseInt(dropBlockElement.dataset.blockIndex ?? "0");
+    const dropIndex = parseInt(dropBlockElement.dataset["blockIndex"] ?? "0");
 
     // Don't do anything if dropping on the same position
     if (draggedBlockIndex === dropIndex) return;
@@ -144,7 +144,7 @@ export function setupCustomDragDrop(
           draggedBlockIndex,
           newIndex,
         },
-        "info",
+        "info"
       );
     } catch (error) {
       const { handleErrorSafely } = await import("~/lib/error-handler.client");

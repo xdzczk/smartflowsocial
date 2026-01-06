@@ -13,7 +13,7 @@ import { getPostStats } from "~/features/posts/stats.server";
 describe("Stats Service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.PRIMAL_CACHING_URL = "http://test-cache-url";
+    process.env["PRIMAL_CACHING_URL"] = "http://test-cache-url";
   });
 
   it("should return empty stats for empty event IDs", async () => {
@@ -53,6 +53,9 @@ describe("Stats Service", () => {
     // fetchJsonWithRetry adds additional options (timeout, maxRetries, correlation ID, etc.)
     expect(fetch).toHaveBeenCalled();
     const fetchCall = (fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    if (!fetchCall) {
+      throw new Error("fetch was not called");
+    }
     expect(fetchCall[0]).toBe("http://test-cache-url");
     const fetchOptions = fetchCall[1] as RequestInit;
     expect(fetchOptions.method).toBe("POST");
@@ -64,7 +67,7 @@ describe("Stats Service", () => {
         params: {
           event_id: "event-123",
         },
-      }),
+      })
     );
     expect(result["event-123"]).toEqual({
       likes: 5,
@@ -96,7 +99,7 @@ describe("Stats Service", () => {
 
   it("should handle fetch errors gracefully", async () => {
     (fetch as ReturnType<typeof vi.fn>).mockRejectedValue(
-      new Error("Network error"),
+      new Error("Network error")
     );
 
     const result = await getPostStats(["event-123"]);

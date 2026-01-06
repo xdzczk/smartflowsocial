@@ -18,10 +18,10 @@ import { redis } from "~/infra/queue/queue-client.server";
  */
 function isTestEnvironment(): boolean {
   // Check environment variables at request time
-  const nodeEnv = process.env.NODE_ENV;
-  const cypress = process.env.CYPRESS;
-  const e2eTest = process.env.E2E_TEST;
-  const disableRateLimit = process.env.DISABLE_RATE_LIMIT;
+  const nodeEnv = process.env["NODE_ENV"];
+  const cypress = process.env["CYPRESS"];
+  const e2eTest = process.env["E2E_TEST"];
+  const disableRateLimit = process.env["DISABLE_RATE_LIMIT"];
 
   return (
     nodeEnv === "test" ||
@@ -48,7 +48,7 @@ export const apiLimiter = rateLimit({
       message: "Too many requests, please try again later.",
       retryAfter: Math.ceil(
         (req.rateLimit?.resetTime ?? Date.now() + 15 * 60 * 1000 - Date.now()) /
-          1000,
+          1000
       ),
     });
   },
@@ -72,7 +72,7 @@ export const strictLimiter = rateLimit({
       message: "Rate limit exceeded for this endpoint. Please try again later.",
       retryAfter: Math.ceil(
         (req.rateLimit?.resetTime ?? Date.now() + 15 * 60 * 1000 - Date.now()) /
-          1000,
+          1000
       ),
     });
   },
@@ -96,7 +96,7 @@ export const authLimiter = rateLimit({
       message: "Too many authentication attempts, please try again later.",
       retryAfter: Math.ceil(
         (req.rateLimit?.resetTime ?? Date.now() + 15 * 60 * 1000 - Date.now()) /
-          1000,
+          1000
       ),
     });
   },
@@ -107,7 +107,7 @@ export const authLimiter = rateLimit({
  * Check if Redis is available for rate limiting
  */
 function isRedisAvailable(): boolean {
-  return !!process.env.REDIS_URL && redis.status === "ready";
+  return !!process.env["REDIS_URL"] && redis.status === "ready";
 }
 
 /**
@@ -124,12 +124,14 @@ export function createUserRateLimiter(points = 100, duration = 60) {
 
     if (!userId) {
       // No user ID, skip rate limiting (will be handled by IP-based limiter)
-      return next();
+      next();
+      return;
     }
 
     if (!isRedisAvailable()) {
       // Redis not available, skip Redis-based rate limiting
-      return next();
+      next();
+      return;
     }
 
     try {
@@ -170,7 +172,8 @@ export function createIPRateLimiter(points = 100, duration = 60) {
     if (!isRedisAvailable()) {
       // Redis not available, skip Redis-based rate limiting
       // Will be handled by express-rate-limit middleware
-      return next();
+      next();
+      return;
     }
 
     const ip = req.ip ?? req.socket.remoteAddress ?? "unknown";

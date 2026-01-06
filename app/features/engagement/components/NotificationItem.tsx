@@ -128,7 +128,7 @@ export function NotificationItem({
                 @{notification.authorNip05.split("@")[0]}
               </span>
             ) : null}
-            {trustInfo && trustBadgeColor ? (
+            {trustInfo && trustBadgeColor && trustScore !== undefined ? (
               <span
                 className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${trustBadgeColor}`}
                 title={`Trust Score: ${trustScore} - ${trustInfo.description}`}
@@ -144,7 +144,7 @@ export function NotificationItem({
             </span>
             <span className="text-xs text-gray-500 dark:text-gray-400">
               {formatDate(
-                new Date(notification.createdAt * 1000).toISOString(),
+                new Date(notification.createdAt * 1000).toISOString()
               )}
             </span>
           </div>

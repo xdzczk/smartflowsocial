@@ -16,7 +16,7 @@ import { convertMarkdownToEditorJS } from "./editorjs-conversion";
 export async function loadEditorJSContent(
   editorRef: React.RefObject<EditorJSInstance>,
   content: string,
-  onContentChange: (content: string) => void,
+  onContentChange: (content: string) => void
 ) {
   if (!editorRef.current || !content) return;
 
@@ -45,7 +45,7 @@ export async function loadEditorJSContent(
             action: "parseContent",
             message: "Content is not valid EditorJS JSON, treating as markdown",
           },
-          "warning",
+          "warning"
         );
         // If JSON parsing fails, treat as markdown and convert to EditorJS
         parsedContent = convertMarkdownToEditorJS(content);
@@ -58,7 +58,7 @@ export async function loadEditorJSContent(
           component: "loadEditorJSContent",
           action: "convertMarkdown",
         },
-        "info",
+        "info"
       );
       parsedContent = convertMarkdownToEditorJS(content);
     }
@@ -77,7 +77,7 @@ export async function loadEditorJSContent(
         component: "useLongFormEditor",
         action: "loadInitialData",
       },
-      false,
+      false
     );
     // Fallback to empty editor if all else fails
     try {
@@ -94,7 +94,7 @@ export async function loadEditorJSContent(
           component: "useLongFormEditor",
           action: "loadInitialDataFallback",
         },
-        false,
+        false
       );
     }
   }
@@ -105,13 +105,13 @@ export async function loadEditorJSContent(
  */
 export async function insertAssetsIntoEditor(
   editorRef: React.RefObject<EditorJSInstance>,
-  selectedAssets: {
+  selectedAssets: Array<{
     assetType: string;
     fileUrl?: string;
     content?: string;
     title?: string;
-  }[],
-  onContentChange: (content: string) => void,
+  }>,
+  onContentChange: (content: string) => void
 ) {
   if (!editorRef.current) return;
 
@@ -138,7 +138,7 @@ export async function insertAssetsIntoEditor(
           action: "getCurrentBlockIndex",
           error: error instanceof Error ? error.message : String(error),
         },
-        "info",
+        "info"
       );
     }
 
@@ -197,7 +197,7 @@ export async function insertAssetsIntoEditor(
         component: "useLongFormEditor",
         action: "insertAssetIntoEditor",
       },
-      false,
+      false
     );
     // Fallback to simple insertion
     try {
@@ -242,7 +242,7 @@ export async function insertAssetsIntoEditor(
           component: "useLongFormEditor",
           action: "insertAssetIntoEditorFallback",
         },
-        false,
+        false
       );
     }
   }
@@ -274,8 +274,8 @@ export function generateSummaryFromContent(content: string): string {
               : "";
           textContent += textValue + " ";
         } else if (block.type === "list") {
-          if (Array.isArray(block.data.items)) {
-            block.data.items.forEach((item: string) => {
+          if (Array.isArray(block.data["items"])) {
+            block.data["items"].forEach((item: string) => {
               textContent += item + " ";
             });
           }
@@ -284,10 +284,9 @@ export function generateSummaryFromContent(content: string): string {
     }
 
     const plainText = textContent.replace(/<[^>]*>/g, "").trim();
-    const generatedSummary =
-      plainText.length > 280 ? plainText.substring(0, 280) + "..." : plainText;
-
-    return generatedSummary;
+    return plainText.length > 280
+      ? plainText.substring(0, 280) + "..."
+      : plainText;
   } catch (error) {
     handleErrorSafely(error, {
       component: "useLongFormEditor",

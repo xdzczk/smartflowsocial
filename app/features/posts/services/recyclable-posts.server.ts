@@ -18,10 +18,7 @@ import {
   getPostsByIds,
 } from "~/models/post.queries.server";
 
-import {
-  toPostDTOArray,
-  type PostDTO,
-} from "../dtos";
+import { toPostDTOArray, type PostDTO } from "../dtos";
 import { getPostStats } from "../stats.server";
 import type { PostData } from "../types";
 import { convertPrismaQueueTypeToQueueType } from "../types";
@@ -68,9 +65,9 @@ export async function getRecyclableDashboardData({
         signedEvent &&
         typeof signedEvent === "object" &&
         "id" in signedEvent &&
-        typeof signedEvent.id === "string"
+        typeof signedEvent["id"] === "string"
       ) {
-        return signedEvent.id;
+        return signedEvent["id"];
       }
       return "";
     })
@@ -107,7 +104,7 @@ export async function getRecyclableDashboardData({
         typeof qt === "object" &&
         qt !== null &&
         "isEnabled" in qt &&
-        qt.isEnabled !== false,
+        qt.isEnabled !== false
     ),
     selectedQueueType: queueType,
   };
@@ -118,7 +115,7 @@ export async function getRecyclableDashboardData({
  */
 export async function handleRecyclablePostAction(
   formData: FormData,
-  userId: string,
+  userId: string
 ) {
   // Validate with Zod
   const result = validateFormDataOrRespond(formData, recyclableActionSchema);
@@ -137,26 +134,35 @@ export async function handleRecyclablePostAction(
   // Handle bulk delete
   if (validatedData._action === "bulkDelete") {
     await Promise.all(
-      validatedData.postIds.map((id: string) => deletePost({ id, userId })),
+      validatedData.postIds.map((id: string) => deletePost({ id, userId }))
     );
     return json({ success: true });
   }
 
   // Handle bulk repost
   if (validatedData._action === "bulkRepost") {
-    const postsData = await getPostsByIds({ ids: validatedData.postIds, userId });
+    const postsData = await getPostsByIds({
+      ids: validatedData.postIds,
+      userId,
+    });
     return json({ repostData: postsData });
   }
 
   // Handle bulk scheduled repost
   if (validatedData._action === "bulkScheduledRepost") {
-    const postsData = await getPostsByIds({ ids: validatedData.postIds, userId });
+    const postsData = await getPostsByIds({
+      ids: validatedData.postIds,
+      userId,
+    });
     return json({ scheduledRepostData: postsData });
   }
 
   // Handle bulk quote
   if (validatedData._action === "bulkQuote") {
-    const postsData = await getPostsByIds({ ids: validatedData.postIds, userId });
+    const postsData = await getPostsByIds({
+      ids: validatedData.postIds,
+      userId,
+    });
 
     // Transform posts data into quote post format
     const quotePostsData = postsData.map((post) => {
@@ -169,11 +175,14 @@ export async function handleRecyclablePostAction(
         typeof signedEvent === "object" &&
         !Array.isArray(signedEvent)
       ) {
-        if ("id" in signedEvent && typeof signedEvent.id === "string") {
-          eventId = signedEvent.id;
+        if ("id" in signedEvent && typeof signedEvent["id"] === "string") {
+          eventId = signedEvent["id"];
         }
-        if ("pubkey" in signedEvent && typeof signedEvent.pubkey === "string") {
-          eventPubkey = signedEvent.pubkey;
+        if (
+          "pubkey" in signedEvent &&
+          typeof signedEvent["pubkey"] === "string"
+        ) {
+          eventPubkey = signedEvent["pubkey"];
         }
       }
 
@@ -211,18 +220,28 @@ export async function handleRecyclablePostAction(
   if (validatedData._action === "repost") {
     try {
       // Type narrowing for repost action
-      const repostData = validatedData._action === "repost" ? validatedData : null;
+      const repostData =
+        validatedData._action === "repost" ? validatedData : null;
       if (!repostData) {
         return json({ error: "Invalid action" }, { status: 400 });
       }
       // Get the original post data
-      const postsData = await getPostsByIds({ ids: [repostData.postId], userId });
+      const postsData = await getPostsByIds({
+        ids: [repostData.postId],
+        userId,
+      });
       if (!postsData || postsData.length === 0) {
         const { NotFoundError } = await import("~/lib/errors");
-        throw new NotFoundError("Post not found", { postId: repostData.postId, userId });
+        throw new NotFoundError("Post not found", {
+          postId: repostData.postId,
+          userId,
+        });
       }
 
       const originalPost = postsData[0];
+      if (!originalPost) {
+        return json({ error: "Post not found" }, { status: 404 });
+      }
       const originalEvent = originalPost.signedEvent;
 
       if (
@@ -235,13 +254,13 @@ export async function handleRecyclablePostAction(
       }
 
       const eventId =
-        typeof originalEvent.id === "string"
-          ? originalEvent.id
-          : String(originalEvent.id);
+        typeof originalEvent["id"] === "string"
+          ? originalEvent["id"]
+          : String(originalEvent["id"]);
       const eventPubkey =
-        typeof originalEvent.pubkey === "string"
-          ? originalEvent.pubkey
-          : String(originalEvent.pubkey);
+        typeof originalEvent["pubkey"] === "string"
+          ? originalEvent["pubkey"]
+          : String(originalEvent["pubkey"]);
 
       // Create kind 6 repost event structure according to NIP-18
       const kind6EventData = {
@@ -271,18 +290,28 @@ export async function handleRecyclablePostAction(
   if (validatedData._action === "quote") {
     try {
       // Type narrowing for quote action
-      const quoteData = validatedData._action === "quote" ? validatedData : null;
+      const quoteData =
+        validatedData._action === "quote" ? validatedData : null;
       if (!quoteData) {
         return json({ error: "Invalid action" }, { status: 400 });
       }
       // Get the original post data
-      const postsData = await getPostsByIds({ ids: [quoteData.postId], userId });
+      const postsData = await getPostsByIds({
+        ids: [quoteData.postId],
+        userId,
+      });
       if (!postsData || postsData.length === 0) {
         const { NotFoundError } = await import("~/lib/errors");
-        throw new NotFoundError("Post not found", { postId: quoteData.postId, userId });
+        throw new NotFoundError("Post not found", {
+          postId: quoteData.postId,
+          userId,
+        });
       }
 
       const originalPost = postsData[0];
+      if (!originalPost) {
+        return json({ error: "Post not found" }, { status: 404 });
+      }
       const originalEvent = originalPost.signedEvent;
 
       if (
@@ -295,13 +324,13 @@ export async function handleRecyclablePostAction(
       }
 
       const eventId =
-        typeof originalEvent.id === "string"
-          ? originalEvent.id
-          : String(originalEvent.id);
+        typeof originalEvent["id"] === "string"
+          ? originalEvent["id"]
+          : String(originalEvent["id"]);
       const eventPubkey =
-        typeof originalEvent.pubkey === "string"
-          ? originalEvent.pubkey
-          : String(originalEvent.pubkey);
+        typeof originalEvent["pubkey"] === "string"
+          ? originalEvent["pubkey"]
+          : String(originalEvent["pubkey"]);
 
       // Create quote post data for bulk posts page
       const fileUrl =

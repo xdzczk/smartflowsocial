@@ -1,5 +1,4 @@
-import type { useFetcher } from "@remix-run/react";
-import { type FetcherWithComponents } from "@remix-run/react";
+import type { useFetcher, type FetcherWithComponents } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
@@ -79,7 +78,7 @@ interface UseRecyclablesStateProps {
   repostFetcher:
     | FetcherWithComponents<RepostFetcherData>
     | FetcherWithComponents<unknown>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Remix fetcher type requires any for dynamic action types
   bulkDeleteFetcher: ReturnType<typeof useFetcher<any>>;
   bulkRepostFetcher: ReturnType<typeof useFetcher>;
   individualRepostFetcher: FetcherWithComponents<IndividualRepostFetcherData>;
@@ -188,7 +187,7 @@ export function useRecyclablesState({
   });
 
   const filteredPosts = sortedPosts.filter((post) =>
-    post.caption?.toLowerCase().includes(searchTerm.toLowerCase()),
+    post.caption?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const requestSort = (key: string) => {
@@ -261,7 +260,7 @@ export function useRecyclablesState({
 
   // Handle bulk delete success
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Remix fetcher data type is complex, validated at runtime
     const dataRaw = bulkDeleteFetcher.data;
     const data =
       dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -299,7 +298,7 @@ export function useRecyclablesState({
           ? user.timezone
           : "UTC";
       const localDate = new Date(
-        now.toLocaleString("en-US", { timeZone: userTimezone }),
+        now.toLocaleString("en-US", { timeZone: userTimezone })
       );
       localDate.setHours(localDate.getHours() + 1);
 
@@ -351,7 +350,7 @@ export function useRecyclablesState({
           ? user.timezone
           : "UTC";
       const localDate = new Date(
-        now.toLocaleString("en-US", { timeZone: userTimezoneForScheduled }),
+        now.toLocaleString("en-US", { timeZone: userTimezoneForScheduled })
       );
       localDate.setHours(localDate.getHours() + 1);
 
@@ -391,12 +390,12 @@ export function useRecyclablesState({
                 : undefined,
             isKind6Repost: true,
           };
-        },
+        }
       );
 
       sessionStorage.setItem(
         "scheduledRepostData",
-        JSON.stringify(scheduledRepostData),
+        JSON.stringify(scheduledRepostData)
       );
       window.location.href = "/dashboard/bulkposts?mode=repost";
       setSelectedPosts(new Set());
@@ -412,7 +411,7 @@ export function useRecyclablesState({
       window.location.href = "/dashboard/bulkposts?mode=quote";
       setSelectedPosts(new Set());
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Dependencies are intentionally limited to avoid unnecessary re-renders
   }, [repostFetcher?.data, user?.timezone, repostFetcher]);
 
   // Handle individual repost actions
@@ -496,7 +495,7 @@ export function useRecyclablesState({
           setTimeout(() => {
             const tags = Array.isArray(eventData.tags) ? eventData.tags : [];
             const eTag: unknown = tags.find(
-              (tag: unknown) => Array.isArray(tag) && tag[0] === "e",
+              (tag: unknown) => Array.isArray(tag) && tag[0] === "e"
             );
             const eventId =
               Array.isArray(eTag) && typeof eTag[1] === "string" ? eTag[1] : "";

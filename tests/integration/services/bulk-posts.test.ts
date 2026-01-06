@@ -11,13 +11,10 @@ vi.mock("~/features/user", () => ({
   getUserHashTagPresets: vi.fn(),
 }));
 
-import { getBulkPostsDashboardData } from "~/features/posts/services/bulk-posts.server";
-import {
-  getQueueTypes,
-  getUserHashTagPresets,
-} from "~/features/user";
-
 import { TEST_USER_ID } from "../../utils/test-helpers";
+
+import { getBulkPostsDashboardData } from "~/features/posts/services/bulk-posts.server";
+import { getQueueTypes, getUserHashTagPresets } from "~/features/user";
 
 describe("Bulk Posts Service", () => {
   beforeEach(() => {
@@ -39,8 +36,8 @@ describe("Bulk Posts Service", () => {
 
     expect(result.tags).toEqual(["tag1", "tag2", "tag3"]);
     expect(result.queueTypes).toHaveLength(2); // Only enabled ones
-    expect(result.queueTypes[0].id).toBe("queue-1");
-    expect(result.queueTypes[1].id).toBe("queue-3");
+    expect(result.queueTypes[0]?.id).toBe("queue-1");
+    expect(result.queueTypes[1]?.id).toBe("queue-3");
     expect(result.hashTagPresets).toHaveLength(2); // All presets are returned
     expect(result.mode).toBe("preset");
   });
@@ -112,14 +109,14 @@ describe("Bulk Posts Service", () => {
     const result = await getBulkPostsDashboardData(TEST_USER_ID);
 
     expect(result.queueTypes).toHaveLength(2);
-    expect(result.queueTypes[0].id).toBe("queue-1");
-    expect(result.queueTypes[1].id).toBe("queue-3");
+    expect(result.queueTypes[0]?.id).toBe("queue-1");
+    expect(result.queueTypes[1]?.id).toBe("queue-3");
   });
 
   it("should handle non-array queue types", async () => {
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-      "not-an-array",
+      "not-an-array"
     );
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
@@ -131,7 +128,7 @@ describe("Bulk Posts Service", () => {
   it("should handle non-array hash tag presets", async () => {
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue(
-      "not-an-array",
+      "not-an-array"
     );
 
     const result = await getBulkPostsDashboardData(TEST_USER_ID);

@@ -24,17 +24,17 @@ vi.mock("~/features/posts/services/queue-type-resolver.server", () => ({
   resolveQueueTypeId: vi.fn(),
 }));
 
-import { requireUserId } from "~/features/auth/session.server";
-import { bulkPostsAction } from "~/features/posts/bulkposts.action.server";
-import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
-import { createPost, updatePost } from "~/models/post.commands.server";
-import { getPostsByIds } from "~/models/post.queries.server";
-
 import {
   TEST_USER_ID,
   createActionFormData,
   createMockPost,
 } from "../utils/test-helpers";
+
+import { requireUserId } from "~/features/auth/session.server";
+import { bulkPostsAction } from "~/features/posts/bulkposts.action.server";
+import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
+import { createPost, updatePost } from "~/models/post.commands.server";
+import { getPostsByIds } from "~/models/post.queries.server";
 
 describe("Bulk Posts Action Handler", () => {
   beforeEach(() => {
@@ -88,8 +88,8 @@ describe("Bulk Posts Action Handler", () => {
           ? (dataRaw as Record<string, unknown>)
           : {};
 
-      expect(data.success).toBe(true);
-      const fileUrls = Array.isArray(data.fileUrls) ? data.fileUrls : [];
+      expect(data["success"]).toBe(true);
+      const fileUrls = Array.isArray(data["fileUrls"]) ? data["fileUrls"] : [];
       expect(fileUrls).toHaveLength(2);
       expect(fileUrls[0]).toMatchObject({
         fileUrl: "https://example.com/image1.jpg",
@@ -165,11 +165,11 @@ describe("Bulk Posts Action Handler", () => {
         createMockPost({
           id: `post-${index + 1}`,
           signedEvent: event,
-        }),
+        })
       );
 
       (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
-        "queue-1",
+        "queue-1"
       );
       (createPost as ReturnType<typeof vi.fn>)
         .mockResolvedValueOnce(mockPosts[0])
@@ -187,11 +187,11 @@ describe("Bulk Posts Action Handler", () => {
       formData.append("caption", JSON.stringify("Caption 2"));
       formData.append(
         "fileUrl",
-        JSON.stringify("https://example.com/image1.jpg"),
+        JSON.stringify("https://example.com/image1.jpg")
       );
       formData.append(
         "fileUrl",
-        JSON.stringify("https://example.com/image2.jpg"),
+        JSON.stringify("https://example.com/image2.jpg")
       );
       formData.append("queueType", "posts");
       formData.append("queueType", "all");
@@ -224,10 +224,10 @@ describe("Bulk Posts Action Handler", () => {
 
       const originalPostId = "original-post-123";
       (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
-        "queue-1",
+        "queue-1"
       );
       (createPost as ReturnType<typeof vi.fn>).mockResolvedValue(
-        createMockPost({ id: "new-post-1" }),
+        createMockPost({ id: "new-post-1" })
       );
       (getPostsByIds as ReturnType<typeof vi.fn>).mockResolvedValue([
         createMockPost({ id: originalPostId, isRecyclable: true }),
@@ -247,12 +247,22 @@ describe("Bulk Posts Action Handler", () => {
       const formData = new FormData();
       formData.append("_action", "sign_and_schedule");
       // Schema expects arrays from FormData.getAll(), so append each item
-      [JSON.stringify(signedEvent)].forEach((event) => formData.append("signedEvents", event));
-      [JSON.stringify(nostrEvent)].forEach((event) => formData.append("nostrEvent", event));
-      [JSON.stringify("Caption")].forEach((caption) => formData.append("caption", caption));
-      [JSON.stringify(["https://example.com/image.jpg"])].forEach((url) => formData.append("fileUrl", url));
+      [JSON.stringify(signedEvent)].forEach((event) =>
+        formData.append("signedEvents", event)
+      );
+      [JSON.stringify(nostrEvent)].forEach((event) =>
+        formData.append("nostrEvent", event)
+      );
+      [JSON.stringify("Caption")].forEach((caption) =>
+        formData.append("caption", caption)
+      );
+      [JSON.stringify(["https://example.com/image.jpg"])].forEach((url) =>
+        formData.append("fileUrl", url)
+      );
       ["posts"].forEach((queue) => formData.append("queueType", queue));
-      ["false"].forEach((recyclable) => formData.append("isRecyclable", recyclable));
+      ["false"].forEach((recyclable) =>
+        formData.append("isRecyclable", recyclable)
+      );
       [originalPostId].forEach((id) => formData.append("originalPostId", id));
 
       const request = new Request(
@@ -260,7 +270,7 @@ describe("Bulk Posts Action Handler", () => {
         {
           method: "POST",
           body: formData,
-        },
+        }
       );
 
       const result = await bulkPostsAction({ request });
@@ -269,13 +279,13 @@ describe("Bulk Posts Action Handler", () => {
       expect(updatePost).toHaveBeenCalledWith(
         expect.objectContaining({
           id: originalPostId,
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
           userId: expect.any(String),
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
           data: expect.objectContaining({
             isRecyclable: false,
           }),
-        }),
+        })
       );
     });
 
@@ -305,10 +315,10 @@ describe("Bulk Posts Action Handler", () => {
       const queueTypes = ["posts", "all"];
 
       (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue(
-        TEST_USER_ID,
+        TEST_USER_ID
       );
       (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
-        "queue-1",
+        "queue-1"
       );
       (createPost as ReturnType<typeof vi.fn>)
         .mockResolvedValueOnce(createMockPost({ id: "draft-1" }))
@@ -344,7 +354,7 @@ describe("Bulk Posts Action Handler", () => {
         expect.objectContaining({
           draft: true,
           isScheduled: false,
-        }),
+        })
       );
     });
   });
@@ -352,7 +362,7 @@ describe("Bulk Posts Action Handler", () => {
   describe("Authentication", () => {
     it("should require authentication", async () => {
       (requireUserId as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Not authenticated"),
+        new Error("Not authenticated")
       );
 
       const formData = createActionFormData("_upload_images_preview", {});

@@ -2,7 +2,6 @@
 // Using ws package instead of deprecated websocket-polyfill
 if (
   process.env.NODE_ENV !== "development" &&
-  typeof globalThis !== "undefined" &&
   globalThis.WebSocket === undefined
 ) {
   const { WebSocket } = require("ws") as {

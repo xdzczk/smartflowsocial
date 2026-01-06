@@ -250,7 +250,7 @@ describe("Nostr Utils", () => {
       };
       const result = convertEditorJSToMarkdown(editorData);
       expect(result).toContain(
-        "![Image caption](https://example.com/image.jpg)",
+        "![Image caption](https://example.com/image.jpg)"
       );
     });
 
@@ -288,15 +288,17 @@ describe("Nostr Utils", () => {
     it("should convert ordered lists", () => {
       const result = convertMarkdownToEditorJS("1. Item 1\n2. Item 2");
       expect(result.blocks).toHaveLength(1);
-      expect(result.blocks[0]?.type).toBe("list");
-      expect(result.blocks[0]?.data.style).toBe("ordered");
+      const firstBlock = result.blocks[0];
+      expect(firstBlock?.type).toBe("list");
+      expect(firstBlock?.data["style"]).toBe("ordered");
     });
 
     it("should convert unordered lists", () => {
       const result = convertMarkdownToEditorJS("- Item 1\n- Item 2");
       expect(result.blocks).toHaveLength(1);
-      expect(result.blocks[0]?.type).toBe("list");
-      expect(result.blocks[0]?.data.style).toBe("unordered");
+      const firstBlock = result.blocks[0];
+      expect(firstBlock?.type).toBe("list");
+      expect(firstBlock?.data["style"]).toBe("unordered");
     });
 
     it("should convert blockquotes", () => {
@@ -313,7 +315,7 @@ describe("Nostr Utils", () => {
 
     it("should convert images", () => {
       const result = convertMarkdownToEditorJS(
-        "![alt](https://example.com/image.jpg)",
+        "![alt](https://example.com/image.jpg)"
       );
       expect(result.blocks).toHaveLength(1);
       expect(result.blocks[0]?.type).toBe("image");
@@ -321,7 +323,7 @@ describe("Nostr Utils", () => {
 
     it("should convert links", () => {
       const result = convertMarkdownToEditorJS(
-        "[Link Text](https://example.com)",
+        "[Link Text](https://example.com)"
       );
       expect(result.blocks).toHaveLength(1);
       expect(result.blocks[0]?.type).toBe("linkTool");

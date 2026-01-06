@@ -50,18 +50,20 @@ export async function loadCalendarData(userId: string, queueType: string) {
   // Filter posts by queue type if specific queue is selected
   const filteredScheduledPosts = filterPostsByQueueType(
     allScheduledPosts,
-    queueType,
+    queueType
   );
   const filteredScheduledLongFormPosts = filterPostsByQueueType(
-    allScheduledLongFormPosts as {
+    allScheduledLongFormPosts as Array<{
       queueType?: { name?: string | null } | null;
-    }[],
-    queueType,
+    }>,
+    queueType
   ) as typeof allScheduledLongFormPosts;
   const filteredPastPosts = filterPostsByQueueType(allPastPosts, queueType);
   const filteredPastLongFormPosts = filterPostsByQueueType(
-    allPastLongFormPosts as { queueType?: { name?: string | null } | null }[],
-    queueType,
+    allPastLongFormPosts as Array<{
+      queueType?: { name?: string | null } | null;
+    }>,
+    queueType
   ) as typeof allPastLongFormPosts;
 
   // Convert PostWithQueueType[] to PostData[] for combineContent
@@ -78,7 +80,7 @@ export async function loadCalendarData(userId: string, queueType: string) {
             description: queueType.description,
             scheduleType: scheduleTypeValue,
             scheduleConfig: convertJsonValueToScheduleConfig(
-              queueType.scheduleConfig,
+              queueType.scheduleConfig
             ),
             isEnabled: queueType.isEnabled,
             userId: queueType.userId,
@@ -110,7 +112,7 @@ export async function loadCalendarData(userId: string, queueType: string) {
             description: queueType.description,
             scheduleType: scheduleTypeValue,
             scheduleConfig: convertJsonValueToScheduleConfig(
-              queueType.scheduleConfig,
+              queueType.scheduleConfig
             ),
             isEnabled: queueType.isEnabled,
             userId: queueType.userId,
@@ -145,7 +147,7 @@ export async function loadCalendarData(userId: string, queueType: string) {
               description: queueType.description,
               scheduleType: scheduleTypeValue,
               scheduleConfig: convertJsonValueToScheduleConfig(
-                queueType.scheduleConfig,
+                queueType.scheduleConfig
               ),
               isEnabled: queueType.isEnabled,
               userId: queueType.userId,
@@ -206,7 +208,7 @@ export async function loadCalendarData(userId: string, queueType: string) {
                 scheduleConfig: convertJsonValueToScheduleConfig(
                   "scheduleConfig" in post.queueType
                     ? post.queueType.scheduleConfig
-                    : undefined,
+                    : undefined
                 ),
                 isEnabled: isEnabledValue,
                 userId: userIdValue,
@@ -226,11 +228,11 @@ export async function loadCalendarData(userId: string, queueType: string) {
   // Note: allContent/allPastContent are removed - reconstruct on client from posts
   const scheduledPostsDTO: PostDTO[] = toPostDTOArray(scheduledPostsData);
   const scheduledLongFormPostsDTO: LongFormPostDTO[] = toLongFormPostDTOArray(
-    scheduledLongFormPostsData,
+    scheduledLongFormPostsData
   );
   const pastPostsDTO: PostDTO[] = toPostDTOArray(pastPostsData);
   const pastLongFormPostsDTO: LongFormPostDTO[] = toLongFormPostDTOArray(
-    pastLongFormPostsData,
+    pastLongFormPostsData
   );
 
   return {
@@ -273,7 +275,7 @@ export async function loadCalendarQueueData(userId: string, queueType: string) {
             description: queueType.description,
             scheduleType: scheduleTypeValue,
             scheduleConfig: convertJsonValueToScheduleConfig(
-              queueType.scheduleConfig,
+              queueType.scheduleConfig
             ),
             isEnabled: queueType.isEnabled,
             userId: queueType.userId,
@@ -298,7 +300,8 @@ export async function loadCalendarQueueData(userId: string, queueType: string) {
   // Convert scheduleInterval strings to numbers for schema compliance
   const scheduleIntervals = user?.scheduleInterval
     ? user.scheduleInterval.map((interval) => {
-        const num = typeof interval === "string" ? parseInt(interval, 10) : interval;
+        const num =
+          typeof interval === "string" ? parseInt(interval, 10) : interval;
         return isNaN(num) ? 0 : num;
       })
     : [];

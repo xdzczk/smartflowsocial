@@ -47,7 +47,7 @@ export default function SchedulingControls({
 
       // Find the queue type object to get its ID
       const selectedQueueType = queueTypes.find(
-        (qt) => (typeof qt === "string" ? qt : qt.name) === queueTypeName,
+        (qt) => (typeof qt === "string" ? qt : qt.name) === queueTypeName
       );
       const queueTypeId =
         typeof selectedQueueType === "object" ? selectedQueueType.id : null;
@@ -83,7 +83,7 @@ export default function SchedulingControls({
         });
       }
     },
-    [queueTypes, userId, onScheduleChange],
+    [queueTypes, userId, onScheduleChange]
   );
 
   useEffect(() => {
@@ -95,7 +95,7 @@ export default function SchedulingControls({
   const _handleScheduleIntervalClick = (intervalHours: string) => {
     const now = new Date();
     const hoursLater = new Date(
-      now.getTime() + parseInt(intervalHours) * 60 * 60 * 1000,
+      now.getTime() + parseInt(intervalHours) * 60 * 60 * 1000
     );
 
     const formattedDate = hoursLater.toLocaleString("en-US", {
@@ -110,7 +110,10 @@ export default function SchedulingControls({
     });
 
     const [datePart, timePart] = formattedDate.split(", ");
-    const [month, day, year] = datePart.split("/");
+    const [month, day, year] = datePart?.split("/") ?? ["", "", ""];
+    if (!year || !month || !day || !timePart) {
+      return;
+    }
     const datetimeLocal = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}T${timePart}`;
 
     setLocalScheduledFor(datetimeLocal);

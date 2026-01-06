@@ -9,7 +9,7 @@ import { logClientError } from "~/lib/error-handler.client";
 
 import { type BulkPost, type PreparedEvent } from "./types";
 interface FetcherData {
-  fileUrls?: { fileUrl: string; scheduledFor: string }[];
+  fileUrls?: Array<{ fileUrl: string; scheduledFor: string }>;
 }
 
 interface UseBulkPostEventsProps {
@@ -127,7 +127,7 @@ export function useBulkPostEvents({
           }
         }
 
-        const tagsString = effectiveHashtags ?? "";
+        const tagsString = effectiveHashtags;
         const addTags =
           user &&
           typeof user === "object" &&
@@ -165,8 +165,8 @@ export function useBulkPostEvents({
             : "";
 
         const contentParts = [fileUrl, post.caption, addTags].filter(
-          (part) => part != null && part !== "",
-        ); // Filter out null, undefined, and empty strings
+          (part) => part !== ""
+        ); // Filter out empty strings
 
         const content = contentParts.join("\n");
 
@@ -201,7 +201,7 @@ export function useBulkPostEvents({
             "en-US",
             {
               timeZone: userTimezone,
-            },
+            }
           );
           const userOffset =
             (new Date(userDate).getTime() -
@@ -230,11 +230,11 @@ export function useBulkPostEvents({
               try {
                 const parsed = JSON.parse(post.originalFileUrl) as string[];
                 if (Array.isArray(parsed) && parsed.length > 0) {
-                  displayFileUrl = parsed[0];
+                  displayFileUrl = parsed[0] ?? "";
                 }
               } catch (_e) {
                 // If parsing fails, use as is
-                displayFileUrl = post.originalFileUrl;
+                displayFileUrl = post.originalFileUrl ?? "";
               }
             } else if (
               Array.isArray(post.originalFileUrl) &&
@@ -251,11 +251,11 @@ export function useBulkPostEvents({
             scheduledFor: Math.floor(
               (post.scheduledFor
                 ? new Date(post.scheduledFor).getTime()
-                : Date.now()) / 1000,
+                : Date.now()) / 1000
             ),
             caption: "", // No caption for kind 6 reposts
-            queueType: post?.queueType ?? "unassigned",
-            isRecyclable: post?.isRecyclable ?? false,
+            queueType: post.queueType,
+            isRecyclable: post.isRecyclable,
             originalPostId: post.originalPostId,
             originalEventId: post.originalEventId,
             originalEventPubkey: post.originalEventPubkey,
@@ -307,7 +307,7 @@ export function useBulkPostEvents({
                     action: "decodeNaddr",
                     message: "Failed to decode naddr for longform quote",
                   },
-                  "warning",
+                  "warning"
                 );
               }
             }
@@ -350,9 +350,9 @@ export function useBulkPostEvents({
           return {
             fileUrl,
             scheduledFor: Math.floor(scheduledTime / 1000),
-            caption: post?.caption ?? "",
-            queueType: post?.queueType ?? "unassigned",
-            isRecyclable: post?.isRecyclable ?? false,
+            caption: post.caption,
+            queueType: post.queueType,
+            isRecyclable: post.isRecyclable,
             originalPostId: post.originalPostId,
             originalEventId: post.originalEventId,
             originalEventPubkey: post.originalEventPubkey,
@@ -368,10 +368,10 @@ export function useBulkPostEvents({
           return {
             fileUrl,
             scheduledFor: Math.floor(scheduledTime / 1000),
-            caption: post?.caption ?? "",
-            queueType: post?.queueType ?? "unassigned",
-            isRecyclable: post?.isRecyclable ?? false,
-            originalPostId: post?.originalPostId,
+            caption: post.caption,
+            queueType: post.queueType,
+            isRecyclable: post.isRecyclable,
+            originalPostId: post.originalPostId,
             events: {
               content,
               created_at: Math.floor(scheduledTime / 1000),
@@ -380,7 +380,7 @@ export function useBulkPostEvents({
             },
           };
         }
-      }),
+      })
     );
 
     setPreparedEvents(events);
@@ -409,7 +409,7 @@ export function useBulkPostEvents({
       // Show toast notification with validation errors
       const errorMessage =
         errors.length === 1
-          ? errors[0]
+          ? (errors[0] ?? "Validation error")
           : `${errors.length} issues found:\n• ${errors.slice(0, 3).join("\n• ")}${errors.length > 3 ? "\n• And more..." : ""}`;
 
       setToast({
@@ -440,7 +440,7 @@ export function useBulkPostEvents({
             // For kind 6 reposts, use the original file URL for display
             if (post.originalFileUrl && post.originalFileUrl.length > 0) {
               if (Array.isArray(post.originalFileUrl)) {
-                fileUrl = post.originalFileUrl[0];
+                fileUrl = post.originalFileUrl[0] ?? "";
               } else if (
                 typeof post.originalFileUrl === "string" &&
                 post.originalFileUrl.startsWith("[")
@@ -450,7 +450,7 @@ export function useBulkPostEvents({
                   if (Array.isArray(parsed) && parsed.length > 0) {
                     fileUrl =
                       typeof (parsed as unknown[])[0] === "string"
-                        ? (parsed as string[])[0]
+                        ? ((parsed as string[])[0] ?? "")
                         : "";
                   }
                 } catch (_e) {
@@ -500,7 +500,7 @@ export function useBulkPostEvents({
 
             // Check for failed uploads
             const failedUploads = uploadResults.filter(
-              (result) => !result.success,
+              (result) => !result.success
             );
             if (failedUploads.length > 0) {
               const errorMessages = failedUploads
@@ -526,7 +526,7 @@ export function useBulkPostEvents({
               formData.append("queueTypes", post.queueType);
               formData.append(
                 "isRecyclable",
-                (post.isRecyclable ?? false).toString(),
+                (post.isRecyclable ?? false).toString()
               );
             });
             formData.append("_action", "_upload_images_preview");
@@ -547,7 +547,7 @@ export function useBulkPostEvents({
                 component: "useBulkPostEvents",
                 action: "prepareEvents",
               },
-              false, // Don't show toast, we set toast state instead
+              false // Don't show toast, we set toast state instead
             );
             setToast({
               type: "error",
@@ -566,7 +566,7 @@ export function useBulkPostEvents({
             formData.append("queueTypes", post.queueType);
             formData.append(
               "isRecyclable",
-              (post.isRecyclable ?? false).toString(),
+              (post.isRecyclable ?? false).toString()
             );
           });
           formData.append("_action", "_upload_images_preview");
@@ -589,7 +589,7 @@ export function useBulkPostEvents({
           component: "useBulkPostEvents",
           action: "prepareEvents",
         },
-        false, // Don't show toast, we set toast state instead
+        false // Don't show toast, we set toast state instead
       );
       setToast({
         type: "error",
@@ -624,13 +624,13 @@ export function useBulkPostEvents({
 
     document.addEventListener(
       "repostEventsPrepared",
-      handleRepostEventsPrepared,
+      handleRepostEventsPrepared
     );
 
     return () => {
       document.removeEventListener(
         "repostEventsPrepared",
-        handleRepostEventsPrepared,
+        handleRepostEventsPrepared
       );
     };
   }, [fetcher.data, processEvents]);

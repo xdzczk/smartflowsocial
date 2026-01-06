@@ -3,8 +3,7 @@
  * Provides caching and background refetching for calendar queue page
  */
 
-import { useFetcher, useLoaderData } from "@remix-run/react";
-import { useParams } from "@remix-run/react";
+import { useFetcher, useLoaderData, useParams } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 
 import type { UserWithHashTagPresets as _UserWithHashTagPresets } from "~/features/user";
@@ -13,7 +12,6 @@ import {
   calendarQueueLoaderDataSchema,
   type CalendarQueueLoaderData,
 } from "~/lib/validation/schemas/loader-responses.schemas";
-
 
 import type { PostDTO } from "../dtos";
 import { fromPostDTOArray } from "../dtos";
@@ -30,7 +28,8 @@ import type { PostData, QueueType } from "../types";
 export const calendarQueueKeys = {
   all: ["calendar-queue"] as const,
   lists: () => [...calendarQueueKeys.all, "list"] as const,
-  list: (queueType?: string) => [...calendarQueueKeys.lists(), queueType] as const,
+  list: (queueType?: string) =>
+    [...calendarQueueKeys.lists(), queueType] as const,
   detail: (id: string) => [...calendarQueueKeys.all, "detail", id] as const,
 };
 
@@ -39,15 +38,15 @@ export const calendarQueueKeys = {
  */
 export function useCalendarQueueQuery() {
   const params = useParams();
-  const queueType = params.queueType ?? "all";
-  
+  const queueType = params["queueType"] ?? "all";
+
   const loaderDataRaw = useLoaderData();
   const fetcher = useFetcher();
 
   // Validate initial loader data
   const validatedLoaderData = safeValidateLoaderResponse(
     loaderDataRaw,
-    calendarQueueLoaderDataSchema,
+    calendarQueueLoaderDataSchema
   );
 
   return useQuery({
@@ -56,14 +55,14 @@ export function useCalendarQueueQuery() {
       // Use fetcher to refetch data
       const url = `/dashboard/calendar${queueType !== "all" ? `/${queueType}` : ""}`;
       fetcher.load(url);
-      
+
       return new Promise<CalendarQueueLoaderData>((resolve, reject) => {
         const checkFetcher = () => {
           if (fetcher.state === "idle") {
             if (fetcher.data) {
               const validated = safeValidateLoaderResponse(
                 fetcher.data,
-                calendarQueueLoaderDataSchema,
+                calendarQueueLoaderDataSchema
               );
               if (validated) {
                 resolve(validated);
@@ -124,4 +123,3 @@ export function useCalendarQueueData() {
     rawData,
   };
 }
-

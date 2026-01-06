@@ -7,7 +7,7 @@ import type {
 } from "./PostBlock.types";
 export function getPostPreview(
   post: CalendarPost,
-  isLongform: boolean,
+  isLongform: boolean
 ): string {
   if (isLongform) {
     if (post.title) {
@@ -40,7 +40,7 @@ export function getPostPreview(
 
 export function getFirstImage(
   post: CalendarPost,
-  isLongform: boolean,
+  isLongform: boolean
 ): string | null {
   if (isLongform) {
     return post.image ?? null;
@@ -55,13 +55,13 @@ export function getFirstImage(
         try {
           const parsed = JSON.parse(firstFileUrl) as string[] | string;
           const url = Array.isArray(parsed) ? parsed[0] : firstFileUrl;
-          return url;
+          return url ?? null;
         } catch {
           // If parsing fails, treat as direct URL
-          return firstFileUrl;
+          return firstFileUrl ?? null;
         }
       }
-      return firstFileUrl as string;
+      return (firstFileUrl as string | undefined) ?? null;
     } catch (error) {
       handleErrorSafely(error, {
         component: "PostBlock",
@@ -76,7 +76,7 @@ export function getFirstImage(
 export function getStatusColor(
   post: CalendarPost,
   isLongform: boolean,
-  isPast: boolean,
+  isPast: boolean
 ): string {
   // Past posts get grayed out styling regardless of other conditions
   if (isPast) {
@@ -106,7 +106,7 @@ export function getQueueColorStyle(
   post: CalendarPost,
   queueTypes: QueueType[] | undefined,
   isLongform: boolean,
-  isPast: boolean,
+  isPast: boolean
 ): QueueColorStyle | null {
   // Past posts get grayed styling regardless of queue color
   if (isPast) {
@@ -128,7 +128,7 @@ export function getQueueColorStyle(
     const queueTypeData = queueTypes.find(
       (qt) =>
         (qt.id && post.queueType?.id && qt.id === post.queueType.id) ??
-        (qt.name && post.queueType?.name && qt.name === post.queueType.name),
+        (qt.name && post.queueType?.name && qt.name === post.queueType.name)
     );
     if (queueTypeData?.color) {
       return {
@@ -154,7 +154,7 @@ export function getQueueColorStyle(
 export function getDisplayTime(
   post: CalendarPost,
   isLongform: boolean,
-  isPast: boolean,
+  isPast: boolean
 ): Date {
   if (isPast) {
     return isLongform

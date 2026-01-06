@@ -97,7 +97,7 @@ export async function checkAndRenewSubscriptions(): Promise<
                         price: String(subscription.Plan.price),
                       }
                     : null,
-                },
+                }
               );
               results.renewalSuccess++;
             } catch (renewalError: unknown) {
@@ -120,7 +120,7 @@ export async function checkAndRenewSubscriptions(): Promise<
                 user.npub,
                 false,
                 planName,
-                `Your ${planName} subscription renewal failed. Please update your payment method to continue using the service.`,
+                `Your ${planName} subscription renewal failed. Please update your payment method to continue using the service.`
               );
             }
           } else {
@@ -134,7 +134,7 @@ export async function checkAndRenewSubscriptions(): Promise<
               user.npub,
               false,
               planName,
-              `Your ${planName} subscription has expired. Please renew to continue using the service.`,
+              `Your ${planName} subscription has expired. Please renew to continue using the service.`
             );
           }
         }
@@ -180,7 +180,7 @@ async function attemptRenewal(
     planId: string | null;
     plan: string | null;
     Plan: { name: string; price: string } | null;
-  },
+  }
 ): Promise<void> {
   // Decrypt user's NWC credentials
   if (!user.encryptedNwc) {
@@ -219,14 +219,14 @@ async function attemptRenewal(
       user.npub,
       true,
       plan.name,
-      "Free plan renewed successfully",
+      "Free plan renewed successfully"
     );
 
     return;
   }
 
   // Create invoice using owner's NWC (to receive payment)
-  const ownerNwc = process.env.OWNER_NWC;
+  const ownerNwc = process.env["OWNER_NWC"];
   if (!ownerNwc) {
     throw new Error("Owner NWC credentials not configured");
   }
@@ -243,7 +243,7 @@ async function attemptRenewal(
     throw new Error(
       `Failed to create invoice: ${
         error instanceof Error ? error.message : String(error)
-      }`,
+      }`
     );
   }
 
@@ -255,7 +255,7 @@ async function attemptRenewal(
     !Array.isArray(invoiceRequest)
       ? (invoiceRequest as unknown as Record<string, unknown>)
       : {};
-  const invoiceValue = requestAny.invoice;
+  const invoiceValue = requestAny["invoice"];
   const invoiceString =
     typeof invoiceValue === "string"
       ? invoiceValue
@@ -274,20 +274,23 @@ async function attemptRenewal(
       ? (invoiceValue as Record<string, unknown>)
       : null;
   const paymentHashString =
-    typeof requestAny.paymentHash === "string"
-      ? requestAny.paymentHash
+    typeof requestAny["paymentHash"] === "string"
+      ? requestAny["paymentHash"]
       : invoiceObj && "paymentHash" in invoiceObj
-        ? String(invoiceObj.paymentHash)
+        ? String(invoiceObj["paymentHash"])
         : "";
 
   // Extract amount in sats - try multiple possible locations
   let amountSats = 0;
-  if (requestAny.amount && typeof requestAny.amount === "number") {
-    amountSats = requestAny.amount;
+  if (requestAny["amount"] && typeof requestAny["amount"] === "number") {
+    amountSats = requestAny["amount"];
   } else if (invoiceObj && "satoshi" in invoiceObj) {
-    amountSats = Number(invoiceObj.satoshi) || 0;
-  } else if (requestAny.satoshi && typeof requestAny.satoshi === "number") {
-    amountSats = requestAny.satoshi;
+    amountSats = Number(invoiceObj["satoshi"]) || 0;
+  } else if (
+    requestAny["satoshi"] &&
+    typeof requestAny["satoshi"] === "number"
+  ) {
+    amountSats = requestAny["satoshi"];
   } else {
     // Parse the Lightning invoice to get the exact amount
     try {
@@ -327,7 +330,7 @@ async function attemptRenewal(
       } catch (error) {
         console.error(
           "[CRON] Failed to fetch Bitcoin rate, using fallback:",
-          error,
+          error
         );
         // Fallback approximation: $1 ≈ 2,500 sats (at $40,000 per BTC)
         amountSats = Math.round(amountUsd * 2500);
@@ -342,12 +345,12 @@ async function attemptRenewal(
         invoiceString,
         paymentHashString,
         requestStructure: Object.keys(
-          invoiceRequest as unknown as Record<string, unknown>,
+          invoiceRequest as unknown as Record<string, unknown>
         ),
-      },
+      }
     );
     throw new Error(
-      "Invalid response from payment provider - missing invoice or paymentHash",
+      "Invalid response from payment provider - missing invoice or paymentHash"
     );
   }
 
@@ -368,7 +371,7 @@ async function attemptRenewal(
     !Array.isArray(paymentResult)
       ? (paymentResult as Record<string, unknown>)
       : {};
-  const preimageValue = paymentResultObj.preimage;
+  const preimageValue = paymentResultObj["preimage"];
   const paymentHash =
     (typeof preimageValue === "string" ? preimageValue : null) ??
     paymentHashString ??
@@ -394,7 +397,7 @@ async function attemptRenewal(
     user.npub,
     true,
     plan.name,
-    `Your ${plan.name} subscription has been renewed successfully. Thank you!`,
+    `Your ${plan.name} subscription has been renewed successfully. Thank you!`
   );
 }
 
@@ -405,7 +408,7 @@ async function sendRenewalNotification(
   pubkeyHex: string,
   _success: boolean,
   _planName: string,
-  message: string,
+  message: string
 ): Promise<void> {
   try {
     await sendNostrDirectMessage(pubkeyHex, message);

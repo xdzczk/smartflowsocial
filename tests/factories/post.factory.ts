@@ -5,9 +5,9 @@
 
 import type { Post, PostType, Prisma, Status } from "@prisma/client";
 
-import type { NostrEvent, SignedEvent } from "~/features/nostr/types";
-
 import { TEST_USER_ID } from "../utils/test-helpers";
+
+import type { NostrEvent, SignedEvent } from "~/features/nostr/types";
 
 export interface PostFactoryOptions {
   id?: string;
@@ -38,7 +38,7 @@ export interface PostFactoryOptions {
 }
 
 export class PostFactory {
-  private options: PostFactoryOptions;
+  private readonly options: PostFactoryOptions;
 
   constructor(options: PostFactoryOptions = {}) {
     this.options = {
@@ -189,7 +189,7 @@ export class PostFactory {
   }
 
   build(): Post {
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Factory pattern requires type assertion for partial data
     return {
       id: this.options.id!,
       userId: this.options.userId!,
@@ -280,7 +280,7 @@ export const postFactory = {
    */
   many: (count: number, overrides?: PostFactoryOptions) => {
     return Array.from({ length: count }, (_, i) =>
-      new PostFactory({ ...overrides, id: `post-${i + 1}` }).build(),
+      new PostFactory({ ...overrides, id: `post-${i + 1}` }).build()
     );
   },
 };

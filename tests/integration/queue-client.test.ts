@@ -53,7 +53,7 @@ import { queueClient } from "~/infra/queue/queue-client.server";
 describe("Queue Client", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.REDIS_URL = "redis://localhost:6379";
+    process.env["REDIS_URL"] = "redis://localhost:6379";
     // Clear the queues map by getting a fresh instance
     // This ensures each test starts with a clean state
   });
@@ -82,13 +82,13 @@ describe("Queue Client", () => {
         "scheduled-posts",
         "publish-post",
         { postId: "post-123", userId: "user-123", signedEvent },
-        { delay: 5000 },
+        { delay: 5000 }
       );
 
       expect(mockQueue.add).toHaveBeenCalledWith(
         "publish-post",
         { postId: "post-123", userId: "user-123", signedEvent },
-        { delay: 5000 },
+        { delay: 5000 }
       );
       expect(result).toEqual({
         success: true,
@@ -120,7 +120,7 @@ describe("Queue Client", () => {
             sig: "test-sig",
           } satisfies Partial<SignedEvent> as SignedEvent,
         },
-        { scheduledFor },
+        { scheduledFor }
       );
 
       expect(mockQueue.add).toHaveBeenCalled();
@@ -147,7 +147,7 @@ describe("Queue Client", () => {
             sig: "test-sig",
           } satisfies Partial<SignedEvent> as SignedEvent,
         },
-        { scheduledFor: pastTime },
+        { scheduledFor: pastTime }
       );
 
       expect(result.success).toBe(false);
@@ -172,7 +172,7 @@ describe("Queue Client", () => {
             content: "",
             sig: "test-sig",
           } satisfies Partial<SignedEvent> as SignedEvent,
-        },
+        }
       );
 
       expect(result.success).toBe(false);
@@ -193,7 +193,7 @@ describe("Queue Client", () => {
       const result = await queueClient.cancelByData(
         "scheduled-posts",
         "postId",
-        "post-123",
+        "post-123"
       );
 
       expect(mockQueue.getJobs).toHaveBeenCalledWith(["waiting", "delayed"]);
@@ -207,7 +207,7 @@ describe("Queue Client", () => {
       const result = await queueClient.cancelByData(
         "scheduled-posts",
         "postId",
-        "post-123",
+        "post-123"
       );
 
       expect(result).toBe(false);
@@ -219,7 +219,7 @@ describe("Queue Client", () => {
       const result = await queueClient.cancelByData(
         "scheduled-posts",
         "postId",
-        "post-123",
+        "post-123"
       );
 
       expect(result).toBe(false);

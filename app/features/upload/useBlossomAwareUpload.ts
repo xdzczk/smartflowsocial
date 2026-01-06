@@ -18,7 +18,7 @@ export function useBlossomAwareUpload() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [response, setResponse] = useState<Record<string, unknown> | null>(
-    null,
+    null
   );
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -74,11 +74,11 @@ export function useBlossomAwareUpload() {
   };
 
   const createBlossomAuthHeaders = async (
-    provider: "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR",
+    provider: "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR"
   ) => {
     if (!window.nostr) {
       throw new Error(
-        "NOSTR extension not found. Please install Alby, Amber, or another NOSTR extension to upload to Blossom.",
+        "NOSTR extension not found. Please install Alby, Amber, or another NOSTR extension to upload to Blossom."
       );
     }
 
@@ -93,7 +93,7 @@ export function useBlossomAwareUpload() {
 
     // Note: Authentication should be handled by the upload service directly
     throw new Error(
-      "Blossom auth not implemented in useBlossomAwareUpload. Use upload.client.ts instead.",
+      "Blossom auth not implemented in useBlossomAwareUpload. Use upload.client.ts instead."
     );
   };
 
@@ -128,11 +128,11 @@ export function useBlossomAwareUpload() {
             `Signing upload request with NOSTR extension for ${providerName}...`,
             {
               id: "blossom-auth",
-            },
+            }
           );
           try {
             headers = await createBlossomAuthHeaders(
-              providerInfo.provider as "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR",
+              providerInfo.provider as "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR"
             );
             toast.success("Upload authorized!", { id: "blossom-auth" });
             setUploadProgress(60);
@@ -218,7 +218,7 @@ export function useBlossomAwareUpload() {
               "Invalid response format: " +
                 (parseError?.message ?? "Unknown error") +
                 ". Response: " +
-                responseText.substring(0, 100),
+                responseText.substring(0, 100)
             );
           }
         }
@@ -227,10 +227,10 @@ export function useBlossomAwareUpload() {
         setUploadProgress(100);
 
         // Handle successful response
-        if (result.success !== false) {
+        if (result["success"] !== false) {
           // Check if this was a redirect response
-          if (fetchResponse.redirected || result.redirect) {
-            const redirectUrl = result.redirect ?? fetchResponse.url;
+          if (fetchResponse.redirected || result["redirect"]) {
+            const redirectUrl = result["redirect"] ?? fetchResponse.url;
             navigate(redirectUrl);
           }
         }
@@ -253,7 +253,7 @@ export function useBlossomAwareUpload() {
         }, 1000);
       }
     },
-    [navigate],
+    [navigate]
   );
 
   return {

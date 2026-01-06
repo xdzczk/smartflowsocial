@@ -49,15 +49,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 }
 
-export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs) => {
-  try {
-    const userId = await requireUserId(request);
-    return await handleNewLongFormAction(userId, request);
-  } catch (error) {
-    const { handleActionError } = await import("~/lib/error-handler.server");
-    return handleActionError(error);
+export const action = withCSRFProtection(
+  async ({ request }: ActionFunctionArgs) => {
+    try {
+      const userId = await requireUserId(request);
+      return await handleNewLongFormAction(userId, request);
+    } catch (error) {
+      const { handleActionError } = await import("~/lib/error-handler.server");
+      return handleActionError(error);
+    }
   }
-});
+);
 
 type LoaderData = Awaited<ReturnType<typeof loadNewLongFormData>>;
 type ActionData = Awaited<ReturnType<typeof action>>;
@@ -111,7 +113,7 @@ export default function NewLongFormPost() {
     ? assetsRaw
         .filter(
           (
-            asset: unknown,
+            asset: unknown
           ): asset is {
             id: string;
             title?: unknown;
@@ -125,7 +127,7 @@ export default function NewLongFormPost() {
             typeof asset === "object" &&
             asset !== null &&
             "id" in asset &&
-            typeof (asset as { id: unknown }).id === "string",
+            typeof (asset as { id: unknown }).id === "string"
         )
         .map((asset) => ({
           id: asset.id,
@@ -203,7 +205,7 @@ export default function NewLongFormPost() {
                 ? q.scheduleType
                 : undefined;
             const scheduleConfig = convertJsonValueToScheduleConfig(
-              q.scheduleConfig,
+              q.scheduleConfig
             );
             const isEnabled =
               typeof q.isEnabled === "boolean"
@@ -231,7 +233,7 @@ export default function NewLongFormPost() {
     ? hashTagPresetsRaw
         .filter(
           (
-            preset: unknown,
+            preset: unknown
           ): preset is {
             id: string;
             name: string;
@@ -251,7 +253,7 @@ export default function NewLongFormPost() {
             typeof (preset as { id: unknown; name: unknown; tags: unknown })
               .name === "string" &&
             typeof (preset as { id: unknown; name: unknown; tags: unknown })
-              .tags === "string",
+              .tags === "string"
         )
         .map((preset) => ({
           id: preset.id,
@@ -266,21 +268,19 @@ export default function NewLongFormPost() {
           userId: typeof preset.userId === "string" ? preset.userId : undefined,
           createdAt: (() => {
             const createdAtValue: unknown = preset.createdAt;
-            if (createdAtValue === null || createdAtValue === undefined)
-              return undefined;
+            if (createdAtValue === null || createdAtValue === undefined) return;
             if (createdAtValue instanceof Date) return createdAtValue;
             if (typeof createdAtValue === "string")
               return new Date(createdAtValue);
-            return undefined;
+            return;
           })(),
           updatedAt: (() => {
             const updatedAtValue: unknown = preset.updatedAt;
-            if (updatedAtValue === null || updatedAtValue === undefined)
-              return undefined;
+            if (updatedAtValue === null || updatedAtValue === undefined) return;
             if (updatedAtValue instanceof Date) return updatedAtValue;
             if (typeof updatedAtValue === "string")
               return new Date(updatedAtValue);
-            return undefined;
+            return;
           })(),
         }))
     : [];

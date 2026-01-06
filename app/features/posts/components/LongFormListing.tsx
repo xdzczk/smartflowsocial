@@ -3,19 +3,20 @@ import { useState, useEffect, useMemo } from "react";
 
 import type { LongFormPostType } from "~/features/posts/server";
 
-import type { PostFetcher } from "../types";
-import type { LongFormPostData } from "../types";
+import type { PostFetcher, LongFormPostData } from "../types";
 import type { EditorJSBlock } from "../types/editorjs.types";
 
 // Helper to safely access formData from a fetcher
 function getFetcherFormData(
-  fetcher: PostFetcher | undefined,
+  fetcher: PostFetcher | undefined
 ): FormData | null | undefined {
-  return (fetcher as { formData?: FormData | null })?.formData;
+  return fetcher
+    ? (fetcher as { formData?: FormData | null }).formData
+    : undefined;
 }
 
 interface LongFormListingProps {
-  posts: (LongFormPostType | LongFormPostData)[];
+  posts: Array<LongFormPostType | LongFormPostData>;
   type: "draft" | "scheduled" | "posted";
   onPostSelect?: (post: LongFormPostType | LongFormPostData) => void;
   searchTerm?: string;
@@ -90,7 +91,7 @@ export default function LongFormListing({
   const filteredPosts = sortedPosts.filter(
     (post) =>
       post.title?.toLowerCase().includes(searchTerm.toLowerCase()) ??
-      post.summary?.toLowerCase().includes(searchTerm.toLowerCase()),
+      post.summary?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const requestSort = (key: string) => {
@@ -120,7 +121,7 @@ export default function LongFormListing({
     } else if (typeof dateInput === "number") {
       // Unix timestamp (seconds or milliseconds)
       date = new Date(
-        dateInput * (dateInput.toString().length <= 10 ? 1000 : 1),
+        dateInput * (dateInput.toString().length <= 10 ? 1000 : 1)
       );
     } else {
       // Date object
@@ -150,15 +151,15 @@ export default function LongFormListing({
         editorData.blocks?.forEach((block: EditorJSBlock) => {
           if (block.type === "paragraph" || block.type === "header") {
             const text =
-              typeof block.data.text === "string"
-                ? block.data.text.replace(/<[^>]*>/g, "")
+              typeof block.data["text"] === "string"
+                ? block.data["text"].replace(/<[^>]*>/g, "")
                 : "";
             wordCount += text
               .split(/\s+/)
               .filter((word: string) => word.length > 0).length;
           } else if (block.type === "list") {
-            const items = Array.isArray(block.data.items)
-              ? block.data.items
+            const items = Array.isArray(block.data["items"])
+              ? block.data["items"]
               : [];
             items.forEach((item: unknown) => {
               const text =
@@ -215,7 +216,7 @@ export default function LongFormListing({
   // Memoize post IDs to avoid infinite loops when posts array reference changes
   const postIds = useMemo(
     () => posts.map((post) => post.id).join(","),
-    [posts],
+    [posts]
   );
 
   // Countdown functionality for scheduled posts
@@ -225,7 +226,7 @@ export default function LongFormListing({
     const updateCountdowns = () => {
       // Get current time in user's timezone
       const now = new Date(
-        new Date().toLocaleString("en-US", { timeZone: userTimezone }),
+        new Date().toLocaleString("en-US", { timeZone: userTimezone })
       ).getTime();
       const newCountdowns: Record<string, string> = {};
 
@@ -244,10 +245,10 @@ export default function LongFormListing({
         if (distance > 0) {
           const days = Math.floor(distance / (1000 * 60 * 60 * 24));
           const hours = Math.floor(
-            (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
+            (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
           );
           const minutes = Math.floor(
-            (distance % (1000 * 60 * 60)) / (1000 * 60),
+            (distance % (1000 * 60 * 60)) / (1000 * 60)
           );
 
           newCountdowns[post.id] = `${days}d ${hours}h ${minutes}m`;
@@ -260,9 +261,8 @@ export default function LongFormListing({
         // Only update if countdowns actually changed to prevent unnecessary re-renders
         const hasChanged =
           Object.keys(newCountdowns).some(
-            (id) => prev[id] !== newCountdowns[id],
-          ) ||
-          Object.keys(prev).length !== Object.keys(newCountdowns).length;
+            (id) => prev[id] !== newCountdowns[id]
+          ) || Object.keys(prev).length !== Object.keys(newCountdowns).length;
 
         return hasChanged ? newCountdowns : prev;
       });
@@ -275,7 +275,7 @@ export default function LongFormListing({
 
     return () => clearInterval(timer);
     // Use postIds instead of posts to avoid infinite loops
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Dependencies are intentionally limited to avoid infinite loops
   }, [postIds, userTimezone, type]);
 
   useEffect(() => {
@@ -428,7 +428,7 @@ export default function LongFormListing({
                       ? "publishedAt"
                       : type === "scheduled"
                         ? "scheduledFor"
-                        : "createdAt",
+                        : "createdAt"
                   )
                 }
                 onKeyDown={(e) => {
@@ -439,7 +439,7 @@ export default function LongFormListing({
                         ? "publishedAt"
                         : type === "scheduled"
                           ? "scheduledFor"
-                          : "createdAt",
+                          : "createdAt"
                     );
                   }
                 }}
@@ -538,7 +538,7 @@ export default function LongFormListing({
                       ? (post.publishedAt ?? undefined)
                       : type === "scheduled"
                         ? (post.scheduledFor ?? undefined)
-                        : (post.createdAt ?? undefined),
+                        : (post.createdAt ?? undefined)
                   )}
                 </td>
                 <td className="p-3 text-center">

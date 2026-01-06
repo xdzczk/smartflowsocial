@@ -88,7 +88,9 @@ export default function ScheduledPosts() {
                   let firstImage: string | undefined;
                   if (post.fileUrl && post.fileUrl.length > 0) {
                     try {
-                      const parsed = JSON.parse(post.fileUrl[0]) as string[];
+                      const firstFileUrl = post.fileUrl[0];
+                      if (!firstFileUrl) return;
+                      const parsed = JSON.parse(firstFileUrl) as string[];
                       firstImage = parsed[0];
                     } catch (_error) {
                       firstImage = post.fileUrl[0];
@@ -127,7 +129,7 @@ export default function ScheduledPosts() {
                       </td>
                       <td className="p-3">
                         {new Date(
-                          Number(post.scheduledFor) * 1000,
+                          Number(post.scheduledFor) * 1000
                         ).toLocaleString()}
                       </td>
                       <td className="p-3 text-center">
@@ -198,9 +200,9 @@ export default function ScheduledPosts() {
                   let modalImage: string | undefined;
                   if (selectedPost.fileUrl && selectedPost.fileUrl.length > 0) {
                     try {
-                      const parsed = JSON.parse(
-                        selectedPost.fileUrl[0],
-                      ) as string[];
+                      const firstFileUrl = selectedPost.fileUrl[0];
+                      if (!firstFileUrl) return;
+                      const parsed = JSON.parse(firstFileUrl) as string[];
                       modalImage = parsed[0];
                     } catch (_error) {
                       modalImage = selectedPost.fileUrl[0];
@@ -235,7 +237,7 @@ export default function ScheduledPosts() {
                   <span className="font-semibold">Scheduled For:</span>
                   <p className="mt-1">
                     {new Date(
-                      Number(selectedPost.scheduledFor) * 1000,
+                      Number(selectedPost.scheduledFor) * 1000
                     ).toLocaleString()}
                   </p>
                 </div>

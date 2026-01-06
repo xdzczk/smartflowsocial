@@ -39,7 +39,7 @@ function getDisplayImageUrl(post: BulkPost): string | null {
           // If parsing fails, use as is
         }
       }
-      return originalImageUrl;
+      return originalImageUrl ?? null;
     }
     return null;
   }

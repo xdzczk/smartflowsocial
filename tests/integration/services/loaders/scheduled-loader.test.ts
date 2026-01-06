@@ -36,6 +36,8 @@ vi.mock("~/features/posts/services/combined.server", () => ({
   ]),
 }));
 
+import { TEST_USER_ID } from "../../../utils/test-helpers";
+
 import { loadScheduledData } from "~/features/posts/services/scheduled-loader.server";
 import {
   getUserById,
@@ -44,8 +46,6 @@ import {
 } from "~/features/user";
 import { getScheduledLongFormPosts } from "~/models/longformpost.server";
 import { getScheduledPosts } from "~/models/post.queries.server";
-
-import { TEST_USER_ID } from "../../../utils/test-helpers";
 
 describe("Scheduled Loader", () => {
   beforeEach(() => {
@@ -66,17 +66,17 @@ describe("Scheduled Loader", () => {
     const mockHashTagPresets = [{ id: "preset-1", name: "Preset 1" }];
 
     (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockPosts,
+      mockPosts
     );
     (getScheduledLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockLongformPosts,
+      mockLongformPosts
     );
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockQueueTypes,
+      mockQueueTypes
     );
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockHashTagPresets,
+      mockHashTagPresets
     );
 
     const result = await loadScheduledData(TEST_USER_ID, "all");
@@ -99,10 +99,10 @@ describe("Scheduled Loader", () => {
     ];
 
     (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockPosts,
+      mockPosts
     );
     (getScheduledLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockLongformPosts,
+      mockLongformPosts
     );
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: TEST_USER_ID,

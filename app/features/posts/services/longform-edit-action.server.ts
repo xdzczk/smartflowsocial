@@ -58,13 +58,12 @@ function parseTags(formData: FormData): string[] {
 
     // Add custom tags to the existing tags array and deduplicate
     const allTags: string[] = [...tags, ...customTagsList];
-    const uniqueTags = allTags.filter(
+    return allTags.filter(
       (tag: string, index: number) =>
         allTags.findIndex(
-          (t: string) => t.toLowerCase() === tag.toLowerCase(),
-        ) === index,
+          (t: string) => t.toLowerCase() === tag.toLowerCase()
+        ) === index
     );
-    return uniqueTags;
   }
 
   return tags;
@@ -77,7 +76,7 @@ async function getEffectiveHashtagsForPost(
   userId: string,
   useHashtagPresets: boolean,
   hashTagPresetId: string | null,
-  queueType: string,
+  queueType: string
 ): Promise<string> {
   if (useHashtagPresets) {
     // Manual hashtag presets are enabled
@@ -85,7 +84,7 @@ async function getEffectiveHashtagsForPost(
       // Use manually selected hashtag preset
       const selectedPreset = await getHashTagPresetById(
         userId,
-        hashTagPresetId,
+        hashTagPresetId
       );
       return selectedPreset?.tags ?? "";
     }
@@ -101,7 +100,9 @@ async function getEffectiveHashtagsForPost(
       "hashTagPreset" in queueTypeObj &&
       queueTypeObj.hashTagPreset
     ) {
-      return (queueTypeObj.hashTagPreset as { tags: string | null })?.tags ?? "";
+      return (
+        (queueTypeObj.hashTagPreset as { tags: string | null })?.tags ?? ""
+      );
     }
     return "";
   }
@@ -112,7 +113,7 @@ async function getEffectiveHashtagsForPost(
  */
 async function handleImageUpload(
   userId: string,
-  formData: FormData,
+  formData: FormData
 ): Promise<Response> {
   const imageFileRaw = formData.get("imageFile");
   const imageFile = imageFileRaw;
@@ -145,7 +146,7 @@ async function handleImageUpload(
         userId,
         file.name,
         undefined,
-        file.type,
+        file.type
       );
 
       return Response.json({ success: true, imageUrl });
@@ -160,7 +161,7 @@ async function handleImageUpload(
           success: false,
           error: "Failed to upload image to storage.",
         },
-        { status: 500 },
+        { status: 500 }
       );
     }
   }
@@ -168,7 +169,7 @@ async function handleImageUpload(
   if (!imageFile) {
     return Response.json(
       { success: false, error: "No image file provided." },
-      { status: 400 },
+      { status: 400 }
     );
   } else {
     return Response.json(
@@ -176,7 +177,7 @@ async function handleImageUpload(
         success: false,
         error: "Image upload failed. Please try again.",
       },
-      { status: 400 },
+      { status: 400 }
     );
   }
 }
@@ -189,7 +190,7 @@ async function handleSaveDraft(
   userId: string,
   formData: FormData,
   queueType: string,
-  hashTagPresetId: string | null,
+  hashTagPresetId: string | null
 ): Promise<Response> {
   const title = formData.get("title")?.toString() ?? "";
   const editorContent = formData.get("content")?.toString() ?? "";
@@ -215,7 +216,7 @@ async function handleSaveDraft(
   let markdownContent;
   try {
     const editorData = JSON.parse(editorContent) as {
-      blocks?: { type: string; data: Record<string, unknown> }[];
+      blocks?: Array<{ type: string; data: Record<string, unknown> }>;
       time?: number;
       version?: string;
     };
@@ -258,7 +259,7 @@ async function handlePublish(
   hashTagPresetId: string | null,
   effectiveHashtags: string,
   showHashTagsinPosts: boolean,
-  sanitizedRelays: string[],
+  sanitizedRelays: string[]
 ): Promise<Response> {
   const title = formData.get("title")?.toString() ?? "";
   const editorContent = formData.get("content")?.toString() ?? "";
@@ -286,28 +287,28 @@ async function handlePublish(
   if (!summary?.trim()) {
     return Response.json(
       { error: "Summary is required for publishing" },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!image?.trim()) {
     return Response.json(
       { error: "Cover image is required for publishing" },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!signedEvent || !nostrEvent) {
     return Response.json(
       { error: "Missing Nostr event data for publishing" },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   let markdownContent;
   try {
     const editorData = JSON.parse(editorContent) as {
-      blocks?: { type: string; data: Record<string, unknown> }[];
+      blocks?: Array<{ type: string; data: Record<string, unknown> }>;
       time?: number;
       version?: string;
     };
@@ -363,7 +364,7 @@ async function handlePublish(
 
   // Read directly from process.env to support test environment changes
   const publisherUrl =
-    process.env.NOSTR_PUBLISHER_URL ?? env.NOSTR_PUBLISHER_URL;
+    process.env["NOSTR_PUBLISHER_URL"] ?? env.NOSTR_PUBLISHER_URL;
   if (!publisherUrl) {
     throw new Error("NOSTR_PUBLISHER_URL environment variable is not set");
   }
@@ -397,7 +398,7 @@ async function handleScheduleLongform(
   queueType: string,
   hashTagPresetId: string | null,
   effectiveHashtags: string,
-  showHashTagsinPosts: boolean,
+  showHashTagsinPosts: boolean
 ): Promise<Response> {
   const title = formData.get("title")?.toString() ?? "";
   const editorContent = formData.get("content")?.toString() ?? "";
@@ -425,28 +426,28 @@ async function handleScheduleLongform(
   if (!summary?.trim()) {
     return Response.json(
       { error: "Summary is required for publishing" },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!image?.trim()) {
     return Response.json(
       { error: "Cover image is required for publishing" },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!signedEvent || !nostrEvent) {
     return Response.json(
       { error: "Missing Nostr event data for publishing" },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   let markdownContent;
   try {
     const editorData = JSON.parse(editorContent) as {
-      blocks?: { type: string; data: Record<string, unknown> }[];
+      blocks?: Array<{ type: string; data: Record<string, unknown> }>;
       time?: number;
       version?: string;
     };
@@ -490,7 +491,7 @@ async function handleScheduleLongform(
 
   if (signedEventJson?.tags) {
     const publishedAtTag = signedEventJson.tags.find(
-      (tag: unknown) => Array.isArray(tag) && tag[0] === "published_at",
+      (tag: unknown) => Array.isArray(tag) && tag[0] === "published_at"
     );
     if (publishedAtTag?.[1]) {
       scheduledForTimestamp = publishedAtTag[1].toString();
@@ -522,7 +523,7 @@ async function handleScheduleLongform(
 export async function handleLongFormEditAction(
   userId: string,
   postId: string,
-  request: Request,
+  request: Request
 ): Promise<Response> {
   const user = await getUserById(userId);
   if (!user) {
@@ -537,7 +538,7 @@ export async function handleLongFormEditAction(
   if (contentType.includes("multipart/form-data")) {
     const uploadHandler = composeUploadHandlers(
       createUploadHandler(userId),
-      createMemoryUploadHandler(),
+      createMemoryUploadHandler()
     );
     formData = await parseMultipartFormData(request, uploadHandler);
   } else {
@@ -547,7 +548,7 @@ export async function handleLongFormEditAction(
   // Check for upload-image action first (handled separately)
   const _actionValue = formData.get("_action");
   const _action = _actionValue ? String(_actionValue) : "";
-  
+
   if (_action === "upload-image") {
     return handleImageUpload(userId, formData);
   }
@@ -555,20 +556,20 @@ export async function handleLongFormEditAction(
   // Validate non-file fields with Zod
   const result = validateFormDataOrRespond(
     formData,
-    newLongformPostActionSchema,
+    newLongformPostActionSchema
   );
   if (!result.success) {
     return result.response;
   }
 
   const validatedData = result.data;
-  
+
   // Type narrowing for discriminated union
   if (validatedData._action === "upload-image") {
     // This shouldn't happen as we handle it above, but TypeScript needs it
     return handleImageUpload(userId, formData);
   }
-  
+
   const queueType = validatedData.queueType || "unassigned";
   const useHashtagPresets = validatedData.useHashtagPresets ?? false;
   const hashTagPresetId: string | null = useHashtagPresets
@@ -580,7 +581,7 @@ export async function handleLongFormEditAction(
     userId,
     useHashtagPresets,
     hashTagPresetId,
-    queueType,
+    queueType
   );
 
   // Handle different actions
@@ -590,7 +591,7 @@ export async function handleLongFormEditAction(
       userId,
       formData,
       queueType,
-      hashTagPresetId,
+      hashTagPresetId
     );
   }
 
@@ -603,7 +604,7 @@ export async function handleLongFormEditAction(
       hashTagPresetId,
       effectiveHashtags,
       showHashTagsinPosts,
-      sanitizedRelays,
+      sanitizedRelays
     );
   }
 
@@ -615,7 +616,7 @@ export async function handleLongFormEditAction(
       queueType,
       hashTagPresetId,
       effectiveHashtags,
-      showHashTagsinPosts,
+      showHashTagsinPosts
     );
   }
 

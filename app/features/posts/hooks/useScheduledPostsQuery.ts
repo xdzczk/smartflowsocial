@@ -3,8 +3,12 @@
  * Provides caching and background refetching for scheduled posts page
  */
 
-import { useFetcher, useLoaderData } from "@remix-run/react";
-import { useParams, useSearchParams } from "@remix-run/react";
+import {
+  useFetcher,
+  useLoaderData,
+  useParams,
+  useSearchParams,
+} from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 
 import { validateHashTagPresets } from "~/lib/validation/hashtag-presets";
@@ -16,10 +20,7 @@ import {
 
 import { combineContent } from "../combined";
 import type { PostDTO, LongFormPostDTO } from "../dtos";
-import {
-  fromPostDTOArray,
-  fromLongFormPostDTOArray,
-} from "../dtos";
+import { fromPostDTOArray, fromLongFormPostDTOArray } from "../dtos";
 import type {
   PostData,
   LongFormPostData,
@@ -48,16 +49,16 @@ export const scheduledPostsKeys = {
 export function useScheduledPostsQuery() {
   const params = useParams();
   const [searchParams] = useSearchParams();
-  const queueType = params.queueType ?? "all";
+  const queueType = params["queueType"] ?? "all";
   const currentTab = searchParams.get("tab") ?? "all";
-  
+
   const loaderDataRaw = useLoaderData();
   const fetcher = useFetcher();
 
   // Validate initial loader data
   const validatedLoaderData = safeValidateLoaderResponse(
     loaderDataRaw,
-    scheduledPostsLoaderDataSchema,
+    scheduledPostsLoaderDataSchema
   );
 
   return useQuery({
@@ -65,14 +66,14 @@ export function useScheduledPostsQuery() {
     queryFn: async () => {
       const url = `/dashboard/scheduled${queueType !== "all" ? `/${queueType}` : ""}?tab=${currentTab}`;
       fetcher.load(url);
-      
+
       return new Promise<ScheduledPostsLoaderData>((resolve, reject) => {
         const checkFetcher = () => {
           if (fetcher.state === "idle") {
             if (fetcher.data) {
               const validated = safeValidateLoaderResponse(
                 fetcher.data,
-                scheduledPostsLoaderDataSchema,
+                scheduledPostsLoaderDataSchema
               );
               if (validated) {
                 resolve(validated);
@@ -106,7 +107,7 @@ export function useScheduledPostsQuery() {
  */
 export function useScheduledPostsData() {
   const { data, isLoading, error } = useScheduledPostsQuery();
-  
+
   if (!data) {
     return {
       posts: [] as PostData[],
@@ -122,7 +123,9 @@ export function useScheduledPostsData() {
 
   const typedData = data;
   const postsRaw =
-    "posts" in typedData && Array.isArray(typedData.posts) ? typedData.posts : [];
+    "posts" in typedData && Array.isArray(typedData.posts)
+      ? typedData.posts
+      : [];
   const longformPostsRaw =
     "longformPosts" in typedData && Array.isArray(typedData.longformPosts)
       ? typedData.longformPosts
@@ -148,7 +151,7 @@ export function useScheduledPostsData() {
     posts,
     longformPosts,
     "scheduledFor",
-    "asc",
+    "asc"
   );
   const queueTypes: QueueType[] = Array.isArray(queueTypesRaw)
     ? queueTypesRaw
@@ -180,11 +183,12 @@ export function useScheduledPostsData() {
                 : null;
             const scheduleType =
               typeof q.scheduleType === "string" &&
-              (q.scheduleType === "INTERVAL" || q.scheduleType === "FIXED_SLOTS")
+              (q.scheduleType === "INTERVAL" ||
+                q.scheduleType === "FIXED_SLOTS")
                 ? q.scheduleType
                 : undefined;
             const scheduleConfig = convertJsonValueToScheduleConfig(
-              q.scheduleConfig,
+              q.scheduleConfig
             );
             const isEnabled =
               typeof q.isEnabled === "boolean"
@@ -208,7 +212,8 @@ export function useScheduledPostsData() {
         .filter((qt): qt is QueueType => qt !== null)
     : [];
   // Validate HashTagPreset array with Zod schema
-  const hashTagPresets: HashTagPreset[] = validateHashTagPresets(hashTagPresetsRaw);
+  const hashTagPresets: HashTagPreset[] =
+    validateHashTagPresets(hashTagPresetsRaw);
 
   return {
     posts,
@@ -221,4 +226,3 @@ export function useScheduledPostsData() {
     error,
   };
 }
-

@@ -38,7 +38,7 @@ export function createQueryClient() {
  * Singleton QueryClient instance
  * Created once and reused across the application
  */
-let browserQueryClient: QueryClient | undefined = undefined;
+let browserQueryClient: QueryClient | undefined;
 
 export function getQueryClient() {
   if (typeof window === "undefined") {
@@ -50,5 +50,3 @@ export function getQueryClient() {
     return browserQueryClient;
   }
 }
-
-

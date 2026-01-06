@@ -32,7 +32,7 @@ export async function handleDraftsAction(formData: FormData, userId: string) {
 
   if (_action === "bulkDelete") {
     await Promise.all(
-      result.data.postIds.map((id: string) => deletePost({ id, userId })),
+      result.data.postIds.map((id: string) => deletePost({ id, userId }))
     );
     return { success: true };
   }
@@ -40,26 +40,27 @@ export async function handleDraftsAction(formData: FormData, userId: string) {
   if (_action === "bulkDeleteLongForm") {
     await Promise.all(
       result.data.postIds.map((id: string) =>
-        deleteLongFormPost({ id, userId }),
-      ),
+        deleteLongFormPost({ id, userId })
+      )
     );
     return { success: true };
   }
 
   if (_action === "bulkSignAndResume") {
     // TypeScript needs explicit narrowing for discriminated unions
-    const bulkData = result.data._action === "bulkSignAndResume" ? result.data : null;
+    const bulkData =
+      result.data._action === "bulkSignAndResume" ? result.data : null;
     if (!bulkData) {
       return { error: "Invalid action" };
     }
-    
+
     await Promise.all(
       bulkData.postIds.map(async (id, index) => {
         // Resolve queue type ID in feature layer (business logic)
         const resolvedQueueTypeId = await resolveQueueTypeId(
           userId,
-          bulkData.queueTypeIds[index] || null,
-          bulkData.queueTypes[index] || null,
+          bulkData.queueTypeIds[index] ?? null,
+          bulkData.queueTypes[index] ?? null
         );
 
         return updatePost({
@@ -77,7 +78,7 @@ export async function handleDraftsAction(formData: FormData, userId: string) {
             isPosted: false,
           },
         });
-      }),
+      })
     );
     return { success: true };
   }

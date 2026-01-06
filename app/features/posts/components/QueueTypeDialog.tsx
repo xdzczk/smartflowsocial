@@ -42,12 +42,12 @@ interface QueueTypeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   queueType?: QueueTypeDialogQueueType | null;
-  hashTagPresets: {
+  hashTagPresets: Array<{
     id: string;
     name: string;
     tags: string;
     description?: string;
-  }[];
+  }>;
 }
 
 export function QueueTypeDialog({
@@ -72,7 +72,7 @@ export function QueueTypeDialog({
         description: queueType.description ?? "",
         color: queueType.color ?? "#3B82F6",
         hashTagPresetId: queueType.hashTagPresetId ?? "none",
-        scheduleType: (queueType.scheduleType ?? "INTERVAL"),
+        scheduleType: queueType.scheduleType ?? "INTERVAL",
         isEnabled: queueType.isEnabled ?? false,
         useGlobalInterval:
           scheduleConfig && isIntervalScheduleConfig(scheduleConfig)
@@ -80,11 +80,11 @@ export function QueueTypeDialog({
             : false,
         intervalHours:
           scheduleConfig && isIntervalScheduleConfig(scheduleConfig)
-            ? scheduleConfig.intervalHours?.toString() ?? ""
+            ? (scheduleConfig.intervalHours?.toString() ?? "")
             : "",
         slots:
           scheduleConfig && isFixedSlotsScheduleConfig(scheduleConfig)
-            ? scheduleConfig.slots?.join(", ") ?? ""
+            ? (scheduleConfig.slots?.join(", ") ?? "")
             : "",
       };
     }
@@ -134,17 +134,22 @@ export function QueueTypeDialog({
       name: data.name,
       description: data.description ?? "",
       color: data.color,
-      hashTagPresetId: data.hashTagPresetId === "none" || !data.hashTagPresetId ? "none" : data.hashTagPresetId,
+      hashTagPresetId:
+        data.hashTagPresetId === "none" || !data.hashTagPresetId
+          ? "none"
+          : data.hashTagPresetId,
       scheduleType: data.scheduleType,
       ...(data.isEnabled !== undefined ? { isEnabled: data.isEnabled } : {}),
-      ...(data.useGlobalInterval !== undefined ? { useGlobalInterval: data.useGlobalInterval } : {}),
+      ...(data.useGlobalInterval !== undefined
+        ? { useGlobalInterval: data.useGlobalInterval }
+        : {}),
       ...(data.intervalHours ? { intervalHours: data.intervalHours } : {}),
       ...(data.slots ? { slots: data.slots } : {}),
     };
 
     const formData = formDataToFormData(
       submitData,
-      isEditing ? "update_queue_type" : "create_queue_type",
+      isEditing ? "update_queue_type" : "create_queue_type"
     );
 
     if (isEditing) {
@@ -168,7 +173,13 @@ export function QueueTypeDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={(e) => { e.preventDefault(); void onSubmit(e); }} className="space-y-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void onSubmit(e);
+          }}
+          className="space-y-4"
+        >
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>
             <Input
@@ -176,9 +187,11 @@ export function QueueTypeDialog({
               {...form.register("name")}
               placeholder="e.g., Tech News"
             />
-            {form.formState.errors.name ? <p className="text-sm text-destructive">
+            {form.formState.errors.name ? (
+              <p className="text-sm text-destructive">
                 {form.formState.errors.name.message}
-              </p> : null}
+              </p>
+            ) : null}
           </div>
 
           <div className="space-y-2">
@@ -246,7 +259,10 @@ export function QueueTypeDialog({
             <Select
               value={scheduleType}
               onValueChange={(value) => {
-                form.setValue("scheduleType", value as "INTERVAL" | "FIXED_SLOTS");
+                form.setValue(
+                  "scheduleType",
+                  value as "INTERVAL" | "FIXED_SLOTS"
+                );
               }}
             >
               <SelectTrigger>
@@ -285,9 +301,11 @@ export function QueueTypeDialog({
                   max="168"
                   {...form.register("intervalHours")}
                 />
-                {form.formState.errors.intervalHours ? <p className="text-sm text-destructive">
+                {form.formState.errors.intervalHours ? (
+                  <p className="text-sm text-destructive">
                     {form.formState.errors.intervalHours.message}
-                  </p> : null}
+                  </p>
+                ) : null}
               </div>
             </div>
           ) : null}
@@ -302,9 +320,11 @@ export function QueueTypeDialog({
                 {...form.register("slots")}
                 placeholder="08:00, 12:00, 18:00"
               />
-              {form.formState.errors.slots ? <p className="text-sm text-destructive">
+              {form.formState.errors.slots ? (
+                <p className="text-sm text-destructive">
                   {form.formState.errors.slots.message}
-                </p> : null}
+                </p>
+              ) : null}
               <p className="text-xs text-muted-foreground">
                 Times are in your selected timezone
               </p>

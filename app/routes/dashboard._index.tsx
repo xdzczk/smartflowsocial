@@ -58,7 +58,8 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     const successMessage = url.searchParams.get("message");
 
     // Get queueType from URL params (query string) or route params, default to "all"
-    const queueType = url.searchParams.get("queueType") ?? params.queueType ?? "all";
+    const queueType =
+      url.searchParams.get("queueType") ?? params["queueType"] ?? "all";
 
     const data = await loadDashboardData(userId, queueType);
 
@@ -70,7 +71,10 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     };
 
     // Validate loader response with Zod schema
-    const validatedData = validateLoaderResponse(dataWithParams, dashboardLoaderDataSchema);
+    const validatedData = validateLoaderResponse(
+      dataWithParams,
+      dashboardLoaderDataSchema
+    );
 
     return json(validatedData);
   } catch (error) {
@@ -92,28 +96,35 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   }
 };
 
-export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs) => {
-  try {
-    const userId = await requireUserId(request);
-    const formData = await request.formData();
-    const result = await handleDashboardAction(formData, userId);
+export const action = withCSRFProtection(
+  async ({ request }: ActionFunctionArgs) => {
+    try {
+      const userId = await requireUserId(request);
+      const formData = await request.formData();
+      const result = await handleDashboardAction(formData, userId);
 
-    // Check if result is a Response (redirect/error response)
-    if (result instanceof Response) {
-      return result;
+      // Check if result is a Response (redirect/error response)
+      if (result instanceof Response) {
+        return result;
+      }
+
+      // Check if result has error property
+      if (
+        result &&
+        typeof result === "object" &&
+        "error" in result &&
+        result.error
+      ) {
+        return json(result, { status: 400 });
+      }
+
+      return json(result);
+    } catch (error) {
+      const { handleActionError } = await import("~/lib/error-handler.server");
+      return handleActionError(error);
     }
-
-    // Check if result has error property
-    if (result && typeof result === "object" && "error" in result && result.error) {
-      return json(result, { status: 400 });
-    }
-
-    return json(result);
-  } catch (error) {
-    const { handleActionError } = await import("~/lib/error-handler.server");
-    return handleActionError(error);
   }
-});
+);
 
 export default function DashboardIndex() {
   // Use TanStack Query for data fetching with caching
@@ -136,7 +147,7 @@ export default function DashboardIndex() {
   const currentTab = searchParams.get("tab") ?? "all";
 
   const [showSuccessMessage, setShowSuccessMessage] = useState(
-    !!(planActivated && typeof planActivated === "string"),
+    !!(planActivated && typeof planActivated === "string")
   );
 
   const {
@@ -367,7 +378,7 @@ export default function DashboardIndex() {
           post={postToEdit}
           onClose={handleCloseEditModal}
           onConfirm={handleModalSuccess}
-          user={user ? validateUserData(user) ?? undefined : undefined}
+          user={user ? (validateUserData(user) ?? undefined) : undefined}
           queueTypes={queueTypes}
           hashTagPresets={hashTagPresets}
         />
@@ -379,7 +390,7 @@ export default function DashboardIndex() {
           post={postToReschedule}
           onClose={handleCloseRescheduleModal}
           onConfirm={handleModalSuccess}
-          user={user ? validateUserData(user) ?? undefined : undefined}
+          user={user ? (validateUserData(user) ?? undefined) : undefined}
           queueTypes={queueTypes}
         />
       ) : null}

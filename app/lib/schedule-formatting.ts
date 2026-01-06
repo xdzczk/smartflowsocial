@@ -11,7 +11,7 @@
  */
 export function formatScheduleTimeForInput(
   date: Date,
-  userTimezone = "UTC",
+  userTimezone = "UTC"
 ): string {
   try {
     // For UTC/GMT timezones, use the date directly
@@ -22,8 +22,7 @@ export function formatScheduleTimeForInput(
       const hours = String(date.getUTCHours()).padStart(2, "0");
       const minutes = String(date.getUTCMinutes()).padStart(2, "0");
 
-      const result = `${year}-${month}-${day}T${hours}:${minutes}`;
-      return result;
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
     }
 
     // Convert UTC date to user's timezone for display in datetime-local input
@@ -46,9 +45,12 @@ export function formatScheduleTimeForInput(
     }, initialParts);
 
     // Format for datetime-local input: YYYY-MM-DDTHH:MM
-    const result = `${partsObj.year}-${partsObj.month}-${partsObj.day}T${partsObj.hour}:${partsObj.minute}`;
-
-    return result;
+    const year = partsObj["year"] ?? "";
+    const month = partsObj["month"] ?? "";
+    const day = partsObj["day"] ?? "";
+    const hour = partsObj["hour"] ?? "";
+    const minute = partsObj["minute"] ?? "";
+    return `${year}-${month}-${day}T${hour}:${minute}`;
   } catch (error) {
     console.error("Error in formatScheduleTimeForInput:", error, {
       date,

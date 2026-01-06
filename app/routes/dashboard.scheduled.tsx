@@ -53,10 +53,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     // Check if user has access to scheduled posts feature
     await requireFeatureAccess(userId, "scheduled");
 
-    const queueType = params.queueType ?? "all";
+    const queueType = params["queueType"] ?? "all";
 
     const data = await loadScheduledData(userId, queueType);
-    
+
     // Validate loader response with Zod schema
     return validateLoaderResponse(data, scheduledPostsLoaderDataSchema);
   } catch (error) {
@@ -70,33 +70,40 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 }
 
-export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs) => {
-  try {
-    const userId = await requireUserId(request);
-    const formData = await request.formData();
-    const result = await handleScheduledAction(formData, userId);
+export const action = withCSRFProtection(
+  async ({ request }: ActionFunctionArgs) => {
+    try {
+      const userId = await requireUserId(request);
+      const formData = await request.formData();
+      const result = await handleScheduledAction(formData, userId);
 
-    // Type narrowing: check if result is a Response
-    if (result instanceof Response) {
-      return result;
-    }
+      // Type narrowing: check if result is a Response
+      if (result instanceof Response) {
+        return result;
+      }
 
-    // Type narrowing: check if result has error property
-    if (typeof result === "object" && result !== null && "error" in result && result.error) {
-      return json(result, { status: 400 });
-    }
+      // Type narrowing: check if result has error property
+      if (
+        typeof result === "object" &&
+        result !== null &&
+        "error" in result &&
+        result.error
+      ) {
+        return json(result, { status: 400 });
+      }
 
-    return json(result);
-  } catch (error) {
-    // If error is a Response (e.g., redirect from requireUserId), return it
-    if (error instanceof Response) {
-      return error;
+      return json(result);
+    } catch (error) {
+      // If error is a Response (e.g., redirect from requireUserId), return it
+      if (error instanceof Response) {
+        return error;
+      }
+      // Use dynamic import to avoid bundling issues
+      const { handleActionError } = await import("~/lib/error-handler.server");
+      return handleActionError(error);
     }
-    // Use dynamic import to avoid bundling issues
-    const { handleActionError } = await import("~/lib/error-handler.server");
-    return handleActionError(error);
   }
-});
+);
 
 type _LoaderData = Awaited<ReturnType<typeof loader>>;
 
@@ -227,7 +234,7 @@ export default function ScheduledPosts() {
           <ScheduledPostsTable
             posts={filteredPosts.map(
               (
-                post,
+                post
               ): {
                 id: string;
                 caption?: string | null;
@@ -262,7 +269,7 @@ export default function ScheduledPosts() {
                 repost: post.repost ?? false,
                 isQuotedPost: post.isQuotedPost ?? false,
                 isPostSigned: post.signedEvent ? true : false,
-              }),
+              })
             )}
             sortConfig={sortConfig}
             onRequestSort={requestSort}
@@ -338,16 +345,16 @@ export default function ScheduledPosts() {
           post={postToEdit}
           onClose={handleCloseEditModal}
           onConfirm={handleModalSuccess}
-          user={user ? validateUserData(user) ?? undefined : undefined}
+          user={user ? (validateUserData(user) ?? undefined) : undefined}
           queueTypes={queueTypes}
           hashTagPresets={
             Array.isArray(hashTagPresets)
-              ? (hashTagPresets as {
+              ? (hashTagPresets as Array<{
                   id: string;
                   name: string;
                   tags: string;
                   description?: string | null;
-                }[])
+                }>)
               : []
           }
         />
@@ -359,7 +366,7 @@ export default function ScheduledPosts() {
           post={postToReschedule}
           onClose={handleCloseRescheduleModal}
           onConfirm={handleModalSuccess}
-          user={user ? validateUserData(user) ?? undefined : undefined}
+          user={user ? (validateUserData(user) ?? undefined) : undefined}
           queueTypes={queueTypes}
         />
       ) : null}

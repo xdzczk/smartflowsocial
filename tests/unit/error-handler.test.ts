@@ -61,8 +61,8 @@ describe("Error Handler Utilities", () => {
     });
 
     it("should include stack in development", () => {
-      const originalEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = "development";
+      const originalEnv = process.env["NODE_ENV"];
+      process.env["NODE_ENV"] = "development";
 
       const error = new Error("Test error");
       error.stack = "Error: Test error\n    at test.ts:1:1";
@@ -71,7 +71,7 @@ describe("Error Handler Utilities", () => {
       // Stack is included in the error object if available
       expect(response.error).toBeDefined();
 
-      process.env.NODE_ENV = originalEnv;
+      process.env["NODE_ENV"] = originalEnv;
     });
   });
 
@@ -183,7 +183,7 @@ describe("Error Handler Utilities", () => {
 
     it("should throw NotFoundError when value is undefined", () => {
       expect(() => assertExists(undefined, "Should throw")).toThrow(
-        NotFoundError,
+        NotFoundError
       );
     });
 

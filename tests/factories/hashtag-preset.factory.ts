@@ -18,7 +18,7 @@ export interface HashTagPresetFactoryOptions {
 }
 
 export class HashTagPresetFactory {
-  private options: HashTagPresetFactoryOptions;
+  private readonly options: HashTagPresetFactoryOptions;
 
   constructor(options: HashTagPresetFactoryOptions = {}) {
     this.options = {
@@ -99,7 +99,7 @@ export const hashTagPresetFactory = {
         ...overrides,
         id: `preset-${i + 1}`,
         name: `Preset ${i + 1}`,
-      }).build(),
+      }).build()
     );
   },
 };

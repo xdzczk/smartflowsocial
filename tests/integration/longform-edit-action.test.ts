@@ -12,7 +12,7 @@ global.fetch = vi.fn();
 // Mock dependencies
 vi.mock("~/features/posts/longform.server", () => ({
   convertEditorJSToMarkdown: vi.fn(
-    (data) => `Markdown: ${JSON.stringify(data)}`,
+    (data) => `Markdown: ${JSON.stringify(data)}`
   ),
 }));
 
@@ -76,7 +76,7 @@ vi.mock("@remix-run/node", async () => {
     unstable_parseMultipartFormData: vi.fn(
       async (
         request: { url?: string; formData?: () => Promise<FormData> },
-        _uploadHandler: unknown,
+        _uploadHandler: unknown
       ) => {
         // Try to get FormData from store first (set by test using request URL as key)
         const url =
@@ -106,10 +106,12 @@ vi.mock("@remix-run/node", async () => {
           // If parsing fails, return empty FormData
           return new FormData();
         }
-      },
+      }
     ),
   };
 });
+
+import { TEST_USER_ID, createMockFormData } from "../utils/test-helpers";
 
 import { handleLongFormEditAction } from "~/features/posts/services/longform-edit-action.server";
 import { uploadBufferToS3 } from "~/features/upload/s3.server";
@@ -121,14 +123,13 @@ import {
 } from "~/features/user";
 import { updateLongFormPost } from "~/models/longformpost.server";
 
-import { TEST_USER_ID, createMockFormData } from "../utils/test-helpers";
-
 describe("Longform Edit Action Handler", () => {
   const POST_ID = "post-123";
 
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.NOSTR_PUBLISHER_URL = "https://api.nostr-publisher.com/publish";
+    process.env["NOSTR_PUBLISHER_URL"] =
+      "https://api.nostr-publisher.com/publish";
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
       userRelays: ["wss://relay1.com", "wss://relay2.com"],
       showHashTagsinPosts: true,
@@ -161,13 +162,13 @@ describe("Longform Edit Action Handler", () => {
         {
           method: "POST",
           body: formData,
-        },
+        }
       );
 
       const response = await handleLongFormEditAction(
         TEST_USER_ID,
         POST_ID,
-        request,
+        request
       );
       const dataRaw: unknown = await response.json();
       const data =
@@ -184,7 +185,7 @@ describe("Longform Edit Action Handler", () => {
     it("should upload File object to S3", async () => {
       const mockFile = new File(["test"], "image.jpg", { type: "image/jpeg" });
       (uploadBufferToS3 as ReturnType<typeof vi.fn>).mockResolvedValue(
-        "https://s3.example.com/image.jpg",
+        "https://s3.example.com/image.jpg"
       );
 
       const formData = new FormData();
@@ -204,7 +205,7 @@ describe("Longform Edit Action Handler", () => {
       const response = await handleLongFormEditAction(
         TEST_USER_ID,
         POST_ID,
-        request,
+        request
       );
       const dataRaw: unknown = await response.json();
       const data =
@@ -227,7 +228,7 @@ describe("Longform Edit Action Handler", () => {
         {
           id: "queue-1",
           name: "posts",
-        },
+        }
       );
 
       const formData = createMockFormData({
@@ -247,13 +248,13 @@ describe("Longform Edit Action Handler", () => {
         {
           method: "POST",
           body: formData,
-        },
+        }
       );
 
       const response = await handleLongFormEditAction(
         TEST_USER_ID,
         POST_ID,
-        request,
+        request
       );
 
       expect(updateLongFormPost).toHaveBeenCalledWith(
@@ -262,7 +263,7 @@ describe("Longform Edit Action Handler", () => {
           userId: TEST_USER_ID,
           title: "Updated Post",
           isPublished: false,
-        }),
+        })
       );
       expect(response.status).toBe(302);
     });
@@ -278,13 +279,13 @@ describe("Longform Edit Action Handler", () => {
         {
           method: "POST",
           body: formData,
-        },
+        }
       );
 
       const response = await handleLongFormEditAction(
         TEST_USER_ID,
         POST_ID,
-        request,
+        request
       );
       const dataRaw: unknown = await response.json();
       const data =
@@ -308,13 +309,13 @@ describe("Longform Edit Action Handler", () => {
         {
           method: "POST",
           body: formData,
-        },
+        }
       );
 
       const response = await handleLongFormEditAction(
         TEST_USER_ID,
         POST_ID,
-        request,
+        request
       );
       const dataRaw: unknown = await response.json();
       const data =
@@ -333,7 +334,7 @@ describe("Longform Edit Action Handler", () => {
         {
           id: "queue-1",
           name: "posts",
-        },
+        }
       );
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
@@ -365,13 +366,13 @@ describe("Longform Edit Action Handler", () => {
         {
           method: "POST",
           body: formData,
-        },
+        }
       );
 
       const response = await handleLongFormEditAction(
         TEST_USER_ID,
         POST_ID,
-        request,
+        request
       );
 
       expect(updateLongFormPost).toHaveBeenCalledWith(
@@ -382,11 +383,11 @@ describe("Longform Edit Action Handler", () => {
           isPublished: true,
           signedEvent: mockSignedEvent,
           nostrEvent: mockNostrEvent,
-        }),
+        })
       );
       expect(global.fetch).toHaveBeenCalledWith(
         "https://api.nostr-publisher.com/publish",
-        expect.any(Object),
+        expect.any(Object)
       );
       expect(response.status).toBe(302);
     });
@@ -407,13 +408,13 @@ describe("Longform Edit Action Handler", () => {
         {
           method: "POST",
           body: formData,
-        },
+        }
       );
 
       const response = await handleLongFormEditAction(
         TEST_USER_ID,
         POST_ID,
-        request,
+        request
       );
       const dataRaw: unknown = await response.json();
       const data =
@@ -442,13 +443,13 @@ describe("Longform Edit Action Handler", () => {
         {
           method: "POST",
           body: formData,
-        },
+        }
       );
 
       const response = await handleLongFormEditAction(
         TEST_USER_ID,
         POST_ID,
-        request,
+        request
       );
       const dataRaw: unknown = await response.json();
       const data =
@@ -496,16 +497,16 @@ describe("Longform Edit Action Handler", () => {
         {
           method: "POST",
           body: formData,
-        },
+        }
       );
 
       await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
 
       expect(updateLongFormPost).toHaveBeenCalledWith(
         expect.objectContaining({
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
           content: expect.stringContaining("#marketing #social"),
-        }),
+        })
       );
     });
   });
@@ -516,7 +517,7 @@ describe("Longform Edit Action Handler", () => {
         {
           id: "queue-1",
           name: "posts",
-        },
+        }
       );
     });
 
@@ -558,13 +559,13 @@ describe("Longform Edit Action Handler", () => {
         {
           method: "POST",
           body: formData,
-        },
+        }
       );
 
       const response = await handleLongFormEditAction(
         TEST_USER_ID,
         POST_ID,
-        request,
+        request
       );
 
       expect(updateLongFormPost).toHaveBeenCalledWith(
@@ -572,7 +573,7 @@ describe("Longform Edit Action Handler", () => {
           id: POST_ID,
           isPublished: false,
           scheduledFor: "1704067200",
-        }),
+        })
       );
       expect(response.status).toBe(302);
     });
@@ -589,13 +590,13 @@ describe("Longform Edit Action Handler", () => {
         {
           method: "POST",
           body: formData,
-        },
+        }
       );
 
       const response = await handleLongFormEditAction(
         TEST_USER_ID,
         POST_ID,
-        request,
+        request
       );
       const dataRaw: unknown = await response.json();
       const data =
@@ -629,19 +630,19 @@ describe("Longform Edit Action Handler", () => {
         {
           method: "POST",
           body: formData,
-        },
+        }
       );
 
       await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
 
       expect(getHashTagPresetById).toHaveBeenCalledWith(
         TEST_USER_ID,
-        "preset-1",
+        "preset-1"
       );
       expect(updateLongFormPost).toHaveBeenCalledWith(
         expect.objectContaining({
           hashTagPresetId: "preset-1",
-        }),
+        })
       );
     });
 
@@ -659,7 +660,7 @@ describe("Longform Edit Action Handler", () => {
         {
           method: "POST",
           body: formData,
-        },
+        }
       );
 
       await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);

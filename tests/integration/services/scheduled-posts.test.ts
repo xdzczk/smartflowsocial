@@ -27,6 +27,8 @@ vi.mock("~/features/posts/services/combined.server", () => ({
   ]),
 }));
 
+import { TEST_USER_ID } from "../../utils/test-helpers";
+
 import { getScheduledDashboardData } from "~/features/posts/services/scheduled-posts.server";
 import {
   getUserById,
@@ -35,8 +37,6 @@ import {
 } from "~/features/user";
 import { getScheduledLongFormPosts } from "~/models/longformpost.server";
 import { getScheduledPosts } from "~/models/post.queries.server";
-
-import { TEST_USER_ID } from "../../utils/test-helpers";
 
 describe("Scheduled Posts Service", () => {
   beforeEach(() => {
@@ -57,17 +57,17 @@ describe("Scheduled Posts Service", () => {
     const mockHashTagPresets = [{ id: "preset-1", name: "Preset 1" }];
 
     (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockPosts,
+      mockPosts
     );
     (getScheduledLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockLongformPosts,
+      mockLongformPosts
     );
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockQueueTypes,
+      mockQueueTypes
     );
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockHashTagPresets,
+      mockHashTagPresets
     );
 
     const result = await getScheduledDashboardData({
@@ -93,10 +93,10 @@ describe("Scheduled Posts Service", () => {
     ];
 
     (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockPosts,
+      mockPosts
     );
     (getScheduledLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockLongformPosts,
+      mockLongformPosts
     );
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: TEST_USER_ID,
@@ -110,22 +110,22 @@ describe("Scheduled Posts Service", () => {
     });
 
     expect(result.longformPosts).toHaveLength(1);
-    expect(result.longformPosts[0].id).toBe("longform-1");
+    expect(result.longformPosts[0]?.id).toBe("longform-1");
   });
 
   it("should handle non-array queue types and hash tag presets", async () => {
     (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getScheduledLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-      [],
+      []
     );
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: TEST_USER_ID,
     });
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-      "not-an-array",
+      "not-an-array"
     );
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue(
-      "not-an-array",
+      "not-an-array"
     );
 
     const result = await getScheduledDashboardData({

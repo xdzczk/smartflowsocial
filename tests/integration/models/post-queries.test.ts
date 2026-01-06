@@ -19,6 +19,8 @@ vi.mock("~/lib/prisma.server", () => ({
   },
 }));
 
+import { TEST_USER_ID } from "../../utils/test-helpers";
+
 import { prisma } from "~/lib/prisma.server";
 import {
   getPostStatistics,
@@ -27,8 +29,6 @@ import {
   getRecentPostedPosts,
   getCronDueScheduledPosts,
 } from "~/models/post.queries.server";
-
-import { TEST_USER_ID } from "../../utils/test-helpers";
 
 describe("Post Queries", () => {
   beforeEach(() => {
@@ -107,7 +107,7 @@ describe("Post Queries", () => {
         prisma.queueType.findFirst as ReturnType<typeof vi.fn>
       ).mockResolvedValue(mockQueueType);
       (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPost,
+        mockPost
       );
 
       const result = await getLastPostTimeForQueue({
@@ -145,7 +145,7 @@ describe("Post Queries", () => {
         prisma.queueType.findFirst as ReturnType<typeof vi.fn>
       ).mockResolvedValue(mockQueueType);
       (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPost,
+        mockPost
       );
 
       const result = await getLastPostTimeForQueue({
@@ -191,7 +191,7 @@ describe("Post Queries", () => {
         prisma.queueType.findFirst as ReturnType<typeof vi.fn>
       ).mockResolvedValue(mockQueueType);
       (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null,
+        null
       );
 
       await getLastPostTimeForQueue({
@@ -214,7 +214,7 @@ describe("Post Queries", () => {
         prisma.queueType.findFirst as ReturnType<typeof vi.fn>
       ).mockResolvedValue(mockQueueType);
       (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null,
+        null
       );
 
       await getLastPostTimeForQueue({
@@ -237,7 +237,7 @@ describe("Post Queries", () => {
         prisma.queueType.findFirst as ReturnType<typeof vi.fn>
       ).mockResolvedValue(mockQueueType);
       (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null,
+        null
       );
 
       const result = await getLastPostTimeForQueue({
@@ -256,7 +256,7 @@ describe("Post Queries", () => {
         { id: "post-2", userId: TEST_USER_ID },
       ];
       (prisma.post.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPosts,
+        mockPosts
       );
 
       const result = await getPostsByIds({
@@ -308,7 +308,7 @@ describe("Post Queries", () => {
         { id: "post-2", isPosted: true },
       ];
       (prisma.post.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPosts,
+        mockPosts
       );
 
       const result = await getRecentPostedPosts({
@@ -353,7 +353,7 @@ describe("Post Queries", () => {
         { id: "post-2", scheduledFor: String(now - 50) },
       ];
       (prisma.post.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPosts,
+        mockPosts
       );
 
       const result = await getCronDueScheduledPosts();
@@ -363,7 +363,7 @@ describe("Post Queries", () => {
           isScheduled: true,
           isPosted: false,
           scheduledFor: {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
             lte: expect.any(String),
           },
         },

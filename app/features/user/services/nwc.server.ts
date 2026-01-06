@@ -15,7 +15,7 @@ import { prisma } from "~/lib/prisma.server";
 export async function updateUserNWC(
   userId: string,
   nwcString: string,
-  enabled = true,
+  enabled = true
 ): Promise<User> {
   // Validate NWC string format
   if (!validateNWCString(nwcString)) {
@@ -25,7 +25,7 @@ export async function updateUserNWC(
   // Encrypt the NWC string before storing
   const encryptedNwc = encrypt(nwcString);
 
-  const result = await prisma.user.update({
+  return await prisma.user.update({
     where: {
       id: userId,
     },
@@ -35,8 +35,6 @@ export async function updateUserNWC(
       nwcLastUsed: new Date(),
     },
   });
-
-  return result;
 }
 
 /**
@@ -44,9 +42,9 @@ export async function updateUserNWC(
  */
 export async function updateUserNWCEnabled(
   userId: string,
-  enabled: boolean,
+  enabled: boolean
 ): Promise<User> {
-  const result = await prisma.user.update({
+  return await prisma.user.update({
     where: {
       id: userId,
     },
@@ -55,8 +53,6 @@ export async function updateUserNWCEnabled(
       ...(enabled && { nwcLastUsed: new Date() }),
     },
   });
-
-  return result;
 }
 
 /**
@@ -109,13 +105,11 @@ export async function getUserNWC(userId: string): Promise<{
     }
   }
 
-  const result = {
+  return {
     enabled: user.nwcEnabled,
     maskedString,
     lastUsed: user.nwcLastUsed,
   };
-
-  return result;
 }
 
 /**
@@ -124,7 +118,7 @@ export async function getUserNWC(userId: string): Promise<{
  * Used for payment processing
  */
 export async function getDecryptedUserNWC(
-  userId: string,
+  userId: string
 ): Promise<string | null> {
   const user = await prisma.user.findUnique({
     where: {

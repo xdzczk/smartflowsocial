@@ -29,12 +29,15 @@ vi.mock("~/features/posts/services/posted-posts.server", () => ({
   getPostedDashboardData: vi.fn(),
 }));
 
+import {
+  createValidUserMock,
+  createValidPostDTOMock,
+} from "../utils/test-helpers";
+
 import { requireUserId } from "~/features/auth/session.server";
 import { requireAnySubscription } from "~/features/payments/subscriptions.server";
 import { getPostedDashboardData } from "~/features/posts/services/posted-posts.server";
 import { loader } from "~/routes/dashboard.posted";
-
-import { createValidUserMock, createValidPostDTOMock } from "../utils/test-helpers";
 
 describe("Posted Posts Loader Integration", () => {
   beforeEach(() => {
@@ -43,7 +46,7 @@ describe("Posted Posts Loader Integration", () => {
     // Default mocks
     (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue("user-123");
     (requireAnySubscription as ReturnType<typeof vi.fn>).mockResolvedValue(
-      undefined,
+      undefined
     );
     (getPostedDashboardData as ReturnType<typeof vi.fn>).mockResolvedValue({
       posts: [],
@@ -100,7 +103,13 @@ describe("Posted Posts Loader Integration", () => {
 
     it("should handle queue type parameter", async () => {
       const mockData = {
-        posts: [createValidPostDTOMock({ id: "1", caption: "Posted post", postedAt: new Date().toISOString() })],
+        posts: [
+          createValidPostDTOMock({
+            id: "1",
+            caption: "Posted post",
+            postedAt: new Date().toISOString(),
+          }),
+        ],
         longformPosts: [],
         user: createValidUserMock(),
         queueTypes: [{ id: "1", name: "Default" }],
@@ -115,7 +124,7 @@ describe("Posted Posts Loader Integration", () => {
       };
 
       (getPostedDashboardData as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockData,
+        mockData
       );
 
       const request = new Request("http://localhost:3000/dashboard/posted");
@@ -145,7 +154,7 @@ describe("Posted Posts Loader Integration", () => {
       expect(getPostedDashboardData).toHaveBeenCalledWith({
         userId: "user-123",
         params: { queueType: "posts" },
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         url: expect.any(URL),
       });
       const selectedQueueType =
@@ -160,8 +169,16 @@ describe("Posted Posts Loader Integration", () => {
     it("should return proper data structure with posted posts", async () => {
       const mockData = {
         posts: [
-          createValidPostDTOMock({ id: "1", caption: "Post 1", postedAt: new Date("2024-01-01").toISOString() }),
-          createValidPostDTOMock({ id: "2", caption: "Post 2", postedAt: new Date("2024-01-02").toISOString() }),
+          createValidPostDTOMock({
+            id: "1",
+            caption: "Post 1",
+            postedAt: new Date("2024-01-01").toISOString(),
+          }),
+          createValidPostDTOMock({
+            id: "2",
+            caption: "Post 2",
+            postedAt: new Date("2024-01-02").toISOString(),
+          }),
         ],
         longformPosts: [
           {
@@ -199,7 +216,7 @@ describe("Posted Posts Loader Integration", () => {
       };
 
       (getPostedDashboardData as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockData,
+        mockData
       );
 
       const request = new Request("http://localhost:3000/dashboard/posted");
@@ -242,7 +259,7 @@ describe("Posted Posts Loader Integration", () => {
 
     it("should pass URL object to getPostedDashboardData", async () => {
       const request = new Request(
-        "http://localhost:3000/dashboard/posted?page=2&limit=10",
+        "http://localhost:3000/dashboard/posted?page=2&limit=10"
       );
 
       const loaderArgs: LoaderFunctionArgs = {
@@ -255,9 +272,9 @@ describe("Posted Posts Loader Integration", () => {
       expect(getPostedDashboardData).toHaveBeenCalledWith({
         userId: "user-123",
         params: {},
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         url: expect.objectContaining({
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
           searchParams: expect.any(URLSearchParams),
         }),
       });
@@ -267,7 +284,7 @@ describe("Posted Posts Loader Integration", () => {
   describe("Error Handling", () => {
     it("should handle authentication errors", async () => {
       (requireUserId as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Authentication required"),
+        new Error("Authentication required")
       );
 
       const request = new Request("http://localhost:3000/dashboard/posted");
@@ -310,7 +327,7 @@ describe("Posted Posts Loader Integration", () => {
 
     it("should handle subscription requirement errors", async () => {
       (requireAnySubscription as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Subscription required"),
+        new Error("Subscription required")
       );
 
       const request = new Request("http://localhost:3000/dashboard/posted");
@@ -353,7 +370,7 @@ describe("Posted Posts Loader Integration", () => {
 
     it("should handle data loading errors", async () => {
       (getPostedDashboardData as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Database error"),
+        new Error("Database error")
       );
 
       const request = new Request("http://localhost:3000/dashboard/posted");

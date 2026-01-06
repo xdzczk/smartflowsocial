@@ -3,10 +3,13 @@
  * Provides caching and background refetching for giveaway pages
  */
 
-import { useFetcher, useLoaderData } from "@remix-run/react";
-import { useParams, useSearchParams } from "@remix-run/react";
+import {
+  useFetcher,
+  useLoaderData,
+  useParams,
+  useSearchParams,
+} from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
-
 
 import type { PostDTO } from "~/features/posts/dtos";
 import { fromPostDTOArray } from "~/features/posts/dtos";
@@ -40,16 +43,16 @@ export const giveawayKeys = {
 export function useGiveawayQuery() {
   const params = useParams();
   const [searchParams] = useSearchParams();
-  const queueType = params.queueType ?? "all";
+  const queueType = params["queueType"] ?? "all";
   const days = parseInt(searchParams.get("days") ?? "7", 10);
-  
+
   const loaderDataRaw = useLoaderData();
   const fetcher = useFetcher();
 
   // Validate initial loader data
   const validatedLoaderData = safeValidateLoaderResponse(
     loaderDataRaw,
-    giveawayLoaderDataSchema,
+    giveawayLoaderDataSchema
   );
 
   return useQuery({
@@ -58,14 +61,14 @@ export function useGiveawayQuery() {
       // Use fetcher to refetch data
       const url = `/dashboard/giveaway${queueType !== "all" ? `/${queueType}` : ""}?days=${days}`;
       fetcher.load(url);
-      
+
       return new Promise<GiveawayLoaderData>((resolve, reject) => {
         const checkFetcher = () => {
           if (fetcher.state === "idle") {
             if (fetcher.data) {
               const validated = safeValidateLoaderResponse(
                 fetcher.data,
-                giveawayLoaderDataSchema,
+                giveawayLoaderDataSchema
               );
               if (validated) {
                 resolve(validated);
@@ -98,7 +101,9 @@ export function useGiveawayData() {
   const rawData = query.data;
 
   if (!rawData) {
-    const emptyPosts: (PostData & { stats?: PostStats; totalEngagement?: number })[] = [];
+    const emptyPosts: Array<
+      PostData & { stats?: PostStats; totalEngagement?: number }
+    > = [];
     const emptyStats: Record<string, PostStats> = {};
     const emptyRelatedEvents: RelatedEvent[] = [];
     const emptyQueueTypes: QueueType[] = [];
@@ -115,30 +120,44 @@ export function useGiveawayData() {
   }
 
   // Deserialize DTOs (with string dates) back to PostData (with Date objects)
-  const posts: (PostData & {
-    stats?: PostStats;
-    totalEngagement?: number;
-  })[] = Array.isArray(rawData.posts)
+  const posts: Array<
+    PostData & {
+      stats?: PostStats;
+      totalEngagement?: number;
+    }
+  > = Array.isArray(rawData.posts)
     ? rawData.posts.map((dto) => {
-        const post = fromPostDTOArray([dto as PostDTO])[0];
-        return {
+        const postArray = fromPostDTOArray([dto as PostDTO]);
+        const post = postArray[0];
+        if (!post) {
+          throw new Error("Failed to deserialize post DTO");
+        }
+        const result: PostData & {
+          stats?: PostStats;
+          totalEngagement?: number;
+        } = {
           ...post,
-          stats: dto.stats,
-          totalEngagement: dto.totalEngagement,
+          stats: dto.stats ?? undefined,
+          totalEngagement: dto.totalEngagement ?? undefined,
         };
+        return result;
       })
     : [];
 
   // Type assertions for stats
   const stats: Record<string, PostStats> =
-    rawData.stats && typeof rawData.stats === "object" && !Array.isArray(rawData.stats)
+    rawData.stats &&
+    typeof rawData.stats === "object" &&
+    !Array.isArray(rawData.stats)
       ? rawData.stats
       : {};
 
   return {
     posts,
     stats,
-    relatedEvents: Array.isArray(rawData.relatedEvents) ? rawData.relatedEvents : [],
+    relatedEvents: Array.isArray(rawData.relatedEvents)
+      ? rawData.relatedEvents
+      : [],
     user: rawData.user,
     queueTypes: Array.isArray(rawData.queueTypes) ? rawData.queueTypes : [],
     selectedQueueType: rawData.selectedQueueType ?? "all",
@@ -146,4 +165,3 @@ export function useGiveawayData() {
     rawData,
   };
 }
-

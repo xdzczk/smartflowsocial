@@ -10,11 +10,12 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+import { TEST_USER_ID } from "../utils/test-helpers";
+
 import { calculateNextScheduleTime } from "~/features/posts/schedulers";
 import { getScheduleInterval } from "~/features/user";
 import { getLastPostTimeForQueue } from "~/models/post.queries.server";
 
-import { TEST_USER_ID } from "../utils/test-helpers";
 // Mock dependencies
 vi.mock("~/models/post.queries.server", () => ({
   getLastPostTimeForQueue: vi.fn(),
@@ -29,7 +30,7 @@ describe("Timezone Edge Cases", () => {
     vi.clearAllMocks();
     (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(["4"]);
     (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
-      null,
+      null
     );
   });
 

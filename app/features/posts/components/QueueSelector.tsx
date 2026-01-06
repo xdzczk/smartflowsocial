@@ -1,7 +1,7 @@
 import { getDynamicQueueStyle } from "../queueColors";
 import type { QueueType } from "../types";
 interface QueueSelectorProps {
-  queueTypes: (string | QueueType)[];
+  queueTypes: Array<string | QueueType>;
   selectedQueue: string;
   onQueueChange: (queue: string) => void;
   disabled?: boolean;
@@ -17,7 +17,7 @@ export function QueueSelector({
 }: QueueSelectorProps) {
   const getQueueTypeId = (queueName: string): string => {
     const selectedQueueType = queueTypes.find((qt) =>
-      typeof qt === "string" ? qt === queueName : qt.name === queueName,
+      typeof qt === "string" ? qt === queueName : qt.name === queueName
     );
     return typeof selectedQueueType === "object"
       ? (selectedQueueType.id ?? "")

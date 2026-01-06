@@ -3,8 +3,7 @@
  * Provides caching and background refetching for templates page
  */
 
-import { useFetcher, useLoaderData } from "@remix-run/react";
-import { useSearchParams } from "@remix-run/react";
+import { useFetcher, useLoaderData, useSearchParams } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 
 import type { Asset } from "~/features/assets/types";
@@ -14,7 +13,6 @@ import {
   templatesLoaderDataSchema,
   type TemplatesLoaderData,
 } from "~/lib/validation/schemas/loader-responses.schemas";
-
 
 import type { Template } from "../types";
 
@@ -39,14 +37,14 @@ export function useTemplatesQuery() {
   const [searchParams] = useSearchParams();
   const searchTerm = searchParams.get("search") ?? "";
   const page = parseInt(searchParams.get("page") ?? "1", 10);
-  
+
   const loaderDataRaw = useLoaderData();
   const fetcher = useFetcher();
 
   // Validate initial loader data
   const validatedLoaderData = safeValidateLoaderResponse(
     loaderDataRaw,
-    templatesLoaderDataSchema,
+    templatesLoaderDataSchema
   );
 
   return useQuery({
@@ -55,7 +53,7 @@ export function useTemplatesQuery() {
       // Use fetcher to refetch data
       const url = `/dashboard/templates?search=${encodeURIComponent(searchTerm)}&page=${page}`;
       fetcher.load(url);
-      
+
       // Wait for fetcher to complete
       return new Promise<TemplatesLoaderData>((resolve, reject) => {
         const checkFetcher = () => {
@@ -63,7 +61,7 @@ export function useTemplatesQuery() {
             if (fetcher.data) {
               const validated = safeValidateLoaderResponse(
                 fetcher.data,
-                templatesLoaderDataSchema,
+                templatesLoaderDataSchema
               );
               if (validated) {
                 resolve(validated);
@@ -130,10 +128,11 @@ export function useTemplatesData() {
       : [],
     totalCount: typeof rawData.totalCount === "number" ? rawData.totalCount : 0,
     totalPages: typeof rawData.totalPages === "number" ? rawData.totalPages : 0,
-    currentPage: typeof rawData.currentPage === "number" ? rawData.currentPage : 1,
-    searchTerm: typeof rawData.searchTerm === "string" ? rawData.searchTerm : "",
+    currentPage:
+      typeof rawData.currentPage === "number" ? rawData.currentPage : 1,
+    searchTerm:
+      typeof rawData.searchTerm === "string" ? rawData.searchTerm : "",
     isLoading: query.isLoading,
     rawData,
   };
 }
-

@@ -24,13 +24,13 @@ import {
 } from "../factories";
 
 export interface TestFixtures {
-  users?: Partial<User>[];
-  queueTypes?: Partial<QueueType>[];
-  hashTagPresets?: Partial<HashTagPreset>[];
-  posts?: Partial<Post>[];
-  longFormPosts?: Partial<LongFormPost>[];
-  payments?: Partial<Payment>[];
-  plans?: Partial<Plan>[];
+  users?: Array<Partial<User>>;
+  queueTypes?: Array<Partial<QueueType>>;
+  hashTagPresets?: Array<Partial<HashTagPreset>>;
+  posts?: Array<Partial<Post>>;
+  longFormPosts?: Array<Partial<LongFormPost>>;
+  payments?: Array<Partial<Payment>>;
+  plans?: Array<Partial<Plan>>;
 }
 
 /**

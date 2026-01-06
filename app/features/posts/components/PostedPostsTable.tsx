@@ -8,7 +8,7 @@ import type { PostStats } from "../stats.server";
 import type { PostData, PostFetcher } from "../types";
 // Helper to safely access formData from a fetcher
 function getFetcherFormData(
-  fetcher: PostFetcher | undefined,
+  fetcher: PostFetcher | undefined
 ): FormData | null | undefined {
   return (fetcher as { formData?: FormData | null })?.formData;
 }
@@ -320,7 +320,12 @@ export default function PostedPostsTable({
                     </span>
                   ) : (
                     <span
-                      className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium capitalize ${getQueueColor(post.queueType?.name ?? "unassigned").bg} ${getQueueColor(post.queueType?.name ?? "unassigned").text}`}
+                      className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium capitalize ${(() => {
+                        const colors = getQueueColor(
+                          post.queueType?.name ?? "unassigned"
+                        );
+                        return colors ? `${colors.bg} ${colors.text}` : "";
+                      })()}`}
                     >
                       {post.queueType?.name ?? "unassigned"}
                     </span>

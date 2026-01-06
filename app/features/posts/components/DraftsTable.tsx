@@ -161,7 +161,14 @@ export function DraftsTable({
                   </div>
                 ) : (
                   <div
-                    className={`inline-flex rounded-full border-2 px-3 py-1 text-xs font-semibold leading-4 ${getQueueColor(post.queueType?.name ?? "unassigned").bg} ${getQueueColor(post.queueType?.name ?? "unassigned").text} ${getQueueColor(post.queueType?.name ?? "unassigned").border} shadow-sm`}
+                    className={`inline-flex rounded-full border-2 px-3 py-1 text-xs font-semibold leading-4 ${(() => {
+                      const colors = getQueueColor(
+                        post.queueType?.name ?? "unassigned"
+                      );
+                      return colors
+                        ? `${colors.bg} ${colors.text} ${colors.border}`
+                        : "";
+                    })()} shadow-sm`}
                   >
                     {post.queueType?.name ?? "unassigned"}
                   </div>

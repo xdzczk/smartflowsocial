@@ -112,7 +112,7 @@ export function RecyclablesTable({
         </thead>
         <tbody>
           {posts.map((post) => {
-            const postStats = stats[post.signedEvent.id] || {
+            const postStats = stats[post.signedEvent.id] ?? {
               likes: 0,
               replies: 0,
               mentions: 0,
@@ -177,7 +177,12 @@ export function RecyclablesTable({
                     </span>
                   ) : (
                     <span
-                      className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium capitalize ${getQueueColor(post.queueType?.name ?? "unassigned").bg} ${getQueueColor(post.queueType?.name ?? "unassigned").text}`}
+                      className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium capitalize ${(() => {
+                        const colors = getQueueColor(
+                          post.queueType?.name ?? "unassigned"
+                        );
+                        return colors ? `${colors.bg} ${colors.text}` : "";
+                      })()}`}
                     >
                       {post.queueType?.name ?? "unassigned"}
                     </span>

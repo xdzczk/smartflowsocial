@@ -3,11 +3,7 @@ import {
   type LoaderFunctionArgs,
   type ActionFunctionArgs,
 } from "@remix-run/node";
-import {
-  useParams,
-  Outlet,
-  useSearchParams,
-} from "@remix-run/react";
+import { useParams, Outlet, useSearchParams } from "@remix-run/react";
 
 import { requireUserId } from "~/features/auth";
 import {
@@ -51,10 +47,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
     // Get queueType from URL params (query string) or route params, default to "all"
     const url = new URL(request.url);
-    const queueType = url.searchParams.get("queueType") ?? params.queueType ?? "all";
+    const queueType =
+      url.searchParams.get("queueType") ?? params["queueType"] ?? "all";
 
     const data = await loadDraftsData(userId, queueType);
-    
+
     // Validate loader response with Zod schema
     return validateLoaderResponse(data, draftsLoaderDataSchema);
   } catch (error) {
@@ -68,33 +65,40 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 }
 
-export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs) => {
-  try {
-    const userId = await requireUserId(request);
-    const formData = await request.formData();
-    const result = await handleDraftsAction(formData, userId);
+export const action = withCSRFProtection(
+  async ({ request }: ActionFunctionArgs) => {
+    try {
+      const userId = await requireUserId(request);
+      const formData = await request.formData();
+      const result = await handleDraftsAction(formData, userId);
 
-    // Type narrowing: check if result is a Response
-    if (result instanceof Response) {
-      return result;
-    }
+      // Type narrowing: check if result is a Response
+      if (result instanceof Response) {
+        return result;
+      }
 
-    // Type narrowing: check if result has error property
-    if (typeof result === "object" && result !== null && "error" in result && result.error) {
-      return json(result, { status: 400 });
-    }
+      // Type narrowing: check if result has error property
+      if (
+        typeof result === "object" &&
+        result !== null &&
+        "error" in result &&
+        result.error
+      ) {
+        return json(result, { status: 400 });
+      }
 
-    return json(result);
-  } catch (error) {
-    // If error is a Response (e.g., redirect from requireUserId), return it
-    if (error instanceof Response) {
-      return error;
+      return json(result);
+    } catch (error) {
+      // If error is a Response (e.g., redirect from requireUserId), return it
+      if (error instanceof Response) {
+        return error;
+      }
+      // Use dynamic import to avoid bundling issues
+      const { handleActionError } = await import("~/lib/error-handler.server");
+      return handleActionError(error);
     }
-    // Use dynamic import to avoid bundling issues
-    const { handleActionError } = await import("~/lib/error-handler.server");
-    return handleActionError(error);
   }
-});
+);
 
 type _LoaderData = Awaited<ReturnType<typeof loader>>;
 
@@ -113,7 +117,7 @@ export default function DraftPosts() {
   // Conversion function: PostData -> Post (for useDraftsState hook)
   // useDraftsState expects Post with createdAt: string
   const convertPostDataToDraftsPost = (
-    postData: PostData,
+    postData: PostData
   ): {
     id: string;
     caption?: string | null;
@@ -135,7 +139,7 @@ export default function DraftPosts() {
   const [searchParams] = useSearchParams();
 
   // Check if we're on a child route (like edit)
-  const isChildRoute = params.id;
+  const isChildRoute = params["id"];
 
   // Get current tab from URL params - default to "all"
   const currentTab = searchParams.get("tab") ?? "all";
@@ -157,7 +161,7 @@ export default function DraftPosts() {
     handleBulkDelete,
     setShowAdvancedBulkResume,
   } = useDraftsState({
-    posts: posts.map(convertPostDataToDraftsPost),
+    posts: posts.map((post) => convertPostDataToDraftsPost(post)),
   });
 
   // If we're on a child route, render the child component
@@ -180,7 +184,7 @@ export default function DraftPosts() {
         allContentCount={allContent.length}
         postsCount={filteredPosts.length}
         longformCount={longformPosts.length}
-        queueType={params.queueType}
+        queueType={params["queueType"]}
       />
 
       {/* Queue Selection Tabs */}
@@ -248,7 +252,7 @@ export default function DraftPosts() {
             ? (() => {
                 const postData = posts.find((p) => p.id === selectedPost.id);
                 const combinedContent = allContent.find(
-                  (c) => c.id === selectedPost.id,
+                  (c) => c.id === selectedPost.id
                 );
 
                 // Use type guards to safely determine post type
@@ -271,7 +275,7 @@ export default function DraftPosts() {
               <DraftBulkResume
                 selectedDrafts={convertDraftsPostsToPostDataArray(
                   filteredPosts.filter((post) => selectedPosts.has(post.id)),
-                  posts,
+                  posts
                 )}
                 queueTypes={queueTypes}
                 onCancel={() => setShowAdvancedBulkResume(false)}

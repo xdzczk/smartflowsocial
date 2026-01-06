@@ -80,7 +80,7 @@ export function postToCombinedContent(post: PostData): CombinedContent {
  * Converts a LongFormPost to CombinedContent format
  */
 export function longFormPostToCombinedContent(
-  longFormPost: LongFormPostData,
+  longFormPost: LongFormPostData
 ): CombinedContent {
   return {
     id: longFormPost.id,
@@ -123,10 +123,12 @@ export function combineContent(
   posts: PostData[] = [],
   longFormPosts: LongFormPostData[] = [],
   sortBy = "createdAt",
-  sortDirection: "asc" | "desc" = "desc",
+  sortDirection: "asc" | "desc" = "desc"
 ): CombinedContent[] {
-  const combinedPosts = posts.map(postToCombinedContent);
-  const combinedLongForm = longFormPosts.map(longFormPostToCombinedContent);
+  const combinedPosts = posts.map((post) => postToCombinedContent(post));
+  const combinedLongForm = longFormPosts.map((post) =>
+    longFormPostToCombinedContent(post)
+  );
   const combined = [...combinedPosts, ...combinedLongForm];
 
   // Sort the combined array
@@ -179,7 +181,7 @@ export function combineContent(
  */
 export function filterCombinedContent(
   content: CombinedContent[],
-  searchTerm: string,
+  searchTerm: string
 ): CombinedContent[] {
   if (!searchTerm) return content;
 

@@ -19,6 +19,8 @@ vi.mock("~/lib/prisma.server", () => ({
   },
 }));
 
+import { TEST_USER_ID } from "../../utils/test-helpers";
+
 import { prisma } from "~/lib/prisma.server";
 import {
   createAsset,
@@ -29,8 +31,6 @@ import {
   getAssetsByType,
   searchAssets,
 } from "~/models/asset.server";
-
-import { TEST_USER_ID } from "../../utils/test-helpers";
 
 describe("Asset Model", () => {
   beforeEach(() => {
@@ -49,7 +49,7 @@ describe("Asset Model", () => {
         assetType: "IMAGE" as const,
       };
       (prisma.asset.create as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockAsset,
+        mockAsset
       );
 
       const result = await createAsset({
@@ -82,7 +82,7 @@ describe("Asset Model", () => {
         tags: [],
       };
       (prisma.asset.create as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockAsset,
+        mockAsset
       );
 
       const result = await createAsset({
@@ -111,7 +111,7 @@ describe("Asset Model", () => {
         { id: "asset-2", userId: TEST_USER_ID },
       ];
       (prisma.asset.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockAssets,
+        mockAssets
       );
       (prisma.asset.count as ReturnType<typeof vi.fn>).mockResolvedValue(10);
 
@@ -174,7 +174,7 @@ describe("Asset Model", () => {
     it("should get asset by ID", async () => {
       const mockAsset = { id: "asset-123", userId: TEST_USER_ID };
       (prisma.asset.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockAsset,
+        mockAsset
       );
 
       const result = await getAssetById({
@@ -199,7 +199,7 @@ describe("Asset Model", () => {
         tags: ["tag3"],
       };
       (prisma.asset.update as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockAsset,
+        mockAsset
       );
 
       const result = await updateAsset({
@@ -226,7 +226,7 @@ describe("Asset Model", () => {
     it("should update asset with partial fields", async () => {
       const mockAsset = { id: "asset-123", title: "Updated Title" };
       (prisma.asset.update as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockAsset,
+        mockAsset
       );
 
       const result = await updateAsset({
@@ -249,7 +249,7 @@ describe("Asset Model", () => {
     it("should delete an asset", async () => {
       const mockAsset = { id: "asset-123", userId: TEST_USER_ID };
       (prisma.asset.delete as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockAsset,
+        mockAsset
       );
 
       const result = await deleteAsset({
@@ -271,7 +271,7 @@ describe("Asset Model", () => {
         { id: "asset-2", assetType: "IMAGE" },
       ];
       (prisma.asset.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockAssets,
+        mockAssets
       );
 
       const result = await getAssetsByType({
@@ -291,7 +291,7 @@ describe("Asset Model", () => {
     it("should search assets by title", async () => {
       const mockAssets = [{ id: "asset-1", title: "Test Asset" }];
       (prisma.asset.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockAssets,
+        mockAssets
       );
       (prisma.asset.count as ReturnType<typeof vi.fn>).mockResolvedValue(1);
 
@@ -353,7 +353,7 @@ describe("Asset Model", () => {
         (condition) =>
           typeof condition === "object" &&
           condition !== null &&
-          "tags" in condition,
+          "tags" in condition
       );
       expect(tagsCondition?.tags?.hasSome).toEqual(["test", "search", "term"]);
     });
@@ -368,7 +368,7 @@ describe("Asset Model", () => {
       });
 
       expect(prisma.asset.findMany).toHaveBeenCalledWith({
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         where: expect.any(Object),
         orderBy: { createdAt: "desc" },
         skip: 0,

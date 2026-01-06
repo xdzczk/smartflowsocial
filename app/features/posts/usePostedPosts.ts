@@ -40,7 +40,7 @@ export function usePostedPosts({
   const repostFetcher = useFetcher<{
     repostData?: PostData[];
     scheduledRepostData?: PostData[];
-    quotePostData?: {
+    quotePostData?: Array<{
       caption: string;
       fileUrl: string;
       queueType: string;
@@ -50,8 +50,8 @@ export function usePostedPosts({
       originalEventPubkey?: string;
       isQuotePost?: boolean;
       originalCaption?: string;
-    }[];
-    longformQuotePostData?: {
+    }>;
+    longformQuotePostData?: Array<{
       caption: string;
       fileUrl: string;
       queueType: string;
@@ -61,7 +61,7 @@ export function usePostedPosts({
       originalEventPubkey?: string;
       isQuotePost?: boolean;
       originalCaption?: string;
-    }[];
+    }>;
   }>();
   const individualRepostFetcher = useFetcher<{
     repostEventData?: {
@@ -70,7 +70,7 @@ export function usePostedPosts({
       tags: string[][];
       created_at: number;
     };
-    quotePostData?: {
+    quotePostData?: Array<{
       caption: string;
       fileUrl: string;
       queueType: string;
@@ -80,7 +80,7 @@ export function usePostedPosts({
       originalEventPubkey?: string;
       isQuotePost?: boolean;
       originalCaption?: string;
-    }[];
+    }>;
     originalPost?: PostData;
     error?: string;
     message?: string;
@@ -97,7 +97,7 @@ export function usePostedPosts({
     message?: string;
   }>();
   const longformQuoteFetcher = useFetcher<{
-    longformQuotePostData?: {
+    longformQuotePostData?: Array<{
       caption: string;
       fileUrl: string;
       queueType: string;
@@ -107,7 +107,7 @@ export function usePostedPosts({
       originalEventPubkey?: string;
       isQuotePost?: boolean;
       originalCaption?: string;
-    }[];
+    }>;
     error?: string;
     message?: string;
   }>();
@@ -159,7 +159,7 @@ export function usePostedPosts({
       const formData = new FormData();
       formData.append(
         "_action",
-        currentTab === "longform" ? "bulkDeleteLongForm" : "bulkDelete",
+        currentTab === "longform" ? "bulkDeleteLongForm" : "bulkDelete"
       );
       formData.append("postIds", JSON.stringify(Array.from(selectedPosts)));
 
@@ -173,7 +173,7 @@ export function usePostedPosts({
     if (currentTab === "all") {
       // For All tab, only process regular posts (longform doesn't support bulk repost)
       const selectedItems = allContent.filter(
-        (item) => selectedPosts.has(item.id) && item.type === "post",
+        (item) => selectedPosts.has(item.id) && item.type === "post"
       );
 
       if (selectedItems.length === 0) {
@@ -185,7 +185,7 @@ export function usePostedPosts({
       formData.append("_action", "bulkRepost");
       formData.append(
         "postIds",
-        JSON.stringify(selectedItems.map((item) => item.id)),
+        JSON.stringify(selectedItems.map((item) => item.id))
       );
 
       repostFetcher.submit(formData, { method: "post" });
@@ -204,7 +204,7 @@ export function usePostedPosts({
     if (currentTab === "all") {
       // For All tab, only process regular posts
       const selectedItems = allContent.filter(
-        (item) => selectedPosts.has(item.id) && item.type === "post",
+        (item) => selectedPosts.has(item.id) && item.type === "post"
       );
 
       if (selectedItems.length === 0) {
@@ -216,7 +216,7 @@ export function usePostedPosts({
       formData.append("_action", "bulkScheduledRepost");
       formData.append(
         "postIds",
-        JSON.stringify(selectedItems.map((item) => item.id)),
+        JSON.stringify(selectedItems.map((item) => item.id))
       );
 
       repostFetcher.submit(formData, { method: "post" });
@@ -235,7 +235,7 @@ export function usePostedPosts({
     if (currentTab === "all") {
       // For All tab, only process regular posts
       const selectedItems = allContent.filter(
-        (item) => selectedPosts.has(item.id) && item.type === "post",
+        (item) => selectedPosts.has(item.id) && item.type === "post"
       );
 
       if (selectedItems.length === 0) {
@@ -247,7 +247,7 @@ export function usePostedPosts({
       formData.append("_action", "bulkQuote");
       formData.append(
         "postIds",
-        JSON.stringify(selectedItems.map((item) => item.id)),
+        JSON.stringify(selectedItems.map((item) => item.id))
       );
 
       repostFetcher.submit(formData, { method: "post" });
@@ -274,7 +274,7 @@ export function usePostedPosts({
       const now = new Date();
       const userTimezone = user?.timezone ?? "UTC";
       const localDate = new Date(
-        now.toLocaleString("en-US", { timeZone: userTimezone }),
+        now.toLocaleString("en-US", { timeZone: userTimezone })
       );
       localDate.setHours(localDate.getHours() + 1);
 
@@ -321,7 +321,7 @@ export function usePostedPosts({
       const now = new Date();
       const userTimezone = user?.timezone ?? "UTC";
       const localDate = new Date(
-        now.toLocaleString("en-US", { timeZone: userTimezone }),
+        now.toLocaleString("en-US", { timeZone: userTimezone })
       );
       localDate.setHours(localDate.getHours() + 1);
 
@@ -353,7 +353,7 @@ export function usePostedPosts({
       // Store scheduled repost data in sessionStorage
       sessionStorage.setItem(
         "scheduledRepostData",
-        JSON.stringify(scheduledRepostData),
+        JSON.stringify(scheduledRepostData)
       );
 
       // Navigate to bulk posts page with repost mode
@@ -442,7 +442,7 @@ export function usePostedPosts({
               component: "usePostedPosts",
               action: "handleLongformRepost",
             },
-            false,
+            false
           ); // Don't show toast, we set toast state instead
           setToast({
             type: "error",
@@ -545,7 +545,7 @@ export function usePostedPosts({
               component: "usePostedPosts",
               action: "handleRepost",
             },
-            false,
+            false
           ); // Don't show toast, we set toast state instead
           setToast({
             type: "error",

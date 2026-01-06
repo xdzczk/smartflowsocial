@@ -30,6 +30,11 @@ vi.mock("~/features/posts/services/scheduled-loader.server", () => ({
   loadScheduledData: vi.fn(),
 }));
 
+import {
+  createValidUserMock,
+  createValidPostDTOMock,
+} from "../utils/test-helpers";
+
 import { requireUserId } from "~/features/auth/session.server";
 import {
   requireAnySubscription,
@@ -38,8 +43,6 @@ import {
 import { loadScheduledData } from "~/features/posts/services/scheduled-loader.server";
 import { loader } from "~/routes/dashboard.scheduled";
 
-import { createValidUserMock, createValidPostDTOMock } from "../utils/test-helpers";
-
 describe("Scheduled Posts Loader Integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -47,10 +50,10 @@ describe("Scheduled Posts Loader Integration", () => {
     // Default mocks
     (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue("user-123");
     (requireAnySubscription as ReturnType<typeof vi.fn>).mockResolvedValue(
-      undefined,
+      undefined
     );
     (requireFeatureAccess as ReturnType<typeof vi.fn>).mockResolvedValue(
-      undefined,
+      undefined
     );
     (loadScheduledData as ReturnType<typeof vi.fn>).mockResolvedValue({
       posts: [],
@@ -94,7 +97,7 @@ describe("Scheduled Posts Loader Integration", () => {
       expect(requireAnySubscription).toHaveBeenCalledWith("user-123");
       expect(requireFeatureAccess).toHaveBeenCalledWith(
         "user-123",
-        "scheduled",
+        "scheduled"
       );
       expect(loadScheduledData).toHaveBeenCalledWith("user-123", "all");
       expect(data).toHaveProperty("posts");
@@ -114,7 +117,7 @@ describe("Scheduled Posts Loader Integration", () => {
       };
 
       (loadScheduledData as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockData,
+        mockData
       );
 
       const request = new Request("http://localhost:3000/dashboard/scheduled");
@@ -148,8 +151,16 @@ describe("Scheduled Posts Loader Integration", () => {
     it("should return proper data structure with posts", async () => {
       const mockData = {
         posts: [
-          createValidPostDTOMock({ id: "1", caption: "Post 1", scheduledFor: new Date().toISOString() }),
-          createValidPostDTOMock({ id: "2", caption: "Post 2", scheduledFor: new Date().toISOString() }),
+          createValidPostDTOMock({
+            id: "1",
+            caption: "Post 1",
+            scheduledFor: new Date().toISOString(),
+          }),
+          createValidPostDTOMock({
+            id: "2",
+            caption: "Post 2",
+            scheduledFor: new Date().toISOString(),
+          }),
         ],
         longformPosts: [],
         user: createValidUserMock({ timezone: "America/New_York" }),
@@ -162,7 +173,7 @@ describe("Scheduled Posts Loader Integration", () => {
       };
 
       (loadScheduledData as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockData,
+        mockData
       );
 
       const request = new Request("http://localhost:3000/dashboard/scheduled");
@@ -211,7 +222,7 @@ describe("Scheduled Posts Loader Integration", () => {
       };
 
       (loadScheduledData as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockData,
+        mockData
       );
 
       const request = new Request("http://localhost:3000/dashboard/scheduled");
@@ -252,7 +263,7 @@ describe("Scheduled Posts Loader Integration", () => {
   describe("Error Handling", () => {
     it("should handle authentication errors", async () => {
       (requireUserId as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Authentication required"),
+        new Error("Authentication required")
       );
 
       const request = new Request("http://localhost:3000/dashboard/scheduled");
@@ -294,7 +305,7 @@ describe("Scheduled Posts Loader Integration", () => {
 
     it("should handle subscription requirement errors", async () => {
       (requireAnySubscription as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Subscription required"),
+        new Error("Subscription required")
       );
 
       const request = new Request("http://localhost:3000/dashboard/scheduled");
@@ -336,7 +347,7 @@ describe("Scheduled Posts Loader Integration", () => {
 
     it("should handle feature access errors", async () => {
       (requireFeatureAccess as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Feature access denied"),
+        new Error("Feature access denied")
       );
 
       const request = new Request("http://localhost:3000/dashboard/scheduled");
@@ -378,7 +389,7 @@ describe("Scheduled Posts Loader Integration", () => {
 
     it("should handle data loading errors", async () => {
       (loadScheduledData as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Database error"),
+        new Error("Database error")
       );
 
       const request = new Request("http://localhost:3000/dashboard/scheduled");

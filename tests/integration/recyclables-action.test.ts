@@ -8,7 +8,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Set SESSION_SECRET for tests (must be before any imports that use it)
-process.env.SESSION_SECRET = "test-session-secret";
+process.env["SESSION_SECRET"] = "test-session-secret";
 
 // Mock session.server to prevent SESSION_SECRET invariant error
 vi.mock("~/features/auth/session.server", () => ({
@@ -36,10 +36,6 @@ vi.mock("~/models/post.queries.server", () => ({
   getPostsByIds: vi.fn(),
 }));
 
-import { handleRecyclablePostAction } from "~/features/posts/server";
-import { deletePost } from "~/models/post.commands.server";
-import { getPostsByIds } from "~/models/post.queries.server";
-
 import {
   createActionFormData,
   TEST_USER_ID,
@@ -47,6 +43,10 @@ import {
   createPostIds,
   createMockPost,
 } from "../utils/test-helpers";
+
+import { handleRecyclablePostAction } from "~/features/posts/server";
+import { deletePost } from "~/models/post.commands.server";
+import { getPostsByIds } from "~/models/post.queries.server";
 
 describe("Recyclables Action Handler", () => {
   beforeEach(() => {
@@ -135,7 +135,7 @@ describe("Recyclables Action Handler", () => {
           id,
           signedEvent: { id: `event-${id}`, pubkey: "pubkey-1" },
           queueType: { name: "posts" },
-        }),
+        })
       );
 
       (getPostsByIds as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
@@ -182,7 +182,7 @@ describe("Recyclables Action Handler", () => {
           id,
           signedEvent: { id: `event-${id}`, pubkey: "pubkey-1" },
           queueType: { name: "posts" },
-        }),
+        })
       );
 
       (getPostsByIds as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
@@ -229,7 +229,7 @@ describe("Recyclables Action Handler", () => {
           fileUrl: [`https://example.com/image-${id}.jpg`],
           queueType: { name: "posts" },
           signedEvent: { id: `event-${id}`, pubkey: "pubkey-1" },
-        }),
+        })
       );
 
       (getPostsByIds as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
@@ -255,7 +255,7 @@ describe("Recyclables Action Handler", () => {
       const quotePostData = Array.isArray(data.quotePostData)
         ? data.quotePostData
         : [];
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
       const firstQuotePost =
         quotePostData[0] &&
         typeof quotePostData[0] === "object" &&
@@ -264,16 +264,20 @@ describe("Recyclables Action Handler", () => {
           : {};
 
       expect(quotePostData).toHaveLength(2);
+      const firstPostId = postIds[0];
+      if (!firstPostId) {
+        throw new Error("Expected postIds[0] to exist");
+      }
       expect(firstQuotePost).toMatchObject({
         caption: "",
-        fileUrl: `https://example.com/image-${postIds[0]}.jpg`, // Implementation returns first element as string
+        fileUrl: `https://example.com/image-${firstPostId}.jpg`, // Implementation returns first element as string
         queueType: "posts",
         scheduledFor: "",
-        originalPostId: postIds[0],
-        originalEventId: `event-${postIds[0]}`,
+        originalPostId: firstPostId,
+        originalEventId: `event-${firstPostId}`,
         originalEventPubkey: "pubkey-1",
         isQuotePost: true,
-        originalCaption: `Caption ${postIds[0]}`,
+        originalCaption: `Caption ${firstPostId}`,
       });
     });
   });
@@ -329,7 +333,7 @@ describe("Recyclables Action Handler", () => {
           ["e", "event-123", "wss://relay.primal.net"],
           ["p", "pubkey-123"],
         ],
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         created_at: expect.any(Number),
       });
       // Dates are serialized to strings in JSON responses
@@ -390,7 +394,7 @@ describe("Recyclables Action Handler", () => {
       const quotePostData = Array.isArray(data.quotePostData)
         ? data.quotePostData
         : [];
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
       const firstQuotePost =
         quotePostData[0] &&
         typeof quotePostData[0] === "object" &&

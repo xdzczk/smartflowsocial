@@ -63,7 +63,7 @@ export function useBulkPostsState({
                 isRecyclable: item.isRecyclable ?? false,
                 originalPostId: item.originalPostId, // Include original post ID for tracking
               };
-            },
+            }
           );
 
           setPosts(repostPosts);
@@ -99,18 +99,16 @@ export function useBulkPostsState({
                   postIds: parsedData
                     .map((item: RepostDataItem) => item.originalPostId)
                     .filter(
-                      (id: string | undefined): id is string =>
-                        id !== undefined,
+                      (id: string | undefined): id is string => id !== undefined
                     ),
                 }),
               });
 
               if (response.ok) {
                 const dataRaw: unknown = await response.json();
-                const originalPosts = Array.isArray(dataRaw)
+                return Array.isArray(dataRaw)
                   ? (dataRaw as OriginalPost[])
                   : [];
-                return originalPosts;
               }
             } catch (error) {
               handleErrorSafely(error, {
@@ -142,7 +140,7 @@ export function useBulkPostsState({
               const repostPosts = parsedData.map(
                 (item: ScheduledRepostDataItem) => {
                   const originalPost = originalPosts.find(
-                    (p: OriginalPost) => p.id === item.originalPostId,
+                    (p: OriginalPost) => p.id === item.originalPostId
                   );
 
                   const originalFileUrl = originalPost?.fileUrl;
@@ -166,7 +164,7 @@ export function useBulkPostsState({
                     originalCaption: originalPost?.caption ?? "", // Store original caption for context
                     isRecyclable: item.isRecyclable ?? false,
                   };
-                },
+                }
               );
 
               setPosts(repostPosts);

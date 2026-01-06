@@ -100,7 +100,7 @@ describe("Bulk Posts Handlers", () => {
         "2024-01-15T12:00",
         posts,
         setPosts,
-        setFirstItemTimeManuallyChanged,
+        setFirstItemTimeManuallyChanged
       );
 
       expect(setPosts).toHaveBeenCalledWith([
@@ -122,7 +122,7 @@ describe("Bulk Posts Handlers", () => {
         "2024-01-15T12:00",
         posts,
         setPosts,
-        setFirstItemTimeManuallyChanged,
+        setFirstItemTimeManuallyChanged
       );
 
       expect(setFirstItemTimeManuallyChanged).toHaveBeenCalledWith(true);
@@ -142,7 +142,7 @@ describe("Bulk Posts Handlers", () => {
         "2024-01-15T12:00",
         posts,
         setPosts,
-        setFirstItemTimeManuallyChanged,
+        setFirstItemTimeManuallyChanged
       );
 
       expect(setFirstItemTimeManuallyChanged).not.toHaveBeenCalled();
@@ -314,7 +314,7 @@ describe("Bulk Posts Handlers", () => {
         Array.isArray(setPosts.mock.calls) && setPosts.mock.calls[0]
           ? setPosts.mock.calls[0]
           : [];
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
       const updatedPostsRaw =
         Array.isArray(calls) && calls[0] ? calls[0] : null;
       const updatedPosts = Array.isArray(updatedPostsRaw)
@@ -364,7 +364,7 @@ describe("Bulk Posts Handlers", () => {
         Array.isArray(setPosts.mock.calls) && setPosts.mock.calls[0]
           ? setPosts.mock.calls[0]
           : [];
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
       const updatedPostsRaw =
         Array.isArray(calls) && calls[0] ? calls[0] : null;
       const updatedPosts = Array.isArray(updatedPostsRaw)
@@ -400,7 +400,7 @@ describe("Bulk Posts Handlers", () => {
         Array.isArray(setPosts.mock.calls) && setPosts.mock.calls[0]
           ? setPosts.mock.calls[0]
           : [];
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
       const updatedPostsRaw =
         Array.isArray(calls) && calls[0] ? calls[0] : null;
       const updatedPosts = Array.isArray(updatedPostsRaw)
@@ -436,7 +436,7 @@ describe("Bulk Posts Handlers", () => {
         Array.isArray(setPosts.mock.calls) && setPosts.mock.calls[0]
           ? setPosts.mock.calls[0]
           : [];
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
       const updatedPostsRaw =
         Array.isArray(calls) && calls[0] ? calls[0] : null;
       const updatedPosts = Array.isArray(updatedPostsRaw)
@@ -477,7 +477,7 @@ describe("Bulk Posts Handlers", () => {
         Array.isArray(setPosts.mock.calls) && setPosts.mock.calls[0]
           ? setPosts.mock.calls[0]
           : [];
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
       const updatedPostsRaw =
         Array.isArray(calls) && calls[0] ? calls[0] : null;
       const updatedPosts = Array.isArray(updatedPostsRaw)
@@ -498,7 +498,7 @@ describe("Bulk Posts Handlers", () => {
       // Should be in YYYY-MM-DDTHH:mm format
       expect(firstPost.scheduledFor).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/);
       expect(secondPost.scheduledFor).toMatch(
-        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/,
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/
       );
     });
   });

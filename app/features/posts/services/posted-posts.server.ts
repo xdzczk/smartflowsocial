@@ -76,7 +76,6 @@ export async function getPostedDashboardData({
               "queueType" in post &&
               post.queueType &&
               typeof post.queueType === "object" &&
-              post.queueType !== null &&
               "name" in post.queueType &&
               typeof post.queueType.name === "string"
             ) {
@@ -95,7 +94,7 @@ export async function getPostedDashboardData({
     const result: PostData = {
       ...rest,
       queueType: convertPrismaQueueTypeToQueueType(
-        "queueType" in post ? post.queueType : undefined,
+        "queueType" in post ? post.queueType : undefined
       ),
       signedEvent: signedEventValue ?? undefined,
       nostrEvent: nostrEventValue ?? undefined,
@@ -112,29 +111,30 @@ export async function getPostedDashboardData({
           : {};
       // Validate Prisma JsonValue with Zod schemas
       const signedEventValue = validateSignedEvent(
-        ("signedEvent" in postObj ? postObj.signedEvent : undefined) as
+        ("signedEvent" in postObj ? postObj["signedEvent"] : undefined) as
           | Prisma.JsonValue
           | null
-          | undefined,
+          | undefined
       );
       const nostrEventValue = validateNostrEvent(
-        ("nostrEvent" in postObj ? postObj.nostrEvent : undefined) as
+        ("nostrEvent" in postObj ? postObj["nostrEvent"] : undefined) as
           | Prisma.JsonValue
           | null
-          | undefined,
+          | undefined
       );
       const queueTypeValue =
         "queueType" in postObj &&
-        postObj.queueType &&
-        typeof postObj.queueType === "object" &&
-        postObj.queueType !== null &&
-        "id" in postObj.queueType &&
-        "name" in postObj.queueType &&
-        typeof (postObj.queueType as { id: unknown; name: unknown }).id ===
-          "string" &&
-        typeof (postObj.queueType as { id: unknown; name: unknown }).name ===
-          "string"
-          ? (postObj.queueType as {
+        postObj["queueType"] &&
+        typeof postObj["queueType"] === "object" &&
+        "id" in postObj["queueType"] &&
+        "name" in postObj["queueType"] &&
+        typeof (postObj["queueType"] as { id: unknown; name: unknown })[
+          "id"
+        ] === "string" &&
+        typeof (postObj["queueType"] as { id: unknown; name: unknown })[
+          "name"
+        ] === "string"
+          ? (postObj["queueType"] as {
               id: string;
               name: string;
               scheduleConfig?: unknown;
@@ -146,19 +146,18 @@ export async function getPostedDashboardData({
               [key: string]: unknown;
             })
           : undefined;
-      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-      const result = {
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Type assertion needed for Prisma query result with spread operator
+      return {
         ...postObj,
         queueType: convertPrismaQueueTypeToQueueType(
           queueTypeValue as unknown as Parameters<
             typeof convertPrismaQueueTypeToQueueType
-          >[0],
+          >[0]
         ),
         signedEvent: signedEventValue ?? undefined,
         nostrEvent: nostrEventValue ?? undefined,
       } as LongFormPostData;
-      return result;
-    },
+    }
   );
 
   const eventIds = posts
@@ -168,9 +167,9 @@ export async function getPostedDashboardData({
         signedEvent &&
         typeof signedEvent === "object" &&
         "id" in signedEvent &&
-        typeof signedEvent.id === "string"
+        typeof signedEvent["id"] === "string"
       ) {
-        return signedEvent.id;
+        return signedEvent["id"];
       }
       return "";
     })
@@ -180,9 +179,8 @@ export async function getPostedDashboardData({
   // Serialize Date objects to strings for Remix loader response
   // Note: allContent is removed - reconstruct on client from posts/longformPosts
   const postsDTO: PostDTO[] = toPostDTOArray(postsData);
-  const longformPostsDTO: LongFormPostDTO[] = toLongFormPostDTOArray(
-    longformPostsData,
-  );
+  const longformPostsDTO: LongFormPostDTO[] =
+    toLongFormPostDTOArray(longformPostsData);
 
   return {
     posts: postsDTO,
@@ -196,7 +194,7 @@ export async function getPostedDashboardData({
         typeof qt === "object" &&
         qt !== null &&
         "isEnabled" in qt &&
-        qt.isEnabled !== false,
+        qt.isEnabled !== false
     ),
     selectedQueueType: queueType,
   };

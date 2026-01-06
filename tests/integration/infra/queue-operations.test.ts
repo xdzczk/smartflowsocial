@@ -14,6 +14,12 @@ vi.mock("~/infra/queue/queue-client.server", () => ({
   },
 }));
 
+import {
+  TEST_USER_ID,
+  TEST_POST_ID,
+  TEST_LONGFORM_ID,
+} from "../../utils/test-helpers";
+
 import { queueClient } from "~/infra/queue/queue-client.server";
 import {
   enqueuePostJob,
@@ -22,12 +28,6 @@ import {
   cancelLongFormPostJob,
   enqueuePostCheckerJob,
 } from "~/infra/queue/queue-operations.server";
-
-import {
-  TEST_USER_ID,
-  TEST_POST_ID,
-  TEST_LONGFORM_ID,
-} from "../../utils/test-helpers";
 
 describe("Queue Operations", () => {
   beforeEach(() => {
@@ -56,14 +56,14 @@ describe("Queue Operations", () => {
         TEST_POST_ID,
         TEST_USER_ID,
         signedEvent,
-        scheduledFor,
+        scheduledFor
       );
 
       expect(queueClient.enqueue).toHaveBeenCalledWith(
         "scheduled-posts",
         "publish-post",
         { postId: TEST_POST_ID, userId: TEST_USER_ID, signedEvent },
-        { scheduledFor, jobId: TEST_POST_ID },
+        { scheduledFor, jobId: TEST_POST_ID }
       );
     });
 
@@ -89,7 +89,7 @@ describe("Queue Operations", () => {
         "scheduled-posts",
         "publish-post",
         { postId: TEST_POST_ID, userId: TEST_USER_ID, signedEvent },
-        { delay: 0, jobId: TEST_POST_ID },
+        { delay: 0, jobId: TEST_POST_ID }
       );
     });
 
@@ -114,8 +114,8 @@ describe("Queue Operations", () => {
           TEST_POST_ID,
           TEST_USER_ID,
           signedEvent,
-          Math.floor(Date.now() / 1000) + 3600,
-        ),
+          Math.floor(Date.now() / 1000) + 3600
+        )
       ).rejects.toThrow("Queue error");
     });
   });
@@ -123,21 +123,21 @@ describe("Queue Operations", () => {
   describe("cancelPostJob", () => {
     it("should cancel a post job", async () => {
       (queueClient.cancelByJobId as ReturnType<typeof vi.fn>).mockResolvedValue(
-        true,
+        true
       );
 
       const result = await cancelPostJob(TEST_POST_ID);
 
       expect(queueClient.cancelByJobId).toHaveBeenCalledWith(
         "scheduled-posts",
-        TEST_POST_ID,
+        TEST_POST_ID
       );
       expect(result).toBe(true);
     });
 
     it("should return false if job not found", async () => {
       (queueClient.cancelByJobId as ReturnType<typeof vi.fn>).mockResolvedValue(
-        false,
+        false
       );
 
       const result = await cancelPostJob(TEST_POST_ID);
@@ -168,14 +168,14 @@ describe("Queue Operations", () => {
         TEST_LONGFORM_ID,
         TEST_USER_ID,
         signedEvent,
-        scheduledFor,
+        scheduledFor
       );
 
       expect(queueClient.enqueue).toHaveBeenCalledWith(
         "scheduled-longform-posts",
         "publish-longform-post",
         { postId: TEST_LONGFORM_ID, userId: TEST_USER_ID, signedEvent },
-        { scheduledFor, jobId: TEST_LONGFORM_ID },
+        { scheduledFor, jobId: TEST_LONGFORM_ID }
       );
     });
 
@@ -199,14 +199,14 @@ describe("Queue Operations", () => {
         TEST_LONGFORM_ID,
         TEST_USER_ID,
         signedEvent,
-        0,
+        0
       );
 
       expect(queueClient.enqueue).toHaveBeenCalledWith(
         "scheduled-longform-posts",
         "publish-longform-post",
         { postId: TEST_LONGFORM_ID, userId: TEST_USER_ID, signedEvent },
-        { delay: 0, jobId: TEST_LONGFORM_ID },
+        { delay: 0, jobId: TEST_LONGFORM_ID }
       );
     });
   });
@@ -214,14 +214,14 @@ describe("Queue Operations", () => {
   describe("cancelLongFormPostJob", () => {
     it("should cancel a longform post job", async () => {
       (queueClient.cancelByJobId as ReturnType<typeof vi.fn>).mockResolvedValue(
-        true,
+        true
       );
 
       const result = await cancelLongFormPostJob(TEST_LONGFORM_ID);
 
       expect(queueClient.cancelByJobId).toHaveBeenCalledWith(
         "scheduled-longform-posts",
-        TEST_LONGFORM_ID,
+        TEST_LONGFORM_ID
       );
       expect(result).toBe(true);
     });
@@ -243,7 +243,7 @@ describe("Queue Operations", () => {
           postId: "",
           userId: "",
         }),
-        { delay: 0 },
+        { delay: 0 }
       );
     });
 
@@ -262,7 +262,7 @@ describe("Queue Operations", () => {
           postId: "",
           userId: "",
         }),
-        { delay: 5000 },
+        { delay: 5000 }
       );
     });
 

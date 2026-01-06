@@ -8,6 +8,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import {
+  TEST_USER_ID,
+  TEST_POST_ID,
+  TEST_QUEUE_TYPE_ID,
+} from "../utils/test-helpers";
+
+import {
   createPost,
   deletePost,
   updatePost,
@@ -46,12 +52,6 @@ vi.mock("~/lib/prisma.server", () => ({
   prisma: mockPrisma,
 }));
 
-import {
-  TEST_USER_ID,
-  TEST_POST_ID,
-  TEST_QUEUE_TYPE_ID,
-} from "../utils/test-helpers";
-
 describe("Post Model Functions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -79,15 +79,15 @@ describe("Post Model Functions", () => {
       };
 
       (mockPrisma.post.create as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPost,
+        mockPost
       );
 
       const result = await createPost(postData);
 
       expect(
-        mockPrisma.post.create as ReturnType<typeof vi.fn>,
+        mockPrisma.post.create as ReturnType<typeof vi.fn>
       ).toHaveBeenCalledWith({
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         data: expect.objectContaining({
           content: "Test content",
           caption: "Test caption",
@@ -126,20 +126,20 @@ describe("Post Model Functions", () => {
       };
 
       (mockPrisma.post.create as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPost,
+        mockPost
       );
 
       const result = await createPost(postData);
 
       // Should NOT call queueType.findFirst when queueTypeId is provided
       expect(
-        mockPrisma.queueType.findFirst as ReturnType<typeof vi.fn>,
+        mockPrisma.queueType.findFirst as ReturnType<typeof vi.fn>
       ).not.toHaveBeenCalled();
 
       expect(
-        mockPrisma.post.create as ReturnType<typeof vi.fn>,
+        mockPrisma.post.create as ReturnType<typeof vi.fn>
       ).toHaveBeenCalledWith({
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         data: expect.objectContaining({
           content: "Test content",
           postType: "TEXT",
@@ -175,21 +175,21 @@ describe("Post Model Functions", () => {
       };
 
       (mockPrisma.post.create as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPost,
+        mockPost
       );
 
       await createPost(postData);
 
       // Should NOT call queueType.findFirst when queueTypeId is null
       expect(
-        mockPrisma.queueType.findFirst as ReturnType<typeof vi.fn>,
+        mockPrisma.queueType.findFirst as ReturnType<typeof vi.fn>
       ).not.toHaveBeenCalled();
       expect(
-        mockPrisma.post.create as ReturnType<typeof vi.fn>,
+        mockPrisma.post.create as ReturnType<typeof vi.fn>
       ).toHaveBeenCalledWith({
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         data: expect.not.objectContaining({
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
           queueType: expect.anything(),
         }),
       });
@@ -216,9 +216,9 @@ describe("Post Model Functions", () => {
       await createPost(postData);
 
       expect(
-        mockPrisma.post.create as ReturnType<typeof vi.fn>,
+        mockPrisma.post.create as ReturnType<typeof vi.fn>
       ).toHaveBeenCalledWith({
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         data: expect.objectContaining({
           scheduledFor: scheduledDate.toString(),
         }),
@@ -245,9 +245,9 @@ describe("Post Model Functions", () => {
       const result = await createPost(postData);
 
       expect(
-        mockPrisma.post.create as ReturnType<typeof vi.fn>,
+        mockPrisma.post.create as ReturnType<typeof vi.fn>
       ).toHaveBeenCalledWith({
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         data: expect.objectContaining({
           draft: true,
         }),
@@ -265,7 +265,7 @@ describe("Post Model Functions", () => {
       };
 
       (mockPrisma.post.delete as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPost,
+        mockPost
       );
 
       const result = await deletePost({
@@ -274,7 +274,7 @@ describe("Post Model Functions", () => {
       });
 
       expect(
-        mockPrisma.post.delete as ReturnType<typeof vi.fn>,
+        mockPrisma.post.delete as ReturnType<typeof vi.fn>
       ).toHaveBeenCalledWith({
         where: {
           id: TEST_POST_ID,
@@ -300,7 +300,7 @@ describe("Post Model Functions", () => {
       };
 
       (mockPrisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockUpdatedPost,
+        mockUpdatedPost
       );
 
       const result = await updatePost({
@@ -310,18 +310,18 @@ describe("Post Model Functions", () => {
       });
 
       expect(
-        mockPrisma.post.update as ReturnType<typeof vi.fn>,
+        mockPrisma.post.update as ReturnType<typeof vi.fn>
       ).toHaveBeenCalledWith({
         where: {
           id: TEST_POST_ID,
           userId: TEST_USER_ID,
         },
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         data: expect.objectContaining({
           content: "Updated content",
           caption: "Updated caption",
           isScheduled: true,
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
           updatedAt: expect.any(Date),
         }),
       });
@@ -349,7 +349,7 @@ describe("Post Model Functions", () => {
       ];
 
       (mockPrisma.post.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPosts,
+        mockPosts
       );
 
       const result = await getScheduledPosts({
@@ -358,9 +358,9 @@ describe("Post Model Functions", () => {
       });
 
       expect(
-        mockPrisma.post.findMany as ReturnType<typeof vi.fn>,
+        mockPrisma.post.findMany as ReturnType<typeof vi.fn>
       ).toHaveBeenCalledWith({
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         where: expect.objectContaining({
           userId: TEST_USER_ID,
           isScheduled: true,
@@ -394,7 +394,7 @@ describe("Post Model Functions", () => {
       ];
 
       (mockPrisma.post.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPosts,
+        mockPosts
       );
 
       const result = await getScheduledPosts({
@@ -403,9 +403,9 @@ describe("Post Model Functions", () => {
       });
 
       expect(
-        mockPrisma.post.findMany as ReturnType<typeof vi.fn>,
+        mockPrisma.post.findMany as ReturnType<typeof vi.fn>
       ).toHaveBeenCalledWith({
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         where: expect.objectContaining({
           userId: TEST_USER_ID,
           isScheduled: true,
@@ -438,7 +438,7 @@ describe("Post Model Functions", () => {
       ];
 
       (mockPrisma.post.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPosts,
+        mockPosts
       );
       (mockPrisma.post.count as ReturnType<typeof vi.fn>).mockResolvedValue(1);
 
@@ -450,9 +450,9 @@ describe("Post Model Functions", () => {
       });
 
       expect(
-        mockPrisma.post.findMany as ReturnType<typeof vi.fn>,
+        mockPrisma.post.findMany as ReturnType<typeof vi.fn>
       ).toHaveBeenCalledWith({
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         where: expect.objectContaining({
           userId: TEST_USER_ID,
           isPosted: true,
@@ -482,10 +482,10 @@ describe("Post Model Functions", () => {
 
     it("should handle pagination correctly", async () => {
       (mockPrisma.post.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
-        [],
+        []
       );
       (mockPrisma.post.count as ReturnType<typeof vi.fn>).mockResolvedValue(
-        100,
+        100
       );
 
       const result = await getPostedPosts({
@@ -498,7 +498,7 @@ describe("Post Model Functions", () => {
         expect.objectContaining({
           skip: 25,
           take: 25,
-        }),
+        })
       );
       expect(result.pagination).toEqual({
         total: 100,
@@ -519,7 +519,7 @@ describe("Post Model Functions", () => {
       };
 
       (mockPrisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPost,
+        mockPost
       );
 
       const result = await getPostById({
@@ -528,7 +528,7 @@ describe("Post Model Functions", () => {
       });
 
       expect(
-        mockPrisma.post.findFirst as ReturnType<typeof vi.fn>,
+        mockPrisma.post.findFirst as ReturnType<typeof vi.fn>
       ).toHaveBeenCalledWith({
         include: {
           queueType: true,
@@ -554,7 +554,7 @@ describe("Post Model Functions", () => {
       };
 
       (mockPrisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockUpdatedPost,
+        mockUpdatedPost
       );
 
       const result = await updatePostStatus({
@@ -564,7 +564,7 @@ describe("Post Model Functions", () => {
       });
 
       expect(
-        mockPrisma.post.update as ReturnType<typeof vi.fn>,
+        mockPrisma.post.update as ReturnType<typeof vi.fn>
       ).toHaveBeenCalledWith({
         where: {
           id: TEST_POST_ID,
@@ -572,7 +572,7 @@ describe("Post Model Functions", () => {
         },
         data: {
           isPosted: true,
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
           postedAt: expect.any(Date),
         },
       });

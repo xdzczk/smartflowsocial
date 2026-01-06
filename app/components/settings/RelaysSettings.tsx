@@ -15,7 +15,10 @@ import { Input } from "~/components/ui/input";
 import { updateRelaysClientSchema } from "~/lib/validation";
 import { useZodFieldArray } from "~/lib/validation/hooks/useZodFieldArray";
 import { relayUrlSchema } from "~/lib/validation/schemas/settings.schemas";
-import { useZodForm, formDataToFormData } from "~/lib/validation/utils.client-safe";
+import {
+  useZodForm,
+  formDataToFormData,
+} from "~/lib/validation/utils.client-safe";
 
 interface RelaysSettingsProps {
   relays: string[];
@@ -37,7 +40,10 @@ export function RelaysSettings({ relays }: RelaysSettingsProps) {
   const { fields, append, remove } = useZodFieldArray<
     z.infer<typeof updateRelaysClientSchema>,
     "relays"
-  >(form as unknown as UseFormReturn<z.infer<typeof updateRelaysClientSchema>>, "relays");
+  >(
+    form as unknown as UseFormReturn<z.infer<typeof updateRelaysClientSchema>>,
+    "relays"
+  );
 
   const isSubmitting = fetcher.state === "submitting";
   const watchedRelays = form.watch("relays");
@@ -46,7 +52,7 @@ export function RelaysSettings({ relays }: RelaysSettingsProps) {
   const onSubmit = form.handleSubmit((data) => {
     // Filter out empty strings and validate
     const filteredRelays = data.relays.filter((relay: string) => relay.trim());
-    
+
     // Validate all non-empty relays
     const invalidRelays = filteredRelays.filter((relay: string) => {
       try {
@@ -56,20 +62,21 @@ export function RelaysSettings({ relays }: RelaysSettingsProps) {
         return true;
       }
     });
-    
+
     if (invalidRelays.length > 0) {
       form.setError("relays", {
         type: "manual",
-        message: "All relay URLs must start with wss:// and have a valid domain",
+        message:
+          "All relay URLs must start with wss:// and have a valid domain",
       });
       return;
     }
-    
+
     const formData = formDataToFormData(
       { relays: filteredRelays.join("\n") },
-      "update_relays",
+      "update_relays"
     );
-    
+
     fetcher.submit(formData, { method: "post" });
   });
 
@@ -82,7 +89,13 @@ export function RelaysSettings({ relays }: RelaysSettingsProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={(e) => { e.preventDefault(); void onSubmit(e); }} className="space-y-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void onSubmit(e);
+          }}
+          className="space-y-4"
+        >
           <div className="space-y-2">
             {fields.map((field, index) => (
               <div key={field.id} className="flex items-start space-x-2">
@@ -104,9 +117,11 @@ export function RelaysSettings({ relays }: RelaysSettingsProps) {
                         : ""
                     }
                   />
-                  {form.formState.errors.relays?.[index] ? <p className="mt-1 text-sm text-destructive">
-                      {form.formState.errors.relays[index]?.message}
-                    </p> : null}
+                  {form.formState.errors.relays?.[index] ? (
+                    <p className="mt-1 text-sm text-destructive">
+                      {form.formState.errors.relays[index].message}
+                    </p>
+                  ) : null}
                 </div>
                 <Button
                   type="button"
@@ -131,9 +146,11 @@ export function RelaysSettings({ relays }: RelaysSettingsProps) {
             </Button>
           </div>
 
-          {form.formState.errors.relays ? <p className="text-sm text-destructive">
+          {form.formState.errors.relays ? (
+            <p className="text-sm text-destructive">
               {form.formState.errors.relays.message}
-            </p> : null}
+            </p>
+          ) : null}
 
           <Button
             type="submit"

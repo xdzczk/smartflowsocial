@@ -12,8 +12,7 @@ export async function getBitcoinRate(dollarAmount: number): Promise<number> {
     const btcRate = response.data.result.XBTUSDC.c[0];
     const btcAmount = dollarAmount / parseFloat(btcRate);
     // Convert BTC to sats (1 BTC = 100,000,000 sats)
-    const satsAmount = Math.round(btcAmount * 100_000_000);
-    return satsAmount;
+    return Math.round(btcAmount * 100_000_000);
   } catch (error) {
     console.error("Error fetching Bitcoin rate:", error);
     throw error;

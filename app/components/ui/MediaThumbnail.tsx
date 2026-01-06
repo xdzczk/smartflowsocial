@@ -94,7 +94,7 @@ const MediaThumbnail: React.FC<MediaThumbnailProps> = ({
   if (!isVideo) {
     // Render image thumbnail
     return (
-      // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
+      // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Image thumbnails need click handlers for preview
       <img
         src={src}
         alt={alt}

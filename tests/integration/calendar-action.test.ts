@@ -29,6 +29,13 @@ vi.mock("~/models/post.queries.server", () => ({
 }));
 
 import {
+  createFormData,
+  TEST_USER_ID,
+  TEST_POST_ID,
+  TEST_LONGFORM_ID,
+} from "../utils/test-helpers";
+
+import {
   handleCalendarAction,
   handleCalendarReschedule,
   handleCalendarRescheduleLongform,
@@ -40,13 +47,6 @@ import {
 } from "~/models/longformpost.server";
 import { reschedulePost } from "~/models/post.commands.server";
 import { getPostById } from "~/models/post.queries.server";
-
-import {
-  createFormData,
-  TEST_USER_ID,
-  TEST_POST_ID,
-  TEST_LONGFORM_ID,
-} from "../utils/test-helpers";
 
 describe("Calendar Action Handler", () => {
   beforeEach(() => {
@@ -91,10 +91,10 @@ describe("Calendar Action Handler", () => {
     it("should route to handleCalendarRescheduleLongform for 'rescheduleLongform' action", async () => {
       const mockLongFormPost = { id: TEST_LONGFORM_ID, userId: TEST_USER_ID };
       (getLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockLongFormPost,
+        mockLongFormPost
       );
       (updateLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockLongFormPost,
+        mockLongFormPost
       );
 
       const formData = createFormData({
@@ -243,13 +243,13 @@ describe("Calendar Action Handler", () => {
         expect.objectContaining({
           signedEvent,
           nostrEvent,
-        }),
+        })
       );
       expect(enqueuePostJob).toHaveBeenCalledWith(
         TEST_POST_ID,
         TEST_USER_ID,
         signedEvent,
-        parseInt(newTime),
+        parseInt(newTime)
       );
 
       const responseObj =
@@ -292,7 +292,7 @@ describe("Calendar Action Handler", () => {
       expect(reschedulePost).toHaveBeenCalledWith(
         expect.objectContaining({
           overrideQueue: true,
-        }),
+        })
       );
     });
 
@@ -431,10 +431,10 @@ describe("Calendar Action Handler", () => {
       const newTime = String(Math.floor(Date.now() / 1000) + 3600);
 
       (getLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockLongFormPost,
+        mockLongFormPost
       );
       (updateLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockLongFormPost,
+        mockLongFormPost
       );
 
       const formData = createFormData({
@@ -445,7 +445,7 @@ describe("Calendar Action Handler", () => {
 
       const result = await handleCalendarRescheduleLongform(
         formData,
-        TEST_USER_ID,
+        TEST_USER_ID
       );
 
       expect(getLongFormPost).toHaveBeenCalledWith({
@@ -502,10 +502,10 @@ describe("Calendar Action Handler", () => {
       };
 
       (getLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockLongFormPost,
+        mockLongFormPost
       );
       (updateLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockLongFormPost,
+        mockLongFormPost
       );
 
       const formData = createFormData({
@@ -518,7 +518,7 @@ describe("Calendar Action Handler", () => {
 
       const result = await handleCalendarRescheduleLongform(
         formData,
-        TEST_USER_ID,
+        TEST_USER_ID
       );
 
       expect(updateLongFormPost).toHaveBeenCalledWith({
@@ -557,7 +557,7 @@ describe("Calendar Action Handler", () => {
 
       const result = await handleCalendarRescheduleLongform(
         formData,
-        TEST_USER_ID,
+        TEST_USER_ID
       );
 
       const responseObj =
@@ -590,7 +590,7 @@ describe("Calendar Action Handler", () => {
 
       const result = await handleCalendarRescheduleLongform(
         formData,
-        TEST_USER_ID,
+        TEST_USER_ID
       );
 
       const responseObj =
@@ -626,7 +626,7 @@ describe("Calendar Action Handler", () => {
 
       const result = await handleCalendarRescheduleLongform(
         formData,
-        TEST_USER_ID,
+        TEST_USER_ID
       );
 
       const responseObj =
@@ -653,10 +653,10 @@ describe("Calendar Action Handler", () => {
       const newTime = String(Math.floor(Date.now() / 1000) + 3600);
 
       (getLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockLongFormPost,
+        mockLongFormPost
       );
       (updateLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockLongFormPost,
+        mockLongFormPost
       );
 
       const formData = createFormData({
@@ -669,7 +669,7 @@ describe("Calendar Action Handler", () => {
 
       const result = await handleCalendarRescheduleLongform(
         formData,
-        TEST_USER_ID,
+        TEST_USER_ID
       );
 
       // Should still succeed but without signed events

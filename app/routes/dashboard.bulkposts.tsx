@@ -12,21 +12,13 @@ import {
   type BulkPost,
   type QueueType,
   type PreparedEvent,
-} from "~/features/posts/server";
-import {
   handleFileChange as handleFileChangeHandler,
   handleCaptionChange as handleCaptionChangeHandler,
   handleDateChange as handleDateChangeHandler,
   handleRemovePost as handleRemovePostHandler,
-} from "~/features/posts/server";
-import {
   handleIsRecyclableChange as handleIsRecyclableChangeHandler,
   handleBulkRecyclableToggle as handleBulkRecyclableToggleHandler,
-} from "~/features/posts/server";
-import {
   handleScheduleIntervalClick as handleScheduleIntervalClickHandler,
-} from "~/features/posts/server";
-import {
   handleQueueTypeChange as handleQueueTypeChangeHandler,
   handleBulkQueueUpdate as handleBulkQueueUpdateHandler,
 } from "~/features/posts/server";
@@ -67,7 +59,7 @@ export default function BulkPosts() {
   const data = useLoaderData<{
     tags: string[];
     queueTypes: QueueType[];
-    hashTagPresets: { id: string; name: string; hashtags: string }[];
+    hashTagPresets: Array<{ id: string; name: string; hashtags: string }>;
     mode: string | null;
   }>();
   const tags = "tags" in data && Array.isArray(data.tags) ? data.tags : [];
@@ -82,12 +74,16 @@ export default function BulkPosts() {
   const mode = "mode" in data ? data.mode : null;
   const [posts, setPosts] = useState<BulkPost[]>([]);
   const [displayedHashtags, setDisplayedHashtags] = useState<string | string[]>(
-    tags,
+    tags
   );
   const [_selectedQueueType, setSelectedQueueType] = useState("unassigned");
   const fetcher = useFetcher<{
     success?: boolean;
-    fileUrls?: { fileUrl: string; scheduledFor: string; queueType: string }[];
+    fileUrls?: Array<{
+      fileUrl: string;
+      scheduledFor: string;
+      queueType: string;
+    }>;
   }>();
   const isSubmitting = fetcher.state !== "idle";
   const userOptional = useOptionalUser();
@@ -155,7 +151,7 @@ export default function BulkPosts() {
         const { handleErrorSafely } = require("~/lib/error-handler.client") as {
           handleErrorSafely: (
             error: unknown,
-            context: { component: string; action: string },
+            context: { component: string; action: string }
           ) => void;
         };
         handleErrorSafely(err, {
@@ -195,7 +191,7 @@ export default function BulkPosts() {
       value,
       posts,
       setPosts,
-      setFirstItemTimeManuallyChanged,
+      setFirstItemTimeManuallyChanged
     );
   };
 
@@ -215,7 +211,7 @@ export default function BulkPosts() {
 
   const handleHashtagPresetSelect = (
     presetId: string | null,
-    hashtags: string,
+    hashtags: string
   ) => {
     setSelectedHashtagPresetId(presetId);
     setSelectedHashtags(hashtags);
@@ -253,7 +249,7 @@ export default function BulkPosts() {
       interval,
       posts,
       setPosts,
-      firstItemTimeManuallyChanged,
+      firstItemTimeManuallyChanged
     );
   };
 

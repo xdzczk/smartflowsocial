@@ -8,7 +8,7 @@ type CacheResponse = unknown[];
  * Supports comma-separated list of WebSocket URLs
  */
 function getCacheEndpoints(): string[] {
-  const envUrl = process.env.PRIMAL_CACHING_URL;
+  const envUrl = process.env["PRIMAL_CACHING_URL"];
 
   if (envUrl) {
     // Support comma-separated list of endpoints
@@ -28,7 +28,7 @@ function getCacheEndpoints(): string[] {
 async function tryConnectToCache(
   endpoint: string,
   requestType: string,
-  params: CacheParams,
+  params: CacheParams
 ): Promise<CacheResponse> {
   return new Promise((resolve, reject) => {
     let resolved = false;
@@ -51,15 +51,15 @@ async function tryConnectToCache(
             JSON.stringify([
               "REQ",
               requestId,
-              { cache: ["feed", { pubkey: params.pubkey }] },
-            ]),
+              { cache: ["feed", { pubkey: params["pubkey"] }] },
+            ])
           );
           break;
         case "thread_view": {
           const threadViewMsg = JSON.stringify([
             "REQ",
             requestId,
-            { cache: ["thread_view", { event_id: params.event_id }] },
+            { cache: ["thread_view", { event_id: params["event_id"] }] },
           ]);
           ws.send(threadViewMsg);
           break;
@@ -69,8 +69,8 @@ async function tryConnectToCache(
             JSON.stringify([
               "REQ",
               requestId,
-              { cache: ["user_infos", { pubkeys: params.pubkeys }] },
-            ]),
+              { cache: ["user_infos", { pubkeys: params["pubkeys"] }] },
+            ])
           );
           break;
         case "events":
@@ -78,8 +78,8 @@ async function tryConnectToCache(
             JSON.stringify([
               "REQ",
               requestId,
-              { cache: ["events", { event_ids: params.event_ids }] },
-            ]),
+              { cache: ["events", { event_ids: params["event_ids"] }] },
+            ])
           );
           break;
         case "user_profile":
@@ -87,8 +87,8 @@ async function tryConnectToCache(
             JSON.stringify([
               "REQ",
               requestId,
-              { cache: ["user_profile", { pubkey: params.pubkey }] },
-            ]),
+              { cache: ["user_profile", { pubkey: params["pubkey"] }] },
+            ])
           );
           break;
         // ---- Added request types below ----
@@ -103,13 +103,13 @@ async function tryConnectToCache(
                 cache: [
                   "event_actions",
                   {
-                    event_id: params.event_id,
+                    event_id: params["event_id"],
                     kind: 6,
-                    limit: params.limit ?? 100,
+                    limit: params["limit"] ?? 100,
                   },
                 ],
               },
-            ]),
+            ])
           );
           break;
 
@@ -123,13 +123,13 @@ async function tryConnectToCache(
                 cache: [
                   "event_actions",
                   {
-                    event_id: params.event_id,
+                    event_id: params["event_id"],
                     kind: 7,
-                    limit: params.limit ?? 100,
+                    limit: params["limit"] ?? 100,
                   },
                 ],
               },
-            ]),
+            ])
           );
           break;
 
@@ -143,13 +143,13 @@ async function tryConnectToCache(
                 cache: [
                   "event_actions",
                   {
-                    event_id: params.event_id,
+                    event_id: params["event_id"],
                     kind: 1,
-                    limit: params.limit ?? 100,
+                    limit: params["limit"] ?? 100,
                   },
                 ],
               },
-            ]),
+            ])
           );
           break;
 
@@ -163,13 +163,13 @@ async function tryConnectToCache(
                 cache: [
                   "event_actions",
                   {
-                    event_id: params.event_id,
+                    event_id: params["event_id"],
                     kind: 9735,
-                    limit: params.limit ?? 100,
+                    limit: params["limit"] ?? 100,
                   },
                 ],
               },
-            ]),
+            ])
           );
           break;
 
@@ -239,7 +239,7 @@ async function tryConnectToCache(
  */
 export async function connectToPrimalCache(
   requestType: string,
-  params: CacheParams,
+  params: CacheParams
 ): Promise<CacheResponse> {
   const endpoints = getCacheEndpoints();
 
@@ -249,7 +249,7 @@ export async function connectToPrimalCache(
 
       // A "good" response: has at least one element that's not ["EOSE"]
       const nonEose = responses?.filter(
-        (res): res is unknown[] => Array.isArray(res) && res[0] !== "EOSE",
+        (res): res is unknown[] => Array.isArray(res) && res[0] !== "EOSE"
       );
 
       if (nonEose && nonEose.length > 0) {

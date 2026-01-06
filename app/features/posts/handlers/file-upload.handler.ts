@@ -28,7 +28,7 @@ export async function handleFileChange(
     | "setIsProcessing"
     | "setProcessingProgress"
     | "setFirstItemTimeManuallyChanged"
-  >,
+  >
 ): Promise<void> {
   const {
     posts,
@@ -53,12 +53,12 @@ export async function handleFileChange(
     const isVideo = isVideoFile(file);
     if (isVideo && file.size > MAX_VIDEO_SIZE) {
       alert(
-        `Video file ${file.name} exceeds 100MB limit. Please select a smaller file.`,
+        `Video file ${file.name} exceeds 100MB limit. Please select a smaller file.`
       );
       return Promise.resolve();
     } else if (!isVideo && file.size > MAX_IMAGE_SIZE) {
       alert(
-        `Image file ${file.name} exceeds 10MB limit. Please select a smaller file.`,
+        `Image file ${file.name} exceeds 10MB limit. Please select a smaller file.`
       );
       return Promise.resolve();
     }
@@ -81,10 +81,9 @@ export async function handleFileChange(
             return file; // Return video files as-is
           } else {
             // Process image files - resize and remove metadata
-            const resized = await resizeImage(file);
-            return resized;
+            return await resizeImage(file);
           }
-        }),
+        })
       );
       processedFiles.push(...chunkProcessed);
 
@@ -114,12 +113,12 @@ export async function handleFileChange(
     const userTimezone = user?.timezone;
 
     const localDate = new Date(
-      now.toLocaleString("en-US", { timeZone: userTimezone }),
+      now.toLocaleString("en-US", { timeZone: userTimezone })
     );
 
     // Add index+4 hours to schedule 4 post per hour (default)
     localDate.setHours(
-      localDate.getHours() + (index + Number(scheduleIntervals?.[0] ?? 4)),
+      localDate.getHours() + (index + Number(scheduleIntervals?.[0] ?? 4))
     );
 
     return {

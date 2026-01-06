@@ -9,14 +9,14 @@ interface BulkPostsActionButtonsProps {
   isProcessing: boolean;
   scheduleIntervals: number[] | undefined;
   queueTypes: QueueType[];
-  hashTagPresets: { id: string; name: string; hashtags: string }[];
+  hashTagPresets: Array<{ id: string; name: string; hashtags: string }>;
   selectedHashtagPresetId: string | null;
   useHashtagPresets: boolean;
   handleScheduleIntervalClick: (interval: number) => void;
   handleBulkQueueUpdate: (queueName: string) => void;
   handleHashtagPresetSelect: (
     presetId: string | null,
-    hashtags: string,
+    hashtags: string
   ) => void;
   setUseHashtagPresets: (use: boolean) => void;
   handleBulkRecyclableToggle: () => void;

@@ -14,10 +14,10 @@ vi.mock("~/lib/prisma.server", () => ({
   },
 }));
 
+import { TEST_USER_ID } from "../../utils/test-helpers";
+
 import { prisma } from "~/lib/prisma.server";
 import { createRenewalPayment } from "~/models/payment.server";
-
-import { TEST_USER_ID } from "../../utils/test-helpers";
 
 describe("Payment Model Commands", () => {
   beforeEach(() => {
@@ -34,7 +34,7 @@ describe("Payment Model Commands", () => {
         status: "COMPLETED",
       };
       (prisma.payment.create as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPayment,
+        mockPayment
       );
 
       const result = await createRenewalPayment({
@@ -57,7 +57,7 @@ describe("Payment Model Commands", () => {
           paymentHash: "hash123",
           status: "COMPLETED",
           description: "Renewal payment",
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
           paidAt: expect.any(Date),
         },
       });

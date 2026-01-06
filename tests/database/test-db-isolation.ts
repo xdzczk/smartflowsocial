@@ -13,7 +13,7 @@ import { getTestPrisma } from "./test-db";
  * This allows rolling back individual tests while keeping the transaction open
  */
 export async function withIsolatedTransaction<T>(
-  testFn: (prisma: PrismaClient) => Promise<T>,
+  testFn: (prisma: PrismaClient) => Promise<T>
 ): Promise<T> {
   const prisma = getTestPrisma();
 
@@ -27,7 +27,7 @@ export async function withIsolatedTransaction<T>(
     {
       timeout: 30000,
       isolationLevel: "ReadCommitted",
-    },
+    }
   );
 }
 
@@ -37,7 +37,7 @@ export async function withIsolatedTransaction<T>(
  */
 export function createIsolatedTestClient(databaseName: string): PrismaClient {
   const testDatabaseUrl =
-    process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL;
+    process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"];
 
   if (!testDatabaseUrl) {
     throw new Error("TEST_DATABASE_URL or DATABASE_URL must be set");

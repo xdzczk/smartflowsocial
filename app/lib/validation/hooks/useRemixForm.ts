@@ -9,7 +9,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Zod schema types require any for generic constraints
 interface UseRemixFormOptions<TSchema extends z.ZodType<any, any, any>> {
   schema: TSchema;
   action: string;
@@ -23,7 +23,7 @@ interface UseRemixFormOptions<TSchema extends z.ZodType<any, any, any>> {
  * Hook that combines React Hook Form with Remix's useFetcher
  * Handles form state, validation, and submission automatically
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Zod schema types require any for generic constraints
 export function useRemixForm<TSchema extends z.ZodType<any, any, any>>({
   schema,
   action,
@@ -34,10 +34,10 @@ export function useRemixForm<TSchema extends z.ZodType<any, any, any>>({
 }: UseRemixFormOptions<TSchema>) {
   const fetcher = useFetcher<{ success?: boolean; error?: string }>();
   const form = useForm<z.infer<TSchema>>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment -- React Hook Form resolver requires type assertion
     resolver: zodResolver(schema) as any,
     mode,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment -- React Hook Form defaultValues requires type assertion
     defaultValues: defaultValues as any,
   });
 
@@ -62,10 +62,10 @@ export function useRemixForm<TSchema extends z.ZodType<any, any, any>>({
   // Reset form on successful submission
   useEffect(() => {
     if (isSuccess && defaultValues) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React Hook Form reset requires type assertion
       form.reset(defaultValues as any);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Dependencies are intentionally limited to avoid unnecessary re-renders
   }, [isSuccess, defaultValues]);
 
   const onSubmit = form.handleSubmit((data) => {
@@ -102,4 +102,3 @@ export function useRemixForm<TSchema extends z.ZodType<any, any, any>>({
     fetcher,
   };
 }
-

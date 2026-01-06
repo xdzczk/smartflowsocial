@@ -14,11 +14,11 @@ vi.mock("~/features/user", () => ({
   getQueueTypes: vi.fn(),
 }));
 
+import { TEST_USER_ID } from "../utils/test-helpers";
+
 import { requireUserId } from "~/features/auth/session.server";
 import { getQueueTypes } from "~/features/user";
 import { action } from "~/routes/api.effective-hashtags";
-
-import { TEST_USER_ID } from "../utils/test-helpers";
 
 describe("API: Effective Hashtags", () => {
   beforeEach(() => {
@@ -40,7 +40,7 @@ describe("API: Effective Hashtags", () => {
       ];
 
       (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockQueueTypes,
+        mockQueueTypes
       );
 
       const request = new Request(
@@ -49,7 +49,7 @@ describe("API: Effective Hashtags", () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ queueTypeName: "posts" }),
-        },
+        }
       );
 
       interface ActionArgs {
@@ -89,7 +89,7 @@ describe("API: Effective Hashtags", () => {
       ];
 
       (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockQueueTypes,
+        mockQueueTypes
       );
 
       const request = new Request(
@@ -98,7 +98,7 @@ describe("API: Effective Hashtags", () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ queueTypeId: "queue-1" }),
-        },
+        }
       );
 
       interface ActionArgs {
@@ -144,7 +144,7 @@ describe("API: Effective Hashtags", () => {
       ];
 
       (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockQueueTypes,
+        mockQueueTypes
       );
 
       const request = new Request(
@@ -156,7 +156,7 @@ describe("API: Effective Hashtags", () => {
             queueTypeId: "queue-1",
             queueTypeName: "posts",
           }),
-        },
+        }
       );
 
       interface ActionArgs {
@@ -187,7 +187,7 @@ describe("API: Effective Hashtags", () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ queueTypeName: "unassigned" }),
-        },
+        }
       );
 
       interface ActionArgs {
@@ -221,7 +221,7 @@ describe("API: Effective Hashtags", () => {
       ];
 
       (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockQueueTypes,
+        mockQueueTypes
       );
 
       const request = new Request(
@@ -230,7 +230,7 @@ describe("API: Effective Hashtags", () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ queueTypeName: "posts" }),
-        },
+        }
       );
 
       interface ActionArgs {
@@ -262,7 +262,7 @@ describe("API: Effective Hashtags", () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ queueTypeName: "nonexistent" }),
-        },
+        }
       );
 
       interface ActionArgs {
@@ -298,7 +298,7 @@ describe("API: Effective Hashtags", () => {
       ];
 
       (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockQueueTypes,
+        mockQueueTypes
       );
 
       const request = new Request(
@@ -307,7 +307,7 @@ describe("API: Effective Hashtags", () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ queueTypeName: "posts" }),
-        },
+        }
       );
 
       interface ActionArgs {
@@ -348,7 +348,7 @@ describe("API: Effective Hashtags", () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ queueTypeName: "posts" }),
-        },
+        }
       );
 
       const response = await action({ request, params: {}, context: {} });
@@ -364,7 +364,7 @@ describe("API: Effective Hashtags", () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: "invalid json",
-        },
+        }
       );
 
       interface ActionArgs {
@@ -400,7 +400,7 @@ describe("API: Effective Hashtags", () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({}),
-        },
+        }
       );
 
       interface ActionArgs {
@@ -431,7 +431,7 @@ describe("API: Effective Hashtags", () => {
 
     it("should handle database errors gracefully", async () => {
       (getQueueTypes as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Database error"),
+        new Error("Database error")
       );
 
       const request = new Request(
@@ -440,7 +440,7 @@ describe("API: Effective Hashtags", () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ queueTypeName: "posts" }),
-        },
+        }
       );
 
       interface ActionArgs {

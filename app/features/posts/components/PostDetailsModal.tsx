@@ -40,7 +40,7 @@ export default function PostDetailsModal({
 
   // Type guard to check if post has queueType property
   const hasQueueType = (
-    p: Post | PostData | CombinedContent,
+    p: Post | PostData | CombinedContent
   ): p is PostData | CombinedContent => {
     return "queueType" in p;
   };
@@ -199,11 +199,19 @@ export default function PostDetailsModal({
                       <h3 className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                         Queue Type
                       </h3>
-                      <span
-                        className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium capitalize ${getQueueColor(queueType.name, queueType.color).bg} ${getQueueColor(queueType.name, queueType.color).text}`}
-                      >
-                        {queueType.name}
-                      </span>
+                      {(() => {
+                        const colors = getQueueColor(
+                          queueType.name,
+                          queueType.color
+                        );
+                        return (
+                          <span
+                            className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium capitalize ${colors?.bg ?? ""} ${colors?.text ?? ""}`}
+                          >
+                            {queueType.name}
+                          </span>
+                        );
+                      })()}
                     </div>
                   ) : null}
                 </>
@@ -227,11 +235,19 @@ export default function PostDetailsModal({
                       <h3 className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                         Queue Type
                       </h3>
-                      <span
-                        className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium capitalize ${getQueueColor(queueType.name, queueType.color).bg} ${getQueueColor(queueType.name, queueType.color).text}`}
-                      >
-                        {queueType.name}
-                      </span>
+                      {(() => {
+                        const colors = getQueueColor(
+                          queueType.name,
+                          queueType.color
+                        );
+                        return (
+                          <span
+                            className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium capitalize ${colors?.bg ?? ""} ${colors?.text ?? ""}`}
+                          >
+                            {queueType.name}
+                          </span>
+                        );
+                      })()}
                     </div>
                   ) : null}
                 </>
@@ -242,11 +258,19 @@ export default function PostDetailsModal({
                   <h3 className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                     Queue Type
                   </h3>
-                  <span
-                    className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium capitalize ${getQueueColor(queueType.name, queueType.color).bg} ${getQueueColor(queueType.name, queueType.color).text}`}
-                  >
-                    {queueType.name}
-                  </span>
+                  {(() => {
+                    const colors = getQueueColor(
+                      queueType.name,
+                      queueType.color
+                    );
+                    return (
+                      <span
+                        className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium capitalize ${colors?.bg ?? ""} ${colors?.text ?? ""}`}
+                      >
+                        {queueType.name}
+                      </span>
+                    );
+                  })()}
                 </div>
               ) : null}
             </div>

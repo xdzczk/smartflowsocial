@@ -48,7 +48,7 @@ describe("Loader Response Validation", () => {
       };
 
       expect(() => validateLoaderResponse(data, schema)).toThrow(
-        ValidationError,
+        ValidationError
       );
     });
 
@@ -70,8 +70,8 @@ describe("Loader Response Validation", () => {
         expect(error).toBeInstanceOf(ValidationError);
         if (error instanceof ValidationError) {
           expect(error.message).toBe("Loader response validation failed");
-          expect(error.context?.errors).toBeDefined();
-          const errors = error.context?.errors as Array<{
+          expect(error.context?.["errors"]).toBeDefined();
+          const errors = error.context?.["errors"] as Array<{
             path: string;
             message: string;
           }>;
@@ -108,7 +108,7 @@ describe("Loader Response Validation", () => {
           z.object({
             id: z.string(),
             value: z.number(),
-          }),
+          })
         ),
       });
 
@@ -162,9 +162,9 @@ describe("Loader Response Validation", () => {
         },
       } as unknown as z.ZodTypeAny;
 
-      expect(() => validateLoaderResponse({ value: "test" }, throwingSchema)).toThrow(
-        "Custom error",
-      );
+      expect(() =>
+        validateLoaderResponse({ value: "test" }, throwingSchema)
+      ).toThrow("Custom error");
     });
   });
 
@@ -278,4 +278,3 @@ describe("Loader Response Validation", () => {
     });
   });
 });
-

@@ -13,7 +13,7 @@ export function AssetPagination({
 }: AssetPaginationProps) {
   // Always show first, last, current, and 2 pages around current
   const getVisiblePages = () => {
-    const pages: (number | "ellipsis")[] = [];
+    const pages: Array<number | "ellipsis"> = [];
     const addPage = (page: number) => {
       if (!pages.includes(page)) pages.push(page);
     };
@@ -84,7 +84,7 @@ export function AssetPagination({
               >
                 {page}
               </button>
-            ),
+            )
           )}
         </div>
 

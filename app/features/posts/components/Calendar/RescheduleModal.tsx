@@ -48,7 +48,7 @@ export function RescheduleModal({
   const [editableDateTime, setEditableDateTime] = useState<Date | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [selectedQueueType, setSelectedQueueType] = useState<string | null>(
-    null,
+    null
   );
 
   useEffect(() => {
@@ -89,12 +89,12 @@ export function RescheduleModal({
         if (typeof firstFileUrl === "string") {
           try {
             const parsed = JSON.parse(firstFileUrl) as string[] | string;
-            return Array.isArray(parsed) ? parsed[0] : firstFileUrl;
+            return Array.isArray(parsed) ? (parsed[0] ?? null) : firstFileUrl;
           } catch {
             return firstFileUrl;
           }
         }
-        return firstFileUrl as string;
+        return (firstFileUrl as string | undefined) ?? null;
       } catch (error) {
         handleErrorSafely(error, {
           component: "RescheduleModal",
@@ -123,7 +123,7 @@ export function RescheduleModal({
     const now = new Date();
     const userTimezone = user?.timezone ?? "Etc/UTC";
     const nowInUserTz = new Date(
-      now.toLocaleString("en-US", { timeZone: userTimezone }),
+      now.toLocaleString("en-US", { timeZone: userTimezone })
     );
 
     if (dateTime <= nowInUserTz) {
@@ -145,7 +145,7 @@ export function RescheduleModal({
     const userTimezone = user?.timezone ?? "Etc/UTC";
     // Create date string in format needed for datetime-local input
     const dateInUserTz = new Date(
-      date.toLocaleString("en-US", { timeZone: userTimezone }),
+      date.toLocaleString("en-US", { timeZone: userTimezone })
     );
     const year = dateInUserTz.getFullYear();
     const month = String(dateInUserTz.getMonth() + 1).padStart(2, "0");
@@ -176,7 +176,7 @@ export function RescheduleModal({
 
       if (!originalSignedEvent || !originalNostrEvent) {
         throw new Error(
-          "Original event not found. Cannot reschedule unsigned posts.",
+          "Original event not found. Cannot reschedule unsigned posts."
         );
       }
 

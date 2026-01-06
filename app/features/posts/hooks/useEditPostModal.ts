@@ -41,8 +41,7 @@ export function useEditPostModal({
   const getInitialValues = () => {
     if (isLongform && post && typeof post === "object" && "title" in post) {
       const postTitle = typeof post.title === "string" ? post.title : "";
-      const postSummary =
-        typeof post.summary === "string" ? post.summary : "";
+      const postSummary = typeof post.summary === "string" ? post.summary : "";
       const postImage = typeof post.image === "string" ? post.image : "";
       const publishedAt =
         post && typeof post === "object" && "publishedAt" in post
@@ -163,8 +162,7 @@ export function useEditPostModal({
   // Load initial content for longform posts
   useEffect(() => {
     if (isLongform && post && typeof post === "object" && "content" in post) {
-      const postContent =
-        typeof post.content === "string" ? post.content : "";
+      const postContent = typeof post.content === "string" ? post.content : "";
       if (postContent) {
         form.setValue("content", postContent);
       }
@@ -250,7 +248,7 @@ export function useEditPostModal({
                         {
                           method: "POST",
                           body: formData,
-                        },
+                        }
                       );
 
                       if (!response.ok) {
@@ -307,7 +305,7 @@ export function useEditPostModal({
                           component: "EditPostModal",
                           action: "uploadImage",
                         },
-                        false,
+                        false
                       );
                       throw error;
                     }
@@ -323,7 +321,7 @@ export function useEditPostModal({
             // @ts-expect-error - EditorJS types don't match exactly but work at runtime
             tools: toolsConfig,
             // @ts-expect-error - EditorJS onChange signature doesn't match types but works at runtime
-            // eslint-disable-next-line @typescript-eslint/no-misused-promises
+            // eslint-disable-next-line @typescript-eslint/no-misused-promises -- EditorJS onChange is async but types don't reflect this
             onChange: async (api: EditorJSAPI) => {
               try {
                 const outputData = await api.saver.save();
@@ -361,7 +359,7 @@ export function useEditPostModal({
               action: "cleanup",
               message: "Error during editor cleanup",
             },
-            "warning",
+            "warning"
           );
         } finally {
           editorRef.current = null;
@@ -370,19 +368,21 @@ export function useEditPostModal({
         }
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Dependencies are intentionally limited to avoid unnecessary re-renders
   }, [isLongform]);
 
   // Load initial content into EditorJS for longform posts
   const formContent = form.watch("content");
   useEffect(() => {
-    if (!isLongform || !editorReady || !editorRef.current || !formContent) return;
+    if (!isLongform || !editorReady || !editorRef.current || !formContent)
+      return;
 
     const loadInitialContent = async () => {
       if (!editorRef.current) return;
       try {
         await editorRef.current.isReady;
-        const contentString = typeof formContent === "string" ? formContent : "";
+        const contentString =
+          typeof formContent === "string" ? formContent : "";
         const editorJSData = convertMarkdownToEditorJS(contentString);
         await editorRef.current.render(editorJSData);
       } catch (error: unknown) {
@@ -405,7 +405,7 @@ export function useEditPostModal({
         ? user.timezone
         : "UTC";
     const dateInUserTz = new Date(
-      date.toLocaleString("en-US", { timeZone: userTimezone }),
+      date.toLocaleString("en-US", { timeZone: userTimezone })
     );
     const year = dateInUserTz.getFullYear();
     const month = String(dateInUserTz.getMonth() + 1).padStart(2, "0");
@@ -426,7 +426,7 @@ export function useEditPostModal({
             return await resizeImage(file);
           }
           return file;
-        }),
+        })
       );
       setNewFiles((prev) => [...prev, ...processedFiles]);
     } catch (error: unknown) {
@@ -445,7 +445,7 @@ export function useEditPostModal({
 
   const handleHashtagPresetSelect = (
     presetId: string | null,
-    hashtags: string,
+    hashtags: string
   ) => {
     form.setValue("hashTagPresetId", presetId ?? undefined);
     form.setValue("useHashtagPresets", !!presetId);
@@ -453,19 +453,19 @@ export function useEditPostModal({
   };
 
   // Watch form values for easy access
-  const caption = isLongform ? "" : (String(form.watch("caption") ?? ""));
-  const title = isLongform ? (String(form.watch("title") ?? "")) : "";
-  const summary = isLongform ? (String(form.watch("summary") ?? "")) : "";
-  const content = isLongform ? (String(form.watch("content") ?? "")) : "";
-  const image = isLongform ? (String(form.watch("image") ?? "")) : "";
+  const caption = isLongform ? "" : String(form.watch("caption") ?? "");
+  const title = isLongform ? String(form.watch("title") ?? "") : "";
+  const summary = isLongform ? String(form.watch("summary") ?? "") : "";
+  const content = isLongform ? String(form.watch("content") ?? "") : "";
+  const image = isLongform ? String(form.watch("image") ?? "") : "";
   const scheduledForStr = form.watch("scheduledFor");
-  const scheduledFor = scheduledForStr
-    ? new Date(scheduledForStr)
-    : null;
+  const scheduledFor = scheduledForStr ? new Date(scheduledForStr) : null;
   const selectedQueueType = String(form.watch("queueType") ?? "");
   const useHashtagPresets = Boolean(form.watch("useHashtagPresets") ?? false);
   const selectedHashtagPresetId = form.watch("hashTagPresetId") ?? null;
-  const manualHashtags = isLongform ? "" : (String(form.watch("manualHashtags") ?? ""));
+  const manualHashtags = isLongform
+    ? ""
+    : String(form.watch("manualHashtags") ?? "");
 
   // Setter functions for backward compatibility
   const setCaption = (value: string) => {
@@ -483,7 +483,7 @@ export function useEditPostModal({
   const setScheduledFor = (value: Date | null) => {
     form.setValue(
       "scheduledFor",
-      value ? value.toISOString().slice(0, 16) : "",
+      value ? value.toISOString().slice(0, 16) : ""
     );
   };
   const setSelectedQueueType = (value: string) => {

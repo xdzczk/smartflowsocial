@@ -41,6 +41,7 @@ export function RecyclablesQueueTabs({
           const queueColor =
             typeof queueType === "object" ? queueType.color : null;
           const colors = getQueueColor(queueName, queueColor);
+          const safeColors = colors ?? getQueueColor("unassigned");
           const isSelected = currentQueueType === queueName;
 
           const baseClasses =
@@ -67,6 +68,10 @@ export function RecyclablesQueueTabs({
             );
           }
 
+          if (!safeColors) {
+            return null;
+          }
+
           return (
             <Link
               key={queueName}
@@ -75,7 +80,7 @@ export function RecyclablesQueueTabs({
               onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
               className={`${baseClasses} ${
                 isSelected
-                  ? `${colors.border.replace("border-", "border-b-")} ${colors.text}`
+                  ? `${safeColors.border.replace("border-", "border-b-")} ${safeColors.text}`
                   : unselectedClasses
               }`}
             >

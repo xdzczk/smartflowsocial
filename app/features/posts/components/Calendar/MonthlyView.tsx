@@ -50,7 +50,7 @@ export function MonthlyView({
     const startDate = new Date(firstDay);
     const startDayOfWeek = startDate.getDay();
     startDate.setDate(
-      startDate.getDate() - (startDayOfWeek === 0 ? 6 : startDayOfWeek - 1),
+      startDate.getDate() - (startDayOfWeek === 0 ? 6 : startDayOfWeek - 1)
     );
 
     // Generate 6 weeks (42 days)
@@ -87,16 +87,14 @@ export function MonthlyView({
           : new Date(Number(timestamp) * 1000);
         // Convert to user's timezone for display
         const timeInUserTz = new Date(
-          postDate.toLocaleString("en-US", { timeZone: userTimezone }),
+          postDate.toLocaleString("en-US", { timeZone: userTimezone })
         );
         const year = timeInUserTz.getFullYear();
         const month = String(timeInUserTz.getMonth() + 1).padStart(2, "0");
         const day = String(timeInUserTz.getDate()).padStart(2, "0");
         const dateKey = `${year}-${month}-${day}`;
 
-        if (!grouped[dateKey]) {
-          grouped[dateKey] = [];
-        }
+        grouped[dateKey] ??= [];
         grouped[dateKey].push({ ...post, isPast: false });
       }
     });
@@ -109,16 +107,14 @@ export function MonthlyView({
         const postDate = new Date(timestamp as string);
         // Convert to user's timezone for display
         const timeInUserTz = new Date(
-          postDate.toLocaleString("en-US", { timeZone: userTimezone }),
+          postDate.toLocaleString("en-US", { timeZone: userTimezone })
         );
         const year = timeInUserTz.getFullYear();
         const month = String(timeInUserTz.getMonth() + 1).padStart(2, "0");
         const day = String(timeInUserTz.getDate()).padStart(2, "0");
         const dateKey = `${year}-${month}-${day}`;
 
-        if (!grouped[dateKey]) {
-          grouped[dateKey] = [];
-        }
+        grouped[dateKey] ??= [];
         grouped[dateKey].push({ ...post, isPast: true });
       }
     });
@@ -134,7 +130,7 @@ export function MonthlyView({
     e.preventDefault();
 
     const postData = JSON.parse(
-      e.dataTransfer.getData("text/plain"),
+      e.dataTransfer.getData("text/plain")
     ) as CalendarPost;
     const userTimezone = user?.timezone ?? "Etc/UTC";
 
@@ -150,7 +146,7 @@ export function MonthlyView({
 
       // Convert to user's timezone and back to get the right UTC offset
       const userTzDate = new Date(
-        tempDate.toLocaleString("sv-SE", { timeZone: userTimezone }),
+        tempDate.toLocaleString("sv-SE", { timeZone: userTimezone })
       );
       const localTzDate = new Date(tempDate.toLocaleString("sv-SE"));
 
@@ -171,7 +167,7 @@ export function MonthlyView({
           const newDateTime = new Date(date);
           newDateTime.setHours(9, 0, 0, 0);
           onPostDrop(postData, newDateTime);
-        },
+        }
       );
     }
   };
@@ -200,7 +196,7 @@ export function MonthlyView({
           const month = String(dayInfo.date.getMonth() + 1).padStart(2, "0");
           const day = String(dayInfo.date.getDate()).padStart(2, "0");
           const dateKey = `${year}-${month}-${day}`;
-          const posts = postsByDate[dateKey] || [];
+          const posts = postsByDate[dateKey] ?? [];
           const postsToShow = posts.slice(0, 3); // Show max 3 posts
           const remainingCount = Math.max(0, posts.length - 3);
 

@@ -16,7 +16,7 @@ export async function resizeImage(
     fileType?: string;
     preserveExif?: boolean;
     [key: string]: unknown;
-  } = {},
+  } = {}
 ) {
   // Default options focused on privacy and optimization
   const options = {
@@ -39,12 +39,11 @@ export async function resizeImage(
     const cleanImage = await stripAllMetadata(compressedFile);
 
     // Step 3: Create a new file with the clean image data
-    const newFile = new File([cleanImage], `${file.name.split(".")[0]}.jpg`, {
+    const baseName = file.name.split(".")[0] ?? file.name;
+    return new File([cleanImage], `${baseName}.jpg`, {
       type: "image/jpeg",
       lastModified: new Date().getTime(), // Update last modified time
     });
-
-    return newFile;
   } catch (error) {
     console.error("Error processing image:", error);
     throw error;
@@ -94,7 +93,7 @@ async function stripAllMetadata(file: File): Promise<Blob> {
             }
           },
           "image/jpeg",
-          0.92,
+          0.92
         );
       } catch (error) {
         URL.revokeObjectURL(url);

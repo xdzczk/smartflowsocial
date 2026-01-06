@@ -50,13 +50,15 @@ function extractProfileBits(nostrProfile: ProfileData | null | undefined): {
 export async function searchUsersByProfileName(
   query: string,
   excludeNpub?: string,
-  limit = 20,
+  limit = 20
 ): Promise<
-  (MinimalUser & {
-    profileName?: string;
-    profileDisplayName?: string;
-    profilePicture?: string;
-  })[]
+  Array<
+    MinimalUser & {
+      profileName?: string;
+      profileDisplayName?: string;
+      profilePicture?: string;
+    }
+  >
 > {
   const trimmed = query.trim();
   if (!trimmed) return [];
@@ -115,11 +117,13 @@ export async function searchUsersByProfileName(
     .slice(0, limit)
     .map(({ _match, ...rest }) => rest);
 
-  return filtered as (MinimalUser & {
-    profileName?: string;
-    profileDisplayName?: string;
-    profilePicture?: string;
-  })[];
+  return filtered as Array<
+    MinimalUser & {
+      profileName?: string;
+      profileDisplayName?: string;
+      profilePicture?: string;
+    }
+  >;
 }
 
 /**
@@ -127,7 +131,7 @@ export async function searchUsersByProfileName(
  */
 export async function requestChildLink(
   parentHex: string,
-  childHex: string,
+  childHex: string
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
   // Directly use 64-char hex keys, no normalization or conversion.
   const parent = (parentHex ?? "").trim();
@@ -166,7 +170,7 @@ export async function requestChildLink(
   }
 
   const alreadyRequested = (childUser.pendingParentRequests ?? []).includes(
-    parent,
+    parent
   );
   if (alreadyRequested) {
     return { ok: true };
@@ -187,7 +191,7 @@ export async function requestChildLink(
  */
 export async function cancelChildLinkRequest(
   parentHex: string,
-  childHex: string,
+  childHex: string
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
   const parent = (parentHex ?? "").trim();
   const child = (childHex ?? "").trim();
@@ -265,7 +269,7 @@ export async function getPendingParentRequestsForChild(childNpub: string) {
 export async function respondToChildRequest(
   childNpub: string,
   parentNpub: string,
-  accept: boolean,
+  accept: boolean
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
   const child = await prisma.user.findUnique({ where: { npub: childNpub } });
   if (!child) return { ok: false, reason: "Child not found" };
@@ -304,7 +308,7 @@ export async function respondToChildRequest(
  * Unlinks a child account from its parent (child-initiated)
  */
 export async function unlinkParent(
-  childNpub: string,
+  childNpub: string
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
   const child = await prisma.user.findUnique({ where: { npub: childNpub } });
   if (!child) return { ok: false, reason: "Child not found" };
@@ -327,7 +331,7 @@ export async function unlinkParent(
  */
 export async function unlinkChildByParent(
   parentNpub: string,
-  childNpub: string,
+  childNpub: string
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
   const child = await prisma.user.findUnique({ where: { npub: childNpub } });
   if (!child) return { ok: false, reason: "Child not found" };

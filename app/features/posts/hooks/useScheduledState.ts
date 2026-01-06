@@ -39,7 +39,7 @@ export function useScheduledState({
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [postToEdit, setPostToEdit] = useState<EditablePost | null>(null);
   const [postToReschedule, setPostToReschedule] = useState<EditablePost | null>(
-    null,
+    null
   );
   interface FetcherData {
     success?: boolean;
@@ -50,7 +50,7 @@ export function useScheduledState({
   // Memoize post IDs to avoid infinite loops when scheduledPosts array reference changes
   const postIds = useMemo(
     () => scheduledPosts.map((post) => post.id).join(","),
-    [scheduledPosts],
+    [scheduledPosts]
   );
 
   // Update countdowns
@@ -58,7 +58,7 @@ export function useScheduledState({
     const updateCountdowns = () => {
       const tz = userTimezone ?? "UTC";
       const now = new Date(
-        new Date().toLocaleString("en-US", { timeZone: tz }),
+        new Date().toLocaleString("en-US", { timeZone: tz })
       ).getTime();
       const newCountdowns: Record<string, string> = {};
 
@@ -77,10 +77,10 @@ export function useScheduledState({
         if (distance > 0) {
           const days = Math.floor(distance / (1000 * 60 * 60 * 24));
           const hours = Math.floor(
-            (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
+            (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
           );
           const minutes = Math.floor(
-            (distance % (1000 * 60 * 60)) / (1000 * 60),
+            (distance % (1000 * 60 * 60)) / (1000 * 60)
           );
           newCountdowns[post.id] = `${days}d ${hours}h ${minutes}m`;
         } else {
@@ -92,9 +92,8 @@ export function useScheduledState({
         // Only update if countdowns actually changed to prevent unnecessary re-renders
         const hasChanged =
           Object.keys(newCountdowns).some(
-            (id) => prev[id] !== newCountdowns[id],
-          ) ||
-          Object.keys(prev).length !== Object.keys(newCountdowns).length;
+            (id) => prev[id] !== newCountdowns[id]
+          ) || Object.keys(prev).length !== Object.keys(newCountdowns).length;
 
         return hasChanged ? newCountdowns : prev;
       });
@@ -104,7 +103,7 @@ export function useScheduledState({
     const timer = setInterval(updateCountdowns, 60000);
     return () => clearInterval(timer);
     // Use postIds instead of scheduledPosts to avoid infinite loops
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Dependencies are intentionally limited to avoid infinite loops
   }, [postIds, userTimezone]);
 
   // Clear selected posts after bulk delete
@@ -150,7 +149,7 @@ export function useScheduledState({
 
   // Filter posts
   const filteredPosts = sortedPosts.filter((post) =>
-    post.caption?.toLowerCase().includes(searchTerm.toLowerCase()),
+    post.caption?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const requestSort = (key: string) => {
@@ -200,7 +199,7 @@ export function useScheduledState({
       const formData = new FormData();
       formData.append(
         "_action",
-        currentTab === "longform" ? "bulkDeleteLongForm" : "bulkDelete",
+        currentTab === "longform" ? "bulkDeleteLongForm" : "bulkDelete"
       );
       formData.append("postIds", JSON.stringify(Array.from(selectedPosts)));
 

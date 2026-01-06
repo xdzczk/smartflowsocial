@@ -3,8 +3,7 @@
  * Provides caching and background refetching for engagement feed page
  */
 
-import { useFetcher, useLoaderData } from "@remix-run/react";
-import { useSearchParams } from "@remix-run/react";
+import { useFetcher, useLoaderData, useSearchParams } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 
 import type { PostDTO } from "~/features/posts/dtos";
@@ -15,7 +14,6 @@ import {
   engagementLoaderDataSchema,
   type EngagementLoaderData,
 } from "~/lib/validation/schemas/loader-responses.schemas";
-
 
 import type { EventStats, GroupedNotification } from "../types";
 
@@ -37,14 +35,14 @@ export const engagementKeys = {
 export function useEngagementQuery() {
   const [searchParams] = useSearchParams();
   const page = parseInt(searchParams.get("page") ?? "1", 10);
-  
+
   const loaderDataRaw = useLoaderData();
   const fetcher = useFetcher();
 
   // Validate initial loader data
   const validatedLoaderData = safeValidateLoaderResponse(
     loaderDataRaw,
-    engagementLoaderDataSchema,
+    engagementLoaderDataSchema
   );
 
   return useQuery({
@@ -53,14 +51,14 @@ export function useEngagementQuery() {
       // Use fetcher to refetch data
       const url = `/dashboard/engagement/feed?page=${page}`;
       fetcher.load(url);
-      
+
       return new Promise<EngagementLoaderData>((resolve, reject) => {
         const checkFetcher = () => {
           if (fetcher.state === "idle") {
             if (fetcher.data) {
               const validated = safeValidateLoaderResponse(
                 fetcher.data,
-                engagementLoaderDataSchema,
+                engagementLoaderDataSchema
               );
               if (validated) {
                 resolve(validated);
@@ -121,7 +119,9 @@ export function useEngagementData() {
 
   // Type guard for stats
   const stats: Record<string, EventStats> =
-    rawData.stats && typeof rawData.stats === "object" && !Array.isArray(rawData.stats)
+    rawData.stats &&
+    typeof rawData.stats === "object" &&
+    !Array.isArray(rawData.stats)
       ? rawData.stats
       : {};
 
@@ -131,27 +131,33 @@ export function useEngagementData() {
     quotes: GroupedNotification[];
   } = {
     replies: Array.isArray(rawData.groupedNotifications?.replies)
-      ? (rawData.groupedNotifications.replies as unknown as GroupedNotification[])
+      ? (rawData.groupedNotifications
+          .replies as unknown as GroupedNotification[])
       : [],
     quotes: Array.isArray(rawData.groupedNotifications?.quotes)
-      ? (rawData.groupedNotifications.quotes as unknown as GroupedNotification[])
+      ? (rawData.groupedNotifications
+          .quotes as unknown as GroupedNotification[])
       : [],
   };
 
   // Type guard for trustScores
   const trustScores: Record<string, number> =
-    rawData.trustScores && typeof rawData.trustScores === "object" && !Array.isArray(rawData.trustScores)
+    rawData.trustScores &&
+    typeof rawData.trustScores === "object" &&
+    !Array.isArray(rawData.trustScores)
       ? Object.fromEntries(
           Object.entries(rawData.trustScores).map(([key, value]) => [
             key,
             typeof value === "number" ? value : 0,
-          ]),
+          ])
         )
       : {};
 
   // Type guard for user
   const user =
-    rawData.user && typeof rawData.user === "object" && !Array.isArray(rawData.user)
+    rawData.user &&
+    typeof rawData.user === "object" &&
+    !Array.isArray(rawData.user)
       ? rawData.user
       : null;
 
@@ -165,4 +171,3 @@ export function useEngagementData() {
     rawData,
   };
 }
-

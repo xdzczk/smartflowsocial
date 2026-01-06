@@ -3,8 +3,7 @@
  * Provides caching and background refetching for calendar page
  */
 
-import { useFetcher, useLoaderData } from "@remix-run/react";
-import { useParams } from "@remix-run/react";
+import { useFetcher, useLoaderData, useParams } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 
 import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
@@ -16,10 +15,7 @@ import { validateUserData } from "~/lib/validation/user-data";
 
 import { combineContent } from "../combined";
 import type { PostDTO, LongFormPostDTO } from "../dtos";
-import {
-  fromPostDTOArray,
-  fromLongFormPostDTOArray,
-} from "../dtos";
+import { fromPostDTOArray, fromLongFormPostDTOArray } from "../dtos";
 import type {
   PostData,
   LongFormPostData,
@@ -29,15 +25,13 @@ import type {
 } from "../types";
 import { convertJsonValueToScheduleConfig } from "../types";
 
-
 /**
  * Query key factory for calendar
  */
 export const calendarKeys = {
   all: ["calendar"] as const,
   lists: () => [...calendarKeys.all, "list"] as const,
-  list: (queueType?: string) =>
-    [...calendarKeys.lists(), queueType] as const,
+  list: (queueType?: string) => [...calendarKeys.lists(), queueType] as const,
 };
 
 // CalendarLoaderData is now exported from schemas
@@ -47,15 +41,15 @@ export const calendarKeys = {
  */
 export function useCalendarQuery() {
   const params = useParams();
-  const queueType = params.queueType ?? "all";
-  
+  const queueType = params["queueType"] ?? "all";
+
   const loaderDataRaw = useLoaderData();
   const fetcher = useFetcher();
 
   // Validate initial loader data
   const validatedLoaderData = safeValidateLoaderResponse(
     loaderDataRaw,
-    calendarLoaderDataSchema,
+    calendarLoaderDataSchema
   );
 
   return useQuery({
@@ -63,14 +57,14 @@ export function useCalendarQuery() {
     queryFn: async () => {
       const url = `/dashboard/calendar${queueType !== "all" ? `/${queueType}` : ""}`;
       fetcher.load(url);
-      
+
       return new Promise<CalendarLoaderData>((resolve, reject) => {
         const checkFetcher = () => {
           if (fetcher.state === "idle") {
             if (fetcher.data) {
               const validated = safeValidateLoaderResponse(
                 fetcher.data,
-                calendarLoaderDataSchema,
+                calendarLoaderDataSchema
               );
               if (validated) {
                 resolve(validated);
@@ -104,14 +98,17 @@ export function useCalendarQuery() {
  */
 export function useCalendarData() {
   const { data, isLoading, error } = useCalendarQuery();
-  
+
   if (!data) {
     return {
       scheduledPosts: [] as PostData[],
       scheduledLongFormPosts: [] as LongFormPostData[],
       pastPosts: [] as PostData[],
       pastLongFormPosts: [] as LongFormPostData[],
-      allContent: [] as Array<{ type: "post" | "longform"; [key: string]: unknown }>,
+      allContent: [] as Array<{
+        type: "post" | "longform";
+        [key: string]: unknown;
+      }>,
       user: null as UserData | null,
       queueTypes: [] as QueueType[],
       selectedQueueType: "all",
@@ -152,7 +149,7 @@ export function useCalendarData() {
     ? fromPostDTOArray(scheduledPostsRaw as PostDTO[])
     : [];
   const scheduledLongFormPosts: LongFormPostData[] = Array.isArray(
-    scheduledLongFormPostsRaw,
+    scheduledLongFormPostsRaw
   )
     ? fromLongFormPostDTOArray(scheduledLongFormPostsRaw as LongFormPostDTO[])
     : [];
@@ -160,19 +157,19 @@ export function useCalendarData() {
     ? fromPostDTOArray(pastPostsRaw as PostDTO[])
     : [];
   const pastLongFormPosts: LongFormPostData[] = Array.isArray(
-    pastLongFormPostsRaw,
+    pastLongFormPostsRaw
   )
     ? fromLongFormPostDTOArray(pastLongFormPostsRaw as LongFormPostDTO[])
     : [];
-  
+
   // Reconstruct allContent on client from deserialized posts
   const allContent = combineContent(
     [...scheduledPosts, ...pastPosts],
     [...scheduledLongFormPosts, ...pastLongFormPosts],
     "scheduledFor",
-    "asc",
+    "asc"
   );
-  
+
   const queueTypes: QueueType[] = Array.isArray(queueTypesRaw)
     ? queueTypesRaw
         .map((qt: unknown) => {
@@ -195,7 +192,9 @@ export function useCalendarData() {
                 | "INTERVAL"
                 | "FIXED_SLOTS"
                 | undefined,
-              scheduleConfig: convertJsonValueToScheduleConfig(q.scheduleConfig),
+              scheduleConfig: convertJsonValueToScheduleConfig(
+                q.scheduleConfig
+              ),
               isEnabled: q.isEnabled,
               userId: q.userId,
             };
@@ -221,4 +220,3 @@ export function useCalendarData() {
     error,
   };
 }
-

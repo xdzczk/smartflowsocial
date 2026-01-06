@@ -73,12 +73,16 @@ export default function PostedPosts() {
 
   // Extract user properties
   const userTimezone =
-    safeUser && "timezone" in safeUser && typeof safeUser.timezone === "string"
-      ? safeUser.timezone
+    safeUser &&
+    "timezone" in safeUser &&
+    typeof safeUser["timezone"] === "string"
+      ? safeUser["timezone"]
       : undefined;
   const userRelays =
-    safeUser && "userRelays" in safeUser && Array.isArray(safeUser.userRelays)
-      ? (safeUser.userRelays as string[])
+    safeUser &&
+    "userRelays" in safeUser &&
+    Array.isArray(safeUser["userRelays"])
+      ? (safeUser["userRelays"] as string[])
       : undefined;
 
   return (
@@ -123,7 +127,7 @@ export default function PostedPosts() {
                 return safeStats[eventId];
               }
             }
-            return undefined;
+            return;
           })()}
           onClose={() => setSelectedPost(null)}
           showStats={true}

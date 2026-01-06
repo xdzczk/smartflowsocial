@@ -1,19 +1,20 @@
 // Convert hex color to RGB values for Tailwind-compatible styles
 const hexToRgb = (hex: string) => {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result
-    ? {
-        r: parseInt(result[1], 16),
-        g: parseInt(result[2], 16),
-        b: parseInt(result[3], 16),
-      }
-    : null;
+  if (!result?.[1] || !result[2] || !result[3]) {
+    return null;
+  }
+  return {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16),
+  };
 };
 
 // Queue color mapping utility
 export const getQueueColor = (
   queueType: string,
-  customColor?: string | null,
+  customColor?: string | null
 ) => {
   // If custom color is provided, generate styles using that color
   if (customColor) {
@@ -59,26 +60,32 @@ export const getQueueColor = (
   };
 
   // Return default color if queue type not found
-  return colorMap[queueType?.toLowerCase()] || colorMap.unassigned;
+  return colorMap[queueType?.toLowerCase()] ?? colorMap["unassigned"];
 };
 
 export const getSelectedQueueStyle = (
   queueType: string,
-  isSelected: boolean,
+  isSelected: boolean
 ) => {
   const colors = getQueueColor(queueType);
-
-  if (isSelected) {
-    return `${colors.bg} ${colors.text} ${colors.border} border-2 shadow-md transform scale-105`;
+  // getQueueColor always returns a value (has fallback to "unassigned")
+  const safeColors = colors ?? getQueueColor("unassigned");
+  if (!safeColors) {
+    // This should never happen, but TypeScript needs this check
+    return "";
   }
 
-  return `${colors.bg} ${colors.text} ${colors.hover} ${colors.border} border opacity-70 hover:opacity-100 hover:shadow-sm`;
+  if (isSelected) {
+    return `${safeColors.bg} ${safeColors.text} ${safeColors.border} border-2 shadow-md transform scale-105`;
+  }
+
+  return `${safeColors.bg} ${safeColors.text} ${safeColors.hover} ${safeColors.border} border opacity-70 hover:opacity-100 hover:shadow-sm`;
 };
 
 // Generate dynamic queue style using database color
 export const getDynamicQueueStyle = (
   queueColor: string | null,
-  isSelected: boolean,
+  isSelected: boolean
 ) => {
   if (!queueColor) {
     // Fallback to unassigned style

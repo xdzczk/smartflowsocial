@@ -88,7 +88,7 @@ export async function getScheduledDashboardData({
     const longformPostData: LongFormPostData = {
       ...post,
       queueType: convertPrismaQueueTypeToQueueType(
-        "queueType" in post ? post.queueType : undefined,
+        "queueType" in post ? post.queueType : undefined
       ),
       signedEvent: signedEventValue,
       nostrEvent: nostrEventValue,
@@ -101,7 +101,7 @@ export async function getScheduledDashboardData({
     postsData,
     longformPostsData,
     "scheduledFor",
-    "asc",
+    "asc"
   );
 
   return {
@@ -114,7 +114,7 @@ export async function getScheduledDashboardData({
         typeof qt === "object" &&
         qt !== null &&
         "isEnabled" in qt &&
-        qt.isEnabled !== false,
+        qt.isEnabled !== false
     ),
     selectedQueueType: queueType,
     hashTagPresets,
@@ -126,7 +126,7 @@ export async function getScheduledDashboardData({
  */
 export async function handleScheduledPostAction(
   formData: FormData,
-  userId: string,
+  userId: string
 ) {
   const postId = formData.get("postId") as string;
   const _action = formData.get("_action");
@@ -170,7 +170,7 @@ export async function handleScheduledPostAction(
       postIds = [];
     }
     await Promise.all(
-      postIds.map((id: string) => deleteLongFormPost({ id, userId })),
+      postIds.map((id: string) => deleteLongFormPost({ id, userId }))
     );
     return json({ success: true });
   }
@@ -178,7 +178,7 @@ export async function handleScheduledPostAction(
   if (_action === "bulkDeleteMixed") {
     const itemDataValue = formData.get("itemData");
     const itemDataStr = itemDataValue ? String(itemDataValue) : "[]";
-    let itemData: { id: string; type: string }[] = [];
+    let itemData: Array<{ id: string; type: string }> = [];
     try {
       const parsed: unknown = JSON.parse(itemDataStr);
       if (Array.isArray(parsed)) {
@@ -189,7 +189,7 @@ export async function handleScheduledPostAction(
             "id" in item &&
             "type" in item &&
             typeof (item as { id: unknown; type: unknown }).id === "string" &&
-            typeof (item as { id: unknown; type: unknown }).type === "string",
+            typeof (item as { id: unknown; type: unknown }).type === "string"
         );
       }
     } catch {
@@ -409,7 +409,7 @@ export async function handleScheduledPostAction(
         const parsed: unknown = JSON.parse(fileUrl);
         parsedFileUrl = Array.isArray(parsed)
           ? parsed.filter(
-              (item: unknown): item is string => typeof item === "string",
+              (item: unknown): item is string => typeof item === "string"
             )
           : [];
       } catch (e) {
@@ -449,7 +449,7 @@ export async function handleScheduledPostAction(
         postId,
         userId,
         parsedSignedEvent,
-        Number(scheduledFor),
+        Number(scheduledFor)
       );
     }
 

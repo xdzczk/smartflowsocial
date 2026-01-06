@@ -27,6 +27,8 @@ vi.mock("~/models/payment.server", () => ({
   getUserSubscription: vi.fn(),
 }));
 
+import { createFormData, TEST_USER_ID } from "../utils/test-helpers";
+
 import { handleSettingsAction } from "~/features/settings/settings-actions.server";
 import {
   updateUserTimezone,
@@ -42,8 +44,6 @@ import {
 } from "~/features/user";
 import { getUserSubscription } from "~/models/payment.server";
 
-import { createFormData, TEST_USER_ID } from "../utils/test-helpers";
-
 describe("Settings Action Handler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -53,7 +53,7 @@ describe("Settings Action Handler", () => {
       Plan: { price: 1000 }, // Paid plan
     });
     (hashTagPresetExistsForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
-      true,
+      true
     );
   });
 
@@ -61,7 +61,7 @@ describe("Settings Action Handler", () => {
     describe("Update Timezone", () => {
       it("should update user timezone", async () => {
         (updateUserTimezone as ReturnType<typeof vi.fn>).mockResolvedValue(
-          undefined,
+          undefined
         );
 
         const formData = createFormData({
@@ -78,7 +78,7 @@ describe("Settings Action Handler", () => {
 
         expect(updateUserTimezone).toHaveBeenCalledWith(
           TEST_USER_ID,
-          "America/New_York",
+          "America/New_York"
         );
         expect(data).toEqual({ success: true });
       });
@@ -87,7 +87,7 @@ describe("Settings Action Handler", () => {
     describe("Update Relays", () => {
       it("should update user relays", async () => {
         (updateUserRelays as ReturnType<typeof vi.fn>).mockResolvedValue(
-          undefined,
+          undefined
         );
 
         const formData = createFormData({
@@ -112,7 +112,7 @@ describe("Settings Action Handler", () => {
 
       it("should filter out empty relay lines", async () => {
         (updateUserRelays as ReturnType<typeof vi.fn>).mockResolvedValue(
-          undefined,
+          undefined
         );
 
         const formData = createFormData({
@@ -139,7 +139,7 @@ describe("Settings Action Handler", () => {
     describe("Update Giveaway Blacklist", () => {
       it("should update giveaway blacklist with valid npubs", async () => {
         (updateGiveawayBlacklist as ReturnType<typeof vi.fn>).mockResolvedValue(
-          undefined,
+          undefined
         );
 
         const formData = createFormData({
@@ -186,7 +186,7 @@ describe("Settings Action Handler", () => {
     describe("Update Schedule Intervals", () => {
       it("should update schedule intervals with valid numbers", async () => {
         (updateScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(
-          undefined,
+          undefined
         );
 
         const formData = createFormData({
@@ -236,7 +236,7 @@ describe("Settings Action Handler", () => {
     describe("Create Hashtag Preset", () => {
       it("should create a hashtag preset", async () => {
         (createHashTagPreset as ReturnType<typeof vi.fn>).mockResolvedValue(
-          undefined,
+          undefined
         );
 
         const formData = createFormData({
@@ -257,7 +257,7 @@ describe("Settings Action Handler", () => {
           TEST_USER_ID,
           "Marketing Tags",
           "#marketing #social #growth",
-          "Tags for marketing posts",
+          "Tags for marketing posts"
         );
         expect(data).toEqual({ success: true });
       });
@@ -285,7 +285,7 @@ describe("Settings Action Handler", () => {
 
       it("should allow description to be optional", async () => {
         (createHashTagPreset as ReturnType<typeof vi.fn>).mockResolvedValue(
-          undefined,
+          undefined
         );
 
         const formData = createFormData({
@@ -305,7 +305,7 @@ describe("Settings Action Handler", () => {
           TEST_USER_ID,
           "Marketing Tags",
           "#marketing",
-          undefined,
+          undefined
         );
         expect(data).toEqual({ success: true });
       });
@@ -314,7 +314,7 @@ describe("Settings Action Handler", () => {
     describe("Update Hashtag Preset", () => {
       it("should update a hashtag preset", async () => {
         (updateHashTagPreset as ReturnType<typeof vi.fn>).mockResolvedValue(
-          undefined,
+          undefined
         );
 
         const formData = createFormData({
@@ -337,7 +337,7 @@ describe("Settings Action Handler", () => {
           "preset-123",
           "Updated Marketing Tags",
           "#marketing #updated",
-          "Updated description",
+          "Updated description"
         );
         expect(data).toEqual({ success: true });
       });
@@ -368,7 +368,7 @@ describe("Settings Action Handler", () => {
     describe("Delete Hashtag Preset", () => {
       it("should delete a hashtag preset", async () => {
         (deleteHashTagPreset as ReturnType<typeof vi.fn>).mockResolvedValue(
-          undefined,
+          undefined
         );
 
         const formData = createFormData({
@@ -385,7 +385,7 @@ describe("Settings Action Handler", () => {
 
         expect(deleteHashTagPreset).toHaveBeenCalledWith(
           TEST_USER_ID,
-          "preset-123",
+          "preset-123"
         );
         expect(data).toEqual({ success: true });
       });
@@ -415,7 +415,7 @@ describe("Settings Action Handler", () => {
     describe("Create Queue Type", () => {
       it("should create a queue type with INTERVAL schedule", async () => {
         (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(
-          undefined,
+          undefined
         );
 
         const formData = createFormData({
@@ -437,7 +437,7 @@ describe("Settings Action Handler", () => {
 
         expect(hashTagPresetExistsForUser).toHaveBeenCalledWith(
           TEST_USER_ID,
-          "preset-123",
+          "preset-123"
         );
         expect(updateQueueType).toHaveBeenCalledWith(TEST_USER_ID, {
           name: "Marketing Queue",
@@ -452,7 +452,7 @@ describe("Settings Action Handler", () => {
 
       it("should create a queue type with FIXED_SLOTS schedule", async () => {
         (updateQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(
-          undefined,
+          undefined
         );
 
         const formData = createFormData({
@@ -545,7 +545,7 @@ describe("Settings Action Handler", () => {
     describe("Delete Queue Type", () => {
       it("should delete a queue type", async () => {
         (deleteQueueType as ReturnType<typeof vi.fn>).mockResolvedValue(
-          undefined,
+          undefined
         );
 
         const formData = createFormData({
@@ -569,7 +569,7 @@ describe("Settings Action Handler", () => {
   describe("Error Handling", () => {
     it("should handle database errors", async () => {
       (updateUserTimezone as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Database error"),
+        new Error("Database error")
       );
 
       const formData = createFormData({
@@ -578,7 +578,7 @@ describe("Settings Action Handler", () => {
       });
 
       await expect(
-        handleSettingsAction(TEST_USER_ID, formData),
+        handleSettingsAction(TEST_USER_ID, formData)
       ).rejects.toThrow("Database error");
     });
   });

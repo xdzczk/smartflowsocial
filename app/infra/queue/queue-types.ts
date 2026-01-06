@@ -80,7 +80,7 @@ export interface QueueClient {
     queueName: QueueType,
     jobName: string,
     data: T,
-    options?: ScheduleOptions,
+    options?: ScheduleOptions
   ): Promise<QueueOperationResult>;
 
   /**
@@ -90,26 +90,27 @@ export interface QueueClient {
   cancelByData(
     queueName: QueueType,
     dataKey: keyof PostJobData | keyof LongFormPostJobData,
-    dataValue: string,
+    dataValue: string
   ): Promise<boolean>;
 
   /**
    * Cancel a job by its deterministic job ID (O(1) operation)
    * This is the preferred method for cancellation when using deterministic job IDs.
    */
-  cancelByJobId(
-    queueName: QueueType,
-    jobId: string,
-  ): Promise<boolean>;
+  cancelByJobId(queueName: QueueType, jobId: string): Promise<boolean>;
 
   /**
    * Get jobs by status
    */
   getJobs(
     queueName: QueueType,
-    statuses: JobStatus[],
+    statuses: JobStatus[]
   ): Promise<
-    { id: string; data: PostJobData | LongFormPostJobData; status: JobStatus }[]
+    Array<{
+      id: string;
+      data: PostJobData | LongFormPostJobData;
+      status: JobStatus;
+    }>
   >;
 
   /**

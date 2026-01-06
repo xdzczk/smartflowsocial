@@ -10,7 +10,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Used in test description/comments
 import { AuthenticationError } from "~/lib/errors";
 // Set up environment variable before mocking
-process.env.SESSION_SECRET = "test-secret-key-for-testing";
+process.env["SESSION_SECRET"] = "test-secret-key-for-testing";
 
 // Mock Prisma to prevent $use middleware errors
 vi.mock("~/lib/prisma.server", () => ({
@@ -41,7 +41,7 @@ vi.mock("~/features/auth/session.server", async () => {
 
   const requireUserId = async (
     request: Request,
-    redirectTo: string = new URL(request.url).pathname,
+    redirectTo: string = new URL(request.url).pathname
   ) => {
     const userId: string | undefined = await getUserId(request);
     if (!userId) {
@@ -140,11 +140,11 @@ describe("Authentication: Session Cookie Security", () => {
 
   it("should use secure cookies in production", () => {
     // Verify that secure flag is set based on NODE_ENV
-    const isProduction = process.env.NODE_ENV === "production";
+    const isProduction = process.env["NODE_ENV"] === "production";
     const expectedSecure = isProduction;
 
     // The secure flag is set in session.server.ts:
-    // secure: process.env.NODE_ENV === "production"
+    // secure: process.env["NODE_ENV"] === "production"
     expect(typeof expectedSecure).toBe("boolean");
   });
 

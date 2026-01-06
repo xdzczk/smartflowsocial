@@ -40,10 +40,12 @@ interface UploadResult {
  */
 export async function handleUploadImagesPreview(formData: FormData) {
   try {
-    const previewSchema = z.object({
-      _action: z.literal("_upload_images_preview"),
-    }).merge(uploadImagesPreviewSchema);
-    
+    const previewSchema = z
+      .object({
+        _action: z.literal("_upload_images_preview"),
+      })
+      .merge(uploadImagesPreviewSchema);
+
     const result = validateFormDataOrRespond(formData, previewSchema);
     if (!result.success) {
       return result.response;
@@ -59,7 +61,7 @@ export async function handleUploadImagesPreview(formData: FormData) {
         fileUrl: result.file?.url ?? "",
         scheduledFor: scheduledDates[index],
         queueType: queueTypes[index],
-      }),
+      })
     );
 
     return json({ success: true, fileUrls });
@@ -75,13 +77,15 @@ export async function handleUploadImagesPreview(formData: FormData) {
 export async function handleSignAndSchedule(
   formData: FormData,
   userId: string,
-  mode: string | null,
+  mode: string | null
 ) {
   try {
-    const scheduleSchema = z.object({
-      _action: z.literal("sign_and_schedule"),
-    }).merge(signAndScheduleSchema);
-    
+    const scheduleSchema = z
+      .object({
+        _action: z.literal("sign_and_schedule"),
+      })
+      .merge(signAndScheduleSchema);
+
     const result = validateFormDataOrRespond(formData, scheduleSchema);
     if (!result.success) {
       return result.response;
@@ -94,7 +98,9 @@ export async function handleSignAndSchedule(
     const fileUrls = validatedData.fileUrl;
     const queueTypes = validatedData.queueType;
     const isRecyclableFlags = validatedData.isRecyclable;
-    const originalPostIds = validatedData.originalPostId?.filter((id: string) => id && id !== "") || [];
+    const originalPostIds =
+      validatedData.originalPostId?.filter((id: string) => id && id !== "") ??
+      [];
 
     await Promise.all(
       signedEvents.map(async (signedEvent, index) => {
@@ -113,8 +119,13 @@ export async function handleSignAndSchedule(
         }
 
         const fileUrl = fileUrls[index];
-        const tags = signedEvent.tags.map((tagArray: string[]) => tagArray[1]);
-        const queueType = (queueTypes[index]) || "unassigned";
+        if (!fileUrl) {
+          throw new Error(`File URL is missing for post at index ${index}`);
+        }
+        const tags = signedEvent.tags
+          .map((tagArray: string[]) => tagArray[1])
+          .filter((tag): tag is string => typeof tag === "string");
+        const queueType = queueTypes[index] ?? "unassigned";
         const isRecyclableFlag = isRecyclableFlags[index];
         const isRecyclable =
           typeof isRecyclableFlag === "string"
@@ -124,7 +135,7 @@ export async function handleSignAndSchedule(
 
         // Enhanced detection for quote posts
         const hasEventTags = signedEvent.tags.some(
-          (tag: string[]) => tag[0] === "e" && tag[3] === "mention",
+          (tag: string[]) => tag[0] === "e" && tag[3] === "mention"
         );
         const isQuotePost =
           mode === "quote" || (signedEvent.kind === 1 && hasEventTags);
@@ -143,7 +154,7 @@ export async function handleSignAndSchedule(
         const resolvedQueueTypeId = await resolveQueueTypeId(
           userId,
           null,
-          queueType,
+          queueType
         );
 
         const post = await createPost({
@@ -155,7 +166,7 @@ export async function handleSignAndSchedule(
           signedEvent: signedEvent,
           nostrEvent: nostrEvents[index],
           tags: tags,
-          caption: captions[index],
+          caption: captions[index] ?? undefined,
           isScheduled: true,
           isPosted: false,
           postType: postType,
@@ -172,15 +183,12 @@ export async function handleSignAndSchedule(
           userId,
         });
         return post;
-      }),
+      })
     );
 
     // If this is a recycle mode (posts have original post IDs), mark original posts as non-recyclable
     if (mode === "recycle" && originalPostIds.length > 0) {
-      await markOriginalPostsAsNonRecyclable(
-        originalPostIds,
-        userId,
-      );
+      await markOriginalPostsAsNonRecyclable(originalPostIds, userId);
     }
 
     return redirect(`/dashboard/scheduled`);
@@ -196,13 +204,15 @@ export async function handleSignAndSchedule(
 export async function handleSaveAsDraft(
   formData: FormData,
   userId: string,
-  mode: string | null,
+  mode: string | null
 ) {
   try {
-    const draftSchema = z.object({
-      _action: z.literal("save_as_draft"),
-    }).merge(saveAsDraftSchema);
-    
+    const draftSchema = z
+      .object({
+        _action: z.literal("save_as_draft"),
+      })
+      .merge(saveAsDraftSchema);
+
     const result = validateFormDataOrRespond(formData, draftSchema);
     if (!result.success) {
       return result.response;
@@ -213,13 +223,15 @@ export async function handleSaveAsDraft(
     const captions = validatedData.caption;
     const queueTypes = validatedData.queueType;
     const _scheduledFors = validatedData.scheduledFor;
-    const originalPostIds = validatedData.originalPostId?.filter((id: string) => id && id !== "") || [];
+    const originalPostIds =
+      validatedData.originalPostId?.filter((id: string) => id && id !== "") ??
+      [];
     const isRecyclableFlags = formData.getAll("isRecyclable");
 
     await Promise.all(
       fileUrls.map(async (fileUrl: string, index: number) => {
-        const caption = captions[index] || "";
-        const queueType = (queueTypes[index]) || "unassigned";
+        const caption = captions[index] ?? "";
+        const queueType = queueTypes[index] ?? "unassigned";
         const isRecyclableFlag = isRecyclableFlags[index];
         const isRecyclable =
           typeof isRecyclableFlag === "string"
@@ -235,10 +247,10 @@ export async function handleSaveAsDraft(
         const resolvedQueueTypeId = await resolveQueueTypeId(
           userId,
           null,
-          queueType,
+          queueType
         );
 
-        const post = await createPost({
+        return await createPost({
           userId,
           content: caption,
           caption: caption,
@@ -251,19 +263,13 @@ export async function handleSaveAsDraft(
           draft: true,
           isRecyclable,
         });
-
-        return post;
-      }),
+      })
     );
 
     // If this is a recycle mode (posts have original post IDs) and user saved as draft,
     // we might still want to mark them as non-recyclable to prevent confusion
     if (mode === "recycle" && originalPostIds.length > 0) {
-      await markOriginalPostsAsNonRecyclable(
-        originalPostIds,
-        userId,
-        true,
-      );
+      await markOriginalPostsAsNonRecyclable(originalPostIds, userId, true);
     }
 
     return redirect(`/dashboard/drafts`);
@@ -279,7 +285,7 @@ export async function handleSaveAsDraft(
 async function markOriginalPostsAsNonRecyclable(
   originalPostIds: string[],
   userId: string,
-  isDraft = false,
+  isDraft = false
 ) {
   logInfo(
     `Marking original posts as non-recyclable${isDraft ? " (draft)" : ""}`,
@@ -287,7 +293,7 @@ async function markOriginalPostsAsNonRecyclable(
       originalPostIds,
       userId,
       isDraft,
-    },
+    }
   );
 
   // Update all original posts to mark them as non-recyclable
@@ -314,7 +320,7 @@ async function markOriginalPostsAsNonRecyclable(
           error: error instanceof Error ? error.message : String(error),
         });
       }
-    }),
+    })
   );
 }
 

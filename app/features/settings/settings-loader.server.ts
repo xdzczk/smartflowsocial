@@ -84,13 +84,13 @@ export interface SettingsLoaderData {
       enableLifetimeAccess: boolean;
     } | null;
   } | null;
-  availablePlans: {
+  availablePlans: Array<{
     id: string;
     name: string;
     price: number;
     enableLifetimeAccess: boolean;
-  }[];
-  paymentHistory: {
+  }>;
+  paymentHistory: Array<{
     id: string;
     amount: number;
     amountUsd: number | null;
@@ -100,7 +100,7 @@ export interface SettingsLoaderData {
     paymentHash: string;
     planName?: string;
     planPrice?: number;
-  }[];
+  }>;
   isChild: boolean;
   hasAccountsAccess: boolean;
   accounts: {
@@ -121,7 +121,7 @@ export interface SettingsLoaderData {
  * Load all settings data
  */
 export async function loadSettingsData(
-  userId: string,
+  userId: string
 ): Promise<SettingsLoaderData> {
   // Get subscription and plan name for gating Accounts tab
   const currentSub = await getUserSubscription(userId);

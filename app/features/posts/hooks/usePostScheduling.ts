@@ -5,7 +5,7 @@ import { useOptionalUser } from "~/lib/remix-utils";
 import type { QueueType } from "../types";
 
 interface UsePostSchedulingProps {
-  queueTypes: (string | QueueType)[];
+  queueTypes: Array<string | QueueType>;
   scheduleIntervals?: number[];
   userTimezone?: string;
   initialQueue?: string;
@@ -37,7 +37,7 @@ export function usePostScheduling({
       const selectedQueueType = queueTypes.find((qt) =>
         typeof qt === "string"
           ? qt === queueTypeName
-          : qt.name === queueTypeName,
+          : qt.name === queueTypeName
       );
       const queueTypeId =
         typeof selectedQueueType === "object" ? selectedQueueType.id : null;
@@ -70,13 +70,13 @@ export function usePostScheduling({
         console.error("Error calculating schedule time:", error);
       }
     },
-    [queueTypes, user?.id, onTimeError],
+    [queueTypes, user?.id, onTimeError]
   );
 
   const handleScheduleIntervalClick = (intervalHours: string | number) => {
     // Find the currently selected queue type
     const selectedQueueType = queueTypes.find((qt) =>
-      typeof qt === "string" ? qt === selectedQueue : qt.name === selectedQueue,
+      typeof qt === "string" ? qt === selectedQueue : qt.name === selectedQueue
     );
 
     // If this is a fixed slot queue, use the API to get the next scheduled time instead
@@ -92,7 +92,7 @@ export function usePostScheduling({
 
     const now = new Date();
     const hoursLater = new Date(
-      now.getTime() + parseInt(String(intervalHours)) * 60 * 60 * 1000,
+      now.getTime() + parseInt(String(intervalHours)) * 60 * 60 * 1000
     );
 
     // Format the date in the user's timezone
@@ -109,10 +109,13 @@ export function usePostScheduling({
 
     // Parse the formatted date back into components
     const [datePart, timePart] = formattedDate.split(", ");
-    const [month, day, year] = datePart.split("/");
-    const [hours, minutes] = timePart.split(":");
+    const [month, day, year] = datePart?.split("/") ?? ["", "", ""];
+    const [hours, minutes] = timePart?.split(":") ?? ["", ""];
 
     // Create the datetime-local format (YYYY-MM-DDTHH:mm)
+    if (!year || !month || !day || !hours || !minutes) {
+      return "";
+    }
     const formattedForInput = `${year}-${month}-${day}T${hours}:${minutes}`;
 
     setScheduledFor(formattedForInput);

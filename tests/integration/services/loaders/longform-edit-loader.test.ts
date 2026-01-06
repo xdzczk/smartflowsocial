@@ -21,6 +21,8 @@ vi.mock("~/features/user", () => ({
   getUserHashTagPresets: vi.fn(),
 }));
 
+import { TEST_USER_ID, TEST_LONGFORM_ID } from "../../../utils/test-helpers";
+
 import { loadLongFormEditData } from "~/features/posts/services/longform-edit-loader.server";
 import {
   getUserById,
@@ -30,8 +32,6 @@ import {
 } from "~/features/user";
 import { getAssets } from "~/models/asset.server";
 import { getLongFormPost } from "~/models/longformpost.server";
-
-import { TEST_USER_ID, TEST_LONGFORM_ID } from "../../../utils/test-helpers";
 
 describe("Longform Edit Loader", () => {
   beforeEach(() => {
@@ -59,10 +59,10 @@ describe("Longform Edit Loader", () => {
     (getLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
     (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockScheduleIntervals,
+      mockScheduleIntervals
     );
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockQueueTypes,
+      mockQueueTypes
     );
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([
       { id: "preset-1", name: "Default", tags: mockTags },
@@ -104,7 +104,7 @@ describe("Longform Edit Loader", () => {
     });
 
     await expect(
-      loadLongFormEditData(TEST_USER_ID, TEST_LONGFORM_ID),
+      loadLongFormEditData(TEST_USER_ID, TEST_LONGFORM_ID)
     ).rejects.toThrow();
   });
 
@@ -132,7 +132,3 @@ describe("Longform Edit Loader", () => {
     expect(result.userTimezone).toBe("Etc/GMT");
   });
 });
-
-
-
-

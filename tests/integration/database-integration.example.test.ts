@@ -15,9 +15,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 
-import { getUserById } from "~/features/user";
-import { createPost } from "~/models/post.commands.server";
-
 import {
   describeDatabase,
   withDatabase,
@@ -25,6 +22,9 @@ import {
   fixtures,
 } from "../database/database-test-helpers";
 import { getTestPrisma } from "../database/test-db";
+
+import { getUserById } from "~/features/user";
+import { createPost } from "~/models/post.commands.server";
 
 // Don't mock Prisma - this test uses the real database
 // Model functions will use the real Prisma client from getTestPrisma()
@@ -84,8 +84,12 @@ describeDatabase("Database Integration Example", () => {
 
     await withDatabase(async (prisma) => {
       // Fixtures are automatically applied
+      const firstUser = testFixtures.users?.[0];
+      if (!firstUser?.id) {
+        throw new Error("Test fixture user not found");
+      }
       const user = await prisma.user.findFirst({
-        where: { id: testFixtures.users![0].id },
+        where: { id: firstUser.id },
       });
 
       expect(user).toBeDefined();
@@ -114,8 +118,12 @@ describeDatabase("Database Integration Example", () => {
     const testFixtures = fixtures.userWithQueues();
 
     await withDatabase(async (prisma) => {
+      const firstUser = testFixtures.users?.[0];
+      if (!firstUser?.id) {
+        throw new Error("Test fixture user not found");
+      }
       const user = await prisma.user.findUnique({
-        where: { id: testFixtures.users![0].id },
+        where: { id: firstUser.id },
         include: {
           queueTypes: true,
         },
@@ -130,14 +138,17 @@ describeDatabase("Database Integration Example", () => {
     const testFixtures = fixtures.userWithQueues();
 
     await withDatabase(async (_prisma) => {
-      const user = testFixtures.users![0];
-      const queue = testFixtures.queueTypes![0];
+      const user = testFixtures.users?.[0];
+      const queue = testFixtures.queueTypes?.[0];
+      if (!user?.id || !queue?.id) {
+        throw new Error("Test fixtures not found");
+      }
 
       // Create post using model function
       const post = await createPost({
-        userId: user.id!,
+        userId: user.id,
         content: "Test post",
-        queueTypeId: queue.id!,
+        queueTypeId: queue.id,
         fileUrl: [],
         tags: [],
         isScheduled: false,

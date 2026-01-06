@@ -5,10 +5,7 @@
 
 import { calculateTrustScore } from "~/features/engagement/trustScore";
 import type { User } from "~/features/engagement/trustScore";
-import {
-  toPostDTOArray,
-  type PostDTO,
-} from "~/features/posts/dtos";
+import { toPostDTOArray, type PostDTO } from "~/features/posts/dtos";
 import type { PostData } from "~/features/posts/types";
 import { convertPrismaQueueTypeToQueueType } from "~/features/posts/types";
 import {
@@ -143,7 +140,7 @@ export async function fetchUserProfile(pubkey: string): Promise<User | null> {
         service: "PrimalCache",
         pubkey,
         originalError: error instanceof Error ? error.message : String(error),
-      },
+      }
     );
 
     logError(serviceError, { pubkey });
@@ -178,7 +175,7 @@ async function fetchPostStats(eventIds: string[]): Promise<
     // Fetch stats for each event ID
     const statsPromises = eventIds.map(async (eventId) => {
       // Read directly from process.env to support test environment changes
-      const primalUrl = process.env.PRIMAL_CACHING_URL;
+      const primalUrl = process.env["PRIMAL_CACHING_URL"];
       if (!primalUrl) {
         throw new Error("PRIMAL_CACHING_URL environment variable is not set");
       }
@@ -280,7 +277,7 @@ async function fetchPostStats(eventIds: string[]): Promise<
         service: "PrimalCache",
         eventIdsCount: eventIds.length,
         originalError: error instanceof Error ? error.message : String(error),
-      },
+      }
     );
 
     logError(serviceError, { eventIdsCount: eventIds.length, userId: "" });
@@ -308,7 +305,7 @@ async function fetchPostStats(eventIds: string[]): Promise<
           zaps: number;
           satszapped: number;
         }
-      > => ({}))(),
+      > => ({}))()
     );
   }
 }
@@ -325,7 +322,7 @@ async function processGiveawayParticipants(
     filterMuted?: boolean;
     mutedList?: { npubs?: string[] };
     [key: string]: unknown;
-  },
+  }
 ): Promise<RelatedEvent[]> {
   if (relatedEvents.length === 0) {
     return [];
@@ -346,7 +343,7 @@ async function processGiveawayParticipants(
   const blacklistedSet = new Set(
     blacklistedPubkeys.map((pubkey) => {
       return convertToHex(pubkey) ?? pubkey;
-    }),
+    })
   );
 
   // Get muted pubkeys if filtering is enabled
@@ -396,7 +393,7 @@ async function processGiveawayParticipants(
             return false;
           const eventTyped = eventData as { kind?: number };
           return eventTyped.kind === 0;
-        },
+        }
       );
 
       // Find stats event (kind 10000105)
@@ -413,7 +410,7 @@ async function processGiveawayParticipants(
             return false;
           const eventTyped = eventData as { kind?: number };
           return eventTyped.kind === 10000105;
-        },
+        }
       );
 
       let lud16 = null;
@@ -459,7 +456,7 @@ async function processGiveawayParticipants(
   filteredRelatedEvents.push(...results.filter((result) => result !== null));
 
   // Filter by trust score if hidePostsFromLowTrustUsers is enabled
-  if (user.hidePostsFromLowTrustUsers) {
+  if (user["hidePostsFromLowTrustUsers"]) {
     // Fetch trust scores for all participants
     const trustScorePromises = filteredRelatedEvents.map(async (event) => {
       const userProfile = await fetchUserProfile(event.pubkey);
@@ -487,7 +484,7 @@ async function processGiveawayParticipants(
 export async function loadGiveawayData(
   userId: string,
   queueType: string,
-  days: number,
+  days: number
 ) {
   const [posts, user, queueTypes] = await Promise.all([
     getRecentPostedPosts({
@@ -505,7 +502,7 @@ export async function loadGiveawayData(
       (post) =>
         post.signedEvent &&
         typeof post.signedEvent === "object" &&
-        "id" in post.signedEvent,
+        "id" in post.signedEvent
     )
     .map((post) => {
       const signedEvent = post.signedEvent as { id: string };
@@ -573,7 +570,7 @@ export async function loadGiveawayData(
 
   // Filter posts with engagement
   const postsWithNonZeroEngagement = postsWithEngagement.filter(
-    (post) => post.totalEngagement > 0,
+    (post) => post.totalEngagement > 0
   );
 
   // Extract all post IDs into an array
@@ -624,14 +621,16 @@ export async function loadGiveawayData(
   const processedEvents = await processGiveawayParticipants(
     relatedEvents,
     userId,
-    userWithDefaults,
+    userWithDefaults
   );
 
   // Serialize Date objects to strings for Remix loader response
   // Note: postsWithNonZeroEngagement has additional fields (stats, totalEngagement)
   // We need to preserve those while serializing dates
   const postsDTO: PostDTO[] = toPostDTOArray(
-    postsWithNonZeroEngagement.map(({ stats: _stats, totalEngagement: _totalEngagement, ...post }) => post),
+    postsWithNonZeroEngagement.map(
+      ({ stats: _stats, totalEngagement: _totalEngagement, ...post }) => post
+    )
   );
 
   // Re-add the engagement fields to DTOs

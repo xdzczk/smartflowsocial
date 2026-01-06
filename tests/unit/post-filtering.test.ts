@@ -36,8 +36,8 @@ describe("Post Filtering Utilities", () => {
       const result = filterPostsByQueueType(posts, "queue1");
 
       expect(result).toHaveLength(2);
-      expect(result[0].id).toBe("1");
-      expect(result[1].id).toBe("3");
+      expect(result[0]?.["id"]).toBe("1");
+      expect(result[1]?.["id"]).toBe("3");
     });
 
     it("should return empty array when no posts match", () => {
@@ -61,7 +61,7 @@ describe("Post Filtering Utilities", () => {
       const result = filterPostsByQueueType(posts, "queue1");
 
       expect(result).toHaveLength(1);
-      expect(result[0].id).toBe("1");
+      expect(result[0]?.["id"]).toBe("1");
     });
 
     it("should handle posts with queueType.name as null", () => {
@@ -74,7 +74,7 @@ describe("Post Filtering Utilities", () => {
       const result = filterPostsByQueueType(posts, "queue1");
 
       expect(result).toHaveLength(1);
-      expect(result[0].id).toBe("1");
+      expect(result[0]?.["id"]).toBe("1");
     });
 
     it("should handle empty array", () => {
@@ -103,11 +103,11 @@ describe("Post Filtering Utilities", () => {
       const result = filterPostsArraysByQueueType(config);
 
       expect(result.scheduledPosts).toHaveLength(1);
-      expect(result.scheduledPosts[0].id).toBe("1");
+      expect(result.scheduledPosts[0]?.["id"]).toBe("1");
       expect(result.scheduledLongFormPosts).toHaveLength(1);
-      expect(result.scheduledLongFormPosts[0].id).toBe("3");
+      expect(result.scheduledLongFormPosts[0]?.["id"]).toBe("3");
       expect(result.pastPosts).toHaveLength(1);
-      expect(result.pastPosts[0].id).toBe("5");
+      expect(result.pastPosts[0]?.["id"]).toBe("5");
       expect(result.pastLongFormPosts).toHaveLength(0);
     });
 

@@ -46,7 +46,7 @@ describe("File Upload Handler Integration Tests", () => {
     };
 
     const createMockEvent = (
-      files: File[],
+      files: File[]
     ): React.ChangeEvent<HTMLInputElement> => {
       // Create a mock input element without using DOM APIs
       const input = {
@@ -68,7 +68,7 @@ describe("File Upload Handler Integration Tests", () => {
             } else {
               posts.splice(0, posts.length, ...newPosts);
             }
-          },
+          }
         ),
         user: {
           id: "user-1",
@@ -86,14 +86,14 @@ describe("File Upload Handler Integration Tests", () => {
       const largeFile = createMockFile(
         "large.jpg",
         101 * 1024 * 1024,
-        "image/jpeg",
+        "image/jpeg"
       );
       const event = createMockEvent([largeFile]);
 
       await handleFileChange(event, deps);
 
       expect(global.alert).toHaveBeenCalledWith(
-        "Total file size exceeds 100MB. Please select smaller files.",
+        "Total file size exceeds 100MB. Please select smaller files."
       );
       expect(deps.setPosts).not.toHaveBeenCalled();
     });
@@ -112,7 +112,7 @@ describe("File Upload Handler Integration Tests", () => {
       const oversizedVideo = createMockFile(
         "large.mp4",
         101 * 1024 * 1024,
-        "video/mp4",
+        "video/mp4"
       );
       const event = createMockEvent([oversizedVideo]);
 
@@ -120,7 +120,7 @@ describe("File Upload Handler Integration Tests", () => {
 
       // Total size check happens first (101MB > 100MB total)
       expect(global.alert).toHaveBeenCalledWith(
-        "Total file size exceeds 100MB. Please select smaller files.",
+        "Total file size exceeds 100MB. Please select smaller files."
       );
       expect(deps.setPosts).not.toHaveBeenCalled();
     });
@@ -130,14 +130,14 @@ describe("File Upload Handler Integration Tests", () => {
       const largeImage = createMockFile(
         "large.jpg",
         11 * 1024 * 1024,
-        "image/jpeg",
+        "image/jpeg"
       );
       const event = createMockEvent([largeImage]);
 
       await handleFileChange(event, deps);
 
       expect(global.alert).toHaveBeenCalledWith(
-        expect.stringContaining("exceeds 10MB limit"),
+        expect.stringContaining("exceeds 10MB limit")
       );
       expect(deps.setPosts).not.toHaveBeenCalled();
     });
@@ -163,21 +163,24 @@ describe("File Upload Handler Integration Tests", () => {
       const videoFile = createMockFile(
         "test.mp4",
         50 * 1024 * 1024,
-        "video/mp4",
+        "video/mp4"
       );
       const event = createMockEvent([videoFile]);
 
       await handleFileChange(event, deps);
 
       expect(deps.setPosts).toHaveBeenCalled();
-      const callArgs = deps.setPosts.mock.calls[0][0];
+      const callArgs = deps.setPosts.mock.calls[0]?.[0];
+      if (!callArgs) {
+        throw new Error("setPosts was not called with arguments");
+      }
       expect(Array.isArray(callArgs)).toBe(true);
     });
 
     it("should process multiple files in chunks", async () => {
       const deps = createMockDeps();
       const files = Array.from({ length: 15 }, (_, i) =>
-        createMockFile(`test${i}.jpg`, 1024, "image/jpeg"),
+        createMockFile(`test${i}.jpg`, 1024, "image/jpeg")
       );
       const event = createMockEvent(files);
 
@@ -198,7 +201,7 @@ describe("File Upload Handler Integration Tests", () => {
       await handleFileChange(event, deps);
 
       expect(global.alert).toHaveBeenCalledWith(
-        "Error processing media files. Please try again.",
+        "Error processing media files. Please try again."
       );
       expect(deps.setIsProcessing).toHaveBeenCalledWith(false);
     });
@@ -217,7 +220,7 @@ describe("File Upload Handler Integration Tests", () => {
     it("should update progress during processing", async () => {
       const deps = createMockDeps();
       const files = Array.from({ length: 5 }, (_, i) =>
-        createMockFile(`test${i}.jpg`, 1024, "image/jpeg"),
+        createMockFile(`test${i}.jpg`, 1024, "image/jpeg")
       );
       const event = createMockEvent(files);
 
@@ -237,7 +240,10 @@ describe("File Upload Handler Integration Tests", () => {
       await handleFileChange(event, deps);
 
       expect(deps.setPosts).toHaveBeenCalled();
-      const callArgs = deps.setPosts.mock.calls[0][0];
+      const callArgs = deps.setPosts.mock.calls[0]?.[0];
+      if (!callArgs) {
+        throw new Error("setPosts was not called with arguments");
+      }
       expect(Array.isArray(callArgs)).toBe(true);
       if (Array.isArray(callArgs) && callArgs.length > 0) {
         const post = callArgs[0] as {
@@ -281,7 +287,7 @@ describe("File Upload Handler Integration Tests", () => {
       const deps = createMockDeps();
       deps.scheduleIntervals = [2]; // 2 hours interval
       const files = Array.from({ length: 3 }, (_, i) =>
-        createMockFile(`test${i}.jpg`, 1024, "image/jpeg"),
+        createMockFile(`test${i}.jpg`, 1024, "image/jpeg")
       );
       const event = createMockEvent(files);
 

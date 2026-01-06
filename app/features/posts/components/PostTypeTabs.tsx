@@ -17,7 +17,7 @@ export default function PostTypeTabs({
   basePath = "/dashboard",
 }: PostTypeTabsProps) {
   const params = useParams();
-  const queueParam = params.queueType ? `/${params.queueType}` : "";
+  const queueParam = params["queueType"] ? `/${params["queueType"]}` : "";
 
   const getTabClasses = (isActive: boolean) =>
     `whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium ${

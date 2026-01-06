@@ -35,7 +35,7 @@ describe("API: Link Preview", () => {
       });
 
       const request = new Request(
-        "http://localhost:3000/api/link-preview?url=https://example.com",
+        "http://localhost:3000/api/link-preview?url=https://example.com"
       );
 
       const response = await loader({ request, params: {}, context: {} });
@@ -59,11 +59,11 @@ describe("API: Link Preview", () => {
       expect(global.fetch).toHaveBeenCalledWith(
         "https://example.com",
         expect.objectContaining({
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
           headers: expect.objectContaining({
             "User-Agent": "Mozilla/5.0 (compatible; LinkPreview/1.0)",
           }),
-        }),
+        })
       );
       expect(data).toEqual({
         success: 1,
@@ -87,7 +87,7 @@ describe("API: Link Preview", () => {
       });
 
       const request = new Request(
-        "http://localhost:3000/api/link-preview?url=https://example.com",
+        "http://localhost:3000/api/link-preview?url=https://example.com"
       );
 
       const response = await loader({ request, params: {}, context: {} });
@@ -136,7 +136,7 @@ describe("API: Link Preview", () => {
       });
 
       const request = new Request(
-        "http://localhost:3000/api/link-preview?url=https://example.com",
+        "http://localhost:3000/api/link-preview?url=https://example.com"
       );
 
       const response = await loader({ request, params: {}, context: {} });
@@ -180,7 +180,7 @@ describe("API: Link Preview", () => {
       });
 
       const request = new Request(
-        "http://localhost:3000/api/link-preview?url=https://example.com",
+        "http://localhost:3000/api/link-preview?url=https://example.com"
       );
 
       const response = await loader({ request, params: {}, context: {} });
@@ -231,7 +231,7 @@ describe("API: Link Preview", () => {
       });
 
       const request = new Request(
-        "http://localhost:3000/api/link-preview?url=https://example.com",
+        "http://localhost:3000/api/link-preview?url=https://example.com"
       );
 
       const response = await loader({ request, params: {}, context: {} });
@@ -287,7 +287,7 @@ describe("API: Link Preview", () => {
 
     it("should return validation error for invalid URL format", async () => {
       const request = new Request(
-        "http://localhost:3000/api/link-preview?url=not-a-url",
+        "http://localhost:3000/api/link-preview?url=not-a-url"
       );
 
       const response = await loader({ request, params: {}, context: {} });
@@ -311,7 +311,7 @@ describe("API: Link Preview", () => {
 
     it("should return validation error for non-http/https URLs", async () => {
       const request = new Request(
-        "http://localhost:3000/api/link-preview?url=ftp://example.com",
+        "http://localhost:3000/api/link-preview?url=ftp://example.com"
       );
 
       const response = await loader({ request, params: {}, context: {} });
@@ -335,11 +335,11 @@ describe("API: Link Preview", () => {
 
     it("should handle fetch connection errors", async () => {
       (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Network error"),
+        new Error("Network error")
       );
 
       const request = new Request(
-        "http://localhost:3000/api/link-preview?url=https://example.com",
+        "http://localhost:3000/api/link-preview?url=https://example.com"
       );
 
       const response = await loader({ request, params: {}, context: {} });
@@ -364,11 +364,11 @@ describe("API: Link Preview", () => {
 
     it("should handle fetch timeout", async () => {
       (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Timeout"),
+        new Error("Timeout")
       );
 
       const request = new Request(
-        "http://localhost:3000/api/link-preview?url=https://example.com",
+        "http://localhost:3000/api/link-preview?url=https://example.com"
       );
 
       const response = await loader({ request, params: {}, context: {} });
@@ -398,7 +398,7 @@ describe("API: Link Preview", () => {
       });
 
       const request = new Request(
-        "http://localhost:3000/api/link-preview?url=https://example.com/404",
+        "http://localhost:3000/api/link-preview?url=https://example.com/404"
       );
 
       const response = await loader({ request, params: {}, context: {} });
@@ -428,7 +428,7 @@ describe("API: Link Preview", () => {
       });
 
       const request = new Request(
-        "http://localhost:3000/api/link-preview?url=https://example.com",
+        "http://localhost:3000/api/link-preview?url=https://example.com"
       );
 
       interface LoaderArgs {
@@ -469,7 +469,7 @@ describe("API: Link Preview", () => {
       });
 
       const request = new Request(
-        "http://localhost:3000/api/link-preview?url=https://example.com",
+        "http://localhost:3000/api/link-preview?url=https://example.com"
       );
 
       interface LoaderArgs {

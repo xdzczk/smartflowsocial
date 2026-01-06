@@ -3,7 +3,7 @@ import invariant from "tiny-invariant";
 
 import { getUserById } from "~/features/user";
 import type { User } from "~/features/user";
-invariant(process.env.SESSION_SECRET, "SESSION_SECRET must be set");
+invariant(process.env["SESSION_SECRET"], "SESSION_SECRET must be set");
 
 export const sessionStorage = createCookieSessionStorage({
   cookie: {
@@ -11,8 +11,8 @@ export const sessionStorage = createCookieSessionStorage({
     httpOnly: true,
     path: "/",
     sameSite: "lax",
-    secrets: [process.env.SESSION_SECRET],
-    secure: process.env.NODE_ENV === "production",
+    secrets: [process.env["SESSION_SECRET"]],
+    secure: process.env["NODE_ENV"] === "production",
   },
 });
 
@@ -24,11 +24,10 @@ export async function getSession(request: Request) {
 }
 
 export async function getUserId(
-  request: Request,
+  request: Request
 ): Promise<User["id"] | undefined> {
   const session = await getSession(request);
-  const userId = session.get(USER_SESSION_KEY) as User["id"] | undefined;
-  return userId;
+  return session.get(USER_SESSION_KEY) as User["id"] | undefined;
 }
 
 export async function getUser(request: Request) {
@@ -43,7 +42,7 @@ export async function getUser(request: Request) {
 
 export async function requireUserId(
   request: Request,
-  redirectTo: string = new URL(request.url).pathname,
+  redirectTo: string = new URL(request.url).pathname
 ) {
   const userId = await getUserId(request);
   if (!userId) {

@@ -26,7 +26,7 @@ export async function handleQueueTypeChange(
     | "user"
     | "setDisplayedHashtags"
     | "setSelectedQueueType"
-  >,
+  >
 ): Promise<void> {
   const {
     posts,
@@ -38,11 +38,13 @@ export async function handleQueueTypeChange(
     setSelectedQueueType,
   } = deps;
   const updatedPosts = [...posts];
-  updatedPosts[index].queueType = value;
+  const postToUpdate = updatedPosts[index];
+  if (!postToUpdate) return;
+  postToUpdate.queueType = value;
 
   // Find the queue type object to get its ID
   const selectedQueueType = queueTypes.find(
-    (qt) => (typeof qt === "string" ? qt : qt.name) === value,
+    (qt) => (typeof qt === "string" ? qt : qt.name) === value
   );
   const queueTypeId =
     typeof selectedQueueType === "object" ? selectedQueueType.id : null;
@@ -70,7 +72,10 @@ export async function handleQueueTypeChange(
         };
         const { scheduledTime } = responseData;
         if (scheduledTime) {
-          updatedPosts[index].scheduledFor = scheduledTime;
+          const postToUpdate = updatedPosts[index];
+          if (postToUpdate) {
+            postToUpdate.scheduledFor = scheduledTime;
+          }
         }
       }
     } catch (error) {
@@ -80,11 +85,14 @@ export async function handleQueueTypeChange(
           component: "bulkposts",
           action: "handleQueueTypeChange",
           queueType: value,
-        },
+        }
       );
     }
   } else {
-    updatedPosts[index].scheduledFor = "";
+    const postToUpdate = updatedPosts[index];
+    if (postToUpdate) {
+      postToUpdate.scheduledFor = "";
+    }
   }
 
   setPosts(updatedPosts);
@@ -93,12 +101,12 @@ export async function handleQueueTypeChange(
   const queueTypeCounts: Record<string, number> = {};
   updatedPosts.forEach((post) => {
     queueTypeCounts[post.queueType] =
-      (queueTypeCounts[post.queueType] || 0) + 1;
+      (queueTypeCounts[post.queueType] ?? 0) + 1;
   });
 
   const mostUsedQueueType = Object.keys(queueTypeCounts).reduce(
-    (a, b) => (queueTypeCounts[a] > queueTypeCounts[b] ? a : b),
-    "unassigned",
+    (a, b) => ((queueTypeCounts[a] ?? 0) > (queueTypeCounts[b] ?? 0) ? a : b),
+    "unassigned"
   );
 
   if (mostUsedQueueType !== value) {
@@ -107,7 +115,7 @@ export async function handleQueueTypeChange(
       queueTypes,
       tags,
       setSelectedQueueType,
-      setDisplayedHashtags,
+      setDisplayedHashtags
     );
   }
 }
@@ -127,7 +135,7 @@ export async function handleBulkQueueUpdate(
     | "setDisplayedHashtags"
     | "setSelectedQueueType"
     | "firstItemTimeManuallyChanged"
-  >,
+  >
 ): Promise<void> {
   const {
     posts,
@@ -148,19 +156,20 @@ export async function handleBulkQueueUpdate(
     queueTypes,
     tags,
     setSelectedQueueType,
-    setDisplayedHashtags,
+    setDisplayedHashtags
   );
 
   // Get the base schedule time from the API (this is the next available time after last scheduled post)
   let baseTime: string | null = null;
   if (queueType !== "unassigned") {
     // If first item time was manually changed, use it as base
-    if (firstItemTimeManuallyChanged && posts[0].scheduledFor) {
-      baseTime = posts[0].scheduledFor;
+    const firstPost = posts[0];
+    if (firstItemTimeManuallyChanged && firstPost?.scheduledFor) {
+      baseTime = firstPost.scheduledFor;
     } else {
       // Original behavior - fetch from API
       const selectedQueueType = queueTypes.find(
-        (qt) => (typeof qt === "string" ? qt : qt.name) === queueType,
+        (qt) => (typeof qt === "string" ? qt : qt.name) === queueType
       );
       const queueTypeId =
         typeof selectedQueueType === "object" ? selectedQueueType.id : null;
@@ -234,7 +243,9 @@ export async function handleBulkQueueUpdate(
           // Sort slots to ensure consistent ordering
           const sortedSlots = slots
             .map((slot) => {
-              const [hours, minutes] = slot.split(":").map(Number);
+              const parts = slot.split(":");
+              const hours = parts[0] ? Number(parts[0]) : 0;
+              const minutes = parts[1] ? Number(parts[1]) : 0;
               return {
                 slot,
                 hours,
@@ -251,7 +262,8 @@ export async function handleBulkQueueUpdate(
 
           let currentSlotIndex = 0;
           for (let i = 0; i < sortedSlots.length; i++) {
-            if (sortedSlots[i].totalMinutes >= baseTotalMinutes) {
+            const slot = sortedSlots[i];
+            if (slot && slot.totalMinutes >= baseTotalMinutes) {
               currentSlotIndex = i;
               break;
             }
@@ -261,25 +273,28 @@ export async function handleBulkQueueUpdate(
           const targetSlotIndex =
             (currentSlotIndex + index) % sortedSlots.length;
           const targetSlot = sortedSlots[targetSlotIndex];
+          if (!targetSlot) {
+            calculatedTime = post.scheduledFor ?? "";
+          } else {
+            // Calculate how many days to add
+            const daysToAdd = Math.floor(
+              (currentSlotIndex + index) / sortedSlots.length
+            );
 
-          // Calculate how many days to add
-          const daysToAdd = Math.floor(
-            (currentSlotIndex + index) / sortedSlots.length,
-          );
+            // Set the time to the target slot
+            const newDate = new Date(baseDate);
+            newDate.setHours(targetSlot.hours, targetSlot.minutes, 0, 0);
+            newDate.setDate(newDate.getDate() + daysToAdd);
 
-          // Set the time to the target slot
-          const newDate = new Date(baseDate);
-          newDate.setHours(targetSlot.hours, targetSlot.minutes, 0, 0);
-          newDate.setDate(newDate.getDate() + daysToAdd);
+            // Format back to datetime-local format
+            const year = newDate.getFullYear();
+            const month = String(newDate.getMonth() + 1).padStart(2, "0");
+            const day = String(newDate.getDate()).padStart(2, "0");
+            const hours = String(newDate.getHours()).padStart(2, "0");
+            const minutes = String(newDate.getMinutes()).padStart(2, "0");
 
-          // Format back to datetime-local format
-          const year = newDate.getFullYear();
-          const month = String(newDate.getMonth() + 1).padStart(2, "0");
-          const day = String(newDate.getDate()).padStart(2, "0");
-          const hours = String(newDate.getHours()).padStart(2, "0");
-          const minutes = String(newDate.getMinutes()).padStart(2, "0");
-
-          calculatedTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+            calculatedTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+          }
         }
       }
 

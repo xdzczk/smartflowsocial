@@ -25,7 +25,7 @@ export default function AssetBrowser({
       asset.title?.toLowerCase().includes(searchLower) ||
       // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- Boolean OR for filter logic
       asset.content?.toLowerCase().includes(searchLower) ||
-      asset.tags?.some((tag) => tag.toLowerCase().includes(searchLower))
+      asset.tags.some((tag) => tag.toLowerCase().includes(searchLower))
     );
   });
 
@@ -33,7 +33,7 @@ export default function AssetBrowser({
     setSelectedAssets((prev) =>
       prev.includes(assetId)
         ? prev.filter((id) => id !== assetId)
-        : [...prev, assetId],
+        : [...prev, assetId]
     );
   };
 
@@ -47,7 +47,7 @@ export default function AssetBrowser({
 
   const handleConfirmSelection = () => {
     const selectedAssetObjects = assets.filter((asset) =>
-      selectedAssets.includes(asset.id),
+      selectedAssets.includes(asset.id)
     );
     onAssetsSelected(selectedAssetObjects);
     onClose();

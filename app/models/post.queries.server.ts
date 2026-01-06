@@ -176,7 +176,7 @@ export async function getRecentPostedPosts({
     };
   }
 
-  const posts = await prisma.post.findMany({
+  return await prisma.post.findMany({
     where: whereClause,
     include: {
       queueType: true,
@@ -187,8 +187,6 @@ export async function getRecentPostedPosts({
       postedAt: "desc",
     },
   });
-
-  return posts;
 }
 
 export async function getPostStatistics({
@@ -448,9 +446,7 @@ export async function getLastPostTimeForQueue({
       return new Date(lastPost.scheduledFor);
     }
     // Convert Unix timestamp (seconds) to Date
-    const parsedDate = new Date(timestamp * 1000);
-
-    return parsedDate;
+    return new Date(timestamp * 1000);
   } catch (error) {
     logError(error instanceof Error ? error : new Error(String(error)), {
       postId: "id" in lastPost ? String(lastPost.id) : "unknown",

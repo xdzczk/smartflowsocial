@@ -6,6 +6,12 @@
 import { describe, it, expect } from "vitest";
 
 import {
+  TEST_USER_ID,
+  TEST_POST_ID,
+  TEST_LONGFORM_ID,
+} from "../utils/test-helpers";
+
+import {
   nullToUndefined,
   postToCombinedContent,
   longFormPostToCombinedContent,
@@ -17,12 +23,6 @@ import type {
   LongFormPostData,
   CombinedContent,
 } from "~/features/posts/types";
-
-import {
-  TEST_USER_ID,
-  TEST_POST_ID,
-  TEST_LONGFORM_ID,
-} from "../utils/test-helpers";
 
 describe("Combined Content Utilities", () => {
   describe("nullToUndefined", () => {
@@ -256,8 +256,8 @@ describe("Combined Content Utilities", () => {
 
       expect(result).toHaveLength(2);
       // Default sort is by createdAt desc, so newer item comes first
-      expect(result[0].type).toBe("longform");
-      expect(result[1].type).toBe("post");
+      expect(result[0]?.type).toBe("longform");
+      expect(result[1]?.type).toBe("post");
     });
 
     it("should sort by createdAt descending by default", () => {
@@ -296,8 +296,8 @@ describe("Combined Content Utilities", () => {
 
       const result = combineContent(posts, longFormPosts, "createdAt", "desc");
 
-      expect(result[0].id).toBe("longform-1"); // Newer first
-      expect(result[1].id).toBe("post-1");
+      expect(result[0]?.["id"]).toBe("longform-1"); // Newer first
+      expect(result[1]?.["id"]).toBe("post-1");
     });
 
     it("should sort by scheduledFor", () => {
@@ -340,11 +340,11 @@ describe("Combined Content Utilities", () => {
         posts,
         longFormPosts,
         "scheduledFor",
-        "asc",
+        "asc"
       );
 
-      expect(result[0].id).toBe("post-1"); // Earlier first
-      expect(result[1].id).toBe("longform-1");
+      expect(result[0]?.["id"]).toBe("post-1"); // Earlier first
+      expect(result[1]?.["id"]).toBe("longform-1");
     });
 
     it("should handle empty arrays", () => {
@@ -421,7 +421,7 @@ describe("Combined Content Utilities", () => {
       const result = filterCombinedContent(content, "Test");
 
       expect(result).toHaveLength(1);
-      expect(result[0].id).toBe("1");
+      expect(result[0]?.["id"]).toBe("1");
     });
 
     it("should filter by title", () => {

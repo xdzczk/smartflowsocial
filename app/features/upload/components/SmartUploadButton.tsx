@@ -80,13 +80,13 @@ export function SmartUploadButton({
   const uploadToBlossom = useCallback(
     async (
       _file: File,
-      _provider: "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR",
+      _provider: "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR"
     ): Promise<string> => {
       try {
         // Check if NOSTR extension is available
         if (!window.nostr) {
           throw new Error(
-            "NOSTR extension not found. Please install Alby, Amber, or another NOSTR extension to upload to Blossom.",
+            "NOSTR extension not found. Please install Alby, Amber, or another NOSTR extension to upload to Blossom."
           );
         }
 
@@ -94,7 +94,7 @@ export function SmartUploadButton({
 
         // Note: Blossom uploads now handled by upload.client.ts utility
         throw new Error(
-          "Direct blossom uploads not supported in SmartUploadButton. Use upload.client.ts instead.",
+          "Direct blossom uploads not supported in SmartUploadButton. Use upload.client.ts instead."
         );
       } catch (error) {
         const { handleAsyncError } = await import("~/lib/error-handler.client");
@@ -104,12 +104,12 @@ export function SmartUploadButton({
             component: "SmartUploadButton",
             action: "uploadToBlossom",
           },
-          false,
+          false
         ); // Don't show toast, throw to caller
         throw error;
       }
     },
-    [onUploadProgress],
+    [onUploadProgress]
   );
 
   const handleFileUpload = useCallback(
@@ -163,7 +163,7 @@ export function SmartUploadButton({
       onUploadComplete,
       onUploadError,
       uploadToBlossom,
-    ],
+    ]
   );
 
   const handleFileSelect = useCallback(
@@ -176,10 +176,13 @@ export function SmartUploadButton({
         Array.from(files).forEach((file) => void handleFileUpload(file));
       } else {
         // Handle single file
-        void handleFileUpload(files[0]);
+        const firstFile = files[0];
+        if (firstFile) {
+          void handleFileUpload(firstFile);
+        }
       }
     },
-    [handleFileUpload, multiple],
+    [handleFileUpload, multiple]
   );
 
   const handleButtonClick = useCallback(() => {

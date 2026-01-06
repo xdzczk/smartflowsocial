@@ -5,12 +5,14 @@
  */
 
 // Dynamic import for file-type since it's ESM-only and we're bundling as CommonJS
-type FileTypeResult = {
+interface FileTypeResult {
   mime: string;
   ext: string;
-};
+}
 
-let fileTypeFromBuffer: (buffer: Uint8Array | ArrayBuffer) => Promise<FileTypeResult | undefined>;
+let fileTypeFromBuffer: (
+  buffer: Uint8Array | ArrayBuffer
+) => Promise<FileTypeResult | undefined>;
 
 async function getFileTypeFromBuffer() {
   if (!fileTypeFromBuffer) {
@@ -58,7 +60,7 @@ export interface UploadValidationResult {
 export async function validateUpload(
   buffer: Buffer,
   filename: string,
-  contentType?: string,
+  contentType?: string
 ): Promise<UploadValidationResult> {
   // Check size first (fastest check)
   if (buffer.length > MAX_FILE_SIZE) {
@@ -90,7 +92,11 @@ export async function validateUpload(
   const detectedMimeType = fileType.mime;
 
   // Validate against allowlist
-  if (!ALLOWED_MIME_TYPES.includes(detectedMimeType as (typeof ALLOWED_MIME_TYPES)[number])) {
+  if (
+    !ALLOWED_MIME_TYPES.includes(
+      detectedMimeType as (typeof ALLOWED_MIME_TYPES)[number]
+    )
+  ) {
     return {
       valid: false,
       error: `File type ${detectedMimeType} is not allowed. Allowed types: ${ALLOWED_MIME_TYPES.join(", ")}`,
@@ -102,7 +108,9 @@ export async function validateUpload(
   // This prevents MIME type spoofing
   if (contentType) {
     // Normalize content type (remove charset, etc.)
-    const normalizedContentType = contentType.split(";")[0].trim().toLowerCase();
+    const contentTypeParts = contentType.split(";");
+    const normalizedContentType =
+      contentTypeParts[0]?.trim().toLowerCase() ?? "";
     const normalizedDetected = detectedMimeType.toLowerCase();
 
     if (normalizedContentType !== normalizedDetected) {
@@ -131,4 +139,3 @@ export function getS3ContentType(detectedMimeType: string): string {
   }
   return detectedMimeType;
 }
-

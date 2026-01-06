@@ -5,9 +5,9 @@
 
 import type { LongFormPost, Status, Prisma } from "@prisma/client";
 
-import type { NostrEvent, SignedEvent } from "~/features/nostr/types";
-
 import { TEST_USER_ID } from "../utils/test-helpers";
+
+import type { NostrEvent, SignedEvent } from "~/features/nostr/types";
 
 export interface LongFormPostFactoryOptions {
   id?: string;
@@ -34,7 +34,7 @@ export interface LongFormPostFactoryOptions {
 }
 
 export class LongFormPostFactory {
-  private options: LongFormPostFactoryOptions;
+  private readonly options: LongFormPostFactoryOptions;
 
   constructor(options: LongFormPostFactoryOptions = {}) {
     this.options = {
@@ -156,7 +156,7 @@ export class LongFormPostFactory {
   }
 
   build(): LongFormPost {
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Factory pattern requires type assertion for partial data
     return {
       id: this.options.id!,
       userId: this.options.userId!,
@@ -201,7 +201,7 @@ export const longFormPostFactory = {
    */
   scheduled: (
     scheduledFor: string | Date,
-    overrides?: LongFormPostFactoryOptions,
+    overrides?: LongFormPostFactoryOptions
   ) => {
     return new LongFormPostFactory(overrides).asScheduled(scheduledFor).build();
   },
@@ -221,7 +221,7 @@ export const longFormPostFactory = {
       new LongFormPostFactory({
         ...overrides,
         id: `longform-${i + 1}`,
-      }).build(),
+      }).build()
     );
   },
 };

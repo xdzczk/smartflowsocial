@@ -10,6 +10,8 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+import { TEST_USER_ID } from "../utils/test-helpers";
+
 import { calculateNextScheduleTime } from "~/features/posts/schedulers";
 import { getUserById, getScheduleInterval } from "~/features/user";
 import {
@@ -17,7 +19,6 @@ import {
   getLastPostTimeForQueue,
 } from "~/models/post.queries.server";
 
-import { TEST_USER_ID } from "../utils/test-helpers";
 // Mock dependencies
 vi.mock("~/models/post.queries.server", () => ({
   getScheduledPosts: vi.fn(),
@@ -45,7 +46,7 @@ describe("Performance Regression Tests", () => {
     vi.clearAllMocks();
     (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(["4"]);
     (getLastPostTimeForQueue as ReturnType<typeof vi.fn>).mockResolvedValue(
-      null,
+      null
     );
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: TEST_USER_ID,
@@ -75,7 +76,7 @@ describe("Performance Regression Tests", () => {
       const duration = endTime - startTime;
 
       expect(duration).toBeLessThan(
-        PERFORMANCE_THRESHOLDS.SCHEDULER_CALCULATION,
+        PERFORMANCE_THRESHOLDS.SCHEDULER_CALCULATION
       );
     });
 
@@ -95,7 +96,7 @@ describe("Performance Regression Tests", () => {
           queueType,
           userId: TEST_USER_ID,
           baseTime: new Date(),
-        }),
+        })
       );
       await Promise.all(promises);
       const endTime = performance.now();
@@ -103,7 +104,7 @@ describe("Performance Regression Tests", () => {
 
       // 10 calculations should complete in reasonable time
       expect(duration).toBeLessThan(
-        PERFORMANCE_THRESHOLDS.SCHEDULER_CALCULATION * 10,
+        PERFORMANCE_THRESHOLDS.SCHEDULER_CALCULATION * 10
       );
     });
   });
@@ -129,7 +130,7 @@ describe("Performance Regression Tests", () => {
       }));
 
       (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-        largeResultSet,
+        largeResultSet
       );
 
       const startTime = performance.now();
@@ -189,7 +190,7 @@ describe("Performance Regression Tests", () => {
           queueType,
           userId: TEST_USER_ID,
           baseTime: new Date(),
-        }),
+        })
       );
       await Promise.all(promises);
       const endTime = performance.now();
@@ -197,7 +198,7 @@ describe("Performance Regression Tests", () => {
 
       // 50 concurrent operations should complete efficiently
       expect(duration).toBeLessThan(
-        PERFORMANCE_THRESHOLDS.SCHEDULER_CALCULATION * 20, // Allow some overhead
+        PERFORMANCE_THRESHOLDS.SCHEDULER_CALCULATION * 20 // Allow some overhead
       );
     });
   });
@@ -208,7 +209,7 @@ describe("Performance Regression Tests", () => {
  * Use these to establish baseline metrics
  */
 export function measurePerformance<T>(
-  fn: () => Promise<T>,
+  fn: () => Promise<T>
 ): Promise<{ result: T; duration: number }> {
   return new Promise((resolve) => {
     const startTime = performance.now();
@@ -228,11 +229,11 @@ export function measurePerformance<T>(
 export function expectPerformance(
   duration: number,
   threshold: number,
-  operation: string,
+  operation: string
 ) {
   if (duration >= threshold) {
     throw new Error(
-      `${operation} took ${duration.toFixed(2)}ms, exceeding threshold of ${threshold}ms`,
+      `${operation} took ${duration.toFixed(2)}ms, exceeding threshold of ${threshold}ms`
     );
   }
   expect(duration).toBeLessThan(threshold);

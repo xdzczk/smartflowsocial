@@ -30,12 +30,12 @@ vi.mock("~/features/posts/services/stats.server", () => ({
   getPostStats: vi.fn(),
 }));
 
+import { TEST_USER_ID } from "../../utils/test-helpers";
+
 import { getPostedDashboardData } from "~/features/posts/services/posted-posts.server";
 import { getUserById, getQueueTypes } from "~/features/user";
 import { getPublishedLongFormPosts } from "~/models/longformpost.server";
 import { getPostedPosts } from "~/models/post.queries.server";
-
-import { TEST_USER_ID } from "../../utils/test-helpers";
 
 describe("Posted Posts Service", () => {
   beforeEach(() => {
@@ -60,11 +60,11 @@ describe("Posted Posts Service", () => {
 
     (getPostedPosts as ReturnType<typeof vi.fn>).mockResolvedValue(mockPosts);
     (getPublishedLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockLongformResult,
+      mockLongformResult
     );
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockQueueTypes,
+      mockQueueTypes
     );
 
     const url = new URL("http://localhost:3000/dashboard/posted?page=1");
@@ -116,7 +116,7 @@ describe("Posted Posts Service", () => {
       pagination: { total: 0, pages: 0, currentPage: 1 },
     });
     (getPublishedLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-      null,
+      null
     );
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: TEST_USER_ID,
@@ -146,7 +146,7 @@ describe("Posted Posts Service", () => {
       id: TEST_USER_ID,
     });
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-      "not-an-array",
+      "not-an-array"
     );
 
     const url = new URL("http://localhost:3000/dashboard/posted");

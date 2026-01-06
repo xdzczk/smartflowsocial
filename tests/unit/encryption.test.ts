@@ -28,20 +28,20 @@ import {
 } from "~/lib/encryption.server";
 
 describe("Encryption Functions", () => {
-  const originalEnv = process.env.SESSION_SECRET;
+  const originalEnv = process.env["SESSION_SECRET"];
 
   beforeEach(() => {
     // Set a test session secret
-    process.env.SESSION_SECRET =
+    process.env["SESSION_SECRET"] =
       "test-session-secret-min-32-chars-long-for-testing";
   });
 
   afterEach(() => {
     // Restore original env
     if (originalEnv) {
-      process.env.SESSION_SECRET = originalEnv;
+      process.env["SESSION_SECRET"] = originalEnv;
     } else {
-      delete process.env.SESSION_SECRET;
+      delete process.env["SESSION_SECRET"];
     }
   });
 
@@ -109,10 +109,10 @@ describe("Encryption Functions", () => {
 
     it("should throw error when SESSION_SECRET is missing", () => {
       // Save original secret
-      const originalSecret = process.env.SESSION_SECRET;
+      const originalSecret = process.env["SESSION_SECRET"];
 
       // Delete SESSION_SECRET to trigger error
-      delete process.env.SESSION_SECRET;
+      delete process.env["SESSION_SECRET"];
 
       // When SESSION_SECRET is missing, encrypt() should throw an error.
       // The error could be:
@@ -124,10 +124,10 @@ describe("Encryption Functions", () => {
 
       // Restore original secret
       if (originalSecret) {
-        process.env.SESSION_SECRET = originalSecret;
+        process.env["SESSION_SECRET"] = originalSecret;
       } else {
         // Ensure it's set for other tests
-        process.env.SESSION_SECRET =
+        process.env["SESSION_SECRET"] =
           "test-session-secret-min-32-chars-long-for-testing";
       }
     });

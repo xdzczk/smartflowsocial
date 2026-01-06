@@ -4,12 +4,12 @@ import { prisma } from "~/lib/prisma.server";
 import { blastrRelay } from "~/lib/relays";
 
 export type UserWithHashTagPresets = User & {
-  hashTagPresets: {
+  hashTagPresets: Array<{
     id: string;
     name: string;
     tags: string;
     description?: string | null;
-  }[];
+  }>;
 };
 
 interface UpdateUserProfileParams {
@@ -37,7 +37,7 @@ export function updateUserProfile({
  * Also includes blastrRelay if user has Premium/Founder subscription
  */
 export async function getUserById(
-  id: string,
+  id: string
 ): Promise<UserWithHashTagPresets | null> {
   const user = await prisma.user.findUnique({
     where: { id },

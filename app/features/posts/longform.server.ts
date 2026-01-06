@@ -36,13 +36,13 @@ export function createLongFormEvent({
     } else {
       // Assume hex string
       privateKeyBytes = new Uint8Array(
-        privateKey.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) ?? [],
+        privateKey.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) ?? []
       );
     }
   } catch {
     // Fallback: treat as hex string
     privateKeyBytes = new Uint8Array(
-      privateKey.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) ?? [],
+      privateKey.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) ?? []
     );
   }
 
@@ -110,38 +110,45 @@ export function convertEditorJSToMarkdown(editorData: EditorJSOutput): string {
     switch (block.type) {
       case "header": {
         const level =
-          typeof block.data.level === "number" ? block.data.level : 1;
-        const text = typeof block.data.text === "string" ? block.data.text : "";
+          typeof block.data["level"] === "number" ? block.data["level"] : 1;
+        const text =
+          typeof block.data["text"] === "string" ? block.data["text"] : "";
         markdown += `${"#".repeat(level)} ${text}\n\n`;
         break;
       }
 
       case "paragraph": {
-        const textValue = block.data.text;
+        const textValue = block.data["text"];
         const text = typeof textValue === "string" ? textValue : "";
         markdown += `${text}\n\n`;
         break;
       }
 
       case "list":
-        if (Array.isArray(block.data.items)) {
-          if (block.data.style === "ordered") {
-            block.data.items.forEach((item: unknown, index: number) => {
-              markdown += `${index + 1}. ${typeof item === "string" ? item : String(item)}\n`;
-            });
+        if (Array.isArray(block.data["items"])) {
+          if (block.data["style"] === "ordered") {
+            const items = block.data["items"];
+            if (Array.isArray(items)) {
+              items.forEach((item: unknown, index: number) => {
+                markdown += `${index + 1}. ${typeof item === "string" ? item : String(item)}\n`;
+              });
+            }
           } else {
-            block.data.items.forEach((item: unknown) => {
-              markdown += `- ${typeof item === "string" ? item : String(item)}\n`;
-            });
+            const items = block.data["items"];
+            if (Array.isArray(items)) {
+              items.forEach((item: unknown) => {
+                markdown += `- ${typeof item === "string" ? item : String(item)}\n`;
+              });
+            }
           }
         }
         markdown += "\n";
         break;
 
       case "quote": {
-        const textValue = block.data.text;
+        const textValue = block.data["text"];
         const text = typeof textValue === "string" ? textValue : "";
-        const captionValue = block.data.caption;
+        const captionValue = block.data["caption"];
         const caption = typeof captionValue === "string" ? captionValue : "";
         markdown += `> ${text}\n`;
         if (caption) {
@@ -152,7 +159,7 @@ export function convertEditorJSToMarkdown(editorData: EditorJSOutput): string {
       }
 
       case "code": {
-        const codeValue = block.data.code;
+        const codeValue = block.data["code"];
         const code = typeof codeValue === "string" ? codeValue : "";
         markdown += "```\n";
         markdown += code;
@@ -161,12 +168,13 @@ export function convertEditorJSToMarkdown(editorData: EditorJSOutput): string {
       }
 
       case "linkTool": {
-        const link = typeof block.data.link === "string" ? block.data.link : "";
+        const link =
+          typeof block.data["link"] === "string" ? block.data["link"] : "";
         const meta =
-          block.data.meta &&
-          typeof block.data.meta === "object" &&
-          "title" in block.data.meta
-            ? (block.data.meta as { title?: string })
+          block.data["meta"] &&
+          typeof block.data["meta"] === "object" &&
+          "title" in block.data["meta"]
+            ? (block.data["meta"] as { title?: string })
             : { title: undefined };
         if (meta.title) {
           markdown += `[${meta.title}](${link})\n\n`;
@@ -177,8 +185,8 @@ export function convertEditorJSToMarkdown(editorData: EditorJSOutput): string {
       }
 
       case "embed": {
-        const serviceValue = block.data.service;
-        const sourceValue = block.data.source;
+        const serviceValue = block.data["service"];
+        const sourceValue = block.data["source"];
         const service = typeof serviceValue === "string" ? serviceValue : "";
         const source = typeof sourceValue === "string" ? sourceValue : "";
         if (service === "youtube") {
@@ -191,17 +199,17 @@ export function convertEditorJSToMarkdown(editorData: EditorJSOutput): string {
 
       case "image": {
         const file =
-          block.data.file &&
-          typeof block.data.file === "object" &&
-          "url" in block.data.file
-            ? (block.data.file as { url?: string })
+          block.data["file"] &&
+          typeof block.data["file"] === "object" &&
+          "url" in block.data["file"]
+            ? (block.data["file"] as { url?: string })
             : { url: undefined };
         const url =
-          typeof block.data.url === "string" ? block.data.url : undefined;
+          typeof block.data["url"] === "string" ? block.data["url"] : undefined;
         const imageUrl = file.url ?? url;
         const caption =
-          typeof block.data.caption === "string"
-            ? block.data.caption
+          typeof block.data["caption"] === "string"
+            ? block.data["caption"]
             : undefined;
         if (imageUrl) {
           if (caption?.trim()) {
@@ -214,7 +222,7 @@ export function convertEditorJSToMarkdown(editorData: EditorJSOutput): string {
       }
 
       default: {
-        const textValue = block.data.text;
+        const textValue = block.data["text"];
         const text = typeof textValue === "string" ? textValue : "";
         if (text) {
           markdown += `${text}\n\n`;
@@ -237,7 +245,9 @@ export function convertMarkdownToEditorJS(markdown: string): EditorJSOutput {
   let i = 0;
 
   while (i < lines.length) {
-    const line = lines[i].trim();
+    const currentLine = lines[i];
+    if (currentLine === undefined) break;
+    const line = currentLine.trim();
 
     if (line === "") {
       i++;
@@ -246,7 +256,8 @@ export function convertMarkdownToEditorJS(markdown: string): EditorJSOutput {
 
     // Headers
     if (line.startsWith("#")) {
-      const level = line.match(/^#+/)?.[0].length ?? 1;
+      const match = line.match(/^#+/);
+      const level = match?.[0]?.length ?? 1;
       const text = line.replace(/^#+\s*/, "");
       blocks.push({
         id: generateBlockId(),
@@ -261,20 +272,23 @@ export function convertMarkdownToEditorJS(markdown: string): EditorJSOutput {
     else if (line.match(/^!\[([^\]]*)\]\(([^)]+)\)$/)) {
       const match = line.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
       if (match) {
-        const [, caption, url] = match;
-        blocks.push({
-          id: generateBlockId(),
-          type: "image",
-          data: {
-            file: {
-              url: url,
+        const caption = match[1];
+        const url = match[2];
+        if (caption !== undefined && url !== undefined) {
+          blocks.push({
+            id: generateBlockId(),
+            type: "image",
+            data: {
+              file: {
+                url: url,
+              },
+              caption: caption ?? "",
+              withBorder: false,
+              withBackground: false,
+              stretched: false,
             },
-            caption: caption ?? "",
-            withBorder: false,
-            withBackground: false,
-            stretched: false,
-          },
-        });
+          });
+        }
       }
     }
     // Blockquotes
@@ -283,8 +297,11 @@ export function convertMarkdownToEditorJS(markdown: string): EditorJSOutput {
       let caption = "";
 
       // Collect all consecutive quote lines
-      while (i < lines.length && lines[i].trim().startsWith("> ")) {
-        const quoteLine = lines[i].trim().substring(2);
+      while (i < lines.length) {
+        const currentQuoteLine = lines[i];
+        if (currentQuoteLine === undefined) break;
+        if (!currentQuoteLine.trim().startsWith("> ")) break;
+        const quoteLine = currentQuoteLine.trim().substring(2);
         if (quoteLine.startsWith("— ")) {
           caption = quoteLine.substring(2);
         } else if (quoteLine !== "") {
@@ -309,9 +326,12 @@ export function convertMarkdownToEditorJS(markdown: string): EditorJSOutput {
       let code = "";
       i++; // Skip the opening ```
 
-      while (i < lines.length && lines[i].trim() !== "```") {
+      while (i < lines.length) {
+        const currentCodeLine = lines[i];
+        if (currentCodeLine === undefined) break;
+        if (currentCodeLine.trim() === "```") break;
         if (code) code += "\n";
-        code += lines[i];
+        code += currentCodeLine;
         i++;
       }
 
@@ -327,8 +347,11 @@ export function convertMarkdownToEditorJS(markdown: string): EditorJSOutput {
     else if (line.match(/^\d+\.\s/)) {
       const items: string[] = [];
 
-      while (i < lines.length && lines[i].trim().match(/^\d+\.\s/)) {
-        const item = lines[i].trim().replace(/^\d+\.\s/, "");
+      while (i < lines.length) {
+        const currentListItem = lines[i];
+        if (currentListItem === undefined) break;
+        if (!currentListItem.trim().match(/^\d+\.\s/)) break;
+        const item = currentListItem.trim().replace(/^\d+\.\s/, "");
         items.push(item);
         i++;
       }
@@ -347,8 +370,11 @@ export function convertMarkdownToEditorJS(markdown: string): EditorJSOutput {
     else if (line.startsWith("- ")) {
       const items: string[] = [];
 
-      while (i < lines.length && lines[i].trim().startsWith("- ")) {
-        const item = lines[i].trim().substring(2);
+      while (i < lines.length) {
+        const currentListItem = lines[i];
+        if (currentListItem === undefined) break;
+        if (!currentListItem.trim().startsWith("- ")) break;
+        const item = currentListItem.trim().substring(2);
         items.push(item);
         i++;
       }
@@ -367,17 +393,20 @@ export function convertMarkdownToEditorJS(markdown: string): EditorJSOutput {
     else if (line.match(/^\[([^\]]+)\]\(([^)]+)\)$/)) {
       const match = line.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
       if (match) {
-        const [, title, url] = match;
-        blocks.push({
-          id: generateBlockId(),
-          type: "linkTool",
-          data: {
-            link: url,
-            meta: {
-              title: title,
+        const title = match[1];
+        const url = match[2];
+        if (title !== undefined && url !== undefined) {
+          blocks.push({
+            id: generateBlockId(),
+            type: "linkTool",
+            data: {
+              link: url,
+              meta: {
+                title: title,
+              },
             },
-          },
-        });
+          });
+        }
       }
     }
     // Regular paragraphs
@@ -386,17 +415,22 @@ export function convertMarkdownToEditorJS(markdown: string): EditorJSOutput {
       let paragraphText = line;
       let j = i + 1;
 
-      while (
-        j < lines.length &&
-        lines[j].trim() !== "" &&
-        !lines[j].trim().startsWith("#") &&
-        !lines[j].trim().startsWith("> ") &&
-        !lines[j].trim().startsWith("- ") &&
-        !lines[j].trim().match(/^\d+\.\s/) &&
-        lines[j].trim() !== "```" &&
-        !lines[j].trim().match(/^!\[([^\]]*)\]\(([^)]+)\)$/)
-      ) {
-        paragraphText += " " + lines[j].trim();
+      while (j < lines.length) {
+        const currentParagraphLine = lines[j];
+        if (currentParagraphLine === undefined) break;
+        const trimmed = currentParagraphLine.trim();
+        if (
+          trimmed === "" ||
+          trimmed.startsWith("#") ||
+          trimmed.startsWith("> ") ||
+          trimmed.startsWith("- ") ||
+          trimmed.match(/^\d+\.\s/) ||
+          trimmed === "```" ||
+          trimmed.match(/^!\[([^\]]*)\]\(([^)]+)\)$/)
+        ) {
+          break;
+        }
+        paragraphText += " " + trimmed;
         j++;
       }
 

@@ -47,7 +47,7 @@ function isSignedEvent(value: unknown): value is SignedEvent {
  * Convert Prisma JsonValue to SignedEvent if valid
  */
 function toSignedEvent(
-  value: Prisma.JsonValue | null | undefined,
+  value: Prisma.JsonValue | null | undefined
 ): SignedEvent | null {
   if (!value || typeof value !== "object") {
     return null;
@@ -58,7 +58,7 @@ function toSignedEvent(
 // Get queue instances using the abstraction
 const _scheduledPostsQueue = getQueueInstance("scheduled-posts");
 const _scheduledLongFormPostsQueue = getQueueInstance(
-  "scheduled-longform-posts",
+  "scheduled-longform-posts"
 );
 const postCheckerQueue = getQueueInstance("post-checker");
 
@@ -116,7 +116,7 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
       // Post to nostr publisher endpoint
       // Read directly from process.env to support test environment changes
       const publisherUrl =
-        process.env.NOSTR_PUBLISHER_URL ?? env.NOSTR_PUBLISHER_URL;
+        process.env["NOSTR_PUBLISHER_URL"] ?? env.NOSTR_PUBLISHER_URL;
       if (!publisherUrl) {
         throw new Error("NOSTR_PUBLISHER_URL environment variable is not set");
       }
@@ -135,7 +135,7 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
 
       if (!response.ok) {
         throw new Error(
-          `Failed to post to nostr publisher: ${response.statusText}`,
+          `Failed to post to nostr publisher: ${response.statusText}`
         );
       }
 
@@ -159,7 +159,7 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
   {
     connection: redis,
     concurrency: 5,
-  },
+  }
 );
 
 // Worker to process scheduled longform posts
@@ -216,7 +216,7 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
       // Post to nostr publisher endpoint
       // Read directly from process.env to support test environment changes
       const publisherUrl =
-        process.env.NOSTR_PUBLISHER_URL ?? env.NOSTR_PUBLISHER_URL;
+        process.env["NOSTR_PUBLISHER_URL"] ?? env.NOSTR_PUBLISHER_URL;
       if (!publisherUrl) {
         throw new Error("NOSTR_PUBLISHER_URL environment variable is not set");
       }
@@ -235,7 +235,7 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
 
       if (!response.ok) {
         throw new Error(
-          `Failed to post longform to nostr publisher: ${response.statusText}`,
+          `Failed to post longform to nostr publisher: ${response.statusText}`
         );
       }
 
@@ -259,7 +259,7 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
   {
     connection: redis,
     concurrency: 5,
-  },
+  }
 );
 
 // Worker to check for due posts and schedule them
@@ -306,7 +306,7 @@ export const postCheckerWorker = new Worker(
             postId,
             postUserId,
             signedEvent,
-            timeDiff <= 0 ? 0 : scheduledTime,
+            timeDiff <= 0 ? 0 : scheduledTime
           );
         }
       }
@@ -353,7 +353,7 @@ export const postCheckerWorker = new Worker(
             longformPostId,
             longformPostUserId,
             signedEvent,
-            timeDiff <= 0 ? 0 : scheduledTime,
+            timeDiff <= 0 ? 0 : scheduledTime
           );
         }
       }
@@ -369,7 +369,7 @@ export const postCheckerWorker = new Worker(
   {
     connection: redis,
     concurrency: 1,
-  },
+  }
 );
 
 // Start the recurring job to check for due posts every minute
@@ -382,7 +382,7 @@ async function startPostChecker() {
       repeat: { every: 60000 }, // Every 60 seconds
       removeOnComplete: 1,
       removeOnFail: 1,
-    },
+    }
   );
 }
 

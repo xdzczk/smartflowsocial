@@ -29,7 +29,7 @@ export type {
 export function parseThreadViewNotifications(
   threadViewResponse: unknown[],
   originalEventId: string,
-  userPubkey: string,
+  userPubkey: string
 ): Notification[] {
   const notifications: Notification[] = [];
   const userProfiles = new Map<string, UserProfile>();
@@ -110,7 +110,7 @@ export function parseThreadViewNotifications(
       const pTags = event.tags?.filter((tag: string[]) => tag[0] === "p") ?? [];
 
       const targetETag = eTags.find(
-        (tag: string[]) => tag[1] === originalEventId,
+        (tag: string[]) => tag[1] === originalEventId
       );
       const referencesOriginal = !!targetETag;
       const mentionsUser = pTags.some((tag: string[]) => tag[1] === userPubkey);
@@ -155,7 +155,7 @@ export function parseThreadViewNotifications(
             pubkey: event.pubkey,
             authorName: profile?.display_name ?? profile?.name,
             authorPicture: profile?.picture as string | null | undefined,
-            authorNip05: profile?.nip05 as string | undefined,
+            authorNip05: profile?.["nip05"] as string | undefined,
             originalEventId,
             stats,
           });
@@ -170,7 +170,7 @@ export function parseThreadViewNotifications(
             pubkey: event.pubkey,
             authorName: profile?.display_name ?? profile?.name,
             authorPicture: profile?.picture as string | null | undefined,
-            authorNip05: profile?.nip05 as string | undefined,
+            authorNip05: profile?.["nip05"] as string | undefined,
             originalEventId,
             stats,
           });
@@ -195,7 +195,7 @@ export function parseThreadViewNotifications(
           pubkey: event.pubkey,
           authorName: profile?.display_name ?? profile?.name,
           authorPicture: profile?.picture as string | null | undefined,
-          authorNip05: profile?.nip05 as string | undefined,
+          authorNip05: profile?.["nip05"] as string | undefined,
           originalEventId,
           stats,
         });
@@ -212,7 +212,7 @@ export function parseThreadViewNotifications(
       try {
         // Parse the description tag to get zap request details
         const descTag = event.tags?.find(
-          (tag: string[]) => tag[0] === "description",
+          (tag: string[]) => tag[0] === "description"
         );
         if (!descTag?.[1] || typeof descTag[1] !== "string") continue;
 
@@ -222,18 +222,18 @@ export function parseThreadViewNotifications(
           content?: string;
         };
         const eTags = (event.tags ?? []).filter(
-          (tag: string[]) => tag[0] === "e",
+          (tag: string[]) => tag[0] === "e"
         );
 
         // Check if this zap is for our original event
         const zapForOriginal = eTags.some(
-          (tag: string[]) => tag[1] === originalEventId,
+          (tag: string[]) => tag[1] === originalEventId
         );
 
         if (zapForOriginal) {
           // Extract amount from bolt11 or amount tag
           const amountTag = zapRequest.tags?.find(
-            (tag: string[]) => tag[0] === "amount",
+            (tag: string[]) => tag[0] === "amount"
           );
           const amountMsats = amountTag?.[1] ? parseInt(amountTag[1], 10) : 0;
           const amountSats = Math.floor(amountMsats / 1000);
@@ -255,11 +255,11 @@ export function parseThreadViewNotifications(
             amountSats,
             senderName: profile?.display_name ?? profile?.name,
             senderPicture: profile?.picture as string | null | undefined,
-            senderNip05: profile?.nip05 as string | undefined,
+            senderNip05: profile?.["nip05"] as string | undefined,
             pubkey: senderPubkey, // For compatibility
             authorName: profile?.display_name ?? profile?.name,
             authorPicture: profile?.picture as string | null | undefined,
-            authorNip05: profile?.nip05 as string | undefined,
+            authorNip05: profile?.["nip05"] as string | undefined,
             originalEventId,
             stats,
           });
@@ -294,7 +294,7 @@ export function groupNotificationsByParent(
   notifications: Notification[],
   posts: PostData[],
   longformPosts: LongFormPostData[],
-  stats: Record<string, EventStats> = {},
+  stats: Record<string, EventStats> = {}
 ): GroupedNotification[] {
   // Create a map of event ID to post data
   const postMap = new Map<string, ParentPost>();
@@ -392,8 +392,8 @@ export async function processQuoteReposts(
   quoteRepostEvents: NotificationEvent[],
   connectToPrimalCache: (
     requestType: string,
-    params: Record<string, unknown>,
-  ) => Promise<unknown[]>,
+    params: Record<string, unknown>
+  ) => Promise<unknown[]>
 ): Promise<NotificationQuoteRepost[]> {
   const _notifications: NotificationQuoteRepost[] = [];
   const userProfiles = new Map<string, UserProfile>();
@@ -424,7 +424,7 @@ export async function processQuoteReposts(
               "kind" in eventData &&
               (eventData as { kind?: unknown }).kind === 0
             );
-          },
+          }
         );
 
         if (
@@ -461,7 +461,7 @@ export async function processQuoteReposts(
       // Extract the quoted event ID from the "e" tags with "mention" marker
       const eTags = event.tags?.filter((tag: NostrTag) => tag[0] === "e") ?? [];
       const quotedEventTag = eTags.find(
-        (tag: NostrTag) => tag[3] === "mention",
+        (tag: NostrTag) => tag[3] === "mention"
       );
 
       if (!quotedEventTag?.[1]) {
@@ -498,7 +498,7 @@ export async function processQuoteReposts(
               typeof eventData.content === "string" &&
               eventData.content.includes(event.id)
             );
-          },
+          }
         );
 
         if (statsEvent && Array.isArray(statsEvent) && statsEvent[2]) {
@@ -542,7 +542,7 @@ export async function processQuoteReposts(
         pubkey: event.pubkey,
         authorName: profile?.display_name ?? profile?.name,
         authorPicture: profile?.picture as string | null | undefined,
-        authorNip05: profile?.nip05 as string | undefined,
+        authorNip05: profile?.["nip05"] as string | undefined,
         originalEventId,
         stats,
       };
@@ -568,7 +568,7 @@ export async function processQuoteReposts(
         "type" in n &&
         n.type === "quote"
       );
-    },
+    }
   );
 
   return validNotifications.sort((a, b) => b.createdAt - a.createdAt);

@@ -59,9 +59,9 @@ export default function BulkPostsTable({
                       let originalImageUrl = "";
 
                       if (Array.isArray(post.originalFileUrl)) {
-                        originalImageUrl = post.originalFileUrl[0];
+                        originalImageUrl = post.originalFileUrl[0] ?? "";
                       } else {
-                        originalImageUrl = post.originalFileUrl;
+                        originalImageUrl = post.originalFileUrl ?? "";
                       }
 
                       // Handle case where fileUrl might be a JSON string array
@@ -71,10 +71,10 @@ export default function BulkPostsTable({
                       ) {
                         try {
                           const parsed = JSON.parse(
-                            originalImageUrl,
+                            originalImageUrl
                           ) as string[];
                           if (Array.isArray(parsed) && parsed.length > 0) {
-                            originalImageUrl = parsed[0];
+                            originalImageUrl = parsed[0] ?? "";
                           }
                         } catch (_e) {
                           // If parsing fails, use as is

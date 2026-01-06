@@ -34,10 +34,10 @@ vi.mock("@remix-run/node", async () => {
   };
 });
 
+import { TEST_USER_ID } from "../utils/test-helpers";
+
 import { requireUserId } from "~/features/auth/session.server";
 import { action, loader } from "~/routes/api.upload";
-
-import { TEST_USER_ID } from "../utils/test-helpers";
 
 describe("API: Upload", () => {
   beforeEach(() => {
@@ -90,7 +90,7 @@ describe("API: Upload", () => {
     describe("Error Handling", () => {
       it("should require authentication", async () => {
         (requireUserId as ReturnType<typeof vi.fn>).mockRejectedValue(
-          new Error("Authentication required"),
+          new Error("Authentication required")
         );
 
         const request = new Request("http://localhost:3000/api/upload", {
@@ -192,7 +192,7 @@ describe("API: Upload", () => {
         (
           unstable_parseMultipartFormData as ReturnType<typeof vi.fn>
         ).mockResolvedValue(
-          new FormData(), // Empty form data
+          new FormData() // Empty form data
         );
 
         const request = new Request("http://localhost:3000/api/upload", {

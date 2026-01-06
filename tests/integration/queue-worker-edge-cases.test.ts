@@ -17,16 +17,16 @@ vi.mock("bullmq", () => {
   class MockWorker {
     queueName: string;
     // Dynamic import() type annotation needed for type reference
-    // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+    // eslint-disable-next-line @typescript-eslint/consistent-type-imports -- Dynamic import requires value import
     process: ((job: import("bullmq").Job) => Promise<unknown>) | undefined;
     close: ReturnType<typeof vi.fn>;
 
     constructor(
       queueName: string,
       // Dynamic import() type annotation needed for type reference
-      // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+      // eslint-disable-next-line @typescript-eslint/consistent-type-imports -- Dynamic import requires value import
       processor: ((job: import("bullmq").Job) => Promise<unknown>) | undefined,
-      _options?: unknown,
+      _options?: unknown
     ) {
       this.queueName = queueName;
       // Store the processor function so tests can call it
@@ -85,11 +85,11 @@ vi.mock("~/infra/queue", () => ({
 // Mock global fetch
 global.fetch = vi.fn();
 
+import { TEST_USER_ID } from "../utils/test-helpers";
+
 import { getUserById } from "~/features/user";
 import { prisma } from "~/lib/prisma.server";
 import { updatePostStatus } from "~/models/post.commands.server";
-
-import { TEST_USER_ID } from "../utils/test-helpers";
 
 // Import workers after mocks are set up
 interface MockWorkerType {
@@ -121,7 +121,8 @@ describe("Queue Worker Edge Cases", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.NOSTR_PUBLISHER_URL = "https://api.nostr-publisher.com/publish";
+    process.env["NOSTR_PUBLISHER_URL"] =
+      "https://api.nostr-publisher.com/publish";
   });
 
   describe("Worker Crash Scenarios", () => {
@@ -133,7 +134,7 @@ describe("Queue Worker Edge Cases", () => {
       });
 
       (updatePostStatus as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Database connection lost"),
+        new Error("Database connection lost")
       );
 
       const mockJobData = {
@@ -152,7 +153,7 @@ describe("Queue Worker Edge Cases", () => {
       }
       const processor = scheduledPostsWorker.process;
       await expect(processor(mockJob)).rejects.toThrow(
-        "Database connection lost",
+        "Database connection lost"
       );
     });
 
@@ -164,7 +165,7 @@ describe("Queue Worker Edge Cases", () => {
       });
 
       (updatePostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
@@ -181,7 +182,7 @@ describe("Queue Worker Edge Cases", () => {
         throw new Error("scheduledPostsWorker.process is not defined");
       }
       await expect(scheduledPostsWorker.process(mockJob)).rejects.toThrow(
-        `User ${TEST_USER_ID} not found`,
+        `User ${TEST_USER_ID} not found`
       );
     });
 
@@ -193,7 +194,7 @@ describe("Queue Worker Edge Cases", () => {
       });
 
       (updatePostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
         userRelays: ["wss://relay1.com"],
@@ -218,7 +219,7 @@ describe("Queue Worker Edge Cases", () => {
         throw new Error("scheduledPostsWorker.process is not defined");
       }
       await expect(scheduledPostsWorker.process(mockJob)).rejects.toThrow(
-        "Failed to post to nostr publisher",
+        "Failed to post to nostr publisher"
       );
 
       // Post should still be marked as posted (idempotency prevents duplicate)
@@ -233,14 +234,14 @@ describe("Queue Worker Edge Cases", () => {
       });
 
       (updatePostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
         userRelays: ["wss://relay1.com"],
       });
 
       (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Network timeout"),
+        new Error("Network timeout")
       );
 
       const mockJobData = {
@@ -256,7 +257,7 @@ describe("Queue Worker Edge Cases", () => {
         throw new Error("scheduledPostsWorker.process is not defined");
       }
       await expect(scheduledPostsWorker.process(mockJob)).rejects.toThrow(
-        "Network timeout",
+        "Network timeout"
       );
     });
   });
@@ -308,7 +309,7 @@ describe("Queue Worker Edge Cases", () => {
         });
 
       (updatePostStatus as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Post already posted"), // Simulate unique constraint violation
+        new Error("Post already posted") // Simulate unique constraint violation
       );
 
       const mockJobData = {
@@ -337,7 +338,7 @@ describe("Queue Worker Edge Cases", () => {
       });
 
       (updatePostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
         userRelays: ["wss://relay1.com"],
@@ -394,7 +395,7 @@ describe("Queue Worker Edge Cases", () => {
         throw new Error("scheduledLongFormPostsWorker.process is not defined");
       }
       await expect(
-        scheduledLongFormPostsWorker.process(mockJob),
+        scheduledLongFormPostsWorker.process(mockJob)
       ).rejects.toThrow("Longform post longform-123 not found");
     });
 
@@ -442,7 +443,7 @@ describe("Queue Worker Edge Cases", () => {
 
       // Mock Prisma to return null (post not found)
       (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null,
+        null
       );
 
       if (!scheduledPostsWorker?.process) {
@@ -475,7 +476,7 @@ describe("Queue Worker Edge Cases", () => {
       };
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Cannot stringify undefined"),
+        new Error("Cannot stringify undefined")
       );
 
       if (!scheduledPostsWorker?.process) {

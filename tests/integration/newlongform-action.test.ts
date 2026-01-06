@@ -27,7 +27,7 @@ vi.mock("~/lib/prisma.server", () => ({
 // Mock dependencies
 vi.mock("~/features/posts/longform.server", () => ({
   convertEditorJSToMarkdown: vi.fn(
-    (data) => `Markdown: ${JSON.stringify(data)}`,
+    (data) => `Markdown: ${JSON.stringify(data)}`
   ),
 }));
 
@@ -91,7 +91,7 @@ vi.mock("@remix-run/node", async () => {
     unstable_parseMultipartFormData: vi.fn(
       async (
         request: { url?: string; formData?: () => Promise<FormData> },
-        _uploadHandler: unknown,
+        _uploadHandler: unknown
       ) => {
         // Try to get FormData from store first (set by test using request URL as key)
         const url =
@@ -121,10 +121,17 @@ vi.mock("@remix-run/node", async () => {
           // If parsing fails, return empty FormData
           return new FormData();
         }
-      },
+      }
     ),
   };
 });
+
+import {
+  TEST_USER_ID,
+  createMockUser,
+  createMockQueueType,
+  createMockFormData,
+} from "../utils/test-helpers";
 
 import { handleNewLongFormAction } from "~/features/posts/services/newlongform-action.server";
 import { uploadBufferToS3 } from "~/features/upload/s3.server";
@@ -136,19 +143,13 @@ import {
 } from "~/features/user";
 import { createLongFormPost } from "~/models/longformpost.server";
 
-import {
-  TEST_USER_ID,
-  createMockUser,
-  createMockQueueType,
-  createMockFormData,
-} from "../utils/test-helpers";
-
 describe("New Longform Action Handler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.NOSTR_PUBLISHER_URL = "https://api.nostr-publisher.com/publish";
+    process.env["NOSTR_PUBLISHER_URL"] =
+      "https://api.nostr-publisher.com/publish";
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(
-      createMockUser({ userRelays: ["wss://relay1.com", "wss://relay2.com"] }),
+      createMockUser({ userRelays: ["wss://relay1.com", "wss://relay2.com"] })
     );
     // Default mock for getQueueTypes to prevent undefined errors
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([
@@ -156,7 +157,7 @@ describe("New Longform Action Handler", () => {
       createMockQueueType({ id: "unassigned", name: "Unassigned" }),
     ]);
     (getQueueTypeByNameForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
-      createMockQueueType({ id: "queue-1", name: "posts" }),
+      createMockQueueType({ id: "queue-1", name: "posts" })
     );
   });
 
@@ -172,7 +173,7 @@ describe("New Longform Action Handler", () => {
         {
           method: "POST",
           body: formData,
-        },
+        }
       );
 
       const response = await handleNewLongFormAction(TEST_USER_ID, request);
@@ -191,7 +192,7 @@ describe("New Longform Action Handler", () => {
     it("should upload File object to S3", async () => {
       const mockFile = new File(["test"], "image.jpg", { type: "image/jpeg" });
       (uploadBufferToS3 as ReturnType<typeof vi.fn>).mockResolvedValue(
-        "https://s3.example.com/image.jpg",
+        "https://s3.example.com/image.jpg"
       );
 
       const formData = new FormData();
@@ -231,7 +232,7 @@ describe("New Longform Action Handler", () => {
     it("should handle S3 upload errors", async () => {
       const mockFile = new File(["test"], "image.jpg", { type: "image/jpeg" });
       (uploadBufferToS3 as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Upload failed"),
+        new Error("Upload failed")
       );
 
       const formData = new FormData();
@@ -271,7 +272,7 @@ describe("New Longform Action Handler", () => {
   describe("Save Draft Action", () => {
     it("should save draft with all required fields", async () => {
       (getQueueTypeByNameForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
-        createMockQueueType({ id: "queue-1", name: "posts" }),
+        createMockQueueType({ id: "queue-1", name: "posts" })
       );
       (
         mockPrisma.queueType.findFirst as ReturnType<typeof vi.fn>
@@ -304,7 +305,7 @@ describe("New Longform Action Handler", () => {
         {
           method: "POST",
           body: formData,
-        },
+        }
       );
 
       const response = await handleNewLongFormAction(TEST_USER_ID, request);
@@ -315,7 +316,7 @@ describe("New Longform Action Handler", () => {
           userId: TEST_USER_ID,
           title: "Test Post",
           isPublished: false,
-        }),
+        })
       );
       expect(response.status).toBe(302); // Redirect
     });
@@ -331,7 +332,7 @@ describe("New Longform Action Handler", () => {
         {
           method: "POST",
           body: formData,
-        },
+        }
       );
 
       const response = await handleNewLongFormAction(TEST_USER_ID, request);
@@ -361,7 +362,7 @@ describe("New Longform Action Handler", () => {
         {
           method: "POST",
           body: formData,
-        },
+        }
       );
 
       const response = await handleNewLongFormAction(TEST_USER_ID, request);
@@ -381,7 +382,7 @@ describe("New Longform Action Handler", () => {
 
     it("should parse and combine tags", async () => {
       (getQueueTypeByNameForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
-        createMockQueueType({ id: "queue-1", name: "posts" }),
+        createMockQueueType({ id: "queue-1", name: "posts" })
       );
 
       const formData = createMockFormData({
@@ -397,7 +398,7 @@ describe("New Longform Action Handler", () => {
         {
           method: "POST",
           body: formData,
-        },
+        }
       );
 
       await handleNewLongFormAction(TEST_USER_ID, request);
@@ -405,9 +406,9 @@ describe("New Longform Action Handler", () => {
       expect(createLongFormPost).toHaveBeenCalledWith(
         // expect.objectContaining returns 'any' - acceptable for test mocks
         expect.objectContaining({
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
           tags: expect.arrayContaining(["tag1", "tag2", "tag3", "tag4"]),
-        }),
+        })
       );
     });
 
@@ -424,7 +425,7 @@ describe("New Longform Action Handler", () => {
         {
           method: "POST",
           body: formData,
-        },
+        }
       );
 
       await handleNewLongFormAction(TEST_USER_ID, request);
@@ -433,7 +434,7 @@ describe("New Longform Action Handler", () => {
         // expect.objectContaining returns 'any' - acceptable for test mocks
         expect.objectContaining({
           queueTypeId: null,
-        }),
+        })
       );
     });
   });
@@ -441,7 +442,7 @@ describe("New Longform Action Handler", () => {
   describe("Publish Action", () => {
     beforeEach(() => {
       (getQueueTypeByNameForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
-        createMockQueueType({ id: "queue-1", name: "posts" }),
+        createMockQueueType({ id: "queue-1", name: "posts" })
       );
       // Mock getQueueTypes for when useHashtagPresets is "off"
       (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([
@@ -482,7 +483,7 @@ describe("New Longform Action Handler", () => {
         {
           method: "POST",
           body: formData,
-        },
+        }
       );
 
       const response = await handleNewLongFormAction(TEST_USER_ID, request);
@@ -495,11 +496,11 @@ describe("New Longform Action Handler", () => {
           isPublished: true,
           signedEvent: mockSignedEvent,
           nostrEvent: mockNostrEvent,
-        }),
+        })
       );
       expect(global.fetch).toHaveBeenCalledWith(
         "https://api.nostr-publisher.com/publish",
-        expect.any(Object),
+        expect.any(Object)
       );
       expect(response.status).toBe(302);
     });
@@ -519,7 +520,7 @@ describe("New Longform Action Handler", () => {
         {
           method: "POST",
           body: formData,
-        },
+        }
       );
 
       const response = await handleNewLongFormAction(TEST_USER_ID, request);
@@ -553,7 +554,7 @@ describe("New Longform Action Handler", () => {
         {
           method: "POST",
           body: formData,
-        },
+        }
       );
 
       const response = await handleNewLongFormAction(TEST_USER_ID, request);
@@ -586,7 +587,7 @@ describe("New Longform Action Handler", () => {
         {
           method: "POST",
           body: formData,
-        },
+        }
       );
 
       const response = await handleNewLongFormAction(TEST_USER_ID, request);
@@ -639,7 +640,7 @@ describe("New Longform Action Handler", () => {
         {
           method: "POST",
           body: formData,
-        },
+        }
       );
 
       await handleNewLongFormAction(TEST_USER_ID, request);
@@ -647,9 +648,9 @@ describe("New Longform Action Handler", () => {
       expect(createLongFormPost).toHaveBeenCalledWith(
         // expect.objectContaining returns 'any' - acceptable for test mocks
         expect.objectContaining({
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
           content: expect.stringContaining("#marketing #social"),
-        }),
+        })
       );
     });
 
@@ -678,11 +679,11 @@ describe("New Longform Action Handler", () => {
         {
           method: "POST",
           body: formData,
-        },
+        }
       );
 
       await expect(
-        handleNewLongFormAction(TEST_USER_ID, request),
+        handleNewLongFormAction(TEST_USER_ID, request)
       ).rejects.toThrow();
     });
   });
@@ -690,7 +691,7 @@ describe("New Longform Action Handler", () => {
   describe("Schedule Longform Action", () => {
     beforeEach(() => {
       (getQueueTypeByNameForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
-        createMockQueueType({ id: "queue-1", name: "posts" }),
+        createMockQueueType({ id: "queue-1", name: "posts" })
       );
     });
 
@@ -725,7 +726,7 @@ describe("New Longform Action Handler", () => {
         {
           method: "POST",
           body: formData,
-        },
+        }
       );
 
       const response = await handleNewLongFormAction(TEST_USER_ID, request);
@@ -735,7 +736,7 @@ describe("New Longform Action Handler", () => {
         expect.objectContaining({
           isPublished: false,
           scheduledFor: "1704067200",
-        }),
+        })
       );
       expect(response.status).toBe(302);
     });
@@ -752,7 +753,7 @@ describe("New Longform Action Handler", () => {
         {
           method: "POST",
           body: formData,
-        },
+        }
       );
 
       const response = await handleNewLongFormAction(TEST_USER_ID, request);
@@ -797,20 +798,20 @@ describe("New Longform Action Handler", () => {
         {
           method: "POST",
           body: formData,
-        },
+        }
       );
 
       await handleNewLongFormAction(TEST_USER_ID, request);
 
       expect(getHashTagPresetById).toHaveBeenCalledWith(
         TEST_USER_ID,
-        "preset-1",
+        "preset-1"
       );
       expect(createLongFormPost).toHaveBeenCalledWith(
         // expect.objectContaining returns 'any' - acceptable for test mocks
         expect.objectContaining({
           hashTagPresetId: "preset-1",
-        }),
+        })
       );
     });
 
@@ -844,7 +845,7 @@ describe("New Longform Action Handler", () => {
         {
           method: "POST",
           body: formData,
-        },
+        }
       );
 
       await handleNewLongFormAction(TEST_USER_ID, request);
@@ -854,7 +855,7 @@ describe("New Longform Action Handler", () => {
         // expect.objectContaining returns 'any' - acceptable for test mocks
         expect.objectContaining({
           hashTagPresetId: "preset-1",
-        }),
+        })
       );
     });
   });

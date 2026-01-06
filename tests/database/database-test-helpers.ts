@@ -51,12 +51,12 @@ export function describeDatabase(
   options?: {
     setup?: () => Promise<void>;
     teardown?: () => Promise<void>;
-  },
+  }
 ): void {
   const testDatabaseUrl =
-    process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL;
+    process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"];
   const shouldSkip =
-    !testDatabaseUrl || process.env.SKIP_DATABASE_TESTS === "true";
+    !testDatabaseUrl || process.env["SKIP_DATABASE_TESTS"] === "true";
 
   // Skip the entire suite if database is not configured
   // This prevents beforeAll from failing and marking the suite as failed
@@ -76,7 +76,7 @@ export function describeDatabase(
       } catch (error) {
         console.warn(
           `Database setup failed for "${name}". Tests may fail.`,
-          error,
+          error
         );
         // Re-throw to mark tests as failed if database is not available
         // This ensures tests don't silently pass when database is unavailable
@@ -108,9 +108,9 @@ export function describeDatabase(
  */
 export async function withDatabase<T>(
   testFn: (prisma: Awaited<ReturnType<typeof getTestPrisma>>) => Promise<T>,
-  fixtures?: TestFixtures,
+  fixtures?: TestFixtures
 ): Promise<T> {
-  // eslint-disable-next-line react-hooks/rules-of-hooks
+  // eslint-disable-next-line react-hooks/rules-of-hooks -- Test helper function, not a React hook
   return await useTestDatabase(testFn, {
     useTransaction: false, // Use separate test database instead
     fixtures,
@@ -125,9 +125,9 @@ export async function withDatabase<T>(
  */
 export async function withDatabaseNoTransaction<T>(
   testFn: (prisma: Awaited<ReturnType<typeof getTestPrisma>>) => Promise<T>,
-  fixtures?: TestFixtures,
+  fixtures?: TestFixtures
 ): Promise<T> {
-  // eslint-disable-next-line react-hooks/rules-of-hooks
+  // eslint-disable-next-line react-hooks/rules-of-hooks -- Test helper function, not a React hook
   return await useTestDatabase(testFn, {
     useTransaction: false,
     fixtures,

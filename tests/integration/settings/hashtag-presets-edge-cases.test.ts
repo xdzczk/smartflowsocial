@@ -12,14 +12,14 @@ vi.mock("~/features/user", () => ({
   deleteHashTagPreset: vi.fn(),
 }));
 
+import { createFormData, TEST_USER_ID } from "../../utils/test-helpers";
+
 import { handleHashtagPresetAction } from "~/features/settings/actions/hashtag-presets-actions.server";
 import {
   createHashTagPreset,
   updateHashTagPreset,
   deleteHashTagPreset,
 } from "~/features/user";
-
-import { createFormData, TEST_USER_ID } from "../../utils/test-helpers";
 
 describe("Hashtag Presets Action Handler - Edge Cases", () => {
   beforeEach(() => {
@@ -37,7 +37,7 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
       const result = await handleHashtagPresetAction(
         TEST_USER_ID,
         "create_hashtag_preset",
-        formData,
+        formData
       );
       const responseObj =
         result instanceof Response
@@ -66,7 +66,7 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
       const result = await handleHashtagPresetAction(
         TEST_USER_ID,
         "create_hashtag_preset",
-        formData,
+        formData
       );
       const responseObj =
         result instanceof Response
@@ -87,7 +87,7 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
 
     it("should handle optional description", async () => {
       (createHashTagPreset as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
 
       const formData = createFormData({
@@ -100,7 +100,7 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
       const result = await handleHashtagPresetAction(
         TEST_USER_ID,
         "create_hashtag_preset",
-        formData,
+        formData
       );
       const responseObj =
         result instanceof Response
@@ -118,14 +118,14 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
         TEST_USER_ID,
         "Test Preset",
         "#tag1 #tag2",
-        "Test description",
+        "Test description"
       );
       expect(jsonResult).toEqual({ success: true });
     });
 
     it("should handle missing description", async () => {
       (createHashTagPreset as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
 
       const formData = createFormData({
@@ -137,7 +137,7 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
       const result = await handleHashtagPresetAction(
         TEST_USER_ID,
         "create_hashtag_preset",
-        formData,
+        formData
       );
       const responseObj =
         result instanceof Response
@@ -155,7 +155,7 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
         TEST_USER_ID,
         "Test Preset",
         "#tag1 #tag2",
-        undefined,
+        undefined
       );
       expect(jsonResult).toEqual({ success: true });
     });
@@ -172,7 +172,7 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
       const result = await handleHashtagPresetAction(
         TEST_USER_ID,
         "update_hashtag_preset",
-        formData,
+        formData
       );
       const responseObj =
         result instanceof Response
@@ -202,7 +202,7 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
       const result = await handleHashtagPresetAction(
         TEST_USER_ID,
         "update_hashtag_preset",
-        formData,
+        formData
       );
       const responseObj =
         result instanceof Response
@@ -232,7 +232,7 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
       const result = await handleHashtagPresetAction(
         TEST_USER_ID,
         "update_hashtag_preset",
-        formData,
+        formData
       );
       const responseObj =
         result instanceof Response
@@ -253,7 +253,7 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
 
     it("should handle optional description", async () => {
       (updateHashTagPreset as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
 
       const formData = createFormData({
@@ -267,7 +267,7 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
       const result = await handleHashtagPresetAction(
         TEST_USER_ID,
         "update_hashtag_preset",
-        formData,
+        formData
       );
       const responseObj =
         result instanceof Response
@@ -286,7 +286,7 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
         "preset-123",
         "Updated Preset",
         "#tag1 #tag2",
-        "Updated description",
+        "Updated description"
       );
       expect(jsonResult).toEqual({ success: true });
     });
@@ -301,7 +301,7 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
       const result = await handleHashtagPresetAction(
         TEST_USER_ID,
         "delete_hashtag_preset",
-        formData,
+        formData
       );
       const responseObj =
         result instanceof Response
@@ -322,7 +322,7 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
 
     it("should delete preset with valid ID", async () => {
       (deleteHashTagPreset as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined,
+        undefined
       );
 
       const formData = createFormData({
@@ -333,7 +333,7 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
       const result = await handleHashtagPresetAction(
         TEST_USER_ID,
         "delete_hashtag_preset",
-        formData,
+        formData
       );
       const responseObj =
         result instanceof Response
@@ -349,7 +349,7 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
 
       expect(deleteHashTagPreset).toHaveBeenCalledWith(
         TEST_USER_ID,
-        "preset-123",
+        "preset-123"
       );
       expect(jsonResult).toEqual({ success: true });
     });
@@ -364,7 +364,7 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
       const result = await handleHashtagPresetAction(
         TEST_USER_ID,
         "unknown_action",
-        formData,
+        formData
       );
 
       expect(result).toBeNull();

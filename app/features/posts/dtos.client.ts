@@ -25,14 +25,14 @@ export function deserializePostDTO(dto: PostDTO): PostData {
  * Deserializes an array of PostDTOs
  */
 export function deserializePostDTOArray(dtos: PostDTO[]): PostData[] {
-  return dtos.map(deserializePostDTO);
+  return dtos.map((dto) => deserializePostDTO(dto));
 }
 
 /**
  * Deserializes a LongFormPostDTO (with string dates) to LongFormPostData (with Date objects)
  */
 export function deserializeLongFormPostDTO(
-  dto: LongFormPostDTO,
+  dto: LongFormPostDTO
 ): LongFormPostData {
   const result: LongFormPostData = {
     ...dto,
@@ -48,8 +48,7 @@ export function deserializeLongFormPostDTO(
  * Deserializes an array of LongFormPostDTOs
  */
 export function deserializeLongFormPostDTOArray(
-  dtos: LongFormPostDTO[],
+  dtos: LongFormPostDTO[]
 ): LongFormPostData[] {
-  return dtos.map(deserializeLongFormPostDTO);
+  return dtos.map((dto) => deserializeLongFormPostDTO(dto));
 }
-

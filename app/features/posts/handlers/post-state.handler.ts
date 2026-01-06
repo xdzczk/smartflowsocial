@@ -15,7 +15,9 @@ export function handleCaptionChange(
   setPosts: React.Dispatch<React.SetStateAction<BulkPost[]>>
 ): void {
   const updatedPosts = [...posts];
-  updatedPosts[index].caption = value;
+  const post = updatedPosts[index];
+  if (!post) return;
+  post.caption = value;
   setPosts(updatedPosts);
 }
 
@@ -33,7 +35,9 @@ export function handleDateChange(
 
   // Handle empty string
   if (!value || value.trim() === "") {
-    updatedPosts[index].scheduledFor = "";
+    const post = updatedPosts[index];
+    if (!post) return;
+    post.scheduledFor = "";
     setPosts(updatedPosts);
     return;
   }
@@ -43,7 +47,9 @@ export function handleDateChange(
 
   // Check if date is invalid
   if (isNaN(localDate.getTime())) {
-    updatedPosts[index].scheduledFor = "";
+    const post = updatedPosts[index];
+    if (!post) return;
+    post.scheduledFor = "";
     setPosts(updatedPosts);
     return;
   }
@@ -59,7 +65,9 @@ export function handleDateChange(
   // Format the date string manually to ensure hour isn't converted
   const formattedDate = `${year}-${month}-${day}T${String(hours).padStart(2, "0")}:${minutes}`;
 
-  updatedPosts[index].scheduledFor = formattedDate;
+  const post = updatedPosts[index];
+  if (!post) return;
+  post.scheduledFor = formattedDate;
 
   // Set flag if user manually changed the first item's time
   if (index === 0) {

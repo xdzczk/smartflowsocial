@@ -7,7 +7,7 @@
  * Create a FormData object with the given entries
  */
 export function createFormData(
-  entries: Record<string, string | string[]>,
+  entries: Record<string, string | string[]>
 ): FormData {
   const formData = new FormData();
 
@@ -27,7 +27,7 @@ export function createFormData(
  */
 export function createActionFormData(
   action: string,
-  additionalData: Record<string, string | string[]> = {},
+  additionalData: Record<string, string | string[]> = {}
 ): FormData {
   return createFormData({
     _action: action,
@@ -89,12 +89,14 @@ export * from "./mock-helpers";
 /**
  * Create a valid user object that matches userSchema
  */
-export function createValidUserMock(overrides: Partial<{
-  id: string;
-  npub: string;
-  timezone: string | null;
-  scheduleInterval: (string | number)[];
-}> = {}): {
+export function createValidUserMock(
+  overrides: Partial<{
+    id: string;
+    npub: string;
+    timezone: string | null;
+    scheduleInterval: Array<string | number>;
+  }> = {}
+): {
   id: string;
   npub: string;
   createdAt: string;
@@ -104,7 +106,7 @@ export function createValidUserMock(overrides: Partial<{
   userRelays: string[];
   giveawayBlackListed: string[];
   uploadProvider: "S3" | "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR";
-  scheduleInterval: (string | number)[];
+  scheduleInterval: Array<string | number>;
   pendingParentRequests: string[];
 } {
   return {
@@ -125,16 +127,18 @@ export function createValidUserMock(overrides: Partial<{
 /**
  * Create a minimal valid post DTO that matches postDTOSchema
  */
-export function createValidPostDTOMock(overrides: Partial<{
-  id: string;
-  userId: string;
-  caption: string | null;
-  content: string | null;
-  postType: "IMAGE" | "CAROUSEL" | "TEXT" | "VIDEO";
-  status: "DRAFT" | "ACTIVE" | "SCHEDULED" | "PAUSED" | "POSTED" | "FAILED";
-  scheduledFor: string | null;
-  postedAt: string | null;
-}> = {}): {
+export function createValidPostDTOMock(
+  overrides: Partial<{
+    id: string;
+    userId: string;
+    caption: string | null;
+    content: string | null;
+    postType: "IMAGE" | "CAROUSEL" | "TEXT" | "VIDEO";
+    status: "DRAFT" | "ACTIVE" | "SCHEDULED" | "PAUSED" | "POSTED" | "FAILED";
+    scheduledFor: string | null;
+    postedAt: string | null;
+  }> = {}
+): {
   id: string;
   fileUrl: string[];
   scheduledFor: string | null;

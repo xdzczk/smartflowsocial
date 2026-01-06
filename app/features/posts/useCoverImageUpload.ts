@@ -81,26 +81,27 @@ export function useCoverImageUpload({
             component: "useCoverImageUpload",
             action: "handleImageUpload",
           },
-          false, // Don't show toast, we set uploadError instead
+          false // Don't show toast, we set uploadError instead
         );
         setUploadError("Error uploading image. Please try again.");
       }
     },
-    [uploadProvider, uploadFetcher],
+    [uploadProvider, uploadFetcher]
   );
 
   const handleCoverImageAssets = useCallback(
     (selectedAssets: SelectedAsset[]) => {
       // For cover image, only use the first selected image asset
-      const imageAssets = selectedAssets.filter(
-        (asset) => asset.assetType === "IMAGE",
+      const imageAsset = selectedAssets.find(
+        (asset) => asset.assetType === "IMAGE"
       );
-      if (imageAssets.length > 0 && imageAssets[0].fileUrl) {
-        setImage(imageAssets[0].fileUrl);
+      const firstImageAsset = imageAsset;
+      if (firstImageAsset?.fileUrl) {
+        setImage(firstImageAsset.fileUrl);
         setUploadError("");
       }
     },
-    [],
+    []
   );
 
   // Handle upload fetcher responses

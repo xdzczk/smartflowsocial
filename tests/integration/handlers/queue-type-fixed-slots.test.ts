@@ -14,11 +14,11 @@ vi.mock("~/features/posts/handlers/hashtag.handler", () => ({
   updateDisplayedHashtags: vi.fn(),
 }));
 
+import { TEST_USER_ID } from "../../utils/test-helpers";
+
 import { handleBulkQueueUpdate } from "~/features/posts/handlers/queue-type.handler";
 import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
 import type { BulkPost, QueueType } from "~/features/posts/types";
-
-import { TEST_USER_ID } from "../../utils/test-helpers";
 
 describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
   beforeEach(() => {
@@ -78,7 +78,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
     });
 
     (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
-      "queue-1",
+      "queue-1"
     );
 
     await handleBulkQueueUpdate("Queue 1", {
@@ -93,14 +93,18 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
     });
 
     expect(setPosts).toHaveBeenCalled();
-    const updatedPosts = setPosts.mock.calls[0][0] as BulkPost[];
+    const callArgs = setPosts.mock.calls[0]?.[0] as unknown;
+    if (!callArgs) {
+      throw new Error("setPosts was not called with arguments");
+    }
+    const updatedPosts = callArgs as BulkPost[];
     expect(updatedPosts).toHaveLength(3);
     // First post should use the next slot after 10:00 (which is 12:00)
-    expect(updatedPosts[0].scheduledFor).toMatch(/2024-12-25T12:00/);
+    expect(updatedPosts[0]?.scheduledFor).toMatch(/2024-12-25T12:00/);
     // Second post should use 15:00
-    expect(updatedPosts[1].scheduledFor).toMatch(/2024-12-25T15:00/);
+    expect(updatedPosts[1]?.scheduledFor).toMatch(/2024-12-25T15:00/);
     // Third post should use 18:00
-    expect(updatedPosts[2].scheduledFor).toMatch(/2024-12-25T18:00/);
+    expect(updatedPosts[2]?.scheduledFor).toMatch(/2024-12-25T18:00/);
   });
 
   it("should wrap to next day when slots are exhausted", async () => {
@@ -151,7 +155,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
     });
 
     (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
-      "queue-1",
+      "queue-1"
     );
 
     await handleBulkQueueUpdate("Queue 1", {
@@ -166,14 +170,18 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
     });
 
     expect(setPosts).toHaveBeenCalled();
-    const updatedPosts = setPosts.mock.calls[0][0] as BulkPost[];
+    const callArgs = setPosts.mock.calls[0]?.[0] as unknown;
+    if (!callArgs) {
+      throw new Error("setPosts was not called with arguments");
+    }
+    const updatedPosts = callArgs as BulkPost[];
     expect(updatedPosts).toHaveLength(3);
     // First post should use 15:00 (current slot)
-    expect(updatedPosts[0].scheduledFor).toMatch(/2024-12-25T15:00/);
+    expect(updatedPosts[0]?.scheduledFor).toMatch(/2024-12-25T15:00/);
     // Second post should use 18:00
-    expect(updatedPosts[1].scheduledFor).toMatch(/2024-12-25T18:00/);
+    expect(updatedPosts[1]?.scheduledFor).toMatch(/2024-12-25T18:00/);
     // Third post should wrap to next day 09:00
-    expect(updatedPosts[2].scheduledFor).toMatch(/2024-12-26T09:00/);
+    expect(updatedPosts[2]?.scheduledFor).toMatch(/2024-12-26T09:00/);
   });
 
   it("should handle useGlobalInterval for INTERVAL schedule type", async () => {
@@ -222,7 +230,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
     });
 
     (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
-      "queue-1",
+      "queue-1"
     );
 
     await handleBulkQueueUpdate("Queue 1", {
@@ -237,12 +245,16 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
     });
 
     expect(setPosts).toHaveBeenCalled();
-    const updatedPosts = setPosts.mock.calls[0][0] as BulkPost[];
+    const callArgs = setPosts.mock.calls[0]?.[0] as unknown;
+    if (!callArgs) {
+      throw new Error("setPosts was not called with arguments");
+    }
+    const updatedPosts = callArgs as BulkPost[];
     expect(updatedPosts).toHaveLength(2);
     // First post: 10:00 + 0 hours = 10:00
-    expect(updatedPosts[0].scheduledFor).toMatch(/2024-12-25T10:00/);
+    expect(updatedPosts[0]?.scheduledFor).toMatch(/2024-12-25T10:00/);
     // Second post: 10:00 + 6 hours = 16:00
-    expect(updatedPosts[1].scheduledFor).toMatch(/2024-12-25T16:00/);
+    expect(updatedPosts[1]?.scheduledFor).toMatch(/2024-12-25T16:00/);
   });
 
   it("should use queue-specific interval when useGlobalInterval is false", async () => {
@@ -292,7 +304,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
     });
 
     (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
-      "queue-1",
+      "queue-1"
     );
 
     await handleBulkQueueUpdate("Queue 1", {
@@ -307,12 +319,16 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
     });
 
     expect(setPosts).toHaveBeenCalled();
-    const updatedPosts = setPosts.mock.calls[0][0] as BulkPost[];
+    const callArgs = setPosts.mock.calls[0]?.[0] as unknown;
+    if (!callArgs) {
+      throw new Error("setPosts was not called with arguments");
+    }
+    const updatedPosts = callArgs as BulkPost[];
     expect(updatedPosts).toHaveLength(2);
     // First post: 10:00 + 0 hours = 10:00
-    expect(updatedPosts[0].scheduledFor).toMatch(/2024-12-25T10:00/);
+    expect(updatedPosts[0]?.scheduledFor).toMatch(/2024-12-25T10:00/);
     // Second post: 10:00 + 8 hours = 18:00
-    expect(updatedPosts[1].scheduledFor).toMatch(/2024-12-25T18:00/);
+    expect(updatedPosts[1]?.scheduledFor).toMatch(/2024-12-25T18:00/);
   });
 
   it("should handle unassigned queue type", async () => {
@@ -346,9 +362,13 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
     });
 
     expect(setPosts).toHaveBeenCalled();
-    const updatedPosts = setPosts.mock.calls[0][0] as BulkPost[];
+    const callArgs = setPosts.mock.calls[0]?.[0] as unknown;
+    if (!callArgs) {
+      throw new Error("setPosts was not called with arguments");
+    }
+    const updatedPosts = callArgs as BulkPost[];
     expect(updatedPosts).toHaveLength(1);
-    expect(updatedPosts[0].scheduledFor).toBe("");
+    expect(updatedPosts[0]?.scheduledFor).toBe("");
   });
 
   it("should sort slots correctly by time", async () => {
@@ -385,7 +405,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
     });
 
     (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
-      "queue-1",
+      "queue-1"
     );
 
     await handleBulkQueueUpdate("Queue 1", {
@@ -400,10 +420,14 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
     });
 
     expect(setPosts).toHaveBeenCalled();
-    const updatedPosts = setPosts.mock.calls[0][0] as BulkPost[];
+    const callArgs = setPosts.mock.calls[0]?.[0] as unknown;
+    if (!callArgs) {
+      throw new Error("setPosts was not called with arguments");
+    }
+    const updatedPosts = callArgs as BulkPost[];
     expect(updatedPosts).toHaveLength(1);
     // Should use 12:00 (next slot after 10:00, sorted correctly)
-    expect(updatedPosts[0].scheduledFor).toMatch(/2024-12-25T12:00/);
+    expect(updatedPosts[0]?.scheduledFor).toMatch(/2024-12-25T12:00/);
   });
 
   it("should handle empty slots array", async () => {
@@ -440,7 +464,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
     });
 
     (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
-      "queue-1",
+      "queue-1"
     );
 
     await handleBulkQueueUpdate("Queue 1", {
@@ -455,10 +479,14 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
     });
 
     expect(setPosts).toHaveBeenCalled();
-    const updatedPosts = setPosts.mock.calls[0][0] as BulkPost[];
+    const callArgs = setPosts.mock.calls[0]?.[0] as unknown;
+    if (!callArgs) {
+      throw new Error("setPosts was not called with arguments");
+    }
+    const updatedPosts = callArgs as BulkPost[];
     expect(updatedPosts).toHaveLength(1);
     // Should not set scheduledFor if no slots
-    expect(updatedPosts[0].scheduledFor).toBe("");
+    expect(updatedPosts[0]?.scheduledFor).toBe("");
   });
 
   it("should handle missing scheduleInterval in user", async () => {
@@ -495,7 +523,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
     });
 
     (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
-      "queue-1",
+      "queue-1"
     );
 
     await handleBulkQueueUpdate("Queue 1", {
@@ -510,10 +538,14 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
     });
 
     expect(setPosts).toHaveBeenCalled();
-    const updatedPosts = setPosts.mock.calls[0][0] as BulkPost[];
+    const callArgs = setPosts.mock.calls[0]?.[0] as unknown;
+    if (!callArgs) {
+      throw new Error("setPosts was not called with arguments");
+    }
+    const updatedPosts = callArgs as BulkPost[];
     expect(updatedPosts).toHaveLength(1);
     // First post (index 0) should be at base time, not base time + interval
     // The interval is used for spacing subsequent posts (index * intervalHours)
-    expect(updatedPosts[0].scheduledFor).toMatch(/2024-12-25T10:00/);
+    expect(updatedPosts[0]?.scheduledFor).toMatch(/2024-12-25T10:00/);
   });
 });

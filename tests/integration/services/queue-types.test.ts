@@ -20,6 +20,8 @@ vi.mock("~/lib/prisma.server", () => ({
   },
 }));
 
+import { TEST_USER_ID } from "../../utils/test-helpers";
+
 import {
   createDefaultQueueTypes,
   updateQueueType,
@@ -29,8 +31,6 @@ import {
   getQueueTypeByNameForUser,
 } from "~/features/user/services/queue-types.server";
 import { prisma } from "~/lib/prisma.server";
-
-import { TEST_USER_ID } from "../../utils/test-helpers";
 
 describe("Queue Types Service", () => {
   beforeEach(() => {
@@ -50,7 +50,7 @@ describe("Queue Types Service", () => {
         where: { userId: TEST_USER_ID },
       });
       expect(prisma.queueType.createMany).toHaveBeenCalledWith({
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         data: expect.arrayContaining([
           expect.objectContaining({
             userId: TEST_USER_ID,
@@ -79,7 +79,7 @@ describe("Queue Types Service", () => {
         scheduleType: "INTERVAL",
       };
       (prisma.queueType.update as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockQueueType,
+        mockQueueType
       );
 
       const result = await updateQueueType(TEST_USER_ID, {
@@ -91,7 +91,7 @@ describe("Queue Types Service", () => {
 
       expect(prisma.queueType.update).toHaveBeenCalledWith({
         where: { id: "queue-1", userId: TEST_USER_ID },
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         data: expect.objectContaining({
           name: "Updated Queue",
           scheduleType: "INTERVAL",
@@ -107,7 +107,7 @@ describe("Queue Types Service", () => {
         scheduleType: "FIXED_SLOTS",
       };
       (prisma.queueType.create as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockQueueType,
+        mockQueueType
       );
 
       const result = await updateQueueType(TEST_USER_ID, {
@@ -117,7 +117,7 @@ describe("Queue Types Service", () => {
       });
 
       expect(prisma.queueType.create).toHaveBeenCalledWith({
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         data: expect.objectContaining({
           name: "New Queue",
           scheduleType: "FIXED_SLOTS",
@@ -129,7 +129,7 @@ describe("Queue Types Service", () => {
     it("should connect hashtag preset when provided", async () => {
       const mockQueueType = { id: "queue-1" };
       (prisma.queueType.update as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockQueueType,
+        mockQueueType
       );
 
       await updateQueueType(TEST_USER_ID, {
@@ -152,7 +152,7 @@ describe("Queue Types Service", () => {
     it("should disconnect hashtag preset when null", async () => {
       const mockQueueType = { id: "queue-1" };
       (prisma.queueType.update as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockQueueType,
+        mockQueueType
       );
 
       await updateQueueType(TEST_USER_ID, {
@@ -212,7 +212,7 @@ describe("Queue Types Service", () => {
         prisma.queueType.createMany as ReturnType<typeof vi.fn>
       ).mockResolvedValue({ count: 1 });
       (prisma.queueType.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockQueueTypes,
+        mockQueueTypes
       );
 
       const result = await getQueueTypes(TEST_USER_ID);
@@ -234,7 +234,7 @@ describe("Queue Types Service", () => {
       ];
       (prisma.queueType.count as ReturnType<typeof vi.fn>).mockResolvedValue(1);
       (prisma.queueType.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockQueueTypes,
+        mockQueueTypes
       );
 
       const queueTypes = await getQueueTypes(TEST_USER_ID);
@@ -293,7 +293,7 @@ describe("Queue Types Service", () => {
 
       const result = await getQueueTypeByNameForUser(
         TEST_USER_ID,
-        "Nonexistent",
+        "Nonexistent"
       );
 
       expect(result).toBeNull();

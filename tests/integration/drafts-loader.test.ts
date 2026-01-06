@@ -30,6 +30,11 @@ vi.mock("~/features/posts/services/drafts-loader.server", () => ({
   loadDraftsData: vi.fn(),
 }));
 
+import {
+  createValidUserMock,
+  createValidPostDTOMock,
+} from "../utils/test-helpers";
+
 import { requireUserId } from "~/features/auth/session.server";
 import {
   requireAnySubscription,
@@ -38,8 +43,6 @@ import {
 import { loadDraftsData } from "~/features/posts/services/drafts-loader.server";
 import { loader } from "~/routes/dashboard.drafts";
 
-import { createValidUserMock, createValidPostDTOMock } from "../utils/test-helpers";
-
 describe("Drafts Loader Integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -47,10 +50,10 @@ describe("Drafts Loader Integration", () => {
     // Default mocks
     (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue("user-123");
     (requireAnySubscription as ReturnType<typeof vi.fn>).mockResolvedValue(
-      undefined,
+      undefined
     );
     (requireFeatureAccess as ReturnType<typeof vi.fn>).mockResolvedValue(
-      undefined,
+      undefined
     );
     (loadDraftsData as ReturnType<typeof vi.fn>).mockResolvedValue({
       posts: [],
@@ -101,7 +104,13 @@ describe("Drafts Loader Integration", () => {
 
     it("should handle queue type parameter", async () => {
       const mockData = {
-        posts: [createValidPostDTOMock({ id: "1", caption: "Draft post", status: "DRAFT" })],
+        posts: [
+          createValidPostDTOMock({
+            id: "1",
+            caption: "Draft post",
+            status: "DRAFT",
+          }),
+        ],
         longformPosts: [],
         user: createValidUserMock(),
         queueTypes: [{ id: "1", name: "Default" }],
@@ -147,30 +156,40 @@ describe("Drafts Loader Integration", () => {
     it("should return proper data structure with drafts", async () => {
       const mockData = {
         posts: [
-          createValidPostDTOMock({ id: "1", caption: "Draft 1", status: "DRAFT" }),
-          createValidPostDTOMock({ id: "2", caption: "Draft 2", status: "DRAFT" }),
+          createValidPostDTOMock({
+            id: "1",
+            caption: "Draft 1",
+            status: "DRAFT",
+          }),
+          createValidPostDTOMock({
+            id: "2",
+            caption: "Draft 2",
+            status: "DRAFT",
+          }),
         ],
-        longformPosts: [{
-          id: "3",
-          title: "Longform Draft",
-          summary: null,
-          content: null,
-          image: null,
-          scheduledFor: null,
-          isScheduled: false,
-          postedAt: null,
-          publishedAt: null,
-          updatedAt: new Date().toISOString(),
-          createdAt: new Date().toISOString(),
-          isPublished: false,
-          draft: true,
-          status: "DRAFT",
-          queueTypeId: null,
-          tags: [],
-          userId: "user-123",
-          hashTagPresetId: null,
-          queueType: null,
-        }],
+        longformPosts: [
+          {
+            id: "3",
+            title: "Longform Draft",
+            summary: null,
+            content: null,
+            image: null,
+            scheduledFor: null,
+            isScheduled: false,
+            postedAt: null,
+            publishedAt: null,
+            updatedAt: new Date().toISOString(),
+            createdAt: new Date().toISOString(),
+            isPublished: false,
+            draft: true,
+            status: "DRAFT",
+            queueTypeId: null,
+            tags: [],
+            userId: "user-123",
+            hashTagPresetId: null,
+            queueType: null,
+          },
+        ],
         user: createValidUserMock({ timezone: "America/New_York" }),
         queueTypes: [{ id: "1", name: "Default", isEnabled: true }],
         selectedQueueType: "all",
@@ -220,7 +239,7 @@ describe("Drafts Loader Integration", () => {
   describe("Error Handling", () => {
     it("should handle authentication errors", async () => {
       (requireUserId as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Authentication required"),
+        new Error("Authentication required")
       );
 
       const request = new Request("http://localhost:3000/dashboard/drafts");
@@ -263,7 +282,7 @@ describe("Drafts Loader Integration", () => {
 
     it("should handle subscription requirement errors", async () => {
       (requireAnySubscription as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Subscription required"),
+        new Error("Subscription required")
       );
 
       const request = new Request("http://localhost:3000/dashboard/drafts");
@@ -306,7 +325,7 @@ describe("Drafts Loader Integration", () => {
 
     it("should handle feature access errors", async () => {
       (requireFeatureAccess as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Feature access denied"),
+        new Error("Feature access denied")
       );
 
       const _request = new Request("http://localhost:3000/dashboard/drafts");

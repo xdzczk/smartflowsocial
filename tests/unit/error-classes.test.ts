@@ -45,7 +45,7 @@ describe("Error Classes Unit Tests", () => {
         404,
         "CUSTOM_ERROR",
         false,
-        context,
+        context
       );
 
       expect(error.message).toBe("Custom error");
@@ -62,7 +62,7 @@ describe("Error Classes Unit Tests", () => {
         400,
         "TEST_ERROR",
         true,
-        context,
+        context
       );
       const json = error.toJSON();
 
@@ -210,7 +210,7 @@ describe("Error Classes Unit Tests", () => {
       const error = new ExternalServiceError(
         "Payment service error",
         503,
-        context,
+        context
       );
 
       expect(error.message).toBe("Payment service error");
@@ -329,7 +329,7 @@ describe("Error Classes Unit Tests", () => {
 
     it("should convert Prisma Unique constraint error to ConflictError", () => {
       const prismaError = new Error(
-        "Unique constraint failed on the fields: (`email`)",
+        "Unique constraint failed on the fields: (`email`)"
       );
       const normalized = normalizeError(prismaError);
 
@@ -378,7 +378,7 @@ describe("Error Classes Unit Tests", () => {
       expect(normalized.isOperational).toBe(false);
       expect(normalized.context).toHaveProperty(
         "originalError",
-        "String error",
+        "String error"
       );
     });
 
@@ -401,7 +401,7 @@ describe("Error Classes Unit Tests", () => {
   describe("getUserFriendlyMessage", () => {
     beforeEach(() => {
       // Reset NODE_ENV to test
-      process.env.NODE_ENV = "test";
+      process.env["NODE_ENV"] = "test";
     });
 
     it("should return error message for operational errors", () => {
@@ -412,12 +412,12 @@ describe("Error Classes Unit Tests", () => {
     });
 
     it("should return error message for non-operational errors in development", () => {
-      process.env.NODE_ENV = "development";
+      process.env["NODE_ENV"] = "development";
       const error = new AppError(
         "Internal database error",
         500,
         "INTERNAL_ERROR",
-        false,
+        false
       );
 
       const message = getUserFriendlyMessage(error);
@@ -425,17 +425,17 @@ describe("Error Classes Unit Tests", () => {
     });
 
     it("should return generic message for non-operational errors in production", () => {
-      process.env.NODE_ENV = "production";
+      process.env["NODE_ENV"] = "production";
       const error = new AppError(
         "Internal database error",
         500,
         "INTERNAL_ERROR",
-        false,
+        false
       );
 
       const message = getUserFriendlyMessage(error);
       expect(message).toBe(
-        "An unexpected error occurred. Please try again later.",
+        "An unexpected error occurred. Please try again later."
       );
     });
   });

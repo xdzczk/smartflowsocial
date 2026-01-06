@@ -42,7 +42,7 @@ export function createQueueType(overrides: Partial<QueueType> = {}): QueueType {
  */
 export function createIntervalQueueType(
   intervalHours: number,
-  overrides: Partial<QueueType> = {},
+  overrides: Partial<QueueType> = {}
 ): QueueType {
   const scheduleType: $Enums.ScheduleType = "INTERVAL";
   return createQueueType({
@@ -58,16 +58,16 @@ export function createIntervalQueueType(
  * @param slots - Array of slot objects with hour and minute, OR array of time strings like "09:00"
  */
 export function createFixedSlotsQueueType(
-  slots: { hour: number; minute: number }[] | string[],
-  overrides: Partial<QueueType> = {},
+  slots: Array<{ hour: number; minute: number }> | string[],
+  overrides: Partial<QueueType> = {}
 ): QueueType {
   // Convert to string format that the scheduler expects (e.g., "09:00")
   const slotStrings =
     typeof slots[0] === "string"
       ? (slots as string[])
-      : (slots as { hour: number; minute: number }[]).map(
+      : (slots as Array<{ hour: number; minute: number }>).map(
           (slot) =>
-            `${String(slot.hour).padStart(2, "0")}:${String(slot.minute).padStart(2, "0")}`,
+            `${String(slot.hour).padStart(2, "0")}:${String(slot.minute).padStart(2, "0")}`
         );
 
   return createQueueType({
@@ -94,7 +94,7 @@ export function createDateAtTime(
   month: number,
   day: number,
   hour: number,
-  minute = 0,
+  minute = 0
 ): Date {
   return new Date(Date.UTC(year, month - 1, day, hour, minute));
 }

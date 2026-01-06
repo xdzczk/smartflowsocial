@@ -30,12 +30,12 @@ interface QueueTypeSettings extends QueueType {
 
 interface QueueTypesSettingsProps {
   queueTypes: QueueTypeSettings[];
-  hashTagPresets: {
+  hashTagPresets: Array<{
     id: string;
     name: string;
     tags: string;
     description?: string;
-  }[];
+  }>;
 }
 
 export function QueueTypesSettings({
@@ -53,7 +53,7 @@ export function QueueTypesSettings({
   const [queueTypesState, setQueueTypesState] = useState(queueTypes || []);
   const [showDialog, setShowDialog] = useState(false);
   const [editingQueueType, setEditingQueueType] = useState<QueueType | null>(
-    null,
+    null
   );
 
   const _isCreating = createFetcher.state === "submitting";

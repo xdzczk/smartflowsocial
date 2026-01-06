@@ -131,7 +131,7 @@ export default function PostedPosts() {
     if (selectedPosts.size === 0) return;
 
     const postIds = Array.from(selectedPosts);
-    
+
     // Use TanStack Query mutation for optimistic updates
     bulkDeleteMutation.mutate(postIds, {
       onSuccess: () => {
@@ -194,15 +194,15 @@ export default function PostedPosts() {
       // Use type-safe PostStats accessors
       const aStats = getPostStats(
         stats && typeof stats === "object" && !Array.isArray(stats)
-          ? stats as Record<string, unknown>
+          ? (stats as Record<string, unknown>)
           : undefined,
-        aEventId,
+        aEventId
       );
       const bStats = getPostStats(
         stats && typeof stats === "object" && !Array.isArray(stats)
-          ? stats as Record<string, unknown>
+          ? (stats as Record<string, unknown>)
           : undefined,
-        bEventId,
+        bEventId
       );
       const sortKey = sortConfig.key;
       const aValue = getPostStatsValue(aStats, sortKey);
@@ -211,11 +211,16 @@ export default function PostedPosts() {
     }
 
     // Use type-safe property accessor for PostData
-    return comparePostDataByProperty(a, b, sortConfig.key, sortConfig.direction as "asc" | "desc");
+    return comparePostDataByProperty(
+      a,
+      b,
+      sortConfig.key,
+      sortConfig.direction as "asc" | "desc"
+    );
   });
 
   const filteredPosts = sortedPosts.filter((post) =>
-    post.caption?.toLowerCase().includes(searchTerm.toLowerCase()),
+    post.caption?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -267,7 +272,9 @@ export default function PostedPosts() {
           showBulkActions={true}
           onBulkDelete={handleBulkDelete}
           bulkDeleteState={
-            bulkDeleteMutation.isPending ? "submitting" : bulkDeleteFetcher.state
+            bulkDeleteMutation.isPending
+              ? "submitting"
+              : bulkDeleteFetcher.state
           }
           // Advanced actions for posted content
           individualRepostFetcher={individualRepostFetcher}
@@ -385,10 +392,14 @@ export default function PostedPosts() {
                 </button>
                 <button
                   onClick={handleBulkDelete}
-                  disabled={bulkDeleteMutation.isPending || bulkDeleteFetcher.state !== "idle"}
+                  disabled={
+                    bulkDeleteMutation.isPending ||
+                    bulkDeleteFetcher.state !== "idle"
+                  }
                   className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-semibold leading-5 text-red-800 hover:border-red-300 hover:text-red-900 hover:shadow-sm focus:ring focus:ring-red-300/25 active:border-red-200 active:shadow-none disabled:opacity-50 dark:border-red-700 dark:bg-gray-800 dark:text-red-300 dark:hover:border-red-600 dark:hover:text-red-200 dark:focus:ring-red-600/40 dark:active:border-red-700"
                 >
-                  {bulkDeleteMutation.isPending || bulkDeleteFetcher.state !== "idle"
+                  {bulkDeleteMutation.isPending ||
+                  bulkDeleteFetcher.state !== "idle"
                     ? "Deleting..."
                     : `Delete ${selectedPosts.size} post${selectedPosts.size !== 1 ? "s" : ""}`}
                 </button>
@@ -418,13 +429,13 @@ export default function PostedPosts() {
               Showing {(pagination.currentPage - 1) * pagination.limit + 1} to{" "}
               {Math.min(
                 pagination.currentPage * pagination.limit,
-                pagination.total,
+                pagination.total
               )}{" "}
               of {pagination.total} posts
             </div>
             <div className="flex gap-2">
               <Link
-                to={`${params.queueType ? `/dashboard/posted/${params.queueType}` : "/dashboard/posted"}?page=${pagination.currentPage - 1}`}
+                to={`${params["queueType"] ? `/dashboard/posted/${params["queueType"]}` : "/dashboard/posted"}?page=${pagination.currentPage - 1}`}
                 className={`rounded-lg border px-3 py-1 ${
                   pagination.currentPage === 1
                     ? "pointer-events-none opacity-50"
@@ -434,7 +445,7 @@ export default function PostedPosts() {
                 Previous
               </Link>
               <Link
-                to={`${params.queueType ? `/dashboard/posted/${params.queueType}` : "/dashboard/posted"}?page=${pagination.currentPage + 1}`}
+                to={`${params["queueType"] ? `/dashboard/posted/${params["queueType"]}` : "/dashboard/posted"}?page=${pagination.currentPage + 1}`}
                 className={`rounded-lg border px-3 py-1 ${
                   pagination.currentPage === pagination.pages
                     ? "pointer-events-none opacity-50"
@@ -457,7 +468,7 @@ export default function PostedPosts() {
                 typeof selectedPost.signedEvent === "object" &&
                 "id" in selectedPost.signedEvent &&
                 typeof selectedPost.signedEvent.id === "string"
-                  ? (stats)[selectedPost.signedEvent.id]
+                  ? stats[selectedPost.signedEvent.id]
                   : undefined
               }
               onClose={() => setSelectedPost(null)}

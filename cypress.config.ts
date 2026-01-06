@@ -15,10 +15,10 @@ export default defineConfig({
     setupNodeEvents: (on, config) => {
       // Use PORT env var, or default to 3000 for dev
       // Only use 8811 if explicitly in CI environment
-      const port = process.env.PORT ?? (process.env.CI ? "8811" : "3000");
+      const port = process.env["PORT"] ?? (process.env["CI"] ? "8811" : "3000");
       const configOverrides: Partial<Cypress.PluginConfigOptions> = {
         baseUrl: `http://localhost:${port}`,
-        screenshotOnRunFailure: !process.env.CI,
+        screenshotOnRunFailure: !process.env["CI"],
       };
 
       // To use this:

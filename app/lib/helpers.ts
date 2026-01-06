@@ -1,7 +1,7 @@
 import { nip19 } from "nostr-tools";
 export const getTimeRemaining = (
   scheduledDate: string | Date,
-  currentTime: Date = new Date(),
+  currentTime: Date = new Date()
 ): string => {
   const scheduleUTC = new Date(scheduledDate);
   const currentUTC = new Date(currentTime);
@@ -79,6 +79,7 @@ export const isVideoFile = (url: string): boolean => {
   ];
 
   // Check if URL ends with a video extension (after removing query params and fragments)
-  const urlWithoutQuery = lowerUrl.split("?")[0].split("#")[0];
+  const urlWithoutQuery = lowerUrl.split("?")[0]?.split("#")[0];
+  if (!urlWithoutQuery) return false;
   return videoExtensions.some((ext) => urlWithoutQuery.endsWith(ext));
 };

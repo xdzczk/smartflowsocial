@@ -27,27 +27,39 @@ export const meta: MetaFunction = () => {
   ];
 };
 
-export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs) => {
-  const formData = await request.formData();
-  const result = await handlePlansAction(formData, request);
+export const action = withCSRFProtection(
+  async ({ request }: ActionFunctionArgs) => {
+    const formData = await request.formData();
+    const result = await handlePlansAction(formData, request);
 
-  // Type narrowing: check if result is a Response
-  if (result instanceof Response) {
-    return result;
+    // Type narrowing: check if result is a Response
+    if (result instanceof Response) {
+      return result;
+    }
+
+    // Type narrowing: check if result has redirect property
+    if (
+      typeof result === "object" &&
+      result !== null &&
+      "redirect" in result &&
+      result.redirect
+    ) {
+      return redirect(result.redirect);
+    }
+
+    // Type narrowing: check if result has error property
+    if (
+      typeof result === "object" &&
+      result !== null &&
+      "error" in result &&
+      result.error
+    ) {
+      return json(result, { status: 400 });
+    }
+
+    return json(result);
   }
-
-  // Type narrowing: check if result has redirect property
-  if (typeof result === "object" && result !== null && "redirect" in result && result.redirect) {
-    return redirect(result.redirect);
-  }
-
-  // Type narrowing: check if result has error property
-  if (typeof result === "object" && result !== null && "error" in result && result.error) {
-    return json(result, { status: 400 });
-  }
-
-  return json(result);
-});
+);
 
 export const loader = async ({ request }: { request: Request }) => {
   const data = await loadPlansData(request);
@@ -56,7 +68,7 @@ export const loader = async ({ request }: { request: Request }) => {
 
 export default function Plans() {
   const { plans, user, currentSubscription } = useLoaderData<typeof loader>();
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Remix action data type is complex, validated at runtime
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
 
@@ -82,57 +94,66 @@ export default function Plans() {
     actionData: typedActionData
       ? {
           success:
-            "success" in typedActionData && typeof typedActionData.success === "boolean"
-              ? typedActionData.success
+            "success" in typedActionData &&
+            typeof typedActionData["success"] === "boolean"
+              ? typedActionData["success"]
               : undefined,
           paid:
-            "paid" in typedActionData && typeof typedActionData.paid === "boolean"
-              ? typedActionData.paid
+            "paid" in typedActionData &&
+            typeof typedActionData["paid"] === "boolean"
+              ? typedActionData["paid"]
               : undefined,
           invoice:
-            "invoice" in typedActionData && typeof typedActionData.invoice === "string"
-              ? typedActionData.invoice
+            "invoice" in typedActionData &&
+            typeof typedActionData["invoice"] === "string"
+              ? typedActionData["invoice"]
               : undefined,
           paymentHash:
-            "paymentHash" in typedActionData && typeof typedActionData.paymentHash === "string"
-              ? typedActionData.paymentHash
+            "paymentHash" in typedActionData &&
+            typeof typedActionData["paymentHash"] === "string"
+              ? typedActionData["paymentHash"]
               : undefined,
           amount:
-            "amount" in typedActionData && typeof typedActionData.amount === "number"
-              ? typedActionData.amount
+            "amount" in typedActionData &&
+            typeof typedActionData["amount"] === "number"
+              ? typedActionData["amount"]
               : undefined,
           amountUsd:
-            "amountUsd" in typedActionData && typeof typedActionData.amountUsd === "number"
-              ? typedActionData.amountUsd
+            "amountUsd" in typedActionData &&
+            typeof typedActionData["amountUsd"] === "number"
+              ? typedActionData["amountUsd"]
               : undefined,
           paymentId:
-            "paymentId" in typedActionData && typeof typedActionData.paymentId === "string"
-              ? typedActionData.paymentId
+            "paymentId" in typedActionData &&
+            typeof typedActionData["paymentId"] === "string"
+              ? typedActionData["paymentId"]
               : undefined,
           expiresAt:
             "expiresAt" in typedActionData
               ? (() => {
-                  const expiresAtValue = typedActionData.expiresAt;
+                  const expiresAtValue = typedActionData["expiresAt"];
                   if (expiresAtValue === null || expiresAtValue === undefined)
-                    return undefined;
+                    return;
                   if (expiresAtValue instanceof Date)
                     return expiresAtValue.toISOString();
-                  if (typeof expiresAtValue === "string")
-                    return expiresAtValue;
-                  return undefined;
+                  if (typeof expiresAtValue === "string") return expiresAtValue;
+                  return;
                 })()
               : undefined,
           planName:
-            "planName" in typedActionData && typeof typedActionData.planName === "string"
-              ? typedActionData.planName
+            "planName" in typedActionData &&
+            typeof typedActionData["planName"] === "string"
+              ? typedActionData["planName"]
               : undefined,
           planId:
-            "planId" in typedActionData && typeof typedActionData.planId === "string"
-              ? typedActionData.planId
+            "planId" in typedActionData &&
+            typeof typedActionData["planId"] === "string"
+              ? typedActionData["planId"]
               : undefined,
           error:
-            "error" in typedActionData && typeof typedActionData.error === "string"
-              ? typedActionData.error
+            "error" in typedActionData &&
+            typeof typedActionData["error"] === "string"
+              ? typedActionData["error"]
               : undefined,
         }
       : null,
@@ -204,9 +225,9 @@ export default function Plans() {
         isOpen={paymentComplete}
         message={
           typedActionData && "message" in typedActionData
-            ? typeof typedActionData.message === "string"
-              ? typedActionData.message
-              : String(typedActionData.message)
+            ? typeof typedActionData["message"] === "string"
+              ? typedActionData["message"]
+              : String(typedActionData["message"])
             : undefined
         }
       />
@@ -226,9 +247,9 @@ export default function Plans() {
       <ErrorMessage
         message={
           typedActionData && "error" in typedActionData
-            ? typeof typedActionData.error === "string"
-              ? typedActionData.error
-              : String(typedActionData.error)
+            ? typeof typedActionData["error"] === "string"
+              ? typedActionData["error"]
+              : String(typedActionData["error"])
             : ""
         }
       />

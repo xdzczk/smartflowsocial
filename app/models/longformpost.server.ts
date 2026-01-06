@@ -56,7 +56,7 @@ function isSignedEvent(value: unknown): value is SignedEvent {
  * Convert Prisma JsonValue to SignedEvent if valid
  */
 function toSignedEvent(
-  value: Prisma.JsonValue | null | undefined,
+  value: Prisma.JsonValue | null | undefined
 ): SignedEvent | null {
   if (!value || typeof value !== "object") {
     return null;
@@ -179,10 +179,10 @@ export async function updateLongFormPost({
     typeof signedEvent === "object" &&
     "tags" in signedEvent
   ) {
-    const tags = signedEvent.tags;
+    const tags = signedEvent["tags"];
     if (Array.isArray(tags)) {
       const publishedAtTag = tags.find(
-        (tag: unknown) => Array.isArray(tag) && tag[0] === "published_at",
+        (tag: unknown) => Array.isArray(tag) && tag[0] === "published_at"
       );
       if (
         publishedAtTag &&
@@ -217,7 +217,7 @@ export async function updateLongFormPost({
     updateData.signedEvent = signedEvent as Prisma.InputJsonValue;
     updateData.nostrEventId =
       signedEvent && typeof signedEvent === "object" && "id" in signedEvent
-        ? String(signedEvent.id)
+        ? String(signedEvent["id"])
         : null;
   }
   if (nostrEvent !== undefined)
@@ -238,8 +238,8 @@ export async function updateLongFormPost({
         signedEvent &&
         typeof signedEvent === "object" &&
         "published_at" in signedEvent &&
-        typeof signedEvent.published_at === "number"
-          ? signedEvent.published_at
+        typeof signedEvent["published_at"] === "number"
+          ? signedEvent["published_at"]
           : undefined;
       updateData.publishedAt = publishedAt
         ? new Date(publishedAt * 1000)
@@ -360,8 +360,8 @@ export async function publishLongFormPost({
         signedEvent &&
         typeof signedEvent === "object" &&
         "id" in signedEvent &&
-        typeof signedEvent.id === "string"
-          ? signedEvent.id
+        typeof signedEvent["id"] === "string"
+          ? signedEvent["id"]
           : null,
     },
   });

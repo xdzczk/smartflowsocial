@@ -24,7 +24,7 @@ const GiveawayRandomizer = ({ relatedEvents }: GiveawayRandomizerProps) => {
     // Group events by type
     const reposters = relatedEvents.filter((event) => event.kind === 6);
     const likers = relatedEvents.filter(
-      (event) => event.kind === 7 || event.kind === 9735 || event.kind === 9734,
+      (event) => event.kind === 7 || event.kind === 9735 || event.kind === 9734
     );
     const commenters = relatedEvents.filter((event) => event.kind === 1);
 
@@ -46,8 +46,7 @@ const GiveawayRandomizer = ({ relatedEvents }: GiveawayRandomizerProps) => {
   const formatPubkey = (pubkey: string | undefined) => {
     if (!pubkey) return "unknown";
     try {
-      const npub = nip19.npubEncode(pubkey);
-      return npub;
+      return nip19.npubEncode(pubkey);
     } catch (error) {
       handleErrorSafely(error, {
         component: "GiveawayRandomizer",

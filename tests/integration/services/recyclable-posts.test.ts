@@ -24,6 +24,8 @@ vi.mock("~/features/posts/stats.server", () => ({
   getPostStats: vi.fn(),
 }));
 
+import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
+
 import {
   getRecyclableDashboardData,
   handleRecyclablePostAction,
@@ -35,8 +37,6 @@ import {
   getRecyclablePosts,
   getPostsByIds,
 } from "~/models/post.queries.server";
-
-import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 
 describe("Recyclable Posts Service", () => {
   beforeEach(() => {
@@ -71,11 +71,11 @@ describe("Recyclable Posts Service", () => {
       const mockStats = { "event-123": { likes: 5, reposts: 2 } };
 
       (getRecyclablePosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPosts,
+        mockPosts
       );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockQueueTypes,
+        mockQueueTypes
       );
       (getPostStats as ReturnType<typeof vi.fn>).mockResolvedValue(mockStats);
 
@@ -130,7 +130,7 @@ describe("Recyclable Posts Service", () => {
       };
 
       (getRecyclablePosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPosts,
+        mockPosts
       );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: TEST_USER_ID,
@@ -162,7 +162,7 @@ describe("Recyclable Posts Service", () => {
           userId: TEST_USER_ID,
           params: {},
           url,
-        }),
+        })
       ).rejects.toThrow("User not found");
     });
 

@@ -25,6 +25,8 @@ vi.mock("~/features/user", () => ({
   getUserById: vi.fn(),
 }));
 
+import { TEST_USER_ID } from "../utils/test-helpers";
+
 import { connectToPrimalCache } from "~/features/cache/primalCache.server";
 import {
   parseThreadViewNotifications,
@@ -35,8 +37,6 @@ import {
 import { loadEngagementFeedData } from "~/features/engagement/services/engagement-loader.server";
 import { getUserById } from "~/features/user";
 import { getPostedPosts } from "~/models/post.queries.server";
-
-import { TEST_USER_ID } from "../utils/test-helpers";
 
 describe("Engagement Loader", () => {
   beforeEach(() => {
@@ -107,7 +107,7 @@ describe("Engagement Loader", () => {
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       // Mock connectToPrimalCache for sequential calls
       (connectToPrimalCache as ReturnType<typeof vi.fn>)
-        // eslint-disable-next-line @typescript-eslint/no-misused-promises
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Test functions can be async
         .mockImplementation((method, params): Promise<unknown> => {
           if (method === "thread_view") {
             const eventId = (params as { event_id?: string }).event_id;
@@ -135,7 +135,7 @@ describe("Engagement Loader", () => {
         quotes: [],
       });
       (groupNotificationsByParent as ReturnType<typeof vi.fn>).mockReturnValue(
-        [],
+        []
       );
       (processQuoteReposts as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
@@ -155,10 +155,11 @@ describe("Engagement Loader", () => {
       expect(result.posts).toHaveLength(1); // Only post-1 has replies > 0
       expect(
         result.posts[0]?.signedEvent &&
-          typeof result.posts[0].signedEvent === "object" &&
+          typeof result.posts[0]?.signedEvent === "object" &&
+          result.posts[0]?.signedEvent &&
           "id" in result.posts[0].signedEvent
-          ? result.posts[0].signedEvent.id
-          : null,
+          ? result.posts[0].signedEvent["id"]
+          : null
       ).toBe("event-1");
     });
 
@@ -209,29 +210,25 @@ describe("Engagement Loader", () => {
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       // Mock thread_view calls - the implementation calls connectToPrimalCache("thread_view", ...) for each event
       // The implementation processes events in batches, so we need to mock for each event ID
-      (connectToPrimalCache as ReturnType<typeof vi.fn>)
-        .mockImplementation(
-          // eslint-disable-next-line @typescript-eslint/no-misused-promises
-          (
-            method: string,
-            params: Record<string, unknown>,
-          ): Promise<unknown> => {
-            if (method === "thread_view") {
-              // Return stats based on event_id
-              if (params.event_id === "event-1") {
-                return Promise.resolve(mockThreadViewData1);
-              } else if (params.event_id === "event-2") {
-                return Promise.resolve(mockThreadViewData2);
-              }
-              return Promise.resolve([]);
-            } else if (method === "get_notifications") {
-              return Promise.resolve([]);
-            } else if (method === "user_profile") {
-              return Promise.resolve([]);
+      (connectToPrimalCache as ReturnType<typeof vi.fn>).mockImplementation(
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Test functions can be async
+        (method: string, params: Record<string, unknown>): Promise<unknown> => {
+          if (method === "thread_view") {
+            // Return stats based on event_id
+            if (params["event_id"] === "event-1") {
+              return Promise.resolve(mockThreadViewData1);
+            } else if (params["event_id"] === "event-2") {
+              return Promise.resolve(mockThreadViewData2);
             }
             return Promise.resolve([]);
-          },
-        );
+          } else if (method === "get_notifications") {
+            return Promise.resolve([]);
+          } else if (method === "user_profile") {
+            return Promise.resolve([]);
+          }
+          return Promise.resolve([]);
+        }
+      );
       (
         parseThreadViewNotifications as ReturnType<typeof vi.fn>
       ).mockReturnValue([]);
@@ -243,7 +240,7 @@ describe("Engagement Loader", () => {
         quotes: [],
       });
       (groupNotificationsByParent as ReturnType<typeof vi.fn>).mockReturnValue(
-        [],
+        []
       );
       (processQuoteReposts as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
@@ -254,10 +251,11 @@ describe("Engagement Loader", () => {
       expect(result.posts).toHaveLength(1);
       expect(
         result.posts[0]?.signedEvent &&
-          typeof result.posts[0].signedEvent === "object" &&
+          typeof result.posts[0]?.signedEvent === "object" &&
+          result.posts[0]?.signedEvent &&
           "id" in result.posts[0].signedEvent
-          ? result.posts[0].signedEvent.id
-          : null,
+          ? result.posts[0].signedEvent["id"]
+          : null
       ).toBe("event-1");
     });
 
@@ -306,7 +304,7 @@ describe("Engagement Loader", () => {
         quotes: [],
       });
       (groupNotificationsByParent as ReturnType<typeof vi.fn>).mockReturnValue(
-        [],
+        []
       );
       (processQuoteReposts as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
@@ -315,7 +313,7 @@ describe("Engagement Loader", () => {
       // Should filter out muted user notifications
       // The function filters notifications, so we check that filtering occurred
       expect(result.notifications.replies.length).toBeLessThanOrEqual(
-        mockNotifications.length,
+        mockNotifications.length
       );
     });
 
@@ -375,7 +373,7 @@ describe("Engagement Loader", () => {
         quotes: [],
       });
       (groupNotificationsByParent as ReturnType<typeof vi.fn>).mockReturnValue(
-        [],
+        []
       );
       (processQuoteReposts as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
@@ -384,7 +382,7 @@ describe("Engagement Loader", () => {
       // Should filter out low trust users (score < 40)
       // The function filters notifications, so we check that filtering occurred
       expect(result.notifications.replies.length).toBeLessThanOrEqual(
-        mockNotifications.length,
+        mockNotifications.length
       );
     });
   });
@@ -397,7 +395,7 @@ describe("Engagement Loader", () => {
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
       await expect(loadEngagementFeedData(TEST_USER_ID, 1, 50)).rejects.toThrow(
-        "User not found",
+        "User not found"
       );
     });
 
@@ -422,7 +420,7 @@ describe("Engagement Loader", () => {
       });
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (connectToPrimalCache as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Cache error"),
+        new Error("Cache error")
       );
       (groupNotificationsByType as ReturnType<typeof vi.fn>).mockReturnValue({
         all: [],
@@ -432,7 +430,7 @@ describe("Engagement Loader", () => {
         quotes: [],
       });
       (groupNotificationsByParent as ReturnType<typeof vi.fn>).mockReturnValue(
-        [],
+        []
       );
       (processQuoteReposts as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
@@ -523,10 +521,10 @@ describe("Engagement Loader", () => {
         quotes: [],
       });
       (groupNotificationsByParent as ReturnType<typeof vi.fn>).mockReturnValue(
-        [],
+        []
       );
       (processQuoteReposts as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockQuoteReposts,
+        mockQuoteReposts
       );
 
       const result = await loadEngagementFeedData(TEST_USER_ID, 1, 50);

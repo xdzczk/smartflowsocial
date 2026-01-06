@@ -9,7 +9,7 @@ interface QueueType {
 
 interface PostedPostsTabsProps {
   currentTab: string;
-  queueTypes: (string | QueueType)[];
+  queueTypes: Array<string | QueueType>;
   allContentLength: number;
   postsLength: number;
   longformPostsLength: number;
@@ -31,7 +31,7 @@ export default function PostedPostsTabs({
       <div className="mb-6 border-b border-gray-200 dark:border-gray-700">
         <nav className="-mb-px flex space-x-8" aria-label="Post Types">
           <Link
-            to={`/dashboard/posted${params.queueType ? `/${params.queueType}` : ""}?tab=all`}
+            to={`/dashboard/posted${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=all`}
             className={`whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium ${
               currentTab === "all"
                 ? "border-blue-500 text-blue-600 dark:text-blue-400"
@@ -41,7 +41,7 @@ export default function PostedPostsTabs({
             All ({allContentLength})
           </Link>
           <Link
-            to={`/dashboard/posted${params.queueType ? `/${params.queueType}` : ""}?tab=posts`}
+            to={`/dashboard/posted${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=posts`}
             className={`whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium ${
               currentTab === "posts"
                 ? "border-blue-500 text-blue-600 dark:text-blue-400"
@@ -51,7 +51,7 @@ export default function PostedPostsTabs({
             Posts ({postsLength})
           </Link>
           <Link
-            to={`/dashboard/posted${params.queueType ? `/${params.queueType}` : ""}?tab=longform`}
+            to={`/dashboard/posted${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=longform`}
             className={`whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium ${
               currentTab === "longform"
                 ? "border-blue-500 text-blue-600 dark:text-blue-400"
@@ -74,7 +74,7 @@ export default function PostedPostsTabs({
               prefetch="intent"
               onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
               className={`whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium ${
-                !params.queueType
+                !params["queueType"]
                   ? "border-blue-500 text-blue-600 dark:text-blue-400"
                   : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
               }`}
@@ -87,7 +87,7 @@ export default function PostedPostsTabs({
               const queueColor =
                 typeof queueType === "object" ? queueType.color : null;
               const colors = getQueueColor(queueName, queueColor);
-              const isSelected = params.queueType === queueName;
+              const isSelected = params["queueType"] === queueName;
 
               const baseClasses =
                 "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium capitalize";
@@ -122,7 +122,7 @@ export default function PostedPostsTabs({
                   prefetch="intent"
                   onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
                   className={`${baseClasses} ${
-                    isSelected
+                    isSelected && colors
                       ? `${colors.border.replace("border-", "border-b-")} ${colors.text}`
                       : unselectedClasses
                   }`}

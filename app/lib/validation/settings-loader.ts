@@ -19,7 +19,7 @@ import {
  * Client-safe version (no server-only logging)
  */
 export function validateSubscription(
-  value: unknown,
+  value: unknown
 ): z.infer<typeof subscriptionSchema> | null {
   if (!value || typeof value !== "object") {
     return null;
@@ -39,13 +39,13 @@ export function validateSubscription(
  * Client-safe version (no server-only logging)
  */
 export function validateAvailablePlans(
-  value: unknown,
-): z.infer<typeof availablePlanSchema>[] {
+  value: unknown
+): Array<z.infer<typeof availablePlanSchema>> {
   if (!Array.isArray(value)) {
     return [];
   }
 
-  const validated: z.infer<typeof availablePlanSchema>[] = [];
+  const validated: Array<z.infer<typeof availablePlanSchema>> = [];
 
   for (const item of value) {
     try {
@@ -65,13 +65,13 @@ export function validateAvailablePlans(
  * Client-safe version (no server-only logging)
  */
 export function validatePaymentHistory(
-  value: unknown,
-): z.infer<typeof paymentHistoryItemSchema>[] {
+  value: unknown
+): Array<z.infer<typeof paymentHistoryItemSchema>> {
   if (!Array.isArray(value)) {
     return [];
   }
 
-  const validated: z.infer<typeof paymentHistoryItemSchema>[] = [];
+  const validated: Array<z.infer<typeof paymentHistoryItemSchema>> = [];
 
   for (const item of value) {
     try {
@@ -91,13 +91,13 @@ export function validatePaymentHistory(
  * Client-safe version (no server-only logging)
  */
 export function validateAccountChildren(
-  value: unknown,
-): z.infer<typeof accountChildSchema>[] {
+  value: unknown
+): Array<z.infer<typeof accountChildSchema>> {
   if (!Array.isArray(value)) {
     return [];
   }
 
-  const validated: z.infer<typeof accountChildSchema>[] = [];
+  const validated: Array<z.infer<typeof accountChildSchema>> = [];
 
   for (const item of value) {
     try {
@@ -117,7 +117,7 @@ export function validateAccountChildren(
  * Client-safe version (no server-only logging)
  */
 export function validateAccounts(
-  value: unknown,
+  value: unknown
 ): z.infer<typeof accountsSchema> | null {
   if (!value || typeof value !== "object") {
     return null;
@@ -130,4 +130,3 @@ export function validateAccounts(
     return null;
   }
 }
-

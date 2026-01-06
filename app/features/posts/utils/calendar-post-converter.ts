@@ -33,7 +33,7 @@ export function postDataToCalendarPost(post: PostData): CalendarPost {
  * Convert LongFormPostData to CalendarPost
  */
 export function longFormPostDataToCalendarPost(
-  post: LongFormPostData,
+  post: LongFormPostData
 ): CalendarPost {
   const publishedAtValue =
     "publishedAt" in post && post.publishedAt
@@ -82,16 +82,16 @@ export function longFormPostDataToCalendarPost(
  * Convert array of PostData to CalendarPost[]
  */
 export function postsToCalendarPosts(posts: PostData[]): CalendarPost[] {
-  return posts.map(postDataToCalendarPost);
+  return posts.map((post) => postDataToCalendarPost(post));
 }
 
 /**
  * Convert array of LongFormPostData to CalendarPost[]
  */
 export function longFormPostsToCalendarPosts(
-  posts: LongFormPostData[],
+  posts: LongFormPostData[]
 ): CalendarPost[] {
-  return posts.map(longFormPostDataToCalendarPost);
+  return posts.map((post) => longFormPostDataToCalendarPost(post));
 }
 
 /**
@@ -99,10 +99,10 @@ export function longFormPostsToCalendarPosts(
  */
 export function mixedPostsToCalendarPosts(
   posts: PostData[],
-  longFormPosts: LongFormPostData[],
+  longFormPosts: LongFormPostData[]
 ): CalendarPost[] {
   return [
-    ...posts.map(postDataToCalendarPost),
-    ...longFormPosts.map(longFormPostDataToCalendarPost),
+    ...posts.map((post) => postDataToCalendarPost(post)),
+    ...longFormPosts.map((post) => longFormPostDataToCalendarPost(post)),
   ];
 }

@@ -18,6 +18,8 @@ vi.mock("~/lib/prisma.server", () => ({
   },
 }));
 
+import { TEST_USER_ID, TEST_LONGFORM_ID } from "../../utils/test-helpers";
+
 import { prisma } from "~/lib/prisma.server";
 import {
   getUserLongFormPosts,
@@ -31,8 +33,6 @@ import {
   updateLongFormPostStatus,
   getPastLongFormPosts,
 } from "~/models/longformpost.server";
-
-import { TEST_USER_ID, TEST_LONGFORM_ID } from "../../utils/test-helpers";
 
 describe("Longform Post Queries - Extended", () => {
   beforeEach(() => {
@@ -49,7 +49,7 @@ describe("Longform Post Queries - Extended", () => {
         prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
       ).mockResolvedValue(mockPosts);
       (prisma.longFormPost.count as ReturnType<typeof vi.fn>).mockResolvedValue(
-        10,
+        10
       );
 
       const result = await getUserLongFormPosts({
@@ -75,7 +75,7 @@ describe("Longform Post Queries - Extended", () => {
         prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
       ).mockResolvedValue([]);
       (prisma.longFormPost.count as ReturnType<typeof vi.fn>).mockResolvedValue(
-        0,
+        0
       );
 
       await getUserLongFormPosts({
@@ -98,7 +98,7 @@ describe("Longform Post Queries - Extended", () => {
         prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
       ).mockResolvedValue([]);
       (prisma.longFormPost.count as ReturnType<typeof vi.fn>).mockResolvedValue(
-        25,
+        25
       );
 
       const result = await getUserLongFormPosts({
@@ -165,11 +165,11 @@ describe("Longform Post Queries - Extended", () => {
 
       expect(prisma.longFormPost.update).toHaveBeenCalledWith({
         where: { id: TEST_LONGFORM_ID, userId: TEST_USER_ID },
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         data: expect.objectContaining({
           isPublished: true,
           status: "ACTIVE",
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
           publishedAt: expect.any(Date),
           signedEvent,
           nostrEvent,
@@ -209,7 +209,7 @@ describe("Longform Post Queries - Extended", () => {
         prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
       ).mockResolvedValue(mockPosts);
       (prisma.longFormPost.count as ReturnType<typeof vi.fn>).mockResolvedValue(
-        5,
+        5
       );
 
       const result = await getPublishedLongFormPosts({

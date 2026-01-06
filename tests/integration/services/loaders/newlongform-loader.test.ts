@@ -22,6 +22,8 @@ vi.mock("~/features/user", () => ({
   getUserUploadProvider: vi.fn(),
 }));
 
+import { TEST_USER_ID } from "../../../utils/test-helpers";
+
 import { requireFeatureAccess } from "~/features/payments/subscriptions.server";
 import { loadNewLongFormData } from "~/features/posts/services/newlongform-loader.server";
 import {
@@ -32,8 +34,6 @@ import {
   getUserUploadProvider,
 } from "~/features/user";
 import { getAssets } from "~/models/asset.server";
-
-import { TEST_USER_ID } from "../../../utils/test-helpers";
 
 describe("New Longform Loader", () => {
   beforeEach(() => {
@@ -55,14 +55,14 @@ describe("New Longform Loader", () => {
     const mockUploadProvider = "s3";
 
     (requireFeatureAccess as ReturnType<typeof vi.fn>).mockResolvedValue(
-      undefined,
+      undefined
     );
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
     (getScheduleInterval as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockScheduleIntervals,
+      mockScheduleIntervals
     );
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockQueueTypes,
+      mockQueueTypes
     );
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([
       { id: "preset-1", name: "Default", tags: mockTags },
@@ -70,14 +70,14 @@ describe("New Longform Loader", () => {
     ]);
     (getAssets as ReturnType<typeof vi.fn>).mockResolvedValue(mockAssets);
     (getUserUploadProvider as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockUploadProvider,
+      mockUploadProvider
     );
 
     const result = await loadNewLongFormData(TEST_USER_ID);
 
     expect(requireFeatureAccess).toHaveBeenCalledWith(
       TEST_USER_ID,
-      "longformPosts",
+      "longformPosts"
     );
     expect(result.userId).toBe(TEST_USER_ID);
     expect(result.tags).toBe(mockTags);
@@ -96,7 +96,7 @@ describe("New Longform Loader", () => {
     const mockUser = { id: TEST_USER_ID };
 
     (requireFeatureAccess as ReturnType<typeof vi.fn>).mockResolvedValue(
-      undefined,
+      undefined
     );
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([
       { id: "preset-1", name: "Default", tags: "" },
@@ -118,7 +118,3 @@ describe("New Longform Loader", () => {
     expect(result.userTimezone).toBe("Etc/GMT");
   });
 });
-
-
-
-

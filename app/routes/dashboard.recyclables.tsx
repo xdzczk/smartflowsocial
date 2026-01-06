@@ -54,22 +54,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 }
 
-export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs) => {
-  try {
-    const userId = await requireUserId(request);
-    const formData = await request.formData();
+export const action = withCSRFProtection(
+  async ({ request }: ActionFunctionArgs) => {
+    try {
+      const userId = await requireUserId(request);
+      const formData = await request.formData();
 
-    return handleRecyclablePostAction(formData, userId);
-  } catch (error) {
-    // If error is a Response (e.g., redirect from requireUserId), return it
-    if (error instanceof Response) {
-      return error;
+      return handleRecyclablePostAction(formData, userId);
+    } catch (error) {
+      // If error is a Response (e.g., redirect from requireUserId), return it
+      if (error instanceof Response) {
+        return error;
+      }
+      // Use dynamic import to avoid bundling issues
+      const { handleActionError } = await import("~/lib/error-handler.server");
+      return handleActionError(error);
     }
-    // Use dynamic import to avoid bundling issues
-    const { handleActionError } = await import("~/lib/error-handler.server");
-    return handleActionError(error);
   }
-});
+);
 
 type _LoaderData = Awaited<ReturnType<typeof loader>>;
 
@@ -138,7 +140,7 @@ export default function RecyclablesPosts() {
 
       <RecyclablesQueueTabs
         queueTypes={queueTypes}
-        currentQueueType={params.queueType}
+        currentQueueType={params["queueType"]}
       />
 
       <RecyclablesBulkActions
@@ -154,7 +156,7 @@ export default function RecyclablesPosts() {
       <RecyclablesTable
         posts={filteredPosts.map(
           (
-            post,
+            post
           ): {
             id: string;
             caption?: string | null;
@@ -192,7 +194,7 @@ export default function RecyclablesPosts() {
                 }
               : null,
             status: typeof post.status === "string" ? post.status : undefined,
-          }),
+          })
         )}
         stats={typedStats}
         sortConfig={sortConfig}

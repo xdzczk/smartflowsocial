@@ -19,12 +19,12 @@ vi.mock("~/features/user", () => ({
   getUserById: vi.fn(),
 }));
 
+import { TEST_USER_ID } from "../utils/test-helpers";
+
 import { loadTemplatesData } from "~/features/templates/services/templates-loader.server";
 import { getUserById } from "~/features/user";
 import { getAssets, searchAssets } from "~/models/asset.server";
 import { getTemplates } from "~/models/template.server";
-
-import { TEST_USER_ID } from "../utils/test-helpers";
 
 describe("Templates Loader", () => {
   beforeEach(() => {
@@ -54,7 +54,7 @@ describe("Templates Loader", () => {
       };
 
       (getTemplates as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockTemplates,
+        mockTemplates
       );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (getAssets as ReturnType<typeof vi.fn>).mockResolvedValue(mockAssetsData);
@@ -95,11 +95,11 @@ describe("Templates Loader", () => {
       };
 
       (getTemplates as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockTemplates,
+        mockTemplates
       );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (searchAssets as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockAssetsData,
+        mockAssetsData
       );
 
       const _result = await loadTemplatesData(TEST_USER_ID, "search", 1, 100);
@@ -124,7 +124,7 @@ describe("Templates Loader", () => {
       };
 
       (getTemplates as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockTemplates,
+        mockTemplates
       );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (getAssets as ReturnType<typeof vi.fn>).mockResolvedValue(mockAssetsData);
@@ -152,7 +152,7 @@ describe("Templates Loader", () => {
       };
 
       (getTemplates as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockTemplates,
+        mockTemplates
       );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (getAssets as ReturnType<typeof vi.fn>).mockResolvedValue(mockAssetsData);
@@ -198,7 +198,7 @@ describe("Templates Loader", () => {
       };
 
       (getTemplates as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockTemplates,
+        mockTemplates
       );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (getAssets as ReturnType<typeof vi.fn>).mockResolvedValue(mockAssetsData);
@@ -220,7 +220,7 @@ describe("Templates Loader", () => {
       };
 
       (getTemplates as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockTemplates,
+        mockTemplates
       );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (getAssets as ReturnType<typeof vi.fn>).mockResolvedValue(mockAssetsData);

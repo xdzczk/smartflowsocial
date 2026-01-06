@@ -43,39 +43,44 @@ export default function LongFormPreviewModal({
       editorData.blocks.forEach((block: EditorJSBlock) => {
         switch (block.type) {
           case "header": {
-            const levelValue = block.data.level;
+            const levelValue = block.data["level"];
             const level = typeof levelValue === "number" ? levelValue : 3;
             const levelStr = String(level);
-            const textValue = block.data.text;
+            const textValue = block.data["text"];
             const text = typeof textValue === "string" ? textValue : "";
             html += `<h${levelStr} class="text-${level === 2 ? "2xl" : level === 3 ? "xl" : "lg"} font-bold mb-4 text-gray-900 dark:text-white">${text}</h${levelStr}>`;
             break;
           }
           case "paragraph": {
-            const textValue = block.data.text;
+            const textValue = block.data["text"];
             const text = typeof textValue === "string" ? textValue : "";
             html += `<p class="mb-4 text-gray-700 dark:text-gray-300 leading-relaxed">${text}</p>`;
             break;
           }
           case "list": {
-            const listType = block.data.style === "ordered" ? "ol" : "ul";
+            const listType = block.data["style"] === "ordered" ? "ol" : "ul";
             const listClass =
-              block.data.style === "ordered" ? "list-decimal" : "list-disc";
+              block.data["style"] === "ordered" ? "list-decimal" : "list-disc";
             html += `<${listType} class="${listClass} ml-6 mb-4 text-gray-700 dark:text-gray-300">`;
-            if (Array.isArray(block.data.items)) {
-              block.data.items.forEach((item: unknown) => {
-                const itemStr = typeof item === "string" ? item : "";
-                html += `<li class="mb-1">${itemStr}</li>`;
-              });
+            if (Array.isArray(block.data["items"])) {
+              const items = block.data["items"];
+              if (Array.isArray(items)) {
+                items.forEach((item: unknown) => {
+                  const itemStr = typeof item === "string" ? item : "";
+                  html += `<li class="mb-1">${itemStr}</li>`;
+                });
+              }
             }
             html += `</${listType}>`;
             break;
           }
           case "quote": {
             const text =
-              typeof block.data.text === "string" ? block.data.text : "";
+              typeof block.data["text"] === "string" ? block.data["text"] : "";
             const caption =
-              typeof block.data.caption === "string" ? block.data.caption : "";
+              typeof block.data["caption"] === "string"
+                ? block.data["caption"]
+                : "";
             html += `<blockquote class="border-l-4 border-blue-500 pl-4 py-2 mb-4 italic text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded-r">
               <p>${text}</p>
               ${caption ? `<footer class="text-sm mt-2">— ${caption}</footer>` : ""}
@@ -84,16 +89,19 @@ export default function LongFormPreviewModal({
           }
           case "code": {
             const code =
-              typeof block.data.code === "string" ? block.data.code : "";
+              typeof block.data["code"] === "string" ? block.data["code"] : "";
             html += `<pre class="bg-gray-900 dark:bg-gray-800 text-green-400 p-4 rounded-lg mb-4 overflow-x-auto"><code>${code}</code></pre>`;
             break;
           }
           case "linkTool": {
             const link =
-              typeof block.data.link === "string" ? block.data.link : "";
+              typeof block.data["link"] === "string" ? block.data["link"] : "";
             const meta =
-              block.data.meta && typeof block.data.meta === "object"
-                ? (block.data.meta as { title?: string; description?: string })
+              block.data["meta"] && typeof block.data["meta"] === "object"
+                ? (block.data["meta"] as {
+                    title?: string;
+                    description?: string;
+                  })
                 : null;
             html += `<div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4">
               <a href="${link}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:underline">
@@ -105,7 +113,9 @@ export default function LongFormPreviewModal({
           }
           case "embed": {
             const embed =
-              typeof block.data.embed === "string" ? block.data.embed : "";
+              typeof block.data["embed"] === "string"
+                ? block.data["embed"]
+                : "";
             html += `<div class="mb-4">
               <iframe src="${embed}" class="w-full aspect-video rounded-lg" frameborder="0" allowfullscreen></iframe>
             </div>`;
@@ -113,14 +123,16 @@ export default function LongFormPreviewModal({
           }
           case "image": {
             const file =
-              block.data.file && typeof block.data.file === "object"
-                ? (block.data.file as { url?: string })
+              block.data["file"] && typeof block.data["file"] === "object"
+                ? (block.data["file"] as { url?: string })
                 : null;
             const url =
-              typeof block.data.url === "string" ? block.data.url : "";
+              typeof block.data["url"] === "string" ? block.data["url"] : "";
             const imageUrl = file?.url ?? url;
             const caption =
-              typeof block.data.caption === "string" ? block.data.caption : "";
+              typeof block.data["caption"] === "string"
+                ? block.data["caption"]
+                : "";
             if (imageUrl) {
               html += `<figure class="mb-6">
                 <img src="${imageUrl}" alt="${caption}" class="w-full rounded-lg shadow-sm" style="max-height: 500px; object-fit: contain;" />
@@ -130,12 +142,12 @@ export default function LongFormPreviewModal({
             break;
           }
           default:
-            if (typeof block.data.text === "string") {
-              html += `<p class="mb-4 text-gray-700 dark:text-gray-300">${block.data.text}</p>`;
+            if (typeof block.data["text"] === "string") {
+              html += `<p class="mb-4 text-gray-700 dark:text-gray-300">${block.data["text"]}</p>`;
             } else {
               const file =
-                block.data.file && typeof block.data.file === "object"
-                  ? (block.data.file as { url?: string })
+                block.data["file"] && typeof block.data["file"] === "object"
+                  ? (block.data["file"] as { url?: string })
                   : null;
               if (file?.url) {
                 // Handle any other block types that might have images

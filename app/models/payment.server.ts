@@ -2,7 +2,6 @@
 // Using ws package instead of deprecated websocket-polyfill
 if (
   process.env.NODE_ENV !== "development" &&
-  typeof globalThis !== "undefined" &&
   globalThis.WebSocket === undefined
 ) {
   const { WebSocket } = require("ws") as {
@@ -75,7 +74,7 @@ export async function createPlanInvoice({
   }
 
   // Use owner's NWC connection for receiving payments
-  const credentials = process.env.OWNER_NWC;
+  const credentials = process.env["OWNER_NWC"];
   if (!credentials) {
     throw new Error("Owner NWC credentials not configured");
   }
@@ -97,7 +96,7 @@ export async function createPlanInvoice({
       requestAny && typeof requestAny === "object" && !Array.isArray(requestAny)
         ? (requestAny as Record<string, unknown>)
         : {};
-    const invoiceValue = requestRecord.invoice;
+    const invoiceValue = requestRecord["invoice"];
     const invoiceString =
       typeof invoiceValue === "string"
         ? invoiceValue
@@ -115,21 +114,21 @@ export async function createPlanInvoice({
       !Array.isArray(invoiceValue)
         ? (invoiceValue as Record<string, unknown>)
         : null;
-    const paymentHashValue = requestRecord.paymentHash;
+    const paymentHashValue = requestRecord["paymentHash"];
     const paymentHashString =
       typeof paymentHashValue === "string"
         ? paymentHashValue
         : invoiceObj && "paymentHash" in invoiceObj
-          ? String(invoiceObj.paymentHash)
+          ? String(invoiceObj["paymentHash"])
           : "";
 
     // Extract amount in sats - try multiple possible locations
     let amountSats = 0;
-    const amountValue = requestRecord.amount;
+    const amountValue = requestRecord["amount"];
     if (amountValue && typeof amountValue === "number") {
       amountSats = amountValue;
     } else if (invoiceObj && "satoshi" in invoiceObj) {
-      amountSats = Number(invoiceObj.satoshi) || 0;
+      amountSats = Number(invoiceObj["satoshi"]) || 0;
     } else if (
       requestAny &&
       typeof requestAny === "object" &&
@@ -200,10 +199,10 @@ export async function createPlanInvoice({
           invoiceString,
           paymentHashString,
           requestStructure: Object.keys(request),
-        },
+        }
       );
       throw new Error(
-        "Invalid response from payment provider - missing invoice or paymentHash",
+        "Invalid response from payment provider - missing invoice or paymentHash"
       );
     }
 
@@ -260,7 +259,7 @@ export async function createPlanInvoice({
 export async function handlePaymentCompleted(
   paymentId: string,
   userId: string,
-  planId: string,
+  planId: string
 ): Promise<void> {
   try {
     // Update payment status
@@ -312,7 +311,7 @@ export async function handlePaymentTimeout(paymentId: string): Promise<void> {
 export async function updateUserSubscription(
   userId: string,
   planId: string,
-  paymentId: string,
+  paymentId: string
 ): Promise<void> {
   const plan = await prisma.plan.findUnique({
     where: { id: planId },
@@ -473,11 +472,7 @@ export async function manuallyVerifyPayment(paymentId: string): Promise<{
   // Note: This is a workaround for cases where onPaid callback didn't fire
   if (payment.status === "PENDING" && payment.userId && planId) {
     try {
-      await handlePaymentCompleted(
-        paymentId,
-        payment.userId,
-        planId,
-      );
+      await handlePaymentCompleted(paymentId, payment.userId, planId);
       return {
         success: true,
         paid: true,
@@ -534,14 +529,12 @@ export async function checkPaymentStatus(paymentId: string): Promise<{
  * Gets user's current subscription info
  */
 export async function getUserSubscription(userId: string) {
-  const subscription = await prisma.subscription.findUnique({
+  return await prisma.subscription.findUnique({
     where: { userId },
     include: {
       Plan: true,
     },
   });
-
-  return subscription;
 }
 
 /**
@@ -558,7 +551,7 @@ export async function getAllPlans() {
  * Gets user's payment history
  */
 export async function getUserPaymentHistory(userId: string) {
-  const payments = await prisma.payment.findMany({
+  return await prisma.payment.findMany({
     where: {
       userId,
       status: "COMPLETED",
@@ -585,8 +578,6 @@ export async function getUserPaymentHistory(userId: string) {
       },
     },
   });
-
-  return payments;
 }
 
 /**

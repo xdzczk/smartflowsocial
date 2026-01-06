@@ -33,17 +33,17 @@ vi.mock("~/features/posts", () => ({
       publishedAt: params.isPublished ? new Date() : null,
       nostrEventId: params.signedEvent?.id ?? null,
       finalScheduledFor: params.scheduledFor ?? null,
-    }),
+    })
   ),
 }));
+
+import { TEST_USER_ID, TEST_LONGFORM_ID } from "../../utils/test-helpers";
 
 import { prisma } from "~/lib/prisma.server";
 import {
   getLongFormPost,
   getLongFormPostByEventId,
 } from "~/models/longformpost.server";
-
-import { TEST_USER_ID, TEST_LONGFORM_ID } from "../../utils/test-helpers";
 
 describe("Longform Post Queries", () => {
   beforeEach(() => {

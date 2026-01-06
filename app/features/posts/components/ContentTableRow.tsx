@@ -21,9 +21,9 @@ import {
 
 // Helper to safely access formData from a fetcher
 function getFetcherFormData(
-  fetcher: PostFetcher | undefined,
+  fetcher: PostFetcher | undefined
 ): FormData | null | undefined {
-  return (fetcher as { formData?: FormData | null })?.formData;
+  return (fetcher as { formData?: FormData | null }).formData;
 }
 
 interface ContentTableRowProps {
@@ -210,7 +210,7 @@ function ContentRowActions({
           (item.originalData?.nostrEventId ||
             item.originalData?.signedEvent?.id) ? (
             <Link
-              to={`https://primal.net/a/${item.originalData.nostrEventId ?? item.originalData.signedEvent?.id ?? ""}`}
+              to={`https://primal.net/a/${item.originalData.nostrEventId ?? item.originalData.signedEvent.id ?? ""}`}
               target="_blank"
               rel="noreferrer"
               onClick={(e) => e.stopPropagation()}

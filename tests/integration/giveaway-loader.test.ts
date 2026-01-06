@@ -37,6 +37,13 @@ vi.mock("~/lib/helpers", () => ({
   convertToHex: vi.fn((npub) => npub),
 }));
 
+import {
+  TEST_USER_ID,
+  createMockUser,
+  createMockQueueType,
+  createMockPost,
+} from "../utils/test-helpers";
+
 import { loadGiveawayData } from "~/features/giveaway/giveaway-loader.server";
 import { fetchGiveawayParticipants } from "~/features/giveaway/giveaway.server";
 import type { RelatedEvent } from "~/features/giveaway/types";
@@ -48,17 +55,10 @@ import {
 import { connectToPrimalCache } from "~/lib/nostrwebsocket.server";
 import { getRecentPostedPosts } from "~/models/post.queries.server";
 
-import {
-  TEST_USER_ID,
-  createMockUser,
-  createMockQueueType,
-  createMockPost,
-} from "../utils/test-helpers";
-
 describe("Giveaway Loader", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.PRIMAL_CACHING_URL = "https://api.primal.com";
+    process.env["PRIMAL_CACHING_URL"] = "https://api.primal.com";
   });
 
   describe("Successful Data Loading", () => {
@@ -80,17 +80,17 @@ describe("Giveaway Loader", () => {
       ];
 
       (getRecentPostedPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPosts,
+        mockPosts
       );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockQueueTypes,
+        mockQueueTypes
       );
       (getGiveawayBlacklist as ReturnType<typeof vi.fn>).mockResolvedValue([]);
       (fetchGiveawayParticipants as ReturnType<typeof vi.fn>).mockResolvedValue(
         {
           relatedEvents: mockRelatedEvents,
-        },
+        }
       );
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
@@ -148,7 +148,7 @@ describe("Giveaway Loader", () => {
       const mockUser = createMockUser();
 
       (getRecentPostedPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPosts,
+        mockPosts
       );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
@@ -156,7 +156,7 @@ describe("Giveaway Loader", () => {
       (fetchGiveawayParticipants as ReturnType<typeof vi.fn>).mockResolvedValue(
         {
           relatedEvents: [],
-        },
+        }
       );
       // Mock fetchPostStats - one call per event ID
       (global.fetch as ReturnType<typeof vi.fn>)
@@ -201,7 +201,7 @@ describe("Giveaway Loader", () => {
       // event-1 has engagement, event-2 doesn't
       expect(result.posts.length).toBeGreaterThanOrEqual(0);
       if (result.posts.length > 0) {
-        expect(result.posts[0].totalEngagement).toBeGreaterThan(0);
+        expect(result.posts[0]?.totalEngagement).toBeGreaterThan(0);
       }
     });
 
@@ -224,7 +224,7 @@ describe("Giveaway Loader", () => {
       ];
 
       (getRecentPostedPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPosts,
+        mockPosts
       );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
@@ -234,7 +234,7 @@ describe("Giveaway Loader", () => {
       (fetchGiveawayParticipants as ReturnType<typeof vi.fn>).mockResolvedValue(
         {
           relatedEvents: mockRelatedEvents,
-        },
+        }
       );
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
@@ -272,10 +272,10 @@ describe("Giveaway Loader", () => {
 
       // Should filter out blacklisted participants
       expect(result.relatedEvents.length).toBeLessThan(
-        mockRelatedEvents.length,
+        mockRelatedEvents.length
       );
       const blacklistedEvent = result.relatedEvents.find(
-        (e: RelatedEvent) => e.pubkey === "blacklisted-pubkey",
+        (e: RelatedEvent) => e.pubkey === "blacklisted-pubkey"
       );
       expect(blacklistedEvent).toBeUndefined();
     });
@@ -299,7 +299,7 @@ describe("Giveaway Loader", () => {
       ];
 
       (getRecentPostedPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPosts,
+        mockPosts
       );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
@@ -307,7 +307,7 @@ describe("Giveaway Loader", () => {
       (fetchGiveawayParticipants as ReturnType<typeof vi.fn>).mockResolvedValue(
         {
           relatedEvents: mockRelatedEvents,
-        },
+        }
       );
       // Mock fetchPostStats for posts
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -374,7 +374,7 @@ describe("Giveaway Loader", () => {
       // valid-pubkey has lud16 and totalZapped=10, invalid-pubkey has no lud16 and totalZapped=3
       expect(result.relatedEvents.length).toBeGreaterThanOrEqual(0);
       const validEvent = result.relatedEvents.find(
-        (e: RelatedEvent) => e.pubkey === "valid-pubkey",
+        (e: RelatedEvent) => e.pubkey === "valid-pubkey"
       );
       if (result.relatedEvents.length > 0) {
         expect(validEvent).toBeDefined();
@@ -403,7 +403,7 @@ describe("Giveaway Loader", () => {
       ];
 
       (getRecentPostedPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPosts,
+        mockPosts
       );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
@@ -411,7 +411,7 @@ describe("Giveaway Loader", () => {
       (fetchGiveawayParticipants as ReturnType<typeof vi.fn>).mockResolvedValue(
         {
           relatedEvents: mockRelatedEvents,
-        },
+        }
       );
       // Mock fetchPostStats for posts
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -484,7 +484,7 @@ describe("Giveaway Loader", () => {
       // Low trust user has 50 followers (score < 40), high trust user has 200 followers (score >= 40)
       expect(result.relatedEvents.length).toBeGreaterThanOrEqual(0);
       const highTrustEvent = result.relatedEvents.find(
-        (e: RelatedEvent) => e.pubkey === "high-trust-pubkey",
+        (e: RelatedEvent) => e.pubkey === "high-trust-pubkey"
       );
       if (result.relatedEvents.length > 0) {
         expect(highTrustEvent).toBeDefined();
@@ -514,17 +514,17 @@ describe("Giveaway Loader", () => {
       const mockUser = createMockUser();
 
       (getRecentPostedPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPosts,
+        mockPosts
       );
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
       (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
       (fetchGiveawayParticipants as ReturnType<typeof vi.fn>).mockResolvedValue(
         {
           relatedEvents: [],
-        },
+        }
       );
       (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Fetch error"),
+        new Error("Fetch error")
       );
 
       const result = await loadGiveawayData(TEST_USER_ID, "posts", 7);
@@ -532,7 +532,8 @@ describe("Giveaway Loader", () => {
       // Should return empty stats on error
       expect(result.stats).toBeDefined();
       expect(result.stats["event-1"]).toBeDefined();
-      expect(result.stats["event-1"].likes).toBe(0);
+      const eventStats = result.stats["event-1"];
+      expect(eventStats?.likes).toBe(0);
     });
 
     it("should filter out disabled queue types", async () => {
@@ -547,16 +548,16 @@ describe("Giveaway Loader", () => {
 
       (getRecentPostedPosts as ReturnType<typeof vi.fn>).mockResolvedValue([]);
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(
-        createMockUser(),
+        createMockUser()
       );
       (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockQueueTypes,
+        mockQueueTypes
       );
 
       const result = await loadGiveawayData(TEST_USER_ID, "posts", 7);
 
       expect(result.queueTypes).toHaveLength(1);
-      expect(result.queueTypes[0].name).toBe("posts");
+      expect(result.queueTypes[0]?.name).toBe("posts");
     });
   });
 });

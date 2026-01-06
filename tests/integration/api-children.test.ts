@@ -38,11 +38,11 @@ vi.mock("~/lib/errors", () => ({
   })),
 }));
 
+import { TEST_USER_ID } from "../utils/test-helpers";
+
 import { requireUserId } from "~/features/auth/session.server";
 import { loadChildrenData } from "~/features/user";
 import { createLoader } from "~/routes/api.children";
-
-import { TEST_USER_ID } from "../utils/test-helpers";
 
 describe("API: Children", () => {
   // Create loader with injected error handler for testing
@@ -123,7 +123,7 @@ describe("API: Children", () => {
 
     it("should return children for founder subscription", async () => {
       (loadChildrenData as ReturnType<typeof vi.fn>).mockResolvedValue(
-        json({ children: [] }),
+        json({ children: [] })
       );
 
       const request = new Request("http://localhost:3000/api/children");
@@ -154,7 +154,7 @@ describe("API: Children", () => {
 
     it("should handle case-insensitive plan matching", async () => {
       (loadChildrenData as ReturnType<typeof vi.fn>).mockResolvedValue(
-        json({ children: [] }),
+        json({ children: [] })
       );
 
       const request = new Request("http://localhost:3000/api/children");
@@ -194,7 +194,7 @@ describe("API: Children", () => {
               picture: undefined,
             },
           ],
-        }),
+        })
       );
 
       const request = new Request("http://localhost:3000/api/children");
@@ -241,7 +241,7 @@ describe("API: Children", () => {
               picture: "https://example.com/pic.jpg",
             },
           ],
-        }),
+        })
       );
 
       const request = new Request("http://localhost:3000/api/children");
@@ -276,7 +276,7 @@ describe("API: Children", () => {
   describe("Access Control", () => {
     it("should return empty array when user has no npub", async () => {
       (loadChildrenData as ReturnType<typeof vi.fn>).mockResolvedValue(
-        json({ children: [] }),
+        json({ children: [] })
       );
 
       const request = new Request("http://localhost:3000/api/children");
@@ -307,7 +307,7 @@ describe("API: Children", () => {
 
     it("should return empty array when user is a child account", async () => {
       (loadChildrenData as ReturnType<typeof vi.fn>).mockResolvedValue(
-        json({ children: [] }),
+        json({ children: [] })
       );
 
       const request = new Request("http://localhost:3000/api/children");
@@ -338,7 +338,7 @@ describe("API: Children", () => {
 
     it("should return empty array when user doesn't have premium/founder subscription", async () => {
       (loadChildrenData as ReturnType<typeof vi.fn>).mockResolvedValue(
-        json({ children: [] }),
+        json({ children: [] })
       );
 
       const request = new Request("http://localhost:3000/api/children");
@@ -369,7 +369,7 @@ describe("API: Children", () => {
 
     it("should return empty array when subscription is null", async () => {
       (loadChildrenData as ReturnType<typeof vi.fn>).mockResolvedValue(
-        json({ children: [] }),
+        json({ children: [] })
       );
 
       const request = new Request("http://localhost:3000/api/children");
@@ -457,7 +457,7 @@ describe("API: Children", () => {
       expect(data).toEqual({ children: [] });
       expect(mockHandleChildrenApiError).toHaveBeenCalledWith(
         dbError,
-        expect.any(String),
+        expect.any(String)
       );
     });
 
@@ -472,7 +472,7 @@ describe("API: Children", () => {
               picture: undefined,
             },
           ],
-        }),
+        })
       );
 
       const request = new Request("http://localhost:3000/api/children");

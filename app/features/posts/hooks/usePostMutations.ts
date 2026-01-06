@@ -3,8 +3,7 @@
  * Ensures all related queries are invalidated when posts are modified
  */
 
-import { useQueryClient } from "@tanstack/react-query";
-import { useMutation } from "@tanstack/react-query";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
 
 import { calendarKeys } from "./useCalendarQuery";
 import { dashboardKeys } from "./useDashboardQuery";
@@ -36,7 +35,13 @@ export function useDeletePostMutation() {
   const invalidateAll = useInvalidatePostQueries();
 
   return useMutation({
-    mutationFn: async ({ postId, isLongform }: { postId: string; isLongform?: boolean }) => {
+    mutationFn: async ({
+      postId,
+      isLongform,
+    }: {
+      postId: string;
+      isLongform?: boolean;
+    }) => {
       const formData = new FormData();
       formData.append("_action", isLongform ? "deleteLongForm" : "delete");
       formData.append("postId", postId);
@@ -65,9 +70,18 @@ export function useBulkDeleteMutation() {
   const invalidateAll = useInvalidatePostQueries();
 
   return useMutation({
-    mutationFn: async ({ postIds, isLongform }: { postIds: string[]; isLongform?: boolean }) => {
+    mutationFn: async ({
+      postIds,
+      isLongform,
+    }: {
+      postIds: string[];
+      isLongform?: boolean;
+    }) => {
       const formData = new FormData();
-      formData.append("_action", isLongform ? "bulkDeleteLongForm" : "bulkDelete");
+      formData.append(
+        "_action",
+        isLongform ? "bulkDeleteLongForm" : "bulkDelete"
+      );
       formData.append("postIds", JSON.stringify(postIds));
 
       const response = await fetch("/dashboard", {
@@ -106,7 +120,10 @@ export function useReschedulePostMutation() {
       isLongform?: boolean;
     }) => {
       const formData = new FormData();
-      formData.append("_action", isLongform ? "rescheduleLongform" : "reschedule");
+      formData.append(
+        "_action",
+        isLongform ? "rescheduleLongform" : "reschedule"
+      );
       formData.append("postId", postId);
       formData.append("scheduledFor", scheduledFor);
       if (queueTypeId) {
@@ -129,4 +146,3 @@ export function useReschedulePostMutation() {
     },
   });
 }
-

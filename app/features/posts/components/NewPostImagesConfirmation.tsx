@@ -176,7 +176,8 @@ export default function NewPostImagesConfirmation({
         tags: tagArray,
       };
 
-      const { signedEvent, nostrEvent } = await nostrAdapter.signEvent(eventData);
+      const { signedEvent, nostrEvent } =
+        await nostrAdapter.signEvent(eventData);
 
       const formData = new FormData();
       formData.append("_action", isImmediate ? "post-media" : "schedule-media");
@@ -228,7 +229,7 @@ export default function NewPostImagesConfirmation({
           component: "NewPostImagesConfirmation",
           action: "handleSignAndSubmit",
         },
-        false,
+        false
       ); // Don't show toast, let component handle it
     }
   };
@@ -391,16 +392,17 @@ export default function NewPostImagesConfirmation({
                   Scheduled for
                 </h4>
                 <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                  {new Date(events[0]?.content.scheduledFor).toLocaleDateString(
-                    "en-US",
-                    {
-                      weekday: "short",
-                      month: "short",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    },
-                  )}
+                  {events[0]?.content?.scheduledFor
+                    ? new Date(
+                        events[0].content.scheduledFor
+                      ).toLocaleDateString("en-US", {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "Not scheduled"}
                 </p>
               </div>
             </div>

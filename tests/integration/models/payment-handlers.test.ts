@@ -30,6 +30,8 @@ vi.mock("~/lib/error-logger.server", () => ({
   logError: vi.fn(),
 }));
 
+import { TEST_USER_ID } from "../../utils/test-helpers";
+
 import { prisma } from "~/lib/prisma.server";
 import {
   handlePaymentCompleted,
@@ -37,8 +39,6 @@ import {
   updateUserSubscription,
   getAllPlans,
 } from "~/models/payment.server";
-
-import { TEST_USER_ID } from "../../utils/test-helpers";
 
 describe("Payment Handlers", () => {
   beforeEach(() => {
@@ -49,7 +49,7 @@ describe("Payment Handlers", () => {
     it("should update payment status and subscription", async () => {
       const mockPayment = { id: "payment-123", status: "COMPLETED" };
       (prisma.payment.update as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPayment,
+        mockPayment
       );
       (prisma.plan.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: "plan-123",
@@ -59,13 +59,13 @@ describe("Payment Handlers", () => {
       (prisma.payment.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
         {
           amount: 1000,
-        },
+        }
       );
       (prisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(
-        // eslint-disable-next-line @typescript-eslint/no-misused-promises
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Test functions can be async
         (callback: (tx: typeof prisma) => Promise<unknown>) => {
           return callback(prisma);
-        },
+        }
       );
       (
         prisma.subscription.upsert as ReturnType<typeof vi.fn>
@@ -80,7 +80,7 @@ describe("Payment Handlers", () => {
         where: { id: "payment-123" },
         data: {
           status: "COMPLETED",
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
           paidAt: expect.any(Date),
         },
       });
@@ -88,11 +88,11 @@ describe("Payment Handlers", () => {
 
     it("should handle errors and rethrow", async () => {
       (prisma.payment.update as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("DB error"),
+        new Error("DB error")
       );
 
       await expect(
-        handlePaymentCompleted("payment-123", TEST_USER_ID, "plan-123"),
+        handlePaymentCompleted("payment-123", TEST_USER_ID, "plan-123")
       ).rejects.toThrow("DB error");
     });
   });
@@ -101,7 +101,7 @@ describe("Payment Handlers", () => {
     it("should mark payment as expired", async () => {
       const mockPayment = { id: "payment-123", status: "EXPIRED" };
       (prisma.payment.update as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPayment,
+        mockPayment
       );
 
       await handlePaymentTimeout("payment-123");
@@ -110,7 +110,7 @@ describe("Payment Handlers", () => {
         where: { id: "payment-123" },
         data: {
           status: "EXPIRED",
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
           failedAt: expect.any(Date),
           failureReason: "Payment timeout",
         },
@@ -119,7 +119,7 @@ describe("Payment Handlers", () => {
 
     it("should handle errors gracefully", async () => {
       (prisma.payment.update as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("DB error"),
+        new Error("DB error")
       );
 
       // Should not throw
@@ -135,10 +135,10 @@ describe("Payment Handlers", () => {
         enableLifetimeAccess: true,
       };
       (prisma.plan.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPlan,
+        mockPlan
       );
       (prisma.payment.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
-        { amount: 10000 },
+        { amount: 10000 }
       );
 
       const mockTx = {
@@ -154,10 +154,10 @@ describe("Payment Handlers", () => {
       };
 
       (prisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(
-        // eslint-disable-next-line @typescript-eslint/no-misused-promises
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Test functions can be async
         (callback: (tx: typeof mockTx) => Promise<unknown>) => {
           return callback(mockTx);
-        },
+        }
       );
 
       await updateUserSubscription(TEST_USER_ID, "plan-123", "payment-123");
@@ -181,10 +181,10 @@ describe("Payment Handlers", () => {
         enableLifetimeAccess: false,
       };
       (prisma.plan.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPlan,
+        mockPlan
       );
       (prisma.payment.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
-        { amount: 1000 },
+        { amount: 1000 }
       );
 
       const mockTx = {
@@ -200,10 +200,10 @@ describe("Payment Handlers", () => {
       };
 
       (prisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(
-        // eslint-disable-next-line @typescript-eslint/no-misused-promises
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Test functions can be async
         (callback: (tx: typeof mockTx) => Promise<unknown>) => {
           return callback(mockTx);
-        },
+        }
       );
 
       await updateUserSubscription(TEST_USER_ID, "plan-123", "payment-123");
@@ -227,7 +227,7 @@ describe("Payment Handlers", () => {
         enableLifetimeAccess: false,
       };
       (prisma.plan.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPlan,
+        mockPlan
       );
 
       const mockTx = {
@@ -243,10 +243,10 @@ describe("Payment Handlers", () => {
       };
 
       (prisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(
-        // eslint-disable-next-line @typescript-eslint/no-misused-promises
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Test functions can be async
         (callback: (tx: typeof mockTx) => Promise<unknown>) => {
           return callback(mockTx);
-        },
+        }
       );
 
       await updateUserSubscription(TEST_USER_ID, "plan-123", "free_123");
@@ -256,11 +256,11 @@ describe("Payment Handlers", () => {
 
     it("should throw error if plan not found", async () => {
       (prisma.plan.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null,
+        null
       );
 
       await expect(
-        updateUserSubscription(TEST_USER_ID, "nonexistent", "payment-123"),
+        updateUserSubscription(TEST_USER_ID, "nonexistent", "payment-123")
       ).rejects.toThrow("Plan nonexistent not found");
     });
   });
@@ -273,7 +273,7 @@ describe("Payment Handlers", () => {
         { id: "plan-3", name: "Premium", price: "20.00", isActive: true },
       ];
       (prisma.plan.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPlans,
+        mockPlans
       );
 
       const result = await getAllPlans();

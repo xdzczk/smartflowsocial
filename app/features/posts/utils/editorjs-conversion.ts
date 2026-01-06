@@ -23,7 +23,7 @@ export function generateArticleIdentifier(title: string): string {
 }
 
 export function convertEditorJSToMarkdown(
-  editorData: EditorJSOutput | string | null | undefined,
+  editorData: EditorJSOutput | string | null | undefined
 ): string {
   // Handle string input (JSON string)
   let parsedData: EditorJSOutput | null = null;
@@ -49,22 +49,22 @@ export function convertEditorJSToMarkdown(
     switch (block.type) {
       case "header": {
         const level = "#".repeat(
-          typeof data.level === "number" ? data.level : 1,
+          typeof data["level"] === "number" ? data["level"] : 1
         );
-        const text = typeof data.text === "string" ? data.text : "";
+        const text = typeof data["text"] === "string" ? data["text"] : "";
         markdown += `${level} ${text}\n\n`;
         break;
       }
 
       case "paragraph": {
-        const text = typeof data.text === "string" ? data.text : "";
+        const text = typeof data["text"] === "string" ? data["text"] : "";
         markdown += `${text}\n\n`;
         break;
       }
 
       case "list": {
-        const style = data.style;
-        const items = Array.isArray(data.items) ? data.items : [];
+        const style = data["style"];
+        const items = Array.isArray(data["items"]) ? data["items"] : [];
         if (style === "ordered") {
           items.forEach((item: unknown, index: number) => {
             const itemText = typeof item === "string" ? item : String(item);
@@ -81,17 +81,17 @@ export function convertEditorJSToMarkdown(
       }
 
       case "quote": {
-        const text = typeof data.text === "string" ? data.text : "";
+        const text = typeof data["text"] === "string" ? data["text"] : "";
         markdown += `> ${text}\n`;
-        if (data.caption && typeof data.caption === "string") {
-          markdown += `> \n> — ${data.caption}\n`;
+        if (data["caption"] && typeof data["caption"] === "string") {
+          markdown += `> \n> — ${data["caption"]}\n`;
         }
         markdown += "\n";
         break;
       }
 
       case "code": {
-        const code = typeof data.code === "string" ? data.code : "";
+        const code = typeof data["code"] === "string" ? data["code"] : "";
         markdown += "```\n";
         markdown += code;
         markdown += "\n```\n\n";
@@ -99,12 +99,12 @@ export function convertEditorJSToMarkdown(
       }
 
       case "linkTool": {
-        const link = typeof data.link === "string" ? data.link : "";
+        const link = typeof data["link"] === "string" ? data["link"] : "";
         const meta =
-          data.meta && typeof data.meta === "object"
-            ? (data.meta as Record<string, unknown>)
+          data["meta"] && typeof data["meta"] === "object"
+            ? (data["meta"] as Record<string, unknown>)
             : {};
-        const title = typeof meta.title === "string" ? meta.title : null;
+        const title = typeof meta["title"] === "string" ? meta["title"] : null;
         if (title) {
           markdown += `[${title}](${link})\n\n`;
         } else {
@@ -114,8 +114,9 @@ export function convertEditorJSToMarkdown(
       }
 
       case "embed": {
-        const service = typeof data.service === "string" ? data.service : "";
-        const source = typeof data.source === "string" ? data.source : "";
+        const service =
+          typeof data["service"] === "string" ? data["service"] : "";
+        const source = typeof data["source"] === "string" ? data["source"] : "";
         if (service === "youtube") {
           markdown += `[![YouTube Video](https://img.youtube.com/vi/${source}/0.jpg)](${source})\n\n`;
         } else {
@@ -126,13 +127,15 @@ export function convertEditorJSToMarkdown(
 
       case "image": {
         const file =
-          data.file && typeof data.file === "object"
-            ? (data.file as Record<string, unknown>)
+          data["file"] && typeof data["file"] === "object"
+            ? (data["file"] as Record<string, unknown>)
             : null;
-        const fileUrl = file && typeof file.url === "string" ? file.url : null;
-        const url = typeof data.url === "string" ? data.url : null;
+        const fileUrl =
+          file && typeof file["url"] === "string" ? file["url"] : null;
+        const url = typeof data["url"] === "string" ? data["url"] : null;
         const imageUrl = fileUrl ?? url;
-        const caption = typeof data.caption === "string" ? data.caption : "";
+        const caption =
+          typeof data["caption"] === "string" ? data["caption"] : "";
         if (imageUrl) {
           if (caption?.trim()) {
             markdown += `![${caption}](${imageUrl})\n\n`;
@@ -144,7 +147,7 @@ export function convertEditorJSToMarkdown(
       }
 
       default: {
-        const text = typeof data.text === "string" ? data.text : null;
+        const text = typeof data["text"] === "string" ? data["text"] : null;
         if (text) {
           markdown += `${text}\n\n`;
         }
@@ -166,7 +169,9 @@ export function convertMarkdownToEditorJS(markdown: string): EditorJSOutput {
   let i = 0;
 
   while (i < lines.length) {
-    const line = lines[i].trim();
+    const currentLine = lines[i];
+    if (currentLine === undefined) break;
+    const line = currentLine.trim();
 
     if (line === "") {
       i++;
@@ -191,20 +196,23 @@ export function convertMarkdownToEditorJS(markdown: string): EditorJSOutput {
     else if (line.match(/^!\[([^\]]*)\]\(([^)]+)\)$/)) {
       const match = line.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
       if (match) {
-        const [, caption, url] = match;
-        blocks.push({
-          id: generateBlockId(),
-          type: "image",
-          data: {
-            file: {
-              url: url,
+        const caption = match[1];
+        const url = match[2];
+        if (caption !== undefined && url !== undefined) {
+          blocks.push({
+            id: generateBlockId(),
+            type: "image",
+            data: {
+              file: {
+                url: url,
+              },
+              caption: caption ?? "",
+              withBorder: false,
+              withBackground: false,
+              stretched: false,
             },
-            caption: caption ?? "",
-            withBorder: false,
-            withBackground: false,
-            stretched: false,
-          },
-        });
+          });
+        }
       }
     }
     // Blockquotes
@@ -213,8 +221,11 @@ export function convertMarkdownToEditorJS(markdown: string): EditorJSOutput {
       let caption = "";
 
       // Collect all consecutive quote lines
-      while (i < lines.length && lines[i].trim().startsWith("> ")) {
-        const quoteLine = lines[i].trim().substring(2);
+      while (i < lines.length) {
+        const currentLine = lines[i];
+        if (currentLine === undefined) break;
+        if (!currentLine.trim().startsWith("> ")) break;
+        const quoteLine = currentLine.trim().substring(2);
         if (quoteLine.startsWith("— ")) {
           caption = quoteLine.substring(2);
         } else if (quoteLine !== "") {
@@ -239,9 +250,12 @@ export function convertMarkdownToEditorJS(markdown: string): EditorJSOutput {
       let code = "";
       i++; // Skip the opening ```
 
-      while (i < lines.length && lines[i].trim() !== "```") {
+      while (i < lines.length) {
+        const currentLine = lines[i];
+        if (currentLine === undefined) break;
+        if (currentLine.trim() === "```") break;
         if (code) code += "\n";
-        code += lines[i];
+        code += currentLine;
         i++;
       }
 
@@ -257,8 +271,11 @@ export function convertMarkdownToEditorJS(markdown: string): EditorJSOutput {
     else if (line.match(/^\d+\.\s/)) {
       const items: string[] = [];
 
-      while (i < lines.length && lines[i].trim().match(/^\d+\.\s/)) {
-        const item = lines[i].trim().replace(/^\d+\.\s/, "");
+      while (i < lines.length) {
+        const currentLine = lines[i];
+        if (currentLine === undefined) break;
+        if (!currentLine.trim().match(/^\d+\.\s/)) break;
+        const item = currentLine.trim().replace(/^\d+\.\s/, "");
         items.push(item);
         i++;
       }
@@ -277,8 +294,11 @@ export function convertMarkdownToEditorJS(markdown: string): EditorJSOutput {
     else if (line.startsWith("- ")) {
       const items: string[] = [];
 
-      while (i < lines.length && lines[i].trim().startsWith("- ")) {
-        const item = lines[i].trim().substring(2);
+      while (i < lines.length) {
+        const currentLine = lines[i];
+        if (currentLine === undefined) break;
+        if (!currentLine.trim().startsWith("- ")) break;
+        const item = currentLine.trim().substring(2);
         items.push(item);
         i++;
       }
@@ -297,17 +317,20 @@ export function convertMarkdownToEditorJS(markdown: string): EditorJSOutput {
     else if (line.match(/^\[([^\]]+)\]\(([^)]+)\)$/)) {
       const match = line.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
       if (match) {
-        const [, title, url] = match;
-        blocks.push({
-          id: generateBlockId(),
-          type: "linkTool",
-          data: {
-            link: url,
-            meta: {
-              title: title,
+        const title = match[1];
+        const url = match[2];
+        if (title !== undefined && url !== undefined) {
+          blocks.push({
+            id: generateBlockId(),
+            type: "linkTool",
+            data: {
+              link: url,
+              meta: {
+                title: title,
+              },
             },
-          },
-        });
+          });
+        }
       }
     }
     // Regular paragraphs
@@ -316,17 +339,22 @@ export function convertMarkdownToEditorJS(markdown: string): EditorJSOutput {
       let paragraphText = line;
       let j = i + 1;
 
-      while (
-        j < lines.length &&
-        lines[j].trim() !== "" &&
-        !lines[j].trim().startsWith("#") &&
-        !lines[j].trim().startsWith("> ") &&
-        !lines[j].trim().startsWith("- ") &&
-        !lines[j].trim().match(/^\d+\.\s/) &&
-        lines[j].trim() !== "```" &&
-        !lines[j].trim().match(/^!\[([^\]]*)\]\(([^)]+)\)$/)
-      ) {
-        paragraphText += " " + lines[j].trim();
+      while (j < lines.length) {
+        const currentLine = lines[j];
+        if (currentLine === undefined) break;
+        const trimmed = currentLine.trim();
+        if (
+          trimmed === "" ||
+          trimmed.startsWith("#") ||
+          trimmed.startsWith("> ") ||
+          trimmed.startsWith("- ") ||
+          trimmed.match(/^\d+\.\s/) ||
+          trimmed === "```" ||
+          trimmed.match(/^!\[([^\]]*)\]\(([^)]+)\)$/)
+        ) {
+          break;
+        }
+        paragraphText += " " + trimmed;
         j++;
       }
 
@@ -348,4 +376,3 @@ export function convertMarkdownToEditorJS(markdown: string): EditorJSOutput {
     blocks: blocks,
   };
 }
-

@@ -34,9 +34,9 @@ describe("Property-Based Tests: Payment Processing", () => {
               return sats1 <= sats2;
             }
             return true;
-          },
+          }
         ),
-        { numRuns: 100 },
+        { numRuns: 100 }
       );
     });
 
@@ -54,9 +54,9 @@ describe("Property-Based Tests: Payment Processing", () => {
             // Allow 1% rounding error
             const error = Math.abs(usdAmount - backToUsd) / usdAmount;
             return Number.isFinite(error) && error < 0.01;
-          },
+          }
         ),
-        { numRuns: 100 },
+        { numRuns: 100 }
       );
     });
 
@@ -67,7 +67,7 @@ describe("Property-Based Tests: Payment Processing", () => {
         fc.property(fc.constant(0), (usdAmount: number) => {
           const sats = Math.round((usdAmount / 2500) * 100000000);
           return sats === 0;
-        }),
+        })
       );
     });
 
@@ -82,9 +82,9 @@ describe("Property-Based Tests: Payment Processing", () => {
           (usdAmount: number) => {
             const sats = Math.round((usdAmount / 2500) * 100000000);
             return sats >= 0;
-          },
+          }
         ),
-        { numRuns: 100 },
+        { numRuns: 100 }
       );
     });
   });
@@ -96,9 +96,9 @@ describe("Property-Based Tests: Payment Processing", () => {
           fc.integer({ min: 0, max: 1000000000 }), // Sat amounts
           (sats: number) => {
             return Number.isInteger(sats) && sats >= 0;
-          },
+          }
         ),
-        { numRuns: 100 },
+        { numRuns: 100 }
       );
     });
 
@@ -111,12 +111,12 @@ describe("Property-Based Tests: Payment Processing", () => {
           (usdAmount: number) => {
             const sats = Math.max(
               1,
-              Math.round((usdAmount / 2500) * 100000000),
+              Math.round((usdAmount / 2500) * 100000000)
             );
             return sats >= 1;
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
 
@@ -128,9 +128,9 @@ describe("Property-Based Tests: Payment Processing", () => {
             // Should not throw or produce invalid values
             const isValid = Number.isFinite(sats) && sats >= 0;
             return isValid;
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
   });
@@ -157,7 +157,8 @@ describe("Property-Based Tests: Payment Processing", () => {
           return true;
         }
         // Otherwise, check if transition is in the valid transitions list
-        return validTransitions[from].includes(to);
+        const transitions = validTransitions[from];
+        return transitions ? transitions.includes(to) : false;
       };
 
       fc.assert(
@@ -179,10 +180,11 @@ describe("Property-Based Tests: Payment Processing", () => {
             }
 
             // Rule 3: Non-terminal states can only transition to states in the valid transitions list
-            return isValid === validTransitions[from].includes(to);
-          },
+            const transitions = validTransitions[from];
+            return isValid === (transitions ? transitions.includes(to) : false);
+          }
         ),
-        { numRuns: 100 },
+        { numRuns: 100 }
       );
     });
   });

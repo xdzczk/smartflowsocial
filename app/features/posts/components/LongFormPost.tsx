@@ -44,7 +44,7 @@ interface InitialData {
 }
 
 interface LongFormPostProps {
-  queueTypes?: (string | QueueType)[];
+  queueTypes?: Array<string | QueueType>;
   scheduleIntervals?: number[];
   userTags?: string;
   assets?: Asset[];
@@ -219,7 +219,7 @@ export default function LongFormPost({
         selectedAssets.map((asset) => ({
           assetType: asset.assetType,
           fileUrl: asset.fileUrl ?? undefined,
-        })),
+        }))
       );
     } else {
       void insertAssetIntoEditor(
@@ -228,7 +228,7 @@ export default function LongFormPost({
           fileUrl: asset.fileUrl ?? undefined,
           content: asset.content ?? undefined,
           title: asset.title ?? undefined,
-        })),
+        }))
       );
     }
     setShowAssetBrowser("");

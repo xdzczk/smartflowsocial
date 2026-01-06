@@ -37,6 +37,8 @@ vi.mock("~/features/posts/services/combined.server", () => ({
   ]),
 }));
 
+import { TEST_USER_ID } from "../../../utils/test-helpers";
+
 import { loadDashboardData } from "~/features/posts/services/dashboard-loader.server";
 import {
   getUserById,
@@ -48,8 +50,6 @@ import {
   getScheduledPosts,
   getPostStatistics,
 } from "~/models/post.queries.server";
-
-import { TEST_USER_ID } from "../../../utils/test-helpers";
 
 describe("Dashboard Loader", () => {
   beforeEach(() => {
@@ -72,20 +72,20 @@ describe("Dashboard Loader", () => {
     const mockStatistics = { scheduledCount: 5, successCount: 10 };
 
     (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockPosts,
+      mockPosts
     );
     (getScheduledLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockLongformPosts,
+      mockLongformPosts
     );
     (getPostStatistics as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockStatistics,
+      mockStatistics
     );
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockQueueTypes,
+      mockQueueTypes
     );
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockHashTagPresets,
+      mockHashTagPresets
     );
 
     const result = await loadDashboardData(TEST_USER_ID, "all");
@@ -113,10 +113,10 @@ describe("Dashboard Loader", () => {
     ];
 
     (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockPosts,
+      mockPosts
     );
     (getScheduledLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockLongformPosts,
+      mockLongformPosts
     );
     (getPostStatistics as ReturnType<typeof vi.fn>).mockResolvedValue({
       scheduledCount: 0,
@@ -124,7 +124,7 @@ describe("Dashboard Loader", () => {
     });
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockQueueTypes,
+      mockQueueTypes
     );
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
@@ -146,7 +146,7 @@ describe("Dashboard Loader", () => {
 
     (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (getScheduledLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
-      [],
+      []
     );
     (getPostStatistics as ReturnType<typeof vi.fn>).mockResolvedValue({
       scheduledCount: 0,
@@ -156,7 +156,7 @@ describe("Dashboard Loader", () => {
       id: TEST_USER_ID,
     });
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-      mockQueueTypes,
+      mockQueueTypes
     );
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 

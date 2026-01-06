@@ -37,17 +37,17 @@ function extractProfileBits(nostrProfile: ProfileData | null | undefined) {
         picture?: string;
       };
       return {
-        name: p?.name,
-        display_name: p?.display_name,
-        picture: p?.picture,
+        name: p.name,
+        display_name: p.display_name,
+        picture: p.picture,
       } as const;
     }
     if (typeof nostrProfile === "object") {
       const p = nostrProfile;
       return {
-        name: p?.name,
-        display_name: p?.display_name,
-        picture: p?.picture,
+        name: p.name,
+        display_name: p.display_name,
+        picture: p.picture,
       } as const;
     }
   } catch {
@@ -92,7 +92,7 @@ export function AccountsSettings({
       lastSubmittedRef.current = value;
       fetcher.submit(
         { _action: "search_accounts", q: value },
-        { method: "post" },
+        { method: "post" }
       );
     }, 300);
 
@@ -103,7 +103,7 @@ export function AccountsSettings({
     const np = (childNpub ?? "").trim();
     fetcher.submit(
       { _action: "request_child", childNpub: np },
-      { method: "post", action: "/dashboard/settings" },
+      { method: "post", action: "/dashboard/settings" }
     );
   };
 
@@ -129,7 +129,7 @@ export function AccountsSettings({
 
   const _renderAccountRow = (
     npub: string,
-    nostrProfile?: ProfileData | null,
+    nostrProfile?: ProfileData | null
   ) => {
     const bits = extractProfileBits(nostrProfile);
     return (
@@ -197,7 +197,7 @@ export function AccountsSettings({
             onClick={() =>
               fetcher.submit(
                 { _action: "unlink_parent" },
-                { method: "post", action: "/dashboard/settings" },
+                { method: "post", action: "/dashboard/settings" }
               )
             }
           >
@@ -358,7 +358,7 @@ export function AccountsSettings({
                       onClick={() =>
                         fetcher.submit(
                           { _action: "unlink_child", childNpub: u.npub },
-                          { method: "post", action: "/dashboard/settings" },
+                          { method: "post", action: "/dashboard/settings" }
                         )
                       }
                     >
@@ -417,7 +417,7 @@ export function AccountsSettings({
                             _action: "cancel_child_request",
                             childNpub: u.npub,
                           },
-                          { method: "post", action: "/dashboard/settings" },
+                          { method: "post", action: "/dashboard/settings" }
                         )
                       }
                     >

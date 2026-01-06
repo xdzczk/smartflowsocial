@@ -77,7 +77,10 @@ export function GiveawayTable({
               </th>
               <SortableHeader sortKey="caption" label="Caption" />
               <SortableHeader sortKey="postedAt" label="Posted At" />
-              <SortableHeader sortKey="totalEngagement" label="Total Engagement" />
+              <SortableHeader
+                sortKey="totalEngagement"
+                label="Total Engagement"
+              />
               <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
                 Likes
               </th>
@@ -229,7 +232,12 @@ export function GiveawayTable({
                     </span>
                   ) : (
                     <span
-                      className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium capitalize ${getQueueColor(post.queueType?.name ?? "unassigned").bg} ${getQueueColor(post.queueType?.name ?? "unassigned").text}`}
+                      className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium capitalize ${(() => {
+                        const colors = getQueueColor(
+                          post.queueType?.name ?? "unassigned"
+                        );
+                        return colors ? `${colors.bg} ${colors.text}` : "";
+                      })()}`}
                     >
                       {post.queueType?.name ?? "unassigned"}
                     </span>

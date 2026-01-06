@@ -69,7 +69,7 @@
     "test:e2e:dev": "start-server-and-test \"cross-env E2E_TEST=true pnpm dev\" http://localhost:3000 \"E2E_TEST=true pnpm exec cypress open\"",
     "test:e2e:run": "start-server-and-test \"cross-env E2E_TEST=true pnpm dev\" http://localhost:3000 \"E2E_TEST=true cypress run\"",
     "test:loaders": "cypress run --spec \"tests/e2e/loaders/**/*.cy.ts\"",
-    "typecheck": "tsc --noEmit && tsc -p tests/e2e/tsconfig.json --noEmit",
+    "typecheck": "./scripts/typecheck.sh",
     "precheck": "pnpm lint && pnpm exec tsc --noEmit",
     "validate": "pnpm format:check && pnpm lint:ci && pnpm typecheck",
     "clean": "rm -rf build .remix node_modules/.cache coverage .tsbuildinfo",

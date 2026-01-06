@@ -1,5 +1,5 @@
 {
-  "exclude": ["./tests/e2e", "./node_modules", "**/node_modules/**"],
+  "exclude": ["./tests/e2e", "node_modules", "**/node_modules/**", "**/.pnpm/**"],
   "include": [
     "remix.env.d.ts",
     "app/**/*.ts",

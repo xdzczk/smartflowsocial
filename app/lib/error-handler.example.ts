@@ -7,8 +7,8 @@
  * NOTE: This is an example file with intentionally unused parameters
  * to demonstrate usage patterns.
  */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unused-vars -- Example file, variables may be unused for demonstration */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment -- Example file, unsafe assignments for demonstration */
 
 import {
   json,
@@ -41,13 +41,12 @@ import {
 
 export const exampleLoader = withErrorHandling(
   async ({ request, params }: LoaderFunctionArgs) => {
-    const userId = params.userId;
+    const userId = params["userId"];
     assertExists(userId, "User ID is required");
 
     // Your loader logic here
-    const data = { userId };
-    return data;
-  },
+    return { userId };
+  }
 );
 
 export const exampleAction = withActionErrorHandling(
@@ -59,7 +58,7 @@ export const exampleAction = withActionErrorHandling(
 
     // Your action logic here
     return createSuccessResponse({ name });
-  },
+  }
 );
 
 // ============================================================================
@@ -71,7 +70,7 @@ export async function manualLoaderExample({
   params,
 }: LoaderFunctionArgs) {
   try {
-    const userId = params.userId;
+    const userId = params["userId"];
     assertExists(userId, "User ID is required");
 
     // Your loader logic here
@@ -121,8 +120,8 @@ export async function assertionExample({
   const userId = await getUserId(request); // Your auth function
   assertAuthenticated(userId, "You must be logged in");
 
-  const resource = await getResource(params.id);
-  assertExists(resource, "Resource not found", { id: params.id ?? "" });
+  const resource = await getResource(params["id"]);
+  assertExists(resource, "Resource not found", { id: params["id"] ?? "" });
 
   const hasPermission = await checkPermission(userId, resource);
   const resourceId =
@@ -135,7 +134,7 @@ export async function assertionExample({
   assertAuthorized(
     hasPermission,
     "You don't have permission to access this resource",
-    { userId, resourceId },
+    { userId, resourceId }
   );
 
   return json({ resource });
@@ -155,7 +154,7 @@ export async function specificErrorsExample({
     throw new AuthenticationError("Please log in to continue");
   }
 
-  const postId = params.postId;
+  const postId = params["postId"];
   if (!postId) {
     throw new ValidationError("Post ID is required");
   }
@@ -172,7 +171,7 @@ export async function specificErrorsExample({
   if (postUserId && typeof postUserId === "string" && postUserId !== userId) {
     throw new AuthorizationError(
       "You don't have permission to edit this post",
-      { postId, userId },
+      { postId, userId }
     );
   }
 
@@ -191,7 +190,7 @@ export async function externalServiceExample({ request }: ActionFunctionArgs) {
       throw new ExternalServiceError(
         "Failed to fetch data from external service",
         response.status,
-        { status: response.status, statusText: response.statusText },
+        { status: response.status, statusText: response.statusText }
       );
     }
     const data = await response.json();
@@ -204,7 +203,7 @@ export async function externalServiceExample({ request }: ActionFunctionArgs) {
     throw new ExternalServiceError(
       "Unexpected error calling external service",
       502,
-      { originalError: error instanceof Error ? error.message : String(error) },
+      { originalError: error instanceof Error ? error.message : String(error) }
     );
   }
 }

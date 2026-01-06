@@ -18,11 +18,7 @@ import {
   postsToCalendarPosts,
   longFormPostsToCalendarPosts,
 } from "~/features/posts/server";
-import {
-  Calendar,
-  getQueueColor,
-  useCalendarData,
-} from "~/features/posts/ui";
+import { Calendar, getQueueColor, useCalendarData } from "~/features/posts/ui";
 import { withCSRFProtection } from "~/lib/csrf";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import { calendarLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
@@ -36,10 +32,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     // Check if user has access to calendar feature
     await requireFeatureAccess(userId, "calendar");
 
-    const queueType = params.queueType ?? "all";
+    const queueType = params["queueType"] ?? "all";
 
     const data = await loadCalendarData(userId, queueType);
-    
+
     // Validate loader response with Zod schema
     return validateLoaderResponse(data, calendarLoaderDataSchema);
   } catch (error) {
@@ -53,21 +49,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 }
 
-export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs) => {
-  try {
-    const userId = await requireUserId(request);
-    const formData = await request.formData();
-    return handleCalendarAction(formData, userId);
-  } catch (error) {
-    // If error is a Response (e.g., redirect from requireUserId), return it
-    if (error instanceof Response) {
-      return error;
+export const action = withCSRFProtection(
+  async ({ request }: ActionFunctionArgs) => {
+    try {
+      const userId = await requireUserId(request);
+      const formData = await request.formData();
+      return handleCalendarAction(formData, userId);
+    } catch (error) {
+      // If error is a Response (e.g., redirect from requireUserId), return it
+      if (error instanceof Response) {
+        return error;
+      }
+      // Use dynamic import to avoid bundling issues
+      const { handleActionError } = await import("~/lib/error-handler.server");
+      return handleActionError(error);
     }
-    // Use dynamic import to avoid bundling issues
-    const { handleActionError } = await import("~/lib/error-handler.server");
-    return handleActionError(error);
   }
-});
+);
 
 type _LoaderData = Exclude<Awaited<ReturnType<typeof loader>>, Response>;
 
@@ -103,7 +101,7 @@ export default function CalendarRoute() {
       <div className="mb-6 border-b border-gray-200 dark:border-gray-700">
         <nav className="-mb-px flex space-x-8" aria-label="Post Types">
           <Link
-            to={`/dashboard/calendar${params.queueType ? `/${params.queueType}` : ""}?tab=all`}
+            to={`/dashboard/calendar${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=all`}
             className={`whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium ${
               currentTab === "all"
                 ? "border-blue-500 text-blue-600 dark:text-blue-400"
@@ -113,7 +111,7 @@ export default function CalendarRoute() {
             All ({allContent.length})
           </Link>
           <Link
-            to={`/dashboard/calendar${params.queueType ? `/${params.queueType}` : ""}?tab=posts`}
+            to={`/dashboard/calendar${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=posts`}
             className={`whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium ${
               currentTab === "posts"
                 ? "border-blue-500 text-blue-600 dark:text-blue-400"
@@ -123,7 +121,7 @@ export default function CalendarRoute() {
             Posts ({scheduledPosts.length})
           </Link>
           <Link
-            to={`/dashboard/calendar${params.queueType ? `/${params.queueType}` : ""}?tab=longform`}
+            to={`/dashboard/calendar${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=longform`}
             className={`whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium ${
               currentTab === "longform"
                 ? "border-blue-500 text-blue-600 dark:text-blue-400"
@@ -146,7 +144,7 @@ export default function CalendarRoute() {
               prefetch="intent"
               onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
               className={`whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium ${
-                !params.queueType
+                !params["queueType"]
                   ? "border-blue-500 text-blue-600 dark:text-blue-400"
                   : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
               }`}
@@ -157,14 +155,15 @@ export default function CalendarRoute() {
               (
                 queueType:
                   | string
-                  | { name: string; id?: string; color?: string | null },
+                  | { name: string; id?: string; color?: string | null }
               ) => {
                 const queueName =
                   typeof queueType === "string" ? queueType : queueType.name;
                 const queueColor =
                   typeof queueType === "object" ? queueType.color : null;
                 const colors = getQueueColor(queueName, queueColor);
-                const isSelected = params.queueType === queueName;
+                const safeColors = colors ?? getQueueColor("unassigned");
+                const isSelected = params["queueType"] === queueName;
                 const queueId =
                   typeof queueType === "object" && queueType.id
                     ? queueType.id
@@ -206,14 +205,14 @@ export default function CalendarRoute() {
                     }
                     className={`${baseClasses} ${
                       isSelected
-                        ? `border-blue-500 ${colors.text}`
+                        ? `border-blue-500 ${safeColors?.text ?? ""}`
                         : unselectedClasses
                     }`}
                   >
                     {queueName}
                   </Link>
                 );
-              },
+              }
             )}
           </nav>
         </div>
@@ -225,7 +224,7 @@ export default function CalendarRoute() {
           <Calendar
             scheduledPosts={mixedPostsToCalendarPosts(
               scheduledPosts,
-              scheduledLongFormPosts,
+              scheduledLongFormPosts
             )}
             pastPosts={mixedPostsToCalendarPosts(pastPosts, pastLongFormPosts)}
             user={user}
@@ -242,7 +241,7 @@ export default function CalendarRoute() {
         ) : (
           <Calendar
             scheduledPosts={longFormPostsToCalendarPosts(
-              scheduledLongFormPosts,
+              scheduledLongFormPosts
             )}
             pastPosts={longFormPostsToCalendarPosts(pastLongFormPosts)}
             user={user}

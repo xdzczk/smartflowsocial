@@ -10,14 +10,14 @@ vi.mock("~/features/user", () => ({
   getQueueTypes: vi.fn(),
 }));
 
+import { TEST_USER_ID } from "../../utils/test-helpers";
+
 import {
   getEffectiveHashtags,
   parseEffectiveHashtagsRequest,
 } from "~/features/posts/services/effective-hashtags.server";
 import { getQueueTypes } from "~/features/user";
 import { ValidationError } from "~/lib/errors";
-
-import { TEST_USER_ID } from "../../utils/test-helpers";
 
 describe("Effective Hashtags Service", () => {
   beforeEach(() => {
@@ -35,7 +35,7 @@ describe("Effective Hashtags Service", () => {
 
     it("should throw ValidationError if neither queueTypeName nor queueTypeId provided", async () => {
       await expect(getEffectiveHashtags(TEST_USER_ID)).rejects.toThrow(
-        ValidationError,
+        ValidationError
       );
       expect(getQueueTypes).not.toHaveBeenCalled();
     });
@@ -57,13 +57,13 @@ describe("Effective Hashtags Service", () => {
       ];
 
       (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockQueueTypes,
+        mockQueueTypes
       );
 
       const result = await getEffectiveHashtags(
         TEST_USER_ID,
         undefined,
-        "queue-1",
+        "queue-1"
       );
 
       expect(getQueueTypes).toHaveBeenCalledWith(TEST_USER_ID);
@@ -83,7 +83,7 @@ describe("Effective Hashtags Service", () => {
       ];
 
       (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockQueueTypes,
+        mockQueueTypes
       );
 
       const result = await getEffectiveHashtags(TEST_USER_ID, "Morning");
@@ -103,7 +103,7 @@ describe("Effective Hashtags Service", () => {
       ];
 
       (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockQueueTypes,
+        mockQueueTypes
       );
 
       const result = await getEffectiveHashtags(TEST_USER_ID, "Morning");
@@ -140,13 +140,13 @@ describe("Effective Hashtags Service", () => {
       ];
 
       (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockQueueTypes,
+        mockQueueTypes
       );
 
       const result = await getEffectiveHashtags(
         TEST_USER_ID,
         "Evening",
-        "queue-1",
+        "queue-1"
       );
 
       const jsonResult = await result.json();
@@ -165,7 +165,7 @@ describe("Effective Hashtags Service", () => {
       ];
 
       (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockQueueTypes,
+        mockQueueTypes
       );
 
       const result = await getEffectiveHashtags(TEST_USER_ID, "Morning");
@@ -208,13 +208,13 @@ describe("Effective Hashtags Service", () => {
 
     it("should throw ValidationError for null body", () => {
       expect(() => parseEffectiveHashtagsRequest(null)).toThrow(
-        ValidationError,
+        ValidationError
       );
     });
 
     it("should throw ValidationError for non-object body", () => {
       expect(() => parseEffectiveHashtagsRequest("string")).toThrow(
-        ValidationError,
+        ValidationError
       );
       expect(() => parseEffectiveHashtagsRequest(123)).toThrow(ValidationError);
       // Note: Arrays are objects in JavaScript, so [] would pass the check

@@ -20,7 +20,7 @@ describe("Database Migrations", () => {
 
   it("should run migrations successfully", async () => {
     const testDatabaseUrl =
-      process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL;
+      process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"];
 
     if (!testDatabaseUrl) {
       throw new Error("TEST_DATABASE_URL or DATABASE_URL must be set");

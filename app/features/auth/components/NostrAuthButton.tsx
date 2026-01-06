@@ -26,7 +26,7 @@ export default function NostrAuthButton() {
                 // @ts-ignore - window.nostr is injected by browser extensions at runtime
                 if (!window.nostr) {
                   throw new Error(
-                    "Nostr extension not found. Please install a Nostr extension like Alby or nos2x.",
+                    "Nostr extension not found. Please install a Nostr extension like Alby or nos2x."
                   );
                 }
 
@@ -36,7 +36,7 @@ export default function NostrAuthButton() {
                   let result = "";
                   for (let i = 0; i < 10; i++) {
                     result += chars.charAt(
-                      Math.floor(Math.random() * chars.length),
+                      Math.floor(Math.random() * chars.length)
                     );
                   }
                   return result;
@@ -70,7 +70,7 @@ export default function NostrAuthButton() {
                     component: "NostrAuthButton",
                     action: "onAuth",
                   },
-                  true,
+                  true
                 );
               }
             })();
@@ -79,7 +79,7 @@ export default function NostrAuthButton() {
 
         // Trigger the login modal
         document.dispatchEvent(
-          new CustomEvent("nlLaunch", { detail: "welcome" }),
+          new CustomEvent("nlLaunch", { detail: "welcome" })
         );
       } catch (error) {
         // Log and handle error
@@ -89,7 +89,7 @@ export default function NostrAuthButton() {
             component: "NostrAuthButton",
             action: "handleNostrLogin",
           },
-          true,
+          true
         );
       }
     })();
@@ -108,7 +108,7 @@ export default function NostrAuthButton() {
         }
       }, 100);
     },
-    [],
+    []
   );
 
   return (
@@ -125,7 +125,7 @@ export default function NostrAuthButton() {
                   typeof user.nostrProfile === "object" &&
                   user.nostrProfile !== null &&
                   "picture" in user.nostrProfile
-                    ? String(user.nostrProfile.picture)
+                    ? String(user.nostrProfile["picture"])
                     : undefined
                 }
                 alt="Profile"
@@ -136,12 +136,12 @@ export default function NostrAuthButton() {
                 "nostrProfile" in user &&
                 typeof user.nostrProfile === "object" &&
                 user.nostrProfile !== null
-                  ? (("name" in user.nostrProfile && user.nostrProfile.name
-                      ? String(user.nostrProfile.name)[0]
+                  ? (("name" in user.nostrProfile && user.nostrProfile["name"]
+                      ? String(user.nostrProfile["name"])[0]
                       : null) ??
                     ("display_name" in user.nostrProfile &&
-                    user.nostrProfile.display_name
-                      ? String(user.nostrProfile.display_name)[0]
+                    user.nostrProfile["display_name"]
+                      ? String(user.nostrProfile["display_name"])[0]
                       : null) ??
                     "U")
                   : "U"}
@@ -153,12 +153,12 @@ export default function NostrAuthButton() {
               "nostrProfile" in user &&
               typeof user.nostrProfile === "object" &&
               user.nostrProfile !== null
-                ? (("name" in user.nostrProfile && user.nostrProfile.name
-                    ? String(user.nostrProfile.name)
+                ? (("name" in user.nostrProfile && user.nostrProfile["name"]
+                    ? String(user.nostrProfile["name"])
                     : null) ??
                   ("display_name" in user.nostrProfile &&
-                  user.nostrProfile.display_name
-                    ? String(user.nostrProfile.display_name)
+                  user.nostrProfile["display_name"]
+                    ? String(user.nostrProfile["display_name"])
                     : null) ??
                   ("npub" in user && user.npub
                     ? `${String(user.npub).slice(0, 12)}...${String(user.npub).slice(-8)}`

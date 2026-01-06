@@ -28,8 +28,8 @@ export async function getUserBasicInfo(userId: string): Promise<{
  */
 
 export async function getUsersByNpubs(
-  npubs: string[],
-): Promise<{ npub: string; nostrProfile: ProfileData | null }[]> {
+  npubs: string[]
+): Promise<Array<{ npub: string; nostrProfile: ProfileData | null }>> {
   if (!npubs.length) return [];
   const users = await prisma.user.findMany({
     where: { npub: { in: npubs } },
@@ -45,7 +45,7 @@ export async function getUsersByNpubs(
  * Gets a user by npub with their profile info
  */
 export async function getUserByNpubWithProfile(
-  npub: string,
+  npub: string
 ): Promise<{ npub: string; nostrProfile: ProfileData | null } | null> {
   const user = await prisma.user.findUnique({
     where: { npub },

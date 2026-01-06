@@ -13,16 +13,17 @@ vi.mock("~/features/auth/session.server", () => ({
   requireUserId: vi.fn(),
 }));
 
+import { TEST_USER_ID } from "../utils/test-helpers";
+
 import { requireUserId } from "~/features/auth/session.server";
 import { action } from "~/routes/api.publish";
-
-import { TEST_USER_ID } from "../utils/test-helpers";
 
 describe("API: Publish", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue(TEST_USER_ID);
-    process.env.NOSTR_PUBLISHER_URL = "https://api.nostr-publisher.com/publish";
+    process.env["NOSTR_PUBLISHER_URL"] =
+      "https://api.nostr-publisher.com/publish";
   });
 
   describe("Successful Requests", () => {
@@ -44,7 +45,7 @@ describe("API: Publish", () => {
         text: async () => "",
       } as unknown as Response;
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockResponse,
+        mockResponse
       );
 
       const request = new Request("http://localhost:3000/api/publish", {
@@ -84,7 +85,7 @@ describe("API: Publish", () => {
             relays: mockRelays,
             event: mockEvent,
           }),
-        }),
+        })
       );
       expect(data).toEqual({ success: true });
     });
@@ -102,7 +103,7 @@ describe("API: Publish", () => {
         text: async () => "Published successfully",
       } as unknown as Response;
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockTextResponse,
+        mockTextResponse
       );
 
       const request = new Request("http://localhost:3000/api/publish", {
@@ -325,7 +326,7 @@ describe("API: Publish", () => {
     });
 
     it("should return error when NOSTR_PUBLISHER_URL is not configured", async () => {
-      delete process.env.NOSTR_PUBLISHER_URL;
+      delete process.env["NOSTR_PUBLISHER_URL"];
 
       const request = new Request("http://localhost:3000/api/publish", {
         method: "POST",
@@ -362,7 +363,7 @@ describe("API: Publish", () => {
 
     it("should handle fetch connection errors", async () => {
       (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Network error"),
+        new Error("Network error")
       );
 
       const request = new Request("http://localhost:3000/api/publish", {
