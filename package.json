@@ -131,7 +131,7 @@
     "ioredis": "^5.6.1",
     "ipaddr.js": "^2.3.0",
     "isbot": "^5.1.17",
-    "lucide-react": "^0.533.0",
+    "lucide-react": "^0.562.0",
     "marked": "^4.3.0",
     "morgan": "^1.10.0",
     "nostr-fetch": "^0.17.0",
