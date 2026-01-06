@@ -80,8 +80,3 @@ export function PostIcon({
     </svg>
   );
 }
-
-
-
-
-

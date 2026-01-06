@@ -49,6 +49,9 @@ jobs:
       - name: Run ESLint (no cache)
         run: pnpm lint:ci
 
+      - name: Check Prettier formatting
+        run: pnpm format:check
+
       - name: Run TypeScript type check
         run: |
           set +e  # Don't exit on error, we'll handle it manually

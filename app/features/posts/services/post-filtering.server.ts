@@ -41,21 +41,16 @@ export function filterPostsArraysByQueueType<
   return {
     scheduledPosts: filterPostsByQueueType(
       config.scheduledPosts ?? [],
-      queueType,
+      queueType
     ),
     scheduledLongFormPosts: filterPostsByQueueType(
       config.scheduledLongFormPosts ?? [],
-      queueType,
+      queueType
     ),
     pastPosts: filterPostsByQueueType(config.pastPosts ?? [], queueType),
     pastLongFormPosts: filterPostsByQueueType(
       config.pastLongFormPosts ?? [],
-      queueType,
+      queueType
     ),
   };
 }
-
-
-
-
-

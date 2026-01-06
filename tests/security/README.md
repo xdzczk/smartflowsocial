@@ -1,6 +1,7 @@
 # Security Testing
 
-This directory contains security tests to ensure the application is protected against common security vulnerabilities.
+This directory contains security tests to ensure the application is protected against common
+security vulnerabilities.
 
 ## Overview
 
@@ -209,8 +210,3 @@ const user = await prisma.user.findUnique({ where: { id: userId } });
 - [OWASP SQL Injection Prevention](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html)
 - [OWASP CSRF Prevention](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html)
 - [Remix Security](https://remix.run/docs/en/main/guides/security)
-
-
-
-
-

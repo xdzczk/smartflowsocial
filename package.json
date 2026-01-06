@@ -1,6 +1,30 @@
 {
   "name": "smartflow-social",
+  "version": "1.0.0",
+  "description": "Professional Nostr social media management platform - Schedule, manage, and optimize your decentralized social presence",
+  "author": "SmartFlowSocial Team",
+  "license": "ELv2",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xdzczk/SmartFlowSocial.git"
+  },
+  "homepage": "https://smartflow.social",
+  "bugs": {
+    "url": "https://github.com/xdzczk/SmartFlowSocial/issues"
+  },
+  "keywords": [
+    "nostr",
+    "social-media",
+    "remix",
+    "typescript",
+    "lightning",
+    "bitcoin",
+    "scheduling",
+    "content-management",
+    "decentralized",
+    "web3"
+  ],
   "packageManager": "pnpm@10.27.0",
   "sideEffects": [
     "**/*.css",
@@ -18,6 +42,7 @@
     "dev:worker": "cross-env NODE_ENV=development esbuild --platform=node --format=cjs ./worker.ts --outdir=build --bundle --external:fsevents --external:ioredis --external:file-type --watch",
     "docker": "docker compose up -d",
     "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "lint": "eslint --cache --cache-location ./node_modules/.cache/eslint .; LINT_EXIT=$?; eslint --format json . > eslint-report.json 2>&1; exit $LINT_EXIT",
     "lint:ci": "eslint . --format json --output-file eslint-report.json || exit 1",
     "start": "cross-env NODE_ENV=production node ./build/server.js",
@@ -44,12 +69,11 @@
     "test:e2e:dev": "start-server-and-test \"cross-env E2E_TEST=true pnpm dev\" http://localhost:3000 \"E2E_TEST=true pnpm exec cypress open\"",
     "test:e2e:run": "start-server-and-test \"cross-env E2E_TEST=true pnpm dev\" http://localhost:3000 \"E2E_TEST=true cypress run\"",
     "test:loaders": "cypress run --spec \"tests/e2e/loaders/**/*.cy.ts\"",
-    "typecheck": "bash -c 'ERRORS=$(tsc 2>&1 | grep -v \"node_modules\"); echo \"$ERRORS\"; echo \"$ERRORS\" | grep -q \"error TS\" && exit 1 || exit 0' && bash -c 'ERRORS=$(tsc -p tests/e2e 2>&1 | grep -v \"node_modules\"); echo \"$ERRORS\"; echo \"$ERRORS\" | grep -q \"error TS\" && exit 1 || exit 0'",
+    "typecheck": "tsc --noEmit && tsc -p tests/e2e/tsconfig.json --noEmit",
     "precheck": "pnpm lint && pnpm exec tsc --noEmit",
-    "lint:fix": "node scripts/fix-eslint-errors.js",
-    "git:status": "git status",
-    "git:push": "git push",
-    "git:sync": "git add . && git commit -m \"Update\" && git push"
+    "validate": "pnpm format:check && pnpm lint:ci && pnpm typecheck",
+    "clean": "rm -rf build .remix node_modules/.cache coverage .tsbuildinfo",
+    "lint:fix": "node scripts/fix-eslint-errors.js"
   },
   "eslintIgnore": [
     "/node_modules",
@@ -188,6 +212,7 @@
     "prettier": "3.3.3",
     "prettier-plugin-tailwindcss": "^0.6.8",
     "prisma": "^6.15.0",
+    "start-server-and-test": "^2.1.3",
     "tailwindcss": "^3.4.13",
     "tsx": "^4.19.1",
     "typescript": "^5.6.2",

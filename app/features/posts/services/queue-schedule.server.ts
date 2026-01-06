@@ -25,7 +25,7 @@ import {
 export async function calculateQueueScheduleTime(
   userId: string,
   queueTypeName?: string,
-  queueTypeId?: string,
+  queueTypeId?: string
 ) {
   if ((!queueTypeName && !queueTypeId) || queueTypeName === "unassigned") {
     return json({ scheduledTime: "" });
@@ -63,7 +63,7 @@ export async function calculateQueueScheduleTime(
   // Format for datetime-local input in user's timezone
   const formattedTime = formatScheduleTimeForInput(
     nextScheduleTime,
-    userTimezone ?? "UTC",
+    userTimezone ?? "UTC"
   );
 
   return createSuccessResponse({ scheduledTime: formattedTime });
@@ -89,8 +89,3 @@ export function parseQueueScheduleRequest(body: unknown): {
     queueTypeId: requestBody.queueTypeId,
   };
 }
-
-
-
-
-

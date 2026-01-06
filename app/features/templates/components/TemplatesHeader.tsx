@@ -14,8 +14,3 @@ export function TemplatesHeader() {
     </div>
   );
 }
-
-
-
-
-

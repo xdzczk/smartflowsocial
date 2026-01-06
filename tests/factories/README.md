@@ -1,10 +1,12 @@
 # Test Data Factories
 
-This directory contains test data factories using the builder pattern for creating test data easily and consistently.
+This directory contains test data factories using the builder pattern for creating test data easily
+and consistently.
 
 ## Overview
 
-Factories provide a clean, fluent API for creating test data with sensible defaults and easy customization.
+Factories provide a clean, fluent API for creating test data with sensible defaults and easy
+customization.
 
 ## Usage
 
@@ -149,7 +151,7 @@ const drafts = postFactory.many(10, { draft: true });
 
 // Create 5 scheduled posts
 const scheduled = Array.from({ length: 5 }, (_, i) =>
-  postFactory.scheduled(new Date(Date.now() + (i + 1) * 3600000).toISOString()),
+  postFactory.scheduled(new Date(Date.now() + (i + 1) * 3600000).toISOString())
 );
 ```
 
@@ -204,8 +206,3 @@ export const myEntityFactory = {
   many: (count, overrides?) => /* create many */,
 };
 ```
-
-
-
-
-

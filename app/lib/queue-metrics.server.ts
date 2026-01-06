@@ -15,7 +15,7 @@ import { singleton } from "./singleton.server";
  */
 function getOrCreateMetric<T extends promClient.Metric>(
   name: string,
-  factory: () => T,
+  factory: () => T
 ): T {
   return singleton(`prom_metric_${name}`, () => {
     // Check if metric already exists in registry
@@ -59,7 +59,7 @@ export const jobDurationHistogram = getOrCreateMetric(
       help: "Duration of queue job processing in milliseconds",
       labelNames: ["queue", "status"],
       buckets: [100, 500, 1000, 2000, 5000, 10000, 30000, 60000],
-    }),
+    })
 );
 
 /**
@@ -73,7 +73,7 @@ export const jobCounter = getOrCreateMetric(
       name: "queue_job_total",
       help: "Total number of queue jobs processed",
       labelNames: ["queue", "status"],
-    }),
+    })
 );
 
 /**
@@ -87,7 +87,7 @@ export const failedJobCounter = getOrCreateMetric(
       name: "queue_job_failed_total",
       help: "Total number of failed queue jobs",
       labelNames: ["queue", "error_type"],
-    }),
+    })
 );
 
 /**
@@ -101,7 +101,7 @@ export const queueLengthGauge = getOrCreateMetric(
       name: "queue_length",
       help: "Current number of jobs waiting in queue",
       labelNames: ["queue"],
-    }),
+    })
 );
 
 /**
@@ -115,7 +115,7 @@ export const activeJobsGauge = getOrCreateMetric(
       name: "queue_active_jobs",
       help: "Number of jobs currently being processed",
       labelNames: ["queue"],
-    }),
+    })
 );
 
 /**
@@ -129,7 +129,7 @@ export const retryCounter = getOrCreateMetric(
       name: "queue_job_retries_total",
       help: "Total number of job retries",
       labelNames: ["queue"],
-    }),
+    })
 );
 
 /**
@@ -143,7 +143,7 @@ export const stuckJobCounter = getOrCreateMetric(
       name: "queue_stuck_jobs_total",
       help: "Total number of stuck jobs (processing > 5 minutes)",
       labelNames: ["queue"],
-    }),
+    })
 );
 
 /**
@@ -153,7 +153,7 @@ export function recordJobMetrics(
   queue: string,
   duration: number,
   success = true,
-  error?: Error,
+  error?: Error
 ): void {
   const status = success ? "success" : "error";
 
@@ -163,7 +163,7 @@ export function recordJobMetrics(
       queue,
       status,
     },
-    duration,
+    duration
   );
 
   // Increment job counter
@@ -210,8 +210,3 @@ export function updateActiveJobs(queue: string, active: number): void {
 export function recordJobRetry(queue: string): void {
   retryCounter.inc({ queue });
 }
-
-
-
-
-

@@ -7,7 +7,7 @@
  */
 export function disableCaptions() {
   const captions = document.querySelectorAll(
-    ".image-tool__caption, .image-tool .cdx-input",
+    ".image-tool__caption, .image-tool .cdx-input"
   );
   captions.forEach((caption) => {
     if (caption) {
@@ -22,7 +22,7 @@ export function disableCaptions() {
  */
 export function setupCaptionObserver(
   editorElement: HTMLElement,
-  disableCaptionsFn: () => void,
+  disableCaptionsFn: () => void
 ): MutationObserver {
   const captionObserver = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
@@ -39,8 +39,3 @@ export function setupCaptionObserver(
 
   return captionObserver;
 }
-
-
-
-
-

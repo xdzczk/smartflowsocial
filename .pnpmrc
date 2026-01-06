@@ -1,0 +1,12 @@
+# Performance optimizations
+shamefully-hoist=false
+public-hoist-pattern[]=*eslint*
+public-hoist-pattern[]=*prettier*
+public-hoist-pattern[]=*typescript*
+
+# Strict mode
+engine-strict=true
+
+# Auto install peers
+auto-install-peers=true
+

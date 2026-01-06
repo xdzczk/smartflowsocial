@@ -1,6 +1,7 @@
 # TanStack Query Integration
 
-This module provides TanStack Query (React Query) integration for the application, enabling efficient data fetching, caching, and state management.
+This module provides TanStack Query (React Query) integration for the application, enabling
+efficient data fetching, caching, and state management.
 
 ## Features
 
@@ -20,10 +21,10 @@ import { useUploadProvider } from "~/lib/query";
 
 function MyComponent() {
   const { data, isLoading, error } = useUploadProvider();
-  
+
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>Error: {error.message}</div>;
-  
+
   return <div>Provider: {data?.provider}</div>;
 }
 ```
@@ -34,15 +35,12 @@ function MyComponent() {
 import { useApiQuery } from "~/lib/query";
 
 function ThreadView({ eventId }: { eventId: string }) {
-  const { data, isLoading } = useApiQuery(
-    `/api/thread-view?event_id=${eventId}`,
-    {
-      queryKey: ["thread-view", eventId],
-      enabled: !!eventId,
-      staleTime: 1000 * 60 * 2, // 2 minutes
-    }
-  );
-  
+  const { data, isLoading } = useApiQuery(`/api/thread-view?event_id=${eventId}`, {
+    queryKey: ["thread-view", eventId],
+    enabled: !!eventId,
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+
   // ...
 }
 ```
@@ -65,16 +63,12 @@ function SettingsForm() {
       toast.success("Settings updated!");
     },
   });
-  
+
   const onSubmit = form.handleSubmit((data) => {
     mutate(data);
   });
-  
-  return (
-    <form onSubmit={onSubmit}>
-      {/* form fields */}
-    </form>
-  );
+
+  return <form onSubmit={onSubmit}>{/* form fields */}</form>;
 }
 ```
 
@@ -97,6 +91,7 @@ const { mutate } = useFormMutation({
 ## Configuration
 
 The QueryClient is configured with:
+
 - **Stale time**: 5 minutes (data is fresh for 5 minutes)
 - **Cache time**: 10 minutes (data stays in cache for 10 minutes)
 - **Retry**: 1 attempt for failed requests
@@ -105,11 +100,7 @@ The QueryClient is configured with:
 ## Integration with Remix
 
 TanStack Query works alongside Remix loaders:
+
 - Use `useLoaderData()` for initial server-rendered data
 - Use TanStack Query for client-side refetching and caching
 - Use `useRemixQuery()` to combine both approaches
-
-
-
-
-

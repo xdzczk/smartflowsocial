@@ -12,7 +12,7 @@ export function handleIsRecyclableChange(
   index: number,
   checked: boolean,
   posts: BulkPost[],
-  setPosts: React.Dispatch<React.SetStateAction<BulkPost[]>>,
+  setPosts: React.Dispatch<React.SetStateAction<BulkPost[]>>
 ): void {
   const updatedPosts = [...posts];
   updatedPosts[index].isRecyclable = checked;
@@ -24,7 +24,7 @@ export function handleIsRecyclableChange(
  */
 export function handleBulkRecyclableToggle(
   posts: BulkPost[],
-  setPosts: React.Dispatch<React.SetStateAction<BulkPost[]>>,
+  setPosts: React.Dispatch<React.SetStateAction<BulkPost[]>>
 ): void {
   if (posts.length === 0) return;
 
@@ -39,8 +39,3 @@ export function handleBulkRecyclableToggle(
 
   setPosts(updatedPosts);
 }
-
-
-
-
-

@@ -8,19 +8,19 @@ declare module "ws" {
     readyState: number;
     send(
       data: string | Buffer | ArrayBuffer | Buffer[],
-      cb?: (err?: Error) => void,
+      cb?: (err?: Error) => void
     ): void;
     close(code?: number, reason?: string): void;
     terminate(): void;
     ping(
       data?: string | Buffer,
       mask?: boolean,
-      cb?: (err?: Error) => void,
+      cb?: (err?: Error) => void
     ): void;
     pong(
       data?: string | Buffer,
       mask?: boolean,
-      cb?: (err?: Error) => void,
+      cb?: (err?: Error) => void
     ): void;
   }
 
@@ -29,8 +29,3 @@ declare module "ws" {
   export const CLOSING = 2;
   export const CLOSED = 3;
 }
-
-
-
-
-

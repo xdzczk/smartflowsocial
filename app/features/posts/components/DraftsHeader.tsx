@@ -41,8 +41,3 @@ export function DraftsHeader({
     </div>
   );
 }
-
-
-
-
-

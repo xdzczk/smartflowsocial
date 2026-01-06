@@ -22,7 +22,7 @@ export interface DraftsStatePost {
  */
 export function convertDraftsPostToPostData(
   draftsPost: DraftsStatePost,
-  originalPosts: PostData[],
+  originalPosts: PostData[]
 ): PostData | null {
   // Try to find original PostData first
   const original = originalPosts.find((p) => p.id === draftsPost.id);
@@ -43,12 +43,9 @@ export function convertDraftsPostToPostData(
  */
 export function convertDraftsPostsToPostDataArray(
   draftsPosts: DraftsStatePost[],
-  originalPosts: PostData[],
+  originalPosts: PostData[]
 ): PostData[] {
   return draftsPosts
     .map((post) => convertDraftsPostToPostData(post, originalPosts))
     .filter((post): post is PostData => post !== null);
 }
-
-
-

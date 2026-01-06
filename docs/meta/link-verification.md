@@ -24,16 +24,14 @@ All documentation links should be verified regularly to ensure:
 **Relative links:**
 
 ```markdown
-[Link Text](./relative/path.md)
-[Link Text](../parent/path.md)
+[Link Text](./relative/path.md) [Link Text](../parent/path.md)
 [Link Text](../../guides/user-guides/posting.md)
 ```
 
 **Anchor links:**
 
 ```markdown
-[Section](#section-name)
-[Section in Another File](./file.md#section-name)
+[Section](#section-name) [Section in Another File](./file.md#section-name)
 ```
 
 ### Verification Checklist
@@ -212,8 +210,3 @@ done
 ---
 
 **Note:** This guide should be updated as link verification processes improve.
-
-
-
-
-

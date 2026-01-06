@@ -17,6 +17,8 @@ vi.mock("~/lib/prisma.server", () => ({
   },
 }));
 
+import { TEST_USER_ID } from "../../utils/test-helpers";
+
 import {
   getUserBasicInfo,
   getUsersByNpubs,
@@ -27,8 +29,6 @@ import {
   disableUserAccount,
 } from "~/features/user/queries/user-queries.server";
 import { prisma } from "~/lib/prisma.server";
-
-import { TEST_USER_ID } from "../../utils/test-helpers";
 
 describe("User Queries", () => {
   beforeEach(() => {
@@ -43,7 +43,7 @@ describe("User Queries", () => {
         parentNpub: null,
       };
       (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockUser,
+        mockUser
       );
 
       const result = await getUserBasicInfo(TEST_USER_ID);
@@ -57,7 +57,7 @@ describe("User Queries", () => {
 
     it("should return null if user not found", async () => {
       (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null,
+        null
       );
 
       const result = await getUserBasicInfo("nonexistent");
@@ -72,7 +72,7 @@ describe("User Queries", () => {
         parentNpub: "parent-npub",
       };
       (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockUser,
+        mockUser
       );
 
       const result = await getUserBasicInfo(TEST_USER_ID);
@@ -89,7 +89,7 @@ describe("User Queries", () => {
         { npub: "npub2", nostrProfile: { name: "User 2" } },
       ];
       (prisma.user.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockUsers,
+        mockUsers
       );
 
       const result = await getUsersByNpubs(["npub1", "npub2"]);
@@ -112,7 +112,7 @@ describe("User Queries", () => {
     it("should handle null nostrProfile", async () => {
       const mockUsers = [{ npub: "npub1", nostrProfile: null }];
       (prisma.user.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockUsers,
+        mockUsers
       );
 
       const result = await getUsersByNpubs(["npub1"]);
@@ -131,7 +131,7 @@ describe("User Queries", () => {
         },
       };
       (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockUser,
+        mockUser
       );
 
       const result = await getUserByNpubWithProfile("npub123");
@@ -145,7 +145,7 @@ describe("User Queries", () => {
 
     it("should return null if user not found", async () => {
       (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null,
+        null
       );
 
       const result = await getUserByNpubWithProfile("nonexistent");
@@ -159,7 +159,7 @@ describe("User Queries", () => {
         nostrProfile: "invalid-format",
       };
       (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockUser,
+        mockUser
       );
 
       const result = await getUserByNpubWithProfile("npub123");
@@ -172,7 +172,7 @@ describe("User Queries", () => {
     it("should get user ID by npub", async () => {
       const mockUser = { id: TEST_USER_ID };
       (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockUser,
+        mockUser
       );
 
       const result = await getUserIdByNpub("npub123");
@@ -186,7 +186,7 @@ describe("User Queries", () => {
 
     it("should return null if user not found", async () => {
       (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null,
+        null
       );
 
       const result = await getUserIdByNpub("nonexistent");
@@ -218,7 +218,7 @@ describe("User Queries", () => {
         },
       ];
       (prisma.user.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockUsers,
+        mockUsers
       );
 
       const result = await getEnabledUsersWithSubscriptions();
@@ -241,7 +241,7 @@ describe("User Queries", () => {
     it("should disable user account", async () => {
       const mockUser = { id: TEST_USER_ID, isEnabled: false };
       (prisma.user.update as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockUser,
+        mockUser
       );
 
       const result = await disableUserAccount(TEST_USER_ID);
@@ -254,8 +254,3 @@ describe("User Queries", () => {
     });
   });
 });
-
-
-
-
-

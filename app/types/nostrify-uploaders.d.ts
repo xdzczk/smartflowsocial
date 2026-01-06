@@ -4,8 +4,3 @@
 declare module "@nostrify/nostrify/uploaders" {
   export * from "@nostrify/nostrify/dist/uploaders/mod";
 }
-
-
-
-
-

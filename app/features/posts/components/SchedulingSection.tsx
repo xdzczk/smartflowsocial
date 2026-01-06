@@ -7,7 +7,7 @@ interface SchedulingSectionProps {
   scheduledFor: string;
   onScheduledForChange: (value: string) => void;
   scheduleIntervals: number[];
-  queueTypes: (string | QueueType)[];
+  queueTypes: Array<string | QueueType>;
   selectedQueue: string;
   onScheduleIntervalClick: (intervalHours: string | number) => void;
   onCalculateNextSlot: () => void;
@@ -32,7 +32,7 @@ export function SchedulingSection({
 }: SchedulingSectionProps) {
   // Find the currently selected queue type
   const selectedQueueType = queueTypes.find((qt) =>
-    typeof qt === "string" ? qt === selectedQueue : qt.name === selectedQueue,
+    typeof qt === "string" ? qt === selectedQueue : qt.name === selectedQueue
   );
 
   const isFixedSlotQueue =
@@ -89,8 +89,3 @@ export function SchedulingSection({
     </div>
   );
 }
-
-
-
-
-

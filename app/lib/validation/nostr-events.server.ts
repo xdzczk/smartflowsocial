@@ -8,14 +8,17 @@ import { z } from "zod";
 
 import { logError } from "~/lib/error-logger.server";
 
-import { nostrEventSchema, signedEventSchema } from "./schemas/nostr-events.schemas";
+import {
+  nostrEventSchema,
+  signedEventSchema,
+} from "./schemas/nostr-events.schemas";
 
 /**
  * Safely validate and convert Prisma JsonValue to SignedEvent
  * Returns null if validation fails (logs error but doesn't throw)
  */
 export function validateSignedEvent(
-  value: Prisma.JsonValue | null | undefined,
+  value: Prisma.JsonValue | null | undefined
 ): z.infer<typeof signedEventSchema> | null {
   if (!value || typeof value !== "object") {
     return null;
@@ -39,7 +42,7 @@ export function validateSignedEvent(
  * Returns null if validation fails (logs error but doesn't throw)
  */
 export function validateNostrEvent(
-  value: Prisma.JsonValue | null | undefined,
+  value: Prisma.JsonValue | null | undefined
 ): z.infer<typeof nostrEventSchema> | null {
   if (!value || typeof value !== "object") {
     return null;
@@ -57,6 +60,3 @@ export function validateNostrEvent(
     return null;
   }
 }
-
-
-

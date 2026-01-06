@@ -94,7 +94,7 @@ export const nostrAdapter = {
       }
 
       throw new Error(
-        "Nostr extension not found after retries. Please install a Nostr extension.",
+        "Nostr extension not found after retries. Please install a Nostr extension."
       );
     } catch (error) {
       // Only log on client side
@@ -107,7 +107,7 @@ export const nostrAdapter = {
             component: "nostr-adapter",
             action: "signEvent",
           },
-          "error",
+          "error"
         );
       }
       throw error;
@@ -117,7 +117,9 @@ export const nostrAdapter = {
   /**
    * Sign a long-form event (NIP-23) using NIP-07
    */
-  async signLongFormEvent(eventData: LongFormEventData): Promise<SignEventResult> {
+  async signLongFormEvent(
+    eventData: LongFormEventData
+  ): Promise<SignEventResult> {
     try {
       // Add retry logic to handle extension loading
       let retries = 0;
@@ -186,7 +188,7 @@ export const nostrAdapter = {
       }
 
       throw new Error(
-        "Nostr extension not found after retries. Please install a Nostr extension.",
+        "Nostr extension not found after retries. Please install a Nostr extension."
       );
     } catch (error) {
       // Only log on client side
@@ -199,7 +201,7 @@ export const nostrAdapter = {
             component: "nostr-adapter",
             action: "signLongFormEvent",
           },
-          "error",
+          "error"
         );
       }
       throw error;
@@ -210,9 +212,8 @@ export const nostrAdapter = {
 /**
  * Re-export types for convenience
  */
-export type { NostrEvent, SignedEvent, SignEventResult } from "~/features/nostr/types";
-
-
-
-
-
+export type {
+  NostrEvent,
+  SignedEvent,
+  SignEventResult,
+} from "~/features/nostr/types";

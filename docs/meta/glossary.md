@@ -10,7 +10,8 @@ Terminology and definitions for SmartFlowSocial.
 
 ### API
 
-Application Programming Interface. Endpoints that allow programmatic access to SmartFlowSocial functionality.
+Application Programming Interface. Endpoints that allow programmatic access to SmartFlowSocial
+functionality.
 
 ### Authentication
 
@@ -34,7 +35,8 @@ A post containing multiple images displayed in a carousel format.
 
 ### Client-Side Signing
 
-The process of signing Nostr events in the browser using a Nostr extension, ensuring private keys never leave the browser.
+The process of signing Nostr events in the browser using a Nostr extension, ensuring private keys
+never leave the browser.
 
 ---
 
@@ -134,7 +136,8 @@ An ORM (Object-Relational Mapping) tool used for database access in SmartFlowSoc
 
 ### Queue
 
-A scheduling system that controls when posts are published. Types include interval queues and fixed time slots.
+A scheduling system that controls when posts are published. Types include interval queues and fixed
+time slots.
 
 ---
 
@@ -183,8 +186,3 @@ A reusable post structure with placeholders (variables) for dynamic content.
 ---
 
 **Next:** [Style Guide](./style-guide.md) → Documentation standards
-
-
-
-
-

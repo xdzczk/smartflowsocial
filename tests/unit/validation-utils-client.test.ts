@@ -1,7 +1,7 @@
 /**
  * Unit tests for client-side validation utilities
  * Tests app/lib/validation/utils.client.ts
- * 
+ *
  * Note: useZodForm requires React context, so we test formDataToFormData
  * and document useZodForm behavior.
  */
@@ -159,7 +159,7 @@ describe("Client-Side Validation Utils", () => {
       // useZodForm is a React hook that requires React context
       // Full testing would require React Testing Library with jsdom
       // This test documents that the function exists and its expected behavior
-      
+
       const schema = z.object({
         name: z.string(),
         email: z.string().email(),
@@ -176,5 +176,3 @@ describe("Client-Side Validation Utils", () => {
     });
   });
 });
-
-

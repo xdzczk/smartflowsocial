@@ -53,6 +53,3 @@ export const searchResultDisplaySchema = z.object({
   authorImage: z.string().nullable(),
   mediaUrls: z.array(z.string()),
 });
-
-
-

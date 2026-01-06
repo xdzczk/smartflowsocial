@@ -33,8 +33,3 @@ export function PaymentSuccessModal({
     </div>
   );
 }
-
-
-
-
-

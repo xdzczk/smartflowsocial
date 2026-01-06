@@ -18,7 +18,7 @@ import {
  * Returns null if validation fails
  */
 export function validateSearchResultData(
-  value: unknown,
+  value: unknown
 ): z.infer<typeof searchResultDataSchema> | null {
   if (!value || typeof value !== "object") {
     return null;
@@ -42,7 +42,7 @@ export function validateSearchResultData(
  * Returns null if validation fails
  */
 export function validateSearchResultDisplay(
-  value: unknown,
+  value: unknown
 ): z.infer<typeof searchResultDisplaySchema> | null {
   if (!value || typeof value !== "object") {
     return null;
@@ -66,7 +66,7 @@ export function validateSearchResultDisplay(
  * Returns null if validation fails
  */
 export function validateSearchStats(
-  value: unknown,
+  value: unknown
 ): z.infer<typeof searchStatsSchema> | null {
   if (!value || typeof value !== "object") {
     return null;
@@ -84,6 +84,3 @@ export function validateSearchStats(
     return null;
   }
 }
-
-
-

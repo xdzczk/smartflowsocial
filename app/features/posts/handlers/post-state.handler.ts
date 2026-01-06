@@ -12,7 +12,7 @@ export function handleCaptionChange(
   index: number,
   value: string,
   posts: BulkPost[],
-  setPosts: React.Dispatch<React.SetStateAction<BulkPost[]>>,
+  setPosts: React.Dispatch<React.SetStateAction<BulkPost[]>>
 ): void {
   const updatedPosts = [...posts];
   updatedPosts[index].caption = value;
@@ -27,7 +27,7 @@ export function handleDateChange(
   value: string,
   posts: BulkPost[],
   setPosts: React.Dispatch<React.SetStateAction<BulkPost[]>>,
-  setFirstItemTimeManuallyChanged: (changed: boolean) => void,
+  setFirstItemTimeManuallyChanged: (changed: boolean) => void
 ): void {
   const updatedPosts = [...posts];
 
@@ -75,12 +75,7 @@ export function handleDateChange(
 export function handleRemovePost(
   index: number,
   posts: BulkPost[],
-  setPosts: React.Dispatch<React.SetStateAction<BulkPost[]>>,
+  setPosts: React.Dispatch<React.SetStateAction<BulkPost[]>>
 ): void {
   setPosts(posts.filter((_, i) => i !== index));
 }
-
-
-
-
-

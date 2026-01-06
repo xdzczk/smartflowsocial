@@ -9,9 +9,7 @@
 /**
  * Recursively converts Date objects to ISO strings in an object
  */
-export function serializeDates<T extends Record<string, unknown>>(
-  obj: T,
-): T {
+export function serializeDates<T extends Record<string, unknown>>(obj: T): T {
   const serialized = { ...obj };
 
   for (const [key, value] of Object.entries(serialized)) {
@@ -19,15 +17,15 @@ export function serializeDates<T extends Record<string, unknown>>(
       (serialized as Record<string, unknown>)[key] = value.toISOString();
     } else if (value && typeof value === "object" && !Array.isArray(value)) {
       (serialized as Record<string, unknown>)[key] = serializeDates(
-        value as Record<string, unknown>,
+        value as Record<string, unknown>
       );
     } else if (Array.isArray(value)) {
       (serialized as Record<string, unknown>)[key] = value.map((item) =>
         item instanceof Date
           ? item.toISOString()
           : item && typeof item === "object"
-          ? serializeDates(item as Record<string, unknown>)
-          : item,
+            ? serializeDates(item as Record<string, unknown>)
+            : item
       );
     }
   }
@@ -38,9 +36,7 @@ export function serializeDates<T extends Record<string, unknown>>(
 /**
  * Recursively converts ISO strings back to Date objects
  */
-export function deserializeDates<T extends Record<string, unknown>>(
-  obj: T,
-): T {
+export function deserializeDates<T extends Record<string, unknown>>(obj: T): T {
   const deserialized = { ...obj };
 
   for (const [key, value] of Object.entries(deserialized)) {
@@ -49,15 +45,15 @@ export function deserializeDates<T extends Record<string, unknown>>(
       (deserialized as Record<string, unknown>)[key] = new Date(value);
     } else if (value && typeof value === "object" && !Array.isArray(value)) {
       (deserialized as Record<string, unknown>)[key] = deserializeDates(
-        value as Record<string, unknown>,
+        value as Record<string, unknown>
       );
     } else if (Array.isArray(value)) {
       (deserialized as Record<string, unknown>)[key] = value.map((item) =>
         typeof item === "string" && isDateString(item)
           ? new Date(item)
           : item && typeof item === "object"
-          ? deserializeDates(item as Record<string, unknown>)
-          : item,
+            ? deserializeDates(item as Record<string, unknown>)
+            : item
       );
     }
   }
@@ -70,8 +66,7 @@ export function deserializeDates<T extends Record<string, unknown>>(
  */
 function isDateString(str: string): boolean {
   // ISO 8601 date format: YYYY-MM-DDTHH:mm:ss.sssZ or YYYY-MM-DD
-  const isoDateRegex =
-    /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?)?$/;
+  const isoDateRegex = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?)?$/;
   if (!isoDateRegex.test(str)) {
     return false;
   }
@@ -85,7 +80,7 @@ function isDateString(str: string): boolean {
  * Serializes an array of objects with Date fields
  */
 export function serializeDatesArray<T extends Record<string, unknown>>(
-  arr: T[],
+  arr: T[]
 ): T[] {
   return arr.map((item) => serializeDates(item));
 }
@@ -94,12 +89,7 @@ export function serializeDatesArray<T extends Record<string, unknown>>(
  * Deserializes an array of objects with date strings back to Date objects
  */
 export function deserializeDatesArray<T extends Record<string, unknown>>(
-  arr: T[],
+  arr: T[]
 ): T[] {
   return arr.map((item) => deserializeDates(item));
 }
-
-
-
-
-

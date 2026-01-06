@@ -79,6 +79,9 @@ jobs:
       - name: Run lint (no cache)
         run: pnpm lint:ci
 
+      - name: Check Prettier formatting
+        run: pnpm format:check
+
       - name: Run type check
         run: |
           set +e  # Don't exit on error, we'll handle it manually

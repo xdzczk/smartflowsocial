@@ -4,7 +4,8 @@
 **Difficulty:** Beginner  
 **Last updated:** 2026-01-03
 
-This guide is for **hosted customers** using SmartFlowSocial at [smartflow.social](https://smartflow.social).
+This guide is for **hosted customers** using SmartFlowSocial at
+[smartflow.social](https://smartflow.social).
 
 ---
 
@@ -60,8 +61,3 @@ If login prompts don’t appear:
 - Try a different supported extension
 
 See [Common issues](../troubleshooting/common-issues.md) for more.
-
-
-
-
-

@@ -58,8 +58,3 @@ export function DraftsPostTypeTabs({
     </div>
   );
 }
-
-
-
-
-

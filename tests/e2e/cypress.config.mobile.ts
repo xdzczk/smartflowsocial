@@ -17,8 +17,3 @@ export default defineConfig({
     specPattern: "tests/e2e/mobile-viewport.cy.ts",
   },
 });
-
-
-
-
-

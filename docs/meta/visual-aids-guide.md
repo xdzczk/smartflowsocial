@@ -38,8 +38,8 @@ Visual aids enhance documentation by:
 **Example:**
 
 ```markdown
-![Post Creation Interface](./screenshots/post-creation.png)
-_The post creation interface with all options visible_
+![Post Creation Interface](./screenshots/post-creation.png) _The post creation interface with all
+options visible_
 ```
 
 ### Diagrams
@@ -150,8 +150,7 @@ docs/
 ### Markdown Syntax
 
 ```markdown
-![Alt text](./images/screenshots/ui/post-creation.png)
-_Caption explaining the screenshot_
+![Alt text](./images/screenshots/ui/post-creation.png) _Caption explaining the screenshot_
 ```
 
 ---
@@ -342,9 +341,5 @@ graph LR
 
 ---
 
-**Note:** Visual aids should enhance, not replace, written documentation. Always provide text alternatives.
-
-
-
-
-
+**Note:** Visual aids should enhance, not replace, written documentation. Always provide text
+alternatives.

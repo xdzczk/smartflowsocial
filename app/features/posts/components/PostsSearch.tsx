@@ -39,8 +39,3 @@ export function PostsSearch({ searchTerm, onSearchChange }: PostsSearchProps) {
     </div>
   );
 }
-
-
-
-
-

@@ -104,8 +104,3 @@ export function ResumeModal({
     </div>
   );
 }
-
-
-
-
-

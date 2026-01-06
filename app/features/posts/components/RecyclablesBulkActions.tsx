@@ -108,8 +108,3 @@ export function RecyclablesBulkActions({
     </div>
   );
 }
-
-
-
-
-

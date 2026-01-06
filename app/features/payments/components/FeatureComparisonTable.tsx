@@ -33,7 +33,7 @@ const featureLabels = [
 
 function renderFeatureValue(
   feature: { key: string; label: string },
-  plan: Plan,
+  plan: Plan
 ) {
   const value = plan.features[feature.key];
 
@@ -98,8 +98,3 @@ export function FeatureComparisonTable({ plans }: FeatureComparisonTableProps) {
     </div>
   );
 }
-
-
-
-
-

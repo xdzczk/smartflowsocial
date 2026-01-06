@@ -32,7 +32,7 @@ export function isPostStats(value: unknown): value is PostStats {
  */
 export function getPostStats(
   stats: Record<string, unknown> | undefined | null,
-  eventId: string | null | undefined,
+  eventId: string | null | undefined
 ): PostStats {
   if (!eventId || !stats || typeof stats !== "object" || Array.isArray(stats)) {
     return {
@@ -64,14 +64,9 @@ export function getPostStats(
  * Safely access a property from PostStats
  * Returns 0 if property doesn't exist or is not a number
  */
-export function getPostStatsValue(
-  stats: PostStats,
-  key: string,
-): number {
+export function getPostStatsValue(stats: PostStats, key: string): number {
   if (key in stats && typeof stats[key as keyof PostStats] === "number") {
     return stats[key as keyof PostStats];
   }
   return 0;
 }
-
-

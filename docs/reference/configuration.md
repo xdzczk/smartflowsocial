@@ -239,8 +239,7 @@ PRIMAL_CACHING_URL=wss://cache.example.com/v1
 PRIMAL_CACHING_URL=wss://cache1.example.com/v1,wss://cache2.example.com/v1
 ```
 
-**Default:**
-If not set, uses public Primal cache endpoints:
+**Default:** If not set, uses public Primal cache endpoints:
 
 - `wss://cache1.primal.net/v1`
 - `wss://cache2.primal.net/v1`
@@ -328,8 +327,7 @@ postgresql://user:password@host:port/testdb
 TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/smartflow_test
 ```
 
-**Default:**
-If not set, uses `DATABASE_URL` for tests.
+**Default:** If not set, uses `DATABASE_URL` for tests.
 
 **Use case:**
 
@@ -603,8 +601,3 @@ node scripts/validate-env.js
 ---
 
 **Next:** [Installation Guide](../getting-started/installation.md) → Set up your environment
-
-
-
-
-

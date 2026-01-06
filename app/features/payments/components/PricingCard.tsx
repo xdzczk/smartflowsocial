@@ -20,7 +20,7 @@ interface PricingCardProps {
   selectedPlan: string | null;
   onPlanSelect: (
     event: React.MouseEvent<HTMLButtonElement>,
-    planId: string,
+    planId: string
   ) => boolean;
 }
 
@@ -96,8 +96,3 @@ export function PricingCard({
     </div>
   );
 }
-
-
-
-
-

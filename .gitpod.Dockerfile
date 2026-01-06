@@ -1,5 +1,8 @@
 FROM gitpod/workspace-full
 
+# Install pnpm (required for this project)
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
 # Install Fly
 RUN curl -L https://fly.io/install.sh | sh
 ENV FLYCTL_INSTALL="/home/gitpod/.fly"

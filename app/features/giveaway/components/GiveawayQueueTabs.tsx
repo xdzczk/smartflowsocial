@@ -88,8 +88,3 @@ export function GiveawayQueueTabs({
     </div>
   );
 }
-
-
-
-
-

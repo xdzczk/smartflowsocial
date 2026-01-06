@@ -4,13 +4,17 @@
  * Client-safe version
  */
 
-import type { PostData, LongFormPostData, CombinedContent } from "~/features/posts/types";
+import type {
+  PostData,
+  LongFormPostData,
+  CombinedContent,
+} from "~/features/posts/types";
 
 /**
  * Type guard to check if CombinedContent.originalData is PostData
  */
 export function isPostData(
-  originalData: CombinedContent["originalData"],
+  originalData: CombinedContent["originalData"]
 ): originalData is PostData {
   if (!originalData || typeof originalData !== "object") {
     return false;
@@ -26,7 +30,7 @@ export function isPostData(
  * Type guard to check if CombinedContent.originalData is LongFormPostData
  */
 export function isLongFormPostData(
-  originalData: CombinedContent["originalData"],
+  originalData: CombinedContent["originalData"]
 ): originalData is LongFormPostData {
   if (!originalData || typeof originalData !== "object") {
     return false;
@@ -40,9 +44,7 @@ export function isLongFormPostData(
  * Safely extract PostData from CombinedContent
  * Returns null if originalData is not PostData
  */
-export function extractPostData(
-  content: CombinedContent,
-): PostData | null {
+export function extractPostData(content: CombinedContent): PostData | null {
   return isPostData(content.originalData) ? content.originalData : null;
 }
 
@@ -51,9 +53,7 @@ export function extractPostData(
  * Returns null if originalData is not LongFormPostData
  */
 export function extractLongFormPostData(
-  content: CombinedContent,
+  content: CombinedContent
 ): LongFormPostData | null {
   return isLongFormPostData(content.originalData) ? content.originalData : null;
 }
-
-

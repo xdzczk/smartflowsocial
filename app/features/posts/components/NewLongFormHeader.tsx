@@ -34,8 +34,3 @@ export function NewLongFormHeader({
     </>
   );
 }
-
-
-
-
-

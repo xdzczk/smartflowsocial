@@ -53,8 +53,3 @@ declare global {
     EditorJSInstances?: EditorJSInstance[];
   }
 }
-
-
-
-
-

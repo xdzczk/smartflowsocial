@@ -12,7 +12,7 @@ export function handleScheduleIntervalClick(
   interval: number,
   posts: BulkPost[],
   setPosts: React.Dispatch<React.SetStateAction<BulkPost[]>>,
-  firstItemTimeManuallyChanged: boolean,
+  firstItemTimeManuallyChanged: boolean
 ): void {
   if (posts.length === 0) return;
 
@@ -48,8 +48,3 @@ export function handleScheduleIntervalClick(
 
   setPosts(updatedPosts);
 }
-
-
-
-
-

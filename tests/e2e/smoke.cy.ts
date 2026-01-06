@@ -36,8 +36,3 @@ describe("Smoke Tests - Critical Paths", () => {
     cy.get("body").should("be.visible");
   });
 });
-
-
-
-
-

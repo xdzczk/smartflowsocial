@@ -13,7 +13,7 @@ import { ValidationError } from "~/lib/errors";
  */
 export function validateLoaderResponse<T extends z.ZodTypeAny>(
   data: unknown,
-  schema: T,
+  schema: T
 ): z.infer<T> {
   try {
     return schema.parse(data);
@@ -37,7 +37,7 @@ export function validateLoaderResponse<T extends z.ZodTypeAny>(
  */
 export function safeValidateLoaderResponse<T extends z.ZodTypeAny>(
   data: unknown,
-  schema: T,
+  schema: T
 ): z.infer<T> | null {
   try {
     return schema.parse(data);
@@ -45,6 +45,3 @@ export function safeValidateLoaderResponse<T extends z.ZodTypeAny>(
     return null;
   }
 }
-
-
-

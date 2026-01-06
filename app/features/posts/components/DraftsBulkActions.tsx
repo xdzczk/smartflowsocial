@@ -45,8 +45,3 @@ export function DraftsBulkActions({
     </div>
   );
 }
-
-
-
-
-

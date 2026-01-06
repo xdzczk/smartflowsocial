@@ -25,7 +25,7 @@ export interface ScheduledPostTablePost {
  * Converts Date scheduledFor to unix timestamp string
  */
 export function convertPostDataToScheduledTablePost(
-  post: PostData,
+  post: PostData
 ): ScheduledPostTablePost {
   // Convert scheduledFor Date to unix timestamp string
   // PostData.scheduledFor can be Date | string | null | undefined
@@ -62,9 +62,7 @@ export function convertPostDataToScheduledTablePost(
  * Convert PostData[] array to ScheduledPostTablePost[] array
  */
 export function convertPostDataArrayToScheduledTablePosts(
-  posts: PostData[],
+  posts: PostData[]
 ): ScheduledPostTablePost[] {
   return posts.map(convertPostDataToScheduledTablePost);
 }
-
-

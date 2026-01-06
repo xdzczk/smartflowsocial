@@ -4,7 +4,8 @@
 **Difficulty:** Beginner  
 **Last updated:** 2026-01-02
 
-Complete guide to uploading, organizing, and managing assets (images, videos, text) in SmartFlowSocial.
+Complete guide to uploading, organizing, and managing assets (images, videos, text) in
+SmartFlowSocial.
 
 ---
 
@@ -438,8 +439,3 @@ SmartFlowSocial's asset management allows you to:
 ---
 
 **Next:** [Reference Documentation](../reference/configuration.md) → Technical configuration details
-
-
-
-
-

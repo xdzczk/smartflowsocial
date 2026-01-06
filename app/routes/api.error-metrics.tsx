@@ -65,8 +65,3 @@ export async function loader({ request }: LoaderFunctionArgs) {
     errorRate: getErrorRate(),
   });
 }
-
-
-
-
-

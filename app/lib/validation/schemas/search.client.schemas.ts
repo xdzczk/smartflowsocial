@@ -25,11 +25,6 @@ export const searchFormClientSchema = z.object({
       {
         message:
           "Invalid format. Please enter a hex event ID (64 chars), note1, or nevent1",
-      },
+      }
     ),
 });
-
-
-
-
-

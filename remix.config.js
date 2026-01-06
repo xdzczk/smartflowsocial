@@ -5,6 +5,13 @@ module.exports = {
   serverModuleFormat: "cjs",
   tailwind: true,
   postcss: true,
+  future: {
+    // Remix v2 future flags
+    v2_errorBoundary: true,
+    v2_meta: true,
+    v2_normalizeFormMethod: true,
+    v2_routeConvention: true,
+  },
   browserNodeBuiltinsPolyfill: {
     modules: {
       util: true,

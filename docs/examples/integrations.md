@@ -2,7 +2,8 @@
 
 **Last updated:** 2026-01-02
 
-Complete examples for integrating SmartFlowSocial with external services, custom applications, and automation tools.
+Complete examples for integrating SmartFlowSocial with external services, custom applications, and
+automation tools.
 
 ---
 
@@ -107,10 +108,7 @@ class SmartFlowSocialClient {
 }
 
 // Usage
-const client = new SmartFlowSocialClient(
-  "https://your-domain.com",
-  "session=your-session-cookie",
-);
+const client = new SmartFlowSocialClient("https://your-domain.com", "session=your-session-cookie");
 
 // Upload an image
 const file = new File(["..."], "image.jpg", { type: "image/jpeg" });
@@ -186,7 +184,8 @@ print(f"Hashtags: {hashtags['effectiveHashtags']}")
 
 ### Setting Up Webhooks
 
-**Note:** Webhooks may need to be implemented in your deployment. This is a template for how they would work.
+**Note:** Webhooks may need to be implemented in your deployment. This is a template for how they
+would work.
 
 ```typescript
 // Webhook payload structure
@@ -242,11 +241,7 @@ app.post("/webhook", express.json(), async (req, res) => {
 import { finalizeEvent, getPublicKey } from "nostr-tools";
 import { SmartFlowSocialClient } from "./client";
 
-async function publishToSmartFlowSocial(
-  privateKey: string,
-  content: string,
-  relays: string[],
-) {
+async function publishToSmartFlowSocial(privateKey: string, content: string, relays: string[]) {
   // Create Nostr event
   const event = {
     kind: 1,
@@ -259,10 +254,7 @@ async function publishToSmartFlowSocial(
   const signedEvent = finalizeEvent(event, privateKey);
 
   // Publish via SmartFlowSocial API
-  const client = new SmartFlowSocialClient(
-    "https://your-domain.com",
-    "session-cookie",
-  );
+  const client = new SmartFlowSocialClient("https://your-domain.com", "session-cookie");
 
   return await client.publishEvent(signedEvent, relays);
 }
@@ -315,10 +307,7 @@ import { SmartFlowSocialClient } from "./client";
 import { finalizeEvent } from "nostr-tools";
 
 async function automatedPosting() {
-  const client = new SmartFlowSocialClient(
-    process.env.SMARTFLOW_URL!,
-    process.env.SESSION_COOKIE!,
-  );
+  const client = new SmartFlowSocialClient(process.env.SMARTFLOW_URL!, process.env.SESSION_COOKIE!);
 
   const privateKey = process.env.NOSTR_PRIVATE_KEY!;
   const relays = process.env.RELAYS!.split(",");
@@ -357,14 +346,9 @@ import * as fs from "fs";
 import * as path from "path";
 
 async function bulkUploadImages(directory: string) {
-  const client = new SmartFlowSocialClient(
-    process.env.SMARTFLOW_URL!,
-    process.env.SESSION_COOKIE!,
-  );
+  const client = new SmartFlowSocialClient(process.env.SMARTFLOW_URL!, process.env.SESSION_COOKIE!);
 
-  const files = fs
-    .readdirSync(directory)
-    .filter((f) => /\.(jpg|jpeg|png|webp)$/i.test(f));
+  const files = fs.readdirSync(directory).filter((f) => /\.(jpg|jpeg|png|webp)$/i.test(f));
 
   const uploads = await Promise.all(
     files.map(async (file) => {
@@ -374,7 +358,7 @@ async function bulkUploadImages(directory: string) {
       const fileObj = new File([blob], file, { type: "image/jpeg" });
 
       return await client.uploadFile(fileObj);
-    }),
+    })
   );
 
   console.log(`Uploaded ${uploads.length} images`);
@@ -395,10 +379,7 @@ async function bulkUploadImages(directory: string) {
 app.post("/zapier-webhook", express.json(), async (req, res) => {
   const { content, imageUrl, hashtags } = req.body;
 
-  const client = new SmartFlowSocialClient(
-    process.env.SMARTFLOW_URL!,
-    process.env.SESSION_COOKIE!,
-  );
+  const client = new SmartFlowSocialClient(process.env.SMARTFLOW_URL!, process.env.SESSION_COOKIE!);
 
   // Create post content
   let postContent = content;
@@ -437,10 +418,7 @@ app.post("/ifttt-webhook", express.json(), async (req, res) => {
   // value2 = image URL (optional)
   // value3 = hashtags (optional)
 
-  const client = new SmartFlowSocialClient(
-    process.env.SMARTFLOW_URL!,
-    process.env.SESSION_COOKIE!,
-  );
+  const client = new SmartFlowSocialClient(process.env.SMARTFLOW_URL!, process.env.SESSION_COOKIE!);
 
   // Build post content
   let content = value1 || "";
@@ -466,7 +444,7 @@ const discordClient = new Client({
 
 const smartflowClient = new SmartFlowSocialClient(
   process.env.SMARTFLOW_URL!,
-  process.env.SESSION_COOKIE!,
+  process.env.SESSION_COOKIE!
 );
 
 discordClient.on("messageCreate", async (message) => {
@@ -515,9 +493,7 @@ async function safeApiCall<T>(fn: () => Promise<T>, retries = 3): Promise<T> {
       if (i === retries - 1) throw error;
 
       // Exponential backoff
-      await new Promise((resolve) =>
-        setTimeout(resolve, 1000 * Math.pow(2, i)),
-      );
+      await new Promise((resolve) => setTimeout(resolve, 1000 * Math.pow(2, i)));
     }
   }
   throw new Error("Max retries exceeded");
@@ -540,8 +516,3 @@ const result = await safeApiCall(async () => {
 ---
 
 **Next:** [Code Samples](./code-samples.md) → More code examples
-
-
-
-
-

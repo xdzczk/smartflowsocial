@@ -4,7 +4,8 @@ This directory contains performance and load tests for SmartFlowSocial.
 
 ## Overview
 
-Performance testing ensures that the application can handle expected load and meets performance benchmarks. We use two approaches:
+Performance testing ensures that the application can handle expected load and meets performance
+benchmarks. We use two approaches:
 
 1. **k6 Load Tests** - For API endpoints and loaders under realistic load
 2. **Vitest Unit Performance Tests** - For individual function performance benchmarks
@@ -258,8 +259,3 @@ Install k6 using the instructions above.
 - [ ] Database query performance tests
 - [ ] Memory leak detection
 - [ ] CPU profiling during load tests
-
-
-
-
-

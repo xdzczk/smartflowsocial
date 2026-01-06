@@ -87,8 +87,3 @@ export function RecyclablesQueueTabs({
     </div>
   );
 }
-
-
-
-
-

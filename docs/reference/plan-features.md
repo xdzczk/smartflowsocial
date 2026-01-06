@@ -490,8 +490,3 @@ Complete reference of subscription plans, features, pricing, and limitations in 
 ---
 
 **Next:** [Configuration Reference](./configuration.md) → Environment configuration
-
-
-
-
-

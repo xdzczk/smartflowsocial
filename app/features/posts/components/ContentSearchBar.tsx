@@ -38,8 +38,3 @@ export function ContentSearchBar({
     </div>
   );
 }
-
-
-
-
-

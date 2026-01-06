@@ -29,16 +29,14 @@ export interface UserData {
  * Safely validate and convert user object to UserData
  * Returns null if validation fails or user is null/undefined
  */
-export function validateUserData(
-  value: unknown,
-): UserData | null {
+export function validateUserData(value: unknown): UserData | null {
   if (!value || typeof value !== "object") {
     return null;
   }
 
   try {
     const validated = userSchema.parse(value);
-    
+
     // Convert to UserData format
     const userData: UserData = {
       id: validated.id,
@@ -71,6 +69,3 @@ export function validateUserData(
     return null;
   }
 }
-
-
-

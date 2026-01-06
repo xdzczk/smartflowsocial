@@ -10,7 +10,8 @@ How to contribute to SmartFlowSocial documentation.
 
 1. **Find what to improve:**
 
-   - Check [open documentation issues](https://github.com/xdzczk/SmartFlowSocial/issues?q=label%3Adocumentation)
+   - Check
+     [open documentation issues](https://github.com/xdzczk/SmartFlowSocial/issues?q=label%3Adocumentation)
    - Review [documentation TODO list](#todo-list)
    - Identify gaps or outdated content
 
@@ -136,8 +137,3 @@ When creating a PR:
 ---
 
 **Thank you for contributing to SmartFlowSocial documentation!** 🙏
-
-
-
-
-
