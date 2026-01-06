@@ -93,7 +93,7 @@
     "@editorjs/list": "^2.0.8",
     "@editorjs/quote": "^2.7.6",
     "@gandlaf21/bolt11-decode": "^3.1.1",
-    "@getalby/sdk": "^6.0.2",
+    "@getalby/sdk": "^7.0.0",
     "@headlessui/react": "^2.2.0",
     "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^5.2.2",
