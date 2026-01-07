@@ -40,7 +40,7 @@ export const formatDate = (date: string | Date): string => {
 };
 
 export const getImageUrls = (fileUrl: string[]): string[] => {
-  if (!fileUrl || fileUrl.length === 0) return [];
+  if (fileUrl.length === 0) return [];
 
   // Handle case where fileUrl is an array of JSON strings
   if (typeof fileUrl[0] === "string" && fileUrl[0].startsWith("[")) {
@@ -62,7 +62,7 @@ export const getImageUrls = (fileUrl: string[]): string[] => {
  * @returns true if the URL appears to be a video file
  */
 export const isVideoFile = (url: string): boolean => {
-  if (!url || typeof url !== "string") return false;
+  if (typeof url !== "string") return false;
 
   const lowerUrl = url.toLowerCase();
   const videoExtensions = [

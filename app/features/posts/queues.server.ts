@@ -55,20 +55,25 @@ function toSignedEvent(
   return isSignedEvent(value) ? value : null;
 }
 
+// Queue name constants
+const QUEUE_SCHEDULED_POSTS = "scheduled-posts";
+const QUEUE_SCHEDULED_LONGFORM_POSTS = "scheduled-longform-posts";
+const QUEUE_POST_CHECKER = "post-checker";
+
 // Get queue instances using the abstraction
-const _scheduledPostsQueue = getQueueInstance("scheduled-posts");
+const _scheduledPostsQueue = getQueueInstance(QUEUE_SCHEDULED_POSTS);
 const _scheduledLongFormPostsQueue = getQueueInstance(
-  "scheduled-longform-posts"
+  QUEUE_SCHEDULED_LONGFORM_POSTS
 );
-const postCheckerQueue = getQueueInstance("post-checker");
+const postCheckerQueue = getQueueInstance(QUEUE_POST_CHECKER);
 
 // Worker to process scheduled posts
 export const scheduledPostsWorker = new Worker<PostJobData>(
-  "scheduled-posts",
+  QUEUE_SCHEDULED_POSTS,
   async (job: Job<PostJobData>) => {
     const { postId, userId, signedEvent } = job.data;
     const startTime = Date.now();
-    const queueName = "scheduled-posts";
+    const queueName = QUEUE_SCHEDULED_POSTS;
 
     try {
       updateActiveJobs(queueName, 1);
@@ -164,11 +169,11 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
 
 // Worker to process scheduled longform posts
 export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
-  "scheduled-longform-posts",
+  QUEUE_SCHEDULED_LONGFORM_POSTS,
   async (job: Job<LongFormPostJobData>) => {
     const { postId, userId, signedEvent } = job.data;
     const startTime = Date.now();
-    const queueName = "scheduled-longform-posts";
+    const queueName = QUEUE_SCHEDULED_LONGFORM_POSTS;
 
     try {
       updateActiveJobs(queueName, 1);
@@ -264,7 +269,7 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
 
 // Worker to check for due posts and schedule them
 export const postCheckerWorker = new Worker(
-  "post-checker",
+  QUEUE_POST_CHECKER,
   async () => {
     try {
       const [posts, longformPosts] = await Promise.all([

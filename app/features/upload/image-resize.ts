@@ -1,4 +1,7 @@
 import imageCompression from "browser-image-compression";
+
+const IMAGE_JPEG_MIME_TYPE = "image/jpeg";
+
 /**
  * Completely strips all metadata (EXIF, IPTC, XMP) from images and resizes them
  * for better performance and enhanced user privacy.
@@ -23,7 +26,7 @@ export async function resizeImage(
     maxSizeMB: 0.1,
     maxWidthOrHeight: 1200,
     useWebWorker: true,
-    fileType: "image/jpeg",
+    fileType: IMAGE_JPEG_MIME_TYPE,
     // Explicitly disable EXIF preservation for privacy
     preserveExif: false,
     // Additional options
@@ -41,7 +44,7 @@ export async function resizeImage(
     // Step 3: Create a new file with the clean image data
     const baseName = file.name.split(".")[0] ?? file.name;
     return new File([cleanImage], `${baseName}.jpg`, {
-      type: "image/jpeg",
+      type: IMAGE_JPEG_MIME_TYPE,
       lastModified: new Date().getTime(), // Update last modified time
     });
   } catch (error) {
@@ -92,7 +95,7 @@ async function stripAllMetadata(file: File): Promise<Blob> {
               reject(new Error("Failed to create image blob"));
             }
           },
-          "image/jpeg",
+          IMAGE_JPEG_MIME_TYPE,
           0.92
         );
       } catch (error) {

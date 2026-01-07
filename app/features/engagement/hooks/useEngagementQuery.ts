@@ -77,7 +77,7 @@ export function useEngagementQuery() {
         checkFetcher();
       });
     },
-    initialData: validatedLoaderData ?? undefined,
+    initialData: validatedLoaderData,
     staleTime: 30 * 1000, // 30 seconds
     refetchOnMount: false,
   });
@@ -119,7 +119,6 @@ export function useEngagementData() {
 
   // Type guard for stats
   const stats: Record<string, EventStats> =
-    rawData.stats &&
     typeof rawData.stats === "object" &&
     !Array.isArray(rawData.stats)
       ? rawData.stats
@@ -130,11 +129,11 @@ export function useEngagementData() {
     replies: GroupedNotification[];
     quotes: GroupedNotification[];
   } = {
-    replies: Array.isArray(rawData.groupedNotifications?.replies)
+    replies: Array.isArray(rawData.groupedNotifications.replies)
       ? (rawData.groupedNotifications
           .replies as unknown as GroupedNotification[])
       : [],
-    quotes: Array.isArray(rawData.groupedNotifications?.quotes)
+    quotes: Array.isArray(rawData.groupedNotifications.quotes)
       ? (rawData.groupedNotifications
           .quotes as unknown as GroupedNotification[])
       : [],

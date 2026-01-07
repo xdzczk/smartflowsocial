@@ -47,8 +47,8 @@ export async function loadDraftsData(userId: string, queueType: string) {
     const result: PostData = {
       ...rest,
       queueType: convertPrismaQueueTypeToQueueType(queueType),
-      signedEvent: signedEventValue ?? undefined,
-      nostrEvent: nostrEventValue ?? undefined,
+      signedEvent: signedEventValue,
+      nostrEvent: nostrEventValue,
     };
     return result;
   });
@@ -62,8 +62,8 @@ export async function loadDraftsData(userId: string, queueType: string) {
     const result: LongFormPostData = {
       ...rest,
       queueType: convertPrismaQueueTypeToQueueType(queueType),
-      signedEvent: signedEventValue ?? undefined,
-      nostrEvent: nostrEventValue ?? undefined,
+      signedEvent: signedEventValue,
+      nostrEvent: nostrEventValue,
     };
     return result;
   });

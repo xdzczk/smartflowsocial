@@ -7,15 +7,26 @@ updates:
       interval: "weekly"
       day: "monday"
       time: "09:00"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 15
+    target-branch: "main"
     reviewers:
-      - "xdzczk" # Update with your GitHub username
+      - "xdzczk"
+    assignees:
+      - "xdzczk"
     labels:
       - "dependencies"
       - "automated"
+    milestone: "Dependencies"
     commit-message:
       prefix: "chore"
       include: "scope"
+    pull-request-branch-name:
+      separator: "/"
+    rebase-strategy: "auto"
+    versioning-strategy: "increase"
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
     # Group updates for better PR management
     groups:
       # Group all ESLint-related packages
@@ -33,11 +44,13 @@ updates:
           - "cypress"
           - "fast-check"
           - "@testing-library/*"
+          - "@faker-js/*"
       # Group all TypeScript-related packages
       typescript:
         patterns:
           - "typescript"
           - "@types/*"
+          - "globals"
       # Group all build tools
       build-tools:
         patterns:
@@ -46,6 +59,73 @@ updates:
           - "tailwindcss"
           - "postcss"
           - "autoprefixer"
+      # Group all Remix-related packages
+      remix:
+        patterns:
+          - "@remix-run/*"
+      # Group all Radix UI packages
+      radix-ui:
+        patterns:
+          - "@radix-ui/*"
+      # Group all EditorJS packages
+      editorjs:
+        patterns:
+          - "@editorjs/*"
+      # Group all Nostr-related packages
+      nostr:
+        patterns:
+          - "@nostr-dev-kit/*"
+          - "@nostrify/*"
+          - "nostr-*"
+      # Group all AWS SDK packages
+      aws:
+        patterns:
+          - "@aws-sdk/*"
+      # Group all Sentry packages
+      sentry:
+        patterns:
+          - "@sentry/*"
+      # Group all TanStack packages
+      tanstack:
+        patterns:
+          - "@tanstack/*"
+      # Group all Prisma packages (minor/patch updates only)
+      prisma:
+        patterns:
+          - "prisma"
+          - "@prisma/*"
+      # Group all UI icon packages
+      ui-icons:
+        patterns:
+          - "lucide-react"
+          - "@heroicons/react"
+          - "react-icons"
+      # Group all payment/lightning-related packages
+      payments:
+        patterns:
+          - "@getalby/*"
+          - "@gandlaf21/*"
+      # Group all React form packages
+      react-forms:
+        patterns:
+          - "react-hook-form"
+          - "@hookform/*"
+      # Group all UI utility packages
+      ui-utilities:
+        patterns:
+          - "clsx"
+          - "tailwind-merge"
+          - "class-variance-authority"
+          - "tailwindcss-animate"
+      # Group all server utility packages
+      server-utils:
+        patterns:
+          - "express"
+          - "helmet"
+          - "compression"
+          - "morgan"
+          - "express-rate-limit"
+          - "rate-limiter-flexible"
     # Ignore major version updates for critical packages (review manually)
     ignore:
       - dependency-name: "typescript"
@@ -66,10 +146,35 @@ updates:
       interval: "weekly"
       day: "monday"
       time: "09:00"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 8
+    target-branch: "main"
     labels:
       - "github-actions"
       - "automated"
+    milestone: "Dependencies"
     commit-message:
       prefix: "ci"
       include: "scope"
+    pull-request-branch-name:
+      separator: "/"
+    rebase-strategy: "auto"
+
+  # Enable version updates for Docker
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    target-branch: "main"
+    labels:
+      - "docker"
+      - "automated"
+    milestone: "Dependencies"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    pull-request-branch-name:
+      separator: "/"
+    rebase-strategy: "auto"

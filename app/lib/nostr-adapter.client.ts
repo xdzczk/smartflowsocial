@@ -217,3 +217,4 @@ export type {
   SignedEvent,
   SignEventResult,
 } from "~/features/nostr/types";
+

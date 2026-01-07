@@ -28,6 +28,8 @@ import { createPost } from "~/models/post.commands.server";
 
 import { resolveQueueTypeId } from "./queue-type-resolver.server";
 
+const ERROR_INVALID_SIGNED_EVENT_FORMAT = "Invalid signedEvent or nostrEvent format";
+
 /**
  * Determine if a file URL is a video based on extension
  */
@@ -244,7 +246,7 @@ async function handlePostOrScheduleText(
     signedEventRaw = JSON.parse(signedEventStr) as SignedEvent;
     nostrEventRaw = JSON.parse(nostrEventStr) as NostrEvent;
   } catch {
-    throw new Error("Invalid signedEvent or nostrEvent format");
+    throw new Error(ERROR_INVALID_SIGNED_EVENT_FORMAT);
   }
 
   const signedEvent: SignedEvent = signedEventRaw;
@@ -408,7 +410,7 @@ async function handlePostImages(
     signedEventRaw = JSON.parse(signedEventStr) as SignedEvent;
     nostrEventRaw = JSON.parse(nostrEventStr) as NostrEvent;
   } catch {
-    throw new Error("Invalid signedEvent or nostrEvent format");
+    throw new Error(ERROR_INVALID_SIGNED_EVENT_FORMAT);
   }
 
   const signedEvent: SignedEvent = signedEventRaw;
@@ -481,7 +483,7 @@ async function handleScheduleImages(
     signedEvent = JSON.parse(signedEventStr) as SignedEvent;
     nostrEvent = JSON.parse(nostrEventStr) as NostrEvent;
   } catch {
-    throw new Error("Invalid signedEvent or nostrEvent format");
+    throw new Error(ERROR_INVALID_SIGNED_EVENT_FORMAT);
   }
 
   const isVideo = isVideoFile(fileUrl);

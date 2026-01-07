@@ -210,11 +210,11 @@ export function WeeklyView({
       {/* Days header */}
       <div className="flex border-b border-gray-200 dark:border-gray-700">
         <div className="w-16 flex-shrink-0"></div>
-        {weekDays.map((day, index) => {
+        {weekDays.map((day) => {
           const isToday = day.toDateString() === new Date().toDateString();
           return (
             <div
-              key={index}
+              key={day.toISOString()}
               className={`min-w-0 flex-1 border-r border-gray-200 p-3 text-center last:border-r-0 dark:border-gray-700 ${
                 isToday ? "bg-blue-50 dark:bg-blue-900/20" : ""
               }`}

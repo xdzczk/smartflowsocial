@@ -156,7 +156,7 @@ export default function ScheduledPosts() {
     handleModalSuccess,
   } = useScheduledState({
     scheduledPosts: posts,
-    userTimezone: user?.timezone ?? undefined,
+    userTimezone: user?.timezone,
     allContent,
     currentTab,
   });

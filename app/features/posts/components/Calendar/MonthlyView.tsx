@@ -190,7 +190,7 @@ export function MonthlyView({
 
       {/* Calendar grid */}
       <div className="grid min-h-0 flex-1 grid-cols-7 gap-0 overflow-auto">
-        {calendarDays.map((dayInfo, index) => {
+        {calendarDays.map((dayInfo) => {
           // Use local date to match the posts grouping
           const year = dayInfo.date.getFullYear();
           const month = String(dayInfo.date.getMonth() + 1).padStart(2, "0");
@@ -202,7 +202,7 @@ export function MonthlyView({
 
           return (
             <div
-              key={index}
+              key={dayInfo.date.toISOString()}
               role="gridcell"
               tabIndex={-1}
               className={`flex min-h-[120px] flex-col border-b border-r border-gray-200 p-2 last:border-r-0 dark:border-gray-700 ${

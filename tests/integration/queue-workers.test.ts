@@ -520,9 +520,8 @@ describe("Queue Workers", () => {
 
       // Dynamic import() type annotation needed for type reference
       // eslint-disable-next-line @typescript-eslint/consistent-type-imports -- Dynamic import requires value import
-      const mockLongformPosts: Array<
-        import("~/features/posts/types").LongFormPostData
-      > = [];
+      type LongFormPostData = import("~/features/posts/types").LongFormPostData;
+      const mockLongformPosts: LongFormPostData[] = [];
 
       (getCronDueScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockPosts

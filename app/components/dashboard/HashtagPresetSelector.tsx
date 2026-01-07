@@ -122,9 +122,9 @@ export function HashtagPresetSelector({
                 .split(/\s+/)
                 .filter((tag) => tag.startsWith("#") && tag.length > 1)
                 .slice(0, 5)
-                .map((tag, index) => (
+                .map((tag) => (
                   <Badge
-                    key={index}
+                    key={tag}
                     variant="outline"
                     className="px-2 py-0 text-xs"
                   >
@@ -215,9 +215,9 @@ export function HashtagPresetSelector({
                               (tag) => tag.startsWith("#") && tag.length > 1,
                             )
                             .slice(0, 3)
-                            .map((tag, index) => (
+                            .map((tag) => (
                               <Badge
-                                key={index}
+                                key={tag}
                                 variant="outline"
                                 className="px-2 py-0 text-xs"
                               >

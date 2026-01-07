@@ -9,7 +9,7 @@ import type { z } from "zod";
 
 import { formDataToFormData } from "~/lib/validation/utils.client";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Zod schema types require any for generic constraints
+ 
 interface UseFormMutationOptions<
   TData,
   TSchema extends z.ZodType<any, any, any> = z.ZodType<any, any, any>,
@@ -45,7 +45,7 @@ interface UseFormMutationOptions<
  * });
  * ```
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Zod schema types require any for generic constraints
+ 
 export function useFormMutation<
   TData = unknown,
   TSchema extends z.ZodType<any, any, any> = z.ZodType<any, any, any>,

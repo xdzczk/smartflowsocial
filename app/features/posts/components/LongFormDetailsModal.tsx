@@ -354,7 +354,7 @@ export default function LongFormDetailsModal({
                       ? (post.publishedAt ?? undefined)
                       : type === "scheduled"
                         ? (post.scheduledFor ?? undefined)
-                        : (post.createdAt ?? undefined)
+                        : (post.createdAt)
                   )}
                 </span>
                 <span>•</span>
@@ -461,7 +461,7 @@ export default function LongFormDetailsModal({
                           ? (post.publishedAt ?? undefined)
                           : type === "scheduled"
                             ? (post.scheduledFor ?? undefined)
-                            : (post.createdAt ?? undefined)
+                            : (post.createdAt)
                       )}
                     </p>
                   </div>

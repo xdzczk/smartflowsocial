@@ -217,11 +217,11 @@ export default function AssetBrowser({
                           </p>
                         ) : null}
 
-                        {asset.tags && asset.tags.length > 0 ? (
+                        {asset.tags.length > 0 ? (
                           <div className="mt-2 flex flex-wrap gap-1">
-                            {asset.tags.slice(0, 2).map((tag, index) => (
+                            {asset.tags.slice(0, 2).map((tag) => (
                               <span
-                                key={index}
+                                key={tag}
                                 className="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800 dark:bg-gray-700 dark:text-gray-200"
                               >
                                 {tag}

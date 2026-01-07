@@ -439,3 +439,4 @@ SmartFlowSocial's asset management allows you to:
 ---
 
 **Next:** [Reference Documentation](../reference/configuration.md) → Technical configuration details
+

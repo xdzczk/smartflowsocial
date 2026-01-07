@@ -240,7 +240,7 @@ export function useBulkPostEvents({
               Array.isArray(post.originalFileUrl) &&
               post.originalFileUrl.length > 0
             ) {
-              displayFileUrl = post.originalFileUrl[0];
+                displayFileUrl = post.originalFileUrl[0] ?? "";
             } else {
               displayFileUrl = post.originalFileUrl as string;
             }

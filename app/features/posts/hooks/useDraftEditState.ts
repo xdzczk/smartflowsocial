@@ -50,11 +50,11 @@ export function useDraftEditState({
   });
 
   // Watch form values
-  const content = form.watch("content") ?? "";
-  const selectedQueue = form.watch("selectedQueue") ?? "unassigned";
-  const scheduledFor = form.watch("scheduledFor") ?? "";
-  const useHashtagPresets = form.watch("useHashtagPresets") ?? false;
-  const selectedHashtagPresetId = form.watch("hashTagPresetId") ?? null;
+  const content = form.watch("content");
+  const selectedQueue = form.watch("selectedQueue");
+  const scheduledFor = form.watch("scheduledFor");
+  const useHashtagPresets = form.watch("useHashtagPresets");
+  const selectedHashtagPresetId = form.watch("hashTagPresetId");
 
   // Non-form state
   const [caption] = useState(post.caption ?? "");
@@ -113,10 +113,8 @@ export function useDraftEditState({
             npub: currentUser.npub,
             timezone: currentUser.timezone ?? null,
             scheduleInterval: currentUser.scheduleInterval
-              ? currentUser.scheduleInterval
-                  .map(Number)
-                  .filter((n) => !isNaN(n))
-              : undefined,
+                .map(Number)
+                .filter((n) => !isNaN(n)),
             userRelays: currentUser.userRelays,
             showHashTagsinPosts: currentUser.showHashTagsinPosts,
             isEnabled: currentUser.isEnabled,
@@ -126,7 +124,7 @@ export function useDraftEditState({
       const result = await signDraftForScheduling({
         content,
         caption,
-        scheduledFor,
+        scheduledFor: scheduledFor ?? "",
         selectedQueue,
         useHashtagPresets,
         selectedHashtags,
@@ -177,7 +175,7 @@ export function useDraftEditState({
     if (post.hashTagPresetId && hashTagPresets.length > 0) {
       const preset = hashTagPresets.find((p) => p.id === post.hashTagPresetId);
       if (preset) {
-        setSelectedHashtags(preset.tags ?? "");
+        setSelectedHashtags(preset.tags);
       }
     }
   }, [post.hashTagPresetId, hashTagPresets]);

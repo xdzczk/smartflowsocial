@@ -538,7 +538,7 @@ export default function LongFormListing({
                       ? (post.publishedAt ?? undefined)
                       : type === "scheduled"
                         ? (post.scheduledFor ?? undefined)
-                        : (post.createdAt ?? undefined)
+                        : (post.createdAt)
                   )}
                 </td>
                 <td className="p-3 text-center">

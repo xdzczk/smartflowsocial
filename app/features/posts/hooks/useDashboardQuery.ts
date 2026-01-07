@@ -94,7 +94,7 @@ export function useDashboardQuery() {
         checkFetcher();
       });
     },
-    initialData: validatedLoaderData ?? undefined,
+    initialData: validatedLoaderData,
     staleTime: 30 * 1000, // 30 seconds
     gcTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: true,
@@ -160,7 +160,6 @@ export function useDashboardData() {
     ? queueTypesRaw
         .map((qt: unknown) => {
           if (
-            qt &&
             typeof qt === "object" &&
             qt !== null &&
             "id" in qt &&

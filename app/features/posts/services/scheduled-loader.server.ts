@@ -70,8 +70,8 @@ export async function loadScheduledData(userId: string, queueType: string) {
       queueType: convertPrismaQueueTypeToQueueType(
         "queueType" in post ? post.queueType : undefined,
       ),
-      signedEvent: signedEventValue ?? undefined,
-      nostrEvent: nostrEventValue ?? undefined,
+      signedEvent: signedEventValue,
+      nostrEvent: nostrEventValue,
     };
     return result;
   });

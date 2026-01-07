@@ -2,6 +2,9 @@
  * Client-side utility functions for queue type operations
  */
 
+const COMPONENT_NAME = "queueTypes.client";
+const ACTION_NAME = "calculateQueueScheduleTime";
+
 interface QueueType {
   id: string;
   name: string;
@@ -62,11 +65,11 @@ export async function calculateQueueScheduleTime(
       const { logClientError } = await import("~/lib/error-handler.client");
       logClientError(
         new Error(
-          errorData?.error?.message ?? errorData?.message ?? "Unknown error",
+          errorData.error?.message ?? errorData.message ?? "Unknown error",
         ),
         {
-          component: "queueTypes.client",
-          action: "calculateQueueScheduleTime",
+          component: COMPONENT_NAME,
+          action: ACTION_NAME,
         },
         "warning",
       );
@@ -76,8 +79,8 @@ export async function calculateQueueScheduleTime(
     // @ts-ignore - Dynamic imports work in client-side Remix bundles
     const { handleErrorSafely } = await import("~/lib/error-handler.client");
     handleErrorSafely(error, {
-      component: "queueTypes.client",
-      action: "calculateQueueScheduleTime",
+      component: COMPONENT_NAME,
+      action: ACTION_NAME,
     });
     return Promise.resolve(null);
   }
@@ -122,7 +125,7 @@ export async function fetchEffectiveHashtags(
       logClientError(
         new Error("Hashtags API error"),
         {
-          component: "queueTypes.client",
+          component: COMPONENT_NAME,
           action: "fetchEffectiveHashtags",
         },
         "warning",
@@ -133,7 +136,7 @@ export async function fetchEffectiveHashtags(
     // @ts-ignore - Dynamic imports work in client-side Remix bundles
     const { handleErrorSafely } = await import("~/lib/error-handler.client");
     handleErrorSafely(error, {
-      component: "queueTypes.client",
+      component: COMPONENT_NAME,
       action: "fetchEffectiveHashtags",
     });
     return Promise.resolve("");

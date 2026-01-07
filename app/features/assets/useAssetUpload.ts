@@ -38,7 +38,7 @@ export function useAssetUpload({ onSuccess, onError }: UseAssetUploadOptions) {
         const fileInput = form.querySelector(
           'input[type="file"]',
         ) as HTMLInputElement;
-        const file = fileInput?.files?.[0];
+        const file = fileInput.files?.[0];
 
         if (!file) {
           throw new Error("No file selected");
@@ -108,7 +108,6 @@ export function useAssetUpload({ onSuccess, onError }: UseAssetUploadOptions) {
       const bulkForm = document.querySelector(
         "form[data-bulk-form]",
       ) as HTMLFormElement;
-      if (!bulkForm) throw new Error("Bulk form not found");
 
       const formData = new FormData(bulkForm);
       const serverFormData = new FormData();
@@ -190,7 +189,6 @@ export function useAssetUpload({ onSuccess, onError }: UseAssetUploadOptions) {
     if (assetFetcher.data?.success) {
       // Show toast message
       if (
-        assetFetcher.data &&
         typeof assetFetcher.data === "object" &&
         "asset" in assetFetcher.data &&
         assetFetcher.data.asset &&

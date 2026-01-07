@@ -119,7 +119,6 @@ export default function NostrAuthButton() {
             <Avatar>
               <AvatarImage
                 src={
-                  user &&
                   typeof user === "object" &&
                   "nostrProfile" in user &&
                   typeof user.nostrProfile === "object" &&
@@ -131,8 +130,7 @@ export default function NostrAuthButton() {
                 alt="Profile"
               />
               <AvatarFallback>
-                {user &&
-                typeof user === "object" &&
+                {typeof user === "object" &&
                 "nostrProfile" in user &&
                 typeof user.nostrProfile === "object" &&
                 user.nostrProfile !== null
@@ -148,8 +146,7 @@ export default function NostrAuthButton() {
               </AvatarFallback>
             </Avatar>
             <span className="hidden sm:inline">
-              {user &&
-              typeof user === "object" &&
+              {typeof user === "object" &&
               "nostrProfile" in user &&
               typeof user.nostrProfile === "object" &&
               user.nostrProfile !== null
@@ -163,8 +160,7 @@ export default function NostrAuthButton() {
                   ("npub" in user && user.npub
                     ? `${String(user.npub).slice(0, 12)}...${String(user.npub).slice(-8)}`
                     : ""))
-                : user &&
-                    typeof user === "object" &&
+                : typeof user === "object" &&
                     "npub" in user &&
                     user.npub
                   ? `${String(user.npub).slice(0, 12)}...${String(user.npub).slice(-8)}`

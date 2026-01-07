@@ -32,7 +32,7 @@ export function validateHashTagPresets(
         id: parsed.id,
         name: parsed.name,
         tags: parsed.tags,
-        description: parsed.description ?? undefined,
+        description: parsed.description,
         userId: parsed.userId,
         createdAt: parsed.createdAt instanceof Date 
           ? parsed.createdAt 

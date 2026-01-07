@@ -1,7 +1,7 @@
 // Convert hex color to RGB values for Tailwind-compatible styles
 const hexToRgb = (hex: string) => {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  if (!result?.[1] || !result[2] || !result[3]) {
+  if (!result || !result[1] || !result[2] || !result[3]) {
     return null;
   }
   return {
@@ -60,7 +60,7 @@ export const getQueueColor = (
   };
 
   // Return default color if queue type not found
-  return colorMap[queueType?.toLowerCase()] ?? colorMap["unassigned"];
+  return colorMap[queueType.toLowerCase()] ?? colorMap["unassigned"];
 };
 
 export const getSelectedQueueStyle = (
@@ -69,17 +69,16 @@ export const getSelectedQueueStyle = (
 ) => {
   const colors = getQueueColor(queueType);
   // getQueueColor always returns a value (has fallback to "unassigned")
-  const safeColors = colors ?? getQueueColor("unassigned");
-  if (!safeColors) {
+  if (!colors) {
     // This should never happen, but TypeScript needs this check
     return "";
   }
 
   if (isSelected) {
-    return `${safeColors.bg} ${safeColors.text} ${safeColors.border} border-2 shadow-md transform scale-105`;
+    return `${colors.bg} ${colors.text} ${colors.border} border-2 shadow-md transform scale-105`;
   }
 
-  return `${safeColors.bg} ${safeColors.text} ${safeColors.hover} ${safeColors.border} border opacity-70 hover:opacity-100 hover:shadow-sm`;
+  return `${colors.bg} ${colors.text} ${colors.hover} ${colors.border} border opacity-70 hover:opacity-100 hover:shadow-sm`;
 };
 
 // Generate dynamic queue style using database color

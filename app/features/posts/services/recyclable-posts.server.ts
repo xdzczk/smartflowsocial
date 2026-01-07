@@ -22,6 +22,10 @@ import { toPostDTOArray, type PostDTO } from "../dtos";
 import { getPostStats } from "../stats.server";
 import type { PostData } from "../types";
 import { convertPrismaQueueTypeToQueueType } from "../types";
+
+const ERROR_INVALID_ACTION = "Invalid action";
+const ERROR_POST_NOT_FOUND = "Post not found";
+
 /**
  * Get recyclable posts dashboard data
  */
@@ -223,7 +227,7 @@ export async function handleRecyclablePostAction(
       const repostData =
         validatedData._action === "repost" ? validatedData : null;
       if (!repostData) {
-        return json({ error: "Invalid action" }, { status: 400 });
+        return json({ error: ERROR_INVALID_ACTION }, { status: 400 });
       }
       // Get the original post data
       const postsData = await getPostsByIds({
@@ -232,7 +236,7 @@ export async function handleRecyclablePostAction(
       });
       if (!postsData || postsData.length === 0) {
         const { NotFoundError } = await import("~/lib/errors");
-        throw new NotFoundError("Post not found", {
+        throw new NotFoundError(ERROR_POST_NOT_FOUND, {
           postId: repostData.postId,
           userId,
         });
@@ -240,7 +244,7 @@ export async function handleRecyclablePostAction(
 
       const originalPost = postsData[0];
       if (!originalPost) {
-        return json({ error: "Post not found" }, { status: 404 });
+        return json({ error: ERROR_POST_NOT_FOUND }, { status: 404 });
       }
       const originalEvent = originalPost.signedEvent;
 
@@ -293,7 +297,7 @@ export async function handleRecyclablePostAction(
       const quoteData =
         validatedData._action === "quote" ? validatedData : null;
       if (!quoteData) {
-        return json({ error: "Invalid action" }, { status: 400 });
+        return json({ error: ERROR_INVALID_ACTION }, { status: 400 });
       }
       // Get the original post data
       const postsData = await getPostsByIds({
@@ -302,7 +306,7 @@ export async function handleRecyclablePostAction(
       });
       if (!postsData || postsData.length === 0) {
         const { NotFoundError } = await import("~/lib/errors");
-        throw new NotFoundError("Post not found", {
+        throw new NotFoundError(ERROR_POST_NOT_FOUND, {
           postId: quoteData.postId,
           userId,
         });
@@ -310,7 +314,7 @@ export async function handleRecyclablePostAction(
 
       const originalPost = postsData[0];
       if (!originalPost) {
-        return json({ error: "Post not found" }, { status: 404 });
+        return json({ error: ERROR_POST_NOT_FOUND }, { status: 404 });
       }
       const originalEvent = originalPost.signedEvent;
 

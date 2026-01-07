@@ -228,7 +228,7 @@ export function GiveawayTable({
                         color: post.queueType.color,
                       }}
                     >
-                      {post.queueType?.name ?? "unassigned"}
+                      {post.queueType.name}
                     </span>
                   ) : (
                     <span

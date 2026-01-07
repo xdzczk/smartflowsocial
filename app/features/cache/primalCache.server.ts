@@ -64,11 +64,11 @@ export async function connectToPrimalCache(
     const responses = await fetchFromCache(requestType, params);
 
     // Check if we got valid responses (at least one non-EOSE event)
-    const nonEose = responses?.filter(
+    const nonEose = responses.filter(
       (res): res is unknown[] => Array.isArray(res) && res[0] !== "EOSE"
     );
 
-    if (nonEose && nonEose.length > 0) {
+    if (nonEose.length > 0) {
       return responses;
     }
 

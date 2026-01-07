@@ -11,6 +11,8 @@ import { updatePost } from "~/models/post.commands.server";
 
 import { resolveQueueTypeId } from "./queue-type-resolver.server";
 
+const ERROR_INVALID_ACTION = "Invalid action";
+
 export async function handleDraftEditAction(
   formData: FormData,
   userId: string,
@@ -26,7 +28,7 @@ export async function handleDraftEditAction(
   if (_action === "update") {
     const updateData = result.data._action === "update" ? result.data : null;
     if (!updateData) {
-      return { error: "Invalid action" };
+      return { error: ERROR_INVALID_ACTION };
     }
 
     // Resolve queue type ID in feature layer (business logic)
@@ -57,7 +59,7 @@ export async function handleDraftEditAction(
   if (_action === "resume") {
     const resumeData = result.data._action === "resume" ? result.data : null;
     if (!resumeData) {
-      return { error: "Invalid action" };
+      return { error: ERROR_INVALID_ACTION };
     }
 
     // Resolve queue type ID in feature layer (business logic)

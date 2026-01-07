@@ -13,7 +13,7 @@ export type { BulkPost, QueueType };
 /**
  * Get the image URL to display for a post
  */
-function getDisplayImageUrl(post: BulkPost): string | null {
+function getDisplayImageUrl(post: BulkPost): string | undefined {
   if (post.isKind6Repost) {
     if (
       post.originalFileUrl &&
@@ -39,9 +39,9 @@ function getDisplayImageUrl(post: BulkPost): string | null {
           // If parsing fails, use as is
         }
       }
-      return originalImageUrl ?? null;
+      return originalImageUrl;
     }
-    return null;
+    return undefined;
   }
 
   if (post.isQuotePost && post.fileUrl && post.fileUrl.trim() !== "") {
@@ -52,7 +52,7 @@ function getDisplayImageUrl(post: BulkPost): string | null {
     return post.fileUrl;
   }
 
-  return null;
+  return undefined;
 }
 
 export function BulkPostCard({

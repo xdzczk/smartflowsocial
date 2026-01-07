@@ -272,7 +272,7 @@ export async function loadSettingsData(
       paidAt: payment.paidAt,
       paymentMethod: payment.paymentMethod,
       paymentHash: payment.paymentHash ?? "",
-      planName: payment.Subscription?.Plan?.name ?? undefined,
+      planName: payment.Subscription?.Plan?.name,
       planPrice: payment.Subscription?.Plan?.price
         ? Number(payment.Subscription.Plan.price)
         : undefined,

@@ -237,3 +237,4 @@ redis-cli -u $REDIS_URL FLUSHDB
 ---
 
 **Next:** [Glossary](./glossary.md) → Terminology reference
+

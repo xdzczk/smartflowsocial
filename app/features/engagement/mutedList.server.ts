@@ -36,17 +36,16 @@ export async function fetchMutedList(
       extended_response: true,
     });
 
-    if (!responses || responses.length === 0) {
+    if (responses.length === 0) {
       return null;
     }
 
     // Find the mute list event (kind 10000)
     const muteListEvent = (responses as PrimalEvent[]).find(
       (res: PrimalEvent) => {
-        if (!Array.isArray(res) || res[0] !== "EVENT" || !res[2]) return false;
+        if (!Array.isArray(res) || res[0] !== "EVENT") return false;
         const eventData = res[2];
         if (
-          !eventData ||
           typeof eventData !== "object" ||
           Array.isArray(eventData)
         )
@@ -59,7 +58,6 @@ export async function fetchMutedList(
     if (
       !muteListEvent ||
       !Array.isArray(muteListEvent) ||
-      !muteListEvent[2] ||
       typeof muteListEvent[2] !== "object" ||
       Array.isArray(muteListEvent[2])
     ) {

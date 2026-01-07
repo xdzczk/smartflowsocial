@@ -14,6 +14,8 @@ import {
   MAX_FILE_SIZE,
 } from "./validation.server";
 
+const ERROR_UPLOAD_VALIDATION_FAILED = "Upload validation failed";
+
 type UploadStream = AsyncIterable<Uint8Array>;
 
 const uploadStreamToS3 = async (
@@ -33,7 +35,7 @@ const uploadStreamToS3 = async (
   // Validate upload (MIME type and size)
   const validation = await validateUpload(buffer, filename, contentType);
   if (!validation.valid) {
-    throw new Error(validation.error ?? "Upload validation failed");
+    throw new Error(validation.error ?? ERROR_UPLOAD_VALIDATION_FAILED);
   }
 
   // Get normalized content type
@@ -122,7 +124,7 @@ export async function uploadBufferToS3(
   // Validate upload (MIME type and size)
   const validation = await validateUpload(buffer, finalFilename, contentType);
   if (!validation.valid) {
-    throw new Error(validation.error ?? "Upload validation failed");
+    throw new Error(validation.error ?? ERROR_UPLOAD_VALIDATION_FAILED);
   }
 
   // Use custom key or generate default one
@@ -183,7 +185,7 @@ export async function uploadEditorJSImage(
     // Validate upload (MIME type and size)
     const validation = await validateUpload(buffer, filename);
     if (!validation.valid) {
-      throw new Error(validation.error ?? "Upload validation failed");
+      throw new Error(validation.error ?? ERROR_UPLOAD_VALIDATION_FAILED);
     }
 
     // Generate a unique filename with timestamp and random string

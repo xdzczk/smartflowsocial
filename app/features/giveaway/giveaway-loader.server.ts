@@ -603,8 +603,8 @@ export async function loadGiveawayData(
   const userWithDefaults = {
     ...user,
     id: user.id,
-    npub: user.npub ?? "",
-    filterMuted: user.filterMuted ?? false,
+    npub: user.npub,
+    filterMuted: user.filterMuted,
     mutedList:
       user.mutedList &&
       typeof user.mutedList === "object" &&

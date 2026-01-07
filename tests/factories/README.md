@@ -206,3 +206,4 @@ export const myEntityFactory = {
   many: (count, overrides?) => /* create many */,
 };
 ```
+

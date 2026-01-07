@@ -5,6 +5,8 @@ import { checkPaymentStatusById } from "~/features/payments";
 import { withCSRFProtection } from "~/lib/csrf";
 import { ValidationError } from "~/lib/errors";
 
+const CONTENT_TYPE_JSON = "application/json";
+
 type AssertFunction = (
   condition: boolean,
   message: string,
@@ -25,7 +27,7 @@ export const action = withCSRFProtection(
       const contentType = request.headers.get("content-type") ?? "";
       let paymentId: string | null = null;
 
-      if (contentType.includes("application/json")) {
+      if (contentType.includes(CONTENT_TYPE_JSON)) {
         // Handle JSON request (from e2e tests)
         const body: unknown = await request.json().catch(() => null);
         if (!body || typeof body !== "object") {
@@ -76,7 +78,7 @@ export async function loader() {
     {
       status: 405,
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": CONTENT_TYPE_JSON,
       },
     }
   );

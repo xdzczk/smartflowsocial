@@ -29,6 +29,10 @@ import {
 import { deletePost } from "~/models/post.commands.server";
 import { getPostsByIds } from "~/models/post.queries.server";
 
+const ERROR_POST_NOT_FOUND = "Post not found";
+const ERROR_LONGFORM_POST_NOT_FOUND = "Longform post not found";
+const DEFAULT_RELAY = "wss://relay.primal.net";
+
 /**
  * Handle delete post action
  */
@@ -197,13 +201,13 @@ async function handleRepost(formData: FormData, userId: string) {
   try {
     // Get the original post data
     const postsData = await getPostsByIds({ ids: [postId], userId });
-    if (!postsData || postsData.length === 0) {
-      return json({ error: "Post not found" }, { status: 404 });
+    if (postsData.length === 0) {
+      return json({ error: ERROR_POST_NOT_FOUND }, { status: 404 });
     }
 
     const originalPost = postsData[0];
     if (!originalPost) {
-      return json({ error: "Post not found" }, { status: 404 });
+      return json({ error: ERROR_POST_NOT_FOUND }, { status: 404 });
     }
     const originalEvent = originalPost.signedEvent;
 
@@ -232,7 +236,7 @@ async function handleRepost(formData: FormData, userId: string) {
       content: "", // Empty content as recommended by NIP-18
       tags: [
         // e tag with the id of the note being reposted and relay URL
-        ["e", eventId, "wss://relay.primal.net"],
+        ["e", eventId, DEFAULT_RELAY],
         // p tag with the pubkey of the event being reposted
         ["p", eventPubkey],
       ],
@@ -274,13 +278,13 @@ async function handleQuote(formData: FormData, userId: string) {
   try {
     // Get the original post data
     const postsData = await getPostsByIds({ ids: [postId], userId });
-    if (!postsData || postsData.length === 0) {
-      return json({ error: "Post not found" }, { status: 404 });
+    if (postsData.length === 0) {
+      return json({ error: ERROR_POST_NOT_FOUND }, { status: 404 });
     }
 
     const originalPost = postsData[0];
     if (!originalPost) {
-      return json({ error: "Post not found" }, { status: 404 });
+      return json({ error: ERROR_POST_NOT_FOUND }, { status: 404 });
     }
     const originalEvent = originalPost.signedEvent;
 
@@ -352,13 +356,13 @@ async function handleLongformRepost(formData: FormData, userId: string) {
       ids: [longformPostId],
       userId,
     });
-    if (!longformData || longformData.length === 0) {
-      return json({ error: "Longform post not found" }, { status: 404 });
+    if (longformData.length === 0) {
+      return json({ error: ERROR_LONGFORM_POST_NOT_FOUND }, { status: 404 });
     }
 
     const originalPost = longformData[0];
     if (!originalPost) {
-      return json({ error: "Longform post not found" }, { status: 404 });
+      return json({ error: ERROR_LONGFORM_POST_NOT_FOUND }, { status: 404 });
     }
     const originalEvent = originalPost.signedEvent;
 
@@ -455,13 +459,13 @@ async function handleLongformQuote(formData: FormData, userId: string) {
       ids: [postId],
       userId,
     });
-    if (!longformData || longformData.length === 0) {
-      return json({ error: "Longform post not found" }, { status: 404 });
+    if (longformData.length === 0) {
+      return json({ error: ERROR_LONGFORM_POST_NOT_FOUND }, { status: 404 });
     }
 
     const originalPost = longformData[0];
     if (!originalPost) {
-      return json({ error: "Longform post not found" }, { status: 404 });
+      return json({ error: ERROR_LONGFORM_POST_NOT_FOUND }, { status: 404 });
     }
     const originalEvent = originalPost.signedEvent;
 

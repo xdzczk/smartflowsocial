@@ -13,7 +13,7 @@ export function useLongFormEditState({
   hashtagPresets,
 }: UseLongFormEditStateProps) {
   const navigation = useNavigation();
-  const [displayedHashtags, setDisplayedHashtags] = useState(userTags ?? "");
+  const [displayedHashtags, setDisplayedHashtags] = useState(userTags);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewData, setPreviewData] = useState({
     title: "",
@@ -78,7 +78,7 @@ export function useLongFormEditState({
 
       if (response.ok) {
         const data = (await response.json()) as { hashtags?: string };
-        setDisplayedHashtags((data.hashtags ?? userTags) || "");
+        setDisplayedHashtags((data.hashtags ?? userTags));
       } else {
         setDisplayedHashtags(userTags ?? "");
       }

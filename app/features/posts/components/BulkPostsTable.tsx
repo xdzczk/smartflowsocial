@@ -44,7 +44,7 @@ export default function BulkPostsTable({
         </thead>
         <tbody>
           {posts.map((post, index) => (
-            <tr key={index} className="border-b">
+            <tr key={`${index}-${post.caption.substring(0, 20)}-${post.scheduledFor}`} className="border-b">
               <td className="p-4">
                 {(() => {
                   let imageUrl = "";

@@ -16,7 +16,7 @@ import type {
 export function isPostData(
   originalData: CombinedContent["originalData"]
 ): originalData is PostData {
-  if (!originalData || typeof originalData !== "object") {
+  if (typeof originalData !== "object") {
     return false;
   }
 
@@ -32,7 +32,7 @@ export function isPostData(
 export function isLongFormPostData(
   originalData: CombinedContent["originalData"]
 ): originalData is LongFormPostData {
-  if (!originalData || typeof originalData !== "object") {
+  if (typeof originalData !== "object") {
     return false;
   }
 
@@ -57,3 +57,4 @@ export function extractLongFormPostData(
 ): LongFormPostData | null {
   return isLongFormPostData(content.originalData) ? content.originalData : null;
 }
+

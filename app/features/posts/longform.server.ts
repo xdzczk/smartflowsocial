@@ -100,7 +100,7 @@ export function generateArticleIdentifier(title: string): string {
 }
 
 export function convertEditorJSToMarkdown(editorData: EditorJSOutput): string {
-  if (!editorData?.blocks) {
+  if (editorData.blocks.length === 0) {
     return "";
   }
 

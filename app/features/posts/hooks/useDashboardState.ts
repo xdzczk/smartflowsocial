@@ -61,7 +61,7 @@ export function useDashboardState({
           typeof scheduledFor === "string" || typeof scheduledFor === "number"
             ? scheduledFor
             : "0";
-        const utcTime = parseInt(String(scheduledForValue ?? 0)) * 1000;
+        const utcTime = parseInt(String(scheduledForValue)) * 1000;
         const userTime = new Date(utcTime).toLocaleString("en-US", {
           timeZone: tz,
         });

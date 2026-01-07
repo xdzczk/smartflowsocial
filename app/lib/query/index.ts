@@ -4,7 +4,7 @@
  */
 
 // Query client
-export * from "./queryClient";
+export * from "./query-client";
 
 // Provider component
 export * from "./QueryProvider";

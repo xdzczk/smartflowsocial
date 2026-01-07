@@ -32,7 +32,7 @@ if (env.NODE_ENV === "production" || env.ENABLE_SOURCE_MAPS === "true") {
   try {
     (
       sourceMapSupport as {
-        install: (options: {
+        install: (_options: {
           handleUncaughtExceptions: boolean;
           environment: string;
         }) => void;

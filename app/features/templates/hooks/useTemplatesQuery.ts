@@ -80,7 +80,7 @@ export function useTemplatesQuery() {
         checkFetcher();
       });
     },
-    initialData: validatedLoaderData ?? undefined,
+    initialData: validatedLoaderData,
     staleTime: 30 * 1000, // 30 seconds
   });
 }

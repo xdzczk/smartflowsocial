@@ -82,7 +82,7 @@ export function useRecyclablesQuery() {
         checkFetcher();
       });
     },
-    initialData: validatedLoaderData ?? undefined,
+    initialData: validatedLoaderData,
     staleTime: 30 * 1000, // 30 seconds
   });
 }
@@ -137,7 +137,6 @@ export function useRecyclablesData() {
       satszapped?: number;
     }
   > =
-    rawData.stats &&
     typeof rawData.stats === "object" &&
     !Array.isArray(rawData.stats)
       ? rawData.stats
@@ -145,7 +144,6 @@ export function useRecyclablesData() {
 
   // Type assertion for pagination
   const pagination =
-    rawData.pagination &&
     typeof rawData.pagination === "object" &&
     !Array.isArray(rawData.pagination) &&
     "total" in rawData.pagination &&

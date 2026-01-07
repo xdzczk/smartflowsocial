@@ -231,3 +231,6 @@ async function getPost(postId: string) {
   // Your database logic
   return null;
 }
+
+/* eslint-enable @typescript-eslint/no-unused-vars */
+/* eslint-enable @typescript-eslint/no-unsafe-assignment */

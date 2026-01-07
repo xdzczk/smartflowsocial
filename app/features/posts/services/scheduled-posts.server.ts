@@ -29,6 +29,12 @@ import {
 } from "~/models/post.commands.server";
 import { getScheduledPosts, getPostById } from "~/models/post.queries.server";
 
+const ERROR_POST_NOT_FOUND = "Post not found";
+const ERROR_LONGFORM_POST_NOT_FOUND = "Longform post not found";
+const ERROR_PARSING_SIGNED_EVENTS = "Error parsing signed events";
+const QUEUE_SCHEDULED_POSTS = "scheduled-posts";
+const QUEUE_SCHEDULED_LONGFORM_POSTS = "scheduled-longform-posts";
+
 import { combineContent } from "../combined.server";
 import { convertPrismaQueueTypeToQueueType } from "../types";
 import type { PostData, LongFormPostData } from "../types";
@@ -220,7 +226,7 @@ export async function handleScheduledPostAction(
 
     const originalPost = await getPostById({ id: postId, userId });
     if (!originalPost) {
-      return json({ error: "Post not found" }, { status: 404 });
+      return json({ error: ERROR_POST_NOT_FOUND }, { status: 404 });
     }
 
     await cancelScheduledPost(postId);
@@ -258,7 +264,7 @@ export async function handleScheduledPostAction(
         logError(e instanceof Error ? e : new Error(String(e)), {
           userId,
           postId,
-          message: "Error parsing signed events",
+          message: ERROR_PARSING_SIGNED_EVENTS,
         });
       }
     }
@@ -293,7 +299,7 @@ export async function handleScheduledPostAction(
 
     const originalPost = await getLongFormPostModel({ id: postId, userId });
     if (!originalPost) {
-      return json({ error: "Longform post not found" }, { status: 404 });
+      return json({ error: ERROR_LONGFORM_POST_NOT_FOUND }, { status: 404 });
     }
 
     let parsedSignedEvent = null;
@@ -329,7 +335,7 @@ export async function handleScheduledPostAction(
         logError(e instanceof Error ? e : new Error(String(e)), {
           userId,
           postId,
-          message: "Error parsing signed events",
+          message: ERROR_PARSING_SIGNED_EVENTS,
         });
       }
     }
@@ -398,7 +404,7 @@ export async function handleScheduledPostAction(
         logError(e instanceof Error ? e : new Error(String(e)), {
           userId,
           postId,
-          message: "Error parsing signed events",
+          message: ERROR_PARSING_SIGNED_EVENTS,
         });
       }
     }
@@ -507,7 +513,7 @@ export async function handleScheduledPostAction(
         logError(e instanceof Error ? e : new Error(String(e)), {
           userId,
           postId,
-          message: "Error parsing signed events",
+          message: ERROR_PARSING_SIGNED_EVENTS,
         });
       }
     }

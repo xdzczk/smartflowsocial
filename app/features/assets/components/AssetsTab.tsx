@@ -224,9 +224,9 @@ export function AssetsTab({
                       <div className="flex flex-wrap gap-1">
                         {asset.tags
                           .slice(0, 3)
-                          .map((tag: string, index: number) => (
+                          .map((tag: string) => (
                             <span
-                              key={index}
+                              key={tag}
                               className="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800 dark:bg-gray-700 dark:text-gray-200"
                             >
                               {tag}

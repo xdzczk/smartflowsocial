@@ -186,3 +186,4 @@ A reusable post structure with placeholders (variables) for dynamic content.
 ---
 
 **Next:** [Style Guide](./style-guide.md) → Documentation standards
+

@@ -6,9 +6,7 @@ export const singleton = <Value>(
   valueFactory: () => Value
 ): Value => {
   const g = global as unknown as { __singletons: Record<string, unknown> };
-  if (!g.__singletons) {
-    g.__singletons = {};
-  }
+  g.__singletons ??= {};
   if (!g.__singletons[name]) {
     g.__singletons[name] = valueFactory();
   }

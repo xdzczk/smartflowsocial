@@ -334,7 +334,7 @@ export default function NewLongFormPost() {
           onPreview={handlePreview}
           useHashtagPresets={useHashtagPresets}
           onUseHashtagPresetsChange={handleUseHashtagPresetsChange}
-          selectedHashtagPresetId={selectedHashtagPresetId ?? undefined}
+          selectedHashtagPresetId={selectedHashtagPresetId}
           selectedHashtags={selectedHashtags}
           onHashtagPresetChange={handleHashtagPresetSelect}
         />

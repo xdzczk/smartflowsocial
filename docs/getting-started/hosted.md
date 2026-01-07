@@ -61,3 +61,4 @@ If login prompts don’t appear:
 - Try a different supported extension
 
 See [Common issues](../troubleshooting/common-issues.md) for more.
+

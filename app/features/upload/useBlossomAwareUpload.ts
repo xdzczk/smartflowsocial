@@ -14,6 +14,8 @@ interface SubmitOptions {
   action?: string;
 }
 
+const TOAST_ID_BLOSSOM_AUTH = "blossom-auth";
+
 export function useBlossomAwareUpload() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -82,14 +84,10 @@ export function useBlossomAwareUpload() {
       );
     }
 
-    let _uploadUrl: string;
-    if (provider === "BLOSSOM_PRIMAL") {
-      _uploadUrl = "https://blossom.primal.net/upload";
-    } else if (provider === "BLOSSOM_BLOSSTR") {
-      _uploadUrl = "https://blosstr.com/upload";
-    } else {
-      throw new Error("Invalid blossom provider");
-    }
+    const _uploadUrl =
+      provider === "BLOSSOM_PRIMAL"
+        ? "https://blossom.primal.net/upload"
+        : "https://blosstr.com/upload";
 
     // Note: Authentication should be handled by the upload service directly
     throw new Error(
@@ -127,7 +125,7 @@ export function useBlossomAwareUpload() {
           toast.loading(
             `Signing upload request with NOSTR extension for ${providerName}...`,
             {
-              id: "blossom-auth",
+              id: TOAST_ID_BLOSSOM_AUTH,
             }
           );
           try {
@@ -142,7 +140,7 @@ export function useBlossomAwareUpload() {
                 ? authError.message
                 : String(authError);
             toast.error("Failed to authorize upload: " + errorMessage, {
-              id: "blossom-auth",
+              id: TOAST_ID_BLOSSOM_AUTH,
             });
             throw authError;
           }
@@ -216,7 +214,7 @@ export function useBlossomAwareUpload() {
             const parseError = _parseError as Error;
             throw new Error(
               "Invalid response format: " +
-                (parseError?.message ?? "Unknown error") +
+                parseError.message +
                 ". Response: " +
                 responseText.substring(0, 100)
             );

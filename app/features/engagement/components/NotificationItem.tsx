@@ -94,8 +94,7 @@ export function NotificationItem({
 
   // Get type-specific badge configuration
   const typeBadge =
-    TYPE_BADGES[notification.type as keyof typeof TYPE_BADGES] ||
-    TYPE_BADGES.reply;
+    TYPE_BADGES[notification.type as keyof typeof TYPE_BADGES];
 
   // Get stats (available on all notification types)
   const stats: NotificationStats | undefined = notification.stats;
@@ -200,7 +199,7 @@ export function NotificationItem({
           {actions.showQuoteInput ? (
             <QuoteInputPanel
               quoteContent={actions.quoteContent}
-              originalContent={notification.content ?? ""}
+              originalContent={notification.content}
               isQuoting={actions.isQuoting}
               onContentChange={actions.setQuoteContent}
               onSubmit={() => {

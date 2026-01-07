@@ -90,10 +90,10 @@ async function fetchUserProfile(pubkey: string): Promise<User | null> {
     const statsTyped = stats;
     const user: User = {
       pubkey,
-      name: profileTyped.name ?? undefined,
-      displayName: profileTyped.display_name ?? undefined,
+      name: profileTyped.name,
+      displayName: profileTyped.display_name,
       about: (profileTyped["about"] as string | undefined) ?? undefined,
-      picture: profileTyped.picture ?? undefined,
+      picture: profileTyped.picture,
       nip05: (profileTyped["nip05"] as string | undefined) ?? undefined,
       lud16: (profileTyped["lud16"] as string | undefined) ?? undefined,
       followsCount: statsTyped.follows_count ?? 0,
@@ -143,7 +143,7 @@ async function processEventBatch(batchIds: string[], userNpub: string) {
 
       const statsEvent = (threadViewData as PrimalEvent[]).find(
         (event: PrimalEvent) => {
-          if (!Array.isArray(event) || event[0] !== "EVENT" || !event[2])
+          if (!Array.isArray(event) || event[0] !== "EVENT")
             return false;
           const eventData = event[2];
           if (typeof eventData !== "object" || Array.isArray(eventData))
@@ -167,7 +167,7 @@ async function processEventBatch(batchIds: string[], userNpub: string) {
         satszapped: 0,
       };
 
-      if (statsEvent && Array.isArray(statsEvent) && statsEvent[2]) {
+      if (statsEvent && Array.isArray(statsEvent)) {
         const eventData = statsEvent[2] as { kind?: number; content?: string };
         if (eventData.content) {
           try {
@@ -276,10 +276,9 @@ export async function loadEngagementFeedData(
   const user: UserWithHashTagPresets = userResult;
 
   // Ensure user has required properties with safe defaults
-  const userNpub = user.npub ?? "";
-  const userFilterMuted = user.filterMuted ?? false;
-  const userHidePostsFromLowTrustUsers =
-    user.hidePostsFromLowTrustUsers ?? false;
+  const userNpub = user.npub;
+  const userFilterMuted = user.filterMuted;
+  const userHidePostsFromLowTrustUsers = user.hidePostsFromLowTrustUsers;
 
   // Type guard for mutedList
   const mutedListData =
@@ -356,7 +355,7 @@ export async function loadEngagementFeedData(
     // Combine stats and notifications
     const initialStats: Record<string, EventStats> = {};
     stats = results.reduce((acc, result) => {
-      if (result.eventId && result.stats) {
+      if (result.eventId) {
         acc[result.eventId] = result.stats;
       }
       return acc;
@@ -651,21 +650,15 @@ export async function loadEngagementFeedData(
   });
 
   return {
-    posts: postsWithReplies ?? [],
-    stats: stats ?? {},
+    posts: postsWithReplies,
+    stats,
     user,
-    notifications: groupedNotifications ?? {
-      all: [],
-      replies: [],
-      mentions: [],
-      zaps: [],
-      quotes: [],
-    },
+    notifications: groupedNotifications,
     groupedNotifications: {
-      replies: groupedByParent.replies ?? [],
-      quotes: groupedQuoteReposts ?? [],
+      replies: groupedByParent.replies,
+      quotes: groupedQuoteReposts,
     },
-    trustScores: trustScores ?? {},
+    trustScores,
   };
 }
 

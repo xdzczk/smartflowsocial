@@ -96,8 +96,8 @@ export async function getPostedDashboardData({
       queueType: convertPrismaQueueTypeToQueueType(
         "queueType" in post ? post.queueType : undefined
       ),
-      signedEvent: signedEventValue ?? undefined,
-      nostrEvent: nostrEventValue ?? undefined,
+      signedEvent: signedEventValue,
+      nostrEvent: nostrEventValue,
     };
     return result;
   });
@@ -154,8 +154,8 @@ export async function getPostedDashboardData({
             typeof convertPrismaQueueTypeToQueueType
           >[0]
         ),
-        signedEvent: signedEventValue ?? undefined,
-        nostrEvent: nostrEventValue ?? undefined,
+        signedEvent: signedEventValue,
+        nostrEvent: nostrEventValue,
       } as LongFormPostData;
     }
   );

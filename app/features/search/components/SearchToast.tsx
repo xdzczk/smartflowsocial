@@ -53,3 +53,4 @@ export function SearchToast({ toast, onClose }: SearchToastProps) {
     </div>
   );
 }
+

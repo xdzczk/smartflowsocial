@@ -87,7 +87,7 @@ export function useGiveawayQuery() {
         checkFetcher();
       });
     },
-    initialData: validatedLoaderData ?? undefined,
+    initialData: validatedLoaderData,
     staleTime: 30 * 1000, // 30 seconds
     refetchOnMount: false,
   });
@@ -137,8 +137,8 @@ export function useGiveawayData() {
           totalEngagement?: number;
         } = {
           ...post,
-          stats: dto.stats ?? undefined,
-          totalEngagement: dto.totalEngagement ?? undefined,
+          stats: dto.stats,
+          totalEngagement: dto.totalEngagement,
         };
         return result;
       })

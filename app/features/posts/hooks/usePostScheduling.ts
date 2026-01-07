@@ -160,6 +160,6 @@ export function usePostScheduling({
     setTimeError: handleTimeError,
     calculateQueueScheduleTime,
     handleScheduleIntervalClick,
-    scheduleIntervals: scheduleIntervals || user?.scheduleInterval || [],
+    scheduleIntervals: scheduleIntervals || user?.scheduleInterval,
   };
 }

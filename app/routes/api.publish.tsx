@@ -5,6 +5,8 @@ import { requireUserId } from "~/features/auth";
 import { withCSRFProtection } from "~/lib/csrf";
 import { ValidationError, ExternalServiceError } from "~/lib/errors";
 
+const CONTENT_TYPE_JSON = "application/json";
+
 type AssertFunction = (
   condition: boolean,
   message: string,
@@ -66,7 +68,7 @@ export const action = withCSRFProtection(
         publishResponse = await fetch(publisherUrl, {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type": CONTENT_TYPE_JSON,
           },
           body: JSON.stringify({
             relays,
@@ -109,7 +111,7 @@ export const action = withCSRFProtection(
         if (
           contentType &&
           typeof contentType === "string" &&
-          contentType.includes("application/json")
+          contentType.includes(CONTENT_TYPE_JSON)
         ) {
           const jsonResult: unknown = await publishResponse.json();
           result = jsonResult;

@@ -6,3 +6,4 @@ declare module "@editorjs/link" {
   const LinkTool: BlockToolConstructable;
   export default LinkTool;
 }
+

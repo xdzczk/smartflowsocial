@@ -121,7 +121,7 @@ export function parseThreadViewNotifications(
 
         // Determine if this is a reply or a mention/quote
         // The 4th element (index 3) in the e tag is the marker
-        const marker = targetETag?.[3] as string | undefined;
+        const marker = targetETag[3] as string | undefined;
 
         // Check if it's a quote post (has nostr:nevent or nostr:note in content)
         const eventContent = event.content ?? "";
@@ -211,7 +211,7 @@ export function parseThreadViewNotifications(
     ) {
       try {
         // Parse the description tag to get zap request details
-        const descTag = event.tags?.find(
+        const descTag = event.tags.find(
           (tag: string[]) => tag[0] === "description"
         );
         if (!descTag?.[1] || typeof descTag[1] !== "string") continue;
@@ -309,8 +309,8 @@ export function groupNotificationsByParent(
       pubkey: post.signedEvent.pubkey,
       caption: post.caption ?? null,
       fileUrl: Array.isArray(post.fileUrl)
-        ? (post.fileUrl[0] ?? null)
-        : (post.fileUrl ?? null),
+        ? post.fileUrl[0] ?? null
+        : post.fileUrl,
       postedAt: post.postedAt ?? new Date(),
       isLongform: false,
       stats: stats[eventId],
@@ -413,9 +413,9 @@ export async function processQuoteReposts(
         });
 
         // Find the profile event (kind 0)
-        const profileEvent = (profileData as PrimalEvent[])?.find(
+        const profileEvent = (profileData as PrimalEvent[]).find(
           (item: PrimalEvent) => {
-            if (!Array.isArray(item) || item[0] !== "EVENT" || !item[2])
+            if (!Array.isArray(item) || item[0] !== "EVENT")
               return false;
             const eventData = item[2];
             if (typeof eventData !== "object" || Array.isArray(eventData))
@@ -430,7 +430,6 @@ export async function processQuoteReposts(
         if (
           profileEvent &&
           Array.isArray(profileEvent) &&
-          profileEvent[2] &&
           typeof profileEvent[2] === "object" &&
           !Array.isArray(profileEvent[2])
         ) {
@@ -459,7 +458,7 @@ export async function processQuoteReposts(
   const quotePromises = quoteRepostEvents.map(async (event) => {
     try {
       // Extract the quoted event ID from the "e" tags with "mention" marker
-      const eTags = event.tags?.filter((tag: NostrTag) => tag[0] === "e") ?? [];
+      const eTags = event.tags.filter((tag: NostrTag) => tag[0] === "e");
       const quotedEventTag = eTags.find(
         (tag: NostrTag) => tag[3] === "mention"
       );
@@ -487,9 +486,9 @@ export async function processQuoteReposts(
         });
 
         // Find the stats event
-        const statsEvent = (threadViewData as PrimalEvent[])?.find(
+        const statsEvent = (threadViewData as PrimalEvent[]).find(
           (item: PrimalEvent) => {
-            if (!Array.isArray(item) || item[0] !== "EVENT" || !item[2])
+            if (!Array.isArray(item) || item[0] !== "EVENT")
               return false;
             const eventData = item[2] as { kind?: number; content?: string };
             return (
@@ -501,7 +500,7 @@ export async function processQuoteReposts(
           }
         );
 
-        if (statsEvent && Array.isArray(statsEvent) && statsEvent[2]) {
+        if (statsEvent && Array.isArray(statsEvent)) {
           const eventData = statsEvent[2] as {
             kind?: number;
             content?: string;
@@ -549,7 +548,7 @@ export async function processQuoteReposts(
       return result;
     } catch (error) {
       logError(error instanceof Error ? error : new Error(String(error)), {
-        eventId: event?.id,
+        eventId: event.id,
         message: "Error processing quote repost",
       });
       return null;
@@ -563,7 +562,6 @@ export async function processQuoteReposts(
     (n): n is NotificationQuoteRepost => {
       return (
         n !== null &&
-        n !== undefined &&
         typeof n === "object" &&
         "type" in n &&
         n.type === "quote"

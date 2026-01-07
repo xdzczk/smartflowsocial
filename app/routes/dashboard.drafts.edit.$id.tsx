@@ -178,7 +178,7 @@ export default function EditDraft() {
       id: preset.id,
       name: preset.name,
       tags: preset.tags,
-      description: preset.description ?? undefined,
+      description: preset.description,
       userId: typeof preset.userId === "string" ? preset.userId : undefined,
       createdAt:
         typeof preset.createdAt === "string"
@@ -262,9 +262,9 @@ export default function EditDraft() {
           content={content}
           caption={typedPost.caption ?? ""}
           selectedQueue={selectedQueue}
-          scheduledFor={scheduledFor}
+          scheduledFor={scheduledFor ?? ""}
           useHashtagPresets={useHashtagPresets}
-          selectedHashtagPresetId={selectedHashtagPresetId}
+          selectedHashtagPresetId={selectedHashtagPresetId ?? null}
           queueTypes={typedQueueTypes}
           hashTagPresets={typedHashTagPresets}
           isSubmitting={isSubmitting}
@@ -282,7 +282,7 @@ export default function EditDraft() {
       <ResumeModal
         isOpen={showResumeModal}
         selectedQueue={selectedQueue}
-        scheduledFor={scheduledFor}
+        scheduledFor={scheduledFor ?? ""}
         content={content}
         caption={typedPost.caption ?? ""}
         isSubmitting={isSubmitting}

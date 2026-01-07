@@ -50,7 +50,7 @@ export function SchedulingSection({
               type="datetime-local"
               id="scheduledFor"
               name="scheduledFor"
-              value={scheduledFor ?? ""}
+              value={scheduledFor}
               onChange={(e) => onScheduledForChange(e.target.value)}
               disabled={disabled}
             />
@@ -89,3 +89,4 @@ export function SchedulingSection({
     </div>
   );
 }
+

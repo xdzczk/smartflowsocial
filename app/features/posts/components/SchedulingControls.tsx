@@ -165,7 +165,7 @@ export default function SchedulingControls({
         />
       </div>
 
-      {scheduleIntervals && scheduleIntervals.length > 0 ? (
+      {scheduleIntervals.length > 0 ? (
         <div>
           <Label>Quick Schedule</Label>
           <div className="mt-2 flex flex-wrap gap-2">

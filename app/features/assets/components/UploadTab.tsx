@@ -214,7 +214,7 @@ export function UploadTab({
               <div className="max-h-96 space-y-4 overflow-y-auto">
                 {bulkUploadFiles.map((file, index) => (
                   <div
-                    key={index}
+                    key={`${file.name}-${file.size}-${file.lastModified}`}
                     className="rounded-lg border border-gray-300 p-4"
                   >
                     <div className="flex items-start gap-4">

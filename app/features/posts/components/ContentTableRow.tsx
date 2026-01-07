@@ -210,7 +210,7 @@ function ContentRowActions({
           (item.originalData?.nostrEventId ||
             item.originalData?.signedEvent?.id) ? (
             <Link
-              to={`https://primal.net/a/${item.originalData.nostrEventId ?? item.originalData.signedEvent.id ?? ""}`}
+              to={`https://primal.net/a/${item.originalData.nostrEventId ?? item.originalData.signedEvent?.id ?? ""}`}
               target="_blank"
               rel="noreferrer"
               onClick={(e) => e.stopPropagation()}

@@ -64,7 +64,7 @@ export function postToCombinedContent(post: PostData): CombinedContent {
     repost: post.repost,
     isQuotedPost: post.isQuotedPost,
     isRecyclable: post.isRecyclable,
-    templateId: post.templateId ?? undefined,
+    templateId: nullToUndefined(post.templateId),
     originalData: post,
   };
 
@@ -103,7 +103,7 @@ export function longFormPostToCombinedContent(
       ? {
           id: longFormPost.queueType.id,
           name: longFormPost.queueType.name,
-          color: longFormPost.queueType.color ?? undefined,
+          color: nullToUndefined(longFormPost.queueType.color),
         }
       : undefined,
     queueTypeId: nullToUndefined(longFormPost.queueTypeId),

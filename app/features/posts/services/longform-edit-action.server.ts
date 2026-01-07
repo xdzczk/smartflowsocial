@@ -35,6 +35,9 @@ import { updateLongFormPost } from "~/models/longformpost.server";
 
 import { convertEditorJSToMarkdown } from "../longform.server";
 
+const ERROR_TITLE_REQUIRED = "Title is required";
+const ERROR_CONTENT_REQUIRED = "Content is required";
+
 /**
  * Parse and combine tags from form data
  */
@@ -206,11 +209,11 @@ async function handleSaveDraft(
   }
 
   if (!title.trim()) {
-    return Response.json({ error: "Title is required" }, { status: 400 });
+    return Response.json({ error: ERROR_TITLE_REQUIRED }, { status: 400 });
   }
 
   if (!editorContent.trim()) {
-    return Response.json({ error: "Content is required" }, { status: 400 });
+    return Response.json({ error: ERROR_CONTENT_REQUIRED }, { status: 400 });
   }
 
   let markdownContent;
@@ -277,11 +280,11 @@ async function handlePublish(
   }
 
   if (!title.trim()) {
-    return Response.json({ error: "Title is required" }, { status: 400 });
+    return Response.json({ error: ERROR_TITLE_REQUIRED }, { status: 400 });
   }
 
   if (!editorContent.trim()) {
-    return Response.json({ error: "Content is required" }, { status: 400 });
+    return Response.json({ error: ERROR_CONTENT_REQUIRED }, { status: 400 });
   }
 
   if (!summary?.trim()) {
@@ -416,11 +419,11 @@ async function handleScheduleLongform(
   }
 
   if (!title.trim()) {
-    return Response.json({ error: "Title is required" }, { status: 400 });
+    return Response.json({ error: ERROR_TITLE_REQUIRED }, { status: 400 });
   }
 
   if (!editorContent.trim()) {
-    return Response.json({ error: "Content is required" }, { status: 400 });
+    return Response.json({ error: ERROR_CONTENT_REQUIRED }, { status: 400 });
   }
 
   if (!summary?.trim()) {

@@ -49,3 +49,4 @@ export function convertDraftsPostsToPostDataArray(
     .map((post) => convertDraftsPostToPostData(post, originalPosts))
     .filter((post): post is PostData => post !== null);
 }
+

@@ -5,6 +5,9 @@ import { nostrAdapter } from "~/lib/nostr-adapter.client";
 
 import type { NotificationEvent, NostrTag } from "../types";
 
+const DEFAULT_RELAY = "wss://relay.primal.net";
+const PUBLISH_API_ENDPOINT = "/api/publish";
+
 export interface NotificationActionTarget {
   eventId: string;
   pubkey: string;
@@ -31,7 +34,7 @@ export interface ChildReply {
 
 export function useNotificationActions({
   notification,
-  userRelays = ["wss://relay.primal.net"],
+  userRelays = [DEFAULT_RELAY],
 }: UseNotificationActionsProps) {
   // UI state
   const [showReplyInput, setShowReplyInput] = useState(false);
@@ -66,7 +69,7 @@ export function useNotificationActions({
     try {
       const neventEncoded = nip19.neventEncode({
         id: notification.eventId,
-        relays: ["wss://relay.primal.net"],
+        relays: [DEFAULT_RELAY],
         author: notification.pubkey,
       });
 
@@ -98,7 +101,7 @@ export function useNotificationActions({
         kind: 1,
         content: replyContent,
         tags: [
-          ["e", notification.eventId, "wss://relay.primal.net", "reply"],
+          ["e", notification.eventId, DEFAULT_RELAY, "reply"],
           ["p", notification.pubkey],
         ],
         created_at: Math.floor(Date.now() / 1000),
@@ -106,7 +109,7 @@ export function useNotificationActions({
 
       const { signedEvent } = await nostrAdapter.signEvent(kind1EventData);
 
-      const response = await fetch("/api/publish", {
+      const response = await fetch(PUBLISH_API_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -153,7 +156,7 @@ export function useNotificationActions({
 
       const { signedEvent } = await nostrAdapter.signEvent(kind6EventData);
 
-      const response = await fetch("/api/publish", {
+      const response = await fetch(PUBLISH_API_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -197,7 +200,7 @@ export function useNotificationActions({
 
       const { signedEvent } = await nostrAdapter.signEvent(kind7EventData);
 
-      const response = await fetch("/api/publish", {
+      const response = await fetch(PUBLISH_API_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -232,7 +235,7 @@ export function useNotificationActions({
     try {
       const neventEncoded = nip19.neventEncode({
         id: notification.eventId,
-        relays: ["wss://relay.primal.net"],
+        relays: [DEFAULT_RELAY],
         author: notification.pubkey,
       });
 
@@ -244,7 +247,7 @@ export function useNotificationActions({
         kind: 1,
         content: quotePostContent,
         tags: [
-          ["e", notification.eventId, "wss://relay.primal.net", "mention"],
+          ["e", notification.eventId, DEFAULT_RELAY, "mention"],
           ["p", notification.pubkey, "", "mention"],
         ],
         created_at: Math.floor(Date.now() / 1000),
@@ -252,7 +255,7 @@ export function useNotificationActions({
 
       const { signedEvent } = await nostrAdapter.signEvent(kind1EventData);
 
-      const response = await fetch("/api/publish", {
+      const response = await fetch(PUBLISH_API_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -302,8 +305,7 @@ export function useNotificationActions({
       // Filter to only show direct replies
       const directReplies = (data.events ?? []).filter(
         (event: NotificationEvent) => {
-          const eTags =
-            event.tags?.filter((tag: NostrTag) => tag[0] === "e") ?? [];
+          const eTags = event.tags.filter((tag: NostrTag) => tag[0] === "e");
           return eTags.some((tag: NostrTag) => tag[1] === notification.eventId);
         },
       );

@@ -1,4 +1,4 @@
-import type { useFetcher, type FetcherWithComponents } from "@remix-run/react";
+import type { FetcherWithComponents , useFetcher } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
@@ -149,19 +149,19 @@ export function useRecyclablesState({
           ? b.signedEvent.id
           : null;
       const aStats =
-        (aEventId &&
+        aEventId &&
         aEventId in stats &&
         typeof stats[aEventId] === "object" &&
         stats[aEventId] !== null
           ? stats[aEventId]
-          : {}) ?? {};
+          : {};
       const bStats =
-        (bEventId &&
+        bEventId &&
         bEventId in stats &&
         typeof stats[bEventId] === "object" &&
         stats[bEventId] !== null
           ? stats[bEventId]
-          : {}) ?? {};
+          : {};
       const aValue = Number(aStats[sortConfig.key as keyof typeof aStats] ?? 0);
       const bValue = Number(bStats[sortConfig.key as keyof typeof bStats] ?? 0);
       return sortConfig.direction === "asc" ? aValue - bValue : bValue - aValue;
@@ -273,7 +273,7 @@ export function useRecyclablesState({
 
   // Handle repost data and navigation
   useEffect(() => {
-    const fetcherDataRaw: unknown = repostFetcher?.data;
+    const fetcherDataRaw: unknown = repostFetcher.data;
     const fetcherData: RepostFetcherData | null =
       fetcherDataRaw &&
       typeof fetcherDataRaw === "object" &&
@@ -309,7 +309,6 @@ export function useRecyclablesState({
         return {
           caption: post.caption ?? "",
           fileUrl:
-            post.fileUrl &&
             Array.isArray(post.fileUrl) &&
             post.fileUrl.length > 0
               ? post.fileUrl[0]
@@ -412,7 +411,7 @@ export function useRecyclablesState({
       setSelectedPosts(new Set());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Dependencies are intentionally limited to avoid unnecessary re-renders
-  }, [repostFetcher?.data, user?.timezone, repostFetcher]);
+  }, [repostFetcher.data, user?.timezone, repostFetcher]);
 
   // Handle individual repost actions
   useEffect(() => {

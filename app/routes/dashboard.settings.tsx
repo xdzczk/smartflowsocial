@@ -465,11 +465,11 @@ export default function Settings() {
             <div className="grid gap-6 md:grid-cols-1">
               {accounts ? (
                 <AccountsSettings
-                  parentNpub={accounts.parentNpub ?? undefined}
-                  confirmedChildren={accounts.confirmedChildren ?? undefined}
-                  pendingChildren={accounts.pendingChildren ?? undefined}
+                  parentNpub={accounts.parentNpub}
+                  confirmedChildren={accounts.confirmedChildren}
+                  pendingChildren={accounts.pendingChildren}
                   isChild={accounts.isChild ?? false}
-                  parentUser={accounts.parentUser ?? undefined}
+                  parentUser={accounts.parentUser}
                 />
               ) : (
                 <div className="text-sm text-muted-foreground">

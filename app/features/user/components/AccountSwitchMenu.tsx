@@ -73,14 +73,12 @@ function displayPicture(
     } else {
       p = user?.nostrProfile;
     }
-    const picture =
-      p &&
+    return p &&
       typeof p === "object" &&
       "picture" in p &&
       typeof p.picture === "string"
         ? p.picture
         : undefined;
-    return picture ?? undefined;
   } catch {
     return undefined;
   }

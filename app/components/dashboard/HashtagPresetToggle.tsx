@@ -106,9 +106,9 @@ export function HashtagPresetToggle({
                 .split(/\s+/)
                 .filter((tag) => tag.startsWith("#") && tag.length > 1)
                 .slice(0, 4)
-                .map((tag, index) => (
+                .map((tag) => (
                   <Badge
-                    key={index}
+                    key={tag}
                     variant="outline"
                     className="px-2 py-0.5 text-xs"
                   >
@@ -188,9 +188,9 @@ export function HashtagPresetToggle({
                       .split(/\s+/)
                       .filter((tag) => tag.startsWith("#") && tag.length > 1)
                       .slice(0, 6)
-                      .map((tag, index) => (
+                      .map((tag) => (
                         <Badge
-                          key={index}
+                          key={tag}
                           variant="outline"
                           className="px-2 py-0.5 text-xs"
                         >

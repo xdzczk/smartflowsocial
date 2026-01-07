@@ -115,7 +115,7 @@ export function getUserPlanType(
 
   // Check both plan name and planId for better matching
   const planName = subscription.Plan?.name?.toLowerCase() ?? "";
-  const planId = subscription.planId?.toLowerCase() ?? "";
+  const planId = subscription.planId.toLowerCase();
 
   // Check planId first (more reliable), then plan name
   if (planId === "basic" || planName.includes("basic")) {

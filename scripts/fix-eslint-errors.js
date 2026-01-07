@@ -73,7 +73,7 @@ function runEslintFix() {
     });
     log("✅ ESLint auto-fix completed", "green");
     return true;
-  } catch (error) {
+  } catch (_error) {
     log(
       "⚠️  ESLint auto-fix completed with some errors (this is expected)",
       "yellow",
@@ -149,7 +149,7 @@ function fixNullishCoalescing(content) {
  * Fix import order (basic grouping)
  * NOTE: Disabled - ESLint's --fix handles this better
  */
-function fixImportOrder_DISABLED(content) {
+function _fixImportOrder_DISABLED(content) {
   const lines = content.split("\n");
   let importStart = -1;
   let importEnd = -1;
@@ -266,7 +266,7 @@ function fixImportOrder_DISABLED(content) {
 /**
  * Remove async from functions without await
  */
-function removeUnnecessaryAsync(content) {
+function _removeUnnecessaryAsync(content) {
   let modified = false;
   let fixes = 0;
 

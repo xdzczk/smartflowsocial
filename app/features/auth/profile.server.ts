@@ -105,7 +105,7 @@ export async function getCompleteProfile({
   const primalData = await fetchPrimalProfileData(npub);
 
   // If no data returned, return empty profile
-  if (!primalData || primalData.length === 0) {
+  if (primalData.length === 0) {
     const emptyProfile: ProcessedProfile = {
       followers_count: 0,
       following_count: 0,

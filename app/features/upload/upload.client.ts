@@ -1,5 +1,7 @@
 // Type declaration for window.nostr is in app/types/window.d.ts
 
+const COMPONENT_UPLOAD_CLIENT = "upload.client";
+
 interface UploadResult {
   success: boolean;
   file?: {
@@ -49,7 +51,7 @@ export async function uploadFile(file: File): Promise<UploadResult> {
     handleAsyncError(
       error,
       {
-        component: "upload.client",
+        component: COMPONENT_UPLOAD_CLIENT,
         action: "uploadFile",
       },
       false,
@@ -197,7 +199,7 @@ async function uploadFileToBlossom(
     handleAsyncError(
       error,
       {
-        component: "upload.client",
+        component: COMPONENT_UPLOAD_CLIENT,
         action: "uploadFileToBlossom",
         provider,
       },
@@ -254,7 +256,7 @@ export async function uploadEditorJSImage(
       logClientError(
         new Error(result.error?.message ?? "EditorJS upload failed"),
         {
-          component: "upload.client",
+          component: COMPONENT_UPLOAD_CLIENT,
           action: "uploadEditorJSImage",
         },
         "warning",
@@ -269,7 +271,7 @@ export async function uploadEditorJSImage(
     handleAsyncError(
       error,
       {
-        component: "upload.client",
+        component: COMPONENT_UPLOAD_CLIENT,
         action: "uploadEditorJSImage",
       },
       false,

@@ -34,7 +34,7 @@ export async function calculateNextScheduleTime({
       baseTime,
     });
     // Validate that result is a valid Date object
-    if (!result || !(result instanceof Date) || isNaN(result.getTime())) {
+    if (!(result instanceof Date) || isNaN(result.getTime())) {
       const queueTypeId =
         queueType &&
         typeof queueType === "object" &&
@@ -49,7 +49,7 @@ export async function calculateNextScheduleTime({
         {
           userId,
           queueTypeId,
-          result: result ? String(result) : "null",
+          result: String(result),
         }
       );
       return fallbackDate;

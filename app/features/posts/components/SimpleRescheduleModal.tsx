@@ -59,7 +59,7 @@ export function SimpleRescheduleModal({
   const form = useZodForm(schema, {
     defaultValues: {
       scheduledFor: initialScheduledFor,
-      ...(!isLongform && post && "queueType" in post
+      ...(!isLongform && "queueType" in post
         ? { queueTypeId: post.queueType?.id ?? "" }
         : {}),
     },
@@ -101,7 +101,7 @@ export function SimpleRescheduleModal({
   };
 
   const handleSubmit = form.handleSubmit(async (data) => {
-    if (!post || !data.scheduledFor) return;
+    if (!data.scheduledFor) return;
 
     try {
       setIsSigningEvent(true);
@@ -412,8 +412,7 @@ export function SimpleRescheduleModal({
               onClick={() => void handleSubmit()}
               disabled={
                 fetcher.state === "submitting" ||
-                isSigningEvent ||
-                !form.formState.isValid
+                isSigningEvent
               }
               className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
             >

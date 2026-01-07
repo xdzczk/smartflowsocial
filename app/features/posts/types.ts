@@ -124,8 +124,8 @@ export function convertPrismaQueueTypeToQueueType(
   return {
     id: prismaQueueType.id,
     name: prismaQueueType.name,
-    color: prismaQueueType.color ?? undefined,
-    description: prismaQueueType.description ?? undefined,
+    color: prismaQueueType.color,
+    description: prismaQueueType.description,
     scheduleType: prismaQueueType.scheduleType as
       | "INTERVAL"
       | "FIXED_SLOTS"

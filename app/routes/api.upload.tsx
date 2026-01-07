@@ -11,6 +11,8 @@ import { createUploadHandler } from "~/features/upload/s3.server";
 import { withCSRFProtection } from "~/lib/csrf";
 import { ExternalServiceError } from "~/lib/errors";
 
+const CONTENT_TYPE_MULTIPART_FORM_DATA = "multipart/form-data";
+
 type AssertFunction = (
   condition: boolean,
   message: string,
@@ -29,7 +31,7 @@ export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs)
     // Validate content type
     const contentType = request.headers.get("content-type") ?? "";
     assert(
-      contentType.includes("multipart/form-data"),
+      contentType.includes(CONTENT_TYPE_MULTIPART_FORM_DATA),
       "Request must be multipart/form-data",
       { contentType },
     );

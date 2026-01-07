@@ -47,8 +47,7 @@ export function EngagementContent({
         ) : null}
 
         {/* Quote Reposts Section */}
-        {groupedNotifications.quotes &&
-        groupedNotifications.quotes.length > 0 ? (
+        {groupedNotifications.quotes.length > 0 ? (
           <div>
             <h4 className="mb-3 font-medium text-gray-900 dark:text-gray-100">
               Repost with Quote
@@ -63,8 +62,7 @@ export function EngagementContent({
         ) : null}
 
         {groupedNotifications.replies.length === 0 &&
-        (!groupedNotifications.quotes ||
-          groupedNotifications.quotes.length === 0) ? (
+        groupedNotifications.quotes.length === 0 ? (
           <div className="rounded-lg border border-gray-200 bg-white p-8 text-center dark:border-gray-700 dark:bg-gray-800">
             <p className="text-gray-500 dark:text-gray-400">
               No engagement found for your posts yet.
@@ -104,8 +102,7 @@ export function EngagementContent({
   if (activeTab === "quotes") {
     return (
       <>
-        {groupedNotifications.quotes &&
-        groupedNotifications.quotes.length > 0 ? (
+        {groupedNotifications.quotes.length > 0 ? (
           <GroupedNotificationList
             groupedNotifications={groupedNotifications.quotes}
             userTimezone={userTimezone ?? undefined}
