@@ -23,9 +23,9 @@ describe("Property-Based Tests: Helpers", () => {
           (scheduledDate: Date, currentTime: Date) => {
             const result = getTimeRemaining(scheduledDate, currentTime);
             return typeof result === "string" && result.length > 0;
-          },
+          }
         ),
-        { numRuns: 100 },
+        { numRuns: 100 }
       );
     });
 
@@ -36,7 +36,7 @@ describe("Property-Based Tests: Helpers", () => {
           // Should contain at least one time unit (d, h, m, or s)
           return /[\d]+[dhms]/.test(result);
         }),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
 
@@ -51,9 +51,9 @@ describe("Property-Based Tests: Helpers", () => {
             const result2 = getTimeRemaining(dateStr);
             // Results should be consistent (same format)
             return typeof result1 === "string" && typeof result2 === "string";
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
 
@@ -64,7 +64,7 @@ describe("Property-Based Tests: Helpers", () => {
           (secondsInFuture: number) => {
             const currentTime = new Date();
             const futureDate = new Date(
-              currentTime.getTime() + secondsInFuture * 1000,
+              currentTime.getTime() + secondsInFuture * 1000
             );
             const result = getTimeRemaining(futureDate, currentTime);
             // Should match format: "Xd Xh" or "Xh Xm" or "Xm Xs" or "Xs"
@@ -76,9 +76,9 @@ describe("Property-Based Tests: Helpers", () => {
               );
             }
             return /^(\d+d \d+h|\d+h \d+m|\d+m \d+s|\d+s)$/.test(result);
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
   });
@@ -91,9 +91,9 @@ describe("Property-Based Tests: Helpers", () => {
           (date: Date) => {
             const result = formatDate(date);
             return typeof result === "string" && result.length > 0;
-          },
+          }
         ),
-        { numRuns: 100 },
+        { numRuns: 100 }
       );
     });
 
@@ -113,9 +113,9 @@ describe("Property-Based Tests: Helpers", () => {
               result1.length > 0 &&
               result2.length > 0
             );
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
 
@@ -127,9 +127,9 @@ describe("Property-Based Tests: Helpers", () => {
             const result = formatDate(date);
             // Should contain date pattern (MM/DD/YYYY)
             return /\d{2}\/\d{2}\/\d{4}/.test(result);
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
   });
@@ -141,16 +141,16 @@ describe("Property-Based Tests: Helpers", () => {
           const result = getImageUrls(urls);
           return Array.isArray(result);
         }),
-        { numRuns: 100 },
+        { numRuns: 100 }
       );
     });
 
     it("should return empty array for empty input", () => {
       fc.assert(
-        fc.property(fc.constant([]), (urls: string[]) => {
+        fc.property(fc.constant([] as string[]), (urls: string[]) => {
           const result = getImageUrls(urls);
           return Array.isArray(result) && result.length === 0;
-        }),
+        })
       );
     });
 
@@ -162,9 +162,9 @@ describe("Property-Based Tests: Helpers", () => {
             const result = getImageUrls(urls);
             // Should return array of same length (if not JSON string)
             return Array.isArray(result);
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
 
@@ -176,9 +176,9 @@ describe("Property-Based Tests: Helpers", () => {
             const jsonString = JSON.stringify(urls);
             const result = getImageUrls([jsonString]);
             return Array.isArray(result) && result.length === urls.length;
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
   });
@@ -190,7 +190,7 @@ describe("Property-Based Tests: Helpers", () => {
           const result = isVideoFile(url);
           return typeof result === "boolean";
         }),
-        { numRuns: 100 },
+        { numRuns: 100 }
       );
     });
 
@@ -215,9 +215,9 @@ describe("Property-Based Tests: Helpers", () => {
           (baseUrl: string, ext: string) => {
             const url = baseUrl + ext;
             return isVideoFile(url) === true;
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
 
@@ -238,9 +238,9 @@ describe("Property-Based Tests: Helpers", () => {
           (baseUrl: string, ext: string) => {
             const url = baseUrl + ext;
             return isVideoFile(url) === false;
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
 
@@ -258,9 +258,9 @@ describe("Property-Based Tests: Helpers", () => {
               isVideoFile(url1) === isVideoFile(url2) &&
               isVideoFile(url2) === isVideoFile(url3)
             );
-          },
+          }
         ),
-        { numRuns: 30 },
+        { numRuns: 30 }
       );
     });
 
@@ -272,14 +272,14 @@ describe("Property-Based Tests: Helpers", () => {
             fc.float(),
             fc.boolean(),
             fc.constant(null),
-            fc.constant(undefined),
+            fc.constant(undefined)
           ),
           (input: number | boolean | null | undefined) => {
             // Testing invalid input types - function should handle gracefully
             return isVideoFile(input as unknown as string) === false;
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
   });

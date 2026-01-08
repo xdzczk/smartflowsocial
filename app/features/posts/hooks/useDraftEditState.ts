@@ -1,5 +1,5 @@
 import { useFetcher } from "@remix-run/react";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 import { useOptionalUser } from "~/lib/remix-utils";
 import { draftEditClientSchema } from "~/lib/validation/schemas/posts.client.schemas";
@@ -32,7 +32,7 @@ export function useDraftEditState({
 }: UseDraftEditStateProps) {
   const fetcher = useFetcher();
   const currentUser = useOptionalUser();
-  
+
   // Initialize form with React Hook Form
   const form = useZodForm(draftEditClientSchema, {
     defaultValues: {
@@ -56,6 +56,16 @@ export function useDraftEditState({
   const useHashtagPresets = form.watch("useHashtagPresets");
   const selectedHashtagPresetId = form.watch("hashTagPresetId");
 
+  // Use refs to stabilize dependencies for React compiler memoization
+  const setScheduledForValueRef = useRef(
+    form.setValue.bind(form, "scheduledFor")
+  );
+  const currentUserIdRef = useRef(currentUser?.id);
+  useEffect(() => {
+    setScheduledForValueRef.current = form.setValue.bind(form, "scheduledFor");
+    currentUserIdRef.current = currentUser?.id;
+  }, [form, currentUser?.id]);
+
   // Non-form state
   const [caption] = useState(post.caption ?? "");
   const [showResumeModal, setShowResumeModal] = useState(false);
@@ -74,7 +84,7 @@ export function useDraftEditState({
   const calculateQueueScheduleTime = useCallback(
     async (queueTypeName: string) => {
       if (queueTypeName === "unassigned") {
-        form.setValue("scheduledFor", "");
+        setScheduledForValueRef.current("");
         return;
       }
 
@@ -86,7 +96,7 @@ export function useDraftEditState({
           },
           body: JSON.stringify({
             queueTypeName,
-            userId: currentUser?.id,
+            userId: currentUserIdRef.current,
           }),
         });
 
@@ -94,14 +104,14 @@ export function useDraftEditState({
           const data = (await response.json()) as { scheduledTime?: string };
           const scheduledTime = data.scheduledTime;
           if (scheduledTime) {
-            form.setValue("scheduledFor", scheduledTime);
+            setScheduledForValueRef.current(scheduledTime);
           }
         }
       } catch (error) {
         console.error("Error calculating schedule time:", error);
       }
     },
-    [currentUser?.id, form],
+    []
   );
 
   const handleSignAndResume = async () => {
@@ -113,8 +123,8 @@ export function useDraftEditState({
             npub: currentUser.npub,
             timezone: currentUser.timezone ?? null,
             scheduleInterval: currentUser.scheduleInterval
-                .map(Number)
-                .filter((n) => !isNaN(n)),
+              .map(Number)
+              .filter((n) => !isNaN(n)),
             userRelays: currentUser.userRelays,
             showHashTagsinPosts: currentUser.showHashTagsinPosts,
             isEnabled: currentUser.isEnabled,
@@ -166,25 +176,34 @@ export function useDraftEditState({
     if (selectedQueue !== "unassigned") {
       void calculateQueueScheduleTime(selectedQueue);
     } else {
-      form.setValue("scheduledFor", "");
+      // Defer to avoid cascading renders
+      setTimeout(() => {
+        setScheduledForValueRef.current("");
+      }, 0);
     }
-  }, [selectedQueue, calculateQueueScheduleTime, form]);
+  }, [selectedQueue, calculateQueueScheduleTime]);
 
   // Initialize hashtag preset data on component mount
   useEffect(() => {
     if (post.hashTagPresetId && hashTagPresets.length > 0) {
       const preset = hashTagPresets.find((p) => p.id === post.hashTagPresetId);
       if (preset) {
-        setSelectedHashtags(preset.tags);
+        // Defer to avoid cascading renders
+        setTimeout(() => {
+          setSelectedHashtags(preset.tags);
+        }, 0);
       }
     }
   }, [post.hashTagPresetId, hashTagPresets]);
 
   // Provide setter wrappers for backward compatibility
   const setContent = (value: string) => form.setValue("content", value);
-  const setSelectedQueue = (value: string) => form.setValue("selectedQueue", value);
-  const setScheduledFor = (value: string) => form.setValue("scheduledFor", value);
-  const setUseHashtagPresets = (value: boolean) => form.setValue("useHashtagPresets", value);
+  const setSelectedQueue = (value: string) =>
+    form.setValue("selectedQueue", value);
+  const setScheduledFor = (value: string) =>
+    form.setValue("scheduledFor", value);
+  const setUseHashtagPresets = (value: boolean) =>
+    form.setValue("useHashtagPresets", value);
 
   return {
     content,

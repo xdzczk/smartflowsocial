@@ -670,7 +670,7 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
     it("should handle empty slot arrays gracefully", async () => {
       await fc.assert(
         fc.asyncProperty(
-          fc.constant([]),
+          fc.constant([] as Array<[number, number]>),
           async (slots: Array<[number, number]>) => {
             try {
               // Reset mocks for this test run to ensure clean state

@@ -39,9 +39,9 @@ async function createAndLogin(email: string) {
   console.log(
     `
 <cookie>
-  ${parsedCookie.__session}
+  ${parsedCookie.__session ?? ""}
 </cookie>
-  `.trim(),
+  `.trim()
   );
 }
 

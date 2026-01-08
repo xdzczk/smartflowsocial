@@ -323,13 +323,11 @@ SmartFlowSocial's asset management allows you to:
 ### Upload Strategy
 
 1. **Organize before upload:**
-
    - Use consistent naming
    - Add titles immediately
    - Tag appropriately
 
 2. **Optimize files:**
-
    - Compress large images
    - Use appropriate formats
    - Check file sizes
@@ -342,13 +340,11 @@ SmartFlowSocial's asset management allows you to:
 ### Asset Management
 
 1. **Regular cleanup:**
-
    - Delete unused assets
    - Archive old content
    - Maintain organization
 
 2. **Tag consistently:**
-
    - Use standard tags
    - Create tag system
    - Review tags regularly
@@ -361,13 +357,11 @@ SmartFlowSocial's asset management allows you to:
 ### Reusability
 
 1. **Create templates:**
-
    - Text assets for common content
    - Reusable captions
    - Standard messages
 
 2. **Organize by purpose:**
-
    - Group similar assets
    - Tag for reuse
    - Maintain library
@@ -439,4 +433,3 @@ SmartFlowSocial's asset management allows you to:
 ---
 
 **Next:** [Reference Documentation](../reference/configuration.md) → Technical configuration details
-

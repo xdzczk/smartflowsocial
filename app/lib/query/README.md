@@ -104,4 +104,3 @@ TanStack Query works alongside Remix loaders:
 - Use `useLoaderData()` for initial server-rendered data
 - Use TanStack Query for client-side refetching and caching
 - Use `useRemixQuery()` to combine both approaches
-

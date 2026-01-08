@@ -65,6 +65,7 @@ describe("Property-Based Tests: Encryption", () => {
     it("should handle unicode and special characters", () => {
       fc.assert(
         fc.property(
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- fast-check API is safe
           fc.fullUnicodeString({ minLength: 0, maxLength: 1000 }),
           (plaintext: string) => {
             const encrypted = encrypt(plaintext);

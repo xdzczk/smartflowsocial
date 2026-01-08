@@ -117,13 +117,11 @@ flowchart TD
 ### Preparation
 
 1. **Capture screenshot:**
-
    - Use browser dev tools
    - Crop to relevant area
    - Ensure high resolution
 
 2. **Optimize image:**
-
    - Compress if needed
    - Use appropriate format (PNG for UI, JPG for photos)
    - Keep file size reasonable
@@ -343,4 +341,3 @@ graph LR
 
 **Note:** Visual aids should enhance, not replace, written documentation. Always provide text
 alternatives.
-

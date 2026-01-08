@@ -29,4 +29,3 @@ declare module "ws" {
   export const CLOSING = 2;
   export const CLOSED = 3;
 }
-

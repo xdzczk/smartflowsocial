@@ -34,7 +34,7 @@ export function DashboardHeader({
   };
 
   return (
-    <div className="mb-5 mt-5 flex flex-col gap-3 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
+    <div className="mt-5 mb-5 flex flex-col gap-3 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
       <div>
         <h3 className="mb-1 font-semibold">{getTitle()}</h3>
         <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -47,4 +47,3 @@ export function DashboardHeader({
     </div>
   );
 }
-

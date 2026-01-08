@@ -33,7 +33,7 @@ export function SuccessMessage({ message, onDismiss }: SuccessMessageProps) {
           <div className="-mx-1.5 -my-1.5">
             <button
               onClick={onDismiss}
-              className="inline-flex rounded-md bg-green-50 p-1.5 text-green-500 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2 focus:ring-offset-green-50 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/40"
+              className="inline-flex rounded-md bg-green-50 p-1.5 text-green-500 hover:bg-green-100 focus:ring-2 focus:ring-green-600 focus:ring-offset-2 focus:ring-offset-green-50 focus:outline-none dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/40"
             >
               <span className="sr-only">Dismiss</span>
               <svg className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
@@ -50,4 +50,3 @@ export function SuccessMessage({ message, onDismiss }: SuccessMessageProps) {
     </div>
   );
 }
-

@@ -9,12 +9,11 @@ import type { z } from "zod";
 
 import { formDataToFormData } from "~/lib/validation/utils.client";
 
- 
 interface UseFormMutationOptions<
   TData,
-  TSchema extends z.ZodType<any, any, any> = z.ZodType<any, any, any>,
+  TSchema extends z.ZodTypeAny = z.ZodTypeAny,
 > {
-  form: UseFormReturn<z.infer<TSchema>>;
+  form: UseFormReturn<z.infer<TSchema> & Record<string, unknown>>;
   endpoint: string;
   action?: string;
   invalidateQueries?: string[][];
@@ -45,10 +44,10 @@ interface UseFormMutationOptions<
  * });
  * ```
  */
- 
+
 export function useFormMutation<
   TData = unknown,
-  TSchema extends z.ZodType<any, any, any> = z.ZodType<any, any, any>,
+  TSchema extends z.ZodTypeAny = z.ZodTypeAny,
 >(options: UseFormMutationOptions<TData, TSchema>) {
   const queryClient = useQueryClient();
   const {
@@ -61,8 +60,8 @@ export function useFormMutation<
     optimisticUpdate,
   } = options;
 
-  return useMutation<TData, Error, z.infer<TSchema>>({
-    mutationFn: async (data: z.infer<TSchema>) => {
+  return useMutation<TData, Error, z.infer<TSchema> & Record<string, unknown>>({
+    mutationFn: async (data: z.infer<TSchema> & Record<string, unknown>) => {
       const formData = formDataToFormData(
         data as Record<string, unknown>,
         action

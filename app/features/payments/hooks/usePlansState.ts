@@ -65,8 +65,11 @@ export function usePlansState({ user, actionData }: UsePlansStateProps) {
     if (actionData?.success) {
       // Handle paid plan payment completion
       if (actionData.paid) {
-        setPaymentComplete(true);
-        setShowInvoice(false);
+        // Defer to avoid cascading renders
+        setTimeout(() => {
+          setPaymentComplete(true);
+          setShowInvoice(false);
+        }, 0);
         processedPaymentIdRef.current = null;
         setTimeout(() => {
           navigate("/dashboard", { replace: true });
@@ -93,22 +96,26 @@ export function usePlansState({ user, actionData }: UsePlansStateProps) {
 
           processedPaymentIdRef.current = actionData.paymentId;
 
+          const expiresAt = actionData.expiresAt;
           const invoice: InvoiceData = {
             invoice: actionData.invoice,
             paymentHash: actionData.paymentHash,
             amount: actionData.amount,
             amountUsd: actionData.amountUsd,
             paymentId: actionData.paymentId,
-            expiresAt: actionData.expiresAt,
+            expiresAt: expiresAt,
             planName: actionData.planName,
             planId: actionData.planId,
           };
-          setInvoiceData(invoice);
-          setShowInvoice(true);
-          // Set initial time remaining
-          setTimeRemaining(
-            new Date(actionData.expiresAt).getTime() - Date.now(),
-          );
+          // Defer to avoid cascading renders
+          setTimeout(() => {
+            setInvoiceData(invoice);
+            setShowInvoice(true);
+            // Set initial time remaining
+            if (expiresAt) {
+              setTimeRemaining(new Date(expiresAt).getTime() - Date.now());
+            }
+          }, 0);
         }
       }
     }
@@ -148,7 +155,7 @@ export function usePlansState({ user, actionData }: UsePlansStateProps) {
   // Function to handle plan selection
   const handlePlanSelection = (
     event: React.MouseEvent<HTMLButtonElement>,
-    planId: string,
+    planId: string
   ) => {
     if (!user) {
       // Prevent form submission and redirect to login if not authenticated

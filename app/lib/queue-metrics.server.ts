@@ -210,4 +210,3 @@ export function updateActiveJobs(queue: string, active: number): void {
 export function recordJobRetry(queue: string): void {
   retryCounter.inc({ queue });
 }
-

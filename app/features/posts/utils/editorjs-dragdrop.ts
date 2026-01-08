@@ -50,7 +50,8 @@ export function setupCustomDragDrop(
 
     // Get block data using EditorJS API
     try {
-      const currentData = await editorRef.current!.saver.save();
+      if (!editorRef.current) return;
+      const currentData = await editorRef.current.saver.save();
       draggedBlockData = currentData.blocks[draggedBlockIndex] ?? null;
 
       dragEvent.dataTransfer!.effectAllowed = "move";
@@ -111,7 +112,8 @@ export function setupCustomDragDrop(
 
     try {
       // Get current editor data
-      const currentData = await editorRef.current!.saver.save();
+      if (!editorRef.current) return;
+      const currentData = await editorRef.current.saver.save();
       const blocks = [...currentData.blocks];
 
       // Remove the dragged block from its original position
@@ -132,7 +134,8 @@ export function setupCustomDragDrop(
         blocks: blocks,
       };
 
-      await editorRef.current!.render(newData);
+      if (!editorRef.current) return;
+      await editorRef.current.render(newData);
       onContentChange(JSON.stringify(newData));
 
       const { logClientError } = await import("~/lib/error-handler.client");

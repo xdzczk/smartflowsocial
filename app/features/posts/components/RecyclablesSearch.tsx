@@ -33,10 +33,9 @@ export function RecyclablesSearch({
         name="search"
         value={searchTerm}
         onChange={(e) => onSearchChange(e.target.value)}
-        className="block w-full rounded-lg border border-gray-200 py-2 pl-10 pr-3 text-sm leading-6 placeholder-gray-400 focus:border-blue-500 focus:ring focus:ring-blue-500/50 dark:border-gray-700 dark:bg-gray-900 dark:focus:border-blue-500"
+        className="block w-full rounded-lg border border-gray-200 py-2 pr-3 pl-10 text-sm leading-6 placeholder-gray-400 focus:border-blue-500 focus:ring focus:ring-blue-500/50 dark:border-gray-700 dark:bg-gray-900 dark:focus:border-blue-500"
         placeholder="Search posts.."
       />
     </div>
   );
 }
-

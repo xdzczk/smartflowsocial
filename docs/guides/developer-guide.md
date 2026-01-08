@@ -113,14 +113,12 @@ git push origin feature/your-feature-name
 ### Code Review Process
 
 1. **Self-review:**
-
    - Review your own code
    - Run all tests
    - Check for linting errors
    - Verify functionality
 
 2. **Request review:**
-
    - Assign reviewers
    - Add description
    - Link related issues
@@ -259,7 +257,6 @@ See [Testing Guide](./testing.md) for complete testing documentation.
 ### Development Tools
 
 1. **Browser DevTools:**
-
    - React DevTools
    - Network tab
    - Console logs
@@ -288,19 +285,16 @@ redis-cli -u $REDIS_URL
 ### Common Debugging Steps
 
 1. **Check logs:**
-
    - Application logs
    - Worker logs
    - Database logs
 
 2. **Verify environment:**
-
    - Check `.env` variables
    - Test database connection
    - Test Redis connection
 
 3. **Review code:**
-
    - Check error messages
    - Review stack traces
    - Verify data flow
@@ -382,13 +376,11 @@ if (cached) return cached;
 ### Code Quality
 
 1. **Type Safety:**
-
    - Use TypeScript throughout
    - Avoid `any` types
    - Use type guards
 
 2. **Error Handling:**
-
    - Use custom error classes
    - Handle errors gracefully
    - Log errors appropriately
@@ -401,13 +393,11 @@ if (cached) return cached;
 ### Security
 
 1. **Input Validation:**
-
    - Validate all user input
    - Sanitize data
    - Use parameterized queries
 
 2. **Authentication:**
-
    - Always check authentication
    - Verify permissions
    - Use secure session management
@@ -420,13 +410,11 @@ if (cached) return cached;
 ### Documentation
 
 1. **Code Comments:**
-
    - Explain why, not what
    - Document complex logic
    - Keep comments current
 
 2. **Type Definitions:**
-
    - Use descriptive types
    - Document interfaces
    - Export public types
@@ -449,4 +437,3 @@ if (cached) return cached;
 ---
 
 **Next:** [API Development Guide](./api-development.md) → Learn to build API endpoints
-

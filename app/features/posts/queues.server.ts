@@ -56,7 +56,9 @@ function toSignedEvent(
 }
 
 // Queue name constants
+
 const QUEUE_SCHEDULED_POSTS = "scheduled-posts";
+
 const QUEUE_SCHEDULED_LONGFORM_POSTS = "scheduled-longform-posts";
 const QUEUE_POST_CHECKER = "post-checker";
 
@@ -162,7 +164,7 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
     }
   },
   {
-    connection: redis,
+    connection: redis as unknown as { host: string; port: number },
     concurrency: 5,
   }
 );
@@ -262,7 +264,7 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
     }
   },
   {
-    connection: redis,
+    connection: redis as unknown as { host: string; port: number },
     concurrency: 5,
   }
 );
@@ -372,7 +374,7 @@ export const postCheckerWorker = new Worker(
     }
   },
   {
-    connection: redis,
+    connection: redis as unknown as { host: string; port: number },
     concurrency: 1,
   }
 );

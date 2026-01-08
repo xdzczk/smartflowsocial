@@ -44,4 +44,3 @@ psql -d your_database -f scripts/VERIFY_INDEXES.sql
 **Last cleanup:** 2026-01-02  
 **Files removed:** 28 one-time analysis/fix scripts  
 **Files kept:** 3 essential utilities
-

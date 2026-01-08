@@ -60,4 +60,3 @@ export function validateNostrEvent(
     return null;
   }
 }
-

@@ -41,6 +41,32 @@ interface RecyclablesTableProps {
   bulkDeleteFetcher: ReturnType<typeof useFetcher>;
 }
 
+interface SortableHeaderProps {
+  sortKey: string;
+  label: string;
+  sortConfig: { key: string; direction: "asc" | "desc" };
+  onRequestSort: (key: string) => void;
+}
+
+const SortableHeader = ({
+  sortKey,
+  label,
+  sortConfig,
+  onRequestSort,
+}: SortableHeaderProps) => (
+  <th
+    className="cursor-pointer bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50"
+    onClick={() => onRequestSort(sortKey)}
+  >
+    {label}{" "}
+    {sortConfig.key === sortKey
+      ? sortConfig.direction === "asc"
+        ? "↑"
+        : "↓"
+      : null}
+  </th>
+);
+
 /**
  * Table component for displaying recyclables posts
  */
@@ -57,29 +83,9 @@ export function RecyclablesTable({
   individualRepostFetcher,
   bulkDeleteFetcher,
 }: RecyclablesTableProps) {
-  const SortableHeader = ({
-    sortKey,
-    label,
-  }: {
-    sortKey: string;
-    label: string;
-  }) => (
-    <th
-      className="cursor-pointer bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50"
-      onClick={() => onRequestSort(sortKey)}
-    >
-      {label}{" "}
-      {sortConfig.key === sortKey
-        ? sortConfig.direction === "asc"
-          ? "↑"
-          : "↓"
-        : null}
-    </th>
-  );
-
   return (
     <div className="min-w-full overflow-x-auto rounded border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-      <table className="min-w-full whitespace-nowrap align-middle text-sm">
+      <table className="min-w-full align-middle text-sm whitespace-nowrap">
         <thead>
           <tr>
             <th className="bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
@@ -95,16 +101,66 @@ export function RecyclablesTable({
             <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
               Media
             </th>
-            <SortableHeader sortKey="caption" label="Caption" />
-            <SortableHeader sortKey="postedAt" label="Posted At" />
-            <SortableHeader sortKey="likes" label="Likes" />
-            <SortableHeader sortKey="replies" label="Replies" />
-            <SortableHeader sortKey="mentions" label="Mentions" />
-            <SortableHeader sortKey="reposts" label="Reposts" />
-            <SortableHeader sortKey="zaps" label="Zaps" />
-            <SortableHeader sortKey="satszapped" label="Zapped" />
-            <SortableHeader sortKey="queueType" label="Queue" />
-            <SortableHeader sortKey="status" label="Status" />
+            <SortableHeader
+              sortKey="caption"
+              label="Caption"
+              sortConfig={sortConfig}
+              onRequestSort={onRequestSort}
+            />
+            <SortableHeader
+              sortKey="postedAt"
+              label="Posted At"
+              sortConfig={sortConfig}
+              onRequestSort={onRequestSort}
+            />
+            <SortableHeader
+              sortKey="likes"
+              label="Likes"
+              sortConfig={sortConfig}
+              onRequestSort={onRequestSort}
+            />
+            <SortableHeader
+              sortKey="replies"
+              label="Replies"
+              sortConfig={sortConfig}
+              onRequestSort={onRequestSort}
+            />
+            <SortableHeader
+              sortKey="mentions"
+              label="Mentions"
+              sortConfig={sortConfig}
+              onRequestSort={onRequestSort}
+            />
+            <SortableHeader
+              sortKey="reposts"
+              label="Reposts"
+              sortConfig={sortConfig}
+              onRequestSort={onRequestSort}
+            />
+            <SortableHeader
+              sortKey="zaps"
+              label="Zaps"
+              sortConfig={sortConfig}
+              onRequestSort={onRequestSort}
+            />
+            <SortableHeader
+              sortKey="satszapped"
+              label="Zapped"
+              sortConfig={sortConfig}
+              onRequestSort={onRequestSort}
+            />
+            <SortableHeader
+              sortKey="queueType"
+              label="Queue"
+              sortConfig={sortConfig}
+              onRequestSort={onRequestSort}
+            />
+            <SortableHeader
+              sortKey="status"
+              label="Status"
+              sortConfig={sortConfig}
+              onRequestSort={onRequestSort}
+            />
             <th className="bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
               Actions
             </th>
@@ -213,7 +269,7 @@ export function RecyclablesTable({
                       <button
                         type="submit"
                         disabled={individualRepostFetcher.state !== "idle"}
-                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-purple-200 bg-white px-2 py-1 text-sm font-semibold leading-5 text-purple-800 hover:border-purple-300 hover:text-purple-900 hover:shadow-sm focus:ring focus:ring-purple-300/25 active:border-purple-200 active:shadow-none disabled:opacity-50 dark:border-purple-700 dark:bg-gray-800 dark:text-purple-300 dark:hover:border-purple-600 dark:hover:text-purple-200 dark:focus:ring-purple-600/40 dark:active:border-purple-700"
+                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-purple-200 bg-white px-2 py-1 text-sm leading-5 font-semibold text-purple-800 hover:border-purple-300 hover:text-purple-900 hover:shadow-sm focus:ring focus:ring-purple-300/25 active:border-purple-200 active:shadow-none disabled:opacity-50 dark:border-purple-700 dark:bg-gray-800 dark:text-purple-300 dark:hover:border-purple-600 dark:hover:text-purple-200 dark:focus:ring-purple-600/40 dark:active:border-purple-700"
                       >
                         {individualRepostFetcher.state !== "idle"
                           ? "Reposting..."
@@ -229,7 +285,7 @@ export function RecyclablesTable({
                       <button
                         type="submit"
                         disabled={individualRepostFetcher.state !== "idle"}
-                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-green-200 bg-white px-2 py-1 text-sm font-semibold leading-5 text-green-800 hover:border-green-300 hover:text-green-900 hover:shadow-sm focus:ring focus:ring-green-300/25 active:border-green-200 active:shadow-none disabled:opacity-50 dark:border-green-700 dark:bg-gray-800 dark:text-green-300 dark:hover:border-green-600 dark:hover:text-green-200 dark:focus:ring-green-600/40 dark:active:border-green-700"
+                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-green-200 bg-white px-2 py-1 text-sm leading-5 font-semibold text-green-800 hover:border-green-300 hover:text-green-900 hover:shadow-sm focus:ring focus:ring-green-300/25 active:border-green-200 active:shadow-none disabled:opacity-50 dark:border-green-700 dark:bg-gray-800 dark:text-green-300 dark:hover:border-green-600 dark:hover:text-green-200 dark:focus:ring-green-600/40 dark:active:border-green-700"
                       >
                         {individualRepostFetcher.state !== "idle"
                           ? "Quoting..."
@@ -248,7 +304,7 @@ export function RecyclablesTable({
                           deleteFetcher.state !== "idle" ||
                           bulkDeleteFetcher.state !== "idle"
                         }
-                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-2 py-1 text-sm font-semibold leading-5 text-red-800 hover:border-red-300 hover:text-red-900 hover:shadow-sm focus:ring focus:ring-red-300/25 active:border-red-200 active:shadow-none disabled:opacity-50 dark:border-red-700 dark:bg-gray-800 dark:text-red-300 dark:hover:border-red-600 dark:hover:text-red-200 dark:focus:ring-red-600/40 dark:active:border-red-700"
+                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-2 py-1 text-sm leading-5 font-semibold text-red-800 hover:border-red-300 hover:text-red-900 hover:shadow-sm focus:ring focus:ring-red-300/25 active:border-red-200 active:shadow-none disabled:opacity-50 dark:border-red-700 dark:bg-gray-800 dark:text-red-300 dark:hover:border-red-600 dark:hover:text-red-200 dark:focus:ring-red-600/40 dark:active:border-red-700"
                       >
                         {deleteFetcher.state !== "idle"
                           ? "Deleting..."

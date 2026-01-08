@@ -31,14 +31,22 @@ export function getTestPrisma(): PrismaClient {
     );
   }
 
-  testPrisma = new PrismaClient({
-    datasources: {
-      db: {
-        url: testDatabaseUrl,
-      },
-    },
-    log: process.env["DEBUG"] ? ["query", "error", "warn"] : ["error"],
-  });
+  // Prisma 7: datasources option is no longer supported in constructor
+  // Set DATABASE_URL environment variable instead
+  const originalUrl = process.env["DATABASE_URL"];
+  process.env["DATABASE_URL"] = testDatabaseUrl;
+  try {
+    testPrisma = new PrismaClient({
+      log: process.env["DEBUG"] ? ["query", "error", "warn"] : ["error"],
+    });
+  } finally {
+    // Restore original URL if it existed
+    if (originalUrl !== undefined) {
+      process.env["DATABASE_URL"] = originalUrl;
+    } else {
+      delete process.env["DATABASE_URL"];
+    }
+  }
 
   return testPrisma;
 }

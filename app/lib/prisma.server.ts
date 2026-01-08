@@ -34,12 +34,15 @@ function getPrismaClient() {
   // that this only runs once per server restart and won't automatically be
   // re-run per request like everything else is. So if you need to change
   // something in this file, you'll need to manually restart the server.
+  // Prisma 7: datasources option is no longer supported in constructor
+  // We need to set DATABASE_URL environment variable for dynamic URLs
+  const finalDatabaseUrl = databaseUrl.toString();
+
+  // Set the environment variable for Prisma 7 to pick up
+  // This is safe because we're in a singleton function that only runs once
+  process.env["DATABASE_URL"] = finalDatabaseUrl;
+
   const baseClient = new PrismaClient({
-    datasources: {
-      db: {
-        url: databaseUrl.toString(),
-      },
-    },
     // Enable query logging in development for performance monitoring
     log:
       env.NODE_ENV === "development"
@@ -72,7 +75,7 @@ function getPrismaClient() {
                   operation,
                   duration,
                   args,
-                },
+                }
               );
             }
 
@@ -88,7 +91,7 @@ function getPrismaClient() {
               operation,
               duration,
               false,
-              error,
+              error
             );
 
             // Log query errors
@@ -100,7 +103,7 @@ function getPrismaClient() {
                 operation,
                 error: error.message,
                 duration,
-              },
+              }
             );
 
             throw err;

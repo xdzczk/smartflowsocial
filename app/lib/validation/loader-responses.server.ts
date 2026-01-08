@@ -45,4 +45,3 @@ export function safeValidateLoaderResponse<T extends z.ZodTypeAny>(
     return null;
   }
 }
-

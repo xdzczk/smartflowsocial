@@ -35,11 +35,14 @@ const GiveawayRandomizer = ({ relatedEvents }: GiveawayRandomizerProps) => {
     };
 
     // Get 3 random users from each category
-    setRandomUsers({
-      reposters: getRandomItems(reposters, 3),
-      likers: getRandomItems(likers, 3),
-      commenters: getRandomItems(commenters, 3),
-    });
+    // Defer to avoid cascading renders
+    setTimeout(() => {
+      setRandomUsers({
+        reposters: getRandomItems(reposters, 3),
+        likers: getRandomItems(likers, 3),
+        commenters: getRandomItems(commenters, 3),
+      });
+    }, 0);
   }, [relatedEvents]);
 
   // Convert pubkey to npub format using nostr-tools
@@ -75,7 +78,7 @@ const GiveawayRandomizer = ({ relatedEvents }: GiveawayRandomizerProps) => {
                   key={`repost-${index}`}
                   className="rounded bg-white p-2 dark:bg-gray-600"
                 >
-                  <div className="mb-2 overflow-hidden text-ellipsis text-xs">
+                  <div className="mb-2 overflow-hidden text-xs text-ellipsis">
                     {formatPubkey(user.pubkey)}
                   </div>
                   <ZapButton npub={formatPubkey(user.pubkey)} />
@@ -101,7 +104,7 @@ const GiveawayRandomizer = ({ relatedEvents }: GiveawayRandomizerProps) => {
                   key={`like-${index}`}
                   className="rounded bg-white p-2 dark:bg-gray-600"
                 >
-                  <div className="mb-2 overflow-hidden text-ellipsis text-xs">
+                  <div className="mb-2 overflow-hidden text-xs text-ellipsis">
                     {formatPubkey(user.pubkey)}
                   </div>
                   <ZapButton npub={formatPubkey(user.pubkey)} />
@@ -127,7 +130,7 @@ const GiveawayRandomizer = ({ relatedEvents }: GiveawayRandomizerProps) => {
                   key={`comment-${index}`}
                   className="rounded bg-white p-2 dark:bg-gray-600"
                 >
-                  <div className="mb-2 overflow-hidden text-ellipsis text-xs">
+                  <div className="mb-2 overflow-hidden text-xs text-ellipsis">
                     {formatPubkey(user.pubkey)}
                   </div>
                   <ZapButton npub={formatPubkey(user.pubkey)} />

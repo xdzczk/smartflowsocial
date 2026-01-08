@@ -103,7 +103,10 @@ export default function EditTemplate() {
       typeof fetcherData.success === "boolean" &&
       fetcherData.success
     ) {
-      setIsEditingName(false);
+      // Defer state update to avoid cascading renders
+      setTimeout(() => {
+        setIsEditingName(false);
+      }, 0);
     }
   }, [updateNameFetcher.data]);
 

@@ -46,7 +46,7 @@ export function useDraftsState({ posts }: UseDraftsStateProps) {
 
   // Filter posts
   const filteredPosts = sortedPosts.filter((post) =>
-    post.caption?.toLowerCase().includes(searchTerm.toLowerCase()),
+    post.caption?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const requestSort = (key: string) => {
@@ -112,8 +112,11 @@ export function useDraftsState({ posts }: UseDraftsStateProps) {
       typeof resumeData.success === "boolean" &&
       resumeData.success;
     if (deleteSuccess || resumeSuccess) {
-      setSelectedPosts(new Set());
-      setShowAdvancedBulkResume(false);
+      // Defer to avoid cascading renders
+      setTimeout(() => {
+        setSelectedPosts(new Set());
+        setShowAdvancedBulkResume(false);
+      }, 0);
     }
   }, [bulkDeleteFetcher.data, bulkResumeFetcher.data]);
 

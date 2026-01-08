@@ -4,6 +4,7 @@
  */
 
 import type { Payment, PaymentStatus } from "@prisma/client";
+// @ts-expect-error - Decimal is available at runtime but types may not be fully exported
 import { Decimal } from "@prisma/client/runtime/library";
 
 import { TEST_USER_ID } from "../utils/test-helpers";

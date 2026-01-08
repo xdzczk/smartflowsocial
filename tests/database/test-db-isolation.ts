@@ -47,13 +47,20 @@ export function createIsolatedTestClient(databaseName: string): PrismaClient {
   const url = new URL(testDatabaseUrl);
   url.pathname = `/${databaseName}`;
 
-  return new PrismaClient({
-    datasources: {
-      db: {
-        url: url.toString(),
-      },
-    },
-  });
+  // Prisma 7: datasources option is no longer supported in constructor
+  // Set DATABASE_URL environment variable instead
+  const originalUrl = process.env["DATABASE_URL"];
+  process.env["DATABASE_URL"] = url.toString();
+  try {
+    return new PrismaClient();
+  } finally {
+    // Restore original URL if it existed
+    if (originalUrl !== undefined) {
+      process.env["DATABASE_URL"] = originalUrl;
+    } else {
+      delete process.env["DATABASE_URL"];
+    }
+  }
 }
 
 /**

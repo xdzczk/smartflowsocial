@@ -56,11 +56,14 @@ export function useSearchState({ user, fetcherData }: UseSearchStateProps) {
 
   useEffect(() => {
     if (searchError) {
-      setToast({
-        type: "error",
-        message: searchError,
-      });
-      setTimeout(() => setToast(null), 5000);
+      // Defer to avoid cascading renders
+      setTimeout(() => {
+        setToast({
+          type: "error",
+          message: searchError,
+        });
+        setTimeout(() => setToast(null), 5000);
+      }, 0);
     }
   }, [searchError]);
 
@@ -102,7 +105,7 @@ export function useSearchState({ user, fetcherData }: UseSearchStateProps) {
     const now = new Date();
     const userTimezone = user?.timezone ?? "UTC";
     const localDate = new Date(
-      now.toLocaleString("en-US", { timeZone: userTimezone }),
+      now.toLocaleString("en-US", { timeZone: userTimezone })
     );
     localDate.setHours(localDate.getHours() + 1);
 
@@ -134,7 +137,7 @@ export function useSearchState({ user, fetcherData }: UseSearchStateProps) {
     // Store in sessionStorage
     sessionStorage.setItem(
       "scheduledRepostData",
-      JSON.stringify(scheduledRepostData),
+      JSON.stringify(scheduledRepostData)
     );
 
     // Navigate to bulk posts page with repost mode

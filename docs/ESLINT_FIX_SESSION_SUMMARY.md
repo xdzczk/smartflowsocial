@@ -33,13 +33,15 @@
 ### 2. Unnecessary Optional Chaining (?.)
 
 1. **`app/features/engagement/hooks/useNotificationActions.ts`**
-   - Changed `event.tags?.filter(...) ?? []` to `event.tags.filter(...)` (tags is required in NotificationEvent)
+   - Changed `event.tags?.filter(...) ?? []` to `event.tags.filter(...)` (tags is required in
+     NotificationEvent)
 
 2. **`app/features/engagement/engagement.server.ts`**
    - Changed `event.tags?.filter(...) ?? []` to `event.tags.filter(...)` (tags is required)
 
 3. **`app/features/giveaway/components/GiveawayTable.tsx`**
-   - Changed `post.queueType?.name ?? "unassigned"` to `post.queueType.name` (inside `if (post.queueType?.color)` block, queueType is guaranteed)
+   - Changed `post.queueType?.name ?? "unassigned"` to `post.queueType.name` (inside
+     `if (post.queueType?.color)` block, queueType is guaranteed)
 
 ## Remaining Warnings Breakdown
 
@@ -53,7 +55,8 @@
 
 ## Best Practices Applied
 
-1. **Type Safety First**: Only fixed patterns where TypeScript types guarantee the values are non-nullish
+1. **Type Safety First**: Only fixed patterns where TypeScript types guarantee the values are
+   non-nullish
 2. **Context Awareness**: Checked surrounding code to understand type narrowing
 3. **Prisma Schema Reference**: Used Prisma schema to verify required vs optional fields
 4. **Incremental Approach**: Fixed clear, safe patterns first
@@ -83,4 +86,3 @@
 - Some patterns may need type definition updates rather than code changes
 - Cognitive complexity warnings require refactoring, not simple fixes
 - Continue fixing incrementally as files are edited
-

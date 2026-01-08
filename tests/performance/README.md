@@ -259,4 +259,3 @@ Install k6 using the instructions above.
 - [ ] Database query performance tests
 - [ ] Memory leak detection
 - [ ] CPU profiling during load tests
-

@@ -152,9 +152,8 @@ export function useLongFormEditor({
               } catch (error) {
                 // Only log errors if component is still mounted
                 if (isMountedRef.current) {
-                  const { handleErrorSafely } = await import(
-                    "~/lib/error-handler.client"
-                  );
+                  const { handleErrorSafely } =
+                    await import("~/lib/error-handler.client");
                   handleErrorSafely(error, {
                     component: "useLongFormEditor",
                     action: "onChange",
@@ -314,7 +313,11 @@ export function useLongFormEditor({
   const loadInitialData = useCallback(
     async (content: string) => {
       if (editorReady && editorRef.current && content) {
-        await loadEditorJSContent(editorRef, content, onContentChange);
+        await loadEditorJSContent(
+          editorRef as unknown as React.RefObject<EditorJSInstance>,
+          content,
+          onContentChange
+        );
       }
     },
     [editorReady, onContentChange]
@@ -330,7 +333,11 @@ export function useLongFormEditor({
         title?: string;
       }>
     ) => {
-      await insertAssetsIntoEditor(editorRef, selectedAssets, onContentChange);
+      await insertAssetsIntoEditor(
+        editorRef as unknown as React.RefObject<EditorJSInstance>,
+        selectedAssets,
+        onContentChange
+      );
     },
     [onContentChange]
   );

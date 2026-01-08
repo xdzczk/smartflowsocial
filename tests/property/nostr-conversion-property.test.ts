@@ -16,7 +16,7 @@ describe("Property-Based Tests: Nostr Conversion", () => {
           const result = convertToHex(input);
           return result === null || typeof result === "string";
         }),
-        { numRuns: 100 },
+        { numRuns: 100 }
       );
     });
 
@@ -25,13 +25,14 @@ describe("Property-Based Tests: Nostr Conversion", () => {
         fc.property(
           fc
             .string({ minLength: 1, maxLength: 100 })
-            .filter((s: string) => !s.startsWith("npub")),
+
+            .filter((s: string): s is string => !s.startsWith("npub")),
           (invalidInput: string) => {
             const result = convertToHex(invalidInput);
             return result === null;
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
 
@@ -39,6 +40,7 @@ describe("Property-Based Tests: Nostr Conversion", () => {
       // Generate valid npub-like strings (simplified - actual npub validation is more complex)
       fc.assert(
         fc.property(
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- fast-check API is safe
           fc.hexaString({ minLength: 32, maxLength: 32 }),
           (hexString: string) => {
             // Create a mock valid npub (in real tests, you'd use actual npub encoding)
@@ -49,9 +51,9 @@ describe("Property-Based Tests: Nostr Conversion", () => {
               result === null ||
               (typeof result === "string" && result.length > 0)
             );
-          },
+          }
         ),
-        { numRuns: 30 },
+        { numRuns: 30 }
       );
     });
   });
@@ -61,9 +63,11 @@ describe("Property-Based Tests: Nostr Conversion", () => {
       fc.assert(
         fc.property(
           // Only test with even-length hex strings (required for proper encoding)
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- fast-check API is safe
           fc
             .hexaString({ minLength: 32, maxLength: 64 })
-            .filter((s: string) => s.length % 2 === 0),
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- fast-check API is safe
+            .filter((s: string): s is string => s.length % 2 === 0),
           (hexString: string) => {
             try {
               const result = convertHexToNpub(hexString);
@@ -72,9 +76,9 @@ describe("Property-Based Tests: Nostr Conversion", () => {
             } catch (_error) {
               return false;
             }
-          },
+          }
         ),
-        { numRuns: 100 },
+        { numRuns: 100 }
       );
     });
 
@@ -82,9 +86,11 @@ describe("Property-Based Tests: Nostr Conversion", () => {
       fc.assert(
         fc.property(
           // Only test with even-length hex strings (required for proper encoding)
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- fast-check API is safe
           fc
             .hexaString({ minLength: 1, maxLength: 128 })
-            .filter((s: string) => s.length % 2 === 0),
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- fast-check API is safe
+            .filter((s: string): s is string => s.length % 2 === 0),
           (hexString: string) => {
             try {
               const result = convertHexToNpub(hexString);
@@ -92,23 +98,24 @@ describe("Property-Based Tests: Nostr Conversion", () => {
             } catch (_error) {
               return false;
             }
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
 
     it("should return npub for valid 64-character hex strings", () => {
       fc.assert(
         fc.property(
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- fast-check API is safe
           fc.hexaString({ minLength: 64, maxLength: 64 }),
           (hexString: string) => {
             const result = convertHexToNpub(hexString);
             // Should start with 'npub' for valid hex
             return typeof result === "string" && result.length > 0;
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
   });
@@ -117,6 +124,7 @@ describe("Property-Based Tests: Nostr Conversion", () => {
     it("should maintain consistency: hex -> npub -> hex (for valid inputs)", () => {
       fc.assert(
         fc.property(
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- fast-check API is safe
           fc.hexaString({ minLength: 64, maxLength: 64 }),
           (originalHex: string) => {
             const npub = convertHexToNpub(originalHex);
@@ -129,9 +137,9 @@ describe("Property-Based Tests: Nostr Conversion", () => {
               );
             }
             return true; // Skip invalid npubs
-          },
+          }
         ),
-        { numRuns: 30 },
+        { numRuns: 30 }
       );
     });
   });

@@ -104,7 +104,10 @@ export function EditPostModal({
       onConfirm();
     }
     if (data && "error" in data && typeof data.error === "string") {
-      setSigningError(data.error);
+      // Defer to avoid cascading renders
+      setTimeout(() => {
+        setSigningError(data.error as string);
+      }, 0);
     }
   }, [fetcher.data, onConfirm]);
 

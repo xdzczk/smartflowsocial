@@ -115,7 +115,7 @@ async function createNostrUserAndLogin(npub: string) {
       // Create or update subscription to be active
       const now = new Date();
       const thirtyDaysFromNow = new Date(
-        now.getTime() + 30 * 24 * 60 * 60 * 1000,
+        now.getTime() + 30 * 24 * 60 * 60 * 1000
       );
 
       if (existingSubscription) {
@@ -192,9 +192,9 @@ async function createNostrUserAndLogin(npub: string) {
   console.log(
     `
 <cookie>
-  ${parsedCookie.__session}
+  ${parsedCookie.__session ?? ""}
 </cookie>
-  `.trim(),
+  `.trim()
   );
 
   await prisma.$disconnect();

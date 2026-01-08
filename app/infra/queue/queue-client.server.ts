@@ -33,7 +33,7 @@ const queues = new Map<QueueType, Queue>();
 function getQueue(queueName: QueueType): Queue {
   if (!queues.has(queueName)) {
     const queue = new Queue(queueName, {
-      connection: redis,
+      connection: redis as unknown as { host: string; port: number },
       defaultJobOptions: {
         removeOnComplete: queueName === "post-checker" ? 10 : 100,
         removeOnFail: queueName === "post-checker" ? 10 : 50,

@@ -4,7 +4,6 @@ import tsconfigPaths from "vite-tsconfig-paths";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
-  // @ts-expect-error - tsconfigPaths plugin type mismatch
   plugins: [tsconfigPaths()],
   test: {
     // Test environment - use 'node' for server-side tests, 'jsdom' for React components

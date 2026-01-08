@@ -13,7 +13,10 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
 import { updateNWCClientSchema } from "~/lib/validation";
-import { useZodForm, formDataToFormData } from "~/lib/validation/utils.client-safe";
+import {
+  useZodForm,
+  formDataToFormData,
+} from "~/lib/validation/utils.client-safe";
 
 interface NWCSettingsProps {
   nwcEnabled: boolean;
@@ -53,7 +56,7 @@ export function NWCSettings({
         nwcEnabled: data.nwcEnabled,
         ...(data.nwcString?.trim() ? { nwcString: data.nwcString.trim() } : {}),
       },
-      "update_nwc",
+      "update_nwc"
     );
 
     fetcher.submit(formData, { method: "post" });
@@ -68,8 +71,11 @@ export function NWCSettings({
   // Reset form state when fetcher completes successfully
   useEffect(() => {
     if (fetcher.data?.success) {
-      form.setValue("nwcString", "");
-      setShowInput(false);
+      // Defer to avoid cascading renders
+      setTimeout(() => {
+        form.setValue("nwcString", "");
+        setShowInput(false);
+      }, 0);
     }
   }, [fetcher.data?.success, form]);
 
@@ -82,11 +88,17 @@ export function NWCSettings({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={(e) => { e.preventDefault(); void onSubmit(e); }} className="space-y-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void onSubmit(e);
+          }}
+          className="space-y-4"
+        >
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label htmlFor="nwc-enabled">Enable NWC</Label>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Allow automated lightning payments through your wallet
               </p>
             </div>
@@ -105,9 +117,9 @@ export function NWCSettings({
               {maskedNwcString && !showInput ? (
                 <div className="space-y-2">
                   <Label>Current NWC Connection</Label>
-                  <div className="space-y-2 rounded-md bg-muted p-3">
+                  <div className="bg-muted space-y-2 rounded-md p-3">
                     <div className="flex items-center justify-between">
-                      <p className="break-all font-mono text-sm">
+                      <p className="font-mono text-sm break-all">
                         {maskedNwcString}
                       </p>
                       <Button
@@ -123,7 +135,7 @@ export function NWCSettings({
                       </Button>
                     </div>
                     {nwcLastUsed ? (
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-muted-foreground text-xs">
                         Last used: {new Date(nwcLastUsed).toLocaleString()}
                       </p>
                     ) : null}
@@ -165,7 +177,7 @@ export function NWCSettings({
                     autoCapitalize="off"
                     spellCheck="false"
                   />
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-muted-foreground text-xs">
                     Enter your Nostr Wallet Connect connection string. This will
                     be encrypted and stored securely.
                   </p>
@@ -186,7 +198,7 @@ export function NWCSettings({
                     autoCapitalize="off"
                     spellCheck="false"
                   />
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-muted-foreground text-xs">
                     Enter your Nostr Wallet Connect connection string. This will
                     be encrypted and stored securely.
                   </p>
@@ -209,7 +221,7 @@ export function NWCSettings({
             </p>
           ) : null}
           {fetcher.data?.error ? (
-            <p className="text-sm text-destructive">{fetcher.data.error}</p>
+            <p className="text-destructive text-sm">{fetcher.data.error}</p>
           ) : null}
         </form>
       </CardContent>

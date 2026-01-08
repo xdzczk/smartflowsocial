@@ -21,7 +21,7 @@ export function GiveawayFilters({
   const hasActiveFilters = dateRange.from || dateRange.to || searchTerm;
 
   return (
-    <div className="mb-5 mt-5 flex flex-col gap-3 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
+    <div className="mt-5 mb-5 flex flex-col gap-3 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
       <div>
         <h3 className="mb-1 font-semibold">Top posts</h3>
       </div>
@@ -29,7 +29,7 @@ export function GiveawayFilters({
         {/* Date range filters */}
         <div className="flex flex-col gap-2 sm:flex-row">
           <div className="flex items-center gap-2">
-            <label htmlFor="from-date" className="whitespace-nowrap text-sm">
+            <label htmlFor="from-date" className="text-sm whitespace-nowrap">
               From:
             </label>
             <input
@@ -43,7 +43,7 @@ export function GiveawayFilters({
             />
           </div>
           <div className="flex items-center gap-2">
-            <label htmlFor="to-date" className="whitespace-nowrap text-sm">
+            <label htmlFor="to-date" className="text-sm whitespace-nowrap">
               To:
             </label>
             <input
@@ -81,7 +81,7 @@ export function GiveawayFilters({
             name="search"
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="block w-full rounded-lg border border-gray-200 py-2 pl-10 pr-3 text-sm leading-6 placeholder-gray-400 focus:border-blue-500 focus:ring focus:ring-blue-500/50 dark:border-gray-700 dark:bg-gray-900 dark:focus:border-blue-500"
+            className="block w-full rounded-lg border border-gray-200 py-2 pr-3 pl-10 text-sm leading-6 placeholder-gray-400 focus:border-blue-500 focus:ring focus:ring-blue-500/50 dark:border-gray-700 dark:bg-gray-900 dark:focus:border-blue-500"
             placeholder="Search posts.."
           />
         </div>
@@ -101,4 +101,3 @@ export function GiveawayFilters({
     </div>
   );
 }
-

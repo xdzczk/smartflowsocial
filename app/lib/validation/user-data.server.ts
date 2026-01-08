@@ -69,4 +69,3 @@ export function validateUserData(value: unknown): UserData | null {
     return null;
   }
 }
-

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 import { useOptionalUser } from "~/lib/remix-utils";
 
@@ -26,6 +26,16 @@ export function usePostScheduling({
   const [scheduledFor, setScheduledFor] = useState("");
   const [timeError, setTimeError] = useState("");
 
+  // Use refs to stabilize dependencies for React compiler
+  const queueTypesRef = useRef(queueTypes);
+  const onTimeErrorRef = useRef(onTimeError);
+  const userIdRef = useRef(user?.id);
+  useEffect(() => {
+    queueTypesRef.current = queueTypes;
+    onTimeErrorRef.current = onTimeError;
+    userIdRef.current = user?.id;
+  }, [queueTypes, onTimeError, user?.id]);
+
   const calculateQueueScheduleTime = useCallback(
     async (queueTypeName: string) => {
       if (queueTypeName === "unassigned") {
@@ -34,7 +44,7 @@ export function usePostScheduling({
       }
 
       // Find the queue type object to get its ID
-      const selectedQueueType = queueTypes.find((qt) =>
+      const selectedQueueType = queueTypesRef.current.find((qt) =>
         typeof qt === "string"
           ? qt === queueTypeName
           : qt.name === queueTypeName
@@ -51,7 +61,7 @@ export function usePostScheduling({
           body: JSON.stringify({
             queueTypeId,
             queueTypeName, // Keep for backward compatibility
-            userId: user?.id,
+            userId: userIdRef.current,
           }),
         });
 
@@ -62,20 +72,20 @@ export function usePostScheduling({
             setScheduledFor(scheduledTime);
           }
           setTimeError("");
-          if (onTimeError) {
-            onTimeError("");
+          if (onTimeErrorRef.current) {
+            onTimeErrorRef.current("");
           }
         }
       } catch (error) {
         console.error("Error calculating schedule time:", error);
       }
     },
-    [queueTypes, user?.id, onTimeError]
+    []
   );
 
   const handleScheduleIntervalClick = (intervalHours: string | number) => {
     // Find the currently selected queue type
-    const selectedQueueType = queueTypes.find((qt) =>
+    const selectedQueueType = queueTypesRef.current.find((qt) =>
       typeof qt === "string" ? qt === selectedQueue : qt.name === selectedQueue
     );
 
@@ -120,36 +130,54 @@ export function usePostScheduling({
 
     setScheduledFor(formattedForInput);
     setTimeError("");
-    if (onTimeError) {
-      onTimeError("");
+    if (onTimeErrorRef.current) {
+      onTimeErrorRef.current("");
     }
   };
 
   // Calculate schedule time when queue changes
   useEffect(() => {
     if (selectedQueue !== "unassigned") {
-      void calculateQueueScheduleTime(selectedQueue);
+      // Defer to avoid cascading renders
+      setTimeout(() => {
+        void calculateQueueScheduleTime(selectedQueue);
+      }, 0);
     }
     // Notify parent component of queue type change
     if (onQueueTypeChange) {
-      onQueueTypeChange(selectedQueue);
+      // Defer to avoid cascading renders
+      setTimeout(() => {
+        onQueueTypeChange(selectedQueue);
+      }, 0);
     }
   }, [selectedQueue, onQueueTypeChange, calculateQueueScheduleTime]);
 
   const handleScheduledForChange = (value: string) => {
     setScheduledFor(value);
     setTimeError("");
-    if (onTimeError) {
-      onTimeError("");
+    if (onTimeErrorRef.current) {
+      onTimeErrorRef.current("");
     }
   };
 
   const handleTimeError = (error: string) => {
     setTimeError(error);
-    if (onTimeError) {
-      onTimeError(error);
+    if (onTimeErrorRef.current) {
+      onTimeErrorRef.current(error);
     }
   };
+
+  // Ensure scheduleIntervals is always number[]
+  const normalizedScheduleIntervals: number[] =
+    scheduleIntervals.length > 0
+      ? scheduleIntervals
+      : user?.scheduleInterval
+        ? user.scheduleInterval.map((interval) =>
+            typeof interval === "string"
+              ? Number.parseInt(interval, 10)
+              : interval
+          )
+        : [];
 
   return {
     selectedQueue,
@@ -160,6 +188,6 @@ export function usePostScheduling({
     setTimeError: handleTimeError,
     calculateQueueScheduleTime,
     handleScheduleIntervalClick,
-    scheduleIntervals: scheduleIntervals || user?.scheduleInterval,
+    scheduleIntervals: normalizedScheduleIntervals,
   };
 }

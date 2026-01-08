@@ -43,43 +43,45 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const limit = 100;
 
   const data = await loadTemplatesData(userId, searchTerm, page, limit);
-  
+
   // Validate loader response with Zod schema
   return json(validateLoaderResponse(data, templatesLoaderDataSchema));
 }
 
-export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs) => {
-  try {
-    const userId = await requireUserId(request);
-    const formData = await request.formData();
-    const result = await handleTemplatesAction(formData, userId);
+export const action = withCSRFProtection(
+  async ({ request }: ActionFunctionArgs) => {
+    try {
+      const userId = await requireUserId(request);
+      const formData = await request.formData();
+      const result = await handleTemplatesAction(formData, userId);
 
-    // Type narrowing: check if result is a Response
-    if (result instanceof Response) {
-      return result;
+      // Type narrowing: check if result is a Response
+      if (result instanceof Response) {
+        return result;
+      }
+
+      // Type narrowing: check if result has error property
+      if (
+        typeof result === "object" &&
+        result !== null &&
+        "error" in result &&
+        result.error
+      ) {
+        return json(result, { status: 400 });
+      }
+
+      return json(result);
+    } catch (error) {
+      const { handleActionError } = await import("~/lib/error-handler.server");
+      return handleActionError(error);
     }
-
-    // Type narrowing: check if result has error property
-    if (typeof result === "object" && result !== null && "error" in result && result.error) {
-      return json(result, { status: 400 });
-    }
-
-    return json(result);
-  } catch (error) {
-    const { handleActionError } = await import("~/lib/error-handler.server");
-    return handleActionError(error);
   }
-});
+);
 
 export default function Templates() {
   // Use TanStack Query for data fetching with caching
-  const {
-    assets,
-    totalCount,
-    totalPages,
-    currentPage,
-    searchTerm,
-  } = useTemplatesData();
+  const { assets, totalCount, totalPages, currentPage, searchTerm } =
+    useTemplatesData();
 
   const {
     selectedTemplate,
@@ -131,7 +133,7 @@ export default function Templates() {
                     ? assets
                         .filter(
                           (
-                            asset: unknown,
+                            asset: unknown
                           ): asset is {
                             id: string;
                             title?: unknown;
@@ -145,7 +147,7 @@ export default function Templates() {
                             typeof asset === "object" &&
                             asset !== null &&
                             "id" in asset &&
-                            typeof (asset as { id: unknown }).id === "string",
+                            typeof (asset as { id: unknown }).id === "string"
                         )
                         .map((asset) => ({
                           id: asset.id,
@@ -171,7 +173,7 @@ export default function Templates() {
                                 : undefined,
                           tags: Array.isArray(asset.tags)
                             ? asset.tags.filter(
-                                (tag): tag is string => typeof tag === "string",
+                                (tag): tag is string => typeof tag === "string"
                               )
                             : [],
                           createdAt: (() => {
@@ -198,12 +200,8 @@ export default function Templates() {
                 onSearchInputChange={setSearchInput}
                 onSearch={handleSearch}
                 onAssetSelect={handleAssetSelect}
-                onSelectAllAssets={() =>
-                  handleSelectAllAssets(assets)
-                }
-                onBulkPostAssets={() =>
-                  handleBulkPostAssets(assets)
-                }
+                onSelectAllAssets={() => handleSelectAllAssets(assets)}
+                onBulkPostAssets={() => handleBulkPostAssets(assets)}
                 onBulkDeleteAssets={handleBulkDeleteAssets}
                 deleteFetcherState={deleteFetcher.state}
                 deleteFetcherForm={
@@ -224,8 +222,12 @@ export default function Templates() {
             </>
           ) : (
             <UploadTab
-              textAssetFormRef={textAssetFormRef}
-              imageAssetFormRef={imageAssetFormRef}
+              textAssetFormRef={
+                textAssetFormRef as React.RefObject<HTMLFormElement>
+              }
+              imageAssetFormRef={
+                imageAssetFormRef as React.RefObject<HTMLFormElement>
+              }
               assetFetcher={{
                 Form: assetFetcher.Form as unknown as React.ComponentType<{
                   children: React.ReactNode;

@@ -62,15 +62,21 @@ export function QueueTypesSettings({
 
   useEffect(() => {
     if (queueTypes) {
-      setQueueTypesState(queueTypes);
+      // Defer to avoid cascading renders
+      setTimeout(() => {
+        setQueueTypesState(queueTypes);
+      }, 0);
     }
   }, [queueTypes]);
 
   // Close dialog on successful submission
   useEffect(() => {
     if (createFetcher.data?.success) {
-      setShowDialog(false);
-      toast.success("Queue type created successfully!");
+      // Defer to avoid cascading renders
+      setTimeout(() => {
+        setShowDialog(false);
+        toast.success("Queue type created successfully!");
+      }, 0);
     }
     if (createFetcher.data?.error) {
       toast.error(createFetcher.data.error);
@@ -79,8 +85,11 @@ export function QueueTypesSettings({
 
   useEffect(() => {
     if (updateFetcher.data?.success) {
-      setEditingQueueType(null);
-      toast.success("Queue type updated successfully!");
+      // Defer to avoid cascading renders
+      setTimeout(() => {
+        setEditingQueueType(null);
+        toast.success("Queue type updated successfully!");
+      }, 0);
     }
     if (updateFetcher.data?.error) {
       toast.error(updateFetcher.data.error);
@@ -132,7 +141,7 @@ export function QueueTypesSettings({
         </CardHeader>
         <CardContent className="space-y-4">
           {queueTypesState.length === 0 ? (
-            <p className="py-8 text-center text-muted-foreground">
+            <p className="text-muted-foreground py-8 text-center">
               No queue types found. Create your first queue type to get started.
             </p>
           ) : (

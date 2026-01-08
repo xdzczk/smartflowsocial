@@ -45,4 +45,3 @@ describe("Remix Utils - Extended", () => {
     });
   });
 });
-

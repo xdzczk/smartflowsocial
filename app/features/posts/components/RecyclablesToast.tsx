@@ -17,7 +17,7 @@ export function RecyclablesToast({ toast, onClose }: RecyclablesToastProps) {
   if (!toast) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50">
+    <div className="fixed right-4 bottom-4 z-50">
       <div
         className={`rounded-lg px-4 py-3 text-white shadow-lg ${
           toast.type === "success" ? "bg-green-500" : "bg-red-500"
@@ -71,4 +71,3 @@ export function RecyclablesToast({ toast, onClose }: RecyclablesToastProps) {
     </div>
   );
 }
-

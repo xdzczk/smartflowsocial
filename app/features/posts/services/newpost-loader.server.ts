@@ -33,4 +33,3 @@ export async function loadNewPostData(userId: string) {
     assets: assetsData.assets,
   };
 }
-

@@ -32,6 +32,32 @@ interface GiveawayTableProps {
   onPostClick: (post: Post) => void;
 }
 
+interface SortableHeaderProps {
+  sortKey: string;
+  label: string;
+  sortConfig: { key: string; direction: "asc" | "desc" };
+  onRequestSort: (key: string) => void;
+}
+
+const SortableHeader = ({
+  sortKey,
+  label,
+  sortConfig,
+  onRequestSort,
+}: SortableHeaderProps) => (
+  <th
+    className="cursor-pointer bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50"
+    onClick={() => onRequestSort(sortKey)}
+  >
+    {label}{" "}
+    {sortConfig.key === sortKey
+      ? sortConfig.direction === "asc"
+        ? "↑"
+        : "↓"
+      : null}
+  </th>
+);
+
 /**
  * Table component for displaying giveaway posts
  */
@@ -41,26 +67,6 @@ export function GiveawayTable({
   onRequestSort,
   onPostClick,
 }: GiveawayTableProps) {
-  const SortableHeader = ({
-    sortKey,
-    label,
-  }: {
-    sortKey: string;
-    label: string;
-  }) => (
-    <th
-      className="cursor-pointer bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50"
-      onClick={() => onRequestSort(sortKey)}
-    >
-      {label}{" "}
-      {sortConfig.key === sortKey
-        ? sortConfig.direction === "asc"
-          ? "↑"
-          : "↓"
-        : null}
-    </th>
-  );
-
   return (
     <>
       {/* Results count */}
@@ -69,17 +75,29 @@ export function GiveawayTable({
       </div>
 
       <div className="min-w-full overflow-x-auto rounded border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-        <table className="min-w-full whitespace-nowrap align-middle text-sm">
+        <table className="min-w-full align-middle text-sm whitespace-nowrap">
           <thead>
             <tr>
               <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
                 Media
               </th>
-              <SortableHeader sortKey="caption" label="Caption" />
-              <SortableHeader sortKey="postedAt" label="Posted At" />
+              <SortableHeader
+                sortKey="caption"
+                label="Caption"
+                sortConfig={sortConfig}
+                onRequestSort={onRequestSort}
+              />
+              <SortableHeader
+                sortKey="postedAt"
+                label="Posted At"
+                sortConfig={sortConfig}
+                onRequestSort={onRequestSort}
+              />
               <SortableHeader
                 sortKey="totalEngagement"
                 label="Total Engagement"
+                sortConfig={sortConfig}
+                onRequestSort={onRequestSort}
               />
               <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
                 Likes
@@ -99,7 +117,12 @@ export function GiveawayTable({
               <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
                 Zapped
               </th>
-              <SortableHeader sortKey="queueType" label="Queue" />
+              <SortableHeader
+                sortKey="queueType"
+                label="Queue"
+                sortConfig={sortConfig}
+                onRequestSort={onRequestSort}
+              />
               <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
                 Actions
               </th>
@@ -126,7 +149,7 @@ export function GiveawayTable({
                         }
                       />
                       {post.repost ? (
-                        <div className="absolute -right-1 -top-1 rounded-full bg-purple-500 p-1">
+                        <div className="absolute -top-1 -right-1 rounded-full bg-purple-500 p-1">
                           <svg
                             className="h-3 w-3 text-white"
                             fill="none"
@@ -143,7 +166,7 @@ export function GiveawayTable({
                         </div>
                       ) : null}
                       {post.isQuotedPost ? (
-                        <div className="absolute -right-1 -top-1 rounded-full bg-green-500 p-1">
+                        <div className="absolute -top-1 -right-1 rounded-full bg-green-500 p-1">
                           <svg
                             className="h-3 w-3 text-white"
                             fill="none"
@@ -166,7 +189,7 @@ export function GiveawayTable({
                         TEXT
                       </div>
                       {post.repost ? (
-                        <div className="absolute -right-1 -top-1 rounded-full bg-purple-500 p-1">
+                        <div className="absolute -top-1 -right-1 rounded-full bg-purple-500 p-1">
                           <svg
                             className="h-3 w-3 text-white"
                             fill="none"
@@ -183,7 +206,7 @@ export function GiveawayTable({
                         </div>
                       ) : null}
                       {post.isQuotedPost ? (
-                        <div className="absolute -right-1 -top-1 rounded-full bg-green-500 p-1">
+                        <div className="absolute -top-1 -right-1 rounded-full bg-green-500 p-1">
                           <svg
                             className="h-3 w-3 text-white"
                             fill="none"
