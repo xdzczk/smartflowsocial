@@ -11,12 +11,10 @@ import { updatePost } from "~/models/post.commands.server";
 
 import { resolveQueueTypeId } from "./queue-type-resolver.server";
 
-const ERROR_INVALID_ACTION = "Invalid action";
-
 export async function handleDraftEditAction(
   formData: FormData,
   userId: string,
-  postId: string,
+  postId: string
 ) {
   const result = validateFormDataOrRespond(formData, draftEditActionSchema);
   if (!result.success) {
@@ -26,16 +24,13 @@ export async function handleDraftEditAction(
   const { _action } = result.data;
 
   if (_action === "update") {
-    const updateData = result.data._action === "update" ? result.data : null;
-    if (!updateData) {
-      return { error: ERROR_INVALID_ACTION };
-    }
+    const updateData = result.data;
 
     // Resolve queue type ID in feature layer (business logic)
     const resolvedQueueTypeId = await resolveQueueTypeId(
       userId,
       updateData.queueTypeId,
-      updateData.queueType,
+      updateData.queueType
     );
 
     const hashTagPresetId = updateData.useHashtagPresets
@@ -56,42 +51,36 @@ export async function handleDraftEditAction(
     return { redirect: "/dashboard/drafts" };
   }
 
-  if (_action === "resume") {
-    const resumeData = result.data._action === "resume" ? result.data : null;
-    if (!resumeData) {
-      return { error: ERROR_INVALID_ACTION };
-    }
+  // _action must be "resume" at this point (discriminated union)
+  const resumeData = result.data;
 
-    // Resolve queue type ID in feature layer (business logic)
-    const resolvedQueueTypeId = await resolveQueueTypeId(
-      userId,
-      resumeData.queueTypeId,
-      resumeData.queueType,
-    );
+  // Resolve queue type ID in feature layer (business logic)
+  const resolvedQueueTypeId = await resolveQueueTypeId(
+    userId,
+    resumeData.queueTypeId,
+    resumeData.queueType
+  );
 
-    const hashTagPresetId = resumeData.useHashtagPresets
-      ? resumeData.hashTagPresetId
-      : null;
+  const hashTagPresetId = resumeData.useHashtagPresets
+    ? resumeData.hashTagPresetId
+    : null;
 
-    await updatePost({
-      id: postId,
-      userId,
-      data: {
-        content: resumeData.content,
-        caption: resumeData.caption,
-        queueTypeId: resolvedQueueTypeId,
-        scheduledFor: resumeData.scheduledFor,
-        signedEvent: resumeData.signedEvent,
-        nostrEvent: resumeData.nostrEvent,
-        draft: false,
-        isScheduled: true,
-        isPosted: false,
-        hashTagPresetId,
-      },
-    });
+  await updatePost({
+    id: postId,
+    userId,
+    data: {
+      content: resumeData.content,
+      caption: resumeData.caption,
+      queueTypeId: resolvedQueueTypeId,
+      scheduledFor: resumeData.scheduledFor,
+      signedEvent: resumeData.signedEvent,
+      nostrEvent: resumeData.nostrEvent,
+      draft: false,
+      isScheduled: true,
+      isPosted: false,
+      hashTagPresetId,
+    },
+  });
 
-    return { redirect: "/dashboard/scheduled" };
-  }
-
-  return { error: "Invalid action" };
+  return { redirect: "/dashboard/scheduled" };
 }

@@ -109,12 +109,7 @@ export const action = withCSRFProtection(
       }
 
       // Check if result has error property
-      if (
-        result &&
-        typeof result === "object" &&
-        "error" in result &&
-        result.error
-      ) {
+      if (typeof result === "object" && "error" in result && result.error) {
         return json(result, { status: 400 });
       }
 
@@ -297,19 +292,13 @@ export default function DashboardIndex() {
                 : undefined
             }
             onPostClick={(post) => {
-              if (post && typeof post === "object") {
-                setSelectedPost(post as PostData);
-              }
+              setSelectedPost(post as PostData);
             }}
             onEditPost={(post) => {
-              if (post && typeof post === "object") {
-                handleEditPost(post as PostData | LongFormPostData);
-              }
+              handleEditPost(post as PostData | LongFormPostData);
             }}
             onReschedulePost={(post) => {
-              if (post && typeof post === "object") {
-                handleReschedulePost(post as PostData | LongFormPostData);
-              }
+              handleReschedulePost(post as PostData | LongFormPostData);
             }}
             onMediaClick={handleMediaClick}
             bulkDeleteState={bulkDeleteFetcher.state}

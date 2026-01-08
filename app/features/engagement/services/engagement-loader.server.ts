@@ -143,8 +143,7 @@ async function processEventBatch(batchIds: string[], userNpub: string) {
 
       const statsEvent = (threadViewData as PrimalEvent[]).find(
         (event: PrimalEvent) => {
-          if (!Array.isArray(event) || event[0] !== "EVENT")
-            return false;
+          if (!Array.isArray(event) || event[0] !== "EVENT") return false;
           const eventData = event[2];
           if (typeof eventData !== "object" || Array.isArray(eventData))
             return false;
@@ -362,7 +361,7 @@ export async function loadEngagementFeedData(
     }, initialStats);
 
     allNotifications = results.flatMap((result) =>
-      result && Array.isArray(result.notifications) ? result.notifications : []
+      Array.isArray(result.notifications) ? result.notifications : []
     );
 
     // Filter out muted users if enabled
@@ -515,7 +514,6 @@ export async function loadEngagementFeedData(
           if (
             Array.isArray(item) &&
             item[0] === "EVENT" &&
-            item[2] &&
             typeof item[2] === "object" &&
             !Array.isArray(item[2]) &&
             "kind" in item[2] &&
@@ -529,7 +527,7 @@ export async function loadEngagementFeedData(
               tags?: unknown;
             };
 
-            if (!event || typeof event !== "object" || Array.isArray(event)) {
+            if (typeof event !== "object" || Array.isArray(event)) {
               return false;
             }
 
@@ -544,8 +542,7 @@ export async function loadEngagementFeedData(
               return false;
             }
 
-            const tags =
-              ((eventTyped as { tags?: unknown }).tags as NostrTag[]) || [];
+            const tags = (eventTyped as { tags: NostrTag[] }).tags;
 
             // Skip if it's the user's own post
             if (eventTyped.pubkey === userNpub) {
@@ -578,7 +575,7 @@ export async function loadEngagementFeedData(
           return false;
         })
         .map((item: PrimalEvent) => {
-          if (Array.isArray(item) && item[2]) {
+          if (Array.isArray(item)) {
             return item[2] as NotificationEvent;
           }
           throw new Error("Invalid PrimalEvent structure");

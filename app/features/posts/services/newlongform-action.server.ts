@@ -105,15 +105,13 @@ async function getHashtagPresetTags(
       ) {
         const preset = selectedQueueType.hashTagPreset;
         if (
-          preset &&
           typeof preset === "object" &&
           "tags" in preset &&
           typeof preset.tags === "string"
         ) {
-          hashTagPresetTags = preset.tags ?? "";
+          hashTagPresetTags = preset.tags;
         }
         if (
-          preset &&
           typeof preset === "object" &&
           "id" in preset &&
           typeof preset.id === "string"
@@ -245,7 +243,7 @@ async function handleSaveDraft(
   }
 
   const sanitizedContent = sanitizeMarkdown(markdownContent);
-  const finalSummary = summary ?? generateSummary(sanitizedContent);
+  const finalSummary = summary || generateSummary(sanitizedContent);
 
   await createLongFormPost({
     userId,
@@ -335,7 +333,7 @@ async function handlePublish(
   }
 
   const sanitizedContent = sanitizeMarkdown(markdownContent);
-  const finalSummary = summary ?? generateSummary(sanitizedContent);
+  const finalSummary = summary || generateSummary(sanitizedContent);
 
   // Add hashtags to content if user has enabled it
   const contentWithHashtags =
@@ -473,7 +471,7 @@ async function handleScheduleLongform(
   }
 
   const sanitizedContent = sanitizeMarkdown(markdownContent);
-  const finalSummary = summary ?? generateSummary(sanitizedContent);
+  const finalSummary = summary || generateSummary(sanitizedContent);
 
   // Add hashtags to content if user has enabled it
   const contentWithHashtags =
@@ -502,13 +500,11 @@ async function handleScheduleLongform(
   // Extract published_at from NOSTR event tags for scheduling
   let scheduledForTimestamp: string | null = null;
 
-  if (signedEventJson?.tags) {
-    const publishedAtTag = signedEventJson.tags.find(
-      (tag: unknown) => Array.isArray(tag) && tag[0] === "published_at"
-    );
-    if (publishedAtTag?.[1]) {
-      scheduledForTimestamp = publishedAtTag[1].toString();
-    }
+  const publishedAtTag = signedEventJson.tags.find(
+    (tag: unknown) => Array.isArray(tag) && tag[0] === "published_at"
+  );
+  if (publishedAtTag?.[1]) {
+    scheduledForTimestamp = publishedAtTag[1].toString();
   }
 
   await createLongFormPost({

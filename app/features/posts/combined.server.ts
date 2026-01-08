@@ -43,7 +43,7 @@ export function postToCombinedContent(post: PostData): CombinedContent {
             name:
               typeof post.queueType.name === "string"
                 ? post.queueType.name
-                : String(post.queueType.name ?? ""),
+                : String(post.queueType.name),
             ...("color" in post.queueType && post.queueType.color
               ? {
                   color:
@@ -69,7 +69,7 @@ export function postToCombinedContent(post: PostData): CombinedContent {
   };
 
   // Only include nostrEventId if it exists in the post
-  if (post.nostrEventId !== null && post.nostrEventId !== undefined) {
+  if (post.nostrEventId != null) {
     result.nostrEventId = post.nostrEventId;
   }
 
@@ -164,8 +164,8 @@ export function combineContent(
       // Handle dates for createdAt/updatedAt
       const aDate = a[sortBy];
       const bDate = b[sortBy];
-      aValue = aDate ? new Date(aDate).getTime() : 0;
-      bValue = bDate ? new Date(bDate).getTime() : 0;
+      aValue = new Date(aDate).getTime();
+      bValue = new Date(bDate).getTime();
     }
 
     if (sortDirection === "asc") {

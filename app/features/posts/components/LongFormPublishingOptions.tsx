@@ -54,7 +54,7 @@ export function LongFormPublishingOptions({
   onUseHashtagPresetsChange,
 }: LongFormPublishingOptionsProps) {
   // Find the currently selected queue type
-  const currentQueueType = queueTypes?.find(
+  const currentQueueType = queueTypes.find(
     (qt) => (typeof qt === "string" ? qt : qt.name) === selectedQueueType
   );
 
@@ -76,7 +76,7 @@ export function LongFormPublishingOptions({
         </Label>
         <div className="flex flex-wrap gap-2">
           {queueTypes
-            ?.filter((queue) => {
+            .filter((queue) => {
               return typeof queue === "object"
                 ? queue.isEnabled !== false
                 : true;
@@ -123,7 +123,7 @@ export function LongFormPublishingOptions({
         onUseHashtagPresetsChange={onUseHashtagPresetsChange}
         showQueuePreset={true}
         queueType={(() => {
-          const qt = queueTypes?.find(
+          const qt = queueTypes.find(
             (q) => (typeof q === "string" ? q : q.name) === selectedQueueType
           );
           // Only pass QueueType objects with the necessary properties
@@ -181,7 +181,7 @@ export function LongFormPublishingOptions({
               Next Slot
             </Button>
           ) : (
-            scheduleIntervals?.map((interval) => (
+            scheduleIntervals.map((interval) => (
               <Button
                 key={interval}
                 type="button"

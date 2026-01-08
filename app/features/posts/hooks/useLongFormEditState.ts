@@ -46,7 +46,7 @@ export function useLongFormEditState({
   const handleHashtagPresetChange = (presetId: string) => {
     setSelectedHashtagPresetId(presetId);
     const preset = hashtagPresets.find((p) => p.id === presetId);
-    const tags = preset?.tags ?? "";
+    const tags = preset?.tags || "";
     setSelectedHashtags(tags);
     if (useHashtagPresets) {
       setDisplayedHashtags(tags);
@@ -61,7 +61,7 @@ export function useLongFormEditState({
     }
 
     if (queueTypeName === "unassigned") {
-      setDisplayedHashtags(userTags ?? "");
+      setDisplayedHashtags(userTags);
       return;
     }
 
@@ -78,13 +78,13 @@ export function useLongFormEditState({
 
       if (response.ok) {
         const data = (await response.json()) as { hashtags?: string };
-        setDisplayedHashtags((data.hashtags ?? userTags));
+        setDisplayedHashtags(data.hashtags ?? userTags);
       } else {
-        setDisplayedHashtags(userTags ?? "");
+        setDisplayedHashtags(userTags);
       }
     } catch (error) {
       console.error("Error fetching effective hashtags:", error);
-      setDisplayedHashtags(userTags ?? "");
+      setDisplayedHashtags(userTags);
     }
   };
 

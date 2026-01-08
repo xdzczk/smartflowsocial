@@ -272,7 +272,7 @@ export function usePostedPosts({
 
       // Prepare repost data with 1 hour default scheduling
       const now = new Date();
-      const userTimezone = user?.timezone ?? "UTC";
+      const userTimezone = user.timezone ?? "UTC";
       const localDate = new Date(
         now.toLocaleString("en-US", { timeZone: userTimezone })
       );
@@ -283,14 +283,12 @@ export function usePostedPosts({
         scheduleDate.setHours(scheduleDate.getHours() + index);
 
         return {
-          caption: post.caption ?? "",
+          caption: post.caption,
           fileUrl:
-            post.fileUrl &&
-            Array.isArray(post.fileUrl) &&
-            post.fileUrl.length > 0
+            Array.isArray(post.fileUrl) && post.fileUrl.length > 0
               ? post.fileUrl[0]
               : "",
-          queueType: post.queueType ?? "unassigned",
+          queueType: post.queueType,
           scheduledFor: scheduleDate
             .toLocaleString("en-US", {
               year: "numeric",
@@ -319,7 +317,7 @@ export function usePostedPosts({
 
       // Prepare scheduled repost data with 1 hour default scheduling
       const now = new Date();
-      const userTimezone = user?.timezone ?? "UTC";
+      const userTimezone = user.timezone ?? "UTC";
       const localDate = new Date(
         now.toLocaleString("en-US", { timeZone: userTimezone })
       );
@@ -332,7 +330,7 @@ export function usePostedPosts({
         return {
           caption: "", // Empty content for kind 6 reposts
           fileUrl: "", // No file URL for kind 6 reposts
-          queueType: post.queueType ?? "unassigned",
+          queueType: post.queueType,
           scheduledFor: scheduleDate
             .toLocaleString("en-US", {
               year: "numeric",
@@ -388,7 +386,7 @@ export function usePostedPosts({
       // Clear selection
       setSelectedPosts(new Set());
     }
-  }, [repostFetcher.data, user?.timezone]);
+  }, [repostFetcher.data, user.timezone]);
 
   // Handle longform repost responses
   useEffect(() => {
@@ -402,7 +400,7 @@ export function usePostedPosts({
           const { signedEvent } = await nostrAdapter.signEvent(eventData);
 
           // Get user relays from user data
-          const sanitizedRelays = user.userRelays ?? ["wss://relay.primal.net"];
+          const sanitizedRelays = user.userRelays;
 
           // Publish the signed event
           const response = await fetch("/api/publish", {
@@ -433,9 +431,8 @@ export function usePostedPosts({
             setTimeout(() => setToast(null), 8000);
           }, 1000);
         } catch (error: unknown) {
-          const { handleAsyncError, getErrorMessage } = await import(
-            "~/lib/error-handler.client"
-          );
+          const { handleAsyncError, getErrorMessage } =
+            await import("~/lib/error-handler.client");
           handleAsyncError(
             error,
             {
@@ -447,7 +444,7 @@ export function usePostedPosts({
           setToast({
             type: "error",
             message:
-              getErrorMessage(error) ??
+              getErrorMessage(error) ||
               "Failed to sign or publish longform repost",
           });
 
@@ -505,7 +502,7 @@ export function usePostedPosts({
           const { signedEvent } = await nostrAdapter.signEvent(eventData);
 
           // Get user relays from user data
-          const sanitizedRelays = user.userRelays ?? ["wss://relay.primal.net"];
+          const sanitizedRelays = user.userRelays;
 
           // Publish the signed event
           const response = await fetch("/api/publish", {
@@ -536,9 +533,8 @@ export function usePostedPosts({
             setTimeout(() => setToast(null), 8000);
           }, 1000); // 1 second delay
         } catch (error: unknown) {
-          const { handleAsyncError, getErrorMessage } = await import(
-            "~/lib/error-handler.client"
-          );
+          const { handleAsyncError, getErrorMessage } =
+            await import("~/lib/error-handler.client");
           handleAsyncError(
             error,
             {
@@ -550,7 +546,7 @@ export function usePostedPosts({
           setToast({
             type: "error",
             message:
-              getErrorMessage(error) ?? "Failed to sign or publish repost",
+              getErrorMessage(error) || "Failed to sign or publish repost",
           });
 
           // Hide toast after 5 seconds for errors

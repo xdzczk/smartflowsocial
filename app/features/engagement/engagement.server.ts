@@ -309,7 +309,7 @@ export function groupNotificationsByParent(
       pubkey: post.signedEvent.pubkey,
       caption: post.caption ?? null,
       fileUrl: Array.isArray(post.fileUrl)
-        ? post.fileUrl[0] ?? null
+        ? (post.fileUrl[0] ?? null)
         : post.fileUrl,
       postedAt: post.postedAt ?? new Date(),
       isLongform: false,
@@ -415,8 +415,7 @@ export async function processQuoteReposts(
         // Find the profile event (kind 0)
         const profileEvent = (profileData as PrimalEvent[]).find(
           (item: PrimalEvent) => {
-            if (!Array.isArray(item) || item[0] !== "EVENT")
-              return false;
+            if (!Array.isArray(item) || item[0] !== "EVENT") return false;
             const eventData = item[2];
             if (typeof eventData !== "object" || Array.isArray(eventData))
               return false;
@@ -488,8 +487,7 @@ export async function processQuoteReposts(
         // Find the stats event
         const statsEvent = (threadViewData as PrimalEvent[]).find(
           (item: PrimalEvent) => {
-            if (!Array.isArray(item) || item[0] !== "EVENT")
-              return false;
+            if (!Array.isArray(item) || item[0] !== "EVENT") return false;
             const eventData = item[2] as { kind?: number; content?: string };
             return (
               eventData.kind === 10000100 &&
@@ -558,14 +556,10 @@ export async function processQuoteReposts(
   const results = await Promise.all(quotePromises);
 
   // Filter out nulls and sort by created_at descending
+  // All non-null results are NotificationQuoteRepost with type: "quote"
   const validNotifications = results.filter(
     (n): n is NotificationQuoteRepost => {
-      return (
-        n !== null &&
-        typeof n === "object" &&
-        "type" in n &&
-        n.type === "quote"
-      );
+      return n !== null && typeof n === "object" && "type" in n;
     }
   );
 

@@ -103,9 +103,7 @@ async function getEffectiveHashtagsForPost(
       "hashTagPreset" in queueTypeObj &&
       queueTypeObj.hashTagPreset
     ) {
-      return (
-        (queueTypeObj.hashTagPreset as { tags: string | null })?.tags ?? ""
-      );
+      return (queueTypeObj.hashTagPreset as { tags: string | null }).tags ?? "";
     }
     return "";
   }
@@ -233,7 +231,7 @@ async function handleSaveDraft(
   }
 
   const sanitizedContent = sanitizeMarkdown(markdownContent);
-  const finalSummary = summary ?? generateSummary(sanitizedContent);
+  const finalSummary = summary || generateSummary(sanitizedContent);
 
   await updateLongFormPost({
     id: postId,
@@ -325,7 +323,7 @@ async function handlePublish(
   }
 
   const sanitizedContent = sanitizeMarkdown(markdownContent);
-  const finalSummary = summary ?? generateSummary(sanitizedContent);
+  const finalSummary = summary || generateSummary(sanitizedContent);
 
   // Add hashtags to content if user has enabled it
   const contentWithHashtags = showHashTagsinPosts
@@ -464,7 +462,7 @@ async function handleScheduleLongform(
   }
 
   const sanitizedContent = sanitizeMarkdown(markdownContent);
-  const finalSummary = summary ?? generateSummary(sanitizedContent);
+  const finalSummary = summary || generateSummary(sanitizedContent);
 
   // Add hashtags to content if user has enabled it
   const contentWithHashtags = showHashTagsinPosts
@@ -492,13 +490,11 @@ async function handleScheduleLongform(
   // Extract published_at from NOSTR event tags for scheduling
   let scheduledForTimestamp: string | null = null;
 
-  if (signedEventJson?.tags) {
-    const publishedAtTag = signedEventJson.tags.find(
-      (tag: unknown) => Array.isArray(tag) && tag[0] === "published_at"
-    );
-    if (publishedAtTag?.[1]) {
-      scheduledForTimestamp = publishedAtTag[1].toString();
-    }
+  const publishedAtTag = signedEventJson.tags.find(
+    (tag: unknown) => Array.isArray(tag) && tag[0] === "published_at"
+  );
+  if (publishedAtTag?.[1]) {
+    scheduledForTimestamp = publishedAtTag[1].toString();
   }
 
   await updateLongFormPost({

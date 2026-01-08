@@ -212,10 +212,10 @@ export default function MediaPost({
               typeof url.caption === "string"
                 ? url.caption
                 : String(url.caption ?? ""),
-            queueType: url.queueType ?? selectedQueue,
+            queueType: url.queueType,
           },
           type: "media",
-          queueType: url.queueType ?? selectedQueue,
+          queueType: url.queueType,
         };
       });
 
@@ -224,10 +224,9 @@ export default function MediaPost({
       setFiles([]);
       setIsUploading(false);
     } catch (error) {
-      const { handleAsyncError, getErrorMessage } = await import(
-        "~/lib/error-handler.client"
-      );
-      const errorMessage = getErrorMessage(error) ?? "Unknown error";
+      const { handleAsyncError, getErrorMessage } =
+        await import("~/lib/error-handler.client");
+      const errorMessage = getErrorMessage(error);
       handleAsyncError(
         error,
         {
@@ -257,9 +256,7 @@ export default function MediaPost({
   return (
     <form className="w-full" onSubmit={(e) => void handleImagePreview(e)}>
       <input type="hidden" name="_action" value="upload-media-preview" />
-      <label
-        className={`block ${isUploaded ? "cursor-not-allowed" : "cursor-pointer"}`}
-      >
+      <label className="block cursor-pointer">
         <input
           type="file"
           name="files"
@@ -267,12 +264,12 @@ export default function MediaPost({
           accept="image/*,video/*"
           multiple
           onChange={(e) => void handleFileChange(e)}
-          disabled={isUploading || isUploaded}
+          disabled={isUploading}
         />
         <div
-          className={`rounded-lg border-2 border-dashed border-gray-300 p-12 text-center ${!isUploaded && "hover:border-gray-400"}`}
-          onDrop={!isUploaded ? (e) => void handleDrop(e) : undefined}
-          onDragOver={!isUploaded ? handleDragOver : undefined}
+          className="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center hover:border-gray-400"
+          onDrop={(e) => void handleDrop(e)}
+          onDragOver={handleDragOver}
         >
           {files.length > 0 ? (
             <div className="flex flex-wrap gap-4">
@@ -307,13 +304,13 @@ export default function MediaPost({
                       onClick={() =>
                         setFiles(files.filter((_, i) => i !== index))
                       }
-                      className="absolute -right-2 -top-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
+                      className="absolute -top-2 -right-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
                       disabled={isUploading}
                     >
                       ×
                     </button>
                     {/* Media type indicator */}
-                    <div className="absolute bottom-1 left-1 rounded bg-black bg-opacity-70 px-2 py-1 text-xs text-white">
+                    <div className="bg-opacity-70 absolute bottom-1 left-1 rounded bg-black px-2 py-1 text-xs text-white">
                       {mediaType === "video" ? "🎥" : "🖼️"}
                     </div>
                   </div>
@@ -443,7 +440,7 @@ export default function MediaPost({
           <button
             type="submit"
             className="rounded-lg bg-green-500 px-8 py-4 text-white hover:bg-green-600 disabled:opacity-50"
-            disabled={isUploading || isUploaded || files.length === 0}
+            disabled={isUploading || files.length === 0}
           >
             {isUploading ? "Uploading..." : "Upload Media →"}
           </button>

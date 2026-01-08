@@ -32,7 +32,7 @@ async function getEffectiveHashtags(
   selectedHashtags: string,
   selectedQueue: string,
   userId: string,
-  user: UserData,
+  user: UserData
 ): Promise<string> {
   if (useHashtagPresets) {
     // Manual hashtag presets are enabled
@@ -72,7 +72,7 @@ async function getEffectiveHashtags(
       }
     } catch (error) {
       logError(error instanceof Error ? error : new Error(String(error)), {
-        userId: user?.id,
+        userId: user.id,
         selectedQueue,
         message: "Error fetching effective hashtags",
       });
@@ -114,7 +114,7 @@ function getImageUrls(fileUrl: string[] | null | undefined): string[] {
  */
 function calculateScheduledTime(
   scheduledFor: string,
-  userTimezone: string,
+  userTimezone: string
 ): number {
   let scheduledTime: number;
 
@@ -170,7 +170,7 @@ export async function signDraftForScheduling(params: SignDraftParams): Promise<{
     selectedHashtags,
     selectedQueue,
     currentUser?.id ?? "",
-    user,
+    user
   );
 
   const tagArray = effectiveHashtags

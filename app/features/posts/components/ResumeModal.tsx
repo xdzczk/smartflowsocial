@@ -78,8 +78,8 @@ export function ResumeModal({
               {new Date(scheduledFor).toLocaleString()}
             </p>
             <p>
-              <strong>Content:</strong>{" "}
-              {(content || caption)?.substring(0, 100)}...
+              <strong>Content:</strong> {(content || caption).substring(0, 100)}
+              ...
             </p>
           </div>
 

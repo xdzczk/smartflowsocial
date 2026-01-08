@@ -23,7 +23,6 @@ import { getPostStats } from "../stats.server";
 import type { PostData } from "../types";
 import { convertPrismaQueueTypeToQueueType } from "../types";
 
-const ERROR_INVALID_ACTION = "Invalid action";
 const ERROR_POST_NOT_FOUND = "Post not found";
 
 /**
@@ -223,18 +222,13 @@ export async function handleRecyclablePostAction(
   // Handle single repost
   if (validatedData._action === "repost") {
     try {
-      // Type narrowing for repost action
-      const repostData =
-        validatedData._action === "repost" ? validatedData : null;
-      if (!repostData) {
-        return json({ error: ERROR_INVALID_ACTION }, { status: 400 });
-      }
+      const repostData = validatedData;
       // Get the original post data
       const postsData = await getPostsByIds({
         ids: [repostData.postId],
         userId,
       });
-      if (!postsData || postsData.length === 0) {
+      if (postsData.length === 0) {
         const { NotFoundError } = await import("~/lib/errors");
         throw new NotFoundError(ERROR_POST_NOT_FOUND, {
           postId: repostData.postId,
@@ -293,18 +287,13 @@ export async function handleRecyclablePostAction(
   // Handle single quote
   if (validatedData._action === "quote") {
     try {
-      // Type narrowing for quote action
-      const quoteData =
-        validatedData._action === "quote" ? validatedData : null;
-      if (!quoteData) {
-        return json({ error: ERROR_INVALID_ACTION }, { status: 400 });
-      }
+      const quoteData = validatedData;
       // Get the original post data
       const postsData = await getPostsByIds({
         ids: [quoteData.postId],
         userId,
       });
-      if (!postsData || postsData.length === 0) {
+      if (postsData.length === 0) {
         const { NotFoundError } = await import("~/lib/errors");
         throw new NotFoundError(ERROR_POST_NOT_FOUND, {
           postId: quoteData.postId,

@@ -61,12 +61,7 @@ export const action = withCSRFProtection(
       }
 
       // Type narrowing: check if result has error property
-      if (
-        typeof result === "object" &&
-        result !== null &&
-        "error" in result &&
-        result.error
-      ) {
+      if (typeof result === "object" && "error" in result && result.error) {
         return json(result, { status: 400 });
       }
 
@@ -162,15 +157,11 @@ export default function Templates() {
                           content:
                             typeof asset.content === "string"
                               ? asset.content
-                              : asset.content === null
-                                ? null
-                                : undefined,
+                              : undefined,
                           title:
                             typeof asset.title === "string"
                               ? asset.title
-                              : asset.title === null
-                                ? null
-                                : undefined,
+                              : undefined,
                           tags: Array.isArray(asset.tags)
                             ? asset.tags.filter(
                                 (tag): tag is string => typeof tag === "string"
@@ -263,7 +254,7 @@ export default function Templates() {
             <TemplateDetailsModal
               template={{
                 id: selectedTemplate.id,
-                name: selectedTemplate.name ?? "",
+                name: selectedTemplate.name || "",
                 text: null,
                 imageUrl: null,
                 createdAt:

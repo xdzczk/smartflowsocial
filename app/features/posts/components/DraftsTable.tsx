@@ -173,7 +173,7 @@ export function DraftsTable({
                       borderColor: post.queueType.color,
                     }}
                   >
-                    {post.queueType?.name ?? "unassigned"}
+                    {post.queueType.name || "unassigned"}
                   </div>
                 ) : (
                   <div
@@ -186,7 +186,7 @@ export function DraftsTable({
                         : "";
                     })()} shadow-sm`}
                   >
-                    {post.queueType?.name ?? "unassigned"}
+                    {post.queueType?.name || "unassigned"}
                   </div>
                 )}
               </td>

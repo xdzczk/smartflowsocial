@@ -18,7 +18,7 @@ export async function loadEditorJSContent(
   content: string,
   onContentChange: (content: string) => void
 ) {
-  if (!editorRef.current || !content) return;
+  if (!editorRef.current) return;
 
   try {
     await editorRef.current.isReady;
@@ -85,9 +85,8 @@ export async function loadEditorJSContent(
       await editorRef.current.render(emptyContent);
       onContentChange(JSON.stringify(emptyContent));
     } catch (fallbackError) {
-      const { handleAsyncError: handleFallbackError } = await import(
-        "~/lib/error-handler.client"
-      );
+      const { handleAsyncError: handleFallbackError } =
+        await import("~/lib/error-handler.client");
       handleFallbackError(
         fallbackError,
         {
@@ -187,7 +186,7 @@ export async function insertAssetsIntoEditor(
 
     // Focus editor
     setTimeout(() => {
-      editorRef.current?.focus();
+      editorRef.current.focus();
     }, 100);
   } catch (error) {
     const { handleAsyncError } = await import("~/lib/error-handler.client");
@@ -223,8 +222,6 @@ export async function insertAssetsIntoEditor(
       }
       const saveResult = editorRef.current.saver.save();
       const isPromise =
-        saveResult !== null &&
-        saveResult !== undefined &&
         typeof saveResult === "object" &&
         "then" in saveResult &&
         typeof (saveResult as { then?: unknown }).then === "function";
@@ -233,9 +230,8 @@ export async function insertAssetsIntoEditor(
         : (saveResult as unknown);
       onContentChange(JSON.stringify(updatedData));
     } catch (fallbackError) {
-      const { handleAsyncError: handleFallbackError } = await import(
-        "~/lib/error-handler.client"
-      );
+      const { handleAsyncError: handleFallbackError } =
+        await import("~/lib/error-handler.client");
       handleFallbackError(
         fallbackError,
         {
@@ -266,7 +262,6 @@ export function generateSummaryFromContent(content: string): string {
       editorData.blocks.forEach((block: EditorJSBlock) => {
         if (block.type === "paragraph" || block.type === "header") {
           const textValue =
-            block.data &&
             typeof block.data === "object" &&
             "text" in block.data &&
             typeof (block.data as { text?: unknown }).text === "string"

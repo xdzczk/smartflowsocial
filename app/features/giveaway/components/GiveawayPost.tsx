@@ -23,9 +23,9 @@ const GiveawayPost = ({ randomUsers }: GiveawayPostProps) => {
   // Generate the giveaway message based on random users
   const generateMessage = () => {
     if (
-      !randomUsers?.reposters ||
-      !randomUsers.likers ||
-      !randomUsers.commenters
+      randomUsers.reposters.length === 0 ||
+      randomUsers.likers.length === 0 ||
+      randomUsers.commenters.length === 0
     ) {
       return "No user data available to generate message.";
     }

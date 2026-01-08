@@ -115,7 +115,7 @@ export function useCalendarQueueData() {
     scheduledPosts,
     user: rawData.user,
     queueTypes: Array.isArray(rawData.queueTypes) ? rawData.queueTypes : [],
-    selectedQueueType: rawData.selectedQueueType ?? "all",
+    selectedQueueType: rawData.selectedQueueType,
     scheduleIntervals: Array.isArray(rawData.scheduleIntervals)
       ? rawData.scheduleIntervals
       : [],

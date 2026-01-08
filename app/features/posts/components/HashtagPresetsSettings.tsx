@@ -26,7 +26,10 @@ import {
   createHashtagPresetClientSchema,
   updateHashtagPresetClientSchema,
 } from "~/lib/validation";
-import { useZodForm, formDataToFormData } from "~/lib/validation/utils.client-safe";
+import {
+  useZodForm,
+  formDataToFormData,
+} from "~/lib/validation/utils.client-safe";
 
 interface HashTagPreset {
   id: string;
@@ -53,7 +56,7 @@ export function HashtagPresetsSettings({
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingPreset, setEditingPreset] = useState<HashTagPreset | null>(
-    null,
+    null
   );
 
   const createForm = useZodForm(createHashtagPresetClientSchema, {
@@ -166,7 +169,13 @@ export function HashtagPresetsSettings({
                 </DialogDescription>
               </DialogHeader>
 
-              <form onSubmit={(e) => { e.preventDefault(); void handleCreateSubmit(e); }} className="space-y-4">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void handleCreateSubmit(e);
+                }}
+                className="space-y-4"
+              >
                 <div className="space-y-2">
                   <Label htmlFor="create-name">Preset Name</Label>
                   <Input
@@ -175,9 +184,11 @@ export function HashtagPresetsSettings({
                     placeholder="e.g., Tech Posts, Travel Content"
                     disabled={isSubmitting}
                   />
-                  {createForm.formState.errors.name ? <p className="text-sm text-destructive">
+                  {createForm.formState.errors.name ? (
+                    <p className="text-destructive text-sm">
                       {createForm.formState.errors.name.message}
-                    </p> : null}
+                    </p>
+                  ) : null}
                 </div>
 
                 <div className="space-y-2">
@@ -189,10 +200,12 @@ export function HashtagPresetsSettings({
                     disabled={isSubmitting}
                     rows={3}
                   />
-                  {createForm.formState.errors.tags ? <p className="text-sm text-destructive">
+                  {createForm.formState.errors.tags ? (
+                    <p className="text-destructive text-sm">
                       {createForm.formState.errors.tags.message}
-                    </p> : null}
-                  <p className="text-xs text-muted-foreground">
+                    </p>
+                  ) : null}
+                  <p className="text-muted-foreground text-xs">
                     Separate hashtags with spaces. Each hashtag should start
                     with #
                   </p>
@@ -208,9 +221,11 @@ export function HashtagPresetsSettings({
                     placeholder="Brief description of when to use this preset"
                     disabled={isSubmitting}
                   />
-                  {createForm.formState.errors.description ? <p className="text-sm text-destructive">
-                      {createForm.formState.errors.description?.message}
-                    </p> : null}
+                  {createForm.formState.errors.description ? (
+                    <p className="text-destructive text-sm">
+                      {createForm.formState.errors.description.message}
+                    </p>
+                  ) : null}
                 </div>
 
                 <div className="flex justify-end gap-2">
@@ -234,7 +249,7 @@ export function HashtagPresetsSettings({
 
       <CardContent>
         {presets.length === 0 ? (
-          <div className="py-8 text-center text-muted-foreground">
+          <div className="text-muted-foreground py-8 text-center">
             <Hash className="mx-auto mb-4 h-12 w-12 opacity-50" />
             <p className="mb-2 text-lg font-medium">No hashtag presets yet</p>
             <p className="mb-4 text-sm">
@@ -251,7 +266,7 @@ export function HashtagPresetsSettings({
             {presets.map((preset) => (
               <div
                 key={preset.id}
-                className="flex items-start justify-between rounded-lg border p-4 transition-colors hover:bg-accent/50"
+                className="hover:bg-accent/50 flex items-start justify-between rounded-lg border p-4 transition-colors"
               >
                 <div className="min-w-0 flex-1">
                   <div className="mb-2 flex items-center gap-2">
@@ -262,7 +277,7 @@ export function HashtagPresetsSettings({
                   </div>
 
                   {preset.description ? (
-                    <p className="mb-2 text-xs text-muted-foreground">
+                    <p className="text-muted-foreground mb-2 text-xs">
                       {preset.description}
                     </p>
                   ) : null}
@@ -313,7 +328,7 @@ export function HashtagPresetsSettings({
           </p>
         ) : null}
         {fetcher.data?.error ? (
-          <p className="mt-4 text-sm text-destructive">{fetcher.data.error}</p>
+          <p className="text-destructive mt-4 text-sm">{fetcher.data.error}</p>
         ) : null}
       </CardContent>
 
@@ -325,11 +340,14 @@ export function HashtagPresetsSettings({
             <DialogDescription>Update your hashtag preset</DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={(e) => { e.preventDefault(); void handleEditSubmit(e); }} className="space-y-4">
-            <input
-              type="hidden"
-              {...editForm.register("id")}
-            />
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void handleEditSubmit(e);
+            }}
+            className="space-y-4"
+          >
+            <input type="hidden" {...editForm.register("id")} />
             <div className="space-y-2">
               <Label htmlFor="edit-name">Preset Name</Label>
               <Input
@@ -338,9 +356,11 @@ export function HashtagPresetsSettings({
                 placeholder="e.g., Tech Posts, Travel Content"
                 disabled={isSubmitting}
               />
-              {editForm.formState.errors.name ? <p className="text-sm text-destructive">
+              {editForm.formState.errors.name ? (
+                <p className="text-destructive text-sm">
                   {editForm.formState.errors.name.message}
-                </p> : null}
+                </p>
+              ) : null}
             </div>
 
             <div className="space-y-2">
@@ -352,10 +372,12 @@ export function HashtagPresetsSettings({
                 disabled={isSubmitting}
                 rows={3}
               />
-              {editForm.formState.errors.tags ? <p className="text-sm text-destructive">
+              {editForm.formState.errors.tags ? (
+                <p className="text-destructive text-sm">
                   {editForm.formState.errors.tags.message}
-                </p> : null}
-              <p className="text-xs text-muted-foreground">
+                </p>
+              ) : null}
+              <p className="text-muted-foreground text-xs">
                 Separate hashtags with spaces. Each hashtag should start with #
               </p>
             </div>
@@ -368,9 +390,11 @@ export function HashtagPresetsSettings({
                 placeholder="Brief description of when to use this preset"
                 disabled={isSubmitting}
               />
-              {editForm.formState.errors.description ? <p className="text-sm text-destructive">
-                  {editForm.formState.errors.description?.message}
-                </p> : null}
+              {editForm.formState.errors.description ? (
+                <p className="text-destructive text-sm">
+                  {editForm.formState.errors.description.message}
+                </p>
+              ) : null}
             </div>
 
             <div className="flex justify-end gap-2">

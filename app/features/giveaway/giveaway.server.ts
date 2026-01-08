@@ -11,7 +11,7 @@ import type { RelatedEvent, PrimalEvent } from "./types";
  * @returns Object containing relatedEvents array (kinds 1, 6, 7, 9735), count, and stats
  */
 export const fetchGiveawayParticipants = async (
-  eventIds: string | string[],
+  eventIds: string | string[]
 ): Promise<{
   relatedEvents: RelatedEvent[];
   count: number;
@@ -52,7 +52,7 @@ export const fetchGiveawayParticipants = async (
 
         // Process thread_view response
         (threadResponse as PrimalEvent[]).forEach((item: PrimalEvent) => {
-          if (!Array.isArray(item) || item[0] !== "EVENT" || !item[2]) return;
+          if (!Array.isArray(item) || item[0] !== "EVENT") return;
 
           const event = item[2];
           if (
@@ -72,7 +72,7 @@ export const fetchGiveawayParticipants = async (
               const descriptionTag = Array.isArray(tags)
                 ? tags.find(
                     (tag: string[]) =>
-                      Array.isArray(tag) && tag[0] === "description",
+                      Array.isArray(tag) && tag[0] === "description"
                   )
                 : undefined;
               if (
@@ -92,7 +92,7 @@ export const fetchGiveawayParticipants = async (
                   const amountTag = Array.isArray(zapRequest.tags)
                     ? zapRequest.tags.find(
                         (tag: string[]) =>
-                          Array.isArray(tag) && tag[0] === "amount",
+                          Array.isArray(tag) && tag[0] === "amount"
                       )
                     : undefined;
                   if (
@@ -120,7 +120,7 @@ export const fetchGiveawayParticipants = async (
             const eTag =
               "tags" in event && Array.isArray(event.tags)
                 ? event.tags.find(
-                    (tag: string[]) => tag[0] === "e" && tag[1] === eventId,
+                    (tag: string[]) => tag[0] === "e" && tag[1] === eventId
                   )
                 : undefined;
             if (eTag) {
@@ -178,11 +178,10 @@ export const fetchGiveawayParticipants = async (
               (item: PrimalEvent) =>
                 Array.isArray(item) &&
                 item[0] === "EVENT" &&
-                item[2] &&
                 typeof item[2] === "object" &&
                 !Array.isArray(item[2]) &&
                 "kind" in item[2] &&
-                item[2].kind === 7,
+                item[2].kind === 7
             )
             .map((item: PrimalEvent) => item[2] as RelatedEvent);
 
@@ -203,11 +202,10 @@ export const fetchGiveawayParticipants = async (
               (item: PrimalEvent) =>
                 Array.isArray(item) &&
                 item[0] === "EVENT" &&
-                item[2] &&
                 typeof item[2] === "object" &&
                 !Array.isArray(item[2]) &&
                 "kind" in item[2] &&
-                item[2].kind === 6,
+                item[2].kind === 6
             )
             .map((item: PrimalEvent) => item[2] as RelatedEvent);
 
@@ -218,7 +216,7 @@ export const fetchGiveawayParticipants = async (
       } catch (error) {
         console.error(
           `Error fetching engagement data for event ${eventId}:`,
-          error,
+          error
         );
       }
 

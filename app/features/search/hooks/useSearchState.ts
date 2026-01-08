@@ -86,7 +86,7 @@ export function useSearchState({ user, fetcherData }: UseSearchStateProps) {
         originalEventId: searchResult.id,
         originalEventPubkey: searchResult.pubkey,
         isQuotePost: true,
-        originalCaption: searchResult.content ?? "",
+        originalCaption: searchResult.content,
         isRecyclable: false,
       },
     ];
@@ -128,8 +128,8 @@ export function useSearchState({ user, fetcherData }: UseSearchStateProps) {
         originalEventId: searchResult.id,
         originalEventPubkey: searchResult.pubkey,
         isKind6Repost: true,
-        originalFileUrl: searchResult.mediaUrls ?? [],
-        originalCaption: searchResult.content ?? "",
+        originalFileUrl: searchResult.mediaUrls,
+        originalCaption: searchResult.content,
         isRecyclable: false,
       },
     ];

@@ -80,7 +80,7 @@ export function BulkPostCard({
               className="h-24 w-24 rounded object-cover"
               onClick={() => onMediaClick(imageUrl)}
             />
-            <div className="absolute -right-1 -top-1 rounded-full bg-purple-500 p-1">
+            <div className="absolute -top-1 -right-1 rounded-full bg-purple-500 p-1">
               <svg
                 className="h-3 w-3 text-white"
                 fill="none"
@@ -117,7 +117,7 @@ export function BulkPostCard({
               className="h-24 w-24 rounded object-cover"
               onClick={() => onMediaClick(imageUrl)}
             />
-            <div className="absolute -right-1 -top-1 rounded-full bg-green-500 p-1">
+            <div className="absolute -top-1 -right-1 rounded-full bg-green-500 p-1">
               <svg
                 className="h-3 w-3 text-white"
                 fill="none"
@@ -214,15 +214,14 @@ export function BulkPostCard({
       <td className="p-4">
         <div className="flex flex-wrap gap-1">
           {queueTypes.map((queue: QueueType | string) => {
-            const queueName =
-              typeof queue === "string" ? queue : (queue.name ?? "");
+            const queueName = typeof queue === "string" ? queue : queue.name;
             const queueColor = typeof queue === "object" ? queue.color : null;
             return (
               <button
                 key={queueName}
                 type="button"
-                onClick={() => onQueueTypeChange(index, queueName ?? "")}
-                className={`rounded-full px-3 py-1 text-xs ${getDynamicQueueStyle(queueColor ?? null, (post.queueType ?? null) === queueName)}`}
+                onClick={() => onQueueTypeChange(index, queueName)}
+                className={`rounded-full px-3 py-1 text-xs ${getDynamicQueueStyle(queueColor ?? null, post.queueType === queueName)}`}
                 style={{
                   backgroundColor: queueColor ?? undefined,
                   borderColor: queueColor ?? undefined,
@@ -248,7 +247,7 @@ export function BulkPostCard({
           <input
             id={`recyclable-${index}`}
             type="checkbox"
-            checked={post.isRecyclable ?? false}
+            checked={post.isRecyclable}
             onChange={(e) => onIsRecyclableChange(index, e.target.checked)}
             className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
           />

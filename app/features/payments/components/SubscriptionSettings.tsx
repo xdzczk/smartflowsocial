@@ -65,9 +65,8 @@ export function SubscriptionSettings({
       setTimeout(() => setCopiedHash(null), 2000);
     } catch (err) {
       void (async () => {
-        const { handleErrorSafely } = await import(
-          "~/lib/error-handler.client"
-        );
+        const { handleErrorSafely } =
+          await import("~/lib/error-handler.client");
         handleErrorSafely(err, {
           component: "SubscriptionSettings",
           action: "copyToClipboard",
@@ -103,7 +102,7 @@ export function SubscriptionSettings({
 
   const formatCurrency = (
     amount: number | null,
-    currency: "USD" | "SATS" = "USD",
+    currency: "USD" | "SATS" = "USD"
   ) => {
     if (!amount) return "Free";
     if (currency === "SATS") {
@@ -113,10 +112,10 @@ export function SubscriptionSettings({
   };
 
   return (
-    <div className="rounded-lg border bg-card p-6">
+    <div className="bg-card rounded-lg border p-6">
       <div className="mb-6">
         <h2 className="text-xl font-semibold">Subscription Management</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="text-muted-foreground mt-1 text-sm">
           View your current plan and manage your subscription
         </p>
       </div>
@@ -139,7 +138,7 @@ export function SubscriptionSettings({
 
           <TabsContent value="overview" className="mt-6 space-y-6">
             {/* Current Plan */}
-            <div className="rounded-lg border bg-muted/30 p-4">
+            <div className="bg-muted/30 rounded-lg border p-4">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
                   <Crown className="h-5 w-5 text-yellow-500" />
@@ -151,7 +150,7 @@ export function SubscriptionSettings({
                     <div className="mt-1 flex items-center gap-2">
                       <span
                         className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${getStatusColor(
-                          subscription.status,
+                          subscription.status
                         )}`}
                       >
                         {subscription.status}
@@ -170,7 +169,7 @@ export function SubscriptionSettings({
                       ? `$${subscription.plan.price}`
                       : "Free"}
                   </p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     {subscription.plan?.enableLifetimeAccess
                       ? "One-time payment"
                       : subscription.plan?.price &&
@@ -190,7 +189,7 @@ export function SubscriptionSettings({
                   <Calendar className="h-5 w-5 text-green-500" />
                   <div>
                     <p className="font-medium">Subscription Started</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       {formatDate(subscription.startDate)}
                     </p>
                   </div>
@@ -199,15 +198,15 @@ export function SubscriptionSettings({
                 {/* Next Billing Date - Combined logic for current period end and next payment due */}
                 {(subscription.currentPeriodEnd ??
                   subscription.nextPaymentDue) &&
-                !subscription.plan?.enableLifetimeAccess ? (
+                !subscription.plan.enableLifetimeAccess ? (
                   <div className="flex items-center gap-3 rounded-lg border p-4">
                     <CreditCard className="h-5 w-5 text-blue-500" />
                     <div>
                       <p className="font-medium">Next Billing Date</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         {formatDate(
                           subscription.currentPeriodEnd ??
-                            subscription.nextPaymentDue,
+                            subscription.nextPaymentDue
                         )}
                       </p>
                     </div>
@@ -242,10 +241,10 @@ export function SubscriptionSettings({
           </TabsContent>
 
           <TabsContent value="payment-history" className="mt-6">
-            {paymentHistory && paymentHistory.length > 0 ? (
+            {paymentHistory.length > 0 ? (
               <div className="space-y-4">
                 <div className="mb-4 flex items-center gap-2">
-                  <Receipt className="h-5 w-5 text-muted-foreground" />
+                  <Receipt className="text-muted-foreground h-5 w-5" />
                   <h3 className="font-medium">Recent Payments</h3>
                 </div>
                 <div className="space-y-3">
@@ -261,13 +260,13 @@ export function SubscriptionSettings({
                                 "Payment"}
                             </p>
                           </div>
-                          <p className="mb-2 text-xs text-muted-foreground">
+                          <p className="text-muted-foreground mb-2 text-xs">
                             {formatDateTime(payment.paidAt)}
                           </p>
 
                           {/* Payment Hash */}
                           <div className="mb-2 flex items-center gap-2">
-                            <p className="font-mono text-xs text-muted-foreground">
+                            <p className="text-muted-foreground font-mono text-xs">
                               Hash: {payment.paymentHash.slice(0, 16)}...
                               {payment.paymentHash.slice(-8)}
                             </p>
@@ -275,7 +274,7 @@ export function SubscriptionSettings({
                               onClick={() =>
                                 void copyToClipboard(
                                   payment.paymentHash,
-                                  payment.id,
+                                  payment.id
                                 )
                               }
                               className="inline-flex items-center justify-center rounded p-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -300,7 +299,7 @@ export function SubscriptionSettings({
                             {formatCurrency(payment.amountUsd)}
                           </p>
                           {payment.amount > 0 ? (
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-muted-foreground text-xs">
                               {formatCurrency(payment.amount, "SATS")}
                             </p>
                           ) : null}
@@ -311,7 +310,7 @@ export function SubscriptionSettings({
                 </div>
                 {paymentHistory.length >= 20 ? (
                   <div className="pt-4 text-center">
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       Showing the last 20 payments
                     </p>
                   </div>
@@ -334,7 +333,7 @@ export function SubscriptionSettings({
         <div className="py-8 text-center">
           <Crown className="mx-auto mb-4 h-12 w-12 text-gray-400" />
           <h3 className="mb-2 text-lg font-medium">No Active Subscription</h3>
-          <p className="mb-6 text-muted-foreground">
+          <p className="text-muted-foreground mb-6">
             You don&apos;t have an active subscription. Choose a plan to unlock
             premium features.
           </p>

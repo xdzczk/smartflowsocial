@@ -39,7 +39,7 @@ export function FullPostBlock({
   const displayTime = getDisplayTime(
     post,
     isLongform ?? false,
-    isPast ?? false,
+    isPast ?? false
   );
 
   return (
@@ -52,11 +52,11 @@ export function FullPostBlock({
       tabIndex={0}
       role="button"
       aria-label={`${isPast ? "View" : "Edit"} post: ${postPreview}, ${isPast ? "posted" : "scheduled"} for ${displayTime.toLocaleString("en-US", { timeZone: userTimezone })}`}
-      className={`rounded-lg border p-3 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+      className={`rounded-lg border p-3 transition-all focus:ring-2 focus:ring-blue-500 focus:outline-none ${
         isPast ? "cursor-default" : "cursor-pointer"
       } ${
         isDragging ? "rotate-2 opacity-50" : isPast ? "" : "hover:shadow-lg"
-      } ${queueColorStyle ? "" : getStatusColor(post, isLongform ?? false, isPast ?? false)} ${queueColorStyle ? "" : "border-current border-opacity-20"}`}
+      } ${queueColorStyle ? "" : getStatusColor(post, isLongform ?? false, isPast ?? false)} ${queueColorStyle ? "" : "border-opacity-20 border-current"}`}
       style={queueColorStyle ?? {}}
     >
       <div className="mb-2 flex items-center justify-between">
@@ -119,10 +119,7 @@ export function FullPostBlock({
         {isLongform ? (post.summary ?? postPreview) : postPreview}
       </p>
 
-      {!isLongform &&
-      post.fileUrl &&
-      post.fileUrl.length > 0 &&
-      Boolean(post.fileUrl.length) ? (
+      {!isLongform && post.fileUrl.length > 0 ? (
         <div className="mt-2">
           <div className="text-xs text-gray-500 dark:text-gray-400">
             {post.fileUrl.length} file{post.fileUrl.length > 1 ? "s" : ""}

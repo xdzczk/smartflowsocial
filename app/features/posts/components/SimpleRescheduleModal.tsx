@@ -37,15 +37,15 @@ export function SimpleRescheduleModal({
   const [signingError, setSigningError] = React.useState<string | null>(null);
 
   // Determine if this is a longform post
-  const isLongform = "title" in post && post.title !== undefined;
+  const isLongform = "title" in post;
 
   // Initialize form with appropriate schema
   const schema = isLongform
     ? rescheduleLongformModalClientSchema
     : rescheduleModalClientSchema;
 
-  const initialScheduledFor = post
-    ? isLongform && "publishedAt" in post
+  const initialScheduledFor =
+    isLongform && "publishedAt" in post
       ? post.publishedAt
         ? new Date(post.publishedAt)
         : new Date()
@@ -53,8 +53,7 @@ export function SimpleRescheduleModal({
         ? post.scheduledFor
           ? new Date(parseInt(post.scheduledFor) * 1000)
           : new Date()
-        : new Date()
-    : new Date();
+        : new Date();
 
   const form = useZodForm(schema, {
     defaultValues: {
@@ -101,8 +100,6 @@ export function SimpleRescheduleModal({
   };
 
   const handleSubmit = form.handleSubmit(async (data) => {
-    if (!data.scheduledFor) return;
-
     try {
       setIsSigningEvent(true);
       setSigningError(null);
@@ -123,8 +120,8 @@ export function SimpleRescheduleModal({
       const { nostrEvent, signedEvent } = await nostrAdapter.signEvent({
         content: originalSignedEvent.content, // Use exact same content
         created_at: newTimeUnix, // Only change the timestamp
-        kind: originalSignedEvent.kind || (isLongform ? 30023 : 1),
-        tags: originalSignedEvent.tags || [], // Use exact same tags
+        kind: originalSignedEvent.kind,
+        tags: originalSignedEvent.tags, // Use exact same tags
       });
 
       // Submit the reschedule action with signed event
@@ -148,9 +145,8 @@ export function SimpleRescheduleModal({
 
       fetcher.submit(formData, { method: "post" });
     } catch (error: unknown) {
-      const { handleAsyncErrorWithMessage, getErrorMessage } = await import(
-        "~/lib/error-handler.client"
-      );
+      const { handleAsyncErrorWithMessage, getErrorMessage } =
+        await import("~/lib/error-handler.client");
       handleAsyncErrorWithMessage(
         error,
         "Failed to sign event. Please try again.",
@@ -168,7 +164,7 @@ export function SimpleRescheduleModal({
   });
 
   const getFirstImage = () => {
-    if (post && "fileUrl" in post && post.fileUrl && post.fileUrl.length > 0) {
+    if ("fileUrl" in post && post.fileUrl.length > 0) {
       try {
         const firstFileUrl = post.fileUrl[0];
         if (typeof firstFileUrl === "string") {
@@ -202,8 +198,6 @@ export function SimpleRescheduleModal({
       timeZone: userTimezone,
     });
   };
-
-  if (!post) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -262,9 +256,7 @@ export function SimpleRescheduleModal({
                   : "caption" in post
                     ? (post.caption ?? "No caption")
                     : "No caption"}
-                {"fileUrl" in post &&
-                post.fileUrl &&
-                post.fileUrl.length > 0 ? (
+                {"fileUrl" in post && post.fileUrl.length > 0 ? (
                   <span className="ml-2 text-xs text-gray-500">
                     ({post.fileUrl.length} file
                     {post.fileUrl.length > 1 ? "s" : ""})
@@ -298,9 +290,7 @@ export function SimpleRescheduleModal({
                 <input
                   id="simple-reschedule-datetime"
                   type="datetime-local"
-                  value={
-                    scheduledFor ? formatDateTimeForInput(scheduledFor) : ""
-                  }
+                  value={formatDateTimeForInput(scheduledFor)}
                   onChange={(e) => {
                     const newValue = e.target.value
                       ? new Date(e.target.value)
@@ -314,11 +304,9 @@ export function SimpleRescheduleModal({
                   className="flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                 />
               </div>
-              {scheduledFor ? (
-                <div className="text-xs text-gray-500 dark:text-gray-400">
-                  {formatDateTime(scheduledFor)}
-                </div>
-              ) : null}
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                {formatDateTime(scheduledFor)}
+              </div>
             </div>
 
             {/* Queue Type Selection for regular posts */}
@@ -410,10 +398,7 @@ export function SimpleRescheduleModal({
             </button>
             <button
               onClick={() => void handleSubmit()}
-              disabled={
-                fetcher.state === "submitting" ||
-                isSigningEvent
-              }
+              disabled={fetcher.state === "submitting" || isSigningEvent}
               className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSigningEvent

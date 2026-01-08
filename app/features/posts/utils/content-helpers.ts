@@ -133,7 +133,7 @@ export function getContentTypeBadge(item: CombinedContent): {
   text: string;
 } {
   // Check for kind property in signedEvent or originalData.signedEvent
-  const kind = item.signedEvent?.kind ?? item.originalData?.signedEvent?.kind;
+  const kind = item.signedEvent?.kind ?? item.originalData.signedEvent?.kind;
 
   if (kind === 6) {
     return {

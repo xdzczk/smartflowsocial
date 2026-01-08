@@ -15,7 +15,7 @@ export function usePaymentPolling({
   const navigate = useNavigate();
   const [isPolling, setIsPolling] = useState(false);
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(
-    null,
+    null
   );
   const shouldStopPolling = useRef(false);
 
@@ -63,91 +63,92 @@ export function usePaymentPolling({
   };
 
   // Start automatic payment polling
-  const startPaymentPolling = useCallback((paymentId: string) => {
-    // Clear any existing interval
-    if (pollingInterval) {
-      clearInterval(pollingInterval);
-      setPollingInterval(null);
-    }
+  const startPaymentPolling = useCallback(
+    (paymentId: string) => {
+      // Clear any existing interval
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+        setPollingInterval(null);
+      }
 
-    // Don't start if already polling
-    if (isPolling) {
-      return;
-    }
-
-    // Reset the stopping ref
-    shouldStopPolling.current = false;
-    setIsPolling(true);
-    const interval = setInterval(() => {
-      if (shouldStopPolling.current) {
-        clearInterval(interval);
+      // Don't start if already polling
+      if (isPolling) {
         return;
       }
 
-      void (async () => {
-        try {
-          const formData = new FormData();
-          formData.append("paymentId", paymentId);
+      // Reset the stopping ref
+      shouldStopPolling.current = false;
+      setIsPolling(true);
+      const interval = setInterval(() => {
+        if (shouldStopPolling.current) {
+          clearInterval(interval);
+          return;
+        }
 
-          const response = await fetch("/api/payment-status", {
-            method: "POST",
-            body: formData,
-          });
-
-          if (!response.ok) {
-            return;
-          }
-
-          const responseText = await response.text();
-          let data: { success?: boolean; paid?: boolean };
+        void (async () => {
           try {
-            data = JSON.parse(responseText) as {
-              success?: boolean;
-              paid?: boolean;
-            };
-          } catch (_parseError) {
-            return;
-          }
+            const formData = new FormData();
+            formData.append("paymentId", paymentId);
 
-          if (data.success && data.paid) {
-            // Stop this specific interval immediately
-            clearInterval(interval);
-            setPollingInterval(null);
-            setIsPolling(false);
-            shouldStopPolling.current = true;
-            onPaymentComplete();
+            const response = await fetch("/api/payment-status", {
+              method: "POST",
+              body: formData,
+            });
 
-            // Also clear the stored interval reference to prevent any issues
-            if (pollingInterval && pollingInterval !== interval) {
-              clearInterval(pollingInterval);
+            if (!response.ok) {
+              return;
             }
 
-            // Redirect to dashboard after showing success message
-            setTimeout(() => {
-              navigate("/dashboard", { replace: true });
-            }, 2000);
+            const responseText = await response.text();
+            let data: { success?: boolean; paid?: boolean };
+            try {
+              data = JSON.parse(responseText) as {
+                success?: boolean;
+                paid?: boolean;
+              };
+            } catch (_parseError) {
+              return;
+            }
+
+            if (data.success && data.paid) {
+              // Stop this specific interval immediately
+              clearInterval(interval);
+              setPollingInterval(null);
+              setIsPolling(false);
+              shouldStopPolling.current = true;
+              onPaymentComplete();
+
+              // Also clear the stored interval reference to prevent any issues
+              if (pollingInterval && pollingInterval !== interval) {
+                clearInterval(pollingInterval);
+              }
+
+              // Redirect to dashboard after showing success message
+              setTimeout(() => {
+                navigate("/dashboard", { replace: true });
+              }, 2000);
+            }
+          } catch (_error) {
+            // Silently handle polling errors
           }
-        } catch (_error) {
-          // Silently handle polling errors
-        }
-      })();
-    }, 5000); // Poll every 5 seconds
+        })();
+      }, 5000); // Poll every 5 seconds
 
-    setPollingInterval(interval);
+      setPollingInterval(interval);
 
-    // Stop polling after 5 minutes
-    setTimeout(
-      () => {
-        shouldStopPolling.current = true;
-        if (interval) {
+      // Stop polling after 5 minutes
+      setTimeout(
+        () => {
+          shouldStopPolling.current = true;
           clearInterval(interval);
           setPollingInterval(null);
           setIsPolling(false);
-        }
-      },
-      5 * 60 * 1000,
-    );
-  }, [isPolling, pollingInterval, onPaymentComplete, navigate]);
+        },
+        5 * 60 * 1000
+      );
+    },
+    [isPolling, pollingInterval, onPaymentComplete, navigate]
+  );
 
   // Clean up polling on component unmount
   useEffect(() => {

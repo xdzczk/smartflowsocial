@@ -14,7 +14,7 @@ import { ValidationError } from "~/lib/errors";
 export async function getEffectiveHashtags(
   userId: string,
   queueTypeName?: string,
-  queueTypeId?: string,
+  queueTypeId?: string
 ) {
   // If explicitly "unassigned", return empty hashtags (valid case)
   if (queueTypeName === "unassigned") {
@@ -51,7 +51,7 @@ export async function getEffectiveHashtags(
   // Return the hashtag preset tags assigned to this queue type
   // Use consistent unwrapped format to match other return statements
   return json({
-    hashtags: (queueType.hashTagPreset as { tags: string | null })?.tags ?? "",
+    hashtags: (queueType.hashTagPreset as { tags: string | null }).tags ?? "",
   });
 }
 

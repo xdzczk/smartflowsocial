@@ -44,7 +44,10 @@ export default function BulkPostsTable({
         </thead>
         <tbody>
           {posts.map((post, index) => (
-            <tr key={`${index}-${post.caption.substring(0, 20)}-${post.scheduledFor}`} className="border-b">
+            <tr
+              key={`${index}-${post.caption.substring(0, 20)}-${post.scheduledFor}`}
+              className="border-b"
+            >
               <td className="p-4">
                 {(() => {
                   let imageUrl = "";
@@ -89,7 +92,7 @@ export default function BulkPostsTable({
                             className="h-24 w-24 rounded object-cover"
                             onClick={() => handleMediaClick(originalImageUrl)}
                           />
-                          <div className="absolute -right-1 -top-1 rounded-full bg-purple-500 p-1">
+                          <div className="absolute -top-1 -right-1 rounded-full bg-purple-500 p-1">
                             <svg
                               className="h-3 w-3 text-white"
                               fill="none"
@@ -136,7 +139,7 @@ export default function BulkPostsTable({
                             className="h-24 w-24 rounded object-cover"
                             onClick={() => handleMediaClick(fileUrl)}
                           />
-                          <div className="absolute -right-1 -top-1 rounded-full bg-green-500 p-1">
+                          <div className="absolute -top-1 -right-1 rounded-full bg-green-500 p-1">
                             <svg
                               className="h-3 w-3 text-white"
                               fill="none"
@@ -241,7 +244,7 @@ export default function BulkPostsTable({
                 <div className="flex flex-wrap gap-1">
                   {queueTypes.map((queue) => {
                     const queueName =
-                      typeof queue === "string" ? queue : (queue.name ?? "");
+                      typeof queue === "string" ? queue : queue.name;
                     const queueColor =
                       typeof queue === "object" ? queue.color : null;
                     return (
@@ -249,7 +252,7 @@ export default function BulkPostsTable({
                         key={queueName}
                         type="button"
                         onClick={() => {
-                          handleQueueTypeChange(index, queueName ?? "");
+                          handleQueueTypeChange(index, queueName);
                         }}
                         className={`rounded-full px-3 py-1 text-xs ${getDynamicQueueStyle(queueColor ?? null, post.queueType === queueName)}`}
                         style={{
@@ -277,7 +280,7 @@ export default function BulkPostsTable({
                   <input
                     id={`bulk-recyclable-${index}`}
                     type="checkbox"
-                    checked={post.isRecyclable ?? false}
+                    checked={post.isRecyclable}
                     onChange={(e) =>
                       handleIsRecyclableChange(index, e.target.checked)
                     }

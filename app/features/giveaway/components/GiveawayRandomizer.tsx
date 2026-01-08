@@ -19,7 +19,7 @@ const GiveawayRandomizer = ({ relatedEvents }: GiveawayRandomizerProps) => {
   });
 
   useEffect(() => {
-    if (!relatedEvents || relatedEvents.length === 0) return;
+    if (relatedEvents.length === 0) return;
 
     // Group events by type
     const reposters = relatedEvents.filter((event) => event.kind === 6);

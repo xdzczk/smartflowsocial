@@ -24,7 +24,7 @@ export function postDataToCalendarPost(post: PostData): CalendarPost {
     postedAt: post.postedAt ?? null,
     publishedAt: publishedAtValue,
     queueType: post.queueType ?? null,
-    manual_override: post.manual_override ?? false,
+    manual_override: post.manual_override || false,
   };
   return result;
 }
@@ -49,16 +49,17 @@ export function longFormPostDataToCalendarPost(
         ? post.templateId
         : null
       : null;
-  const hashtagsValue =
-    post.tags && Array.isArray(post.tags) ? post.tags.join(" ") : undefined;
+  const hashtagsValue = Array.isArray(post.tags)
+    ? post.tags.join(" ")
+    : undefined;
   const result: CalendarPost = {
     ...post,
     // Override specific fields for CalendarPost
     caption: post.content ?? null,
     fileUrl: [],
     hashtags: hashtagsValue,
-    isScheduled: post.isScheduled ?? false,
-    isPosted: post.isPublished ?? false,
+    isScheduled: post.isScheduled || false,
+    isPosted: post.isPublished || false,
     templateId: templateIdValue,
     isRecyclable:
       "isRecyclable" in post && typeof post.isRecyclable === "boolean"

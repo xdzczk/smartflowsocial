@@ -97,16 +97,16 @@ export default function LongFormPost({
       customTags: initialData?.tags?.join(", ") ?? "",
       scheduledFor: "",
       queueType: initialData?.queueType?.name ?? "Unassigned",
-      useHashtagPresets: useHashtagPresets ?? false,
+      useHashtagPresets: useHashtagPresets,
       hashTagPresetId: selectedHashtagPresetId ?? undefined,
     },
   });
 
   // Watch form values
-  const title = form.watch("title") ?? "";
-  const summary = form.watch("summary") ?? "";
-  const content = form.watch("content") ?? "";
-  const customTags = form.watch("customTags") ?? "";
+  const title = form.watch("title");
+  const summary = form.watch("summary");
+  const content = form.watch("content");
+  const customTags = form.watch("customTags");
 
   // Use extracted hooks
   const {
@@ -170,8 +170,8 @@ export default function LongFormPost({
   const formScheduledFor = form.watch("scheduledFor");
   const formQueueType = form.watch("queueType");
   useEffect(() => {
-    if (formScheduledFor && formScheduledFor !== schedulingScheduledFor) {
-      setSchedulingScheduledFor(formScheduledFor);
+    if (formScheduledFor !== schedulingScheduledFor) {
+      setSchedulingScheduledFor(formScheduledFor ?? null);
     }
   }, [formScheduledFor, schedulingScheduledFor, setSchedulingScheduledFor]);
 
@@ -242,11 +242,11 @@ export default function LongFormPost({
   };
 
   const { handleSchedule } = useLongFormSubmission({
-    title,
-    summary,
-    content,
+    title: title ?? "",
+    summary: summary ?? "",
+    content: content ?? "",
     image,
-    customTags,
+    customTags: customTags ?? "",
     selectedQueueType,
     scheduledFor,
     displayedHashtags,
@@ -263,10 +263,10 @@ export default function LongFormPost({
 
       <div className="space-y-6">
         <LongFormPostFields
-          title={title}
-          summary={summary}
-          customTags={customTags}
-          content={content}
+          title={title ?? ""}
+          summary={summary ?? ""}
+          customTags={customTags ?? ""}
+          content={content ?? ""}
           onTitleChange={(value) => form.setValue("title", value)}
           onSummaryChange={(value) => form.setValue("summary", value)}
           onCustomTagsChange={(value) => form.setValue("customTags", value)}
@@ -351,7 +351,7 @@ export default function LongFormPost({
             if (onPreview) {
               onPreview({
                 title,
-                summary: summary || generateSummaryFromContent(content),
+                summary: summary ?? generateSummaryFromContent(content),
                 content,
                 image,
               });

@@ -123,7 +123,7 @@ export function LongFormCoverImage({
                 accept="image/*"
                 onChange={onImageUpload}
                 className="hidden"
-                disabled={uploadFetcherState !== "idle"}
+                disabled={false}
               />
             </>
           )}
@@ -137,7 +137,7 @@ export function LongFormCoverImage({
               alt="Cover preview"
               className="h-48 w-full object-cover"
             />
-            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 opacity-0 transition-all duration-200 hover:bg-opacity-20 hover:opacity-100">
+            <div className="bg-opacity-0 hover:bg-opacity-20 absolute inset-0 flex items-center justify-center bg-black opacity-0 transition-all duration-200 hover:opacity-100">
               <div className="flex gap-2">
                 <Button
                   type="button"

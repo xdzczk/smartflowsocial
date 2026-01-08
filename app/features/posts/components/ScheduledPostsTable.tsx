@@ -250,7 +250,7 @@ export function ScheduledPostsTable({
                       borderColor: post.queueType.color,
                     }}
                   >
-                    {post.queueType?.name ?? "unassigned"}
+                    {post.queueType.name}
                   </div>
                 ) : (
                   (() => {

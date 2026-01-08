@@ -142,7 +142,7 @@ export function useLongFormSubmission({
         const input = document.createElement("input");
         input.type = "hidden";
         input.name = name;
-        input.value = value ?? "";
+        input.value = value || "";
         form.appendChild(input);
       });
 

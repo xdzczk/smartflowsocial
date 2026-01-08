@@ -63,10 +63,8 @@ type LoaderData = Awaited<ReturnType<typeof loader>>;
 export default function EditTemplate() {
   const data = useLoaderData<LoaderData>();
   const template =
-    data &&
     typeof data === "object" &&
     "template" in data &&
-    data.template &&
     typeof data.template === "object" &&
     !Array.isArray(data.template)
       ? data.template
@@ -269,7 +267,7 @@ export default function EditTemplate() {
             ? "s"
             : ""}{" "}
           • Created{" "}
-          {template && "createdAt" in template && template.createdAt
+          {template.createdAt
             ? formatDate(template.createdAt as string | Date)
             : "Unknown"}
         </p>

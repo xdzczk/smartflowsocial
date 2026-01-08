@@ -1,4 +1,4 @@
-import type { FetcherWithComponents , useFetcher } from "@remix-run/react";
+import type { FetcherWithComponents, useFetcher } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
@@ -152,14 +152,14 @@ export function useRecyclablesState({
         aEventId &&
         aEventId in stats &&
         typeof stats[aEventId] === "object" &&
-        stats[aEventId] !== null
+        !Array.isArray(stats[aEventId])
           ? stats[aEventId]
           : {};
       const bStats =
         bEventId &&
         bEventId in stats &&
         typeof stats[bEventId] === "object" &&
-        stats[bEventId] !== null
+        !Array.isArray(stats[bEventId])
           ? stats[bEventId]
           : {};
       const aValue = Number(aStats[sortConfig.key as keyof typeof aStats] ?? 0);
@@ -309,11 +309,10 @@ export function useRecyclablesState({
         return {
           caption: post.caption ?? "",
           fileUrl:
-            Array.isArray(post.fileUrl) &&
-            post.fileUrl.length > 0
+            Array.isArray(post.fileUrl) && post.fileUrl.length > 0
               ? post.fileUrl[0]
               : "",
-          queueType: post.queueType ?? "unassigned",
+          queueType: post.queueType?.name ?? "unassigned",
           scheduledFor: scheduleDate
             .toLocaleString("en-US", {
               year: "numeric",
@@ -361,7 +360,7 @@ export function useRecyclablesState({
           return {
             caption: "",
             fileUrl: "",
-            queueType: post.queueType ?? "unassigned",
+            queueType: post.queueType?.name ?? "unassigned",
             scheduledFor: scheduleDate
               .toLocaleString("en-US", {
                 year: "numeric",

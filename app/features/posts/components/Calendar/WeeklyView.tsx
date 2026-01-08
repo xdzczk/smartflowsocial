@@ -292,7 +292,7 @@ export function WeeklyView({
                               : isLongform
                           }
                           isPast={
-                            typeof posts[0]?.isPast === "boolean"
+                            typeof posts[0].isPast === "boolean"
                               ? posts[0].isPast
                               : false
                           }
@@ -406,10 +406,10 @@ function CurrentTimeIndicator({ user, weekDays }: CurrentTimeIndicatorProps) {
 
   return (
     <div
-      className="pointer-events-none absolute left-16 right-0 z-20 h-0.5 bg-red-500"
+      className="pointer-events-none absolute right-0 left-16 z-20 h-0.5 bg-red-500"
       style={{ top: `${topOffset}px` }}
     >
-      <div className="absolute -left-2 -top-1 h-3 w-3 rounded-full bg-red-500"></div>
+      <div className="absolute -top-1 -left-2 h-3 w-3 rounded-full bg-red-500"></div>
     </div>
   );
 }

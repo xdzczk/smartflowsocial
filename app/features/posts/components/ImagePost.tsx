@@ -74,9 +74,8 @@ export default function ImagePost({
       );
       setFiles((prev: File[]) => [...prev, ...processedFiles]);
     } catch (error: unknown) {
-      const { handleAsyncErrorWithMessage } = await import(
-        "~/lib/error-handler.client"
-      );
+      const { handleAsyncErrorWithMessage } =
+        await import("~/lib/error-handler.client");
       handleAsyncErrorWithMessage(
         error,
         "Error processing images. Using original files.",
@@ -111,9 +110,8 @@ export default function ImagePost({
         );
         setFiles((prev: File[]) => [...prev, ...processedFiles]);
       } catch (error: unknown) {
-        const { handleAsyncErrorWithMessage } = await import(
-          "~/lib/error-handler.client"
-        );
+        const { handleAsyncErrorWithMessage } =
+          await import("~/lib/error-handler.client");
         handleAsyncErrorWithMessage(
           error,
           "Error processing images. Using original files.",
@@ -180,7 +178,6 @@ export default function ImagePost({
           return qt === queueTypeName;
         }
         if (
-          qt &&
           typeof qt === "object" &&
           "name" in qt &&
           typeof qt.name === "string"
@@ -255,7 +252,6 @@ export default function ImagePost({
         return qt === selectedQueue;
       }
       if (
-        qt &&
         typeof qt === "object" &&
         "name" in qt &&
         typeof qt.name === "string"
@@ -434,7 +430,7 @@ export default function ImagePost({
                     onClick={() =>
                       setFiles(files.filter((_, i) => i !== index))
                     }
-                    className="absolute -right-2 -top-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
+                    className="absolute -top-2 -right-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
                     disabled={fetcher.state !== "idle"}
                   >
                     ×
@@ -520,7 +516,7 @@ export default function ImagePost({
                     <button
                       key={queueName}
                       type="button"
-                      onClick={() => setSelectedQueue(queueName ?? "")}
+                      onClick={() => setSelectedQueue(queueName)}
                       disabled={fetcher.state !== "idle" || isUploaded}
                       className={`rounded-full px-4 py-2 text-sm ${getDynamicQueueStyle(queueColor ?? null, selectedQueue === queueName)} disabled:cursor-not-allowed disabled:opacity-50`}
                       style={{
@@ -576,7 +572,6 @@ export default function ImagePost({
                   return qt === selectedQueue;
                 }
                 if (
-                  qt &&
                   typeof qt === "object" &&
                   "name" in qt &&
                   typeof qt.name === "string"

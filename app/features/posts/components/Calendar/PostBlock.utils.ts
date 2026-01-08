@@ -25,7 +25,7 @@ export function getPostPreview(
   }
 
   // Check postType to provide accurate labels
-  if (post.fileUrl && post.fileUrl.length > 0) {
+  if (post.fileUrl.length > 0) {
     if (post.postType === "VIDEO") {
       return "Media post";
     } else if (post.postType === "CAROUSEL") {
@@ -46,7 +46,7 @@ export function getFirstImage(
     return post.image ?? null;
   }
 
-  if (post.fileUrl && post.fileUrl.length > 0) {
+  if (post.fileUrl.length > 0) {
     try {
       // Handle both JSON array format and direct URL format
       const firstFileUrl = post.fileUrl[0];
@@ -58,10 +58,10 @@ export function getFirstImage(
           return url ?? null;
         } catch {
           // If parsing fails, treat as direct URL
-          return firstFileUrl ?? null;
+          return firstFileUrl;
         }
       }
-      return (firstFileUrl as string | undefined) ?? null;
+      return firstFileUrl ?? null;
     } catch (error) {
       handleErrorSafely(error, {
         component: "PostBlock",
@@ -124,10 +124,10 @@ export function getQueueColorStyle(
   }
 
   // First try to use queue color if available
-  if (post.queueType && queueTypes && Array.isArray(queueTypes)) {
+  if (post.queueType && queueTypes) {
     const queueTypeData = queueTypes.find(
       (qt) =>
-        (qt.id && post.queueType?.id && qt.id === post.queueType.id) ??
+        (qt.id && post.queueType?.id && qt.id === post.queueType.id) ||
         (qt.name && post.queueType?.name && qt.name === post.queueType.name)
     );
     if (queueTypeData?.color) {

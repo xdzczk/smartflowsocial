@@ -91,14 +91,15 @@ export default function TextPost({
   // Sync scheduling hook when form's scheduledFor changes
   const formScheduledFor = form.watch("scheduledFor");
   React.useEffect(() => {
-    if (formScheduledFor && formScheduledFor !== schedulingScheduledFor) {
-      setSchedulingScheduledFor(formScheduledFor);
+    if (formScheduledFor !== schedulingScheduledFor) {
+      setSchedulingScheduledFor(formScheduledFor ?? "");
     }
   }, [formScheduledFor, schedulingScheduledFor, setSchedulingScheduledFor]);
 
   const handleSubmit = form.handleSubmit(async (data, event) => {
-    const submitter = (event?.nativeEvent as SubmitEvent)
-      ?.submitter as HTMLButtonElement;
+    const submitter = event?.nativeEvent
+      ? ((event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement)
+      : undefined;
     const submitType = submitter?.value ?? "";
 
     // For draft saves, we don't need to sign the event
@@ -193,22 +194,17 @@ export default function TextPost({
             effectiveHashtags = data.hashtags ?? "";
           } else {
             // Fallback to user's default hashtags
-            effectiveHashtags = Array.isArray(tags)
-              ? tags.join(" ")
-              : (tags ?? "");
+            effectiveHashtags = tags.join(" ");
           }
         } catch (error) {
-          const { handleErrorSafely } = await import(
-            "~/lib/error-handler.client"
-          );
+          const { handleErrorSafely } =
+            await import("~/lib/error-handler.client");
           handleErrorSafely(error, {
             component: "TextPost",
             action: "fetchEffectiveHashtags",
           });
           // Fallback to user's default hashtags
-          effectiveHashtags = Array.isArray(tags)
-            ? tags.join(" ")
-            : (tags ?? "");
+          effectiveHashtags = tags.join(" ");
         }
       }
 
@@ -319,7 +315,7 @@ export default function TextPost({
           size="sm"
           onClick={() => setShowAssetBrowser(true)}
           disabled={fetcher.state !== "idle"}
-          className="absolute right-2 top-2"
+          className="absolute top-2 right-2"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -422,7 +418,7 @@ export default function TextPost({
               </Button>
             </div>
             <SchedulingSection
-              scheduledFor={formScheduledFor ?? schedulingScheduledFor ?? ""}
+              scheduledFor={formScheduledFor || schedulingScheduledFor}
               onScheduledForChange={(value) => {
                 form.setValue("scheduledFor", value);
                 setSchedulingScheduledFor(value);

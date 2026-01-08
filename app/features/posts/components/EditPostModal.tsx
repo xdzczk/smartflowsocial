@@ -112,8 +112,6 @@ export function EditPostModal({
   }, [fetcher.data, onConfirm]);
 
   const handleSubmit = async () => {
-    if (!post) return;
-
     try {
       setIsSigningEvent(true);
       setSigningError(null);
@@ -151,8 +149,6 @@ export function EditPostModal({
       setSigningError(errorMessage);
     }
   };
-
-  if (!post) return null;
 
   return (
     <>

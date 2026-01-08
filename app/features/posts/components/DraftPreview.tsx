@@ -42,7 +42,7 @@ export function DraftPreview({
       <h2 className="text-lg font-semibold">Preview</h2>
 
       {/* Images */}
-      {post.fileUrl && post.fileUrl.length > 0 ? (
+      {post.fileUrl.length > 0 ? (
         <div className="grid grid-cols-2 gap-2">
           {getImageUrls(post.fileUrl).map((url, index) => (
             <img
@@ -75,7 +75,7 @@ export function DraftPreview({
           </span>
           {queueColor ? (
             <div
-              className="inline-flex rounded-full border-2 px-3 py-1 text-xs font-semibold leading-4 shadow-sm"
+              className="inline-flex rounded-full border-2 px-3 py-1 text-xs leading-4 font-semibold shadow-sm"
               style={{
                 backgroundColor: `${queueColor}20`,
                 color: queueColor,
@@ -86,7 +86,7 @@ export function DraftPreview({
             </div>
           ) : (
             <div
-              className={`inline-flex rounded-full border-2 px-3 py-1 text-xs font-semibold leading-4 ${getSelectedQueueStyle(selectedQueue, true).replace("hover:scale-105", "")} shadow-sm`}
+              className={`inline-flex rounded-full border-2 px-3 py-1 text-xs leading-4 font-semibold ${getSelectedQueueStyle(selectedQueue, true).replace("hover:scale-105", "")} shadow-sm`}
             >
               {selectedQueue}
             </div>

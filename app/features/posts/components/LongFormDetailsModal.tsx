@@ -97,7 +97,8 @@ export default function LongFormDetailsModal({
             const link =
               typeof block.data["link"] === "string" ? block.data["link"] : "";
             const meta =
-              block.data["meta"] && typeof block.data["meta"] === "object"
+              typeof block.data["meta"] === "object" &&
+              block.data["meta"] !== null
                 ? (block.data["meta"] as {
                     title?: string;
                     description?: string;
@@ -123,7 +124,8 @@ export default function LongFormDetailsModal({
           }
           case "image": {
             const file =
-              block.data["file"] && typeof block.data["file"] === "object"
+              typeof block.data["file"] === "object" &&
+              block.data["file"] !== null
                 ? (block.data["file"] as { url?: string })
                 : null;
             const url =
@@ -160,7 +162,7 @@ export default function LongFormDetailsModal({
       });
 
       return (
-        html ??
+        html ||
         '<p class="text-gray-500 italic">Content could not be rendered</p>'
       );
     } catch (error) {
@@ -170,7 +172,7 @@ export default function LongFormDetailsModal({
       });
       // Try to display as plain text if JSON parsing fails
       const plainTextContent = content.replace(/<[^>]*>/g, "");
-      return `<p class="text-gray-700 dark:text-gray-300">${plainTextContent ?? "Content parsing failed"}</p>`;
+      return `<p class="text-gray-700 dark:text-gray-300">${plainTextContent}</p>`;
     }
   };
 
@@ -354,7 +356,7 @@ export default function LongFormDetailsModal({
                       ? (post.publishedAt ?? undefined)
                       : type === "scheduled"
                         ? (post.scheduledFor ?? undefined)
-                        : (post.createdAt)
+                        : post.createdAt
                   )}
                 </span>
                 <span>•</span>
@@ -379,7 +381,7 @@ export default function LongFormDetailsModal({
               </div>
 
               {/* Title */}
-              <h1 className="mb-6 text-3xl font-bold leading-tight text-gray-900 dark:text-white">
+              <h1 className="mb-6 text-3xl leading-tight font-bold text-gray-900 dark:text-white">
                 {post.title ?? "Untitled Article"}
               </h1>
 
@@ -397,7 +399,7 @@ export default function LongFormDetailsModal({
               {/* Summary */}
               {post.summary ? (
                 <div className="mb-6 rounded-xl bg-gray-50 p-6 dark:bg-gray-800">
-                  <p className="text-lg font-medium leading-relaxed text-gray-700 dark:text-gray-300">
+                  <p className="text-lg leading-relaxed font-medium text-gray-700 dark:text-gray-300">
                     {post.summary}
                   </p>
                 </div>
@@ -417,7 +419,7 @@ export default function LongFormDetailsModal({
               />
 
               {/* Tags */}
-              {post.tags && post.tags.length > 0 ? (
+              {post.tags.length > 0 ? (
                 <div className="mt-8 flex items-center gap-2 border-t border-gray-200 pt-6 dark:border-gray-700">
                   {post.tags.map((tag) => (
                     <span
@@ -461,7 +463,7 @@ export default function LongFormDetailsModal({
                           ? (post.publishedAt ?? undefined)
                           : type === "scheduled"
                             ? (post.scheduledFor ?? undefined)
-                            : (post.createdAt)
+                            : post.createdAt
                       )}
                     </p>
                   </div>
@@ -475,7 +477,7 @@ export default function LongFormDetailsModal({
                     </p>
                   </div>
 
-                  {post.tags && post.tags.length > 0 ? (
+                  {post.tags.length > 0 ? (
                     <div>
                       <span className="text-xs text-gray-500 dark:text-gray-400">
                         Tags
@@ -511,7 +513,7 @@ export default function LongFormDetailsModal({
                   </div>
                   {showEventData ? (
                     <div className="rounded-lg bg-gray-100 p-3 dark:bg-gray-800">
-                      <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-words text-xs text-gray-800 dark:text-gray-200">
+                      <pre className="max-h-64 overflow-auto text-xs break-words whitespace-pre-wrap text-gray-800 dark:text-gray-200">
                         {JSON.stringify(post.signedEvent, null, 2)}
                       </pre>
                     </div>
@@ -528,16 +530,16 @@ export default function LongFormDetailsModal({
             <div className="flex gap-3">
               {type === "posted" &&
               (post.nostrEventId ??
-                (post.signedEvent &&
-                typeof post.signedEvent === "object" &&
+                (typeof post.signedEvent === "object" &&
+                post.signedEvent !== null &&
                 "id" in post.signedEvent
                   ? (post.signedEvent as { id?: string }).id
                   : undefined)) ? (
                 <Link
-                  to={`https://primal.net/a/${String(post.nostrEventId ?? (post.signedEvent && typeof post.signedEvent === "object" && "id" in post.signedEvent ? (post.signedEvent as { id?: string }).id : "") ?? "")}`}
+                  to={`https://primal.net/a/${String(post.nostrEventId ?? (typeof post.signedEvent === "object" && post.signedEvent !== null && "id" in post.signedEvent ? (post.signedEvent as { id?: string }).id : "") ?? "")}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:bg-gray-700 dark:hover:bg-gray-600"
+                  className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:outline-none dark:bg-gray-700 dark:hover:bg-gray-600"
                 >
                   View Article
                 </Link>
@@ -546,7 +548,7 @@ export default function LongFormDetailsModal({
               {type === "draft" ? (
                 <Link
                   to={`/dashboard/drafts/longform/edit/${post.id}`}
-                  className="inline-flex items-center rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-medium text-blue-800 transition-colors hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:border-blue-700 dark:bg-gray-800 dark:text-blue-300 dark:hover:bg-blue-950/50"
+                  className="inline-flex items-center rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-medium text-blue-800 transition-colors hover:bg-blue-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none dark:border-blue-700 dark:bg-gray-800 dark:text-blue-300 dark:hover:bg-blue-950/50"
                 >
                   Edit Draft
                 </Link>
@@ -563,7 +565,7 @@ export default function LongFormDetailsModal({
                 <button
                   type="submit"
                   disabled={deleteFetcher.state !== "idle"}
-                  className="inline-flex items-center rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 dark:border-red-600 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-950/50"
+                  className="inline-flex items-center rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-50 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:outline-none disabled:opacity-50 dark:border-red-600 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-950/50"
                 >
                   {deleteFetcher.state !== "idle" &&
                   deleteFetcher.formData?.get("postId") === post.id

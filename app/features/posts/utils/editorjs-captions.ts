@@ -10,10 +10,8 @@ export function disableCaptions() {
     ".image-tool__caption, .image-tool .cdx-input"
   );
   captions.forEach((caption) => {
-    if (caption) {
-      (caption as HTMLElement).style.display = "none";
-      caption.remove();
-    }
+    (caption as HTMLElement).style.display = "none";
+    caption.remove();
   });
 }
 

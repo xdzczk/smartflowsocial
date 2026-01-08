@@ -274,7 +274,7 @@ export async function handleBulkQueueUpdate(
             (currentSlotIndex + index) % sortedSlots.length;
           const targetSlot = sortedSlots[targetSlotIndex];
           if (!targetSlot) {
-            calculatedTime = post.scheduledFor ?? "";
+            calculatedTime = post.scheduledFor;
           } else {
             // Calculate how many days to add
             const daysToAdd = Math.floor(

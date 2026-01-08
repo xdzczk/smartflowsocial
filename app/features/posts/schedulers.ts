@@ -36,7 +36,6 @@ export async function calculateNextScheduleTime({
     // Validate that result is a valid Date object
     if (!(result instanceof Date) || isNaN(result.getTime())) {
       const queueTypeId =
-        queueType &&
         typeof queueType === "object" &&
         "id" in queueType &&
         typeof queueType.id === "string"
@@ -58,7 +57,10 @@ export async function calculateNextScheduleTime({
   } catch (error) {
     logError(error instanceof Error ? error : new Error(String(error)), {
       userId,
-      queueTypeId: queueType?.id,
+      queueTypeId:
+        typeof queueType === "object" && "id" in queueType
+          ? queueType.id
+          : undefined,
       message: "Error in calculateNextScheduleTime wrapper",
     });
     return fallbackDate;
@@ -91,14 +93,21 @@ async function calculateNextScheduleTimeInternal({
     } catch (error) {
       logError(error instanceof Error ? error : new Error(String(error)), {
         userId,
-        queueTypeId: queueType?.id,
+        queueTypeId:
+          typeof queueType === "object" && "id" in queueType
+            ? queueType.id
+            : undefined,
         message: "Error getting last post time",
       });
       lastPostTime = null;
     }
 
     // Validate queueType structure
-    if (!queueType?.scheduleType) {
+    if (
+      typeof queueType !== "object" ||
+      !("scheduleType" in queueType) ||
+      !queueType.scheduleType
+    ) {
       logError(new Error("Invalid queueType"), {
         userId,
         queueType: String(queueType),
@@ -108,14 +117,12 @@ async function calculateNextScheduleTimeInternal({
     }
 
     const scheduleType =
-      queueType && typeof queueType === "object" && "scheduleType" in queueType
+      typeof queueType === "object" && "scheduleType" in queueType
         ? queueType.scheduleType
         : null;
     if (scheduleType === "INTERVAL") {
       const config =
-        queueType &&
-        typeof queueType === "object" &&
-        "scheduleConfig" in queueType
+        typeof queueType === "object" && "scheduleConfig" in queueType
           ? queueType.scheduleConfig
           : null;
 
@@ -196,7 +203,6 @@ async function calculateNextScheduleTimeInternal({
       } else {
         // Use queue-specific interval
         const intervalHours =
-          config &&
           typeof config === "object" &&
           "intervalHours" in config &&
           typeof config.intervalHours === "number"
@@ -232,9 +238,7 @@ async function calculateNextScheduleTimeInternal({
       }
     } else if (scheduleType === "FIXED_SLOTS") {
       const config =
-        queueType &&
-        typeof queueType === "object" &&
-        "scheduleConfig" in queueType
+        typeof queueType === "object" && "scheduleConfig" in queueType
           ? queueType.scheduleConfig
           : null;
       const slots =
@@ -270,7 +274,7 @@ async function calculateNextScheduleTimeInternal({
               isNaN(minutes) ||
               hours < 0 ||
               hours > 23 ||
-              (minutes ?? 0) < 0 ||
+              minutes < 0 ||
               minutes > 59
             ) {
               return null;
@@ -332,8 +336,8 @@ async function calculateNextScheduleTimeInternal({
 
           // Start with a UTC date for the desired time
           const [year, month, day] = userDateStr.split("-").map(Number);
-          const safeHours = hours ?? 0;
-          const safeMinutes = minutes ?? 0;
+          const safeHours = hours;
+          const safeMinutes = minutes;
           let testUTC = new Date(
             Date.UTC(
               year ?? 0,
@@ -587,7 +591,10 @@ async function calculateNextScheduleTimeInternal({
         ? baseTime
         : new Date();
     logError(error instanceof Error ? error : new Error(String(error)), {
-      queueTypeId: queueType?.id,
+      queueTypeId:
+        typeof queueType === "object" && "id" in queueType
+          ? queueType.id
+          : undefined,
       userId,
       userTimezone,
       message: "Error in calculateNextScheduleTime",

@@ -165,7 +165,7 @@ export async function checkAndRenewSubscriptions(): Promise<
         ...results.errors,
         typeof errorResponse.error === "string"
           ? errorResponse.error
-          : (errorResponse.error.message ?? String(errorResponse.error)),
+          : errorResponse.error.message,
       ],
     };
   }
@@ -250,9 +250,7 @@ async function attemptRenewal(
   // Extract invoice, paymentHash and amount from the request object structure
   // Cast to unknown then to Record to access properties that may exist on ReceiveInvoice
   const requestAny: Record<string, unknown> =
-    invoiceRequest &&
-    typeof invoiceRequest === "object" &&
-    !Array.isArray(invoiceRequest)
+    typeof invoiceRequest === "object" && !Array.isArray(invoiceRequest)
       ? (invoiceRequest as unknown as Record<string, unknown>)
       : {};
   const invoiceValue = requestAny["invoice"];
@@ -366,15 +364,13 @@ async function attemptRenewal(
 
   // Extract payment hash from result
   const paymentResultObj =
-    paymentResult &&
-    typeof paymentResult === "object" &&
-    !Array.isArray(paymentResult)
+    typeof paymentResult === "object" && !Array.isArray(paymentResult)
       ? (paymentResult as Record<string, unknown>)
       : {};
   const preimageValue = paymentResultObj["preimage"];
   const paymentHash =
-    (typeof preimageValue === "string" ? preimageValue : null) ??
-    paymentHashString ??
+    (typeof preimageValue === "string" ? preimageValue : null) ||
+    paymentHashString ||
     `payment_${Date.now()}`;
 
   // Create payment record

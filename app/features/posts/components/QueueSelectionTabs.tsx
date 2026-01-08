@@ -38,7 +38,7 @@ export default function QueueSelectionTabs({
           to={`${basePath}?tab=${currentTab}`}
           prefetch="intent"
           onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
-          className={`whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium ${
+          className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
             (!params["queueType"] && !searchParams.get("queueType")) ||
             searchParams.get("queueType") === "all"
               ? "border-blue-500 text-blue-600 dark:text-blue-400"
@@ -97,7 +97,7 @@ export default function QueueSelectionTabs({
               onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
               className={`${baseClasses} ${
                 isSelected && colors
-                  ? `${colors.border?.replace("border-", "border-b-") || "border-b-blue-500"} ${colors.text ?? "text-blue-600"}`
+                  ? `${colors.border.replace("border-", "border-b-") || "border-b-blue-500"} ${colors.text}`
                   : unselectedClasses
               }`}
             >

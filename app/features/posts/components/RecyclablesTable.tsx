@@ -192,7 +192,7 @@ export function RecyclablesTable({
                   />
                 </td>
                 <td className="p-3">
-                  {post.fileUrl && post.fileUrl.length > 0 ? (
+                  {post.fileUrl.length > 0 ? (
                     <img
                       src={getImageUrls(post.fileUrl)[0]}
                       alt="Post preview"
@@ -229,7 +229,7 @@ export function RecyclablesTable({
                         color: post.queueType.color,
                       }}
                     >
-                      {post.queueType?.name ?? "unassigned"}
+                      {post.queueType.name}
                     </span>
                   ) : (
                     <span

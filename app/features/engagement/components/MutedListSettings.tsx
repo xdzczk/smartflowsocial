@@ -44,7 +44,7 @@ export function MutedListSettings({
 
   const [isFilterEnabled, setIsFilterEnabled] = useState(filterMuted);
   const [isHideLowTrustEnabled, setIsHideLowTrustEnabled] = useState(
-    hidePostsFromLowTrustUsers,
+    hidePostsFromLowTrustUsers
   );
 
   const isSyncing = syncFetcher.state === "submitting";
@@ -59,7 +59,7 @@ export function MutedListSettings({
     isHideLowTrustEnabled;
 
   const mutedCount =
-    syncFetcher.data?.mutedList?.npubs?.length ?? mutedList?.npubs?.length ?? 0;
+    syncFetcher.data?.mutedList?.npubs.length ?? mutedList?.npubs.length ?? 0;
 
   const lastSyncedDate = syncFetcher.data?.mutedList?.lastSynced
     ? new Date(syncFetcher.data.mutedList.lastSynced)
@@ -119,7 +119,7 @@ export function MutedListSettings({
           </div>
 
           {lastSyncedDate ? (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               Last synced: {lastSyncedDate.toLocaleDateString()}{" "}
               {lastSyncedDate.toLocaleTimeString()}
             </p>
@@ -133,7 +133,7 @@ export function MutedListSettings({
           </p>
         ) : null}
         {syncFetcher.data?.error ? (
-          <p className="text-sm text-destructive">{syncFetcher.data.error}</p>
+          <p className="text-destructive text-sm">{syncFetcher.data.error}</p>
         ) : null}
 
         {/* Filter Toggle */}
@@ -142,7 +142,7 @@ export function MutedListSettings({
             <Label htmlFor="filter-muted" className="text-base">
               Enable Muted Filtering
             </Label>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Hide content from muted users in your engagement feed
             </p>
           </div>
@@ -160,7 +160,7 @@ export function MutedListSettings({
           </p>
         ) : null}
         {toggleFetcher.data?.error ? (
-          <p className="text-sm text-destructive">{toggleFetcher.data.error}</p>
+          <p className="text-destructive text-sm">{toggleFetcher.data.error}</p>
         ) : null}
 
         {/* Hide Low Trust Users Toggle */}
@@ -169,7 +169,7 @@ export function MutedListSettings({
             <Label htmlFor="hide-low-trust" className="text-base">
               Hide Posts from Low Trust Users
             </Label>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Filter out content from users with low trust scores in your
               engagement feed
             </p>
@@ -188,7 +188,7 @@ export function MutedListSettings({
           </p>
         ) : null}
         {toggleLowTrustFetcher.data?.error ? (
-          <p className="text-sm text-destructive">
+          <p className="text-destructive text-sm">
             {toggleLowTrustFetcher.data.error}
           </p>
         ) : null}

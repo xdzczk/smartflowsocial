@@ -20,7 +20,7 @@ export function QueueSelector({
       typeof qt === "string" ? qt === queueName : qt.name === queueName
     );
     return typeof selectedQueueType === "object"
-      ? (selectedQueueType.id ?? "")
+      ? selectedQueueType.id || ""
       : "";
   };
 
@@ -65,7 +65,7 @@ export function QueueSelector({
               <button
                 key={queueName}
                 type="button"
-                onClick={() => onQueueChange(queueName ?? "")}
+                onClick={() => onQueueChange(queueName)}
                 disabled={disabled}
                 className={`rounded-full px-4 py-2 text-sm ${getDynamicQueueStyle(queueColor ?? null, selectedQueue === queueName)} disabled:cursor-not-allowed disabled:opacity-50`}
                 style={{

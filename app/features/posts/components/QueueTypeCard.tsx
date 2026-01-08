@@ -45,14 +45,14 @@ export function QueueTypeCard({
       return "Invalid interval configuration";
     } else {
       if (isFixedSlotsScheduleConfig(queueType.scheduleConfig)) {
-        return `Fixed slots: ${queueType.scheduleConfig.slots?.join(", ") || "None"}`;
+        return `Fixed slots: ${queueType.scheduleConfig.slots.join(", ") || "None"}`;
       }
       return "Invalid slots configuration";
     }
   };
 
   return (
-    <Card className="transition-colors hover:bg-accent/50">
+    <Card className="hover:bg-accent/50 transition-colors">
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -75,11 +75,11 @@ export function QueueTypeCard({
                 ) : null}
               </div>
               {queueType.description ? (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {queueType.description}
                 </p>
               ) : null}
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 {getScheduleDescription()}
               </p>
               {queueType.hashTagPreset ? (

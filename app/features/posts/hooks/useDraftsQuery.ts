@@ -147,7 +147,7 @@ export function useDraftsData() {
           if (
             qt &&
             typeof qt === "object" &&
-            qt !== null &&
+            !Array.isArray(qt) &&
             "id" in qt &&
             "name" in qt
           ) {

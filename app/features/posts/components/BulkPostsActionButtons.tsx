@@ -40,7 +40,7 @@ export default function BulkPostsActionButtons({
 
   return (
     <>
-      <div className="mb-4 mt-4 flex flex-col items-center gap-3">
+      <div className="mt-4 mb-4 flex flex-col items-center gap-3">
         <div className="flex justify-center">
           {scheduleIntervals
             ? scheduleIntervals.map((interval) => (
@@ -61,8 +61,7 @@ export default function BulkPostsActionButtons({
       <div className="mb-6">
         <div className="flex flex-wrap justify-center gap-2">
           {queueTypes.map((queue) => {
-            const queueName =
-              typeof queue === "string" ? queue : (queue.name ?? "");
+            const queueName = typeof queue === "string" ? queue : queue.name;
             const queueColor = typeof queue === "object" ? queue.color : null;
             // Check if this queue is selected for all posts
             const isAllSelected =
@@ -72,7 +71,7 @@ export default function BulkPostsActionButtons({
                 key={queueName}
                 type="button"
                 onClick={() => {
-                  handleBulkQueueUpdate(queueName ?? "");
+                  handleBulkQueueUpdate(queueName);
                 }}
                 disabled={isProcessing}
                 className={`rounded-full px-4 py-2 text-sm ${getDynamicQueueStyle(queueColor ?? null, isAllSelected)} disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100`}

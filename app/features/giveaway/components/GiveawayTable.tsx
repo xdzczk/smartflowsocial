@@ -136,7 +136,7 @@ export function GiveawayTable({
                 onClick={() => onPostClick(post)}
               >
                 <td className="p-3">
-                  {post.fileUrl && post.fileUrl.length > 0 ? (
+                  {post.fileUrl.length > 0 ? (
                     <div className="relative">
                       <MediaThumbnail
                         src={getImageUrls(post.fileUrl)[0]}

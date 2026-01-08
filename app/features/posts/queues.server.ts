@@ -111,7 +111,7 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
         throw new Error(`User ${userId} not found`);
       }
       const userRelays =
-        user && typeof user === "object" && "userRelays" in user
+        typeof user === "object" && "userRelays" in user
           ? user.userRelays
           : null;
       const relaysArray = Array.isArray(userRelays) ? userRelays : [];
@@ -211,7 +211,7 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
         throw new Error(`User ${userId} not found`);
       }
       const userRelays =
-        user && typeof user === "object" && "userRelays" in user
+        typeof user === "object" && "userRelays" in user
           ? user.userRelays
           : null;
       const relaysArray = Array.isArray(userRelays) ? userRelays : [];
@@ -282,7 +282,7 @@ export const postCheckerWorker = new Worker(
 
       // Process regular posts
       for (const post of posts) {
-        if (!post || typeof post !== "object") continue;
+        if (typeof post !== "object") continue;
         const postId =
           "id" in post && typeof post.id === "string" ? post.id : null;
         const postUserId =
@@ -320,7 +320,7 @@ export const postCheckerWorker = new Worker(
 
       // Process longform posts
       for (const longformPost of longformPosts) {
-        if (!longformPost || typeof longformPost !== "object") continue;
+        if (typeof longformPost !== "object") continue;
         const longformPostId =
           "id" in longformPost && typeof longformPost.id === "string"
             ? longformPost.id

@@ -42,7 +42,7 @@ export function RescheduleModal({
 
   const fetcher = useFetcher<FetcherData>();
   const loaderData = useLoaderData<{ user?: UserData }>();
-  const user = userProp ?? loaderData?.user;
+  const user = userProp ?? loaderData.user;
   const [isSigningEvent, setIsSigningEvent] = useState(false);
   const [signingError, setSigningError] = useState<string | null>(null);
   const [editableDateTime, setEditableDateTime] = useState<Date | null>(null);
@@ -83,7 +83,7 @@ export function RescheduleModal({
       return post.image;
     }
 
-    if (post.fileUrl && post.fileUrl.length > 0) {
+    if (post.fileUrl.length > 0) {
       try {
         const firstFileUrl = post.fileUrl[0];
         if (typeof firstFileUrl === "string") {
@@ -295,7 +295,7 @@ export function RescheduleModal({
                 ) : (
                   "No caption"
                 )}
-                {post.fileUrl && post.fileUrl.length > 0 ? (
+                {post.fileUrl.length > 0 ? (
                   <span className="ml-2 text-xs text-gray-500">
                     ({post.fileUrl.length} file
                     {post.fileUrl.length > 1 ? "s" : ""})

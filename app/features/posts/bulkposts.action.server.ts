@@ -98,9 +98,9 @@ export async function handleSignAndSchedule(
     const fileUrls = validatedData.fileUrl;
     const queueTypes = validatedData.queueType;
     const isRecyclableFlags = validatedData.isRecyclable;
-    const originalPostIds =
-      validatedData.originalPostId?.filter((id: string) => id && id !== "") ??
-      [];
+    const originalPostIds = validatedData.originalPostId.filter(
+      (id: string) => id && id !== ""
+    );
 
     await Promise.all(
       signedEvents.map(async (signedEvent, index) => {
@@ -177,9 +177,9 @@ export async function handleSignAndSchedule(
         });
 
         logInfo("Created post", {
-          postId: post?.id,
+          postId: post.id,
           index,
-          queueTypeId: post?.queueTypeId,
+          queueTypeId: post.queueTypeId,
           userId,
         });
         return post;
@@ -223,9 +223,9 @@ export async function handleSaveAsDraft(
     const captions = validatedData.caption;
     const queueTypes = validatedData.queueType;
     const _scheduledFors = validatedData.scheduledFor;
-    const originalPostIds =
-      validatedData.originalPostId?.filter((id: string) => id && id !== "") ??
-      [];
+    const originalPostIds = validatedData.originalPostId.filter(
+      (id: string) => id && id !== ""
+    );
     const isRecyclableFlags = formData.getAll("isRecyclable");
 
     await Promise.all(

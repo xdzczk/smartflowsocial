@@ -14,7 +14,10 @@ import {
 import { Input } from "~/components/ui/input";
 import { updateBlacklistClientSchema } from "~/lib/validation";
 import { useZodFieldArray } from "~/lib/validation/hooks/useZodFieldArray";
-import { useZodForm, formDataToFormData } from "~/lib/validation/utils.client-safe";
+import {
+  useZodForm,
+  formDataToFormData,
+} from "~/lib/validation/utils.client-safe";
 
 interface GiveawayBlacklistSettingsProps {
   giveawayBlacklist: string[];
@@ -38,7 +41,12 @@ export function GiveawayBlacklistSettings({
   const { fields, append, remove } = useZodFieldArray<
     z.infer<typeof updateBlacklistClientSchema>,
     "blacklist"
-  >(form as unknown as UseFormReturn<z.infer<typeof updateBlacklistClientSchema>>, "blacklist");
+  >(
+    form as unknown as UseFormReturn<
+      z.infer<typeof updateBlacklistClientSchema>
+    >,
+    "blacklist"
+  );
 
   const isSubmitting = fetcher.state === "submitting";
   const watchedBlacklist = form.watch("blacklist");
@@ -48,12 +56,12 @@ export function GiveawayBlacklistSettings({
   const onSubmit = form.handleSubmit((data) => {
     // Filter out empty strings and validate
     const filteredBlacklist = data.blacklist.filter((item: string) =>
-      item.trim(),
+      item.trim()
     );
 
     // Validate all non-empty items start with npub
     const invalidItems = filteredBlacklist.filter(
-      (item: string) => !item.trim().startsWith("npub"),
+      (item: string) => !item.trim().startsWith("npub")
     );
 
     if (invalidItems.length > 0) {
@@ -66,7 +74,7 @@ export function GiveawayBlacklistSettings({
 
     const formData = formDataToFormData(
       { blacklist: filteredBlacklist.join("\n") },
-      "update_blacklist",
+      "update_blacklist"
     );
 
     fetcher.submit(formData, { method: "post" });
@@ -81,9 +89,15 @@ export function GiveawayBlacklistSettings({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={(e) => { e.preventDefault(); void onSubmit(e); }} className="space-y-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void onSubmit(e);
+          }}
+          className="space-y-4"
+        >
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Add npub addresses one by one
             </p>
             {fields.map((field, index) => (
@@ -99,9 +113,11 @@ export function GiveawayBlacklistSettings({
                         : ""
                     }
                   />
-                  {form.formState.errors.blacklist?.[index] ? <p className="mt-1 text-sm text-destructive">
-                      {String(form.formState.errors.blacklist[index]?.message)}
-                    </p> : null}
+                  {form.formState.errors.blacklist?.[index] ? (
+                    <p className="text-destructive mt-1 text-sm">
+                      {String(form.formState.errors.blacklist[index].message)}
+                    </p>
+                  ) : null}
                 </div>
                 <Button
                   type="button"
@@ -126,9 +142,11 @@ export function GiveawayBlacklistSettings({
             </Button>
           </div>
 
-          {form.formState.errors.blacklist ? <p className="text-sm text-destructive">
+          {form.formState.errors.blacklist ? (
+            <p className="text-destructive text-sm">
               {form.formState.errors.blacklist.message}
-            </p> : null}
+            </p>
+          ) : null}
 
           <Button
             type="submit"
@@ -144,7 +162,7 @@ export function GiveawayBlacklistSettings({
             </p>
           ) : null}
           {fetcher.data?.error ? (
-            <p className="text-sm text-destructive">{fetcher.data.error}</p>
+            <p className="text-destructive text-sm">{fetcher.data.error}</p>
           ) : null}
         </form>
       </CardContent>

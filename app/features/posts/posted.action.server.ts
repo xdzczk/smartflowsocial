@@ -310,7 +310,7 @@ async function handleQuote(formData: FormData, userId: string) {
     // Create quote post data for bulk posts page
     const quotePostData = {
       caption: "", // Empty caption - user can add content
-      fileUrl: originalPost.fileUrl ?? "",
+      fileUrl: originalPost.fileUrl[0] ?? "",
       queueType: (originalPost.queueTypeId ?? "") || "unassigned",
       scheduledFor: "",
       originalPostId: originalPost.id,

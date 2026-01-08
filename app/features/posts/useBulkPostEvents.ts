@@ -240,7 +240,7 @@ export function useBulkPostEvents({
               Array.isArray(post.originalFileUrl) &&
               post.originalFileUrl.length > 0
             ) {
-                displayFileUrl = post.originalFileUrl[0] ?? "";
+              displayFileUrl = post.originalFileUrl[0] ?? "";
             } else {
               displayFileUrl = post.originalFileUrl as string;
             }
@@ -290,7 +290,7 @@ export function useBulkPostEvents({
             if (post.naddr) {
               try {
                 const decoded = nip19.decode(post.naddr.replace("nostr:", ""));
-                if (decoded.type === "naddr" && decoded.data) {
+                if (decoded.type === "naddr") {
                   const { identifier, pubkey, kind } = decoded.data;
                   aTag = [
                     "a",
@@ -476,7 +476,7 @@ export function useBulkPostEvents({
             fileUrl,
             scheduledFor: post.scheduledFor,
             queueType: post.queueType,
-            isRecyclable: post.isRecyclable ?? false,
+            isRecyclable: post.isRecyclable,
           };
         });
 
@@ -524,10 +524,7 @@ export function useBulkPostEvents({
             posts.forEach((post) => {
               formData.append("scheduledDates", post.scheduledFor);
               formData.append("queueTypes", post.queueType);
-              formData.append(
-                "isRecyclable",
-                (post.isRecyclable ?? false).toString()
-              );
+              formData.append("isRecyclable", post.isRecyclable.toString());
             });
             formData.append("_action", "_upload_images_preview");
 
@@ -564,10 +561,7 @@ export function useBulkPostEvents({
           posts.forEach((post) => {
             formData.append("scheduledDates", post.scheduledFor);
             formData.append("queueTypes", post.queueType);
-            formData.append(
-              "isRecyclable",
-              (post.isRecyclable ?? false).toString()
-            );
+            formData.append("isRecyclable", post.isRecyclable.toString());
           });
           formData.append("_action", "_upload_images_preview");
 
@@ -579,9 +573,8 @@ export function useBulkPostEvents({
         }
       }
     } catch (error: unknown) {
-      const { handleAsyncErrorWithMessage } = await import(
-        "~/lib/error-handler.client"
-      );
+      const { handleAsyncErrorWithMessage } =
+        await import("~/lib/error-handler.client");
       handleAsyncErrorWithMessage(
         error,
         "An error occurred while preparing posts. Please try again.",

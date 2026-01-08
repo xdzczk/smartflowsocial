@@ -10,7 +10,9 @@ import type { PostData, PostFetcher } from "../types";
 function getFetcherFormData(
   fetcher: PostFetcher | undefined
 ): FormData | null | undefined {
-  return (fetcher as { formData?: FormData | null })?.formData;
+  return fetcher
+    ? (fetcher as { formData?: FormData | null }).formData
+    : undefined;
 }
 
 interface PostedPostsTableProps {
@@ -42,7 +44,7 @@ export default function PostedPostsTable({
 }: PostedPostsTableProps) {
   return (
     <div className="min-w-full overflow-x-auto rounded border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-      <table className="min-w-full whitespace-nowrap align-middle text-sm">
+      <table className="min-w-full align-middle text-sm whitespace-nowrap">
         <thead>
           <tr>
             <th className="bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
@@ -207,7 +209,7 @@ export default function PostedPostsTable({
                   />
                 </td>
                 <td className="p-3">
-                  {post.fileUrl && post.fileUrl.length > 0 ? (
+                  {post.fileUrl.length > 0 ? (
                     <div className="relative">
                       <MediaThumbnail
                         src={getImageUrls(post.fileUrl)[0]}
@@ -215,7 +217,7 @@ export default function PostedPostsTable({
                         className="h-12 w-12 rounded object-cover"
                       />
                       {post.repost ? (
-                        <div className="absolute -right-1 -top-1 rounded-full bg-purple-500 p-1">
+                        <div className="absolute -top-1 -right-1 rounded-full bg-purple-500 p-1">
                           <svg
                             className="h-3 w-3 text-white"
                             fill="none"
@@ -232,7 +234,7 @@ export default function PostedPostsTable({
                         </div>
                       ) : null}
                       {post.isQuotedPost ? (
-                        <div className="absolute -right-1 -top-1 rounded-full bg-green-500 p-1">
+                        <div className="absolute -top-1 -right-1 rounded-full bg-green-500 p-1">
                           <svg
                             className="h-3 w-3 text-white"
                             fill="none"
@@ -255,7 +257,7 @@ export default function PostedPostsTable({
                         TEXT
                       </div>
                       {post.repost ? (
-                        <div className="absolute -right-1 -top-1 rounded-full bg-purple-500 p-1">
+                        <div className="absolute -top-1 -right-1 rounded-full bg-purple-500 p-1">
                           <svg
                             className="h-3 w-3 text-white"
                             fill="none"
@@ -272,7 +274,7 @@ export default function PostedPostsTable({
                         </div>
                       ) : null}
                       {post.isQuotedPost ? (
-                        <div className="absolute -right-1 -top-1 rounded-full bg-green-500 p-1">
+                        <div className="absolute -top-1 -right-1 rounded-full bg-green-500 p-1">
                           <svg
                             className="h-3 w-3 text-white"
                             fill="none"
@@ -316,18 +318,18 @@ export default function PostedPostsTable({
                         color: post.queueType.color,
                       }}
                     >
-                      {post.queueType?.name ?? "unassigned"}
+                      {post.queueType.name}
                     </span>
                   ) : (
                     <span
                       className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium capitalize ${(() => {
                         const colors = getQueueColor(
-                          post.queueType?.name ?? "unassigned"
+                          post.queueType?.name || "unassigned"
                         );
                         return colors ? `${colors.bg} ${colors.text}` : "";
                       })()}`}
                     >
-                      {post.queueType?.name ?? "unassigned"}
+                      {post.queueType?.name || "unassigned"}
                     </span>
                   )}
                 </td>
@@ -366,7 +368,7 @@ export default function PostedPostsTable({
                                   post.id
                                 : false)
                             }
-                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-purple-200 bg-white px-2 py-1 text-sm font-semibold leading-5 text-purple-800 hover:border-purple-300 hover:text-purple-900 hover:shadow-sm focus:ring focus:ring-purple-300/25 active:border-purple-200 active:shadow-none disabled:opacity-50 dark:border-purple-700 dark:bg-gray-800 dark:text-purple-300 dark:hover:border-purple-600 dark:hover:text-purple-200 dark:focus:ring-purple-600/40 dark:active:border-purple-700"
+                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-purple-200 bg-white px-2 py-1 text-sm leading-5 font-semibold text-purple-800 hover:border-purple-300 hover:text-purple-900 hover:shadow-sm focus:ring focus:ring-purple-300/25 active:border-purple-200 active:shadow-none disabled:opacity-50 dark:border-purple-700 dark:bg-gray-800 dark:text-purple-300 dark:hover:border-purple-600 dark:hover:text-purple-200 dark:focus:ring-purple-600/40 dark:active:border-purple-700"
                           >
                             {fetcher.state !== "idle" &&
                             (formData
@@ -398,7 +400,7 @@ export default function PostedPostsTable({
                                   post.id
                                 : false)
                             }
-                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-green-200 bg-white px-2 py-1 text-sm font-semibold leading-5 text-green-800 hover:border-green-300 hover:text-green-900 hover:shadow-sm focus:ring focus:ring-green-300/25 active:border-green-200 active:shadow-none disabled:opacity-50 dark:border-green-700 dark:bg-gray-800 dark:text-green-300 dark:hover:border-green-600 dark:hover:text-green-200 dark:focus:ring-green-600/40 dark:active:border-green-700"
+                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-green-200 bg-white px-2 py-1 text-sm leading-5 font-semibold text-green-800 hover:border-green-300 hover:text-green-900 hover:shadow-sm focus:ring focus:ring-green-300/25 active:border-green-200 active:shadow-none disabled:opacity-50 dark:border-green-700 dark:bg-gray-800 dark:text-green-300 dark:hover:border-green-600 dark:hover:text-green-200 dark:focus:ring-green-600/40 dark:active:border-green-700"
                           >
                             {fetcher.state !== "idle" &&
                             (formData
@@ -423,7 +425,7 @@ export default function PostedPostsTable({
                           deleteFetcher.state !== "idle" ||
                           bulkDeleteFetcher.state !== "idle"
                         }
-                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-2 py-1 text-sm font-semibold leading-5 text-red-800 hover:border-red-300 hover:text-red-900 hover:shadow-sm focus:ring focus:ring-red-300/25 active:border-red-200 active:shadow-none disabled:opacity-50 dark:border-red-700 dark:bg-gray-800 dark:text-red-300 dark:hover:border-red-600 dark:hover:text-red-200 dark:focus:ring-red-600/40 dark:active:border-red-700"
+                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-2 py-1 text-sm leading-5 font-semibold text-red-800 hover:border-red-300 hover:text-red-900 hover:shadow-sm focus:ring focus:ring-red-300/25 active:border-red-200 active:shadow-none disabled:opacity-50 dark:border-red-700 dark:bg-gray-800 dark:text-red-300 dark:hover:border-red-600 dark:hover:text-red-200 dark:focus:ring-red-600/40 dark:active:border-red-700"
                       >
                         {deleteFetcher.state !== "idle" &&
                         deleteFetcher.formData?.get("postId") === post.id

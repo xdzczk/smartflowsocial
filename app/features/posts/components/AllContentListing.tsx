@@ -117,8 +117,8 @@ export default function AllContentListing({
     ) {
       const aKey = a[sortConfig.key];
       const bKey = b[sortConfig.key];
-      aValue = aKey ? new Date(aKey).getTime() : 0;
-      bValue = bKey ? new Date(bKey).getTime() : 0;
+      aValue = new Date(aKey).getTime();
+      bValue = new Date(bKey).getTime();
     } else {
       const aKey = a[sortConfig.key as keyof CombinedContent];
       const bKey = b[sortConfig.key as keyof CombinedContent];
@@ -143,7 +143,7 @@ export default function AllContentListing({
       item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- Boolean OR for filter logic
       item.content?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.summary?.toLowerCase().includes(searchTerm.toLowerCase()),
+      item.summary?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -168,7 +168,7 @@ export default function AllContentListing({
 
       {/* Content Table */}
       <div className="min-w-full overflow-x-auto rounded border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-        <table className="min-w-full whitespace-nowrap align-middle text-sm">
+        <table className="min-w-full align-middle text-sm whitespace-nowrap">
           <ContentTableHeader
             type={type}
             showBulkActions={showBulkActions}

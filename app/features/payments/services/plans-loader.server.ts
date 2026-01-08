@@ -16,9 +16,7 @@ export async function loadPlansData(request: Request) {
 
   try {
     user = await requireUser(request);
-    if (user) {
-      currentSubscription = await getUserSubscription(user.id);
-    }
+    currentSubscription = await getUserSubscription(user.id);
   } catch {
     // User not logged in - that's okay for viewing plans
   }

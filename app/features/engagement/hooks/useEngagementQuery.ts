@@ -119,8 +119,7 @@ export function useEngagementData() {
 
   // Type guard for stats
   const stats: Record<string, EventStats> =
-    typeof rawData.stats === "object" &&
-    !Array.isArray(rawData.stats)
+    typeof rawData.stats === "object" && !Array.isArray(rawData.stats)
       ? rawData.stats
       : {};
 
@@ -141,7 +140,6 @@ export function useEngagementData() {
 
   // Type guard for trustScores
   const trustScores: Record<string, number> =
-    rawData.trustScores &&
     typeof rawData.trustScores === "object" &&
     !Array.isArray(rawData.trustScores)
       ? Object.fromEntries(

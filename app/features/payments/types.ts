@@ -107,14 +107,14 @@ export interface SubscriptionData {
  * Get the current user's plan type from their subscription
  */
 export function getUserPlanType(
-  subscription: UserSubscription | null,
+  subscription: UserSubscription | null
 ): PlanType {
   if (subscription?.status !== "ACTIVE") {
     return "free";
   }
 
   // Check both plan name and planId for better matching
-  const planName = subscription.Plan?.name?.toLowerCase() ?? "";
+  const planName = subscription.Plan?.name.toLowerCase() ?? "";
   const planId = subscription.planId.toLowerCase();
 
   // Check planId first (more reliable), then plan name
@@ -134,7 +134,7 @@ export function getUserPlanType(
  */
 export function hasFeatureAccess(
   subscription: UserSubscription | null,
-  feature: FeatureName,
+  feature: FeatureName
 ): boolean {
   const planType = getUserPlanType(subscription);
   return PLAN_FEATURES[planType][feature];
@@ -188,7 +188,7 @@ export function useFeatureAccess(feature: FeatureName): boolean {
   const subscriptionData = useSubscription();
   return hasFeatureAccess(
     subscriptionData?.currentSubscription ?? null,
-    feature,
+    feature
   );
 }
 
@@ -228,7 +228,7 @@ export function getMinimumPlanForFeature(feature: FeatureName): PlanType {
  * Check if user is a new user without any subscription
  */
 export function isNewUserWithoutSubscription(
-  subscriptionData: SubscriptionData | null,
+  subscriptionData: SubscriptionData | null
 ): boolean {
   if (!subscriptionData?.user) {
     return true; // No user data means not logged in

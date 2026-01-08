@@ -47,12 +47,7 @@ export async function handleDraftsAction(formData: FormData, userId: string) {
   }
 
   if (_action === "bulkSignAndResume") {
-    // TypeScript needs explicit narrowing for discriminated unions
-    const bulkData =
-      result.data._action === "bulkSignAndResume" ? result.data : null;
-    if (!bulkData) {
-      return { error: "Invalid action" };
-    }
+    const bulkData = result.data;
 
     await Promise.all(
       bulkData.postIds.map(async (id, index) => {

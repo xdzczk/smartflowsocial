@@ -109,9 +109,7 @@ export default function DraftBulkResume({
 
             if (queueType.scheduleType === "INTERVAL") {
               const config =
-                queueType &&
-                typeof queueType === "object" &&
-                "scheduleConfig" in queueType
+                typeof queueType === "object" && "scheduleConfig" in queueType
                   ? queueType.scheduleConfig
                   : null;
               let intervalHours = 4; // default
@@ -144,14 +142,12 @@ export default function DraftBulkResume({
               );
             } else if (queueType.scheduleType === "FIXED_SLOTS") {
               const config =
-                queueType &&
-                typeof queueType === "object" &&
-                "scheduleConfig" in queueType
+                typeof queueType === "object" && "scheduleConfig" in queueType
                   ? queueType.scheduleConfig
                   : null;
               const slots =
                 config && isFixedSlotsScheduleConfig(config)
-                  ? (config.slots ?? [])
+                  ? config.slots
                   : [];
 
               if (slots.length > 0) {
@@ -364,9 +360,8 @@ export default function DraftBulkResume({
             const data = (await response.json()) as { hashtags?: string };
             tagsString = data.hashtags ?? "";
           } catch (error) {
-            const { handleErrorSafely } = await import(
-              "~/lib/error-handler.client"
-            );
+            const { handleErrorSafely } =
+              await import("~/lib/error-handler.client");
             handleErrorSafely(error, {
               component: "DraftBulkResume",
               action: "getEffectiveHashtags",
@@ -413,9 +408,9 @@ export default function DraftBulkResume({
         const queueTypeValue =
           typeof post.queueType === "string"
             ? post.queueType
-            : (post.queueType?.name ?? "");
+            : post.queueType.name;
         formData.append("queueTypes", queueTypeValue);
-        formData.append("scheduledFors", post.scheduledFor ?? "");
+        formData.append("scheduledFors", post.scheduledFor);
         formData.append("signedEvents", post.signedEvent);
         formData.append("nostrEvents", post.nostrEvent);
       });
@@ -473,7 +468,7 @@ export default function DraftBulkResume({
 
         {/* Schedule Interval Buttons */}
         {posts.length > 0 ? (
-          <div className="mb-4 mt-4 flex justify-center">
+          <div className="mt-4 mb-4 flex justify-center">
             {scheduleIntervals
               ? scheduleIntervals.map((interval) => (
                   <button
@@ -546,7 +541,7 @@ export default function DraftBulkResume({
               {posts.map((post, index) => (
                 <tr key={post.id} className="border-b">
                   <td className="p-4">
-                    {post.fileUrl && post.fileUrl.length > 0 ? (
+                    {post.fileUrl.length > 0 ? (
                       <img
                         src={getImageUrls(post.fileUrl)[0]}
                         alt="Preview"

@@ -160,7 +160,7 @@ export default function LongFormPreviewModal({
       });
 
       return (
-        html ??
+        html ||
         '<p class="text-gray-500 italic">Content could not be rendered</p>'
       );
     } catch (error) {
@@ -170,7 +170,7 @@ export default function LongFormPreviewModal({
       });
       // Try to display as plain text if JSON parsing fails
       const plainTextContent = content.replace(/<[^>]*>/g, "");
-      return `<p class="text-gray-700 dark:text-gray-300">${plainTextContent ?? "Content parsing failed"}</p>`;
+      return `<p class="text-gray-700 dark:text-gray-300">${plainTextContent || "Content parsing failed"}</p>`;
     }
   };
 
@@ -192,7 +192,7 @@ export default function LongFormPreviewModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black bg-opacity-50"
+        className="bg-opacity-50 absolute inset-0 bg-black"
         onClick={onClose}
         onKeyDown={handleBackdropKeyDown}
         role="button"
@@ -271,8 +271,8 @@ export default function LongFormPreviewModal({
             </div>
 
             {/* Title */}
-            <h1 className="mb-4 text-2xl font-bold leading-tight text-gray-900 dark:text-white">
-              {title ?? "Untitled Post"}
+            <h1 className="mb-4 text-2xl leading-tight font-bold text-gray-900 dark:text-white">
+              {title || "Untitled Post"}
             </h1>
 
             {/* Cover Image */}
@@ -289,7 +289,7 @@ export default function LongFormPreviewModal({
             {/* Summary */}
             {summary ? (
               <div className="mb-6 rounded-xl bg-gray-50 p-6 dark:bg-gray-800">
-                <p className="text-lg font-medium leading-relaxed text-gray-700 dark:text-gray-300">
+                <p className="text-lg leading-relaxed font-medium text-gray-700 dark:text-gray-300">
                   {summary}
                 </p>
               </div>
@@ -304,7 +304,7 @@ export default function LongFormPreviewModal({
                 color: "inherit",
               }}
               dangerouslySetInnerHTML={{
-                __html: convertEditorJSToHTML(content ?? ""),
+                __html: convertEditorJSToHTML(content),
               }}
             />
 

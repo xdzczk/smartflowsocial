@@ -68,7 +68,7 @@ export function QueueTypeDialog({
     if (queueType) {
       const scheduleConfig = queueType.scheduleConfig;
       return {
-        name: queueType.name ?? "",
+        name: queueType.name,
         description: queueType.description ?? "",
         color: queueType.color ?? "#3B82F6",
         hashTagPresetId: queueType.hashTagPresetId ?? "none",
@@ -84,7 +84,7 @@ export function QueueTypeDialog({
             : "",
         slots:
           scheduleConfig && isFixedSlotsScheduleConfig(scheduleConfig)
-            ? (scheduleConfig.slots?.join(", ") ?? "")
+            ? scheduleConfig.slots.join(", ")
             : "",
       };
     }
@@ -188,7 +188,7 @@ export function QueueTypeDialog({
               placeholder="e.g., Tech News"
             />
             {form.formState.errors.name ? (
-              <p className="text-sm text-destructive">
+              <p className="text-destructive text-sm">
                 {form.formState.errors.name.message}
               </p>
             ) : null}
@@ -233,7 +233,7 @@ export function QueueTypeDialog({
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               Posts in this queue will automatically use the selected hashtag
               preset
             </p>
@@ -302,7 +302,7 @@ export function QueueTypeDialog({
                   {...form.register("intervalHours")}
                 />
                 {form.formState.errors.intervalHours ? (
-                  <p className="text-sm text-destructive">
+                  <p className="text-destructive text-sm">
                     {form.formState.errors.intervalHours.message}
                   </p>
                 ) : null}
@@ -321,11 +321,11 @@ export function QueueTypeDialog({
                 placeholder="08:00, 12:00, 18:00"
               />
               {form.formState.errors.slots ? (
-                <p className="text-sm text-destructive">
+                <p className="text-destructive text-sm">
                   {form.formState.errors.slots.message}
                 </p>
               ) : null}
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Times are in your selected timezone
               </p>
             </div>
@@ -342,7 +342,7 @@ export function QueueTypeDialog({
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? (
                 <svg
-                  className="-ml-1 mr-2 h-4 w-4 animate-spin text-white"
+                  className="mr-2 -ml-1 h-4 w-4 animate-spin text-white"
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"

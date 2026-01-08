@@ -14,7 +14,10 @@ import {
 import { Input } from "~/components/ui/input";
 import { updateScheduleIntervalsClientSchema } from "~/lib/validation";
 import { useZodFieldArray } from "~/lib/validation/hooks/useZodFieldArray";
-import { useZodForm, formDataToFormData } from "~/lib/validation/utils.client-safe";
+import {
+  useZodForm,
+  formDataToFormData,
+} from "~/lib/validation/utils.client-safe";
 
 interface ScheduleIntervalsSettingsProps {
   scheduleIntervals: string[];
@@ -39,7 +42,12 @@ export function ScheduleIntervalsSettings({
   const { fields, append, remove } = useZodFieldArray<
     z.infer<typeof updateScheduleIntervalsClientSchema>,
     "scheduleIntervals"
-  >(form as unknown as UseFormReturn<z.infer<typeof updateScheduleIntervalsClientSchema>>, "scheduleIntervals");
+  >(
+    form as unknown as UseFormReturn<
+      z.infer<typeof updateScheduleIntervalsClientSchema>
+    >,
+    "scheduleIntervals"
+  );
 
   const isSubmitting = fetcher.state === "submitting";
   const watchedIntervals = form.watch("scheduleIntervals");
@@ -50,7 +58,7 @@ export function ScheduleIntervalsSettings({
   const onSubmit = form.handleSubmit((data) => {
     // Filter out empty strings and validate
     const filteredIntervals = data.scheduleIntervals.filter(
-      (interval: string) => interval.trim(),
+      (interval: string) => interval.trim()
     );
 
     // Validate all non-empty intervals are positive integers
@@ -69,7 +77,7 @@ export function ScheduleIntervalsSettings({
 
     const formData = formDataToFormData(
       { scheduleIntervals: filteredIntervals.join("\n") },
-      "update_schedule_intervals",
+      "update_schedule_intervals"
     );
 
     fetcher.submit(formData, { method: "post" });
@@ -85,9 +93,15 @@ export function ScheduleIntervalsSettings({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={(e) => { e.preventDefault(); void onSubmit(e); }} className="space-y-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void onSubmit(e);
+          }}
+          className="space-y-4"
+        >
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Add time intervals one by one (whole numbers only, e.g. 1 for 1
               hour, 24 for 24 hours)
             </p>
@@ -112,11 +126,13 @@ export function ScheduleIntervalsSettings({
                         : ""
                     }
                   />
-                  {form.formState.errors.scheduleIntervals?.[index] ? <p className="mt-1 text-sm text-destructive">
+                  {form.formState.errors.scheduleIntervals?.[index] ? (
+                    <p className="text-destructive mt-1 text-sm">
                       {String(
-                        form.formState.errors.scheduleIntervals[index]?.message,
+                        form.formState.errors.scheduleIntervals[index].message
                       )}
-                    </p> : null}
+                    </p>
+                  ) : null}
                 </div>
                 <Button
                   type="button"
@@ -141,9 +157,11 @@ export function ScheduleIntervalsSettings({
             </Button>
           </div>
 
-          {form.formState.errors.scheduleIntervals ? <p className="text-sm text-destructive">
+          {form.formState.errors.scheduleIntervals ? (
+            <p className="text-destructive text-sm">
               {form.formState.errors.scheduleIntervals.message}
-            </p> : null}
+            </p>
+          ) : null}
 
           <Button
             type="submit"
@@ -159,7 +177,7 @@ export function ScheduleIntervalsSettings({
             </p>
           ) : null}
           {fetcher.data?.error ? (
-            <p className="text-sm text-destructive">{fetcher.data.error}</p>
+            <p className="text-destructive text-sm">{fetcher.data.error}</p>
           ) : null}
         </form>
       </CardContent>

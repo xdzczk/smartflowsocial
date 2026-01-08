@@ -50,7 +50,7 @@ export function QueueTypesSettings({
   const updateFetcher = useFetcher<FetcherData>();
   const deleteFetcher = useFetcher<FetcherData>();
 
-  const [queueTypesState, setQueueTypesState] = useState(queueTypes || []);
+  const [queueTypesState, setQueueTypesState] = useState(queueTypes);
   const [showDialog, setShowDialog] = useState(false);
   const [editingQueueType, setEditingQueueType] = useState<QueueType | null>(
     null
@@ -61,12 +61,10 @@ export function QueueTypesSettings({
   const isDeleting = deleteFetcher.state === "submitting";
 
   useEffect(() => {
-    if (queueTypes) {
-      // Defer to avoid cascading renders
-      setTimeout(() => {
-        setQueueTypesState(queueTypes);
-      }, 0);
-    }
+    // Defer to avoid cascading renders
+    setTimeout(() => {
+      setQueueTypesState(queueTypes);
+    }, 0);
   }, [queueTypes]);
 
   // Close dialog on successful submission

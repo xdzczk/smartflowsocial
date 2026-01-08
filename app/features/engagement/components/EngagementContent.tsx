@@ -99,26 +99,23 @@ export function EngagementContent({
   }
 
   // Quote Reposts Tab Content
-  if (activeTab === "quotes") {
-    return (
-      <>
-        {groupedNotifications.quotes.length > 0 ? (
-          <GroupedNotificationList
-            groupedNotifications={groupedNotifications.quotes}
-            userTimezone={userTimezone ?? undefined}
-            userRelays={userRelays ?? defaultRelays}
-            trustScores={trustScores}
-          />
-        ) : (
-          <div className="rounded-lg border border-gray-200 bg-white p-8 text-center dark:border-gray-700 dark:bg-gray-800">
-            <p className="text-gray-500 dark:text-gray-400">
-              No quote reposts found for your posts.
-            </p>
-          </div>
-        )}
-      </>
-    );
-  }
-
-  return null;
+  // activeTab must be "quotes" at this point due to type narrowing
+  return (
+    <>
+      {groupedNotifications.quotes.length > 0 ? (
+        <GroupedNotificationList
+          groupedNotifications={groupedNotifications.quotes}
+          userTimezone={userTimezone ?? undefined}
+          userRelays={userRelays ?? defaultRelays}
+          trustScores={trustScores}
+        />
+      ) : (
+        <div className="rounded-lg border border-gray-200 bg-white p-8 text-center dark:border-gray-700 dark:bg-gray-800">
+          <p className="text-gray-500 dark:text-gray-400">
+            No quote reposts found for your posts.
+          </p>
+        </div>
+      )}
+    </>
+  );
 }

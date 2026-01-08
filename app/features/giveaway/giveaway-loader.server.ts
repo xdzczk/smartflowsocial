@@ -50,7 +50,6 @@ export async function fetchUserProfile(pubkey: string): Promise<User | null> {
       )
         continue;
       const event = eventData as { kind?: number; content?: string };
-      if (!event) continue;
 
       if (event.kind === 0) {
         profileEvent = event;
@@ -200,14 +199,9 @@ async function fetchPostStats(eventIds: string[]): Promise<
       const data = (await response.json()) as PrimalEvent[];
       // Find the stats event in the response array
       const statsEvent = data.find((event: PrimalEvent) => {
-        if (!Array.isArray(event) || event[0] !== "EVENT" || !event[2])
-          return false;
+        if (!Array.isArray(event) || event[0] !== "EVENT") return false;
         const eventData = event[2];
-        if (
-          !eventData ||
-          typeof eventData !== "object" ||
-          Array.isArray(eventData)
-        )
+        if (typeof eventData !== "object" || Array.isArray(eventData))
           return false;
         const eventTyped = eventData as { kind?: number; content?: string };
         return (
@@ -221,7 +215,6 @@ async function fetchPostStats(eventIds: string[]): Promise<
       if (
         statsEvent &&
         Array.isArray(statsEvent) &&
-        statsEvent[2] &&
         typeof statsEvent[2] === "object" &&
         !Array.isArray(statsEvent[2])
       ) {
@@ -382,14 +375,9 @@ async function processGiveawayParticipants(
       // Find user profile event (kind 0)
       const userProfile = (userProfileResponse as PrimalEvent[]).find(
         (data: PrimalEvent) => {
-          if (!Array.isArray(data) || data[0] !== "EVENT" || !data[2])
-            return false;
+          if (!Array.isArray(data) || data[0] !== "EVENT") return false;
           const eventData = data[2];
-          if (
-            !eventData ||
-            typeof eventData !== "object" ||
-            Array.isArray(eventData)
-          )
+          if (typeof eventData !== "object" || Array.isArray(eventData))
             return false;
           const eventTyped = eventData as { kind?: number };
           return eventTyped.kind === 0;
@@ -399,14 +387,9 @@ async function processGiveawayParticipants(
       // Find stats event (kind 10000105)
       const statsEvent = (userProfileResponse as PrimalEvent[]).find(
         (data: PrimalEvent) => {
-          if (!Array.isArray(data) || data[0] !== "EVENT" || !data[2])
-            return false;
+          if (!Array.isArray(data) || data[0] !== "EVENT") return false;
           const eventData = data[2];
-          if (
-            !eventData ||
-            typeof eventData !== "object" ||
-            Array.isArray(eventData)
-          )
+          if (typeof eventData !== "object" || Array.isArray(eventData))
             return false;
           const eventTyped = eventData as { kind?: number };
           return eventTyped.kind === 10000105;
@@ -417,7 +400,7 @@ async function processGiveawayParticipants(
       let totalZapped = 0;
 
       // Extract lud16 from profile
-      if (userProfile && Array.isArray(userProfile) && userProfile[2]) {
+      if (userProfile && Array.isArray(userProfile)) {
         const profileEvent = userProfile[2] as { content?: string };
         if (profileEvent.content && typeof profileEvent.content === "string") {
           const profileContent = JSON.parse(profileEvent.content) as {
@@ -428,7 +411,7 @@ async function processGiveawayParticipants(
       }
 
       // Extract zap stats
-      if (statsEvent && Array.isArray(statsEvent) && statsEvent[2]) {
+      if (statsEvent && Array.isArray(statsEvent)) {
         const statsEventData = statsEvent[2] as { content?: string };
         if (
           statsEventData.content &&

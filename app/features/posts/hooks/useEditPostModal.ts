@@ -39,19 +39,18 @@ export function useEditPostModal({
 }: UseEditPostModalProps) {
   // Get initial values for form
   const getInitialValues = () => {
-    if (isLongform && post && typeof post === "object" && "title" in post) {
+    if (isLongform && typeof post === "object" && "title" in post) {
       const postTitle = typeof post.title === "string" ? post.title : "";
       const postSummary = typeof post.summary === "string" ? post.summary : "";
       const postImage = typeof post.image === "string" ? post.image : "";
       const publishedAt =
-        post && typeof post === "object" && "publishedAt" in post
+        typeof post === "object" && "publishedAt" in post
           ? post.publishedAt
           : null;
       const scheduledForStr = publishedAt
         ? new Date(publishedAt).toISOString().slice(0, 16)
         : "";
       const queueType =
-        post &&
         typeof post === "object" &&
         "queueType" in post &&
         post.queueType &&
@@ -62,7 +61,6 @@ export function useEditPostModal({
           : "";
 
       const hashTagPresetId =
-        post &&
         typeof post === "object" &&
         "hashTagPresetId" in post &&
         typeof post.hashTagPresetId === "string"
@@ -82,14 +80,12 @@ export function useEditPostModal({
       };
     } else {
       const postCaption =
-        post &&
         typeof post === "object" &&
         "caption" in post &&
         typeof post.caption === "string"
           ? post.caption
           : "";
       const queueTypeId =
-        post &&
         typeof post === "object" &&
         "queueType" in post &&
         post.queueType &&
@@ -99,7 +95,7 @@ export function useEditPostModal({
           ? post.queueType.id
           : "";
       const scheduledForValue =
-        post && typeof post === "object" && "scheduledFor" in post
+        typeof post === "object" && "scheduledFor" in post
           ? (post as { scheduledFor?: unknown }).scheduledFor
           : null;
       const scheduledForStr =
@@ -110,7 +106,6 @@ export function useEditPostModal({
           : "";
 
       const hashTagPresetId =
-        post &&
         typeof post === "object" &&
         "hashTagPresetId" in post &&
         typeof post.hashTagPresetId === "string"
@@ -118,7 +113,6 @@ export function useEditPostModal({
           : undefined;
 
       const existingHashtags =
-        post &&
         typeof post === "object" &&
         "hashtags" in post &&
         typeof post.hashtags === "string"
@@ -161,7 +155,7 @@ export function useEditPostModal({
 
   // Load initial content for longform posts
   useEffect(() => {
-    if (isLongform && post && typeof post === "object" && "content" in post) {
+    if (isLongform && typeof post === "object" && "content" in post) {
       const postContent = typeof post.content === "string" ? post.content : "";
       if (postContent) {
         form.setValue("content", postContent);
@@ -296,9 +290,8 @@ export function useEditPostModal({
                         throw new Error(error ?? "Upload failed");
                       }
                     } catch (error: unknown) {
-                      const { handleAsyncError } = await import(
-                        "~/lib/error-handler.client"
-                      );
+                      const { handleAsyncError } =
+                        await import("~/lib/error-handler.client");
                       handleAsyncError(
                         error,
                         {

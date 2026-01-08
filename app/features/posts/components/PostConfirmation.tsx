@@ -38,9 +38,8 @@ export default function PostConfirmation({
               originalPostId: eventData.originalPostId,
             };
           } catch (eventError) {
-            const { handleAsyncError } = await import(
-              "~/lib/error-handler.client"
-            );
+            const { handleAsyncError } =
+              await import("~/lib/error-handler.client");
             handleAsyncError(
               eventError,
               {
@@ -132,13 +131,11 @@ export default function PostConfirmation({
 
         {/* Posts Grid */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {preparedEvents?.map((eventData, index) => {
+          {preparedEvents.map((eventData, index) => {
             // Extract events data with type safety
             const eventsData = eventData.events;
             const eventsKind =
-              typeof eventsData === "object" &&
-              eventsData !== null &&
-              "kind" in eventsData
+              typeof eventsData === "object" && "kind" in eventsData
                 ? (eventsData as { kind?: unknown }).kind
                 : undefined;
             const isRepost = eventsKind === 6;
@@ -146,9 +143,7 @@ export default function PostConfirmation({
             // Debug logging for reposts
             if (isRepost) {
               const eventsTags =
-                typeof eventsData === "object" &&
-                eventsData !== null &&
-                "tags" in eventsData
+                typeof eventsData === "object" && "tags" in eventsData
                   ? (eventsData as { tags?: unknown }).tags
                   : undefined;
               logClientError(
@@ -174,16 +169,14 @@ export default function PostConfirmation({
 
             if (isRepost) {
               // For reposts, use the fileUrl from the eventData
-              mediaUrl = eventData.fileUrl ?? "";
-              caption = eventData.caption ?? "";
+              mediaUrl = eventData.fileUrl;
+              caption = eventData.caption;
               // Hide tags for reposts
               tags = "";
             } else {
               // For regular posts, parse content assuming format: "caption mediaUrl1 mediaUrl2 ..."
               const eventsContent =
-                typeof eventsData === "object" &&
-                eventsData !== null &&
-                "content" in eventsData
+                typeof eventsData === "object" && "content" in eventsData
                   ? (eventsData as { content?: unknown }).content
                   : undefined;
               if (eventsContent && typeof eventsContent === "string") {
@@ -207,18 +200,16 @@ export default function PostConfirmation({
                 mediaUrl = mediaUrl_ || "";
               } else {
                 // Fallback to eventData.caption if content is not available
-                caption = eventData.caption ?? "";
-                mediaUrl = eventData.fileUrl ?? "";
+                caption = eventData.caption;
+                mediaUrl = eventData.fileUrl;
               }
               const eventsTags =
-                typeof eventsData === "object" &&
-                eventsData !== null &&
-                "tags" in eventsData
+                typeof eventsData === "object" && "tags" in eventsData
                   ? (eventsData as { tags?: unknown }).tags
                   : undefined;
               tags = (Array.isArray(eventsTags) ? eventsTags : [])
                 .map((tag) =>
-                  Array.isArray(tag) && tag[1] && typeof tag[1] === "string"
+                  Array.isArray(tag) && typeof tag[1] === "string"
                     ? `#${tag[1]}`
                     : ""
                 )
@@ -228,9 +219,7 @@ export default function PostConfirmation({
 
             // Extract eventsTags for use in JSX
             const eventsTagsForDisplay =
-              typeof eventsData === "object" &&
-              eventsData !== null &&
-              "tags" in eventsData
+              typeof eventsData === "object" && "tags" in eventsData
                 ? (eventsData as { tags?: unknown }).tags
                 : undefined;
 
@@ -260,7 +249,7 @@ export default function PostConfirmation({
                         Caption
                       </h4>
                       <div className="max-h-20 overflow-y-auto rounded-lg bg-gray-50 p-3 dark:bg-gray-700">
-                        <p className="whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300">
+                        <p className="text-sm whitespace-pre-wrap text-gray-700 dark:text-gray-300">
                           {caption}
                         </p>
                       </div>
@@ -307,9 +296,7 @@ export default function PostConfirmation({
                           .filter((tag) => Array.isArray(tag) && tag[0] === "t") // Only show hashtag tags
                           .map((tag, tagIndex) => {
                             const tagValue =
-                              Array.isArray(tag) &&
-                              tag[1] &&
-                              typeof tag[1] === "string"
+                              Array.isArray(tag) && typeof tag[1] === "string"
                                 ? tag[1]
                                 : "";
                             return (
@@ -327,13 +314,12 @@ export default function PostConfirmation({
 
                   {/* Schedule time */}
                   <div className="rounded-lg border border-gray-200 p-3 text-center dark:border-gray-600">
-                    <h4 className="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    <h4 className="mb-1 text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
                       Scheduled for
                     </h4>
                     <p className="text-sm font-semibold text-gray-900 dark:text-white">
                       {new Date(
                         (typeof eventsData === "object" &&
-                        eventsData !== null &&
                         "created_at" in eventsData &&
                         typeof (eventsData as { created_at?: unknown })
                           .created_at === "number"

@@ -146,9 +146,7 @@ export function useGiveawayData() {
 
   // Type assertions for stats
   const stats: Record<string, PostStats> =
-    rawData.stats &&
-    typeof rawData.stats === "object" &&
-    !Array.isArray(rawData.stats)
+    typeof rawData.stats === "object" && !Array.isArray(rawData.stats)
       ? rawData.stats
       : {};
 
@@ -160,7 +158,7 @@ export function useGiveawayData() {
       : [],
     user: rawData.user,
     queueTypes: Array.isArray(rawData.queueTypes) ? rawData.queueTypes : [],
-    selectedQueueType: rawData.selectedQueueType ?? "all",
+    selectedQueueType: rawData.selectedQueueType,
     isLoading: query.isLoading,
     rawData,
   };

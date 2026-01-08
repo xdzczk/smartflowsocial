@@ -32,7 +32,7 @@ export default function NewPostImagesConfirmation({
   const user = useOptionalUser();
 
   // Calculate addTags for display
-  const addTags = user?.showHashTagsinPosts ? `\n${tags ?? ""}` : "";
+  const addTags = user?.showHashTagsinPosts ? `\n${tags}` : "";
 
   // Flatten the array structure if needed
   const events: PreparedEventData[] = Array.isArray(preparedEvents[0])
@@ -69,20 +69,17 @@ export default function NewPostImagesConfirmation({
           effectiveHashtags = data.hashtags ?? "";
         } else {
           // Fallback to user's default hashtags
-          effectiveHashtags = Array.isArray(tags)
-            ? tags.join(" ")
-            : (tags ?? "");
+          effectiveHashtags = Array.isArray(tags) ? tags.join(" ") : tags;
         }
       } catch (error) {
-        const { handleErrorSafely } = await import(
-          "~/lib/error-handler.client"
-        );
+        const { handleErrorSafely } =
+          await import("~/lib/error-handler.client");
         handleErrorSafely(error, {
           component: "NewPostImagesConfirmation",
           action: "fetchEffectiveHashtags",
         });
         // Fallback to user's default hashtags
-        effectiveHashtags = Array.isArray(tags) ? tags.join(" ") : (tags ?? "");
+        effectiveHashtags = tags;
       }
 
       const addTags = user?.showHashTagsinPosts ? `\n${effectiveHashtags}` : "";
@@ -102,7 +99,6 @@ export default function NewPostImagesConfirmation({
         ) {
           const content = firstEvent.content;
           if (
-            content &&
             typeof content === "object" &&
             !Array.isArray(content) &&
             "scheduledFor" in content
@@ -146,7 +142,6 @@ export default function NewPostImagesConfirmation({
 
       const firstEventContent = events[0]?.content;
       const firstCaption =
-        firstEventContent &&
         typeof firstEventContent === "object" &&
         "caption" in firstEventContent &&
         typeof firstEventContent.caption === "string"
@@ -156,7 +151,6 @@ export default function NewPostImagesConfirmation({
         .map((event) => {
           const content = event.content;
           if (
-            content &&
             typeof content === "object" &&
             "fileUrl" in content &&
             typeof content.fileUrl === "string"
@@ -187,7 +181,6 @@ export default function NewPostImagesConfirmation({
         .map((event) => {
           const content = event.content;
           if (
-            content &&
             typeof content === "object" &&
             "fileUrl" in content &&
             typeof content.fileUrl === "string"
@@ -198,14 +191,12 @@ export default function NewPostImagesConfirmation({
         })
         .filter((url) => url !== "");
       const captionForForm =
-        firstEventContent &&
         typeof firstEventContent === "object" &&
         "caption" in firstEventContent &&
         typeof firstEventContent.caption === "string"
           ? firstEventContent.caption
           : "";
       const queueTypeForForm =
-        firstEventContent &&
         typeof firstEventContent === "object" &&
         "queueType" in firstEventContent &&
         typeof firstEventContent.queueType === "string"
@@ -241,7 +232,6 @@ export default function NewPostImagesConfirmation({
       .map((event) => {
         const content = event.content;
         if (
-          content &&
           typeof content === "object" &&
           "fileUrl" in content &&
           typeof content.fileUrl === "string"
@@ -257,7 +247,6 @@ export default function NewPostImagesConfirmation({
       typeof draftFirstEvent === "object" &&
       "content" in draftFirstEvent &&
       typeof draftFirstEvent.content === "object" &&
-      draftFirstEvent.content !== null &&
       "caption" in draftFirstEvent.content &&
       typeof draftFirstEvent.content.caption === "string"
         ? draftFirstEvent.content.caption
@@ -267,7 +256,6 @@ export default function NewPostImagesConfirmation({
       typeof draftFirstEvent === "object" &&
       "content" in draftFirstEvent &&
       typeof draftFirstEvent.content === "object" &&
-      draftFirstEvent.content !== null &&
       "queueType" in draftFirstEvent.content &&
       typeof draftFirstEvent.content.queueType === "string"
         ? draftFirstEvent.content.queueType
@@ -314,7 +302,6 @@ export default function NewPostImagesConfirmation({
                 {events.map((event: PreparedEventData, index: number) => {
                   const content = event.content;
                   const fileUrl =
-                    content &&
                     typeof content === "object" &&
                     "fileUrl" in content &&
                     typeof content.fileUrl === "string"
@@ -356,7 +343,7 @@ export default function NewPostImagesConfirmation({
                       Caption
                     </h4>
                     <div className="max-h-20 overflow-y-auto rounded-lg bg-gray-50 p-3 dark:bg-gray-700">
-                      <p className="whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300">
+                      <p className="text-sm whitespace-pre-wrap text-gray-700 dark:text-gray-300">
                         {caption + addTags}
                       </p>
                     </div>
@@ -388,11 +375,11 @@ export default function NewPostImagesConfirmation({
 
               {/* Schedule time */}
               <div className="rounded-lg border border-gray-200 p-3 text-center dark:border-gray-600">
-                <h4 className="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                <h4 className="mb-1 text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
                   Scheduled for
                 </h4>
                 <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                  {events[0]?.content?.scheduledFor
+                  {events[0]?.content.scheduledFor
                     ? new Date(
                         events[0].content.scheduledFor
                       ).toLocaleDateString("en-US", {

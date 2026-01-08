@@ -28,7 +28,8 @@ import { createPost } from "~/models/post.commands.server";
 
 import { resolveQueueTypeId } from "./queue-type-resolver.server";
 
-const ERROR_INVALID_SIGNED_EVENT_FORMAT = "Invalid signedEvent or nostrEvent format";
+const ERROR_INVALID_SIGNED_EVENT_FORMAT =
+  "Invalid signedEvent or nostrEvent format";
 
 /**
  * Determine if a file URL is a video based on extension
@@ -109,15 +110,13 @@ async function getHashtagPresetTags(
     ) {
       const preset = selectedQueueType.hashTagPreset;
       if (
-        preset &&
         typeof preset === "object" &&
         "tags" in preset &&
         typeof preset.tags === "string"
       ) {
-        hashTagPresetTags = preset.tags ?? "";
+        hashTagPresetTags = preset.tags;
       }
       if (
-        preset &&
         typeof preset === "object" &&
         "id" in preset &&
         typeof preset.id === "string"
@@ -637,14 +636,14 @@ export async function handleNewPostAction(
   );
   const hashTagPresetTags =
     typeof hashtagResult === "object" &&
-    hashtagResult !== null &&
+    !Array.isArray(hashtagResult) &&
     "tags" in hashtagResult &&
     typeof hashtagResult.tags === "string"
       ? hashtagResult.tags
       : "";
   const hashTagPresetId =
     typeof hashtagResult === "object" &&
-    hashtagResult !== null &&
+    !Array.isArray(hashtagResult) &&
     "presetId" in hashtagResult
       ? hashtagResult.presetId
       : manualHashTagPresetId;
