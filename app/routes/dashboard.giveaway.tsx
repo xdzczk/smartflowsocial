@@ -137,6 +137,7 @@ export default function PostedPosts() {
         <PostDetailsModal
           post={selectedPost as unknown as PostData | CombinedContent}
           stats={
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: type narrowing for serialized data
             selectedPost &&
             typeof selectedPost === "object" &&
             "signedEvent" in selectedPost &&

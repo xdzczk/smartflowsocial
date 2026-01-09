@@ -192,7 +192,7 @@ function fixUnnecessaryOptionalChaining() {
         totalFixes += fixes;
         log(`  ✅ Fixed ${fixes} issues in ${file}`);
       }
-    } catch (_error) {
+    } catch {
       // Skip files with errors
     }
   });
@@ -275,7 +275,7 @@ function fixUnnecessaryConditionals() {
         // We'll just log them for manual fixing
         // Line would be available at lines[lineIndex] when implemented
       });
-    } catch (_error) {
+    } catch {
       // Skip files with errors
     }
   });

@@ -50,6 +50,7 @@ export function setupCustomDragDrop(
 
     // Get block data using EditorJS API
     try {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: ref value can change between async operations
       if (!editorRef.current) return;
       const currentData = await editorRef.current.saver.save();
       draggedBlockData = currentData.blocks[draggedBlockIndex] ?? null;
@@ -72,6 +73,7 @@ export function setupCustomDragDrop(
     const blockElement = (e.target as HTMLElement).closest(
       ".ce-block"
     ) as HTMLElement;
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: element may not exist if drag was cancelled
     if (blockElement) {
       blockElement.style.opacity = "1";
       blockElement.classList.remove("dragging");
@@ -90,6 +92,7 @@ export function setupCustomDragDrop(
     const blockElement = (dragEvent.target as HTMLElement).closest(
       ".ce-block"
     ) as HTMLElement;
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: element and draggedBlockIndex may not exist
     if (blockElement && draggedBlockIndex !== null) {
       blockElement.classList.add("drag-over");
     }
@@ -102,6 +105,7 @@ export function setupCustomDragDrop(
     const dropBlockElement = (e.target as HTMLElement).closest(
       ".ce-block"
     ) as HTMLElement;
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: values can be null if drag was cancelled
     if (!dropBlockElement || draggedBlockIndex === null || !draggedBlockData)
       return;
 
@@ -112,6 +116,7 @@ export function setupCustomDragDrop(
 
     try {
       // Get current editor data
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: ref value can change between async operations
       if (!editorRef.current) return;
       const currentData = await editorRef.current.saver.save();
       const blocks = [...currentData.blocks];
@@ -134,6 +139,7 @@ export function setupCustomDragDrop(
         blocks: blocks,
       };
 
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: ref value can change between async operations
       if (!editorRef.current) return;
       await editorRef.current.render(newData);
       onContentChange(JSON.stringify(newData));

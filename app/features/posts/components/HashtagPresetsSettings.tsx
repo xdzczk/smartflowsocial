@@ -288,6 +288,7 @@ export function HashtagPresetsSettings({
                       .filter((tag) => tag.startsWith("#") && tag.length > 1)
                       .map((tag, index) => (
                         <Badge
+                          // eslint-disable-next-line react/no-array-index-key -- Stable list of tags, no unique ID available
                           key={index}
                           variant="outline"
                           className="px-2 py-0 text-xs"

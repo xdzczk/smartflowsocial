@@ -1,4 +1,4 @@
-import { getDynamicQueueStyle } from "../queueColors";
+import { getDynamicQueueStyle } from "../queue-colors";
 import type { QueueType } from "../types";
 interface QueueSelectorProps {
   queueTypes: Array<string | QueueType>;

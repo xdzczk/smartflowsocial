@@ -58,9 +58,11 @@ export function getFirstImage(
           return url ?? null;
         } catch {
           // If parsing fails, treat as direct URL
-          return firstFileUrl;
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: firstFileUrl may be undefined if array is empty
+          return firstFileUrl ?? null;
         }
       }
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: firstFileUrl may be undefined if array is empty
       return firstFileUrl ?? null;
     } catch (error) {
       handleErrorSafely(error, {
@@ -127,8 +129,8 @@ export function getQueueColorStyle(
   if (post.queueType && queueTypes) {
     const queueTypeData = queueTypes.find(
       (qt) =>
-        (qt.id && post.queueType?.id && qt.id === post.queueType.id) ||
-        (qt.name && post.queueType?.name && qt.name === post.queueType.name)
+        (qt.id && post.queueType?.id && qt.id === post.queueType.id) ??
+        (qt.name && post.queueType?.name === qt.name)
     );
     if (queueTypeData?.color) {
       return {

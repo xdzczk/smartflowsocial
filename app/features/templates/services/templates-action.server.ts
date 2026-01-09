@@ -11,6 +11,15 @@ import {
 } from "~/lib/validation";
 import { createAsset, deleteAsset } from "~/models/asset.server";
 import { deleteTemplate, getTemplates } from "~/models/template.server";
+const ACTION_DELETE = "delete";
+const ACTION_DELETE_ASSET = "delete_asset";
+const ACTION_CREATE_TEXT_ASSET = "create_text_asset";
+const ACTION_CREATE_MEDIA_ASSET = "create_media_asset";
+const ACTION_BULK_CREATE_MEDIA_ASSETS = "bulk_create_media_assets";
+const ACTION_BULK_DELETE_ASSETS = "bulk_delete_assets";
+
+const ASSET_TYPE_VIDEO = "Video";
+const ASSET_TYPE_IMAGE = "Image";
 
 export async function handleTemplatesAction(
   formData: FormData,
@@ -23,31 +32,23 @@ export async function handleTemplatesAction(
 
   const { _action } = result.data;
 
-  if (_action === "delete") {
-    const deleteData = result.data._action === "delete" ? result.data : null;
-    if (!deleteData) {
-      return { error: "Invalid action" };
-    }
+  if (_action === ACTION_DELETE) {
+    // TypeScript guarantees this is "delete" after the check
+    const deleteData = result.data;
     await deleteTemplate({ id: deleteData.templateId, userId });
     return { success: true };
   }
 
-  if (_action === "delete_asset") {
-    const deleteData =
-      result.data._action === "delete_asset" ? result.data : null;
-    if (!deleteData) {
-      return { error: "Invalid action" };
-    }
+  if (_action === ACTION_DELETE_ASSET) {
+    // TypeScript guarantees this is "delete_asset" after the check
+    const deleteData = result.data;
     await deleteAsset({ id: deleteData.assetId, userId });
     return { success: true };
   }
 
-  if (_action === "create_text_asset") {
-    const textData =
-      result.data._action === "create_text_asset" ? result.data : null;
-    if (!textData) {
-      return { error: "Invalid action" };
-    }
+  if (_action === ACTION_CREATE_TEXT_ASSET) {
+    // TypeScript guarantees this is "create_text_asset" after the check
+    const textData = result.data;
     const asset = await createAsset({
       userId,
       title: textData.title,
@@ -62,17 +63,10 @@ export async function handleTemplatesAction(
   if (
     _action === "create_image_asset" ||
     _action === "create_video_asset" ||
-    _action === "create_media_asset"
+    _action === ACTION_CREATE_MEDIA_ASSET
   ) {
-    const mediaData =
-      result.data._action === "create_image_asset" ||
-      result.data._action === "create_video_asset" ||
-      result.data._action === "create_media_asset"
-        ? result.data
-        : null;
-    if (!mediaData) {
-      return { error: "Invalid action" };
-    }
+    // TypeScript guarantees this is one of the media asset actions after the check
+    const mediaData = result.data;
 
     // These properties are validated by Zod, so they're safe to access
     const fileUrl = mediaData.uploadResult.file.url;
@@ -112,16 +106,10 @@ export async function handleTemplatesAction(
 
   if (
     _action === "bulk_create_image_assets" ||
-    _action === "bulk_create_media_assets"
+    _action === ACTION_BULK_CREATE_MEDIA_ASSETS
   ) {
-    const bulkData =
-      result.data._action === "bulk_create_image_assets" ||
-      result.data._action === "bulk_create_media_assets"
-        ? result.data
-        : null;
-    if (!bulkData) {
-      return { error: "Invalid action" };
-    }
+    // TypeScript guarantees this is one of the bulk create actions after the check
+    const bulkData = result.data;
 
     // Check for failed uploads
     const failedUploads = bulkData.uploadResults.filter(
@@ -161,9 +149,10 @@ export async function handleTemplatesAction(
           assetType = AssetType.VIDEO;
         }
 
-        const title =
-          bulkData.titles[index] ??
-          `${assetType === AssetType.VIDEO ? "Video" : "Image"} ${index + 1}`;
+        const titleValue = bulkData.titles[index];
+        const assetTypeLabel =
+          assetType === AssetType.VIDEO ? ASSET_TYPE_VIDEO : ASSET_TYPE_IMAGE;
+        const title = titleValue ?? `${assetTypeLabel} ${String(index + 1)}`;
         const tagsString = bulkData.tags[index] ?? "";
         const tags = tagsString
           ? tagsString
@@ -185,12 +174,9 @@ export async function handleTemplatesAction(
     return { success: true, assets };
   }
 
-  if (_action === "bulk_delete_assets") {
-    const bulkDeleteData =
-      result.data._action === "bulk_delete_assets" ? result.data : null;
-    if (!bulkDeleteData) {
-      return { error: "Invalid action" };
-    }
+  if (_action === ACTION_BULK_DELETE_ASSETS) {
+    // TypeScript guarantees this is "bulk_delete_assets" after the check
+    const bulkDeleteData = result.data;
 
     await Promise.all(
       bulkDeleteData.assetIds.map((assetId) =>
@@ -201,46 +187,43 @@ export async function handleTemplatesAction(
     return { success: true, deletedCount: bulkDeleteData.assetIds.length };
   }
 
-  if (_action === "schedule") {
-    const scheduleData =
-      result.data._action === "schedule" ? result.data : null;
-    if (!scheduleData) {
-      return { error: "Invalid action" };
-    }
-    const templates = await getTemplates({ userId });
-    const template = templates.find((t) => t.id === scheduleData.templateId);
+  // TypeScript guarantees this is "schedule" after all previous checks (discriminated union)
+  // Use type assertion since discriminated union narrowing doesn't work here
+  const scheduleData = result.data as {
+    _action: "schedule";
+    templateId: string;
+  };
+  const templates = await getTemplates({ userId });
+  const template = templates.find((t) => t.id === scheduleData.templateId);
 
-    if (!template) {
-      return { error: "Template not found" };
-    }
-
-    // Prepare template data for scheduling
-    const localDate = new Date();
-    localDate.setHours(localDate.getHours() + 1);
-
-    const templateData = template.posts.map((post, index) => {
-      const scheduleDate = new Date(localDate);
-      scheduleDate.setHours(scheduleDate.getHours() + index);
-
-      return {
-        caption: post.caption ?? "",
-        fileUrl: post.fileUrl,
-        queueType: post.queueTypeId ?? "unassigned",
-        scheduledFor: scheduleDate
-          .toLocaleString("en-US", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: false,
-          })
-          .replace(/(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+)/, "$3-$1-$2T$4:$5"),
-      };
-    });
-
-    return { scheduleData: templateData };
+  if (!template) {
+    return { error: "Template not found" };
   }
 
-  return { error: "Invalid action" };
+  // Prepare template data for scheduling
+  const localDate = new Date();
+  localDate.setHours(localDate.getHours() + 1);
+
+  const templateData = template.posts.map((post, index) => {
+    const scheduleDate = new Date(localDate);
+    scheduleDate.setHours(scheduleDate.getHours() + index);
+
+    return {
+      caption: post.caption ?? "",
+      fileUrl: post.fileUrl,
+      queueType: post.queueTypeId ?? "unassigned",
+      scheduledFor: scheduleDate
+        .toLocaleString("en-US", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        })
+        .replace(/(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+)/, "$3-$1-$2T$4:$5"),
+    };
+  });
+
+  return { scheduleData: templateData };
 }

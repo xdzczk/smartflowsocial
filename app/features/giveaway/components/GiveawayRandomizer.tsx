@@ -75,6 +75,7 @@ const GiveawayRandomizer = ({ relatedEvents }: GiveawayRandomizerProps) => {
             <ul className="space-y-2">
               {randomUsers.reposters.map((user, index) => (
                 <li
+                  // eslint-disable-next-line react/no-array-index-key -- Stable list of random users, composite key with prefix
                   key={`repost-${index}`}
                   className="rounded bg-white p-2 dark:bg-gray-600"
                 >
@@ -101,6 +102,7 @@ const GiveawayRandomizer = ({ relatedEvents }: GiveawayRandomizerProps) => {
             <ul className="space-y-2">
               {randomUsers.likers.map((user, index) => (
                 <li
+                  // eslint-disable-next-line react/no-array-index-key -- Stable list of random users, composite key with prefix
                   key={`like-${index}`}
                   className="rounded bg-white p-2 dark:bg-gray-600"
                 >
@@ -127,6 +129,7 @@ const GiveawayRandomizer = ({ relatedEvents }: GiveawayRandomizerProps) => {
             <ul className="space-y-2">
               {randomUsers.commenters.map((user, index) => (
                 <li
+                  // eslint-disable-next-line react/no-array-index-key -- Stable list of random users, composite key with prefix
                   key={`comment-${index}`}
                   className="rounded bg-white p-2 dark:bg-gray-600"
                 >

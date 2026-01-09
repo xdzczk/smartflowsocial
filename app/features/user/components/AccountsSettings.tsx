@@ -22,6 +22,9 @@ interface SearchResult {
   pendingParentRequests?: string[];
 }
 
+const ACTION_REQUEST_CHILD = "request_child";
+const DASHBOARD_SETTINGS_ACTION = "/dashboard/settings";
+
 function extractProfileBits(nostrProfile: ProfileData | null | undefined) {
   if (!nostrProfile)
     return {
@@ -100,18 +103,18 @@ export function AccountsSettings({
   }, [q, fetcher]);
 
   const onRequestChild = (childNpub: string) => {
-    const np = (childNpub ?? "").trim();
+    const np = childNpub.trim();
     fetcher.submit(
-      { _action: "request_child", childNpub: np },
-      { method: "post", action: "/dashboard/settings" }
+      { _action: ACTION_REQUEST_CHILD, childNpub: np },
+      { method: "post", action: DASHBOARD_SETTINGS_ACTION }
     );
   };
 
   // Submission state feedback
   const submittingAction =
-    (fetcher.formData?.get("_action") as string) ?? undefined;
+    (fetcher.formData?.get("_action") as string) || undefined;
   const submittingChildNpub =
-    (fetcher.formData?.get("childNpub") as string) ?? undefined;
+    (fetcher.formData?.get("childNpub") as string) || undefined;
   const isUnlinking =
     submittingAction === "unlink_parent" && fetcher.state !== "idle";
 
@@ -150,7 +153,7 @@ export function AccountsSettings({
             <div className="truncate font-medium">
               {bits.name ?? bits.display_name ?? npub}
             </div>
-            <div className="truncate text-xs text-muted-foreground">{npub}</div>
+            <div className="text-muted-foreground truncate text-xs">{npub}</div>
           </div>
         </div>
       </div>
@@ -167,12 +170,12 @@ export function AccountsSettings({
       <Card className="p-4">
         <div className="mb-4">
           <h2 className="text-xl font-semibold">Accounts</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             This account is managed by a parent account.
           </p>
         </div>
 
-        <div className="mb-6 flex items-center justify-between rounded-md border bg-muted/30 p-4">
+        <div className="bg-muted/30 mb-6 flex items-center justify-between rounded-md border p-4">
           <div className="flex min-w-0 items-center gap-3">
             <Avatar className="h-10 w-10">
               {bits.picture ? (
@@ -184,7 +187,7 @@ export function AccountsSettings({
                 Managed by {parentName}
               </div>
               {parentUser?.npub ? (
-                <div className="truncate text-xs text-muted-foreground">
+                <div className="text-muted-foreground truncate text-xs">
                   {parentUser.npub}
                 </div>
               ) : null}
@@ -197,7 +200,7 @@ export function AccountsSettings({
             onClick={() =>
               fetcher.submit(
                 { _action: "unlink_parent" },
-                { method: "post", action: "/dashboard/settings" }
+                { method: "post", action: DASHBOARD_SETTINGS_ACTION }
               )
             }
           >
@@ -205,7 +208,7 @@ export function AccountsSettings({
           </Button>
         </div>
 
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           As a child account, you cannot search for or link child accounts.
         </p>
       </Card>
@@ -216,7 +219,7 @@ export function AccountsSettings({
     <Card className="p-4">
       <div className="mb-4">
         <h2 className="text-xl font-semibold">Accounts</h2>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           Search Nostr users by profile name and request to add them as child
           accounts.
         </p>
@@ -242,13 +245,13 @@ export function AccountsSettings({
           <h3 className="mb-2 text-sm font-medium">Search results</h3>
           <div className="divide-y rounded-md border">
             {results.length === 0 ? (
-              <div className="p-3 text-sm text-muted-foreground">
+              <div className="text-muted-foreground p-3 text-sm">
                 No results
               </div>
             ) : (
               results.map((r) => {
                 const isSubmittingThis =
-                  submittingAction === "request_child" &&
+                  submittingAction === ACTION_REQUEST_CHILD &&
                   submittingChildNpub === r.npub &&
                   fetcher.state !== "idle";
                 const disabled =
@@ -289,7 +292,7 @@ export function AccountsSettings({
                         <div className="truncate font-medium">
                           {r.profileName ?? r.profileDisplayName ?? r.npub}
                         </div>
-                        <div className="truncate text-xs text-muted-foreground">
+                        <div className="text-muted-foreground truncate text-xs">
                           {r.npub}
                         </div>
                       </div>
@@ -318,7 +321,7 @@ export function AccountsSettings({
           <h3 className="mb-2 text-sm font-medium">Confirmed children</h3>
           <div className="divide-y rounded-md border">
             {confirmedChildren?.length === 0 ? (
-              <div className="p-3 text-sm text-muted-foreground">
+              <div className="text-muted-foreground p-3 text-sm">
                 No confirmed children
               </div>
             ) : (
@@ -346,7 +349,7 @@ export function AccountsSettings({
                         <div className="truncate font-medium">
                           {bits.name ?? bits.display_name ?? u.npub}
                         </div>
-                        <div className="truncate text-xs text-muted-foreground">
+                        <div className="text-muted-foreground truncate text-xs">
                           {u.npub}
                         </div>
                       </div>
@@ -358,7 +361,7 @@ export function AccountsSettings({
                       onClick={() =>
                         fetcher.submit(
                           { _action: "unlink_child", childNpub: u.npub },
-                          { method: "post", action: "/dashboard/settings" }
+                          { method: "post", action: DASHBOARD_SETTINGS_ACTION }
                         )
                       }
                     >
@@ -374,7 +377,7 @@ export function AccountsSettings({
           <h3 className="mb-2 text-sm font-medium">Pending requests</h3>
           <div className="divide-y rounded-md border">
             {pendingChildren?.length === 0 ? (
-              <div className="p-3 text-sm text-muted-foreground">
+              <div className="text-muted-foreground p-3 text-sm">
                 No pending requests
               </div>
             ) : (
@@ -402,7 +405,7 @@ export function AccountsSettings({
                         <div className="truncate font-medium">
                           {bits.name ?? bits.display_name ?? u.npub}
                         </div>
-                        <div className="truncate text-xs text-muted-foreground">
+                        <div className="text-muted-foreground truncate text-xs">
                           {u.npub}
                         </div>
                       </div>
@@ -417,7 +420,7 @@ export function AccountsSettings({
                             _action: "cancel_child_request",
                             childNpub: u.npub,
                           },
-                          { method: "post", action: "/dashboard/settings" }
+                          { method: "post", action: DASHBOARD_SETTINGS_ACTION }
                         )
                       }
                     >

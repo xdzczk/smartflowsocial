@@ -54,6 +54,7 @@ export function EditPostFormFields({
         </label>
         <div className="flex flex-wrap gap-3">
           {existingImages.map((url, idx) => (
+            // eslint-disable-next-line react/no-array-index-key -- Stable list of existing images, composite key with prefix
             <div key={`existing-${idx}`} className="relative">
               <img
                 src={url}
@@ -63,7 +64,7 @@ export function EditPostFormFields({
               <button
                 type="button"
                 onClick={() => onRemoveExistingImage(idx)}
-                className="absolute -right-2 -top-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
+                className="absolute -top-2 -right-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
               >
                 ×
               </button>
@@ -72,6 +73,7 @@ export function EditPostFormFields({
           {newFiles.map((file, idx) => {
             const objectURL = URL.createObjectURL(file);
             return (
+              // eslint-disable-next-line react/no-array-index-key -- Stable list of new files, composite key with prefix
               <div key={`new-${idx}`} className="relative">
                 <img
                   src={objectURL}
@@ -81,7 +83,7 @@ export function EditPostFormFields({
                 <button
                   type="button"
                   onClick={() => onRemoveNewFile(idx)}
-                  className="absolute -right-2 -top-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
+                  className="absolute -top-2 -right-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
                 >
                   ×
                 </button>

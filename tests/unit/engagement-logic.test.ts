@@ -27,7 +27,7 @@ import {
   getTrustScoreBadgeColor,
   getAccountAgeInDays,
   type User,
-} from "~/features/engagement/trustScore";
+} from "~/features/engagement/trust-score";
 
 describe("Engagement Logic Unit Tests", () => {
   describe("groupNotificationsByType", () => {

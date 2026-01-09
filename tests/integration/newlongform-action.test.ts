@@ -95,12 +95,13 @@ vi.mock("@remix-run/node", async () => {
       ) => {
         // Try to get FormData from store first (set by test using request URL as key)
         const url =
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: type narrowing for mock request
           request &&
           typeof request === "object" &&
           "url" in request &&
           typeof request.url === "string"
             ? request.url
-            : String(request?.url ?? "");
+            : String(request.url ?? "");
         const storedFormData = formDataStore.get(url);
         if (storedFormData) {
           formDataStore.delete(url); // Clean up after use
@@ -110,6 +111,7 @@ vi.mock("@remix-run/node", async () => {
         // Fallback: try to parse from request
         try {
           const formData =
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: type narrowing for mock request
             request &&
             typeof request === "object" &&
             "formData" in request &&

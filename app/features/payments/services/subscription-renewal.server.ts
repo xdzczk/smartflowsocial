@@ -283,7 +283,8 @@ async function attemptRenewal(
   if (requestAny["amount"] && typeof requestAny["amount"] === "number") {
     amountSats = requestAny["amount"];
   } else if (invoiceObj && "satoshi" in invoiceObj) {
-    amountSats = Number(invoiceObj["satoshi"]) || 0;
+    const satoshiValue = Number(invoiceObj["satoshi"]);
+    amountSats = Number.isNaN(satoshiValue) ? 0 : satoshiValue;
   } else if (
     requestAny["satoshi"] &&
     typeof requestAny["satoshi"] === "number"
@@ -369,8 +370,9 @@ async function attemptRenewal(
       : {};
   const preimageValue = paymentResultObj["preimage"];
   const paymentHash =
-    (typeof preimageValue === "string" ? preimageValue : null) ||
-    paymentHashString ||
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: preimageValue may not be string, paymentHashString can be undefined
+    (typeof preimageValue === "string" ? preimageValue : null) ??
+    paymentHashString ??
     `payment_${Date.now()}`;
 
   // Create payment record

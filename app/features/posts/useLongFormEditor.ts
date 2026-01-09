@@ -86,7 +86,7 @@ export function useLongFormEditor({
         if (window.EditorJSInstances) {
           window.EditorJSInstances.forEach((instance) => {
             try {
-              if (instance.destroy) instance.destroy();
+              instance.destroy();
             } catch (_e) {
               /* ignore cleanup errors */
             }
@@ -102,6 +102,7 @@ export function useLongFormEditor({
         await new Promise((resolve) => setTimeout(resolve, 100));
 
         // Check if component is still mounted and element exists before creating editor
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: ref value can change between async operations
         if (!isMountedRef.current) {
           editorInitialized.current = false;
           return;
@@ -117,6 +118,7 @@ export function useLongFormEditor({
         const tools = await createEditorJSToolsConfig(uploadProvider);
 
         // Double-check component is still mounted before creating editor instance
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: ref value can change between async operations
         if (!isMountedRef.current) {
           editorInitialized.current = false;
           return;
@@ -134,6 +136,7 @@ export function useLongFormEditor({
             // eslint-disable-next-line @typescript-eslint/no-misused-promises -- EditorJS onChange is async but types don't reflect this
             onChange: async (api: EditorJSAPI) => {
               // Check if component is still mounted and editor element exists
+
               if (!isMountedRef.current) {
                 return;
               }
@@ -146,11 +149,13 @@ export function useLongFormEditor({
               try {
                 const outputData = await api.saver.save();
                 // Double-check component is still mounted before calling callback
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: ref value can change between async operations
                 if (isMountedRef.current) {
                   onContentChange(JSON.stringify(outputData));
                 }
               } catch (error) {
                 // Only log errors if component is still mounted
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: ref value can change between async operations
                 if (isMountedRef.current) {
                   const { handleErrorSafely } =
                     await import("~/lib/error-handler.client");
@@ -165,6 +170,7 @@ export function useLongFormEditor({
         } catch (error) {
           // If editor creation fails, reset flag and return
           editorInitialized.current = false;
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: ref value can change between async operations
           if (isMountedRef.current) {
             logClientError(
               error instanceof Error ? error : new Error(String(error)),
@@ -190,14 +196,17 @@ export function useLongFormEditor({
 
             // Check if element still exists before waiting for isReady
             const editorElement = document.getElementById("editorjs");
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: ref value can change between async operations
             if (!editorElement || !isMountedRef.current) return;
 
             await editorRef.current.isReady;
 
             // Check again after isReady resolves
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: ref values can change between async operations
             if (!editorRef.current || !isMountedRef.current) return;
 
             const editorElementAfterReady = document.getElementById("editorjs");
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: ref value can change between async operations
             if (!editorElementAfterReady || !isMountedRef.current) return;
 
             const dragObserver = setupCustomDragDrop(
@@ -208,11 +217,13 @@ export function useLongFormEditor({
             );
             editorRef.current._dragObserver = dragObserver;
 
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: ref value can change between async operations
             if (isMountedRef.current) {
               setEditorReady(true);
             }
           } catch (error) {
             // Only log if component is still mounted
+
             if (isMountedRef.current) {
               logClientError(
                 error instanceof Error ? error : new Error(String(error)),
@@ -228,6 +239,7 @@ export function useLongFormEditor({
 
         // Run caption disabling immediately and on editor changes
         // Only if component is still mounted
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: ref value can change between async operations
         if (isMountedRef.current) {
           setTimeout(() => {
             if (isMountedRef.current) {
@@ -238,8 +250,10 @@ export function useLongFormEditor({
 
         // Set up a mutation observer to remove captions whenever they appear
         // Only if component is still mounted
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: ref value can change between async operations
         if (isMountedRef.current) {
           const editorElement = document.getElementById("editorjs");
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: ref value can change between async operations
           if (editorElement && editorRef.current) {
             const captionObserver = setupCaptionObserver(
               editorElement,
@@ -268,6 +282,7 @@ export function useLongFormEditor({
           }
 
           // Destroy the editor instance
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: destroy method exists but TypeScript types may not reflect it
           if (editorRef.current.destroy) {
             editorRef.current.destroy();
           }

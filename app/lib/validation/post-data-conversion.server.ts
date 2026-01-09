@@ -44,15 +44,16 @@ export function convertPostDataToScheduledTablePost(
     id: post.id,
     caption: post.caption ?? null,
     scheduledFor: scheduledForString,
-    fileUrl: post.fileUrl ?? null,
+    // fileUrl is always string[] in PostData (from Prisma schema), but target type allows null
+    fileUrl: post.fileUrl,
     queueType: post.queueType
       ? {
           name: post.queueType.name,
           color: post.queueType.color ?? null,
         }
       : null,
-    repost: post.repost ?? false,
-    isQuotedPost: post.isQuotedPost ?? false,
+    repost: post.repost,
+    isQuotedPost: post.isQuotedPost,
     isPostSigned: post.signedEvent ? true : false,
   };
 }

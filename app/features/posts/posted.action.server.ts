@@ -32,6 +32,7 @@ import { getPostsByIds } from "~/models/post.queries.server";
 const ERROR_POST_NOT_FOUND = "Post not found";
 const ERROR_LONGFORM_POST_NOT_FOUND = "Longform post not found";
 const DEFAULT_RELAY = "wss://relay.primal.net";
+const DEFAULT_QUEUE_TYPE = "unassigned";
 
 /**
  * Handle delete post action
@@ -175,7 +176,7 @@ async function handleBulkQuote(formData: FormData, userId: string) {
     return {
       caption: "", // Empty caption - user can add content
       fileUrl,
-      queueType: queueTypeId ?? "unassigned",
+      queueType: queueTypeId ?? DEFAULT_QUEUE_TYPE,
       scheduledFor: "",
       originalPostId: post.id,
       originalEventId: eventId,
@@ -311,7 +312,7 @@ async function handleQuote(formData: FormData, userId: string) {
     const quotePostData = {
       caption: "", // Empty caption - user can add content
       fileUrl: originalPost.fileUrl[0] ?? "",
-      queueType: (originalPost.queueTypeId ?? "") || "unassigned",
+      queueType: (originalPost.queueTypeId ?? "") || DEFAULT_QUEUE_TYPE,
       scheduledFor: "",
       originalPostId: originalPost.id,
       originalEventId: eventId,
@@ -402,7 +403,7 @@ async function handleLongformRepost(formData: FormData, userId: string) {
       identifier: typeof dTag === "string" ? dTag : String(dTag),
       pubkey: eventPubkey,
       kind: 30023,
-      relays: ["wss://relay.primal.net"],
+      relays: [DEFAULT_RELAY],
     });
 
     // Create kind 1 repost event data (not kind 6 - this is for longform content)
@@ -411,7 +412,7 @@ async function handleLongformRepost(formData: FormData, userId: string) {
       content: `nostr:${naddr}`, // Just the naddr reference for simple repost
       tags: [
         // Reference the original longform post
-        ["a", `30023:${eventPubkey}:${dTag}`, "wss://relay.primal.net"],
+        ["a", `30023:${eventPubkey}:${dTag}`, DEFAULT_RELAY],
         // p tag with the pubkey of the event being reposted
         ["p", eventPubkey],
       ],
@@ -504,14 +505,14 @@ async function handleLongformQuote(formData: FormData, userId: string) {
       identifier: typeof dTag === "string" ? dTag : String(dTag),
       pubkey: eventPubkey,
       kind: 30023,
-      relays: ["wss://relay.primal.net"],
+      relays: [DEFAULT_RELAY],
     });
 
     // Create quot??post data for bulk posts page with naddr reference
     const quotePostData = {
       caption: `nostr:${naddr}`, // Include naddr reference for quote post
       fileUrl: "", // No file URL for text-based quote
-      queueType: originalPost.queueTypeId ?? "unassigned",
+      queueType: originalPost.queueTypeId ?? DEFAULT_QUEUE_TYPE,
       scheduledFor: "",
       originalPostId: originalPost.id,
       originalEventId: eventId,

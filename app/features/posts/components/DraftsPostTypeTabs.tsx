@@ -1,4 +1,9 @@
 import { Link } from "@remix-run/react";
+
+const ACTIVE_TAB_CLASSES = "border-blue-500 text-blue-600 dark:text-blue-400";
+const INACTIVE_TAB_CLASSES =
+  "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300";
+
 interface DraftsPostTypeTabsProps {
   currentTab: string;
   allContentCount: number;
@@ -27,9 +32,7 @@ export function DraftsPostTypeTabs({
         <Link
           to={`${basePath}?tab=all`}
           className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
-            currentTab === "all"
-              ? "border-blue-500 text-blue-600 dark:text-blue-400"
-              : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+            currentTab === "all" ? ACTIVE_TAB_CLASSES : INACTIVE_TAB_CLASSES
           }`}
         >
           All ({allContentCount})
@@ -37,9 +40,7 @@ export function DraftsPostTypeTabs({
         <Link
           to={`${basePath}?tab=posts`}
           className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
-            currentTab === "posts"
-              ? "border-blue-500 text-blue-600 dark:text-blue-400"
-              : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+            currentTab === "posts" ? ACTIVE_TAB_CLASSES : INACTIVE_TAB_CLASSES
           }`}
         >
           Posts ({postsCount})
@@ -48,8 +49,8 @@ export function DraftsPostTypeTabs({
           to={`${basePath}?tab=longform`}
           className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
             currentTab === "longform"
-              ? "border-blue-500 text-blue-600 dark:text-blue-400"
-              : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+              ? ACTIVE_TAB_CLASSES
+              : INACTIVE_TAB_CLASSES
           }`}
         >
           Longform ({longformCount})

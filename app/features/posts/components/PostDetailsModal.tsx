@@ -6,7 +6,7 @@ import MediaModal from "~/components/ui/MediaModal";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { formatDate, getImageUrls } from "~/lib/helpers";
 
-import { getQueueColor } from "../queueColors";
+import { getQueueColor } from "../queue-colors";
 import type { CombinedContent, PostData } from "../types";
 interface PostDetailsModalProps {
   post: Post | PostData | CombinedContent;
@@ -145,10 +145,11 @@ export default function PostDetailsModal({
               <div className="flex gap-3 overflow-x-auto pb-2">
                 {getImageUrls(post.fileUrl).map((url, index) => (
                   <MediaThumbnail
+                    // eslint-disable-next-line react/no-array-index-key -- Stable list of image URLs, no unique ID available
                     key={index}
                     src={url}
                     alt={`Post media ${index + 1}`}
-                    className="h-48 w-auto flex-shrink-0 rounded-lg object-cover shadow-sm ring-1 ring-gray-200 dark:ring-gray-700"
+                    className="h-48 w-auto flex-shrink-0 rounded-lg object-cover ring-1 shadow-sm ring-gray-200 dark:ring-gray-700"
                     onClick={() => {
                       setActiveMediaSrc(url);
                       setIsMediaOpen(true);
@@ -356,7 +357,7 @@ export default function PostDetailsModal({
                 <h3 className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">
                   Signed Event Data
                 </h3>
-                <pre className="max-h-96 overflow-auto whitespace-pre-wrap break-words rounded-md bg-gray-100 p-3 text-xs text-gray-800 dark:bg-gray-800 dark:text-gray-200">
+                <pre className="max-h-96 overflow-auto rounded-md bg-gray-100 p-3 text-xs break-words whitespace-pre-wrap text-gray-800 dark:bg-gray-800 dark:text-gray-200">
                   {JSON.stringify(post.signedEvent, null, 2)}
                 </pre>
               </div>
@@ -375,7 +376,7 @@ export default function PostDetailsModal({
                 to={`https://primal.net/e/${post.signedEvent.id}`}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:bg-gray-700 dark:hover:bg-gray-600"
+                className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:outline-none dark:bg-gray-700 dark:hover:bg-gray-600"
               >
                 View Note
               </Link>
@@ -390,7 +391,7 @@ export default function PostDetailsModal({
               <button
                 type="submit"
                 disabled={deleteFetcher.state !== "idle"}
-                className="inline-flex items-center rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 dark:border-red-600 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-950/50"
+                className="inline-flex items-center rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-50 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:outline-none disabled:opacity-50 dark:border-red-600 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-950/50"
               >
                 {deleteFetcher.state !== "idle" &&
                 deleteFetcher.formData?.get("postId") === post.id

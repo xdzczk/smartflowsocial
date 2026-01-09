@@ -126,7 +126,7 @@ export default function RecyclablesPosts() {
 
   return (
     <div>
-      <div className="mb-5 mt-5 flex flex-col gap-3 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
+      <div className="mt-5 mb-5 flex flex-col gap-3 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
         <div>
           <h3 className="mb-1 font-semibold">Recyclable Posts</h3>
         </div>
@@ -173,12 +173,11 @@ export default function RecyclablesPosts() {
                 ? post.postedAt
                 : typeof post.postedAt === "string"
                   ? new Date(post.postedAt)
-                  : post.postedAt === null
-                    ? null
-                    : null,
+                  : null,
             fileUrl: Array.isArray(post.fileUrl)
               ? post.fileUrl
-              : post.fileUrl
+              : // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: fileUrl may be a string from legacy data
+                post.fileUrl
                 ? [post.fileUrl]
                 : [],
             signedEvent:
@@ -242,9 +241,11 @@ export default function RecyclablesPosts() {
           post={selectedPost as unknown as PostData | CombinedContent}
           stats={(() => {
             const eventId =
+              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: type narrowing for serialized data
               selectedPost &&
               typeof selectedPost === "object" &&
               "signedEvent" in selectedPost &&
+              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: signedEvent may not exist
               selectedPost.signedEvent &&
               typeof selectedPost.signedEvent === "object" &&
               "id" in selectedPost.signedEvent

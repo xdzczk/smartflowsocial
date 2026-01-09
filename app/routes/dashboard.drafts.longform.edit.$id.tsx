@@ -56,15 +56,18 @@ type ActionData = Awaited<ReturnType<typeof action>>;
 export default function EditLongFormPost() {
   const loaderData = useLoaderData<LoaderData>();
   // Type assertions for Remix JsonifyObject serialization
+  // These runtime checks are necessary because TypeScript cannot verify
+  // the shape of serialized data at compile time, even though the types
+  // suggest the checks are unnecessary.
+
   const post =
-    loaderData &&
     typeof loaderData === "object" &&
     loaderData !== null &&
     "post" in loaderData
       ? loaderData.post
       : null;
+
   const _userId =
-    loaderData &&
     typeof loaderData === "object" &&
     loaderData !== null &&
     "userId" in loaderData
@@ -72,8 +75,8 @@ export default function EditLongFormPost() {
         ? loaderData.userId
         : String(loaderData.userId ?? "")
       : "";
+
   const userTags =
-    loaderData &&
     typeof loaderData === "object" &&
     loaderData !== null &&
     "tags" in loaderData
@@ -81,31 +84,31 @@ export default function EditLongFormPost() {
         ? loaderData.tags
         : String(loaderData.tags ?? "")
       : "";
+
   const scheduleIntervalsRaw =
-    loaderData &&
     typeof loaderData === "object" &&
     loaderData !== null &&
     "scheduleIntervals" in loaderData
       ? loaderData.scheduleIntervals
       : null;
+
   const queueTypesRaw =
-    loaderData &&
     typeof loaderData === "object" &&
     loaderData !== null &&
     "queueTypes" in loaderData &&
     Array.isArray(loaderData.queueTypes)
       ? loaderData.queueTypes
       : [];
+
   const assetsRaw =
-    loaderData &&
     typeof loaderData === "object" &&
     loaderData !== null &&
     "assets" in loaderData &&
     Array.isArray(loaderData.assets)
       ? (loaderData.assets as unknown[])
       : [];
+
   const _userTimezone =
-    loaderData &&
     typeof loaderData === "object" &&
     loaderData !== null &&
     "userTimezone" in loaderData
@@ -113,8 +116,8 @@ export default function EditLongFormPost() {
         ? loaderData.userTimezone
         : String(loaderData.userTimezone ?? "Etc/GMT")
       : "Etc/GMT";
+
   const hashtagPresetsRaw =
-    loaderData &&
     typeof loaderData === "object" &&
     loaderData !== null &&
     "hashtagPresets" in loaderData &&
@@ -138,14 +141,14 @@ export default function EditLongFormPost() {
   const assets = assetsRaw.filter(
     (asset: unknown): asset is Asset =>
       typeof asset === "object" &&
-      asset !== null &&
+      asset != null &&
       "id" in asset &&
       typeof (asset as { id: unknown }).id === "string"
   );
   const typedPost =
     post &&
     typeof post === "object" &&
-    post !== null &&
+    post != null &&
     "id" in post &&
     typeof (post as { id: unknown }).id === "string"
       ? (post as {

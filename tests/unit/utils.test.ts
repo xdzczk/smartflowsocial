@@ -18,6 +18,7 @@ describe("Utility Functions", () => {
 
     it("should handle conditional classes", () => {
       const condition = true;
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: testing conditional class logic
       const result = cn("base", condition && "conditional");
 
       expect(result).toContain("base");
@@ -26,6 +27,7 @@ describe("Utility Functions", () => {
 
     it("should exclude false conditional classes", () => {
       const condition = false;
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: testing conditional class logic
       const result = cn("base", condition && "conditional");
 
       expect(result).toContain("base");
@@ -78,7 +80,7 @@ describe("Utility Functions", () => {
         "base",
         ["array1", "array2"],
         { obj1: true, obj2: false },
-        "conditional", // true && "conditional" -> always truthy, so just use the value
+        "conditional" // true && "conditional" -> always truthy, so just use the value
         // false && "excluded" -> always falsy, so exclude it
       );
 

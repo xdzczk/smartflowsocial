@@ -284,90 +284,86 @@ export async function handleRecyclablePostAction(
     }
   }
 
-  // Handle single quote
-  if (validatedData._action === "quote") {
-    try {
-      const quoteData = validatedData;
-      // Get the original post data
-      const postsData = await getPostsByIds({
-        ids: [quoteData.postId],
+  // Handle single quote - TypeScript guarantees this is "quote" after previous checks
+  try {
+    const quoteData = validatedData;
+    // Get the original post data
+    const postsData = await getPostsByIds({
+      ids: [quoteData.postId],
+      userId,
+    });
+    if (postsData.length === 0) {
+      const { NotFoundError } = await import("~/lib/errors");
+      throw new NotFoundError(ERROR_POST_NOT_FOUND, {
+        postId: quoteData.postId,
         userId,
       });
-      if (postsData.length === 0) {
-        const { NotFoundError } = await import("~/lib/errors");
-        throw new NotFoundError(ERROR_POST_NOT_FOUND, {
-          postId: quoteData.postId,
-          userId,
-        });
-      }
-
-      const originalPost = postsData[0];
-      if (!originalPost) {
-        return json({ error: ERROR_POST_NOT_FOUND }, { status: 404 });
-      }
-      const originalEvent = originalPost.signedEvent;
-
-      if (
-        !originalEvent ||
-        typeof originalEvent !== "object" ||
-        !("id" in originalEvent) ||
-        !("pubkey" in originalEvent)
-      ) {
-        return json({ error: "Invalid event data" }, { status: 400 });
-      }
-
-      const eventId =
-        typeof originalEvent["id"] === "string"
-          ? originalEvent["id"]
-          : String(originalEvent["id"]);
-      const eventPubkey =
-        typeof originalEvent["pubkey"] === "string"
-          ? originalEvent["pubkey"]
-          : String(originalEvent["pubkey"]);
-
-      // Create quote post data for bulk posts page
-      const fileUrl =
-        "fileUrl" in originalPost
-          ? Array.isArray(originalPost.fileUrl)
-            ? originalPost.fileUrl[0]
-            : typeof originalPost.fileUrl === "string"
-              ? originalPost.fileUrl
-              : ""
-          : "";
-      const queueTypeName =
-        originalPost.queueType &&
-        typeof originalPost.queueType === "object" &&
-        "name" in originalPost.queueType &&
-        typeof originalPost.queueType.name === "string"
-          ? originalPost.queueType.name
-          : "unassigned";
-      const caption =
-        "caption" in originalPost && typeof originalPost.caption === "string"
-          ? originalPost.caption
-          : "";
-      const originalPostId =
-        "id" in originalPost && typeof originalPost.id === "string"
-          ? originalPost.id
-          : "";
-
-      const quotePostData = {
-        caption: "", // Empty caption - user can add content
-        fileUrl,
-        queueType: queueTypeName,
-        scheduledFor: "",
-        originalPostId: originalPostId,
-        originalEventId: eventId,
-        originalEventPubkey: eventPubkey,
-        isQuotePost: true,
-        originalCaption: caption,
-      };
-
-      return json({ quotePostData: [quotePostData] });
-    } catch (error) {
-      const { handleActionError } = await import("~/lib/error-handler.server");
-      return handleActionError(error);
     }
-  }
 
-  return json({ error: "Invalid action" }, { status: 400 });
+    const originalPost = postsData[0];
+    if (!originalPost) {
+      return json({ error: ERROR_POST_NOT_FOUND }, { status: 404 });
+    }
+    const originalEvent = originalPost.signedEvent;
+
+    if (
+      !originalEvent ||
+      typeof originalEvent !== "object" ||
+      !("id" in originalEvent) ||
+      !("pubkey" in originalEvent)
+    ) {
+      return json({ error: "Invalid event data" }, { status: 400 });
+    }
+
+    const eventId =
+      typeof originalEvent["id"] === "string"
+        ? originalEvent["id"]
+        : String(originalEvent["id"]);
+    const eventPubkey =
+      typeof originalEvent["pubkey"] === "string"
+        ? originalEvent["pubkey"]
+        : String(originalEvent["pubkey"]);
+
+    // Create quote post data for bulk posts page
+    const fileUrl =
+      "fileUrl" in originalPost
+        ? Array.isArray(originalPost.fileUrl)
+          ? originalPost.fileUrl[0]
+          : typeof originalPost.fileUrl === "string"
+            ? originalPost.fileUrl
+            : ""
+        : "";
+    const queueTypeName =
+      originalPost.queueType &&
+      typeof originalPost.queueType === "object" &&
+      "name" in originalPost.queueType &&
+      typeof originalPost.queueType.name === "string"
+        ? originalPost.queueType.name
+        : "unassigned";
+    const caption =
+      "caption" in originalPost && typeof originalPost.caption === "string"
+        ? originalPost.caption
+        : "";
+    const originalPostId =
+      "id" in originalPost && typeof originalPost.id === "string"
+        ? originalPost.id
+        : "";
+
+    const quotePostData = {
+      caption: "", // Empty caption - user can add content
+      fileUrl,
+      queueType: queueTypeName,
+      scheduledFor: "",
+      originalPostId: originalPostId,
+      originalEventId: eventId,
+      originalEventPubkey: eventPubkey,
+      isQuotePost: true,
+      originalCaption: caption,
+    };
+
+    return json({ quotePostData: [quotePostData] });
+  } catch (error) {
+    const { handleActionError } = await import("~/lib/error-handler.server");
+    return handleActionError(error);
+  }
 }

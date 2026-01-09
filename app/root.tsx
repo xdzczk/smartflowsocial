@@ -25,6 +25,11 @@ export const links: LinksFunction = () => [
   ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] : []),
 ];
 
+const APP_NAME = "SmartFlow Social";
+const APP_TITLE = `${APP_NAME} - Nostr Post Scheduler`;
+const APP_DESCRIPTION =
+  "Schedule and automate your Nostr posts with SmartFlow Social. The easiest way to plan and manage your Nostr content calendar.";
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
     return json({
@@ -32,6 +37,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       // Expose Sentry DSN to client (safe - it's a public key)
       ENV: {
         SENTRY_DSN: process.env["SENTRY_DSN"] ?? null,
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: process.env.NODE_ENV may be undefined in some environments
         NODE_ENV: process.env["NODE_ENV"] ?? "development",
       },
     });
@@ -48,32 +54,20 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const meta = () => [
-  { title: "SmartFlow Social - Nostr Post Scheduler" },
-  {
-    name: "description",
-    content:
-      "Schedule and automate your Nostr posts with SmartFlow Social. The easiest way to plan and manage your Nostr content calendar.",
-  },
+  { title: APP_TITLE },
+  { name: "description", content: APP_DESCRIPTION },
   {
     name: "keywords",
     content:
       "nostr, post scheduler, content calendar, automation, social media scheduling, nostr automation, bitcoin",
   },
-  { name: "author", content: "SmartFlow Social" },
-  { property: "og:title", content: "SmartFlow Social - Nostr Post Scheduler" },
-  {
-    property: "og:description",
-    content:
-      "Schedule and automate your Nostr posts with SmartFlow Social. The easiest way to plan and manage your Nostr content calendar.",
-  },
+  { name: "author", content: APP_NAME },
+  { property: "og:title", content: APP_TITLE },
+  { property: "og:description", content: APP_DESCRIPTION },
   { property: "og:type", content: "website" },
   { name: "twitter:card", content: "summary_large_image" },
-  { name: "twitter:title", content: "SmartFlow Social - Nostr Post Scheduler" },
-  {
-    name: "twitter:description",
-    content:
-      "Schedule and automate your Nostr posts with SmartFlow Social. The easiest way to plan and manage your Nostr content calendar.",
-  },
+  { name: "twitter:title", content: APP_TITLE },
+  { name: "twitter:description", content: APP_DESCRIPTION },
   { name: "robots", content: "index, follow" },
   { name: "viewport", content: "width=device-width, initial-scale=1" },
 ];
@@ -83,7 +77,6 @@ type LoaderData = Awaited<ReturnType<typeof loader>>;
 export default function App() {
   const loaderData = useLoaderData<LoaderData>();
   const ENV =
-    loaderData &&
     typeof loaderData === "object" &&
     "ENV" in loaderData &&
     loaderData.ENV &&

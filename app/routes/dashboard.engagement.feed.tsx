@@ -112,7 +112,6 @@ export default function PostedPosts() {
           post={selectedPost as PostData}
           stats={(() => {
             if (
-              selectedPost &&
               typeof selectedPost === "object" &&
               "signedEvent" in selectedPost
             ) {

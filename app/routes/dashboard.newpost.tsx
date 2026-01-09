@@ -293,7 +293,11 @@ export default function NewPost() {
             hashTagPresets={typedHashTagPresets}
             onQueueTypeChange={handleQueueTypeChange}
             selectedHashTagPresetId={selectedHashTagPresetId}
-            onHashtagPresetChange={(presetId, _hashtags) =>
+            onHashtagPresetChange={(
+              presetId: string | null,
+              _hashtags: string
+            ) =>
+              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: presetId can be null
               handleHashtagPresetSelect(presetId ?? "", _hashtags ?? "")
             }
           />
@@ -327,8 +331,10 @@ export default function NewPost() {
               setFiles={setFiles}
               setShowImagePreview={setShowImagePreview}
               setPreparedImageEvent={(data) => {
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: type narrowing for callback data
                 if (data && Array.isArray(data) && data.length > 0) {
                   const firstItem = data[0];
+
                   if (
                     firstItem &&
                     typeof firstItem === "object" &&

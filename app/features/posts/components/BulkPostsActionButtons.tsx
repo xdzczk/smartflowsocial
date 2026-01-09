@@ -1,6 +1,6 @@
 import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
 
-import { getDynamicQueueStyle } from "../queueColors";
+import { getDynamicQueueStyle } from "../queue-colors";
 
 import type { BulkPost, QueueType } from "./BulkPostCard";
 

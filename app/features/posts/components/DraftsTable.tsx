@@ -4,7 +4,7 @@
 
 import { Link, useFetcher } from "@remix-run/react";
 
-import { getQueueColor } from "../queueColors";
+import { getQueueColor } from "../queue-colors";
 interface Post {
   id: string;
   caption?: string | null;
@@ -186,7 +186,7 @@ export function DraftsTable({
                         : "";
                     })()} shadow-sm`}
                   >
-                    {post.queueType?.name || "unassigned"}
+                    {post.queueType?.name ?? "unassigned"}
                   </div>
                 )}
               </td>

@@ -211,7 +211,7 @@ export default function MediaPost({
             caption:
               typeof url.caption === "string"
                 ? url.caption
-                : String(url.caption ?? ""),
+                : String(url.caption),
             queueType: url.queueType,
           },
           type: "media",
@@ -267,9 +267,20 @@ export default function MediaPost({
           disabled={isUploading}
         />
         <div
+          role="button"
+          tabIndex={0}
+          aria-label="Drop zone for media files. Click or drag and drop files here."
           className="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center hover:border-gray-400"
           onDrop={(e) => void handleDrop(e)}
           onDragOver={handleDragOver}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              document
+                .querySelector<HTMLInputElement>('input[type="file"]')
+                ?.click();
+            }
+          }}
         >
           {files.length > 0 ? (
             <div className="flex flex-wrap gap-4">
@@ -278,6 +289,7 @@ export default function MediaPost({
                 const objectURL = URL.createObjectURL(file);
 
                 return (
+                  // eslint-disable-next-line react/no-array-index-key -- Stable list of media files, no unique ID available
                   <div key={index} className="relative">
                     {mediaType === "image" ? (
                       <img

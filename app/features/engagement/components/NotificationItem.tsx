@@ -2,7 +2,7 @@ import { formatDate } from "~/lib/helpers";
 
 import type { Notification } from "../engagement.server";
 import { useNotificationActions } from "../hooks/useNotificationActions";
-import { getTrustLevel, getTrustScoreBadgeColor } from "../trustScore";
+import { getTrustLevel, getTrustScoreBadgeColor } from "../trust-score";
 
 import { ChildRepliesPanel } from "./ChildRepliesPanel";
 import {
@@ -93,8 +93,7 @@ export function NotificationItem({
     trustScore !== undefined ? getTrustScoreBadgeColor(trustScore) : null;
 
   // Get type-specific badge configuration
-  const typeBadge =
-    TYPE_BADGES[notification.type as keyof typeof TYPE_BADGES];
+  const typeBadge = TYPE_BADGES[notification.type as keyof typeof TYPE_BADGES];
 
   // Get stats (available on all notification types)
   const stats: NotificationStats | undefined = notification.stats;
@@ -149,7 +148,7 @@ export function NotificationItem({
           </div>
 
           {/* Notification Content */}
-          <p className="mb-2 whitespace-pre-wrap break-words text-sm text-gray-700 dark:text-gray-300">
+          <p className="mb-2 text-sm break-words whitespace-pre-wrap text-gray-700 dark:text-gray-300">
             {notification.content}
           </p>
 

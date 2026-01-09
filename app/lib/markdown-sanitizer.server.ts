@@ -58,7 +58,7 @@ export function sanitizeMarkdown(markdown: string): string {
       smartypants: false,
     });
     const html =
-      typeof htmlResult === "string" ? htmlResult : String(htmlResult ?? "");
+      typeof htmlResult === "string" ? htmlResult : String(htmlResult);
 
     // Preserve code blocks before sanitization
     // sanitize-html will escape code block content, which we want to preserve as-is

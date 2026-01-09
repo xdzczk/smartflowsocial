@@ -7,6 +7,42 @@ import { nostrAdapter } from "~/lib/nostr-adapter.client";
 
 import type { CombinedContent, PostData, LongFormPostData } from "./types";
 
+// Action constants
+const ACTION_BULK_SCHEDULED_REPOST = "bulkScheduledRepost";
+const ACTION_BULK_QUOTE = "bulkQuote";
+const ACTION_BULK_DELETE = "bulkDelete";
+const ACTION_BULK_DELETE_LONGFORM = "bulkDeleteLongForm";
+const ACTION_BULK_DELETE_MIXED = "bulkDeleteMixed";
+const ACTION_BULK_REPOST = "bulkRepost";
+
+// Session storage keys
+const STORAGE_KEY_REPOST_DATA = "repostData";
+const STORAGE_KEY_SCHEDULED_REPOST_DATA = "scheduledRepostData";
+const STORAGE_KEY_QUOTE_POST_DATA = "quotePostData";
+
+// Navigation paths
+const PATH_BULK_POSTS_RECYCLE = "/dashboard/bulkposts?mode=recycle";
+const PATH_BULK_POSTS_REPOST = "/dashboard/bulkposts?mode=repost";
+const PATH_BULK_POSTS_QUOTE = "/dashboard/bulkposts?mode=quote";
+
+// Common type definitions to avoid duplication
+interface QuotePostData {
+  caption: string;
+  fileUrl: string;
+  queueType: string;
+  scheduledFor: string;
+  originalPostId: string;
+  originalEventId?: string;
+  originalEventPubkey?: string;
+  isQuotePost?: boolean;
+  originalCaption?: string;
+}
+
+interface FetcherErrorResponse {
+  error?: string;
+  message?: string;
+}
+
 interface UsePostedPostsProps {
   user: User;
   allContent: CombinedContent[];
@@ -40,77 +76,37 @@ export function usePostedPosts({
   const repostFetcher = useFetcher<{
     repostData?: PostData[];
     scheduledRepostData?: PostData[];
-    quotePostData?: Array<{
-      caption: string;
-      fileUrl: string;
-      queueType: string;
-      scheduledFor: string;
-      originalPostId: string;
-      originalEventId?: string;
-      originalEventPubkey?: string;
-      isQuotePost?: boolean;
-      originalCaption?: string;
-    }>;
-    longformQuotePostData?: Array<{
-      caption: string;
-      fileUrl: string;
-      queueType: string;
-      scheduledFor: string;
-      originalPostId: string;
-      originalEventId?: string;
-      originalEventPubkey?: string;
-      isQuotePost?: boolean;
-      originalCaption?: string;
-    }>;
+    quotePostData?: QuotePostData[];
+    longformQuotePostData?: QuotePostData[];
   }>();
-  const individualRepostFetcher = useFetcher<{
-    repostEventData?: {
-      kind: number;
-      content: string;
-      tags: string[][];
-      created_at: number;
-    };
-    quotePostData?: Array<{
-      caption: string;
-      fileUrl: string;
-      queueType: string;
-      scheduledFor: string;
-      originalPostId: string;
-      originalEventId?: string;
-      originalEventPubkey?: string;
-      isQuotePost?: boolean;
-      originalCaption?: string;
-    }>;
-    originalPost?: PostData;
-    error?: string;
-    message?: string;
-  }>();
-  const longformRepostFetcher = useFetcher<{
-    longformRepostEventData?: {
-      kind: number;
-      content: string;
-      tags: string[][];
-      created_at: number;
-    };
-    originalPost?: LongFormPostData;
-    error?: string;
-    message?: string;
-  }>();
-  const longformQuoteFetcher = useFetcher<{
-    longformQuotePostData?: Array<{
-      caption: string;
-      fileUrl: string;
-      queueType: string;
-      scheduledFor: string;
-      originalPostId: string;
-      originalEventId?: string;
-      originalEventPubkey?: string;
-      isQuotePost?: boolean;
-      originalCaption?: string;
-    }>;
-    error?: string;
-    message?: string;
-  }>();
+  const individualRepostFetcher = useFetcher<
+    {
+      repostEventData?: {
+        kind: number;
+        content: string;
+        tags: string[][];
+        created_at: number;
+      };
+      quotePostData?: QuotePostData[];
+      originalPost?: PostData;
+    } & FetcherErrorResponse
+  >();
+  const longformRepostFetcher = useFetcher<
+    {
+      longformRepostEventData?: {
+        kind: number;
+        content: string;
+        tags: string[][];
+        created_at: number;
+      };
+      originalPost?: LongFormPostData;
+    } & FetcherErrorResponse
+  >();
+  const longformQuoteFetcher = useFetcher<
+    {
+      longformQuotePostData?: QuotePostData[];
+    } & FetcherErrorResponse
+  >();
 
   const requestSort = (key: string) => {
     setSortConfig((current) => ({
@@ -150,7 +146,7 @@ export function usePostedPosts({
         .map((item) => ({ id: item.id, type: item.type }));
 
       const formData = new FormData();
-      formData.append("_action", "bulkDeleteMixed");
+      formData.append("_action", ACTION_BULK_DELETE_MIXED);
       formData.append("itemData", JSON.stringify(selectedItems));
 
       bulkDeleteFetcher.submit(formData, { method: "post" });
@@ -159,7 +155,9 @@ export function usePostedPosts({
       const formData = new FormData();
       formData.append(
         "_action",
-        currentTab === "longform" ? "bulkDeleteLongForm" : "bulkDelete"
+        currentTab === "longform"
+          ? ACTION_BULK_DELETE_LONGFORM
+          : ACTION_BULK_DELETE
       );
       formData.append("postIds", JSON.stringify(Array.from(selectedPosts)));
 
@@ -182,7 +180,7 @@ export function usePostedPosts({
       }
 
       const formData = new FormData();
-      formData.append("_action", "bulkRepost");
+      formData.append("_action", ACTION_BULK_REPOST);
       formData.append(
         "postIds",
         JSON.stringify(selectedItems.map((item) => item.id))
@@ -191,7 +189,7 @@ export function usePostedPosts({
       repostFetcher.submit(formData, { method: "post" });
     } else {
       const formData = new FormData();
-      formData.append("_action", "bulkRepost");
+      formData.append("_action", ACTION_BULK_REPOST);
       formData.append("postIds", JSON.stringify(Array.from(selectedPosts)));
 
       repostFetcher.submit(formData, { method: "post" });
@@ -213,7 +211,7 @@ export function usePostedPosts({
       }
 
       const formData = new FormData();
-      formData.append("_action", "bulkScheduledRepost");
+      formData.append("_action", ACTION_BULK_SCHEDULED_REPOST);
       formData.append(
         "postIds",
         JSON.stringify(selectedItems.map((item) => item.id))
@@ -222,7 +220,7 @@ export function usePostedPosts({
       repostFetcher.submit(formData, { method: "post" });
     } else {
       const formData = new FormData();
-      formData.append("_action", "bulkScheduledRepost");
+      formData.append("_action", ACTION_BULK_SCHEDULED_REPOST);
       formData.append("postIds", JSON.stringify(Array.from(selectedPosts)));
 
       repostFetcher.submit(formData, { method: "post" });
@@ -244,7 +242,7 @@ export function usePostedPosts({
       }
 
       const formData = new FormData();
-      formData.append("_action", "bulkQuote");
+      formData.append("_action", ACTION_BULK_QUOTE);
       formData.append(
         "postIds",
         JSON.stringify(selectedItems.map((item) => item.id))
@@ -253,7 +251,7 @@ export function usePostedPosts({
       repostFetcher.submit(formData, { method: "post" });
     } else {
       const formData = new FormData();
-      formData.append("_action", "bulkQuote");
+      formData.append("_action", ACTION_BULK_QUOTE);
       formData.append("postIds", JSON.stringify(Array.from(selectedPosts)));
 
       repostFetcher.submit(formData, { method: "post" });
@@ -303,10 +301,13 @@ export function usePostedPosts({
       });
 
       // Store repost data in sessionStorage
-      sessionStorage.setItem("repostData", JSON.stringify(repostData));
+      sessionStorage.setItem(
+        STORAGE_KEY_REPOST_DATA,
+        JSON.stringify(repostData)
+      );
 
       // Navigate to bulk posts page
-      window.location.href = "/dashboard/bulkposts?mode=recycle";
+      window.location.href = PATH_BULK_POSTS_RECYCLE;
 
       // Clear selection
       setSelectedPosts(new Set());
@@ -350,12 +351,12 @@ export function usePostedPosts({
 
       // Store scheduled repost data in sessionStorage
       sessionStorage.setItem(
-        "scheduledRepostData",
+        STORAGE_KEY_SCHEDULED_REPOST_DATA,
         JSON.stringify(scheduledRepostData)
       );
 
       // Navigate to bulk posts page with repost mode
-      window.location.href = "/dashboard/bulkposts?mode=repost";
+      window.location.href = PATH_BULK_POSTS_REPOST;
 
       // Clear selection
       setSelectedPosts(new Set());
@@ -365,10 +366,13 @@ export function usePostedPosts({
       const quoteData = repostFetcher.data.quotePostData;
 
       // Store quote post data in sessionStorage
-      sessionStorage.setItem("quotePostData", JSON.stringify(quoteData));
+      sessionStorage.setItem(
+        STORAGE_KEY_QUOTE_POST_DATA,
+        JSON.stringify(quoteData)
+      );
 
       // Navigate to bulk posts page with quote mode
-      window.location.href = "/dashboard/bulkposts?mode=quote";
+      window.location.href = PATH_BULK_POSTS_QUOTE;
 
       // Clear selection
       setSelectedPosts(new Set());
@@ -381,7 +385,7 @@ export function usePostedPosts({
       sessionStorage.setItem("quotePostData", JSON.stringify(quoteData));
 
       // Navigate to bulk posts page with quote mode
-      window.location.href = "/dashboard/bulkposts?mode=quote";
+      window.location.href = PATH_BULK_POSTS_QUOTE;
 
       // Clear selection
       setSelectedPosts(new Set());
@@ -423,7 +427,7 @@ export function usePostedPosts({
             setToast({
               type: "success",
               message: "Article reposted successfully!",
-              link: `https://primal.net/a/${originalPost?.nostrEventId ?? originalPost?.signedEvent?.id ?? ""}`,
+              link: `https://primal.net/a/${String(originalPost?.nostrEventId ?? originalPost?.signedEvent?.id ?? "")}`,
               linkText: "View Original Article",
             });
 
@@ -478,7 +482,7 @@ export function usePostedPosts({
       sessionStorage.setItem("quotePostData", JSON.stringify(quoteData));
 
       // Navigate to bulk posts page with quote mode
-      window.location.href = "/dashboard/bulkposts?mode=quote";
+      window.location.href = PATH_BULK_POSTS_QUOTE;
     } else if (longformQuoteFetcher.data?.error) {
       setToast({
         type: "error",

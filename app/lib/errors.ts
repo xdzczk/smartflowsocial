@@ -23,7 +23,7 @@ export class AppError extends Error {
     statusCode = 500,
     code = "INTERNAL_ERROR",
     isOperational = true,
-    context?: Record<string, unknown>,
+    context?: Record<string, unknown>
   ) {
     super(message);
     this.name = this.constructor.name;
@@ -34,6 +34,7 @@ export class AppError extends Error {
     this.timestamp = new Date().toISOString();
 
     // Maintains proper stack trace for where our error was thrown (only available on V8)
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime check: Error.captureStackTrace exists in V8 but not in all JS engines
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, this.constructor);
     }
@@ -66,7 +67,7 @@ export class ValidationError extends AppError {
 export class AuthenticationError extends AppError {
   constructor(
     message = "Authentication required",
-    context?: Record<string, unknown>,
+    context?: Record<string, unknown>
   ) {
     super(message, 401, "AUTHENTICATION_ERROR", true, context);
   }
@@ -78,7 +79,7 @@ export class AuthenticationError extends AppError {
 export class AuthorizationError extends AppError {
   constructor(
     message = "Insufficient permissions",
-    context?: Record<string, unknown>,
+    context?: Record<string, unknown>
   ) {
     super(message, 403, "AUTHORIZATION_ERROR", true, context);
   }
@@ -90,7 +91,7 @@ export class AuthorizationError extends AppError {
 export class NotFoundError extends AppError {
   constructor(
     message = "Resource not found",
-    context?: Record<string, unknown>,
+    context?: Record<string, unknown>
   ) {
     super(message, 404, "NOT_FOUND_ERROR", true, context);
   }
@@ -102,7 +103,7 @@ export class NotFoundError extends AppError {
 export class ConflictError extends AppError {
   constructor(
     message = "Resource conflict",
-    context?: Record<string, unknown>,
+    context?: Record<string, unknown>
   ) {
     super(message, 409, "CONFLICT_ERROR", true, context);
   }
@@ -114,7 +115,7 @@ export class ConflictError extends AppError {
 export class RateLimitError extends AppError {
   constructor(
     message = "Rate limit exceeded",
-    context?: Record<string, unknown>,
+    context?: Record<string, unknown>
   ) {
     super(message, 429, "RATE_LIMIT_ERROR", true, context);
   }
@@ -127,7 +128,7 @@ export class ExternalServiceError extends AppError {
   constructor(
     message: string,
     statusCode = 502,
-    context?: Record<string, unknown>,
+    context?: Record<string, unknown>
   ) {
     super(message, statusCode, "EXTERNAL_SERVICE_ERROR", true, context);
   }
@@ -139,7 +140,7 @@ export class ExternalServiceError extends AppError {
 export class DatabaseError extends AppError {
   constructor(
     message = "Database operation failed",
-    context?: Record<string, unknown>,
+    context?: Record<string, unknown>
   ) {
     super(message, 500, "DATABASE_ERROR", true, context);
   }
@@ -175,12 +176,12 @@ export function normalizeError(error: unknown): AppError {
 
   if (isError(error)) {
     const message = error.message.trim();
-    
+
     // Check for common Prisma errors
     if (message.includes("Unique constraint")) {
       return new ConflictError(
         "A record with this information already exists",
-        { originalError: error.message },
+        { originalError: error.message }
       );
     }
 
@@ -189,7 +190,7 @@ export function normalizeError(error: unknown): AppError {
         "The record you're trying to update doesn't exist",
         {
           originalError: error.message,
-        },
+        }
       );
     }
 
@@ -249,7 +250,7 @@ export function normalizeError(error: unknown): AppError {
     500,
     "UNKNOWN_ERROR",
     false,
-    { originalError: String(error) },
+    { originalError: String(error) }
   );
 }
 
@@ -260,7 +261,7 @@ export function getUserFriendlyMessage(error: AppError): string {
   // Always return the actual message in test/development mode
   const isTestOrDev =
     process.env.NODE_ENV === "test" || process.env.NODE_ENV === "development";
-  
+
   if (isTestOrDev) {
     return error.message;
   }

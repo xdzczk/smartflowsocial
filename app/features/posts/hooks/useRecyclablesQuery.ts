@@ -137,8 +137,7 @@ export function useRecyclablesData() {
       satszapped?: number;
     }
   > =
-    typeof rawData.stats === "object" &&
-    !Array.isArray(rawData.stats)
+    typeof rawData.stats === "object" && !Array.isArray(rawData.stats)
       ? rawData.stats
       : {};
 
@@ -176,7 +175,7 @@ export function useRecyclablesData() {
     stats,
     user: rawData.user,
     queueTypes: Array.isArray(rawData.queueTypes) ? rawData.queueTypes : [],
-    selectedQueueType: rawData.selectedQueueType ?? "all",
+    selectedQueueType: rawData.selectedQueueType || "all",
     isLoading: query.isLoading,
     rawData,
   };

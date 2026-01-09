@@ -20,24 +20,27 @@ function log(message) {
  */
 function fixUnnecessaryNullishUndefined() {
   log("🔍 Finding unnecessary ?? undefined patterns...");
-  
+
   // Find files with this pattern
   const files = execSync(
     `grep -r "?? undefined" --include="*.ts" --include="*.tsx" app/ tests/ 2>/dev/null | cut -d: -f1 | sort -u`,
     { cwd: PROJECT_ROOT, encoding: "utf8" }
-  ).trim().split("\n").filter(Boolean);
+  )
+    .trim()
+    .split("\n")
+    .filter(Boolean);
 
   let totalFixes = 0;
-  
+
   files.forEach((file) => {
     const filePath = path.join(PROJECT_ROOT, file);
     if (!fs.existsSync(filePath)) return;
-    
+
     let content = fs.readFileSync(filePath, "utf8");
     const lines = content.split("\n");
     let modified = false;
     let fixes = 0;
-    
+
     lines.forEach((line, index) => {
       // Pattern: variable ?? undefined (when variable is already T | undefined)
       // Be conservative - only fix simple cases
@@ -64,14 +67,14 @@ function fixUnnecessaryNullishUndefined() {
         }
       }
     });
-    
+
     if (modified) {
       fs.writeFileSync(filePath, lines.join("\n"), "utf8");
       totalFixes += fixes;
       log(`  ✅ Fixed ${fixes} issues in ${file}`);
     }
   });
-  
+
   log(`\n✅ Fixed ${totalFixes} unnecessary ?? undefined patterns\n`);
   return totalFixes;
 }
@@ -82,27 +85,31 @@ function fixUnnecessaryNullishUndefined() {
  */
 function fixUnnecessaryOptionalChaining() {
   log("🔍 Finding unnecessary optional chaining patterns...");
-  
+
   // Get all files with this warning from ESLint
   let lintOutput;
   try {
-    lintOutput = execSync(
-      `pnpm lint 2>&1`,
-      { cwd: PROJECT_ROOT, encoding: "utf8", maxBuffer: 10 * 1024 * 1024 }
-    );
+    lintOutput = execSync(`pnpm lint 2>&1`, {
+      cwd: PROJECT_ROOT,
+      encoding: "utf8",
+      maxBuffer: 10 * 1024 * 1024,
+    });
   } catch (error) {
     lintOutput = error.stdout || error.message || "";
   }
-  
+
   // Parse ESLint output to get file:line:col for each warning
   const warnings = [];
   const lines = lintOutput.split("\n");
   let currentFile = null;
-  
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     // File path
-    if (line.startsWith("/") && (line.includes(".ts") || line.includes(".tsx"))) {
+    if (
+      line.startsWith("/") &&
+      (line.includes(".ts") || line.includes(".tsx"))
+    ) {
       currentFile = line.trim();
     }
     // Warning line
@@ -117,7 +124,7 @@ function fixUnnecessaryOptionalChaining() {
       }
     }
   }
-  
+
   // Group by file
   const filesMap = {};
   warnings.forEach((w) => {
@@ -126,42 +133,47 @@ function fixUnnecessaryOptionalChaining() {
     }
     filesMap[w.file].push(w);
   });
-  
+
   let totalFixes = 0;
-  
+
   Object.entries(filesMap).forEach(([file, fileWarnings]) => {
     const filePath = path.join(PROJECT_ROOT, file);
     if (!fs.existsSync(filePath)) return;
-    
+
     try {
       let content = fs.readFileSync(filePath, "utf8");
       const lines = content.split("\n");
       let modified = false;
       let fixes = 0;
-      
+
       fileWarnings.forEach((warning) => {
         const lineIndex = warning.line - 1;
         if (lineIndex < 0 || lineIndex >= lines.length) return;
-        
+
         const line = lines[lineIndex];
         if (!line.includes("?.")) return;
-        
+
         // Fix simple patterns: obj?.prop -> obj.prop
         // Handle various patterns: obj?.prop, obj?.prop?.nested, etc.
         let newLine = line;
-        
+
         // Pattern 1: Simple property access obj?.prop (not a method call)
-        newLine = newLine.replace(/(\w+(?:\.\w+)*)\?\.(\w+)(?!\()/g, (match, obj, prop) => {
-          // Skip if it's followed by ( indicating a method call
-          const restOfLine = line.substring(line.indexOf(match) + match.length);
-          if (restOfLine.trim().startsWith("(")) {
-            return match;
+        newLine = newLine.replace(
+          /(\w+(?:\.\w+)*)\?\.(\w+)(?!\()/g,
+          (match, obj, prop) => {
+            // Skip if it's followed by ( indicating a method call
+            const restOfLine = line.substring(
+              line.indexOf(match) + match.length
+            );
+            if (restOfLine.trim().startsWith("(")) {
+              return match;
+            }
+            fixes++;
+            modified = true;
+            return `${obj}.${prop}`;
           }
-          fixes++;
-          modified = true;
-          return `${obj}.${prop}`;
-        });
-        
+        );
+
         // Pattern 2: Nested optional chaining - be more careful
         // Only fix if the whole chain is unnecessary
         newLine = newLine.replace(/(\w+)\?\.(\w+)\?\.(\w+)/g, (match) => {
@@ -169,22 +181,22 @@ function fixUnnecessaryOptionalChaining() {
           // For now, skip nested chains
           return match;
         });
-        
+
         if (newLine !== line) {
           lines[lineIndex] = newLine;
         }
       });
-      
+
       if (modified) {
         fs.writeFileSync(filePath, lines.join("\n"), "utf8");
         totalFixes += fixes;
         log(`  ✅ Fixed ${fixes} issues in ${file}`);
       }
-    } catch (_error) {
+    } catch {
       // Skip files with errors
     }
   });
-  
+
   log(`\n✅ Fixed ${totalFixes} unnecessary optional chaining patterns\n`);
   return totalFixes;
 }
@@ -195,29 +207,36 @@ function fixUnnecessaryOptionalChaining() {
  */
 function fixUnnecessaryConditionals() {
   log("🔍 Finding unnecessary conditionals...");
-  
+
   let lintOutput;
   try {
-    lintOutput = execSync(
-      `pnpm lint 2>&1`,
-      { cwd: PROJECT_ROOT, encoding: "utf8", maxBuffer: 10 * 1024 * 1024 }
-    );
+    lintOutput = execSync(`pnpm lint 2>&1`, {
+      cwd: PROJECT_ROOT,
+      encoding: "utf8",
+      maxBuffer: 10 * 1024 * 1024,
+    });
   } catch (error) {
     lintOutput = error.stdout || error.message || "";
   }
-  
+
   const warnings = [];
   const lines = lintOutput.split("\n");
   let currentFile = null;
-  
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    if (line.startsWith("/") && (line.includes(".ts") || line.includes(".tsx"))) {
+    if (
+      line.startsWith("/") &&
+      (line.includes(".ts") || line.includes(".tsx"))
+    ) {
       currentFile = line.trim();
     }
-    if ((line.includes("value is always truthy") || 
-         line.includes("value is always falsy") ||
-         line.includes("types have no overlap")) && currentFile) {
+    if (
+      (line.includes("value is always truthy") ||
+        line.includes("value is always falsy") ||
+        line.includes("types have no overlap")) &&
+      currentFile
+    ) {
       const match = line.match(/(\d+):(\d+)/);
       if (match) {
         warnings.push({
@@ -228,7 +247,7 @@ function fixUnnecessaryConditionals() {
       }
     }
   }
-  
+
   // Group by file
   const filesMap = {};
   warnings.forEach((w) => {
@@ -237,31 +256,33 @@ function fixUnnecessaryConditionals() {
     }
     filesMap[w.file].push(w);
   });
-  
+
   Object.entries(filesMap).forEach(([file, fileWarnings]) => {
     const filePath = path.join(PROJECT_ROOT, file);
     if (!fs.existsSync(filePath)) return;
-    
+
     try {
       const content = fs.readFileSync(filePath, "utf8");
       const lines = content.split("\n");
-      
+
       fileWarnings.forEach((warning) => {
         const lineIndex = warning.line - 1;
         if (lineIndex < 0 || lineIndex >= lines.length) return;
-        
+
         // Fix: if (alwaysTruthy) -> remove if, keep body
         // Fix: if (alwaysFalsy) -> remove entire if block
         // This is complex and risky - skip for now, require manual review
         // We'll just log them for manual fixing
         // Line would be available at lines[lineIndex] when implemented
       });
-    } catch (_error) {
+    } catch {
       // Skip files with errors
     }
   });
-  
-  log(`\n⚠️  Found ${warnings.length} unnecessary conditionals (require manual review)\n`);
+
+  log(
+    `\n⚠️  Found ${warnings.length} unnecessary conditionals (require manual review)\n`
+  );
   return 0; // Don't auto-fix these, too risky
 }
 
@@ -270,29 +291,36 @@ function fixUnnecessaryConditionals() {
  */
 function fixDuplicateStringLiterals() {
   log("🔍 Finding duplicate string literals...");
-  
+
   // This requires analyzing the codebase for repeated strings
   // For now, we'll just identify them
   let lintOutput;
   try {
-    lintOutput = execSync(
-      `pnpm lint 2>&1`,
-      { cwd: PROJECT_ROOT, encoding: "utf8", maxBuffer: 10 * 1024 * 1024 }
-    );
+    lintOutput = execSync(`pnpm lint 2>&1`, {
+      cwd: PROJECT_ROOT,
+      encoding: "utf8",
+      maxBuffer: 10 * 1024 * 1024,
+    });
   } catch (error) {
     lintOutput = error.stdout || error.message || "";
   }
-  
+
   const warnings = [];
   const lines = lintOutput.split("\n");
   let currentFile = null;
-  
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    if (line.startsWith("/") && (line.includes(".ts") || line.includes(".tsx"))) {
+    if (
+      line.startsWith("/") &&
+      (line.includes(".ts") || line.includes(".tsx"))
+    ) {
       currentFile = line.trim();
     }
-    if (line.includes("Define a constant instead of duplicating this literal") && currentFile) {
+    if (
+      line.includes("Define a constant instead of duplicating this literal") &&
+      currentFile
+    ) {
       const match = line.match(/(\d+):(\d+)/);
       if (match) {
         warnings.push({
@@ -302,22 +330,24 @@ function fixDuplicateStringLiterals() {
       }
     }
   }
-  
-  log(`\n⚠️  Found ${warnings.length} duplicate string literals (require manual extraction)\n`);
+
+  log(
+    `\n⚠️  Found ${warnings.length} duplicate string literals (require manual extraction)\n`
+  );
   return 0; // Don't auto-fix, requires understanding context
 }
 
 function main() {
   log("🚀 Batch Fixing ESLint Warnings\n");
   log("=".repeat(60));
-  
+
   let totalFixes = 0;
-  
+
   totalFixes += fixUnnecessaryNullishUndefined();
   totalFixes += fixUnnecessaryOptionalChaining();
   fixUnnecessaryConditionals();
   fixDuplicateStringLiterals();
-  
+
   log("=".repeat(60));
   log(`\n✅ Total fixes: ${totalFixes}`);
   log("\n💡 Run 'pnpm lint' to see remaining warnings\n");
@@ -328,4 +358,3 @@ if (require.main === module) {
 }
 
 module.exports = { main };
-

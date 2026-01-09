@@ -9,7 +9,7 @@ import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 
-import { getSelectedQueueStyle } from "../queueColors";
+import { getSelectedQueueStyle } from "../queue-colors";
 import type { PostData, QueueType, HashTagPreset } from "../types";
 interface DraftEditFormProps {
   post: PostData;
@@ -132,7 +132,7 @@ export function DraftEditForm({
           onUseHashtagPresetsChange={onUseHashtagPresetsChange}
           showQueuePreset={selectedQueue !== "unassigned"}
           queueType={queueTypes.find(
-            (q) => (typeof q === "string" ? q : q.name) === selectedQueue,
+            (q) => (typeof q === "string" ? q : q.name) === selectedQueue
           )}
         />
 

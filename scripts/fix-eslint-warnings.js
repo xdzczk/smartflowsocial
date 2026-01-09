@@ -74,6 +74,7 @@ function getWarningsByType() {
  * Fix unnecessary nullish coalescing (remove ?? when left side is never null/undefined)
  * This is a conservative fix - only removes ?? when the right side is a simple default
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars -- Intentionally disabled function, kept for reference
 function fixUnnecessaryNullishCoalescing(content) {
   // Pattern: something ?? defaultValue where something is never null/undefined
   // We'll be conservative and only fix obvious cases
@@ -100,6 +101,7 @@ function fixUnnecessaryNullishCoalescing(content) {
 /**
  * Fix unnecessary optional chaining (remove ?. when value is guaranteed non-nullish)
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars -- Intentionally disabled function, kept for reference
 function fixUnnecessaryOptionalChaining(_content) {
   // Pattern: something?.property where something is never null/undefined
   // This is also tricky to detect automatically
@@ -146,4 +148,3 @@ if (require.main === module) {
 }
 
 module.exports = { getWarningsByType, main };
-

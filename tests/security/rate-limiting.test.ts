@@ -157,6 +157,7 @@ describe("Rate Limiting", () => {
       // If Redis is available, should return info or null
       // If not available, should return null
       expect(
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: checking rate limit info structure
         info === null || (info && "remaining" in info && "resetTime" in info)
       ).toBe(true);
     });

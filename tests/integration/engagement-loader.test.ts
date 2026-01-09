@@ -155,8 +155,9 @@ describe("Engagement Loader", () => {
       expect(result.posts).toHaveLength(1); // Only post-1 has replies > 0
       expect(
         result.posts[0]?.signedEvent &&
-          typeof result.posts[0]?.signedEvent === "object" &&
-          result.posts[0]?.signedEvent &&
+          typeof result.posts[0].signedEvent === "object" &&
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: type narrowing for mock data
+          result.posts[0].signedEvent &&
           "id" in result.posts[0].signedEvent
           ? result.posts[0].signedEvent["id"]
           : null
@@ -251,8 +252,9 @@ describe("Engagement Loader", () => {
       expect(result.posts).toHaveLength(1);
       expect(
         result.posts[0]?.signedEvent &&
-          typeof result.posts[0]?.signedEvent === "object" &&
-          result.posts[0]?.signedEvent &&
+          typeof result.posts[0].signedEvent === "object" &&
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: type narrowing for mock data
+          result.posts[0].signedEvent &&
           "id" in result.posts[0].signedEvent
           ? result.posts[0].signedEvent["id"]
           : null

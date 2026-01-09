@@ -5,7 +5,7 @@
  */
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 
-import { getDynamicQueueStyle } from "../queueColors";
+import { getDynamicQueueStyle } from "../queue-colors";
 import type { BulkPostCardProps, BulkPost, QueueType } from "../types";
 // Re-export types for consumers
 export type { BulkPost, QueueType };

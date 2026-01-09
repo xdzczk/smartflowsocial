@@ -8,6 +8,9 @@ import type { User } from "~/features/user";
 import { logClientError } from "~/lib/error-handler.client";
 
 import { type BulkPost, type PreparedEvent } from "./types";
+
+const DEFAULT_RELAY_URL = "wss://relay.primal.net";
+
 interface FetcherData {
   fileUrls?: Array<{ fileUrl: string; scheduledFor: string }>;
 }
@@ -264,7 +267,7 @@ export function useBulkPostEvents({
               created_at: Math.floor(scheduledTime / 1000),
               kind: 6, // Kind 6 for reposts
               tags: [
-                ["e", post.originalEventId ?? "", "wss://relay.primal.net"],
+                ["e", post.originalEventId ?? "", DEFAULT_RELAY_URL],
                 ["p", post.originalEventPubkey ?? ""],
               ],
             },
@@ -295,7 +298,7 @@ export function useBulkPostEvents({
                   aTag = [
                     "a",
                     `${kind}:${pubkey}:${identifier}`,
-                    "wss://relay.primal.net",
+                    DEFAULT_RELAY_URL,
                     "mention",
                   ];
                 }
@@ -321,7 +324,7 @@ export function useBulkPostEvents({
             // Create nevent1 format for regular quoted events
             const neventEncoded = nip19.neventEncode({
               id: post.originalEventId ?? "",
-              relays: ["wss://relay.primal.net"],
+              relays: [DEFAULT_RELAY_URL],
               author: post.originalEventPubkey,
             });
 
@@ -337,12 +340,7 @@ export function useBulkPostEvents({
             // Include hashtag t tags plus e and p tags for quote posts
             quoteTags = [
               ...tagArray, // Hashtag tags
-              [
-                "e",
-                post.originalEventId ?? "",
-                "wss://relay.primal.net",
-                "mention",
-              ], // Reference to quoted event
+              ["e", post.originalEventId ?? "", DEFAULT_RELAY_URL, "mention"], // Reference to quoted event
               ["p", post.originalEventPubkey ?? "", "", "mention"], // Reference to quoted author
             ];
           }

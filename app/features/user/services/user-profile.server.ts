@@ -75,7 +75,6 @@ export async function getUserById(
   ) {
     // Add blastrRelay if not already present
     const userRelays =
-      user &&
       typeof user === "object" &&
       "userRelays" in user &&
       Array.isArray(user.userRelays)

@@ -6,12 +6,24 @@
 import { z } from "zod";
 
 /**
+ * Action type constants
+ */
+const ACTION_DELETE = "delete";
+const ACTION_DELETE_LONGFORM = "deleteLongForm";
+const ACTION_BULK_DELETE = "bulkDelete";
+
+/**
+ * Validation error messages
+ */
+const ERROR_POST_ID_REQUIRED = "Post ID is required";
+
+/**
  * Base action schema - validates the _action field
  */
 export const postActionSchema = z.enum([
-  "delete",
-  "deleteLongForm",
-  "bulkDelete",
+  ACTION_DELETE,
+  ACTION_DELETE_LONGFORM,
+  ACTION_BULK_DELETE,
   "bulkDeleteLongForm",
   "bulkDeleteMixed",
   "bulkSignAndResume",
@@ -21,23 +33,23 @@ export const postActionSchema = z.enum([
  * Delete post schema
  */
 export const deletePostSchema = z.object({
-  _action: z.literal("delete"),
-  postId: z.string().min(1, "Post ID is required"),
+  _action: z.literal(ACTION_DELETE),
+  postId: z.string().min(1, ERROR_POST_ID_REQUIRED),
 });
 
 /**
  * Delete longform post schema
  */
 export const deleteLongFormPostSchema = z.object({
-  _action: z.literal("deleteLongForm"),
-  postId: z.string().min(1, "Post ID is required"),
+  _action: z.literal(ACTION_DELETE_LONGFORM),
+  postId: z.string().min(1, ERROR_POST_ID_REQUIRED),
 });
 
 /**
  * Bulk delete posts schema
  */
 export const bulkDeletePostsSchema = z.object({
-  _action: z.literal("bulkDelete"),
+  _action: z.literal(ACTION_BULK_DELETE),
   postIds: z
     .string()
     .transform((val) => {
@@ -94,9 +106,9 @@ export const bulkDeleteMixedSchema = z.object({
           z.object({
             id: z.string().min(1),
             type: z.enum(["post", "longform"]),
-          }),
+          })
         )
-        .min(1, "At least one item is required"),
+        .min(1, "At least one item is required")
     ),
 });
 
@@ -106,49 +118,47 @@ export const bulkDeleteMixedSchema = z.object({
  */
 export const bulkSignAndResumeSchema = z.object({
   _action: z.literal("bulkSignAndResume"),
-  postIds: z.array(z.string().min(1)).min(1, "At least one post ID is required"),
+  postIds: z
+    .array(z.string().min(1))
+    .min(1, "At least one post ID is required"),
   contents: z.array(z.string()),
   captions: z.array(z.string()),
   queueTypes: z.array(z.string()),
   queueTypeIds: z.array(z.string()),
   scheduledFors: z.array(z.string()),
-  signedEvents: z
-    .array(z.string())
-    .transform((arr) =>
-      arr.map((str) => {
-        try {
-          return JSON.parse(str) as {
-            id: string;
-            pubkey: string;
-            created_at: number;
-            kind: number;
-            content: string;
-            tags: string[][];
-            sig: string;
-          };
-        } catch {
-          throw new Error("Invalid signed event format");
-        }
-      }),
-    ),
-  nostrEvents: z
-    .array(z.string())
-    .transform((arr) =>
-      arr.map((str) => {
-        try {
-          return JSON.parse(str) as {
-            id: string;
-            pubkey: string;
-            created_at: number;
-            kind: number;
-            content: string;
-            tags: string[][];
-          };
-        } catch {
-          throw new Error("Invalid nostr event format");
-        }
-      }),
-    ),
+  signedEvents: z.array(z.string()).transform((arr) =>
+    arr.map((str) => {
+      try {
+        return JSON.parse(str) as {
+          id: string;
+          pubkey: string;
+          created_at: number;
+          kind: number;
+          content: string;
+          tags: string[][];
+          sig: string;
+        };
+      } catch {
+        throw new Error("Invalid signed event format");
+      }
+    })
+  ),
+  nostrEvents: z.array(z.string()).transform((arr) =>
+    arr.map((str) => {
+      try {
+        return JSON.parse(str) as {
+          id: string;
+          pubkey: string;
+          created_at: number;
+          kind: number;
+          content: string;
+          tags: string[][];
+        };
+      } catch {
+        throw new Error("Invalid nostr event format");
+      }
+    })
+  ),
 });
 
 /**
@@ -156,7 +166,7 @@ export const bulkSignAndResumeSchema = z.object({
  */
 export const calendarRescheduleSchema = z.object({
   action: z.literal("reschedule"),
-  postId: z.string().min(1, "Post ID is required"),
+  postId: z.string().min(1, ERROR_POST_ID_REQUIRED),
   newTime: z.string().min(1, "New time is required"),
   overrideQueue: z
     .union([z.string(), z.boolean()])
@@ -172,7 +182,7 @@ export const calendarRescheduleSchema = z.object({
  */
 export const calendarRescheduleLongformSchema = z.object({
   action: z.literal("rescheduleLongform"),
-  postId: z.string().min(1, "Post ID is required"),
+  postId: z.string().min(1, ERROR_POST_ID_REQUIRED),
   newTime: z.string().min(1, "New time is required"),
   signedEvent: z.string().optional().nullable(),
   nostrEvent: z.string().optional().nullable(),
@@ -351,7 +361,7 @@ export const bulkQuoteSchema = z.object({
  */
 export const repostSchema = z.object({
   _action: z.literal("repost"),
-  postId: z.string().min(1, "Post ID is required"),
+  postId: z.string().min(1, ERROR_POST_ID_REQUIRED),
 });
 
 /**
@@ -367,7 +377,7 @@ export const longformRepostSchema = z.object({
  */
 export const longformQuoteSchema = z.object({
   _action: z.literal("longformQuote"),
-  postId: z.string().min(1, "Post ID is required"),
+  postId: z.string().min(1, ERROR_POST_ID_REQUIRED),
 });
 
 /**
@@ -375,7 +385,7 @@ export const longformQuoteSchema = z.object({
  */
 export const quoteSchema = z.object({
   _action: z.literal("quote"),
-  postId: z.string().min(1, "Post ID is required"),
+  postId: z.string().min(1, ERROR_POST_ID_REQUIRED),
 });
 
 /**
@@ -414,8 +424,8 @@ export const searchActionSchema = z.discriminatedUnion("_action", [
  * Delete recyclable post schema
  */
 export const deleteRecyclablePostSchema = z.object({
-  _action: z.literal("delete"),
-  postId: z.string().min(1, "Post ID is required"),
+  _action: z.literal(ACTION_DELETE),
+  postId: z.string().min(1, ERROR_POST_ID_REQUIRED),
 });
 
 /**
@@ -430,4 +440,3 @@ export const recyclableActionSchema = z.discriminatedUnion("_action", [
   repostSchema,
   quoteSchema,
 ]);
-

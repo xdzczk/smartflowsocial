@@ -303,6 +303,7 @@ export function WeeklyView({
                       <div className="flex h-full space-x-0.5">
                         {posts.map((post, postIndex) => (
                           <div
+                            // eslint-disable-next-line react/no-array-index-key -- Composite key with stable post ID
                             key={`${post.id}-${postIndex}`}
                             className="min-w-0 flex-1"
                           >
@@ -333,6 +334,7 @@ export function WeeklyView({
                       <div className="flex h-full space-x-0.5">
                         {posts.slice(0, 5).map((post, postIndex) => (
                           <div
+                            // eslint-disable-next-line react/no-array-index-key -- Composite key with post.id ensures uniqueness
                             key={`${post.id}-${postIndex}`}
                             className="min-w-0 flex-1"
                           >

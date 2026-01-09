@@ -25,12 +25,13 @@ describe("Accessibility", () => {
 
       cy.get("body").then(($body) => {
         const buttons = $body.find("button");
+        const buttonArray = Array.from(buttons);
         const hasAriaLabels =
-          buttons.filter(
-            (_, el) =>
+          buttonArray.filter(
+            (el) =>
               el.hasAttribute("aria-label") ||
               el.hasAttribute("aria-labelledby") ||
-              el.textContent?.trim() !== "",
+              (el.textContent && el.textContent.trim() !== "")
           ).length > 0;
 
         // At least some buttons should have labels or text
@@ -50,24 +51,25 @@ describe("Accessibility", () => {
           const hasClosestLabel = $textarea.closest("label").length > 0;
           const hasLabelFor =
             document.querySelector(
-              `label[for="${String($textarea.attr("id") ?? "")}"]`,
+              `label[for="${String($textarea.attr("id") ?? "")}"]`
             ) !== null;
           const placeholder = $textarea.attr("placeholder");
           const name = $textarea.attr("name");
           // Also check for placeholder or name as accessibility indicators
           const hasLabel = Boolean(
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: checking multiple optional accessibility attributes
             ariaLabel ??
-              ariaLabelledBy ??
-              hasClosestLabel ??
-              hasLabelFor ??
-              placeholder ??
-              name,
+            ariaLabelledBy ??
+            hasClosestLabel ??
+            hasLabelFor ??
+            placeholder ??
+            name
           );
 
           // If no label found, log a warning but don't fail (UI improvement needed)
           if (!hasLabel) {
             cy.log(
-              "Warning: Textarea missing accessible label - UI improvement needed",
+              "Warning: Textarea missing accessible label - UI improvement needed"
             );
           }
           // Make test more lenient - placeholder or name can serve as accessibility aid
@@ -106,7 +108,7 @@ describe("Accessibility", () => {
       // Should process submission
       cy.location("pathname", { timeout: 10000 }).should((pathname) => {
         expect(pathname).to.satisfy(
-          (p: string) => p.includes("dashboard") || p.includes("newpost"),
+          (p: string) => p.includes("dashboard") || p.includes("newpost")
         );
       });
     });
@@ -207,7 +209,7 @@ describe("Accessibility", () => {
           const name = $textarea.attr("name");
           const hasClosestLabel = $textarea.closest("label").length > 0;
           const isAccessible = Boolean(
-            ariaLabel ?? ariaLabelledBy ?? name ?? hasClosestLabel,
+            ariaLabel ?? ariaLabelledBy ?? name ?? hasClosestLabel
           );
 
           expect(isAccessible).to.be.true;

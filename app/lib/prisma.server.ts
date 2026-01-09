@@ -1,4 +1,6 @@
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
+import { Pool } from "pg";
 
 import { env } from "./env.server";
 import { recordQueryMetrics } from "./query-metrics.server";
@@ -42,7 +44,21 @@ function getPrismaClient() {
   // This is safe because we're in a singleton function that only runs once
   process.env["DATABASE_URL"] = finalDatabaseUrl;
 
+  // Prisma 7: Use PostgreSQL adapter for the "client" engine type
+  // Create a connection pool for the adapter
+  const pool = new Pool({
+    connectionString: finalDatabaseUrl,
+    // Connection pool configuration
+    max: 10, // Maximum number of clients in the pool
+    idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
+    connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection cannot be established
+  });
+
+  // Create the Prisma adapter using the connection pool
+  const adapter = new PrismaPg(pool);
+
   const baseClient = new PrismaClient({
+    adapter: adapter, // Use adapter for Prisma 7 client engine type
     // Enable query logging in development for performance monitoring
     log:
       env.NODE_ENV === "development"
@@ -64,7 +80,8 @@ function getPrismaClient() {
             const duration = after - before;
 
             // Record metrics
-            recordQueryMetrics(model ?? "unknown", operation, duration, true);
+            // model is always string in Prisma's $allOperations callback
+            recordQueryMetrics(model, operation, duration, true);
 
             // Log slow queries (over 100ms)
             if (duration > 100) {
@@ -86,13 +103,8 @@ function getPrismaClient() {
             const duration = after - before;
 
             // Record error metrics
-            recordQueryMetrics(
-              model ?? "unknown",
-              operation,
-              duration,
-              false,
-              error
-            );
+            // model is always string in Prisma's $allOperations callback
+            recordQueryMetrics(model, operation, duration, false, error);
 
             // Log query errors
 

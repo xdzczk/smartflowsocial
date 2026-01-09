@@ -211,6 +211,7 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
               });
 
               // Ensure result is a valid Date
+              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: defensive check for function return value
               if (!result) {
                 console.error("Result is null/undefined", {
                   intervalHours,
@@ -292,7 +293,9 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
               const _afterCall = Date.now();
 
               // Result should be a valid Date
+
               if (
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: defensive check for function return value
                 !result ||
                 !(result instanceof Date) ||
                 isNaN(result.getTime())
@@ -359,6 +362,7 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
               });
 
               // Result should be a valid date
+              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: defensive check for function return value
               if (!result) {
                 console.error("Result is null/undefined", { intervalHours });
                 return false;
@@ -417,6 +421,7 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
               const slotStrings = slots.map((slot) => {
                 // Handle tuple format [h, m]
                 // slot should be [h, m] directly from fc.tuple
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check for tuple validation
                 if (!Array.isArray(slot) || slot.length !== 2) {
                   throw new Error("Invalid slot format");
                 }
@@ -446,6 +451,7 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
                 userTimezone: timezone,
               });
 
+              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: defensive check for function return value
               if (!result) {
                 console.error("Result is null/undefined", { slots, timezone });
                 return false;
@@ -504,6 +510,7 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
               const slotStrings = slots.map((slot) => {
                 // Handle tuple format [h, m]
                 // slot should be [h, m] directly from fc.tuple
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check for tuple validation
                 if (!Array.isArray(slot) || slot.length !== 2) {
                   throw new Error("Invalid slot format");
                 }
@@ -536,7 +543,9 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
               const _afterCall = Date.now();
 
               // Result should be a valid Date
+
               if (
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: defensive check for function return value
                 !result ||
                 !(result instanceof Date) ||
                 isNaN(result.getTime())
@@ -594,6 +603,7 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
                 userTimezone: timezone,
               });
 
+              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: defensive check for function return value
               if (!result) {
                 console.error("Result is null/undefined", { timezone });
                 return false;
@@ -712,6 +722,7 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
               });
 
               // Should return current time for empty slots
+              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: defensive check for function return value
               if (!result) {
                 console.error("Result is null/undefined", { slots });
                 return false;
@@ -771,6 +782,7 @@ describe("Property-Based Tests: Scheduling Algorithms", () => {
                 userTimezone: "UTC",
               });
 
+              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: defensive check for function return value
               if (!result) {
                 console.error("Result is null/undefined", { intervalHours });
                 return false;

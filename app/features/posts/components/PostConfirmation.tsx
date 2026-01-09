@@ -4,7 +4,7 @@ import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { logClientError } from "~/lib/error-handler.client";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 
-import { getSelectedQueueStyle } from "../queueColors";
+import { getSelectedQueueStyle } from "../queue-colors";
 import type { PreparedEvent } from "../types";
 
 interface PostConfirmationProps {
@@ -197,7 +197,7 @@ export default function PostConfirmation({
                 );
 
                 caption = captionParts.join(" ");
-                mediaUrl = mediaUrl_ || "";
+                mediaUrl = mediaUrl_ ?? "";
               } else {
                 // Fallback to eventData.caption if content is not available
                 caption = eventData.caption;
@@ -225,6 +225,7 @@ export default function PostConfirmation({
 
             return (
               <div
+                // eslint-disable-next-line react/no-array-index-key -- Stable list of prepared events, no unique ID available
                 key={index}
                 className="group overflow-hidden rounded-xl bg-white shadow-lg transition-all duration-300 hover:shadow-xl dark:bg-gray-800"
               >
@@ -301,6 +302,7 @@ export default function PostConfirmation({
                                 : "";
                             return (
                               <span
+                                // eslint-disable-next-line react/no-array-index-key -- Stable list of tags, no unique ID available
                                 key={tagIndex}
                                 className="rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-600 dark:bg-blue-900 dark:text-blue-300"
                               >

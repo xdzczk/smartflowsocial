@@ -73,7 +73,7 @@ export {
 // Queue Type Utilities
 // ============================================================================
 
-export { getQueueColor } from "./queueColors";
+export { getQueueColor } from "./queue-colors";
 
 // ============================================================================
 // Calendar Components
@@ -205,4 +205,3 @@ export { useDraftEditState } from "./hooks/useDraftEditState";
 export { useLongFormEditState } from "./hooks/useLongFormEditState";
 export { useNewLongFormState } from "./hooks/useNewLongFormState";
 export { useNewPostState } from "./hooks/useNewPostState";
-

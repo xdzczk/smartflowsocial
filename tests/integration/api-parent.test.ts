@@ -323,7 +323,7 @@ describe("API: Parent", () => {
 
       // The loader should catch the error and return a graceful response
       const response = await loader(loaderArgs);
-      const data = (await response.json()) as { parent?: unknown | null };
+      const data = (await response.json()) as { parent?: unknown };
 
       // Verify graceful error handling - returns null parent instead of throwing
       expect(response.status).toBe(200);

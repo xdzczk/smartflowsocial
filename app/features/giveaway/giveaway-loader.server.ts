@@ -3,8 +3,8 @@
  * Centralized data fetching and processing for giveaway page
  */
 
-import { calculateTrustScore } from "~/features/engagement/trustScore";
-import type { User } from "~/features/engagement/trustScore";
+import { calculateTrustScore } from "~/features/engagement/trust-score";
+import type { User } from "~/features/engagement/trust-score";
 import { toPostDTOArray, type PostDTO } from "~/features/posts/dtos";
 import type { PostData } from "~/features/posts/types";
 import { convertPrismaQueueTypeToQueueType } from "~/features/posts/types";

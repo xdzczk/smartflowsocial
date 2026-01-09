@@ -1,4 +1,7 @@
 import type { useFetcher } from "@remix-run/react";
+
+const PROCESSING_TEXT = "Processing...";
+
 interface RecyclablesBulkActionsProps {
   selectedCount: number;
   onBulkRepost: () => void;
@@ -48,7 +51,7 @@ export function RecyclablesBulkActions({
             />
           </svg>
           {repostFetcher.state !== "idle"
-            ? "Processing..."
+            ? PROCESSING_TEXT
             : `Recycle ${selectedCount} Post${selectedCount !== 1 ? "s" : ""}`}
         </button>
         <button
@@ -70,7 +73,7 @@ export function RecyclablesBulkActions({
             />
           </svg>
           {repostFetcher.state !== "idle"
-            ? "Processing..."
+            ? PROCESSING_TEXT
             : `Repost ${selectedCount} Post${selectedCount !== 1 ? "s" : ""}`}
         </button>
         <button
@@ -92,7 +95,7 @@ export function RecyclablesBulkActions({
             />
           </svg>
           {repostFetcher.state !== "idle"
-            ? "Processing..."
+            ? PROCESSING_TEXT
             : `Quote ${selectedCount} Post${selectedCount !== 1 ? "s" : ""}`}
         </button>
         <button

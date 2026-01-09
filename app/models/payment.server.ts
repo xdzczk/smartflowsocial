@@ -1,5 +1,6 @@
 // Polyfill WebSocket for @getalby/sdk in Node.js (production only)
 // Using ws package instead of deprecated websocket-polyfill
+
 if (
   process.env.NODE_ENV !== "development" &&
   globalThis.WebSocket === undefined
@@ -444,7 +445,8 @@ export async function manuallyVerifyPayment(paymentId: string): Promise<{
   // Only verify payments created within the last 30 minutes (invoice expiration time)
   // This prevents accidentally completing old/stale payments
   const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
-  const isRecent = payment.createdAt && payment.createdAt > thirtyMinutesAgo;
+  // createdAt is always defined in Payment model (has @default(now()))
+  const isRecent = payment.createdAt > thirtyMinutesAgo;
 
   if (!isRecent) {
     return {

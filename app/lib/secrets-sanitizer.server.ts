@@ -76,7 +76,7 @@ export function sanitizeObject<T>(obj: T): T {
 /**
  * Sanitize error message and stack trace
  */
-export function sanitizeError(error: Error | unknown): {
+export function sanitizeError(error: Error): {
   message: string;
   stack?: string;
   name: string;

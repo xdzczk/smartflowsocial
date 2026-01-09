@@ -248,11 +248,11 @@ export async function connectToPrimalCache(
       const responses = await tryConnectToCache(endpoint, requestType, params);
 
       // A "good" response: has at least one element that's not ["EOSE"]
-      const nonEose = responses?.filter(
+      const nonEose = responses.filter(
         (res): res is unknown[] => Array.isArray(res) && res[0] !== "EOSE"
       );
 
-      if (nonEose && nonEose.length > 0) {
+      if (nonEose.length > 0) {
         return responses;
       }
       // else, try next endpoint

@@ -85,7 +85,8 @@ export const action = withCSRFProtection(
       // Type narrowing: check if result has error property
       if (
         typeof result === "object" &&
-        result !== null &&
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: result may be null
+        result &&
         "error" in result &&
         result.error
       ) {
@@ -257,7 +258,8 @@ export default function ScheduledPosts() {
                 })(),
                 fileUrl: Array.isArray(post.fileUrl)
                   ? post.fileUrl
-                  : post.fileUrl
+                  : // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: fileUrl may be a string from legacy data
+                    post.fileUrl
                     ? [post.fileUrl]
                     : null,
                 queueType: post.queueType
@@ -266,9 +268,9 @@ export default function ScheduledPosts() {
                       color: post.queueType.color ?? null,
                     }
                   : null,
-                repost: post.repost ?? false,
-                isQuotedPost: post.isQuotedPost ?? false,
-                isPostSigned: post.signedEvent ? true : false,
+                repost: post.repost || false,
+                isQuotedPost: post.isQuotedPost || false,
+                isPostSigned: !!post.signedEvent,
               })
             )}
             sortConfig={sortConfig}

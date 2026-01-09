@@ -365,9 +365,11 @@ export async function handleScheduledPostAction(
     const hashtags = (formData.get("hashtags") ?? "") as string;
     const signedEventStr = formData.get("signedEvent") as string;
     const nostrEventStr = formData.get("nostrEvent") as string;
-    const queueTypeId = (formData.get("queueTypeId") as string) ?? null;
-    const scheduledFor = (formData.get("scheduledFor") as string) ?? null;
-    const hashTagPresetId = (formData.get("hashTagPresetId") as string) ?? null;
+    const queueTypeId = (formData.get("queueTypeId") as string | null) ?? null;
+    const scheduledFor =
+      (formData.get("scheduledFor") as string | null) ?? null;
+    const hashTagPresetId =
+      (formData.get("hashTagPresetId") as string | null) ?? null;
 
     if (!postId) {
       return json({ error: "Missing postId" }, { status: 400 });
@@ -476,7 +478,8 @@ export async function handleScheduledPostAction(
     const image = (formData.get("image") ?? "") as string;
     const signedEventStr = formData.get("signedEvent") as string;
     const nostrEventStr = formData.get("nostrEvent") as string;
-    const scheduledFor = (formData.get("scheduledFor") as string) ?? null;
+    const scheduledFor =
+      (formData.get("scheduledFor") as string | null) ?? null;
 
     if (!postId) {
       return json({ error: "Missing postId" }, { status: 400 });

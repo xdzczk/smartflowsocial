@@ -18,6 +18,7 @@ export async function loadEditorJSContent(
   content: string,
   onContentChange: (content: string) => void
 ) {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: ref value can change between async operations
   if (!editorRef.current) return;
 
   try {
@@ -112,6 +113,7 @@ export async function insertAssetsIntoEditor(
   }>,
   onContentChange: (content: string) => void
 ) {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: ref value can change between async operations
   if (!editorRef.current) return;
 
   try {

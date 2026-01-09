@@ -48,7 +48,7 @@ export {
 // Trust Score
 // ============================================================================
 
-export { calculateTrustScore } from "./trustScore";
+export { calculateTrustScore } from "./trust-score";
 
 // ============================================================================
 // Components (Public API)

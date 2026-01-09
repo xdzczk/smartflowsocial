@@ -34,13 +34,17 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     return videoExtensions.some((ext) => lower.includes(ext));
   }, [src]);
 
-  const handleVideoClick = (event: React.MouseEvent<HTMLVideoElement>) => {
+  const handleVideoClick = async (
+    event: React.MouseEvent<HTMLVideoElement>
+  ) => {
     const video = event.currentTarget;
     if (video.paused) {
-      void video.play().catch(() => {
+      try {
+        await video.play();
+        setIsPlaying(true);
+      } catch {
         // Handle play() rejection silently
-      });
-      setIsPlaying(true);
+      }
     } else {
       video.pause();
       setIsPlaying(false);
@@ -65,7 +69,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
         autoPlay={autoPlay}
         controls={controls}
         className="h-full w-full object-cover"
-        onClick={handleVideoClick}
+        onClick={(e) => void handleVideoClick(e)}
         onEnded={handleVideoEnded}
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
@@ -74,7 +78,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
       </video>
       {!isPlaying ? (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="rounded-full bg-black bg-opacity-50 p-3">
+          <div className="bg-opacity-50 rounded-full bg-black p-3">
             <PlayIcon className="h-8 w-8 text-white" />
           </div>
         </div>

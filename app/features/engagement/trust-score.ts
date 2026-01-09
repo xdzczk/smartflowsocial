@@ -42,7 +42,7 @@ export function calculateTrustScore(user: User): number {
   // Followers (weighted logarithmically to prevent gaming)
   const followerScore = Math.min(
     12,
-    Math.log10(Math.max(1, user.followersCount)) * 3,
+    Math.log10(Math.max(1, user.followersCount)) * 3
   );
   score += followerScore;
 
@@ -53,7 +53,7 @@ export function calculateTrustScore(user: User): number {
   // Replies (shows engagement)
   const replyScore = Math.min(
     5,
-    Math.log10(Math.max(1, user.replyCount)) * 1.5,
+    Math.log10(Math.max(1, user.replyCount)) * 1.5
   );
   score += replyScore;
 
@@ -75,7 +75,7 @@ export function calculateTrustScore(user: User): number {
   // Total sats zapped (economic value)
   const satsScore = Math.min(
     5,
-    Math.log10(Math.max(1, user.totalSatsZapped)) * 1,
+    Math.log10(Math.max(1, user.totalSatsZapped)) * 1
   );
   score += satsScore;
 

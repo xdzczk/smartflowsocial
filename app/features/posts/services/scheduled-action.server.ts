@@ -12,7 +12,7 @@ import { deletePost } from "~/models/post.commands.server";
 
 export async function handleScheduledAction(
   formData: FormData,
-  userId: string,
+  userId: string
 ) {
   const result = validateFormDataOrRespond(formData, scheduledActionSchema);
   if (!result.success) {
@@ -33,7 +33,7 @@ export async function handleScheduledAction(
 
   if (_action === "bulkDelete") {
     await Promise.all(
-      result.data.postIds.map((id: string) => deletePost({ id, userId })),
+      result.data.postIds.map((id: string) => deletePost({ id, userId }))
     );
     return { success: true };
   }
@@ -41,23 +41,20 @@ export async function handleScheduledAction(
   if (_action === "bulkDeleteLongForm") {
     await Promise.all(
       result.data.postIds.map((id: string) =>
-        deleteLongFormPost({ id, userId }),
-      ),
+        deleteLongFormPost({ id, userId })
+      )
     );
     return { success: true };
   }
 
-  if (_action === "bulkDeleteMixed") {
-    const promises = result.data.itemData.map((item) => {
-      if (item.type === "post") {
-        return deletePost({ id: item.id, userId });
-      } else {
-        return deleteLongFormPost({ id: item.id, userId });
-      }
-    });
-    await Promise.all(promises);
-    return { success: true };
-  }
-
-  return { error: "Invalid action" };
+  // TypeScript guarantees this is "bulkDeleteMixed" after previous checks
+  const promises = result.data.itemData.map((item) => {
+    if (item.type === "post") {
+      return deletePost({ id: item.id, userId });
+    } else {
+      return deleteLongFormPost({ id: item.id, userId });
+    }
+  });
+  await Promise.all(promises);
+  return { success: true };
 }

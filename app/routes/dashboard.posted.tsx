@@ -1,5 +1,7 @@
 import { Link, useParams } from "@remix-run/react";
 
+const PROCESSING_TEXT = "Processing...";
+
 import Toast from "~/components/ui/Toast";
 import { requireUserId } from "~/features/auth";
 import { requireAnySubscription } from "~/features/payments";
@@ -151,14 +153,16 @@ export default function PostedPosts() {
       const dateA = (
         a.postedAt instanceof Date
           ? a.postedAt
-          : a.postedAt
+          : // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: handle serialized Date strings
+            a.postedAt
             ? new Date(a.postedAt)
             : new Date(0)
       ).getTime();
       const dateB = (
         b.postedAt instanceof Date
           ? b.postedAt
-          : b.postedAt
+          : // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: handle serialized Date strings
+            b.postedAt
             ? new Date(b.postedAt)
             : new Date(0)
       ).getTime();
@@ -193,12 +197,14 @@ export default function PostedPosts() {
 
       // Use type-safe PostStats accessors
       const aStats = getPostStats(
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: type narrowing for serialized data
         stats && typeof stats === "object" && !Array.isArray(stats)
           ? (stats as Record<string, unknown>)
           : undefined,
         aEventId
       );
       const bStats = getPostStats(
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: type narrowing for serialized data
         stats && typeof stats === "object" && !Array.isArray(stats)
           ? (stats as Record<string, unknown>)
           : undefined,
@@ -225,7 +231,7 @@ export default function PostedPosts() {
 
   return (
     <div>
-      <div className="mb-5 mt-5 flex flex-col gap-3 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
+      <div className="mt-5 mb-5 flex flex-col gap-3 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
         <div>
           <h3 className="mb-1 font-semibold">Posted History</h3>
         </div>
@@ -249,7 +255,7 @@ export default function PostedPosts() {
           type="posted"
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
-          userTimezone={user?.timezone ?? undefined}
+          userTimezone={user.timezone ?? undefined}
           onPostSelect={(content) => {
             // Handle selection based on content type using type guards
             if (content.type === "post") {
@@ -311,7 +317,7 @@ export default function PostedPosts() {
                 name="search"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="block w-full rounded-lg border border-gray-200 py-2 pl-10 pr-3 text-sm leading-6 placeholder-gray-400 focus:border-blue-500 focus:ring focus:ring-blue-500/50 dark:border-gray-700 dark:bg-gray-900 dark:focus:border-blue-500"
+                className="block w-full rounded-lg border border-gray-200 py-2 pr-3 pl-10 text-sm leading-6 placeholder-gray-400 focus:border-blue-500 focus:ring focus:ring-blue-500/50 dark:border-gray-700 dark:bg-gray-900 dark:focus:border-blue-500"
                 placeholder="Search posts.."
               />
             </div>
@@ -327,7 +333,7 @@ export default function PostedPosts() {
                 <button
                   onClick={handleBulkRepost}
                   disabled={repostFetcher.state !== "idle"}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm font-semibold leading-5 text-blue-800 hover:border-blue-300 hover:text-blue-900 hover:shadow-sm focus:ring focus:ring-blue-300/25 active:border-blue-200 active:shadow-none disabled:opacity-50 dark:border-blue-700 dark:bg-gray-800 dark:text-blue-300 dark:hover:border-blue-600 dark:hover:text-blue-200 dark:focus:ring-blue-600/40 dark:active:border-blue-700"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm leading-5 font-semibold text-blue-800 hover:border-blue-300 hover:text-blue-900 hover:shadow-sm focus:ring focus:ring-blue-300/25 active:border-blue-200 active:shadow-none disabled:opacity-50 dark:border-blue-700 dark:bg-gray-800 dark:text-blue-300 dark:hover:border-blue-600 dark:hover:text-blue-200 dark:focus:ring-blue-600/40 dark:active:border-blue-700"
                 >
                   <svg
                     className="h-4 w-4"
@@ -343,13 +349,13 @@ export default function PostedPosts() {
                     />
                   </svg>
                   {repostFetcher.state !== "idle"
-                    ? "Processing..."
+                    ? PROCESSING_TEXT
                     : `Recycle ${selectedPosts.size} Post${selectedPosts.size !== 1 ? "s" : ""}`}
                 </button>
                 <button
                   onClick={handleBulkScheduledRepost}
                   disabled={repostFetcher.state !== "idle"}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-purple-200 bg-white px-3 py-2 text-sm font-semibold leading-5 text-purple-800 hover:border-purple-300 hover:text-purple-900 hover:shadow-sm focus:ring focus:ring-purple-300/25 active:border-purple-200 active:shadow-none disabled:opacity-50 dark:border-purple-700 dark:bg-gray-800 dark:text-purple-300 dark:hover:border-purple-600 dark:hover:text-purple-200 dark:focus:ring-purple-600/40 dark:active:border-purple-700"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-purple-200 bg-white px-3 py-2 text-sm leading-5 font-semibold text-purple-800 hover:border-purple-300 hover:text-purple-900 hover:shadow-sm focus:ring focus:ring-purple-300/25 active:border-purple-200 active:shadow-none disabled:opacity-50 dark:border-purple-700 dark:bg-gray-800 dark:text-purple-300 dark:hover:border-purple-600 dark:hover:text-purple-200 dark:focus:ring-purple-600/40 dark:active:border-purple-700"
                 >
                   <svg
                     className="h-4 w-4"
@@ -365,13 +371,13 @@ export default function PostedPosts() {
                     />
                   </svg>
                   {repostFetcher.state !== "idle"
-                    ? "Processing..."
+                    ? PROCESSING_TEXT
                     : `Repost ${selectedPosts.size} Post${selectedPosts.size !== 1 ? "s" : ""}`}
                 </button>
                 <button
                   onClick={handleBulkQuote}
                   disabled={repostFetcher.state !== "idle"}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-green-200 bg-white px-3 py-2 text-sm font-semibold leading-5 text-green-800 hover:border-green-300 hover:text-green-900 hover:shadow-sm focus:ring focus:ring-green-300/25 active:border-green-200 active:shadow-none disabled:opacity-50 dark:border-green-700 dark:bg-gray-800 dark:text-green-300 dark:hover:border-green-600 dark:hover:text-green-200 dark:focus:ring-green-600/40 dark:active:border-green-700"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-green-200 bg-white px-3 py-2 text-sm leading-5 font-semibold text-green-800 hover:border-green-300 hover:text-green-900 hover:shadow-sm focus:ring focus:ring-green-300/25 active:border-green-200 active:shadow-none disabled:opacity-50 dark:border-green-700 dark:bg-gray-800 dark:text-green-300 dark:hover:border-green-600 dark:hover:text-green-200 dark:focus:ring-green-600/40 dark:active:border-green-700"
                 >
                   <svg
                     className="h-4 w-4"
@@ -387,7 +393,7 @@ export default function PostedPosts() {
                     />
                   </svg>
                   {repostFetcher.state !== "idle"
-                    ? "Processing..."
+                    ? PROCESSING_TEXT
                     : `Quote ${selectedPosts.size} Post${selectedPosts.size !== 1 ? "s" : ""}`}
                 </button>
                 <button
@@ -396,7 +402,7 @@ export default function PostedPosts() {
                     bulkDeleteMutation.isPending ||
                     bulkDeleteFetcher.state !== "idle"
                   }
-                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-semibold leading-5 text-red-800 hover:border-red-300 hover:text-red-900 hover:shadow-sm focus:ring focus:ring-red-300/25 active:border-red-200 active:shadow-none disabled:opacity-50 dark:border-red-700 dark:bg-gray-800 dark:text-red-300 dark:hover:border-red-600 dark:hover:text-red-200 dark:focus:ring-red-600/40 dark:active:border-red-700"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm leading-5 font-semibold text-red-800 hover:border-red-300 hover:text-red-900 hover:shadow-sm focus:ring focus:ring-red-300/25 active:border-red-200 active:shadow-none disabled:opacity-50 dark:border-red-700 dark:bg-gray-800 dark:text-red-300 dark:hover:border-red-600 dark:hover:text-red-200 dark:focus:ring-red-600/40 dark:active:border-red-700"
                 >
                   {bulkDeleteMutation.isPending ||
                   bulkDeleteFetcher.state !== "idle"
@@ -461,8 +467,8 @@ export default function PostedPosts() {
             <PostDetailsModal
               post={selectedPost}
               stats={
-                selectedPost &&
                 typeof selectedPost === "object" &&
+                selectedPost !== null &&
                 "signedEvent" in selectedPost &&
                 selectedPost.signedEvent &&
                 typeof selectedPost.signedEvent === "object" &&
@@ -475,7 +481,7 @@ export default function PostedPosts() {
               showStats={true}
               showSignedEvent={true}
               type="posted"
-              userTimezone={user?.timezone ?? undefined}
+              userTimezone={user.timezone ?? undefined}
             />
           ) : null}
         </div>
@@ -486,7 +492,7 @@ export default function PostedPosts() {
           type="posted"
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
-          userTimezone={user?.timezone ?? undefined}
+          userTimezone={user.timezone ?? undefined}
           longformRepostFetcher={longformRepostFetcher}
           longformQuoteFetcher={longformQuoteFetcher}
           onPostSelect={(post) => {
@@ -502,7 +508,7 @@ export default function PostedPosts() {
           onClose={() => setSelectedLongFormPost(null)}
           type="posted"
           showSignedEvent={true}
-          userTimezone={user?.timezone ?? undefined}
+          userTimezone={user.timezone ?? undefined}
         />
       ) : null}
 

@@ -3,7 +3,7 @@ import type { useFetcher } from "@remix-run/react";
 
 import { formatDate, getImageUrls } from "~/lib/helpers";
 
-import { getQueueColor } from "../queueColors";
+import { getQueueColor } from "../queue-colors";
 
 interface Post {
   id: string;

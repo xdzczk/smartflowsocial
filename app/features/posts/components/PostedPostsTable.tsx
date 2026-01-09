@@ -3,7 +3,7 @@ import { Link } from "@remix-run/react";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { formatDate, getImageUrls } from "~/lib/helpers";
 
-import { getQueueColor } from "../queueColors";
+import { getQueueColor } from "../queue-colors";
 import type { PostStats } from "../stats.server";
 import type { PostData, PostFetcher } from "../types";
 // Helper to safely access formData from a fetcher
@@ -324,12 +324,12 @@ export default function PostedPostsTable({
                     <span
                       className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium capitalize ${(() => {
                         const colors = getQueueColor(
-                          post.queueType?.name || "unassigned"
+                          post.queueType?.name ?? "unassigned"
                         );
                         return colors ? `${colors.bg} ${colors.text}` : "";
                       })()}`}
                     >
-                      {post.queueType?.name || "unassigned"}
+                      {post.queueType?.name ?? "unassigned"}
                     </span>
                   )}
                 </td>

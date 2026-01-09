@@ -87,7 +87,10 @@ export default function CalendarRoute() {
   const [searchParams] = useSearchParams();
 
   // Get current tab from URL params - default to "all"
-  const currentTab = searchParams.get("tab") ?? "all";
+  const TAB_ALL = "all";
+  const TAB_POSTS = "posts";
+  const TAB_LONGFORM = "longform";
+  const currentTab = searchParams.get("tab") ?? TAB_ALL;
 
   return (
     <div className="flex h-full flex-col space-y-6">
@@ -101,9 +104,9 @@ export default function CalendarRoute() {
       <div className="mb-6 border-b border-gray-200 dark:border-gray-700">
         <nav className="-mb-px flex space-x-8" aria-label="Post Types">
           <Link
-            to={`/dashboard/calendar${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=all`}
-            className={`whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium ${
-              currentTab === "all"
+            to={`/dashboard/calendar${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=${TAB_ALL}`}
+            className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
+              currentTab === TAB_ALL
                 ? "border-blue-500 text-blue-600 dark:text-blue-400"
                 : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
             }`}
@@ -111,9 +114,9 @@ export default function CalendarRoute() {
             All ({allContent.length})
           </Link>
           <Link
-            to={`/dashboard/calendar${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=posts`}
-            className={`whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium ${
-              currentTab === "posts"
+            to={`/dashboard/calendar${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=${TAB_POSTS}`}
+            className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
+              currentTab === TAB_POSTS
                 ? "border-blue-500 text-blue-600 dark:text-blue-400"
                 : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
             }`}
@@ -121,9 +124,9 @@ export default function CalendarRoute() {
             Posts ({scheduledPosts.length})
           </Link>
           <Link
-            to={`/dashboard/calendar${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=longform`}
-            className={`whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium ${
-              currentTab === "longform"
+            to={`/dashboard/calendar${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=${TAB_LONGFORM}`}
+            className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
+              currentTab === TAB_LONGFORM
                 ? "border-blue-500 text-blue-600 dark:text-blue-400"
                 : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
             }`}
@@ -134,16 +137,16 @@ export default function CalendarRoute() {
       </div>
 
       {/* Queue Selection Tabs - Show for all content types */}
-      {currentTab === "all" ||
-      currentTab === "posts" ||
-      currentTab === "longform" ? (
+      {currentTab === TAB_ALL ||
+      currentTab === TAB_POSTS ||
+      currentTab === TAB_LONGFORM ? (
         <div className="border-b border-gray-200 dark:border-gray-700">
           <nav className="-mb-px flex space-x-8" aria-label="Queue Types">
             <Link
               to={`/dashboard/calendar?tab=${currentTab}`}
               prefetch="intent"
               onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
-              className={`whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium ${
+              className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
                 !params["queueType"]
                   ? "border-blue-500 text-blue-600 dark:text-blue-400"
                   : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
@@ -220,7 +223,7 @@ export default function CalendarRoute() {
 
       {/* Content based on current tab */}
       <div className="min-h-0 flex-1">
-        {currentTab === "all" ? (
+        {currentTab === TAB_ALL ? (
           <Calendar
             scheduledPosts={mixedPostsToCalendarPosts(
               scheduledPosts,
@@ -231,7 +234,7 @@ export default function CalendarRoute() {
             queueTypes={queueTypes}
             isAll={true}
           />
-        ) : currentTab === "posts" ? (
+        ) : currentTab === TAB_POSTS ? (
           <Calendar
             scheduledPosts={postsToCalendarPosts(scheduledPosts)}
             pastPosts={postsToCalendarPosts(pastPosts)}

@@ -183,9 +183,8 @@ function validateAndGetEnv(): EnvConfig {
   if (process.env["SENTRY_DSN"]) {
     config.SENTRY_DSN = process.env["SENTRY_DSN"];
   }
-  if (process.env["NODE_ENV"]) {
-    config.NODE_ENV = process.env["NODE_ENV"];
-  }
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: process.env.NODE_ENV may be undefined in some environments
+  config.NODE_ENV = process.env["NODE_ENV"] ?? "development";
   if (process.env["PORT"]) {
     config.PORT = process.env["PORT"];
   }

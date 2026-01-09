@@ -73,10 +73,10 @@ function runEslintFix() {
     });
     log("✅ ESLint auto-fix completed", "green");
     return true;
-  } catch (_error) {
+  } catch {
     log(
       "⚠️  ESLint auto-fix completed with some errors (this is expected)",
-      "yellow",
+      "yellow"
     );
     return false;
   }
@@ -114,7 +114,7 @@ function fixNullishCoalescing(content) {
             return `${left} ?? ${right}`;
           }
           return match;
-        },
+        }
       );
       return newLine;
     }
@@ -131,7 +131,7 @@ function fixNullishCoalescing(content) {
             return `(${prefix}?.${match.split("?.")[1].split(")")[0]}) ?? ${right}`;
           }
           return match;
-        },
+        }
       );
       if (newLine !== line) return newLine;
     }
@@ -149,6 +149,7 @@ function fixNullishCoalescing(content) {
  * Fix import order (basic grouping)
  * NOTE: Disabled - ESLint's --fix handles this better
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars -- Intentionally disabled function, kept for reference
 function _fixImportOrder_DISABLED(content) {
   const lines = content.split("\n");
   let importStart = -1;
@@ -266,6 +267,7 @@ function _fixImportOrder_DISABLED(content) {
 /**
  * Remove async from functions without await
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars -- Intentionally disabled function, kept for reference
 function _removeUnnecessaryAsync(content) {
   let modified = false;
   let fixes = 0;
@@ -332,7 +334,7 @@ function applyCustomFixes(filePath) {
   } catch (error) {
     log(
       `  ⚠️  Error processing ${path.relative(PROJECT_ROOT, filePath)}: ${error.message}`,
-      "yellow",
+      "yellow"
     );
     return { fixed: false, fixes: 0, error: error.message };
   }
@@ -369,7 +371,7 @@ function applyCustomFixesToAll() {
   if (filesFixed > 0) {
     log(
       `✅ Custom fixes applied to ${filesFixed} files (${totalFixes} total fixes)`,
-      "green",
+      "green"
     );
   } else {
     log("ℹ️  No custom fixes needed", "blue");
@@ -439,7 +441,7 @@ function main() {
   } else {
     log(
       `⚠️  ${counts.errors} errors remaining (these may require manual fixes)`,
-      "yellow",
+      "yellow"
     );
     log('💡 Run "pnpm lint" to see details', "blue");
   }

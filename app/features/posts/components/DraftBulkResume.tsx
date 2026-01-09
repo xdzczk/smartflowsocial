@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 
-import { getSelectedQueueStyle } from "../queueColors";
+import { getSelectedQueueStyle } from "../queue-colors";
 import { isIntervalScheduleConfig, isFixedSlotsScheduleConfig } from "../types";
 import type { QueueType, PostData } from "../types";
 

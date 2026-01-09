@@ -15,7 +15,8 @@ let fileTypeFromBuffer: (
 ) => Promise<FileTypeResult | undefined>;
 
 async function getFileTypeFromBuffer() {
-  if (!fileTypeFromBuffer) {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: lazy-loaded module check
+  if (fileTypeFromBuffer === undefined) {
     const fileType = await import("file-type");
     fileTypeFromBuffer = fileType.fileTypeFromBuffer;
   }

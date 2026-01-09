@@ -84,7 +84,7 @@ export default function GiveawayQueueRoute() {
     <div>
       <GiveawayRandomizer relatedEvents={relatedEvents} />
 
-      <div className="mb-5 mt-5 flex flex-col gap-3 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
+      <div className="mt-5 mb-5 flex flex-col gap-3 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
         <div>
           <h3 className="mb-1 font-semibold">
             Top posts -{" "}
@@ -160,6 +160,7 @@ export default function GiveawayQueueRoute() {
         <PostDetailsModal
           post={selectedPost as unknown as PostData | CombinedContent}
           stats={
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: type narrowing for serialized data
             selectedPost &&
             typeof selectedPost === "object" &&
             "signedEvent" in selectedPost &&

@@ -2,7 +2,7 @@
  * Draft preview component
  */
 
-import { getSelectedQueueStyle } from "../queueColors";
+import { getSelectedQueueStyle } from "../queue-colors";
 import type { PostData, QueueType } from "../types";
 interface DraftPreviewProps {
   post: PostData;
@@ -46,6 +46,7 @@ export function DraftPreview({
         <div className="grid grid-cols-2 gap-2">
           {getImageUrls(post.fileUrl).map((url, index) => (
             <img
+              // eslint-disable-next-line react/no-array-index-key -- Stable list of image URLs, no unique ID available
               key={index}
               src={url}
               alt={`Preview ${index + 1}`}

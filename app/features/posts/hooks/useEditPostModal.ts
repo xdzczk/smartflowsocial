@@ -341,9 +341,7 @@ export function useEditPostModal({
     return () => {
       if (editorRef.current) {
         try {
-          if (editorRef.current.destroy) {
-            editorRef.current.destroy();
-          }
+          editorRef.current.destroy();
         } catch (error) {
           logClientError(
             error instanceof Error ? error : new Error(String(error)),

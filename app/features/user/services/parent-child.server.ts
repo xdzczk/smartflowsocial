@@ -4,6 +4,8 @@ import type { ProfileData } from "~/features/nostr/types";
 import { logWarning, logError } from "~/lib/error-logger.server";
 import { prisma } from "~/lib/prisma.server";
 
+const ERROR_CHILD_NOT_FOUND = "Child not found";
+
 type MinimalUser = Pick<User, "id" | "npub"> & {
   nostrProfile?: ProfileData | null;
   isChild?: boolean;
@@ -25,16 +27,16 @@ function extractProfileBits(nostrProfile: ProfileData | null | undefined): {
         picture?: string;
       };
       return {
-        name: parsed?.name,
-        display_name: parsed?.display_name,
-        picture: parsed?.picture,
+        name: parsed.name,
+        display_name: parsed.display_name,
+        picture: parsed.picture,
       };
     }
     if (typeof nostrProfile === "object") {
       return {
-        name: nostrProfile?.name,
-        display_name: nostrProfile?.display_name,
-        picture: nostrProfile?.picture,
+        name: nostrProfile.name,
+        display_name: nostrProfile.display_name,
+        picture: nostrProfile.picture,
       };
     }
   } catch {
@@ -102,15 +104,15 @@ export async function searchUsersByProfileName(
         id: u.id,
         npub: u.npub,
         nostrProfile: profile,
-        isChild: u.isChild ?? false,
+        isChild: u.isChild || false,
         parentNpub: u.parentNpub,
-        pendingParentRequests: u.pendingParentRequests ?? [],
+        pendingParentRequests: u.pendingParentRequests,
         profileName: bits.name,
         profileDisplayName: bits.display_name,
         profilePicture: bits.picture,
         _match:
           u.npub.toLowerCase().includes(lowered) ||
-          name?.toLowerCase().includes(lowered),
+          name.toLowerCase().includes(lowered),
       };
     })
     .filter((u) => u._match)
@@ -134,8 +136,8 @@ export async function requestChildLink(
   childHex: string
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
   // Directly use 64-char hex keys, no normalization or conversion.
-  const parent = (parentHex ?? "").trim();
-  const child = (childHex ?? "").trim();
+  const parent = parentHex.trim();
+  const child = childHex.trim();
 
   if (!/^[0-9a-fA-F]{64}$/.test(parent) || !/^[0-9a-fA-F]{64}$/.test(child)) {
     logWarning("[requestChildLink] Invalid hex key(s)", { parent, child });
@@ -169,9 +171,7 @@ export async function requestChildLink(
     return { ok: false, reason: "This account is already linked to a parent." };
   }
 
-  const alreadyRequested = (childUser.pendingParentRequests ?? []).includes(
-    parent
-  );
+  const alreadyRequested = childUser.pendingParentRequests.includes(parent);
   if (alreadyRequested) {
     return { ok: true };
   }
@@ -193,8 +193,8 @@ export async function cancelChildLinkRequest(
   parentHex: string,
   childHex: string
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
-  const parent = (parentHex ?? "").trim();
-  const child = (childHex ?? "").trim();
+  const parent = parentHex.trim();
+  const child = childHex.trim();
 
   if (!/^[0-9a-fA-F]{64}$/.test(parent) || !/^[0-9a-fA-F]{64}$/.test(child)) {
     return Promise.resolve({
@@ -207,7 +207,7 @@ export async function cancelChildLinkRequest(
   if (!childUser)
     return Promise.resolve({ ok: false, reason: "Child account not found." });
 
-  const pending = childUser.pendingParentRequests ?? [];
+  const pending = childUser.pendingParentRequests;
   if (!pending.includes(parent)) {
     return Promise.resolve({
       ok: false,
@@ -260,7 +260,7 @@ export async function getPendingParentRequestsForChild(childNpub: string) {
     where: { npub: childNpub },
     select: { pendingParentRequests: true },
   });
-  return child?.pendingParentRequests ?? [];
+  return child ? child.pendingParentRequests : [];
 }
 
 /**
@@ -272,9 +272,9 @@ export async function respondToChildRequest(
   accept: boolean
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
   const child = await prisma.user.findUnique({ where: { npub: childNpub } });
-  if (!child) return { ok: false, reason: "Child not found" };
+  if (!child) return { ok: false, reason: ERROR_CHILD_NOT_FOUND };
 
-  const pending = child.pendingParentRequests ?? [];
+  const pending = child.pendingParentRequests;
   if (!pending.includes(parentNpub)) {
     return { ok: false, reason: "No pending request from this parent" };
   }
@@ -311,7 +311,7 @@ export async function unlinkParent(
   childNpub: string
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
   const child = await prisma.user.findUnique({ where: { npub: childNpub } });
-  if (!child) return { ok: false, reason: "Child not found" };
+  if (!child) return { ok: false, reason: ERROR_CHILD_NOT_FOUND };
   if (!child.parentNpub || !child.isChild) {
     return { ok: false, reason: "This account is not linked to a parent." };
   }
@@ -334,7 +334,7 @@ export async function unlinkChildByParent(
   childNpub: string
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
   const child = await prisma.user.findUnique({ where: { npub: childNpub } });
-  if (!child) return { ok: false, reason: "Child not found" };
+  if (!child) return { ok: false, reason: ERROR_CHILD_NOT_FOUND };
   if (child.parentNpub !== parentNpub) {
     return { ok: false, reason: "Not authorized to unlink this child." };
   }

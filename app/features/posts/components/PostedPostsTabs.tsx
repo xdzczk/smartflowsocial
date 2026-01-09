@@ -1,6 +1,11 @@
 import { Link, useParams, useRevalidator } from "@remix-run/react";
 
-import { getQueueColor } from "../queueColors";
+import { getQueueColor } from "../queue-colors";
+
+const ACTIVE_TAB_CLASSES = "border-blue-500 text-blue-600 dark:text-blue-400";
+const INACTIVE_TAB_CLASSES =
+  "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300";
+
 interface QueueType {
   name: string;
   color?: string;
@@ -32,30 +37,26 @@ export default function PostedPostsTabs({
         <nav className="-mb-px flex space-x-8" aria-label="Post Types">
           <Link
             to={`/dashboard/posted${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=all`}
-            className={`whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium ${
-              currentTab === "all"
-                ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+            className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
+              currentTab === "all" ? ACTIVE_TAB_CLASSES : INACTIVE_TAB_CLASSES
             }`}
           >
             All ({allContentLength})
           </Link>
           <Link
             to={`/dashboard/posted${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=posts`}
-            className={`whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium ${
-              currentTab === "posts"
-                ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+            className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
+              currentTab === "posts" ? ACTIVE_TAB_CLASSES : INACTIVE_TAB_CLASSES
             }`}
           >
             Posts ({postsLength})
           </Link>
           <Link
             to={`/dashboard/posted${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=longform`}
-            className={`whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium ${
+            className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
               currentTab === "longform"
-                ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                ? ACTIVE_TAB_CLASSES
+                : INACTIVE_TAB_CLASSES
             }`}
           >
             Longform ({longformPostsLength})
@@ -73,10 +74,8 @@ export default function PostedPostsTabs({
               to={`/dashboard/posted?tab=${currentTab}`}
               prefetch="intent"
               onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
-              className={`whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium ${
-                !params["queueType"]
-                  ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                  : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+              className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
+                !params["queueType"] ? ACTIVE_TAB_CLASSES : INACTIVE_TAB_CLASSES
               }`}
             >
               All Queues
@@ -91,8 +90,7 @@ export default function PostedPostsTabs({
 
               const baseClasses =
                 "whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium capitalize";
-              const unselectedClasses =
-                "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300";
+              const unselectedClasses = INACTIVE_TAB_CLASSES;
 
               if (isSelected && queueColor) {
                 // Use inline styles for custom colors

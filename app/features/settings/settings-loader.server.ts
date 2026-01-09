@@ -169,7 +169,7 @@ export async function loadSettingsData(
   // Accounts data
   let accounts: SettingsLoaderData["accounts"];
   if (isChild) {
-    const parentUser = userRecord?.parentNpub
+    const parentUser = userRecord.parentNpub
       ? await getUserByNpubWithProfile(userRecord.parentNpub)
       : null;
     accounts = {
@@ -271,7 +271,7 @@ export async function loadSettingsData(
       description: payment.description,
       paidAt: payment.paidAt,
       paymentMethod: payment.paymentMethod,
-      paymentHash: payment.paymentHash ?? "",
+      paymentHash: payment.paymentHash || "",
       planName: payment.Subscription?.Plan?.name,
       planPrice: payment.Subscription?.Plan?.price
         ? Number(payment.Subscription.Plan.price)

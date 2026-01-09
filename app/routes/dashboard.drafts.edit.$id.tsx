@@ -77,30 +77,33 @@ export const action = withCSRFProtection(
 export default function EditDraft() {
   const loaderData = useLoaderData<typeof loader>();
   // Type assertions for Remix JsonifyObject serialization
+  // These runtime checks are necessary because TypeScript cannot verify
+  // the shape of serialized data at compile time, even though the types
+  // suggest the checks are unnecessary.
+
   const postRaw =
-    loaderData &&
     typeof loaderData === "object" &&
     loaderData !== null &&
     "post" in loaderData
       ? loaderData.post
       : null;
+
   const userRaw =
-    loaderData &&
     typeof loaderData === "object" &&
     loaderData !== null &&
     "user" in loaderData
       ? loaderData.user
       : null;
+
   const queueTypesRaw =
-    loaderData &&
     typeof loaderData === "object" &&
     loaderData !== null &&
     "queueTypes" in loaderData &&
     Array.isArray(loaderData.queueTypes)
       ? loaderData.queueTypes
       : [];
+
   const hashTagPresetsRaw =
-    loaderData &&
     typeof loaderData === "object" &&
     loaderData !== null &&
     "hashTagPresets" in loaderData &&
@@ -110,13 +113,11 @@ export default function EditDraft() {
 
   // Deserialize DTO (with string dates) back to PostData (with Date objects)
   const typedPost =
-    postRaw && typeof postRaw === "object" && postRaw !== null
+    postRaw && typeof postRaw === "object"
       ? fromPostDTO(postRaw as PostDTO)
       : null;
   const typedUser =
-    userRaw && typeof userRaw === "object" && userRaw !== null
-      ? validateUserData(userRaw)
-      : null;
+    userRaw && typeof userRaw === "object" ? validateUserData(userRaw) : null;
   const typedQueueTypes: QueueType[] = queueTypesRaw
     .filter(
       (
@@ -128,7 +129,7 @@ export default function EditDraft() {
         [key: string]: unknown;
       } =>
         typeof qt === "object" &&
-        qt !== null &&
+        qt != null &&
         "id" in qt &&
         "name" in qt &&
         typeof (qt as { id: unknown; name: unknown }).id === "string" &&
@@ -142,6 +143,7 @@ export default function EditDraft() {
         typeof qt.description === "string" ? qt.description : undefined,
       scheduleType:
         typeof qt.scheduleType === "string" &&
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: Remix serialized data type narrowing
         (qt.scheduleType === "INTERVAL" || qt.scheduleType === "FIXED_SLOTS")
           ? qt.scheduleType
           : undefined,

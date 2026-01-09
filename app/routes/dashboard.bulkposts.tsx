@@ -134,9 +134,10 @@ export default function BulkPosts() {
 
   // Fetch upload provider on component mount
   useEffect(() => {
-    void fetch("/api/user-upload-provider")
-      .then((res) => res.json())
-      .then((data: unknown) => {
+    void (async () => {
+      try {
+        const res = await fetch("/api/user-upload-provider");
+        const data: unknown = await res.json();
         const provider =
           data &&
           typeof data === "object" &&
@@ -146,8 +147,7 @@ export default function BulkPosts() {
             ? (data as { provider: string }).provider
             : null;
         setUploadProvider(provider);
-      })
-      .catch((err: unknown) => {
+      } catch (err: unknown) {
         const { handleErrorSafely } = require("~/lib/error-handler.client") as {
           handleErrorSafely: (
             error: unknown,
@@ -158,7 +158,8 @@ export default function BulkPosts() {
           component: "BulkPosts",
           action: "fetchUploadProvider",
         });
-      });
+      }
+    })();
   }, []);
 
   // Wrapper functions that delegate to extracted handlers
@@ -298,12 +299,7 @@ export default function BulkPosts() {
   useEffect(() => {
     return () => {
       previewData.forEach((data) => {
-        if (
-          data &&
-          typeof data === "object" &&
-          data !== null &&
-          "url" in data
-        ) {
+        if (typeof data === "object" && data !== null && "url" in data) {
           const url = data.url;
           if (typeof url === "string") {
             URL.revokeObjectURL(url);
@@ -325,7 +321,7 @@ export default function BulkPosts() {
               : "Bulk Schedule Posts"}
       </h1>
       {displayedHashtags && displayedHashtags.length <= 10 ? (
-        <div className="mb-6 inline-flex items-center gap-1 rounded bg-orange-200 px-2 py-1 text-xs font-semibold leading-4 text-orange-700">
+        <div className="mb-6 inline-flex items-center gap-1 rounded bg-orange-200 px-2 py-1 text-xs leading-4 font-semibold text-orange-700">
           <svg
             className="hi-solid hi-hashtag inline-block size-4 opacity-75"
             fill="currentColor"
@@ -448,7 +444,7 @@ export default function BulkPosts() {
         </fetcher.Form>
       ) : (
         <PostConfirmation
-          preparedEvents={preparedEvents ?? []}
+          preparedEvents={preparedEvents}
           postsCount={posts.length}
         />
       )}

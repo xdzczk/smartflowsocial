@@ -36,7 +36,7 @@ export function logClientError(
     ...(errorStack && { stack: errorStack }),
     ...(context && { context }),
     environment:
-      typeof window !== "undefined" ? window.location.href : "unknown",
+      typeof window !== "undefined" ? String(window.location.href) : "unknown",
   };
 
   if (process.env.NODE_ENV === "production") {
@@ -47,7 +47,11 @@ export function logClientError(
     const emoji = level === "error" ? "❌" : level === "warning" ? "⚠️" : "ℹ️";
     console[
       level === "error" ? "error" : level === "warning" ? "warn" : "info"
-    ](`${emoji} [CLIENT ${level.toUpperCase()}]`, errorMessage, context ?? "");
+    ](
+      `${emoji} [CLIENT ${level.toUpperCase()}]`,
+      errorMessage,
+      context ? String(context) : ""
+    );
     if (errorStack && level === "error") {
       console.error("Stack:", errorStack);
     }
@@ -57,10 +61,10 @@ export function logClientError(
   if (error instanceof Error) {
     const tags: Record<string, string> = { level };
     if (context?.component) {
-      tags["component"] = context["component"];
+      tags["component"] = String(context["component"]);
     }
     if (context?.action) {
-      tags["action"] = context["action"];
+      tags["action"] = String(context["action"]);
     }
     captureException(error, {
       tags,
@@ -82,12 +86,12 @@ export function handleApiError(
   // Handle Response object
   if (response instanceof Response) {
     // Try to parse JSON error response
-    return response.statusText || `HTTP ${response.status} Error`;
+    return response.statusText || `HTTP ${String(response.status)} Error`;
   }
 
   // Handle error response object
   if (response.error) {
-    return response.error.message ?? "An error occurred";
+    return response.error.message || "An error occurred";
   }
 
   return "An unexpected error occurred";
@@ -116,13 +120,24 @@ export function showErrorToast(
   } else if (error instanceof Error) {
     message = error.message;
   } else {
-    message = error.message ?? "An error occurred";
+    message = error.message || "An error occurred";
   }
 
   toast.error(message, {
     duration: options?.duration ?? 5000,
     position: options?.position ?? "top-right",
   });
+}
+
+/**
+ * Type guard to safely convert unknown to Error
+ */
+
+function toError(error: unknown): Error {
+  if (error instanceof Error) {
+    return error;
+  }
+  return new Error(String(error));
 }
 
 /**
@@ -133,7 +148,7 @@ export function handleAsyncError(
   context?: ClientErrorContext,
   showToast = true
 ): void {
-  const errorObj = error instanceof Error ? error : new Error(String(error));
+  const errorObj = toError(error);
 
   // Log the error
   logClientError(errorObj, context, "error");

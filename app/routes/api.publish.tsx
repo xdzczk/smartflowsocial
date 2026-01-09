@@ -38,7 +38,7 @@ export const action = withCSRFProtection(
       }
 
       const body =
-        bodyRaw && typeof bodyRaw === "object" && bodyRaw !== null
+        typeof bodyRaw === "object" && bodyRaw !== null
           ? (bodyRaw as { relays?: unknown; event?: unknown })
           : {};
       const { relays, event } = body;

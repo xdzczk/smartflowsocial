@@ -5,7 +5,7 @@
 import { handleErrorSafely } from "~/lib/error-handler.client";
 
 import type { CombinedContent } from "../combined.server";
-import { getQueueColor } from "../queueColors";
+import { getQueueColor } from "../queue-colors";
 
 export function getImageUrls(fileUrl: string[] | undefined): string[] {
   if (!fileUrl || fileUrl.length === 0) return [];

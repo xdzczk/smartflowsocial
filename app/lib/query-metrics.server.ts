@@ -14,7 +14,7 @@ import { singleton } from "./singleton.server";
  */
 function getOrCreateMetric<T extends promClient.Metric>(
   name: string,
-  factory: () => T,
+  factory: () => T
 ): T {
   return singleton(`prom_metric_${name}`, () => {
     // Check if metric already exists in registry
@@ -64,7 +64,7 @@ export const queryDurationHistogram = getOrCreateMetric(
       labelNames: ["model", "action", "status"],
       buckets: [10, 50, 100, 200, 500, 1000, 2000, 5000],
       // Register with default registry (used by express-prometheus-middleware)
-    }),
+    })
 );
 
 /**
@@ -78,7 +78,7 @@ export const queryCounter = getOrCreateMetric(
       name: "prisma_query_total",
       help: "Total number of Prisma queries",
       labelNames: ["model", "action", "status"],
-    }),
+    })
 );
 
 /**
@@ -92,7 +92,7 @@ export const slowQueryCounter = getOrCreateMetric(
       name: "prisma_slow_query_total",
       help: "Total number of slow Prisma queries (>100ms)",
       labelNames: ["model", "action"],
-    }),
+    })
 );
 
 /**
@@ -106,7 +106,7 @@ export const queryErrorCounter = getOrCreateMetric(
       name: "prisma_query_errors_total",
       help: "Total number of Prisma query errors",
       labelNames: ["model", "action", "error_type"],
-    }),
+    })
 );
 
 /**
@@ -117,7 +117,7 @@ export function recordQueryMetrics(
   action: string,
   duration: number,
   success = true,
-  error?: Error,
+  error?: Error
 ): void {
   const status = success ? "success" : "error";
 
@@ -128,7 +128,7 @@ export function recordQueryMetrics(
       action,
       status,
     },
-    duration,
+    duration
   );
 
   // Increment query counter
@@ -148,7 +148,7 @@ export function recordQueryMetrics(
 
   // Record errors
   if (!success && error) {
-    const errorType = error.constructor.name ?? "UnknownError";
+    const errorType = error.constructor.name || "UnknownError";
     queryErrorCounter.inc({
       model,
       action,

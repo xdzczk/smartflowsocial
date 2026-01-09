@@ -46,7 +46,7 @@ export function useLongFormEditState({
   const handleHashtagPresetChange = (presetId: string) => {
     setSelectedHashtagPresetId(presetId);
     const preset = hashtagPresets.find((p) => p.id === presetId);
-    const tags = preset?.tags || "";
+    const tags = preset?.tags ?? "";
     setSelectedHashtags(tags);
     if (useHashtagPresets) {
       setDisplayedHashtags(tags);

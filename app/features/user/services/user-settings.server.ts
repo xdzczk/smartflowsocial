@@ -9,7 +9,7 @@ import { blastrRelay } from "~/lib/relays";
  */
 export function updateUserTimezone(
   userId: string,
-  timezone: string,
+  timezone: string
 ): Promise<User> {
   return prisma.user.update({
     where: {
@@ -42,7 +42,7 @@ export async function getUserTimezone(userId: string): Promise<string | null> {
  */
 export function updateUserRelays(
   userId: string,
-  relays: string[],
+  relays: string[]
 ): Promise<User> {
   return prisma.user.update({
     where: {
@@ -80,7 +80,7 @@ export async function getUserRelays(userId: string): Promise<string[]> {
   // Include blastrRelay if user has Premium or Founder plan with ACTIVE status
   if (
     subscription?.status === "ACTIVE" &&
-    subscription?.Plan?.name &&
+    subscription.Plan?.name &&
     (subscription.Plan.name.toLowerCase() === "premium" ||
       subscription.Plan.name.toLowerCase() === "founder")
   ) {
@@ -98,7 +98,7 @@ export async function getUserRelays(userId: string): Promise<string[]> {
  */
 export function updateGiveawayBlacklist(
   userId: string,
-  blacklistedItems: string[],
+  blacklistedItems: string[]
 ): Promise<User> {
   return prisma.user.update({
     where: {
@@ -130,7 +130,7 @@ export async function getGiveawayBlacklist(userId: string): Promise<string[]> {
  */
 export function updateScheduleInterval(
   userId: string,
-  intervals: string[],
+  intervals: string[]
 ): Promise<User> {
   return prisma.user.update({
     where: {
@@ -162,7 +162,7 @@ export async function getScheduleInterval(userId: string): Promise<string[]> {
  */
 export function updateUserUploadProvider(
   userId: string,
-  uploadProvider: UploadProvider,
+  uploadProvider: UploadProvider
 ): Promise<User> {
   return prisma.user.update({
     where: {
@@ -179,7 +179,7 @@ export function updateUserUploadProvider(
  * Handles legacy BLOSSOM value by converting to BLOSSOM_PRIMAL
  */
 export async function getUserUploadProvider(
-  userId: string,
+  userId: string
 ): Promise<UploadProvider> {
   const user = await prisma.user.findUnique({
     where: {
@@ -204,7 +204,7 @@ export async function getUserUploadProvider(
  * Gets whether user has mirror Blossom enabled
  */
 export async function getUserEnableMirrorBlossom(
-  userId: string,
+  userId: string
 ): Promise<boolean> {
   const user = await prisma.user.findUnique({
     where: {
@@ -222,7 +222,7 @@ export async function getUserEnableMirrorBlossom(
  */
 export function updateUserEnableMirrorBlossom(
   userId: string,
-  enableMirrorBlossom: boolean,
+  enableMirrorBlossom: boolean
 ): Promise<User> {
   return prisma.user.update({
     where: {
@@ -238,7 +238,7 @@ export function updateUserEnableMirrorBlossom(
  * Gets user's mirror upload URLs
  */
 export async function getUserMirrorUploadUrls(
-  userId: string,
+  userId: string
 ): Promise<string[]> {
   const user = await prisma.user.findUnique({
     where: {
@@ -256,7 +256,7 @@ export async function getUserMirrorUploadUrls(
  */
 export function updateUserMirrorUploadUrls(
   userId: string,
-  mirrorUrls: string[],
+  mirrorUrls: string[]
 ): Promise<User> {
   return prisma.user.update({
     where: {
@@ -273,7 +273,7 @@ export function updateUserMirrorUploadUrls(
  */
 export function updateUserMutedList(
   userId: string,
-  mutedList: { npubs: string[]; lastSynced: string },
+  mutedList: { npubs: string[]; lastSynced: string }
 ): Promise<User> {
   return prisma.user.update({
     where: { id: userId },
@@ -319,7 +319,7 @@ export async function getUserMutedList(userId: string): Promise<{
  */
 export function updateUserFilterMuted(
   userId: string,
-  filterMuted: boolean,
+  filterMuted: boolean
 ): Promise<User> {
   return prisma.user.update({
     where: { id: userId },
@@ -345,7 +345,7 @@ export async function getUserFilterMuted(userId: string): Promise<boolean> {
  */
 export function updateUserHidePostsFromLowTrustUsers(
   userId: string,
-  hidePostsFromLowTrustUsers: boolean,
+  hidePostsFromLowTrustUsers: boolean
 ): Promise<User> {
   return prisma.user.update({
     where: { id: userId },
@@ -359,7 +359,7 @@ export function updateUserHidePostsFromLowTrustUsers(
  * Gets the hidePostsFromLowTrustUsers setting
  */
 export async function getUserHidePostsFromLowTrustUsers(
-  userId: string,
+  userId: string
 ): Promise<boolean> {
   const user = await prisma.user.findUnique({
     where: { id: userId },

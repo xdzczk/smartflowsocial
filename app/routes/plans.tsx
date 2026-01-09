@@ -38,6 +38,7 @@ export const action = withCSRFProtection(
     }
 
     // Type narrowing: check if result has redirect property
+
     if (
       typeof result === "object" &&
       result !== null &&
@@ -48,6 +49,7 @@ export const action = withCSRFProtection(
     }
 
     // Type narrowing: check if result has error property
+
     if (
       typeof result === "object" &&
       result !== null &&
@@ -162,7 +164,7 @@ export default function Plans() {
   return (
     <>
       <div className="relative overflow-hidden bg-white dark:bg-gray-900 dark:text-gray-100">
-        <div className="absolute left-0 right-0 top-0 flex h-64 opacity-70 dark:opacity-50">
+        <div className="absolute top-0 right-0 left-0 flex h-64 opacity-70 dark:opacity-50">
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white dark:to-gray-900" />
           <div className="grow bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900 dark:to-emerald-900" />
           <div className="grow bg-gradient-to-r from-emerald-100 to-teal-100 dark:from-emerald-900 dark:to-teal-900" />
@@ -179,15 +181,15 @@ export default function Plans() {
 
         <Header />
 
-        <div className="container relative mx-auto px-4 py-16 lg:px-8 lg:py-32 xl:max-w-7xl">
+        <div className="relative container mx-auto px-4 py-16 lg:px-8 lg:py-32 xl:max-w-7xl">
           <div className="mb-16 text-center">
-            <div className="mb-2 inline-flex rounded border border-amber-300 bg-amber-200 px-2 py-1 text-sm font-medium leading-4 text-amber-700 dark:border-amber-800/50 dark:bg-amber-950/50 dark:text-amber-200">
+            <div className="mb-2 inline-flex rounded border border-amber-300 bg-amber-200 px-2 py-1 text-sm leading-4 font-medium text-amber-700 dark:border-amber-800/50 dark:bg-amber-950/50 dark:text-amber-200">
               Choose the perfect plan for your needs!
             </div>
             <h1 className="mb-4 text-4xl font-black text-black dark:text-white">
               Pricing Plans
             </h1>
-            <p className="mx-auto max-w-2xl text-xl font-medium leading-relaxed text-gray-700 dark:text-gray-300">
+            <p className="mx-auto max-w-2xl text-xl leading-relaxed font-medium text-gray-700 dark:text-gray-300">
               Select the perfect plan for your social media automation needs.
             </p>
           </div>

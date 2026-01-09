@@ -48,6 +48,28 @@ if (env.NODE_ENV === "production" || env.ENABLE_SOURCE_MAPS === "true") {
 }
 installGlobals();
 
+// Suppress DEP0169 deprecation warning from @opentelemetry/instrumentation-http
+// This is a transitive dependency of @sentry/remix that uses url.parse()
+// The warning is harmless and will be fixed when the dependency is updated
+const originalEmitWarning = process.emitWarning;
+
+process.emitWarning = function (warning: any, ...args: any[]) {
+  if (
+    typeof warning === "object" &&
+    warning !== null &&
+    "name" in warning &&
+    "code" in warning &&
+    warning.name === "DeprecationWarning" &&
+    warning.code === "DEP0169"
+  ) {
+    // Suppress DEP0169 (url.parse deprecation) warnings
+    return;
+  }
+  // Call original with all arguments - TypeScript types are too strict here
+
+  return originalEmitWarning.call(this, warning, ...args);
+};
+
 // Ensure Web Crypto API exists for server-side code that expects browser crypto
 interface GlobalWithCrypto {
   crypto?: Crypto;
@@ -238,7 +260,8 @@ async function run() {
   // non-GET/HEAD/OPTIONS requests hit the primary region rather than read-only
   // Postgres DBs.
   // learn more: https://fly.io/docs/getting-started/multi-region-databases/#replay-the-request
-  app.all("*", function getReplayResponse(req, res, next) {
+  // Express 5: Use app.use() without path for catch-all middleware
+  app.use(function getReplayResponse(req, res, next) {
     const { method, path: pathname } = req;
     const PRIMARY_REGION = env.PRIMARY_REGION;
     const FLY_REGION = env.FLY_REGION;
@@ -383,7 +406,8 @@ async function run() {
   app.use("/login", authLimiter);
   app.use("/nostr-auth", authLimiter);
 
-  app.all("*", remixHandler);
+  // Express 5: Use app.use() without path for catch-all route handler
+  app.use(remixHandler);
 
   const port = parseInt(env.PORT ?? "3000", 10);
   app.listen(port, () => {

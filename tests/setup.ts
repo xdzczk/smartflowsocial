@@ -14,6 +14,7 @@ afterEach(() => {
 });
 
 // Mock environment variables if needed
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: setting up test environment
 process.env["NODE_ENV"] = process.env["NODE_ENV"] || "test";
 
 // Set required environment variables for tests

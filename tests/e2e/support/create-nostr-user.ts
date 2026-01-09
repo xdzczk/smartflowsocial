@@ -146,6 +146,7 @@ async function createNostrUserAndLogin(npub: string) {
         });
       }
     } else if (
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: checking subscription state
       existingSubscription &&
       existingSubscription.planId !== plan.id
     ) {

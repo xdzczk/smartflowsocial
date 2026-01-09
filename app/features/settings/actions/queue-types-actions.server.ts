@@ -20,7 +20,7 @@ import { getUserSubscription } from "~/models/payment.server";
 export async function handleQueueTypeAction(
   userId: string,
   action: string,
-  formData: FormData,
+  formData: FormData
 ) {
   if (action === "create_queue_type") {
     // Check if user has a free subscription
@@ -31,7 +31,7 @@ export async function handleQueueTypeAction(
           error:
             "Creating queue types is not available on the free plan. Please upgrade your subscription.",
         },
-        { status: 403 },
+        { status: 403 }
       );
     }
 
@@ -46,24 +46,31 @@ export async function handleQueueTypeAction(
     if (data.hashTagPresetId) {
       const presetExists = await hashTagPresetExistsForUser(
         userId,
-        data.hashTagPresetId,
+        data.hashTagPresetId
       );
       if (!presetExists) {
         return json(
           { error: "Selected hashtag preset does not exist" },
-          { status: 400 },
+          { status: 400 }
         );
       }
     }
 
     // Build schedule config based on schedule type
-    let scheduleConfig: { useGlobalInterval?: boolean; intervalHours?: number; slots?: string[] } = {};
+    // Schema validation ensures slots is defined when scheduleType is "FIXED_SLOTS"
+    let scheduleConfig: {
+      useGlobalInterval?: boolean;
+      intervalHours?: number;
+      slots?: string[];
+    } = {};
     if (data.scheduleType === "INTERVAL") {
       scheduleConfig = data.useGlobalInterval
         ? { useGlobalInterval: true }
         : { intervalHours: data.intervalHours };
-    } else if (data.scheduleType === "FIXED_SLOTS") {
-      scheduleConfig = { slots: data.slots };
+    } else {
+      // scheduleType must be "FIXED_SLOTS" here (enum has only two values)
+      // Schema validation ensures slots is defined
+      scheduleConfig = { slots: data.slots! };
     }
 
     await updateQueueType(userId, {
@@ -89,24 +96,31 @@ export async function handleQueueTypeAction(
     if (data.hashTagPresetId) {
       const presetExists = await hashTagPresetExistsForUser(
         userId,
-        data.hashTagPresetId,
+        data.hashTagPresetId
       );
       if (!presetExists) {
         return json(
           { error: "Selected hashtag preset does not exist" },
-          { status: 400 },
+          { status: 400 }
         );
       }
     }
 
     // Build schedule config based on schedule type
-    let scheduleConfig: { useGlobalInterval?: boolean; intervalHours?: number; slots?: string[] } = {};
+    // Schema validation ensures slots is defined when scheduleType is "FIXED_SLOTS"
+    let scheduleConfig: {
+      useGlobalInterval?: boolean;
+      intervalHours?: number;
+      slots?: string[];
+    } = {};
     if (data.scheduleType === "INTERVAL") {
       scheduleConfig = data.useGlobalInterval
         ? { useGlobalInterval: true }
         : { intervalHours: data.intervalHours };
-    } else if (data.scheduleType === "FIXED_SLOTS") {
-      scheduleConfig = { slots: data.slots };
+    } else {
+      // scheduleType must be "FIXED_SLOTS" here (enum has only two values)
+      // Schema validation ensures slots is defined
+      scheduleConfig = { slots: data.slots! };
     }
 
     await updateQueueType(userId, {

@@ -19,15 +19,18 @@ type TestSubscriptionStatus =
 
 async function updateSubscriptionStatus(
   npub: string,
-  targetStatus: TestSubscriptionStatus,
+  targetStatus: TestSubscriptionStatus
 ) {
   if (!npub) {
     throw new Error("npub required");
   }
 
+  // targetStatus is typed as TestSubscriptionStatus (union of string literals)
+  // The check is technically unnecessary but kept for runtime safety in case of invalid input
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check for invalid input
   if (!targetStatus) {
     throw new Error(
-      "status required (FREE, ACTIVE, EXPIRED, CANCELED, PAST_DUE)",
+      "status required (FREE, ACTIVE, EXPIRED, CANCELED, PAST_DUE)"
     );
   }
 
@@ -53,7 +56,7 @@ async function updateSubscriptionStatus(
   } else if (targetStatus === "ACTIVE") {
     const now = new Date();
     const thirtyDaysFromNow = new Date(
-      now.getTime() + 30 * 24 * 60 * 60 * 1000,
+      now.getTime() + 30 * 24 * 60 * 60 * 1000
     );
 
     if (user.Subscription) {
@@ -144,7 +147,7 @@ async function updateSubscriptionStatus(
   } else if (targetStatus === "CANCELED") {
     const now = new Date();
     const thirtyDaysFromNow = new Date(
-      now.getTime() + 30 * 24 * 60 * 60 * 1000,
+      now.getTime() + 30 * 24 * 60 * 60 * 1000
     );
 
     if (user.Subscription) {
@@ -187,7 +190,8 @@ async function updateSubscriptionStatus(
     }
 
     console.log(`<status>CANCELED</status>`);
-  } else if (targetStatus === "PAST_DUE") {
+  } else {
+    // At this point, targetStatus must be "PAST_DUE" (the only remaining option in the union type)
     const now = new Date();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
@@ -229,8 +233,6 @@ async function updateSubscriptionStatus(
     }
 
     console.log(`<status>PAST_DUE</status>`);
-  } else {
-    throw new Error(`Unknown status: ${String(targetStatus)}`);
   }
 
   await prisma.$disconnect();
@@ -238,5 +240,5 @@ async function updateSubscriptionStatus(
 
 void updateSubscriptionStatus(
   process.argv[2],
-  process.argv[3] as TestSubscriptionStatus,
+  process.argv[3] as TestSubscriptionStatus
 );

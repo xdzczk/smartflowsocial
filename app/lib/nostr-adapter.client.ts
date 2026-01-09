@@ -73,17 +73,16 @@ export const nostrAdapter = {
           const signResult = await window.nostr.signEvent(nostrEvent);
 
           // Handle different return types from different extensions
+          // TypeScript knows signResult is SignedEvent, but some extensions return string
           const signedEvent: SignedEvent = {
-            id: signResult?.id ?? "unknown",
-            pubkey: signResult?.pubkey ?? "unknown",
+            id: typeof signResult === "string" ? "unknown" : signResult.id,
+            pubkey:
+              typeof signResult === "string" ? "unknown" : signResult.pubkey,
             created_at: nostrEvent.created_at,
             kind: nostrEvent.kind,
             tags: nostrEvent.tags,
             content: nostrEvent.content,
-            sig:
-              typeof signResult === "string"
-                ? signResult
-                : (signResult?.sig ?? "unknown"),
+            sig: typeof signResult === "string" ? signResult : signResult.sig,
           };
 
           return { nostrEvent, signedEvent };
@@ -167,17 +166,16 @@ export const nostrAdapter = {
           const signResult = await window.nostr.signEvent(nostrEvent);
 
           // Handle different return types from different extensions
+          // TypeScript knows signResult is SignedEvent, but some extensions return string
           const signedEvent: SignedEvent = {
-            id: signResult?.id ?? "unknown",
-            pubkey: signResult?.pubkey ?? "unknown",
+            id: typeof signResult === "string" ? "unknown" : signResult.id,
+            pubkey:
+              typeof signResult === "string" ? "unknown" : signResult.pubkey,
             created_at: nostrEvent.created_at,
             kind: nostrEvent.kind,
             tags: nostrEvent.tags,
             content: nostrEvent.content,
-            sig:
-              typeof signResult === "string"
-                ? signResult
-                : (signResult?.sig ?? "unknown"),
+            sig: typeof signResult === "string" ? signResult : signResult.sig,
           };
 
           return { nostrEvent, signedEvent };

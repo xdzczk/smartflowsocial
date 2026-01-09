@@ -1,5 +1,6 @@
 // Polyfill WebSocket for @getalby/sdk in Node.js (production only)
 // Using ws package instead of deprecated websocket-polyfill
+
 if (
   process.env.NODE_ENV !== "development" &&
   globalThis.WebSocket === undefined

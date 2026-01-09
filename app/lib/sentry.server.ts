@@ -36,6 +36,7 @@ export function initSentry(): void {
 
     Sentry.init({
       dsn: process.env["SENTRY_DSN"],
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: process.env.NODE_ENV may be undefined in some environments
       environment: process.env["NODE_ENV"] ?? "development",
       // Adjust traces sample rate based on environment
       tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,

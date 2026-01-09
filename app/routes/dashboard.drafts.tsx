@@ -78,12 +78,8 @@ export const action = withCSRFProtection(
       }
 
       // Type narrowing: check if result has error property
-      if (
-        typeof result === "object" &&
-        result !== null &&
-        "error" in result &&
-        result.error
-      ) {
+
+      if (typeof result === "object" && "error" in result && result.error) {
         return json(result, { status: 400 });
       }
 
@@ -258,14 +254,14 @@ export default function DraftPosts() {
                 // Use type guards to safely determine post type
                 // PostDetailsModal accepts Post | PostData | CombinedContent
                 const postToShow = postData ?? combinedContent ?? selectedPost;
-                return postToShow ? (
+                return (
                   <PostDetailsModal
                     post={postToShow as PostData | CombinedContent}
                     onClose={() => setSelectedPost(null)}
                     type="draft"
                     userTimezone={user?.timezone ?? undefined}
                   />
-                ) : null;
+                );
               })()
             : null}
 

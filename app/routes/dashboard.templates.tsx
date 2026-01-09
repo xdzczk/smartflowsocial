@@ -254,7 +254,7 @@ export default function Templates() {
             <TemplateDetailsModal
               template={{
                 id: selectedTemplate.id,
-                name: selectedTemplate.name || "",
+                name: selectedTemplate.name ?? "",
                 text: null,
                 imageUrl: null,
                 createdAt:

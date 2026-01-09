@@ -243,7 +243,7 @@ async function handleSaveDraft(
   }
 
   const sanitizedContent = sanitizeMarkdown(markdownContent);
-  const finalSummary = summary || generateSummary(sanitizedContent);
+  const finalSummary = summary ?? generateSummary(sanitizedContent);
 
   await createLongFormPost({
     userId,
@@ -333,7 +333,7 @@ async function handlePublish(
   }
 
   const sanitizedContent = sanitizeMarkdown(markdownContent);
-  const finalSummary = summary || generateSummary(sanitizedContent);
+  const finalSummary = summary ?? generateSummary(sanitizedContent);
 
   // Add hashtags to content if user has enabled it
   const contentWithHashtags =
@@ -471,7 +471,7 @@ async function handleScheduleLongform(
   }
 
   const sanitizedContent = sanitizeMarkdown(markdownContent);
-  const finalSummary = summary || generateSummary(sanitizedContent);
+  const finalSummary = summary ?? generateSummary(sanitizedContent);
 
   // Add hashtags to content if user has enabled it
   const contentWithHashtags =

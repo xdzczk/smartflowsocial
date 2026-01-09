@@ -124,9 +124,10 @@ export async function assertionExample({
   assertExists(resource, "Resource not found", { id: params["id"] ?? "" });
 
   const hasPermission = await checkPermission(userId, resource);
+  // assertExists guarantees resource is not null/undefined
   const resourceId =
-    resource &&
     typeof resource === "object" &&
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Example code: defensive check for type narrowing
     resource !== null &&
     "id" in resource
       ? String((resource as { id: unknown }).id)
@@ -160,12 +161,14 @@ export async function specificErrorsExample({
   }
 
   const post = await getPost(postId);
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Example code: defensive check (getPost may return null/undefined)
   if (!post) {
     throw new NotFoundError("Post not found", { postId });
   }
 
+  // post is guaranteed to be non-null after the check above
   const postUserId =
-    post && typeof post === "object" && post !== null && "userId" in post
+    typeof post === "object" && "userId" in post
       ? (post as { userId: unknown }).userId
       : undefined;
   if (postUserId && typeof postUserId === "string" && postUserId !== userId) {

@@ -5,7 +5,7 @@ import {
   useSearchParams,
 } from "@remix-run/react";
 
-import { getQueueColor } from "../queueColors";
+import { getQueueColor } from "../queue-colors";
 import type { QueueType } from "../types";
 interface QueueSelectionTabsProps {
   currentTab: string;

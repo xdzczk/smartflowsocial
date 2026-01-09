@@ -233,6 +233,7 @@ async function applyFixtures(
     for (const user of fixtures.users) {
       // Use upsert to handle existing records
       const userId =
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: type narrowing for fixture data
         user &&
         typeof user === "object" &&
         "id" in user &&
@@ -256,6 +257,7 @@ async function applyFixtures(
   if (fixtures.queueTypes && Array.isArray(fixtures.queueTypes)) {
     for (const queueType of fixtures.queueTypes) {
       const queueTypeId =
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: type narrowing for fixture data
         queueType &&
         typeof queueType === "object" &&
         "id" in queueType &&
@@ -279,6 +281,7 @@ async function applyFixtures(
   if (fixtures.hashTagPresets && Array.isArray(fixtures.hashTagPresets)) {
     for (const preset of fixtures.hashTagPresets) {
       const presetId =
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: type narrowing for fixture data
         preset &&
         typeof preset === "object" &&
         "id" in preset &&
@@ -302,6 +305,7 @@ async function applyFixtures(
   if (fixtures.posts && Array.isArray(fixtures.posts)) {
     for (const post of fixtures.posts) {
       const postId =
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: type narrowing for fixture data
         post &&
         typeof post === "object" &&
         "id" in post &&
@@ -325,6 +329,7 @@ async function applyFixtures(
   if (fixtures.longFormPosts && Array.isArray(fixtures.longFormPosts)) {
     for (const longform of fixtures.longFormPosts) {
       const longformId =
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: type narrowing for fixture data
         longform &&
         typeof longform === "object" &&
         "id" in longform &&
@@ -348,6 +353,7 @@ async function applyFixtures(
   if (fixtures.payments && Array.isArray(fixtures.payments)) {
     for (const payment of fixtures.payments) {
       const paymentId =
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: type narrowing for fixture data
         payment &&
         typeof payment === "object" &&
         "id" in payment &&
@@ -371,6 +377,7 @@ async function applyFixtures(
   if (fixtures.plans && Array.isArray(fixtures.plans)) {
     for (const plan of fixtures.plans) {
       const planId =
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: type narrowing for fixture data
         plan &&
         typeof plan === "object" &&
         "id" in plan &&

@@ -67,6 +67,7 @@ export function AssetPagination({
           {getVisiblePages().map((page, index) =>
             page === "ellipsis" ? (
               <span
+                // eslint-disable-next-line react/no-array-index-key -- Stable pagination list, composite key with prefix
                 key={`ellipsis-${index}`}
                 className="px-2 py-1 text-gray-500"
               >

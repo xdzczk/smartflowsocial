@@ -5,8 +5,11 @@ import { toast } from "react-hot-toast";
 import { resizeImage } from "~/features/upload/image-resize";
 import { useOptionalUser } from "~/lib/remix-utils";
 
-import { getDynamicQueueStyle } from "../queueColors";
+import { getDynamicQueueStyle } from "../queue-colors";
 import type { QueueType } from "../types";
+
+const ERROR_PROCESSING_IMAGES =
+  "Error processing images. Using original files.";
 
 interface PreparedEventData {
   content: string;
@@ -78,14 +81,14 @@ export default function ImagePost({
         await import("~/lib/error-handler.client");
       handleAsyncErrorWithMessage(
         error,
-        "Error processing images. Using original files.",
+        ERROR_PROCESSING_IMAGES,
         {
           component: "ImagePost",
           action: "handleFileChange",
         },
         false // Don't show toast, we call toast.error instead
       );
-      toast.error("Error processing images. Using original files.");
+      toast.error(ERROR_PROCESSING_IMAGES);
       setFiles((prev: File[]) => [...prev, ...selectedFiles]);
     }
   };
@@ -114,14 +117,14 @@ export default function ImagePost({
           await import("~/lib/error-handler.client");
         handleAsyncErrorWithMessage(
           error,
-          "Error processing images. Using original files.",
+          ERROR_PROCESSING_IMAGES,
           {
             component: "ImagePost",
             action: "handleDrop",
           },
           false // Don't show toast, we call toast.error instead
         );
-        toast.error("Error processing images. Using original files.");
+        toast.error(ERROR_PROCESSING_IMAGES);
         setFiles((prev: File[]) => [...prev, ...imageFiles]);
       }
     }
@@ -419,6 +422,7 @@ export default function ImagePost({
           {files.length > 0 ? (
             <div className="flex flex-wrap gap-4">
               {files.map((file, index) => (
+                // eslint-disable-next-line react/no-array-index-key -- Stable list of files, no unique ID available
                 <div key={index} className="relative">
                   <img
                     src={URL.createObjectURL(file)}

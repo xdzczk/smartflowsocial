@@ -18,7 +18,7 @@ import {
   processQuoteReposts,
   type Notification,
 } from "../engagement.server";
-import { calculateTrustScore, type User } from "../trustScore";
+import { calculateTrustScore, type User } from "../trust-score";
 import type {
   EngagementProfile,
   EngagementStats,

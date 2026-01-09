@@ -352,6 +352,7 @@ describe("Asset Model", () => {
       const tagsCondition = callArgs?.where?.OR?.find(
         (condition) =>
           typeof condition === "object" &&
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: type guard for mock Prisma query (types have no overlap due to Prisma's complex types)
           condition !== null &&
           "tags" in condition
       );

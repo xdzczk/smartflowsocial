@@ -16,6 +16,8 @@ import {
   deleteTemplate,
   removePostFromTemplate,
 } from "~/models/template.server";
+const ACTION_UPDATE_NAME = "updateName";
+const ACTION_REMOVE_POST = "removePost";
 
 /**
  * Load template data for editing
@@ -40,7 +42,7 @@ export async function loadTemplateEditData(templateId: string, userId: string) {
 export async function handleTemplateEditAction(
   formData: FormData,
   templateId: string,
-  userId: string,
+  userId: string
 ) {
   if (!templateId) {
     throw new ValidationError("Template ID is required");
@@ -53,11 +55,9 @@ export async function handleTemplateEditAction(
 
   const { _action } = result.data;
 
-  if (_action === "updateName") {
-    const updateData = result.data._action === "updateName" ? result.data : null;
-    if (!updateData) {
-      return json({ error: "Invalid action" }, { status: 400 });
-    }
+  if (_action === ACTION_UPDATE_NAME) {
+    // TypeScript guarantees this is "updateName" after the check
+    const updateData = result.data;
 
     await updateTemplate({
       id: templateId,
@@ -68,11 +68,9 @@ export async function handleTemplateEditAction(
     return json({ success: true });
   }
 
-  if (_action === "removePost") {
-    const removeData = result.data._action === "removePost" ? result.data : null;
-    if (!removeData) {
-      return json({ error: "Invalid action" }, { status: 400 });
-    }
+  if (_action === ACTION_REMOVE_POST) {
+    // TypeScript guarantees this is "removePost" after the check
+    const removeData = result.data;
 
     await removePostFromTemplate({
       templateId,
@@ -97,40 +95,37 @@ export async function handleTemplateEditAction(
     return redirect("/dashboard/templates");
   }
 
-  if (_action === "schedule") {
-    const template = await getTemplateById({ id: templateId, userId });
+  // TypeScript guarantees this is "schedule" after checking all other actions
+  const template = await getTemplateById({ id: templateId, userId });
 
-    if (!template) {
-      return json({ error: "Template not found" }, { status: 404 });
-    }
-
-    // Prepare template data for scheduling (similar to repost mode)
-    const localDate = new Date();
-    localDate.setHours(localDate.getHours() + 1);
-
-    const templateData = template.posts.map((post, index) => {
-      const scheduleDate = new Date(localDate);
-      scheduleDate.setHours(scheduleDate.getHours() + index);
-
-      return {
-        caption: post.caption ?? "",
-        fileUrl: post.fileUrl,
-        queueType: post.queueTypeId ?? "unassigned",
-        scheduledFor: scheduleDate
-          .toLocaleString("en-US", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: false,
-          })
-          .replace(/(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+)/, "$3-$1-$2T$4:$5"),
-      };
-    });
-
-    return json({ scheduleData: templateData });
+  if (!template) {
+    return json({ error: "Template not found" }, { status: 404 });
   }
 
-  return json({ error: "Invalid action" }, { status: 400 });
+  // Prepare template data for scheduling (similar to repost mode)
+  const localDate = new Date();
+  localDate.setHours(localDate.getHours() + 1);
+
+  const templateData = template.posts.map((post, index) => {
+    const scheduleDate = new Date(localDate);
+    scheduleDate.setHours(scheduleDate.getHours() + index);
+
+    return {
+      caption: post.caption ?? "",
+      fileUrl: post.fileUrl,
+      queueType: post.queueTypeId ?? "unassigned",
+      scheduledFor: scheduleDate
+        .toLocaleString("en-US", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        })
+        .replace(/(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+)/, "$3-$1-$2T$4:$5"),
+    };
+  });
+
+  return json({ scheduleData: templateData });
 }

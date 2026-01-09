@@ -418,7 +418,7 @@ export default function TextPost({
               </Button>
             </div>
             <SchedulingSection
-              scheduledFor={formScheduledFor || schedulingScheduledFor}
+              scheduledFor={formScheduledFor ?? schedulingScheduledFor}
               onScheduledForChange={(value) => {
                 form.setValue("scheduledFor", value);
                 setSchedulingScheduledFor(value);

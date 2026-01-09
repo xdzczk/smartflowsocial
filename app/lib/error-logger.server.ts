@@ -54,7 +54,7 @@ interface ErrorLogEntry {
  */
 export function logError(
   error: AppError | Error,
-  context: LogContext = {},
+  context: LogContext = {}
 ): void {
   const logEntry: ErrorLogEntry = {
     timestamp: new Date().toISOString(),
@@ -81,6 +81,7 @@ export function logError(
         id: context.userId,
       },
     }),
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: process.env.NODE_ENV may be undefined in some environments
     environment: process.env.NODE_ENV ?? "development",
   };
 
@@ -145,6 +146,7 @@ export function logWarning(message: string, context: LogContext = {}): void {
     level: "warn" as LogLevel,
     message,
     ...context,
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: process.env.NODE_ENV may be undefined in some environments
     environment: process.env.NODE_ENV ?? "development",
   };
 
@@ -164,6 +166,7 @@ export function logInfo(message: string, context: LogContext = {}): void {
     level: "info" as LogLevel,
     message,
     ...context,
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: process.env.NODE_ENV may be undefined in some environments
     environment: process.env.NODE_ENV ?? "development",
   };
 

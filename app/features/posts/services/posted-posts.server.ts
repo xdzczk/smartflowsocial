@@ -54,7 +54,7 @@ export async function getPostedDashboardData({
 
   const allLongformResult =
     typeof allLongformResultRaw === "object" &&
-    allLongformResultRaw &&
+    allLongformResultRaw !== null &&
     !Array.isArray(allLongformResultRaw) &&
     "posts" in allLongformResultRaw &&
     "pagination" in allLongformResultRaw

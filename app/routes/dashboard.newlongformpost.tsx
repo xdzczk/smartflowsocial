@@ -131,24 +131,9 @@ export default function NewLongFormPost() {
         )
         .map((asset) => ({
           id: asset.id,
-          title:
-            typeof asset.title === "string"
-              ? asset.title
-              : asset.title === null
-                ? null
-                : null,
-          content:
-            typeof asset.content === "string"
-              ? asset.content
-              : asset.content === null
-                ? null
-                : null,
-          fileUrl:
-            typeof asset.fileUrl === "string"
-              ? asset.fileUrl
-              : asset.fileUrl === null
-                ? null
-                : null,
+          title: typeof asset.title === "string" ? asset.title : null,
+          content: typeof asset.content === "string" ? asset.content : null,
+          fileUrl: typeof asset.fileUrl === "string" ? asset.fileUrl : null,
           tags: Array.isArray(asset.tags)
             ? asset.tags.filter((tag): tag is string => typeof tag === "string")
             : [],

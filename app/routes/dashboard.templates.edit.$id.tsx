@@ -3,7 +3,7 @@ import { useLoaderData, Link, useFetcher } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
 import { requireUserId } from "~/features/auth";
-import { getQueueColor } from "~/features/posts/queueColors";
+import { getQueueColor } from "~/features/posts/queue-colors";
 import {
   loadTemplateEditData,
   handleTemplateEditAction,

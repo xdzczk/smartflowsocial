@@ -77,8 +77,8 @@ function displayPicture(
       typeof p === "object" &&
       "picture" in p &&
       typeof p.picture === "string"
-        ? p.picture
-        : undefined;
+      ? p.picture
+      : undefined;
   } catch {
     return undefined;
   }
@@ -102,14 +102,12 @@ export default function AccountSwitchMenu() {
   const [children, setChildren] = React.useState<ChildAccount[]>([]);
 
   // Safely handle potentially undefined subscription values
-  const planId =
-    (subscription?.currentSubscription?.planId ?? "")
-      .toString()
-      .toLowerCase() ?? "";
-  const planName =
-    (subscription?.currentSubscription?.Plan?.name ?? "")
-      .toString()
-      .toLowerCase() ?? "";
+  const planId = (subscription?.currentSubscription?.planId ?? "")
+    .toString()
+    .toLowerCase();
+  const planName = (subscription?.currentSubscription?.Plan?.name ?? "")
+    .toString()
+    .toLowerCase();
   const isChild = !!user?.["isChild"];
   const parentNpub = user?.["parentNpub"] as string | undefined;
   const hasAccountsAccess =
@@ -260,15 +258,15 @@ export default function AccountSwitchMenu() {
               {currentAvatar ? (
                 <AvatarImage src={currentAvatar} alt={currentLabel} />
               ) : (
-                <AvatarFallback>{currentLabel?.[0] ?? "U"}</AvatarFallback>
+                <AvatarFallback>{currentLabel[0] ?? "U"}</AvatarFallback>
               )}
             </Avatar>
             <div className="min-w-0">
               <div className="truncate font-medium">{currentLabel}</div>
-              <div className="truncate text-xs text-muted-foreground">
+              <div className="text-muted-foreground truncate text-xs">
                 {formatNpubShort(user?.npub)}
               </div>
-              <div className="text-xs text-muted-foreground">
+              <div className="text-muted-foreground text-xs">
                 Currently signed in
               </div>
             </div>
@@ -279,7 +277,7 @@ export default function AccountSwitchMenu() {
               <div className="mb-2 text-sm font-medium">Child accounts</div>
               <div className="divide-y rounded-md border">
                 {children.length === 0 ? (
-                  <div className="p-3 text-sm text-muted-foreground">
+                  <div className="text-muted-foreground p-3 text-sm">
                     No child accounts linked
                   </div>
                 ) : (
@@ -303,7 +301,7 @@ export default function AccountSwitchMenu() {
                           </Avatar>
                           <div className="min-w-0">
                             <div className="truncate font-medium">{label}</div>
-                            <div className="truncate text-xs text-muted-foreground">
+                            <div className="text-muted-foreground truncate text-xs">
                               {formatNpubShort(c.npub)}
                             </div>
                           </div>

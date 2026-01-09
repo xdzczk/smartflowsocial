@@ -34,7 +34,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const dashboardData = await loadDashboardData(
     user.id,
     user.npub,
-    pendingParentNpubs,
+    pendingParentNpubs
   );
 
   return json({
@@ -45,11 +45,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   });
 };
 
-export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs) => {
-  const user = await requireUser(request);
-  const formData = await request.formData();
-  return handleDashboardAction(formData, user.id, user.npub);
-});
+export const action = withCSRFProtection(
+  async ({ request }: ActionFunctionArgs) => {
+    const user = await requireUser(request);
+    const formData = await request.formData();
+    return handleDashboardAction(formData, user.id, user.npub);
+  }
+);
 
 function ProfileBits({ nostrProfile }: { nostrProfile: unknown }) {
   let name: string | undefined;
@@ -85,7 +87,7 @@ export default function Dashboard() {
     <>
       <div
         id="page-container"
-        className={`mx-auto flex min-h-dvh w-full min-w-[320px] flex-col bg-gray-100 dark:bg-gray-900 dark:text-gray-100 lg:pl-64`}
+        className={`mx-auto flex min-h-dvh w-full min-w-[320px] flex-col bg-gray-100 lg:pl-64 dark:bg-gray-900 dark:text-gray-100`}
       >
         <Header />
 
@@ -93,7 +95,7 @@ export default function Dashboard() {
           id="page-content"
           className="flex max-w-full flex-auto flex-col pt-16"
         >
-          {pendingParentUsers?.length ? (
+          {pendingParentUsers.length > 0 ? (
             <div className="max-w-10xl mx-auto w-full px-4 pt-4 lg:px-8">
               {pendingParentUsers.map((p) => {
                 const isThisSubmitting =
@@ -143,7 +145,7 @@ export default function Dashboard() {
                         <input type="hidden" name="parentNpub" value={p.npub} />
                         <input type="hidden" name="decision" value="accept" />
                         <button
-                          className="inline-flex items-center rounded-md bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-70"
+                          className="inline-flex items-center rounded-md bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:outline-none disabled:opacity-70"
                           type="submit"
                           disabled={isThisSubmitting}
                         >
@@ -172,7 +174,7 @@ export default function Dashboard() {
                 <Link
                   prefetch="intent"
                   to="/plans"
-                  className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
                 >
                   View plans
                 </Link>

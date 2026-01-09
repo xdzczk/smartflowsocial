@@ -25,7 +25,7 @@ export function EngagementTabs({
       <nav className="-mb-px flex space-x-8" aria-label="Tabs">
         <button
           onClick={() => onTabChange("all")}
-          className={`whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium ${
+          className={`border-b-2 px-1 py-4 text-sm font-medium whitespace-nowrap ${
             activeTab === "all" ? ACTIVE_TAB_CLASSES : INACTIVE_TAB_CLASSES
           }`}
         >
@@ -33,20 +33,16 @@ export function EngagementTabs({
         </button>
         <button
           onClick={() => onTabChange("replies")}
-          className={`whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium ${
-            activeTab === "replies"
-              ? "border-purple-500 text-purple-600 dark:border-purple-400 dark:text-purple-400"
-              : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:border-gray-600 dark:hover:text-gray-300"
+          className={`border-b-2 px-1 py-4 text-sm font-medium whitespace-nowrap ${
+            activeTab === "replies" ? ACTIVE_TAB_CLASSES : INACTIVE_TAB_CLASSES
           }`}
         >
           Replies ({repliesCount})
         </button>
         <button
           onClick={() => onTabChange("quotes")}
-          className={`whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium ${
-            activeTab === "quotes"
-              ? "border-purple-500 text-purple-600 dark:border-purple-400 dark:text-purple-400"
-              : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:border-gray-600 dark:hover:text-gray-300"
+          className={`border-b-2 px-1 py-4 text-sm font-medium whitespace-nowrap ${
+            activeTab === "quotes" ? ACTIVE_TAB_CLASSES : INACTIVE_TAB_CLASSES
           }`}
         >
           Repost with Quote ({quotesCount})
@@ -55,4 +51,3 @@ export function EngagementTabs({
     </div>
   );
 }
-

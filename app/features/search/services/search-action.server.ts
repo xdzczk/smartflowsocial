@@ -25,7 +25,7 @@ function decodeEventId(eventInput: string): string {
   if (eventId.startsWith("nevent1")) {
     try {
       const decoded = nip19.decode(eventId);
-      if (decoded.type === "nevent" && decoded.data) {
+      if (decoded.type === "nevent") {
         return decoded.data.id;
       }
     } catch (_e) {
@@ -34,7 +34,7 @@ function decodeEventId(eventInput: string): string {
   } else if (eventId.startsWith("nostr:nevent1")) {
     try {
       const decoded = nip19.decode(eventId.replace("nostr:", ""));
-      if (decoded.type === "nevent" && decoded.data) {
+      if (decoded.type === "nevent") {
         return decoded.data.id;
       }
     } catch (_e) {
@@ -54,7 +54,7 @@ function decodeEventId(eventInput: string): string {
   // Validate hex format (64 character hex string)
   if (!/^[a-f0-9]{64}$/i.test(eventId)) {
     throw new Error(
-      "Invalid event ID format. Must be a 64-character hex string, note1, or nevent1",
+      "Invalid event ID format. Must be a 64-character hex string, note1, or nevent1"
     );
   }
 
@@ -76,13 +76,13 @@ async function fetchAuthorInfo(pubkey: string): Promise<{
       pubkeys: [pubkey],
     });
 
-    const userMetadataEvent = userInfoResponses?.find(
+    const userMetadataEvent = userInfoResponses.find(
       (res): res is [string, string, NostrEventWithMetadata] =>
         Array.isArray(res) &&
         res[0] === "EVENT" &&
         res[2] !== undefined &&
         (res[2] as NostrEventWithMetadata).kind === 0 &&
-        (res[2] as NostrEventWithMetadata).pubkey === pubkey,
+        (res[2] as NostrEventWithMetadata).pubkey === pubkey
     );
 
     if (userMetadataEvent?.[2]) {
@@ -127,14 +127,14 @@ async function fetchEventStats(eventId: string): Promise<{
       event_id: eventId,
     });
 
-    const statsEvent = threadResponses?.find(
+    const statsEvent = threadResponses.find(
       (res): res is [string, string, NostrEventWithMetadata] =>
         Array.isArray(res) &&
         res[0] === "EVENT" &&
         res[2] !== undefined &&
         (res[2] as NostrEventWithMetadata).kind === 10000100 &&
         typeof (res[2] as NostrEventWithMetadata).content === "string" &&
-        (res[2] as NostrEventWithMetadata).content.includes(eventId),
+        (res[2] as NostrEventWithMetadata).content.includes(eventId)
     );
 
     if (statsEvent?.[2]) {
@@ -194,7 +194,7 @@ export async function handleSearchEvent(eventInput: string) {
     const { ValidationError } = await import("~/lib/errors");
     throw new ValidationError(
       error instanceof Error ? error.message : "Invalid event ID format",
-      { input: eventInput },
+      { input: eventInput }
     );
   }
 
@@ -217,7 +217,7 @@ export async function handleSearchEvent(eventInput: string) {
   const eventResponse = Array.isArray(responses)
     ? responses.find(
         (res): res is [string, string, NostrEventWithMetadata] =>
-          Array.isArray(res) && res[0] === "EVENT" && res[2] !== undefined,
+          Array.isArray(res) && res[0] === "EVENT" && res[2] !== undefined
       )
     : null;
 
@@ -225,16 +225,17 @@ export async function handleSearchEvent(eventInput: string) {
     const { NotFoundError } = await import("~/lib/errors");
     throw new NotFoundError(
       "Event not found. Please check the event ID and try again.",
-      { eventId },
+      { eventId }
     );
   }
 
   const event = eventResponse[2];
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: defensive check for array access
   if (!event) {
     const { NotFoundError } = await import("~/lib/errors");
     throw new NotFoundError(
       "Event not found. Please check the event ID and try again.",
-      { eventId },
+      { eventId }
     );
   }
 

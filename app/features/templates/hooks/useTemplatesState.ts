@@ -19,11 +19,11 @@ interface UseTemplatesStateProps {
  */
 export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(
-    null,
+    null
   );
   const [activeTab, setActiveTab] = useState<"assets" | "upload">("assets");
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
-  const [searchInput, setSearchInput] = useState(searchTerm ?? "");
+  const [searchInput, setSearchInput] = useState(searchTerm || "");
   const [bulkUploadFiles, setBulkUploadFiles] = useState<File[]>([]);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
@@ -75,7 +75,6 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
     const scheduleData =
       fetcherData &&
       typeof fetcherData === "object" &&
-      fetcherData !== null &&
       "scheduleData" in fetcherData
         ? fetcherData.scheduleData
         : undefined;
@@ -91,7 +90,6 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
     if (
       fetcherData &&
       typeof fetcherData === "object" &&
-      fetcherData !== null &&
       "success" in fetcherData &&
       fetcherData.success
     ) {
@@ -106,11 +104,11 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
             ? fetcherData.asset.assetType
             : "asset";
         setToastMessage(
-          `${assetType.toLowerCase()} asset created successfully!`,
+          `${assetType.toLowerCase()} asset created successfully!`
         );
       } else if ("assets" in fetcherData && Array.isArray(fetcherData.assets)) {
         setToastMessage(
-          `${fetcherData.assets.length} image assets uploaded successfully!`,
+          `${fetcherData.assets.length} image assets uploaded successfully!`
         );
       } else {
         setToastMessage("Asset created successfully!");
@@ -135,7 +133,7 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
     setSelectedAssets((prev) =>
       prev.includes(assetId)
         ? prev.filter((id) => id !== assetId)
-        : [...prev, assetId],
+        : [...prev, assetId]
     );
   };
 
@@ -151,7 +149,7 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
     if (selectedAssets.length === 0) return;
 
     const selectedAssetData = assets.filter((asset) =>
-      selectedAssets.includes(asset.id),
+      selectedAssets.includes(asset.id)
     );
 
     const assetData = selectedAssetData.map((asset) => ({
@@ -175,7 +173,7 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
 
     if (
       !confirm(
-        `Are you sure you want to delete ${selectedAssets.length} selected asset${selectedAssets.length > 1 ? "s" : ""}?`,
+        `Are you sure you want to delete ${selectedAssets.length} selected asset${selectedAssets.length > 1 ? "s" : ""}?`
       )
     ) {
       return;
@@ -216,7 +214,7 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
 
   const handleDeleteAsset = (
     e: React.MouseEvent<HTMLButtonElement>,
-    _assetId: string,
+    _assetId: string
   ) => {
     if (!confirm("Are you sure you want to dele?? this asset?")) {
       e.preventDefault();
@@ -226,7 +224,7 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
   // Upload handlers
   const handleSingleFileUpload = async (
     e: React.FormEvent,
-    form: HTMLFormElement,
+    form: HTMLFormElement
   ) => {
     e.preventDefault();
     setSingleFileUploading(true);
@@ -234,9 +232,9 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
     try {
       const formData = new FormData(form);
       const fileInput = form.querySelector(
-        'input[type="file"]',
+        'input[type="file"]'
       ) as HTMLInputElement;
-      const file = fileInput?.files?.[0];
+      const file = fileInput.files?.[0];
 
       if (!file) {
         throw new Error("No file selected");
@@ -287,10 +285,10 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
         throw new Error(`Upload failed: ${errorMessages}`);
       }
 
-      const bulkForm = document.querySelector(
-        "form[data-bulk-form]",
-      ) as HTMLFormElement;
-      if (!bulkForm) throw new Error("Bulk form not found");
+      const bulkForm = document.querySelector("form[data-bulk-form]");
+      if (!bulkForm || !(bulkForm instanceof HTMLFormElement)) {
+        throw new Error("Bulk form not found");
+      }
 
       const formData = new FormData(bulkForm);
       const serverFormData = new FormData();
@@ -300,7 +298,7 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
       const titles = formData.getAll("titles");
       const tags = formData.getAll("tags");
       titles.forEach((title) =>
-        serverFormData.append("titles", title as string),
+        serverFormData.append("titles", title as string)
       );
       tags.forEach((tag) => serverFormData.append("tags", tag as string));
 
@@ -318,7 +316,7 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
   };
 
   const handleBulkFileChange = async (
-    e: React.ChangeEvent<HTMLInputElement>,
+    e: React.ChangeEvent<HTMLInputElement>
   ) => {
     if (e.target.files) {
       const selectedFiles = Array.from(e.target.files);
@@ -330,7 +328,7 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
               return await resizeImageClient(file);
             }
             return file;
-          }),
+          })
         );
         setBulkUploadFiles(processedFiles);
       } catch (error) {

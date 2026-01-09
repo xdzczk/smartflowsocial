@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 
-import { getDynamicQueueStyle } from "../queueColors";
+import { getDynamicQueueStyle } from "../queue-colors";
 import type { QueueType } from "../types";
 
 interface SchedulingControlsProps {
@@ -74,9 +74,8 @@ export default function SchedulingControls({
           }
         }
       } catch (error) {
-        const { handleErrorSafely } = await import(
-          "~/lib/error-handler.client"
-        );
+        const { handleErrorSafely } =
+          await import("~/lib/error-handler.client");
         handleErrorSafely(error, {
           component: "SchedulingControls",
           action: "calculateScheduleTime",

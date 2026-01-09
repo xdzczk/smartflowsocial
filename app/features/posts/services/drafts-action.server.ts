@@ -46,37 +46,34 @@ export async function handleDraftsAction(formData: FormData, userId: string) {
     return { success: true };
   }
 
-  if (_action === "bulkSignAndResume") {
-    const bulkData = result.data;
+  // TypeScript guarantees this is "bulkSignAndResume" after previous checks
+  const bulkData = result.data;
 
-    await Promise.all(
-      bulkData.postIds.map(async (id, index) => {
-        // Resolve queue type ID in feature layer (business logic)
-        const resolvedQueueTypeId = await resolveQueueTypeId(
-          userId,
-          bulkData.queueTypeIds[index] ?? null,
-          bulkData.queueTypes[index] ?? null
-        );
+  await Promise.all(
+    bulkData.postIds.map(async (id, index) => {
+      // Resolve queue type ID in feature layer (business logic)
+      const resolvedQueueTypeId = await resolveQueueTypeId(
+        userId,
+        bulkData.queueTypeIds[index] ?? null,
+        bulkData.queueTypes[index] ?? null
+      );
 
-        return updatePost({
-          id,
-          userId,
-          data: {
-            content: bulkData.contents[index],
-            caption: bulkData.captions[index],
-            queueTypeId: resolvedQueueTypeId,
-            scheduledFor: bulkData.scheduledFors[index],
-            signedEvent: bulkData.signedEvents[index],
-            nostrEvent: bulkData.nostrEvents[index],
-            draft: false,
-            isScheduled: true,
-            isPosted: false,
-          },
-        });
-      })
-    );
-    return { success: true };
-  }
-
-  return { error: "Invalid action" };
+      return updatePost({
+        id,
+        userId,
+        data: {
+          content: bulkData.contents[index],
+          caption: bulkData.captions[index],
+          queueTypeId: resolvedQueueTypeId,
+          scheduledFor: bulkData.scheduledFors[index],
+          signedEvent: bulkData.signedEvents[index],
+          nostrEvent: bulkData.nostrEvents[index],
+          draft: false,
+          isScheduled: true,
+          isPosted: false,
+        },
+      });
+    })
+  );
+  return { success: true };
 }

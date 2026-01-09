@@ -36,16 +36,19 @@ function isTestEnvironment(): boolean {
  * Limits: 100 requests per 15 minutes per IP
  * Disabled in test environments
  */
+const RATE_LIMIT_MESSAGE = "Too many requests, please try again later.";
+
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: isTestEnvironment() ? 10000 : 100, // Very high limit in tests, normal in production
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-  message: "Too many requests, please try again later.",
+  message: RATE_LIMIT_MESSAGE,
   handler: (req: Request, res: Response) => {
+    const rateLimitMessage = RATE_LIMIT_MESSAGE;
     res.status(429).json({
       error: "Rate limit exceeded",
-      message: "Too many requests, please try again later.",
+      message: rateLimitMessage,
       retryAfter: Math.ceil(
         (req.rateLimit?.resetTime ?? Date.now() + 15 * 60 * 1000 - Date.now()) /
           1000

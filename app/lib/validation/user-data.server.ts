@@ -54,7 +54,7 @@ export function validateUserData(value: unknown): UserData | null {
             })
             .filter((item): item is number => item !== undefined)
         : [],
-      userRelays: validated.userRelays ?? [],
+      userRelays: validated.userRelays,
       isEnabled: validated.isEnabled,
     };
 

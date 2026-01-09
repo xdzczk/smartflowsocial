@@ -29,17 +29,17 @@ function extractProfileBits(nostrProfile: ProfileData | null | undefined) {
         picture?: string;
       };
       return {
-        name: p?.name,
-        display_name: p?.display_name,
-        picture: p?.picture,
+        name: p.name,
+        display_name: p.display_name,
+        picture: p.picture,
       } as const;
     }
     if (typeof nostrProfile === "object") {
       const p = nostrProfile;
       return {
-        name: p?.name,
-        display_name: p?.display_name,
-        picture: p?.picture,
+        name: p.name,
+        display_name: p.display_name,
+        picture: p.picture,
       } as const;
     }
   } catch {

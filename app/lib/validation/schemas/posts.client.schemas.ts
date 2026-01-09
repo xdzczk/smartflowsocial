@@ -6,11 +6,21 @@
 import { z } from "zod";
 
 /**
+ * Validation message constants
+ */
+const VALIDATION_TITLE_REQUIRED = "Title is required";
+const VALIDATION_TITLE_TOO_LONG = "Title too long";
+const VALIDATION_CONTENT_REQUIRED = "Content is required";
+
+/**
  * Text post client schema
  * For use with React Hook Form - works with form values directly
  */
 export const textPostClientSchema = z.object({
-  content: z.string().min(1, "Post content cannot be empty").max(5000, "Content too long"),
+  content: z
+    .string()
+    .min(1, "Post content cannot be empty")
+    .max(5000, "Content too long"),
   scheduledFor: z.string().optional(),
   queueType: z.string().default("unassigned"),
   isRecyclable: z.boolean().default(false),
@@ -35,9 +45,12 @@ export const editPostClientSchema = z.object({
  * Edit longform post client schema
  */
 export const editLongformPostClientSchema = z.object({
-  title: z.string().min(1, "Title is required").max(200, "Title too long"),
+  title: z
+    .string()
+    .min(1, VALIDATION_TITLE_REQUIRED)
+    .max(200, VALIDATION_TITLE_TOO_LONG),
   summary: z.string().max(500, "Summary too long").optional(),
-  content: z.string().min(1, "Content is required"),
+  content: z.string().min(1, VALIDATION_CONTENT_REQUIRED),
   image: z.string().optional(),
   scheduledFor: z.string().optional(),
   queueType: z.string().optional(),
@@ -50,9 +63,12 @@ export const editLongformPostClientSchema = z.object({
  * Longform post client schema (for new posts)
  */
 export const longformPostClientSchema = z.object({
-  title: z.string().min(1, "Title is required").max(200, "Title too long"),
+  title: z
+    .string()
+    .min(1, VALIDATION_TITLE_REQUIRED)
+    .max(200, VALIDATION_TITLE_TOO_LONG),
   summary: z.string().max(500, "Summary too long").optional(),
-  content: z.string().min(1, "Content is required"),
+  content: z.string().min(1, VALIDATION_CONTENT_REQUIRED),
   customTags: z.string().optional(),
   scheduledFor: z.string().optional(),
   queueType: z.string().default("Unassigned"),
@@ -65,10 +81,9 @@ export const longformPostClientSchema = z.object({
  * For editing draft posts (content, queue, scheduling, hashtags)
  */
 export const draftEditClientSchema = z.object({
-  content: z.string().min(1, "Content is required"),
+  content: z.string().min(1, VALIDATION_CONTENT_REQUIRED),
   selectedQueue: z.string().default("unassigned"),
   scheduledFor: z.string().optional(),
   useHashtagPresets: z.boolean().default(false),
   hashTagPresetId: z.string().nullable().optional(),
 });
-

@@ -140,6 +140,7 @@ function fixUnnecessaryOptionalChaining(content, warnings) {
 /**
  * Fix unnecessary conditionals: if (alwaysTruthy) or if (alwaysFalsy)
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars -- Intentionally disabled function, kept for reference
 function _fixUnnecessaryConditionals(content, warnings) {
   const conditionalWarnings = warnings.filter(
     (w) =>
@@ -256,4 +257,3 @@ if (require.main === module) {
 }
 
 module.exports = { processFile, main };
-

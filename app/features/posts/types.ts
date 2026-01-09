@@ -34,8 +34,10 @@ export type ScheduleConfig = IntervalScheduleConfig | FixedSlotsScheduleConfig;
 
 /**
  * Type guard to check if config is IntervalScheduleConfig
+ * Accepts unknown to handle serialized data from Remix loaders
  */
 export function isIntervalScheduleConfig(
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents -- unknown is necessary for runtime type checking of serialized data
   config: ScheduleConfig | unknown
 ): config is IntervalScheduleConfig {
   if (typeof config !== "object" || config === null) {
@@ -55,8 +57,10 @@ export function isIntervalScheduleConfig(
 
 /**
  * Type guard to check if config is FixedSlotsScheduleConfig
+ * Accepts unknown to handle serialized data from Remix loaders
  */
 export function isFixedSlotsScheduleConfig(
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents -- unknown is necessary for runtime type checking of serialized data
   config: ScheduleConfig | unknown
 ): config is FixedSlotsScheduleConfig {
   if (typeof config !== "object" || config === null) {
@@ -214,8 +218,10 @@ export interface PostData extends Omit<Post, "signedEvent" | "nostrEvent"> {
 /**
  * Longform post data structure for editing/displaying
  */
-export interface LongFormPostData
-  extends Omit<LongFormPost, "signedEvent" | "nostrEvent"> {
+export interface LongFormPostData extends Omit<
+  LongFormPost,
+  "signedEvent" | "nostrEvent"
+> {
   signedEvent?: SignedEvent | null;
   nostrEvent?: NostrEvent | null;
   queueType?: QueueType | null;

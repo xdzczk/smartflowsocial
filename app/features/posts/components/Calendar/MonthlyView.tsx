@@ -205,7 +205,7 @@ export function MonthlyView({
               key={dayInfo.date.toISOString()}
               role="gridcell"
               tabIndex={-1}
-              className={`flex min-h-[120px] flex-col border-b border-r border-gray-200 p-2 last:border-r-0 dark:border-gray-700 ${
+              className={`flex min-h-[120px] flex-col border-r border-b border-gray-200 p-2 last:border-r-0 dark:border-gray-700 ${
                 dayInfo.isCurrentMonth
                   ? "bg-white dark:bg-gray-800"
                   : "bg-gray-50 dark:bg-gray-900"
@@ -230,6 +230,7 @@ export function MonthlyView({
               <div className="flex-1 space-y-1 overflow-hidden">
                 {postsToShow.map((post, postIndex) => (
                   <PostBlock
+                    // eslint-disable-next-line react/no-array-index-key -- Composite key with stable post ID
                     key={`${post.id}-${postIndex}`}
                     post={post}
                     compact={true}

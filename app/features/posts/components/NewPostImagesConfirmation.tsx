@@ -309,6 +309,7 @@ export default function NewPostImagesConfirmation({
                       : "";
                   return (
                     <div
+                      // eslint-disable-next-line react/no-array-index-key -- Stable list of image previews, no unique ID available
                       key={index}
                       className="relative overflow-hidden rounded-lg"
                     >
@@ -363,6 +364,7 @@ export default function NewPostImagesConfirmation({
                       .filter((tag: string) => tag.length > 0)
                       .map((tag: string, tagIndex: number) => (
                         <span
+                          // eslint-disable-next-line react/no-array-index-key -- Stable list of tags, no unique ID available
                           key={tagIndex}
                           className="rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-600 dark:bg-blue-900 dark:text-blue-300"
                         >

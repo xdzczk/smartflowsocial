@@ -6,6 +6,12 @@
 import { z } from "zod";
 
 /**
+ * Validation message constants
+ */
+const VALIDATION_NAME_REQUIRED = "Name is required";
+const VALIDATION_TAGS_REQUIRED = "Tags are required";
+
+/**
  * Relays update schema for client-side forms
  * Works with array of strings directly (not newline-separated)
  * Allows empty strings for form editing, but validates non-empty strings
@@ -21,7 +27,6 @@ export const updateRelaysClientSchema = z.object({
 export const updateTimezoneClientSchema = z.object({
   timezone: z.string().min(1, "Timezone is required"),
 });
-
 
 /**
  * Schedule intervals update schema for client-side forms
@@ -43,8 +48,8 @@ export const updateBlacklistClientSchema = z.object({
  * Hashtag preset create schema for client-side forms
  */
 export const createHashtagPresetClientSchema = z.object({
-  name: z.string().min(1, "Name is required").trim(),
-  tags: z.string().min(1, "Tags are required").trim(),
+  name: z.string().min(1, VALIDATION_NAME_REQUIRED).trim(),
+  tags: z.string().min(1, VALIDATION_TAGS_REQUIRED).trim(),
   description: z.string().optional(),
 });
 
@@ -53,8 +58,8 @@ export const createHashtagPresetClientSchema = z.object({
  */
 export const updateHashtagPresetClientSchema = z.object({
   id: z.string().min(1, "ID is required"),
-  name: z.string().min(1, "Name is required").trim(),
-  tags: z.string().min(1, "Tags are required").trim(),
+  name: z.string().min(1, VALIDATION_NAME_REQUIRED).trim(),
+  tags: z.string().min(1, VALIDATION_TAGS_REQUIRED).trim(),
   description: z.string().optional(),
 });
 
@@ -91,7 +96,7 @@ export const updateTagsClientSchema = z.object({
  */
 export const queueTypeClientSchema = z
   .object({
-    name: z.string().min(1, "Name is required").trim(),
+    name: z.string().min(1, VALIDATION_NAME_REQUIRED).trim(),
     description: z.string().optional(),
     color: z.string().min(1, "Color is required"),
     hashTagPresetId: z.string().optional(),
@@ -104,14 +109,17 @@ export const queueTypeClientSchema = z
   .refine(
     (data) => {
       if (data.scheduleType === "INTERVAL") {
-        return data.useGlobalInterval === true || data.intervalHours !== undefined;
+        return (
+          data.useGlobalInterval === true || data.intervalHours !== undefined
+        );
       }
       return true;
     },
     {
-      message: "Interval hours or use global interval is required for INTERVAL schedule type",
+      message:
+        "Interval hours or use global interval is required for INTERVAL schedule type",
       path: ["intervalHours"],
-    },
+    }
   )
   .refine(
     (data) => {
@@ -123,6 +131,5 @@ export const queueTypeClientSchema = z
     {
       message: "Slots are required for FIXED_SLOTS schedule type",
       path: ["slots"],
-    },
+    }
   );
-

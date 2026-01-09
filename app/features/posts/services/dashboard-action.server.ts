@@ -12,7 +12,7 @@ import { deletePost } from "~/models/post.commands.server";
 
 export async function handleDashboardAction(
   formData: FormData,
-  userId: string,
+  userId: string
 ) {
   const result = validateFormDataOrRespond(formData, dashboardActionSchema);
   if (!result.success) {
@@ -33,19 +33,14 @@ export async function handleDashboardAction(
 
   if (_action === "bulkDelete") {
     await Promise.all(
-      result.data.postIds.map((id: string) => deletePost({ id, userId })),
+      result.data.postIds.map((id: string) => deletePost({ id, userId }))
     );
     return { success: true };
   }
 
-  if (_action === "bulkDeleteLongForm") {
-    await Promise.all(
-      result.data.postIds.map((id: string) =>
-        deleteLongFormPost({ id, userId }),
-      ),
-    );
-    return { success: true };
-  }
-
-  return { error: "Invalid action" };
+  // TypeScript guarantees this is "bulkDeleteLongForm" after previous checks
+  await Promise.all(
+    result.data.postIds.map((id: string) => deleteLongFormPost({ id, userId }))
+  );
+  return { success: true };
 }

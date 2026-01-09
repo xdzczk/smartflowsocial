@@ -1,6 +1,6 @@
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 
-import { getDynamicQueueStyle } from "../queueColors";
+import { getDynamicQueueStyle } from "../queue-colors";
 
 import type { BulkPost, QueueType } from "./BulkPostCard";
 
@@ -45,6 +45,7 @@ export default function BulkPostsTable({
         <tbody>
           {posts.map((post, index) => (
             <tr
+              // eslint-disable-next-line react/no-array-index-key -- Composite key with post data ensures uniqueness
               key={`${index}-${post.caption.substring(0, 20)}-${post.scheduledFor}`}
               className="border-b"
             >

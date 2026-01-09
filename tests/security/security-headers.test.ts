@@ -45,8 +45,12 @@ describe("Security Headers: Configuration", () => {
 
     // Verify expected CSP structure
     expect(helmetConfig.contentSecurityPolicy).toBeDefined();
-    expect(helmetConfig.contentSecurityPolicy.directives.defaultSrc).toContain("'self'");
-    expect(helmetConfig.contentSecurityPolicy.directives.frameSrc).toContain("'none'");
+    expect(helmetConfig.contentSecurityPolicy.directives.defaultSrc).toContain(
+      "'self'"
+    );
+    expect(helmetConfig.contentSecurityPolicy.directives.frameSrc).toContain(
+      "'none'"
+    );
   });
 
   it("should configure X-Frame-Options to DENY", () => {
@@ -170,6 +174,7 @@ describe("Security Headers: Environment-Specific Configuration", () => {
     const scriptSrc = [
       "'self'",
       "'unsafe-inline'",
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: testing conditional CSP directive
       ...(isDevelopment ? ["'unsafe-eval'"] : []),
     ];
 
@@ -180,6 +185,7 @@ describe("Security Headers: Environment-Specific Configuration", () => {
     const productionScriptSrc = [
       "'self'",
       "'unsafe-inline'",
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: testing conditional CSP directive
       ...(isProduction ? ["'unsafe-eval'"] : []),
     ];
 
@@ -188,6 +194,7 @@ describe("Security Headers: Environment-Specific Configuration", () => {
 
   it("should enable upgradeInsecureRequests in production", () => {
     const isDevelopment = false;
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: testing conditional security header
     const upgradeInsecureRequests = !isDevelopment ? [] : null;
 
     expect(upgradeInsecureRequests).not.toBeNull();
