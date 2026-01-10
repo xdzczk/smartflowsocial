@@ -25,7 +25,6 @@ import {
 import type { PostData, LongFormPostData } from "../types";
 import { convertPrismaQueueTypeToQueueType } from "../types";
 
-
 import { filterPostsByQueueType } from "./post-filtering.server";
 
 /**
@@ -68,7 +67,7 @@ export async function loadScheduledData(userId: string, queueType: string) {
     const result: LongFormPostData = {
       ...post,
       queueType: convertPrismaQueueTypeToQueueType(
-        "queueType" in post ? post.queueType : undefined,
+        "queueType" in post ? post.queueType : undefined
       ),
       signedEvent: signedEventValue,
       nostrEvent: nostrEventValue,
@@ -79,9 +78,8 @@ export async function loadScheduledData(userId: string, queueType: string) {
   // Serialize Date objects to strings for Remix loader response
   // Note: allContent is removed - reconstruct on client from posts/longformPosts
   const postsDTO: PostDTO[] = toPostDTOArray(postsData);
-  const longformPostsDTO: LongFormPostDTO[] = toLongFormPostDTOArray(
-    longformPostsData,
-  );
+  const longformPostsDTO: LongFormPostDTO[] =
+    toLongFormPostDTOArray(longformPostsData);
 
   return {
     posts: postsDTO,

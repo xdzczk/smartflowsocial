@@ -5,7 +5,11 @@
 
 import { describe, it, expect } from "vitest";
 
-import type { CombinedContent, PostData, LongFormPostData } from "~/features/posts/types";
+import type {
+  CombinedContent,
+  PostData,
+  LongFormPostData,
+} from "~/features/posts/types";
 import {
   isPostData,
   isLongFormPostData,
@@ -16,22 +20,32 @@ import {
 describe("Combined Content Validation", () => {
   describe("isPostData", () => {
     it("should return false for null", () => {
-      expect(isPostData(null as unknown as PostData | LongFormPostData)).toBe(false);
+      expect(isPostData(null as unknown as PostData | LongFormPostData)).toBe(
+        false
+      );
     });
 
     it("should return false for undefined", () => {
-      expect(isPostData(undefined as unknown as PostData | LongFormPostData)).toBe(false);
+      expect(
+        isPostData(undefined as unknown as PostData | LongFormPostData)
+      ).toBe(false);
     });
 
     it("should return false for non-object values", () => {
       // The function checks: if (!originalData || typeof originalData !== "object")
-      expect(isPostData("string" as unknown as PostData | LongFormPostData)).toBe(false);
-      expect(isPostData(123 as unknown as PostData | LongFormPostData)).toBe(false);
+      expect(
+        isPostData("string" as unknown as PostData | LongFormPostData)
+      ).toBe(false);
+      expect(isPostData(123 as unknown as PostData | LongFormPostData)).toBe(
+        false
+      );
       // Arrays are objects in JavaScript, but the function checks for "title" or "summary"
       // An empty array doesn't have these properties, so it would return true
       // But that's the actual behavior - arrays without title/summary are considered PostData
       // Let's test with a proper object that's not PostData
-      expect(isPostData({ title: "Test" } as unknown as PostData | LongFormPostData)).toBe(false);
+      expect(
+        isPostData({ title: "Test" } as unknown as PostData | LongFormPostData)
+      ).toBe(false);
     });
 
     it("should handle arrays (arrays are objects but don't have title/summary)", () => {
@@ -39,7 +53,9 @@ describe("Combined Content Validation", () => {
       // The function checks: !("title" in originalData) && !("summary" in originalData)
       // Arrays don't have "title" or "summary" properties, so this returns true
       // This is the actual behavior of the function
-      expect(isPostData([] as unknown as PostData | LongFormPostData)).toBe(true);
+      expect(isPostData([] as unknown as PostData | LongFormPostData)).toBe(
+        true
+      );
     });
 
     it("should return true for PostData (no title or summary)", () => {
@@ -47,7 +63,9 @@ describe("Combined Content Validation", () => {
         id: "post-1",
         caption: "Test caption",
       };
-      expect(isPostData(postData as unknown as PostData | LongFormPostData)).toBe(true);
+      expect(
+        isPostData(postData as unknown as PostData | LongFormPostData)
+      ).toBe(true);
     });
 
     it("should return false for LongFormPostData (has title)", () => {
@@ -56,7 +74,9 @@ describe("Combined Content Validation", () => {
         title: "Test Title",
         caption: "Test caption",
       };
-      expect(isPostData(longFormData as unknown as PostData | LongFormPostData)).toBe(false);
+      expect(
+        isPostData(longFormData as unknown as PostData | LongFormPostData)
+      ).toBe(false);
     });
 
     it("should return false for LongFormPostData (has summary)", () => {
@@ -65,7 +85,9 @@ describe("Combined Content Validation", () => {
         summary: "Test summary",
         caption: "Test caption",
       };
-      expect(isPostData(longFormData as unknown as PostData | LongFormPostData)).toBe(false);
+      expect(
+        isPostData(longFormData as unknown as PostData | LongFormPostData)
+      ).toBe(false);
     });
 
     it("should return false for LongFormPostData (has both title and summary)", () => {
@@ -75,23 +97,35 @@ describe("Combined Content Validation", () => {
         summary: "Test summary",
         caption: "Test caption",
       };
-      expect(isPostData(longFormData as unknown as PostData | LongFormPostData)).toBe(false);
+      expect(
+        isPostData(longFormData as unknown as PostData | LongFormPostData)
+      ).toBe(false);
     });
   });
 
   describe("isLongFormPostData", () => {
     it("should return false for null", () => {
-      expect(isLongFormPostData(null as unknown as PostData | LongFormPostData)).toBe(false);
+      expect(
+        isLongFormPostData(null as unknown as PostData | LongFormPostData)
+      ).toBe(false);
     });
 
     it("should return false for undefined", () => {
-      expect(isLongFormPostData(undefined as unknown as PostData | LongFormPostData)).toBe(false);
+      expect(
+        isLongFormPostData(undefined as unknown as PostData | LongFormPostData)
+      ).toBe(false);
     });
 
     it("should return false for non-object values", () => {
-      expect(isLongFormPostData("string" as unknown as PostData | LongFormPostData)).toBe(false);
-      expect(isLongFormPostData(123 as unknown as PostData | LongFormPostData)).toBe(false);
-      expect(isLongFormPostData([] as unknown as PostData | LongFormPostData)).toBe(false);
+      expect(
+        isLongFormPostData("string" as unknown as PostData | LongFormPostData)
+      ).toBe(false);
+      expect(
+        isLongFormPostData(123 as unknown as PostData | LongFormPostData)
+      ).toBe(false);
+      expect(
+        isLongFormPostData([] as unknown as PostData | LongFormPostData)
+      ).toBe(false);
     });
 
     it("should return true for LongFormPostData (has title)", () => {
@@ -100,7 +134,11 @@ describe("Combined Content Validation", () => {
         title: "Test Title",
         caption: "Test caption",
       };
-      expect(isLongFormPostData(longFormData as unknown as PostData | LongFormPostData)).toBe(true);
+      expect(
+        isLongFormPostData(
+          longFormData as unknown as PostData | LongFormPostData
+        )
+      ).toBe(true);
     });
 
     it("should return true for LongFormPostData (has summary)", () => {
@@ -109,7 +147,11 @@ describe("Combined Content Validation", () => {
         summary: "Test summary",
         caption: "Test caption",
       };
-      expect(isLongFormPostData(longFormData as unknown as PostData | LongFormPostData)).toBe(true);
+      expect(
+        isLongFormPostData(
+          longFormData as unknown as PostData | LongFormPostData
+        )
+      ).toBe(true);
     });
 
     it("should return true for LongFormPostData (has both)", () => {
@@ -119,7 +161,11 @@ describe("Combined Content Validation", () => {
         summary: "Test summary",
         caption: "Test caption",
       };
-      expect(isLongFormPostData(longFormData as unknown as PostData | LongFormPostData)).toBe(true);
+      expect(
+        isLongFormPostData(
+          longFormData as unknown as PostData | LongFormPostData
+        )
+      ).toBe(true);
     });
 
     it("should return false for PostData (no title or summary)", () => {
@@ -127,7 +173,9 @@ describe("Combined Content Validation", () => {
         id: "post-1",
         caption: "Test caption",
       };
-      expect(isLongFormPostData(postData as unknown as PostData | LongFormPostData)).toBe(false);
+      expect(
+        isLongFormPostData(postData as unknown as PostData | LongFormPostData)
+      ).toBe(false);
     });
   });
 
@@ -178,7 +226,9 @@ describe("Combined Content Validation", () => {
         originalData: longFormData,
       };
 
-      const result = extractLongFormPostData(content as unknown as CombinedContent);
+      const result = extractLongFormPostData(
+        content as unknown as CombinedContent
+      );
       expect(result).toEqual(longFormData);
     });
 
@@ -191,7 +241,9 @@ describe("Combined Content Validation", () => {
         originalData: postData,
       };
 
-      const result = extractLongFormPostData(content as unknown as CombinedContent);
+      const result = extractLongFormPostData(
+        content as unknown as CombinedContent
+      );
       expect(result).toBeNull();
     });
 
@@ -200,9 +252,10 @@ describe("Combined Content Validation", () => {
         originalData: null,
       };
 
-      const result = extractLongFormPostData(content as unknown as CombinedContent);
+      const result = extractLongFormPostData(
+        content as unknown as CombinedContent
+      );
       expect(result).toBeNull();
     });
   });
 });
-

@@ -36,7 +36,7 @@ export function useAssetUpload({ onSuccess, onError }: UseAssetUploadOptions) {
       try {
         const formData = new FormData(form);
         const fileInput = form.querySelector(
-          'input[type="file"]',
+          'input[type="file"]'
         ) as HTMLInputElement;
         const file = fileInput.files?.[0];
 
@@ -65,9 +65,8 @@ export function useAssetUpload({ onSuccess, onError }: UseAssetUploadOptions) {
 
         assetFetcher.submit(serverFormData, { method: "post" });
       } catch (error: unknown) {
-        const { handleAsyncErrorWithMessage, getErrorMessage } = await import(
-          "~/lib/error-handler.client"
-        );
+        const { handleAsyncErrorWithMessage, getErrorMessage } =
+          await import("~/lib/error-handler.client");
         const errorMessage = `Upload failed: ${getErrorMessage(error)}`;
         handleAsyncErrorWithMessage(
           error,
@@ -76,14 +75,14 @@ export function useAssetUpload({ onSuccess, onError }: UseAssetUploadOptions) {
             component: "useAssetUpload",
             action: "handleSingleFileUpload",
           },
-          false, // Don't show toast, we call onError instead
+          false // Don't show toast, we call onError instead
         );
         onError(errorMessage);
       } finally {
         setSingleFileUploading(false);
       }
     },
-    [assetFetcher, onError],
+    [assetFetcher, onError]
   );
 
   const handleBulkFileUpload = useCallback(async () => {
@@ -106,7 +105,7 @@ export function useAssetUpload({ onSuccess, onError }: UseAssetUploadOptions) {
 
       // Get form data for titles and tags
       const bulkForm = document.querySelector(
-        "form[data-bulk-form]",
+        "form[data-bulk-form]"
       ) as HTMLFormElement;
 
       const formData = new FormData(bulkForm);
@@ -118,15 +117,14 @@ export function useAssetUpload({ onSuccess, onError }: UseAssetUploadOptions) {
       const titles = formData.getAll("titles");
       const tags = formData.getAll("tags");
       titles.forEach((title) =>
-        serverFormData.append("titles", title as string),
+        serverFormData.append("titles", title as string)
       );
       tags.forEach((tag) => serverFormData.append("tags", tag as string));
 
       assetFetcher.submit(serverFormData, { method: "post" });
     } catch (error: unknown) {
-      const { handleAsyncErrorWithMessage, getErrorMessage } = await import(
-        "~/lib/error-handler.client"
-      );
+      const { handleAsyncErrorWithMessage, getErrorMessage } =
+        await import("~/lib/error-handler.client");
       const errorMessage = `Bulk upload failed: ${getErrorMessage(error)}`;
       handleAsyncErrorWithMessage(
         error,
@@ -135,7 +133,7 @@ export function useAssetUpload({ onSuccess, onError }: UseAssetUploadOptions) {
           component: "useAssetUpload",
           action: "handleBulkFileUpload",
         },
-        false, // Don't show toast, we call onError instead
+        false // Don't show toast, we call onError instead
       );
       onError(errorMessage);
     } finally {
@@ -158,13 +156,12 @@ export function useAssetUpload({ onSuccess, onError }: UseAssetUploadOptions) {
               }
               // Videos are uploaded as-is (no processing needed for privacy)
               return file;
-            }),
+            })
           );
           setBulkUploadFiles(processedFiles);
         } catch (error) {
-          const { handleErrorSafely } = await import(
-            "~/lib/error-handler.client"
-          );
+          const { handleErrorSafely } =
+            await import("~/lib/error-handler.client");
           handleErrorSafely(
             error,
             {
@@ -174,14 +171,14 @@ export function useAssetUpload({ onSuccess, onError }: UseAssetUploadOptions) {
             () => {
               // Fallback to original files if processing fails
               setBulkUploadFiles(selectedFiles);
-            },
+            }
           );
         } finally {
           setIsProcessingImages(false);
         }
       }
     },
-    [],
+    []
   );
 
   // Handle fetcher responses
@@ -197,11 +194,11 @@ export function useAssetUpload({ onSuccess, onError }: UseAssetUploadOptions) {
       ) {
         const assetType = assetFetcher.data.asset.assetType;
         onSuccess(
-          `${typeof assetType === "string" ? assetType.toLowerCase() : String(assetType).toLowerCase()} asset created successfully!`,
+          `${typeof assetType === "string" ? assetType.toLowerCase() : String(assetType).toLowerCase()} asset created successfully!`
         );
       } else if (assetFetcher.data.assets) {
         onSuccess(
-          `${assetFetcher.data.assets.length} image assets uploaded successfully!`,
+          `${assetFetcher.data.assets.length} image assets uploaded successfully!`
         );
       } else {
         onSuccess("Asset created successfully!");

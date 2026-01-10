@@ -86,7 +86,6 @@ Learn how to schedule posts for future publication to maintain a consistent post
 ## Step 5: Review Scheduled Time
 
 1. **Check scheduled time:**
-
    - Date and time displayed
    - Timezone shown
    - Verify it's correct
@@ -101,7 +100,6 @@ Learn how to schedule posts for future publication to maintain a consistent post
 
 1. **Click "Schedule Post"** button
 2. **Sign with Nostr Extension:**
-
    - Extension popup appears
    - Review event details
    - Event signed with scheduled timestamp
@@ -118,7 +116,6 @@ Learn how to schedule posts for future publication to maintain a consistent post
 
 1. **Go to Dashboard → Scheduled**
 2. **Find your post:**
-
    - See scheduled date/time
    - Preview post content
    - Status shows "Scheduled"
@@ -227,7 +224,6 @@ Learn how to schedule posts for future publication to maintain a consistent post
 
 1. **Go to Dashboard → Calendar**
 2. **See scheduled posts:**
-
    - On calendar grid
    - Visual representation
    - Easy to spot gaps
@@ -303,5 +299,3 @@ See [Calendar Guide](../../guides/user-guides/calendar.md) for details.
 ---
 
 **Next Tutorial:** [Creating Your First Queue](./creating-your-first-queue.md) → Organize your posts
-
-

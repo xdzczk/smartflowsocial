@@ -21,7 +21,7 @@ import {
 export async function handleGeneralSettingsAction(
   userId: string,
   action: string,
-  formData: FormData,
+  formData: FormData
 ) {
   if (action === "update_timezone") {
     const result = validateFormDataOrRespond(formData, updateTimezoneSchema);
@@ -53,14 +53,14 @@ export async function handleGeneralSettingsAction(
   if (action === "update_schedule_intervals") {
     const result = validateFormDataOrRespond(
       formData,
-      updateScheduleIntervalsSchema,
+      updateScheduleIntervalsSchema
     );
     if (!result.success) {
       return result.response;
     }
     // Convert numbers back to strings for storage
     const intervals = result.data.scheduleIntervals.map((num) =>
-      num.toString(),
+      num.toString()
     );
     await updateScheduleInterval(userId, intervals);
     return json({ success: true });

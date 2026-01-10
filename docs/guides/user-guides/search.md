@@ -4,7 +4,8 @@
 **Difficulty:** Beginner  
 **Last updated:** 2026-01-02
 
-Complete guide to searching for Nostr events, viewing engagement statistics, and scheduling quote posts or reposts.
+Complete guide to searching for Nostr events, viewing engagement statistics, and scheduling quote
+posts or reposts.
 
 ---
 
@@ -226,13 +227,11 @@ SmartFlowSocial's search feature allows you to:
 ### Finding Content
 
 1. **Use event IDs:**
-
    - Copy from Nostr clients
    - Use nevent1 format when available
    - Verify ID before searching
 
 2. **Check engagement:**
-
    - Review statistics before sharing
    - Look for high engagement
    - Consider content quality
@@ -245,13 +244,11 @@ SmartFlowSocial's search feature allows you to:
 ### Scheduling Posts
 
 1. **Quote posts:**
-
    - Add valuable commentary
    - Provide context
    - Engage with original content
 
 2. **Reposts:**
-
    - Share quality content
    - Support creators
    - Build your feed
@@ -264,13 +261,11 @@ SmartFlowSocial's search feature allows you to:
 ### Content Curation
 
 1. **Quality over quantity:**
-
    - Share valuable content
    - Avoid spam
    - Maintain feed quality
 
 2. **Engagement analysis:**
-
    - Use statistics to find trends
    - Identify popular content
    - Learn what resonates
@@ -340,5 +335,3 @@ SmartFlowSocial's search feature allows you to:
 ---
 
 **Next:** [Assets Management Guide](./assets.md) → Manage uploaded assets
-
-

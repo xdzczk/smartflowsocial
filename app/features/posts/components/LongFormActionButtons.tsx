@@ -27,7 +27,7 @@ export function LongFormActionButtons({
           value="save-draft"
           variant="outline"
           disabled={isDisabled}
-          className="flex-1 border-gray-300 dark:border-gray-600 sm:min-w-[140px] sm:flex-none"
+          className="flex-1 border-gray-300 sm:min-w-[140px] sm:flex-none dark:border-gray-600"
         >
           {fetcherState !== "idle" ? "Saving..." : "Save Draft"}
         </Button>
@@ -37,7 +37,7 @@ export function LongFormActionButtons({
           variant="outline"
           onClick={onPreview}
           disabled={!isFormValid}
-          className="flex-1 border-gray-300 dark:border-gray-600 sm:min-w-[140px] sm:flex-none"
+          className="flex-1 border-gray-300 sm:min-w-[140px] sm:flex-none dark:border-gray-600"
         >
           <svg
             className="mr-2 h-4 w-4"

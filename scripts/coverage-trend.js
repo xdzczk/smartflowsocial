@@ -34,7 +34,7 @@ function getCurrentCoverage() {
   const summaryFile = path.join(COVERAGE_DIR, "coverage-summary.json");
   if (!fs.existsSync(summaryFile)) {
     console.error(
-      "Coverage summary not found. Run 'npm run test:coverage' first.",
+      "Coverage summary not found. Run 'npm run test:coverage' first."
     );
     process.exit(1);
   }
@@ -66,7 +66,7 @@ function generateTrendReport(trendData) {
   recent.forEach((entry) => {
     const date = new Date(entry.timestamp).toLocaleDateString();
     console.log(
-      `  ${date}: Lines ${entry.coverage.lines.toFixed(2)}% | Functions ${entry.coverage.functions.toFixed(2)}% | Branches ${entry.coverage.branches.toFixed(2)}% | Statements ${entry.coverage.statements.toFixed(2)}%`,
+      `  ${date}: Lines ${entry.coverage.lines.toFixed(2)}% | Functions ${entry.coverage.functions.toFixed(2)}% | Branches ${entry.coverage.branches.toFixed(2)}% | Statements ${entry.coverage.statements.toFixed(2)}%`
     );
   });
 
@@ -125,7 +125,7 @@ function main() {
   } else {
     console.log("Usage:");
     console.log(
-      "  node scripts/coverage-trend.js record  - Record current coverage",
+      "  node scripts/coverage-trend.js record  - Record current coverage"
     );
     console.log("  node scripts/coverage-trend.js report  - Show trend report");
     process.exit(1);

@@ -4,7 +4,8 @@
 **Difficulty:** Intermediate  
 **Last updated:** 2026-01-02
 
-Complete guide for deploying SmartFlowSocial to production environments, including platform-specific instructions and best practices.
+Complete guide for deploying SmartFlowSocial to production environments, including platform-specific
+instructions and best practices.
 
 ## Table of Contents
 
@@ -209,7 +210,8 @@ railway add
 
 Vercel is optimized for frontend deployments but can run Remix applications.
 
-**Note**: Vercel has limitations for long-running processes. Consider using Vercel for the main app and a separate service for the worker.
+**Note**: Vercel has limitations for long-running processes. Consider using Vercel for the main app
+and a separate service for the worker.
 
 #### 1. Install Vercel CLI
 

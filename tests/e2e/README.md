@@ -5,7 +5,8 @@
 
 ## Overview
 
-These e2e tests follow best practices and focus on **critical user flows** rather than testing every possible scenario. Quality over quantity.
+These e2e tests follow best practices and focus on **critical user flows** rather than testing every
+possible scenario. Quality over quantity.
 
 ## Test Files
 
@@ -146,7 +147,8 @@ These e2e tests follow best practices and focus on **critical user flows** rathe
 **Note:** Error handling scenarios are covered in other test files:
 
 - **Form validation**: Covered in `accessibility.cy.ts` and `post-creation.cy.ts`
-- **Empty states**: Covered in feature-specific test files (`drafts.cy.ts`, `post-scheduling.cy.ts`, etc.)
+- **Empty states**: Covered in feature-specific test files (`drafts.cy.ts`, `post-scheduling.cy.ts`,
+  etc.)
 - **API error handling**: Covered in `api-endpoints.cy.ts`
 
 ## Best Practices Followed
@@ -251,8 +253,10 @@ cy.get('[data-testid="element"]').should("be.visible");
 
 ## Notes
 
-- **ESLint Warnings:** Some `jest/expect-expect` warnings are false positives - Cypress uses different assertion patterns than Jest.
-- **Test Data:** Tests use the `TEST_NPUB` from `support/nostr-test-keys.ts` for consistent authentication.
+- **ESLint Warnings:** Some `jest/expect-expect` warnings are false positives - Cypress uses
+  different assertion patterns than Jest.
+- **Test Data:** Tests use the `TEST_NPUB` from `support/nostr-test-keys.ts` for consistent
+  authentication.
 - **Cleanup:** All tests clean up after themselves using `afterEach` hooks.
 
 ## Test Coverage Summary

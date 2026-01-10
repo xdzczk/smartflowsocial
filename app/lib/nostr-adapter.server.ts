@@ -56,7 +56,7 @@ export const nostrAdapter = {
     try {
       // Convert hex string to Uint8Array
       const privateKeyBytes = new Uint8Array(
-        hex.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) ?? [],
+        hex.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) ?? []
       );
       return nip19.nsecEncode(privateKeyBytes);
     } catch {
@@ -95,7 +95,7 @@ export const nostrAdapter = {
     } else {
       // Assume hex string
       privateKeyBytes = new Uint8Array(
-        privateKey.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) ?? [],
+        privateKey.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) ?? []
       );
     }
     return getPublicKey(privateKeyBytes);
@@ -117,7 +117,7 @@ export const nostrAdapter = {
     } else {
       // Assume hex string
       privateKeyBytes = new Uint8Array(
-        privateKey.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) ?? [],
+        privateKey.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) ?? []
       );
     }
     return finalizeEvent(event, privateKeyBytes);
@@ -185,5 +185,8 @@ export const nostrAdapter = {
 /**
  * Re-export types for convenience
  */
-export type { NostrEvent, SignedEvent, SignEventResult } from "~/features/nostr/types";
-
+export type {
+  NostrEvent,
+  SignedEvent,
+  SignEventResult,
+} from "~/features/nostr/types";

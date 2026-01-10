@@ -2,7 +2,8 @@
 
 **Last updated:** 2026-01-03
 
-This guide helps you diagnose and resolve errors and issues with SmartFlowSocial, including debugging techniques and tools.
+This guide helps you diagnose and resolve errors and issues with SmartFlowSocial, including
+debugging techniques and tools.
 
 ## Table of Contents
 
@@ -386,7 +387,6 @@ See [Queue System Documentation](./queue-system.md) for more details.
    ```
 
 2. **Check External Services:**
-
    - Verify Nostr Publisher is accessible
    - Check database connection
    - Verify user data exists
@@ -415,7 +415,6 @@ See [Queue System Documentation](./queue-system.md) for more details.
 **Solutions:**
 
 1. **Check Nostr Extension:**
-
    - Verify Nostr extension is installed
    - Check extension permissions
    - Try different extension (Alby, nos2x)
@@ -428,7 +427,6 @@ See [Queue System Documentation](./queue-system.md) for more details.
    ```
 
 3. **Check Cookies:**
-
    - Verify cookies are enabled
    - Check browser console for errors
    - Clear cookies and try again
@@ -643,7 +641,6 @@ See [Queue System Documentation](./queue-system.md) for more details.
    ```
 
 3. **Check Bucket Permissions:**
-
    - Verify bucket exists
    - Check IAM permissions
    - Verify CORS configuration
@@ -1028,13 +1025,11 @@ await queue.clean(0, 100, "active");
 ### Identify Bottlenecks
 
 1. **Database queries:**
-
    - Enable query logging
    - Identify slow queries
    - Add indexes
 
 2. **API endpoints:**
-
    - Measure response times
    - Identify slow endpoints
    - Optimize queries

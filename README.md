@@ -11,7 +11,8 @@
 
 Schedule, manage, and optimize your decentralized social presence.
 
-[🚀 Try Hosted](https://smartflow.social) • [📖 Documentation](./docs/README.md) • [🔧 Self-Host](#-self-hosted)
+[🚀 Try Hosted](https://smartflow.social) • [📖 Documentation](./docs/README.md) •
+[🔧 Self-Host](#-self-hosted)
 
 </div>
 
@@ -19,9 +20,13 @@ Schedule, manage, and optimize your decentralized social presence.
 
 ## What is SmartFlowSocial?
 
-SmartFlowSocial is a **professional-grade social media management platform** for the Nostr protocol. Available as a fully managed hosted service or self-hostable open source software, it helps creators, businesses, and communities manage their decentralized social presence with enterprise-level features.
+SmartFlowSocial is a **professional-grade social media management platform** for the Nostr protocol.
+Available as a fully managed hosted service or self-hostable open source software, it helps
+creators, businesses, and communities manage their decentralized social presence with
+enterprise-level features.
 
-**Available at:** [smartflow.social](https://smartflow.social) • [smartflowsocial.com](https://smartflowsocial.com)
+**Available at:** [smartflow.social](https://smartflow.social) •
+[smartflowsocial.com](https://smartflowsocial.com)
 
 ### Why SmartFlowSocial?
 
@@ -37,6 +42,7 @@ SmartFlowSocial is a **professional-grade social media management platform** for
 ## ✨ Key Features
 
 ### 📝 Post Management
+
 - **Instant posting** — Post to Nostr with one click
 - **Scheduled posts** — Plan content days, weeks, or months in advance
 - **Bulk upload** — Upload multiple images with auto-scheduled intervals
@@ -45,6 +51,7 @@ SmartFlowSocial is a **professional-grade social media management platform** for
 - **Recyclable posts** — Reuse evergreen content efficiently
 
 ### 📅 Scheduling & Queues
+
 - **Calendar view** — Visual drag-and-drop scheduling (weekly/monthly views)
 - **Multiple queues** — Organize content with different scheduling rules
 - **Interval scheduling** — Post every X hours automatically
@@ -52,6 +59,7 @@ SmartFlowSocial is a **professional-grade social media management platform** for
 - **Queue override** — Manual scheduling with smart queue integration
 
 ### 🎁 Engagement & Tools
+
 - **Engagement feed** — Track replies, mentions, and interactions
 - **Nostr giveaways** — Create native giveaways with fair winner selection
 - **Blacklist management** — Block bots and spam accounts
@@ -59,6 +67,7 @@ SmartFlowSocial is a **professional-grade social media management platform** for
 - **Multi-account** — Parent/child account relationships
 
 ### 🔌 API & Integrations
+
 - **REST API** — Full programmatic access to all features
 - **File upload API** — Upload media programmatically
 - **Queue management** — Schedule and manage posts via API
@@ -79,6 +88,7 @@ SmartFlowSocial is a **professional-grade social media management platform** for
 3. Create your first scheduled post
 
 **Next steps:**
+
 - [Hosted quick start guide](./docs/getting-started/hosted.md)
 - [Posting guide](./docs/guides/user-guides/posting.md)
 - [Calendar guide](./docs/guides/user-guides/calendar.md)
@@ -109,9 +119,11 @@ pnpm db:seed
 pnpm dev
 ```
 
-**That's it!** Open [http://localhost:3000](http://localhost:3000) and start managing your Nostr presence.
+**That's it!** Open [http://localhost:3000](http://localhost:3000) and start managing your Nostr
+presence.
 
 **Next steps:**
+
 - [Self-host quickstart](./docs/getting-started/quickstart.md) — 5-minute setup
 - [Installation guide](./docs/getting-started/installation.md) — Complete setup
 - [Deployment guide](./docs/guides/deployment.md) — Production deployment
@@ -126,7 +138,8 @@ SmartFlowSocial is built with modern, production-ready technologies:
 - **Database**: PostgreSQL + [Prisma](https://prisma.io) — Type-safe database access
 - **Queue System**: [BullMQ](https://docs.bullmq.io/) + Redis — Reliable background job processing
 - **Styling**: [TailwindCSS](https://tailwindcss.com) — Rapid UI development
-- **UI Components**: [Headless UI](https://headlessui.com) + [Radix UI](https://radix-ui.com) — Accessible components
+- **UI Components**: [Headless UI](https://headlessui.com) + [Radix UI](https://radix-ui.com) —
+  Accessible components
 - **Payments**: Lightning Network (NWC) — Native Bitcoin payments
 - **Protocol**: [Nostr](https://nostr.com) — Decentralized social protocol
 
@@ -137,18 +150,21 @@ See [Architecture Documentation](./docs/getting-started/architecture.md) for det
 ## 📚 Documentation
 
 ### For Hosted Users
+
 - [Hosted quick start](./docs/getting-started/hosted.md) — Get started in 5 minutes
 - [Posting guide](./docs/guides/user-guides/posting.md) — Create and schedule posts
 - [Calendar guide](./docs/guides/user-guides/calendar.md) — Visual scheduling
 - [Payments guide](./docs/guides/user-guides/payments.md) — Subscription management
 
 ### For Self-Hosters
+
 - [Quick start](./docs/getting-started/quickstart.md) — 5-minute setup
 - [Installation guide](./docs/getting-started/installation.md) — Complete setup
 - [Deployment guide](./docs/guides/deployment.md) — Production deployment
 - [Operations guide](./docs/guides/operations.md) — Monitoring and maintenance
 
 ### For Developers
+
 - [Developer guide](./docs/guides/developer-guide.md) — Development workflow
 - [API reference](./docs/reference/api.md) — Complete API documentation
 - [Testing guide](./docs/guides/testing.md) — Testing strategies
@@ -235,10 +251,12 @@ See [Contributing Guide](./CONTRIBUTING.md) for detailed guidelines.
 
 ## 💬 Community & Support
 
-- 🌐 **Hosted Instance**: [smartflow.social](https://smartflow.social) | [smartflowsocial.com](https://smartflowsocial.com)
+- 🌐 **Hosted Instance**: [smartflow.social](https://smartflow.social) |
+  [smartflowsocial.com](https://smartflowsocial.com)
 - 📖 **Documentation**: [docs/README.md](./docs/README.md)
 - 🐛 **Bug Reports**: [GitHub Issues](https://github.com/xdzczk/SmartFlowSocial/issues)
-- 💡 **Feature Requests**: [GitHub Discussions](https://github.com/xdzczk/SmartFlowSocial/discussions)
+- 💡 **Feature Requests**:
+  [GitHub Discussions](https://github.com/xdzczk/SmartFlowSocial/discussions)
 - 📧 **Security Issues**: Report privately (see [Security Guide](./docs/guides/security.md))
 
 ---
@@ -247,7 +265,9 @@ See [Contributing Guide](./CONTRIBUTING.md) for detailed guidelines.
 
 Elastic License 2.0 (ELv2) — see [LICENSE](./LICENSE) for full terms.
 
-**Summary:** Free for personal and commercial use, with restrictions on providing the software as a managed service to third parties. See [Elastic License 2.0](https://www.elastic.co/licensing/elastic-license) for details.
+**Summary:** Free for personal and commercial use, with restrictions on providing the software as a
+managed service to third parties. See
+[Elastic License 2.0](https://www.elastic.co/licensing/elastic-license) for details.
 
 ---
 
@@ -257,6 +277,8 @@ Elastic License 2.0 (ELv2) — see [LICENSE](./LICENSE) for full terms.
 
 Built with ❤️ for the Nostr community.
 
-[Try Hosted](https://smartflow.social) • [Self-Host](#-self-hosted) • [API Docs](./docs/reference/api.md) • [Documentation](./docs/README.md) • [Contributing](./CONTRIBUTING.md)
+[Try Hosted](https://smartflow.social) • [Self-Host](#-self-hosted) •
+[API Docs](./docs/reference/api.md) • [Documentation](./docs/README.md) •
+[Contributing](./CONTRIBUTING.md)
 
 </div>

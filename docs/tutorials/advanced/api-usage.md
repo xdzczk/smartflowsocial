@@ -4,7 +4,8 @@
 **Difficulty:** Advanced  
 **Last updated:** 2026-01-02
 
-Complete guide to using the SmartFlowSocial API for programmatic access, automation, and custom integrations.
+Complete guide to using the SmartFlowSocial API for programmatic access, automation, and custom
+integrations.
 
 ---
 
@@ -65,7 +66,7 @@ const response = await fetch("/api/endpoint", {
 class SmartFlowSocialAPI {
   constructor(
     private baseUrl: string,
-    private sessionCookie: string,
+    private sessionCookie: string
   ) {}
 
   private async request(endpoint: string, options: RequestInit = {}) {
@@ -209,9 +210,7 @@ console.log(hashtags.effectiveHashtags);
 
 ```typescript
 async function batchPublish(events: any[], relays: string[]) {
-  const results = await Promise.allSettled(
-    events.map((event) => this.publishEvent(event, relays)),
-  );
+  const results = await Promise.allSettled(events.map((event) => this.publishEvent(event, relays)));
 
   return results.map((result, index) => ({
     index,
@@ -232,9 +231,7 @@ async function publishWithRetry(event: any, relays: string[], maxRetries = 3) {
       return await this.publishEvent(event, relays);
     } catch (error) {
       if (i === maxRetries - 1) throw error;
-      await new Promise((resolve) =>
-        setTimeout(resolve, 1000 * Math.pow(2, i)),
-      );
+      await new Promise((resolve) => setTimeout(resolve, 1000 * Math.pow(2, i)));
     }
   }
 }
@@ -341,7 +338,7 @@ class ContentPublisher {
   constructor(
     private api: SmartFlowSocialAPI,
     private privateKey: string,
-    private relays: string[],
+    private relays: string[]
   ) {}
 
   async publishPost(content: string, hashtags?: string[]) {
@@ -387,9 +384,7 @@ class ContentPublisher {
     const event = {
       kind: 1,
       content: `${content}\n\n${allHashtags.join(" ")}`,
-      created_at: Math.floor(
-        new Date(schedule.nextScheduleTime).getTime() / 1000,
-      ),
+      created_at: Math.floor(new Date(schedule.nextScheduleTime).getTime() / 1000),
       tags: allHashtags.map((tag) => ["t", tag.replace("#", "")]),
     };
 
@@ -400,10 +395,7 @@ class ContentPublisher {
 }
 
 // Usage
-const api = new SmartFlowSocialAPI(
-  "https://your-domain.com",
-  process.env.SESSION_COOKIE!,
-);
+const api = new SmartFlowSocialAPI("https://your-domain.com", process.env.SESSION_COOKIE!);
 
 const publisher = new ContentPublisher(api, process.env.NOSTR_PRIVATE_KEY!, [
   "wss://relay.example.com",
@@ -473,7 +465,8 @@ await publisher.schedulePost("Scheduled post", "Bitcoin News");
 
 1. **[Custom Integrations](./custom-integrations.md)** - Build integrations
 2. **[Advanced Queue Management](./advanced-queue-management.md)** - Master queues
-3. **[Operations Guide](../../guides/operations.md#performance-monitoring)** - Performance optimization
+3. **[Operations Guide](../../guides/operations.md#performance-monitoring)** - Performance
+   optimization
 
 ---
 
@@ -485,6 +478,5 @@ await publisher.schedulePost("Scheduled post", "Bitcoin News");
 
 ---
 
-**Next Tutorial:** [Advanced Queue Management](./advanced-queue-management.md) → Master queue systems
-
-
+**Next Tutorial:** [Advanced Queue Management](./advanced-queue-management.md) → Master queue
+systems

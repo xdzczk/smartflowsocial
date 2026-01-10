@@ -75,7 +75,7 @@ export function PostBlock({
     post,
     queueTypes,
     isLongform,
-    isPast,
+    isPast
   );
 
   const baseProps = {

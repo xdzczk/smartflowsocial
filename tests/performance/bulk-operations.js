@@ -33,7 +33,7 @@ export default function () {
       _action: "bulkDelete",
       postIds: Array.from({ length: 10 }, (_, i) => `post-${i + 1}`),
     },
-    session,
+    session
   );
   check(bulkDeleteResponse, {
     "bulk-delete: status 200": (r) => r.status === 200,
@@ -50,7 +50,7 @@ export default function () {
       _action: "bulkDelete",
       postIds: Array.from({ length: 5 }, (_, i) => `post-${i + 1}`),
     },
-    session,
+    session
   );
   check(bulkScheduleResponse, {
     "bulk-schedule: status 200": (r) => r.status === 200,
@@ -67,7 +67,7 @@ export default function () {
       _action: "bulkSignAndResume",
       postIds: Array.from({ length: 5 }, (_, i) => `post-${i + 1}`),
     },
-    session,
+    session
   );
   check(bulkSignResponse, {
     "bulk-sign: status 200": (r) => r.status === 200,

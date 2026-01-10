@@ -12,7 +12,7 @@ import type { z } from "zod";
  */
 export function safeValidateLoaderResponse<T extends z.ZodTypeAny>(
   data: unknown,
-  schema: T,
+  schema: T
 ): z.infer<T> | null {
   try {
     return schema.parse(data);
@@ -20,4 +20,3 @@ export function safeValidateLoaderResponse<T extends z.ZodTypeAny>(
     return null;
   }
 }
-

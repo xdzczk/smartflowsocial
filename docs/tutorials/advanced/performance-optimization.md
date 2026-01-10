@@ -246,13 +246,11 @@ app.use("/api/", apiLimiter);
 **Optimize queue processing:**
 
 1. **Batch job processing:**
-
    - Process multiple jobs together
    - Reduce overhead
    - Improve throughput
 
 2. **Worker scaling:**
-
    - Add more workers
    - Distribute load
    - Handle peak times
@@ -290,7 +288,6 @@ async function processPostJob(job: Job) {
 **Scale application servers:**
 
 1. **Load balancing:**
-
    - Use reverse proxy (nginx)
    - Distribute requests
    - Handle failover
@@ -305,7 +302,6 @@ async function processPostJob(job: Job) {
 **Scale database:**
 
 1. **Read replicas:**
-
    - Separate read/write
    - Distribute read load
    - Improve performance
@@ -320,7 +316,6 @@ async function processPostJob(job: Job) {
 **Add caching:**
 
 1. **Redis cache:**
-
    - Frequently accessed data
    - Session storage
    - Queue backend
@@ -339,19 +334,16 @@ async function processPostJob(job: Job) {
 **Monitor these metrics:**
 
 1. **Response time:**
-
    - P50, P95, P99
    - Average response time
    - Slowest endpoints
 
 2. **Throughput:**
-
    - Requests per second
    - Jobs processed per minute
    - Success rate
 
 3. **Resource usage:**
-
    - CPU usage
    - Memory usage
    - Database connections
@@ -467,5 +459,3 @@ async function processPostJob(job: Job) {
 ---
 
 **Tutorials Complete!** Return to [Tutorials Index](../README.md) for more learning paths.
-
-

@@ -6,7 +6,11 @@
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
-import { CSRFValidationError, validateOrigin, isStateChangingMethod } from "~/lib/security.server";
+import {
+  CSRFValidationError,
+  validateOrigin,
+  isStateChangingMethod,
+} from "~/lib/security.server";
 
 // Mock environment variables
 vi.mock("~/lib/env.server", () => ({
@@ -117,7 +121,9 @@ describe("CSRF Protection: Origin Validation", () => {
     });
 
     expect(() => validateOrigin(request)).toThrow(CSRFValidationError);
-    expect(() => validateOrigin(request)).toThrow("Invalid origin header format");
+    expect(() => validateOrigin(request)).toThrow(
+      "Invalid origin header format"
+    );
   });
 
   it("should handle malformed Referer header", () => {
@@ -129,7 +135,9 @@ describe("CSRF Protection: Origin Validation", () => {
     });
 
     expect(() => validateOrigin(request)).toThrow(CSRFValidationError);
-    expect(() => validateOrigin(request)).toThrow("Invalid referer header format");
+    expect(() => validateOrigin(request)).toThrow(
+      "Invalid referer header format"
+    );
   });
 });
 
@@ -178,7 +186,7 @@ describe("CSRF Protection: Development Mode", () => {
     //   allowedOrigins.push("http://localhost:3000");
     //   allowedOrigins.push("http://127.0.0.1:3000");
     // }
-    
+
     // This behavior is tested implicitly through the main validation tests
     // Full testing would require environment variable manipulation which is
     // better suited for integration tests

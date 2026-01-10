@@ -4,7 +4,8 @@
 **Difficulty:** Beginner  
 **Last updated:** 2026-01-02
 
-Learn how to use the visual calendar interface to schedule and manage your posts with drag-and-drop functionality.
+Learn how to use the visual calendar interface to schedule and manage your posts with drag-and-drop
+functionality.
 
 ---
 
@@ -197,13 +198,11 @@ Learn how to use the visual calendar interface to schedule and manage your posts
 ### Visual Organization
 
 1. **Use queue colors:**
-
    - Assign distinct colors to queues
    - Easy visual identification
    - Better organization
 
 2. **Balance schedule:**
-
    - Don't overload time slots
    - Space posts appropriately
    - Consider audience timezone
@@ -216,13 +215,11 @@ Learn how to use the visual calendar interface to schedule and manage your posts
 ### Time Management
 
 1. **Peak engagement times:**
-
    - Schedule during active hours
    - Use analytics to find best times
    - Test different schedules
 
 2. **Consistency:**
-
    - Post at regular intervals
    - Use queues for automation
    - Maintain schedule
@@ -284,7 +281,8 @@ Learn how to use the visual calendar interface to schedule and manage your posts
 ## Next Steps
 
 1. **[Posting Guide](../../guides/user-guides/posting.md#bulk-operations)** - Bulk scheduling
-2. **[Advanced Scheduling Strategies](../intermediate/advanced-scheduling-strategies.md)** - Optimize your schedule
+2. **[Advanced Scheduling Strategies](../intermediate/advanced-scheduling-strategies.md)** -
+   Optimize your schedule
 3. **[Creating Your First Queue](./creating-your-first-queue.md)** - Organize with queues
 
 ---
@@ -297,6 +295,5 @@ Learn how to use the visual calendar interface to schedule and manage your posts
 
 ---
 
-**Next Tutorial:** [Posting Guide](../../guides/user-guides/posting.md#bulk-operations) → Bulk scheduling
-
-
+**Next Tutorial:** [Posting Guide](../../guides/user-guides/posting.md#bulk-operations) → Bulk
+scheduling

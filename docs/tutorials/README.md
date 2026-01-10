@@ -25,6 +25,7 @@ For users ready to explore advanced features and workflows.
 - [Long-form Articles](./intermediate/long-form-articles.md) - 35 min
 
 **Note:** For bulk scheduling, multi-account setup, and giveaways, see the comprehensive guides:
+
 - [Posting Guide](../guides/user-guides/posting.md#bulk-operations) - Bulk scheduling
 - [Multi-Account Guide](../guides/user-guides/multi-account.md) - Multi-account setup
 - [Giveaways Guide](../guides/user-guides/giveaways.md) - Creating giveaways
@@ -38,8 +39,11 @@ For power users and developers.
 - [Advanced Queue Management](./advanced/advanced-queue-management.md) - 35 min
 
 **Note:** For performance optimization, see:
-- [Operations Guide](../guides/operations.md#performance-monitoring) - Performance monitoring and optimization
-- [Performance Troubleshooting](../troubleshooting/performance.md) - Performance issues and solutions
+
+- [Operations Guide](../guides/operations.md#performance-monitoring) - Performance monitoring and
+  optimization
+- [Performance Troubleshooting](../troubleshooting/performance.md) - Performance issues and
+  solutions
 
 ---
 
@@ -47,20 +51,24 @@ For power users and developers.
 
 ### I want to...
 
-**Get started quickly**
-→ [Creating and Scheduling Posts](./beginner/creating-and-scheduling-posts.md) → [Creating Your First Queue](./beginner/creating-your-first-queue.md) → [Using the Calendar View](./beginner/using-calendar-view.md)
+**Get started quickly** →
+[Creating and Scheduling Posts](./beginner/creating-and-scheduling-posts.md) →
+[Creating Your First Queue](./beginner/creating-your-first-queue.md) →
+[Using the Calendar View](./beginner/using-calendar-view.md)
 
-**Organize my content**
-→ [Creating Your First Queue](./beginner/creating-your-first-queue.md) → [Using Hashtag Presets](./beginner/using-hashtag-presets.md) → [Using the Calendar View](./beginner/using-calendar-view.md)
+**Organize my content** → [Creating Your First Queue](./beginner/creating-your-first-queue.md) →
+[Using Hashtag Presets](./beginner/using-hashtag-presets.md) →
+[Using the Calendar View](./beginner/using-calendar-view.md)
 
-**Scale my posting**
-→ [Posting Guide](../guides/user-guides/posting.md#bulk-operations) → [Advanced Scheduling Strategies](./intermediate/advanced-scheduling-strategies.md) → [Advanced Queue Management](./advanced/advanced-queue-management.md)
+**Scale my posting** → [Posting Guide](../guides/user-guides/posting.md#bulk-operations) →
+[Advanced Scheduling Strategies](./intermediate/advanced-scheduling-strategies.md) →
+[Advanced Queue Management](./advanced/advanced-queue-management.md)
 
-**Build integrations**
-→ [API Usage](./advanced/api-usage.md) → [Custom Integrations](./advanced/custom-integrations.md)
+**Build integrations** → [API Usage](./advanced/api-usage.md) →
+[Custom Integrations](./advanced/custom-integrations.md)
 
-**Optimize performance**
-→ [Operations Guide](../guides/operations.md#performance-monitoring) → [Performance Troubleshooting](../troubleshooting/performance.md)
+**Optimize performance** → [Operations Guide](../guides/operations.md#performance-monitoring) →
+[Performance Troubleshooting](../troubleshooting/performance.md)
 
 ---
 
@@ -80,10 +88,9 @@ All tutorials follow a consistent format:
 
 ## Contributing
 
-Want to improve a tutorial or add a new one? See our [Documentation Contributing Guide](../meta/contributing.md).
+Want to improve a tutorial or add a new one? See our
+[Documentation Contributing Guide](../meta/contributing.md).
 
 ---
 
 **Start Learning:** [Creating and Scheduling Posts](./beginner/creating-and-scheduling-posts.md)
-
-

@@ -16,7 +16,7 @@ export async function updateDisplayedHashtags(
   queueTypes: QueueType[],
   tags: string[],
   setSelectedQueueType: (type: string) => void,
-  setDisplayedHashtags: (hashtags: string | string[]) => void,
+  setDisplayedHashtags: (hashtags: string | string[]) => void
 ): Promise<void> {
   setSelectedQueueType(queueTypeName);
 
@@ -27,7 +27,7 @@ export async function updateDisplayedHashtags(
 
   // Find the queue type object to get its ID
   const selectedQueueType = queueTypes.find(
-    (qt) => (typeof qt === "string" ? qt : qt.name) === queueTypeName,
+    (qt) => (typeof qt === "string" ? qt : qt.name) === queueTypeName
   );
   const queueTypeId =
     typeof selectedQueueType === "object" ? selectedQueueType.id : null;

@@ -48,7 +48,7 @@ export function initSentry(): void {
             // Don't send events for browser extensions, etc.
             if (
               event.exception?.values?.[0]?.value?.includes(
-                "Non-Error promise rejection",
+                "Non-Error promise rejection"
               )
             ) {
               return null;
@@ -91,7 +91,7 @@ export function captureException(
     extra?: Record<string, unknown>;
     user?: { id?: string; email?: string };
     level?: "fatal" | "error" | "warning" | "info" | "debug";
-  },
+  }
 ): void {
   if (!sentryInitialized || typeof window === "undefined") {
     return;
@@ -127,7 +127,7 @@ export function captureMessage(
   context?: {
     tags?: Record<string, string>;
     extra?: Record<string, unknown>;
-  },
+  }
 ): void {
   if (!sentryInitialized || typeof window === "undefined") {
     return;

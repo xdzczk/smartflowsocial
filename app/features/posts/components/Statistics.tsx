@@ -32,7 +32,7 @@ export default function Statistics() {
               <dt className="text-2xl font-bold">
                 {postStatistics.scheduledCount}
               </dt>
-              <dd className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              <dd className="text-sm font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
                 Scheduled Posts
               </dd>
             </dl>
@@ -61,7 +61,7 @@ export default function Statistics() {
               <dt className="text-2xl font-bold">
                 {postStatistics.successCount}
               </dt>
-              <dd className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              <dd className="text-sm font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
                 Posted Successfully
               </dd>
             </dl>
@@ -92,7 +92,7 @@ export default function Statistics() {
               </div>
               <dl className="space-y-1 text-right">
                 <dt className="text-2xl font-bold text-white">New</dt>
-                <dd className="text-sm font-semibold uppercase tracking-wider text-white/80">
+                <dd className="text-sm font-semibold tracking-wider text-white/80 uppercase">
                   Create Post
                 </dd>
               </dl>

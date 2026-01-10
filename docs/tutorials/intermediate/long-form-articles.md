@@ -4,7 +4,8 @@
 **Difficulty:** Intermediate  
 **Last updated:** 2026-01-02
 
-Complete guide to creating, formatting, and publishing long-form articles using NIP-23 (Kind 30023) in SmartFlowSocial.
+Complete guide to creating, formatting, and publishing long-form articles using NIP-23 (Kind 30023)
+in SmartFlowSocial.
 
 ---
 
@@ -232,7 +233,6 @@ Complete guide to creating, formatting, and publishing long-form articles using 
 
 1. **Click "Preview"** button
 2. **Review article:**
-
    - Check formatting
    - Verify images
    - Review structure
@@ -320,13 +320,11 @@ Complete guide to creating, formatting, and publishing long-form articles using 
 ### Structure
 
 1. **Clear hierarchy:**
-
    - Use headers properly
    - Logical flow
    - Easy navigation
 
 2. **Readable length:**
-
    - Optimal: 1000-2000 words
    - Can be longer if needed
    - Break into sections
@@ -340,14 +338,12 @@ Complete guide to creating, formatting, and publishing long-form articles using 
 ### Content Quality
 
 1. **Valuable content:**
-
    - Provide value
    - Be informative
    - Answer questions
    - Share knowledge
 
 2. **Engaging writing:**
-
    - Clear and concise
    - Engaging tone
    - Good flow
@@ -362,7 +358,6 @@ Complete guide to creating, formatting, and publishing long-form articles using 
 ### Formatting
 
 1. **Consistent style:**
-
    - Use headers consistently
    - Format lists properly
    - Style code blocks
@@ -501,5 +496,3 @@ Complete guide to creating, formatting, and publishing long-form articles using 
 ---
 
 **Next Tutorial:** [Custom Integrations](../advanced/custom-integrations.md) → Build integrations
-
-

@@ -116,75 +116,130 @@ export function useRecyclablesState({
   } | null>(null);
 
   // Sort and filter posts
-  const sortedPosts = [...posts].sort((a, b) => {
-    if (sortConfig.key === "postedAt") {
-      const dateA = new Date(a[sortConfig.key] ?? 0).getTime();
-      const dateB = new Date(b[sortConfig.key] ?? 0).getTime();
-      return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
-    }
+  // ============================================================================
+  // Helper Functions
+  // ============================================================================
 
-    // Handle engagement metrics sorting
+  function getEventId(post: PostData): string | null {
     if (
-      [
-        "likes",
-        "replies",
-        "mentions",
-        "reposts",
-        "zaps",
-        "satszapped",
-      ].includes(sortConfig.key)
+      post.signedEvent &&
+      typeof post.signedEvent === "object" &&
+      "id" in post.signedEvent &&
+      typeof post.signedEvent.id === "string"
     ) {
-      const aEventId =
-        a.signedEvent &&
-        typeof a.signedEvent === "object" &&
-        "id" in a.signedEvent &&
-        typeof a.signedEvent.id === "string"
-          ? a.signedEvent.id
-          : null;
-      const bEventId =
-        b.signedEvent &&
-        typeof b.signedEvent === "object" &&
-        "id" in b.signedEvent &&
-        typeof b.signedEvent.id === "string"
-          ? b.signedEvent.id
-          : null;
-      const aStats =
-        aEventId &&
-        aEventId in stats &&
-        typeof stats[aEventId] === "object" &&
-        !Array.isArray(stats[aEventId])
-          ? stats[aEventId]
-          : {};
-      const bStats =
-        bEventId &&
-        bEventId in stats &&
-        typeof stats[bEventId] === "object" &&
-        !Array.isArray(stats[bEventId])
-          ? stats[bEventId]
-          : {};
-      const aValue = Number(aStats[sortConfig.key as keyof typeof aStats] ?? 0);
-      const bValue = Number(bStats[sortConfig.key as keyof typeof bStats] ?? 0);
-      return sortConfig.direction === "asc" ? aValue - bValue : bValue - aValue;
+      return post.signedEvent.id;
     }
+    return null;
+  }
 
-    const aValue = (a as Record<string, unknown>)[sortConfig.key] as
+  function getPostStats(
+    eventId: string | null,
+    stats: Record<string, unknown>
+  ): Record<string, unknown> {
+    if (
+      eventId &&
+      eventId in stats &&
+      typeof stats[eventId] === "object" &&
+      !Array.isArray(stats[eventId])
+    ) {
+      return stats[eventId] as Record<string, unknown>;
+    }
+    return {};
+  }
+
+  function compareByEngagementMetric(
+    a: PostData,
+    b: PostData,
+    sortKey: string,
+    direction: "asc" | "desc",
+    stats: Record<string, unknown>
+  ): number {
+    const aEventId = getEventId(a);
+    const bEventId = getEventId(b);
+    const aStats = getPostStats(aEventId, stats);
+    const bStats = getPostStats(bEventId, stats);
+    const aValue = Number(aStats[sortKey] ?? 0);
+    const bValue = Number(bStats[sortKey] ?? 0);
+    return direction === "asc" ? aValue - bValue : bValue - aValue;
+  }
+
+  function compareByDate(
+    a: PostData,
+    b: PostData,
+    sortKey: string,
+    direction: "asc" | "desc"
+  ): number {
+    const dateA = new Date(
+      (a[sortKey as keyof PostData] ?? 0) as Date | string | number
+    ).getTime();
+    const dateB = new Date(
+      (b[sortKey as keyof PostData] ?? 0) as Date | string | number
+    ).getTime();
+    return direction === "asc" ? dateA - dateB : dateB - dateA;
+  }
+
+  function compareByGenericValue(
+    a: PostData,
+    b: PostData,
+    sortKey: string,
+    direction: "asc" | "desc"
+  ): number {
+    const aValue = (a as unknown as Record<string, unknown>)[sortKey] as
       | string
       | number
       | undefined;
-    const bValue = (b as Record<string, unknown>)[sortConfig.key] as
+    const bValue = (b as unknown as Record<string, unknown>)[sortKey] as
       | string
       | number
       | undefined;
 
-    // Handle null/undefined values
     if (aValue == null && bValue == null) return 0;
-    if (aValue == null) return sortConfig.direction === "asc" ? -1 : 1;
-    if (bValue == null) return sortConfig.direction === "asc" ? 1 : -1;
+    if (aValue == null) return direction === "asc" ? -1 : 1;
+    if (bValue == null) return direction === "asc" ? 1 : -1;
 
-    if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
-    if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
+    if (aValue < bValue) return direction === "asc" ? -1 : 1;
+    if (aValue > bValue) return direction === "asc" ? 1 : -1;
     return 0;
-  });
+  }
+
+  function isEngagementMetric(key: string): boolean {
+    return [
+      "likes",
+      "replies",
+      "mentions",
+      "reposts",
+      "zaps",
+      "satszapped",
+    ].includes(key);
+  }
+
+  function sortRecyclablePosts(
+    posts: PostData[],
+    sortConfig: { key: string; direction: "asc" | "desc" },
+    stats: Record<string, unknown>
+  ): PostData[] {
+    return [...posts].sort((a, b) => {
+      if (sortConfig.key === "postedAt") {
+        return compareByDate(a, b, sortConfig.key, sortConfig.direction);
+      }
+      if (isEngagementMetric(sortConfig.key)) {
+        return compareByEngagementMetric(
+          a,
+          b,
+          sortConfig.key,
+          sortConfig.direction,
+          stats
+        );
+      }
+      return compareByGenericValue(a, b, sortConfig.key, sortConfig.direction);
+    });
+  }
+
+  const sortedPosts = sortRecyclablePosts(
+    posts as PostData[],
+    sortConfig,
+    stats
+  );
 
   const filteredPosts = sortedPosts.filter((post) =>
     post.caption?.toLowerCase().includes(searchTerm.toLowerCase())

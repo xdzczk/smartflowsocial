@@ -35,7 +35,7 @@ export const action = withActionErrorHandling(
     assert(
       contentType.includes("multipart/form-data"),
       "Request must be multipart/form-data",
-      { contentType },
+      { contentType }
     );
 
     // Parse the multipart form data
@@ -45,7 +45,7 @@ export const action = withActionErrorHandling(
         createUploadHandler(userId),
         createMemoryUploadHandler({
           maxPartSize: 100 * 1024 * 1024, // 100MB max for videos
-        }),
+        })
       );
       formData = await parseMultipartFormData(request, uploadHandler);
     } catch (error) {
@@ -54,7 +54,7 @@ export const action = withActionErrorHandling(
         400,
         {
           originalError: error instanceof Error ? error.message : String(error),
-        },
+        }
       );
     }
 
@@ -72,12 +72,12 @@ export const action = withActionErrorHandling(
         fileType: typeof file,
         fileValue:
           typeof file === "string" ? file.substring(0, 50) : "not a string",
-      },
+      }
     );
 
     // Return success response
     return createSuccessResponse({ fileUrl: file });
-  },
+  }
 );
 
 /**
@@ -98,7 +98,7 @@ export async function actionManual({ request }: ActionFunctionArgs) {
       createUploadHandler(userId),
       createMemoryUploadHandler({
         maxPartSize: 100 * 1024 * 1024,
-      }),
+      })
     );
 
     let formData: FormData;
@@ -110,7 +110,7 @@ export async function actionManual({ request }: ActionFunctionArgs) {
         400,
         {
           originalError: error instanceof Error ? error.message : String(error),
-        },
+        }
       );
     }
 
@@ -127,7 +127,7 @@ export async function actionManual({ request }: ActionFunctionArgs) {
         500,
         {
           fileType: typeof file,
-        },
+        }
       );
     }
 

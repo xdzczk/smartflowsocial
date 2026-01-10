@@ -12,6 +12,29 @@ import { useZodForm } from "~/lib/validation/utils.client";
 
 import type { PostData, LongFormPostData, UserData, QueueType } from "../types";
 
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+function getInitialScheduledFor(
+  post: PostData | LongFormPostData,
+  isLongform: boolean
+): Date {
+  if (isLongform && "publishedAt" in post && post.publishedAt) {
+    return new Date(post.publishedAt);
+  }
+  if ("scheduledFor" in post && post.scheduledFor) {
+    const scheduledForValue = post.scheduledFor;
+    if (typeof scheduledForValue === "string") {
+      return new Date(parseInt(scheduledForValue, 10) * 1000);
+    }
+    if (typeof scheduledForValue === "number") {
+      return new Date(scheduledForValue * 1000);
+    }
+  }
+  return new Date();
+}
+
 interface SimpleRescheduleModalProps {
   post: PostData | LongFormPostData;
   onClose: () => void;
@@ -44,16 +67,7 @@ export function SimpleRescheduleModal({
     ? rescheduleLongformModalClientSchema
     : rescheduleModalClientSchema;
 
-  const initialScheduledFor =
-    isLongform && "publishedAt" in post
-      ? post.publishedAt
-        ? new Date(post.publishedAt)
-        : new Date()
-      : !isLongform && "scheduledFor" in post
-        ? post.scheduledFor
-          ? new Date(parseInt(post.scheduledFor) * 1000)
-          : new Date()
-        : new Date();
+  const initialScheduledFor = getInitialScheduledFor(post, isLongform);
 
   const form = useZodForm(schema, {
     defaultValues: {
@@ -187,6 +201,8 @@ export function SimpleRescheduleModal({
     return null;
   };
 
+  const firstImage = getFirstImage();
+
   const formatDateTime = (date: Date) => {
     const userTimezone = user?.timezone ?? "UTC";
     return date.toLocaleDateString("en-US", {
@@ -237,11 +253,11 @@ export function SimpleRescheduleModal({
               </div>
 
               {/* Show image thumbnail if available */}
-              {getFirstImage() ? (
+              {firstImage ? (
                 <div className="mb-2">
                   <div className="h-20 w-full overflow-hidden rounded-md">
                     <img
-                      src={getFirstImage()!}
+                      src={firstImage}
                       alt="Post preview"
                       className="h-full w-full object-cover"
                       loading="lazy"

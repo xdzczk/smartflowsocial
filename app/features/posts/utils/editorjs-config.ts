@@ -99,7 +99,7 @@ async function createImageUploadHandler(uploadProvider: string | null) {
           fileSize: file.size,
           uploadProvider,
         },
-        "info",
+        "info"
       );
 
       // Check upload provider and use appropriate method
@@ -117,7 +117,7 @@ async function createImageUploadHandler(uploadProvider: string | null) {
               provider: "Blossom",
               fileUrl: uploadResult.file.url,
             },
-            "info",
+            "info"
           );
           return {
             success: 1,
@@ -138,7 +138,7 @@ async function createImageUploadHandler(uploadProvider: string | null) {
               action: "uploadImage",
               provider: "Blossom",
             },
-            "warning",
+            "warning"
           );
           throw new Error(uploadResult.error ?? "Blossom upload failed");
         }
@@ -163,7 +163,7 @@ async function createImageUploadHandler(uploadProvider: string | null) {
               provider: "S3",
               serverResponse: errorText,
             },
-            "error",
+            "error"
           );
           throw new Error(`Server error: ${response.status}`);
         }
@@ -186,7 +186,7 @@ async function createImageUploadHandler(uploadProvider: string | null) {
             provider: "S3",
             response: result,
           },
-          "info",
+          "info"
         );
 
         if (result.success === 1 && result.file?.url) {
@@ -198,7 +198,7 @@ async function createImageUploadHandler(uploadProvider: string | null) {
               provider: "S3",
               fileUrl: result.file.url,
             },
-            "info",
+            "info"
           );
           return {
             success: 1,
@@ -218,7 +218,7 @@ async function createImageUploadHandler(uploadProvider: string | null) {
               action: "uploadImage",
               provider: "S3",
             },
-            "warning",
+            "warning"
           );
           throw new Error(result.error ?? "Upload failed");
         }
@@ -231,7 +231,7 @@ async function createImageUploadHandler(uploadProvider: string | null) {
           component: "useLongFormEditor",
           action: "uploadImage",
         },
-        false,
+        false
       ); // Don't show toast, let EditorJS handle it
       throw error;
     }

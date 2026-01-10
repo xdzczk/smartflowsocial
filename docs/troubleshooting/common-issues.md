@@ -552,19 +552,25 @@ SESSION_SECRET=your-random-32-character-secret
 
 **What is SmartFlowSocial?**
 
-SmartFlowSocial is a professional-grade social media management platform for the Nostr protocol. Available as a hosted service or self-hostable open source software.
+SmartFlowSocial is a professional-grade social media management platform for the Nostr protocol.
+Available as a hosted service or self-hostable open source software.
 
 **Is SmartFlowSocial free?**
 
-Yes! SmartFlowSocial is open-source (ELv2 License) and free to use. Self-hosting is completely free forever. The hosted version offers a free plan with basic features, and paid plans for advanced features.
+Yes! SmartFlowSocial is open-source (ELv2 License) and free to use. Self-hosting is completely free
+forever. The hosted version offers a free plan with basic features, and paid plans for advanced
+features.
 
 **Is there a hosted version?**
 
-Yes! We offer a hosted instance at [smartflow.social](https://smartflow.social) and [smartflowsocial.com](https://smartflowsocial.com). You can also self-host for full control over your data and infrastructure.
+Yes! We offer a hosted instance at [smartflow.social](https://smartflow.social) and
+[smartflowsocial.com](https://smartflowsocial.com). You can also self-host for full control over
+your data and infrastructure.
 
 **How do I sign up for the hosted version?**
 
-Visit [smartflow.social](https://smartflow.social) and sign up with your Nostr extension. No credit card required for the free plan.
+Visit [smartflow.social](https://smartflow.social) and sign up with your Nostr extension. No credit
+card required for the free plan.
 
 ### Setup & Installation
 
@@ -578,7 +584,8 @@ Visit [smartflow.social](https://smartflow.social) and sign up with your Nostr e
 
 **Do I need to host it myself?**
 
-No! You can use our [hosted instance](https://smartflow.social) with no setup required. Alternatively, you can self-host for full control over your data and infrastructure.
+No! You can use our [hosted instance](https://smartflow.social) with no setup required.
+Alternatively, you can self-host for full control over your data and infrastructure.
 
 **How long does setup take?**
 
@@ -592,7 +599,8 @@ See [Quick Start Guide](../getting-started/quickstart.md) for details.
 
 **Is my data private?**
 
-Absolutely. Your private keys never leave your browser. All events are signed client-side using NIP-07. We never see or store your private keys.
+Absolutely. Your private keys never leave your browser. All events are signed client-side using
+NIP-07. We never see or store your private keys.
 
 **What Nostr extensions are supported?**
 
@@ -615,11 +623,13 @@ Any NIP-07 compatible extension works:
 
 **How does scheduling work?**
 
-Posts are signed with future timestamps and stored in a queue. A background worker process checks the queue and publishes posts to Nostr relays at the specified time.
+Posts are signed with future timestamps and stored in a queue. A background worker process checks
+the queue and publishes posts to Nostr relays at the specified time.
 
 **Can I edit a scheduled post?**
 
-Yes! Go to **Scheduled**, click on a post, and edit it. Changes are saved and will be published at the scheduled time.
+Yes! Go to **Scheduled**, click on a post, and edit it. Changes are saved and will be published at
+the scheduled time.
 
 **What happens if I delete a scheduled post?**
 
@@ -627,7 +637,8 @@ The post is removed from the queue and won't be published. This action cannot be
 
 **Can I use it with multiple Nostr accounts?**
 
-Yes! SmartFlowSocial supports parent/child account relationships, allowing you to manage multiple accounts from one interface.
+Yes! SmartFlowSocial supports parent/child account relationships, allowing you to manage multiple
+accounts from one interface.
 
 ### Queues
 
@@ -669,7 +680,8 @@ Yes, storage is required for image uploads. You can use any S3-compatible provid
 
 **How do I set up storage?**
 
-See [Installation Guide](../getting-started/installation.md#storage-setup) for detailed instructions.
+See [Installation Guide](../getting-started/installation.md#storage-setup) for detailed
+instructions.
 
 ### Development
 
@@ -692,7 +704,8 @@ Open an issue on [GitHub](https://github.com/xdzczk/SmartFlowSocial/issues):
 
 **How do I request a feature?**
 
-Open a feature request on [GitHub Discussions](https://github.com/xdzczk/SmartFlowSocial/discussions):
+Open a feature request on
+[GitHub Discussions](https://github.com/xdzczk/SmartFlowSocial/discussions):
 
 - Describe the feature
 - Explain the use case
@@ -705,14 +718,12 @@ Open a feature request on [GitHub Discussions](https://github.com/xdzczk/SmartFl
 If you're still experiencing issues:
 
 1. **Check logs:**
-
    - Application logs
    - Worker logs
    - Database logs
    - Redis logs
 
 2. **Review documentation:**
-
    - [Installation Guide](../getting-started/installation.md)
    - [Configuration Reference](../reference/configuration.md)
    - [Error Troubleshooting](./errors.md) - Detailed error resolution
@@ -736,5 +747,3 @@ If you're still experiencing issues:
 ---
 
 **Next:** [Error Troubleshooting](./errors.md) → Detailed error resolution
-
-

@@ -24,7 +24,7 @@ export const rescheduleModalClientSchema = z
     {
       message: "Cannot schedule posts in the past",
       path: ["scheduledFor"],
-    },
+    }
   );
 
 /**
@@ -44,6 +44,5 @@ export const rescheduleLongformModalClientSchema = z
     {
       message: "Cannot schedule posts in the past",
       path: ["scheduledFor"],
-    },
+    }
   );
-

@@ -44,7 +44,8 @@ You need a **Nostr browser extension** installed:
 - Your public key (npub) is stored in the session
 - You can now create and manage posts
 
-> **Security Note:** Your private key (nsec) never leaves your browser. All events are signed client-side using NIP-07.
+> **Security Note:** Your private key (nsec) never leaves your browser. All events are signed
+> client-side using NIP-07.
 
 ---
 
@@ -202,7 +203,8 @@ When scheduling a post:
 
 - **[Posting Guide](../guides/user-guides/posting.md)** - Advanced posting features
 - **[Calendar Guide](../guides/user-guides/calendar.md)** - Calendar features
-- **[Posting Guide](../guides/user-guides/posting.md#templates)** - Templates (included in posting guide)
+- **[Posting Guide](../guides/user-guides/posting.md#templates)** - Templates (included in posting
+  guide)
 - **[Engagement Guide](../guides/user-guides/engagement.md)** - Track interactions
 
 ### Advanced Features
@@ -219,11 +221,13 @@ When scheduling a post:
 
 ### How do posts get published?
 
-Scheduled posts are stored in a queue. A background worker process checks the queue and publishes posts at their scheduled time to Nostr relays.
+Scheduled posts are stored in a queue. A background worker process checks the queue and publishes
+posts at their scheduled time to Nostr relays.
 
 ### Can I edit a scheduled post?
 
-Yes! Go to **Scheduled**, click on a post, and edit it. Changes are saved and will be published at the scheduled time.
+Yes! Go to **Scheduled**, click on a post, and edit it. Changes are saved and will be published at
+the scheduled time.
 
 ### What happens if I delete a scheduled post?
 
@@ -265,5 +269,3 @@ See [Troubleshooting Guide](../troubleshooting/common-issues.md) for more soluti
 ---
 
 **Next:** [Core Concepts](./concepts.md) → Understand how SmartFlowSocial works
-
-

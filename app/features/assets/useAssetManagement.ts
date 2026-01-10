@@ -26,7 +26,7 @@ export function useAssetManagement({
     setSelectedAssets((prev) =>
       prev.includes(assetId)
         ? prev.filter((id) => id !== assetId)
-        : [...prev, assetId],
+        : [...prev, assetId]
     );
   }, []);
 
@@ -42,7 +42,7 @@ export function useAssetManagement({
     if (selectedAssets.length === 0) return;
 
     const selectedAssetData = assets.filter((asset) =>
-      selectedAssets.includes(asset.id),
+      selectedAssets.includes(asset.id)
     );
 
     // Convert assets to repost format
@@ -68,7 +68,7 @@ export function useAssetManagement({
 
     if (
       !confirm(
-        `Are you sure you want to delete ${selectedAssets.length} selected asset${selectedAssets.length > 1 ? "s" : ""}?`,
+        `Are you sure you want to delete ${selectedAssets.length} selected asset${selectedAssets.length > 1 ? "s" : ""}?`
       )
     ) {
       return;
@@ -92,7 +92,7 @@ export function useAssetManagement({
       url.searchParams.delete("page"); // Reset to first page when searching
       window.location.href = url.toString();
     },
-    [searchInput],
+    [searchInput]
   );
 
   const handlePageChange = useCallback((newPage: number) => {

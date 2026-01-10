@@ -17,7 +17,7 @@ import {
  * Client-safe version (no server-only logging)
  */
 export function validateSearchResultData(
-  value: unknown,
+  value: unknown
 ): z.infer<typeof searchResultDataSchema> | null {
   if (!value || typeof value !== "object") {
     return null;
@@ -37,7 +37,7 @@ export function validateSearchResultData(
  * Client-safe version (no server-only logging)
  */
 export function validateSearchResultDisplay(
-  value: unknown,
+  value: unknown
 ): z.infer<typeof searchResultDisplaySchema> | null {
   if (!value || typeof value !== "object") {
     return null;
@@ -57,7 +57,7 @@ export function validateSearchResultDisplay(
  * Client-safe version (no server-only logging)
  */
 export function validateSearchStats(
-  value: unknown,
+  value: unknown
 ): z.infer<typeof searchStatsSchema> | null {
   if (!value || typeof value !== "object") {
     return null;
@@ -70,4 +70,3 @@ export function validateSearchStats(
     return null;
   }
 }
-

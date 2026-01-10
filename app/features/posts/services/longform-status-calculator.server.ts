@@ -33,7 +33,7 @@ export function calculateLongFormStatus({
   let finalScheduledFor = scheduledFor;
   if (!finalScheduledFor && !isPublished && signedEvent?.tags) {
     const publishedAtTag = signedEvent.tags.find(
-      (tag) => Array.isArray(tag) && tag[0] === "published_at",
+      (tag) => Array.isArray(tag) && tag[0] === "published_at"
     );
     if (publishedAtTag?.[1]) {
       finalScheduledFor = publishedAtTag[1].toString();
@@ -63,7 +63,7 @@ export function calculateLongFormStatus({
     let publishedAtTimestamp: number | null = null;
     if (signedEvent?.tags) {
       const publishedAtTag = signedEvent.tags.find(
-        (tag: unknown) => Array.isArray(tag) && tag[0] === "published_at",
+        (tag: unknown) => Array.isArray(tag) && tag[0] === "published_at"
       );
       if (
         publishedAtTag &&

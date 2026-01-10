@@ -6,6 +6,7 @@ import { formatDate, getImageUrls } from "~/lib/helpers";
 import { getQueueColor } from "../queue-colors";
 import type { PostStats } from "../stats.server";
 import type { PostData, PostFetcher } from "../types";
+
 // Helper to safely access formData from a fetcher
 function getFetcherFormData(
   fetcher: PostFetcher | undefined
@@ -14,6 +15,50 @@ function getFetcherFormData(
     ? (fetcher as { formData?: FormData | null }).formData
     : undefined;
 }
+
+// Helper to get post stats
+function getPostStats(
+  post: PostData,
+  stats: Record<string, PostStats>
+): PostStats {
+  const eventId = post.nostrEventId ?? post.id;
+  return (
+    stats[eventId] ?? {
+      likes: 0,
+      replies: 0,
+      mentions: 0,
+      reposts: 0,
+      zaps: 0,
+      satszapped: 0,
+    }
+  );
+}
+
+interface SortableHeaderProps {
+  sortKey: string;
+  label: string;
+  sortConfig: { key: string; direction: string };
+  requestSort: (key: string) => void;
+}
+
+const SortableHeader = ({
+  sortKey,
+  label,
+  sortConfig,
+  requestSort,
+}: SortableHeaderProps) => (
+  <th
+    className="cursor-pointer bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50"
+    onClick={() => requestSort(sortKey)}
+  >
+    {label}{" "}
+    {sortConfig.key === sortKey
+      ? sortConfig.direction === "asc"
+        ? "↑"
+        : "↓"
+      : ""}
+  </th>
+);
 
 interface PostedPostsTableProps {
   filteredPosts: PostData[];
@@ -62,116 +107,66 @@ export default function PostedPostsTable({
             <th className="bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
               Media
             </th>
-            <th
-              className="cursor-pointer bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50"
-              onClick={() => requestSort("caption")}
-            >
-              Caption{" "}
-              {sortConfig.key === "caption"
-                ? sortConfig.direction === "asc"
-                  ? "↑"
-                  : "↓"
-                : null}
-            </th>
-            <th
-              className="cursor-pointer bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50"
-              onClick={() => requestSort("postedAt")}
-            >
-              Posted At{" "}
-              {sortConfig.key === "postedAt"
-                ? sortConfig.direction === "asc"
-                  ? "↑"
-                  : "↓"
-                : null}
-            </th>
-            <th
-              className="cursor-pointer bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50"
-              onClick={() => requestSort("likes")}
-            >
-              Likes{" "}
-              {sortConfig.key === "likes"
-                ? sortConfig.direction === "asc"
-                  ? "↑"
-                  : "↓"
-                : null}
-            </th>
-            <th
-              className="cursor-pointer bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50"
-              onClick={() => requestSort("replies")}
-            >
-              Replies{" "}
-              {sortConfig.key === "replies"
-                ? sortConfig.direction === "asc"
-                  ? "↑"
-                  : "↓"
-                : null}
-            </th>
-            <th
-              className="cursor-pointer bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50"
-              onClick={() => requestSort("mentions")}
-            >
-              Mentions{" "}
-              {sortConfig.key === "mentions"
-                ? sortConfig.direction === "asc"
-                  ? "↑"
-                  : "↓"
-                : null}
-            </th>
-            <th
-              className="cursor-pointer bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50"
-              onClick={() => requestSort("reposts")}
-            >
-              Reposts{" "}
-              {sortConfig.key === "reposts"
-                ? sortConfig.direction === "asc"
-                  ? "↑"
-                  : "↓"
-                : null}
-            </th>
-            <th
-              className="cursor-pointer bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50"
-              onClick={() => requestSort("zaps")}
-            >
-              Zaps{" "}
-              {sortConfig.key === "zaps"
-                ? sortConfig.direction === "asc"
-                  ? "↑"
-                  : "↓"
-                : null}
-            </th>
-            <th
-              className="cursor-pointer bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50"
-              onClick={() => requestSort("satszapped")}
-            >
-              Zapped{" "}
-              {sortConfig.key === "satszapped"
-                ? sortConfig.direction === "asc"
-                  ? "↑"
-                  : "↓"
-                : null}
-            </th>
-            <th
-              className="cursor-pointer bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50"
-              onClick={() => requestSort("queueType")}
-            >
-              Queue{" "}
-              {sortConfig.key === "queueType"
-                ? sortConfig.direction === "asc"
-                  ? "↑"
-                  : "↓"
-                : null}
-            </th>
-            <th
-              className="cursor-pointer bg-gray-100/75 px-3 py-4 text-left font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50"
-              onClick={() => requestSort("status")}
-            >
-              Status{" "}
-              {sortConfig.key === "status"
-                ? sortConfig.direction === "asc"
-                  ? "↑"
-                  : "↓"
-                : null}
-            </th>
+            <SortableHeader
+              label="Caption"
+              sortKey="caption"
+              sortConfig={sortConfig}
+              requestSort={requestSort}
+            />
+            <SortableHeader
+              label="Posted At"
+              sortKey="postedAt"
+              sortConfig={sortConfig}
+              requestSort={requestSort}
+            />
+            <SortableHeader
+              label="Likes"
+              sortKey="likes"
+              sortConfig={sortConfig}
+              requestSort={requestSort}
+            />
+            <SortableHeader
+              label="Replies"
+              sortKey="replies"
+              sortConfig={sortConfig}
+              requestSort={requestSort}
+            />
+            <SortableHeader
+              label="Mentions"
+              sortKey="mentions"
+              sortConfig={sortConfig}
+              requestSort={requestSort}
+            />
+            <SortableHeader
+              label="Reposts"
+              sortKey="reposts"
+              sortConfig={sortConfig}
+              requestSort={requestSort}
+            />
+            <SortableHeader
+              label="Zaps"
+              sortKey="zaps"
+              sortConfig={sortConfig}
+              requestSort={requestSort}
+            />
+            <SortableHeader
+              label="Zapped"
+              sortKey="satszapped"
+              sortConfig={sortConfig}
+              requestSort={requestSort}
+            />
+            <SortableHeader
+              label="Queue"
+              sortKey="queueType"
+              sortConfig={sortConfig}
+              requestSort={requestSort}
+            />
+            <SortableHeader
+              label="Status"
+              sortKey="status"
+              sortConfig={sortConfig}
+              requestSort={requestSort}
+            />
             <th className="bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
               Actions
             </th>
@@ -180,19 +175,7 @@ export default function PostedPostsTable({
 
         <tbody>
           {filteredPosts.map((post) => {
-            const postStats = (post.signedEvent &&
-            typeof post.signedEvent === "object" &&
-            "id" in post.signedEvent &&
-            typeof post.signedEvent.id === "string"
-              ? stats[post.signedEvent.id]
-              : null) ?? {
-              likes: 0,
-              replies: 0,
-              mentions: 0,
-              reposts: 0,
-              zaps: 0,
-              satszapped: 0,
-            };
+            const postStats = getPostStats(post, stats);
             return (
               <tr
                 key={post.id}

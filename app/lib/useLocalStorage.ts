@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 export default function useLocalStorage<T>(
   key: string,
-  initialValue: T,
+  initialValue: T
 ): [T, (value: T) => void] {
   const [value, setValue] = useState<T>(() => {
     if (typeof window !== "undefined") {

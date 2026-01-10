@@ -19,7 +19,7 @@ declare global {
               content: string;
               tags: string[][];
               created_at: number;
-            },
+            }
       ): Promise<{
         id: string;
         pubkey: string;

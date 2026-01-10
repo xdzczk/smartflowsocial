@@ -1,6 +1,7 @@
 # API Reference
 
-This document describes all API endpoints available in SmartFlowSocial, including request/response formats, authentication, error handling, and usage examples.
+This document describes all API endpoints available in SmartFlowSocial, including request/response
+formats, authentication, error handling, and usage examples.
 
 ## Table of Contents
 
@@ -18,7 +19,9 @@ This document describes all API endpoints available in SmartFlowSocial, includin
 
 ## Overview
 
-All API routes are located in `app/routes/api.*.tsx`. These endpoints handle various background operations for the application, including file uploads, post publishing, queue management, and user operations.
+All API routes are located in `app/routes/api.*.tsx`. These endpoints handle various background
+operations for the application, including file uploads, post publishing, queue management, and user
+operations.
 
 **API Design Principles:**
 
@@ -31,7 +34,8 @@ All API routes are located in `app/routes/api.*.tsx`. These endpoints handle var
 
 ## Authentication
 
-Most API endpoints require an authenticated session. Authentication is handled via Nostr login (NIP-07) with session cookies.
+Most API endpoints require an authenticated session. Authentication is handled via Nostr login
+(NIP-07) with session cookies.
 
 ### Authentication Flow
 
@@ -46,7 +50,8 @@ No special headers required. Session is managed via cookies.
 
 ### Unauthenticated Requests
 
-Some endpoints may work without authentication (e.g., public health checks), but most require authentication.
+Some endpoints may work without authentication (e.g., public health checks), but most require
+authentication.
 
 ---
 
@@ -243,7 +248,8 @@ Publish a signed Nostr event to relays via the HTTP Nostr Publisher service.
 }
 ```
 
-**Note:** Requires `NOSTR_PUBLISHER_URL` environment variable to be configured. The event must be signed client-side before sending.
+**Note:** Requires `NOSTR_PUBLISHER_URL` environment variable to be configured. The event must be
+signed client-side before sending.
 
 ---
 
@@ -286,7 +292,8 @@ Get the calculated next schedule time for a queue.
 }
 ```
 
-**Note:** Calculates next available time slot based on queue schedule rules (interval or fixed slots).
+**Note:** Calculates next available time slot based on queue schedule rules (interval or fixed
+slots).
 
 ---
 
@@ -525,7 +532,8 @@ Common HTTP status codes:
 
 ## Rate Limiting
 
-Currently, there is no built-in rate limiting. For production deployments, consider adding rate limiting at the reverse proxy level (e.g., nginx, Cloudflare).
+Currently, there is no built-in rate limiting. For production deployments, consider adding rate
+limiting at the reverse proxy level (e.g., nginx, Cloudflare).
 
 **Recommended Limits:**
 
@@ -550,7 +558,8 @@ app.use("/api/", apiLimiter);
 
 ## CORS
 
-API endpoints are same-origin only by default. If you need cross-origin access, configure CORS in `server.ts`.
+API endpoints are same-origin only by default. If you need cross-origin access, configure CORS in
+`server.ts`.
 
 ### Enabling CORS
 
@@ -562,7 +571,7 @@ app.use(
   cors({
     origin: "https://allowed-origin.com",
     credentials: true,
-  }),
+  })
 );
 ```
 

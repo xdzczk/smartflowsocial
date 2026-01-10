@@ -117,7 +117,7 @@ describe("Media Helpers", () => {
 
     it("should detect video extension anywhere in URL", () => {
       expect(
-        isVideoUrl("https://example.com/path/to/video.mp4?param=value"),
+        isVideoUrl("https://example.com/path/to/video.mp4?param=value")
       ).toBe(true);
     });
   });
@@ -145,18 +145,18 @@ describe("Media Helpers", () => {
       // If file is video, return VIDEO regardless of URL
       const videoFile = new File([], "test.mp4", { type: "video/mp4" });
       expect(getPostType(videoFile, "https://example.com/image.jpg")).toBe(
-        "VIDEO",
+        "VIDEO"
       );
 
       // If file is not video, check URL - if URL is video, return VIDEO
       const imageFile = new File([], "test.jpg", { type: "image/jpeg" });
       expect(getPostType(imageFile, "https://example.com/video.mp4")).toBe(
-        "VIDEO",
+        "VIDEO"
       );
 
       // If file is not video and URL is not video, return IMAGE
       expect(getPostType(imageFile, "https://example.com/image.jpg")).toBe(
-        "IMAGE",
+        "IMAGE"
       );
     });
 

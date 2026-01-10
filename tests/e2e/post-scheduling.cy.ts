@@ -31,7 +31,7 @@ describe("Post Scheduling Flow", () => {
       cy.get("body", { timeout: 10000 }).then(($body) => {
         const scheduleToggle = $body.find('[data-testid="schedule-toggle"]');
         const scheduleCheckbox = $body.find(
-          'input[type="checkbox"][name*="schedule"]',
+          'input[type="checkbox"][name*="schedule"]'
         );
         const scheduleLabel = $body.find("label").filter((_, el) => {
           return Cypress.$(el).text().toLowerCase().includes("schedule");
@@ -54,7 +54,7 @@ describe("Post Scheduling Flow", () => {
           // If no schedule toggle found, that's also acceptable (feature might not be available)
           // Log a note but don't fail the test
           cy.log(
-            "Schedule toggle not found - feature may not be available or UI may need improvement",
+            "Schedule toggle not found - feature may not be available or UI may need improvement"
           );
           expect(true).to.be.true;
         }
@@ -118,12 +118,12 @@ describe("Post Scheduling Flow", () => {
       cy.get("body").then(($body) => {
         const dateInput = $body
           .find(
-            'input[type="date"][name*="schedule"], input[type="date"][name*="date"]',
+            'input[type="date"][name*="schedule"], input[type="date"][name*="date"]'
           )
           .first();
         const timeInput = $body
           .find(
-            'input[type="time"][name*="schedule"], input[type="time"][name*="time"]',
+            'input[type="time"][name*="schedule"], input[type="time"][name*="time"]'
           )
           .first();
 
@@ -139,7 +139,7 @@ describe("Post Scheduling Flow", () => {
 
       // Submit
       cy.get(
-        'button[type="submit"], button:contains("Schedule"), button:contains("Post")',
+        'button[type="submit"], button:contains("Schedule"), button:contains("Post")'
       )
         .first()
         .click();
@@ -147,7 +147,7 @@ describe("Post Scheduling Flow", () => {
       // Verify redirect
       cy.location("pathname", { timeout: 10000 }).should((pathname) => {
         expect(pathname).to.satisfy(
-          (p: string) => p.includes("dashboard") || p.includes("scheduled"),
+          (p: string) => p.includes("dashboard") || p.includes("scheduled")
         );
       });
 
@@ -161,7 +161,7 @@ describe("Post Scheduling Flow", () => {
         // If redirected to login, session was lost - this is a bug
         if (pathname.includes("login")) {
           cy.log(
-            "Warning: Session lost after scheduled post creation - may indicate application bug",
+            "Warning: Session lost after scheduled post creation - may indicate application bug"
           );
           // Re-login and try again
           cy.loginNostr({ npub: TEST_NPUB });
@@ -175,7 +175,7 @@ describe("Post Scheduling Flow", () => {
           if (!hasPost) {
             // Post might not have been created or might be in a different queue
             cy.log(
-              "Scheduled post not found in scheduled queue - may indicate application bug",
+              "Scheduled post not found in scheduled queue - may indicate application bug"
             );
           }
           // Verify page loaded at least
@@ -201,7 +201,7 @@ describe("Post Scheduling Flow", () => {
       cy.get("body", { timeout: 10000 }).then(($body) => {
         const hasPosts =
           $body.find(
-            'table tbody tr, [data-testid="scheduled-post"], .scheduled-post, tbody tr',
+            'table tbody tr, [data-testid="scheduled-post"], .scheduled-post, tbody tr'
           ).length > 0;
         const hasEmptyState =
           $body.find('[data-testid="empty-state"]').length > 0 ||

@@ -50,6 +50,134 @@ interface ValidationError {
   reason: string;
 }
 
+// ============================================================================
+// Validation Helper Functions
+// ============================================================================
+
+function validateRequiredVariable(
+  key: string,
+  value: string | undefined
+): ValidationError | null {
+  if (!value || value.trim() === "") {
+    return null; // Missing, handled separately
+  }
+
+  if (key === "SESSION_SECRET" && value.length < 32) {
+    return {
+      key,
+      reason: "must be at least 32 characters long",
+    };
+  }
+  if (key === "DATABASE_URL" && !value.startsWith("postgresql://")) {
+    return {
+      key,
+      reason: "must be a valid PostgreSQL connection string (postgresql://...)",
+    };
+  }
+  if (key === "REDIS_URL" && !value.startsWith("redis://")) {
+    return {
+      key,
+      reason: "must be a valid Redis connection string (redis://...)",
+    };
+  }
+
+  return null;
+}
+
+function validateStorageVariables(
+  storageVariables: readonly string[]
+): string[] {
+  const storageValues = storageVariables.map((key) => process.env[key]);
+  const hasSomeStorage = storageValues.some((v) => v && v.trim() !== "");
+  const hasAllStorage = storageValues.every((v) => v && v.trim() !== "");
+
+  if (hasSomeStorage && !hasAllStorage) {
+    return storageVariables.filter((key) => {
+      const value = process.env[key];
+      return !value || value.trim() === "";
+    });
+  }
+
+  return [];
+}
+
+function buildBaseConfig(): EnvConfig {
+  return {
+    DATABASE_URL: process.env["DATABASE_URL"]!,
+    SESSION_SECRET: process.env["SESSION_SECRET"]!,
+    NOSTR_PUBLISHER_URL: process.env["NOSTR_PUBLISHER_URL"]!,
+    REDIS_URL: process.env["REDIS_URL"]!,
+  };
+}
+
+function addOptionalStorageConfig(
+  config: EnvConfig,
+  hasAllStorage: boolean
+): void {
+  if (hasAllStorage) {
+    config.STORAGE_ACCESS_KEY = process.env["STORAGE_ACCESS_KEY"];
+    config.STORAGE_SECRET = process.env["STORAGE_SECRET"];
+    config.STORAGE_REGION = process.env["STORAGE_REGION"];
+    config.STORAGE_BUCKET = process.env["STORAGE_BUCKET"];
+  }
+}
+
+function addOptionalConfig(config: EnvConfig): void {
+  const optionalVars: Array<keyof EnvConfig> = [
+    "PRIMAL_CACHING_URL",
+    "OWNER_NWC",
+    "NOSTR_NSEC",
+    "SENTRY_DSN",
+    "PORT",
+    "METRICS_PORT",
+    "FLY_REGION",
+    "PRIMARY_REGION",
+    "TEST_DATABASE_URL",
+    "ENABLE_SOURCE_MAPS",
+    "E2E_TEST",
+    "APP_URL",
+    "ALLOWED_ORIGINS",
+    "METRICS_TOKEN",
+    "METRICS_ALLOWED_IPS",
+  ];
+
+  optionalVars.forEach((key) => {
+    const value = process.env[key];
+    if (value) {
+      config[key] = value;
+    }
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: process.env.NODE_ENV may be undefined in some environments
+  config.NODE_ENV = process.env["NODE_ENV"] ?? "development";
+}
+
+function reportValidationErrors(
+  missing: string[],
+  invalid: ValidationError[]
+): void {
+  console.error("❌ Environment validation failed:");
+
+  if (missing.length > 0) {
+    console.error("\nMissing required environment variables:");
+    missing.forEach((key) => console.error(`  - ${key}`));
+  }
+
+  if (invalid.length > 0) {
+    console.error("\nInvalid environment variables:");
+    invalid.forEach(({ key, reason }) =>
+      console.error(`  - ${key}: ${reason}`)
+    );
+  }
+
+  console.error("\nPlease check your .env file or environment configuration.");
+  console.error(
+    "See docs/getting-started/environment-setup.md for detailed configuration instructions."
+  );
+
+  process.exit(1);
+}
+
 /**
  * Validates environment variables and returns typed config
  * Throws error if validation fails (prevents app from starting)
@@ -91,135 +219,34 @@ function validateAndGetEnv(): EnvConfig {
     if (!value || value.trim() === "") {
       missing.push(key);
     } else {
-      // Additional validation for specific variables
-      if (key === "SESSION_SECRET" && value.length < 32) {
-        invalid.push({
-          key,
-          reason: "must be at least 32 characters long",
-        });
-      }
-      if (key === "DATABASE_URL" && !value.startsWith("postgresql://")) {
-        invalid.push({
-          key,
-          reason:
-            "must be a valid PostgreSQL connection string (postgresql://...)",
-        });
-      }
-      if (key === "REDIS_URL" && !value.startsWith("redis://")) {
-        invalid.push({
-          key,
-          reason: "must be a valid Redis connection string (redis://...)",
-        });
+      const error = validateRequiredVariable(key, value);
+      if (error) {
+        invalid.push(error);
       }
     }
   }
 
   // Validate storage variables: if any is set, all must be set
-  const storageValues = storageVariables.map((key) => process.env[key]);
-  const hasSomeStorage = storageValues.some((v) => v && v.trim() !== "");
-  const hasAllStorage = storageValues.every((v) => v && v.trim() !== "");
-
-  if (hasSomeStorage && !hasAllStorage) {
-    missing.push(
-      ...storageVariables.filter((key) => {
-        const value = process.env[key];
-        return !value || value.trim() === "";
-      })
-    );
-  }
+  const storageMissing = validateStorageVariables(storageVariables);
+  missing.push(...storageMissing);
 
   // Report errors
   if (missing.length > 0 || invalid.length > 0) {
-    console.error("❌ Environment validation failed:");
-
-    if (missing.length > 0) {
-      console.error("\nMissing required environment variables:");
-      missing.forEach((key) => console.error(`  - ${key}`));
-    }
-
-    if (invalid.length > 0) {
-      console.error("\nInvalid environment variables:");
-      invalid.forEach(({ key, reason }) =>
-        console.error(`  - ${key}: ${reason}`)
-      );
-    }
-
-    console.error(
-      "\nPlease check your .env file or environment configuration."
-    );
-    console.error(
-      "See docs/getting-started/environment-setup.md for detailed configuration instructions."
-    );
-
-    process.exit(1);
+    reportValidationErrors(missing, invalid);
   }
 
   // Build typed config object
-  const config: EnvConfig = {
-    DATABASE_URL: process.env["DATABASE_URL"]!,
-    SESSION_SECRET: process.env["SESSION_SECRET"]!,
-    NOSTR_PUBLISHER_URL: process.env["NOSTR_PUBLISHER_URL"]!,
-    REDIS_URL: process.env["REDIS_URL"]!,
-  };
+  const config = buildBaseConfig();
+
+  // Check if all storage variables are set
+  const storageValues = storageVariables.map((key) => process.env[key]);
+  const hasAllStorage = storageValues.every((v) => v && v.trim() !== "");
 
   // Add optional storage config if all are set
-  if (hasAllStorage) {
-    config.STORAGE_ACCESS_KEY = process.env["STORAGE_ACCESS_KEY"];
-    config.STORAGE_SECRET = process.env["STORAGE_SECRET"];
-    config.STORAGE_REGION = process.env["STORAGE_REGION"];
-    config.STORAGE_BUCKET = process.env["STORAGE_BUCKET"];
-  }
+  addOptionalStorageConfig(config, hasAllStorage);
 
   // Add other optional variables
-  if (process.env["PRIMAL_CACHING_URL"]) {
-    config.PRIMAL_CACHING_URL = process.env["PRIMAL_CACHING_URL"];
-  }
-  if (process.env["OWNER_NWC"]) {
-    config.OWNER_NWC = process.env["OWNER_NWC"];
-  }
-  if (process.env["NOSTR_NSEC"]) {
-    config.NOSTR_NSEC = process.env["NOSTR_NSEC"];
-  }
-  if (process.env["SENTRY_DSN"]) {
-    config.SENTRY_DSN = process.env["SENTRY_DSN"];
-  }
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: process.env.NODE_ENV may be undefined in some environments
-  config.NODE_ENV = process.env["NODE_ENV"] ?? "development";
-  if (process.env["PORT"]) {
-    config.PORT = process.env["PORT"];
-  }
-  if (process.env["METRICS_PORT"]) {
-    config.METRICS_PORT = process.env["METRICS_PORT"];
-  }
-  if (process.env["FLY_REGION"]) {
-    config.FLY_REGION = process.env["FLY_REGION"];
-  }
-  if (process.env["PRIMARY_REGION"]) {
-    config.PRIMARY_REGION = process.env["PRIMARY_REGION"];
-  }
-  if (process.env["TEST_DATABASE_URL"]) {
-    config.TEST_DATABASE_URL = process.env["TEST_DATABASE_URL"];
-  }
-  if (process.env["ENABLE_SOURCE_MAPS"]) {
-    config.ENABLE_SOURCE_MAPS = process.env["ENABLE_SOURCE_MAPS"];
-  }
-  if (process.env["E2E_TEST"]) {
-    config.E2E_TEST = process.env["E2E_TEST"];
-  }
-
-  // Add security configuration
-  if (process.env["APP_URL"]) {
-    config.APP_URL = process.env["APP_URL"];
-  }
-  if (process.env["ALLOWED_ORIGINS"]) {
-    config.ALLOWED_ORIGINS = process.env["ALLOWED_ORIGINS"];
-  }
-  if (process.env["METRICS_TOKEN"]) {
-    config.METRICS_TOKEN = process.env["METRICS_TOKEN"];
-  }
-  if (process.env["METRICS_ALLOWED_IPS"]) {
-    config.METRICS_ALLOWED_IPS = process.env["METRICS_ALLOWED_IPS"];
-  }
+  addOptionalConfig(config);
 
   console.info("✅ Environment variables validated");
   return config;

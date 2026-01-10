@@ -22,9 +22,9 @@ describe("Property-Based Tests: Data Validation", () => {
             // Sanitization should preserve valid strings
             const sanitized = validString.trim();
             return sanitized === validString.trim();
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
 
@@ -36,9 +36,9 @@ describe("Property-Based Tests: Data Validation", () => {
             // After sanitization, should not contain script tags
             const sanitized = input.replace(/<script[^>]*>.*?<\/script>/gi, "");
             return !sanitized.includes("<script");
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
   });
@@ -54,7 +54,7 @@ describe("Property-Based Tests: Data Validation", () => {
             return false;
           }
         }),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
 
@@ -76,9 +76,9 @@ describe("Property-Based Tests: Data Validation", () => {
             } catch {
               return true; // Correctly rejected
             }
-          },
+          }
         ),
-        { numRuns: 30 },
+        { numRuns: 30 }
       );
     });
   });
@@ -91,7 +91,7 @@ describe("Property-Based Tests: Data Validation", () => {
         fc.property(fc.emailAddress(), (email: string) => {
           return emailRegex.test(email);
         }),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
   });
@@ -102,7 +102,7 @@ describe("Property-Based Tests: Data Validation", () => {
         fc.property(fc.integer({ min: 1, max: 1000000 }), (num: number) => {
           return Number.isInteger(num) && num > 0;
         }),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
 
@@ -111,7 +111,7 @@ describe("Property-Based Tests: Data Validation", () => {
         fc.property(fc.integer({ min: 0, max: 1000000 }), (num: number) => {
           return num >= 0;
         }),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
   });
@@ -123,9 +123,9 @@ describe("Property-Based Tests: Data Validation", () => {
           fc.array(fc.string(), { minLength: 0, maxLength: 100 }),
           (arr: string[]) => {
             return arr.length >= 0 && arr.length <= 100;
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
 
@@ -136,9 +136,9 @@ describe("Property-Based Tests: Data Validation", () => {
           (arr: string[]) => {
             const unique = new Set(arr);
             return unique.size === arr.length;
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
   });
@@ -154,9 +154,9 @@ describe("Property-Based Tests: Data Validation", () => {
               date <= new Date("2100-12-31") &&
               !isNaN(date.getTime())
             );
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
 
@@ -168,7 +168,7 @@ describe("Property-Based Tests: Data Validation", () => {
           // Use the captured 'now' time for consistent validation
           return date >= now && !isNaN(date.getTime());
         }),
-        { numRuns: 30 },
+        { numRuns: 30 }
       );
     });
   });
@@ -182,9 +182,9 @@ describe("Property-Based Tests: Data Validation", () => {
             const normalized1 = input.trim().toLowerCase();
             const normalized2 = normalized1.trim().toLowerCase();
             return normalized1 === normalized2;
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
   });

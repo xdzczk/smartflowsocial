@@ -28,7 +28,7 @@ export function validateNpub(npub: string): boolean {
  * Fetches profile data from Primal API using WebSocket
  */
 export async function fetchPrimalProfileData(
-  npub: string,
+  npub: string
 ): Promise<PrimalEvent[]> {
   try {
     const pubkey = nostrAdapter.decodeNpub(npub);
@@ -52,23 +52,19 @@ export function processPrimalData(data: PrimalEvent[]): {
   // Find the profile event (kind 0)
   const profileEvent = data.find(
     (event) =>
-      Array.isArray(event) && event[0] === "EVENT" && event[2].kind === 0,
+      Array.isArray(event) && event[0] === "EVENT" && event[2].kind === 0
   );
 
   // Find the stats event (kind 10000105)
   const statsEvent = data.find(
     (event) =>
-      Array.isArray(event) &&
-      event[0] === "EVENT" &&
-      event[2].kind === 10000105,
+      Array.isArray(event) && event[0] === "EVENT" && event[2].kind === 10000105
   );
 
   // Find the media resources event (kind 10000119)
   const mediaEvent = data.find(
     (event) =>
-      Array.isArray(event) &&
-      event[0] === "EVENT" &&
-      event[2].kind === 10000119,
+      Array.isArray(event) && event[0] === "EVENT" && event[2].kind === 10000119
   );
 
   // Parse profile content

@@ -48,7 +48,6 @@ export interface NotificationEvent {
   authorImage?: string | null;
 }
 
-
 /**
  * Profile data from Primal API
  */

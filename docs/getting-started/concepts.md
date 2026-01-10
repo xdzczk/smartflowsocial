@@ -22,7 +22,8 @@ Understand the fundamental concepts behind SmartFlowSocial and how everything wo
 
 ## What is SmartFlowSocial?
 
-SmartFlowSocial is a **self-hosted, professional-grade social media management platform** for the Nostr protocol. It enables you to:
+SmartFlowSocial is a **self-hosted, professional-grade social media management platform** for the
+Nostr protocol. It enables you to:
 
 - **Schedule Posts** - Plan content days, weeks, or months in advance
 - **Manage Multiple Accounts** - Handle parent/child account relationships
@@ -352,5 +353,3 @@ NIP-07 allows browser extensions to:
 ---
 
 **Next:** [Architecture Overview](./architecture.md) → Deep dive into system design
-
-

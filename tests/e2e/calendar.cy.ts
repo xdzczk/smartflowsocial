@@ -69,7 +69,7 @@ describe("Calendar View", () => {
           }).length > 0 ||
           $body.find('[data-testid="calendar-nav"]').length > 0 ||
           $body.find(
-            '.fc-header-toolbar, .calendar-nav, [class*="calendar-nav"]',
+            '.fc-header-toolbar, .calendar-nav, [class*="calendar-nav"]'
           ).length > 0 ||
           // Calendar might be rendered, so check if calendar container exists
           $body.find('.fc, .calendar, [class*="calendar"]').length > 0;

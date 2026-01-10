@@ -59,26 +59,28 @@ We follow the **test pyramid** principle:
 
 SmartFlowSocial uses multiple testing frameworks and techniques:
 
-| Type                     | Description                                     | Location                      | Framework           | Speed        |
-| ------------------------ | ----------------------------------------------- | ----------------------------- | ------------------- | ------------ |
-| **Unit Tests**           | Pure function tests for critical business logic | `tests/unit/*.test.ts`        | Vitest              | < 100ms      |
-| **Integration Tests**    | Loader/API/Model tests that verify data flow    | `tests/integration/*.test.ts` | Vitest              | < 1s         |
-| **Property-Based Tests** | Random input generation to find edge cases      | `tests/property/*.test.ts`    | Vitest + fast-check | 1-5s         |
-| **Security Tests**       | XSS, SQL injection, authentication, etc.        | `tests/security/*.test.ts`    | Vitest              | < 1s         |
-| **Performance Tests**    | Function performance benchmarks                 | `tests/performance/*.test.ts` | Vitest + k6         | Variable     |
-| **E2E Tests**            | Full user flow tests (login, navigation, forms) | `tests/e2e/**/*.cy.ts`        | Cypress             | 5-30s        |
+| Type                     | Description                                     | Location                      | Framework           | Speed    |
+| ------------------------ | ----------------------------------------------- | ----------------------------- | ------------------- | -------- |
+| **Unit Tests**           | Pure function tests for critical business logic | `tests/unit/*.test.ts`        | Vitest              | < 100ms  |
+| **Integration Tests**    | Loader/API/Model tests that verify data flow    | `tests/integration/*.test.ts` | Vitest              | < 1s     |
+| **Property-Based Tests** | Random input generation to find edge cases      | `tests/property/*.test.ts`    | Vitest + fast-check | 1-5s     |
+| **Security Tests**       | XSS, SQL injection, authentication, etc.        | `tests/security/*.test.ts`    | Vitest              | < 1s     |
+| **Performance Tests**    | Function performance benchmarks                 | `tests/performance/*.test.ts` | Vitest + k6         | Variable |
+| **E2E Tests**            | Full user flow tests (login, navigation, forms) | `tests/e2e/**/*.cy.ts`        | Cypress             | 5-30s    |
 
 ### When to Use Each
 
 #### Unit Tests (Vitest)
 
 **When to Use:**
+
 - Pure functions (no side effects)
 - Business logic calculations
 - Data transformations
 - Utility functions
 
 **Examples:**
+
 - Scheduling algorithms
 - Date formatting
 - String manipulation
@@ -87,6 +89,7 @@ SmartFlowSocial uses multiple testing frameworks and techniques:
 #### Integration Tests (Vitest)
 
 **When to Use:**
+
 - Remix loaders and actions
 - API routes
 - Database operations (via mocked Prisma)
@@ -94,6 +97,7 @@ SmartFlowSocial uses multiple testing frameworks and techniques:
 - Queue workers
 
 **Examples:**
+
 - Dashboard loader
 - Post creation action
 - API endpoint handlers
@@ -102,12 +106,14 @@ SmartFlowSocial uses multiple testing frameworks and techniques:
 #### Property-Based Tests
 
 **When to Use:**
+
 - Functions with many possible inputs
 - Edge case discovery
 - Round-trip conversions
 - Mathematical operations
 
 **Examples:**
+
 - Date formatting with random dates
 - URL parsing with random strings
 - Key conversions (npub ↔ hex)
@@ -116,6 +122,7 @@ SmartFlowSocial uses multiple testing frameworks and techniques:
 #### Security Tests
 
 **When to Use:**
+
 - Input sanitization
 - Authentication/authorization
 - SQL injection prevention
@@ -123,6 +130,7 @@ SmartFlowSocial uses multiple testing frameworks and techniques:
 - File upload validation
 
 **Examples:**
+
 - Markdown sanitization
 - Session management
 - Parameterized queries
@@ -131,12 +139,14 @@ SmartFlowSocial uses multiple testing frameworks and techniques:
 #### Performance Tests
 
 **When to Use:**
+
 - Critical performance paths
 - Load testing
 - Benchmarking
 - Performance regression detection
 
 **Examples:**
+
 - Content combining with large arrays
 - Statistics fetching with many IDs
 - API endpoint load tests
@@ -145,12 +155,14 @@ SmartFlowSocial uses multiple testing frameworks and techniques:
 #### E2E Tests (Cypress)
 
 **When to Use:**
+
 - Critical user flows
 - Browser-specific behavior
 - Full integration scenarios
 - UI interactions
 
 **Examples:**
+
 - User authentication flow
 - Post creation flow
 - Dashboard navigation
@@ -159,6 +171,7 @@ SmartFlowSocial uses multiple testing frameworks and techniques:
 ### Why Vitest for Unit/Integration Tests?
 
 **Benefits:**
+
 1. **Speed**: Runs in Node.js without browser overhead (10-100x faster)
 2. **No Server Required**: Unit/integration tests don't need a running dev server
 3. **Better Developer Experience**: Fast feedback, watch mode, better error messages
@@ -223,8 +236,8 @@ pnpm test:performance
 
 ### Cypress Tests (E2E)
 
-> [!IMPORTANT]
-> The development server **must be running** before executing Cypress tests. Tests run against `http://localhost:3000` by default.
+> [!IMPORTANT] The development server **must be running** before executing Cypress tests. Tests run
+> against `http://localhost:3000` by default.
 
 ```bash
 # Terminal 1: Start the dev server
@@ -367,6 +380,7 @@ See [Test Factories README](../tests/factories/README.md) for details.
 #### When to Mock
 
 **Always Mock:**
+
 - Database (Prisma)
 - External APIs (fetch, HTTP clients)
 - File system operations
@@ -374,6 +388,7 @@ See [Test Factories README](../tests/factories/README.md) for details.
 - Third-party services
 
 **Don't Mock:**
+
 - Functions you're testing
 - Pure utility functions
 - Business logic functions
@@ -475,9 +490,7 @@ it("should calculate next schedule time", () => {
 import { ValidationError } from "~/lib/errors";
 
 it("should throw ValidationError for invalid input", async () => {
-  await expect(loader({ request, params: {}, context: {} })).rejects.toThrow(
-    ValidationError,
-  );
+  await expect(loader({ request, params: {}, context: {} })).rejects.toThrow(ValidationError);
 });
 ```
 
@@ -551,6 +564,7 @@ Coverage thresholds are enforced in CI/CD and `vitest.config.ts`:
 ### What NOT to Test
 
 **Excluded from Coverage:**
+
 - Third-party library code
 - Framework code (Remix, Prisma)
 - Generated code

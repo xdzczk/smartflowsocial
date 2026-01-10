@@ -1,6 +1,4 @@
-import { Link, useParams } from "@remix-run/react";
-
-const PROCESSING_TEXT = "Processing...";
+import { useParams } from "@remix-run/react";
 
 import Toast from "~/components/ui/Toast";
 import { requireUserId } from "~/features/auth";
@@ -13,12 +11,11 @@ import {
   type PostFetcher,
   type LongFormPostType as _LongFormPostType,
 } from "~/features/posts/server";
-import type { PostStats as _PostStats } from "~/features/posts/stats.server";
+import type { PostStats } from "~/features/posts/stats.server";
 import {
   AllContentListing,
   LongFormDetailsModal,
   LongFormListing,
-  PostDetailsModal,
   PostedPostsTable,
   PostedPostsTabs,
   usePostedPosts,
@@ -68,6 +65,96 @@ export async function loader({
 
 type _LoaderData = Awaited<ReturnType<typeof loader>>;
 
+// ============================================================================
+// Sorting Helper Functions
+// ============================================================================
+
+function getDateValue(postedAt: Date | string | null | undefined): number {
+  if (postedAt instanceof Date) {
+    return postedAt.getTime();
+  }
+  if (postedAt) {
+    return new Date(postedAt).getTime();
+  }
+  return new Date(0).getTime();
+}
+
+function compareByDate(
+  a: PostData,
+  b: PostData,
+  direction: "asc" | "desc"
+): number {
+  const dateA = getDateValue(a.postedAt);
+  const dateB = getDateValue(b.postedAt);
+  return direction === "asc" ? dateA - dateB : dateB - dateA;
+}
+
+function getEventId(post: PostData): string {
+  return post.signedEvent &&
+    typeof post.signedEvent === "object" &&
+    "id" in post.signedEvent &&
+    typeof post.signedEvent.id === "string"
+    ? post.signedEvent.id
+    : "";
+}
+
+function compareByEngagementMetric(
+  a: PostData,
+  b: PostData,
+  sortKey: string,
+  direction: "asc" | "desc",
+  stats: Record<string, unknown> | undefined
+): number {
+  const aEventId = getEventId(a);
+  const bEventId = getEventId(b);
+
+  const aStats = getPostStats(stats, aEventId);
+  const bStats = getPostStats(stats, bEventId);
+  const aValue = getPostStatsValue(aStats, sortKey);
+  const bValue = getPostStatsValue(bStats, sortKey);
+  return direction === "asc" ? aValue - bValue : bValue - aValue;
+}
+
+function isEngagementMetric(key: string): boolean {
+  return [
+    "likes",
+    "replies",
+    "mentions",
+    "reposts",
+    "zaps",
+    "satszapped",
+  ].includes(key);
+}
+
+function sortPosts(
+  posts: PostData[],
+  sortConfig: { key: string; direction: "asc" | "desc" },
+  stats: Record<string, unknown> | undefined
+): PostData[] {
+  return [...posts].sort((a, b) => {
+    if (sortConfig.key === "postedAt") {
+      return compareByDate(a, b, sortConfig.direction);
+    }
+
+    if (isEngagementMetric(sortConfig.key)) {
+      return compareByEngagementMetric(
+        a,
+        b,
+        sortConfig.key,
+        sortConfig.direction,
+        stats
+      );
+    }
+
+    return comparePostDataByProperty(
+      a,
+      b,
+      sortConfig.key,
+      sortConfig.direction
+    );
+  });
+}
+
 export default function PostedPosts() {
   // Use TanStack Query for data fetching with caching
   const {
@@ -76,12 +163,12 @@ export default function PostedPosts() {
     allContent,
     user,
     queueTypes,
-    pagination,
+    pagination: _pagination,
     stats,
     isLoading: _isLoading,
   } = usePostedPostsData();
 
-  const params = useParams();
+  const _params = useParams();
 
   // Use TanStack Query mutation for bulk delete with optimistic updates
   const bulkDeleteMutation = useBulkDeletePostsMutation();
@@ -92,7 +179,7 @@ export default function PostedPosts() {
     sortConfig,
     searchTerm,
     setSearchTerm,
-    selectedPost,
+    selectedPost: _selectedPost,
     setSelectedPost,
     selectedPosts,
     selectedLongFormPost,
@@ -148,82 +235,13 @@ export default function PostedPosts() {
     });
   };
 
-  const sortedPosts = [...posts].sort((a, b) => {
-    if (sortConfig.key === "postedAt") {
-      const dateA = (
-        a.postedAt instanceof Date
-          ? a.postedAt
-          : // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: handle serialized Date strings
-            a.postedAt
-            ? new Date(a.postedAt)
-            : new Date(0)
-      ).getTime();
-      const dateB = (
-        b.postedAt instanceof Date
-          ? b.postedAt
-          : // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: handle serialized Date strings
-            b.postedAt
-            ? new Date(b.postedAt)
-            : new Date(0)
-      ).getTime();
-      return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
-    }
-
-    // Handle engagement metrics sorting
-    if (
-      [
-        "likes",
-        "replies",
-        "mentions",
-        "reposts",
-        "zaps",
-        "satszapped",
-      ].includes(sortConfig.key)
-    ) {
-      const aEventId =
-        a.signedEvent &&
-        typeof a.signedEvent === "object" &&
-        "id" in a.signedEvent &&
-        typeof a.signedEvent.id === "string"
-          ? a.signedEvent.id
-          : "";
-      const bEventId =
-        b.signedEvent &&
-        typeof b.signedEvent === "object" &&
-        "id" in b.signedEvent &&
-        typeof b.signedEvent.id === "string"
-          ? b.signedEvent.id
-          : "";
-
-      // Use type-safe PostStats accessors
-      const aStats = getPostStats(
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: type narrowing for serialized data
-        stats && typeof stats === "object" && !Array.isArray(stats)
-          ? (stats as Record<string, unknown>)
-          : undefined,
-        aEventId
-      );
-      const bStats = getPostStats(
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: type narrowing for serialized data
-        stats && typeof stats === "object" && !Array.isArray(stats)
-          ? (stats as Record<string, unknown>)
-          : undefined,
-        bEventId
-      );
-      const sortKey = sortConfig.key;
-      const aValue = getPostStatsValue(aStats, sortKey);
-      const bValue = getPostStatsValue(bStats, sortKey);
-      return sortConfig.direction === "asc" ? aValue - bValue : bValue - aValue;
-    }
-
-    // Use type-safe property accessor for PostData
-    return comparePostDataByProperty(
-      a,
-      b,
-      sortConfig.key,
-      sortConfig.direction as "asc" | "desc"
-    );
-  });
+  const sortedPosts = sortPosts(
+    posts,
+    sortConfig,
+    typeof stats === "object" && !Array.isArray(stats)
+      ? (stats as Record<string, unknown>)
+      : undefined
+  );
 
   const filteredPosts = sortedPosts.filter((post) =>
     post.caption?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -257,7 +275,6 @@ export default function PostedPosts() {
           onSearchChange={setSearchTerm}
           userTimezone={user.timezone ?? undefined}
           onPostSelect={(content) => {
-            // Handle selection based on content type using type guards
             if (content.type === "post") {
               const postData = extractPostData(content);
               if (postData) {
@@ -282,7 +299,6 @@ export default function PostedPosts() {
               ? "submitting"
               : bulkDeleteFetcher.state
           }
-          // Advanced actions for posted content
           individualRepostFetcher={individualRepostFetcher}
           longformRepostFetcher={longformRepostFetcher}
           longformQuoteFetcher={longformQuoteFetcher}
@@ -292,201 +308,25 @@ export default function PostedPosts() {
           repostFetcher={repostFetcher as PostFetcher}
         />
       ) : currentTab === "posts" ? (
-        <div>
-          {/* Search Bar for Posts */}
-          <div className="mb-4 flex items-center gap-2">
-            <div className="relative w-full">
-              <div className="pointer-events-none absolute inset-y-0 left-0 my-px ml-px flex w-10 items-center justify-center rounded-l text-gray-500">
-                <svg
-                  className="hi-mini hi-magnifying-glass inline-block size-5"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <input
-                type="text"
-                id="search"
-                name="search"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="block w-full rounded-lg border border-gray-200 py-2 pr-3 pl-10 text-sm leading-6 placeholder-gray-400 focus:border-blue-500 focus:ring focus:ring-blue-500/50 dark:border-gray-700 dark:bg-gray-900 dark:focus:border-blue-500"
-                placeholder="Search posts.."
-              />
-            </div>
-          </div>
-
-          {selectedPosts.size > 0 ? (
-            <div className="mb-4 flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-700 dark:bg-blue-900/50">
-              <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                {selectedPosts.size} post{selectedPosts.size !== 1 ? "s" : ""}{" "}
-                selected
-              </span>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleBulkRepost}
-                  disabled={repostFetcher.state !== "idle"}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm leading-5 font-semibold text-blue-800 hover:border-blue-300 hover:text-blue-900 hover:shadow-sm focus:ring focus:ring-blue-300/25 active:border-blue-200 active:shadow-none disabled:opacity-50 dark:border-blue-700 dark:bg-gray-800 dark:text-blue-300 dark:hover:border-blue-600 dark:hover:text-blue-200 dark:focus:ring-blue-600/40 dark:active:border-blue-700"
-                >
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                    />
-                  </svg>
-                  {repostFetcher.state !== "idle"
-                    ? PROCESSING_TEXT
-                    : `Recycle ${selectedPosts.size} Post${selectedPosts.size !== 1 ? "s" : ""}`}
-                </button>
-                <button
-                  onClick={handleBulkScheduledRepost}
-                  disabled={repostFetcher.state !== "idle"}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-purple-200 bg-white px-3 py-2 text-sm leading-5 font-semibold text-purple-800 hover:border-purple-300 hover:text-purple-900 hover:shadow-sm focus:ring focus:ring-purple-300/25 active:border-purple-200 active:shadow-none disabled:opacity-50 dark:border-purple-700 dark:bg-gray-800 dark:text-purple-300 dark:hover:border-purple-600 dark:hover:text-purple-200 dark:focus:ring-purple-600/40 dark:active:border-purple-700"
-                >
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                    />
-                  </svg>
-                  {repostFetcher.state !== "idle"
-                    ? PROCESSING_TEXT
-                    : `Repost ${selectedPosts.size} Post${selectedPosts.size !== 1 ? "s" : ""}`}
-                </button>
-                <button
-                  onClick={handleBulkQuote}
-                  disabled={repostFetcher.state !== "idle"}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-green-200 bg-white px-3 py-2 text-sm leading-5 font-semibold text-green-800 hover:border-green-300 hover:text-green-900 hover:shadow-sm focus:ring focus:ring-green-300/25 active:border-green-200 active:shadow-none disabled:opacity-50 dark:border-green-700 dark:bg-gray-800 dark:text-green-300 dark:hover:border-green-600 dark:hover:text-green-200 dark:focus:ring-green-600/40 dark:active:border-green-700"
-                >
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
-                    />
-                  </svg>
-                  {repostFetcher.state !== "idle"
-                    ? PROCESSING_TEXT
-                    : `Quote ${selectedPosts.size} Post${selectedPosts.size !== 1 ? "s" : ""}`}
-                </button>
-                <button
-                  onClick={handleBulkDelete}
-                  disabled={
-                    bulkDeleteMutation.isPending ||
-                    bulkDeleteFetcher.state !== "idle"
-                  }
-                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm leading-5 font-semibold text-red-800 hover:border-red-300 hover:text-red-900 hover:shadow-sm focus:ring focus:ring-red-300/25 active:border-red-200 active:shadow-none disabled:opacity-50 dark:border-red-700 dark:bg-gray-800 dark:text-red-300 dark:hover:border-red-600 dark:hover:text-red-200 dark:focus:ring-red-600/40 dark:active:border-red-700"
-                >
-                  {bulkDeleteMutation.isPending ||
-                  bulkDeleteFetcher.state !== "idle"
-                    ? "Deleting..."
-                    : `Delete ${selectedPosts.size} post${selectedPosts.size !== 1 ? "s" : ""}`}
-                </button>
-              </div>
-            </div>
-          ) : null}
-
-          <PostedPostsTable
-            filteredPosts={filteredPosts}
-            selectedPosts={selectedPosts}
-            stats={stats}
-            sortConfig={sortConfig}
-            toggleSelectAll={() =>
-              toggleSelectAll(filteredPosts as PostData[] | CombinedContent[])
-            }
-            togglePostSelection={togglePostSelection}
-            requestSort={requestSort}
-            setSelectedPost={setSelectedPost}
-            individualRepostFetcher={individualRepostFetcher}
-            deleteFetcher={deleteFetcher}
-            bulkDeleteFetcher={bulkDeleteFetcher}
-          />
-
-          {/* Pagination Controls */}
-          <div className="mt-4 flex items-center justify-between">
-            <div className="text-sm text-gray-500">
-              Showing {(pagination.currentPage - 1) * pagination.limit + 1} to{" "}
-              {Math.min(
-                pagination.currentPage * pagination.limit,
-                pagination.total
-              )}{" "}
-              of {pagination.total} posts
-            </div>
-            <div className="flex gap-2">
-              <Link
-                to={`${params["queueType"] ? `/dashboard/posted/${params["queueType"]}` : "/dashboard/posted"}?page=${pagination.currentPage - 1}`}
-                className={`rounded-lg border px-3 py-1 ${
-                  pagination.currentPage === 1
-                    ? "pointer-events-none opacity-50"
-                    : "hover:bg-gray-100"
-                }`}
-              >
-                Previous
-              </Link>
-              <Link
-                to={`${params["queueType"] ? `/dashboard/posted/${params["queueType"]}` : "/dashboard/posted"}?page=${pagination.currentPage + 1}`}
-                className={`rounded-lg border px-3 py-1 ${
-                  pagination.currentPage === pagination.pages
-                    ? "pointer-events-none opacity-50"
-                    : "hover:bg-gray-100"
-                }`}
-              >
-                Next
-              </Link>
-            </div>
-          </div>
-
-          {selectedPost ? (
-            <PostDetailsModal
-              post={selectedPost}
-              stats={
-                /* eslint-disable @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data */
-                typeof selectedPost === "object" &&
-                selectedPost !== null &&
-                "signedEvent" in selectedPost &&
-                selectedPost.signedEvent &&
-                typeof selectedPost.signedEvent === "object" &&
-                "id" in selectedPost.signedEvent &&
-                typeof selectedPost.signedEvent.id === "string"
-                  ? stats[selectedPost.signedEvent.id]
-                  : undefined
-              }
-              /* eslint-enable @typescript-eslint/no-unnecessary-condition */
-              onClose={() => setSelectedPost(null)}
-              showStats={true}
-              showSignedEvent={true}
-              type="posted"
-              userTimezone={user.timezone ?? undefined}
-            />
-          ) : null}
-        </div>
+        <PostedPostsTable
+          filteredPosts={filteredPosts}
+          selectedPosts={selectedPosts}
+          stats={
+            typeof stats === "object" && !Array.isArray(stats)
+              ? (stats as Record<string, PostStats>) // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion -- Type assertion needed for Remix loader data structure
+              : {}
+          }
+          sortConfig={sortConfig}
+          toggleSelectAll={() =>
+            toggleSelectAll(filteredPosts as PostData[] | CombinedContent[])
+          }
+          togglePostSelection={togglePostSelection}
+          requestSort={requestSort}
+          setSelectedPost={setSelectedPost}
+          individualRepostFetcher={individualRepostFetcher}
+          deleteFetcher={deleteFetcher}
+          bulkDeleteFetcher={bulkDeleteFetcher}
+        />
       ) : (
         /* Longform Posts Content */
         <LongFormListing

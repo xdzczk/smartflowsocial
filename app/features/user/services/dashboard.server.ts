@@ -16,7 +16,7 @@ import { respondToChildRequest } from "./parent-child.server";
 export async function loadDashboardData(
   userId: string,
   userNpub: string,
-  pendingParentRequests: string[] = [],
+  pendingParentRequests: string[] = []
 ) {
   const pendingParentUsers = await getUsersByNpubs(pendingParentRequests);
 
@@ -32,7 +32,7 @@ export async function loadDashboardData(
 export async function handleDashboardAction(
   formData: FormData,
   userId: string,
-  userNpub: string,
+  userNpub: string
 ) {
   const _action = formData.get("_action") as string;
 
@@ -43,7 +43,7 @@ export async function handleDashboardAction(
     const res = await respondToChildRequest(
       userNpub,
       parentNpub,
-      decision === "accept",
+      decision === "accept"
     );
 
     if (!res.ok) {
@@ -56,7 +56,7 @@ export async function handleDashboardAction(
         await updateUserSubscription(
           userId,
           "basic",
-          `free_childlink_basic_${Date.now()}_${userId}`,
+          `free_childlink_basic_${Date.now()}_${userId}`
         );
       } catch (e) {
         logWarning("Failed to promote child to basic plan after accept", {

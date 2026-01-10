@@ -20,7 +20,7 @@ export function useApiMutation<TData = unknown, TVariables = unknown>(
     invalidateQueries?: string[][];
     onSuccess?: (data: TData) => void;
     onError?: (error: Error) => void;
-  } & Omit<UseMutationOptions<TData, Error, TVariables>, "mutationFn">,
+  } & Omit<UseMutationOptions<TData, Error, TVariables>, "mutationFn">
 ) {
   const queryClient = useQueryClient();
 
@@ -65,7 +65,7 @@ export function useFormDataMutation<TData = unknown>(
     invalidateQueries?: string[][];
     onSuccess?: (data: TData) => void;
     onError?: (error: Error) => void;
-  },
+  }
 ) {
   const queryClient = useQueryClient();
 
@@ -93,4 +93,3 @@ export function useFormDataMutation<TData = unknown>(
     onError: options?.onError,
   });
 }
-

@@ -56,7 +56,13 @@ export function HashtagsSettings({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={(e) => { e.preventDefault(); void onSubmit(e); }} className="space-y-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void onSubmit(e);
+          }}
+          className="space-y-4"
+        >
           <div className="space-y-2">
             <Label htmlFor="hashtags">Hashtags</Label>
             <Textarea
@@ -99,7 +105,7 @@ export function HashtagsSettings({
             </p>
           ) : null}
           {fetcher.data?.error ? (
-            <p className="text-sm text-destructive">{fetcher.data.error}</p>
+            <p className="text-destructive text-sm">{fetcher.data.error}</p>
           ) : null}
         </form>
       </CardContent>

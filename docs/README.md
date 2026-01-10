@@ -4,7 +4,8 @@
 
 **Professional documentation for a professional platform**
 
-[Quick Start](#-quick-start) • [Guides](#-guides) • [Reference](#-reference) • [Examples](#-examples) • [Troubleshooting](#-troubleshooting)
+[Quick Start](#-quick-start) • [Guides](#-guides) • [Reference](#-reference) •
+[Examples](#-examples) • [Troubleshooting](#-troubleshooting)
 
 </div>
 
@@ -68,7 +69,8 @@ Comprehensive guides organized by role and topic.
 - [Giveaways Guide](./guides/user-guides/giveaways.md) - Create and manage giveaways
 - [Multi-Account Guide](./guides/user-guides/multi-account.md) - Manage multiple accounts
 - [Settings Guide](./guides/user-guides/settings.md) - Complete settings configuration
-- [Engagement Guide](./guides/user-guides/engagement.md#searching-for-events) - Search for events (included in engagement guide)
+- [Engagement Guide](./guides/user-guides/engagement.md#searching-for-events) - Search for events
+  (included in engagement guide)
 - [Assets Management Guide](./guides/user-guides/assets.md) - Manage uploaded assets
 
 #### Developer Guides
@@ -127,20 +129,20 @@ Help when things go wrong.
 
 ### I want to...
 
-**Get started quickly**
-→ [Quick Start](./getting-started/quickstart.md) → [First Steps](./getting-started/first-steps.md) → [Posting Guide](./guides/user-guides/posting.md)
+**Get started quickly** → [Quick Start](./getting-started/quickstart.md) →
+[First Steps](./getting-started/first-steps.md) → [Posting Guide](./guides/user-guides/posting.md)
 
-**Deploy to production**
-→ [Installation](./getting-started/installation.md) → [Deployment Guide](./guides/deployment.md) → [Operations Guide](./guides/operations.md)
+**Deploy to production** → [Installation](./getting-started/installation.md) →
+[Deployment Guide](./guides/deployment.md) → [Operations Guide](./guides/operations.md)
 
-**Build a custom feature**
-→ [Architecture](./getting-started/architecture.md) → [Developer Guide](./guides/developer-guide.md) → [Contributing](./guides/contributing.md)
+**Build a custom feature** → [Architecture](./getting-started/architecture.md) →
+[Developer Guide](./guides/developer-guide.md) → [Contributing](./guides/contributing.md)
 
-**Understand how it works**
-→ [Core Concepts](./getting-started/concepts.md) → [Architecture](./getting-started/architecture.md) → [Nostr Integration](./reference/nostr.md)
+**Understand how it works** → [Core Concepts](./getting-started/concepts.md) →
+[Architecture](./getting-started/architecture.md) → [Nostr Integration](./reference/nostr.md)
 
-**Troubleshoot an issue**
-→ [Common Issues](./troubleshooting/common-issues.md) → [Error Troubleshooting](./troubleshooting/errors.md)
+**Troubleshoot an issue** → [Common Issues](./troubleshooting/common-issues.md) →
+[Error Troubleshooting](./troubleshooting/errors.md)
 
 ---
 
@@ -215,6 +217,7 @@ We welcome contributions! See our [Documentation Contributing Guide](./meta/cont
 
 **SmartFlowSocial Documentation** — Built with ❤️ for the community
 
-[Report Documentation Issue](https://github.com/xdzczk/SmartFlowSocial/issues) • [Improve This Page](./meta/contributing.md)
+[Report Documentation Issue](https://github.com/xdzczk/SmartFlowSocial/issues) •
+[Improve This Page](./meta/contributing.md)
 
 </div>

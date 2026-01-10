@@ -55,13 +55,11 @@ Learn how to create and configure queues to organize your posts and automate sch
 **Fill in basic information:**
 
 1. **Name:**
-
    - Enter descriptive name
    - Example: "Bitcoin News"
    - This appears in dropdowns
 
 2. **Description (Optional):**
-
    - Add description
    - Example: "Daily Bitcoin and Lightning news"
    - Helps remember queue purpose
@@ -153,7 +151,6 @@ Learn how to create and configure queues to organize your posts and automate sch
 ## Step 6: Save Queue
 
 1. **Review settings:**
-
    - Name, description, color
    - Schedule type and rules
    - Hashtag preset
@@ -331,5 +328,3 @@ Learn how to create and configure queues to organize your posts and automate sch
 ---
 
 **Next Tutorial:** [Using Hashtag Presets](./using-hashtag-presets.md) → Automate your hashtags
-
-

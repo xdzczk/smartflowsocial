@@ -32,7 +32,7 @@ export default function () {
     "GET",
     "/api/effective-hashtags?queueTypeId=test-queue",
     null,
-    session,
+    session
   );
   check(hashtagsResponse, {
     "effective-hashtags: status 200": (r) => r.status === 200,
@@ -46,7 +46,7 @@ export default function () {
     "GET",
     "/api/queue-schedule?queueTypeId=test-queue&timezone=America/New_York",
     null,
-    session,
+    session
   );
   check(scheduleResponse, {
     "queue-schedule: status 200": (r) => r.status === 200,
@@ -68,7 +68,7 @@ export default function () {
     "POST",
     "/api/payment-status",
     { paymentId: "test-payment-123" },
-    session,
+    session
   );
   check(paymentResponse, {
     "payment-status: status 200": (r) => r.status === 200,
@@ -82,7 +82,7 @@ export default function () {
     "GET",
     "/api/thread-view?eventId=test-event-123",
     null,
-    session,
+    session
   );
   check(threadResponse, {
     "thread-view: status 200": (r) => r.status === 200,
@@ -96,7 +96,7 @@ export default function () {
     "GET",
     "/api/link-preview?url=https://example.com",
     null,
-    session,
+    session
   );
   check(linkPreviewResponse, {
     "link-preview: status 200": (r) => r.status === 200,

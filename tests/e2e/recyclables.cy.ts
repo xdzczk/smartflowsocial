@@ -27,7 +27,7 @@ describe("Recyclables", () => {
         .click({ force: true });
       cy.location("pathname", { timeout: 10000 }).should(
         "include",
-        "recyclables",
+        "recyclables"
       );
     });
 
@@ -50,7 +50,7 @@ describe("Recyclables", () => {
       cy.get("body", { timeout: 10000 }).then(($body) => {
         const hasRecyclables =
           $body.find(
-            'table tbody tr, [data-testid="recyclable-item"], .recyclable-item, tbody tr',
+            'table tbody tr, [data-testid="recyclable-item"], .recyclable-item, tbody tr'
           ).length > 0;
         const hasEmptyState =
           $body.find('[data-testid="empty-state"]').length > 0 ||

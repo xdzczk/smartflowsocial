@@ -18,7 +18,7 @@ export async function enqueuePostJob(
   postId: string,
   userId: string,
   signedEvent: SignedEvent,
-  scheduledFor: number,
+  scheduledFor: number
 ): Promise<void> {
   // Handle immediate scheduling (delay: 0)
   const baseOptions = scheduledFor === 0 ? { delay: 0 } : { scheduledFor };
@@ -29,7 +29,7 @@ export async function enqueuePostJob(
     "scheduled-posts",
     "publish-post",
     { postId, userId, signedEvent },
-    options,
+    options
   );
 
   if (!result.success) {
@@ -58,7 +58,7 @@ export async function enqueueLongFormPostJob(
   postId: string,
   userId: string,
   signedEvent: SignedEvent,
-  scheduledFor: number,
+  scheduledFor: number
 ): Promise<void> {
   // Handle immediate scheduling (delay: 0)
   const baseOptions = scheduledFor === 0 ? { delay: 0 } : { scheduledFor };
@@ -69,7 +69,7 @@ export async function enqueueLongFormPostJob(
     "scheduled-longform-posts",
     "publish-longform-post",
     { postId, userId, signedEvent },
-    options,
+    options
   );
 
   if (!result.success) {
@@ -108,7 +108,7 @@ export async function enqueuePostCheckerJob(delay = 0): Promise<void> {
         sig: "",
       },
     },
-    { delay },
+    { delay }
   );
 
   if (!result.success) {

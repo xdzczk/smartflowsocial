@@ -163,9 +163,8 @@ describe("External API Failure Edge Cases", () => {
 
   describe("Primal Cache Failures", () => {
     it("should handle Primal cache connection failure", async () => {
-      const { connectToPrimalCache } = await import(
-        "~/features/cache/primalCache.server"
-      );
+      const { connectToPrimalCache } =
+        await import("~/features/cache/primalCache.server");
 
       // Mock connection failure
       mockConnectToPrimalCache.mockRejectedValue(
@@ -178,9 +177,8 @@ describe("External API Failure Edge Cases", () => {
     });
 
     it("should handle Primal cache timeout", async () => {
-      const { connectToPrimalCache } = await import(
-        "~/features/cache/primalCache.server"
-      );
+      const { connectToPrimalCache } =
+        await import("~/features/cache/primalCache.server");
 
       // Mock timeout
       mockConnectToPrimalCache.mockImplementation(() => {

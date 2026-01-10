@@ -90,7 +90,7 @@ describe("Detailed User Interactions", () => {
       // Should process submission
       cy.location("pathname", { timeout: 10000 }).should((pathname) => {
         expect(pathname).to.satisfy(
-          (p: string) => p.includes("dashboard") || p.includes("newpost"),
+          (p: string) => p.includes("dashboard") || p.includes("newpost")
         );
       });
     });
@@ -160,7 +160,7 @@ describe("Detailed User Interactions", () => {
           // Wait for navigation after file upload
           cy.location("pathname", { timeout: 10000 }).should(
             "include",
-            "newpost",
+            "newpost"
           );
         }
       });
@@ -174,7 +174,7 @@ describe("Detailed User Interactions", () => {
           // Wait for navigation after file upload
           cy.location("pathname", { timeout: 10000 }).should(
             "include",
-            "newpost",
+            "newpost"
           );
         }
       });
@@ -196,7 +196,7 @@ describe("Detailed User Interactions", () => {
           cy.get('a[href*="newpost"]').first().click({ force: true });
           cy.location("pathname", { timeout: 10000 }).should(
             "include",
-            "newpost",
+            "newpost"
           );
         });
     });

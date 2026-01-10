@@ -72,6 +72,96 @@ export const loader = async ({ request }: { request: Request }) => {
   return json(data);
 };
 
+// ============================================================================
+// Action Data Parsing Helper
+// ============================================================================
+
+function parseExpiresAt(expiresAtValue: unknown): string | undefined {
+  if (expiresAtValue === null || expiresAtValue === undefined) {
+    return undefined;
+  }
+  if (expiresAtValue instanceof Date) {
+    return expiresAtValue.toISOString();
+  }
+  if (typeof expiresAtValue === "string") {
+    return expiresAtValue;
+  }
+  return undefined;
+}
+
+function parseActionData(typedActionData: Record<string, unknown> | null): {
+  success?: boolean;
+  paid?: boolean;
+  invoice?: string;
+  paymentHash?: string;
+  amount?: number;
+  amountUsd?: number;
+  paymentId?: string;
+  expiresAt?: string;
+  planName?: string;
+  planId?: string;
+  error?: string;
+} | null {
+  if (!typedActionData) {
+    return null;
+  }
+
+  return {
+    success:
+      "success" in typedActionData &&
+      typeof typedActionData["success"] === "boolean"
+        ? typedActionData["success"]
+        : undefined,
+    paid:
+      "paid" in typedActionData && typeof typedActionData["paid"] === "boolean"
+        ? typedActionData["paid"]
+        : undefined,
+    invoice:
+      "invoice" in typedActionData &&
+      typeof typedActionData["invoice"] === "string"
+        ? typedActionData["invoice"]
+        : undefined,
+    paymentHash:
+      "paymentHash" in typedActionData &&
+      typeof typedActionData["paymentHash"] === "string"
+        ? typedActionData["paymentHash"]
+        : undefined,
+    amount:
+      "amount" in typedActionData &&
+      typeof typedActionData["amount"] === "number"
+        ? typedActionData["amount"]
+        : undefined,
+    amountUsd:
+      "amountUsd" in typedActionData &&
+      typeof typedActionData["amountUsd"] === "number"
+        ? typedActionData["amountUsd"]
+        : undefined,
+    paymentId:
+      "paymentId" in typedActionData &&
+      typeof typedActionData["paymentId"] === "string"
+        ? typedActionData["paymentId"]
+        : undefined,
+    expiresAt:
+      "expiresAt" in typedActionData
+        ? parseExpiresAt(typedActionData["expiresAt"])
+        : undefined,
+    planName:
+      "planName" in typedActionData &&
+      typeof typedActionData["planName"] === "string"
+        ? typedActionData["planName"]
+        : undefined,
+    planId:
+      "planId" in typedActionData &&
+      typeof typedActionData["planId"] === "string"
+        ? typedActionData["planId"]
+        : undefined,
+    error:
+      "error" in typedActionData && typeof typedActionData["error"] === "string"
+        ? typedActionData["error"]
+        : undefined,
+  };
+}
+
 export default function Plans() {
   const { plans, user, currentSubscription } = useLoaderData<typeof loader>();
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Remix action data type is complex, validated at runtime
@@ -97,72 +187,7 @@ export default function Plans() {
     copyToClipboard,
   } = usePlansState({
     user,
-    actionData: typedActionData
-      ? {
-          success:
-            "success" in typedActionData &&
-            typeof typedActionData["success"] === "boolean"
-              ? typedActionData["success"]
-              : undefined,
-          paid:
-            "paid" in typedActionData &&
-            typeof typedActionData["paid"] === "boolean"
-              ? typedActionData["paid"]
-              : undefined,
-          invoice:
-            "invoice" in typedActionData &&
-            typeof typedActionData["invoice"] === "string"
-              ? typedActionData["invoice"]
-              : undefined,
-          paymentHash:
-            "paymentHash" in typedActionData &&
-            typeof typedActionData["paymentHash"] === "string"
-              ? typedActionData["paymentHash"]
-              : undefined,
-          amount:
-            "amount" in typedActionData &&
-            typeof typedActionData["amount"] === "number"
-              ? typedActionData["amount"]
-              : undefined,
-          amountUsd:
-            "amountUsd" in typedActionData &&
-            typeof typedActionData["amountUsd"] === "number"
-              ? typedActionData["amountUsd"]
-              : undefined,
-          paymentId:
-            "paymentId" in typedActionData &&
-            typeof typedActionData["paymentId"] === "string"
-              ? typedActionData["paymentId"]
-              : undefined,
-          expiresAt:
-            "expiresAt" in typedActionData
-              ? (() => {
-                  const expiresAtValue = typedActionData["expiresAt"];
-                  if (expiresAtValue === null || expiresAtValue === undefined)
-                    return;
-                  if (expiresAtValue instanceof Date)
-                    return expiresAtValue.toISOString();
-                  if (typeof expiresAtValue === "string") return expiresAtValue;
-                  return;
-                })()
-              : undefined,
-          planName:
-            "planName" in typedActionData &&
-            typeof typedActionData["planName"] === "string"
-              ? typedActionData["planName"]
-              : undefined,
-          planId:
-            "planId" in typedActionData &&
-            typeof typedActionData["planId"] === "string"
-              ? typedActionData["planId"]
-              : undefined,
-          error:
-            "error" in typedActionData &&
-            typeof typedActionData["error"] === "string"
-              ? typedActionData["error"]
-              : undefined,
-        }
-      : null,
+    actionData: parseActionData(typedActionData),
   });
 
   return (

@@ -38,7 +38,7 @@ describe("Hashtag Handler Integration Tests", () => {
         queueTypes,
         tags,
         setSelectedQueueType,
-        setDisplayedHashtags,
+        setDisplayedHashtags
       );
 
       expect(setSelectedQueueType).toHaveBeenCalledWith("unassigned");
@@ -72,7 +72,7 @@ describe("Hashtag Handler Integration Tests", () => {
         queueTypes,
         tags,
         setSelectedQueueType,
-        setDisplayedHashtags,
+        setDisplayedHashtags
       );
 
       expect(setSelectedQueueType).toHaveBeenCalledWith("Morning");
@@ -113,7 +113,7 @@ describe("Hashtag Handler Integration Tests", () => {
         queueTypes,
         tags,
         setSelectedQueueType,
-        setDisplayedHashtags,
+        setDisplayedHashtags
       );
 
       expect(setDisplayedHashtags).toHaveBeenCalledWith(tags);
@@ -140,7 +140,7 @@ describe("Hashtag Handler Integration Tests", () => {
         queueTypes,
         tags,
         setSelectedQueueType,
-        setDisplayedHashtags,
+        setDisplayedHashtags
       );
 
       expect(setDisplayedHashtags).toHaveBeenCalledWith(tags);
@@ -164,7 +164,7 @@ describe("Hashtag Handler Integration Tests", () => {
         queueTypes,
         tags,
         setSelectedQueueType,
-        setDisplayedHashtags,
+        setDisplayedHashtags
       );
 
       expect(setDisplayedHashtags).toHaveBeenCalledWith(tags);
@@ -186,7 +186,7 @@ describe("Hashtag Handler Integration Tests", () => {
         queueTypes,
         tags,
         setSelectedQueueType,
-        setDisplayedHashtags,
+        setDisplayedHashtags
       );
 
       expect(mockFetch).toHaveBeenCalledWith("/api/effective-hashtags", {
@@ -222,7 +222,7 @@ describe("Hashtag Handler Integration Tests", () => {
         queueTypes,
         tags,
         setSelectedQueueType,
-        setDisplayedHashtags,
+        setDisplayedHashtags
       );
 
       expect(setDisplayedHashtags).toHaveBeenCalledWith("tag1 tag2 tag3");

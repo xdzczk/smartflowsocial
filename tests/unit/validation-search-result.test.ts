@@ -132,4 +132,3 @@ describe("Search Result Validation", () => {
     });
   });
 });
-

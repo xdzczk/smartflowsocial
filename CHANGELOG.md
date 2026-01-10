@@ -2,7 +2,8 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/) and this project adheres to [Semantic Versioning](https://semver.org/).
+The format is based on [Keep a Changelog](https://keepachangelog.com/) and this project adheres to
+[Semantic Versioning](https://semver.org/).
 
 ---
 
@@ -71,4 +72,5 @@ Each section in this changelog uses the following categories:
 
 ---
 
-This changelog should be updated with each release, summarizing what’s new, improved, or fixed to keep track of all project changes in a clear and organized manner.
+This changelog should be updated with each release, summarizing what’s new, improved, or fixed to
+keep track of all project changes in a clear and organized manner.

@@ -78,7 +78,6 @@ Ends in 7 days.
 ## Step 3: Select a Post
 
 1. **View posts with engagement:**
-
    - Sorted by total engagement
    - Shows engagement statistics
    - Filter by queue or time period
@@ -96,14 +95,12 @@ Ends in 7 days.
 ## Step 4: Configure Giveaway Period
 
 1. **Select time period:**
-
    - **Last 7 days** (default)
    - **Last 14 days**
    - **Last 30 days**
    - **Custom range**
 
 2. **Filter by queue:**
-
    - **All queues** - All posts
    - **Specific queue** - Posts from one queue
    - **Unassigned** - Posts without queue
@@ -119,7 +116,6 @@ Ends in 7 days.
 **Filter options:**
 
 1. **By engagement type:**
-
    - **All** - All engagement types
    - **Reposts** - Only reposters
    - **Likes** - Only likers
@@ -127,7 +123,6 @@ Ends in 7 days.
    - **Zaps** - Only zappers
 
 2. **By time period:**
-
    - Last 7/14/30 days
    - Custom date range
 
@@ -143,7 +138,6 @@ Ends in 7 days.
 
 1. **Click "Select Winners"** or similar
 2. **System randomly selects:**
-
    - 3 random reposters
    - 3 random likers
    - 3 random commenters
@@ -193,13 +187,11 @@ Ends in 7 days.
 **Edit generated message:**
 
 1. **Modify text:**
-
    - Add personal touches
    - Customize tone
    - Add additional content
 
 2. **Adjust format:**
-
    - Change structure
    - Add emojis
    - Modify hashtags
@@ -267,13 +259,11 @@ Ends in 7 days.
 ### Content Strategy
 
 1. **Create engaging content:**
-
    - Memes, announcements, updates
    - Clear and shareable
    - Relevant to your audience
 
 2. **Announce in advance:**
-
    - Post giveaway announcement
    - Include rules and timeline
    - Build anticipation
@@ -286,13 +276,11 @@ Ends in 7 days.
 ### Winner Selection
 
 1. **Be transparent:**
-
    - Use random selection
    - Show selection process
    - Post results publicly
 
 2. **Select fairly:**
-
    - No bias or favoritism
    - Random from all participants
    - Respect blacklist settings
@@ -368,7 +356,8 @@ Ends in 7 days.
 ## Next Steps
 
 1. **[Multi-Account Setup](./multi-account-setup.md)** - Manage multiple accounts
-2. **[Advanced Scheduling Strategies](./advanced-scheduling-strategies.md)** - Optimize your schedule
+2. **[Advanced Scheduling Strategies](./advanced-scheduling-strategies.md)** - Optimize your
+   schedule
 3. **[Long-form Articles](./long-form-articles.md)** - Create detailed content
 
 ---
@@ -382,5 +371,3 @@ Ends in 7 days.
 ---
 
 **Next Tutorial:** [Multi-Account Setup](./multi-account-setup.md) → Manage multiple accounts
-
-

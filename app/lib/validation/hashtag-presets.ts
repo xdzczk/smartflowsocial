@@ -13,15 +13,13 @@ import { hashTagPresetSchema } from "./schemas/loader-responses.schemas";
  * Normalizes createdAt/updatedAt from string | Date to Date | undefined
  * Client-safe version (no server-only logging)
  */
-export function validateHashTagPresets(
-  value: unknown,
-): HashTagPreset[] {
+export function validateHashTagPresets(value: unknown): HashTagPreset[] {
   if (!Array.isArray(value)) {
     return [];
   }
 
   const validated: HashTagPreset[] = [];
-  
+
   for (const item of value) {
     try {
       const parsed = hashTagPresetSchema.parse(item);
@@ -32,16 +30,18 @@ export function validateHashTagPresets(
         tags: parsed.tags,
         description: parsed.description,
         userId: parsed.userId,
-        createdAt: parsed.createdAt instanceof Date 
-          ? parsed.createdAt 
-          : typeof parsed.createdAt === "string" 
-            ? new Date(parsed.createdAt) 
-            : undefined,
-        updatedAt: parsed.updatedAt instanceof Date 
-          ? parsed.updatedAt 
-          : typeof parsed.updatedAt === "string" 
-            ? new Date(parsed.updatedAt) 
-            : undefined,
+        createdAt:
+          parsed.createdAt instanceof Date
+            ? parsed.createdAt
+            : typeof parsed.createdAt === "string"
+              ? new Date(parsed.createdAt)
+              : undefined,
+        updatedAt:
+          parsed.updatedAt instanceof Date
+            ? parsed.updatedAt
+            : typeof parsed.updatedAt === "string"
+              ? new Date(parsed.updatedAt)
+              : undefined,
       });
     } catch {
       // Skip invalid items, continue with valid ones
@@ -51,4 +51,3 @@ export function validateHashTagPresets(
 
   return validated;
 }
-

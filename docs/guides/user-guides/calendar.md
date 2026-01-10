@@ -23,7 +23,9 @@ Complete guide to using the visual calendar interface for scheduling posts in Sm
 
 ## Overview
 
-The calendar feature provides a Notion-style visual interface for managing scheduled posts with drag-and-drop functionality and smart queue override logic. It's designed for users who prefer visual content management over list-based interfaces.
+The calendar feature provides a Notion-style visual interface for managing scheduled posts with
+drag-and-drop functionality and smart queue override logic. It's designed for users who prefer
+visual content management over list-based interfaces.
 
 ## Features
 
@@ -155,12 +157,10 @@ app/routes/
 ### Accessing the Calendar
 
 1. **Navigate to Calendar**
-
    - Click "Calendar" in dashboard navigation
    - Or go to `/dashboard/calendar`
 
 2. **Select Queue Type** (Optional)
-
    - Choose specific queue to view
    - Or view all queues together
 
@@ -215,13 +215,11 @@ app/routes/
 **Simple Reschedule (Manual Posts):**
 
 1. **Drag Post Block**
-
    - Click and hold post
    - Drag to new time slot
    - Release to drop
 
 2. **Confirm Reschedule**
-
    - Modal appears with new time
    - Review changes
    - Click "Confirm"
@@ -234,11 +232,9 @@ app/routes/
 **Advanced Reschedule (Auto-scheduled Posts):**
 
 1. **Drag Post Block**
-
    - Same as above
 
 2. **Choose Option**
-
    - **Cancel**: No changes
    - **Keep Queue Rule**: Update time, keep auto-scheduling
    - **Convert to Manual**: Update time, disable auto-scheduling
@@ -255,13 +251,11 @@ app/routes/
 ### Organizing Content
 
 1. **Use Queue Colors**
-
    - Assign colors to queues
    - Visual organization
    - Easy identification
 
 2. **Group Related Posts**
-
    - Schedule related content together
    - Use consistent times
    - Create content blocks
@@ -274,13 +268,11 @@ app/routes/
 ### Time Management
 
 1. **Peak Times**
-
    - Schedule during peak engagement
    - Use analytics to find best times
    - Test different times
 
 2. **Consistency**
-
    - Post at regular intervals
    - Use queues for automation
    - Maintain schedule
@@ -293,7 +285,6 @@ app/routes/
 ### Visual Organization
 
 1. **Queue Colors**
-
    - Use distinct colors
    - Match brand colors if possible
    - Keep consistent
@@ -379,11 +370,15 @@ See [Troubleshooting Guide](../troubleshooting/common-issues.md) for more soluti
 
 ### Signing Behavior
 
-- **User-Required Signing**: All scheduled posts must be signed by the user client-side before scheduling
-- **No Server-Side Signing**: The server does not sign events; users must approve each post with their Nostr key
-- **Re-signing on Reschedule**: When a post is rescheduled, it must be re-signed with the new timestamp
+- **User-Required Signing**: All scheduled posts must be signed by the user client-side before
+  scheduling
+- **No Server-Side Signing**: The server does not sign events; users must approve each post with
+  their Nostr key
+- **Re-signing on Reschedule**: When a post is rescheduled, it must be re-signed with the new
+  timestamp
 - **Content Preservation**: Uses the exact same content and tags from the original signed event
-- **Only Timestamp Changes**: Only the `created_at` field is updated, everything else remains identical
+- **Only Timestamp Changes**: Only the `created_at` field is updated, everything else remains
+  identical
 - **Client-side Signing**: Uses the same `signEventFn` as regular post creation
 - **Nostr Event Integrity**: Maintains proper nostr event structure with correct timestamp
 - **Job Scheduling**: Posts are only scheduled in the queue system after successful user signing

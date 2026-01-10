@@ -75,7 +75,7 @@ describe("Post Creation Flow", () => {
       // Wait for redirect or success message
       cy.location("pathname", { timeout: 10000 }).should((pathname) => {
         expect(pathname).to.satisfy(
-          (p: string) => p.includes("dashboard") || p.includes("posted"),
+          (p: string) => p.includes("dashboard") || p.includes("posted")
         );
       });
 
@@ -89,7 +89,7 @@ describe("Post Creation Flow", () => {
         // If redirected to login, session was lost - this is a bug
         if (pathname.includes("login")) {
           cy.log(
-            "Warning: Session lost after post creation - may indicate application bug",
+            "Warning: Session lost after post creation - may indicate application bug"
           );
           // Re-login and try again
           cy.loginNostr({ npub: TEST_NPUB });
@@ -103,7 +103,7 @@ describe("Post Creation Flow", () => {
           if (!hasPost) {
             // Post might not have been created or might be in a different queue
             cy.log(
-              "Post not found in posted queue - may indicate application bug",
+              "Post not found in posted queue - may indicate application bug"
             );
           }
           // Verify page loaded at least
@@ -120,7 +120,7 @@ describe("Post Creation Flow", () => {
       cy.location("pathname").then((pathname) => {
         // Either shows error or stays on newpost page
         expect(pathname).to.satisfy(
-          (p: string) => p.includes("newpost") || p.includes("dashboard"),
+          (p: string) => p.includes("newpost") || p.includes("dashboard")
         );
       });
     });

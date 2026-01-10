@@ -16,7 +16,7 @@ import { prisma } from "~/lib/prisma.server";
 export async function resolveQueueTypeId(
   userId: string,
   queueTypeId?: string | null,
-  queueType?: string | null,
+  queueType?: string | null
 ): Promise<string | null> {
   // Use provided queue type ID directly
   if (queueTypeId) {

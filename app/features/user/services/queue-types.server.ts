@@ -47,7 +47,7 @@ export function updateQueueType(
     description?: string;
     isEnabled?: boolean;
     hashTagPresetId?: string | null;
-  },
+  }
 ): Promise<QueueType> {
   if (queueTypeData.id) {
     // Update existing queue type
@@ -106,7 +106,7 @@ export function updateQueueType(
  */
 export async function deleteQueueType(
   userId: string,
-  queueTypeId: string,
+  queueTypeId: string
 ): Promise<void> {
   await prisma.queueType.delete({
     where: {
@@ -138,13 +138,12 @@ export async function getQueueTypes(userId: string): Promise<QueueType[]> {
   });
 }
 
-
 /**
  * Gets a queue type by ID for a specific user
  */
 export function getQueueTypeByIdForUser(
   userId: string,
-  queueTypeId: string,
+  queueTypeId: string
 ): Promise<QueueType | null> {
   return prisma.queueType.findFirst({
     where: {
@@ -159,7 +158,7 @@ export function getQueueTypeByIdForUser(
  */
 export function getQueueTypeByNameForUser(
   userId: string,
-  queueTypeName: string,
+  queueTypeName: string
 ): Promise<{ id: string } | null> {
   return prisma.queueType.findFirst({
     where: {

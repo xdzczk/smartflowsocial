@@ -21,6 +21,138 @@ interface NewPostImagesConfirmationProps {
   tags: string;
 }
 
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+function getQueueTypeFromEvent(events: PreparedEventData[]): string {
+  const firstEvent = events[0];
+  if (
+    firstEvent &&
+    typeof firstEvent === "object" &&
+    "queueType" in firstEvent &&
+    typeof firstEvent.queueType === "string"
+  ) {
+    return firstEvent.queueType;
+  }
+  return "unassigned";
+}
+
+async function fetchEffectiveHashtags(
+  userId: string | undefined,
+  queueType: string,
+  fallbackTags: string | string[]
+): Promise<string> {
+  try {
+    const response = await fetch("/api/effective-hashtags", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId,
+        queueTypeName: queueType,
+      }),
+    });
+
+    if (response.ok) {
+      const data = (await response.json()) as { hashtags?: string };
+      return data.hashtags ?? "";
+    }
+    return Array.isArray(fallbackTags) ? fallbackTags.join(" ") : fallbackTags;
+  } catch (error) {
+    const { handleErrorSafely } = await import("~/lib/error-handler.client");
+    handleErrorSafely(error, {
+      component: "NewPostImagesConfirmation",
+      action: "fetchEffectiveHashtags",
+    });
+    return Array.isArray(fallbackTags) ? fallbackTags.join(" ") : fallbackTags;
+  }
+}
+
+function getScheduledForString(events: PreparedEventData[]): string {
+  const firstEvent = events[0];
+  if (
+    !firstEvent ||
+    typeof firstEvent !== "object" ||
+    !("content" in firstEvent)
+  ) {
+    return "";
+  }
+  const content = firstEvent.content;
+  if (
+    typeof content === "object" &&
+    !Array.isArray(content) &&
+    "scheduledFor" in content
+  ) {
+    const scheduledFor = content.scheduledFor;
+    if (typeof scheduledFor === "string") {
+      return scheduledFor;
+    }
+  }
+  return "";
+}
+
+function calculateScheduledTime(
+  isImmediate: boolean,
+  scheduledForStr: string,
+  userTimezone: string
+): number {
+  if (isImmediate) {
+    return Date.now();
+  }
+
+  if (userTimezone !== "UTC" && userTimezone !== "Etc/GMT") {
+    const utcDate = new Date(scheduledForStr);
+    const userDate = new Date(scheduledForStr).toLocaleString("en-US", {
+      timeZone: userTimezone,
+    });
+    const userOffset =
+      (new Date(userDate).getTime() - new Date(scheduledForStr).getTime()) /
+      60000;
+    utcDate.setMinutes(utcDate.getMinutes() - userOffset);
+    return utcDate.getTime();
+  }
+
+  const dateObj = new Date(scheduledForStr + "Z");
+  return dateObj.getTime();
+}
+
+function extractFileUrls(events: PreparedEventData[]): string[] {
+  return events
+    .map((event) => {
+      const content = event.content;
+      if (
+        typeof content === "object" &&
+        "fileUrl" in content &&
+        typeof (content as { fileUrl: unknown }).fileUrl === "string"
+      ) {
+        return (content as { fileUrl: string }).fileUrl;
+      }
+      return "";
+    })
+    .filter((url) => url !== "");
+}
+
+function getFirstCaption(events: PreparedEventData[]): string {
+  const firstEventContent = events[0]?.content;
+  if (
+    typeof firstEventContent === "object" &&
+    "caption" in firstEventContent &&
+    typeof (firstEventContent as { caption: unknown }).caption === "string"
+  ) {
+    return (firstEventContent as { caption: string }).caption;
+  }
+  return "";
+}
+
+function buildTagArray(effectiveHashtags: string): string[][] {
+  return effectiveHashtags
+    .split(" ")
+    .filter((tag: string) => tag.length > 0)
+    .map((tag: string) => ["t", tag.replace("#", "")]);
+}
+
 export default function NewPostImagesConfirmation({
   preparedEvents,
   onCancel,
@@ -41,125 +173,27 @@ export default function NewPostImagesConfirmation({
 
   const handleSignAndSubmit = async (isImmediate: boolean) => {
     try {
-      // Get effective hashtags based on queue type
-      const firstEvent = events[0];
-      const queueType =
-        firstEvent &&
-        typeof firstEvent === "object" &&
-        "queueType" in firstEvent &&
-        typeof firstEvent.queueType === "string"
-          ? firstEvent.queueType
-          : "unassigned";
-      let effectiveHashtags = "";
-
-      try {
-        const response = await fetch("/api/effective-hashtags", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userId: user?.id,
-            queueTypeName: queueType,
-          }),
-        });
-
-        if (response.ok) {
-          const data = (await response.json()) as { hashtags?: string };
-          effectiveHashtags = data.hashtags ?? "";
-        } else {
-          // Fallback to user's default hashtags
-          effectiveHashtags = Array.isArray(tags) ? tags.join(" ") : tags;
-        }
-      } catch (error) {
-        const { handleErrorSafely } =
-          await import("~/lib/error-handler.client");
-        handleErrorSafely(error, {
-          component: "NewPostImagesConfirmation",
-          action: "fetchEffectiveHashtags",
-        });
-        // Fallback to user's default hashtags
-        effectiveHashtags = tags;
-      }
+      const queueType = getQueueTypeFromEvent(events);
+      const effectiveHashtags = await fetchEffectiveHashtags(
+        user?.id,
+        queueType,
+        tags
+      );
 
       const addTags = user?.showHashTagsinPosts ? `\n${effectiveHashtags}` : "";
 
       const userTimezone = user?.timezone ?? "UTC";
-      let scheduledTime;
-
-      if (isImmediate) {
-        scheduledTime = Date.now();
-      } else {
-        const firstEvent = events[0];
-        let scheduledForStr = "";
-        if (
-          firstEvent &&
-          typeof firstEvent === "object" &&
-          "content" in firstEvent
-        ) {
-          const content = firstEvent.content;
-          if (
-            typeof content === "object" &&
-            !Array.isArray(content) &&
-            "scheduledFor" in content
-          ) {
-            const scheduledFor = content.scheduledFor;
-            if (typeof scheduledFor === "string") {
-              scheduledForStr = scheduledFor;
-            }
-          }
-        }
-
-        // Only convert timezone if not UTC/Etc/GMT
-        if (userTimezone !== "UTC" && userTimezone !== "Etc/GMT") {
-          const utcDate = new Date(scheduledForStr);
-
-          // Get timezone offset in minutes between user timezone and UTC
-          const userDate = new Date(scheduledForStr).toLocaleString("en-US", {
-            timeZone: userTimezone,
-          });
-          const userOffset =
-            (new Date(userDate).getTime() -
-              new Date(scheduledForStr).getTime()) /
-            60000;
-
-          // Adjust the date by the offset
-          utcDate.setMinutes(utcDate.getMinutes() - userOffset);
-          scheduledTime = utcDate.getTime();
-        } else {
-          // Parse date string and ensure it's in UTC
-          const dateObj = new Date(scheduledForStr + "Z");
-          scheduledTime = dateObj.getTime();
-        }
-      }
+      const scheduledForStr = getScheduledForString(events);
+      const scheduledTime = calculateScheduledTime(
+        isImmediate,
+        scheduledForStr,
+        userTimezone
+      );
 
       const scheduledForUnix = Math.floor(scheduledTime / 1000);
-
-      const tagArray = effectiveHashtags
-        .split(" ")
-        .filter((tag: string) => tag.length > 0)
-        .map((tag: string) => ["t", tag.replace("#", "")]);
-
-      const firstEventContent = events[0]?.content;
-      const firstCaption =
-        typeof firstEventContent === "object" &&
-        "caption" in firstEventContent &&
-        typeof firstEventContent.caption === "string"
-          ? firstEventContent.caption
-          : "";
-      const fileUrls = events
-        .map((event) => {
-          const content = event.content;
-          if (
-            typeof content === "object" &&
-            "fileUrl" in content &&
-            typeof content.fileUrl === "string"
-          ) {
-            return content.fileUrl;
-          }
-          return "";
-        })
-        .filter((url) => url !== "");
+      const tagArray = buildTagArray(effectiveHashtags);
+      const firstCaption = getFirstCaption(events);
+      const fileUrls = extractFileUrls(events);
 
       const eventData = {
         content:
@@ -185,22 +219,24 @@ export default function NewPostImagesConfirmation({
             "fileUrl" in content &&
             typeof content.fileUrl === "string"
           ) {
-            return content.fileUrl;
+            return (content as { fileUrl: string }).fileUrl;
           }
           return "";
         })
         .filter((url) => url !== "");
+      const firstEventContent = events[0]?.content;
       const captionForForm =
         typeof firstEventContent === "object" &&
         "caption" in firstEventContent &&
-        typeof firstEventContent.caption === "string"
-          ? firstEventContent.caption
+        typeof (firstEventContent as { caption: unknown }).caption === "string"
+          ? (firstEventContent as { caption: string }).caption
           : "";
       const queueTypeForForm =
         typeof firstEventContent === "object" &&
         "queueType" in firstEventContent &&
-        typeof firstEventContent.queueType === "string"
-          ? firstEventContent.queueType
+        typeof (firstEventContent as { queueType: unknown }).queueType ===
+          "string"
+          ? (firstEventContent as { queueType: string }).queueType
           : "unassigned";
 
       formData.append("fileUrl", JSON.stringify(fileUrlsForForm));
@@ -236,7 +272,7 @@ export default function NewPostImagesConfirmation({
           "fileUrl" in content &&
           typeof content.fileUrl === "string"
         ) {
-          return content.fileUrl;
+          return (content as { fileUrl: string }).fileUrl;
         }
         return "";
       })

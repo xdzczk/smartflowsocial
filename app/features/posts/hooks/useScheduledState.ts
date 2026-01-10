@@ -64,9 +64,7 @@ export function useScheduledState({
 
       scheduledPosts.forEach((post) => {
         const scheduledFor =
-          typeof post.scheduledFor === "string"
-            ? post.scheduledFor
-            : "0";
+          typeof post.scheduledFor === "string" ? post.scheduledFor : "0";
         const utcTime = parseInt(scheduledFor) * 1000;
         const userTime = new Date(utcTime).toLocaleString("en-US", {
           timeZone: tz,
@@ -122,13 +120,9 @@ export function useScheduledState({
   const sortedPosts = [...scheduledPosts].sort((a, b) => {
     if (sortConfig.key === "scheduledFor") {
       const aScheduledFor =
-        typeof a.scheduledFor === "string"
-          ? a.scheduledFor
-          : "0";
+        typeof a.scheduledFor === "string" ? a.scheduledFor : "0";
       const bScheduledFor =
-        typeof b.scheduledFor === "string"
-          ? b.scheduledFor
-          : "0";
+        typeof b.scheduledFor === "string" ? b.scheduledFor : "0";
       const dateA = parseInt(aScheduledFor) * 1000;
       const dateB = parseInt(bScheduledFor) * 1000;
       return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;

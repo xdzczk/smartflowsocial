@@ -11,7 +11,7 @@ import type { PostData } from "~/features/posts/types";
  */
 export function getPostDataProperty(
   post: PostData,
-  key: string,
+  key: string
 ): string | number | Date | undefined {
   // Handle known PostData properties
   switch (key) {
@@ -19,17 +19,21 @@ export function getPostDataProperty(
       return post.id;
     case "caption":
       return post.caption ?? undefined;
-      case "scheduledFor":
-        if (post.scheduledFor) {
-          const scheduledFor = post.scheduledFor as Date | string | null | undefined;
-          if (scheduledFor instanceof Date) {
-            return scheduledFor;
-          }
-          if (typeof scheduledFor === "string") {
-            return new Date(scheduledFor);
-          }
+    case "scheduledFor":
+      if (post.scheduledFor) {
+        const scheduledFor = post.scheduledFor as
+          | Date
+          | string
+          | null
+          | undefined;
+        if (scheduledFor instanceof Date) {
+          return scheduledFor;
         }
-        return undefined;
+        if (typeof scheduledFor === "string") {
+          return new Date(scheduledFor);
+        }
+      }
+      return undefined;
     case "postedAt":
       return post.postedAt instanceof Date
         ? post.postedAt
@@ -51,7 +55,11 @@ export function getPostDataProperty(
     default: {
       // For other properties, try safe access
       const value = (post as unknown as Record<string, unknown>)[key];
-      if (typeof value === "string" || typeof value === "number" || (value && typeof value === "object" && value instanceof Date)) {
+      if (
+        typeof value === "string" ||
+        typeof value === "number" ||
+        (value && typeof value === "object" && value instanceof Date)
+      ) {
         return value;
       }
       return undefined;
@@ -67,7 +75,7 @@ export function comparePostDataByProperty(
   a: PostData,
   b: PostData,
   key: string,
-  direction: "asc" | "desc",
+  direction: "asc" | "desc"
 ): number {
   const aValue = getPostDataProperty(a, key);
   const bValue = getPostDataProperty(b, key);
@@ -88,4 +96,3 @@ export function comparePostDataByProperty(
   if (aValue > bValue) return direction === "asc" ? 1 : -1;
   return 0;
 }
-

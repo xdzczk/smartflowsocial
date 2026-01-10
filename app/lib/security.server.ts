@@ -23,114 +23,145 @@ export class CSRFValidationError extends Error {
  * @param request - The incoming request
  * @throws {CSRFValidationError} If origin validation fails
  */
-export function validateOrigin(request: Request): void {
-  const origin = request.headers.get("Origin");
-  const referer = request.headers.get("Referer");
+// ============================================================================
+// Helper Functions
+// ============================================================================
 
-  // Allow same-origin requests (no Origin header)
-  // This handles same-origin form submissions and navigation
-  if (!origin && !referer) {
-    return; // Same-origin request, allow it
+function addAppUrlToAllowedOrigins(allowedOrigins: string[]): void {
+  if (!env.APP_URL) {
+    return;
   }
+  try {
+    const appUrl = new URL(env.APP_URL);
+    allowedOrigins.push(appUrl.origin);
+  } catch {
+    console.warn("Invalid APP_URL in environment:", env.APP_URL);
+  }
+}
 
-  // Get allowed origins from env
-  const allowedOrigins: string[] = [];
-  
-  // Add APP_URL if set
-  if (env.APP_URL) {
+function addAllowedOriginsFromEnv(allowedOrigins: string[]): void {
+  if (!env.ALLOWED_ORIGINS) {
+    return;
+  }
+  const origins = env.ALLOWED_ORIGINS.split(",").map((o) => o.trim());
+  for (const originStr of origins) {
     try {
-      const appUrl = new URL(env.APP_URL);
-      allowedOrigins.push(appUrl.origin);
-    } catch (_error) {
-      console.warn("Invalid APP_URL in environment:", env.APP_URL);
+      const originUrl = new URL(originStr);
+      allowedOrigins.push(originUrl.origin);
+    } catch {
+      console.warn("Invalid origin in ALLOWED_ORIGINS:", originStr);
     }
   }
+}
 
-  // Add ALLOWED_ORIGINS if set (comma-separated)
-  if (env.ALLOWED_ORIGINS) {
-    const origins = env.ALLOWED_ORIGINS.split(",").map((o) => o.trim());
-    for (const originStr of origins) {
+function addDevelopmentOrigins(allowedOrigins: string[]): void {
+  if (env.NODE_ENV === "development") {
+    allowedOrigins.push("http://localhost:3000");
+    allowedOrigins.push("http://127.0.0.1:3000");
+  }
+}
+
+function buildAllowedOrigins(): string[] {
+  const allowedOrigins: string[] = [];
+  addAppUrlToAllowedOrigins(allowedOrigins);
+  addAllowedOriginsFromEnv(allowedOrigins);
+  addDevelopmentOrigins(allowedOrigins);
+  return allowedOrigins;
+}
+
+function checkSameOriginRequest(
+  origin: string | null,
+  referer: string | null
+): boolean {
+  return !origin && !referer;
+}
+
+function validateOriginHeader(origin: string, allowedOrigins: string[]): void {
+  try {
+    const originUrl = new URL(origin);
+    const isValid = allowedOrigins.some((allowed) => {
       try {
-        const originUrl = new URL(originStr);
-        allowedOrigins.push(originUrl.origin);
-      } catch (_error) {
-        console.warn("Invalid origin in ALLOWED_ORIGINS:", originStr);
+        const allowedUrl = new URL(allowed);
+        return originUrl.origin === allowedUrl.origin;
+      } catch {
+        return false;
       }
-    }
-  }
+    });
 
-  // If no allowed origins configured, default to same-origin only
-  // In development, allow localhost origins
+    if (!isValid) {
+      throw new CSRFValidationError(
+        `Invalid origin: ${origin}. Allowed origins: ${allowedOrigins.join(", ")}`
+      );
+    }
+  } catch (error) {
+    if (error instanceof CSRFValidationError) {
+      throw error;
+    }
+    throw new CSRFValidationError(`Invalid origin header format: ${origin}`);
+  }
+}
+
+function validateRefererHeader(
+  referer: string,
+  allowedOrigins: string[]
+): void {
+  try {
+    const refererUrl = new URL(referer);
+    const isValid = allowedOrigins.some((allowed) => {
+      try {
+        const allowedUrl = new URL(allowed);
+        return refererUrl.origin === allowedUrl.origin;
+      } catch {
+        return false;
+      }
+    });
+
+    if (!isValid) {
+      throw new CSRFValidationError(
+        `Invalid referer: ${referer}. Allowed origins: ${allowedOrigins.join(", ")}`
+      );
+    }
+  } catch (error) {
+    if (error instanceof CSRFValidationError) {
+      throw error;
+    }
+    throw new CSRFValidationError(`Invalid referer header format: ${referer}`);
+  }
+}
+
+function checkProductionStrictMode(
+  origin: string | null,
+  referer: string | null,
+  allowedOrigins: string[]
+): void {
   const isDevelopment = env.NODE_ENV === "development";
   if (allowedOrigins.length === 0 && !isDevelopment) {
-    // In production without configuration, only allow same-origin
-    // This is strict but safe
     if (origin || referer) {
       throw new CSRFValidationError(
         "CSRF protection enabled but no allowed origins configured"
       );
     }
+  }
+}
+
+export function validateOrigin(request: Request): void {
+  const origin = request.headers.get("Origin");
+  const referer = request.headers.get("Referer");
+
+  if (checkSameOriginRequest(origin, referer)) {
     return;
   }
 
-  // In development, add localhost origins
-  if (isDevelopment) {
-    allowedOrigins.push("http://localhost:3000");
-    allowedOrigins.push("http://127.0.0.1:3000");
-  }
+  const allowedOrigins = buildAllowedOrigins();
+  checkProductionStrictMode(origin, referer, allowedOrigins);
 
-  // Validate Origin if present (preferred header)
   if (origin) {
-    try {
-      const originUrl = new URL(origin);
-      const isValid = allowedOrigins.some((allowed) => {
-        try {
-          const allowedUrl = new URL(allowed);
-          return originUrl.origin === allowedUrl.origin;
-        } catch {
-          return false;
-        }
-      });
-
-      if (!isValid) {
-        throw new CSRFValidationError(
-          `Invalid origin: ${origin}. Allowed origins: ${allowedOrigins.join(", ")}`
-        );
-      }
-      return; // Origin is valid
-    } catch (error) {
-      if (error instanceof CSRFValidationError) {
-        throw error;
-      }
-      throw new CSRFValidationError(`Invalid origin header format: ${origin}`);
-    }
+    validateOriginHeader(origin, allowedOrigins);
+    return;
   }
 
-  // Fallback to Referer if Origin not present (some browsers don't send Origin for same-origin)
-  if (!origin && referer) {
-    try {
-      const refererUrl = new URL(referer);
-      const isValid = allowedOrigins.some((allowed) => {
-        try {
-          const allowedUrl = new URL(allowed);
-          return refererUrl.origin === allowedUrl.origin;
-        } catch {
-          return false;
-        }
-      });
-
-      if (!isValid) {
-        throw new CSRFValidationError(
-          `Invalid referer: ${referer}. Allowed origins: ${allowedOrigins.join(", ")}`
-        );
-      }
-      return; // Referer is valid
-    } catch (error) {
-      if (error instanceof CSRFValidationError) {
-        throw error;
-      }
-      throw new CSRFValidationError(`Invalid referer header format: ${referer}`);
-    }
+  if (referer) {
+    validateRefererHeader(referer, allowedOrigins);
   }
 }
 
@@ -140,4 +171,3 @@ export function validateOrigin(request: Request): void {
 export function isStateChangingMethod(method: string): boolean {
   return ["POST", "PUT", "PATCH", "DELETE"].includes(method.toUpperCase());
 }
-

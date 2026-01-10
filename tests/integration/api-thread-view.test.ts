@@ -35,11 +35,11 @@ describe("API: Thread View", () => {
       ];
 
       (connectToPrimalCache as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockThreadData,
+        mockThreadData
       );
 
       const request = new Request(
-        "http://localhost:3000/api/thread-view?event_id=event-123",
+        "http://localhost:3000/api/thread-view?event_id=event-123"
       );
 
       const response = await loader({ request, params: {}, context: {} });
@@ -75,11 +75,11 @@ describe("API: Thread View", () => {
       ];
 
       (connectToPrimalCache as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockThreadData,
+        mockThreadData
       );
 
       const request = new Request(
-        "http://localhost:3000/api/thread-view?event_id=event-123",
+        "http://localhost:3000/api/thread-view?event_id=event-123"
       );
 
       const response = await loader({ request, params: {}, context: {} });
@@ -111,11 +111,11 @@ describe("API: Thread View", () => {
       ];
 
       (connectToPrimalCache as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockThreadData,
+        mockThreadData
       );
 
       const request = new Request(
-        "http://localhost:3000/api/thread-view?event_id=event-123",
+        "http://localhost:3000/api/thread-view?event_id=event-123"
       );
 
       const response = await loader({ request, params: {}, context: {} });
@@ -142,7 +142,7 @@ describe("API: Thread View", () => {
       (connectToPrimalCache as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
       const request = new Request(
-        "http://localhost:3000/api/thread-view?event_id=event-123",
+        "http://localhost:3000/api/thread-view?event_id=event-123"
       );
 
       const response = await loader({ request, params: {}, context: {} });
@@ -173,7 +173,7 @@ describe("API: Thread View", () => {
       });
 
       const request = new Request(
-        "http://localhost:3000/api/thread-view?event_id=event-123",
+        "http://localhost:3000/api/thread-view?event_id=event-123"
       );
 
       const response = await loader({ request, params: {}, context: {} });
@@ -225,11 +225,11 @@ describe("API: Thread View", () => {
 
     it("should handle cache connection errors", async () => {
       (connectToPrimalCache as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Cache connection failed"),
+        new Error("Cache connection failed")
       );
 
       const request = new Request(
-        "http://localhost:3000/api/thread-view?event_id=event-123",
+        "http://localhost:3000/api/thread-view?event_id=event-123"
       );
 
       const response = await loader({ request, params: {}, context: {} });
@@ -256,11 +256,11 @@ describe("API: Thread View", () => {
       const malformedData = [["NOT_EVENT", "data"], { notAnArray: true }, null];
 
       (connectToPrimalCache as ReturnType<typeof vi.fn>).mockResolvedValue(
-        malformedData,
+        malformedData
       );
 
       const request = new Request(
-        "http://localhost:3000/api/thread-view?event_id=event-123",
+        "http://localhost:3000/api/thread-view?event_id=event-123"
       );
 
       const response = await loader({ request, params: {}, context: {} });

@@ -1,6 +1,9 @@
 # Contributing to SmartFlowSocial
 
-Thank you for your interest in contributing to **SmartFlowSocial**! This document provides guidelines for how team members can contribute to the project, from setting up the development environment to submitting pull requests. Following these guidelines helps us maintain a clean, efficient, and organized codebase.
+Thank you for your interest in contributing to **SmartFlowSocial**! This document provides
+guidelines for how team members can contribute to the project, from setting up the development
+environment to submitting pull requests. Following these guidelines helps us maintain a clean,
+efficient, and organized codebase.
 
 ---
 
@@ -19,13 +22,15 @@ Thank you for your interest in contributing to **SmartFlowSocial**! This documen
 
 ## Getting Started
 
-1. **Fork the Repository**: If you haven't already, create a personal fork of the SmartFlowSocial repository.
+1. **Fork the Repository**: If you haven't already, create a personal fork of the SmartFlowSocial
+   repository.
 2. **Clone Your Fork**: Clone your forked repository to your local machine.
    ```bash
    git clone https://github.com/xdzczk/SmartFlowSocial
    cd smartflowsocial
    ```
-3. **Set Up the Upstream Remote**: Add the original repository as an upstream remote to stay updated.
+3. **Set Up the Upstream Remote**: Add the original repository as an upstream remote to stay
+   updated.
    ```bash
    git remote add upstream https://github.com/xdzczk/SmartFlowSocial
    ```
@@ -34,7 +39,8 @@ Thank you for your interest in contributing to **SmartFlowSocial**! This documen
 
 ## Project Setup
 
-SmartFlowSocial is built with **Remix**, a full-stack web framework. Follow these steps to set up the development environment:
+SmartFlowSocial is built with **Remix**, a full-stack web framework. Follow these steps to set up
+the development environment:
 
 ### Prerequisites
 
@@ -280,11 +286,13 @@ async function badAction({ request }: ActionFunctionArgs) {
 | `app/features/*` | Business logic  | Workflows, permissions, plan enforcement, scheduling | Direct Prisma queries, HTTP handling   |
 | `app/routes/*`   | HTTP wiring     | Request parsing, response formatting, UI composition | Business logic, database queries       |
 
-**When in doubt**: Ask yourself "Is this about data access, business rules, or HTTP handling?" and place it accordingly.
+**When in doubt**: Ask yourself "Is this about data access, business rules, or HTTP handling?" and
+place it accordingly.
 
 ### 4.2. **Feature Public APIs**
 
-To maintain clear boundaries and prevent tight coupling, all features expose a **public API** via `index.ts` files. This enforces encapsulation and makes refactoring safer.
+To maintain clear boundaries and prevent tight coupling, all features expose a **public API** via
+`index.ts` files. This enforces encapsulation and makes refactoring safer.
 
 #### **Using Feature Public APIs**
 
@@ -294,10 +302,7 @@ To maintain clear boundaries and prevent tight coupling, all features expose a *
 // ✅ Good: Use public API
 import { getUser, requireUserId } from "~/features/auth";
 import { getUserPlanType, hasFeatureAccess } from "~/features/payments";
-import {
-  getScheduledDashboardData,
-  calculateNextScheduleTime,
-} from "~/features/posts";
+import { getScheduledDashboardData, calculateNextScheduleTime } from "~/features/posts";
 ```
 
 **❌ DON'T**: Import from feature internals
@@ -326,7 +331,8 @@ ESLint rules automatically enforce these boundaries:
 - **Features** cannot import from other features' internals
 - **Models** cannot import from feature internals
 
-If you see an ESLint error about restricted imports, use the feature's public API or service layers instead.
+If you see an ESLint error about restricted imports, use the feature's public API or service layers
+instead.
 
 **Example ESLint Errors:**
 
@@ -334,13 +340,15 @@ If you see an ESLint error about restricted imports, use the feature's public AP
 Routes cannot import from ~/models/* directly. Use feature service layers instead (e.g., ~/features/*/services/*.server.ts)
 ```
 
-**Fix**: Change `import { getUserById } from "~/models/user.server"` to `import { loadUserData } from "~/features/user/services/user-profile.server"`
+**Fix**: Change `import { getUserById } from "~/models/user.server"` to
+`import { loadUserData } from "~/features/user/services/user-profile.server"`
 
 ```
 Routes must use feature public API (index.ts), not internal services
 ```
 
-**Fix**: Change `import { ... } from "~/features/posts/services/..."` to `import { ... } from "~/features/posts"`
+**Fix**: Change `import { ... } from "~/features/posts/services/..."` to
+`import { ... } from "~/features/posts"`
 
 #### **Available Feature Public APIs**
 
@@ -375,10 +383,12 @@ All features have `index.ts` files that export their public API:
 
 We follow a structured branching model to ensure a smooth workflow:
 
-1. **`main`**: Production-ready code. Only merge into `main` when a feature or release is fully tested and approved.
+1. **`main`**: Production-ready code. Only merge into `main` when a feature or release is fully
+   tested and approved.
 2. **`development`**: Integrate all ongoing work here before merging to `main`.
 3. **Feature Branches**: Create a new branch for each feature, bug fix, or enhancement.
-   - Naming convention: `feature/feature-name`, `bugfix/bug-description`, or `enhancement/description`.
+   - Naming convention: `feature/feature-name`, `bugfix/bug-description`, or
+     `enhancement/description`.
    ```bash
    git checkout -b feature/scheduled-posting
    ```
@@ -387,7 +397,8 @@ We follow a structured branching model to ensure a smooth workflow:
 
 ## Commit Message Guidelines
 
-Write clear, concise, and descriptive commit messages to make it easier for others to understand your changes. Use the following format:
+Write clear, concise, and descriptive commit messages to make it easier for others to understand
+your changes. Use the following format:
 
 ### Format
 
@@ -421,7 +432,8 @@ test: add unit tests for user authentication
 
 ## Pull Request Process
 
-Before submitting a pull request (PR), make sure your code follows all standards and has been tested.
+Before submitting a pull request (PR), make sure your code follows all standards and has been
+tested.
 
 ### 1. **Sync with Upstream**
 
@@ -447,7 +459,8 @@ git pull upstream development
 
 ### 4. **Merge**
 
-Once approved, your PR will be merged into `development`. The team may periodically merge `development` into `main` for production releases.
+Once approved, your PR will be merged into `development`. The team may periodically merge
+`development` into `main` for production releases.
 
 ---
 
@@ -542,7 +555,6 @@ Use appropriate labels to categorize issues:
    ```
 
 2. **Make Changes:**
-
    - Write code following coding standards
    - Add tests for new functionality
    - Update documentation if needed
@@ -772,4 +784,5 @@ See [Troubleshooting Guide](./docs/operations/troubleshooting.md) for common iss
 
 ---
 
-By following these guidelines, you'll help us maintain an efficient and collaborative workflow that enables SmartFlowSocial to grow and improve. Thank you for contributing!
+By following these guidelines, you'll help us maintain an efficient and collaborative workflow that
+enables SmartFlowSocial to grow and improve. Thank you for contributing!

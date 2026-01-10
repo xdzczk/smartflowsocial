@@ -60,7 +60,10 @@ export function usePostedPosts({
   // Get current tab from URL params - default to "all"
   const currentTab = searchParams.get("tab") ?? "all";
 
-  const [sortConfig, setSortConfig] = useState({
+  const [sortConfig, setSortConfig] = useState<{
+    key: string;
+    direction: "asc" | "desc";
+  }>({
     key: "postedAt",
     direction: "desc",
   });

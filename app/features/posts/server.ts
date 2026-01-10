@@ -93,9 +93,7 @@ export { postedPostsAction } from "./posted.action.server";
 
 // Re-export all bulk post handlers for convenience
 // @deprecated Import directly from handlers/ subdirectory for better tree-shaking
-export {
-  handleFileChange,
-} from "./handlers/file-upload.handler";
+export { handleFileChange } from "./handlers/file-upload.handler";
 export {
   handleCaptionChange,
   handleDateChange,
@@ -105,12 +103,8 @@ export {
   handleIsRecyclableChange,
   handleBulkRecyclableToggle,
 } from "./handlers/recyclable.handler";
-export {
-  handleScheduleIntervalClick,
-} from "./handlers/schedule-interval.handler";
-export {
-  updateDisplayedHashtags,
-} from "./handlers/hashtag.handler";
+export { handleScheduleIntervalClick } from "./handlers/schedule-interval.handler";
+export { updateDisplayedHashtags } from "./handlers/hashtag.handler";
 export {
   handleQueueTypeChange,
   handleBulkQueueUpdate,
@@ -228,4 +222,3 @@ export {
   longFormPostsToCalendarPosts,
   mixedPostsToCalendarPosts,
 } from "./utils/calendar-post-converter";
-

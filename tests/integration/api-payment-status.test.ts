@@ -36,7 +36,7 @@ describe("API: Payment Status", () => {
           {
             method: "POST",
             body: formData,
-          },
+          }
         );
 
         const actionParams: {
@@ -84,7 +84,7 @@ describe("API: Payment Status", () => {
           {
             method: "POST",
             body: formData,
-          },
+          }
         );
 
         const actionParams: {
@@ -129,7 +129,7 @@ describe("API: Payment Status", () => {
           {
             method: "POST",
             body: formData,
-          },
+          }
         );
 
         const actionParams: {
@@ -165,7 +165,7 @@ describe("API: Payment Status", () => {
           "http://localhost:3000/api/payment-status",
           {
             method: "GET",
-          },
+          }
         );
 
         const actionParams: {
@@ -204,7 +204,7 @@ describe("API: Payment Status", () => {
           {
             method: "POST",
             body: formData,
-          },
+          }
         );
 
         const actionParams: {
@@ -244,7 +244,7 @@ describe("API: Payment Status", () => {
           {
             method: "POST",
             body: formData,
-          },
+          }
         );
 
         const actionParams: {
@@ -272,7 +272,7 @@ describe("API: Payment Status", () => {
 
       it("should handle database errors", async () => {
         (checkPaymentStatus as ReturnType<typeof vi.fn>).mockRejectedValue(
-          new Error("Database error"),
+          new Error("Database error")
         );
 
         const formData = new FormData();
@@ -283,7 +283,7 @@ describe("API: Payment Status", () => {
           {
             method: "POST",
             body: formData,
-          },
+          }
         );
 
         const actionParams: {

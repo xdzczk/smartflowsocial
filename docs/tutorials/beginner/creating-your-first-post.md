@@ -103,7 +103,6 @@ flowchart TD
 ## Step 5: Review and Post
 
 1. **Review your post:**
-
    - Check spelling and grammar
    - Verify hashtags
    - Ensure content looks good
@@ -111,7 +110,6 @@ flowchart TD
 2. **Click "Post Now"**
 
 3. **Sign with Nostr Extension:**
-
    - Extension popup appears
    - Review the event details
    - Click "Sign" or "Approve"
@@ -126,7 +124,6 @@ flowchart TD
 ## Step 6: Verify Your Post
 
 1. **Check your Nostr client:**
-
    - Open your favorite Nostr client
    - Find your profile
    - Your post should appear

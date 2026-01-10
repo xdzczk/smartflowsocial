@@ -23,6 +23,337 @@ export type {
   ParentPost,
 } from "~/features/engagement/types";
 
+// ============================================================================
+// Helper Functions for Notification Parsing
+// ============================================================================
+
+interface ParsedEvent {
+  kind?: number;
+  content?: string;
+  pubkey?: string;
+  id?: string;
+  tags?: string[][];
+  created_at?: number;
+}
+
+function extractEventFromItem(item: unknown): ParsedEvent | null {
+  if (!Array.isArray(item) || item[0] !== "EVENT") {
+    return null;
+  }
+  const event = item[2] as ParsedEvent | undefined;
+  return event ?? null;
+}
+
+function parseUserProfile(
+  event: ParsedEvent,
+  userProfiles: Map<string, UserProfile>
+): void {
+  if (event.kind === 0 && event.content && event.pubkey) {
+    try {
+      const profile = JSON.parse(event.content) as Record<string, unknown>;
+      userProfiles.set(event.pubkey, profile as UserProfile);
+    } catch {
+      // Ignore parse errors
+    }
+  }
+}
+
+function parseEventStats(
+  event: ParsedEvent,
+  eventStats: Map<string, EventStats>
+): void {
+  if (event.kind === 10000100 && event.content) {
+    try {
+      const statsData = JSON.parse(event.content) as {
+        event_id?: string;
+        likes?: number;
+        replies?: number;
+        mentions?: number;
+        reposts?: number;
+        zaps?: number;
+        satszapped?: number;
+      };
+      if (statsData.event_id) {
+        eventStats.set(statsData.event_id, {
+          likes: statsData.likes ?? 0,
+          replies: statsData.replies ?? 0,
+          mentions: statsData.mentions ?? 0,
+          reposts: statsData.reposts ?? 0,
+          zaps: statsData.zaps ?? 0,
+          satszapped: statsData.satszapped ?? 0,
+        });
+      }
+    } catch {
+      // Ignore parse errors
+    }
+  }
+}
+
+function collectProfilesAndStats(threadViewResponse: unknown[]): {
+  userProfiles: Map<string, UserProfile>;
+  eventStats: Map<string, EventStats>;
+} {
+  const userProfiles = new Map<string, UserProfile>();
+  const eventStats = new Map<string, EventStats>();
+
+  for (const item of threadViewResponse) {
+    const event = extractEventFromItem(item);
+    if (!event) continue;
+
+    parseUserProfile(event, userProfiles);
+    parseEventStats(event, eventStats);
+  }
+
+  return { userProfiles, eventStats };
+}
+
+function isQuotePost(
+  event: ParsedEvent,
+  targetETag: string[] | undefined
+): boolean {
+  if (!targetETag) return false;
+
+  const marker = targetETag[3] as string | undefined;
+  const eventContent = event.content ?? "";
+  const hasNostrReference =
+    eventContent.includes("nostr:nevent") ||
+    eventContent.includes("nostr:note") ||
+    eventContent.includes("nostr:naddr");
+
+  return (
+    (!marker || marker === "" || marker === "mention") && hasNostrReference
+  );
+}
+
+function isReply(targetETag: string[] | undefined): boolean {
+  if (!targetETag) return false;
+  const marker = targetETag[3] as string | undefined;
+  return marker === "reply" || marker === "root";
+}
+
+function createReplyNotification(
+  event: ParsedEvent,
+  profile: UserProfile | undefined,
+  stats: EventStats | undefined,
+  originalEventId: string
+): Notification | null {
+  if (!event.id || !event.pubkey || event.created_at === undefined) {
+    return null;
+  }
+
+  return {
+    type: "reply",
+    id: event.id,
+    eventId: event.id,
+    content: event.content ?? "",
+    createdAt: event.created_at,
+    pubkey: event.pubkey,
+    authorName: profile?.display_name ?? profile?.name,
+    authorPicture: profile?.picture as string | null | undefined,
+    authorNip05: profile?.["nip05"] as string | undefined,
+    originalEventId,
+    stats,
+  };
+}
+
+function createMentionNotification(
+  event: ParsedEvent,
+  profile: UserProfile | undefined,
+  stats: EventStats | undefined,
+  originalEventId: string
+): Notification | null {
+  if (!event.id || !event.pubkey || event.created_at === undefined) {
+    return null;
+  }
+
+  return {
+    type: "mention",
+    id: event.id,
+    eventId: event.id,
+    content: event.content ?? "",
+    createdAt: event.created_at,
+    pubkey: event.pubkey,
+    authorName: profile?.display_name ?? profile?.name,
+    authorPicture: profile?.picture as string | null | undefined,
+    authorNip05: profile?.["nip05"] as string | undefined,
+    originalEventId,
+    stats,
+  };
+}
+
+function createZapNotification(
+  event: ParsedEvent,
+  zapRequest: {
+    tags?: string[][];
+    pubkey?: string;
+    content?: string;
+  },
+  profile: UserProfile | undefined,
+  stats: EventStats | undefined,
+  userPubkey: string,
+  originalEventId: string
+): Notification | null {
+  if (!event.id || event.created_at === undefined) {
+    return null;
+  }
+
+  const amountTag = zapRequest.tags?.find(
+    (tag: string[]) => tag[0] === "amount"
+  );
+  const amountMsats = amountTag?.[1] ? parseInt(amountTag[1], 10) : 0;
+  const amountSats = Math.floor(amountMsats / 1000);
+  const senderPubkey = zapRequest.pubkey ?? event.pubkey ?? "";
+
+  return {
+    type: "zap",
+    id: event.id,
+    eventId: event.id,
+    content: event.content ?? zapRequest.content ?? "",
+    createdAt: event.created_at,
+    senderPubkey,
+    receiverPubkey: userPubkey,
+    amountSats,
+    senderName: profile?.display_name ?? profile?.name,
+    senderPicture: profile?.picture as string | null | undefined,
+    senderNip05: profile?.["nip05"] as string | undefined,
+    pubkey: senderPubkey,
+    authorName: profile?.display_name ?? profile?.name,
+    authorPicture: profile?.picture as string | null | undefined,
+    authorNip05: profile?.["nip05"] as string | undefined,
+    originalEventId,
+    stats,
+  };
+}
+
+function processKind1Notifications(
+  event: ParsedEvent,
+  originalEventId: string,
+  userPubkey: string,
+  userProfiles: Map<string, UserProfile>,
+  eventStats: Map<string, EventStats>
+): Notification[] {
+  const notifications: Notification[] = [];
+
+  if (event.kind !== 1 || !event.id || event.id === originalEventId) {
+    return notifications;
+  }
+
+  const eTags = event.tags?.filter((tag: string[]) => tag[0] === "e") ?? [];
+  const pTags = event.tags?.filter((tag: string[]) => tag[0] === "p") ?? [];
+
+  const targetETag = eTags.find((tag: string[]) => tag[1] === originalEventId);
+  const referencesOriginal = !!targetETag;
+  const mentionsUser = pTags.some((tag: string[]) => tag[1] === userPubkey);
+
+  if (referencesOriginal && event.pubkey && event.pubkey !== userPubkey) {
+    const profile = userProfiles.get(event.pubkey);
+    const stats = eventStats.get(event.id);
+    const isQuote = isQuotePost(event, targetETag);
+    const isReplyEvent = isReply(targetETag);
+
+    if (isQuote && !isReplyEvent) {
+      const notification = createMentionNotification(
+        event,
+        profile,
+        stats,
+        originalEventId
+      );
+      if (notification) {
+        notifications.push(notification);
+      }
+    } else {
+      const notification = createReplyNotification(
+        event,
+        profile,
+        stats,
+        originalEventId
+      );
+      if (notification) {
+        notifications.push(notification);
+      }
+    }
+  } else if (
+    mentionsUser &&
+    !referencesOriginal &&
+    event.pubkey &&
+    event.pubkey !== userPubkey
+  ) {
+    const profile = userProfiles.get(event.pubkey);
+    const stats = eventStats.get(event.id);
+    const notification = createMentionNotification(
+      event,
+      profile,
+      stats,
+      originalEventId
+    );
+    if (notification) {
+      notifications.push(notification);
+    }
+  }
+
+  return notifications;
+}
+
+function processKind9735Notifications(
+  event: ParsedEvent,
+  originalEventId: string,
+  userPubkey: string,
+  userProfiles: Map<string, UserProfile>,
+  eventStats: Map<string, EventStats>
+): Notification[] {
+  const notifications: Notification[] = [];
+
+  if (
+    event.kind !== 9735 ||
+    !event.tags ||
+    !event.id ||
+    event.created_at === undefined
+  ) {
+    return notifications;
+  }
+
+  try {
+    const descTag = event.tags.find(
+      (tag: string[]) => tag[0] === "description"
+    );
+    if (!descTag?.[1] || typeof descTag[1] !== "string") {
+      return notifications;
+    }
+
+    const zapRequest = JSON.parse(descTag[1]) as {
+      tags?: string[][];
+      pubkey?: string;
+      content?: string;
+    };
+    const eTags = (event.tags ?? []).filter((tag: string[]) => tag[0] === "e");
+
+    const zapForOriginal = eTags.some(
+      (tag: string[]) => tag[1] === originalEventId
+    );
+
+    if (zapForOriginal) {
+      const senderPubkey = zapRequest.pubkey ?? event.pubkey ?? "";
+      const profile = senderPubkey ? userProfiles.get(senderPubkey) : undefined;
+      const stats = eventStats.get(event.id);
+      const notification = createZapNotification(
+        event,
+        zapRequest,
+        profile,
+        stats,
+        userPubkey,
+        originalEventId
+      );
+      if (notification) {
+        notifications.push(notification);
+      }
+    }
+  } catch {
+    // Ignore parse errors
+  }
+
+  return notifications;
+}
+
 /**
  * Parse thread_view response to extract notifications (replies, mentions, zaps)
  */
@@ -32,242 +363,35 @@ export function parseThreadViewNotifications(
   userPubkey: string
 ): Notification[] {
   const notifications: Notification[] = [];
-  const userProfiles = new Map<string, UserProfile>();
-  const eventStats = new Map<string, EventStats>();
 
   // First pass: collect all user profiles (kind 0) and stats (kind 10000100)
-  for (const item of threadViewResponse) {
-    if (!Array.isArray(item) || item[0] !== "EVENT") continue;
-    const event = item[2] as
-      | {
-          kind?: number;
-          content?: string;
-          pubkey?: string;
-          id?: string;
-          tags?: string[][];
-          created_at?: number;
-        }
-      | undefined;
-    if (!event) continue;
-
-    // Collect user profiles (kind 0)
-    if (event.kind === 0 && event.content && event.pubkey) {
-      try {
-        const profile = JSON.parse(event.content) as Record<string, unknown>;
-        userProfiles.set(event.pubkey, profile as UserProfile);
-      } catch {
-        // Ignore parse errors
-      }
-    }
-
-    // Collect event stats (kind 10000100)
-    if (event.kind === 10000100 && event.content) {
-      try {
-        const statsData = JSON.parse(event.content) as {
-          event_id?: string;
-          likes?: number;
-          replies?: number;
-          mentions?: number;
-          reposts?: number;
-          zaps?: number;
-          satszapped?: number;
-        };
-        if (statsData.event_id) {
-          eventStats.set(statsData.event_id, {
-            likes: statsData.likes ?? 0,
-            replies: statsData.replies ?? 0,
-            mentions: statsData.mentions ?? 0,
-            reposts: statsData.reposts ?? 0,
-            zaps: statsData.zaps ?? 0,
-            satszapped: statsData.satszapped ?? 0,
-          });
-        }
-      } catch {
-        // Ignore parse errors
-      }
-    }
-  }
+  const { userProfiles, eventStats } =
+    collectProfilesAndStats(threadViewResponse);
 
   // Second pass: collect notifications
   for (const item of threadViewResponse) {
-    if (!Array.isArray(item) || item[0] !== "EVENT") continue;
-    const event = item[2] as
-      | {
-          kind?: number;
-          content?: string;
-          pubkey?: string;
-          id?: string;
-          tags?: string[][];
-          created_at?: number;
-        }
-      | undefined;
+    const event = extractEventFromItem(item);
     if (!event) continue;
 
-    // Replies and Mentions (kind 1 events that reference the original event)
-    if (event.kind === 1 && event.id && event.id !== originalEventId) {
-      // Check if this event replies to or mentions the original event
-      const eTags = event.tags?.filter((tag: string[]) => tag[0] === "e") ?? [];
-      const pTags = event.tags?.filter((tag: string[]) => tag[0] === "p") ?? [];
+    // Process kind 1 notifications (replies and mentions)
+    const kind1Notifications = processKind1Notifications(
+      event,
+      originalEventId,
+      userPubkey,
+      userProfiles,
+      eventStats
+    );
+    notifications.push(...kind1Notifications);
 
-      const targetETag = eTags.find(
-        (tag: string[]) => tag[1] === originalEventId
-      );
-      const referencesOriginal = !!targetETag;
-      const mentionsUser = pTags.some((tag: string[]) => tag[1] === userPubkey);
-
-      if (referencesOriginal && event.pubkey && event.pubkey !== userPubkey) {
-        const profile = userProfiles.get(event.pubkey);
-        const stats = eventStats.get(event.id);
-
-        // Determine if this is a reply or a mention/quote
-        // The 4th element (index 3) in the e tag is the marker
-        const marker = targetETag[3] as string | undefined;
-
-        // Check if it's a quote post (has nostr:nevent or nostr:note in content)
-        const eventContent = event.content ?? "";
-        const hasNostrReference =
-          eventContent.includes("nostr:nevent") ||
-          eventContent.includes("nostr:note") ||
-          eventContent.includes("nostr:naddr");
-
-        // It's a mention/quote if:
-        // - marker is 'mention' OR marker is undefined/empty AND has nostr reference
-        // - NOT a reply (which has 'reply' or 'root' markers)
-        const isQuote =
-          (!marker || marker === "" || marker === "mention") &&
-          hasNostrReference;
-        const isReply = marker === "reply" || marker === "root";
-
-        if (
-          isQuote &&
-          !isReply &&
-          event.id &&
-          event.pubkey &&
-          event.created_at !== undefined
-        ) {
-          // This is a quote post/mention
-          notifications.push({
-            type: "mention",
-            id: event.id,
-            eventId: event.id,
-            content: eventContent,
-            createdAt: event.created_at,
-            pubkey: event.pubkey,
-            authorName: profile?.display_name ?? profile?.name,
-            authorPicture: profile?.picture as string | null | undefined,
-            authorNip05: profile?.["nip05"] as string | undefined,
-            originalEventId,
-            stats,
-          });
-        } else if (event.id && event.pubkey && event.created_at !== undefined) {
-          // This is a regular reply (has reply/root marker, or no nostr reference)
-          notifications.push({
-            type: "reply",
-            id: event.id,
-            eventId: event.id,
-            content: eventContent,
-            createdAt: event.created_at,
-            pubkey: event.pubkey,
-            authorName: profile?.display_name ?? profile?.name,
-            authorPicture: profile?.picture as string | null | undefined,
-            authorNip05: profile?.["nip05"] as string | undefined,
-            originalEventId,
-            stats,
-          });
-        }
-      } else if (
-        mentionsUser &&
-        !referencesOriginal &&
-        event.pubkey &&
-        event.pubkey !== userPubkey &&
-        event.id &&
-        event.created_at !== undefined
-      ) {
-        // This is a mention via p tag (user was tagged but not replying to their post)
-        const profile = userProfiles.get(event.pubkey);
-        const stats = eventStats.get(event.id);
-        notifications.push({
-          type: "mention",
-          id: event.id,
-          eventId: event.id,
-          content: event.content ?? "",
-          createdAt: event.created_at,
-          pubkey: event.pubkey,
-          authorName: profile?.display_name ?? profile?.name,
-          authorPicture: profile?.picture as string | null | undefined,
-          authorNip05: profile?.["nip05"] as string | undefined,
-          originalEventId,
-          stats,
-        });
-      }
-    }
-
-    // Zaps (kind 9735)
-    if (
-      event.kind === 9735 &&
-      event.tags &&
-      event.id &&
-      event.created_at !== undefined
-    ) {
-      try {
-        // Parse the description tag to get zap request details
-        const descTag = event.tags.find(
-          (tag: string[]) => tag[0] === "description"
-        );
-        if (!descTag?.[1] || typeof descTag[1] !== "string") continue;
-
-        const zapRequest = JSON.parse(descTag[1]) as {
-          tags?: string[][];
-          pubkey?: string;
-          content?: string;
-        };
-        const eTags = (event.tags ?? []).filter(
-          (tag: string[]) => tag[0] === "e"
-        );
-
-        // Check if this zap is for our original event
-        const zapForOriginal = eTags.some(
-          (tag: string[]) => tag[1] === originalEventId
-        );
-
-        if (zapForOriginal) {
-          // Extract amount from bolt11 or amount tag
-          const amountTag = zapRequest.tags?.find(
-            (tag: string[]) => tag[0] === "amount"
-          );
-          const amountMsats = amountTag?.[1] ? parseInt(amountTag[1], 10) : 0;
-          const amountSats = Math.floor(amountMsats / 1000);
-
-          const senderPubkey = zapRequest.pubkey ?? event.pubkey ?? "";
-          const profile = senderPubkey
-            ? userProfiles.get(senderPubkey)
-            : undefined;
-          const stats = eventStats.get(event.id);
-
-          notifications.push({
-            type: "zap",
-            id: event.id,
-            eventId: event.id,
-            content: event.content ?? zapRequest.content ?? "",
-            createdAt: event.created_at,
-            senderPubkey,
-            receiverPubkey: userPubkey,
-            amountSats,
-            senderName: profile?.display_name ?? profile?.name,
-            senderPicture: profile?.picture as string | null | undefined,
-            senderNip05: profile?.["nip05"] as string | undefined,
-            pubkey: senderPubkey, // For compatibility
-            authorName: profile?.display_name ?? profile?.name,
-            authorPicture: profile?.picture as string | null | undefined,
-            authorNip05: profile?.["nip05"] as string | undefined,
-            originalEventId,
-            stats,
-          });
-        }
-      } catch {
-        // Ignore parse errors
-      }
-    }
+    // Process kind 9735 notifications (zaps)
+    const kind9735Notifications = processKind9735Notifications(
+      event,
+      originalEventId,
+      userPubkey,
+      userProfiles,
+      eventStats
+    );
+    notifications.push(...kind9735Notifications);
   }
 
   // Sort by created_at descending (newest first)

@@ -9,7 +9,7 @@ import { loadChildrenData, handleChildrenApiError } from "~/features/user";
  */
 function createLoader(
   dataLoader: (userId: string) => Promise<Response>,
-  errorHandler: (error: unknown, requestUrl: string) => Response,
+  errorHandler: (error: unknown, requestUrl: string) => Response
 ) {
   return async ({ request }: LoaderFunctionArgs) => {
     try {

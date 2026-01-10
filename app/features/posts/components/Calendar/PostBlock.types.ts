@@ -6,17 +6,16 @@ import type {
 // Re-export QueueType for convenience
 export type QueueType = QueueTypeFromTypes;
 
-export interface CalendarPost
-  extends Omit<
-    PostData,
-    | "scheduledFor"
-    | "postedAt"
-    | "publishedAt"
-    | "postType"
-    | "repost"
-    | "isQuotedPost"
-    | "manual_override"
-  > {
+export interface CalendarPost extends Omit<
+  PostData,
+  | "scheduledFor"
+  | "postedAt"
+  | "publishedAt"
+  | "postType"
+  | "repost"
+  | "isQuotedPost"
+  | "manual_override"
+> {
   title?: string;
   summary?: string;
   image?: string;

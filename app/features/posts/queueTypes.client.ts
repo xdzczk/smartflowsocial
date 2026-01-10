@@ -17,10 +17,10 @@ interface QueueType {
  */
 export function findQueueTypeId(
   queueTypes: QueueType[],
-  queueTypeName: string,
+  queueTypeName: string
 ): string | null {
   const selectedQueueType = queueTypes.find(
-    (qt) => (typeof qt === "string" ? qt : qt.name) === queueTypeName,
+    (qt) => (typeof qt === "string" ? qt : qt.name) === queueTypeName
   );
   return typeof selectedQueueType === "object" ? selectedQueueType.id : null;
 }
@@ -31,7 +31,7 @@ export function findQueueTypeId(
 export async function calculateQueueScheduleTime(
   queueTypes: QueueType[],
   queueTypeName: string,
-  userId?: string,
+  userId?: string
 ): Promise<string | null> {
   if (queueTypeName === "unassigned") {
     return Promise.resolve(null);
@@ -65,13 +65,13 @@ export async function calculateQueueScheduleTime(
       const { logClientError } = await import("~/lib/error-handler.client");
       logClientError(
         new Error(
-          errorData.error?.message ?? errorData.message ?? "Unknown error",
+          errorData.error?.message ?? errorData.message ?? "Unknown error"
         ),
         {
           component: COMPONENT_NAME,
           action: ACTION_NAME,
         },
-        "warning",
+        "warning"
       );
       return Promise.resolve(null);
     }
@@ -92,7 +92,7 @@ export async function calculateQueueScheduleTime(
 export async function fetchEffectiveHashtags(
   queueTypes: QueueType[],
   queueTypeName: string,
-  userId?: string,
+  userId?: string
 ): Promise<string> {
   if (queueTypeName === "unassigned") {
     return Promise.resolve("");
@@ -128,7 +128,7 @@ export async function fetchEffectiveHashtags(
           component: COMPONENT_NAME,
           action: "fetchEffectiveHashtags",
         },
-        "warning",
+        "warning"
       );
       return Promise.resolve("");
     }

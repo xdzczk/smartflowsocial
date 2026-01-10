@@ -68,7 +68,7 @@ describe("Post Data Properties", () => {
 
       expect(result).toBeInstanceOf(Date);
       expect((result as Date).getTime()).toBe(
-        new Date("2024-01-01T12:00:00Z").getTime(),
+        new Date("2024-01-01T12:00:00Z").getTime()
       );
     });
 
@@ -194,7 +194,10 @@ describe("Post Data Properties", () => {
 
     it("should handle undefined values in ascending order", () => {
       const a: PostData = { id: "post-1" } as unknown as PostData;
-      const b: PostData = { id: "post-2", caption: "test" } as unknown as PostData;
+      const b: PostData = {
+        id: "post-2",
+        caption: "test",
+      } as unknown as PostData;
 
       const result = comparePostDataByProperty(a, b, "caption", "asc");
 
@@ -203,7 +206,10 @@ describe("Post Data Properties", () => {
 
     it("should handle undefined values in descending order", () => {
       const a: PostData = { id: "post-1" } as unknown as PostData;
-      const b: PostData = { id: "post-2", caption: "test" } as unknown as PostData;
+      const b: PostData = {
+        id: "post-2",
+        caption: "test",
+      } as unknown as PostData;
 
       const result = comparePostDataByProperty(a, b, "caption", "desc");
 
@@ -235,8 +241,14 @@ describe("Post Data Properties", () => {
     });
 
     it("should compare number values", () => {
-      const a: PostData = { id: "post-1", customNumber: 10 } as unknown as PostData;
-      const b: PostData = { id: "post-2", customNumber: 20 } as unknown as PostData;
+      const a: PostData = {
+        id: "post-1",
+        customNumber: 10,
+      } as unknown as PostData;
+      const b: PostData = {
+        id: "post-2",
+        customNumber: 20,
+      } as unknown as PostData;
 
       const result = comparePostDataByProperty(a, b, "customNumber", "asc");
 
@@ -244,4 +256,3 @@ describe("Post Data Properties", () => {
     });
   });
 });
-

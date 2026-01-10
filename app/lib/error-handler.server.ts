@@ -62,7 +62,7 @@ export function createErrorResponse(
   options?: {
     includeStack?: boolean;
     includeContext?: boolean;
-  },
+  }
 ): [ErrorResponse, number] {
   const normalizedError = normalizeError(error);
   const includeStack =
@@ -111,7 +111,7 @@ export function createSuccessResponse<T>(data: T): SuccessResponse<T> {
  * that work correctly with Remix bundler (e.g., requireUserId, requireFeatureAccess)
  */
 export function withErrorHandling<T>(
-  loaderFn: (args: LoaderFunctionArgs) => Promise<T>,
+  loaderFn: (args: LoaderFunctionArgs) => Promise<T>
 ) {
   return async (args: LoaderFunctionArgs) => {
     try {
@@ -140,7 +140,7 @@ export function withErrorHandling<T>(
  * that work correctly with Remix bundler (e.g., requireUserId, requireFeatureAccess)
  */
 export function withActionErrorHandling<T>(
-  actionFn: (args: ActionFunctionArgs) => Promise<T>,
+  actionFn: (args: ActionFunctionArgs) => Promise<T>
 ) {
   return async (args: ActionFunctionArgs) => {
     try {
@@ -168,7 +168,7 @@ export function withActionErrorHandling<T>(
  */
 export function handleLoaderError(
   error: unknown,
-  defaultData: unknown,
+  defaultData: unknown
 ): Response {
   const [errorResponse, statusCode] = createErrorResponse(error);
   const defaultDataObj =
@@ -178,7 +178,7 @@ export function handleLoaderError(
       ...defaultDataObj,
       error: errorResponse.error,
     },
-    { status: statusCode },
+    { status: statusCode }
   );
 }
 
@@ -196,7 +196,7 @@ export function handleActionError(error: unknown): Response {
 export function assert(
   condition: boolean,
   message: string,
-  context?: Record<string, unknown>,
+  context?: Record<string, unknown>
 ): asserts condition {
   if (!condition) {
     throw new ValidationError(message, context);
@@ -209,7 +209,7 @@ export function assert(
 export function assertExists<T>(
   value: T | null | undefined,
   message = "Resource not found",
-  context?: Record<string, unknown>,
+  context?: Record<string, unknown>
 ): asserts value is T {
   if (value === null || value === undefined) {
     throw new NotFoundError(message, context);
@@ -221,7 +221,7 @@ export function assertExists<T>(
  */
 export function assertAuthenticated(
   userId: string | undefined | null,
-  message = "Authentication required",
+  message = "Authentication required"
 ): asserts userId is string {
   if (!userId) {
     throw new AuthenticationError(message);
@@ -234,7 +234,7 @@ export function assertAuthenticated(
 export function assertAuthorized(
   hasPermission: boolean,
   message = "Insufficient permissions",
-  context?: Record<string, unknown>,
+  context?: Record<string, unknown>
 ): asserts hasPermission {
   if (!hasPermission) {
     throw new AuthorizationError(message, context);

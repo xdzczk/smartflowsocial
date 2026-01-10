@@ -53,11 +53,11 @@ describe("Database Failure Edge Cases", () => {
   describe("Connection Failures", () => {
     it("should handle database connection timeout", async () => {
       (mockPrisma.post.findMany as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Connection timeout after 30s"),
+        new Error("Connection timeout after 30s")
       );
 
       await expect(
-        getScheduledPosts({ userId: TEST_USER_ID, queueType: "all" }),
+        getScheduledPosts({ userId: TEST_USER_ID, queueType: "all" })
       ).rejects.toThrow("Connection timeout");
     });
 
@@ -65,17 +65,17 @@ describe("Database Failure Edge Cases", () => {
       (
         mockPrisma.user.findUnique as ReturnType<typeof vi.fn>
       ).mockRejectedValue(
-        new Error("Connection lost: server closed the connection unexpectedly"),
+        new Error("Connection lost: server closed the connection unexpectedly")
       );
 
       await expect(getUserById(TEST_USER_ID)).rejects.toThrow(
-        "Connection lost",
+        "Connection lost"
       );
     });
 
     it("should handle database unavailable error", async () => {
       (mockPrisma.post.create as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Database unavailable: connection refused"),
+        new Error("Database unavailable: connection refused")
       );
 
       await expect(
@@ -87,7 +87,7 @@ describe("Database Failure Edge Cases", () => {
           tags: [],
           isScheduled: false,
           isPosted: false,
-        }),
+        })
       ).rejects.toThrow("Database unavailable");
     });
   });
@@ -97,7 +97,7 @@ describe("Database Failure Edge Cases", () => {
       // updatePost doesn't use transactions, so we'll test with a function that does
       // For now, test that updatePost handles database errors
       mockPrisma.post.update.mockRejectedValue(
-        new Error("Transaction failed: deadlock detected"),
+        new Error("Transaction failed: deadlock detected")
       );
 
       await expect(
@@ -105,7 +105,7 @@ describe("Database Failure Edge Cases", () => {
           id: TEST_POST_ID,
           userId: TEST_USER_ID,
           data: { content: "Updated" },
-        }),
+        })
       ).rejects.toThrow("Transaction failed");
     });
 
@@ -121,7 +121,7 @@ describe("Database Failure Edge Cases", () => {
           id: TEST_POST_ID,
           userId: TEST_USER_ID,
           data: { content: "Updated" },
-        }),
+        })
       ).rejects.toThrow("Transaction timeout");
     });
   });
@@ -129,17 +129,17 @@ describe("Database Failure Edge Cases", () => {
   describe("Query Failures", () => {
     it("should handle query timeout", async () => {
       (mockPrisma.post.findMany as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Query timeout"),
+        new Error("Query timeout")
       );
 
       await expect(
-        getScheduledPosts({ userId: TEST_USER_ID, queueType: "all" }),
+        getScheduledPosts({ userId: TEST_USER_ID, queueType: "all" })
       ).rejects.toThrow("Query timeout");
     });
 
     it("should handle constraint violation errors", async () => {
       (mockPrisma.post.create as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Unique constraint violation on post.id"),
+        new Error("Unique constraint violation on post.id")
       );
 
       await expect(
@@ -151,13 +151,13 @@ describe("Database Failure Edge Cases", () => {
           tags: [],
           isScheduled: false,
           isPosted: false,
-        }),
+        })
       ).rejects.toThrow("Unique constraint violation");
     });
 
     it("should handle foreign key constraint errors", async () => {
       (mockPrisma.post.create as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Foreign key constraint violation on userId"),
+        new Error("Foreign key constraint violation on userId")
       );
 
       await expect(
@@ -169,7 +169,7 @@ describe("Database Failure Edge Cases", () => {
           tags: [],
           isScheduled: false,
           isPosted: false,
-        }),
+        })
       ).rejects.toThrow("Foreign key constraint violation");
     });
   });
@@ -192,7 +192,7 @@ describe("Database Failure Edge Cases", () => {
 
       // First attempt fails
       await expect(getUserById(TEST_USER_ID)).rejects.toThrow(
-        "Connection lost",
+        "Connection lost"
       );
 
       // Second attempt succeeds (simulating reconnection)

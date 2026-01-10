@@ -21,15 +21,27 @@ export interface ClientErrorContext {
  * Client-side error logger
  * Logs errors to console with structured format
  */
-export function logClientError(
-  error: Error | string,
-  context?: ClientErrorContext,
-  level: ClientErrorLevel = "error"
-): void {
-  const errorMessage = error instanceof Error ? error.message : error;
-  const errorStack = error instanceof Error ? error.stack : undefined;
+// ============================================================================
+// Helper Functions
+// ============================================================================
 
-  const logEntry = {
+function getErrorDetails(error: Error | string): {
+  message: string;
+  stack: string | undefined;
+} {
+  return {
+    message: error instanceof Error ? error.message : error,
+    stack: error instanceof Error ? error.stack : undefined,
+  };
+}
+
+function buildLogEntry(
+  errorMessage: string,
+  errorStack: string | undefined,
+  level: ClientErrorLevel,
+  context: ClientErrorContext | undefined
+): Record<string, unknown> {
+  return {
     timestamp: new Date().toISOString(),
     level,
     message: errorMessage,
@@ -38,41 +50,72 @@ export function logClientError(
     environment:
       typeof window !== "undefined" ? String(window.location.href) : "unknown",
   };
+}
+
+function logToConsole(
+  errorMessage: string,
+  errorStack: string | undefined,
+  level: ClientErrorLevel,
+  context: ClientErrorContext | undefined
+): void {
+  const emoji = level === "error" ? "❌" : level === "warning" ? "⚠️" : "ℹ️";
+  const consoleMethod =
+    level === "error" ? "error" : level === "warning" ? "warn" : "info";
+  console[consoleMethod](
+    `${emoji} [CLIENT ${level.toUpperCase()}]`,
+    errorMessage,
+    context ? String(context) : ""
+  );
+  if (errorStack && level === "error") {
+    console.error("Stack:", errorStack);
+  }
+}
+
+function buildSentryTags(
+  level: ClientErrorLevel,
+  context: ClientErrorContext | undefined
+): Record<string, string> {
+  const tags: Record<string, string> = { level };
+  if (context?.component) {
+    tags["component"] = String(context["component"]);
+  }
+  if (context?.action) {
+    tags["action"] = String(context["action"]);
+  }
+  return tags;
+}
+
+function sendToSentry(
+  error: Error,
+  level: ClientErrorLevel,
+  context: ClientErrorContext | undefined
+): void {
+  const tags = buildSentryTags(level, context);
+  captureException(error, {
+    tags,
+    extra: context,
+    user: context?.userId ? { id: context.userId } : undefined,
+    level:
+      level === "error" ? "error" : level === "warning" ? "warning" : "info",
+  });
+}
+
+export function logClientError(
+  error: Error | string,
+  context?: ClientErrorContext,
+  level: ClientErrorLevel = "error"
+): void {
+  const { message: errorMessage, stack: errorStack } = getErrorDetails(error);
 
   if (process.env.NODE_ENV === "production") {
-    // In production, log as JSON for log aggregation
+    const logEntry = buildLogEntry(errorMessage, errorStack, level, context);
     console.error(JSON.stringify(logEntry));
   } else {
-    // In development, use readable format
-    const emoji = level === "error" ? "❌" : level === "warning" ? "⚠️" : "ℹ️";
-    console[
-      level === "error" ? "error" : level === "warning" ? "warn" : "info"
-    ](
-      `${emoji} [CLIENT ${level.toUpperCase()}]`,
-      errorMessage,
-      context ? String(context) : ""
-    );
-    if (errorStack && level === "error") {
-      console.error("Stack:", errorStack);
-    }
+    logToConsole(errorMessage, errorStack, level, context);
   }
 
-  // Send to Sentry if configured
   if (error instanceof Error) {
-    const tags: Record<string, string> = { level };
-    if (context?.component) {
-      tags["component"] = String(context["component"]);
-    }
-    if (context?.action) {
-      tags["action"] = String(context["action"]);
-    }
-    captureException(error, {
-      tags,
-      extra: context,
-      user: context?.userId ? { id: context.userId } : undefined,
-      level:
-        level === "error" ? "error" : level === "warning" ? "warning" : "info",
-    });
+    sendToSentry(error, level, context);
   }
 }
 

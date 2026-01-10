@@ -21,7 +21,8 @@ Learn how to create and use reusable post templates to streamline your content c
 
 ## Overview
 
-Templates allow you to create reusable post structures with placeholders for dynamic content. Use templates for:
+Templates allow you to create reusable post structures with placeholders for dynamic content. Use
+templates for:
 
 - **Weekly announcements** - Regular updates
 - **Product launches** - Consistent format
@@ -37,7 +38,6 @@ Templates allow you to create reusable post structures with placeholders for dyn
 1. Go to **Settings** → **Templates**
 2. Click **"Create Template"**
 3. Enter template details:
-
    - **Name** - Template identifier
    - **Content** - Template text with variables
    - **Description** - What this template is for
@@ -191,13 +191,11 @@ Read more: {{link}}
 ### Template Design
 
 1. **Keep it flexible:**
-
    - Use variables for dynamic content
    - Allow customization
    - Don't over-constrain
 
 2. **Make it reusable:**
-
    - Generic enough for multiple uses
    - Specific enough to be useful
    - Clear variable names
@@ -224,13 +222,11 @@ Read more: {{link}}
 ### Template Organization
 
 1. **Group by purpose:**
-
    - Weekly updates
    - Product launches
    - Event promotions
 
 2. **Name clearly:**
-
    - "Weekly Update Template"
    - "Product Launch Template"
    - "Event Promotion Template"
@@ -293,5 +289,3 @@ Use variables to conditionally include content:
 ---
 
 **Next:** [Posting Guide](./posting.md) → Learn advanced posting features
-
-

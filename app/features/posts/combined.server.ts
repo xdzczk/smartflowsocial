@@ -7,6 +7,48 @@ import type { CombinedContent, PostData, LongFormPostData } from "./types";
 // Re-export the type
 export type { CombinedContent } from "~/features/posts/types";
 
+// ============================================================================
+// Sorting Helper Functions
+// ============================================================================
+
+function parseScheduledFor(value: unknown): number {
+  if (!value) {
+    return 0;
+  }
+  if (typeof value === "string") {
+    return parseInt(value, 10) * 1000;
+  }
+  if (typeof value === "number") {
+    return value * 1000;
+  }
+  return 0;
+}
+
+function getSortValue(item: CombinedContent, sortBy: string): number {
+  if (sortBy === "scheduledFor") {
+    return parseScheduledFor(item.scheduledFor);
+  }
+  if (sortBy === "postedAt" || sortBy === "publishedAt") {
+    return item.postedAt ? new Date(item.postedAt).getTime() : 0;
+  }
+  if (sortBy === "createdAt" || sortBy === "updatedAt") {
+    const dateValue = item[sortBy];
+    return new Date(dateValue).getTime();
+  }
+  return 0;
+}
+
+function compareValues(
+  aValue: number,
+  bValue: number,
+  sortDirection: "asc" | "desc"
+): number {
+  if (sortDirection === "asc") {
+    return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+  }
+  return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+}
+
 /**
  * Converts a Post to CombinedContent format
  */
@@ -131,48 +173,10 @@ export function combineContent(
   );
   const combined = [...combinedPosts, ...combinedLongForm];
 
-  // Sort the combined array
   return combined.sort((a, b) => {
-    let aValue = 0;
-    let bValue = 0;
-
-    if (sortBy === "scheduledFor") {
-      // Handle Unix timestamps for scheduledFor
-      const aScheduled = a.scheduledFor;
-      const bScheduled = b.scheduledFor;
-      aValue = aScheduled
-        ? (typeof aScheduled === "string"
-            ? parseInt(aScheduled, 10)
-            : typeof aScheduled === "number"
-              ? aScheduled
-              : 0) * 1000
-        : 0;
-      bValue = bScheduled
-        ? (typeof bScheduled === "string"
-            ? parseInt(bScheduled, 10)
-            : typeof bScheduled === "number"
-              ? bScheduled
-              : 0) * 1000
-        : 0;
-    } else if (sortBy === "postedAt" || sortBy === "publishedAt") {
-      // Handle dates for postedAt/publishedAt
-      const aPosted = a.postedAt;
-      const bPosted = b.postedAt;
-      aValue = aPosted ? new Date(aPosted).getTime() : 0;
-      bValue = bPosted ? new Date(bPosted).getTime() : 0;
-    } else if (sortBy === "createdAt" || sortBy === "updatedAt") {
-      // Handle dates for createdAt/updatedAt
-      const aDate = a[sortBy];
-      const bDate = b[sortBy];
-      aValue = new Date(aDate).getTime();
-      bValue = new Date(bDate).getTime();
-    }
-
-    if (sortDirection === "asc") {
-      return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
-    } else {
-      return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
-    }
+    const aValue = getSortValue(a, sortBy);
+    const bValue = getSortValue(b, sortBy);
+    return compareValues(aValue, bValue, sortDirection);
   });
 }
 

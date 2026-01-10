@@ -15,15 +15,13 @@ import { hashTagPresetSchema } from "./schemas/loader-responses.schemas";
  * Returns empty array if validation fails (logs error but doesn't throw)
  * Normalizes createdAt/updatedAt from string | Date to Date | undefined
  */
-export function validateHashTagPresets(
-  value: unknown,
-): HashTagPreset[] {
+export function validateHashTagPresets(value: unknown): HashTagPreset[] {
   if (!Array.isArray(value)) {
     return [];
   }
 
   const validated: HashTagPreset[] = [];
-  
+
   for (const item of value) {
     try {
       const parsed = hashTagPresetSchema.parse(item);
@@ -34,16 +32,18 @@ export function validateHashTagPresets(
         tags: parsed.tags,
         description: parsed.description,
         userId: parsed.userId,
-        createdAt: parsed.createdAt instanceof Date 
-          ? parsed.createdAt 
-          : typeof parsed.createdAt === "string" 
-            ? new Date(parsed.createdAt) 
-            : undefined,
-        updatedAt: parsed.updatedAt instanceof Date 
-          ? parsed.updatedAt 
-          : typeof parsed.updatedAt === "string" 
-            ? new Date(parsed.updatedAt) 
-            : undefined,
+        createdAt:
+          parsed.createdAt instanceof Date
+            ? parsed.createdAt
+            : typeof parsed.createdAt === "string"
+              ? new Date(parsed.createdAt)
+              : undefined,
+        updatedAt:
+          parsed.updatedAt instanceof Date
+            ? parsed.updatedAt
+            : typeof parsed.updatedAt === "string"
+              ? new Date(parsed.updatedAt)
+              : undefined,
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -58,4 +58,3 @@ export function validateHashTagPresets(
 
   return validated;
 }
-

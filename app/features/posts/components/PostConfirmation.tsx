@@ -7,6 +7,91 @@ import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { getSelectedQueueStyle } from "../queue-colors";
 import type { PreparedEvent } from "../types";
 
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+function getEventsKind(eventsData: unknown): number | undefined {
+  if (
+    typeof eventsData === "object" &&
+    eventsData !== null &&
+    "kind" in eventsData
+  ) {
+    return (eventsData as { kind?: unknown }).kind as number | undefined;
+  }
+  return undefined;
+}
+
+function getEventsContent(eventsData: unknown): string | undefined {
+  if (
+    typeof eventsData === "object" &&
+    eventsData !== null &&
+    "content" in eventsData
+  ) {
+    const content = (eventsData as { content?: unknown }).content;
+    return typeof content === "string" ? content : undefined;
+  }
+  return undefined;
+}
+
+function getEventsTags(eventsData: unknown): unknown {
+  if (
+    typeof eventsData === "object" &&
+    eventsData !== null &&
+    "tags" in eventsData
+  ) {
+    return (eventsData as { tags?: unknown }).tags;
+  }
+  return undefined;
+}
+
+function parseContentForRegularPost(
+  eventsContent: string,
+  fallbackCaption: string,
+  fallbackFileUrl: string
+): { caption: string; mediaUrl: string } {
+  const contentParts = eventsContent.split(" ");
+  const mediaUrl =
+    contentParts.find(
+      (part) =>
+        part && part.trim() !== "" && part !== "null" && part.startsWith("http")
+    ) ?? "";
+
+  const captionParts = contentParts.filter(
+    (part) =>
+      part && part.trim() !== "" && part !== "null" && !part.startsWith("http")
+  );
+
+  return {
+    caption: captionParts.length > 0 ? captionParts.join(" ") : fallbackCaption,
+    mediaUrl: mediaUrl || fallbackFileUrl,
+  };
+}
+
+function extractTagsFromEvents(eventsTags: unknown): string {
+  if (!Array.isArray(eventsTags)) {
+    return "";
+  }
+  return eventsTags
+    .map((tag) =>
+      Array.isArray(tag) && typeof tag[1] === "string" ? `#${tag[1]}` : ""
+    )
+    .filter((t) => t !== "")
+    .join(" ");
+}
+
+function getCreatedAtTimestamp(eventsData: unknown): number {
+  if (
+    typeof eventsData === "object" &&
+    eventsData !== null &&
+    "created_at" in eventsData &&
+    typeof (eventsData as { created_at?: unknown }).created_at === "number"
+  ) {
+    return (eventsData as { created_at: number }).created_at;
+  }
+  return 0;
+}
+
 interface PostConfirmationProps {
   preparedEvents: PreparedEvent[];
   postsCount: number;
@@ -132,20 +217,13 @@ export default function PostConfirmation({
         {/* Posts Grid */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {preparedEvents.map((eventData, index) => {
-            // Extract events data with type safety
             const eventsData = eventData.events;
-            const eventsKind =
-              typeof eventsData === "object" && "kind" in eventsData
-                ? (eventsData as { kind?: unknown }).kind
-                : undefined;
+            const eventsKind = getEventsKind(eventsData);
             const isRepost = eventsKind === 6;
 
             // Debug logging for reposts
             if (isRepost) {
-              const eventsTags =
-                typeof eventsData === "object" && "tags" in eventsData
-                  ? (eventsData as { tags?: unknown }).tags
-                  : undefined;
+              const eventsTags = getEventsTags(eventsData);
               logClientError(
                 `Repost ${index + 1} data`,
                 {
@@ -161,67 +239,34 @@ export default function PostConfirmation({
               );
             }
 
-            // For reposts, use the original fileUrl directly
-            // For regular posts, parse content to extract media URLs
+            // Extract media URL, caption, and tags
             let mediaUrl = "";
             let caption = "";
             let tags = "";
 
             if (isRepost) {
-              // For reposts, use the fileUrl from the eventData
               mediaUrl = eventData.fileUrl;
               caption = eventData.caption;
-              // Hide tags for reposts
               tags = "";
             } else {
-              // For regular posts, parse content assuming format: "caption mediaUrl1 mediaUrl2 ..."
-              const eventsContent =
-                typeof eventsData === "object" && "content" in eventsData
-                  ? (eventsData as { content?: unknown }).content
-                  : undefined;
-              if (eventsContent && typeof eventsContent === "string") {
-                const contentParts = eventsContent.split(" ");
-                const mediaUrl_ = contentParts.find(
-                  (part) =>
-                    part &&
-                    part.trim() !== "" &&
-                    part !== "null" &&
-                    part.startsWith("http")
+              const eventsContent = getEventsContent(eventsData);
+              if (eventsContent) {
+                const parsed = parseContentForRegularPost(
+                  eventsContent,
+                  eventData.caption,
+                  eventData.fileUrl
                 );
-                const captionParts = contentParts.filter(
-                  (part) =>
-                    part &&
-                    part.trim() !== "" &&
-                    part !== "null" &&
-                    !part.startsWith("http")
-                );
-
-                caption = captionParts.join(" ");
-                mediaUrl = mediaUrl_ ?? "";
+                caption = parsed.caption;
+                mediaUrl = parsed.mediaUrl;
               } else {
-                // Fallback to eventData.caption if content is not available
                 caption = eventData.caption;
                 mediaUrl = eventData.fileUrl;
               }
-              const eventsTags =
-                typeof eventsData === "object" && "tags" in eventsData
-                  ? (eventsData as { tags?: unknown }).tags
-                  : undefined;
-              tags = (Array.isArray(eventsTags) ? eventsTags : [])
-                .map((tag) =>
-                  Array.isArray(tag) && typeof tag[1] === "string"
-                    ? `#${tag[1]}`
-                    : ""
-                )
-                .filter((t) => t !== "")
-                .join(" ");
+              const eventsTags = getEventsTags(eventsData);
+              tags = extractTagsFromEvents(eventsTags);
             }
 
-            // Extract eventsTags for use in JSX
-            const eventsTagsForDisplay =
-              typeof eventsData === "object" && "tags" in eventsData
-                ? (eventsData as { tags?: unknown }).tags
-                : undefined;
+            const eventsTagsForDisplay = getEventsTags(eventsData);
 
             return (
               <div
@@ -321,12 +366,7 @@ export default function PostConfirmation({
                     </h4>
                     <p className="text-sm font-semibold text-gray-900 dark:text-white">
                       {new Date(
-                        (typeof eventsData === "object" &&
-                        "created_at" in eventsData &&
-                        typeof (eventsData as { created_at?: unknown })
-                          .created_at === "number"
-                          ? (eventsData as { created_at: number }).created_at
-                          : 0) * 1000
+                        getCreatedAtTimestamp(eventsData) * 1000
                       ).toLocaleDateString("en-US", {
                         weekday: "short",
                         month: "short",

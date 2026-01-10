@@ -68,11 +68,11 @@ describe("Scheduling Logic Unit Tests", () => {
       const tokyoResult = formatScheduleTimeForInput(testDate, "Asia/Tokyo"); // UTC+9
       const londonResult = formatScheduleTimeForInput(
         testDate,
-        "Europe/London",
+        "Europe/London"
       ); // UTC+1 in July (BST)
       const laResult = formatScheduleTimeForInput(
         testDate,
-        "America/Los_Angeles",
+        "America/Los_Angeles"
       ); // UTC-7 in July (PDT)
 
       expect(tokyoResult).toBe("2024-07-15T21:00");

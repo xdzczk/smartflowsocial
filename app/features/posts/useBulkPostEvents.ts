@@ -15,6 +15,374 @@ interface FetcherData {
   fileUrls?: Array<{ fileUrl: string; scheduledFor: string }>;
 }
 
+// ============================================================================
+// Pure Helper Functions (moved outside component to avoid dependency issues)
+// ============================================================================
+
+function getFileUrlFromFetcher(
+  fetcher: FetcherWithComponents<FetcherData>,
+  index: number
+): { fileUrl: string; scheduledFor: string } {
+  const fetcherDataRaw = fetcher.data;
+  const fetcherData =
+    fetcherDataRaw &&
+    typeof fetcherDataRaw === "object" &&
+    !Array.isArray(fetcherDataRaw)
+      ? (fetcherDataRaw as { fileUrls?: unknown })
+      : null;
+  const fileUrls =
+    fetcherData &&
+    "fileUrls" in fetcherData &&
+    Array.isArray(fetcherData.fileUrls)
+      ? fetcherData.fileUrls
+      : null;
+  const fileUrlItem =
+    fileUrls?.[index] &&
+    typeof fileUrls[index] === "object" &&
+    fileUrls[index] !== null &&
+    !Array.isArray(fileUrls[index])
+      ? (fileUrls[index] as { fileUrl?: unknown; scheduledFor?: unknown })
+      : null;
+  const fileUrl =
+    fileUrlItem &&
+    "fileUrl" in fileUrlItem &&
+    typeof fileUrlItem.fileUrl === "string"
+      ? fileUrlItem.fileUrl
+      : "";
+  const scheduledFor =
+    fileUrlItem &&
+    "scheduledFor" in fileUrlItem &&
+    typeof fileUrlItem.scheduledFor === "string"
+      ? fileUrlItem.scheduledFor
+      : "";
+
+  return { fileUrl, scheduledFor };
+}
+
+function buildContent(
+  fileUrl: string,
+  caption: string,
+  tagsString: string,
+  user: User | null
+): string {
+  const addTags =
+    user &&
+    typeof user === "object" &&
+    "showHashTagsinPosts" in user &&
+    user.showHashTagsinPosts
+      ? `${tagsString}`
+      : "";
+
+  const contentParts = [fileUrl, caption, addTags].filter(
+    (part) => part !== ""
+  );
+  return contentParts.join("\n");
+}
+
+function convertTagsToArray(tagsString: string): string[][] {
+  return tagsString
+    .split(" ")
+    .filter((tag: string) => tag.length > 0)
+    .map((tag: string) => ["t", tag.replace("#", "")]);
+}
+
+function convertScheduledTime(
+  scheduledForValue: string,
+  userTimezone: string
+): number {
+  if (userTimezone !== "UTC" && userTimezone !== "Etc/GMT") {
+    const utcDate = new Date(scheduledForValue);
+    const userDate = new Date(scheduledForValue).toLocaleString("en-US", {
+      timeZone: userTimezone,
+    });
+    const userOffset =
+      (new Date(userDate).getTime() - new Date(scheduledForValue).getTime()) /
+      60000;
+    utcDate.setMinutes(utcDate.getMinutes() - userOffset);
+    return utcDate.getTime();
+  }
+  const dateObj = new Date(scheduledForValue + "Z");
+  return dateObj.getTime();
+}
+
+function parseOriginalFileUrl(originalFileUrl: string | string[]): string {
+  if (Array.isArray(originalFileUrl)) {
+    return originalFileUrl[0] ?? "";
+  }
+  if (typeof originalFileUrl === "string" && originalFileUrl.startsWith("[")) {
+    try {
+      const parsed: unknown = JSON.parse(originalFileUrl);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return typeof (parsed as unknown[])[0] === "string"
+          ? ((parsed as string[])[0] ?? "")
+          : "";
+      }
+    } catch {
+      return originalFileUrl;
+    }
+  }
+  return typeof originalFileUrl === "string" ? originalFileUrl : "";
+}
+
+function getFileUrlFromPost(post: BulkPost): string {
+  if (
+    post.isKind6Repost &&
+    post.originalFileUrl &&
+    post.originalFileUrl.length > 0
+  ) {
+    return parseOriginalFileUrl(post.originalFileUrl);
+  }
+  if (Array.isArray(post.fileUrl)) {
+    return typeof post.fileUrl[0] === "string" ? post.fileUrl[0] : "";
+  }
+  return typeof post.fileUrl === "string" ? post.fileUrl : "";
+}
+
+function _createFakeFileUrlData(posts: BulkPost[]): Array<{
+  fileUrl: string;
+  scheduledFor: string;
+  queueType: string;
+  isRecyclable: boolean;
+}> {
+  return posts.map((post) => ({
+    fileUrl: getFileUrlFromPost(post),
+    scheduledFor: post.scheduledFor,
+    queueType: post.queueType,
+    isRecyclable: post.isRecyclable,
+  }));
+}
+
+function getUserTimezone(user: User | null): string {
+  return user &&
+    typeof user === "object" &&
+    "timezone" in user &&
+    typeof user.timezone === "string"
+    ? user.timezone
+    : "UTC";
+}
+
+function getDisplayFileUrl(post: BulkPost): string {
+  if (!post.originalFileUrl || post.originalFileUrl.length === 0) {
+    return "";
+  }
+
+  if (
+    typeof post.originalFileUrl === "string" &&
+    post.originalFileUrl.startsWith("[")
+  ) {
+    try {
+      const parsed = JSON.parse(post.originalFileUrl) as string[];
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed[0] ?? "";
+      }
+    } catch (_e) {
+      return post.originalFileUrl ?? "";
+    }
+  }
+
+  if (Array.isArray(post.originalFileUrl) && post.originalFileUrl.length > 0) {
+    return post.originalFileUrl[0] ?? "";
+  }
+
+  return post.originalFileUrl as string;
+}
+
+function createKind6RepostEvent(
+  post: BulkPost,
+  scheduledTime: number
+): PreparedEvent {
+  const displayFileUrl = getDisplayFileUrl(post);
+  return {
+    fileUrl: displayFileUrl,
+    scheduledFor: Math.floor(
+      (post.scheduledFor ? new Date(post.scheduledFor).getTime() : Date.now()) /
+        1000
+    ),
+    caption: "",
+    queueType: post.queueType,
+    isRecyclable: post.isRecyclable,
+    originalPostId: post.originalPostId,
+    originalEventId: post.originalEventId,
+    originalEventPubkey: post.originalEventPubkey,
+    events: {
+      content: "",
+      created_at: Math.floor(scheduledTime / 1000),
+      kind: 6,
+      tags: [
+        ["e", post.originalEventId ?? "", DEFAULT_RELAY_URL],
+        ["p", post.originalEventPubkey ?? ""],
+      ],
+    },
+  };
+}
+
+function createLongformQuoteEvent(
+  post: BulkPost,
+  addTags: string,
+  tagArray: string[][],
+  scheduledTime: number,
+  fileUrl: string
+): PreparedEvent {
+  const quoteContent = [post.caption, addTags.length > 10 ? "" : addTags]
+    .filter(Boolean)
+    .join("\n");
+
+  let aTag: string[] | null = null;
+  if (post.naddr) {
+    try {
+      const decoded = nip19.decode(post.naddr.replace("nostr:", ""));
+      if (decoded.type === "naddr") {
+        const { identifier, pubkey, kind } = decoded.data;
+        aTag = [
+          "a",
+          `${kind}:${pubkey}:${identifier}`,
+          DEFAULT_RELAY_URL,
+          "mention",
+        ];
+      }
+    } catch (e) {
+      logClientError(
+        e instanceof Error ? e : new Error(String(e)),
+        {
+          component: "useBulkPostEvents",
+          action: "decodeNaddr",
+          message: "Failed to decode naddr for longform quote",
+        },
+        "warning"
+      );
+    }
+  }
+
+  const quoteTags = [
+    ...tagArray,
+    ...(aTag ? [aTag] : []),
+    ["p", post.originalEventPubkey ?? "", "", "mention"],
+  ];
+
+  return {
+    fileUrl,
+    scheduledFor: Math.floor(scheduledTime / 1000),
+    caption: post.caption,
+    queueType: post.queueType,
+    isRecyclable: post.isRecyclable,
+    originalPostId: post.originalPostId,
+    originalEventId: post.originalEventId,
+    originalEventPubkey: post.originalEventPubkey,
+    events: {
+      content: quoteContent,
+      created_at: Math.floor(scheduledTime / 1000),
+      kind: 1,
+      tags: quoteTags,
+      isQuotePost: true,
+    },
+  };
+}
+
+function createRegularQuoteEvent(
+  post: BulkPost,
+  addTags: string,
+  tagArray: string[][],
+  scheduledTime: number,
+  fileUrl: string
+): PreparedEvent {
+  const neventEncoded = nip19.neventEncode({
+    id: post.originalEventId ?? "",
+    relays: [DEFAULT_RELAY_URL],
+    author: post.originalEventPubkey,
+  });
+
+  const quoteContent = [
+    post.caption,
+    `nostr:${neventEncoded}`,
+    addTags.length > 10 ? "" : addTags,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const quoteTags = [
+    ...tagArray,
+    ["e", post.originalEventId ?? "", DEFAULT_RELAY_URL, "mention"],
+    ["p", post.originalEventPubkey ?? "", "", "mention"],
+  ];
+
+  return {
+    fileUrl,
+    scheduledFor: Math.floor(scheduledTime / 1000),
+    caption: post.caption,
+    queueType: post.queueType,
+    isRecyclable: post.isRecyclable,
+    originalPostId: post.originalPostId,
+    originalEventId: post.originalEventId,
+    originalEventPubkey: post.originalEventPubkey,
+    events: {
+      content: quoteContent,
+      created_at: Math.floor(scheduledTime / 1000),
+      kind: 1,
+      tags: quoteTags,
+      isQuotePost: true,
+    },
+  };
+}
+
+function createQuotePostEvent(
+  post: BulkPost,
+  addTags: string,
+  tagArray: string[][],
+  scheduledTime: number,
+  fileUrl: string
+): PreparedEvent {
+  if (post.isLongformQuote) {
+    return createLongformQuoteEvent(
+      post,
+      addTags,
+      tagArray,
+      scheduledTime,
+      fileUrl
+    );
+  }
+  return createRegularQuoteEvent(
+    post,
+    addTags,
+    tagArray,
+    scheduledTime,
+    fileUrl
+  );
+}
+
+async function getEffectiveHashtags(
+  post: BulkPost,
+  useHashtagPresets: boolean,
+  selectedHashtags: string,
+  userId: string | undefined,
+  tags: string[]
+): Promise<string> {
+  if (useHashtagPresets && selectedHashtags) {
+    return selectedHashtags;
+  }
+
+  try {
+    const res = await fetch("/api/effective-hashtags", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId,
+        queueTypeName: post.queueType,
+      }),
+    });
+    const dataRaw: unknown = await res.json();
+    const data =
+      dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+        ? (dataRaw as { hashtags?: unknown })
+        : {};
+    const hashtags = typeof data.hashtags === "string" ? data.hashtags : null;
+    return hashtags ?? tags.join(" ");
+  } catch {
+    return tags.join(" ");
+  }
+}
+
 interface UseBulkPostEventsProps {
   posts: BulkPost[];
   fetcher: FetcherWithComponents<FetcherData>;
@@ -98,39 +466,24 @@ export function useBulkPostEvents({
     // Create events with image URLs and hashtags
     const events = await Promise.all(
       posts.map(async (post, index) => {
-        // Get effective hashtags - use manual selection if enabled, otherwise queue default
-        let effectiveHashtags = "";
-
-        if (useHashtagPresets && selectedHashtags) {
-          // Use manually selected hashtag preset
-          effectiveHashtags = selectedHashtags;
-        } else {
-          // Use queue type's default hashtags
-          try {
-            const res = await fetch("/api/effective-hashtags", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                userId: user?.id,
-                queueTypeName: post.queueType,
-              }),
-            });
-            const dataRaw: unknown = await res.json();
-            const data =
-              dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
-                ? (dataRaw as { hashtags?: unknown })
-                : {};
-            const hashtags =
-              typeof data.hashtags === "string" ? data.hashtags : null;
-            effectiveHashtags = hashtags ?? tags.join(" ");
-          } catch {
-            effectiveHashtags = tags.join(" ");
-          }
-        }
-
+        const effectiveHashtags = await getEffectiveHashtags(
+          post,
+          useHashtagPresets,
+          selectedHashtags,
+          user?.id,
+          tags
+        );
         const tagsString = effectiveHashtags;
+        const { fileUrl, scheduledFor: scheduledForValue } =
+          getFileUrlFromFetcher(fetcher, index);
+        const content = buildContent(fileUrl, post.caption, tagsString, user);
+        const tagArray = convertTagsToArray(tagsString);
+        const userTimezone = getUserTimezone(user);
+        const scheduledTime = convertScheduledTime(
+          scheduledForValue,
+          userTimezone
+        );
+
         const addTags =
           user &&
           typeof user === "object" &&
@@ -139,245 +492,36 @@ export function useBulkPostEvents({
             ? `${tagsString}`
             : "";
 
-        // Build content array, filtering out null/undefined/empty values
-        const fetcherDataRaw = fetcher.data;
-        const fetcherData =
-          fetcherDataRaw &&
-          typeof fetcherDataRaw === "object" &&
-          !Array.isArray(fetcherDataRaw)
-            ? (fetcherDataRaw as { fileUrls?: unknown })
-            : null;
-        const fileUrls =
-          fetcherData &&
-          "fileUrls" in fetcherData &&
-          Array.isArray(fetcherData.fileUrls)
-            ? fetcherData.fileUrls
-            : null;
-        const fileUrlItem =
-          fileUrls?.[index] &&
-          typeof fileUrls[index] === "object" &&
-          fileUrls[index] !== null &&
-          !Array.isArray(fileUrls[index])
-            ? (fileUrls[index] as { fileUrl?: unknown; scheduledFor?: unknown })
-            : null;
-        const fileUrl =
-          fileUrlItem &&
-          "fileUrl" in fileUrlItem &&
-          typeof fileUrlItem.fileUrl === "string"
-            ? fileUrlItem.fileUrl
-            : "";
-
-        const contentParts = [fileUrl, post.caption, addTags].filter(
-          (part) => part !== ""
-        ); // Filter out empty strings
-
-        const content = contentParts.join("\n");
-
-        // Convert space-separated tags string into array of ["t", tag] pairs
-        const tagArray: string[][] = tagsString
-          .split(" ")
-          .filter((tag: string) => tag.length > 0)
-          .map((tag: string) => ["t", tag.replace("#", "")]);
-
-        const userTimezone =
-          user &&
-          typeof user === "object" &&
-          "timezone" in user &&
-          typeof user.timezone === "string"
-            ? user.timezone
-            : "UTC";
-        const scheduledForValue =
-          fileUrlItem &&
-          "scheduledFor" in fileUrlItem &&
-          typeof fileUrlItem.scheduledFor === "string"
-            ? fileUrlItem.scheduledFor
-            : "";
-        const userTimezoneDateStr = scheduledForValue;
-        let scheduledTime;
-
-        // Only convert timezone if not UTC/Etc/GMT
-        if (userTimezone !== "UTC" && userTimezone !== "Etc/GMT") {
-          const utcDate = new Date(userTimezoneDateStr);
-
-          // Get timezone offset in minutes between user timezone and UTC
-          const userDate = new Date(userTimezoneDateStr).toLocaleString(
-            "en-US",
-            {
-              timeZone: userTimezone,
-            }
-          );
-          const userOffset =
-            (new Date(userDate).getTime() -
-              new Date(userTimezoneDateStr).getTime()) /
-            60000;
-
-          // Adjust the date by the offset
-          utcDate.setMinutes(utcDate.getMinutes() - userOffset);
-          scheduledTime = utcDate.getTime();
-        } else {
-          // Parse date string and ensure it's in UTC
-          const dateObj = new Date(userTimezoneDateStr + "Z");
-          scheduledTime = dateObj.getTime();
-        }
-
         // Handle kind 6 reposts differently
         if (post.isKind6Repost) {
-          // For kind 6 reposts, use the original file URL for display purposes
-          let displayFileUrl = "";
-          if (post.originalFileUrl && post.originalFileUrl.length > 0) {
-            // Handle case where fileUrl might be a JSON string array
-            if (
-              typeof post.originalFileUrl === "string" &&
-              post.originalFileUrl.startsWith("[")
-            ) {
-              try {
-                const parsed = JSON.parse(post.originalFileUrl) as string[];
-                if (Array.isArray(parsed) && parsed.length > 0) {
-                  displayFileUrl = parsed[0] ?? "";
-                }
-              } catch (_e) {
-                // If parsing fails, use as is
-                displayFileUrl = post.originalFileUrl ?? "";
-              }
-            } else if (
-              Array.isArray(post.originalFileUrl) &&
-              post.originalFileUrl.length > 0
-            ) {
-              displayFileUrl = post.originalFileUrl[0] ?? "";
-            } else {
-              displayFileUrl = post.originalFileUrl as string;
-            }
-          }
-
-          return {
-            fileUrl: displayFileUrl, // Use original file URL for display
-            scheduledFor: Math.floor(
-              (post.scheduledFor
-                ? new Date(post.scheduledFor).getTime()
-                : Date.now()) / 1000
-            ),
-            caption: "", // No caption for kind 6 reposts
-            queueType: post.queueType,
-            isRecyclable: post.isRecyclable,
-            originalPostId: post.originalPostId,
-            originalEventId: post.originalEventId,
-            originalEventPubkey: post.originalEventPubkey,
-            events: {
-              content: "", // Empty content for kind 6 reposts
-              created_at: Math.floor(scheduledTime / 1000),
-              kind: 6, // Kind 6 for reposts
-              tags: [
-                ["e", post.originalEventId ?? "", DEFAULT_RELAY_URL],
-                ["p", post.originalEventPubkey ?? ""],
-              ],
-            },
-          };
-        } else if (post.isQuotePost) {
-          // Handle quote posts (kind 1 with e and p tags)
-          let quoteContent;
-          let quoteTags;
-
-          if (post.isLongformQuote) {
-            // For longform quote posts, the caption already contains the naddr reference
-            // Don't add an additional nevent reference
-            quoteContent = [
-              post.caption, // This already contains nostr:naddr1... for longform
-              addTags.length > 10 ? "" : addTags, // Hide tags if longer than 10 characters
-            ]
-              .filter(Boolean)
-              .join("\n");
-
-            // For longform quotes, use 'a' tag instead of 'e' tag
-            // Extract dTag from naddr if available
-            let aTag = null;
-            if (post.naddr) {
-              try {
-                const decoded = nip19.decode(post.naddr.replace("nostr:", ""));
-                if (decoded.type === "naddr") {
-                  const { identifier, pubkey, kind } = decoded.data;
-                  aTag = [
-                    "a",
-                    `${kind}:${pubkey}:${identifier}`,
-                    DEFAULT_RELAY_URL,
-                    "mention",
-                  ];
-                }
-              } catch (e) {
-                logClientError(
-                  e instanceof Error ? e : new Error(String(e)),
-                  {
-                    component: "useBulkPostEvents",
-                    action: "decodeNaddr",
-                    message: "Failed to decode naddr for longform quote",
-                  },
-                  "warning"
-                );
-              }
-            }
-
-            quoteTags = [
-              ...tagArray, // Hashtag tags
-              ...(aTag ? [aTag] : []), // 'a' tag for longform reference if available
-              ["p", post.originalEventPubkey ?? "", "", "mention"], // Reference to quoted author
-            ];
-          } else {
-            // Create nevent1 format for regular quoted events
-            const neventEncoded = nip19.neventEncode({
-              id: post.originalEventId ?? "",
-              relays: [DEFAULT_RELAY_URL],
-              author: post.originalEventPubkey,
-            });
-
-            // For regular quote posts, content should include caption + nevent + hashtags
-            quoteContent = [
-              post.caption,
-              `nostr:${neventEncoded}`,
-              addTags.length > 10 ? "" : addTags, // Hide tags if longer than 10 characters
-            ]
-              .filter(Boolean)
-              .join("\n");
-
-            // Include hashtag t tags plus e and p tags for quote posts
-            quoteTags = [
-              ...tagArray, // Hashtag tags
-              ["e", post.originalEventId ?? "", DEFAULT_RELAY_URL, "mention"], // Reference to quoted event
-              ["p", post.originalEventPubkey ?? "", "", "mention"], // Reference to quoted author
-            ];
-          }
-
-          return {
-            fileUrl,
-            scheduledFor: Math.floor(scheduledTime / 1000),
-            caption: post.caption,
-            queueType: post.queueType,
-            isRecyclable: post.isRecyclable,
-            originalPostId: post.originalPostId,
-            originalEventId: post.originalEventId,
-            originalEventPubkey: post.originalEventPubkey,
-            events: {
-              content: quoteContent,
-              created_at: Math.floor(scheduledTime / 1000),
-              kind: 1, // Kind 1 for quote posts
-              tags: quoteTags,
-              isQuotePost: true, // Flag to identify quote posts
-            },
-          };
-        } else {
-          return {
-            fileUrl,
-            scheduledFor: Math.floor(scheduledTime / 1000),
-            caption: post.caption,
-            queueType: post.queueType,
-            isRecyclable: post.isRecyclable,
-            originalPostId: post.originalPostId,
-            events: {
-              content,
-              created_at: Math.floor(scheduledTime / 1000),
-              kind: 1,
-              tags: tagArray,
-            },
-          };
+          return createKind6RepostEvent(post, scheduledTime);
         }
+
+        if (post.isQuotePost) {
+          return createQuotePostEvent(
+            post,
+            addTags,
+            tagArray,
+            scheduledTime,
+            fileUrl
+          );
+        }
+
+        // Regular post
+        return {
+          fileUrl,
+          scheduledFor: Math.floor(scheduledTime / 1000),
+          caption: post.caption,
+          queueType: post.queueType,
+          isRecyclable: post.isRecyclable,
+          originalPostId: post.originalPostId,
+          events: {
+            content,
+            created_at: Math.floor(scheduledTime / 1000),
+            kind: 1,
+            tags: tagArray,
+          },
+        };
       })
     );
 
@@ -392,7 +536,7 @@ export function useBulkPostEvents({
     selectedHashtags,
     user,
     tags,
-    fetcher.data,
+    fetcher,
     setPreparedEvents,
     setShowConfirmation,
     setIsPreviewSubmitting,
@@ -431,52 +575,7 @@ export function useBulkPostEvents({
 
       if (hasRepostData || hasKind6RepostData || hasQuotePostData) {
         // For reposts and quote posts, create fake upload response with existing URLs
-        const fakeFileUrls = posts.map((post) => {
-          let fileUrl = "";
-
-          if (post.isKind6Repost) {
-            // For kind 6 reposts, use the original file URL for display
-            if (post.originalFileUrl && post.originalFileUrl.length > 0) {
-              if (Array.isArray(post.originalFileUrl)) {
-                fileUrl = post.originalFileUrl[0] ?? "";
-              } else if (
-                typeof post.originalFileUrl === "string" &&
-                post.originalFileUrl.startsWith("[")
-              ) {
-                try {
-                  const parsed: unknown = JSON.parse(post.originalFileUrl);
-                  if (Array.isArray(parsed) && parsed.length > 0) {
-                    fileUrl =
-                      typeof (parsed as unknown[])[0] === "string"
-                        ? ((parsed as string[])[0] ?? "")
-                        : "";
-                  }
-                } catch (_e) {
-                  // If parsing fails, use as is
-                  fileUrl = post.originalFileUrl;
-                }
-              } else {
-                fileUrl = post.originalFileUrl;
-              }
-            }
-          } else {
-            // For regular reposts and quote posts, use the fileUrl
-            fileUrl = Array.isArray(post.fileUrl)
-              ? typeof post.fileUrl[0] === "string"
-                ? post.fileUrl[0]
-                : ""
-              : typeof post.fileUrl === "string"
-                ? post.fileUrl
-                : "";
-          }
-
-          return {
-            fileUrl,
-            scheduledFor: post.scheduledFor,
-            queueType: post.queueType,
-            isRecyclable: post.isRecyclable,
-          };
-        });
+        const fakeFileUrls = _createFakeFileUrlData(posts);
 
         // Simulate the fetcher response
         // Note: Direct assignment to fetcher.data is not recommended, but this is a workaround for repost flow

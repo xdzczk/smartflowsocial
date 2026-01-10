@@ -21,7 +21,7 @@ export function useNewPostState() {
 
   const handleHashtagPresetSelect = (
     presetId: string | null,
-    hashtags: string,
+    hashtags: string
   ) => {
     setSelectedHashTagPresetId(presetId);
     setSelectedHashtags(hashtags);

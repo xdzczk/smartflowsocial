@@ -5,7 +5,8 @@
 
 ## Overview
 
-E2E test coverage has been significantly expanded from 6 test files to **15 test files** covering all major features and user flows.
+E2E test coverage has been significantly expanded from 6 test files to **15 test files** covering
+all major features and user flows.
 
 ## Test Files (21 total)
 
@@ -340,4 +341,5 @@ Potential areas for further expansion:
 - Tests use `TEST_NPUB` from `support/nostr-test-keys.ts` for consistent authentication
 - All tests clean up after themselves using `afterEach` hooks
 - Tests are designed to be independent and can run in any order
-- Some warnings (`jest/expect-expect`) are false positives - Cypress uses different assertion patterns
+- Some warnings (`jest/expect-expect`) are false positives - Cypress uses different assertion
+  patterns

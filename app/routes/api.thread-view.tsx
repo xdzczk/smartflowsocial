@@ -10,7 +10,7 @@ import { ExternalServiceError } from "~/lib/errors";
 type AssertFunction = (
   condition: boolean,
   message: string,
-  context?: Record<string, unknown>,
+  context?: Record<string, unknown>
 ) => asserts condition;
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -40,7 +40,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
           service: "PrimalCache",
           eventId,
           originalError: error instanceof Error ? error.message : String(error),
-        },
+        }
       );
     }
 

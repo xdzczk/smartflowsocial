@@ -138,14 +138,14 @@ function ReplyNotification({
             </span>
           </div>
 
-          <p className="mb-2 whitespace-pre-wrap break-words text-sm text-gray-700 dark:text-gray-300">
+          <p className="mb-2 text-sm break-words whitespace-pre-wrap text-gray-700 dark:text-gray-300">
             {notification.content}
           </p>
 
           <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
             <span>
               {formatDate(
-                new Date(notification.createdAt * 1000).toISOString(),
+                new Date(notification.createdAt * 1000).toISOString()
               )}
             </span>
             <Link
@@ -221,7 +221,7 @@ function ZapNotification({
           </div>
 
           {notification.content ? (
-            <p className="mb-2 whitespace-pre-wrap break-words text-sm text-gray-700 dark:text-gray-300">
+            <p className="mb-2 text-sm break-words whitespace-pre-wrap text-gray-700 dark:text-gray-300">
               {notification.content}
             </p>
           ) : null}
@@ -229,7 +229,7 @@ function ZapNotification({
           <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
             <span>
               {formatDate(
-                new Date(notification.createdAt * 1000).toISOString(),
+                new Date(notification.createdAt * 1000).toISOString()
               )}
             </span>
             <Link
@@ -305,14 +305,14 @@ function MentionNotification({
             </span>
           </div>
 
-          <p className="mb-2 whitespace-pre-wrap break-words text-sm text-gray-700 dark:text-gray-300">
+          <p className="mb-2 text-sm break-words whitespace-pre-wrap text-gray-700 dark:text-gray-300">
             {notification.content}
           </p>
 
           <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
             <span>
               {formatDate(
-                new Date(notification.createdAt * 1000).toISOString(),
+                new Date(notification.createdAt * 1000).toISOString()
               )}
             </span>
             <Link

@@ -62,7 +62,7 @@ describe("Bulk Posts Upload", () => {
           // Wait for navigation after file upload
           cy.location("pathname", { timeout: 10000 }).should(
             "include",
-            "bulkposts",
+            "bulkposts"
           );
         }
       });
@@ -76,7 +76,7 @@ describe("Bulk Posts Upload", () => {
           // Wait for navigation after file upload
           cy.location("pathname", { timeout: 10000 }).should(
             "include",
-            "bulkposts",
+            "bulkposts"
           );
         }
       });

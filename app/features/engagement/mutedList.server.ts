@@ -15,7 +15,7 @@ export const getMutedList = fetchMutedList;
  */
 export function updateMutedList(
   pubkey: string,
-  mutedList: MutedListData,
+  mutedList: MutedListData
 ): MutedListData {
   // TODO: Implement actual update logic
   // This is a placeholder that returns the provided muted list
@@ -28,7 +28,7 @@ export function updateMutedList(
  * @returns Object containing array of muted npubs and sync timestamp
  */
 export async function fetchMutedList(
-  pubkey: string,
+  pubkey: string
 ): Promise<MutedListData | null> {
   try {
     const responses = await connectToPrimalCache("mutelist", {
@@ -45,14 +45,11 @@ export async function fetchMutedList(
       (res: PrimalEvent) => {
         if (!Array.isArray(res) || res[0] !== "EVENT") return false;
         const eventData = res[2];
-        if (
-          typeof eventData !== "object" ||
-          Array.isArray(eventData)
-        )
+        if (typeof eventData !== "object" || Array.isArray(eventData))
           return false;
         const eventTyped = eventData as { kind?: number };
         return eventTyped.kind === 10000;
-      },
+      }
     );
 
     if (

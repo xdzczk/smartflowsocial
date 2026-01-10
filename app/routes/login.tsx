@@ -26,7 +26,7 @@ export default function LoginPage() {
       id="page-container"
       className="mx-auto flex min-h-dvh w-full min-w-[320px] flex-col bg-gray-100 dark:bg-gray-900 dark:text-gray-100"
     >
-      <div className="absolute left-0 right-0 top-0 flex h-64 opacity-70 dark:opacity-50">
+      <div className="absolute top-0 right-0 left-0 flex h-64 opacity-70 dark:opacity-50">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white dark:to-gray-900" />
         <div className="grow bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900 dark:to-emerald-900" />
         <div className="grow bg-gradient-to-r from-emerald-100 to-teal-100 dark:from-emerald-900 dark:to-teal-900" />
@@ -68,7 +68,7 @@ export default function LoginPage() {
             >
               <div className="absolute inset-0 rounded-r-lg bg-blue-900/50" />
               <div className="relative text-center sm:text-left">
-                <p className="mb-2 text-lg font-semibold leading-relaxed text-white sm:text-xl">
+                <p className="mb-2 text-lg leading-relaxed font-semibold text-white sm:text-xl">
                   Sign in securely using your Nostr identity
                 </p>
                 <p className="text-sm font-medium text-white/75 sm:text-base">

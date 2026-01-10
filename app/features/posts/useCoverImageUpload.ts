@@ -48,9 +48,8 @@ export function useCoverImageUpload({
         // Check if user has Blossom provider selected
         if (uploadProvider?.includes("BLOSSOM")) {
           // Use client-side upload for Blossom
-          const { uploadFile } = await import(
-            "~/features/upload/upload.client"
-          );
+          const { uploadFile } =
+            await import("~/features/upload/upload.client");
           const uploadResult = await uploadFile(processedFile);
 
           if (uploadResult.success && uploadResult.file) {
@@ -71,9 +70,8 @@ export function useCoverImageUpload({
           });
         }
       } catch (error) {
-        const { handleAsyncErrorWithMessage } = await import(
-          "~/lib/error-handler.client"
-        );
+        const { handleAsyncErrorWithMessage } =
+          await import("~/lib/error-handler.client");
         handleAsyncErrorWithMessage(
           error,
           "Error uploading image. Please try again.",

@@ -123,6 +123,150 @@ type QueueTypeSettings = QueueType & {
   hashTagPresetId?: string;
 };
 
+// ============================================================================
+// Data Parsing Helper Functions
+// ============================================================================
+
+function parseQueueType(qt: unknown): QueueTypeSettings | null {
+  if (!qt || typeof qt !== "object" || !("id" in qt) || !("name" in qt)) {
+    return null;
+  }
+  const q = qt as {
+    id: string;
+    name: string;
+    color?: string | null;
+    scheduleType?: string;
+    scheduleConfig?: unknown;
+    isEnabled?: boolean;
+    hashTagPresetId?: string;
+    isDefault?: boolean;
+    hashTagPreset?: {
+      id: string;
+      name: string;
+      tags: string;
+      description?: string;
+    } | null;
+  };
+  return {
+    id: q.id,
+    name: q.name,
+    color: q.color,
+    description: undefined,
+    scheduleType: q.scheduleType as "INTERVAL" | "FIXED_SLOTS" | undefined,
+    scheduleConfig: convertJsonValueToScheduleConfig(q.scheduleConfig),
+    isEnabled: q.isEnabled,
+    isDefault: q.isDefault ?? false,
+    hashTagPresetId: q.hashTagPresetId,
+    hashTagPreset: q.hashTagPreset,
+  };
+}
+
+function parseQueueTypes(queueTypesRaw: unknown): QueueTypeSettings[] {
+  if (!Array.isArray(queueTypesRaw)) {
+    return [];
+  }
+  return queueTypesRaw
+    .map((qt) => parseQueueType(qt))
+    .filter((qt): qt is QueueTypeSettings => qt !== null);
+}
+
+function isValidHashTagPreset(preset: unknown): preset is {
+  id: string;
+  name: string;
+  tags: string;
+  description?: unknown;
+  createdAt?: unknown;
+  updatedAt?: unknown;
+  userId?: unknown;
+} {
+  return (
+    typeof preset === "object" &&
+    preset !== null &&
+    "id" in preset &&
+    "name" in preset &&
+    "tags" in preset &&
+    typeof (preset as { id: unknown; name: unknown; tags: unknown }).id ===
+      "string" &&
+    typeof (preset as { id: unknown; name: unknown; tags: unknown }).name ===
+      "string" &&
+    typeof (preset as { id: unknown; name: unknown; tags: unknown }).tags ===
+      "string"
+  );
+}
+
+function parseDateValue(dateValue: unknown): Date | undefined {
+  if (dateValue === null || dateValue === undefined) {
+    return undefined;
+  }
+  if (dateValue instanceof Date) {
+    return dateValue;
+  }
+  if (typeof dateValue === "string") {
+    return new Date(dateValue);
+  }
+  return undefined;
+}
+
+function parseHashTagPreset(preset: {
+  id: string;
+  name: string;
+  tags: string;
+  description?: unknown;
+  createdAt?: unknown;
+  updatedAt?: unknown;
+  userId?: unknown;
+}): HashTagPreset {
+  return {
+    id: preset.id,
+    name: preset.name,
+    tags: preset.tags,
+    description:
+      preset.description === null
+        ? null
+        : typeof preset.description === "string"
+          ? preset.description
+          : undefined,
+    userId: typeof preset.userId === "string" ? preset.userId : undefined,
+    createdAt: parseDateValue(preset.createdAt),
+    updatedAt: parseDateValue(preset.updatedAt),
+  };
+}
+
+function parseHashTagPresets(hashTagPresetsRaw: unknown): HashTagPreset[] {
+  if (!Array.isArray(hashTagPresetsRaw)) {
+    return [];
+  }
+  return hashTagPresetsRaw
+    .filter((p) => isValidHashTagPreset(p))
+    .map((p) => parseHashTagPreset(p));
+}
+
+function parseMutedList(mutedListRaw: unknown): {
+  npubs: string[];
+  lastSynced: string;
+} {
+  const mutedListRawTyped = mutedListRaw as
+    | { npubs?: unknown; lastSynced?: unknown }
+    | null
+    | undefined;
+  if (
+    mutedListRawTyped &&
+    typeof mutedListRawTyped === "object" &&
+    !Array.isArray(mutedListRawTyped)
+  ) {
+    return {
+      npubs: Array.isArray(mutedListRawTyped.npubs)
+        ? (mutedListRawTyped.npubs as string[])
+        : [],
+      lastSynced:
+        typeof mutedListRawTyped.lastSynced === "string"
+          ? mutedListRawTyped.lastSynced
+          : new Date().toISOString(),
+    };
+  }
+  return { npubs: [], lastSynced: new Date().toISOString() };
+}
+
 export default function Settings() {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Remix loader data type is complex, validated at runtime
   const loaderDataRaw = useLoaderData<typeof loader>();
@@ -175,129 +319,13 @@ export default function Settings() {
   } = data;
 
   // Type assertions for Remix JsonifyObject serialization
-  const queueTypes: QueueTypeSettings[] = Array.isArray(queueTypesRaw)
-    ? queueTypesRaw
-        .map((qt: unknown) => {
-          if (qt && typeof qt === "object" && "id" in qt && "name" in qt) {
-            const q = qt as {
-              id: string;
-              name: string;
-              color?: string | null;
-              scheduleType?: string;
-              scheduleConfig?: unknown;
-              isEnabled?: boolean;
-              hashTagPresetId?: string;
-              isDefault?: boolean;
-              hashTagPreset?: {
-                id: string;
-                name: string;
-                tags: string;
-                description?: string;
-              } | null;
-            };
-            const result: QueueTypeSettings = {
-              id: q.id,
-              name: q.name,
-              color: q.color,
-              description: undefined,
-              scheduleType: q.scheduleType as
-                | "INTERVAL"
-                | "FIXED_SLOTS"
-                | undefined,
-              scheduleConfig: convertJsonValueToScheduleConfig(
-                q.scheduleConfig
-              ),
-              isEnabled: q.isEnabled,
-              isDefault: q.isDefault ?? false,
-              hashTagPresetId: q.hashTagPresetId,
-              hashTagPreset: q.hashTagPreset,
-            };
-            return result;
-          }
-          return null;
-        })
-        .filter((qt): qt is QueueTypeSettings => qt !== null)
-    : [];
-  // Validate accounts data with Zod schema
+  const queueTypes = parseQueueTypes(queueTypesRaw);
   const accounts = validateAccounts(accountsRaw);
-
-  const hashTagPresets: HashTagPreset[] = Array.isArray(hashTagPresetsRaw)
-    ? hashTagPresetsRaw
-        .filter(
-          (
-            preset: unknown
-          ): preset is {
-            id: string;
-            name: string;
-            tags: string;
-            description?: unknown;
-            createdAt?: unknown;
-            updatedAt?: unknown;
-            userId?: unknown;
-          } =>
-            typeof preset === "object" &&
-            preset !== null &&
-            "id" in preset &&
-            "name" in preset &&
-            "tags" in preset &&
-            typeof (preset as { id: unknown; name: unknown; tags: unknown })
-              .id === "string" &&
-            typeof (preset as { id: unknown; name: unknown; tags: unknown })
-              .name === "string" &&
-            typeof (preset as { id: unknown; name: unknown; tags: unknown })
-              .tags === "string"
-        )
-        .map((preset) => ({
-          id: preset.id,
-          name: preset.name,
-          tags: preset.tags,
-          description:
-            preset.description === null
-              ? null
-              : typeof preset.description === "string"
-                ? preset.description
-                : undefined,
-          userId: typeof preset.userId === "string" ? preset.userId : undefined,
-          createdAt: (() => {
-            const createdAtValue: unknown = preset.createdAt;
-            if (createdAtValue === null || createdAtValue === undefined) return;
-            if (createdAtValue instanceof Date) return createdAtValue;
-            if (typeof createdAtValue === "string")
-              return new Date(createdAtValue);
-            return;
-          })(),
-          updatedAt: (() => {
-            const updatedAtValue: unknown = preset.updatedAt;
-            if (updatedAtValue === null || updatedAtValue === undefined) return;
-            if (updatedAtValue instanceof Date) return updatedAtValue;
-            if (typeof updatedAtValue === "string")
-              return new Date(updatedAtValue);
-            return;
-          })(),
-        }))
-    : [];
-  // Validate subscription, plans, and payment history with Zod schemas
+  const hashTagPresets = parseHashTagPresets(hashTagPresetsRaw);
   const subscription = validateSubscription(subscriptionRaw);
   const availablePlans = validateAvailablePlans(availablePlansRaw);
   const paymentHistory = validatePaymentHistory(paymentHistoryRaw);
-  const mutedListRawTyped = mutedListRaw as
-    | { npubs?: unknown; lastSynced?: unknown }
-    | null
-    | undefined;
-  const mutedList =
-    mutedListRawTyped &&
-    typeof mutedListRawTyped === "object" &&
-    !Array.isArray(mutedListRawTyped)
-      ? {
-          npubs: Array.isArray(mutedListRawTyped.npubs)
-            ? (mutedListRawTyped.npubs as string[])
-            : [],
-          lastSynced:
-            typeof mutedListRawTyped.lastSynced === "string"
-              ? mutedListRawTyped.lastSynced
-              : new Date().toISOString(),
-        }
-      : { npubs: [], lastSynced: new Date().toISOString() };
+  const mutedList = parseMutedList(mutedListRaw);
 
   // Get tab from URL search params
   const searchParams = new URLSearchParams(
@@ -315,7 +343,7 @@ export default function Settings() {
     <div className="container mx-auto p-6">
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-        <p className="mt-2 text-muted-foreground">
+        <p className="text-muted-foreground mt-2">
           Manage your account preferences and posting configurations
         </p>
       </div>
@@ -472,7 +500,7 @@ export default function Settings() {
                   parentUser={accounts.parentUser}
                 />
               ) : (
-                <div className="text-sm text-muted-foreground">
+                <div className="text-muted-foreground text-sm">
                   Your account npub is not available.
                 </div>
               )}

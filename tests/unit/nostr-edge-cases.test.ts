@@ -95,7 +95,7 @@ describe("Nostr Edge Cases", () => {
       }
 
       await expect(promise).rejects.toThrow(
-        "Nostr extension not found after retries",
+        "Nostr extension not found after retries"
       );
       vi.useRealTimers();
     });
@@ -254,10 +254,10 @@ describe("Nostr Edge Cases", () => {
       ]);
       expect(result.nostrEvent.tags).toContainEqual(["client", "SmartFlow"]);
       expect(result.nostrEvent.tags).not.toContainEqual(
-        expect.arrayContaining(["title"]),
+        expect.arrayContaining(["title"])
       );
       expect(result.nostrEvent.tags).not.toContainEqual(
-        expect.arrayContaining(["summary"]),
+        expect.arrayContaining(["summary"])
       );
     });
 
@@ -311,7 +311,8 @@ describe("Nostr Edge Cases", () => {
 
   describe("EditorJS Conversion Edge Cases", () => {
     it("should handle complex nested markdown structures", async () => {
-      const { convertMarkdownToEditorJS } = await import("~/features/posts/utils/editorjs-conversion");
+      const { convertMarkdownToEditorJS } =
+        await import("~/features/posts/utils/editorjs-conversion");
 
       const markdown = `# Header 1
 
@@ -342,7 +343,8 @@ code block
     });
 
     it("should handle markdown with multiple consecutive empty lines", async () => {
-      const { convertMarkdownToEditorJS } = await import("~/features/posts/utils/editorjs-conversion");
+      const { convertMarkdownToEditorJS } =
+        await import("~/features/posts/utils/editorjs-conversion");
 
       const markdown = "Paragraph 1\n\n\n\nParagraph 2";
 
@@ -352,7 +354,8 @@ code block
     });
 
     it("should handle markdown with special characters in links", async () => {
-      const { convertMarkdownToEditorJS } = await import("~/features/posts/utils/editorjs-conversion");
+      const { convertMarkdownToEditorJS } =
+        await import("~/features/posts/utils/editorjs-conversion");
 
       const markdown =
         "[Link with spaces](https://example.com/path with spaces)";
@@ -363,7 +366,8 @@ code block
     });
 
     it("should handle EditorJS with unknown block types gracefully", async () => {
-      const { convertEditorJSToMarkdown } = await import("~/features/posts/utils/editorjs-conversion");
+      const { convertEditorJSToMarkdown } =
+        await import("~/features/posts/utils/editorjs-conversion");
 
       const editorData = {
         blocks: [
@@ -381,7 +385,8 @@ code block
     });
 
     it("should handle EditorJS blocks with missing data fields", async () => {
-      const { convertEditorJSToMarkdown } = await import("~/features/posts/utils/editorjs-conversion");
+      const { convertEditorJSToMarkdown } =
+        await import("~/features/posts/utils/editorjs-conversion");
 
       const editorData = {
         blocks: [

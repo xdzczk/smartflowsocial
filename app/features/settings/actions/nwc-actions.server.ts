@@ -9,15 +9,12 @@ import {
   updateUserNWCEnabled,
   clearUserNWC,
 } from "~/features/user";
-import {
-  updateNWCSchema,
-  validateFormDataOrRespond,
-} from "~/lib/validation";
+import { updateNWCSchema, validateFormDataOrRespond } from "~/lib/validation";
 
 export async function handleNWCAction(
   userId: string,
   action: string,
-  formData: FormData,
+  formData: FormData
 ) {
   if (action === "update_nwc") {
     const result = validateFormDataOrRespond(formData, updateNWCSchema);
@@ -42,4 +39,3 @@ export async function handleNWCAction(
 
   return null;
 }
-

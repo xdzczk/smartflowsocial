@@ -271,7 +271,7 @@ describe("Queue Type Handler Integration Tests", () => {
         queueTypes,
         tags,
         setSelectedQueueType,
-        setDisplayedHashtags,
+        setDisplayedHashtags
       );
     });
   });

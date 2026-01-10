@@ -14,7 +14,7 @@ export async function loadTemplatesData(
   userId: string,
   searchTerm = "",
   page = 1,
-  limit = 100,
+  limit = 100
 ) {
   const [templates, user, assetsData] = await Promise.all([
     getTemplates({ userId }),

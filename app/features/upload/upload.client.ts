@@ -39,22 +39,21 @@ export async function uploadFile(file: File): Promise<UploadResult> {
         file,
         uploadProvider,
         enableMirrorBlossom,
-        mirrorUploadUrls,
+        mirrorUploadUrls
       );
     } else {
       return await uploadFileToS3(file);
     }
   } catch (error) {
-    const { handleAsyncError, getErrorMessage } = await import(
-      "~/lib/error-handler.client"
-    );
+    const { handleAsyncError, getErrorMessage } =
+      await import("~/lib/error-handler.client");
     handleAsyncError(
       error,
       {
         component: COMPONENT_UPLOAD_CLIENT,
         action: "uploadFile",
       },
-      false,
+      false
     ); // Don't show toast, return error instead
     return {
       success: false,
@@ -107,13 +106,13 @@ async function uploadFileToBlossom(
   file: File,
   provider = "BLOSSOM_PRIMAL",
   enableMirrorBlossom = false,
-  mirrorUploadUrls: string[] = [],
+  mirrorUploadUrls: string[] = []
 ): Promise<UploadResult> {
   try {
     // Check if NOSTR is available
     if (!window.nostr) {
       throw new Error(
-        "NOSTR extension not available. Please install a NOSTR browser extension like Alby, Amber, or nos2x.",
+        "NOSTR extension not available. Please install a NOSTR browser extension like Alby, Amber, or nos2x."
       );
     }
 
@@ -153,7 +152,7 @@ async function uploadFileToBlossom(
     // Validate that we got the expected tag format
     if (!Array.isArray(tags)) {
       throw new Error(
-        "BlossomUploader returned invalid format - expected array of tags",
+        "BlossomUploader returned invalid format - expected array of tags"
       );
     }
 
@@ -193,9 +192,8 @@ async function uploadFileToBlossom(
       };
     }
   } catch (error) {
-    const { handleAsyncError, getErrorMessage } = await import(
-      "~/lib/error-handler.client"
-    );
+    const { handleAsyncError, getErrorMessage } =
+      await import("~/lib/error-handler.client");
     handleAsyncError(
       error,
       {
@@ -203,7 +201,7 @@ async function uploadFileToBlossom(
         action: "uploadFileToBlossom",
         provider,
       },
-      false,
+      false
     ); // Don't show toast, return error instead
     return {
       success: false,
@@ -216,7 +214,7 @@ async function uploadFileToBlossom(
  * Upload multiple files
  */
 export async function uploadMultipleFiles(
-  files: File[],
+  files: File[]
 ): Promise<UploadResult[]> {
   const uploadPromises = files.map((file) => uploadFile(file));
   return Promise.all(uploadPromises);
@@ -227,7 +225,7 @@ export async function uploadMultipleFiles(
  * This specifically uses the EditorJS endpoint which handles image processing
  */
 export async function uploadEditorJSImage(
-  file: File,
+  file: File
 ): Promise<{ success: number; file?: { url: string } }> {
   try {
     const formData = new FormData();
@@ -259,7 +257,7 @@ export async function uploadEditorJSImage(
           component: COMPONENT_UPLOAD_CLIENT,
           action: "uploadEditorJSImage",
         },
-        "warning",
+        "warning"
       );
       return {
         success: 0,
@@ -274,7 +272,7 @@ export async function uploadEditorJSImage(
         component: COMPONENT_UPLOAD_CLIENT,
         action: "uploadEditorJSImage",
       },
-      false,
+      false
     ); // Don't show toast, return error code instead
     return {
       success: 0,

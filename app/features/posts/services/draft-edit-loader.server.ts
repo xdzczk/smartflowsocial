@@ -32,7 +32,10 @@ export async function loadDraftEditData(userId: string, postId: string) {
   // Convert Post to PostData and serialize to DTO
   // getPostById returns Post with includes, so queueType might be in the post
   const queueType = "queueType" in post ? post.queueType : null;
-  const { queueType: _queueType, ...rest } = post as { queueType?: unknown; [key: string]: unknown };
+  const { queueType: _queueType, ...rest } = post as {
+    queueType?: unknown;
+    [key: string]: unknown;
+  };
   const signedEventValue: PostData["signedEvent"] =
     post.signedEvent as PostData["signedEvent"];
   const nostrEventValue: PostData["nostrEvent"] =
@@ -40,7 +43,7 @@ export async function loadDraftEditData(userId: string, postId: string) {
   const postData: PostData = {
     ...rest,
     queueType: convertPrismaQueueTypeToQueueType(
-      queueType as Parameters<typeof convertPrismaQueueTypeToQueueType>[0],
+      queueType as Parameters<typeof convertPrismaQueueTypeToQueueType>[0]
     ),
     signedEvent: signedEventValue,
     nostrEvent: nostrEventValue,

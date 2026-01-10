@@ -1,10 +1,12 @@
 # Test Database Integration
 
-This directory contains utilities for integrating real database tests with transaction-based isolation.
+This directory contains utilities for integrating real database tests with transaction-based
+isolation.
 
 ## Overview
 
-Test database integration allows you to write tests that use a real database instead of mocks. This catches more integration issues but requires careful setup to ensure test isolation.
+Test database integration allows you to write tests that use a real database instead of mocks. This
+catches more integration issues but requires careful setup to ensure test isolation.
 
 ## Features
 
@@ -95,10 +97,7 @@ it("should get user with queues", async () => {
 ### Using describeDatabase Helper
 
 ```typescript
-import {
-  describeDatabase,
-  withDatabase,
-} from "~/tests/database/database-test-helpers";
+import { describeDatabase, withDatabase } from "~/tests/database/database-test-helpers";
 
 describeDatabase("Post Model", () => {
   it("should create a post", async () => {
@@ -304,7 +303,7 @@ await prisma.$transaction(
   async (tx) => {
     // Test code
   },
-  { timeout: 60000 },
+  { timeout: 60000 }
 ); // 60 seconds
 ```
 

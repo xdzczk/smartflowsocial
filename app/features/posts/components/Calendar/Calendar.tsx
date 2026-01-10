@@ -37,7 +37,7 @@ export function Calendar({
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [rescheduleData, setRescheduleData] = useState<RescheduleData | null>(
-    null,
+    null
   );
 
   const handlePostDrop = useCallback(
@@ -58,7 +58,7 @@ export function Calendar({
       });
       setShowRescheduleModal(true);
     },
-    [isLongform, isAll],
+    [isLongform, isAll]
   );
 
   const handlePostEdit = useCallback(
@@ -83,7 +83,7 @@ export function Calendar({
       });
       setShowRescheduleModal(true);
     },
-    [isLongform, isAll],
+    [isLongform, isAll]
   );
 
   return (

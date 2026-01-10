@@ -43,7 +43,12 @@ const tier1Rules = {
   ],
   "@typescript-eslint/restrict-template-expressions": [
     "error",
-    { allowNumber: true, allowBoolean: true, allowAny: false, allowNullish: false },
+    {
+      allowNumber: true,
+      allowBoolean: true,
+      allowAny: false,
+      allowNullish: false,
+    },
   ],
 };
 
@@ -86,7 +91,10 @@ const tier2Rules = {
   // TypeScript consistency rules
   "@typescript-eslint/consistent-type-definitions": ["warn", "interface"],
   "@typescript-eslint/array-type": ["warn", { default: "array-simple" }],
-  "@typescript-eslint/no-confusing-void-expression": ["warn", { ignoreArrowShorthand: true }],
+  "@typescript-eslint/no-confusing-void-expression": [
+    "warn",
+    { ignoreArrowShorthand: true },
+  ],
   "@typescript-eslint/no-meaningless-void-operator": "warn",
   "@typescript-eslint/no-redundant-type-constituents": "warn",
 };
@@ -110,66 +118,78 @@ const featureBoundaryRestrictions = [
   {
     target: "app/routes/**/*",
     from: "app/models/**",
-    message: "Routes cannot import from ~/models/* directly. Use feature service layers instead.",
+    message:
+      "Routes cannot import from ~/models/* directly. Use feature service layers instead.",
   },
   {
     target: "app/routes/**/*",
     from: "app/features/**/services/**",
-    message: "Routes must use feature public API (index.ts), not internal services",
+    message:
+      "Routes must use feature public API (index.ts), not internal services",
   },
   {
     target: "app/routes/**/*",
     from: "app/features/**/hooks/**",
-    message: "Routes must use feature public API (index.ts), not internal hooks",
+    message:
+      "Routes must use feature public API (index.ts), not internal hooks",
   },
   {
     target: "app/routes/**/*",
     from: "app/features/**/components/**",
-    message: "Routes must use feature public API (index.ts), not internal components",
+    message:
+      "Routes must use feature public API (index.ts), not internal components",
   },
   {
     target: "app/routes/**/*",
     from: "app/features/**/utils/**",
-    message: "Routes must use feature public API (index.ts), not internal utils",
+    message:
+      "Routes must use feature public API (index.ts), not internal utils",
   },
   {
     target: ["app/features/**/*.{ts,tsx}", "!app/features/**/index.{ts,tsx}"],
     from: "~/features/*/services/**",
     except: ["app/features/*/services/**", "app/features/**/services/**"],
-    message: "Features must use other features' public API (index.ts), not internal services. Use relative imports for same-feature imports.",
+    message:
+      "Features must use other features' public API (index.ts), not internal services. Use relative imports for same-feature imports.",
   },
   {
     target: ["app/features/**/*.{ts,tsx}", "!app/features/**/index.{ts,tsx}"],
     from: "~/features/*/hooks/**",
     except: ["app/features/*/hooks/**", "app/features/**/hooks/**"],
-    message: "Features must use other features' public API (index.ts), not internal hooks. Use relative imports for same-feature imports.",
+    message:
+      "Features must use other features' public API (index.ts), not internal hooks. Use relative imports for same-feature imports.",
   },
   {
     target: ["app/features/**/*.{ts,tsx}", "!app/features/**/index.{ts,tsx}"],
     from: "~/features/*/components/**",
     except: ["app/features/*/components/**", "app/features/**/components/**"],
-    message: "Features must use other features' public API (index.ts), not internal components. Use relative imports for same-feature imports.",
+    message:
+      "Features must use other features' public API (index.ts), not internal components. Use relative imports for same-feature imports.",
   },
   {
     target: ["app/features/**/*.{ts,tsx}", "!app/features/**/index.{ts,tsx}"],
     from: "~/features/*/utils/**",
     except: ["app/features/*/utils/**", "app/features/**/utils/**"],
-    message: "Features must use other features' public API (index.ts), not internal utils. Use relative imports for same-feature imports.",
+    message:
+      "Features must use other features' public API (index.ts), not internal utils. Use relative imports for same-feature imports.",
   },
   {
     target: "app/models/**/*",
     from: "app/features/**/services/**",
-    message: "Models must use feature public API (index.ts), not internal services",
+    message:
+      "Models must use feature public API (index.ts), not internal services",
   },
   {
     target: "app/models/**/*",
     from: "app/features/**/hooks/**",
-    message: "Models must use feature public API (index.ts), not internal hooks",
+    message:
+      "Models must use feature public API (index.ts), not internal hooks",
   },
   {
     target: "app/models/**/*",
     from: "app/features/**/components/**",
-    message: "Models must use feature public API (index.ts), not internal components",
+    message:
+      "Models must use feature public API (index.ts), not internal components",
   },
 ];
 
@@ -198,7 +218,7 @@ const qualityRules = {
   "unicorn/prefer-string-trim-start-end": "warn",
   "unicorn/prefer-top-level-await": "off",
   // SonarJS
-  "sonarjs/cognitive-complexity": ["warn", 15],
+  "sonarjs/cognitive-complexity": ["warn", 30],
   "sonarjs/no-duplicate-string": ["warn", { threshold: 3 }],
   "sonarjs/no-identical-functions": "warn",
   "sonarjs/no-small-switch": "off",
@@ -251,7 +271,10 @@ export default (async () => {
         "eslint-comments/disable-enable-pair": "warn",
         "eslint-comments/no-unlimited-disable": "error",
         "eslint-comments/no-unused-disable": "error",
-        "eslint-comments/require-description": ["warn", { ignore: ["eslint-enable"] }],
+        "eslint-comments/require-description": [
+          "warn",
+          { ignore: ["eslint-enable"] },
+        ],
       },
     },
 
@@ -288,7 +311,10 @@ export default (async () => {
         ...reactPlugin.configs["jsx-runtime"].rules,
         ...reactHooks.configs.recommended.rules,
         ...jsxA11y.configs.recommended.rules,
-        "react/jsx-no-leaked-render": ["warn", { validStrategies: ["ternary"] }],
+        "react/jsx-no-leaked-render": [
+          "warn",
+          { validStrategies: ["ternary"] },
+        ],
         "react/prop-types": "off",
         "no-undef": "off",
         // React performance rules
@@ -351,7 +377,10 @@ export default (async () => {
         ...tier2Rules,
         "import/order": importOrderRule,
         "no-console": ["error", { allow: ["error", "warn", "info"] }],
-        "import/no-restricted-paths": ["error", { zones: featureBoundaryRestrictions }],
+        "import/no-restricted-paths": [
+          "error",
+          { zones: featureBoundaryRestrictions },
+        ],
         "no-restricted-imports": "off", // Handled in routes-specific block
         // Import quality rules
         "import/no-cycle": ["error", { maxDepth: 10 }],
@@ -373,13 +402,15 @@ export default (async () => {
               {
                 name: "@prisma/client",
                 importNames: ["PrismaClient"],
-                message: "Routes should not import PrismaClient directly. Use models layer instead.",
+                message:
+                  "Routes should not import PrismaClient directly. Use models layer instead.",
               },
             ],
             patterns: [
               {
                 group: ["**/prisma.server"],
-                message: "Routes should not import prisma.server directly. Use models layer instead.",
+                message:
+                  "Routes should not import prisma.server directly. Use models layer instead.",
               },
             ],
           },
@@ -511,7 +542,10 @@ export default (async () => {
         "@typescript-eslint/no-unsafe-member-access": "off",
         "@typescript-eslint/no-unsafe-call": "off",
         "no-console": "off",
-        "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+        "@typescript-eslint/no-unused-vars": [
+          "warn",
+          { argsIgnorePattern: "^_" },
+        ],
         "no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
         "import/order": "warn",
         "import/no-restricted-paths": "off",

@@ -28,7 +28,7 @@ interface AssetsTabProps {
   }>;
   onDeleteAsset: (
     e: React.MouseEvent<HTMLButtonElement>,
-    assetId: string,
+    assetId: string
   ) => void;
 }
 
@@ -71,7 +71,7 @@ export function AssetsTab({
               type="text"
               value={searchInput}
               onChange={(e) => onSearchInputChange(e.target.value)}
-              className="block w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 text-sm leading-6 placeholder-gray-400 focus:border-blue-500 focus:ring focus:ring-blue-500/50 dark:border-gray-700 dark:bg-gray-900 dark:focus:border-blue-500"
+              className="block w-full rounded-lg border border-gray-300 py-2 pr-3 pl-10 text-sm leading-6 placeholder-gray-400 focus:border-blue-500 focus:ring focus:ring-blue-500/50 dark:border-gray-700 dark:bg-gray-900 dark:focus:border-blue-500"
               placeholder="Search assets by title, content, or tags..."
             />
           </div>
@@ -143,7 +143,7 @@ export function AssetsTab({
         </div>
       ) : (
         <div className="min-w-full overflow-x-auto rounded border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-          <table className="min-w-full whitespace-nowrap align-middle text-sm">
+          <table className="min-w-full align-middle text-sm whitespace-nowrap">
             <thead>
               <tr>
                 <th className="bg-gray-100/75 px-3 py-4 text-center font-semibold text-gray-900 dark:bg-gray-700/25 dark:text-gray-50">
@@ -222,16 +222,14 @@ export function AssetsTab({
                   <td className="p-3">
                     {asset.tags && asset.tags.length > 0 ? (
                       <div className="flex flex-wrap gap-1">
-                        {asset.tags
-                          .slice(0, 3)
-                          .map((tag: string) => (
-                            <span
-                              key={tag}
-                              className="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800 dark:bg-gray-700 dark:text-gray-200"
-                            >
-                              {tag}
-                            </span>
-                          ))}
+                        {asset.tags.slice(0, 3).map((tag: string) => (
+                          <span
+                            key={tag}
+                            className="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800 dark:bg-gray-700 dark:text-gray-200"
+                          >
+                            {tag}
+                          </span>
+                        ))}
                         {asset.tags.length > 3 ? (
                           <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800 dark:bg-gray-700 dark:text-gray-200">
                             +{asset.tags.length - 3}
@@ -268,7 +266,7 @@ export function AssetsTab({
                         type="submit"
                         onClick={(e) => onDeleteAsset(e, asset.id)}
                         disabled={deleteFetcherState !== "idle"}
-                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-2 py-1 text-sm font-semibold leading-5 text-red-800 hover:border-red-300 hover:text-red-900 hover:shadow-sm focus:ring focus:ring-red-300/25 active:border-red-200 active:shadow-none disabled:opacity-50 dark:border-red-700 dark:bg-gray-800 dark:text-red-300 dark:hover:border-red-600 dark:hover:text-red-200 dark:focus:ring-red-600/40 dark:active:border-red-700"
+                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-2 py-1 text-sm leading-5 font-semibold text-red-800 hover:border-red-300 hover:text-red-900 hover:shadow-sm focus:ring focus:ring-red-300/25 active:border-red-200 active:shadow-none disabled:opacity-50 dark:border-red-700 dark:bg-gray-800 dark:text-red-300 dark:hover:border-red-600 dark:hover:text-red-200 dark:focus:ring-red-600/40 dark:active:border-red-700"
                       >
                         Delete
                       </button>

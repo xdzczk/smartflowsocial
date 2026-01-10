@@ -42,9 +42,9 @@ describe("Property-Based Tests: Timezone Handling", () => {
             } catch {
               return false;
             }
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
 
@@ -63,9 +63,9 @@ describe("Property-Based Tests: Timezone Handling", () => {
             } catch {
               return false;
             }
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
   });
@@ -80,9 +80,9 @@ describe("Property-Based Tests: Timezone Handling", () => {
           (timezone: string, date: Date, hours: number) => {
             const later = new Date(date.getTime() + hours * 60 * 60 * 1000);
             return later > date;
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
 
@@ -92,7 +92,7 @@ describe("Property-Based Tests: Timezone Handling", () => {
           fc.constantFrom(
             "America/New_York",
             "Europe/London",
-            "Australia/Sydney",
+            "Australia/Sydney"
           ),
           fc.date({ min: new Date("2020-01-01"), max: new Date("2030-12-31") }),
           (timezone: string, date: Date) => {
@@ -104,9 +104,9 @@ describe("Property-Based Tests: Timezone Handling", () => {
             } catch {
               return false;
             }
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
   });
@@ -120,7 +120,7 @@ describe("Property-Based Tests: Timezone Handling", () => {
             /^[A-Z][a-z]+\/[A-Z][a-zA-Z_]+$/.test(timezone) ||
             timezone === "UTC"
           );
-        }),
+        })
       );
     });
 
@@ -129,7 +129,7 @@ describe("Property-Based Tests: Timezone Handling", () => {
         fc.property(fc.constantFrom(...validTimezones), (timezone: string) => {
           const normalized = timezone.trim();
           return validTimezones.includes(normalized);
-        }),
+        })
       );
     });
   });
@@ -143,12 +143,12 @@ describe("Property-Based Tests: Timezone Handling", () => {
           fc.integer({ min: 1, max: 168 }), // Hours in future (up to 1 week)
           (timezone: string, baseTime: Date, hoursAhead: number) => {
             const scheduledTime = new Date(
-              baseTime.getTime() + hoursAhead * 60 * 60 * 1000,
+              baseTime.getTime() + hoursAhead * 60 * 60 * 1000
             );
             return scheduledTime > baseTime && scheduledTime >= new Date();
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
 
@@ -164,9 +164,9 @@ describe("Property-Based Tests: Timezone Handling", () => {
             const date2 = new Date(date);
             // Both represent the same moment
             return date1.getTime() === date2.getTime();
-          },
+          }
         ),
-        { numRuns: 30 },
+        { numRuns: 30 }
       );
     });
   });

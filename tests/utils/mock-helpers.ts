@@ -130,7 +130,7 @@ export function setupPostMocks(mocks: {
 export function setupFetchMock(
   status = 200,
   ok = true,
-  jsonResponse: unknown = {},
+  jsonResponse: unknown = {}
 ) {
   const mockFetch = vi.fn();
   global.fetch = mockFetch as unknown as typeof fetch;

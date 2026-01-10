@@ -75,7 +75,7 @@ describe("Subscription and Payment Flow", () => {
           (p: string) =>
             p.includes("settings") ||
             p.includes("plans") ||
-            p.includes("dashboard"),
+            p.includes("dashboard")
         );
       });
       cy.get("body").should("be.visible");
@@ -90,7 +90,7 @@ describe("Subscription and Payment Flow", () => {
       cy.location("pathname").then((pathname) => {
         // Accept either dashboard or plans page (if redirected)
         expect(pathname).to.satisfy(
-          (p: string) => p.includes("dashboard") || p.includes("plans"),
+          (p: string) => p.includes("dashboard") || p.includes("plans")
         );
       });
       cy.get("body").should("be.visible");

@@ -27,6 +27,98 @@ interface EditPostSubmitParams {
   user?: UserData;
 }
 
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+async function uploadNewFiles(
+  newFiles: File[],
+  existingImages: string[]
+): Promise<string[]> {
+  const allImageUrls = [...existingImages];
+  if (newFiles.length === 0) {
+    return allImageUrls;
+  }
+
+  const uploadResults = await uploadMultipleFiles(newFiles);
+  const failedUploads = uploadResults.filter((result) => !result.success);
+  if (failedUploads.length > 0) {
+    throw new Error(
+      `Upload failed: ${failedUploads.map((r) => r.error).join(", ")}`
+    );
+  }
+
+  const newUrls = uploadResults
+    .filter((result) => result.success && result.file)
+    .map((result) => result.file!.url);
+  allImageUrls.push(...newUrls);
+  return allImageUrls;
+}
+
+function buildLongformEventTags(
+  postId: string,
+  title: string | undefined,
+  summary: string | undefined,
+  image: string | undefined
+): string[][] {
+  const tags: string[][] = [
+    ["d", postId],
+    ["title", title ?? ""],
+    ["summary", summary ?? ""],
+  ];
+  if (image) {
+    tags.push(["image", image]);
+  }
+  return tags;
+}
+
+function getFinalHashtags(
+  useHashtagPresets: boolean,
+  selectedHashtagPresetTags: string | undefined,
+  manualHashtags: string
+): string {
+  return useHashtagPresets && selectedHashtagPresetTags
+    ? selectedHashtagPresetTags
+    : manualHashtags;
+}
+
+function buildRegularPostContent(
+  caption: string | undefined,
+  allImageUrls: string[],
+  finalHashtags: string,
+  user: UserData | null | undefined
+): string {
+  let eventContent = caption ?? "";
+
+  if (allImageUrls.length > 0) {
+    const imageContent = allImageUrls.join("\n");
+    eventContent = eventContent
+      ? `${eventContent}\n\n${imageContent}`
+      : imageContent;
+  }
+
+  if (user?.showHashTagsinPosts && finalHashtags) {
+    eventContent = `${eventContent}\n${finalHashtags}`;
+  }
+
+  return eventContent;
+}
+
+function buildHashtagTags(finalHashtags: string): string[][] {
+  const eventTags: string[][] = [];
+  if (!finalHashtags) {
+    return eventTags;
+  }
+
+  const hashtagList = finalHashtags
+    .split(/\s+/)
+    .filter((tag) => tag.startsWith("#") && tag.length > 1);
+  hashtagList.forEach((tag) => {
+    eventTags.push(["t", tag.replace("#", "")]);
+  });
+  return eventTags;
+}
+
 export async function prepareEditPostSubmission({
   post,
   isLongform,
@@ -45,70 +137,28 @@ export async function prepareEditPostSubmission({
   scheduledFor,
   user,
 }: EditPostSubmitParams) {
-  // Handle image uploads first if there are new files
-  const allImageUrls = [...existingImages];
-  if (newFiles.length > 0) {
-    const uploadResults = await uploadMultipleFiles(newFiles);
-    const failedUploads = uploadResults.filter((result) => !result.success);
-    if (failedUploads.length > 0) {
-      throw new Error(
-        `Upload failed: ${failedUploads.map((r) => r.error).join(", ")}`,
-      );
-    }
-    const newUrls = uploadResults
-      .filter((result) => result.success && result.file)
-      .map((result) => result.file!.url);
-    allImageUrls.push(...newUrls);
-  }
+  const allImageUrls = await uploadNewFiles(newFiles, existingImages);
 
   let eventContent = "";
   let eventTags: string[][] = [];
   let finalHashtags = "";
 
   if (isLongform) {
-    // Create longform event content (NIP-23)
     eventContent = content ?? "";
-    eventTags = [
-      ["d", post.id], // identifier tag
-      ["title", title ?? ""],
-      ["summary", summary ?? ""],
-    ];
-    if (image) {
-      eventTags.push(["image", image]);
-    }
+    eventTags = buildLongformEventTags(post.id, title, summary, image);
   } else {
-    // Determine final hashtags to use
-    if (useHashtagPresets && selectedHashtagPresetTags) {
-      finalHashtags = selectedHashtagPresetTags;
-    } else {
-      finalHashtags = manualHashtags;
-    }
-
-    // Create post content with images below text
-    eventContent = caption ?? "";
-
-    // Add image URLs to content (below the text)
-    if (allImageUrls.length > 0) {
-      const imageContent = allImageUrls.join("\n");
-      eventContent = eventContent
-        ? `${eventContent}\n\n${imageContent}`
-        : imageContent;
-    }
-
-    // Add hashtags if applicable and user setting is enabled
-    if (user?.showHashTagsinPosts && finalHashtags) {
-      eventContent = `${eventContent}\n${finalHashtags}`;
-    }
-
-    // Parse hashtags and add as 't' tags
-    if (finalHashtags) {
-      const hashtagList = finalHashtags
-        .split(/\s+/)
-        .filter((tag) => tag.startsWith("#") && tag.length > 1);
-      hashtagList.forEach((tag) => {
-        eventTags.push(["t", tag.replace("#", "")]);
-      });
-    }
+    finalHashtags = getFinalHashtags(
+      useHashtagPresets,
+      selectedHashtagPresetTags,
+      manualHashtags
+    );
+    eventContent = buildRegularPostContent(
+      caption,
+      allImageUrls,
+      finalHashtags,
+      user
+    );
+    eventTags = buildHashtagTags(finalHashtags);
   }
 
   const eventKind = isLongform ? 30023 : 1;
@@ -134,7 +184,7 @@ export async function prepareEditPostSubmission({
   if (scheduledFor) {
     formData.append(
       "scheduledFor",
-      Math.floor(scheduledFor.getTime() / 1000).toString(),
+      Math.floor(scheduledFor.getTime() / 1000).toString()
     );
   }
 

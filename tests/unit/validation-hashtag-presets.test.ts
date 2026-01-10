@@ -74,7 +74,7 @@ describe("HashTag Presets Validation", () => {
 
       expect(result[0]?.createdAt).toBeInstanceOf(Date);
       expect(result[0]?.createdAt?.getTime()).toBe(
-        new Date("2024-01-01T00:00:00Z").getTime(),
+        new Date("2024-01-01T00:00:00Z").getTime()
       );
     });
 
@@ -127,7 +127,7 @@ describe("HashTag Presets Validation", () => {
 
       expect(result[0]?.updatedAt).toBeInstanceOf(Date);
       expect(result[0]?.updatedAt?.getTime()).toBe(
-        new Date("2024-01-02T00:00:00Z").getTime(),
+        new Date("2024-01-02T00:00:00Z").getTime()
       );
     });
 
@@ -198,4 +198,3 @@ describe("HashTag Presets Validation", () => {
     });
   });
 });
-

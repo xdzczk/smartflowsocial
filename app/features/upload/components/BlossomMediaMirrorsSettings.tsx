@@ -200,12 +200,12 @@ export function BlossomMediaMirrorsSettings({
                 </Button>
               </div>
               {form.formState.errors.mirrorUrls ? (
-                <p className="text-sm text-destructive">
+                <p className="text-destructive text-sm">
                   {form.formState.errors.mirrorUrls.message ??
                     "Please fix validation errors"}
                 </p>
               ) : null}
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Add Blossom mirror URLs one by one
               </p>
             </div>
@@ -225,7 +225,7 @@ export function BlossomMediaMirrorsSettings({
             </p>
           ) : null}
           {fetcher.data?.error ? (
-            <p className="text-sm text-destructive">{fetcher.data.error}</p>
+            <p className="text-destructive text-sm">{fetcher.data.error}</p>
           ) : null}
         </form>
       </CardContent>

@@ -33,7 +33,8 @@ SmartFlowSocial supports multiple ways to create and publish content to Nostr:
 - **Templates**: Reuse post structures
 - **Recyclables**: Reuse evergreen content
 
-All posts are signed client-side using your Nostr extension (NIP-07) before being published to relays.
+All posts are signed client-side using your Nostr extension (NIP-07) before being published to
+relays.
 
 ### Posting Workflow
 
@@ -165,7 +166,8 @@ Check out this video: https://youtube.com/watch?v=...
 #video #tutorial
 ```
 
-**Note:** Nostr doesn't natively support video embedding. Videos are shared as links with preview cards.
+**Note:** Nostr doesn't natively support video embedding. Videos are shared as links with preview
+cards.
 
 ### Long-form Posts (Articles)
 
@@ -203,35 +205,29 @@ Publish immediately to Nostr.
 **Steps:**
 
 1. **Click "New Post"**
-
    - From dashboard header
    - Or use keyboard shortcut (if configured)
 
 2. **Select Post Type**
-
    - Text, Image, Carousel, or Video
    - Choose based on your content
 
 3. **Enter Content**
-
    - Type your post text
    - Add hashtags manually or select preset
    - Attach images if needed
 
 4. **Preview**
-
    - Review how post will appear
    - Check formatting
    - Verify media attachments
 
 5. **Click "Post Now"**
-
    - Confirmation dialog appears
    - Review post one more time
    - Click "Post Now" to confirm
 
 6. **Sign Event**
-
    - Nostr extension prompts you
    - Review event details:
      - Content
@@ -327,7 +323,6 @@ Assign posts to queues with automatic scheduling rules.
 **Queue Types:**
 
 1. **Interval Scheduling**
-
    - Posts every X hours
    - Calculated from last post time
    - Example: Every 4 hours
@@ -370,35 +365,29 @@ Upload multiple images and schedule them automatically.
 **Steps:**
 
 1. **Click "Bulk Posts"**
-
    - From dashboard navigation
    - Or go to `/dashboard/bulk`
 
 2. **Upload Images**
-
    - Drag and drop multiple files
    - Or click to select files
    - Supports: JPG, PNG, WebP, GIF
 
 3. **Set Start Date and Time**
-
    - When to start posting
    - First image posts at this time
 
 4. **Select Posting Interval**
-
    - Choose from: 2h, 4h, 6h, 12h, 24h
    - Or custom interval
    - Images spaced by this interval
 
 5. **Add Captions** (Optional)
-
    - Add caption for each image
    - Or use template captions
    - Can edit individually
 
 6. **Preview Posts**
-
    - Click "Preview X Posts"
    - Review all scheduled posts
    - Check times and captions
@@ -694,21 +683,17 @@ Full articles with rich text formatting (NIP-23).
 **Steps:**
 
 1. **Click "New Long-form Post"**
-
    - From dashboard navigation
 
 2. **Enter Title**
-
    - Article title
    - Used in NIP-23 event
 
 3. **Add Summary** (Optional)
-
    - Brief description
    - Shown in previews
 
 4. **Write Content**
-
    - Use rich text editor
    - Supports:
      - Headers (H1-H6)
@@ -720,17 +705,14 @@ Full articles with rich text formatting (NIP-23).
      - Images
 
 5. **Add Cover Image** (Optional)
-
    - Upload cover image
    - Shown in article previews
 
 6. **Add Topic Tags**
-
    - Enter topic tags
    - Used for categorization
 
 7. **Schedule or Publish**
-
    - Publish immediately
    - Or schedule for later
 
@@ -780,7 +762,8 @@ Save reusable post structures with placeholders for dynamic content.
 
 **What Templates Are:**
 
-Templates allow you to create reusable post structures with placeholders for dynamic content. Use templates for:
+Templates allow you to create reusable post structures with placeholders for dynamic content. Use
+templates for:
 
 - **Weekly announcements** - Regular updates
 - **Product launches** - Consistent format

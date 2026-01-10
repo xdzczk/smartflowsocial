@@ -4,7 +4,8 @@
 **Difficulty:** Intermediate  
 **Last updated:** 2026-01-02
 
-Complete guide to operating SmartFlowSocial in production, including monitoring, logging, alerting, and maintenance.
+Complete guide to operating SmartFlowSocial in production, including monitoring, logging, alerting,
+and maintenance.
 
 ## Table of Contents
 
@@ -409,18 +410,15 @@ receivers:
 ### Key Performance Indicators (KPIs)
 
 1. **Response Time**
-
    - P50 (median): < 200ms
    - P95: < 500ms
    - P99: < 1s
 
 2. **Throughput**
-
    - Requests per second
    - Jobs processed per minute
 
 3. **Error Rate**
-
    - < 1% of requests
    - < 10 errors per minute
 
@@ -510,13 +508,11 @@ try {
 ### Key Metrics
 
 1. **Connection Pool**
-
    - Active connections
    - Idle connections
    - Connection wait time
 
 2. **Query Performance**
-
    - Slow queries
    - Query frequency
    - Cache hit rate

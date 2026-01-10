@@ -147,9 +147,8 @@ describe("API: Upload", () => {
       });
 
       it("should handle multipart parsing errors", async () => {
-        const { unstable_parseMultipartFormData } = await import(
-          "@remix-run/node"
-        );
+        const { unstable_parseMultipartFormData } =
+          await import("@remix-run/node");
         (
           unstable_parseMultipartFormData as ReturnType<typeof vi.fn>
         ).mockRejectedValue(new Error("Parse error"));
@@ -186,9 +185,8 @@ describe("API: Upload", () => {
       });
 
       it("should return validation error when no file provided", async () => {
-        const { unstable_parseMultipartFormData } = await import(
-          "@remix-run/node"
-        );
+        const { unstable_parseMultipartFormData } =
+          await import("@remix-run/node");
         (
           unstable_parseMultipartFormData as ReturnType<typeof vi.fn>
         ).mockResolvedValue(
@@ -227,9 +225,8 @@ describe("API: Upload", () => {
       });
 
       it("should return validation error when file upload fails (no URL)", async () => {
-        const { unstable_parseMultipartFormData } = await import(
-          "@remix-run/node"
-        );
+        const { unstable_parseMultipartFormData } =
+          await import("@remix-run/node");
         const formData = new FormData();
         formData.append("file", "not-a-url");
         (

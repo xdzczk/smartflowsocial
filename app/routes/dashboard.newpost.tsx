@@ -16,6 +16,7 @@ import {
   type QueueType,
   type HashTagPreset,
 } from "~/features/posts/server";
+import type { PreparedEvent } from "~/features/posts/types";
 import {
   MediaPost,
   NewPostHeader,
@@ -24,6 +25,237 @@ import {
   useNewPostState,
 } from "~/features/posts/ui";
 import { withCSRFProtection } from "~/lib/csrf";
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+function parseQueueType(qt: unknown): string | QueueType {
+  if (typeof qt === "string") return qt;
+  if (
+    typeof qt === "object" &&
+    qt !== null &&
+    "id" in qt &&
+    "name" in qt &&
+    typeof (qt as { id: unknown; name: unknown }).id === "string" &&
+    typeof (qt as { id: unknown; name: unknown }).name === "string"
+  ) {
+    const queueTypeObj = qt as {
+      id: string;
+      name: string;
+      scheduleConfig?: unknown;
+      [key: string]: unknown;
+    };
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Type assertion needed for Remix loader data structure
+    return {
+      id: queueTypeObj.id,
+      name: queueTypeObj.name,
+      color:
+        typeof queueTypeObj["color"] === "string"
+          ? queueTypeObj["color"]
+          : undefined,
+      description:
+        typeof queueTypeObj["description"] === "string"
+          ? queueTypeObj["description"]
+          : undefined,
+      scheduleType:
+        typeof queueTypeObj["scheduleType"] === "string" &&
+        (queueTypeObj["scheduleType"] === "INTERVAL" ||
+          queueTypeObj["scheduleType"] === "FIXED_SLOTS")
+          ? queueTypeObj["scheduleType"]
+          : undefined,
+      scheduleConfig: convertJsonValueToScheduleConfig(
+        queueTypeObj.scheduleConfig
+      ),
+      isEnabled:
+        typeof queueTypeObj["isEnabled"] === "boolean"
+          ? queueTypeObj["isEnabled"]
+          : undefined,
+      userId:
+        typeof queueTypeObj["userId"] === "string"
+          ? queueTypeObj["userId"]
+          : undefined,
+    } as QueueType;
+  }
+  return qt as string | QueueType;
+}
+
+function parseDateValue(dateValue: unknown): Date | undefined {
+  if (dateValue === null || dateValue === undefined) return;
+  if (dateValue instanceof Date) return dateValue;
+  if (typeof dateValue === "string") return new Date(dateValue);
+  return;
+}
+
+function parseHashTagPreset(preset: unknown): HashTagPreset | null {
+  if (
+    typeof preset === "object" &&
+    preset !== null &&
+    "id" in preset &&
+    "name" in preset &&
+    "tags" in preset &&
+    typeof (preset as { id: unknown; name: unknown; tags: unknown }).id ===
+      "string" &&
+    typeof (preset as { id: unknown; name: unknown; tags: unknown }).name ===
+      "string" &&
+    typeof (preset as { id: unknown; name: unknown; tags: unknown }).tags ===
+      "string"
+  ) {
+    const typedPreset = preset as {
+      id: string;
+      name: string;
+      tags: string;
+      description?: unknown;
+      createdAt?: unknown;
+      updatedAt?: unknown;
+      userId?: unknown;
+    };
+    return {
+      id: typedPreset.id,
+      name: typedPreset.name,
+      tags: typedPreset.tags,
+      description:
+        typedPreset.description === null
+          ? null
+          : typeof typedPreset.description === "string"
+            ? typedPreset.description
+            : undefined,
+      userId:
+        typeof typedPreset.userId === "string" ? typedPreset.userId : undefined,
+      createdAt: parseDateValue(typedPreset.createdAt),
+      updatedAt: parseDateValue(typedPreset.updatedAt),
+    };
+  }
+  return null;
+}
+
+function parseAsset(asset: unknown): Asset | null {
+  if (
+    typeof asset === "object" &&
+    asset !== null &&
+    "id" in asset &&
+    typeof (asset as { id: unknown }).id === "string"
+  ) {
+    const typedAsset = asset as {
+      id: string;
+      title?: unknown;
+      content?: unknown;
+      fileUrl?: unknown;
+      tags?: unknown;
+      assetType?: unknown;
+      createdAt?: unknown;
+      updatedAt?: unknown;
+    };
+    return {
+      id: typedAsset.id,
+      title:
+        typeof typedAsset.title === "string"
+          ? typedAsset.title
+          : typedAsset.title === null
+            ? null
+            : null,
+      content:
+        typeof typedAsset.content === "string"
+          ? typedAsset.content
+          : typedAsset.content === null
+            ? null
+            : null,
+      fileUrl:
+        typeof typedAsset.fileUrl === "string"
+          ? typedAsset.fileUrl
+          : typedAsset.fileUrl === null
+            ? null
+            : null,
+      tags: Array.isArray(typedAsset.tags)
+        ? typedAsset.tags.filter(
+            (tag): tag is string => typeof tag === "string"
+          )
+        : [],
+      assetType: (typeof typedAsset.assetType === "string"
+        ? typedAsset.assetType
+        : "IMAGE") as AssetType,
+      createdAt: (() => {
+        const createdAtValue: unknown = typedAsset.createdAt;
+        if (createdAtValue instanceof Date) return createdAtValue;
+        if (typeof createdAtValue === "string") return new Date(createdAtValue);
+        return new Date();
+      })(),
+      updatedAt: (() => {
+        const updatedAtValue: unknown = typedAsset.updatedAt;
+        if (updatedAtValue instanceof Date) return updatedAtValue;
+        if (typeof updatedAtValue === "string") return new Date(updatedAtValue);
+        return new Date();
+      })(),
+    };
+  }
+  return null;
+}
+
+function handlePreparedImageEventData(
+  data: unknown,
+  setPreparedImageEvent: (event: PreparedEvent | null) => void
+): void {
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    setPreparedImageEvent(null);
+    return;
+  }
+
+  const firstItem = data[0] as { content?: unknown } | undefined;
+  if (
+    !firstItem ||
+    typeof firstItem !== "object" ||
+    !("content" in firstItem)
+  ) {
+    setPreparedImageEvent(null);
+    return;
+  }
+
+  const firstItemContent = (firstItem as { content: unknown }).content;
+  if (
+    !firstItemContent ||
+    typeof firstItemContent !== "object" ||
+    !("fileUrl" in firstItemContent) ||
+    !("scheduledFor" in firstItemContent) ||
+    !("caption" in firstItemContent) ||
+    !("queueType" in firstItemContent)
+  ) {
+    setPreparedImageEvent(null);
+    return;
+  }
+
+  const content = firstItemContent as {
+    fileUrl: unknown;
+    scheduledFor: unknown;
+    caption: unknown;
+    queueType: unknown;
+  };
+
+  const fileUrl = typeof content.fileUrl === "string" ? content.fileUrl : "";
+  const scheduledFor =
+    typeof content.scheduledFor === "string"
+      ? parseInt(content.scheduledFor, 10)
+      : typeof content.scheduledFor === "number"
+        ? content.scheduledFor
+        : 0;
+  const caption = typeof content.caption === "string" ? content.caption : "";
+  const queueType =
+    typeof content.queueType === "string" ? content.queueType : "unassigned";
+
+  setPreparedImageEvent({
+    fileUrl,
+    scheduledFor,
+    caption,
+    queueType,
+    isRecyclable: false,
+    events: {
+      content: "",
+      created_at: 0,
+      kind: 1,
+      tags: [],
+    },
+  });
+}
+
 export async function loader({ request }: LoaderFunctionArgs) {
   try {
     const userId = await requireUserId(request);
@@ -82,185 +314,15 @@ export default function NewPost() {
 
   // Type assertions for Remix JsonifyObject serialization
   const typedQueueTypes: Array<string | QueueType> = Array.isArray(queueTypes)
-    ? queueTypes.map((qt: unknown) => {
-        if (typeof qt === "string") return qt;
-        if (
-          typeof qt === "object" &&
-          qt !== null &&
-          "id" in qt &&
-          "name" in qt &&
-          typeof (qt as { id: unknown; name: unknown }).id === "string" &&
-          typeof (qt as { id: unknown; name: unknown }).name === "string"
-        ) {
-          const queueTypeObj = qt as {
-            id: string;
-            name: string;
-            scheduleConfig?: unknown;
-            [key: string]: unknown;
-          };
-          // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Type assertion needed for Remix loader data structure
-          return {
-            id: queueTypeObj.id,
-            name: queueTypeObj.name,
-            color:
-              typeof queueTypeObj["color"] === "string"
-                ? queueTypeObj["color"]
-                : undefined,
-            description:
-              typeof queueTypeObj["description"] === "string"
-                ? queueTypeObj["description"]
-                : undefined,
-            scheduleType:
-              typeof queueTypeObj["scheduleType"] === "string" &&
-              (queueTypeObj["scheduleType"] === "INTERVAL" ||
-                queueTypeObj["scheduleType"] === "FIXED_SLOTS")
-                ? queueTypeObj["scheduleType"]
-                : undefined,
-            scheduleConfig: convertJsonValueToScheduleConfig(
-              queueTypeObj.scheduleConfig
-            ),
-            isEnabled:
-              typeof queueTypeObj["isEnabled"] === "boolean"
-                ? queueTypeObj["isEnabled"]
-                : undefined,
-            userId:
-              typeof queueTypeObj["userId"] === "string"
-                ? queueTypeObj["userId"]
-                : undefined,
-          } as QueueType;
-        }
-        return qt as string | QueueType;
-      })
+    ? queueTypes.map((qt) => parseQueueType(qt))
     : [];
   const typedHashTagPresets: HashTagPreset[] = Array.isArray(hashTagPresets)
     ? hashTagPresets
-        .filter(
-          (
-            preset: unknown
-          ): preset is {
-            id: string;
-            name: string;
-            tags: string;
-            description?: unknown;
-            createdAt?: unknown;
-            updatedAt?: unknown;
-            userId?: unknown;
-          } =>
-            typeof preset === "object" &&
-            preset !== null &&
-            "id" in preset &&
-            "name" in preset &&
-            "tags" in preset &&
-            typeof (preset as { id: unknown; name: unknown; tags: unknown })
-              .id === "string" &&
-            typeof (preset as { id: unknown; name: unknown; tags: unknown })
-              .name === "string" &&
-            typeof (preset as { id: unknown; name: unknown; tags: unknown })
-              .tags === "string"
-        )
-        .map(
-          (preset: {
-            id: string;
-            name: string;
-            tags: string;
-            description?: unknown;
-            createdAt?: unknown;
-            updatedAt?: unknown;
-            userId?: unknown;
-          }) => ({
-            id: preset.id,
-            name: preset.name,
-            tags: preset.tags,
-            description:
-              preset.description === null
-                ? null
-                : typeof preset.description === "string"
-                  ? preset.description
-                  : undefined,
-            userId:
-              typeof preset.userId === "string" ? preset.userId : undefined,
-            createdAt: (() => {
-              const createdAtValue: unknown = preset.createdAt;
-              if (createdAtValue === null || createdAtValue === undefined)
-                return;
-              if (createdAtValue instanceof Date) return createdAtValue;
-              if (typeof createdAtValue === "string")
-                return new Date(createdAtValue);
-              return;
-            })(),
-            updatedAt: (() => {
-              const updatedAtValue: unknown = preset.updatedAt;
-              if (updatedAtValue === null || updatedAtValue === undefined)
-                return;
-              if (updatedAtValue instanceof Date) return updatedAtValue;
-              if (typeof updatedAtValue === "string")
-                return new Date(updatedAtValue);
-              return;
-            })(),
-          })
-        )
+        .map((p) => parseHashTagPreset(p))
+        .filter((p): p is HashTagPreset => p !== null)
     : [];
   const typedAssets: Asset[] = Array.isArray(assets)
-    ? assets
-        .filter(
-          (
-            asset: unknown
-          ): asset is {
-            id: string;
-            title?: unknown;
-            content?: unknown;
-            fileUrl?: unknown;
-            tags?: unknown;
-            assetType?: unknown;
-            createdAt?: unknown;
-            updatedAt?: unknown;
-          } =>
-            typeof asset === "object" &&
-            asset !== null &&
-            "id" in asset &&
-            typeof (asset as { id: unknown }).id === "string"
-        )
-        .map((asset) => ({
-          id: asset.id,
-          title:
-            typeof asset.title === "string"
-              ? asset.title
-              : asset.title === null
-                ? null
-                : null,
-          content:
-            typeof asset.content === "string"
-              ? asset.content
-              : asset.content === null
-                ? null
-                : null,
-          fileUrl:
-            typeof asset.fileUrl === "string"
-              ? asset.fileUrl
-              : asset.fileUrl === null
-                ? null
-                : null,
-          tags: Array.isArray(asset.tags)
-            ? asset.tags.filter((tag): tag is string => typeof tag === "string")
-            : [],
-          assetType: (typeof asset.assetType === "string"
-            ? asset.assetType
-            : "IMAGE") as AssetType,
-          createdAt: (() => {
-            const createdAtValue: unknown = asset.createdAt;
-            if (createdAtValue instanceof Date) return createdAtValue;
-            if (typeof createdAtValue === "string")
-              return new Date(createdAtValue);
-            return new Date();
-          })(),
-          updatedAt: (() => {
-            const updatedAtValue: unknown = asset.updatedAt;
-            if (updatedAtValue instanceof Date) return updatedAtValue;
-            if (typeof updatedAtValue === "string")
-              return new Date(updatedAtValue);
-            return new Date();
-          })(),
-        }))
+    ? assets.map((a) => parseAsset(a)).filter((a): a is Asset => a !== null)
     : [];
 
   const {
@@ -330,70 +392,9 @@ export default function NewPost() {
               files={files}
               setFiles={setFiles}
               setShowImagePreview={setShowImagePreview}
-              setPreparedImageEvent={(data) => {
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: type narrowing for callback data
-                if (data && Array.isArray(data) && data.length > 0) {
-                  const firstItem = data[0];
-
-                  /* eslint-disable @typescript-eslint/no-unnecessary-condition -- Runtime type guard for serialized data */
-                  if (
-                    firstItem &&
-                    typeof firstItem === "object" &&
-                    firstItem !== null &&
-                    "content" in firstItem
-                  ) {
-                    const content = firstItem.content;
-                    if (
-                      content &&
-                      typeof content === "object" &&
-                      content !== null &&
-                      "fileUrl" in content &&
-                      "scheduledFor" in content &&
-                      "caption" in content &&
-                      "queueType" in content
-                    ) {
-                      /* eslint-enable @typescript-eslint/no-unnecessary-condition */
-                      const fileUrl =
-                        typeof content.fileUrl === "string"
-                          ? content.fileUrl
-                          : "";
-                      const scheduledFor =
-                        typeof content.scheduledFor === "string"
-                          ? parseInt(content.scheduledFor, 10)
-                          : typeof content.scheduledFor === "number"
-                            ? content.scheduledFor
-                            : 0;
-                      const caption =
-                        typeof content.caption === "string"
-                          ? content.caption
-                          : "";
-                      const queueType =
-                        typeof content.queueType === "string"
-                          ? content.queueType
-                          : "unassigned";
-                      setPreparedImageEvent({
-                        fileUrl,
-                        scheduledFor,
-                        caption,
-                        queueType,
-                        isRecyclable: false,
-                        events: {
-                          content: "",
-                          created_at: 0,
-                          kind: 1,
-                          tags: [],
-                        },
-                      });
-                    } else {
-                      setPreparedImageEvent(null);
-                    }
-                  } else {
-                    setPreparedImageEvent(null);
-                  }
-                } else {
-                  setPreparedImageEvent(null);
-                }
-              }}
+              setPreparedImageEvent={(data) =>
+                handlePreparedImageEventData(data, setPreparedImageEvent)
+              }
               queueTypes={typedQueueTypes}
               hashTagPresets={typedHashTagPresets}
               selectedQueueType={selectedQueueType}

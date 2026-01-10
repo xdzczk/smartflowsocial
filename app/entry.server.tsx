@@ -24,20 +24,20 @@ export default function handleRequest(
   request: Request,
   responseStatusCode: number,
   responseHeaders: Headers,
-  remixContext: EntryContext,
+  remixContext: EntryContext
 ) {
   return isbot(request.headers.get("user-agent"))
     ? handleBotRequest(
         request,
         responseStatusCode,
         responseHeaders,
-        remixContext,
+        remixContext
       )
     : handleBrowserRequest(
         request,
         responseStatusCode,
         responseHeaders,
-        remixContext,
+        remixContext
       );
 }
 
@@ -45,7 +45,7 @@ function handleBotRequest(
   request: Request,
   responseStatusCode: number,
   responseHeaders: Headers,
-  remixContext: EntryContext,
+  remixContext: EntryContext
 ) {
   return new Promise((resolve, reject) => {
     const { abort, pipe } = renderToPipeableStream(
@@ -64,7 +64,7 @@ function handleBotRequest(
             new Response(createReadableStreamFromReadable(body), {
               headers: responseHeaders,
               status: responseStatusCode,
-            }),
+            })
           );
 
           pipe(body);
@@ -81,7 +81,7 @@ function handleBotRequest(
             message: "Error during bot request rendering",
           });
         },
-      },
+      }
     );
 
     setTimeout(abort, ABORT_DELAY);
@@ -92,7 +92,7 @@ function handleBrowserRequest(
   request: Request,
   responseStatusCode: number,
   responseHeaders: Headers,
-  remixContext: EntryContext,
+  remixContext: EntryContext
 ) {
   return new Promise((resolve, reject) => {
     const { abort, pipe } = renderToPipeableStream(
@@ -111,7 +111,7 @@ function handleBrowserRequest(
             new Response(createReadableStreamFromReadable(body), {
               headers: responseHeaders,
               status: responseStatusCode,
-            }),
+            })
           );
 
           pipe(body);
@@ -128,7 +128,7 @@ function handleBrowserRequest(
           });
           responseStatusCode = 500;
         },
-      },
+      }
     );
 
     setTimeout(abort, ABORT_DELAY);

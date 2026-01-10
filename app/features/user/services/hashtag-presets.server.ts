@@ -9,7 +9,7 @@ export function createHashTagPreset(
   userId: string,
   name: string,
   tags: string,
-  description?: string,
+  description?: string
 ): Promise<HashTagPreset> {
   return prisma.hashTagPreset.create({
     data: {
@@ -29,7 +29,7 @@ export function updateHashTagPreset(
   id: string,
   name: string,
   tags: string,
-  description?: string,
+  description?: string
 ): Promise<HashTagPreset> {
   return prisma.hashTagPreset.update({
     where: {
@@ -49,7 +49,7 @@ export function updateHashTagPreset(
  */
 export async function deleteHashTagPreset(
   userId: string,
-  id: string,
+  id: string
 ): Promise<void> {
   await prisma.hashTagPreset.delete({
     where: {
@@ -63,7 +63,7 @@ export async function deleteHashTagPreset(
  * Gets all hashtag presets for a user
  */
 export function getUserHashTagPresets(
-  userId: string,
+  userId: string
 ): Promise<HashTagPreset[]> {
   return prisma.hashTagPreset.findMany({
     where: {
@@ -80,7 +80,7 @@ export function getUserHashTagPresets(
  */
 export function getHashTagPresetById(
   userId: string,
-  id: string,
+  id: string
 ): Promise<HashTagPreset | null> {
   return prisma.hashTagPreset.findFirst({
     where: {
@@ -95,7 +95,7 @@ export function getHashTagPresetById(
  */
 export async function hashTagPresetExistsForUser(
   userId: string,
-  presetId: string,
+  presetId: string
 ): Promise<boolean> {
   const preset = await prisma.hashTagPreset.findFirst({
     where: {
@@ -111,7 +111,7 @@ export async function hashTagPresetExistsForUser(
  */
 export function updateUserHashTagsAndSettings(
   userId: string,
-  showHashTagsInPosts: boolean,
+  showHashTagsInPosts: boolean
 ): Promise<User> {
   // Update the user's showHashTagsinPosts setting
   return prisma.user.update({
@@ -144,7 +144,7 @@ export async function getShowHashTagsInPosts(userId: string): Promise<boolean> {
  */
 export function updateShowHashTagsInPosts(
   userId: string,
-  showHashTags: boolean,
+  showHashTags: boolean
 ): Promise<User> {
   return prisma.user.update({
     where: {
@@ -155,7 +155,3 @@ export function updateShowHashTagsInPosts(
     },
   });
 }
-
-
-
-

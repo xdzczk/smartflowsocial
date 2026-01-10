@@ -4,8 +4,10 @@
  * Handles scheduled posts data loading and actions
  */
 
+import type { Prisma } from "@prisma/client";
 import { json } from "@remix-run/node";
 
+import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 import {
   getUserById,
   getQueueTypes,
@@ -129,6 +131,347 @@ export async function getScheduledDashboardData({
   };
 }
 
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+interface ParsedSignedEvent {
+  id: string;
+  pubkey: string;
+  created_at: number;
+  kind: number;
+  content: string;
+  tags: string[][];
+  sig: string;
+}
+
+interface ParsedNostrEvent {
+  id: string;
+  pubkey: string;
+  created_at: number;
+  kind: number;
+  content: string;
+  tags: string[][];
+}
+
+function parseSignedEvents(
+  signedEventStr: string | null,
+  nostrEventStr: string | null,
+  userId: string,
+  postId: string
+): {
+  signedEvent: ParsedSignedEvent | null;
+  nostrEvent: ParsedNostrEvent | null;
+} {
+  if (!signedEventStr || !nostrEventStr) {
+    return { signedEvent: null, nostrEvent: null };
+  }
+
+  try {
+    const parsedSigned: unknown = JSON.parse(signedEventStr);
+    const parsedNostr: unknown = JSON.parse(nostrEventStr);
+    const signedEvent =
+      typeof parsedSigned === "object" && parsedSigned !== null
+        ? (parsedSigned as ParsedSignedEvent)
+        : null;
+    const nostrEvent =
+      typeof parsedNostr === "object" && parsedNostr !== null
+        ? (parsedNostr as ParsedNostrEvent)
+        : null;
+    return { signedEvent, nostrEvent };
+  } catch (e) {
+    logError(e instanceof Error ? e : new Error(String(e)), {
+      userId,
+      postId,
+      message: ERROR_PARSING_SIGNED_EVENTS,
+    });
+    return { signedEvent: null, nostrEvent: null };
+  }
+}
+
+function parsePostIds(postIdsValue: FormDataEntryValue | null): string[] {
+  const postIdsStr = postIdsValue ? String(postIdsValue) : "[]";
+  try {
+    const parsed: unknown = JSON.parse(postIdsStr);
+    return Array.isArray(parsed)
+      ? parsed.filter((id: unknown): id is string => typeof id === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function parseItemData(
+  itemDataValue: FormDataEntryValue | null
+): Array<{ id: string; type: string }> {
+  const itemDataStr = itemDataValue ? String(itemDataValue) : "[]";
+  try {
+    const parsed: unknown = JSON.parse(itemDataStr);
+    if (Array.isArray(parsed)) {
+      return parsed.filter(
+        (item: unknown): item is { id: string; type: string } =>
+          typeof item === "object" &&
+          item !== null &&
+          "id" in item &&
+          "type" in item &&
+          typeof (item as { id: unknown; type: unknown }).id === "string" &&
+          typeof (item as { id: unknown; type: unknown }).type === "string"
+      );
+    }
+  } catch {
+    // Ignore parse errors
+  }
+  return [];
+}
+
+function parseFileUrl(
+  fileUrl: string | null,
+  userId: string,
+  postId: string
+): string[] {
+  if (!fileUrl) {
+    return [];
+  }
+  try {
+    const parsed: unknown = JSON.parse(fileUrl);
+    return Array.isArray(parsed)
+      ? parsed.filter(
+          (item: unknown): item is string => typeof item === "string"
+        )
+      : [];
+  } catch (e) {
+    logError(e instanceof Error ? e : new Error(String(e)), {
+      userId,
+      postId,
+      fileUrl,
+      message: "Error parsing fileUrl",
+    });
+    return [];
+  }
+}
+
+// ============================================================================
+// Action Handlers
+// ============================================================================
+
+async function handleDelete(postId: string, userId: string) {
+  await deletePost({ id: postId, userId });
+  return json({ success: true });
+}
+
+async function handleDeleteLongForm(postId: string, userId: string) {
+  await deleteLongFormPost({ id: postId, userId });
+  return json({ success: true });
+}
+
+async function handleBulkDelete(formData: FormData, userId: string) {
+  const postIdsValue = formData.get("postIds");
+  const postIds = parsePostIds(postIdsValue);
+  await Promise.all(postIds.map((id: string) => deletePost({ id, userId })));
+  return json({ success: true });
+}
+
+async function handleBulkDeleteLongForm(formData: FormData, userId: string) {
+  const postIdsValue = formData.get("postIds");
+  const postIds = parsePostIds(postIdsValue);
+  await Promise.all(
+    postIds.map((id: string) => deleteLongFormPost({ id, userId }))
+  );
+  return json({ success: true });
+}
+
+async function handleBulkDeleteMixed(formData: FormData, userId: string) {
+  const itemDataValue = formData.get("itemData");
+  const itemData = parseItemData(itemDataValue);
+  const promises = itemData.map((item: { id: string; type: string }) => {
+    if (item.type === "post") {
+      return deletePost({ id: item.id, userId });
+    } else {
+      return deleteLongFormPost({ id: item.id, userId });
+    }
+  });
+  await Promise.all(promises);
+  return json({ success: true });
+}
+
+async function handleReschedule(formData: FormData, userId: string) {
+  const postId = formData.get("postId") as string;
+  const newTime = formData.get("newTime") as string;
+  const overrideQueue = formData.get("overrideQueue") === "true";
+  const signedEventStr = formData.get("signedEvent") as string;
+  const nostrEventStr = formData.get("nostrEvent") as string;
+  const queueTypeId = formData.get("queueTypeId") as string;
+
+  if (!postId || !newTime) {
+    return json({ error: "Missing required fields" }, { status: 400 });
+  }
+
+  const originalPost = await getPostById({ id: postId, userId });
+  if (!originalPost) {
+    return json({ error: ERROR_POST_NOT_FOUND }, { status: 404 });
+  }
+
+  await cancelScheduledPost(postId);
+
+  const { signedEvent: parsedSignedEvent, nostrEvent: parsedNostrEvent } =
+    parseSignedEvents(signedEventStr, nostrEventStr, userId, postId);
+
+  const updatedPost = await reschedulePost({
+    id: postId,
+    userId,
+    newScheduledFor: newTime,
+    overrideQueue,
+    queueTypeId,
+    signedEvent: parsedSignedEvent as unknown as SignedEvent | undefined,
+    nostrEvent: parsedNostrEvent as unknown as NostrEvent | undefined,
+  });
+
+  if (parsedSignedEvent && parsedNostrEvent) {
+    await schedulePost(postId, userId, parsedSignedEvent, parseInt(newTime));
+    return json({ success: true, post: updatedPost, signed: true });
+  }
+
+  return json({ success: true, post: updatedPost, needsSigning: true });
+}
+
+async function handleRescheduleLongform(formData: FormData, userId: string) {
+  const postId = formData.get("postId") as string;
+  const newTime = formData.get("newTime") as string;
+  const signedEventStr = formData.get("signedEvent") as string;
+  const nostrEventStr = formData.get("nostrEvent") as string;
+
+  if (!postId || !newTime) {
+    return json({ error: "Missing required fields" }, { status: 400 });
+  }
+
+  const originalPost = await getLongFormPostModel({ id: postId, userId });
+  if (!originalPost) {
+    return json({ error: ERROR_LONGFORM_POST_NOT_FOUND }, { status: 404 });
+  }
+
+  const { signedEvent: parsedSignedEvent, nostrEvent: parsedNostrEvent } =
+    parseSignedEvents(signedEventStr, nostrEventStr, userId, postId);
+
+  const updatedPost = await updateLongFormPost({
+    id: postId,
+    userId,
+    publishedAt: new Date(parseInt(newTime) * 1000),
+    status: "SCHEDULED",
+    signedEvent: parsedSignedEvent
+      ? (JSON.parse(JSON.stringify(parsedSignedEvent)) as Prisma.JsonValue)
+      : undefined,
+    nostrEvent: parsedNostrEvent
+      ? (JSON.parse(JSON.stringify(parsedNostrEvent)) as Prisma.JsonValue)
+      : undefined,
+  });
+
+  return json({
+    success: true,
+    post: updatedPost,
+    signed: !!parsedSignedEvent,
+  });
+}
+
+async function handleEditPost(formData: FormData, userId: string) {
+  const postId = formData.get("postId") as string;
+  const caption = (formData.get("caption") ?? "") as string;
+  const fileUrl = (formData.get("fileUrl") ?? "") as string;
+  const hashtags = (formData.get("hashtags") ?? "") as string;
+  const signedEventStr = formData.get("signedEvent") as string;
+  const nostrEventStr = formData.get("nostrEvent") as string;
+  const queueTypeId = (formData.get("queueTypeId") as string | null) ?? null;
+  const scheduledFor = (formData.get("scheduledFor") as string | null) ?? null;
+  const hashTagPresetId =
+    (formData.get("hashTagPresetId") as string | null) ?? null;
+
+  if (!postId) {
+    return json({ error: "Missing postId" }, { status: 400 });
+  }
+
+  const { signedEvent: parsedSignedEvent, nostrEvent: parsedNostrEvent } =
+    parseSignedEvents(signedEventStr, nostrEventStr, userId, postId);
+
+  const parsedFileUrl = parseFileUrl(fileUrl, userId, postId);
+
+  const updated = await updatePost({
+    id: postId,
+    userId,
+    data: {
+      caption,
+      fileUrl: parsedFileUrl,
+      tags: hashtags
+        ? hashtags
+            .toString()
+            .split(" ")
+            .filter((tag) => tag.trim())
+        : [],
+      queueTypeId,
+      scheduledFor: scheduledFor ? String(Number(scheduledFor)) : undefined,
+      signedEvent: parsedSignedEvent ?? undefined,
+      nostrEvent: parsedNostrEvent ?? undefined,
+      hashTagPresetId,
+    },
+  });
+
+  if (scheduledFor && parsedSignedEvent) {
+    await cancelScheduledPost(postId);
+    await schedulePost(postId, userId, parsedSignedEvent, Number(scheduledFor));
+  }
+
+  return json({
+    success: true,
+    post: updated,
+    signed: !!parsedSignedEvent,
+  });
+}
+
+async function handleEditLongform(formData: FormData, userId: string) {
+  const postId = formData.get("postId") as string;
+  const title = (formData.get("title") ?? "") as string;
+  const summary = (formData.get("summary") ?? "") as string;
+  const content = (formData.get("content") ?? "") as string;
+  const image = (formData.get("image") ?? "") as string;
+  const signedEventStr = formData.get("signedEvent") as string;
+  const nostrEventStr = formData.get("nostrEvent") as string;
+  const scheduledFor = (formData.get("scheduledFor") as string | null) ?? null;
+
+  if (!postId) {
+    return json({ error: "Missing postId" }, { status: 400 });
+  }
+
+  const { signedEvent: parsedSignedEvent, nostrEvent: parsedNostrEvent } =
+    parseSignedEvents(signedEventStr, nostrEventStr, userId, postId);
+
+  const updated = await updateLongFormPost({
+    id: postId,
+    userId,
+    title,
+    summary,
+    content,
+    image,
+    publishedAt: scheduledFor
+      ? new Date(Number(scheduledFor) * 1000)
+      : undefined,
+    status: "SCHEDULED",
+    signedEvent: parsedSignedEvent
+      ? (JSON.parse(JSON.stringify(parsedSignedEvent)) as Prisma.JsonValue)
+      : undefined,
+    nostrEvent: parsedNostrEvent
+      ? (JSON.parse(JSON.stringify(parsedNostrEvent)) as Prisma.JsonValue)
+      : undefined,
+  });
+
+  return json({
+    success: true,
+    post: updated,
+    signed: !!parsedSignedEvent,
+  });
+}
+
+// ============================================================================
+// Main Action Router
+// ============================================================================
+
 /**
  * Handle scheduled post actions (delete, reschedule, edit)
  */
@@ -139,410 +482,28 @@ export async function handleScheduledPostAction(
   const postId = formData.get("postId") as string;
   const _action = formData.get("_action");
 
-  if (_action === "delete") {
-    await deletePost({ id: postId, userId });
-    return json({ success: true });
-  }
+  const actionHandlers: Record<
+    string,
+    (formData: FormData, userId: string) => Promise<ReturnType<typeof json>>
+  > = {
+    delete: () => handleDelete(postId, userId),
+    deleteLongForm: () => handleDeleteLongForm(postId, userId),
+    bulkDelete: () => handleBulkDelete(formData, userId),
+    bulkDeleteLongForm: () => handleBulkDeleteLongForm(formData, userId),
+    bulkDeleteMixed: () => handleBulkDeleteMixed(formData, userId),
+    reschedule: () => handleReschedule(formData, userId),
+    rescheduleLongform: () => handleRescheduleLongform(formData, userId),
+    editPost: () => handleEditPost(formData, userId),
+    editLongform: () => handleEditLongform(formData, userId),
+  };
 
-  if (_action === "deleteLongForm") {
-    await deleteLongFormPost({ id: postId, userId });
-    return json({ success: true });
-  }
+  const handler =
+    _action && typeof _action === "string"
+      ? actionHandlers[_action]
+      : undefined;
 
-  if (_action === "bulkDelete") {
-    const postIdsValue = formData.get("postIds");
-    const postIdsStr = postIdsValue ? String(postIdsValue) : "[]";
-    let postIds: string[] = [];
-    try {
-      const parsed: unknown = JSON.parse(postIdsStr);
-      postIds = Array.isArray(parsed)
-        ? parsed.filter((id: unknown): id is string => typeof id === "string")
-        : [];
-    } catch {
-      postIds = [];
-    }
-    await Promise.all(postIds.map((id: string) => deletePost({ id, userId })));
-    return json({ success: true });
-  }
-
-  if (_action === "bulkDeleteLongForm") {
-    const postIdsValue = formData.get("postIds");
-    const postIdsStr = postIdsValue ? String(postIdsValue) : "[]";
-    let postIds: string[] = [];
-    try {
-      const parsed: unknown = JSON.parse(postIdsStr);
-      postIds = Array.isArray(parsed)
-        ? parsed.filter((id: unknown): id is string => typeof id === "string")
-        : [];
-    } catch {
-      postIds = [];
-    }
-    await Promise.all(
-      postIds.map((id: string) => deleteLongFormPost({ id, userId }))
-    );
-    return json({ success: true });
-  }
-
-  if (_action === "bulkDeleteMixed") {
-    const itemDataValue = formData.get("itemData");
-    const itemDataStr = itemDataValue ? String(itemDataValue) : "[]";
-    let itemData: Array<{ id: string; type: string }> = [];
-    try {
-      const parsed: unknown = JSON.parse(itemDataStr);
-      if (Array.isArray(parsed)) {
-        itemData = parsed.filter(
-          (item: unknown): item is { id: string; type: string } =>
-            typeof item === "object" &&
-            item !== null &&
-            "id" in item &&
-            "type" in item &&
-            typeof (item as { id: unknown; type: unknown }).id === "string" &&
-            typeof (item as { id: unknown; type: unknown }).type === "string"
-        );
-      }
-    } catch {
-      itemData = [];
-    }
-    const promises = itemData.map((item: { id: string; type: string }) => {
-      if (item.type === "post") {
-        return deletePost({ id: item.id, userId });
-      } else {
-        return deleteLongFormPost({ id: item.id, userId });
-      }
-    });
-    await Promise.all(promises);
-    return json({ success: true });
-  }
-
-  // Reschedule a regular post (with optional re-signed event)
-  if (_action === "reschedule") {
-    const newTime = formData.get("newTime") as string;
-    const overrideQueue = formData.get("overrideQueue") === "true";
-    const signedEventStr = formData.get("signedEvent") as string;
-    const nostrEventStr = formData.get("nostrEvent") as string;
-    const queueTypeId = formData.get("queueTypeId") as string;
-
-    if (!postId || !newTime) {
-      return json({ error: "Missing required fields" }, { status: 400 });
-    }
-
-    const originalPost = await getPostById({ id: postId, userId });
-    if (!originalPost) {
-      return json({ error: ERROR_POST_NOT_FOUND }, { status: 404 });
-    }
-
-    await cancelScheduledPost(postId);
-
-    let parsedSignedEvent = null;
-    let parsedNostrEvent = null;
-    if (signedEventStr && nostrEventStr) {
-      try {
-        const parsedSigned: unknown = JSON.parse(signedEventStr);
-        const parsedNostr: unknown = JSON.parse(nostrEventStr);
-        parsedSignedEvent =
-          typeof parsedSigned === "object" && parsedSigned !== null
-            ? (parsedSigned as {
-                id: string;
-                pubkey: string;
-                created_at: number;
-                kind: number;
-                content: string;
-                tags: string[][];
-                sig: string;
-              })
-            : null;
-        parsedNostrEvent =
-          typeof parsedNostr === "object" && parsedNostr !== null
-            ? (parsedNostr as {
-                id: string;
-                pubkey: string;
-                created_at: number;
-                kind: number;
-                content: string;
-                tags: string[][];
-              })
-            : null;
-      } catch (e) {
-        logError(e instanceof Error ? e : new Error(String(e)), {
-          userId,
-          postId,
-          message: ERROR_PARSING_SIGNED_EVENTS,
-        });
-      }
-    }
-
-    const updatedPost = await reschedulePost({
-      id: postId,
-      userId,
-      newScheduledFor: newTime,
-      overrideQueue,
-      queueTypeId,
-      signedEvent: parsedSignedEvent ?? undefined,
-      nostrEvent: parsedNostrEvent ?? undefined,
-    });
-
-    if (parsedSignedEvent && parsedNostrEvent) {
-      await schedulePost(postId, userId, parsedSignedEvent, parseInt(newTime));
-      return json({ success: true, post: updatedPost, signed: true });
-    }
-
-    return json({ success: true, post: updatedPost, needsSigning: true });
-  }
-
-  // Reschedule a longform post (with optional re-signed event)
-  if (_action === "rescheduleLongform") {
-    const newTime = formData.get("newTime") as string;
-    const signedEventStr = formData.get("signedEvent") as string;
-    const nostrEventStr = formData.get("nostrEvent") as string;
-
-    if (!postId || !newTime) {
-      return json({ error: "Missing required fields" }, { status: 400 });
-    }
-
-    const originalPost = await getLongFormPostModel({ id: postId, userId });
-    if (!originalPost) {
-      return json({ error: ERROR_LONGFORM_POST_NOT_FOUND }, { status: 404 });
-    }
-
-    let parsedSignedEvent = null;
-    let parsedNostrEvent = null;
-    if (signedEventStr && nostrEventStr) {
-      try {
-        const parsedSigned: unknown = JSON.parse(signedEventStr);
-        const parsedNostr: unknown = JSON.parse(nostrEventStr);
-        parsedSignedEvent =
-          typeof parsedSigned === "object" && parsedSigned !== null
-            ? (parsedSigned as {
-                id: string;
-                pubkey: string;
-                created_at: number;
-                kind: number;
-                content: string;
-                tags: string[][];
-                sig: string;
-              })
-            : null;
-        parsedNostrEvent =
-          typeof parsedNostr === "object" && parsedNostr !== null
-            ? (parsedNostr as {
-                id: string;
-                pubkey: string;
-                created_at: number;
-                kind: number;
-                content: string;
-                tags: string[][];
-              })
-            : null;
-      } catch (e) {
-        logError(e instanceof Error ? e : new Error(String(e)), {
-          userId,
-          postId,
-          message: ERROR_PARSING_SIGNED_EVENTS,
-        });
-      }
-    }
-
-    const updatedPost = await updateLongFormPost({
-      id: postId,
-      userId,
-      publishedAt: new Date(parseInt(newTime) * 1000),
-      status: "SCHEDULED",
-      signedEvent: parsedSignedEvent ?? undefined,
-      nostrEvent: parsedNostrEvent ?? undefined,
-    });
-
-    return json({
-      success: true,
-      post: updatedPost,
-      signed: !!parsedSignedEvent,
-    });
-  }
-
-  // Edit a regular post's content/media/hashtags and re-sign
-  if (_action === "editPost") {
-    const caption = (formData.get("caption") ?? "") as string;
-    const fileUrl = (formData.get("fileUrl") ?? "") as string;
-    const hashtags = (formData.get("hashtags") ?? "") as string;
-    const signedEventStr = formData.get("signedEvent") as string;
-    const nostrEventStr = formData.get("nostrEvent") as string;
-    const queueTypeId = (formData.get("queueTypeId") as string | null) ?? null;
-    const scheduledFor =
-      (formData.get("scheduledFor") as string | null) ?? null;
-    const hashTagPresetId =
-      (formData.get("hashTagPresetId") as string | null) ?? null;
-
-    if (!postId) {
-      return json({ error: "Missing postId" }, { status: 400 });
-    }
-
-    let parsedSignedEvent = null;
-    let parsedNostrEvent = null;
-    if (signedEventStr && nostrEventStr) {
-      try {
-        const parsedSigned: unknown = JSON.parse(signedEventStr);
-        const parsedNostr: unknown = JSON.parse(nostrEventStr);
-        parsedSignedEvent =
-          typeof parsedSigned === "object" && parsedSigned !== null
-            ? (parsedSigned as {
-                id: string;
-                pubkey: string;
-                created_at: number;
-                kind: number;
-                content: string;
-                tags: string[][];
-                sig: string;
-              })
-            : null;
-        parsedNostrEvent =
-          typeof parsedNostr === "object" && parsedNostr !== null
-            ? (parsedNostr as {
-                id: string;
-                pubkey: string;
-                created_at: number;
-                kind: number;
-                content: string;
-                tags: string[][];
-              })
-            : null;
-      } catch (e) {
-        logError(e instanceof Error ? e : new Error(String(e)), {
-          userId,
-          postId,
-          message: ERROR_PARSING_SIGNED_EVENTS,
-        });
-      }
-    }
-
-    let parsedFileUrl: string[] = [];
-    if (fileUrl) {
-      try {
-        const parsed: unknown = JSON.parse(fileUrl);
-        parsedFileUrl = Array.isArray(parsed)
-          ? parsed.filter(
-              (item: unknown): item is string => typeof item === "string"
-            )
-          : [];
-      } catch (e) {
-        logError(e instanceof Error ? e : new Error(String(e)), {
-          userId,
-          postId,
-          fileUrl,
-          message: "Error parsing fileUrl",
-        });
-        parsedFileUrl = [];
-      }
-    }
-
-    const updated = await updatePost({
-      id: postId,
-      userId,
-      data: {
-        caption,
-        fileUrl: parsedFileUrl,
-        tags: hashtags
-          ? hashtags
-              .toString()
-              .split(" ")
-              .filter((tag) => tag.trim())
-          : [],
-        queueTypeId,
-        scheduledFor: scheduledFor ? String(Number(scheduledFor)) : undefined,
-        signedEvent: parsedSignedEvent ?? undefined,
-        nostrEvent: parsedNostrEvent ?? undefined,
-        hashTagPresetId,
-      },
-    });
-
-    if (scheduledFor && parsedSignedEvent) {
-      await cancelScheduledPost(postId);
-      await schedulePost(
-        postId,
-        userId,
-        parsedSignedEvent,
-        Number(scheduledFor)
-      );
-    }
-
-    return json({
-      success: true,
-      post: updated,
-      signed: !!parsedSignedEvent,
-    });
-  }
-
-  // Edit a longform post's content and re-sign
-  if (_action === "editLongform") {
-    const title = (formData.get("title") ?? "") as string;
-    const summary = (formData.get("summary") ?? "") as string;
-    const content = (formData.get("content") ?? "") as string;
-    const image = (formData.get("image") ?? "") as string;
-    const signedEventStr = formData.get("signedEvent") as string;
-    const nostrEventStr = formData.get("nostrEvent") as string;
-    const scheduledFor =
-      (formData.get("scheduledFor") as string | null) ?? null;
-
-    if (!postId) {
-      return json({ error: "Missing postId" }, { status: 400 });
-    }
-
-    let parsedSignedEvent = null;
-    let parsedNostrEvent = null;
-    if (signedEventStr && nostrEventStr) {
-      try {
-        const parsedSigned: unknown = JSON.parse(signedEventStr);
-        const parsedNostr: unknown = JSON.parse(nostrEventStr);
-        parsedSignedEvent =
-          typeof parsedSigned === "object" && parsedSigned !== null
-            ? (parsedSigned as {
-                id: string;
-                pubkey: string;
-                created_at: number;
-                kind: number;
-                content: string;
-                tags: string[][];
-                sig: string;
-              })
-            : null;
-        parsedNostrEvent =
-          typeof parsedNostr === "object" && parsedNostr !== null
-            ? (parsedNostr as {
-                id: string;
-                pubkey: string;
-                created_at: number;
-                kind: number;
-                content: string;
-                tags: string[][];
-              })
-            : null;
-      } catch (e) {
-        logError(e instanceof Error ? e : new Error(String(e)), {
-          userId,
-          postId,
-          message: ERROR_PARSING_SIGNED_EVENTS,
-        });
-      }
-    }
-
-    const updated = await updateLongFormPost({
-      id: postId,
-      userId,
-      title,
-      summary,
-      content,
-      image,
-      publishedAt: scheduledFor
-        ? new Date(Number(scheduledFor) * 1000)
-        : undefined,
-      status: "SCHEDULED",
-      signedEvent: parsedSignedEvent ?? undefined,
-      nostrEvent: parsedNostrEvent ?? undefined,
-    });
-
-    return json({
-      success: true,
-      post: updated,
-      signed: !!parsedSignedEvent,
-    });
+  if (handler) {
+    return await handler(formData, userId);
   }
 
   return json({ error: "Invalid action" }, { status: 400 });

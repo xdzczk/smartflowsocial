@@ -88,9 +88,8 @@ export async function loadDashboardData(userId: string, queueType: string) {
   // Serialize Date objects to strings for Remix loader response
   // Note: allContent is removed - reconstruct on client from scheduledPosts/longformPosts
   const scheduledPostsDTO: PostDTO[] = toPostDTOArray(scheduledPostsData);
-  const longformPostsDTO: LongFormPostDTO[] = toLongFormPostDTOArray(
-    longformPostsData,
-  );
+  const longformPostsDTO: LongFormPostDTO[] =
+    toLongFormPostDTOArray(longformPostsData);
 
   return {
     scheduledPosts: scheduledPostsDTO,

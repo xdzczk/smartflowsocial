@@ -4,10 +4,7 @@
  * Handles bulk posts dashboard data loading
  */
 
-import {
-  getQueueTypes,
-  getUserHashTagPresets,
-} from "~/features/user";
+import { getQueueTypes, getUserHashTagPresets } from "~/features/user";
 /**
  * Get bulk posts dashboard data
  */
@@ -45,7 +42,7 @@ export async function getBulkPostsDashboardData(userId: string) {
         typeof qt === "object" &&
         qt !== null &&
         "isEnabled" in qt &&
-        qt.isEnabled !== false,
+        qt.isEnabled !== false
     ),
     hashTagPresets,
     mode,

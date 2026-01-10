@@ -1,9 +1,9 @@
 /**
  * CSRF Protection Middleware
- * 
+ *
  * This file contains the implementation that works in both server and client bundles.
  * The server file re-exports from here to maintain backward compatibility.
- * 
+ *
  * Usage:
  *   import { withCSRFProtection } from "~/lib/csrf";
  *   export const action = withCSRFProtection(async ({ request }) => {
@@ -41,10 +41,10 @@ async function getServerFunctions() {
 
 /**
  * Wraps action functions with CSRF protection
- * 
+ *
  * This middleware validates the Origin/Referer header for state-changing requests
  * (POST, PUT, PATCH, DELETE) to prevent CSRF attacks.
- * 
+ *
  * @param actionFn - The action function to protect
  * @returns A protected action function
  */
@@ -55,10 +55,13 @@ export function withCSRFProtection<T>(
     // On the client, this should never be called (actions are server-only)
     // But we provide a stub to satisfy the bundler
     if (typeof window !== "undefined") {
-      throw new Error("withCSRFProtection should never be called on the client");
+      throw new Error(
+        "withCSRFProtection should never be called on the client"
+      );
     }
 
-    const { isStateChangingMethod, validateOrigin } = await getServerFunctions();
+    const { isStateChangingMethod, validateOrigin } =
+      await getServerFunctions();
     const method = args.request.method;
 
     // Only protect state-changing methods
@@ -70,8 +73,7 @@ export function withCSRFProtection<T>(
         return json(
           {
             error: "CSRF validation failed",
-            message:
-              error instanceof Error ? error.message : "Invalid origin",
+            message: error instanceof Error ? error.message : "Invalid origin",
           },
           { status: 403 }
         );

@@ -20,7 +20,7 @@ export default function UpgradePrompt({
   const minPlan = getMinimumPlanForFeature(feature);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
       <div className="mx-4 max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800">
         <div className="mb-4 flex items-start justify-between">
           <div className="flex items-center gap-3">
@@ -47,7 +47,7 @@ export default function UpgradePrompt({
         <div className="mb-6">
           <p className="text-gray-700 dark:text-gray-300">
             <strong>{featureName}</strong> requires a{" "}
-            <span className="font-semibold capitalize text-blue-600 dark:text-blue-400">
+            <span className="font-semibold text-blue-600 capitalize dark:text-blue-400">
               {minPlan}
             </span>{" "}
             plan or higher.
@@ -61,13 +61,13 @@ export default function UpgradePrompt({
         <div className="flex gap-3">
           <Link
             to="/plans"
-            className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-center font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-center font-medium text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
           >
             View Plans
           </Link>
           <button
             onClick={onClose}
-            className="flex-1 rounded-lg border border-gray-300 px-4 py-2 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+            className="flex-1 rounded-lg border border-gray-300 px-4 py-2 font-medium text-gray-700 hover:bg-gray-50 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:outline-none dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
           >
             Cancel
           </button>

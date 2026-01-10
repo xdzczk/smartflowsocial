@@ -77,7 +77,7 @@ export function signEvent(eventData: {
  */
 export function createTestNote(
   content: string,
-  tags: string[][] = [],
+  tags: string[][] = []
 ): SignedEvent {
   return signEvent({
     content,

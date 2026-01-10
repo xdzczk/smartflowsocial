@@ -132,7 +132,7 @@ function login({
         .replace(/.*<cookie>(?<cookieValue>.*)<\/cookie>.*/s, "$<cookieValue>")
         .trim();
       cy.setCookie("__session", cookieValue);
-    },
+    }
   );
   return cy.get("@user");
 }
@@ -148,11 +148,11 @@ function loginNostr({ npub = TEST_NPUB }: { npub?: string } = {}) {
         const cookieValue = stdout
           .replace(
             /.*<cookie>(?<cookieValue>.*)<\/cookie>.*/s,
-            "$<cookieValue>",
+            "$<cookieValue>"
           )
           .trim();
         cy.setCookie("__session", cookieValue);
-      },
+      }
     );
   });
   return cy.get("@user");
@@ -234,11 +234,11 @@ function visitAndCheck(url: string, waitTime = 1000) {
  */
 function uploadTestFile(
   selector: string,
-  fileIndex: number | number[] = 0,
+  fileIndex: number | number[] = 0
 ): void {
   const indices = Array.isArray(fileIndex) ? fileIndex : [fileIndex];
   const filePaths = indices.map(
-    (i) => `tests/e2e/memes_test_files/${TEST_FILES[i]}`,
+    (i) => `tests/e2e/memes_test_files/${TEST_FILES[i]}`
   );
 
   cy.get(selector).selectFile(filePaths, { force: true });
@@ -266,11 +266,11 @@ function setSubscriptionStatus(status: TestSubscriptionStatus): void {
     const npub = (user as { npub?: string }).npub;
     if (!npub) {
       throw new Error(
-        "No npub found on user. Make sure to call cy.loginNostr() first.",
+        "No npub found on user. Make sure to call cy.loginNostr() first."
       );
     }
     cy.exec(
-      `npx tsx ./tests/e2e/support/update-subscription-status.ts "${npub}" "${status}"`,
+      `npx tsx ./tests/e2e/support/update-subscription-status.ts "${npub}" "${status}"`
     ).then(({ stdout }) => {
       const resultStatus = stdout
         .replace(/.*<status>(?<statusValue>.*)<\/status>.*/s, "$<statusValue>")

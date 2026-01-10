@@ -16,7 +16,7 @@ import {
 export async function requireFeatureAccess(
   userId: string,
   feature: FeatureName,
-  redirectTo = "/plans",
+  redirectTo = "/plans"
 ): Promise<SubscriptionData> {
   // Get user's enabled status and subscription
   const [user, currentSubscription] = await Promise.all([
@@ -62,7 +62,7 @@ export async function requireFeatureAccess(
  */
 export async function checkNewUserAccess(
   userId: string,
-  redirectTo = "/plans",
+  redirectTo = "/plans"
 ): Promise<SubscriptionData> {
   // Get user's enabled status and subscription
   const [user, currentSubscription] = await Promise.all([
@@ -112,7 +112,7 @@ export async function checkNewUserAccess(
 export async function requireSubscriptionForDashboardChild(
   request: Request,
   userId: string,
-  redirectTo = "/plans",
+  redirectTo = "/plans"
 ): Promise<SubscriptionData> {
   const subscriptionData = await getSubscriptionData(userId);
 
@@ -138,7 +138,7 @@ export async function requireSubscriptionForDashboardChild(
  */
 export async function requireAnySubscription(
   userId: string,
-  redirectTo = "/plans",
+  redirectTo = "/plans"
 ): Promise<void> {
   // Get user's enabled status and subscription
   const [user, currentSubscription] = await Promise.all([
@@ -165,7 +165,7 @@ export async function requireAnySubscription(
  */
 export async function requireActiveSubscription(
   userId: string,
-  redirectTo = "/plans",
+  redirectTo = "/plans"
 ): Promise<SubscriptionData> {
   // Get user's enabled status and subscription
   const [user, currentSubscription] = await Promise.all([
@@ -209,7 +209,7 @@ export async function requireActiveSubscription(
  * Get subscription data without enforcing access (for informational purposes)
  */
 export async function getSubscriptionData(
-  userId: string,
+  userId: string
 ): Promise<SubscriptionData> {
   // Get user's enabled status and subscription
   const [user, currentSubscription] = await Promise.all([

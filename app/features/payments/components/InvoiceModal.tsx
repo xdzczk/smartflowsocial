@@ -27,7 +27,7 @@ export function InvoiceModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
       <div className="mx-4 max-w-lg rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800">
         <div className="mb-4">
           <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
@@ -72,11 +72,11 @@ export function InvoiceModal({
               type="text"
               value={invoiceData.invoice}
               readOnly
-              className="min-w-0 flex-1 rounded-l-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+              className="min-w-0 flex-1 rounded-l-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
             />
             <button
               onClick={() => onCopy(invoiceData.invoice)}
-              className="rounded-r-lg border border-l-0 border-gray-300 bg-blue-500 px-3 py-2 text-sm text-white hover:bg-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600"
+              className="rounded-r-lg border border-l-0 border-gray-300 bg-blue-500 px-3 py-2 text-sm text-white hover:bg-blue-600 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-gray-600"
             >
               Copy
             </button>
@@ -112,7 +112,7 @@ export function InvoiceModal({
               <>
                 Payment expires in {Math.floor(timeRemaining / (1000 * 60))}:
                 {String(
-                  Math.floor((timeRemaining % (1000 * 60)) / 1000),
+                  Math.floor((timeRemaining % (1000 * 60)) / 1000)
                 ).padStart(2, "0")}
               </>
             ) : (

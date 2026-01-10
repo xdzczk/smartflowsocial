@@ -18,7 +18,10 @@ import {
 } from "~/components/ui/select";
 import { timeZonesList } from "~/lib/date";
 import { updateTimezoneClientSchema } from "~/lib/validation";
-import { useZodForm, formDataToFormData } from "~/lib/validation/utils.client-safe";
+import {
+  useZodForm,
+  formDataToFormData,
+} from "~/lib/validation/utils.client-safe";
 
 interface TimezoneSettingsProps {
   timezone: string | null;
@@ -54,7 +57,13 @@ export function TimezoneSettings({ timezone }: TimezoneSettingsProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={(e) => { e.preventDefault(); void onSubmit(e); }} className="space-y-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void onSubmit(e);
+          }}
+          className="space-y-4"
+        >
           <div className="space-y-2">
             <Label htmlFor="timezone">Select Timezone</Label>
             <Select
@@ -75,9 +84,11 @@ export function TimezoneSettings({ timezone }: TimezoneSettingsProps) {
                 ))}
               </SelectContent>
             </Select>
-            {form.formState.errors.timezone ? <p className="text-sm text-destructive">
+            {form.formState.errors.timezone ? (
+              <p className="text-destructive text-sm">
                 {form.formState.errors.timezone.message}
-              </p> : null}
+              </p>
+            ) : null}
           </div>
 
           <Button
@@ -94,7 +105,7 @@ export function TimezoneSettings({ timezone }: TimezoneSettingsProps) {
             </p>
           ) : null}
           {fetcher.data?.error ? (
-            <p className="text-sm text-destructive">{fetcher.data.error}</p>
+            <p className="text-destructive text-sm">{fetcher.data.error}</p>
           ) : null}
         </form>
       </CardContent>

@@ -4,21 +4,28 @@ import { authenticateNostrUser } from "~/features/auth";
 import { withCSRFProtection } from "~/lib/csrf";
 import { safeRedirect } from "~/lib/remix-utils";
 
-export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs) => {
-  try {
-    const formData = await request.formData();
-    const event = formData.get("event") as string | null;
-    const contentSign = formData.get("contentSign") as string | null;
-    const redirectTo = safeRedirect(formData.get("redirectTo"), `/dashboard`);
+export const action = withCSRFProtection(
+  async ({ request }: ActionFunctionArgs) => {
+    try {
+      const formData = await request.formData();
+      const event = formData.get("event") as string | null;
+      const contentSign = formData.get("contentSign") as string | null;
+      const redirectTo = safeRedirect(formData.get("redirectTo"), `/dashboard`);
 
-    return authenticateNostrUser(event ?? "", contentSign, redirectTo, request);
-  } catch (error) {
-    // If error is a Response (e.g., redirect from requireUserId), return it
-    if (error instanceof Response) {
-      return error;
+      return authenticateNostrUser(
+        event ?? "",
+        contentSign,
+        redirectTo,
+        request
+      );
+    } catch (error) {
+      // If error is a Response (e.g., redirect from requireUserId), return it
+      if (error instanceof Response) {
+        return error;
+      }
+      // Use dynamic import to avoid bundling issues
+      const { handleActionError } = await import("~/lib/error-handler.server");
+      return handleActionError(error);
     }
-    // Use dynamic import to avoid bundling issues
-    const { handleActionError } = await import("~/lib/error-handler.server");
-    return handleActionError(error);
   }
-});
+);

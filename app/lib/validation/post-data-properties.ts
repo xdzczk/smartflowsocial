@@ -97,4 +97,3 @@ export function comparePostDataByProperty(
   if (aValue > bValue) return direction === "asc" ? 1 : -1;
   return 0;
 }
-

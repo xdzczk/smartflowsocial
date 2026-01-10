@@ -4,7 +4,8 @@
 **Difficulty:** Intermediate  
 **Last updated:** 2026-01-02
 
-Complete guide to managing multiple Nostr accounts with parent/child relationships in SmartFlowSocial.
+Complete guide to managing multiple Nostr accounts with parent/child relationships in
+SmartFlowSocial.
 
 ---
 
@@ -139,7 +140,6 @@ flowchart TD
 
 1. Go to **Settings** → **Accounts**
 2. In the search box, enter:
-
    - Account name
    - Profile display name
    - npub (public key)
@@ -159,12 +159,10 @@ flowchart TD
 ### Step 3: Accept Request (Child Account)
 
 1. **Child account receives request:**
-
    - Notification in Settings
    - Shows in "Pending Requests" section
 
 2. **Accept or reject:**
-
    - Click **"Accept"** to link accounts
    - Click **"Reject"** to decline
    - Request expires if not responded to
@@ -332,13 +330,11 @@ flowchart TD
 ### Account Organization
 
 1. **Clear naming:**
-
    - Use descriptive account names
    - Distinguish parent from children
    - Organize by purpose
 
 2. **Limit child accounts:**
-
    - Only link necessary accounts
    - Keep relationships clear
    - Avoid over-complication
@@ -351,13 +347,11 @@ flowchart TD
 ### Security
 
 1. **Trust relationships:**
-
    - Only link trusted accounts
    - Verify account ownership
    - Monitor linked accounts
 
 2. **Access control:**
-
    - Review child account access
    - Remove unnecessary links
    - Update permissions as needed
@@ -370,7 +364,6 @@ flowchart TD
 ### Workflow
 
 1. **Parent workflow:**
-
    - Search for child account
    - Request link
    - Wait for acceptance

@@ -27,7 +27,7 @@ describe("Helper Utilities", () => {
   describe("getTimeRemaining", () => {
     it("should return days and hours for future dates", () => {
       const future = new Date(
-        Date.now() + 3 * 24 * 60 * 60 * 1000 + 5 * 60 * 60 * 1000,
+        Date.now() + 3 * 24 * 60 * 60 * 1000 + 5 * 60 * 60 * 1000
       );
       const result = getTimeRemaining(future);
 
@@ -158,7 +158,7 @@ describe("Helper Utilities", () => {
 
     it("should handle URLs with query parameters", () => {
       expect(isVideoFile("https://example.com/video.mp4?param=value")).toBe(
-        true,
+        true
       );
       expect(isVideoFile("https://example.com/video.mp4#fragment")).toBe(true);
     });

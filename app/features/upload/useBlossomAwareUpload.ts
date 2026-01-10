@@ -163,63 +163,84 @@ export function useBlossomAwareUpload() {
 
         setUploadProgress(90);
 
-        if (!fetchResponse.ok) {
-          let errorData: { error?: string };
+        // ============================================================================
+        // Helper Functions
+        // ============================================================================
+
+        async function parseErrorResponse(
+          fetchResponse: Response
+        ): Promise<{ error?: string }> {
           try {
-            errorData = (await fetchResponse.json()) as { error?: string };
+            return (await fetchResponse.json()) as { error?: string };
           } catch {
-            // If response is not JSON, try to get text
             const errorText = await fetchResponse
               .text()
               .catch(() => `HTTP ${fetchResponse.status}`);
-            errorData = {
+            return {
               error: errorText.includes("<!DOCTYPE")
                 ? `HTTP ${fetchResponse.status}`
                 : errorText,
             };
           }
-          throw new Error(errorData.error ?? "Upload failed");
         }
 
-        let result;
-        const responseText = await fetchResponse.text();
+        function isHtmlResponse(responseText: string): boolean {
+          return (
+            responseText.includes("<!DOCTYPE") || responseText.includes("<html")
+          );
+        }
 
-        try {
-          // Try to parse as JSON first
-          result = JSON.parse(responseText) as Record<string, unknown>;
-        } catch (_parseError: unknown) {
-          // If response is HTML (redirect or error page), handle gracefully
+        function parseHtmlResponse(
+          responseText: string,
+          status: number
+        ): Record<string, unknown> {
           if (
-            responseText.includes("<!DOCTYPE") ||
-            responseText.includes("<html")
+            responseText.includes("success") ||
+            responseText.includes("uploaded") ||
+            status === 200
           ) {
-            if (
-              responseText.includes("success") ||
-              responseText.includes("uploaded") ||
-              fetchResponse.status === 200
-            ) {
-              result = {
-                success: true,
-                redirect: true,
-                message:
-                  "Upload completed, but received HTML response instead of JSON",
-              };
-            } else {
-              result = {
-                success: false,
-                error: "Server returned HTML instead of expected JSON response",
-              };
+            return {
+              success: true,
+              redirect: true,
+              message:
+                "Upload completed, but received HTML response instead of JSON",
+            };
+          }
+          return {
+            success: false,
+            error: "Server returned HTML instead of expected JSON response",
+          };
+        }
+
+        async function parseResponse(
+          fetchResponse: Response
+        ): Promise<Record<string, unknown>> {
+          const responseText = await fetchResponse.text();
+
+          try {
+            return JSON.parse(responseText) as Record<string, unknown>;
+          } catch (parseError: unknown) {
+            if (isHtmlResponse(responseText)) {
+              return parseHtmlResponse(responseText, fetchResponse.status);
             }
-          } else {
-            const parseError = _parseError as Error;
+            const error = parseError as Error;
             throw new Error(
               "Invalid response format: " +
-                parseError.message +
+                error.message +
                 ". Response: " +
                 responseText.substring(0, 100)
             );
           }
         }
+
+        if (!fetchResponse.ok) {
+          const errorData = await parseErrorResponse(fetchResponse);
+          throw new Error(errorData.error ?? "Upload failed");
+        }
+
+        setUploadProgress(90);
+
+        const result = await parseResponse(fetchResponse);
 
         setResponse(result);
         setUploadProgress(100);

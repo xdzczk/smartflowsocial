@@ -75,123 +75,159 @@ export const userSchema = z.object({
 /**
  * Schema for SignedEvent (minimal validation)
  */
-const signedEventSchema = z.object({
-  id: z.string(),
-  pubkey: z.string(),
-  created_at: z.number(),
-  kind: z.number(),
-  tags: z.array(z.array(z.string())),
-  content: z.string(),
-  sig: z.string(),
-}).passthrough(); // Allow additional fields
+const signedEventSchema = z
+  .object({
+    id: z.string(),
+    pubkey: z.string(),
+    created_at: z.number(),
+    kind: z.number(),
+    tags: z.array(z.array(z.string())),
+    content: z.string(),
+    sig: z.string(),
+  })
+  .passthrough(); // Allow additional fields
 
 /**
  * Schema for NostrEvent (minimal validation)
  */
-const nostrEventSchema = z.object({
-  id: z.string(),
-  pubkey: z.string(),
-  created_at: z.number(),
-  kind: z.number(),
-  tags: z.array(z.array(z.string())),
-  content: z.string(),
-}).passthrough(); // Allow additional fields
+const nostrEventSchema = z
+  .object({
+    id: z.string(),
+    pubkey: z.string(),
+    created_at: z.number(),
+    kind: z.number(),
+    tags: z.array(z.array(z.string())),
+    content: z.string(),
+  })
+  .passthrough(); // Allow additional fields
 
 /**
  * Schema for PostDTO
  */
-const postDTOSchema = z.object({
-  id: z.string(),
-  nostrEventId: z.string().nullable().optional(),
-  caption: z.string().nullish().transform(val => val ?? null),
-  fileUrl: z.array(z.string()),
-  scheduledFor: z.string().nullable(),
-  postedAt: z.string().nullable(),
-  content: z.string().nullish().transform(val => val ?? null),
-  isPosted: z.boolean(),
-  isScheduled: z.boolean(),
-  postType: z.enum(["IMAGE", "CAROUSEL", "TEXT", "VIDEO"]),
-  repost: z.boolean(),
-  isQuotedPost: z.boolean(),
-  isRecyclable: z.boolean(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-  draft: z.boolean(),
-  status: z.enum(["DRAFT", "ACTIVE", "SCHEDULED", "PAUSED", "POSTED", "FAILED"]),
-  signedEvent: signedEventSchema.nullable().optional(),
-  nostrEvent: nostrEventSchema.nullable().optional(),
-  queueTypeId: z.string().nullable().optional(),
-  tags: z.array(z.string()),
-  manual_override: z.boolean(),
-  userId: z.string(),
-  templateId: z.string().nullable().optional(),
-  hashTagPresetId: z.string().nullable().optional(),
-  queueType: queueTypeSchema.nullable().optional(),
-  hashTagPreset: z
-    .object({
-      id: z.string(),
-      name: z.string(),
-      tags: z.string(),
-      description: z.string().nullable().optional(),
-    })
-    .nullable()
-    .optional(),
-  hashtags: z.string().optional(),
-}).passthrough(); // Allow additional fields
+const postDTOSchema = z
+  .object({
+    id: z.string(),
+    nostrEventId: z.string().nullable().optional(),
+    caption: z
+      .string()
+      .nullish()
+      .transform((val) => val ?? null),
+    fileUrl: z.array(z.string()),
+    scheduledFor: z.string().nullable(),
+    postedAt: z.string().nullable(),
+    content: z
+      .string()
+      .nullish()
+      .transform((val) => val ?? null),
+    isPosted: z.boolean(),
+    isScheduled: z.boolean(),
+    postType: z.enum(["IMAGE", "CAROUSEL", "TEXT", "VIDEO"]),
+    repost: z.boolean(),
+    isQuotedPost: z.boolean(),
+    isRecyclable: z.boolean(),
+    createdAt: z.string(),
+    updatedAt: z.string(),
+    draft: z.boolean(),
+    status: z.enum([
+      "DRAFT",
+      "ACTIVE",
+      "SCHEDULED",
+      "PAUSED",
+      "POSTED",
+      "FAILED",
+    ]),
+    signedEvent: signedEventSchema.nullable().optional(),
+    nostrEvent: nostrEventSchema.nullable().optional(),
+    queueTypeId: z.string().nullable().optional(),
+    tags: z.array(z.string()),
+    manual_override: z.boolean(),
+    userId: z.string(),
+    templateId: z.string().nullable().optional(),
+    hashTagPresetId: z.string().nullable().optional(),
+    queueType: queueTypeSchema.nullable().optional(),
+    hashTagPreset: z
+      .object({
+        id: z.string(),
+        name: z.string(),
+        tags: z.string(),
+        description: z.string().nullable().optional(),
+      })
+      .nullable()
+      .optional(),
+    hashtags: z.string().optional(),
+  })
+  .passthrough(); // Allow additional fields
 
 /**
  * Schema for LongFormPostDTO
  */
-const longFormPostDTOSchema = z.object({
-  id: z.string(),
-  nostrEventId: z.string().nullable().optional(),
-  title: z.string().nullish().transform(val => val ?? null),
-  summary: z.string().nullable().optional(),
-  content: z.string().nullish().transform(val => val ?? null),
-  image: z.string().nullable().optional(),
-  scheduledFor: z.string().nullable(),
-  isScheduled: z.boolean(),
-  postedAt: z.string().nullable(),
-  publishedAt: z.string().nullable(),
-  updatedAt: z.string(),
-  createdAt: z.string(),
-  isPublished: z.boolean(),
-  draft: z.boolean(),
-  status: z.enum(["DRAFT", "ACTIVE", "SCHEDULED", "PAUSED", "POSTED", "FAILED"]),
-  queueTypeId: z.string().nullable().optional(),
-  tags: z.array(z.string()),
-  signedEvent: signedEventSchema.nullable().optional(),
-  nostrEvent: nostrEventSchema.nullable().optional(),
-  userId: z.string(),
-  hashTagPresetId: z.string().nullable().optional(),
-  queueType: queueTypeSchema.nullable().optional(),
-}).passthrough(); // Allow additional fields
+const longFormPostDTOSchema = z
+  .object({
+    id: z.string(),
+    nostrEventId: z.string().nullable().optional(),
+    title: z
+      .string()
+      .nullish()
+      .transform((val) => val ?? null),
+    summary: z.string().nullable().optional(),
+    content: z
+      .string()
+      .nullish()
+      .transform((val) => val ?? null),
+    image: z.string().nullable().optional(),
+    scheduledFor: z.string().nullable(),
+    isScheduled: z.boolean(),
+    postedAt: z.string().nullable(),
+    publishedAt: z.string().nullable(),
+    updatedAt: z.string(),
+    createdAt: z.string(),
+    isPublished: z.boolean(),
+    draft: z.boolean(),
+    status: z.enum([
+      "DRAFT",
+      "ACTIVE",
+      "SCHEDULED",
+      "PAUSED",
+      "POSTED",
+      "FAILED",
+    ]),
+    queueTypeId: z.string().nullable().optional(),
+    tags: z.array(z.string()),
+    signedEvent: signedEventSchema.nullable().optional(),
+    nostrEvent: nostrEventSchema.nullable().optional(),
+    userId: z.string(),
+    hashTagPresetId: z.string().nullable().optional(),
+    queueType: queueTypeSchema.nullable().optional(),
+  })
+  .passthrough(); // Allow additional fields
 
 /**
  * Schema for CombinedContent (simplified - just validates structure)
  */
-const _combinedContentSchema = z.object({
-  id: z.string(),
-  type: z.enum(["post", "longform"]),
-  title: z.string().optional(),
-  caption: z.string().optional(),
-  content: z.string().optional(),
-  summary: z.string().optional(),
-  image: z.string().optional(),
-  fileUrl: z.array(z.string()).optional(),
-  scheduledFor: z.string().optional(),
-  publishedAt: z.union([z.string(), z.date()]).optional(),
-  postedAt: z.union([z.string(), z.date()]).optional(),
-  createdAt: z.union([z.string(), z.date()]),
-  updatedAt: z.union([z.string(), z.date()]),
-  isScheduled: z.boolean().optional(),
-  isPosted: z.boolean().optional(),
-  isPublished: z.boolean().optional(),
-  draft: z.boolean().optional(),
-  status: z.string(),
-  queueType: queueTypeSchema.nullable().optional(),
-  originalData: z.unknown(), // Allow any original data
-}).passthrough(); // Allow additional fields
+const _combinedContentSchema = z
+  .object({
+    id: z.string(),
+    type: z.enum(["post", "longform"]),
+    title: z.string().optional(),
+    caption: z.string().optional(),
+    content: z.string().optional(),
+    summary: z.string().optional(),
+    image: z.string().optional(),
+    fileUrl: z.array(z.string()).optional(),
+    scheduledFor: z.string().optional(),
+    publishedAt: z.union([z.string(), z.date()]).optional(),
+    postedAt: z.union([z.string(), z.date()]).optional(),
+    createdAt: z.union([z.string(), z.date()]),
+    updatedAt: z.union([z.string(), z.date()]),
+    isScheduled: z.boolean().optional(),
+    isPosted: z.boolean().optional(),
+    isPublished: z.boolean().optional(),
+    draft: z.boolean().optional(),
+    status: z.string(),
+    queueType: queueTypeSchema.nullable().optional(),
+    originalData: z.unknown(), // Allow any original data
+  })
+  .passthrough(); // Allow additional fields
 
 /**
  * Schema for PostedPostsLoaderData
@@ -220,7 +256,7 @@ const userWithHashTagPresetsSchema = userSchema.extend({
       name: z.string(),
       tags: z.string(),
       description: z.string().nullable().optional(),
-    }),
+    })
   ),
 });
 
@@ -255,28 +291,41 @@ export type DraftsLoaderData = z.infer<typeof draftsLoaderDataSchema>;
 /**
  * Schema for Template
  */
-const templateSchema = z.object({
-  id: z.string(),
-  name: z.string().nullable().optional(),
-  createdAt: z.string().or(z.date()),
-  updatedAt: z.string().or(z.date()),
-  userId: z.string(),
-}).passthrough();
+const templateSchema = z
+  .object({
+    id: z.string(),
+    name: z.string().nullable().optional(),
+    createdAt: z.string().or(z.date()),
+    updatedAt: z.string().or(z.date()),
+    userId: z.string(),
+  })
+  .passthrough();
 
 /**
  * Schema for Asset
  */
-const assetSchema = z.object({
-  id: z.string(),
-  title: z.string().nullish().transform(val => val ?? null),
-  content: z.string().nullish().transform(val => val ?? null),
-  fileUrl: z.string().nullish().transform(val => val ?? null),
-  tags: z.array(z.string()),
-  assetType: z.enum(["TEXT", "IMAGE", "VIDEO"]),
-  createdAt: z.string().or(z.date()),
-  updatedAt: z.string().or(z.date()),
-  userId: z.string(),
-}).passthrough();
+const assetSchema = z
+  .object({
+    id: z.string(),
+    title: z
+      .string()
+      .nullish()
+      .transform((val) => val ?? null),
+    content: z
+      .string()
+      .nullish()
+      .transform((val) => val ?? null),
+    fileUrl: z
+      .string()
+      .nullish()
+      .transform((val) => val ?? null),
+    tags: z.array(z.string()),
+    assetType: z.enum(["TEXT", "IMAGE", "VIDEO"]),
+    createdAt: z.string().or(z.date()),
+    updatedAt: z.string().or(z.date()),
+    userId: z.string(),
+  })
+  .passthrough();
 
 /**
  * Schema for TemplatesLoaderData
@@ -308,15 +357,17 @@ const eventStatsSchema = z.object({
 /**
  * Schema for GroupedNotification (simplified - allows passthrough for flexibility)
  */
-const groupedNotificationSchema = z.object({
-  id: z.string(),
-  eventId: z.string(),
-  pubkey: z.string(),
-  createdAt: z.number(),
-  kind: z.number(),
-  content: z.string().optional(),
-  tags: z.array(z.array(z.string())).optional(),
-}).passthrough();
+const groupedNotificationSchema = z
+  .object({
+    id: z.string(),
+    eventId: z.string(),
+    pubkey: z.string(),
+    createdAt: z.number(),
+    kind: z.number(),
+    content: z.string().optional(),
+    tags: z.array(z.array(z.string())).optional(),
+  })
+  .passthrough();
 
 /**
  * Schema for EngagementLoaderData
@@ -352,7 +403,9 @@ export const calendarQueueLoaderDataSchema = z.object({
   scheduleIntervals: z.array(z.number()),
 });
 
-export type CalendarQueueLoaderData = z.infer<typeof calendarQueueLoaderDataSchema>;
+export type CalendarQueueLoaderData = z.infer<
+  typeof calendarQueueLoaderDataSchema
+>;
 
 /**
  * Schema for RelatedEvent (from giveaway feature)
@@ -396,15 +449,17 @@ export type GiveawayLoaderData = z.infer<typeof giveawayLoaderDataSchema>;
  * Schema for HashTagPreset
  * Validates HashTagPreset structure from Prisma/loader responses
  */
-export const hashTagPresetSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  tags: z.string(),
-  description: z.string().nullable().optional(),
-  createdAt: z.string().or(z.date()),
-  updatedAt: z.string().or(z.date()),
-  userId: z.string(),
-}).passthrough();
+export const hashTagPresetSchema = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    tags: z.string(),
+    description: z.string().nullable().optional(),
+    createdAt: z.string().or(z.date()),
+    updatedAt: z.string().or(z.date()),
+    userId: z.string(),
+  })
+  .passthrough();
 
 /**
  * Schema for ScheduledPostsLoaderData
@@ -419,7 +474,9 @@ export const scheduledPostsLoaderDataSchema = z.object({
   hashTagPresets: z.array(hashTagPresetSchema),
 });
 
-export type ScheduledPostsLoaderData = z.infer<typeof scheduledPostsLoaderDataSchema>;
+export type ScheduledPostsLoaderData = z.infer<
+  typeof scheduledPostsLoaderDataSchema
+>;
 
 /**
  * Schema for DashboardLoaderData
@@ -431,10 +488,12 @@ export const dashboardLoaderDataSchema = z.object({
   user: userSchema.nullable(),
   queueTypes: z.array(queueTypeSchema),
   hashTagPresets: z.array(hashTagPresetSchema),
-  postStatistics: z.object({
-    scheduledCount: z.number(),
-    successCount: z.number(),
-  }).optional(),
+  postStatistics: z
+    .object({
+      scheduledCount: z.number(),
+      successCount: z.number(),
+    })
+    .optional(),
   selectedQueueType: z.string(),
   planActivated: z.string().nullable().optional(),
   successMessage: z.string().nullable().optional(),
@@ -458,4 +517,3 @@ export const calendarLoaderDataSchema = z.object({
 });
 
 export type CalendarLoaderData = z.infer<typeof calendarLoaderDataSchema>;
-

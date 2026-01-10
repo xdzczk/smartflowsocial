@@ -26,16 +26,51 @@ function createValidJPEGBuffer(): Buffer {
 function createValidPNGBuffer(): Buffer {
   // Minimal valid PNG: PNG signature + IHDR chunk
   const pngHeader = Buffer.from([
-    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, // PNG signature
-    0x00, 0x00, 0x00, 0x0d, // IHDR chunk length
-    0x49, 0x48, 0x44, 0x52, // IHDR
-    0x00, 0x00, 0x00, 0x01, // width
-    0x00, 0x00, 0x00, 0x01, // height
-    0x08, 0x06, 0x00, 0x00, 0x00, // bit depth, color type, compression, filter, interlace
-    0x1f, 0x15, 0xc4, 0x89, // CRC
-    0x00, 0x00, 0x00, 0x00, // IEND chunk length
-    0x49, 0x45, 0x4e, 0x44, // IEND
-    0xae, 0x42, 0x60, 0x82, // CRC
+    0x89,
+    0x50,
+    0x4e,
+    0x47,
+    0x0d,
+    0x0a,
+    0x1a,
+    0x0a, // PNG signature
+    0x00,
+    0x00,
+    0x00,
+    0x0d, // IHDR chunk length
+    0x49,
+    0x48,
+    0x44,
+    0x52, // IHDR
+    0x00,
+    0x00,
+    0x00,
+    0x01, // width
+    0x00,
+    0x00,
+    0x00,
+    0x01, // height
+    0x08,
+    0x06,
+    0x00,
+    0x00,
+    0x00, // bit depth, color type, compression, filter, interlace
+    0x1f,
+    0x15,
+    0xc4,
+    0x89, // CRC
+    0x00,
+    0x00,
+    0x00,
+    0x00, // IEND chunk length
+    0x49,
+    0x45,
+    0x4e,
+    0x44, // IEND
+    0xae,
+    0x42,
+    0x60,
+    0x82, // CRC
   ]);
   return pngHeader;
 }
@@ -97,7 +132,7 @@ describe("File Upload Security: File Type Validation", () => {
 
   it("should validate against Content-Type header if provided", async () => {
     const jpegBuffer = createValidJPEGBuffer();
-    
+
     // Valid: Content-Type matches detected type
     const validResult = await validateUpload(
       jpegBuffer,
@@ -203,7 +238,7 @@ describe("File Upload Security: Edge Cases", () => {
 
   it("should normalize Content-Type with charset", async () => {
     const jpegBuffer = createValidJPEGBuffer();
-    
+
     // Content-Type with charset should still work
     const result = await validateUpload(
       jpegBuffer,

@@ -13,7 +13,7 @@ declare global {
               content: string;
               tags: string[][];
               created_at: number;
-            },
+            }
       ): Promise<SignedEvent>;
       signSchnorr?(message: string): Promise<string>;
       nip04?: {

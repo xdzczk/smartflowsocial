@@ -2,7 +2,11 @@ import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { isVideoFile } from "~/lib/helpers";
 
 import { PostBadges } from "./PostBadges";
-import type { PostBlockBaseProps, QueueColorStyle } from "./PostBlock.types";
+import type {
+  PostBlockBaseProps,
+  QueueColorStyle,
+  CalendarPost,
+} from "./PostBlock.types";
 import {
   getPostPreview,
   getFirstImage,
@@ -15,6 +19,273 @@ interface MinimalPostBlockProps extends PostBlockBaseProps {
   userTimezone: string;
   multipleInCell?: boolean;
   hideVideoPlayButton?: boolean;
+}
+
+// ============================================================================
+// Helper Functions and Components
+// ============================================================================
+
+function getAriaLabel(
+  postPreview: string,
+  isLongform: boolean,
+  isPast: boolean,
+  displayTime: Date,
+  userTimezone: string
+): string {
+  const action = isPast ? "View" : "Edit";
+  const postType = isLongform ? "longform post" : "post";
+  const status = isPast ? "posted" : isLongform ? "published" : "scheduled";
+  const timeStr = displayTime.toLocaleString("en-US", {
+    timeZone: userTimezone,
+  });
+  return `${action} ${postType}: ${postPreview}, ${status} for ${timeStr}`;
+}
+
+function getTitleText(
+  postPreview: string,
+  isLongform: boolean,
+  isPast: boolean,
+  displayTime: Date,
+  userTimezone: string
+): string {
+  const status = isPast ? "Posted" : isLongform ? "Published" : "Scheduled";
+  const timeStr = displayTime.toLocaleString("en-US", {
+    timeZone: userTimezone,
+  });
+  const action = isPast ? "Past post (view only)" : "Click to edit";
+  return `${postPreview}\n${status} for ${timeStr}\n${action}`;
+}
+
+function getClassName(
+  isPast: boolean,
+  isDragging: boolean,
+  queueColorStyle: React.CSSProperties | null | undefined,
+  post: CalendarPost,
+  isLongform: boolean
+): string {
+  const baseClasses = "rounded text-xs transition-opacity focus:outline-none";
+  const cursorClass = isPast
+    ? "cursor-default"
+    : "cursor-pointer hover:opacity-80";
+  const draggingClass = isDragging ? "opacity-50" : "";
+  const statusColor = queueColorStyle
+    ? ""
+    : getStatusColor(post, isLongform, isPast);
+  return `${baseClasses} ${cursorClass} ${draggingClass} ${statusColor}`.trim();
+}
+
+interface PostThumbnailProps {
+  firstImage: string | null;
+  post: CalendarPost;
+  isLongform: boolean;
+  size: "xs" | "sm";
+  hideVideoPlayButton?: boolean;
+}
+
+function PostThumbnail({
+  firstImage,
+  post,
+  isLongform,
+  size,
+  hideVideoPlayButton = false,
+}: PostThumbnailProps) {
+  const sizeClasses = size === "xs" ? "h-3 w-3" : "h-4 w-4";
+  const badgeSize = size === "xs" ? "xs" : "sm";
+
+  if (firstImage) {
+    return (
+      <div className="relative">
+        <MediaThumbnail
+          src={firstImage}
+          alt="Post thumbnail"
+          className={`${sizeClasses} flex-shrink-0 rounded`}
+          forceType={isVideoFile(firstImage) ? "video" : "image"}
+          hidePlayButton={size === "xs" ? true : hideVideoPlayButton}
+          fallback={
+            <div
+              className={`${sizeClasses} flex-shrink-0 rounded bg-gray-200 dark:bg-gray-600`}
+            />
+          }
+        />
+        <PostBadges post={post} size={badgeSize} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative">
+      {size === "xs" ? (
+        <div className={sizeClasses}>
+          <PostIcon
+            post={post}
+            isLongform={isLongform}
+            className={sizeClasses}
+          />
+        </div>
+      ) : (
+        <PostIcon post={post} isLongform={isLongform} />
+      )}
+      <PostBadges post={post} size={badgeSize} />
+    </div>
+  );
+}
+
+interface UltraCompactLayoutProps {
+  post: CalendarPost;
+  firstImage: string | null;
+  postPreview: string;
+  isLongform: boolean;
+  isPast: boolean;
+  isDragging: boolean;
+  onDragStart: (e: React.DragEvent<HTMLDivElement>) => void;
+  onDragEnd: () => void;
+  onClick: (e: React.MouseEvent<HTMLDivElement>) => void;
+  onKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void;
+  queueColorStyle: React.CSSProperties | null | undefined;
+  displayTime: Date;
+  userTimezone: string;
+}
+
+function UltraCompactLayout({
+  post,
+  firstImage,
+  postPreview,
+  isLongform,
+  isPast,
+  isDragging,
+  onDragStart,
+  onDragEnd,
+  onClick,
+  onKeyDown,
+  queueColorStyle,
+  displayTime,
+  userTimezone,
+}: UltraCompactLayoutProps) {
+  const className = `${getClassName(isPast, isDragging, queueColorStyle, post, isLongform)} p-0.5 focus:ring-1 focus:ring-blue-500`;
+  const ariaLabel = getAriaLabel(
+    postPreview,
+    isLongform,
+    isPast,
+    displayTime,
+    userTimezone
+  );
+  const title = getTitleText(
+    postPreview,
+    isLongform,
+    isPast,
+    displayTime,
+    userTimezone
+  );
+
+  return (
+    <div
+      draggable={!isPast}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onClick={(e) => onClick(e)}
+      onKeyDown={(e) => onKeyDown(e)}
+      tabIndex={0}
+      role="button"
+      aria-label={ariaLabel}
+      className={className}
+      style={queueColorStyle ?? {}}
+      title={title}
+    >
+      <div className="flex flex-col items-center space-y-0.5">
+        <PostThumbnail
+          firstImage={firstImage}
+          post={post}
+          isLongform={isLongform}
+          size="xs"
+        />
+        <span
+          className="max-w-full truncate text-center text-xs leading-tight"
+          style={{ fontSize: "11px", lineHeight: "20px" }}
+        >
+          {postPreview.length > 8
+            ? postPreview.substring(0, 8) + "..."
+            : postPreview}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+interface RegularLayoutProps {
+  post: CalendarPost;
+  firstImage: string | null;
+  postPreview: string;
+  isLongform: boolean;
+  isPast: boolean;
+  isDragging: boolean;
+  onDragStart: (e: React.DragEvent<HTMLDivElement>) => void;
+  onDragEnd: () => void;
+  onClick: (e: React.MouseEvent<HTMLDivElement>) => void;
+  onKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void;
+  queueColorStyle: React.CSSProperties | null | undefined;
+  displayTime: Date;
+  userTimezone: string;
+  hideVideoPlayButton: boolean;
+}
+
+function RegularLayout({
+  post,
+  firstImage,
+  postPreview,
+  isLongform,
+  isPast,
+  isDragging,
+  onDragStart,
+  onDragEnd,
+  onClick,
+  onKeyDown,
+  queueColorStyle,
+  displayTime,
+  userTimezone,
+  hideVideoPlayButton,
+}: RegularLayoutProps) {
+  const className = `${getClassName(isPast, isDragging, queueColorStyle, post, isLongform)} px-2 py-1 focus:ring-2 focus:ring-blue-500`;
+  const ariaLabel = getAriaLabel(
+    postPreview,
+    isLongform,
+    isPast,
+    displayTime,
+    userTimezone
+  );
+  const title = getTitleText(
+    postPreview,
+    isLongform,
+    isPast,
+    displayTime,
+    userTimezone
+  );
+
+  return (
+    <div
+      draggable={!isPast}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onClick={(e) => onClick(e)}
+      onKeyDown={(e) => onKeyDown(e)}
+      tabIndex={0}
+      role="button"
+      aria-label={ariaLabel}
+      className={className}
+      style={queueColorStyle ?? {}}
+      title={title}
+    >
+      <div className="flex items-center space-x-1">
+        <PostThumbnail
+          firstImage={firstImage}
+          post={post}
+          isLongform={isLongform}
+          size="sm"
+          hideVideoPlayButton={hideVideoPlayButton}
+        />
+        <span className="flex-1 truncate">{postPreview}</span>
+      </div>
+    </div>
+  );
 }
 
 export function MinimalPostBlock({
@@ -37,111 +308,45 @@ export function MinimalPostBlock({
   const displayTime = getDisplayTime(
     post,
     isLongform ?? false,
-    isPast ?? false,
+    isPast ?? false
   );
 
-  // When there are multiple posts in cell, use ultra-compact layout
   if (multipleInCell) {
     return (
-      <div
-        draggable={!isPast}
+      <UltraCompactLayout
+        post={post}
+        firstImage={firstImage}
+        postPreview={postPreview}
+        isLongform={isLongform ?? false}
+        isPast={isPast ?? false}
+        isDragging={isDragging ?? false}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
         onClick={onClick}
         onKeyDown={onKeyDown}
-        tabIndex={0}
-        role="button"
-        aria-label={`${isPast ? "View" : "Edit"} ${isLongform ? "longform post" : "post"}: ${postPreview}, ${isPast ? "posted" : isLongform ? "published" : "scheduled"} for ${displayTime.toLocaleString("en-US", { timeZone: userTimezone })}`}
-        className={`rounded p-0.5 text-xs transition-opacity focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-          isPast ? "cursor-default" : "cursor-pointer hover:opacity-80"
-        } ${
-          isDragging ? "opacity-50" : ""
-        } ${queueColorStyle ? "" : getStatusColor(post, isLongform ?? false, isPast ?? false)}`}
-        style={queueColorStyle ?? {}}
-        title={`${postPreview}\n${isPast ? "Posted" : isLongform ? "Published" : "Scheduled"} for ${displayTime.toLocaleString("en-US", { timeZone: userTimezone })}\n${isPast ? "Past post (view only)" : "Click to edit"}`}
-      >
-        <div className="flex flex-col items-center space-y-0.5">
-          {firstImage ? (
-            <div className="relative">
-              <MediaThumbnail
-                src={firstImage}
-                alt="Post thumbnail"
-                className="h-3 w-3 flex-shrink-0 rounded"
-                forceType={isVideoFile(firstImage) ? "video" : "image"}
-                hidePlayButton={true}
-                fallback={
-                  <div className="h-3 w-3 flex-shrink-0 rounded bg-gray-200 dark:bg-gray-600" />
-                }
-              />
-              <PostBadges post={post} size="xs" />
-            </div>
-          ) : (
-            <div className="relative">
-              <div className="h-3 w-3">
-                <PostIcon
-                  post={post}
-                  isLongform={isLongform ?? false}
-                  className="h-3 w-3"
-                />
-              </div>
-              <PostBadges post={post} size="xs" />
-            </div>
-          )}
-          <span
-            className="max-w-full truncate text-center text-xs leading-tight"
-            style={{ fontSize: "11px", lineHeight: "20px" }}
-          >
-            {postPreview.length > 8
-              ? postPreview.substring(0, 8) + "..."
-              : postPreview}
-          </span>
-        </div>
-      </div>
+        queueColorStyle={queueColorStyle}
+        displayTime={displayTime}
+        userTimezone={userTimezone}
+      />
     );
   }
 
-  // Regular minimal layout for single posts
   return (
-    <div
-      draggable={!isPast}
+    <RegularLayout
+      post={post}
+      firstImage={firstImage}
+      postPreview={postPreview}
+      isLongform={isLongform ?? false}
+      isPast={isPast ?? false}
+      isDragging={isDragging ?? false}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
-      onClick={onClick}
-      onKeyDown={onKeyDown}
-      tabIndex={0}
-      role="button"
-      aria-label={`${isPast ? "View" : "Edit"} ${isLongform ? "longform post" : "post"}: ${postPreview}, ${isPast ? "posted" : isLongform ? "published" : "scheduled"} for ${displayTime.toLocaleString("en-US", { timeZone: userTimezone })}`}
-      className={`rounded px-2 py-1 text-xs transition-opacity focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-        isPast ? "cursor-default" : "cursor-pointer hover:opacity-80"
-      } ${
-        isDragging ? "opacity-50" : ""
-      } ${queueColorStyle ? "" : getStatusColor(post, isLongform ?? false, isPast ?? false)}`}
-      style={queueColorStyle ?? {}}
-      title={`${postPreview}\n${isPast ? "Posted" : isLongform ? "Published" : "Scheduled"} for ${displayTime.toLocaleString("en-US", { timeZone: userTimezone })}\n${isPast ? "Past post (view only)" : "Click to edit"}`}
-    >
-      <div className="flex items-center space-x-1">
-        {firstImage ? (
-          <div className="relative">
-            <MediaThumbnail
-              src={firstImage}
-              alt="Post thumbnail"
-              className="h-4 w-4 flex-shrink-0 rounded"
-              forceType={isVideoFile(firstImage) ? "video" : "image"}
-              hidePlayButton={hideVideoPlayButton}
-              fallback={
-                <div className="h-4 w-4 flex-shrink-0 rounded bg-gray-200 dark:bg-gray-600" />
-              }
-            />
-            <PostBadges post={post} size="sm" />
-          </div>
-        ) : (
-          <div className="relative">
-            <PostIcon post={post} isLongform={isLongform ?? false} />
-            <PostBadges post={post} size="sm" />
-          </div>
-        )}
-        <span className="flex-1 truncate">{postPreview}</span>
-      </div>
-    </div>
+      onClick={(e) => onClick(e)}
+      onKeyDown={(e) => onKeyDown(e)}
+      queueColorStyle={queueColorStyle}
+      displayTime={displayTime}
+      userTimezone={userTimezone}
+      hideVideoPlayButton={hideVideoPlayButton}
+    />
   );
 }

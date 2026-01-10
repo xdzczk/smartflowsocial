@@ -25,7 +25,7 @@ describe("Post Data Conversion", () => {
       expect(result.id).toBe("post-1");
       expect(result.caption).toBe("Test caption");
       expect(result.scheduledFor).toBe(
-        Math.floor(new Date("2024-01-01T12:00:00Z").getTime() / 1000).toString(),
+        Math.floor(new Date("2024-01-01T12:00:00Z").getTime() / 1000).toString()
       );
     });
 
@@ -235,4 +235,3 @@ describe("Post Data Conversion", () => {
     });
   });
 });
-

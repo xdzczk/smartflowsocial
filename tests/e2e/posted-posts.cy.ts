@@ -49,7 +49,7 @@ describe("Posted Posts Queue", () => {
       cy.get("body", { timeout: 10000 }).then(($body) => {
         const hasPosts =
           $body.find(
-            'table tbody tr, [data-testid="posted-post"], .post-item, tbody tr',
+            'table tbody tr, [data-testid="posted-post"], .post-item, tbody tr'
           ).length > 0;
         const hasEmptyState =
           $body.find('[data-testid="empty-state"]').length > 0 ||

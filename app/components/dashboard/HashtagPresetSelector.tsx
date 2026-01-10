@@ -103,7 +103,7 @@ export function HashtagPresetSelector({
         </div>
 
         {selectedPreset && !isExpanded ? (
-          <div className="mt-3 rounded-lg bg-muted/50 p-3">
+          <div className="bg-muted/50 mt-3 rounded-lg p-3">
             <div className="mb-2 flex items-center gap-2">
               <h4 className="text-sm font-medium">{selectedPreset.name}</h4>
               <Badge variant="secondary" className="text-xs">
@@ -112,7 +112,7 @@ export function HashtagPresetSelector({
             </div>
 
             {selectedPreset.description ? (
-              <p className="mb-2 text-xs text-muted-foreground">
+              <p className="text-muted-foreground mb-2 text-xs">
                 {selectedPreset.description}
               </p>
             ) : null}
@@ -198,12 +198,12 @@ export function HashtagPresetSelector({
                             {countHashtags(preset.tags)} tags
                           </Badge>
                           {selectedPresetId === preset.id ? (
-                            <Check className="h-4 w-4 text-primary" />
+                            <Check className="text-primary h-4 w-4" />
                           ) : null}
                         </div>
 
                         {preset.description ? (
-                          <p className="mb-2 text-xs text-muted-foreground">
+                          <p className="text-muted-foreground mb-2 text-xs">
                             {preset.description}
                           </p>
                         ) : null}
@@ -212,7 +212,7 @@ export function HashtagPresetSelector({
                           {preset.tags
                             .split(/\s+/)
                             .filter(
-                              (tag) => tag.startsWith("#") && tag.length > 1,
+                              (tag) => tag.startsWith("#") && tag.length > 1
                             )
                             .slice(0, 3)
                             .map((tag) => (

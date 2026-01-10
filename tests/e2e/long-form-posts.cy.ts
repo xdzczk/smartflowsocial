@@ -27,7 +27,7 @@ describe("Long Form Posts", () => {
         .click({ force: true });
       cy.location("pathname", { timeout: 10000 }).should(
         "include",
-        "newlongformpost",
+        "newlongformpost"
       );
     });
 

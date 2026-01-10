@@ -28,42 +28,42 @@ describe("Date Utilities", () => {
 
     it("should contain Africa timezones", () => {
       const africaTimezones = timeZonesList.filter((tz) =>
-        tz.startsWith("Africa/"),
+        tz.startsWith("Africa/")
       );
       expect(africaTimezones.length).toBeGreaterThan(0);
     });
 
     it("should contain America timezones", () => {
       const americaTimezones = timeZonesList.filter((tz) =>
-        tz.startsWith("America/"),
+        tz.startsWith("America/")
       );
       expect(americaTimezones.length).toBeGreaterThan(0);
     });
 
     it("should contain Asia timezones", () => {
       const asiaTimezones = timeZonesList.filter((tz) =>
-        tz.startsWith("Asia/"),
+        tz.startsWith("Asia/")
       );
       expect(asiaTimezones.length).toBeGreaterThan(0);
     });
 
     it("should contain Europe timezones", () => {
       const europeTimezones = timeZonesList.filter((tz) =>
-        tz.startsWith("Europe/"),
+        tz.startsWith("Europe/")
       );
       expect(europeTimezones.length).toBeGreaterThan(0);
     });
 
     it("should contain Pacific timezones", () => {
       const pacificTimezones = timeZonesList.filter((tz) =>
-        tz.startsWith("Pacific/"),
+        tz.startsWith("Pacific/")
       );
       expect(pacificTimezones.length).toBeGreaterThan(0);
     });
 
     it("should contain Australia timezones", () => {
       const australiaTimezones = timeZonesList.filter((tz) =>
-        tz.startsWith("Australia/"),
+        tz.startsWith("Australia/")
       );
       expect(australiaTimezones.length).toBeGreaterThan(0);
     });

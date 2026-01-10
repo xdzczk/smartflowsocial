@@ -16,7 +16,7 @@ export function useApiQuery<TData = unknown>(
     enabled?: boolean;
     staleTime?: number;
     refetchInterval?: number;
-  } & Omit<UseQueryOptions<TData>, "queryKey" | "queryFn">,
+  } & Omit<UseQueryOptions<TData>, "queryKey" | "queryFn">
 ) {
   const queryKey = options?.queryKey ?? [endpoint];
 
@@ -39,7 +39,7 @@ export function useApiQuery<TData = unknown>(
 /**
  * Hook to fetch user upload provider settings
  * Cached for 5 minutes
- * 
+ *
  * @example
  * ```tsx
  * const { data, isLoading } = useUploadProvider();
@@ -82,7 +82,7 @@ export function useThreadView(eventId: string | null) {
   const endpoint = eventId
     ? `/api/thread-view?event_id=${encodeURIComponent(eventId)}`
     : "/api/thread-view";
-    
+
   return useApiQuery<{
     events: unknown[];
     metadata: Record<string, unknown>;
@@ -92,4 +92,3 @@ export function useThreadView(eventId: string | null) {
     staleTime: 1000 * 60 * 2, // 2 minutes
   });
 }
-

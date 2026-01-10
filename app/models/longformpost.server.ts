@@ -32,23 +32,32 @@ export type { LongFormPost } from "@prisma/client";
  * Type guard to check if a value is a SignedEvent
  */
 function isSignedEvent(value: unknown): value is SignedEvent {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const event = value as Record<string, unknown>;
+
+  if (
+    !("id" in event) ||
+    !("pubkey" in event) ||
+    !("created_at" in event) ||
+    !("kind" in event) ||
+    !("tags" in event) ||
+    !("content" in event) ||
+    !("sig" in event)
+  ) {
+    return false;
+  }
+
   return (
-    typeof value === "object" &&
-    value !== null &&
-    "id" in value &&
-    "pubkey" in value &&
-    "created_at" in value &&
-    "kind" in value &&
-    "tags" in value &&
-    "content" in value &&
-    "sig" in value &&
-    typeof (value as SignedEvent).id === "string" &&
-    typeof (value as SignedEvent).pubkey === "string" &&
-    typeof (value as SignedEvent).created_at === "number" &&
-    typeof (value as SignedEvent).kind === "number" &&
-    Array.isArray((value as SignedEvent).tags) &&
-    typeof (value as SignedEvent).content === "string" &&
-    typeof (value as SignedEvent).sig === "string"
+    typeof event["id"] === "string" &&
+    typeof event["pubkey"] === "string" &&
+    typeof event["created_at"] === "number" &&
+    typeof event["kind"] === "number" &&
+    Array.isArray(event["tags"]) &&
+    typeof event["content"] === "string" &&
+    typeof event["sig"] === "string"
   );
 }
 
@@ -138,6 +147,140 @@ export async function createLongFormPost({
   });
 }
 
+// ============================================================================
+// Update LongFormPost Helper Functions
+// ============================================================================
+
+function extractScheduledForFromTags(
+  scheduledFor: string | null | undefined,
+  isPublished: boolean | undefined,
+  signedEvent: unknown
+): string | null | undefined {
+  if (scheduledFor !== undefined) {
+    return scheduledFor;
+  }
+  if (isPublished) {
+    return scheduledFor;
+  }
+  if (
+    !signedEvent ||
+    typeof signedEvent !== "object" ||
+    !("tags" in signedEvent)
+  ) {
+    return scheduledFor;
+  }
+  const tags = signedEvent["tags"];
+  if (!Array.isArray(tags)) {
+    return scheduledFor;
+  }
+  const publishedAtTag = tags.find(
+    (tag: unknown): tag is string[] =>
+      Array.isArray(tag) && tag[0] === "published_at"
+  );
+  if (publishedAtTag && Array.isArray(publishedAtTag) && publishedAtTag[1]) {
+    return String(publishedAtTag[1]);
+  }
+  return scheduledFor;
+}
+
+function buildBasicUpdateData(
+  title: string | null | undefined,
+  summary: string | null | undefined,
+  content: string | null | undefined,
+  image: string | null | undefined,
+  tags: string | null | undefined,
+  finalScheduledFor: string | null | undefined
+): Prisma.LongFormPostUpdateInput {
+  const updateData: Prisma.LongFormPostUpdateInput = {
+    updatedAt: new Date(),
+  };
+
+  if (title !== undefined) updateData.title = title;
+  if (summary !== undefined) updateData.summary = summary;
+  if (content !== undefined) updateData.content = content;
+  if (image !== undefined) updateData.image = image;
+  if (tags !== undefined && tags !== null) {
+    const tagsArray = tags
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
+    updateData.tags = tagsArray;
+  }
+  if (finalScheduledFor !== undefined)
+    updateData.scheduledFor = finalScheduledFor;
+
+  return updateData;
+}
+
+function setQueueTypeUpdate(
+  updateData: Prisma.LongFormPostUpdateInput,
+  queueTypeId: string | null | undefined
+): void {
+  if (queueTypeId === undefined) {
+    return;
+  }
+  if (queueTypeId === null) {
+    updateData.queueType = { disconnect: true };
+  } else {
+    updateData.queueType = { connect: { id: queueTypeId } };
+  }
+}
+
+function setEventData(
+  updateData: Prisma.LongFormPostUpdateInput,
+  signedEvent: unknown,
+  nostrEvent: unknown
+): void {
+  if (signedEvent !== undefined) {
+    updateData.signedEvent = signedEvent as Prisma.InputJsonValue;
+    updateData.nostrEventId =
+      signedEvent && typeof signedEvent === "object" && "id" in signedEvent
+        ? String(signedEvent["id"])
+        : null;
+  }
+  if (nostrEvent !== undefined) {
+    updateData.nostrEvent = nostrEvent as Prisma.InputJsonValue;
+  }
+}
+
+function getPublishedAtFromSignedEvent(signedEvent: unknown): Date {
+  if (
+    signedEvent &&
+    typeof signedEvent === "object" &&
+    "published_at" in signedEvent &&
+    typeof signedEvent["published_at"] === "number"
+  ) {
+    return new Date(signedEvent["published_at"] * 1000);
+  }
+  return new Date();
+}
+
+function setPublicationStatus(
+  updateData: Prisma.LongFormPostUpdateInput,
+  isPublished: boolean | undefined,
+  finalScheduledFor: string | null | undefined,
+  signedEvent: unknown
+): void {
+  const finalIsPublished = isPublished ?? false;
+  const isScheduled = Boolean(finalScheduledFor && !finalIsPublished);
+  const isDraft = !finalIsPublished && !isScheduled;
+
+  updateData.isPublished = finalIsPublished;
+  updateData.isScheduled = isScheduled;
+  updateData.draft = isDraft;
+
+  if (finalIsPublished) {
+    updateData.status = "ACTIVE";
+    updateData.publishedAt = getPublishedAtFromSignedEvent(signedEvent);
+    updateData.postedAt = new Date();
+  } else if (isScheduled && finalScheduledFor) {
+    updateData.status = "SCHEDULED";
+    updateData.publishedAt = new Date(parseInt(finalScheduledFor) * 1000);
+  } else {
+    updateData.status = "DRAFT";
+  }
+}
+
 export async function updateLongFormPost({
   id,
   userId,
@@ -170,88 +313,31 @@ export async function updateLongFormPost({
   status?: LongFormPost["status"];
   hashTagPresetId?: string | null;
 }) {
-  // Extract published_at from NOSTR event tags if scheduledFor is not provided
-  let finalScheduledFor = scheduledFor;
-  if (
-    scheduledFor === undefined &&
-    !isPublished &&
-    signedEvent &&
-    typeof signedEvent === "object" &&
-    "tags" in signedEvent
-  ) {
-    const tags = signedEvent["tags"];
-    if (Array.isArray(tags)) {
-      const publishedAtTag = tags.find(
-        (tag: unknown) => Array.isArray(tag) && tag[0] === "published_at"
-      );
-      if (
-        publishedAtTag &&
-        Array.isArray(publishedAtTag) &&
-        publishedAtTag[1]
-      ) {
-        finalScheduledFor = String(publishedAtTag[1]);
-      }
-    }
-  }
+  const finalScheduledFor = extractScheduledForFromTags(
+    scheduledFor,
+    isPublished,
+    signedEvent
+  );
 
-  const updateData: Prisma.LongFormPostUpdateInput = {
-    updatedAt: new Date(),
-  };
+  const updateData = buildBasicUpdateData(
+    title,
+    summary,
+    content,
+    image,
+    tags && typeof tags === "string" ? tags : null,
+    finalScheduledFor
+  );
 
-  if (title !== undefined) updateData.title = title;
-  if (summary !== undefined) updateData.summary = summary;
-  if (content !== undefined) updateData.content = content;
-  if (image !== undefined) updateData.image = image;
-  if (tags !== undefined) updateData.tags = tags;
-  if (finalScheduledFor !== undefined)
-    updateData.scheduledFor = finalScheduledFor;
-  if (queueTypeId !== undefined) {
-    if (queueTypeId === null) {
-      updateData.queueType = { disconnect: true };
-    } else {
-      updateData.queueType = { connect: { id: queueTypeId } };
-    }
-  }
-
-  if (signedEvent !== undefined) {
-    updateData.signedEvent = signedEvent as Prisma.InputJsonValue;
-    updateData.nostrEventId =
-      signedEvent && typeof signedEvent === "object" && "id" in signedEvent
-        ? String(signedEvent["id"])
-        : null;
-  }
-  if (nostrEvent !== undefined)
-    updateData.nostrEvent = nostrEvent as Prisma.InputJsonValue;
+  setQueueTypeUpdate(updateData, queueTypeId);
+  setEventData(updateData, signedEvent, nostrEvent);
 
   if (isPublished !== undefined || finalScheduledFor !== undefined) {
-    const finalIsPublished = isPublished ?? false;
-    const isScheduled = Boolean(finalScheduledFor && !finalIsPublished);
-    const isDraft = !finalIsPublished && !isScheduled;
-
-    updateData.isPublished = finalIsPublished;
-    updateData.isScheduled = isScheduled;
-    updateData.draft = isDraft;
-
-    if (finalIsPublished) {
-      updateData.status = "ACTIVE";
-      const publishedAt =
-        signedEvent &&
-        typeof signedEvent === "object" &&
-        "published_at" in signedEvent &&
-        typeof signedEvent["published_at"] === "number"
-          ? signedEvent["published_at"]
-          : undefined;
-      updateData.publishedAt = publishedAt
-        ? new Date(publishedAt * 1000)
-        : new Date();
-      updateData.postedAt = new Date();
-    } else if (isScheduled && finalScheduledFor) {
-      updateData.status = "SCHEDULED";
-      // Set publishedAt to the scheduled time for consistency
-      updateData.publishedAt = new Date(parseInt(finalScheduledFor) * 1000);
-    } else {
-      updateData.status = "DRAFT";
-    }
+    setPublicationStatus(
+      updateData,
+      isPublished,
+      finalScheduledFor,
+      signedEvent
+    );
   }
 
   return prisma.longFormPost.update({

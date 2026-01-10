@@ -4,7 +4,8 @@
 **Difficulty:** Advanced  
 **Last updated:** 2026-01-02
 
-Learn how to build custom integrations with SmartFlowSocial, including webhooks, third-party services, and automation workflows.
+Learn how to build custom integrations with SmartFlowSocial, including webhooks, third-party
+services, and automation workflows.
 
 ---
 
@@ -82,10 +83,7 @@ import { SmartFlowSocialClient } from "./client";
 import Parser from "rss-parser";
 
 const parser = new Parser();
-const client = new SmartFlowSocialClient(
-  process.env.SMARTFLOW_URL!,
-  process.env.SESSION_COOKIE!,
-);
+const client = new SmartFlowSocialClient(process.env.SMARTFLOW_URL!, process.env.SESSION_COOKIE!);
 
 async function rssToPosts(feedUrl: string) {
   // Parse RSS feed
@@ -117,7 +115,7 @@ setInterval(
   () => {
     rssToPosts("https://example.com/feed.xml");
   },
-  60 * 60 * 1000,
+  60 * 60 * 1000
 ); // Every hour
 ```
 
@@ -149,15 +147,14 @@ const twitterClient = new TwitterApi({
 
 const smartflowClient = new SmartFlowSocialClient(
   process.env.SMARTFLOW_URL!,
-  process.env.SESSION_COOKIE!,
+  process.env.SESSION_COOKIE!
 );
 
 async function syncTwitterToNostr() {
   // Get recent tweets
-  const tweets = await twitterClient.v2.userTimeline(
-    process.env.TWITTER_USER_ID!,
-    { max_results: 10 },
-  );
+  const tweets = await twitterClient.v2.userTimeline(process.env.TWITTER_USER_ID!, {
+    max_results: 10,
+  });
 
   for (const tweet of tweets.data) {
     // Check if already posted
@@ -183,9 +180,7 @@ async function syncTwitterToNostr() {
     };
 
     const signedEvent = await signEvent(event);
-    await smartflowClient.publishEvent(signedEvent, [
-      "wss://relay.example.com",
-    ]);
+    await smartflowClient.publishEvent(signedEvent, ["wss://relay.example.com"]);
 
     // Mark as posted
     await markAsPosted(tweet.id);
@@ -215,10 +210,7 @@ import { SmartFlowSocialClient } from "./client";
 const app = express();
 app.use(express.json());
 
-const client = new SmartFlowSocialClient(
-  process.env.SMARTFLOW_URL!,
-  process.env.SESSION_COOKIE!,
-);
+const client = new SmartFlowSocialClient(process.env.SMARTFLOW_URL!, process.env.SESSION_COOKIE!);
 
 // Webhook endpoint
 app.post("/webhook/smartflow", async (req, res) => {
@@ -293,7 +285,7 @@ const discordClient = new Client({
 
 const smartflowClient = new SmartFlowSocialClient(
   process.env.SMARTFLOW_URL!,
-  process.env.SESSION_COOKIE!,
+  process.env.SESSION_COOKIE!
 );
 
 discordClient.on("messageCreate", async (message) => {
@@ -354,10 +346,7 @@ app.post("/zapier-webhook", express.json(), async (req, res) => {
   // value2 = image URL (optional)
   // value3 = hashtags (optional)
 
-  const client = new SmartFlowSocialClient(
-    process.env.SMARTFLOW_URL!,
-    process.env.SESSION_COOKIE!,
-  );
+  const client = new SmartFlowSocialClient(process.env.SMARTFLOW_URL!, process.env.SESSION_COOKIE!);
 
   // Build post content
   let content = value1 || "";
@@ -398,10 +387,7 @@ app.post("/zapier-webhook", express.json(), async (req, res) => {
 import { SmartFlowSocialClient } from "./client";
 import { Queue } from "bullmq";
 
-const client = new SmartFlowSocialClient(
-  process.env.SMARTFLOW_URL!,
-  process.env.SESSION_COOKIE!,
-);
+const client = new SmartFlowSocialClient(process.env.SMARTFLOW_URL!, process.env.SESSION_COOKIE!);
 
 const contentQueue = new Queue("content-processing");
 
@@ -439,9 +425,7 @@ contentQueue.process("process-content", async (job) => {
   const event = {
     kind: 1,
     content: postContent,
-    created_at: Math.floor(
-      new Date(schedule.nextScheduleTime).getTime() / 1000,
-    ),
+    created_at: Math.floor(new Date(schedule.nextScheduleTime).getTime() / 1000),
     tags: [["source", source]],
   };
 
@@ -465,9 +449,7 @@ async function safeIntegrationCall(fn: () => Promise<any>, retries = 3) {
       return await fn();
     } catch (error) {
       if (i === retries - 1) throw error;
-      await new Promise((resolve) =>
-        setTimeout(resolve, 1000 * Math.pow(2, i)),
-      );
+      await new Promise((resolve) => setTimeout(resolve, 1000 * Math.pow(2, i)));
     }
   }
 }
@@ -578,7 +560,8 @@ logger.info("Integration started", { source, itemCount });
 
 1. **[API Usage](./api-usage.md)** - Deep dive into API
 2. **[Advanced Queue Management](./advanced-queue-management.md)** - Master queues
-3. **[Operations Guide](../../guides/operations.md#performance-monitoring)** - Performance optimization
+3. **[Operations Guide](../../guides/operations.md#performance-monitoring)** - Performance
+   optimization
 
 ---
 
@@ -591,5 +574,3 @@ logger.info("Integration started", { source, itemCount });
 ---
 
 **Next Tutorial:** [API Usage](./api-usage.md) → Deep dive into the API
-
-

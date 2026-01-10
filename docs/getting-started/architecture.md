@@ -1,6 +1,7 @@
 # Project Architecture
 
-This document describes the folder structure, code organization, design patterns, and architectural decisions of SmartFlowSocial.
+This document describes the folder structure, code organization, design patterns, and architectural
+decisions of SmartFlowSocial.
 
 ## Table of Contents
 
@@ -204,7 +205,8 @@ Remix uses file-based routing with dot notation:
 
 ### Remix Loaders and Actions
 
-This project follows the standard **Remix Run** pattern where route files contain two key server-side functions:
+This project follows the standard **Remix Run** pattern where route files contain two key
+server-side functions:
 
 #### `loader` Function
 

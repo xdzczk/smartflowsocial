@@ -33,7 +33,7 @@ export function ThumbnailPostBlock({
   const displayTime = getDisplayTime(
     post,
     isLongform ?? false,
-    isPast ?? false,
+    isPast ?? false
   );
 
   return (
@@ -46,7 +46,7 @@ export function ThumbnailPostBlock({
       tabIndex={0}
       role="button"
       aria-label={`${isPast ? "View" : "Edit"} ${isLongform ? "longform post" : "post"}: ${postPreview}, ${isPast ? "posted" : isLongform ? "published" : "scheduled"} for ${displayTime.toLocaleString("en-US", { timeZone: userTimezone })}`}
-      className={`rounded p-1 text-xs transition-opacity focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+      className={`rounded p-1 text-xs transition-opacity focus:ring-2 focus:ring-blue-500 focus:outline-none ${
         isPast ? "cursor-default" : "cursor-pointer hover:opacity-80"
       } ${
         isDragging ? "opacity-50" : ""

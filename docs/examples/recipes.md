@@ -24,14 +24,12 @@ Common use case patterns and recipes for SmartFlowSocial.
 ### Setup
 
 1. **Create Fixed Time Queue:**
-
    - Go to **Settings** → **Queues**
    - Create queue with type **"Fixed Time Slots"**
    - Set times: `9:00 AM`, `12:00 PM`, `5:00 PM`
    - Set timezone
 
 2. **Create Posts:**
-
    - Go to **New Post**
    - Write your content
    - Select the queue
@@ -51,13 +49,11 @@ Common use case patterns and recipes for SmartFlowSocial.
 ### Steps
 
 1. **Prepare images:**
-
    - Optimize images (compress, resize)
    - Name files descriptively
    - Organize in folder
 
 2. **Bulk upload:**
-
    - Go to **New Post**
    - Click **"Bulk Upload"**
    - Select multiple images
@@ -92,7 +88,6 @@ Common use case patterns and recipes for SmartFlowSocial.
    ```
 
 2. **Schedule weekly:**
-
    - Use template
    - Fill in variables
    - Schedule for Monday 9 AM
@@ -112,19 +107,16 @@ Common use case patterns and recipes for SmartFlowSocial.
 ### Strategy
 
 1. **Announcement (2 weeks before):**
-
    - "Save the date" post
    - Include event details
    - Link to event page
 
 2. **Reminder (1 week before):**
-
    - Reminder post
    - Highlight key details
    - Include registration link
 
 3. **Countdown (3 days before):**
-
    - Daily countdown posts
    - Build anticipation
    - Share updates
@@ -137,7 +129,6 @@ Common use case patterns and recipes for SmartFlowSocial.
 ### Implementation
 
 1. **Create posts:**
-
    - Write all posts in advance
    - Schedule at optimal times
    - Use consistent hashtags
@@ -205,13 +196,11 @@ Get it now: {{link}}
 ### Workflow
 
 1. **Review engagement:**
-
    - Check engagement feed daily
    - Prioritize important interactions
    - Identify common questions
 
 2. **Create response templates:**
-
    - Thank you messages
    - FAQ responses
    - Support replies
@@ -233,12 +222,11 @@ Get it now: {{link}}
 ## Related Documentation
 
 - [Posting Guide](../guides/user-guides/posting.md) - Complete posting guide
-- [Posting Guide](../guides/user-guides/posting.md#templates) - Templates (included in posting guide)
+- [Posting Guide](../guides/user-guides/posting.md#templates) - Templates (included in posting
+  guide)
 - [Calendar Guide](../guides/user-guides/calendar.md) - Visual scheduling
 - [Code Samples](./code-samples.md) - Code examples
 
 ---
 
 **Next:** [Code Samples](./code-samples.md) → View code examples
-
-

@@ -119,7 +119,7 @@ export default function Header() {
       <nav
         id="page-sidebar"
         aria-label="Main Sidebar Navigation"
-        className={`fixed bottom-0 left-0 top-0 z-50 flex h-full w-full flex-col border-r border-gray-800 bg-gray-800 text-gray-200 transition-transform duration-500 ease-out lg:w-64 ${
+        className={`fixed top-0 bottom-0 left-0 z-50 flex h-full w-full flex-col border-r border-gray-800 bg-gray-800 text-gray-200 transition-transform duration-500 ease-out lg:w-64 ${
           desktopSidebarOpen ? "lg:translate-x-0" : "lg:-translate-x-full"
         } ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
@@ -231,7 +231,7 @@ export default function Header() {
                 to="/dashboard/recyclables"
                 feature="recyclables"
                 isActive={location.pathname.startsWith(
-                  "/dashboard/recyclables",
+                  "/dashboard/recyclables"
                 )}
                 onUpgradeClick={handleUpgradeClick}
                 icon={<HiOutlineArrowPath className="inline-block size-5" />}
@@ -269,7 +269,7 @@ export default function Header() {
                 to="/dashboard/engagement/feed"
                 feature="engagement_feed"
                 isActive={location.pathname.startsWith(
-                  "/dashboard/engagement/feed",
+                  "/dashboard/engagement/feed"
                 )}
                 onUpgradeClick={handleUpgradeClick}
                 icon={<HiOutlineFire className="inline-block size-5" />}
@@ -280,7 +280,7 @@ export default function Header() {
                 to="/dashboard/search/posts"
                 feature="dashboard"
                 isActive={location.pathname.startsWith(
-                  "/dashboard/search/posts",
+                  "/dashboard/search/posts"
                 )}
                 onUpgradeClick={handleUpgradeClick}
                 icon={
@@ -312,7 +312,7 @@ export default function Header() {
       {/* Page Header */}
       <header
         id="page-header"
-        className={`fixed left-0 right-0 top-0 z-30 flex h-16 flex-none items-center bg-white shadow-sm dark:bg-gray-800 ${desktopSidebarOpen ? "lg:pl-64" : ""}`}
+        className={`fixed top-0 right-0 left-0 z-30 flex h-16 flex-none items-center bg-white shadow-sm dark:bg-gray-800 ${desktopSidebarOpen ? "lg:pl-64" : ""}`}
       >
         <div className="max-w-10xl mx-auto flex w-full justify-between px-4 lg:px-8">
           {/* Left Section */}

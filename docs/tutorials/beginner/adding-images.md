@@ -85,12 +85,10 @@ Learn how to add images to your posts to make them more engaging and visually ap
 **Before posting, you can:**
 
 1. **Remove image:**
-
    - Click "Remove" on image
    - Image removed from post
 
 2. **Reorder images:**
-
    - Drag images to reorder
    - First image is the cover
 
@@ -103,12 +101,10 @@ Learn how to add images to your posts to make them more engaging and visually ap
 ## Step 6: Configure Post Settings
 
 1. **Hashtags:**
-
    - Add manually or use preset
    - Include relevant tags
 
 2. **Queue (Optional):**
-
    - Select queue type
    - Helps organize content
 
@@ -255,5 +251,3 @@ See [Assets Management Guide](../../guides/user-guides/assets.md) for details.
 ---
 
 **Next Tutorial:** [Scheduling Posts](./scheduling-posts.md) → Plan your content in advance
-
-

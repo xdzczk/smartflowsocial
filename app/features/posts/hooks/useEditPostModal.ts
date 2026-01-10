@@ -31,6 +31,128 @@ interface UseEditPostModalProps {
   isLongform: boolean;
 }
 
+// ============================================================================
+// Helper Functions for Initial Values
+// ============================================================================
+
+function getStringValue(
+  post: PostData | LongFormPostData,
+  key: string
+): string {
+  if (
+    typeof post === "object" &&
+    key in post &&
+    typeof (post as unknown as Record<string, unknown>)[key] === "string"
+  ) {
+    const value = (post as unknown as Record<string, string>)[key];
+    return value ?? "";
+  }
+  return "";
+}
+
+function getQueueTypeName(post: PostData | LongFormPostData): string {
+  if (
+    typeof post === "object" &&
+    "queueType" in post &&
+    (post as { queueType: unknown }).queueType &&
+    typeof (post as { queueType: unknown }).queueType === "object" &&
+    "name" in (post as { queueType: { name?: unknown } }).queueType &&
+    typeof (post as { queueType: { name: string } }).queueType.name === "string"
+  ) {
+    return (post as { queueType: { name: string } }).queueType.name;
+  }
+  return "";
+}
+
+function getQueueTypeId(post: PostData | LongFormPostData): string {
+  if (
+    typeof post === "object" &&
+    "queueType" in post &&
+    (post as { queueType: unknown }).queueType &&
+    typeof (post as { queueType: unknown }).queueType === "object" &&
+    "id" in (post as { queueType: { id?: unknown } }).queueType &&
+    typeof (post as { queueType: { id: string } }).queueType.id === "string"
+  ) {
+    return (post as { queueType: { id: string } }).queueType.id;
+  }
+  return "";
+}
+
+function getHashTagPresetId(
+  post: PostData | LongFormPostData
+): string | undefined {
+  if (
+    typeof post === "object" &&
+    "hashTagPresetId" in post &&
+    typeof (post as { hashTagPresetId: unknown }).hashTagPresetId === "string"
+  ) {
+    return (post as { hashTagPresetId: string }).hashTagPresetId;
+  }
+  return undefined;
+}
+
+function formatScheduledForFromDate(date: Date | string | null): string {
+  if (!date) return "";
+  return new Date(date).toISOString().slice(0, 16);
+}
+
+function formatScheduledForFromUnixTimestamp(timestamp: unknown): string {
+  if (!timestamp || typeof timestamp !== "string") return "";
+  return new Date(parseInt(timestamp, 10) * 1000).toISOString().slice(0, 16);
+}
+
+function getLongformInitialValues(post: PostData | LongFormPostData): {
+  title: string;
+  summary: string;
+  content: string;
+  image: string;
+  scheduledFor: string;
+  queueType: string;
+  useHashtagPresets: boolean;
+  hashTagPresetId: string | undefined;
+  customTags: string;
+} {
+  const publishedAt =
+    typeof post === "object" && "publishedAt" in post ? post.publishedAt : null;
+
+  return {
+    title: getStringValue(post, "title"),
+    summary: getStringValue(post, "summary"),
+    content: "",
+    image: getStringValue(post, "image"),
+    scheduledFor: formatScheduledForFromDate(publishedAt),
+    queueType: getQueueTypeName(post),
+    useHashtagPresets: !!getHashTagPresetId(post),
+    hashTagPresetId: getHashTagPresetId(post),
+    customTags: "",
+  };
+}
+
+function getRegularPostInitialValues(post: PostData | LongFormPostData): {
+  caption: string;
+  queueType: string;
+  scheduledFor: string;
+  isRecyclable: boolean;
+  useHashtagPresets: boolean;
+  hashTagPresetId: string | undefined;
+  manualHashtags: string;
+} {
+  const scheduledForValue =
+    typeof post === "object" && "scheduledFor" in post
+      ? (post as { scheduledFor?: unknown }).scheduledFor
+      : null;
+
+  return {
+    caption: getStringValue(post, "caption"),
+    queueType: getQueueTypeId(post),
+    scheduledFor: formatScheduledForFromUnixTimestamp(scheduledForValue),
+    isRecyclable: false,
+    useHashtagPresets: !!getHashTagPresetId(post),
+    hashTagPresetId: getHashTagPresetId(post),
+    manualHashtags: getStringValue(post, "hashtags"),
+  };
+}
+
 export function useEditPostModal({
   post,
   user,
@@ -40,95 +162,9 @@ export function useEditPostModal({
   // Get initial values for form
   const getInitialValues = () => {
     if (isLongform && typeof post === "object" && "title" in post) {
-      const postTitle = typeof post.title === "string" ? post.title : "";
-      const postSummary = typeof post.summary === "string" ? post.summary : "";
-      const postImage = typeof post.image === "string" ? post.image : "";
-      const publishedAt =
-        typeof post === "object" && "publishedAt" in post
-          ? post.publishedAt
-          : null;
-      const scheduledForStr = publishedAt
-        ? new Date(publishedAt).toISOString().slice(0, 16)
-        : "";
-      const queueType =
-        typeof post === "object" &&
-        "queueType" in post &&
-        post.queueType &&
-        typeof post.queueType === "object" &&
-        "name" in post.queueType &&
-        typeof post.queueType.name === "string"
-          ? post.queueType.name
-          : "";
-
-      const hashTagPresetId =
-        typeof post === "object" &&
-        "hashTagPresetId" in post &&
-        typeof post.hashTagPresetId === "string"
-          ? post.hashTagPresetId
-          : undefined;
-
-      return {
-        title: postTitle,
-        summary: postSummary,
-        content: "",
-        image: postImage,
-        scheduledFor: scheduledForStr,
-        queueType,
-        useHashtagPresets: !!hashTagPresetId,
-        hashTagPresetId,
-        customTags: "",
-      };
-    } else {
-      const postCaption =
-        typeof post === "object" &&
-        "caption" in post &&
-        typeof post.caption === "string"
-          ? post.caption
-          : "";
-      const queueTypeId =
-        typeof post === "object" &&
-        "queueType" in post &&
-        post.queueType &&
-        typeof post.queueType === "object" &&
-        "id" in post.queueType &&
-        typeof post.queueType.id === "string"
-          ? post.queueType.id
-          : "";
-      const scheduledForValue =
-        typeof post === "object" && "scheduledFor" in post
-          ? (post as { scheduledFor?: unknown }).scheduledFor
-          : null;
-      const scheduledForStr =
-        scheduledForValue && typeof scheduledForValue === "string"
-          ? new Date(parseInt(scheduledForValue, 10) * 1000)
-              .toISOString()
-              .slice(0, 16)
-          : "";
-
-      const hashTagPresetId =
-        typeof post === "object" &&
-        "hashTagPresetId" in post &&
-        typeof post.hashTagPresetId === "string"
-          ? post.hashTagPresetId
-          : undefined;
-
-      const existingHashtags =
-        typeof post === "object" &&
-        "hashtags" in post &&
-        typeof post.hashtags === "string"
-          ? post.hashtags
-          : "";
-
-      return {
-        caption: postCaption,
-        queueType: queueTypeId,
-        scheduledFor: scheduledForStr,
-        isRecyclable: false,
-        useHashtagPresets: !!hashTagPresetId,
-        hashTagPresetId,
-        manualHashtags: existingHashtags,
-      };
+      return getLongformInitialValues(post);
     }
+    return getRegularPostInitialValues(post);
   };
 
   // Initialize form with React Hook Form

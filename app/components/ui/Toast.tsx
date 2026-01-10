@@ -10,7 +10,7 @@ interface ToastProps {
 
 export default function Toast({ toast, onClose }: ToastProps) {
   return (
-    <div className="fixed bottom-4 right-4 z-50">
+    <div className="fixed right-4 bottom-4 z-50">
       <div
         className={`rounded-lg px-4 py-3 text-white shadow-lg ${
           toast.type === "success" ? "bg-green-500" : "bg-red-500"
@@ -43,7 +43,7 @@ export default function Toast({ toast, onClose }: ToastProps) {
             </svg>
           )}
           <div className="flex-1">
-            <pre className="whitespace-pre-wrap text-sm font-medium">
+            <pre className="text-sm font-medium whitespace-pre-wrap">
               {toast.message}
             </pre>
             {toast.link ? (

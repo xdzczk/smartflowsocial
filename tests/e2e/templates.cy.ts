@@ -28,7 +28,7 @@ describe("Templates", () => {
         .click({ force: true });
       cy.location("pathname", { timeout: 10000 }).should(
         "include",
-        "templates",
+        "templates"
       );
     });
 
@@ -51,7 +51,7 @@ describe("Templates", () => {
       cy.get("body", { timeout: 10000 }).then(($body) => {
         const hasTemplates =
           $body.find(
-            'table tbody tr, [data-testid="template-item"], .template-item, tbody tr',
+            'table tbody tr, [data-testid="template-item"], .template-item, tbody tr'
           ).length > 0;
         const hasEmptyState =
           $body.find('[data-testid="empty-state"]').length > 0 ||
@@ -71,7 +71,7 @@ describe("Templates", () => {
       cy.get("body").then(($body) => {
         const hasCreateButton =
           $body.find(
-            'a[href*="templates"], button:contains("Create"), button:contains("New")',
+            'a[href*="templates"], button:contains("Create"), button:contains("New")'
           ).length > 0;
 
         expect(hasCreateButton).to.be.true;

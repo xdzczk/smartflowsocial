@@ -55,6 +55,146 @@ export async function loader({ request }: { request: Request }) {
   }
 }
 
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+function extractLoaderData(data: unknown): {
+  tags: string[];
+  queueTypes: QueueType[];
+  hashTagPresets: Array<{ id: string; name: string; hashtags: string }>;
+  mode: string | null;
+} {
+  const tags =
+    data &&
+    typeof data === "object" &&
+    "tags" in data &&
+    Array.isArray(data.tags)
+      ? data.tags
+      : [];
+  const queueTypes =
+    data &&
+    typeof data === "object" &&
+    "queueTypes" in data &&
+    Array.isArray(data.queueTypes)
+      ? data.queueTypes
+      : [];
+  const hashTagPresets =
+    data &&
+    typeof data === "object" &&
+    "hashTagPresets" in data &&
+    Array.isArray(data.hashTagPresets)
+      ? data.hashTagPresets
+      : [];
+  const mode =
+    data && typeof data === "object" && "mode" in data
+      ? (data as { mode?: unknown }).mode
+      : null;
+
+  return {
+    tags: tags as string[],
+    queueTypes: queueTypes as QueueType[],
+    hashTagPresets: hashTagPresets as Array<{
+      id: string;
+      name: string;
+      hashtags: string;
+    }>,
+    mode: typeof mode === "string" ? mode : null,
+  };
+}
+
+function getPageTitle(mode: string | null): string {
+  if (mode === "recycle") {
+    return "Recycle & Schedule Posts";
+  }
+  if (mode === "repost") {
+    return "Schedule Reposts (Kind 6)";
+  }
+  if (mode === "quote") {
+    return "Schedule Quote Posts";
+  }
+  return "Bulk Schedule Posts";
+}
+
+interface SubmitButtonProps {
+  isSubmitting: boolean;
+  isProcessing: boolean;
+  isPreviewSubmitting: boolean;
+  postsCount: number;
+}
+
+function SubmitButton({
+  isSubmitting,
+  isProcessing,
+  isPreviewSubmitting,
+  postsCount,
+}: SubmitButtonProps) {
+  const disabled = isSubmitting || isProcessing || isPreviewSubmitting;
+
+  const getButtonContent = () => {
+    if (isPreviewSubmitting) {
+      return (
+        <span className="flex items-center justify-center gap-2">
+          <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+              fill="none"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            />
+          </svg>
+          Validating & Preparing...
+        </span>
+      );
+    }
+    if (isSubmitting) {
+      return (
+        <span className="flex items-center justify-center gap-2">
+          <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+              fill="none"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            />
+          </svg>
+          Uploading Media Files...
+        </span>
+      );
+    }
+    if (isProcessing) {
+      return "Processing Media Files...";
+    }
+    return `Preview ${postsCount} Post${postsCount !== 1 ? "s" : ""}`;
+  };
+
+  return (
+    <button
+      type="submit"
+      disabled={disabled}
+      className="mt-6 w-full rounded-lg bg-blue-500 p-4 text-white hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-blue-300"
+    >
+      {getButtonContent()}
+    </button>
+  );
+}
+
 export default function BulkPosts() {
   const data = useLoaderData<{
     tags: string[];
@@ -62,16 +202,7 @@ export default function BulkPosts() {
     hashTagPresets: Array<{ id: string; name: string; hashtags: string }>;
     mode: string | null;
   }>();
-  const tags = "tags" in data && Array.isArray(data.tags) ? data.tags : [];
-  const queueTypes =
-    "queueTypes" in data && Array.isArray(data.queueTypes)
-      ? data.queueTypes
-      : [];
-  const hashTagPresets =
-    "hashTagPresets" in data && Array.isArray(data.hashTagPresets)
-      ? data.hashTagPresets
-      : [];
-  const mode = "mode" in data ? data.mode : null;
+  const { tags, queueTypes, hashTagPresets, mode } = extractLoaderData(data);
   const [posts, setPosts] = useState<BulkPost[]>([]);
   const [displayedHashtags, setDisplayedHashtags] = useState<string | string[]>(
     tags
@@ -312,15 +443,7 @@ export default function BulkPosts() {
 
   return (
     <div className="p-6">
-      <h1 className="mb-6 text-2xl font-bold">
-        {mode === "recycle"
-          ? "Recycle & Schedule Posts"
-          : mode === "repost"
-            ? "Schedule Reposts (Kind 6)"
-            : mode === "quote"
-              ? "Schedule Quote Posts"
-              : "Bulk Schedule Posts"}
-      </h1>
+      <h1 className="mb-6 text-2xl font-bold">{getPageTitle(mode)}</h1>
       {displayedHashtags && displayedHashtags.length <= 10 ? (
         <div className="mb-6 inline-flex items-center gap-1 rounded bg-orange-200 px-2 py-1 text-xs leading-4 font-semibold text-orange-700">
           <svg
@@ -389,57 +512,12 @@ export default function BulkPosts() {
                 handleMediaClick={handleMediaClick}
               />
 
-              <button
-                type="submit"
-                disabled={isSubmitting || isProcessing || isPreviewSubmitting}
-                className="mt-6 w-full rounded-lg bg-blue-500 p-4 text-white hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-blue-300"
-              >
-                {isPreviewSubmitting ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                        fill="none"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      />
-                    </svg>
-                    Validating & Preparing...
-                  </span>
-                ) : isSubmitting ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                        fill="none"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      />
-                    </svg>
-                    Uploading Media Files...
-                  </span>
-                ) : isProcessing ? (
-                  "Processing Media Files..."
-                ) : (
-                  `Preview ${posts.length} Post${posts.length !== 1 ? "s" : ""}`
-                )}
-              </button>
+              <SubmitButton
+                isSubmitting={isSubmitting}
+                isProcessing={isProcessing}
+                isPreviewSubmitting={isPreviewSubmitting}
+                postsCount={posts.length}
+              />
             </>
           ) : null}
         </fetcher.Form>

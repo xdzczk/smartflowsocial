@@ -131,7 +131,7 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
 
       it("should allow basicScheduling for free users", () => {
         expect(hasFeatureAccess(freeSubscription, "basicScheduling")).toBe(
-          true,
+          true
         );
       });
 
@@ -153,7 +153,7 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
 
       it("should deny bulkScheduling for free users", () => {
         expect(hasFeatureAccess(freeSubscription, "bulkScheduling")).toBe(
-          false,
+          false
         );
       });
 
@@ -175,7 +175,7 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
 
       it("should allow all free features for basic users", () => {
         expect(hasFeatureAccess(basicSubscription, "basicScheduling")).toBe(
-          true,
+          true
         );
         expect(hasFeatureAccess(basicSubscription, "newPost")).toBe(true);
         expect(hasFeatureAccess(basicSubscription, "dashboard")).toBe(true);
@@ -185,7 +185,7 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
         expect(hasFeatureAccess(basicSubscription, "drafts")).toBe(true);
         expect(hasFeatureAccess(basicSubscription, "calendar")).toBe(true);
         expect(hasFeatureAccess(basicSubscription, "bulkScheduling")).toBe(
-          true,
+          true
         );
         expect(hasFeatureAccess(basicSubscription, "longformPosts")).toBe(true);
         expect(hasFeatureAccess(basicSubscription, "templates")).toBe(true);
@@ -203,13 +203,13 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
         expect(hasFeatureAccess(expiredSubscription, "drafts")).toBe(false);
         expect(hasFeatureAccess(expiredSubscription, "calendar")).toBe(false);
         expect(hasFeatureAccess(expiredSubscription, "bulkScheduling")).toBe(
-          false,
+          false
         );
       });
 
       it("should still allow basic features when expired", () => {
         expect(hasFeatureAccess(expiredSubscription, "basicScheduling")).toBe(
-          true,
+          true
         );
         expect(hasFeatureAccess(expiredSubscription, "newPost")).toBe(true);
         expect(hasFeatureAccess(expiredSubscription, "dashboard")).toBe(true);

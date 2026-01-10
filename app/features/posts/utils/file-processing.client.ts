@@ -85,7 +85,7 @@ export function filterAcceptableFiles(files: File[]): File[] {
  * Returns processed files, falls back to original files on error
  */
 export async function processMediaFiles(
-  files: File[],
+  files: File[]
 ): Promise<{ processed: File[]; original: File[] }> {
   try {
     const processedFiles = await Promise.all(
@@ -96,7 +96,7 @@ export async function processMediaFiles(
         }
         // Videos are uploaded as-is (no processing needed)
         return file;
-      }),
+      })
     );
 
     return {
@@ -122,7 +122,7 @@ export async function processMediaFiles(
  * Returns processed files or shows errors
  */
 export async function validateAndProcessFiles(
-  files: File[],
+  files: File[]
 ): Promise<File[] | null> {
   // Filter acceptable file types
   const validFiles = filterAcceptableFiles(files);

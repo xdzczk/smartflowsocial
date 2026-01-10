@@ -5,11 +5,7 @@
 
 import { validateEvent } from "nostr-tools";
 
-import {
-  createUser,
-  getUserByNpub,
-  updateUserProfile,
-} from "~/features/user";
+import { createUser, getUserByNpub, updateUserProfile } from "~/features/user";
 import { AuthenticationError, ValidationError } from "~/lib/errors";
 import { safeRedirect } from "~/lib/remix-utils";
 
@@ -23,7 +19,7 @@ export async function authenticateNostrUser(
   event: string,
   contentSign: string | null,
   redirectTo: string,
-  request: Request,
+  request: Request
 ) {
   if (!event || typeof event !== "string") {
     throw new ValidationError("Missing or invalid event");
@@ -72,7 +68,7 @@ export async function authenticateNostrUser(
     if (!user) {
       user = await createUser(
         parsedEvent.pubkey ?? "",
-        JSON.stringify(nostrProfile),
+        JSON.stringify(nostrProfile)
       );
     }
 

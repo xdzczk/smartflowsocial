@@ -45,7 +45,7 @@ describe("Drafts Management", () => {
       cy.get("body", { timeout: 10000 }).then(($body) => {
         const hasDrafts =
           $body.find(
-            'table tbody tr, [data-testid="draft-item"], .draft-item, tbody tr',
+            'table tbody tr, [data-testid="draft-item"], .draft-item, tbody tr'
           ).length > 0;
         const hasEmptyState =
           $body.find('[data-testid="empty-state"]').length > 0 ||
@@ -73,7 +73,7 @@ describe("Drafts Management", () => {
       cy.get("body").then(($body) => {
         const saveDraftButton = $body
           .find(
-            'button:contains("Save Draft"), button:contains("Save as Draft")',
+            'button:contains("Save Draft"), button:contains("Save as Draft")'
           )
           .first();
 
@@ -83,7 +83,7 @@ describe("Drafts Management", () => {
           // Should redirect or show success
           cy.location("pathname", { timeout: 10000 }).should((pathname) => {
             expect(pathname).to.satisfy(
-              (p: string) => p.includes("dashboard") || p.includes("drafts"),
+              (p: string) => p.includes("dashboard") || p.includes("drafts")
             );
           });
         }
@@ -99,7 +99,7 @@ describe("Drafts Management", () => {
     it("should display draft items with action buttons when drafts exist", () => {
       cy.get("body").then(($body) => {
         const draftItems = $body.find(
-          '[data-testid="draft-item"], table tbody tr',
+          '[data-testid="draft-item"], table tbody tr'
         );
 
         if (draftItems.length > 0) {
@@ -111,7 +111,7 @@ describe("Drafts Management", () => {
               cy.get("body").then(($item) => {
                 const hasActions =
                   $item.find(
-                    'button:contains("Edit"), button:contains("Delete")',
+                    'button:contains("Edit"), button:contains("Delete")'
                   ).length > 0 ||
                   $item.find('[data-testid="draft-actions"]').length > 0;
 

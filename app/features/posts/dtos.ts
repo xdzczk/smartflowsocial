@@ -21,16 +21,15 @@ import type {
  * PostDTO - Serialized version of PostData for Remix loaders
  * Date fields are ISO strings instead of Date objects
  */
-export interface PostDTO
-  extends Omit<
-    Post,
-    | "createdAt"
-    | "updatedAt"
-    | "postedAt"
-    | "scheduledFor"
-    | "signedEvent"
-    | "nostrEvent"
-  > {
+export interface PostDTO extends Omit<
+  Post,
+  | "createdAt"
+  | "updatedAt"
+  | "postedAt"
+  | "scheduledFor"
+  | "signedEvent"
+  | "nostrEvent"
+> {
   createdAt: string;
   updatedAt: string;
   postedAt: string | null;
@@ -46,16 +45,15 @@ export interface PostDTO
  * LongFormPostDTO - Serialized version of LongFormPostData for Remix loaders
  * Date fields are ISO strings instead of Date objects
  */
-export interface LongFormPostDTO
-  extends Omit<
-    LongFormPost,
-    | "createdAt"
-    | "updatedAt"
-    | "publishedAt"
-    | "scheduledFor"
-    | "signedEvent"
-    | "nostrEvent"
-  > {
+export interface LongFormPostDTO extends Omit<
+  LongFormPost,
+  | "createdAt"
+  | "updatedAt"
+  | "publishedAt"
+  | "scheduledFor"
+  | "signedEvent"
+  | "nostrEvent"
+> {
   createdAt: string;
   updatedAt: string;
   publishedAt: string | null;

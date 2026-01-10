@@ -1,6 +1,7 @@
 # Nostr Integration Guide
 
-This guide covers Nostr protocol integration in SmartFlowSocial, including NIP implementations, event handling, and relay management.
+This guide covers Nostr protocol integration in SmartFlowSocial, including NIP implementations,
+event handling, and relay management.
 
 ## Table of Contents
 
@@ -18,7 +19,8 @@ This guide covers Nostr protocol integration in SmartFlowSocial, including NIP i
 
 ## Overview
 
-SmartFlowSocial integrates with the Nostr protocol to enable decentralized social media management. The application uses Nostr for:
+SmartFlowSocial integrates with the Nostr protocol to enable decentralized social media management.
+The application uses Nostr for:
 
 - **Authentication**: NIP-07 browser extension authentication
 - **Publishing**: Posting content to Nostr relays
@@ -127,7 +129,6 @@ Standard Nostr event structure and relay communication.
 ### How It Works
 
 1. **User Clicks Login**
-
    - Application requests Nostr extension access
    - Extension prompts user for permission
 

@@ -27,7 +27,7 @@ describe("Engagement Feed", () => {
         .click({ force: true });
       cy.location("pathname", { timeout: 10000 }).should(
         "include",
-        "engagement",
+        "engagement"
       );
     });
 

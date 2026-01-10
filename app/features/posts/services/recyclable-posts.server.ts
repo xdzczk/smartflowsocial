@@ -113,181 +113,218 @@ export async function getRecyclableDashboardData({
   };
 }
 
-/**
- * Handle recyclable post actions (delete, repost, quote)
- */
-export async function handleRecyclablePostAction(
-  formData: FormData,
+// ============================================================================
+// Action Handler Helpers
+// ============================================================================
+
+async function handleDeleteAction(
+  postId: string,
   userId: string
-) {
-  // Validate with Zod
-  const result = validateFormDataOrRespond(formData, recyclableActionSchema);
-  if (!result.success) {
-    return result.response;
-  }
+): Promise<Response> {
+  await deletePost({ id: postId, userId });
+  return json({ success: true });
+}
 
-  const validatedData = result.data;
+async function handleBulkDeleteAction(
+  postIds: string[],
+  userId: string
+): Promise<Response> {
+  await Promise.all(postIds.map((id: string) => deletePost({ id, userId })));
+  return json({ success: true });
+}
 
-  // Handle delete action
-  if (validatedData._action === "delete") {
-    await deletePost({ id: validatedData.postId, userId });
-    return json({ success: true });
-  }
+async function handleBulkRepostAction(
+  postIds: string[],
+  userId: string
+): Promise<Response> {
+  const postsData = await getPostsByIds({
+    ids: postIds,
+    userId,
+  });
+  return json({ repostData: postsData });
+}
 
-  // Handle bulk delete
-  if (validatedData._action === "bulkDelete") {
-    await Promise.all(
-      validatedData.postIds.map((id: string) => deletePost({ id, userId }))
-    );
-    return json({ success: true });
-  }
+async function handleBulkScheduledRepostAction(
+  postIds: string[],
+  userId: string
+): Promise<Response> {
+  const postsData = await getPostsByIds({
+    ids: postIds,
+    userId,
+  });
+  return json({ scheduledRepostData: postsData });
+}
 
-  // Handle bulk repost
-  if (validatedData._action === "bulkRepost") {
-    const postsData = await getPostsByIds({
-      ids: validatedData.postIds,
-      userId,
-    });
-    return json({ repostData: postsData });
-  }
+function extractEventData(signedEvent: unknown): {
+  eventId: string;
+  eventPubkey: string;
+} {
+  let eventId = "";
+  let eventPubkey = "";
 
-  // Handle bulk scheduled repost
-  if (validatedData._action === "bulkScheduledRepost") {
-    const postsData = await getPostsByIds({
-      ids: validatedData.postIds,
-      userId,
-    });
-    return json({ scheduledRepostData: postsData });
-  }
-
-  // Handle bulk quote
-  if (validatedData._action === "bulkQuote") {
-    const postsData = await getPostsByIds({
-      ids: validatedData.postIds,
-      userId,
-    });
-
-    // Transform posts data into quote post format
-    const quotePostsData = postsData.map((post) => {
-      const signedEvent = post.signedEvent;
-      let eventId = "";
-      let eventPubkey = "";
-
-      if (
-        signedEvent &&
-        typeof signedEvent === "object" &&
-        !Array.isArray(signedEvent)
-      ) {
-        if ("id" in signedEvent && typeof signedEvent["id"] === "string") {
-          eventId = signedEvent["id"];
-        }
-        if (
-          "pubkey" in signedEvent &&
-          typeof signedEvent["pubkey"] === "string"
-        ) {
-          eventPubkey = signedEvent["pubkey"];
-        }
-      }
-
-      const fileUrl = Array.isArray(post.fileUrl)
-        ? post.fileUrl
-        : typeof post.fileUrl === "string"
-          ? [post.fileUrl]
-          : [];
-      const caption = typeof post.caption === "string" ? post.caption : "";
-      const queueTypeName =
-        post.queueType &&
-        typeof post.queueType === "object" &&
-        "name" in post.queueType &&
-        typeof post.queueType.name === "string"
-          ? post.queueType.name
-          : "unassigned";
-
-      return {
-        caption: "", // Empty caption - user can add content
-        fileUrl: fileUrl.length > 0 ? (fileUrl[0] ?? "") : "",
-        queueType: queueTypeName,
-        scheduledFor: "",
-        originalPostId: post.id,
-        originalEventId: eventId,
-        originalEventPubkey: eventPubkey,
-        isQuotePost: true,
-        originalCaption: caption,
-      };
-    });
-
-    return json({ quotePostData: quotePostsData });
-  }
-
-  // Handle single repost
-  if (validatedData._action === "repost") {
-    try {
-      const repostData = validatedData;
-      // Get the original post data
-      const postsData = await getPostsByIds({
-        ids: [repostData.postId],
-        userId,
-      });
-      if (postsData.length === 0) {
-        const { NotFoundError } = await import("~/lib/errors");
-        throw new NotFoundError(ERROR_POST_NOT_FOUND, {
-          postId: repostData.postId,
-          userId,
-        });
-      }
-
-      const originalPost = postsData[0];
-      if (!originalPost) {
-        return json({ error: ERROR_POST_NOT_FOUND }, { status: 404 });
-      }
-      const originalEvent = originalPost.signedEvent;
-
-      if (
-        !originalEvent ||
-        typeof originalEvent !== "object" ||
-        !("id" in originalEvent) ||
-        !("pubkey" in originalEvent)
-      ) {
-        return json({ error: "Invalid event data" }, { status: 400 });
-      }
-
-      const eventId =
-        typeof originalEvent["id"] === "string"
-          ? originalEvent["id"]
-          : String(originalEvent["id"]);
-      const eventPubkey =
-        typeof originalEvent["pubkey"] === "string"
-          ? originalEvent["pubkey"]
-          : String(originalEvent["pubkey"]);
-
-      // Create kind 6 repost event structure according to NIP-18
-      const kind6EventData = {
-        kind: 6,
-        content: "", // Empty content as recommended by NIP-18
-        tags: [
-          // e tag with the id of the note being reposted and relay URL
-          ["e", eventId, "wss://relay.primal.net"],
-          // p tag with the pubkey of the event being reposted
-          ["p", eventPubkey],
-        ],
-        created_at: Math.floor(Date.now() / 1000),
-      };
-
-      // Return the unsigned event data for client-side signing
-      return json({
-        repostEventData: kind6EventData,
-        originalPost: originalPost,
-      });
-    } catch (error) {
-      const { handleActionError } = await import("~/lib/error-handler.server");
-      return handleActionError(error);
+  if (
+    signedEvent &&
+    typeof signedEvent === "object" &&
+    !Array.isArray(signedEvent)
+  ) {
+    if ("id" in signedEvent && typeof signedEvent["id"] === "string") {
+      eventId = signedEvent["id"];
+    }
+    if ("pubkey" in signedEvent && typeof signedEvent["pubkey"] === "string") {
+      eventPubkey = signedEvent["pubkey"];
     }
   }
 
-  // Handle single quote - TypeScript guarantees this is "quote" after previous checks
+  return { eventId, eventPubkey };
+}
+
+function getQueueTypeName(post: PostData): string {
+  if (
+    post.queueType &&
+    typeof post.queueType === "object" &&
+    "name" in post.queueType &&
+    typeof post.queueType.name === "string"
+  ) {
+    return post.queueType.name;
+  }
+  return "unassigned";
+}
+
+function transformPostToQuoteFormat(post: PostData): {
+  caption: string;
+  fileUrl: string;
+  queueType: string;
+  scheduledFor: string;
+  originalPostId: string;
+  originalEventId: string;
+  originalEventPubkey: string;
+  isQuotePost: boolean;
+  originalCaption: string;
+} {
+  const { eventId, eventPubkey } = extractEventData(post.signedEvent);
+
+  const fileUrl = Array.isArray(post.fileUrl)
+    ? post.fileUrl
+    : typeof post.fileUrl === "string"
+      ? [post.fileUrl]
+      : [];
+  const caption = typeof post.caption === "string" ? post.caption : "";
+
+  return {
+    caption: "", // Empty caption - user can add content
+    fileUrl: fileUrl.length > 0 ? (fileUrl[0] ?? "") : "",
+    queueType: getQueueTypeName(post),
+    scheduledFor: "",
+    originalPostId: post.id,
+    originalEventId: eventId,
+    originalEventPubkey: eventPubkey,
+    isQuotePost: true,
+    originalCaption: caption,
+  };
+}
+
+async function handleBulkQuoteAction(
+  postIds: string[],
+  userId: string
+): Promise<Response> {
+  const postsData = await getPostsByIds({
+    ids: postIds,
+    userId,
+  });
+
+  const quotePostsData = postsData.map((post) =>
+    transformPostToQuoteFormat(post as PostData)
+  );
+  return json({ quotePostData: quotePostsData });
+}
+
+async function handleSingleRepostAction(
+  repostData: { postId: string },
+  userId: string
+): Promise<Response> {
   try {
-    const quoteData = validatedData;
-    // Get the original post data
+    const postsData = await getPostsByIds({
+      ids: [repostData.postId],
+      userId,
+    });
+    if (postsData.length === 0) {
+      const { NotFoundError } = await import("~/lib/errors");
+      throw new NotFoundError(ERROR_POST_NOT_FOUND, {
+        postId: repostData.postId,
+        userId,
+      });
+    }
+
+    const originalPost = postsData[0];
+    if (!originalPost) {
+      return json({ error: ERROR_POST_NOT_FOUND }, { status: 404 });
+    }
+    const originalEvent = originalPost.signedEvent;
+
+    if (
+      !originalEvent ||
+      typeof originalEvent !== "object" ||
+      !("id" in originalEvent) ||
+      !("pubkey" in originalEvent)
+    ) {
+      return json({ error: "Invalid event data" }, { status: 400 });
+    }
+
+    const { eventId, eventPubkey } = extractEventData(originalEvent);
+
+    const kind6EventData = {
+      kind: 6,
+      content: "",
+      tags: [
+        ["e", eventId, "wss://relay.primal.net"],
+        ["p", eventPubkey],
+      ],
+      created_at: Math.floor(Date.now() / 1000),
+    };
+
+    return json({
+      repostEventData: kind6EventData,
+      originalPost: originalPost,
+    });
+  } catch (error) {
+    const { handleActionError } = await import("~/lib/error-handler.server");
+    return handleActionError(error);
+  }
+}
+
+function extractQuotePostData(originalPost: PostData): {
+  fileUrl: string;
+  queueTypeName: string;
+  caption: string;
+  originalPostId: string;
+} {
+  const fileUrl =
+    "fileUrl" in originalPost
+      ? Array.isArray(originalPost.fileUrl)
+        ? originalPost.fileUrl[0]
+        : typeof originalPost.fileUrl === "string"
+          ? originalPost.fileUrl
+          : ""
+      : "";
+  const queueTypeName = getQueueTypeName(originalPost);
+  const caption =
+    "caption" in originalPost && typeof originalPost.caption === "string"
+      ? originalPost.caption
+      : "";
+  const originalPostId =
+    "id" in originalPost && typeof originalPost.id === "string"
+      ? originalPost.id
+      : "";
+  const fileUrlString = typeof fileUrl === "string" ? fileUrl : "";
+
+  return { fileUrl: fileUrlString, queueTypeName, caption, originalPostId };
+}
+
+async function handleSingleQuoteAction(
+  quoteData: { postId: string },
+  userId: string
+): Promise<Response> {
+  try {
     const postsData = await getPostsByIds({
       ids: [quoteData.postId],
       userId,
@@ -315,42 +352,12 @@ export async function handleRecyclablePostAction(
       return json({ error: "Invalid event data" }, { status: 400 });
     }
 
-    const eventId =
-      typeof originalEvent["id"] === "string"
-        ? originalEvent["id"]
-        : String(originalEvent["id"]);
-    const eventPubkey =
-      typeof originalEvent["pubkey"] === "string"
-        ? originalEvent["pubkey"]
-        : String(originalEvent["pubkey"]);
-
-    // Create quote post data for bulk posts page
-    const fileUrl =
-      "fileUrl" in originalPost
-        ? Array.isArray(originalPost.fileUrl)
-          ? originalPost.fileUrl[0]
-          : typeof originalPost.fileUrl === "string"
-            ? originalPost.fileUrl
-            : ""
-        : "";
-    const queueTypeName =
-      originalPost.queueType &&
-      typeof originalPost.queueType === "object" &&
-      "name" in originalPost.queueType &&
-      typeof originalPost.queueType.name === "string"
-        ? originalPost.queueType.name
-        : "unassigned";
-    const caption =
-      "caption" in originalPost && typeof originalPost.caption === "string"
-        ? originalPost.caption
-        : "";
-    const originalPostId =
-      "id" in originalPost && typeof originalPost.id === "string"
-        ? originalPost.id
-        : "";
+    const { eventId, eventPubkey } = extractEventData(originalEvent);
+    const { fileUrl, queueTypeName, caption, originalPostId } =
+      extractQuotePostData(originalPost as PostData);
 
     const quotePostData = {
-      caption: "", // Empty caption - user can add content
+      caption: "",
       fileUrl,
       queueType: queueTypeName,
       scheduledFor: "",
@@ -366,4 +373,53 @@ export async function handleRecyclablePostAction(
     const { handleActionError } = await import("~/lib/error-handler.server");
     return handleActionError(error);
   }
+}
+
+/**
+ * Handle recyclable post actions (delete, repost, quote)
+ */
+export async function handleRecyclablePostAction(
+  formData: FormData,
+  userId: string
+) {
+  // Validate with Zod
+  const result = validateFormDataOrRespond(formData, recyclableActionSchema);
+  if (!result.success) {
+    return result.response;
+  }
+
+  const validatedData = result.data;
+
+  // Handle delete action
+  if (validatedData._action === "delete") {
+    return handleDeleteAction(validatedData.postId, userId);
+  }
+
+  // Handle bulk delete
+  if (validatedData._action === "bulkDelete") {
+    return handleBulkDeleteAction(validatedData.postIds, userId);
+  }
+
+  // Handle bulk repost
+  if (validatedData._action === "bulkRepost") {
+    return handleBulkRepostAction(validatedData.postIds, userId);
+  }
+
+  // Handle bulk scheduled repost
+  if (validatedData._action === "bulkScheduledRepost") {
+    return handleBulkScheduledRepostAction(validatedData.postIds, userId);
+  }
+
+  // Handle bulk quote
+  if (validatedData._action === "bulkQuote") {
+    return handleBulkQuoteAction(validatedData.postIds, userId);
+  }
+
+  // Handle single repost
+  if (validatedData._action === "repost") {
+    return handleSingleRepostAction(validatedData, userId);
+  }
+
+  // Handle single quote
+  return handleSingleQuoteAction(validatedData, userId);
 }

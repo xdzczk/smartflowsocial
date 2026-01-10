@@ -4,7 +4,8 @@
 **Difficulty:** Beginner  
 **Last updated:** 2026-01-02
 
-Complete guide to configuring all settings in SmartFlowSocial, from timezone to storage to engagement filters.
+Complete guide to configuring all settings in SmartFlowSocial, from timezone to storage to
+engagement filters.
 
 ---
 
@@ -119,7 +120,6 @@ SmartFlowSocial settings are organized into tabs:
 1. Go to **Settings** → **Queues**
 2. Click **"Create Queue"**
 3. Configure:
-
    - **Name** - Queue identifier
    - **Color** - Visual identifier
    - **Description** - Queue purpose
@@ -155,7 +155,6 @@ SmartFlowSocial settings are organized into tabs:
 1. Go to **Settings** → **Hashtags**
 2. Click **"Create Preset"**
 3. Enter:
-
    - **Name** - Preset identifier
    - **Tags** - Hashtags (space or comma separated)
    - **Description** - Preset purpose
@@ -261,7 +260,6 @@ Description: For Bitcoin-related content
 
 1. Go to **Settings** → **Engagement**
 2. **Muted Accounts:**
-
    - Add npub addresses
    - One per line
    - Click **"Save"**
@@ -407,24 +405,20 @@ nostr+walletconnect://pubkey?relay=wss://relay.example.com&secret=...
 ### Settings Organization
 
 1. **Configure timezone first:**
-
    - Ensures correct scheduling
    - Affects all time-based features
 
 2. **Set up queues:**
-
    - Create queues before posting
    - Assign hashtag presets
    - Configure scheduling rules
 
 3. **Create hashtag presets:**
-
    - Organize by content type
    - Assign to queues
    - Reuse across posts
 
 4. **Configure storage:**
-
    - Choose provider
    - Set up Blossom if needed
    - Test uploads
@@ -437,13 +431,11 @@ nostr+walletconnect://pubkey?relay=wss://relay.example.com&secret=...
 ### Settings Maintenance
 
 1. **Review regularly:**
-
    - Check settings quarterly
    - Update as needed
    - Remove unused presets
 
 2. **Organize queues:**
-
    - Clear naming
    - Logical grouping
    - Remove unused queues
@@ -499,5 +491,3 @@ nostr+walletconnect://pubkey?relay=wss://relay.example.com&secret=...
 ---
 
 **Next:** [Engagement Guide](./engagement.md#searching-for-events) → Search for Nostr events
-
-

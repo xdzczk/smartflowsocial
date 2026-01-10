@@ -218,10 +218,7 @@ Configure in `server.ts`:
 
 ```typescript
 // Cache build assets forever (fingerprinted)
-app.use(
-  "/build",
-  express.static("public/build", { immutable: true, maxAge: "1y" }),
-);
+app.use("/build", express.static("public/build", { immutable: true, maxAge: "1y" }));
 
 // Cache other static assets
 app.use(express.static("public", { maxAge: "1h" }));
@@ -323,12 +320,7 @@ import { FixedSizeList } from "react-window";
 
 function PostList({ posts }) {
   return (
-    <FixedSizeList
-      height={600}
-      itemCount={posts.length}
-      itemSize={100}
-      width="100%"
-    >
+    <FixedSizeList height={600} itemCount={posts.length} itemSize={100} width="100%">
       {({ index, style }) => (
         <div style={style}>
           <PostItem post={posts[index]} />
@@ -434,11 +426,8 @@ async function generateImageSizes(file: File) {
   const sizes = [400, 800, 1200, 1920];
   const images = await Promise.all(
     sizes.map((size) =>
-      sharp(buffer)
-        .resize(size, size, { fit: "inside" })
-        .webp({ quality: 80 })
-        .toBuffer(),
-    ),
+      sharp(buffer).resize(size, size, { fit: "inside" }).webp({ quality: 80 }).toBuffer()
+    )
   );
 
   return images;
@@ -526,19 +515,16 @@ export default function () {
 Monitor these metrics:
 
 1. **Response Time**
-
    - P50, P95, P99 percentiles
    - Average response time
    - Slowest endpoints
 
 2. **Throughput**
-
    - Requests per second
    - Successful requests
    - Failed requests
 
 3. **Resource Usage**
-
    - CPU usage
    - Memory usage
    - Database connections
@@ -552,13 +538,11 @@ Monitor these metrics:
 ### Monitoring Tools
 
 1. **Prometheus + Grafana**
-
    - Metrics collection
    - Visualization
    - Alerting
 
 2. **Application Performance Monitoring (APM)**
-
    - New Relic
    - Datadog
    - Sentry Performance

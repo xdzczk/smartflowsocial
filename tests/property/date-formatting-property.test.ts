@@ -40,9 +40,9 @@ describe("Property-Based Tests: Date Formatting", () => {
             // Should match YYYY-MM-DDTHH:mm format
             const regex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
             return regex.test(formatted);
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
 
@@ -55,9 +55,9 @@ describe("Property-Based Tests: Date Formatting", () => {
             const formatted1 = formatScheduleTimeForInput(date, timezone);
             const formatted2 = formatScheduleTimeForInput(date, timezone);
             return formatted1 === formatted2;
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
 
@@ -73,9 +73,9 @@ describe("Property-Based Tests: Date Formatting", () => {
             } catch {
               return false;
             }
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
 
@@ -107,9 +107,9 @@ describe("Property-Based Tests: Date Formatting", () => {
               // just ensure both are valid formatted strings
               return formatted1.length > 0 && formatted2.length > 0;
             }
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
 
@@ -125,9 +125,9 @@ describe("Property-Based Tests: Date Formatting", () => {
             const day = String(date.getUTCDate()).padStart(2, "0");
             const expectedPrefix = `${year}-${month}-${day}`;
             return formatted.startsWith(expectedPrefix);
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
   });
@@ -146,7 +146,7 @@ describe("Property-Based Tests: Date Formatting", () => {
                 min: new Date("2000-01-01"),
                 max: new Date("2100-12-31"),
               })
-              .map((d: Date) => d.toISOString()),
+              .map((d: Date) => d.toISOString())
           ),
           (dateInput: Date | string) => {
             try {
@@ -155,9 +155,9 @@ describe("Property-Based Tests: Date Formatting", () => {
             } catch {
               return false;
             }
-          },
+          }
         ),
-        { numRuns: 50 },
+        { numRuns: 50 }
       );
     });
 
@@ -172,9 +172,9 @@ describe("Property-Based Tests: Date Formatting", () => {
             return (
               formattedFromDate.length > 0 && formattedFromString.length > 0
             );
-          },
+          }
         ),
-        { numRuns: 30 },
+        { numRuns: 30 }
       );
     });
 
@@ -187,9 +187,9 @@ describe("Property-Based Tests: Date Formatting", () => {
             const formatted2 = formatDate(date);
             // Should be identical
             return formatted1 === formatted2;
-          },
+          }
         ),
-        { numRuns: 30 },
+        { numRuns: 30 }
       );
     });
   });
@@ -205,15 +205,15 @@ describe("Property-Based Tests: Date Formatting", () => {
               const formatted = formatDateWithTimezone(
                 unixTimestamp.toString(),
                 true, // isUnixTimestamp
-                timezone,
+                timezone
               );
               return formatted !== "-" && formatted.length > 0;
             } catch {
               return false;
             }
-          },
+          }
         ),
-        { numRuns: 30 },
+        { numRuns: 30 }
       );
     });
 
@@ -229,9 +229,9 @@ describe("Property-Based Tests: Date Formatting", () => {
             } catch {
               return false;
             }
-          },
+          }
         ),
-        { numRuns: 30 },
+        { numRuns: 30 }
       );
     });
 
@@ -243,8 +243,8 @@ describe("Property-Based Tests: Date Formatting", () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Testing edge case with null/undefined input
             const formatted = formatDateWithTimezone(dateInput as any, false);
             return formatted === "-";
-          },
-        ),
+          }
+        )
       );
     });
 
@@ -268,9 +268,9 @@ describe("Property-Based Tests: Date Formatting", () => {
             } catch {
               return false;
             }
-          },
+          }
         ),
-        { numRuns: 20 },
+        { numRuns: 20 }
       );
     });
   });
@@ -286,7 +286,7 @@ describe("Property-Based Tests: Date Formatting", () => {
             new Date("2012-02-29"), // Leap year
             new Date("2016-02-29"), // Leap year
             new Date("2020-02-29"), // Leap year
-            new Date("2024-02-29"), // Leap year
+            new Date("2024-02-29") // Leap year
           ),
           fc.constantFrom(...validTimezones),
           (date: Date, timezone: string) => {
@@ -296,8 +296,8 @@ describe("Property-Based Tests: Date Formatting", () => {
             } catch {
               return false;
             }
-          },
-        ),
+          }
+        )
       );
     });
 
@@ -307,7 +307,7 @@ describe("Property-Based Tests: Date Formatting", () => {
           fc.constantFrom(
             new Date("2000-01-01T00:00:00Z"),
             new Date("2000-12-31T23:59:59Z"),
-            new Date("2099-12-31T23:59:59Z"),
+            new Date("2099-12-31T23:59:59Z")
           ),
           fc.constantFrom(...validTimezones),
           (date: Date, timezone: string) => {
@@ -317,8 +317,8 @@ describe("Property-Based Tests: Date Formatting", () => {
             } catch {
               return false;
             }
-          },
-        ),
+          }
+        )
       );
     });
 
@@ -330,12 +330,12 @@ describe("Property-Based Tests: Date Formatting", () => {
             new Date("2024-03-10T07:00:00Z"), // DST start in US
             new Date("2024-11-03T06:00:00Z"), // DST end in US
             new Date("2023-03-12T07:00:00Z"), // DST start
-            new Date("2023-11-05T06:00:00Z"), // DST end
+            new Date("2023-11-05T06:00:00Z") // DST end
           ),
           fc.constantFrom(
             "America/New_York",
             "America/Los_Angeles",
-            "Europe/London",
+            "Europe/London"
           ),
           (date: Date, timezone: string) => {
             try {
@@ -344,8 +344,8 @@ describe("Property-Based Tests: Date Formatting", () => {
             } catch {
               return false;
             }
-          },
-        ),
+          }
+        )
       );
     });
   });

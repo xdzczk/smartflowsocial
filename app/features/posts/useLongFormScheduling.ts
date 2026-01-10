@@ -69,9 +69,8 @@ export function useLongFormScheduling({
           setScheduledFor(scheduledTime);
         }
       } catch (error) {
-        const { handleErrorSafely } = await import(
-          "~/lib/error-handler.client"
-        );
+        const { handleErrorSafely } =
+          await import("~/lib/error-handler.client");
         handleErrorSafely(error, {
           component: "useLongFormScheduling",
           action: "calculateQueueScheduleTime",
@@ -125,9 +124,8 @@ export function useLongFormScheduling({
           setDisplayedHashtags(userTags);
         }
       } catch (error) {
-        const { handleErrorSafely } = await import(
-          "~/lib/error-handler.client"
-        );
+        const { handleErrorSafely } =
+          await import("~/lib/error-handler.client");
         handleErrorSafely(error, {
           component: "useLongFormScheduling",
           action: "updateDisplayedHashtags",

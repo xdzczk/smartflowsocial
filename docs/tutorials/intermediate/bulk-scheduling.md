@@ -205,13 +205,11 @@ Learn how to upload multiple images and schedule them automatically with consist
 **Before scheduling:**
 
 1. **Check scheduled times:**
-
    - Review each image's time
    - Verify intervals are correct
    - Ensure times work for audience
 
 2. **Review captions:**
-
    - Check spelling
    - Verify hashtags
    - Ensure consistency
@@ -403,7 +401,8 @@ Learn how to upload multiple images and schedule them automatically with consist
 
 ## Next Steps
 
-1. **[Advanced Scheduling Strategies](./advanced-scheduling-strategies.md)** - Optimize your schedule
+1. **[Advanced Scheduling Strategies](./advanced-scheduling-strategies.md)** - Optimize your
+   schedule
 2. **[Creating Giveaways](./creating-giveaways.md)** - Engage your audience
 3. **[Long-form Articles](./long-form-articles.md)** - Create detailed content
 
@@ -418,5 +417,3 @@ Learn how to upload multiple images and schedule them automatically with consist
 ---
 
 **Next Tutorial:** [Creating Giveaways](./creating-giveaways.md) → Engage your audience
-
-

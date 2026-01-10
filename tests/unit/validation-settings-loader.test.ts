@@ -270,12 +270,8 @@ describe("Settings Loader Validation", () => {
     it("should return validated accounts for valid data", () => {
       const validAccounts = {
         parentNpub: "npub1test",
-        confirmedChildren: [
-          { npub: "npub2test", nostrProfile: null },
-        ],
-        pendingChildren: [
-          { npub: "npub3test" },
-        ],
+        confirmedChildren: [{ npub: "npub2test", nostrProfile: null }],
+        pendingChildren: [{ npub: "npub3test" }],
         isChild: false,
         parentUser: {
           npub: "npub1test",
@@ -306,4 +302,3 @@ describe("Settings Loader Validation", () => {
     });
   });
 });
-

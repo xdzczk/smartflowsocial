@@ -1,7 +1,7 @@
 /**
  * TanStack Query integration with Remix loaders
  * Allows using Remix loader data with React Query for client-side refetching
- * 
+ *
  * Note: This is a simplified version. For complex use cases, use useFetcher directly
  * or create custom hooks that combine Remix loaders with TanStack Query.
  */
@@ -12,7 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 /**
  * Hook to use Remix loader data with TanStack Query
  * Useful when you want to refetch loader data on the client side
- * 
+ *
  * @example
  * ```tsx
  * const loaderData = useLoaderData();
@@ -58,4 +58,3 @@ export function useRemixQuery<TData = unknown>({
     staleTime,
   });
 }
-

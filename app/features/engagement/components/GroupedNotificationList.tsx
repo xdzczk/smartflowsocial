@@ -97,9 +97,8 @@ function GroupedNotificationCard({
       });
       setTimeout(() => setParentToast(null), 2000);
     } catch (error) {
-      const { handleAsyncErrorWithMessage } = await import(
-        "~/lib/error-handler.client"
-      );
+      const { handleAsyncErrorWithMessage } =
+        await import("~/lib/error-handler.client");
       handleAsyncErrorWithMessage(
         error,
         "Failed to copy",
@@ -107,7 +106,7 @@ function GroupedNotificationCard({
           component: "GroupedNotificationList",
           action: "handleCopyNEvent",
         },
-        false, // Don't show toast, we set parentToast instead
+        false // Don't show toast, we set parentToast instead
       );
       setParentToast({ type: "error", message: "Failed to copy" });
       setTimeout(() => setParentToast(null), 2000);
@@ -119,7 +118,7 @@ function GroupedNotificationCard({
       {/* Forum-style layout: Parent post on left, replies on right */}
       <div className="flex flex-col lg:flex-row">
         {/* Parent Post - Left Side */}
-        <div className="flex-shrink-0 border-b border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/50 lg:w-2/5 lg:border-b-0 lg:border-r">
+        <div className="flex-shrink-0 border-b border-gray-200 bg-gray-50 p-4 lg:w-2/5 lg:border-r lg:border-b-0 dark:border-gray-700 dark:bg-gray-900/50">
           <div className="mb-2 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
             <svg
               className="h-5 w-5"
@@ -177,7 +176,7 @@ function GroupedNotificationCard({
                 </>
               ) : (
                 parentPost.caption && (
-                  <p className="whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300">
+                  <p className="text-sm whitespace-pre-wrap text-gray-700 dark:text-gray-300">
                     {parentPost.caption.length > 200
                       ? parentPost.caption.substring(0, 200) + "..."
                       : parentPost.caption}

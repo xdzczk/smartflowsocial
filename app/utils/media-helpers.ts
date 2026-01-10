@@ -55,7 +55,7 @@ export function isVideoUrl(url: string | null | undefined): boolean {
  */
 export function getPostType(
   file?: File | null,
-  url?: string | null,
+  url?: string | null
 ): "VIDEO" | "IMAGE" {
   if (file && isVideoFile(file)) return "VIDEO";
   if (url && isVideoUrl(url)) return "VIDEO";

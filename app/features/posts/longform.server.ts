@@ -99,6 +99,144 @@ export function generateArticleIdentifier(title: string): string {
     .substring(0, 64);
 }
 
+// ============================================================================
+// EditorJS to Markdown Conversion Helpers
+// ============================================================================
+
+function convertHeaderBlock(block: EditorJSBlock): string {
+  const level =
+    typeof block.data["level"] === "number" ? block.data["level"] : 1;
+  const text = typeof block.data["text"] === "string" ? block.data["text"] : "";
+  return `${"#".repeat(level)} ${text}\n\n`;
+}
+
+function convertParagraphBlock(block: EditorJSBlock): string {
+  const textValue = block.data["text"];
+  const text = typeof textValue === "string" ? textValue : "";
+  return `${text}\n\n`;
+}
+
+function convertListBlock(block: EditorJSBlock): string {
+  if (!Array.isArray(block.data["items"])) {
+    return "\n";
+  }
+
+  const items = block.data["items"];
+  if (!Array.isArray(items)) {
+    return "\n";
+  }
+
+  let markdown = "";
+  if (block.data["style"] === "ordered") {
+    items.forEach((item: unknown, index: number) => {
+      markdown += `${index + 1}. ${typeof item === "string" ? item : String(item)}\n`;
+    });
+  } else {
+    items.forEach((item: unknown) => {
+      markdown += `- ${typeof item === "string" ? item : String(item)}\n`;
+    });
+  }
+  return `${markdown}\n`;
+}
+
+function convertQuoteBlock(block: EditorJSBlock): string {
+  const textValue = block.data["text"];
+  const text = typeof textValue === "string" ? textValue : "";
+  const captionValue = block.data["caption"];
+  const caption = typeof captionValue === "string" ? captionValue : "";
+  let markdown = `> ${text}\n`;
+  if (caption) {
+    markdown += `> \n> — ${caption}\n`;
+  }
+  return `${markdown}\n`;
+}
+
+function convertCodeBlock(block: EditorJSBlock): string {
+  const codeValue = block.data["code"];
+  const code = typeof codeValue === "string" ? codeValue : "";
+  return `\`\`\`\n${code}\n\`\`\`\n\n`;
+}
+
+function convertLinkToolBlock(block: EditorJSBlock): string {
+  const link = typeof block.data["link"] === "string" ? block.data["link"] : "";
+  const meta =
+    block.data["meta"] &&
+    typeof block.data["meta"] === "object" &&
+    "title" in block.data["meta"]
+      ? (block.data["meta"] as { title?: string })
+      : { title: undefined };
+  if (meta.title) {
+    return `[${meta.title}](${link})\n\n`;
+  }
+  return `${link}\n\n`;
+}
+
+function convertEmbedBlock(block: EditorJSBlock): string {
+  const serviceValue = block.data["service"];
+  const sourceValue = block.data["source"];
+  const service = typeof serviceValue === "string" ? serviceValue : "";
+  const source = typeof sourceValue === "string" ? sourceValue : "";
+  if (service === "youtube") {
+    return `[![YouTube Video](https://img.youtube.com/vi/${source}/0.jpg)](${source})\n\n`;
+  }
+  return `${source}\n\n`;
+}
+
+function convertImageBlock(block: EditorJSBlock): string {
+  const file =
+    block.data["file"] &&
+    typeof block.data["file"] === "object" &&
+    "url" in block.data["file"]
+      ? (block.data["file"] as { url?: string })
+      : { url: undefined };
+  const url =
+    typeof block.data["url"] === "string" ? block.data["url"] : undefined;
+  const imageUrl = file.url ?? url;
+  const caption =
+    typeof block.data["caption"] === "string"
+      ? block.data["caption"]
+      : undefined;
+  if (!imageUrl) {
+    return "";
+  }
+  if (caption?.trim()) {
+    return `![${caption}](${imageUrl})\n\n`;
+  }
+  return `![](${imageUrl})\n\n`;
+}
+
+function convertDefaultBlock(block: EditorJSBlock): string {
+  const textValue = block.data["text"];
+  const text = typeof textValue === "string" ? textValue : "";
+  if (text) {
+    return `${text}\n\n`;
+  }
+  return "";
+}
+
+function convertBlockToMarkdown(block: EditorJSBlock): string {
+  switch (block.type) {
+    case "header":
+      return convertHeaderBlock(block);
+    case "paragraph":
+      return convertParagraphBlock(block);
+    case "list":
+      return convertListBlock(block);
+    case "quote":
+      return convertQuoteBlock(block);
+    case "code":
+      return convertCodeBlock(block);
+    case "linkTool":
+      return convertLinkToolBlock(block);
+    case "embed":
+      return convertEmbedBlock(block);
+    case "image":
+      return convertImageBlock(block);
+    default:
+      return convertDefaultBlock(block);
+  }
+}
+
 export function convertEditorJSToMarkdown(editorData: EditorJSOutput): string {
   if (editorData.blocks.length === 0) {
     return "";
@@ -107,132 +245,281 @@ export function convertEditorJSToMarkdown(editorData: EditorJSOutput): string {
   let markdown = "";
 
   editorData.blocks.forEach((block: EditorJSBlock) => {
-    switch (block.type) {
-      case "header": {
-        const level =
-          typeof block.data["level"] === "number" ? block.data["level"] : 1;
-        const text =
-          typeof block.data["text"] === "string" ? block.data["text"] : "";
-        markdown += `${"#".repeat(level)} ${text}\n\n`;
-        break;
-      }
-
-      case "paragraph": {
-        const textValue = block.data["text"];
-        const text = typeof textValue === "string" ? textValue : "";
-        markdown += `${text}\n\n`;
-        break;
-      }
-
-      case "list":
-        if (Array.isArray(block.data["items"])) {
-          if (block.data["style"] === "ordered") {
-            const items = block.data["items"];
-            if (Array.isArray(items)) {
-              items.forEach((item: unknown, index: number) => {
-                markdown += `${index + 1}. ${typeof item === "string" ? item : String(item)}\n`;
-              });
-            }
-          } else {
-            const items = block.data["items"];
-            if (Array.isArray(items)) {
-              items.forEach((item: unknown) => {
-                markdown += `- ${typeof item === "string" ? item : String(item)}\n`;
-              });
-            }
-          }
-        }
-        markdown += "\n";
-        break;
-
-      case "quote": {
-        const textValue = block.data["text"];
-        const text = typeof textValue === "string" ? textValue : "";
-        const captionValue = block.data["caption"];
-        const caption = typeof captionValue === "string" ? captionValue : "";
-        markdown += `> ${text}\n`;
-        if (caption) {
-          markdown += `> \n> — ${caption}\n`;
-        }
-        markdown += "\n";
-        break;
-      }
-
-      case "code": {
-        const codeValue = block.data["code"];
-        const code = typeof codeValue === "string" ? codeValue : "";
-        markdown += "```\n";
-        markdown += code;
-        markdown += "\n```\n\n";
-        break;
-      }
-
-      case "linkTool": {
-        const link =
-          typeof block.data["link"] === "string" ? block.data["link"] : "";
-        const meta =
-          block.data["meta"] &&
-          typeof block.data["meta"] === "object" &&
-          "title" in block.data["meta"]
-            ? (block.data["meta"] as { title?: string })
-            : { title: undefined };
-        if (meta.title) {
-          markdown += `[${meta.title}](${link})\n\n`;
-        } else {
-          markdown += `${link}\n\n`;
-        }
-        break;
-      }
-
-      case "embed": {
-        const serviceValue = block.data["service"];
-        const sourceValue = block.data["source"];
-        const service = typeof serviceValue === "string" ? serviceValue : "";
-        const source = typeof sourceValue === "string" ? sourceValue : "";
-        if (service === "youtube") {
-          markdown += `[![YouTube Video](https://img.youtube.com/vi/${source}/0.jpg)](${source})\n\n`;
-        } else {
-          markdown += `${source}\n\n`;
-        }
-        break;
-      }
-
-      case "image": {
-        const file =
-          block.data["file"] &&
-          typeof block.data["file"] === "object" &&
-          "url" in block.data["file"]
-            ? (block.data["file"] as { url?: string })
-            : { url: undefined };
-        const url =
-          typeof block.data["url"] === "string" ? block.data["url"] : undefined;
-        const imageUrl = file.url ?? url;
-        const caption =
-          typeof block.data["caption"] === "string"
-            ? block.data["caption"]
-            : undefined;
-        if (imageUrl) {
-          if (caption?.trim()) {
-            markdown += `![${caption}](${imageUrl})\n\n`;
-          } else {
-            markdown += `![](${imageUrl})\n\n`;
-          }
-        }
-        break;
-      }
-
-      default: {
-        const textValue = block.data["text"];
-        const text = typeof textValue === "string" ? textValue : "";
-        if (text) {
-          markdown += `${text}\n\n`;
-        }
-        break;
-      }
-    }
+    markdown += convertBlockToMarkdown(block);
   });
 
   return markdown.trim();
+}
+
+// ============================================================================
+// Markdown Parser Helpers
+// ============================================================================
+
+interface ParseResult {
+  block: EditorJSBlock | null;
+  nextIndex: number;
+}
+
+function parseHeader(line: string): EditorJSBlock | null {
+  const match = line.match(/^#+/);
+  const level = match?.[0]?.length ?? 1;
+  const text = line.replace(/^#+\s*/, "");
+  return {
+    id: generateBlockId(),
+    type: "header",
+    data: {
+      text: text,
+      level: Math.min(Math.max(level, 1), 6),
+    },
+  };
+}
+
+function parseImage(line: string): EditorJSBlock | null {
+  const match = line.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+  if (!match) {
+    return null;
+  }
+  const caption = match[1];
+  const url = match[2];
+  if (caption === undefined || url === undefined) {
+    return null;
+  }
+  return {
+    id: generateBlockId(),
+    type: "image",
+    data: {
+      file: {
+        url: url,
+      },
+      caption: caption,
+      withBorder: false,
+      withBackground: false,
+      stretched: false,
+    },
+  };
+}
+
+function parseBlockquote(lines: string[], startIndex: number): ParseResult {
+  let quoteText = "";
+  let caption = "";
+  let i = startIndex;
+
+  // Collect all consecutive quote lines
+  while (i < lines.length) {
+    const currentQuoteLine = lines[i];
+    if (currentQuoteLine === undefined) break;
+    if (!currentQuoteLine.trim().startsWith("> ")) break;
+    const quoteLine = currentQuoteLine.trim().substring(2);
+    if (quoteLine.startsWith("— ")) {
+      caption = quoteLine.substring(2);
+    } else if (quoteLine !== "") {
+      if (quoteText) quoteText += " ";
+      quoteText += quoteLine;
+    }
+    i++;
+  }
+
+  return {
+    block: {
+      id: generateBlockId(),
+      type: "quote",
+      data: {
+        text: quoteText,
+        caption: caption,
+      },
+    },
+    nextIndex: i - 1, // Adjust for the loop increment
+  };
+}
+
+function parseCodeBlock(lines: string[], startIndex: number): ParseResult {
+  let code = "";
+  let i = startIndex + 1; // Skip the opening ```
+
+  while (i < lines.length) {
+    const currentCodeLine = lines[i];
+    if (currentCodeLine === undefined) break;
+    if (currentCodeLine.trim() === "```") break;
+    if (code) code += "\n";
+    code += currentCodeLine;
+    i++;
+  }
+
+  return {
+    block: {
+      id: generateBlockId(),
+      type: "code",
+      data: {
+        code: code,
+      },
+    },
+    nextIndex: i,
+  };
+}
+
+function parseOrderedList(lines: string[], startIndex: number): ParseResult {
+  const items: string[] = [];
+  let i = startIndex;
+
+  while (i < lines.length) {
+    const currentListItem = lines[i];
+    if (currentListItem === undefined) break;
+    if (!currentListItem.trim().match(/^\d+\.\s/)) break;
+    const item = currentListItem.trim().replace(/^\d+\.\s/, "");
+    items.push(item);
+    i++;
+  }
+
+  return {
+    block: {
+      id: generateBlockId(),
+      type: "list",
+      data: {
+        style: "ordered",
+        items: items,
+      },
+    },
+    nextIndex: i - 1, // Adjust for the loop increment
+  };
+}
+
+function parseUnorderedList(lines: string[], startIndex: number): ParseResult {
+  const items: string[] = [];
+  let i = startIndex;
+
+  while (i < lines.length) {
+    const currentListItem = lines[i];
+    if (currentListItem === undefined) break;
+    if (!currentListItem.trim().startsWith("- ")) break;
+    const item = currentListItem.trim().substring(2);
+    items.push(item);
+    i++;
+  }
+
+  return {
+    block: {
+      id: generateBlockId(),
+      type: "list",
+      data: {
+        style: "unordered",
+        items: items,
+      },
+    },
+    nextIndex: i - 1, // Adjust for the loop increment
+  };
+}
+
+function parseLink(line: string): EditorJSBlock | null {
+  const match = line.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+  if (!match) {
+    return null;
+  }
+  const title = match[1];
+  const url = match[2];
+  if (title === undefined || url === undefined) {
+    return null;
+  }
+  return {
+    id: generateBlockId(),
+    type: "linkTool",
+    data: {
+      link: url,
+      meta: {
+        title: title,
+      },
+    },
+  };
+}
+
+function parseParagraph(lines: string[], startIndex: number): ParseResult {
+  const line = lines[startIndex];
+  if (line === undefined) {
+    return { block: null, nextIndex: startIndex };
+  }
+
+  let paragraphText = line.trim();
+  let j = startIndex + 1;
+
+  while (j < lines.length) {
+    const currentParagraphLine = lines[j];
+    if (currentParagraphLine === undefined) break;
+    const trimmed = currentParagraphLine.trim();
+    if (
+      trimmed === "" ||
+      trimmed.startsWith("#") ||
+      trimmed.startsWith("> ") ||
+      trimmed.startsWith("- ") ||
+      trimmed.match(/^\d+\.\s/) ||
+      trimmed === "```" ||
+      trimmed.match(/^!\[([^\]]*)\]\(([^)]+)\)$/)
+    ) {
+      break;
+    }
+    paragraphText += " " + trimmed;
+    j++;
+  }
+
+  return {
+    block: {
+      id: generateBlockId(),
+      type: "paragraph",
+      data: {
+        text: paragraphText,
+      },
+    },
+    nextIndex: j - 1, // Set to the last line we processed
+  };
+}
+
+// ============================================================================
+// Markdown to EditorJS Conversion Helpers
+// ============================================================================
+
+function processMarkdownLine(
+  line: string,
+  lines: string[],
+  index: number
+): { block: EditorJSBlock | null; nextIndex: number } {
+  // Headers
+  if (line.startsWith("#")) {
+    const block = parseHeader(line);
+    return { block, nextIndex: index };
+  }
+
+  // Images
+  if (line.match(/^!\[([^\]]*)\]\(([^)]+)\)$/)) {
+    const block = parseImage(line);
+    return { block, nextIndex: index };
+  }
+
+  // Blockquotes
+  if (line.startsWith("> ")) {
+    return parseBlockquote(lines, index);
+  }
+
+  // Code blocks
+  if (line === "```") {
+    return parseCodeBlock(lines, index);
+  }
+
+  // Ordered lists
+  if (line.match(/^\d+\.\s/)) {
+    return parseOrderedList(lines, index);
+  }
+
+  // Unordered lists
+  if (line.startsWith("- ")) {
+    return parseUnorderedList(lines, index);
+  }
+
+  // Links
+  if (line.match(/^\[([^\]]+)\]\(([^)]+)\)$/)) {
+    const block = parseLink(line);
+    return { block, nextIndex: index };
+  }
+
+  // Regular paragraphs
+  return parseParagraph(lines, index);
 }
 
 export function convertMarkdownToEditorJS(markdown: string): EditorJSOutput {
@@ -254,198 +541,11 @@ export function convertMarkdownToEditorJS(markdown: string): EditorJSOutput {
       continue;
     }
 
-    // Headers
-    if (line.startsWith("#")) {
-      const match = line.match(/^#+/);
-      const level = match?.[0]?.length ?? 1;
-      const text = line.replace(/^#+\s*/, "");
-      blocks.push({
-        id: generateBlockId(),
-        type: "header",
-        data: {
-          text: text,
-          level: Math.min(Math.max(level, 1), 6),
-        },
-      });
+    const result = processMarkdownLine(line, lines, i);
+    if (result.block) {
+      blocks.push(result.block);
     }
-    // Images
-    else if (line.match(/^!\[([^\]]*)\]\(([^)]+)\)$/)) {
-      const match = line.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
-      if (match) {
-        const caption = match[1];
-        const url = match[2];
-        if (caption !== undefined && url !== undefined) {
-          blocks.push({
-            id: generateBlockId(),
-            type: "image",
-            data: {
-              file: {
-                url: url,
-              },
-              caption: caption,
-              withBorder: false,
-              withBackground: false,
-              stretched: false,
-            },
-          });
-        }
-      }
-    }
-    // Blockquotes
-    else if (line.startsWith("> ")) {
-      let quoteText = "";
-      let caption = "";
-
-      // Collect all consecutive quote lines
-      while (i < lines.length) {
-        const currentQuoteLine = lines[i];
-        if (currentQuoteLine === undefined) break;
-        if (!currentQuoteLine.trim().startsWith("> ")) break;
-        const quoteLine = currentQuoteLine.trim().substring(2);
-        if (quoteLine.startsWith("— ")) {
-          caption = quoteLine.substring(2);
-        } else if (quoteLine !== "") {
-          if (quoteText) quoteText += " ";
-          quoteText += quoteLine;
-        }
-        i++;
-      }
-      i--; // Adjust for the loop increment
-
-      blocks.push({
-        id: generateBlockId(),
-        type: "quote",
-        data: {
-          text: quoteText,
-          caption: caption,
-        },
-      });
-    }
-    // Code blocks
-    else if (line === "```") {
-      let code = "";
-      i++; // Skip the opening ```
-
-      while (i < lines.length) {
-        const currentCodeLine = lines[i];
-        if (currentCodeLine === undefined) break;
-        if (currentCodeLine.trim() === "```") break;
-        if (code) code += "\n";
-        code += currentCodeLine;
-        i++;
-      }
-
-      blocks.push({
-        id: generateBlockId(),
-        type: "code",
-        data: {
-          code: code,
-        },
-      });
-    }
-    // Ordered lists
-    else if (line.match(/^\d+\.\s/)) {
-      const items: string[] = [];
-
-      while (i < lines.length) {
-        const currentListItem = lines[i];
-        if (currentListItem === undefined) break;
-        if (!currentListItem.trim().match(/^\d+\.\s/)) break;
-        const item = currentListItem.trim().replace(/^\d+\.\s/, "");
-        items.push(item);
-        i++;
-      }
-      i--; // Adjust for the loop increment
-
-      blocks.push({
-        id: generateBlockId(),
-        type: "list",
-        data: {
-          style: "ordered",
-          items: items,
-        },
-      });
-    }
-    // Unordered lists
-    else if (line.startsWith("- ")) {
-      const items: string[] = [];
-
-      while (i < lines.length) {
-        const currentListItem = lines[i];
-        if (currentListItem === undefined) break;
-        if (!currentListItem.trim().startsWith("- ")) break;
-        const item = currentListItem.trim().substring(2);
-        items.push(item);
-        i++;
-      }
-      i--; // Adjust for the loop increment
-
-      blocks.push({
-        id: generateBlockId(),
-        type: "list",
-        data: {
-          style: "unordered",
-          items: items,
-        },
-      });
-    }
-    // Links (simple detection)
-    else if (line.match(/^\[([^\]]+)\]\(([^)]+)\)$/)) {
-      const match = line.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
-      if (match) {
-        const title = match[1];
-        const url = match[2];
-        if (title !== undefined && url !== undefined) {
-          blocks.push({
-            id: generateBlockId(),
-            type: "linkTool",
-            data: {
-              link: url,
-              meta: {
-                title: title,
-              },
-            },
-          });
-        }
-      }
-    }
-    // Regular paragraphs
-    else if (line) {
-      // Collect consecutive non-empty lines for paragraph
-      let paragraphText = line;
-      let j = i + 1;
-
-      while (j < lines.length) {
-        const currentParagraphLine = lines[j];
-        if (currentParagraphLine === undefined) break;
-        const trimmed = currentParagraphLine.trim();
-        if (
-          trimmed === "" ||
-          trimmed.startsWith("#") ||
-          trimmed.startsWith("> ") ||
-          trimmed.startsWith("- ") ||
-          trimmed.match(/^\d+\.\s/) ||
-          trimmed === "```" ||
-          trimmed.match(/^!\[([^\]]*)\]\(([^)]+)\)$/)
-        ) {
-          break;
-        }
-        paragraphText += " " + trimmed;
-        j++;
-      }
-
-      blocks.push({
-        id: generateBlockId(),
-        type: "paragraph",
-        data: {
-          text: paragraphText,
-        },
-      });
-
-      i = j - 1; // Set i to the last line we processed
-    }
-
-    i++;
+    i = result.nextIndex + 1;
   }
 
   return {

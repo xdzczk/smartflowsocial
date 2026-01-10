@@ -17,7 +17,7 @@ vi.mock("~/lib/security.server", () => {
 
   return {
     isStateChangingMethod: vi.fn((method: string) =>
-      ["POST", "PUT", "PATCH", "DELETE"].includes(method.toUpperCase()),
+      ["POST", "PUT", "PATCH", "DELETE"].includes(method.toUpperCase())
     ),
     validateOrigin: vi.fn(),
     CSRFValidationError,
@@ -25,10 +25,7 @@ vi.mock("~/lib/security.server", () => {
 });
 
 import { withCSRFProtection } from "~/lib/csrf";
-import {
-  validateOrigin,
-  CSRFValidationError,
-} from "~/lib/security.server";
+import { validateOrigin, CSRFValidationError } from "~/lib/security.server";
 
 describe("CSRF Protection Middleware", () => {
   beforeEach(() => {
@@ -178,7 +175,10 @@ describe("CSRF Protection Middleware", () => {
       expect(result).toBeInstanceOf(Response);
       const response = result as Response;
       expect(response.status).toBe(403);
-      const json = (await response.json()) as { error: string; message: string };
+      const json = (await response.json()) as {
+        error: string;
+        message: string;
+      };
       expect(json.error).toBe("CSRF validation failed");
       expect(json.message).toBe("Invalid origin");
     });
@@ -205,7 +205,10 @@ describe("CSRF Protection Middleware", () => {
       expect(result).toBeInstanceOf(Response);
       const response = result as Response;
       expect(response.status).toBe(403);
-      const json = (await response.json()) as { error: string; message: string };
+      const json = (await response.json()) as {
+        error: string;
+        message: string;
+      };
       expect(json.error).toBe("CSRF validation failed");
       expect(json.message).toBe("Invalid origin");
     });
@@ -257,4 +260,3 @@ describe("CSRF Protection Middleware", () => {
     });
   });
 });
-

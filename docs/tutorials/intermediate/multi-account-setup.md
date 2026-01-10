@@ -4,7 +4,8 @@
 **Difficulty:** Intermediate  
 **Last updated:** 2026-01-02
 
-Step-by-step guide to setting up and managing parent/child account relationships for managing multiple Nostr accounts.
+Step-by-step guide to setting up and managing parent/child account relationships for managing
+multiple Nostr accounts.
 
 ---
 
@@ -40,13 +41,11 @@ Step-by-step guide to setting up and managing parent/child account relationships
 **Before starting, ensure:**
 
 1. **Parent account has Premium or Founder plan:**
-
    - Go to Settings → Subscription
    - Verify plan is Premium or Founder
    - Upgrade if needed
 
 2. **Parent account is not a child:**
-
    - Check account status
    - Cannot be child and parent simultaneously
 
@@ -72,13 +71,11 @@ Step-by-step guide to setting up and managing parent/child account relationships
 ## Step 3: Search for Child Account
 
 1. **In search box, enter:**
-
    - Account name
    - Profile display name
    - npub (public key)
 
 2. **Search results appear:**
-
    - Matching accounts displayed
    - Shows profile information
    - Account status indicators
@@ -100,14 +97,12 @@ Step-by-step guide to setting up and managing parent/child account relationships
 
 1. **Find child account** in search results
 2. **Review account information:**
-
    - Profile name
    - npub
    - Status (available, has parent, etc.)
 
 3. **Click "Request Link"** button
 4. **Request sent:**
-
    - Status changes to "Requesting..."
    - Then shows "Requested"
    - Request appears in "Pending Children"
@@ -125,13 +120,11 @@ Step-by-step guide to setting up and managing parent/child account relationships
 1. **Log in to child account**
 2. **Go to Settings** → **Accounts**
 3. **View "Pending Requests" section:**
-
    - See parent account request
    - Shows parent profile information
    - Request details
 
 4. **Review parent account:**
-
    - Verify parent identity
    - Check parent profile
    - Ensure trust relationship
@@ -318,13 +311,11 @@ Step-by-step guide to setting up and managing parent/child account relationships
 ### Account Organization
 
 1. **Clear naming:**
-
    - Use descriptive account names
    - Distinguish parent from children
    - Organize by purpose
 
 2. **Limit relationships:**
-
    - Only link necessary accounts
    - Keep relationships clear
    - Avoid over-complication
@@ -337,13 +328,11 @@ Step-by-step guide to setting up and managing parent/child account relationships
 ### Security
 
 1. **Trust relationships:**
-
    - Only link trusted accounts
    - Verify account ownership
    - Monitor linked accounts
 
 2. **Access control:**
-
    - Review child account access
    - Remove unnecessary links
    - Update permissions as needed
@@ -367,7 +356,8 @@ Step-by-step guide to setting up and managing parent/child account relationships
 
 ## Next Steps
 
-1. **[Advanced Scheduling Strategies](./advanced-scheduling-strategies.md)** - Optimize your schedule
+1. **[Advanced Scheduling Strategies](./advanced-scheduling-strategies.md)** - Optimize your
+   schedule
 2. **[Long-form Articles](./long-form-articles.md)** - Create detailed content
 3. **[Creating Giveaways](./creating-giveaways.md)** - Engage your audience
 
@@ -381,6 +371,5 @@ Step-by-step guide to setting up and managing parent/child account relationships
 
 ---
 
-**Next Tutorial:** [Advanced Scheduling Strategies](./advanced-scheduling-strategies.md) → Optimize your schedule
-
-
+**Next Tutorial:** [Advanced Scheduling Strategies](./advanced-scheduling-strategies.md) → Optimize
+your schedule

@@ -4,7 +4,8 @@
 **Difficulty:** Beginner  
 **Last updated:** 2026-01-03
 
-Complete step-by-step tutorial to create posts (with or without images) and schedule them for future publication on SmartFlowSocial.
+Complete step-by-step tutorial to create posts (with or without images) and schedule them for future
+publication on SmartFlowSocial.
 
 ---
 
@@ -481,7 +482,8 @@ Now that you've mastered creating and scheduling posts, try:
 1. **[Creating Your First Queue](./creating-your-first-queue.md)** - Organize posts with queues
 2. **[Using Hashtag Presets](./using-hashtag-presets.md)** - Streamline your tagging
 3. **[Using the Calendar View](./using-calendar-view.md)** - Visual scheduling
-4. **[Posting Guide](../../guides/user-guides/posting.md#bulk-operations)** - Bulk scheduling multiple posts
+4. **[Posting Guide](../../guides/user-guides/posting.md#bulk-operations)** - Bulk scheduling
+   multiple posts
 
 ---
 
@@ -495,4 +497,3 @@ Now that you've mastered creating and scheduling posts, try:
 ---
 
 **Next Tutorial:** [Creating Your First Queue](./creating-your-first-queue.md) → Organize your posts
-

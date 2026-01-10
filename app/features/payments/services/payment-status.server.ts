@@ -55,7 +55,7 @@ export async function checkPaymentStatusById(paymentId: string) {
         headers: {
           "Content-Type": "application/json",
         },
-      },
+      }
     );
   }
 
@@ -70,6 +70,6 @@ export async function checkPaymentStatusById(paymentId: string) {
       headers: {
         "Content-Type": "application/json",
       },
-    },
+    }
   );
 }

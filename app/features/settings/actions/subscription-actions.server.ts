@@ -13,7 +13,7 @@ import { getPlanById, updateUserSubscription } from "~/models/payment.server";
 export async function handleSubscriptionAction(
   userId: string,
   action: string,
-  formData: FormData,
+  formData: FormData
 ) {
   if (action === "switch_to_free_plan") {
     const result = validateFormDataOrRespond(formData, switchToFreePlanSchema);
@@ -31,7 +31,7 @@ export async function handleSubscriptionAction(
     if (Number(plan.price) > 0) {
       return json(
         { error: "This action is only allowed for free plans" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -39,7 +39,7 @@ export async function handleSubscriptionAction(
     await updateUserSubscription(
       userId,
       result.data.planId,
-      `free_${Date.now()}_${userId}`,
+      `free_${Date.now()}_${userId}`
     );
 
     return json({
@@ -50,4 +50,3 @@ export async function handleSubscriptionAction(
 
   return null;
 }
-

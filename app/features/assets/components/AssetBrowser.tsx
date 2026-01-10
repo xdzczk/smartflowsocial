@@ -54,7 +54,7 @@ export default function AssetBrowser({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
       <div className="max-h-[90vh] w-full max-w-6xl overflow-hidden rounded-lg bg-white dark:bg-gray-800">
         <div className="border-b border-gray-200 p-6 dark:border-gray-700">
           <div className="flex items-center justify-between">

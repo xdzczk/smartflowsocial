@@ -8,7 +8,10 @@ Complete guide to Lightning Network payment integration for SmartFlowSocial plan
 
 ## Overview
 
-The payment system uses the owner's Lightning wallet (via NWC - Nostr Wallet Connect) to receive payments from users purchasing plans. When users select a paid plan, an invoice is generated and they pay to the owner's wallet. Upon payment completion, their account is automatically activated with the selected plan features.
+The payment system uses the owner's Lightning wallet (via NWC - Nostr Wallet Connect) to receive
+payments from users purchasing plans. When users select a paid plan, an invoice is generated and
+they pay to the owner's wallet. Upon payment completion, their account is automatically activated
+with the selected plan features.
 
 ## Architecture
 

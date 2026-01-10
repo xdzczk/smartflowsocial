@@ -206,7 +206,7 @@ describe("User Model Functions", () => {
 
       const result = await updateUserTimezone(
         TEST_USER_ID,
-        "America/Los_Angeles",
+        "America/Los_Angeles"
       );
 
       expect(mockPrisma.user.update).toHaveBeenCalledWith({

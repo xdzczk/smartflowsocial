@@ -27,12 +27,9 @@ import { getPostById } from "~/models/post.queries.server";
  */
 export async function handleCalendarReschedule(
   formData: FormData,
-  userId: string,
+  userId: string
 ) {
-  const result = validateFormDataOrRespond(
-    formData,
-    calendarRescheduleSchema,
-  );
+  const result = validateFormDataOrRespond(formData, calendarRescheduleSchema);
   if (!result.success) {
     return result.response;
   }
@@ -116,11 +113,11 @@ export async function handleCalendarReschedule(
  */
 export async function handleCalendarRescheduleLongform(
   formData: FormData,
-  userId: string,
+  userId: string
 ) {
   const result = validateFormDataOrRespond(
     formData,
-    calendarRescheduleLongformSchema,
+    calendarRescheduleLongformSchema
   );
   if (!result.success) {
     return result.response;

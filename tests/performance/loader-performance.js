@@ -31,7 +31,7 @@ export default function () {
     "GET",
     "/dashboard",
     null,
-    session,
+    session
   );
   check(dashboardResponse, {
     "dashboard: status 200": (r) => r.status === 200,
@@ -46,7 +46,7 @@ export default function () {
     "GET",
     "/dashboard/scheduled",
     null,
-    session,
+    session
   );
   check(scheduledResponse, {
     "scheduled: status 200": (r) => r.status === 200,
@@ -60,7 +60,7 @@ export default function () {
     "GET",
     "/dashboard/calendar/regular",
     null,
-    session,
+    session
   );
   check(calendarResponse, {
     "calendar: status 200": (r) => r.status === 200,
@@ -74,7 +74,7 @@ export default function () {
     "GET",
     "/dashboard/drafts",
     null,
-    session,
+    session
   );
   check(draftsResponse, {
     "drafts: status 200": (r) => r.status === 200,
@@ -88,7 +88,7 @@ export default function () {
     "GET",
     "/dashboard/posted",
     null,
-    session,
+    session
   );
   check(postedResponse, {
     "posted: status 200": (r) => r.status === 200,

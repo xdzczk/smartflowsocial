@@ -118,7 +118,7 @@ export function RelaysSettings({ relays }: RelaysSettingsProps) {
                     }
                   />
                   {form.formState.errors.relays?.[index] ? (
-                    <p className="mt-1 text-sm text-destructive">
+                    <p className="text-destructive mt-1 text-sm">
                       {form.formState.errors.relays[index].message}
                     </p>
                   ) : null}
@@ -147,7 +147,7 @@ export function RelaysSettings({ relays }: RelaysSettingsProps) {
           </div>
 
           {form.formState.errors.relays ? (
-            <p className="text-sm text-destructive">
+            <p className="text-destructive text-sm">
               {form.formState.errors.relays.message}
             </p>
           ) : null}
@@ -166,7 +166,7 @@ export function RelaysSettings({ relays }: RelaysSettingsProps) {
             </p>
           ) : null}
           {fetcher.data?.error ? (
-            <p className="text-sm text-destructive">{fetcher.data.error}</p>
+            <p className="text-destructive text-sm">{fetcher.data.error}</p>
           ) : null}
         </form>
       </CardContent>

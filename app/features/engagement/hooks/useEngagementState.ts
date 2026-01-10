@@ -5,7 +5,7 @@ import { useState } from "react";
 export function useEngagementState() {
   const [selectedPost, setSelectedPost] = useState<unknown>(null);
   const [activeTab, setActiveTab] = useState<"all" | "replies" | "quotes">(
-    "all",
+    "all"
   );
 
   return {

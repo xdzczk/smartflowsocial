@@ -26,7 +26,7 @@ export class FetchError extends Error {
     public readonly status?: number,
     public readonly statusText?: string,
     public readonly correlationId?: string,
-    public readonly retries?: number,
+    public readonly retries?: number
   ) {
     super(message);
     this.name = "FetchError";
@@ -37,7 +37,7 @@ export class FetchTimeoutError extends FetchError {
   constructor(
     message: string,
     public readonly timeout: number,
-    correlationId?: string,
+    correlationId?: string
   ) {
     super(message, undefined, undefined, correlationId);
     this.name = "FetchTimeoutError";
@@ -48,7 +48,7 @@ export class FetchNetworkError extends FetchError {
   constructor(
     message: string,
     public readonly originalError: unknown,
-    correlationId?: string,
+    correlationId?: string
   ) {
     super(message, undefined, undefined, correlationId);
     this.name = "FetchNetworkError";
@@ -59,7 +59,7 @@ export class FetchRateLimitError extends FetchError {
   constructor(
     message: string,
     public readonly retryAfter?: number,
-    correlationId?: string,
+    correlationId?: string
   ) {
     super(message, 429, "Too Many Requests", correlationId);
     this.name = "FetchRateLimitError";
@@ -158,7 +158,7 @@ function shouldRetryResponse(
   attempt: number,
   maxRetries: number,
   retryOn5xx: boolean,
-  customShouldRetry?: (response: Response, attempt: number) => boolean,
+  customShouldRetry?: (response: Response, attempt: number) => boolean
 ): boolean {
   if (attempt >= maxRetries) {
     return false;
@@ -192,6 +192,208 @@ function shouldRetryResponse(
   return false;
 }
 
+// ============================================================================
+// Helper Functions for Retry Logic
+// ============================================================================
+
+function createAbortControllerWithTimeout(
+  timeout: number,
+  originalSignal?: AbortSignal
+): AbortController {
+  const timeoutController = createTimeoutController(timeout);
+  const abortController = new AbortController();
+
+  if (originalSignal) {
+    originalSignal.addEventListener("abort", () => {
+      abortController.abort();
+    });
+  }
+  timeoutController.signal.addEventListener("abort", () => {
+    abortController.abort();
+  });
+
+  return abortController;
+}
+
+async function makeFetchRequest(
+  url: string | URL,
+  fetchOptions: RequestInit,
+  correlationId: string
+): Promise<Response> {
+  return fetch(url, {
+    ...fetchOptions,
+    headers: {
+      ...fetchOptions.headers,
+      "X-Correlation-Id": correlationId,
+    },
+  });
+}
+
+async function handleRateLimitRetry(
+  response: Response,
+  attempt: number,
+  maxRetries: number,
+  retryDelay: number,
+  correlationId: string,
+  url: string | URL
+): Promise<number> {
+  const retryAfter = response.headers.get("Retry-After");
+  const retryAfterSeconds = retryAfter ? parseInt(retryAfter, 10) : undefined;
+
+  if (attempt < maxRetries) {
+    const delay = retryAfterSeconds
+      ? retryAfterSeconds * 1000
+      : calculateBackoffDelay(attempt, retryDelay);
+
+    logError(
+      new FetchRateLimitError(
+        `Rate limited (429) on attempt ${attempt + 1}/${maxRetries + 1}`,
+        retryAfterSeconds,
+        correlationId
+      ),
+      {
+        url: String(url),
+        attempt: attempt + 1,
+        maxRetries: maxRetries + 1,
+        delay,
+        correlationId,
+      }
+    );
+
+    await new Promise((resolve) => setTimeout(resolve, delay));
+    return delay;
+  }
+
+  throw new FetchRateLimitError(
+    `Rate limited after ${maxRetries + 1} attempts`,
+    retryAfterSeconds,
+    correlationId
+  );
+}
+
+async function handle5xxRetry(
+  response: Response,
+  attempt: number,
+  maxRetries: number,
+  retryDelay: number,
+  correlationId: string,
+  url: string | URL
+): Promise<void> {
+  if (attempt < maxRetries) {
+    const delay = calculateBackoffDelay(attempt, retryDelay);
+
+    logError(
+      new FetchError(
+        `Server error (${response.status}) on attempt ${attempt + 1}/${maxRetries + 1}`,
+        response.status,
+        response.statusText,
+        correlationId,
+        attempt + 1
+      ),
+      {
+        url: String(url),
+        attempt: attempt + 1,
+        maxRetries: maxRetries + 1,
+        delay,
+        correlationId,
+      }
+    );
+
+    await new Promise((resolve) => setTimeout(resolve, delay));
+  }
+}
+
+async function handleTimeoutError(
+  error: Error,
+  attempt: number,
+  maxRetries: number,
+  timeout: number,
+  retryOnNetworkError: boolean,
+  retryDelay: number,
+  correlationId: string,
+  url: string | URL
+): Promise<void> {
+  if (attempt < maxRetries && retryOnNetworkError) {
+    const delay = calculateBackoffDelay(attempt, retryDelay);
+
+    logError(
+      new FetchTimeoutError(
+        `Request timeout after ${timeout}ms on attempt ${attempt + 1}/${maxRetries + 1}`,
+        timeout,
+        correlationId
+      ),
+      {
+        url: String(url),
+        attempt: attempt + 1,
+        maxRetries: maxRetries + 1,
+        delay,
+        correlationId,
+      }
+    );
+
+    await new Promise((resolve) => setTimeout(resolve, delay));
+  } else {
+    throw new FetchTimeoutError(
+      `Request timeout after ${timeout}ms (${maxRetries + 1} attempts)`,
+      timeout,
+      correlationId
+    );
+  }
+}
+
+async function handleNetworkError(
+  error: Error,
+  attempt: number,
+  maxRetries: number,
+  retryOnNetworkError: boolean,
+  retryDelay: number,
+  correlationId: string,
+  url: string | URL
+): Promise<void> {
+  if (attempt < maxRetries && retryOnNetworkError) {
+    const delay = calculateBackoffDelay(attempt, retryDelay);
+
+    logError(
+      new FetchNetworkError(
+        `Network error on attempt ${attempt + 1}/${maxRetries + 1}: ${error.message}`,
+        error,
+        correlationId
+      ),
+      {
+        url: String(url),
+        attempt: attempt + 1,
+        maxRetries: maxRetries + 1,
+        delay,
+        correlationId,
+      }
+    );
+
+    await new Promise((resolve) => setTimeout(resolve, delay));
+  } else {
+    throw new FetchNetworkError(
+      `Network error after ${maxRetries + 1} attempts: ${error.message}`,
+      error,
+      correlationId
+    );
+  }
+}
+
+function isNetworkError(error: unknown): boolean {
+  if (error instanceof TypeError) {
+    return true;
+  }
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    return (
+      message.includes("fetch") ||
+      message.includes("network") ||
+      message.includes("econnrefused") ||
+      message.includes("enotfound")
+    );
+  }
+  return false;
+}
+
 /**
  * Hardened fetch with timeout, retries, and structured error handling
  *
@@ -202,7 +404,7 @@ function shouldRetryResponse(
  */
 export async function fetchWithRetry(
   url: string | URL,
-  options: FetchRetryOptions = {},
+  options: FetchRetryOptions = {}
 ): Promise<Response> {
   const {
     timeout = DEFAULT_OPTIONS.timeout,
@@ -220,30 +422,18 @@ export async function fetchWithRetry(
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      // Create timeout controller for this attempt
-      const timeoutController = createTimeoutController(timeout);
-
-      // Merge abort signals if both are provided
-      const abortController = new AbortController();
-      if (fetchOptions.signal) {
-        // If original signal aborts, abort our controller
-        fetchOptions.signal.addEventListener("abort", () => {
-          abortController.abort();
-        });
-      }
-      timeoutController.signal.addEventListener("abort", () => {
-        abortController.abort();
-      });
+      // Create abort controller with timeout
+      const abortController = createAbortControllerWithTimeout(
+        timeout,
+        fetchOptions.signal ?? undefined
+      );
 
       // Make the fetch request
-      const response = await fetch(url, {
-        ...fetchOptions,
-        signal: abortController.signal,
-        headers: {
-          ...fetchOptions.headers,
-          "X-Correlation-Id": correlationId,
-        },
-      });
+      const response = await makeFetchRequest(
+        url,
+        { ...fetchOptions, signal: abortController.signal },
+        correlationId
+      );
 
       // Check if we should retry
       if (
@@ -252,74 +442,35 @@ export async function fetchWithRetry(
           attempt,
           maxRetries,
           retryOn5xx,
-          customShouldRetry,
+          customShouldRetry
         )
       ) {
         lastResponse = response;
 
         // Handle rate limiting
         if (response.status === 429) {
-          const retryAfter = response.headers.get("Retry-After");
-          const retryAfterSeconds = retryAfter
-            ? parseInt(retryAfter, 10)
-            : undefined;
-
-          if (attempt < maxRetries) {
-            const delay = retryAfterSeconds
-              ? retryAfterSeconds * 1000
-              : calculateBackoffDelay(attempt, retryDelay);
-
-            logError(
-              new FetchRateLimitError(
-                `Rate limited (429) on attempt ${attempt + 1}/${maxRetries + 1}`,
-                retryAfterSeconds,
-                correlationId,
-              ),
-              {
-                url: String(url),
-                attempt: attempt + 1,
-                maxRetries: maxRetries + 1,
-                delay,
-                correlationId,
-              },
-            );
-
-            await new Promise((resolve) => setTimeout(resolve, delay));
-            continue;
-          } else {
-            throw new FetchRateLimitError(
-              `Rate limited after ${maxRetries + 1} attempts`,
-              retryAfterSeconds,
-              correlationId,
-            );
-          }
+          await handleRateLimitRetry(
+            response,
+            attempt,
+            maxRetries,
+            retryDelay,
+            correlationId,
+            url
+          );
+          continue;
         }
 
         // Retry on 5xx errors
         if (response.status >= 500 && response.status < 600) {
-          if (attempt < maxRetries) {
-            const delay = calculateBackoffDelay(attempt, retryDelay);
-
-            logError(
-              new FetchError(
-                `Server error (${response.status}) on attempt ${attempt + 1}/${maxRetries + 1}`,
-                response.status,
-                response.statusText,
-                correlationId,
-                attempt + 1,
-              ),
-              {
-                url: String(url),
-                attempt: attempt + 1,
-                maxRetries: maxRetries + 1,
-                delay,
-                correlationId,
-              },
-            );
-
-            await new Promise((resolve) => setTimeout(resolve, delay));
-            continue;
-          }
+          await handle5xxRetry(
+            response,
+            attempt,
+            maxRetries,
+            retryDelay,
+            correlationId,
+            url
+          );
+          continue;
         }
       }
 
@@ -330,71 +481,31 @@ export async function fetchWithRetry(
 
       // Handle AbortError (timeout)
       if (error instanceof Error && error.name === "AbortError") {
-        if (attempt < maxRetries && retryOnNetworkError) {
-          const delay = calculateBackoffDelay(attempt, retryDelay);
-
-          logError(
-            new FetchTimeoutError(
-              `Request timeout after ${timeout}ms on attempt ${attempt + 1}/${maxRetries + 1}`,
-              timeout,
-              correlationId,
-            ),
-            {
-              url: String(url),
-              attempt: attempt + 1,
-              maxRetries: maxRetries + 1,
-              delay,
-              correlationId,
-            },
-          );
-
-          await new Promise((resolve) => setTimeout(resolve, delay));
-          continue;
-        } else {
-          throw new FetchTimeoutError(
-            `Request timeout after ${timeout}ms (${maxRetries + 1} attempts)`,
-            timeout,
-            correlationId,
-          );
-        }
+        await handleTimeoutError(
+          error,
+          attempt,
+          maxRetries,
+          timeout,
+          retryOnNetworkError,
+          retryDelay,
+          correlationId,
+          url
+        );
+        continue;
       }
 
       // Handle network errors
-      if (
-        error instanceof TypeError ||
-        (error instanceof Error &&
-          (error.message.includes("fetch") ||
-            error.message.includes("network") ||
-            error.message.includes("ECONNREFUSED") ||
-            error.message.includes("ENOTFOUND")))
-      ) {
-        if (attempt < maxRetries && retryOnNetworkError) {
-          const delay = calculateBackoffDelay(attempt, retryDelay);
-
-          logError(
-            new FetchNetworkError(
-              `Network error on attempt ${attempt + 1}/${maxRetries + 1}: ${error.message}`,
-              error,
-              correlationId,
-            ),
-            {
-              url: String(url),
-              attempt: attempt + 1,
-              maxRetries: maxRetries + 1,
-              delay,
-              correlationId,
-            },
-          );
-
-          await new Promise((resolve) => setTimeout(resolve, delay));
-          continue;
-        } else {
-          throw new FetchNetworkError(
-            `Network error after ${maxRetries + 1} attempts: ${error.message}`,
-            error,
-            correlationId,
-          );
-        }
+      if (isNetworkError(error)) {
+        await handleNetworkError(
+          error instanceof Error ? error : new Error(String(error)),
+          attempt,
+          maxRetries,
+          retryOnNetworkError,
+          retryDelay,
+          correlationId,
+          url
+        );
+        continue;
       }
 
       // Re-throw unknown errors
@@ -409,7 +520,7 @@ export async function fetchWithRetry(
       lastResponse.status,
       lastResponse.statusText,
       correlationId,
-      maxRetries + 1,
+      maxRetries + 1
     );
   }
 
@@ -417,7 +528,7 @@ export async function fetchWithRetry(
     throw new FetchNetworkError(
       `Request failed after ${maxRetries + 1} attempts: ${lastError.message}`,
       lastError,
-      correlationId,
+      correlationId
     );
   }
 
@@ -426,7 +537,7 @@ export async function fetchWithRetry(
     undefined,
     undefined,
     correlationId,
-    maxRetries + 1,
+    maxRetries + 1
   );
 }
 
@@ -435,7 +546,7 @@ export async function fetchWithRetry(
  */
 export async function fetchJsonWithRetry<T = unknown>(
   url: string | URL,
-  options: FetchRetryOptions = {},
+  options: FetchRetryOptions = {}
 ): Promise<T> {
   const response = await fetchWithRetry(url, {
     ...options,
@@ -450,7 +561,7 @@ export async function fetchJsonWithRetry<T = unknown>(
       `JSON request failed with status ${response.status}`,
       response.status,
       response.statusText,
-      options.correlationId,
+      options.correlationId
     );
   }
 

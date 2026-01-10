@@ -69,9 +69,7 @@ throw new AuthenticationError("Please log in to continue");
 **Example:**
 
 ```typescript
-throw new AuthorizationError(
-  "You don't have permission to access this resource",
-);
+throw new AuthorizationError("You don't have permission to access this resource");
 ```
 
 ### NotFoundError
@@ -407,13 +405,11 @@ const errorMessage = handleApiError(response);
 ### Error Messages
 
 1. **User-friendly:**
-
    - Clear and understandable
    - Actionable when possible
    - Avoid technical jargon
 
 2. **Contextual:**
-
    - Include relevant details
    - Show what went wrong
    - Suggest solutions
@@ -426,13 +422,11 @@ const errorMessage = handleApiError(response);
 ### Error Handling
 
 1. **Catch early:**
-
    - Validate input early
    - Check permissions first
    - Handle errors at boundaries
 
 2. **Log appropriately:**
-
    - Log all errors
    - Include context
    - Sanitize sensitive data
@@ -453,5 +447,3 @@ const errorMessage = handleApiError(response);
 ---
 
 **Next:** [Plan Features Reference](./plan-features.md) → Subscription plan details
-
-

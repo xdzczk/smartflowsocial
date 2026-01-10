@@ -228,7 +228,7 @@ Set CSP headers to prevent XSS:
 app.use((req, res, next) => {
   res.setHeader(
     "Content-Security-Policy",
-    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';",
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
   );
   next();
 });
@@ -377,10 +377,7 @@ app.use((req, res, next) => {
   res.setHeader("X-XSS-Protection", "1; mode=block");
 
   // HSTS
-  res.setHeader(
-    "Strict-Transport-Security",
-    "max-age=31536000; includeSubDomains; preload",
-  );
+  res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
 
   // Referrer policy
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
@@ -388,7 +385,7 @@ app.use((req, res, next) => {
   // Content Security Policy
   res.setHeader(
     "Content-Security-Policy",
-    "default-src 'self'; script-src 'self' 'unsafe-inline';",
+    "default-src 'self'; script-src 'self' 'unsafe-inline';"
   );
 
   next();
@@ -565,4 +562,5 @@ If you discover a security vulnerability:
 
 ## Security Contact
 
-For security-related questions or to report vulnerabilities, contact the project maintainers through the appropriate channels.
+For security-related questions or to report vulnerabilities, contact the project maintainers through
+the appropriate channels.

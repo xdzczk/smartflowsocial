@@ -4,7 +4,8 @@
 **Difficulty:** Beginner  
 **Last updated:** 2026-01-02
 
-Learn how to track and manage engagement with your Nostr posts, including replies, mentions, and interactions.
+Learn how to track and manage engagement with your Nostr posts, including replies, mentions, and
+interactions.
 
 ---
 
@@ -35,15 +36,18 @@ The Engagement Feed helps you track and respond to interactions with your posts 
 
 ## Searching for Events
 
-SmartFlowSocial's search feature allows you to find Nostr events, view engagement statistics, and schedule quote posts or reposts.
+SmartFlowSocial's search feature allows you to find Nostr events, view engagement statistics, and
+schedule quote posts or reposts.
 
 ### Supported Formats
 
 **Event ID:**
+
 - 64-character hex string
 - Example: `abc123...def456`
 
 **nevent1:**
+
 - Nostr event identifier (NIP-19)
 - Example: `nevent1abc123...`
 
@@ -96,23 +100,28 @@ SmartFlowSocial's search feature allows you to find Nostr events, view engagemen
 When viewing search results or your own posts, you can see:
 
 **Likes:**
+
 - Number of likes (kind 7, 9735, 9734)
 - Positive engagement indicator
 
 **Replies:**
+
 - Number of replies (kind 1)
 - Conversation engagement
 
 **Reposts:**
+
 - Number of reposts (kind 6)
 - Sharing engagement
 
 **Zaps:**
+
 - Number of zaps (kind 9735)
 - Lightning payments received
 - Total sats zapped
 
 **Mentions:**
+
 - Number of mentions
 - References to event
 
@@ -312,12 +321,10 @@ When viewing search results or your own posts, you can see:
 ### Responding to Replies
 
 1. **View the reply:**
-
    - Click on the engagement item
    - See full context and thread
 
 2. **Write your response:**
-
    - Click **"Reply"**
    - Write your message
    - Include relevant hashtags
@@ -329,12 +336,10 @@ When viewing search results or your own posts, you can see:
 ### Engaging with Mentions
 
 1. **Review the mention:**
-
    - Check the context
    - Understand why you were mentioned
 
 2. **Decide on response:**
-
    - Reply if relevant
    - Acknowledge if appropriate
    - Ignore if not relevant
@@ -384,13 +389,11 @@ When viewing search results or your own posts, you can see:
 ### Responding to Engagement
 
 1. **Be timely:**
-
    - Respond within 24-48 hours
    - Use scheduling for planned responses
    - Set aside time for engagement
 
 2. **Be authentic:**
-
    - Write genuine responses
    - Add value to conversations
    - Be helpful and friendly
@@ -403,13 +406,11 @@ When viewing search results or your own posts, you can see:
 ### Building Engagement
 
 1. **Ask questions:**
-
    - Encourage replies
    - Start conversations
    - Engage with your audience
 
 2. **Respond to comments:**
-
    - Acknowledge replies
    - Answer questions
    - Thank supporters
@@ -429,5 +430,3 @@ When viewing search results or your own posts, you can see:
 ---
 
 **Next:** [Posting Guide](./posting.md) → Learn about templates and advanced posting
-
-

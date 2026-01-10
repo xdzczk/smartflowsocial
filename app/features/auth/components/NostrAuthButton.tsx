@@ -5,6 +5,123 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { handleAsyncError } from "~/lib/error-handler.client";
 import { useOptionalUser } from "~/lib/remix-utils";
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+function getUserProfilePicture(user: unknown): string | undefined {
+  if (
+    typeof user === "object" &&
+    user !== null &&
+    "nostrProfile" in user &&
+    typeof user.nostrProfile === "object" &&
+    user.nostrProfile !== null &&
+    "picture" in user.nostrProfile
+  ) {
+    return String(user.nostrProfile["picture"]);
+  }
+  return undefined;
+}
+
+function getUserDisplayName(user: unknown): string {
+  if (
+    typeof user === "object" &&
+    user !== null &&
+    "nostrProfile" in user &&
+    typeof user.nostrProfile === "object" &&
+    user.nostrProfile !== null
+  ) {
+    if ("name" in user.nostrProfile && user.nostrProfile["name"]) {
+      return String(user.nostrProfile["name"]);
+    }
+    if (
+      "display_name" in user.nostrProfile &&
+      user.nostrProfile["display_name"]
+    ) {
+      return String(user.nostrProfile["display_name"]);
+    }
+  }
+
+  if (
+    typeof user === "object" &&
+    user !== null &&
+    "npub" in user &&
+    user.npub
+  ) {
+    const npub = String(user.npub);
+    return `${npub.slice(0, 12)}...${npub.slice(-8)}`;
+  }
+
+  return "";
+}
+
+function getUserAvatarFallback(user: unknown): string {
+  if (
+    typeof user === "object" &&
+    user !== null &&
+    "nostrProfile" in user &&
+    typeof user.nostrProfile === "object" &&
+    user.nostrProfile !== null
+  ) {
+    if ("name" in user.nostrProfile && user.nostrProfile["name"]) {
+      return String(user.nostrProfile["name"])[0] ?? "U";
+    }
+    if (
+      "display_name" in user.nostrProfile &&
+      user.nostrProfile["display_name"]
+    ) {
+      return String(user.nostrProfile["display_name"])[0] ?? "U";
+    }
+  }
+  return "U";
+}
+
+function generateRandomKeys(): string {
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  for (let i = 0; i < 10; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+async function handleNostrAuth(fetcher: {
+  submit: (
+    formData: FormData,
+    options: { method: string; action: string }
+  ) => void;
+}): Promise<void> {
+  // @ts-ignore - window.nostr is injected by browser extensions at runtime
+  if (!window.nostr) {
+    throw new Error(
+      "Nostr extension not found. Please install a Nostr extension like Alby or nos2x."
+    );
+  }
+
+  const contentSign = `Login request ${generateRandomKeys()}`;
+  const event = {
+    kind: 27235,
+    created_at: Math.floor(Date.now() / 1000),
+    tags: [],
+    content: contentSign,
+  };
+
+  // @ts-ignore - window.nostr is injected by browser extensions at runtime
+  const signedEvent = await window.nostr.signEvent(event);
+
+  const formData = new FormData();
+  formData.append("pubkey", signedEvent.pubkey);
+  formData.append("signature", signedEvent.sig);
+  formData.append("event", JSON.stringify(signedEvent));
+  formData.append("contentSign", contentSign);
+
+  fetcher.submit(formData, {
+    method: "post",
+    action: "/nostr-auth",
+  });
+}
+
 export default function NostrAuthButton() {
   const user = useOptionalUser() ?? null;
   const fetcher = useFetcher();
@@ -23,45 +140,16 @@ export default function NostrAuthButton() {
           onAuth: () => {
             void (async () => {
               try {
-                // @ts-ignore - window.nostr is injected by browser extensions at runtime
-                if (!window.nostr) {
-                  throw new Error(
-                    "Nostr extension not found. Please install a Nostr extension like Alby or nos2x."
-                  );
-                }
-
-                const randomKeys = () => {
-                  const chars =
-                    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-                  let result = "";
-                  for (let i = 0; i < 10; i++) {
-                    result += chars.charAt(
-                      Math.floor(Math.random() * chars.length)
-                    );
-                  }
-                  return result;
-                };
-                const contentSign = `Login request ${randomKeys()}`;
-                const event = {
-                  kind: 27235,
-                  created_at: Math.floor(Date.now() / 1000),
-                  tags: [],
-                  content: contentSign,
-                };
-
-                // @ts-ignore - window.nostr is injected by browser extensions at runtime
-                const signedEvent = await window.nostr.signEvent(event);
-
-                const formData = new FormData();
-                formData.append("pubkey", signedEvent.pubkey);
-                formData.append("signature", signedEvent.sig);
-                formData.append("event", JSON.stringify(signedEvent));
-                formData.append("contentSign", contentSign);
-
-                // Submit auth request
-                fetcher.submit(formData, {
-                  method: "post",
-                  action: "/nostr-auth",
+                await handleNostrAuth({
+                  submit: (
+                    formData: FormData,
+                    options: { method: string; action: string }
+                  ) => {
+                    fetcher.submit(formData, {
+                      method: options.method as "post" | "get",
+                      action: options.action,
+                    });
+                  },
                 });
               } catch (authError) {
                 handleAsyncError(
@@ -82,7 +170,6 @@ export default function NostrAuthButton() {
           new CustomEvent("nlLaunch", { detail: "welcome" })
         );
       } catch (error) {
-        // Log and handle error
         handleAsyncError(
           error,
           {
@@ -117,55 +204,10 @@ export default function NostrAuthButton() {
         <>
           <div className="flex items-center gap-3">
             <Avatar>
-              <AvatarImage
-                src={
-                  typeof user === "object" &&
-                  "nostrProfile" in user &&
-                  typeof user.nostrProfile === "object" &&
-                  user.nostrProfile !== null &&
-                  "picture" in user.nostrProfile
-                    ? String(user.nostrProfile["picture"])
-                    : undefined
-                }
-                alt="Profile"
-              />
-              <AvatarFallback>
-                {typeof user === "object" &&
-                "nostrProfile" in user &&
-                typeof user.nostrProfile === "object" &&
-                user.nostrProfile !== null
-                  ? (("name" in user.nostrProfile && user.nostrProfile["name"]
-                      ? String(user.nostrProfile["name"])[0]
-                      : null) ??
-                    ("display_name" in user.nostrProfile &&
-                    user.nostrProfile["display_name"]
-                      ? String(user.nostrProfile["display_name"])[0]
-                      : null) ??
-                    "U")
-                  : "U"}
-              </AvatarFallback>
+              <AvatarImage src={getUserProfilePicture(user)} alt="Profile" />
+              <AvatarFallback>{getUserAvatarFallback(user)}</AvatarFallback>
             </Avatar>
-            <span className="hidden sm:inline">
-              {typeof user === "object" &&
-              "nostrProfile" in user &&
-              typeof user.nostrProfile === "object" &&
-              user.nostrProfile !== null
-                ? (("name" in user.nostrProfile && user.nostrProfile["name"]
-                    ? String(user.nostrProfile["name"])
-                    : null) ??
-                  ("display_name" in user.nostrProfile &&
-                  user.nostrProfile["display_name"]
-                    ? String(user.nostrProfile["display_name"])
-                    : null) ??
-                  ("npub" in user && user.npub
-                    ? `${String(user.npub).slice(0, 12)}...${String(user.npub).slice(-8)}`
-                    : ""))
-                : typeof user === "object" &&
-                    "npub" in user &&
-                    user.npub
-                  ? `${String(user.npub).slice(0, 12)}...${String(user.npub).slice(-8)}`
-                  : ""}
-            </span>
+            <span className="hidden sm:inline">{getUserDisplayName(user)}</span>
             {location.pathname === "/" ? (
               <Button variant="outline" size="sm" asChild>
                 <Link to="/dashboard">Dashboard</Link>

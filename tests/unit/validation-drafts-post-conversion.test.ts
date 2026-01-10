@@ -29,10 +29,7 @@ describe("Drafts Post Conversion", () => {
 
       const originalPosts: PostData[] = [originalPost];
 
-      const result = convertDraftsPostToPostData(
-        draftsPost,
-        originalPosts,
-      );
+      const result = convertDraftsPostToPostData(draftsPost, originalPosts);
 
       expect(result).toEqual(originalPost);
       expect(result?.id).toBe("post-1");
@@ -53,10 +50,7 @@ describe("Drafts Post Conversion", () => {
         } as unknown as PostData,
       ];
 
-      const result = convertDraftsPostToPostData(
-        draftsPost,
-        originalPosts,
-      );
+      const result = convertDraftsPostToPostData(draftsPost, originalPosts);
 
       expect(result).toBeNull();
     });
@@ -70,10 +64,7 @@ describe("Drafts Post Conversion", () => {
 
       const originalPosts: PostData[] = [];
 
-      const result = convertDraftsPostToPostData(
-        draftsPost,
-        originalPosts,
-      );
+      const result = convertDraftsPostToPostData(draftsPost, originalPosts);
 
       expect(result).toBeNull();
     });
@@ -91,10 +82,7 @@ describe("Drafts Post Conversion", () => {
         { id: "post-3", caption: "Post 3" } as unknown as PostData,
       ];
 
-      const result = convertDraftsPostToPostData(
-        draftsPost,
-        originalPosts,
-      );
+      const result = convertDraftsPostToPostData(draftsPost, originalPosts);
 
       expect(result).not.toBeNull();
       expect(result?.id).toBe("post-2");
@@ -124,7 +112,7 @@ describe("Drafts Post Conversion", () => {
 
       const result = convertDraftsPostsToPostDataArray(
         draftsPosts,
-        originalPosts,
+        originalPosts
       );
 
       expect(result).toHaveLength(2);
@@ -159,7 +147,7 @@ describe("Drafts Post Conversion", () => {
 
       const result = convertDraftsPostsToPostDataArray(
         draftsPosts,
-        originalPosts,
+        originalPosts
       );
 
       expect(result).toHaveLength(2);
@@ -182,7 +170,7 @@ describe("Drafts Post Conversion", () => {
 
       const result = convertDraftsPostsToPostDataArray(
         draftsPosts,
-        originalPosts,
+        originalPosts
       );
 
       expect(result).toHaveLength(0);
@@ -196,7 +184,7 @@ describe("Drafts Post Conversion", () => {
 
       const result = convertDraftsPostsToPostDataArray(
         draftsPosts,
-        originalPosts,
+        originalPosts
       );
 
       expect(result).toHaveLength(0);
@@ -215,11 +203,10 @@ describe("Drafts Post Conversion", () => {
 
       const result = convertDraftsPostsToPostDataArray(
         draftsPosts,
-        originalPosts,
+        originalPosts
       );
 
       expect(result).toHaveLength(0);
     });
   });
 });
-

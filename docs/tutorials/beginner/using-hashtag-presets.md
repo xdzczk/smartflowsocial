@@ -4,7 +4,8 @@
 **Difficulty:** Beginner  
 **Last updated:** 2026-01-02
 
-Learn how to create and use hashtag presets to streamline your posting workflow and maintain consistent tagging.
+Learn how to create and use hashtag presets to streamline your posting workflow and maintain
+consistent tagging.
 
 ---
 
@@ -55,13 +56,11 @@ Learn how to create and use hashtag presets to streamline your posting workflow 
 **Fill in preset details:**
 
 1. **Name:**
-
    - Enter descriptive name
    - Example: "Bitcoin Content"
    - This appears in dropdowns
 
 2. **Tags:**
-
    - Enter hashtags (space or comma separated)
    - Example: `#bitcoin #lightning #nostr #plebchain`
    - Or: `bitcoin, lightning, nostr, plebchain`
@@ -85,7 +84,6 @@ Description: For Bitcoin-related content
 ## Step 4: Save Preset
 
 1. **Review settings:**
-
    - Check name is clear
    - Verify tags are correct
    - Ensure description is helpful
@@ -237,14 +235,12 @@ Description: For Bitcoin-related content
 **For different content types:**
 
 1. **Create preset for each type:**
-
    - Bitcoin News
    - Lightning Updates
    - Nostr Tips
    - Memes
 
 2. **Assign to different queues:**
-
    - News queue → Bitcoin News preset
    - Updates queue → Lightning Updates preset
 
@@ -326,5 +322,3 @@ Description: For Bitcoin-related content
 ---
 
 **Next Tutorial:** [Using the Calendar View](./using-calendar-view.md) → Visual scheduling
-
-

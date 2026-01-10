@@ -18,12 +18,12 @@ import {
 export async function handleStorageSettingsAction(
   userId: string,
   action: string,
-  formData: FormData,
+  formData: FormData
 ) {
   if (action === "update_upload_provider") {
     const result = validateFormDataOrRespond(
       formData,
-      updateUploadProviderSchema,
+      updateUploadProviderSchema
     );
     if (!result.success) {
       return result.response;
@@ -35,16 +35,18 @@ export async function handleStorageSettingsAction(
   if (action === "update_blossom_mirrors") {
     const result = validateFormDataOrRespond(
       formData,
-      updateBlossomMirrorsSchema,
+      updateBlossomMirrorsSchema
     );
     if (!result.success) {
       return result.response;
     }
-    await updateUserEnableMirrorBlossom(userId, result.data.enableMirrorBlossom);
+    await updateUserEnableMirrorBlossom(
+      userId,
+      result.data.enableMirrorBlossom
+    );
     await updateUserMirrorUploadUrls(userId, result.data.mirrorUrls);
     return json({ success: true });
   }
 
   return null;
 }
-

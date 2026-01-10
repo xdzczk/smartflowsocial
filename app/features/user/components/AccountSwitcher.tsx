@@ -76,7 +76,7 @@ export default function AccountSwitcher() {
               const signedEvent = await window.nostr.signEvent(event);
               if (signedEvent.pubkey !== childNpub) {
                 alert(
-                  "Please sign with the selected child's keys in your Nostr extension.",
+                  "Please sign with the selected child's keys in your Nostr extension."
                 );
                 return;
               }
@@ -103,7 +103,7 @@ export default function AccountSwitcher() {
         require("~/lib/error-handler.client") as unknown as {
           handleErrorSafely: (
             error: unknown,
-            context: { component: string; action: string },
+            context: { component: string; action: string }
           ) => void;
         };
       handleErrorSafely(e, {

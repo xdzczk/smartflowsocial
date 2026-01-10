@@ -57,4 +57,3 @@ export function extractLongFormPostData(
 ): LongFormPostData | null {
   return isLongFormPostData(content.originalData) ? content.originalData : null;
 }
-

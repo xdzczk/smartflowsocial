@@ -9,7 +9,8 @@
 
 ### Critical Errors (14 → 0) ✅
 
-1. **Fixed `no-constant-binary-expression` error** in `app/features/settings/actions/accounts-actions.server.ts`
+1. **Fixed `no-constant-binary-expression` error** in
+   `app/features/settings/actions/accounts-actions.server.ts`
    - Changed `if (!me?.npub ?? me.isChild)` to `if (!me?.npub || me.isChild)`
    - The `??` operator was incorrectly used with boolean logic
 
@@ -17,7 +18,8 @@
    - Added proper eslint-disable comments for Zod schema type constraints
    - These `any` types are necessary for Zod's generic type system
 
-3. **Fixed `@typescript-eslint/consistent-type-imports` error** in `tests/integration/queue-workers.test.ts`
+3. **Fixed `@typescript-eslint/consistent-type-imports` error** in
+   `tests/integration/queue-workers.test.ts`
    - Changed inline `import()` type annotation to a separate type alias
    - This satisfies the consistent-type-imports rule while maintaining type safety
 
@@ -67,29 +69,32 @@
 ### Phase 1: Quick Wins (High Impact, Low Risk)
 
 1. **Fix unnecessary nullish coalescing** - Start with validation files
+
    ```typescript
    // Before
    return post.caption ?? undefined;
-   
+
    // After
    return post.caption;
    ```
 
 2. **Fix unnecessary optional chaining** - When value is guaranteed non-nullish
+
    ```typescript
    // Before
    const value = obj?.property;
-   
+
    // After
    const value = obj.property;
    ```
 
 3. **Extract duplicate string literals** - Create constants
+
    ```typescript
    // Before
    if (action === "update") { ... }
    if (action === "update") { ... }
-   
+
    // After
    const ACTION_UPDATE = "update";
    if (action === ACTION_UPDATE) { ... }
@@ -111,6 +116,7 @@
 ## Tools and Commands
 
 ### Analyze Warnings
+
 ```bash
 # Get warning summary
 node scripts/fix-eslint-warnings.js
@@ -123,6 +129,7 @@ pnpm lint app/lib 2>&1 | grep "warning"
 ```
 
 ### Fix Warnings
+
 ```bash
 # Auto-fix what's possible
 pnpm lint:fix
@@ -164,4 +171,3 @@ pnpm lint 2>&1 | tail -3
 - Some warnings (like cognitive complexity) require significant refactoring
 - Consider temporarily disabling specific rules for legacy code if needed
 - The goal is incremental improvement, not perfection
-

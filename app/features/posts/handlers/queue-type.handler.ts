@@ -11,6 +11,143 @@ import { isIntervalScheduleConfig, isFixedSlotsScheduleConfig } from "../types";
 
 import { updateDisplayedHashtags } from "./hashtag.handler";
 
+// ============================================================================
+// Helper Functions for Schedule Calculation
+// ============================================================================
+
+function formatDateToDateTimeLocal(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+function getIntervalHours(
+  config: unknown,
+  user: BulkPostsHandlerDeps["user"]
+): number {
+  if (!config || !isIntervalScheduleConfig(config)) {
+    return 4;
+  }
+  if (config.useGlobalInterval) {
+    return user?.scheduleInterval?.[0] ?? 4;
+  }
+  return config.intervalHours ?? 4;
+}
+
+function calculateIntervalScheduleTime(
+  baseDate: Date,
+  index: number,
+  config: unknown,
+  user: BulkPostsHandlerDeps["user"]
+): string {
+  const intervalHours = getIntervalHours(config, user);
+  const newDate = new Date(baseDate);
+  newDate.setHours(newDate.getHours() + index * intervalHours);
+  return formatDateToDateTimeLocal(newDate);
+}
+
+interface SlotInfo {
+  slot: string;
+  hours: number;
+  minutes: number;
+  totalMinutes: number;
+}
+
+function parseAndSortSlots(slots: string[]): SlotInfo[] {
+  return slots
+    .map((slot) => {
+      const parts = slot.split(":");
+      const hours = parts[0] ? Number(parts[0]) : 0;
+      const minutes = parts[1] ? Number(parts[1]) : 0;
+      return {
+        slot,
+        hours,
+        minutes,
+        totalMinutes: hours * 60 + minutes,
+      };
+    })
+    .sort((a, b) => a.totalMinutes - b.totalMinutes);
+}
+
+function findCurrentSlotIndex(sortedSlots: SlotInfo[], baseDate: Date): number {
+  const baseHours = baseDate.getHours();
+  const baseMinutes = baseDate.getMinutes();
+  const baseTotalMinutes = baseHours * 60 + baseMinutes;
+
+  for (let i = 0; i < sortedSlots.length; i++) {
+    const slot = sortedSlots[i];
+    if (slot && slot.totalMinutes >= baseTotalMinutes) {
+      return i;
+    }
+  }
+  return 0;
+}
+
+function calculateFixedSlotsScheduleTime(
+  baseDate: Date,
+  index: number,
+  config: unknown,
+  fallbackTime: string
+): string {
+  if (!config || !isFixedSlotsScheduleConfig(config)) {
+    return fallbackTime;
+  }
+
+  const slots = config.slots ?? []; // eslint-disable-line @typescript-eslint/no-unnecessary-condition -- config.slots can be undefined
+  if (slots.length === 0) {
+    return fallbackTime;
+  }
+
+  const sortedSlots = parseAndSortSlots(slots);
+  const currentSlotIndex = findCurrentSlotIndex(sortedSlots, baseDate);
+  const targetSlotIndex = (currentSlotIndex + index) % sortedSlots.length;
+  const targetSlot = sortedSlots[targetSlotIndex];
+
+  if (!targetSlot) {
+    return fallbackTime;
+  }
+
+  const daysToAdd = Math.floor((currentSlotIndex + index) / sortedSlots.length);
+  const newDate = new Date(baseDate);
+  newDate.setHours(targetSlot.hours, targetSlot.minutes, 0, 0);
+  newDate.setDate(newDate.getDate() + daysToAdd);
+
+  return formatDateToDateTimeLocal(newDate);
+}
+
+function calculateScheduleTime(
+  baseTime: string,
+  index: number,
+  queueTypeConfig: { scheduleType: string; scheduleConfig: unknown },
+  user: BulkPostsHandlerDeps["user"],
+  fallbackTime: string
+): string {
+  const baseDate = new Date(baseTime);
+
+  if (queueTypeConfig.scheduleType === "INTERVAL") {
+    return calculateIntervalScheduleTime(
+      baseDate,
+      index,
+      queueTypeConfig.scheduleConfig,
+      user
+    );
+  }
+
+  if (queueTypeConfig.scheduleType === "FIXED_SLOTS") {
+    return calculateFixedSlotsScheduleTime(
+      baseDate,
+      index,
+      queueTypeConfig.scheduleConfig,
+      fallbackTime
+    );
+  }
+
+  return "";
+}
+
 /**
  * Handle queue type change for a single post
  */
@@ -204,105 +341,29 @@ export async function handleBulkQueueUpdate(
   const updatedPosts = posts.map((post, index) => {
     let scheduledFor = post.scheduledFor;
 
-    // Auto-calculate schedule time if not unassigned
-    if (queueType !== "unassigned" && baseTime && queueTypeConfig) {
-      // Calculate each post's time based on the base time + offsets
-      const baseDate = new Date(baseTime);
-      let calculatedTime = "";
-
-      if (queueTypeConfig.scheduleType === "INTERVAL") {
-        const config = queueTypeConfig.scheduleConfig;
-        let intervalHours = 4; // default
-
-        if (config && isIntervalScheduleConfig(config)) {
-          if (config.useGlobalInterval) {
-            intervalHours = user?.scheduleInterval?.[0] ?? 4;
-          } else {
-            intervalHours = config.intervalHours ?? 4;
-          }
-        }
-
-        // Add interval * index to base time
-        const newDate = new Date(baseDate);
-        newDate.setHours(newDate.getHours() + index * intervalHours);
-
-        // Format back to datetime-local format
-        const year = newDate.getFullYear();
-        const month = String(newDate.getMonth() + 1).padStart(2, "0");
-        const day = String(newDate.getDate()).padStart(2, "0");
-        const hours = String(newDate.getHours()).padStart(2, "0");
-        const minutes = String(newDate.getMinutes()).padStart(2, "0");
-
-        calculatedTime = `${year}-${month}-${day}T${hours}:${minutes}`;
-      } else if (queueTypeConfig.scheduleType === "FIXED_SLOTS") {
-        const config = queueTypeConfig.scheduleConfig;
-        const slots =
-          config && isFixedSlotsScheduleConfig(config) ? config.slots : [];
-
-        if (slots.length > 0) {
-          // Sort slots to ensure consistent ordering
-          const sortedSlots = slots
-            .map((slot) => {
-              const parts = slot.split(":");
-              const hours = parts[0] ? Number(parts[0]) : 0;
-              const minutes = parts[1] ? Number(parts[1]) : 0;
-              return {
-                slot,
-                hours,
-                minutes,
-                totalMinutes: hours * 60 + minutes,
-              };
-            })
-            .sort((a, b) => a.totalMinutes - b.totalMinutes);
-
-          // Get the current slot index based on the base time
-          const baseHours = baseDate.getHours();
-          const baseMinutes = baseDate.getMinutes();
-          const baseTotalMinutes = baseHours * 60 + baseMinutes;
-
-          let currentSlotIndex = 0;
-          for (let i = 0; i < sortedSlots.length; i++) {
-            const slot = sortedSlots[i];
-            if (slot && slot.totalMinutes >= baseTotalMinutes) {
-              currentSlotIndex = i;
-              break;
-            }
-          }
-
-          // Calculate which slot this post should use
-          const targetSlotIndex =
-            (currentSlotIndex + index) % sortedSlots.length;
-          const targetSlot = sortedSlots[targetSlotIndex];
-          if (!targetSlot) {
-            calculatedTime = post.scheduledFor;
-          } else {
-            // Calculate how many days to add
-            const daysToAdd = Math.floor(
-              (currentSlotIndex + index) / sortedSlots.length
-            );
-
-            // Set the time to the target slot
-            const newDate = new Date(baseDate);
-            newDate.setHours(targetSlot.hours, targetSlot.minutes, 0, 0);
-            newDate.setDate(newDate.getDate() + daysToAdd);
-
-            // Format back to datetime-local format
-            const year = newDate.getFullYear();
-            const month = String(newDate.getMonth() + 1).padStart(2, "0");
-            const day = String(newDate.getDate()).padStart(2, "0");
-            const hours = String(newDate.getHours()).padStart(2, "0");
-            const minutes = String(newDate.getMinutes()).padStart(2, "0");
-
-            calculatedTime = `${year}-${month}-${day}T${hours}:${minutes}`;
-          }
-        }
-      }
-
+    if (queueType === "unassigned") {
+      scheduledFor = "";
+    } else if (
+      queueType !== "unassigned" &&
+      baseTime &&
+      queueTypeConfig &&
+      typeof queueTypeConfig === "object" &&
+      "scheduleType" in queueTypeConfig &&
+      "scheduleConfig" in queueTypeConfig
+    ) {
+      const calculatedTime = calculateScheduleTime(
+        baseTime,
+        index,
+        {
+          scheduleType: String(queueTypeConfig.scheduleType),
+          scheduleConfig: queueTypeConfig.scheduleConfig,
+        },
+        user,
+        post.scheduledFor
+      );
       if (calculatedTime) {
         scheduledFor = calculatedTime;
       }
-    } else if (queueType === "unassigned") {
-      scheduledFor = "";
     }
 
     return {

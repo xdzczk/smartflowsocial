@@ -19,12 +19,12 @@ import {
 export async function handleHashtagPresetAction(
   userId: string,
   action: string,
-  formData: FormData,
+  formData: FormData
 ) {
   if (action === "create_hashtag_preset") {
     const result = validateFormDataOrRespond(
       formData,
-      createHashtagPresetSchema,
+      createHashtagPresetSchema
     );
     if (!result.success) {
       return result.response;
@@ -33,7 +33,7 @@ export async function handleHashtagPresetAction(
       userId,
       result.data.name,
       result.data.tags,
-      result.data.description,
+      result.data.description
     );
     return json({ success: true });
   }
@@ -41,7 +41,7 @@ export async function handleHashtagPresetAction(
   if (action === "update_hashtag_preset") {
     const result = validateFormDataOrRespond(
       formData,
-      updateHashtagPresetSchema,
+      updateHashtagPresetSchema
     );
     if (!result.success) {
       return result.response;
@@ -51,7 +51,7 @@ export async function handleHashtagPresetAction(
       result.data.id,
       result.data.name,
       result.data.tags,
-      result.data.description,
+      result.data.description
     );
     return json({ success: true });
   }
@@ -59,7 +59,7 @@ export async function handleHashtagPresetAction(
   if (action === "delete_hashtag_preset") {
     const result = validateFormDataOrRespond(
       formData,
-      deleteHashtagPresetSchema,
+      deleteHashtagPresetSchema
     );
     if (!result.success) {
       return result.response;
@@ -70,4 +70,3 @@ export async function handleHashtagPresetAction(
 
   return null;
 }
-

@@ -14,11 +14,7 @@ interface SearchFormProps {
   isSearching: boolean;
 }
 
-export function SearchForm({
-  form,
-  onSubmit,
-  isSearching,
-}: SearchFormProps) {
+export function SearchForm({ form, onSubmit, isSearching }: SearchFormProps) {
   const fetcher = useFetcher();
 
   return (
@@ -32,14 +28,16 @@ export function SearchForm({
             className="block w-full rounded-lg border border-gray-200 px-4 py-3 text-sm leading-6 placeholder-gray-400 focus:border-blue-500 focus:ring focus:ring-blue-500/50 dark:border-gray-700 dark:bg-gray-900 dark:focus:border-blue-500"
             disabled={isSearching}
           />
-          {form.formState.errors.eventInput ? <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+          {form.formState.errors.eventInput ? (
+            <p className="mt-1 text-xs text-red-600 dark:text-red-400">
               {form.formState.errors.eventInput.message}
-            </p> : null}
+            </p>
+          ) : null}
         </div>
         <button
           type="submit"
           disabled={isSearching || !form.formState.isValid}
-          className="inline-flex items-center justify-center gap-2 rounded-lg border border-blue-700 bg-blue-700 px-6 py-3 text-sm font-semibold leading-5 text-white hover:border-blue-600 hover:bg-blue-600 hover:text-white focus:ring focus:ring-blue-400/50 active:border-blue-700 active:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex items-center justify-center gap-2 rounded-lg border border-blue-700 bg-blue-700 px-6 py-3 text-sm leading-5 font-semibold text-white hover:border-blue-600 hover:bg-blue-600 hover:text-white focus:ring focus:ring-blue-400/50 active:border-blue-700 active:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSearching ? (
             <>
@@ -94,4 +92,3 @@ export function SearchForm({
     </div>
   );
 }
-

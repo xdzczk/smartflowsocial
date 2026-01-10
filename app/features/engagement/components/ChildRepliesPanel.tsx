@@ -107,7 +107,7 @@ export function ChildRepliesPanel({
                 {formatDate(new Date(reply.created_at * 1000).toISOString())}
               </span>
             </div>
-            <p className="whitespace-pre-wrap break-words text-xs text-gray-700 dark:text-gray-300">
+            <p className="text-xs break-words whitespace-pre-wrap text-gray-700 dark:text-gray-300">
               {reply.content}
             </p>
           </div>

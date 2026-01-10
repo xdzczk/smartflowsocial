@@ -15,12 +15,14 @@ SmartFlowSocial follows a **layered architecture**:
 3. **Models** (`app/models/*`) - Database access, used internally by features
 
 **✅ DO:** Import from feature public APIs
+
 ```typescript
 import { loadDashboardData } from "~/features/posts";
 import { requireUserId } from "~/features/auth";
 ```
 
 **❌ DON'T:** Import from models or feature internals
+
 ```typescript
 import { createPost } from "~/models/post.commands.server"; // ❌ Bad
 import { getPosts } from "~/features/posts/services/..."; // ❌ Bad
@@ -87,7 +89,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 ### Using Models (Internal Layer)
 
-**Note:** Models are internal to features. Routes should use feature public APIs, not models directly.
+**Note:** Models are internal to features. Routes should use feature public APIs, not models
+directly.
 
 ```typescript
 // app/models/post.commands.server.ts
@@ -132,9 +135,10 @@ export function getScheduledPosts({
     isPosted: false,
     draft: false,
     userId: userId,
-    ...(queueType && queueType !== "all" && {
-      queueType: { name: queueType },
-    }),
+    ...(queueType &&
+      queueType !== "all" && {
+        queueType: { name: queueType },
+      }),
   };
 
   return prisma.post.findMany({
@@ -219,6 +223,7 @@ export async function action({ request }: ActionFunctionArgs) {
 ```
 
 **Note:** In practice, post creation goes through feature action handlers that:
+
 - Validate input
 - Resolve queue types
 - Handle business logic
@@ -240,24 +245,27 @@ export async function schedulePost(
   postId: string,
   userId: string,
   signedEvent: SignedEvent,
-  scheduledAt: Date,
+  scheduledAt: Date
 ) {
   const delay = scheduledAt.getTime() - Date.now();
 
   // Use queue abstraction layer (not BullMQ directly)
-  await enqueuePostJob({
-    postId,
-    userId,
-    signedEvent,
-    scheduledAt: scheduledAt.toISOString(),
-  }, {
-    delay: Math.max(0, delay), // Ensure non-negative
-    attempts: 3,
-    backoff: {
-      type: "exponential",
-      delay: 2000,
+  await enqueuePostJob(
+    {
+      postId,
+      userId,
+      signedEvent,
+      scheduledAt: scheduledAt.toISOString(),
     },
-  });
+    {
+      delay: Math.max(0, delay), // Ensure non-negative
+      attempts: 3,
+      backoff: {
+        type: "exponential",
+        delay: 2000,
+      },
+    }
+  );
 }
 ```
 
@@ -277,17 +285,17 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
   "scheduled-posts",
   async (job) => {
     const { postId, userId, signedEvent } = job.data;
-    
+
     // Publish to Nostr via HTTP Publisher
     await publishPostToNostr(signedEvent);
-    
+
     // Update post status
     await updatePostStatus(postId, { isPosted: true });
   },
   {
     connection: redis,
     concurrency: 5,
-  },
+  }
 );
 
 // Event handlers
@@ -331,7 +339,7 @@ export async function uploadFile(file: File, userId: string) {
       Key: key,
       Body: buffer,
       ContentType: file.type,
-    }),
+    })
   );
 
   const url = `https://${process.env.STORAGE_BUCKET}.s3.${process.env.STORAGE_REGION}.amazonaws.com/${key}`;
@@ -440,7 +448,7 @@ export async function publishPost(postId: string) {
 async function retryWithBackoff<T>(
   fn: () => Promise<T>,
   maxRetries: number = 3,
-  initialDelay: number = 1000,
+  initialDelay: number = 1000
 ): Promise<T> {
   let lastError: Error;
 
@@ -470,7 +478,7 @@ export async function publishPostWithRetry(postId: string) {
       return await publishPost(postId);
     },
     3,
-    1000,
+    1000
   );
 }
 ```
@@ -493,13 +501,11 @@ import pLimit from "p-limit";
 export async function processBatch<T, R>(
   items: T[],
   processor: (item: T) => Promise<R>,
-  concurrency: number = 5,
+  concurrency: number = 5
 ): Promise<R[]> {
   const limit = pLimit(concurrency);
 
-  const results = await Promise.allSettled(
-    items.map((item) => limit(() => processor(item))),
-  );
+  const results = await Promise.allSettled(items.map((item) => limit(() => processor(item))));
 
   const successful: R[] = [];
   const failed: Array<{ item: T; error: Error }> = [];
@@ -510,10 +516,7 @@ export async function processBatch<T, R>(
     } else {
       failed.push({
         item: items[index],
-        error:
-          result.reason instanceof Error
-            ? result.reason
-            : new Error(String(result.reason)),
+        error: result.reason instanceof Error ? result.reason : new Error(String(result.reason)),
       });
     }
   });
@@ -533,7 +536,7 @@ export async function bulkPublishPosts(postIds: string[]) {
     async (postId) => {
       return await publishPost(postId);
     },
-    5, // Process 5 at a time
+    5 // Process 5 at a time
   );
 }
 ```
@@ -559,7 +562,7 @@ import { resolveQueueTypeId } from "./queue-type-resolver.server";
 export async function schedulePostWithQueue(
   postId: string,
   queueTypeName: string,
-  scheduledAt: Date,
+  scheduledAt: Date
 ) {
   // Use transaction to ensure consistency
   return await prisma.$transaction(async (tx) => {
@@ -677,14 +680,11 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
       }
 
       // Publish to Nostr via HTTP Publisher
-      const response = await fetchWithRetry(
-        `${env.NOSTR_PUBLISHER_URL}/publish`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ event: signedEvent }),
-        },
-      );
+      const response = await fetchWithRetry(`${env.NOSTR_PUBLISHER_URL}/publish`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event: signedEvent }),
+      });
 
       if (!response.ok) {
         throw new Error(`Failed to publish: ${response.statusText}`);
@@ -712,7 +712,7 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
       max: 10,
       duration: 1000, // 10 jobs per second
     },
-  },
+  }
 );
 
 // Event handlers
@@ -754,10 +754,7 @@ const PostSchema = z.object({
     .string()
     .min(1, "Content cannot be empty")
     .max(5000, "Content too long")
-    .refine(
-      (val) => val.trim().length > 0,
-      "Content cannot be only whitespace",
-    ),
+    .refine((val) => val.trim().length > 0, "Content cannot be only whitespace"),
   scheduledAt: z.date().optional(),
   queueId: z.string().uuid().optional(),
 });
@@ -777,24 +774,19 @@ export function validatePost(data: unknown) {
 // Sanitize content
 export function sanitizeContent(content: string): string {
   // Remove potentially dangerous HTML
-  return content
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
-    .trim();
+  return content.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "").trim();
 }
 
 // Usage in route - use feature action handler
 export async function action({ request }: ActionFunctionArgs) {
   const userId = await requireUserId(request);
-  
+
   // Feature action handlers handle validation, sanitization, and business logic
   return handleNewPostAction({ request, userId });
 }
 
 // Or if you need custom validation in a feature service:
-export async function createPostWithValidation(
-  userId: string,
-  data: unknown,
-) {
+export async function createPostWithValidation(userId: string, data: unknown) {
   // Validate
   const validated = validatePost(data);
 
@@ -833,21 +825,18 @@ export async function createPostWithValidation(
 ### Do's ✅
 
 1. **Error Handling:**
-
    - Always handle errors
    - Implement retry logic for transient errors
    - Log errors for debugging
    - Provide meaningful error messages
 
 2. **Performance:**
-
    - Use pagination for large datasets
    - Implement caching for frequent queries
    - Batch operations when possible
    - Use transactions for consistency
 
 3. **Security:**
-
    - Validate all input
    - Sanitize user content
    - Use parameterized queries
@@ -862,19 +851,16 @@ export async function createPostWithValidation(
 ### Don'ts ❌
 
 1. **Error Handling:**
-
    - Don't ignore errors
    - Don't retry on all errors
    - Don't expose internal errors to users
 
 2. **Performance:**
-
    - Don't fetch all records at once
    - Don't cache without invalidation
    - Don't create N+1 queries
 
 3. **Security:**
-
    - Don't trust client input
    - Don't skip validation
    - Don't expose sensitive data

@@ -61,14 +61,168 @@ export default function DraftBulkResume({
     })
   );
 
-  const calculateQueueScheduleTime = async (
-    queueTypeName: string,
-    baseIndex = 0
-  ): Promise<string> => {
-    if (queueTypeName === "unassigned") {
-      return "";
+  // ============================================================================
+  // Helper Functions
+  // ============================================================================
+
+  const formatDateTimeLocal = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  const getIntervalHours = (
+    config: unknown,
+    currentUser: typeof user
+  ): number => {
+    if (!isIntervalScheduleConfig(config)) {
+      return 4; // default
     }
 
+    if (config.useGlobalInterval) {
+      const userIntervalRaw =
+        currentUser &&
+        typeof currentUser === "object" &&
+        "scheduleInterval" in currentUser &&
+        Array.isArray(currentUser.scheduleInterval) &&
+        currentUser.scheduleInterval.length > 0
+          ? currentUser.scheduleInterval[0]
+          : null;
+      const userInterval =
+        typeof userIntervalRaw === "number"
+          ? userIntervalRaw
+          : typeof userIntervalRaw === "string"
+            ? Number(userIntervalRaw)
+            : null;
+      return userInterval && !isNaN(userInterval) ? userInterval : 4;
+    }
+
+    return config.intervalHours ?? 4;
+  };
+
+  const calculateIntervalOffset = (
+    baseDate: Date,
+    baseIndex: number,
+    config: unknown,
+    userData: typeof user
+  ): Date => {
+    const intervalHours = getIntervalHours(config, userData);
+    const offsetDate = new Date(baseDate);
+    offsetDate.setHours(offsetDate.getHours() + baseIndex * intervalHours);
+    return offsetDate;
+  };
+
+  interface ParsedSlot {
+    slot: string;
+    hours: number;
+    minutes: number;
+    totalMinutes: number;
+  }
+
+  const parseAndSortSlots = (slots: string[]): ParsedSlot[] => {
+    return slots
+      .map((slot: string) => {
+        const parts = slot.split(":");
+        const hours = parts[0] ? Number(parts[0]) : 0;
+        const minutes = parts[1] ? Number(parts[1]) : 0;
+        return {
+          slot,
+          hours,
+          minutes,
+          totalMinutes: hours * 60 + minutes,
+        };
+      })
+      .sort((a: ParsedSlot, b: ParsedSlot) => a.totalMinutes - b.totalMinutes);
+  };
+
+  const calculateFixedSlotsOffset = (
+    baseDate: Date,
+    baseIndex: number,
+    slots: string[]
+  ): Date => {
+    if (slots.length === 0) {
+      return baseDate;
+    }
+
+    const sortedSlots = parseAndSortSlots(slots);
+
+    // Get the current slot index based on the base time
+    const baseHours = baseDate.getHours();
+    const baseMinutes = baseDate.getMinutes();
+    const baseTotalMinutes = baseHours * 60 + baseMinutes;
+
+    let currentSlotIndex = 0;
+    for (let i = 0; i < sortedSlots.length; i++) {
+      const slot = sortedSlots[i];
+      if (slot && slot.totalMinutes >= baseTotalMinutes) {
+        currentSlotIndex = i;
+        break;
+      }
+    }
+
+    // Calculate which slot this post should use
+    const targetSlotIndex = (currentSlotIndex + baseIndex) % sortedSlots.length;
+    const targetSlot = sortedSlots[targetSlotIndex];
+
+    if (!targetSlot) {
+      return baseDate;
+    }
+
+    // Calculate how many days to add
+    const daysToAdd = Math.floor(
+      (currentSlotIndex + baseIndex) / sortedSlots.length
+    );
+
+    // Set the time to the target slot
+    const offsetDate = new Date(baseDate);
+    offsetDate.setHours(targetSlot.hours, targetSlot.minutes, 0, 0);
+    offsetDate.setDate(offsetDate.getDate() + daysToAdd);
+    return offsetDate;
+  };
+
+  const applyScheduleOffset = (
+    baseDate: Date,
+    baseIndex: number,
+    queueType: QueueType
+  ): Date => {
+    if (baseIndex === 0) {
+      return baseDate;
+    }
+
+    if (
+      typeof queueType !== "object" ||
+      !("scheduleType" in queueType) ||
+      !queueType.scheduleType
+    ) {
+      return baseDate;
+    }
+
+    const config =
+      typeof queueType === "object" && "scheduleConfig" in queueType
+        ? queueType.scheduleConfig
+        : null;
+
+    if (queueType.scheduleType === "INTERVAL") {
+      return calculateIntervalOffset(baseDate, baseIndex, config, user);
+    }
+
+    if (queueType.scheduleType === "FIXED_SLOTS") {
+      const slots =
+        config && isFixedSlotsScheduleConfig(config) ? config.slots : [];
+      return calculateFixedSlotsOffset(baseDate, baseIndex, slots);
+    }
+
+    // Unknown schedule type, return base date unchanged
+
+    return baseDate;
+  };
+
+  const fetchScheduledTime = async (
+    queueTypeName: string
+  ): Promise<string | null> => {
     try {
       const response = await fetch("/api/queue-schedule", {
         method: "POST",
@@ -81,150 +235,57 @@ export default function DraftBulkResume({
         }),
       });
 
-      if (response.ok) {
-        const dataRaw: unknown = await response.json();
-        const data =
-          dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
-            ? (dataRaw as { scheduledTime?: unknown })
-            : {};
-        const scheduledTime =
-          typeof data.scheduledTime === "string"
-            ? data.scheduledTime
-            : undefined;
-        if (!scheduledTime) return "";
-
-        // For bulk posts, add interval offset based on index
-        if (baseIndex > 0) {
-          const queueType = queueTypes.find((qt) => {
-            const name = typeof qt === "string" ? qt : qt.name;
-            return name === queueTypeName;
-          });
-
-          if (
-            queueType &&
-            typeof queueType === "object" &&
-            "scheduleType" in queueType
-          ) {
-            const baseDate = new Date(scheduledTime);
-
-            if (queueType.scheduleType === "INTERVAL") {
-              const config =
-                typeof queueType === "object" && "scheduleConfig" in queueType
-                  ? queueType.scheduleConfig
-                  : null;
-              let intervalHours = 4; // default
-
-              if (config && isIntervalScheduleConfig(config)) {
-                if (config.useGlobalInterval) {
-                  const userIntervalRaw =
-                    user &&
-                    typeof user === "object" &&
-                    "scheduleInterval" in user &&
-                    Array.isArray(user.scheduleInterval) &&
-                    user.scheduleInterval.length > 0
-                      ? user.scheduleInterval[0]
-                      : null;
-                  const userInterval =
-                    typeof userIntervalRaw === "number"
-                      ? userIntervalRaw
-                      : typeof userIntervalRaw === "string"
-                        ? Number(userIntervalRaw)
-                        : null;
-                  intervalHours =
-                    userInterval && !isNaN(userInterval) ? userInterval : 4;
-                } else {
-                  intervalHours = config.intervalHours ?? 4;
-                }
-              }
-
-              baseDate.setHours(
-                baseDate.getHours() + baseIndex * intervalHours
-              );
-            } else if (queueType.scheduleType === "FIXED_SLOTS") {
-              const config =
-                typeof queueType === "object" && "scheduleConfig" in queueType
-                  ? queueType.scheduleConfig
-                  : null;
-              const slots =
-                config && isFixedSlotsScheduleConfig(config)
-                  ? config.slots
-                  : [];
-
-              if (slots.length > 0) {
-                // Sort slots to ensure consistent ordering
-                const sortedSlots = slots
-                  .map((slot: string) => {
-                    const parts = slot.split(":");
-                    const hours = parts[0] ? Number(parts[0]) : 0;
-                    const minutes = parts[1] ? Number(parts[1]) : 0;
-                    return {
-                      slot,
-                      hours,
-                      minutes,
-                      totalMinutes: hours * 60 + minutes,
-                    };
-                  })
-                  .sort(
-                    (
-                      a: { totalMinutes: number },
-                      b: { totalMinutes: number }
-                    ) => a.totalMinutes - b.totalMinutes
-                  );
-
-                // Get the current slot index based on the base time
-                const baseHours = baseDate.getHours();
-                const baseMinutes = baseDate.getMinutes();
-                const baseTotalMinutes = baseHours * 60 + baseMinutes;
-
-                let currentSlotIndex = 0;
-                for (let i = 0; i < sortedSlots.length; i++) {
-                  const slot = sortedSlots[i];
-                  if (slot && slot.totalMinutes >= baseTotalMinutes) {
-                    currentSlotIndex = i;
-                    break;
-                  }
-                }
-
-                // Calculate which slot this post should use
-                const targetSlotIndex =
-                  (currentSlotIndex + baseIndex) % sortedSlots.length;
-                const targetSlot = sortedSlots[targetSlotIndex];
-
-                if (targetSlot) {
-                  // Calculate how many days to add
-                  const daysToAdd = Math.floor(
-                    (currentSlotIndex + baseIndex) / sortedSlots.length
-                  );
-
-                  // Set the time to the target slot
-                  baseDate.setHours(targetSlot.hours, targetSlot.minutes, 0, 0);
-                  baseDate.setDate(baseDate.getDate() + daysToAdd);
-                }
-              }
-            }
-
-            // Format back to datetime-local format
-            const year = baseDate.getFullYear();
-            const month = String(baseDate.getMonth() + 1).padStart(2, "0");
-            const day = String(baseDate.getDate()).padStart(2, "0");
-            const hours = String(baseDate.getHours()).padStart(2, "0");
-            const minutes = String(baseDate.getMinutes()).padStart(2, "0");
-
-            return `${year}-${month}-${day}T${hours}:${minutes}`;
-          }
-        }
-
-        return scheduledTime;
+      if (!response.ok) {
+        return null;
       }
+
+      const dataRaw: unknown = await response.json();
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as { scheduledTime?: unknown })
+          : {};
+      const scheduledTime =
+        typeof data.scheduledTime === "string" ? data.scheduledTime : undefined;
+
+      return scheduledTime ?? null;
     } catch (error) {
       const { handleErrorSafely } = await import("~/lib/error-handler.client");
       handleErrorSafely(error, {
         component: "DraftBulkResume",
-        action: "calculateQueueScheduleTime",
+        action: "fetchScheduledTime",
       });
+      return null;
+    }
+  };
+
+  const calculateQueueScheduleTime = async (
+    queueTypeName: string,
+    baseIndex = 0
+  ): Promise<string> => {
+    if (queueTypeName === "unassigned") {
+      return "";
     }
 
-    return "";
+    const scheduledTime = await fetchScheduledTime(queueTypeName);
+    if (!scheduledTime) {
+      return "";
+    }
+
+    // For bulk posts, add interval offset based on index
+    if (baseIndex > 0) {
+      const queueType = queueTypes.find((qt) => {
+        const name = typeof qt === "string" ? qt : qt.name;
+        return name === queueTypeName;
+      });
+
+      if (queueType && typeof queueType === "object") {
+        const baseDate = new Date(scheduledTime);
+        const offsetDate = applyScheduleOffset(baseDate, baseIndex, queueType);
+        return formatDateTimeLocal(offsetDate);
+      }
+    }
+
+    return scheduledTime;
   };
 
   const handleQueueTypeChange = async (

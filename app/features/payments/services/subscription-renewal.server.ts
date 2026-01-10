@@ -21,6 +21,237 @@ import {
 
 import { getBitcoinRate } from "../btc.rate";
 
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+interface InvoiceDetails {
+  invoice: string;
+  paymentHash: string;
+  amountSats: number;
+}
+
+async function handleFreePlanRenewal(
+  user: { id: string; npub: string },
+  planId: string,
+  planName: string
+): Promise<void> {
+  const paymentId = `free_renewal_${Date.now()}_${user.id}`;
+  await createRenewalPayment({
+    paymentId,
+    userId: user.id,
+    amount: 0,
+    amountUsd: 0,
+    invoice: "free_plan_renewal",
+    paymentHash: "free_plan_renewal",
+    description: `Free plan renewal`,
+  });
+  await updateUserSubscription(user.id, planId, paymentId);
+  await sendRenewalNotification(
+    user.npub,
+    true,
+    planName,
+    "Free plan renewed successfully"
+  );
+}
+
+function extractInvoiceString(invoiceRequest: unknown): string {
+  const requestAny: Record<string, unknown> =
+    typeof invoiceRequest === "object" && !Array.isArray(invoiceRequest)
+      ? (invoiceRequest as unknown as Record<string, unknown>)
+      : {};
+  const invoiceValue = requestAny["invoice"];
+
+  if (typeof invoiceValue === "string") {
+    return invoiceValue;
+  }
+
+  if (
+    invoiceValue &&
+    typeof invoiceValue === "object" &&
+    !Array.isArray(invoiceValue) &&
+    "paymentRequest" in invoiceValue &&
+    typeof (invoiceValue as { paymentRequest?: unknown }).paymentRequest ===
+      "string"
+  ) {
+    return (invoiceValue as { paymentRequest: string }).paymentRequest;
+  }
+
+  return "";
+}
+
+function extractPaymentHash(
+  invoiceRequest: unknown,
+  invoiceValue: unknown
+): string {
+  const requestAny: Record<string, unknown> =
+    typeof invoiceRequest === "object" && !Array.isArray(invoiceRequest)
+      ? (invoiceRequest as unknown as Record<string, unknown>)
+      : {};
+
+  if (typeof requestAny["paymentHash"] === "string") {
+    return requestAny["paymentHash"];
+  }
+
+  const invoiceObj =
+    invoiceValue &&
+    typeof invoiceValue === "object" &&
+    !Array.isArray(invoiceValue)
+      ? (invoiceValue as Record<string, unknown>)
+      : null;
+
+  if (invoiceObj && "paymentHash" in invoiceObj) {
+    return String(invoiceObj["paymentHash"]);
+  }
+
+  return "";
+}
+
+async function extractAmountInSats(
+  invoiceRequest: unknown,
+  invoiceString: string,
+  amountUsd: number
+): Promise<number> {
+  const requestAny: Record<string, unknown> =
+    typeof invoiceRequest === "object" && !Array.isArray(invoiceRequest)
+      ? (invoiceRequest as unknown as Record<string, unknown>)
+      : {};
+
+  // Try direct amount property
+  if (requestAny["amount"] && typeof requestAny["amount"] === "number") {
+    return requestAny["amount"];
+  }
+
+  // Try invoice object
+  const invoiceValue = requestAny["invoice"];
+  const invoiceObj =
+    invoiceValue &&
+    typeof invoiceValue === "object" &&
+    !Array.isArray(invoiceValue)
+      ? (invoiceValue as Record<string, unknown>)
+      : null;
+
+  if (invoiceObj && "satoshi" in invoiceObj) {
+    const satoshiValue = Number(invoiceObj["satoshi"]);
+    if (!Number.isNaN(satoshiValue)) {
+      return satoshiValue;
+    }
+  }
+
+  // Try requestAny satoshi
+  if (requestAny["satoshi"] && typeof requestAny["satoshi"] === "number") {
+    return requestAny["satoshi"];
+  }
+
+  // Parse from Lightning invoice string
+  try {
+    if (typeof invoiceString === "string") {
+      const invoiceStr = invoiceString.toLowerCase();
+      if (invoiceStr.startsWith("lnbc")) {
+        const amountMatch = invoiceStr.match(/lnbc([0-9]+)([munp]?)/);
+        if (amountMatch?.[1]) {
+          const baseAmount = parseInt(amountMatch[1], 10);
+          const unit = amountMatch[2];
+
+          if (unit === "m") {
+            return baseAmount * 100000;
+          } else if (unit === "u") {
+            return baseAmount * 100;
+          } else if (unit === "n") {
+            return Math.round(baseAmount * 0.1);
+          } else if (unit === "p") {
+            return Math.round(baseAmount * 0.0001);
+          } else {
+            return baseAmount * 100000000;
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error("[CRON] Error parsing Lightning invoice amount:", error);
+  }
+
+  // Fallback: use live Bitcoin rate
+  try {
+    return await getBitcoinRate(amountUsd);
+  } catch (error) {
+    console.error(
+      "[CRON] Failed to fetch Bitcoin rate, using fallback:",
+      error
+    );
+    // Fallback approximation: $1 ≈ 2,500 sats (at $40,000 per BTC)
+    return Math.round(amountUsd * 2500);
+  }
+}
+
+async function createInvoice(
+  ownerNwc: string,
+  amountUsd: number
+): Promise<unknown> {
+  const ownerLn = new LN(ownerNwc);
+  try {
+    return await ownerLn.requestPayment(USD(amountUsd));
+  } catch (error) {
+    console.error("[CRON] Failed to request make_invoice", error);
+    throw new Error(
+      `Failed to create invoice: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+  }
+}
+
+async function payInvoice(
+  decryptedNwc: string,
+  invoiceString: string
+): Promise<string> {
+  const nwcClient = new NWCClient({
+    nostrWalletConnectUrl: decryptedNwc,
+  });
+
+  const paymentResult = await nwcClient.payInvoice({
+    invoice: invoiceString,
+  });
+
+  const paymentResultObj =
+    typeof paymentResult === "object" && !Array.isArray(paymentResult)
+      ? (paymentResult as Record<string, unknown>)
+      : {};
+  const preimageValue = paymentResultObj["preimage"];
+
+  return typeof preimageValue === "string"
+    ? preimageValue
+    : `payment_${Date.now()}`;
+}
+
+async function completePaidRenewal(
+  user: { id: string; npub: string },
+  planId: string,
+  planName: string,
+  invoiceDetails: InvoiceDetails,
+  amountUsd: number
+): Promise<void> {
+  const paymentId = `renewal_${planId}_${Date.now()}_${user.id}`;
+  await createRenewalPayment({
+    paymentId,
+    userId: user.id,
+    amount: invoiceDetails.amountSats,
+    amountUsd,
+    invoice: invoiceDetails.invoice,
+    paymentHash: invoiceDetails.paymentHash,
+    description: `${planName} plan renewal`,
+  });
+
+  await updateUserSubscription(user.id, planId, paymentId);
+
+  await sendRenewalNotification(
+    user.npub,
+    true,
+    planName,
+    `Your ${planName} subscription has been renewed successfully. Thank you!`
+  );
+}
+
 interface RenewalResults {
   checked: number;
   expired: number;
@@ -29,6 +260,145 @@ interface RenewalResults {
   renewalSuccess: number;
   renewalFailed: number;
   errors: string[];
+}
+
+// ============================================================================
+// Subscription Renewal Helper Functions
+// ============================================================================
+
+function isSubscriptionExpired(subscription: {
+  currentPeriodEnd: Date | null;
+}): boolean {
+  if (!subscription.currentPeriodEnd) {
+    return false;
+  }
+  const now = new Date();
+  return new Date(subscription.currentPeriodEnd) < now;
+}
+
+function getPlanName(subscription: { Plan?: { name: string } | null }): string {
+  return subscription.Plan?.name ?? "subscription";
+}
+
+async function handleRenewalWithNWC(
+  user: { id: string; npub: string; encryptedNwc: string | null },
+  subscription: {
+    planId: string | null;
+    plan: string | null;
+    currentPeriodEnd: Date | null;
+    Plan?: {
+      name: string;
+      price: string;
+      enableLifetimeAccess?: boolean;
+    } | null;
+  },
+  results: RenewalResults
+): Promise<void> {
+  results.renewalAttempted++;
+
+  try {
+    if (!user.encryptedNwc) {
+      throw new Error("User NWC credentials not available");
+    }
+    await attemptRenewal(
+      { ...user, encryptedNwc: user.encryptedNwc },
+      {
+        planId: subscription.planId,
+        plan: subscription.plan,
+        Plan:
+          subscription.Plan &&
+          "name" in subscription.Plan &&
+          "price" in subscription.Plan
+            ? {
+                name: String(subscription.Plan.name),
+                price: String(subscription.Plan.price),
+              }
+            : null,
+      }
+    );
+    results.renewalSuccess++;
+  } catch (renewalError: unknown) {
+    results.renewalFailed++;
+    const errorMsg = `Failed to renew subscription for user ${user.id}: ${
+      renewalError instanceof Error
+        ? renewalError.message
+        : String(renewalError)
+    }`;
+    results.errors.push(errorMsg);
+    console.error(`[CRON] ${errorMsg}`, renewalError);
+
+    await disableUserAccount(user.id);
+    results.disabled++;
+
+    const planName = getPlanName(subscription);
+    await sendRenewalNotification(
+      user.npub,
+      false,
+      planName,
+      `Your ${planName} subscription renewal failed. Please update your payment method to continue using the service.`
+    );
+  }
+}
+
+async function handleRenewalWithoutNWC(
+  user: { id: string; npub: string },
+  subscription: {
+    Plan?: { name: string } | null;
+  },
+  results: RenewalResults
+): Promise<void> {
+  await disableUserAccount(user.id);
+  results.disabled++;
+
+  const planName = getPlanName(subscription);
+  await sendRenewalNotification(
+    user.npub,
+    false,
+    planName,
+    `Your ${planName} subscription has expired. Please renew to continue using the service.`
+  );
+}
+
+async function processUserSubscription(
+  user: {
+    id: string;
+    npub: string;
+    nwcEnabled: boolean;
+    encryptedNwc: string | null;
+    Subscription: {
+      planId: string | null;
+      plan: string | null;
+      currentPeriodEnd: Date | null;
+      Plan?: {
+        name: string;
+        price: string;
+        enableLifetimeAccess?: boolean;
+      } | null;
+    } | null;
+  } & Record<string, unknown>,
+  results: RenewalResults
+): Promise<void> {
+  const subscription = user.Subscription;
+
+  if (!subscription) {
+    return;
+  }
+
+  if (subscription.Plan?.enableLifetimeAccess) {
+    return;
+  }
+
+  if (!isSubscriptionExpired(subscription)) {
+    return;
+  }
+
+  results.expired++;
+
+  if (user.nwcEnabled && user.encryptedNwc) {
+    await handleRenewalWithNWC(user, subscription, results);
+  } else {
+    await handleRenewalWithoutNWC(user, subscription, results);
+  }
 }
 
 /**
@@ -51,93 +421,30 @@ export async function checkAndRenewSubscriptions(): Promise<
   };
 
   try {
-    // Get all enabled users with their subscriptions
     const users = await getEnabledUsersWithSubscriptions();
-
     results.checked = users.length;
 
     for (const user of users) {
       try {
-        const subscription = user.Subscription;
-
-        // Skip if user has no subscription
-        if (!subscription) {
-          continue;
-        }
-
-        // Skip lifetime plans
-        if (subscription.Plan?.enableLifetimeAccess) {
-          continue;
-        }
-
-        const now = new Date();
-        const isExpired =
-          subscription.currentPeriodEnd &&
-          new Date(subscription.currentPeriodEnd) < now;
-
-        if (isExpired) {
-          results.expired++;
-
-          // If user has NWC enabled, attempt automatic renewal
-          if (user.nwcEnabled && user.encryptedNwc) {
-            results.renewalAttempted++;
-
-            try {
-              if (!user.encryptedNwc) {
-                throw new Error("User NWC credentials not available");
-              }
-              await attemptRenewal(
-                { ...user, encryptedNwc: user.encryptedNwc },
-                {
-                  planId: subscription.planId,
-                  plan: subscription.plan,
-                  Plan: subscription.Plan
-                    ? {
-                        name: subscription.Plan.name,
-                        price: String(subscription.Plan.price),
-                      }
-                    : null,
-                }
-              );
-              results.renewalSuccess++;
-            } catch (renewalError: unknown) {
-              results.renewalFailed++;
-              const errorMsg = `Failed to renew subscription for user ${user.id}: ${
-                renewalError instanceof Error
-                  ? renewalError.message
-                  : String(renewalError)
-              }`;
-              results.errors.push(errorMsg);
-              console.error(`[CRON] ${errorMsg}`, renewalError);
-
-              // Disable account due to failed renewal
-              await disableUserAccount(user.id);
-              results.disabled++;
-
-              // Send failure notification
-              const planName = subscription.Plan?.name ?? "subscription";
-              await sendRenewalNotification(
-                user.npub,
-                false,
-                planName,
-                `Your ${planName} subscription renewal failed. Please update your payment method to continue using the service.`
-              );
-            }
-          } else {
-            // No NWC enabled, disable account
-            await disableUserAccount(user.id);
-            results.disabled++;
-
-            // Send notification about expiration
-            const planName = subscription.Plan?.name ?? "subscription";
-            await sendRenewalNotification(
-              user.npub,
-              false,
-              planName,
-              `Your ${planName} subscription has expired. Please renew to continue using the service.`
-            );
-          }
-        }
+        await processUserSubscription(
+          user as Record<string, unknown> & {
+            id: string;
+            npub: string;
+            nwcEnabled: boolean;
+            encryptedNwc: string | null;
+            Subscription: {
+              planId: string | null;
+              plan: string | null;
+              currentPeriodEnd: Date | null;
+              Plan?: {
+                name: string;
+                price: string;
+                enableLifetimeAccess?: boolean;
+              } | null;
+            } | null;
+          },
+          results
+        );
       } catch (userError: unknown) {
         const errorMsg = `Error processing user ${user.id}: ${
           userError instanceof Error ? userError.message : String(userError)
@@ -199,29 +506,9 @@ async function attemptRenewal(
     throw new Error(`Plan ${planId} not found`);
   }
 
-  // Skip free plans
+  // Handle free plans
   if (Number(plan.price) === 0) {
-    // Renew free plan automatically
-    const paymentId = `free_renewal_${Date.now()}_${user.id}`;
-    await createRenewalPayment({
-      paymentId,
-      userId: user.id,
-      amount: 0,
-      amountUsd: 0,
-      invoice: "free_plan_renewal",
-      paymentHash: "free_plan_renewal",
-      description: `Free plan renewal`,
-    });
-    await updateUserSubscription(user.id, planId, paymentId);
-
-    // Send success message
-    await sendRenewalNotification(
-      user.npub,
-      true,
-      plan.name,
-      "Free plan renewed successfully"
-    );
-
+    await handleFreePlanRenewal(user, planId, plan.name);
     return;
   }
 
@@ -232,110 +519,21 @@ async function attemptRenewal(
   }
 
   const amountUsd = Number(plan.price);
+  const invoiceRequest = await createInvoice(ownerNwc, amountUsd);
 
-  const ownerLn = new LN(ownerNwc);
-  let invoiceRequest;
-  try {
-    // Create payment request using Alby SDK - owner receives payment
-    invoiceRequest = await ownerLn.requestPayment(USD(amountUsd));
-  } catch (error) {
-    console.error("[CRON] Failed to request make_invoice", error);
-    throw new Error(
-      `Failed to create invoice: ${
-        error instanceof Error ? error.message : String(error)
-      }`
-    );
+  if (!invoiceRequest) {
+    throw new Error("Failed to create invoice");
   }
 
-  // Extract invoice, paymentHash and amount from the request object structure
-  // Cast to unknown then to Record to access properties that may exist on ReceiveInvoice
-  const requestAny: Record<string, unknown> =
-    typeof invoiceRequest === "object" && !Array.isArray(invoiceRequest)
-      ? (invoiceRequest as unknown as Record<string, unknown>)
-      : {};
-  const invoiceValue = requestAny["invoice"];
-  const invoiceString =
-    typeof invoiceValue === "string"
-      ? invoiceValue
-      : invoiceValue &&
-          typeof invoiceValue === "object" &&
-          !Array.isArray(invoiceValue) &&
-          "paymentRequest" in invoiceValue &&
-          typeof (invoiceValue as { paymentRequest?: unknown })
-            .paymentRequest === "string"
-        ? (invoiceValue as { paymentRequest: string }).paymentRequest
-        : "";
-  const invoiceObj =
-    invoiceValue &&
-    typeof invoiceValue === "object" &&
-    !Array.isArray(invoiceValue)
-      ? (invoiceValue as Record<string, unknown>)
+  // Extract invoice details
+  const invoiceValue =
+    typeof invoiceRequest === "object" &&
+    !Array.isArray(invoiceRequest) &&
+    "invoice" in invoiceRequest
+      ? (invoiceRequest as Record<string, unknown>)["invoice"]
       : null;
-  const paymentHashString =
-    typeof requestAny["paymentHash"] === "string"
-      ? requestAny["paymentHash"]
-      : invoiceObj && "paymentHash" in invoiceObj
-        ? String(invoiceObj["paymentHash"])
-        : "";
-
-  // Extract amount in sats - try multiple possible locations
-  let amountSats = 0;
-  if (requestAny["amount"] && typeof requestAny["amount"] === "number") {
-    amountSats = requestAny["amount"];
-  } else if (invoiceObj && "satoshi" in invoiceObj) {
-    const satoshiValue = Number(invoiceObj["satoshi"]);
-    amountSats = Number.isNaN(satoshiValue) ? 0 : satoshiValue;
-  } else if (
-    requestAny["satoshi"] &&
-    typeof requestAny["satoshi"] === "number"
-  ) {
-    amountSats = requestAny["satoshi"];
-  } else {
-    // Parse the Lightning invoice to get the exact amount
-    try {
-      if (typeof invoiceString !== "string") {
-        throw new Error("Invoice string is not a string");
-      }
-      const invoiceStr = invoiceString.toLowerCase();
-      if (invoiceStr.startsWith("lnbc")) {
-        // Extract amount from Lightning invoice - amounts are encoded after 'lnbc'
-        const amountMatch = invoiceStr.match(/lnbc([0-9]+)([munp]?)/);
-        if (amountMatch?.[1]) {
-          const baseAmount = parseInt(amountMatch[1], 10);
-          const unit = amountMatch[2];
-
-          // Convert to satoshis based on unit
-          if (unit === "m") {
-            amountSats = baseAmount * 100000; // 1 mBTC = 100,000 sats
-          } else if (unit === "u") {
-            amountSats = baseAmount * 100; // 1 µBTC = 100 sats
-          } else if (unit === "n") {
-            amountSats = Math.round(baseAmount * 0.1); // 1 nBTC = 0.1 sats
-          } else if (unit === "p") {
-            amountSats = Math.round(baseAmount * 0.0001); // 1 pBTC = 0.0001 sats
-          } else {
-            amountSats = baseAmount * 100000000; // 1 BTC = 100,000,000 sats
-          }
-        }
-      }
-    } catch (error) {
-      console.error("[CRON] Error parsing Lightning invoice amount:", error);
-    }
-
-    // If we still don't have an amount, use live Bitcoin rate as fallback
-    if (amountSats === 0) {
-      try {
-        amountSats = await getBitcoinRate(amountUsd);
-      } catch (error) {
-        console.error(
-          "[CRON] Failed to fetch Bitcoin rate, using fallback:",
-          error
-        );
-        // Fallback approximation: $1 ≈ 2,500 sats (at $40,000 per BTC)
-        amountSats = Math.round(amountUsd * 2500);
-      }
-    }
-  }
+  const invoiceString = extractInvoiceString(invoiceRequest);
+  const paymentHashString = extractPaymentHash(invoiceRequest, invoiceValue);
 
   if (!invoiceString || !paymentHashString) {
     console.error(
@@ -353,49 +551,27 @@ async function attemptRenewal(
     );
   }
 
-  // Use user's NWC to pay the invoice
-  const nwcClient = new NWCClient({
-    nostrWalletConnectUrl: decryptedNwc,
-  });
+  // Extract amount in sats
+  const amountSats = await extractAmountInSats(
+    invoiceRequest,
+    invoiceString,
+    amountUsd
+  );
 
   // Pay the invoice using user's NWC
-  const paymentResult = await nwcClient.payInvoice({
-    invoice: invoiceString,
-  });
+  const paymentHash = await payInvoice(decryptedNwc, invoiceString);
 
-  // Extract payment hash from result
-  const paymentResultObj =
-    typeof paymentResult === "object" && !Array.isArray(paymentResult)
-      ? (paymentResult as Record<string, unknown>)
-      : {};
-  const preimageValue = paymentResultObj["preimage"];
-  const paymentHash =
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: preimageValue may not be string, paymentHashString can be undefined
-    (typeof preimageValue === "string" ? preimageValue : null) ??
-    paymentHashString ??
-    `payment_${Date.now()}`;
-
-  // Create payment record
-  const paymentId = `renewal_${planId}_${Date.now()}_${user.id}`;
-  await createRenewalPayment({
-    paymentId,
-    userId: user.id,
-    amount: amountSats,
-    amountUsd,
-    invoice: invoiceString,
-    paymentHash: paymentHash,
-    description: `${plan.name} plan renewal`,
-  });
-
-  // Update subscription
-  await updateUserSubscription(user.id, planId, paymentId);
-
-  // Send success notification
-  await sendRenewalNotification(
-    user.npub,
-    true,
+  // Complete the renewal process
+  await completePaidRenewal(
+    user,
+    planId,
     plan.name,
-    `Your ${plan.name} subscription has been renewed successfully. Thank you!`
+    {
+      invoice: invoiceString,
+      paymentHash: paymentHash || paymentHashString,
+      amountSats,
+    },
+    amountUsd
   );
 }
 

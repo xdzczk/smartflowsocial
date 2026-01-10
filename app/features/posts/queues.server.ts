@@ -26,6 +26,98 @@ import {
 import { updatePostStatus } from "~/models/post.commands.server";
 import { getCronDueScheduledPosts } from "~/models/post.queries.server";
 
+// ============================================================================
+// Helper Functions for Queue Processing
+// ============================================================================
+
+interface PostData {
+  id: string;
+  userId: string;
+  signedEvent: Prisma.JsonValue;
+  scheduledFor: string;
+}
+
+function extractPostData(post: unknown): PostData | null {
+  if (typeof post !== "object" || post === null) {
+    return null;
+  }
+
+  const postId = "id" in post && typeof post.id === "string" ? post.id : null;
+  const postUserId =
+    "userId" in post && typeof post.userId === "string" ? post.userId : null;
+  const postSignedEvent = "signedEvent" in post ? post.signedEvent : null;
+  const postScheduledFor =
+    "scheduledFor" in post && typeof post.scheduledFor === "string"
+      ? post.scheduledFor
+      : null;
+
+  if (!postUserId || !postSignedEvent || !postScheduledFor || !postId) {
+    return null;
+  }
+
+  return {
+    id: postId,
+    userId: postUserId,
+    signedEvent: postSignedEvent,
+    scheduledFor: postScheduledFor,
+  };
+}
+
+async function processPost(postData: PostData, now: number): Promise<boolean> {
+  const signedEvent = toSignedEvent(postData.signedEvent);
+  if (!signedEvent) {
+    return false;
+  }
+
+  const scheduledTime = parseInt(postData.scheduledFor, 10);
+  if (isNaN(scheduledTime)) {
+    return false;
+  }
+
+  const timeDiff = scheduledTime - now;
+  if (timeDiff <= 1) {
+    const { enqueuePostJob } = await import("~/infra/queue");
+    await enqueuePostJob(
+      postData.id,
+      postData.userId,
+      signedEvent,
+      timeDiff <= 0 ? 0 : scheduledTime
+    );
+    return true;
+  }
+
+  return false;
+}
+
+async function processLongFormPost(
+  postData: PostData,
+  now: number
+): Promise<boolean> {
+  const signedEvent = toSignedEvent(postData.signedEvent);
+  if (!signedEvent) {
+    return false;
+  }
+
+  const scheduledTime = parseInt(postData.scheduledFor, 10);
+  if (isNaN(scheduledTime)) {
+    return false;
+  }
+
+  const timeDiff = scheduledTime - now;
+  if (timeDiff <= 1) {
+    const { enqueueLongFormPostJob } = await import("~/infra/queue");
+    await enqueueLongFormPostJob(
+      postData.id,
+      postData.userId,
+      signedEvent,
+      timeDiff <= 0 ? 0 : scheduledTime
+    );
+    return true;
+  }
+
+  return false;
+}
+
 /**
  * Type guard to check if value is a SignedEvent
  */
@@ -282,86 +374,17 @@ export const postCheckerWorker = new Worker(
 
       // Process regular posts
       for (const post of posts) {
-        if (typeof post !== "object") continue;
-        const postId =
-          "id" in post && typeof post.id === "string" ? post.id : null;
-        const postUserId =
-          "userId" in post && typeof post.userId === "string"
-            ? post.userId
-            : null;
-        const postSignedEvent = "signedEvent" in post ? post.signedEvent : null;
-        const postScheduledFor =
-          "scheduledFor" in post && typeof post.scheduledFor === "string"
-            ? post.scheduledFor
-            : null;
-
-        if (!postUserId || !postSignedEvent || !postScheduledFor || !postId)
-          continue;
-
-        const signedEvent = toSignedEvent(postSignedEvent);
-        if (!signedEvent) continue;
-
-        const scheduledTime = parseInt(postScheduledFor, 10);
-        if (isNaN(scheduledTime)) continue;
-        const timeDiff = scheduledTime - now;
-
-        if (timeDiff <= 1) {
-          // Schedule immediate processing using the abstraction
-          const { enqueuePostJob } = await import("~/infra/queue");
-          // Use 0 for immediate processing when timeDiff <= 1
-          await enqueuePostJob(
-            postId,
-            postUserId,
-            signedEvent,
-            timeDiff <= 0 ? 0 : scheduledTime
-          );
+        const postData = extractPostData(post);
+        if (postData) {
+          await processPost(postData, now);
         }
       }
 
       // Process longform posts
       for (const longformPost of longformPosts) {
-        if (typeof longformPost !== "object") continue;
-        const longformPostId =
-          "id" in longformPost && typeof longformPost.id === "string"
-            ? longformPost.id
-            : null;
-        const longformPostUserId =
-          "userId" in longformPost && typeof longformPost.userId === "string"
-            ? longformPost.userId
-            : null;
-        const longformPostSignedEvent =
-          "signedEvent" in longformPost ? longformPost.signedEvent : null;
-        const longformPostScheduledFor =
-          "scheduledFor" in longformPost &&
-          typeof longformPost.scheduledFor === "string"
-            ? longformPost.scheduledFor
-            : null;
-
-        if (
-          !longformPostUserId ||
-          !longformPostSignedEvent ||
-          !longformPostScheduledFor ||
-          !longformPostId
-        )
-          continue;
-
-        const signedEvent = toSignedEvent(longformPostSignedEvent);
-        if (!signedEvent) continue;
-
-        const scheduledTime = parseInt(longformPostScheduledFor, 10);
-        if (isNaN(scheduledTime)) continue;
-        const timeDiff = scheduledTime - now;
-
-        if (timeDiff <= 1) {
-          // Schedule immediate processing using the abstraction
-          const { enqueueLongFormPostJob } = await import("~/infra/queue");
-          // Use 0 for immediate processing when timeDiff <= 1
-          await enqueueLongFormPostJob(
-            longformPostId,
-            longformPostUserId,
-            signedEvent,
-            timeDiff <= 0 ? 0 : scheduledTime
-          );
+        const postData = extractPostData(longformPost);
+        if (postData) {
+          await processLongFormPost(postData, now);
         }
       }
 

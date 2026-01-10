@@ -20,7 +20,7 @@ import {
 export async function handleEngagementAction(
   userId: string,
   action: string,
-  formData: FormData,
+  formData: FormData
 ) {
   if (action === "sync_muted_list") {
     // Get user's npub/pubkey
@@ -36,7 +36,7 @@ export async function handleEngagementAction(
     if (!mutedListData) {
       return json(
         { error: "Failed to fetch muted list from Nostr" },
-        { status: 500 },
+        { status: 500 }
       );
     }
 
@@ -50,10 +50,7 @@ export async function handleEngagementAction(
   }
 
   if (action === "toggle_filter_muted") {
-    const result = validateFormDataOrRespond(
-      formData,
-      toggleFilterMutedSchema,
-    );
+    const result = validateFormDataOrRespond(formData, toggleFilterMutedSchema);
     if (!result.success) {
       return result.response;
     }
@@ -65,14 +62,14 @@ export async function handleEngagementAction(
   if (action === "toggle_hide_low_trust") {
     const result = validateFormDataOrRespond(
       formData,
-      toggleHideLowTrustSchema,
+      toggleHideLowTrustSchema
     );
     if (!result.success) {
       return result.response;
     }
     await updateUserHideLowTrust(
       userId,
-      result.data.hidePostsFromLowTrustUsers,
+      result.data.hidePostsFromLowTrustUsers
     );
 
     return json({
