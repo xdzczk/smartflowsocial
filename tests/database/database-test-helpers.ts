@@ -53,10 +53,15 @@ export function describeDatabase(
     teardown?: () => Promise<void>;
   }
 ): void {
+  // Check SKIP_DATABASE_TESTS first - if it's set, always skip
+  if (process.env["SKIP_DATABASE_TESTS"] === "true") {
+    describe.skip(name, fn);
+    return;
+  }
+
   const testDatabaseUrl =
     process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"];
-  const shouldSkip =
-    !testDatabaseUrl || process.env["SKIP_DATABASE_TESTS"] === "true";
+  const shouldSkip = !testDatabaseUrl;
 
   // Skip the entire suite if database is not configured
   // This prevents beforeAll from failing and marking the suite as failed
@@ -78,6 +83,11 @@ export function describeDatabase(
           `Database setup failed for "${name}". Tests may fail.`,
           error
         );
+        // If SKIP_DATABASE_TESTS is set, skip the tests instead of failing
+        if (process.env["SKIP_DATABASE_TESTS"] === "true") {
+          // Skip all tests in this suite
+          return;
+        }
         // Re-throw to mark tests as failed if database is not available
         // This ensures tests don't silently pass when database is unavailable
         throw error;

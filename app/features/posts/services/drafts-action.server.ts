@@ -52,9 +52,15 @@ export async function handleDraftsAction(formData: FormData, userId: string) {
   await Promise.all(
     bulkData.postIds.map(async (id, index) => {
       // Resolve queue type ID in feature layer (business logic)
+      // Convert empty strings to null for queueTypeIds
+      const queueTypeId =
+        bulkData.queueTypeIds[index] &&
+        bulkData.queueTypeIds[index].trim() !== ""
+          ? bulkData.queueTypeIds[index]
+          : null;
       const resolvedQueueTypeId = await resolveQueueTypeId(
         userId,
-        bulkData.queueTypeIds[index] ?? null,
+        queueTypeId,
         bulkData.queueTypes[index] ?? null
       );
 

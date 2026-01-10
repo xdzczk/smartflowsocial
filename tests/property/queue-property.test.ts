@@ -193,7 +193,9 @@ describe("Property-Based Tests: Queue Operations", () => {
     it("should always schedule jobs in the future (or present)", () => {
       fc.assert(
         fc.property(
-          fc.date({ min: new Date("2020-01-01"), max: new Date("2030-12-31") }),
+          fc
+            .date({ min: new Date("2020-01-01"), max: new Date("2030-12-31") })
+            .filter((date: Date) => !isNaN(date.getTime())),
           fc.integer({ min: 0, max: 86400 * 365 }), // Delay in seconds (up to 1 year)
           (baseTime: Date, delaySeconds: number) => {
             const scheduledTime = new Date(

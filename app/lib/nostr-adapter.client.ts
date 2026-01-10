@@ -67,15 +67,11 @@ function normalizeSignResult(
   signResult: unknown,
   nostrEvent: NostrEvent
 ): SignedEvent {
+  const signedEvent =
+    typeof signResult === "string" ? undefined : (signResult as SignedEvent);
   return {
-    id:
-      typeof signResult === "string"
-        ? "unknown"
-        : (signResult as SignedEvent).id,
-    pubkey:
-      typeof signResult === "string"
-        ? "unknown"
-        : (signResult as SignedEvent).pubkey,
+    id: signedEvent?.id ?? "unknown",
+    pubkey: signedEvent?.pubkey ?? "unknown",
     created_at: nostrEvent.created_at,
     kind: nostrEvent.kind,
     tags: nostrEvent.tags,
@@ -83,7 +79,7 @@ function normalizeSignResult(
     sig:
       typeof signResult === "string"
         ? signResult
-        : (signResult as SignedEvent).sig,
+        : (signedEvent?.sig ?? "unknown"),
   };
 }
 

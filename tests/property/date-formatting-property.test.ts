@@ -33,7 +33,9 @@ describe("Property-Based Tests: Date Formatting", () => {
     it("should always produce valid datetime-local format (YYYY-MM-DDTHH:mm)", () => {
       fc.assert(
         fc.property(
-          fc.date({ min: new Date("2000-01-01"), max: new Date("2100-12-31") }),
+          fc
+            .date({ min: new Date("2000-01-01"), max: new Date("2100-12-31") })
+            .filter((date: Date) => !isNaN(date.getTime())),
           fc.constantFrom(...validTimezones),
           (date: Date, timezone: string) => {
             const formatted = formatScheduleTimeForInput(date, timezone);
@@ -64,7 +66,9 @@ describe("Property-Based Tests: Date Formatting", () => {
     it("should handle all valid dates without errors", () => {
       fc.assert(
         fc.property(
-          fc.date({ min: new Date("2000-01-01"), max: new Date("2100-12-31") }),
+          fc
+            .date({ min: new Date("2000-01-01"), max: new Date("2100-12-31") })
+            .filter((date: Date) => !isNaN(date.getTime())),
           fc.constantFrom(...validTimezones),
           (date: Date, timezone: string) => {
             try {
@@ -137,15 +141,18 @@ describe("Property-Based Tests: Date Formatting", () => {
       fc.assert(
         fc.property(
           fc.oneof(
-            fc.date({
-              min: new Date("2000-01-01"),
-              max: new Date("2100-12-31"),
-            }),
             fc
               .date({
                 min: new Date("2000-01-01"),
                 max: new Date("2100-12-31"),
               })
+              .filter((d: Date) => !isNaN(d.getTime())),
+            fc
+              .date({
+                min: new Date("2000-01-01"),
+                max: new Date("2100-12-31"),
+              })
+              .filter((d: Date) => !isNaN(d.getTime()))
               .map((d: Date) => d.toISOString())
           ),
           (dateInput: Date | string) => {
@@ -164,7 +171,9 @@ describe("Property-Based Tests: Date Formatting", () => {
     it("should handle Date objects and ISO strings consistently", () => {
       fc.assert(
         fc.property(
-          fc.date({ min: new Date("2000-01-01"), max: new Date("2100-12-31") }),
+          fc
+            .date({ min: new Date("2000-01-01"), max: new Date("2100-12-31") })
+            .filter((date: Date) => !isNaN(date.getTime())),
           (date: Date) => {
             const formattedFromDate = formatDate(date);
             const formattedFromString = formatDate(date.toISOString());

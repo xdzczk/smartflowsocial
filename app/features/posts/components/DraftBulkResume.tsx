@@ -209,15 +209,10 @@ export default function DraftBulkResume({
       return calculateIntervalOffset(baseDate, baseIndex, config, user);
     }
 
-    if (queueType.scheduleType === "FIXED_SLOTS") {
-      const slots =
-        config && isFixedSlotsScheduleConfig(config) ? config.slots : [];
-      return calculateFixedSlotsOffset(baseDate, baseIndex, slots);
-    }
-
-    // Unknown schedule type, return base date unchanged
-
-    return baseDate;
+    // After checking for INTERVAL, scheduleType must be FIXED_SLOTS
+    const slots =
+      config && isFixedSlotsScheduleConfig(config) ? config.slots : [];
+    return calculateFixedSlotsOffset(baseDate, baseIndex, slots);
   };
 
   const fetchScheduledTime = async (

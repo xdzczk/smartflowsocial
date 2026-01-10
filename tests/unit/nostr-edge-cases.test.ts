@@ -197,7 +197,6 @@ describe("Nostr Edge Cases", () => {
       });
 
       const { nostrAdapter } = await import("~/lib/nostr-adapter.client");
-      const signLongFormEvent = nostrAdapter.signLongFormEvent;
 
       const eventData = {
         content: "Test content",
@@ -209,7 +208,7 @@ describe("Nostr Edge Cases", () => {
         tags: ["tag1", "tag2"],
       };
 
-      const result = await signLongFormEvent(eventData);
+      const result = await nostrAdapter.signLongFormEvent(eventData);
 
       expect(result.nostrEvent.kind).toBe(30023);
       expect(result.nostrEvent.tags).toContainEqual(["title", "Test Title"]);
@@ -238,15 +237,14 @@ describe("Nostr Edge Cases", () => {
       });
 
       const { nostrAdapter } = await import("~/lib/nostr-adapter.client");
-      const signLongFormEvent = nostrAdapter.signLongFormEvent;
 
       const eventData = {
-        title: "", // Empty title - required by type but should not result in title tag
         content: "Test content",
+        title: "", // Empty title - required by type but should not result in title tag
         // No optional fields (no summary, image, etc.)
       };
 
-      const result = await signLongFormEvent(eventData);
+      const result = await nostrAdapter.signLongFormEvent(eventData);
 
       expect(result.nostrEvent.tags).toContainEqual([
         "r",
@@ -269,7 +267,6 @@ describe("Nostr Edge Cases", () => {
       });
 
       const { nostrAdapter } = await import("~/lib/nostr-adapter.client");
-      const signLongFormEvent = nostrAdapter.signLongFormEvent;
 
       const eventData = {
         title: "Test Title",
@@ -277,7 +274,7 @@ describe("Nostr Edge Cases", () => {
         tags: ["  TAG1  ", "Tag2", "tag3"],
       };
 
-      const result = await signLongFormEvent(eventData);
+      const result = await nostrAdapter.signLongFormEvent(eventData);
 
       expect(result.nostrEvent.tags).toContainEqual(["t", "tag1"]);
       expect(result.nostrEvent.tags).toContainEqual(["t", "tag2"]);
@@ -292,7 +289,6 @@ describe("Nostr Edge Cases", () => {
       });
 
       const { nostrAdapter } = await import("~/lib/nostr-adapter.client");
-      const signLongFormEvent = nostrAdapter.signLongFormEvent;
 
       const eventData = {
         title: "Test Title",
@@ -300,7 +296,7 @@ describe("Nostr Edge Cases", () => {
         tags: ["tag1", "", "   ", "tag2"],
       };
 
-      const result = await signLongFormEvent(eventData);
+      const result = await nostrAdapter.signLongFormEvent(eventData);
 
       const topicTags = result.nostrEvent.tags.filter((tag) => tag[0] === "t");
       expect(topicTags).toHaveLength(2);

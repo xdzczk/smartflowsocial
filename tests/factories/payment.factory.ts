@@ -4,8 +4,38 @@
  */
 
 import type { Payment, PaymentStatus } from "@prisma/client";
-// @ts-expect-error - Decimal is available at runtime but types may not be fully exported
-import { Decimal } from "@prisma/client/runtime/library";
+
+// Type definition for Decimal-like class
+interface DecimalLike {
+  new (_value: number | string): DecimalLike;
+  toNumber(): number;
+  toString(): string;
+  valueOf(): number;
+}
+
+// Use Prisma.Decimal if available, otherwise fallback to a simple number wrapper
+let Decimal: DecimalLike;
+try {
+  Decimal = require("@prisma/client/runtime/library").Decimal as DecimalLike;
+} catch {
+  // Fallback for test environments where the runtime library is not available
+  class MockDecimal {
+    value: number;
+    constructor(value: number | string) {
+      this.value = Number(value);
+    }
+    toNumber(): number {
+      return this.value;
+    }
+    toString(): string {
+      return this.value.toString();
+    }
+    valueOf(): number {
+      return this.value;
+    }
+  }
+  Decimal = MockDecimal as unknown as DecimalLike;
+}
 
 import { TEST_USER_ID } from "../utils/test-helpers";
 

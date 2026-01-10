@@ -147,7 +147,9 @@ describe("Property-Based Tests: Data Validation", () => {
     it("should validate dates are within reasonable range", () => {
       fc.assert(
         fc.property(
-          fc.date({ min: new Date("2000-01-01"), max: new Date("2100-12-31") }),
+          fc
+            .date({ min: new Date("2000-01-01"), max: new Date("2100-12-31") })
+            .filter((date: Date) => !isNaN(date.getTime())),
           (date: Date) => {
             return (
               date >= new Date("2000-01-01") &&
@@ -164,10 +166,13 @@ describe("Property-Based Tests: Data Validation", () => {
       // Capture the current time once at test start to avoid race conditions
       const now = new Date();
       fc.assert(
-        fc.property(fc.date({ min: now }), (date: Date) => {
-          // Use the captured 'now' time for consistent validation
-          return date >= now && !isNaN(date.getTime());
-        }),
+        fc.property(
+          fc.date({ min: now }).filter((date: Date) => !isNaN(date.getTime())),
+          (date: Date) => {
+            // Use the captured 'now' time for consistent validation
+            return date >= now && !isNaN(date.getTime());
+          }
+        ),
         { numRuns: 30 }
       );
     });

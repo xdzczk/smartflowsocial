@@ -133,7 +133,15 @@ export function getContentTypeBadge(item: CombinedContent): {
   text: string;
 } {
   // Check for kind property in signedEvent or originalData.signedEvent
-  const kind = item.signedEvent?.kind ?? item.originalData.signedEvent?.kind;
+  const kind =
+    item.signedEvent?.kind ??
+    (typeof item.originalData === "object" &&
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime check needed: typeof null === "object" in JavaScript
+    item.originalData !== null &&
+    "signedEvent" in item.originalData
+      ? (item.originalData as { signedEvent?: { kind?: number } }).signedEvent
+          ?.kind
+      : undefined);
 
   if (kind === 6) {
     return {

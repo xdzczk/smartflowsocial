@@ -349,10 +349,7 @@ function renderModals(props: {
             Array.isArray(queueTypes)
               ? queueTypes.filter(
                   (qt): qt is QueueType =>
-                    typeof qt === "object" &&
-                    qt !== null &&
-                    "id" in qt &&
-                    "name" in qt
+                    typeof qt === "object" && "id" in qt && "name" in qt
                 )
               : []
           }
@@ -370,10 +367,7 @@ function renderModals(props: {
             Array.isArray(queueTypes)
               ? queueTypes.filter(
                   (qt): qt is QueueType =>
-                    typeof qt === "object" &&
-                    qt !== null &&
-                    "id" in qt &&
-                    "name" in qt
+                    typeof qt === "object" && "id" in qt && "name" in qt
                 )
               : []
           }
@@ -558,9 +552,7 @@ export default function DashboardIndex() {
         showRescheduleModal,
         postToReschedule,
         user,
-        queueTypes: Array.isArray(queueTypes)
-          ? (queueTypes as Array<string | QueueType>)
-          : [],
+        queueTypes: Array.isArray(queueTypes) ? queueTypes : [],
         hashTagPresets: Array.isArray(hashTagPresets) ? hashTagPresets : [],
         userTimezone: getUserTimezone(user),
         handleCloseEditModal,

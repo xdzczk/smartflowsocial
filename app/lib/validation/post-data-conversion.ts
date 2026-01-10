@@ -52,7 +52,8 @@ export function convertPostDataToScheduledTablePost(
           color: post.queueType.color ?? null,
         }
       : null,
-    repost: post.repost,
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- repost is optional and may be undefined
+    repost: post.repost ?? false,
     isQuotedPost: post.isQuotedPost,
     isPostSigned: post.signedEvent ? true : false,
   };

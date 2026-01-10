@@ -185,18 +185,26 @@ describe("Bulk Posts Action Handler", () => {
       });
       formData.append("caption", JSON.stringify("Caption 1"));
       formData.append("caption", JSON.stringify("Caption 2"));
+      // fileUrl schema expects array of strings that get parsed and flattened
+      // Each entry should be a JSON stringified array
       formData.append(
         "fileUrl",
-        JSON.stringify("https://example.com/image1.jpg")
+        JSON.stringify(["https://example.com/image1.jpg"])
       );
       formData.append(
         "fileUrl",
-        JSON.stringify("https://example.com/image2.jpg")
+        JSON.stringify(["https://example.com/image2.jpg"])
       );
       formData.append("queueType", "posts");
       formData.append("queueType", "all");
       formData.append("isRecyclable", "false");
       formData.append("isRecyclable", "false");
+      if (signedEvents[0] && signedEvents[1]) {
+        formData.append("scheduledFor", String(signedEvents[0].created_at));
+        formData.append("scheduledFor", String(signedEvents[1].created_at));
+      }
+      formData.append("originalPostId", ""); // Required field
+      formData.append("originalPostId", ""); // Required field
 
       const request = new Request("http://localhost/dashboard/bulkposts", {
         method: "POST",
@@ -206,6 +214,16 @@ describe("Bulk Posts Action Handler", () => {
       const result = await bulkPostsAction({ request });
 
       expect(result).toBeInstanceOf(Response);
+      if (result.status !== 302) {
+        // Log the error for debugging
+        try {
+          const errorData = (await result.json()) as unknown;
+          console.error("Error response:", JSON.stringify(errorData, null, 2));
+        } catch {
+          const errorText = await result.text();
+          console.error("Error response text:", errorText);
+        }
+      }
       expect(result.status).toBe(302); // Redirect
       expect(createPost).toHaveBeenCalledTimes(2);
     });

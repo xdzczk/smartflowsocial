@@ -74,7 +74,17 @@ describe("Posted Posts Service", () => {
       url,
     });
 
-    expect(result.posts).toEqual(mockPosts.posts);
+    // The function converts posts to DTOs and adds signedEvent/nostrEvent fields
+    expect(result.posts).toHaveLength(1);
+    expect(result.posts[0]).toMatchObject({
+      id: "post-1",
+      queueType: expect.objectContaining({
+        id: "queue-1",
+        name: "Queue 1",
+      }) as unknown,
+    });
+    expect(result.posts[0]).toHaveProperty("signedEvent");
+    expect(result.posts[0]).toHaveProperty("nostrEvent");
     expect(result.longformPosts).toBeDefined();
     expect(result.user).toEqual(mockUser);
     expect(result.queueTypes).toEqual(mockQueueTypes);

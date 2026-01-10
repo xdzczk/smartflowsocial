@@ -90,7 +90,17 @@ describe("Dashboard Loader", () => {
 
     const result = await loadDashboardData(TEST_USER_ID, "all");
 
-    expect(result.scheduledPosts).toEqual(mockPosts);
+    // The function converts posts to DTOs and adds signedEvent/nostrEvent fields
+    expect(result.scheduledPosts).toHaveLength(1);
+    expect(result.scheduledPosts[0]).toMatchObject({
+      id: "post-1",
+      queueType: expect.objectContaining({
+        id: "queue-1",
+        name: "Queue 1",
+      }) as unknown,
+    });
+    expect(result.scheduledPosts[0]).toHaveProperty("signedEvent");
+    expect(result.scheduledPosts[0]).toHaveProperty("nostrEvent");
     expect(result.longformPosts).toBeDefined();
     expect(result.postStatistics).toEqual(mockStatistics);
     expect(result.user).toEqual(mockUser);

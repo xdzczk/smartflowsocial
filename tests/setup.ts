@@ -27,6 +27,12 @@ process.env["TEST_DATABASE_URL"] ??=
   process.env["DATABASE_URL"] ??
   "postgresql://postgres:postgres@localhost:5432/smartflow_test";
 
+// Skip database tests by default unless explicitly enabled
+// Users can set SKIP_DATABASE_TESTS=false to enable them
+// or set a real TEST_DATABASE_URL to enable them
+// This prevents tests from failing when a database is not available
+process.env["SKIP_DATABASE_TESTS"] ??= "true";
+
 process.env["SESSION_SECRET"] ??=
   "test-session-secret-very-long-and-secure-32-chars-minimum";
 

@@ -18,8 +18,8 @@ export async function resolveQueueTypeId(
   queueTypeId?: string | null,
   queueType?: string | null
 ): Promise<string | null> {
-  // Use provided queue type ID directly
-  if (queueTypeId) {
+  // Use provided queue type ID directly (but treat empty strings as null)
+  if (queueTypeId && queueTypeId.trim() !== "") {
     return Promise.resolve(queueTypeId);
   }
 

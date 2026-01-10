@@ -29,7 +29,9 @@ describe("Property-Based Tests: Timezone Handling", () => {
       fc.assert(
         fc.property(
           fc.constantFrom(...validTimezones),
-          fc.date({ min: new Date("2020-01-01"), max: new Date("2030-12-31") }),
+          fc
+            .date({ min: new Date("2020-01-01"), max: new Date("2030-12-31") })
+            .filter((date: Date) => !isNaN(date.getTime())),
           (timezone: string, date: Date) => {
             try {
               // Convert to UTC
@@ -75,7 +77,9 @@ describe("Property-Based Tests: Timezone Handling", () => {
       fc.assert(
         fc.property(
           fc.constantFrom(...validTimezones),
-          fc.date({ min: new Date("2020-01-01"), max: new Date("2030-12-31") }),
+          fc
+            .date({ min: new Date("2020-01-01"), max: new Date("2030-12-31") })
+            .filter((date: Date) => !isNaN(date.getTime())),
           fc.integer({ min: 1, max: 24 }),
           (timezone: string, date: Date, hours: number) => {
             const later = new Date(date.getTime() + hours * 60 * 60 * 1000);
@@ -94,7 +98,9 @@ describe("Property-Based Tests: Timezone Handling", () => {
             "Europe/London",
             "Australia/Sydney"
           ),
-          fc.date({ min: new Date("2020-01-01"), max: new Date("2030-12-31") }),
+          fc
+            .date({ min: new Date("2020-01-01"), max: new Date("2030-12-31") })
+            .filter((date: Date) => !isNaN(date.getTime())),
           (timezone: string, date: Date) => {
             try {
               // Add/subtract days that might cross DST boundaries
@@ -139,7 +145,9 @@ describe("Property-Based Tests: Timezone Handling", () => {
       fc.assert(
         fc.property(
           fc.constantFrom(...validTimezones),
-          fc.date({ min: new Date(), max: new Date("2030-12-31") }),
+          fc
+            .date({ min: new Date(), max: new Date("2030-12-31") })
+            .filter((date: Date) => !isNaN(date.getTime())),
           fc.integer({ min: 1, max: 168 }), // Hours in future (up to 1 week)
           (timezone: string, baseTime: Date, hoursAhead: number) => {
             const scheduledTime = new Date(
@@ -157,7 +165,9 @@ describe("Property-Based Tests: Timezone Handling", () => {
         fc.property(
           fc.constantFrom(...validTimezones),
           fc.constantFrom(...validTimezones),
-          fc.date({ min: new Date("2020-01-01"), max: new Date("2030-12-31") }),
+          fc
+            .date({ min: new Date("2020-01-01"), max: new Date("2030-12-31") })
+            .filter((date: Date) => !isNaN(date.getTime())),
           (tz1: string, tz2: string, date: Date) => {
             // Same moment in different timezones should have same UTC timestamp
             const date1 = new Date(date);

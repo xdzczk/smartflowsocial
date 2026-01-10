@@ -61,8 +61,28 @@ describe("Drafts Loader", () => {
 
     const result = await loadDraftsData(TEST_USER_ID, "all");
 
-    expect(result.posts).toEqual(mockPosts);
-    expect(result.longformPosts).toEqual(mockLongformPosts);
+    // The function converts posts to DTOs and adds signedEvent/nostrEvent fields
+    expect(result.posts).toHaveLength(1);
+    expect(result.posts[0]).toMatchObject({
+      id: "post-1",
+      queueType: expect.objectContaining({
+        id: "queue-1",
+        name: "Queue 1",
+      }) as unknown,
+    });
+    expect(result.posts[0]).toHaveProperty("signedEvent");
+    expect(result.posts[0]).toHaveProperty("nostrEvent");
+    // The function converts longform posts to DTOs and adds signedEvent/nostrEvent fields
+    expect(result.longformPosts).toHaveLength(1);
+    expect(result.longformPosts[0]).toMatchObject({
+      id: "longform-1",
+      queueType: expect.objectContaining({
+        id: "queue-1",
+        name: "Queue 1",
+      }) as unknown,
+    });
+    expect(result.longformPosts[0]).toHaveProperty("signedEvent");
+    expect(result.longformPosts[0]).toHaveProperty("nostrEvent");
     expect(result.user).toEqual(mockUser);
     expect(result.queueTypes).toHaveLength(1);
     expect(result.selectedQueueType).toBe("all");

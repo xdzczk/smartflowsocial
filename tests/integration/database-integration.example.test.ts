@@ -164,31 +164,44 @@ describeDatabase("Database Integration Example", () => {
 });
 
 // Example: Test without transactions (for testing transaction behavior)
-describe("Database Tests Without Transactions", () => {
-  beforeAll(async () => {
-    // Setup database
+const testDatabaseUrl =
+  process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"];
+const shouldSkipDatabaseTests =
+  !testDatabaseUrl || process.env["SKIP_DATABASE_TESTS"] === "true";
+
+if (shouldSkipDatabaseTests) {
+  describe.skip("Database Tests Without Transactions", () => {
+    it("should persist data without transactions", () => {
+      // Skipped - database not configured
+    });
   });
-
-  afterAll(async () => {
-    // Cleanup - reset database
-    const prisma = getTestPrisma();
-    await prisma.user.deleteMany({});
-  });
-
-  it("should persist data without transactions", async () => {
-    const prisma = getTestPrisma();
-
-    const user = await prisma.user.create({
-      data: {
-        npub: "npub-persist-test",
-        isEnabled: true,
-      },
+} else {
+  describe("Database Tests Without Transactions", () => {
+    beforeAll(async () => {
+      // Setup database
     });
 
-    // Data persists - requires manual cleanup
-    expect(user).toBeDefined();
+    afterAll(async () => {
+      // Cleanup - reset database
+      const prisma = getTestPrisma();
+      await prisma.user.deleteMany({});
+    });
 
-    // Cleanup
-    await prisma.user.delete({ where: { id: user.id } });
+    it("should persist data without transactions", async () => {
+      const prisma = getTestPrisma();
+
+      const user = await prisma.user.create({
+        data: {
+          npub: "npub-persist-test",
+          isEnabled: true,
+        },
+      });
+
+      // Data persists - requires manual cleanup
+      expect(user).toBeDefined();
+
+      // Cleanup
+      await prisma.user.delete({ where: { id: user.id } });
+    });
   });
-});
+}

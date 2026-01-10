@@ -21,6 +21,9 @@ export async function loadEditorJSContent(
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: ref value can change between async operations
   if (!editorRef.current) return;
 
+  // Return early if content is empty
+  if (!content || content.trim() === "") return;
+
   try {
     await editorRef.current.isReady;
 

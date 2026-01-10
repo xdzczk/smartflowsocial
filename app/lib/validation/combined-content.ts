@@ -16,7 +16,8 @@ import type {
 export function isPostData(
   originalData: CombinedContent["originalData"]
 ): originalData is PostData {
-  if (typeof originalData !== "object") {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime check needed: typeof null === "object" in JavaScript
+  if (typeof originalData !== "object" || originalData === null) {
     return false;
   }
 
@@ -32,7 +33,8 @@ export function isPostData(
 export function isLongFormPostData(
   originalData: CombinedContent["originalData"]
 ): originalData is LongFormPostData {
-  if (typeof originalData !== "object") {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime check needed: typeof null === "object" in JavaScript
+  if (typeof originalData !== "object" || originalData === null) {
     return false;
   }
 

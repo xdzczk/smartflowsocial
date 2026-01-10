@@ -31,11 +31,16 @@ describe("Property-Based Tests: Helpers", () => {
 
     it("should return positive time remaining when scheduled date is in the future", () => {
       fc.assert(
-        fc.property(fc.date({ min: new Date() }), (futureDate: Date) => {
-          const result = getTimeRemaining(futureDate, new Date());
-          // Should contain at least one time unit (d, h, m, or s)
-          return /[\d]+[dhms]/.test(result);
-        }),
+        fc.property(
+          fc
+            .date({ min: new Date() })
+            .filter((date: Date) => !isNaN(date.getTime())),
+          (futureDate: Date) => {
+            const result = getTimeRemaining(futureDate, new Date());
+            // Should contain at least one time unit (d, h, m, or s)
+            return /[\d]+[dhms]/.test(result);
+          }
+        ),
         { numRuns: 50 }
       );
     });
@@ -43,7 +48,9 @@ describe("Property-Based Tests: Helpers", () => {
     it("should handle date strings and Date objects consistently", () => {
       fc.assert(
         fc.property(
-          fc.date({ min: new Date("2000-01-01"), max: new Date("2100-12-31") }),
+          fc
+            .date({ min: new Date("2000-01-01"), max: new Date("2100-12-31") })
+            .filter((date: Date) => !isNaN(date.getTime())),
           (date: Date) => {
             const dateObj = new Date(date);
             const dateStr = dateObj.toISOString();
@@ -100,7 +107,9 @@ describe("Property-Based Tests: Helpers", () => {
     it("should handle date strings and Date objects consistently", () => {
       fc.assert(
         fc.property(
-          fc.date({ min: new Date("1900-01-01"), max: new Date("2100-12-31") }),
+          fc
+            .date({ min: new Date("1900-01-01"), max: new Date("2100-12-31") })
+            .filter((date: Date) => !isNaN(date.getTime())),
           (date: Date) => {
             const dateObj = new Date(date);
             const dateStr = dateObj.toISOString();
@@ -122,7 +131,9 @@ describe("Property-Based Tests: Helpers", () => {
     it("should return date in MM/DD/YYYY format", () => {
       fc.assert(
         fc.property(
-          fc.date({ min: new Date("1900-01-01"), max: new Date("2100-12-31") }),
+          fc
+            .date({ min: new Date("1900-01-01"), max: new Date("2100-12-31") })
+            .filter((date: Date) => !isNaN(date.getTime())),
           (date: Date) => {
             const result = formatDate(date);
             // Should contain date pattern (MM/DD/YYYY)

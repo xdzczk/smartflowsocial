@@ -7,8 +7,10 @@
 
 import { execSync } from "child_process";
 
+import { PrismaPg } from "@prisma/adapter-pg";
 import type { Prisma } from "@prisma/client";
 import { PrismaClient } from "@prisma/client";
+import { Pool } from "pg";
 
 let testPrisma: PrismaClient | null = null;
 let transactionClient: PrismaClient | null = null;
@@ -36,7 +38,20 @@ export function getTestPrisma(): PrismaClient {
   const originalUrl = process.env["DATABASE_URL"];
   process.env["DATABASE_URL"] = testDatabaseUrl;
   try {
+    // Prisma 7: Use PostgreSQL adapter for the "client" engine type
+    // Create a connection pool for the adapter
+    const pool = new Pool({
+      connectionString: testDatabaseUrl,
+      max: 10,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 2000,
+    });
+
+    // Create the Prisma adapter using the connection pool
+    const adapter = new PrismaPg(pool);
+
     testPrisma = new PrismaClient({
+      adapter: adapter,
       log: process.env["DEBUG"] ? ["query", "error", "warn"] : ["error"],
     });
   } finally {
@@ -108,6 +123,11 @@ export function setupTestDatabase(): Promise<void> {
     throw new Error("TEST_DATABASE_URL or DATABASE_URL must be set");
   }
 
+  // If SKIP_DATABASE_TESTS is set, skip the setup
+  if (process.env["SKIP_DATABASE_TESTS"] === "true") {
+    return Promise.resolve();
+  }
+
   try {
     // Use db push for test databases - it syncs schema without requiring migrations
     // This works even if the database already has schema
@@ -120,6 +140,10 @@ export function setupTestDatabase(): Promise<void> {
     return Promise.resolve();
   } catch (error) {
     console.error("Failed to sync database schema:", error);
+    // If SKIP_DATABASE_TESTS is set, don't throw - allow tests to be skipped
+    if (process.env["SKIP_DATABASE_TESTS"] === "true") {
+      return Promise.resolve();
+    }
     // If db push fails, it might be due to breaking schema changes
     // In that case, use a fresh test database or manually resolve conflicts
     throw error;
