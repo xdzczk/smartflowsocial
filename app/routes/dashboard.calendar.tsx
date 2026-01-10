@@ -92,6 +92,11 @@ export default function CalendarRoute() {
   const TAB_LONGFORM = "longform";
   const currentTab = searchParams.get("tab") ?? TAB_ALL;
 
+  // Tab styling constants
+  const TAB_ACTIVE_CLASSES = "border-blue-500 text-blue-600 dark:text-blue-400";
+  const TAB_INACTIVE_CLASSES =
+    "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300";
+
   return (
     <div className="flex h-full flex-col space-y-6">
       <div className="flex items-center justify-between">
@@ -106,9 +111,7 @@ export default function CalendarRoute() {
           <Link
             to={`/dashboard/calendar${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=${TAB_ALL}`}
             className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
-              currentTab === TAB_ALL
-                ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+              currentTab === TAB_ALL ? TAB_ACTIVE_CLASSES : TAB_INACTIVE_CLASSES
             }`}
           >
             All ({allContent.length})
@@ -117,8 +120,8 @@ export default function CalendarRoute() {
             to={`/dashboard/calendar${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=${TAB_POSTS}`}
             className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
               currentTab === TAB_POSTS
-                ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                ? TAB_ACTIVE_CLASSES
+                : TAB_INACTIVE_CLASSES
             }`}
           >
             Posts ({scheduledPosts.length})
@@ -127,8 +130,8 @@ export default function CalendarRoute() {
             to={`/dashboard/calendar${params["queueType"] ? `/${params["queueType"]}` : ""}?tab=${TAB_LONGFORM}`}
             className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
               currentTab === TAB_LONGFORM
-                ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                ? TAB_ACTIVE_CLASSES
+                : TAB_INACTIVE_CLASSES
             }`}
           >
             Longform ({scheduledLongFormPosts.length})
@@ -147,9 +150,7 @@ export default function CalendarRoute() {
               prefetch="intent"
               onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
               className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
-                !params["queueType"]
-                  ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                  : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                !params["queueType"] ? TAB_ACTIVE_CLASSES : TAB_INACTIVE_CLASSES
               }`}
             >
               All Queues

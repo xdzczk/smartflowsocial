@@ -170,6 +170,7 @@ async function createNostrUserAndLogin(npub: string) {
     return userWithSubscription;
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: defensive check for user creation
   if (!user) {
     throw new Error("Failed to create user");
   }

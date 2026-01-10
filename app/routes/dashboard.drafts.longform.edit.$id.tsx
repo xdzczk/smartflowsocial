@@ -60,13 +60,16 @@ export default function EditLongFormPost() {
   // the shape of serialized data at compile time, even though the types
   // suggest the checks are unnecessary.
 
+  /* eslint-disable @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data */
   const post =
     typeof loaderData === "object" &&
     loaderData !== null &&
     "post" in loaderData
       ? loaderData.post
       : null;
+  /* eslint-enable @typescript-eslint/no-unnecessary-condition */
 
+  /* eslint-disable @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data */
   const _userId =
     typeof loaderData === "object" &&
     loaderData !== null &&
@@ -75,7 +78,9 @@ export default function EditLongFormPost() {
         ? loaderData.userId
         : String(loaderData.userId ?? "")
       : "";
+  /* eslint-enable @typescript-eslint/no-unnecessary-condition */
 
+  /* eslint-disable @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data */
   const userTags =
     typeof loaderData === "object" &&
     loaderData !== null &&
@@ -84,14 +89,18 @@ export default function EditLongFormPost() {
         ? loaderData.tags
         : String(loaderData.tags ?? "")
       : "";
+  /* eslint-enable @typescript-eslint/no-unnecessary-condition */
 
+  /* eslint-disable @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data */
   const scheduleIntervalsRaw =
     typeof loaderData === "object" &&
     loaderData !== null &&
     "scheduleIntervals" in loaderData
       ? loaderData.scheduleIntervals
       : null;
+  /* eslint-enable @typescript-eslint/no-unnecessary-condition */
 
+  /* eslint-disable @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data */
   const queueTypesRaw =
     typeof loaderData === "object" &&
     loaderData !== null &&
@@ -99,7 +108,9 @@ export default function EditLongFormPost() {
     Array.isArray(loaderData.queueTypes)
       ? loaderData.queueTypes
       : [];
+  /* eslint-enable @typescript-eslint/no-unnecessary-condition */
 
+  /* eslint-disable @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data */
   const assetsRaw =
     typeof loaderData === "object" &&
     loaderData !== null &&
@@ -107,7 +118,9 @@ export default function EditLongFormPost() {
     Array.isArray(loaderData.assets)
       ? (loaderData.assets as unknown[])
       : [];
+  /* eslint-enable @typescript-eslint/no-unnecessary-condition */
 
+  /* eslint-disable @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data */
   const _userTimezone =
     typeof loaderData === "object" &&
     loaderData !== null &&
@@ -116,7 +129,9 @@ export default function EditLongFormPost() {
         ? loaderData.userTimezone
         : String(loaderData.userTimezone ?? "Etc/GMT")
       : "Etc/GMT";
+  /* eslint-enable @typescript-eslint/no-unnecessary-condition */
 
+  /* eslint-disable @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data */
   const hashtagPresetsRaw =
     typeof loaderData === "object" &&
     loaderData !== null &&
@@ -124,6 +139,7 @@ export default function EditLongFormPost() {
     Array.isArray(loaderData.hashtagPresets)
       ? loaderData.hashtagPresets
       : [];
+  /* eslint-enable @typescript-eslint/no-unnecessary-condition */
   const actionData = useActionData<ActionData>();
 
   // Type assertions for Remix JsonifyObject serialization
@@ -148,6 +164,7 @@ export default function EditLongFormPost() {
   const typedPost =
     post &&
     typeof post === "object" &&
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data
     post != null &&
     "id" in post &&
     typeof (post as { id: unknown }).id === "string"

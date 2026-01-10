@@ -242,8 +242,10 @@ export default function LongFormPost({
   };
 
   const { handleSchedule } = useLongFormSubmission({
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data
     title: title ?? "",
     summary: summary ?? "",
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data
     content: content ?? "",
     image,
     customTags: customTags ?? "",
@@ -263,9 +265,11 @@ export default function LongFormPost({
 
       <div className="space-y-6">
         <LongFormPostFields
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data
           title={title ?? ""}
           summary={summary ?? ""}
           customTags={customTags ?? ""}
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data
           content={content ?? ""}
           onTitleChange={(value) => form.setValue("title", value)}
           onSummaryChange={(value) => form.setValue("summary", value)}

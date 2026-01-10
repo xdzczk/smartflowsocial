@@ -39,23 +39,27 @@ export const action = withCSRFProtection(
 
     // Type narrowing: check if result has redirect property
 
+    /* eslint-disable @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data */
     if (
       typeof result === "object" &&
       result !== null &&
       "redirect" in result &&
       result.redirect
     ) {
+      /* eslint-enable @typescript-eslint/no-unnecessary-condition */
       return redirect(result.redirect);
     }
 
     // Type narrowing: check if result has error property
 
+    /* eslint-disable @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data */
     if (
       typeof result === "object" &&
       result !== null &&
       "error" in result &&
       result.error
     ) {
+      /* eslint-enable @typescript-eslint/no-unnecessary-condition */
       return json(result, { status: 400 });
     }
 

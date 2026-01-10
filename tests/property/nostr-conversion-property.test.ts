@@ -128,7 +128,7 @@ describe("Property-Based Tests: Nostr Conversion", () => {
           fc.hexaString({ minLength: 64, maxLength: 64 }),
           (originalHex: string) => {
             const npub = convertHexToNpub(originalHex);
-            if (npub?.startsWith("npub")) {
+            if (npub.startsWith("npub")) {
               const backToHex = convertToHex(npub);
               // For valid conversions, should get back original or valid hex
               return (

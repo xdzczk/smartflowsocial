@@ -8,6 +8,8 @@ import { z } from "zod";
 
 import { ValidationError } from "~/lib/errors";
 
+const VALIDATION_FAILED_MESSAGE = "Validation failed";
+
 /**
  * Parse FormData and validate with Zod schema
  * Returns validated data or throws ValidationError
@@ -145,7 +147,7 @@ export function validateFormData<T extends z.ZodTypeAny>(
                 path: err.path.join("."),
                 message: err.message,
               }));
-              throw new ValidationError("Validation failed", {
+              throw new ValidationError(VALIDATION_FAILED_MESSAGE, {
                 errors: errorDetails,
               });
             }
@@ -166,7 +168,9 @@ export function validateFormData<T extends z.ZodTypeAny>(
         path: err.path.join("."),
         message: err.message,
       }));
-      throw new ValidationError("Validation failed", { errors: errorDetails });
+      throw new ValidationError(VALIDATION_FAILED_MESSAGE, {
+        errors: errorDetails,
+      });
     }
     throw error;
   }
@@ -201,7 +205,7 @@ export function validateFormDataOrRespond<T extends z.ZodTypeAny>(
     }
     return {
       success: false,
-      response: json({ error: "Validation failed" }, { status: 400 }),
+      response: json({ error: VALIDATION_FAILED_MESSAGE }, { status: 400 }),
     };
   }
 }

@@ -299,6 +299,7 @@ export default function BulkPosts() {
   useEffect(() => {
     return () => {
       previewData.forEach((data) => {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime type guard for serialized data
         if (typeof data === "object" && data !== null && "url" in data) {
           const url = data.url;
           if (typeof url === "string") {

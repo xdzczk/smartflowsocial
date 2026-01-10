@@ -335,6 +335,7 @@ export default function NewPost() {
                 if (data && Array.isArray(data) && data.length > 0) {
                   const firstItem = data[0];
 
+                  /* eslint-disable @typescript-eslint/no-unnecessary-condition -- Runtime type guard for serialized data */
                   if (
                     firstItem &&
                     typeof firstItem === "object" &&
@@ -351,6 +352,7 @@ export default function NewPost() {
                       "caption" in content &&
                       "queueType" in content
                     ) {
+                      /* eslint-enable @typescript-eslint/no-unnecessary-condition */
                       const fileUrl =
                         typeof content.fileUrl === "string"
                           ? content.fileUrl

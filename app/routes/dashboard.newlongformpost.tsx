@@ -161,6 +161,7 @@ export default function NewLongFormPost() {
           if (
             qt &&
             typeof qt === "object" &&
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data
             qt !== null &&
             "id" in qt &&
             "name" in qt

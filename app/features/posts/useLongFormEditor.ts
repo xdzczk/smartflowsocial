@@ -31,6 +31,25 @@ export function useLongFormEditor({
   const [editorReady, setEditorReady] = useState(false);
   const isMountedRef = useRef(true);
 
+  // Helper function to safely check if component is mounted
+  // This function makes the ref check explicit to TypeScript
+  const isMounted = useCallback((): boolean => {
+    return isMountedRef.current === true;
+  }, []);
+
+  // Helper to safely execute a callback only if mounted
+  const safeExecute = useCallback(
+    // eslint-disable-next-line promise/prefer-await-to-callbacks -- Synchronous helper function, not a promise callback
+    <T>(callback: () => T): T | undefined => {
+      if (isMountedRef.current) {
+        // eslint-disable-next-line promise/prefer-await-to-callbacks -- Synchronous helper function, not a promise callback
+        return callback();
+      }
+      return undefined;
+    },
+    []
+  );
+
   // Disable captions function
   const disableCaptionsFn = useCallback(() => {
     disableCaptions();
@@ -47,7 +66,7 @@ export function useLongFormEditor({
         typeof window !== "undefined" &&
         !editorRef.current &&
         !editorInitialized.current &&
-        isMountedRef.current
+        isMounted()
       ) {
         editorInitialized.current = true;
 
@@ -102,8 +121,7 @@ export function useLongFormEditor({
         await new Promise((resolve) => setTimeout(resolve, 100));
 
         // Check if component is still mounted and element exists before creating editor
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: ref value can change between async operations
-        if (!isMountedRef.current) {
+        if (!isMounted()) {
           editorInitialized.current = false;
           return;
         }
@@ -118,8 +136,7 @@ export function useLongFormEditor({
         const tools = await createEditorJSToolsConfig(uploadProvider);
 
         // Double-check component is still mounted before creating editor instance
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: ref value can change between async operations
-        if (!isMountedRef.current) {
+        if (!isMounted()) {
           editorInitialized.current = false;
           return;
         }
@@ -136,8 +153,7 @@ export function useLongFormEditor({
             // eslint-disable-next-line @typescript-eslint/no-misused-promises -- EditorJS onChange is async but types don't reflect this
             onChange: async (api: EditorJSAPI) => {
               // Check if component is still mounted and editor element exists
-
-              if (!isMountedRef.current) {
+              if (!isMounted()) {
                 return;
               }
 
@@ -149,29 +165,28 @@ export function useLongFormEditor({
               try {
                 const outputData = await api.saver.save();
                 // Double-check component is still mounted before calling callback
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: ref value can change between async operations
-                if (isMountedRef.current) {
+                safeExecute(() => {
                   onContentChange(JSON.stringify(outputData));
-                }
+                });
               } catch (error) {
                 // Only log errors if component is still mounted
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: ref value can change between async operations
-                if (isMountedRef.current) {
-                  const { handleErrorSafely } =
-                    await import("~/lib/error-handler.client");
-                  handleErrorSafely(error, {
-                    component: "useLongFormEditor",
-                    action: "onChange",
-                  });
-                }
+                safeExecute(() => {
+                  void (async () => {
+                    const { handleErrorSafely } =
+                      await import("~/lib/error-handler.client");
+                    handleErrorSafely(error, {
+                      component: "useLongFormEditor",
+                      action: "onChange",
+                    });
+                  })();
+                });
               }
             },
           }) as EditorJSInstance;
         } catch (error) {
           // If editor creation fails, reset flag and return
           editorInitialized.current = false;
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: ref value can change between async operations
-          if (isMountedRef.current) {
+          safeExecute(() => {
             logClientError(
               error instanceof Error ? error : new Error(String(error)),
               {
@@ -181,7 +196,7 @@ export function useLongFormEditor({
               },
               "warning"
             );
-          }
+          });
           return;
         }
 
@@ -192,22 +207,20 @@ export function useLongFormEditor({
         // Initialize custom drag and drop functionality after editor is ready
         void (async () => {
           try {
-            if (!editorRef.current || !isMountedRef.current) return;
+            if (!editorRef.current || !isMounted()) return;
 
             // Check if element still exists before waiting for isReady
             const editorElement = document.getElementById("editorjs");
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: ref value can change between async operations
-            if (!editorElement || !isMountedRef.current) return;
+            if (!editorElement || !isMounted()) return;
 
             await editorRef.current.isReady;
 
             // Check again after isReady resolves
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: ref values can change between async operations
-            if (!editorRef.current || !isMountedRef.current) return;
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: ref value can change between async operations
+            if (!editorRef.current || !isMounted()) return;
 
             const editorElementAfterReady = document.getElementById("editorjs");
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: ref value can change between async operations
-            if (!editorElementAfterReady || !isMountedRef.current) return;
+            if (!editorElementAfterReady || !isMounted()) return;
 
             const dragObserver = setupCustomDragDrop(
               editorRef as unknown as React.RefObject<EditorJSInstance>,
@@ -217,14 +230,12 @@ export function useLongFormEditor({
             );
             editorRef.current._dragObserver = dragObserver;
 
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: ref value can change between async operations
-            if (isMountedRef.current) {
+            safeExecute(() => {
               setEditorReady(true);
-            }
+            });
           } catch (error) {
             // Only log if component is still mounted
-
-            if (isMountedRef.current) {
+            safeExecute(() => {
               logClientError(
                 error instanceof Error ? error : new Error(String(error)),
                 {
@@ -233,27 +244,24 @@ export function useLongFormEditor({
                 },
                 "warning"
               );
-            }
+            });
           }
         })();
 
         // Run caption disabling immediately and on editor changes
         // Only if component is still mounted
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: ref value can change between async operations
-        if (isMountedRef.current) {
+        safeExecute(() => {
           setTimeout(() => {
-            if (isMountedRef.current) {
+            if (isMounted()) {
               disableCaptionsFn();
             }
           }, 100);
-        }
+        });
 
         // Set up a mutation observer to remove captions whenever they appear
         // Only if component is still mounted
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: ref value can change between async operations
-        if (isMountedRef.current) {
+        safeExecute(() => {
           const editorElement = document.getElementById("editorjs");
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety check: ref value can change between async operations
           if (editorElement && editorRef.current) {
             const captionObserver = setupCaptionObserver(
               editorElement,
@@ -261,7 +269,7 @@ export function useLongFormEditor({
             );
             editorRef.current._captionObserver = captionObserver;
           }
-        }
+        });
       }
     };
 
@@ -322,7 +330,13 @@ export function useLongFormEditor({
         }
       }
     };
-  }, [uploadProvider, onContentChange, disableCaptionsFn]);
+  }, [
+    uploadProvider,
+    onContentChange,
+    disableCaptionsFn,
+    isMounted,
+    safeExecute,
+  ]);
 
   // Load initial content when editor is ready
   const loadInitialData = useCallback(

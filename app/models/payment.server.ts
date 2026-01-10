@@ -3,6 +3,7 @@
 
 if (
   process.env.NODE_ENV !== "development" &&
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime polyfill check for Node.js environment
   globalThis.WebSocket === undefined
 ) {
   const { WebSocket } = require("ws") as {

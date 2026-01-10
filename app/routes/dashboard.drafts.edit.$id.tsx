@@ -47,22 +47,26 @@ export const action = withCSRFProtection(
       }
 
       // Type narrowing: check if result has error property
+      /* eslint-disable @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data */
       if (
         typeof result === "object" &&
         result !== null &&
         "error" in result &&
         result.error
       ) {
+        /* eslint-enable @typescript-eslint/no-unnecessary-condition */
         return json(result, { status: 400 });
       }
 
       // Type narrowing: check if result has redirect property
+      /* eslint-disable @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data */
       if (
         typeof result === "object" &&
         result !== null &&
         "redirect" in result &&
         result.redirect
       ) {
+        /* eslint-enable @typescript-eslint/no-unnecessary-condition */
         return redirect(result.redirect);
       }
 
@@ -81,20 +85,25 @@ export default function EditDraft() {
   // the shape of serialized data at compile time, even though the types
   // suggest the checks are unnecessary.
 
+  /* eslint-disable @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data */
   const postRaw =
     typeof loaderData === "object" &&
     loaderData !== null &&
     "post" in loaderData
       ? loaderData.post
       : null;
+  /* eslint-enable @typescript-eslint/no-unnecessary-condition */
 
+  /* eslint-disable @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data */
   const userRaw =
     typeof loaderData === "object" &&
     loaderData !== null &&
     "user" in loaderData
       ? loaderData.user
       : null;
+  /* eslint-enable @typescript-eslint/no-unnecessary-condition */
 
+  /* eslint-disable @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data */
   const queueTypesRaw =
     typeof loaderData === "object" &&
     loaderData !== null &&
@@ -102,7 +111,9 @@ export default function EditDraft() {
     Array.isArray(loaderData.queueTypes)
       ? loaderData.queueTypes
       : [];
+  /* eslint-enable @typescript-eslint/no-unnecessary-condition */
 
+  /* eslint-disable @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data */
   const hashTagPresetsRaw =
     typeof loaderData === "object" &&
     loaderData !== null &&
@@ -110,6 +121,7 @@ export default function EditDraft() {
     Array.isArray(loaderData.hashTagPresets)
       ? loaderData.hashTagPresets
       : [];
+  /* eslint-enable @typescript-eslint/no-unnecessary-condition */
 
   // Deserialize DTO (with string dates) back to PostData (with Date objects)
   const typedPost =
@@ -219,6 +231,7 @@ export default function EditDraft() {
             ? { name: typedPost.queueType.name }
             : null,
           hashTagPresetId: typedPost.hashTagPresetId ?? null,
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data
           fileUrl: typedPost.fileUrl ?? null,
         }
       : {
@@ -274,6 +287,7 @@ export default function EditDraft() {
           onQueueChange={setSelectedQueue}
           onScheduledForChange={setScheduledFor}
           onHashtagPresetSelect={(presetId, _hashtags) =>
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data
             handleHashtagPresetSelect(presetId ?? "", _hashtags ?? "")
           }
           onUseHashtagPresetsChange={setUseHashtagPresets}

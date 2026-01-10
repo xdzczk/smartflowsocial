@@ -16,6 +16,7 @@ const ACTION_BULK_DELETE = "bulkDelete";
  * Validation error messages
  */
 const ERROR_POST_ID_REQUIRED = "Post ID is required";
+const AT_LEAST_ONE_POST_ID_REQUIRED = "At least one post ID is required";
 
 /**
  * Base action schema - validates the _action field
@@ -62,7 +63,7 @@ export const bulkDeletePostsSchema = z.object({
         return [];
       }
     })
-    .pipe(z.array(z.string()).min(1, "At least one post ID is required")),
+    .pipe(z.array(z.string()).min(1, AT_LEAST_ONE_POST_ID_REQUIRED)),
 });
 
 /**
@@ -82,7 +83,7 @@ export const bulkDeleteLongFormPostsSchema = z.object({
         return [];
       }
     })
-    .pipe(z.array(z.string()).min(1, "At least one post ID is required")),
+    .pipe(z.array(z.string()).min(1, AT_LEAST_ONE_POST_ID_REQUIRED)),
 });
 
 /**
@@ -313,7 +314,7 @@ export const bulkRepostSchema = z.object({
         return [];
       }
     })
-    .pipe(z.array(z.string()).min(1, "At least one post ID is required")),
+    .pipe(z.array(z.string()).min(1, AT_LEAST_ONE_POST_ID_REQUIRED)),
 });
 
 /**
@@ -333,7 +334,7 @@ export const bulkScheduledRepostSchema = z.object({
         return [];
       }
     })
-    .pipe(z.array(z.string()).min(1, "At least one post ID is required")),
+    .pipe(z.array(z.string()).min(1, AT_LEAST_ONE_POST_ID_REQUIRED)),
 });
 
 /**
@@ -353,7 +354,7 @@ export const bulkQuoteSchema = z.object({
         return [];
       }
     })
-    .pipe(z.array(z.string()).min(1, "At least one post ID is required")),
+    .pipe(z.array(z.string()).min(1, AT_LEAST_ONE_POST_ID_REQUIRED)),
 });
 
 /**

@@ -52,6 +52,7 @@ export async function getPostedDashboardData({
       getQueueTypes(userId),
     ]);
 
+  /* eslint-disable @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data */
   const allLongformResult =
     typeof allLongformResultRaw === "object" &&
     allLongformResultRaw !== null &&
@@ -60,6 +61,7 @@ export async function getPostedDashboardData({
     "pagination" in allLongformResultRaw
       ? (allLongformResultRaw as { posts: unknown[]; pagination: unknown })
       : { posts: [], pagination: { total: 0, pages: 0, currentPage: 1 } };
+  /* eslint-enable @typescript-eslint/no-unnecessary-condition */
   const queueTypes = Array.isArray(queueTypesRaw) ? queueTypesRaw : [];
 
   const allLongformPosts = Array.isArray(allLongformResult.posts)

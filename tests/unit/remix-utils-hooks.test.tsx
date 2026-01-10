@@ -37,8 +37,8 @@ describe("Remix Utils Hooks - Logic Tests", () => {
 
     it("should handle Error data by returning undefined", () => {
       const data = new Error("Test error");
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: testing error handling logic
       const isValid =
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: demonstrating type guard pattern
         data && typeof data === "object" && !(data instanceof Error);
       expect(isValid).toBe(false);
     });
@@ -56,8 +56,8 @@ describe("Remix Utils Hooks - Logic Tests", () => {
 
     it("should return data when it's a valid object", () => {
       const data = { user: { npub: "test" } };
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: testing type validation logic
       const isValid =
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: demonstrating type guard pattern
         data && typeof data === "object" && !(data instanceof Error);
       expect(isValid).toBe(true);
 

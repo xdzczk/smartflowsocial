@@ -467,6 +467,7 @@ export default function PostedPosts() {
             <PostDetailsModal
               post={selectedPost}
               stats={
+                /* eslint-disable @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data */
                 typeof selectedPost === "object" &&
                 selectedPost !== null &&
                 "signedEvent" in selectedPost &&
@@ -477,6 +478,7 @@ export default function PostedPosts() {
                   ? stats[selectedPost.signedEvent.id]
                   : undefined
               }
+              /* eslint-enable @typescript-eslint/no-unnecessary-condition */
               onClose={() => setSelectedPost(null)}
               showStats={true}
               showSignedEvent={true}

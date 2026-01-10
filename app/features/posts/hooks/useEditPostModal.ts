@@ -452,6 +452,7 @@ export function useEditPostModal({
   const scheduledForStr = form.watch("scheduledFor");
   const scheduledFor = scheduledForStr ? new Date(scheduledForStr) : null;
   const selectedQueueType = String(form.watch("queueType") ?? "");
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data
   const useHashtagPresets = Boolean(form.watch("useHashtagPresets") ?? false);
   const selectedHashtagPresetId = form.watch("hashTagPresetId") ?? null;
   const manualHashtags = isLongform

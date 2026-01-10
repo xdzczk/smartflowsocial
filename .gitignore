@@ -21,9 +21,7 @@ node_modules
 /.nyc_output
 
 # Performance test results
-tests/performance/results/
-
-# Test results
+tests/performance/results/# Test results
 test-results/# Build artifacts
 eslint-report.json
 *.tsbuildinfo

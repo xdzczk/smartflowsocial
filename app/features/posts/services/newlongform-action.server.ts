@@ -333,6 +333,7 @@ async function handlePublish(
   }
 
   const sanitizedContent = sanitizeMarkdown(markdownContent);
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data
   const finalSummary = summary ?? generateSummary(sanitizedContent);
 
   // Add hashtags to content if user has enabled it
@@ -471,6 +472,7 @@ async function handleScheduleLongform(
   }
 
   const sanitizedContent = sanitizeMarkdown(markdownContent);
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data
   const finalSummary = summary ?? generateSummary(sanitizedContent);
 
   // Add hashtags to content if user has enabled it

@@ -37,6 +37,7 @@ function isTestEnvironment(): boolean {
  * Disabled in test environments
  */
 const RATE_LIMIT_MESSAGE = "Too many requests, please try again later.";
+const RATE_LIMIT_EXCEEDED_ERROR = "Rate limit exceeded";
 
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -47,7 +48,7 @@ export const apiLimiter = rateLimit({
   handler: (req: Request, res: Response) => {
     const rateLimitMessage = RATE_LIMIT_MESSAGE;
     res.status(429).json({
-      error: "Rate limit exceeded",
+      error: RATE_LIMIT_EXCEEDED_ERROR,
       message: rateLimitMessage,
       retryAfter: Math.ceil(
         (req.rateLimit?.resetTime ?? Date.now() + 15 * 60 * 1000 - Date.now()) /
@@ -71,7 +72,7 @@ export const strictLimiter = rateLimit({
   message: "Rate limit exceeded for this endpoint.",
   handler: (req: Request, res: Response) => {
     res.status(429).json({
-      error: "Rate limit exceeded",
+      error: RATE_LIMIT_EXCEEDED_ERROR,
       message: "Rate limit exceeded for this endpoint. Please try again later.",
       retryAfter: Math.ceil(
         (req.rateLimit?.resetTime ?? Date.now() + 15 * 60 * 1000 - Date.now()) /
@@ -95,7 +96,7 @@ export const authLimiter = rateLimit({
   message: "Too many authentication attempts, please try again later.",
   handler: (req: Request, res: Response) => {
     res.status(429).json({
-      error: "Rate limit exceeded",
+      error: RATE_LIMIT_EXCEEDED_ERROR,
       message: "Too many authentication attempts, please try again later.",
       retryAfter: Math.ceil(
         (req.rateLimit?.resetTime ?? Date.now() + 15 * 60 * 1000 - Date.now()) /
@@ -158,7 +159,7 @@ export function createUserRateLimiter(points = 100, duration = 60) {
         : duration;
 
       res.status(429).json({
-        error: "Rate limit exceeded",
+        error: RATE_LIMIT_EXCEEDED_ERROR,
         message: "Too many requests, please try again later.",
         retryAfter,
       });
@@ -201,7 +202,7 @@ export function createIPRateLimiter(points = 100, duration = 60) {
         : duration;
 
       res.status(429).json({
-        error: "Rate limit exceeded",
+        error: RATE_LIMIT_EXCEEDED_ERROR,
         message: "Too many requests from this IP, please try again later.",
         retryAfter,
       });
