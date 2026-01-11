@@ -20,7 +20,7 @@ describe("Engagement Feed", () => {
   describe("Page Access", () => {
     it("should navigate to engagement feed from dashboard", () => {
       cy.visitAndCheck("/dashboard");
-      // Use force:true for fixed sidebar links
+      // Fixed sidebar links may be overflowed, use force click
       cy.get('a[href*="engagement"]')
         .first()
         .should("exist")

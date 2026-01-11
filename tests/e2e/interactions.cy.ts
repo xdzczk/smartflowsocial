@@ -81,7 +81,7 @@ describe("Detailed User Interactions", () => {
 
     it("should click submit button", () => {
       cy.get("textarea").first().type("Test post");
-      cy.get('button[type="submit"], button:contains("Post")')
+      cy.get('button[type="submit"]')
         .first()
         .should("be.visible")
         .should("not.be.disabled")
@@ -190,15 +190,8 @@ describe("Detailed User Interactions", () => {
       cy.get('a[href*="newpost"]')
         .first()
         .should("exist")
-        .should("have.attr", "href")
-        .then(() => {
-          // Use force:true for fixed sidebar links
-          cy.get('a[href*="newpost"]').first().click({ force: true });
-          cy.location("pathname", { timeout: 10000 }).should(
-            "include",
-            "newpost"
-          );
-        });
+        .click({ force: true });
+      cy.location("pathname", { timeout: 10000 }).should("include", "newpost");
     });
 
     it("should handle external links", () => {

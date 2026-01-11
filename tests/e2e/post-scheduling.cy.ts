@@ -138,11 +138,7 @@ describe("Post Scheduling Flow", () => {
       });
 
       // Submit
-      cy.get(
-        'button[type="submit"], button:contains("Schedule"), button:contains("Post")'
-      )
-        .first()
-        .click();
+      cy.get('button[type="submit"]').first().should("be.visible").click();
 
       // Verify redirect
       cy.location("pathname", { timeout: 10000 }).should((pathname) => {

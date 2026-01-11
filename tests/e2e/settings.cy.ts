@@ -20,7 +20,7 @@ describe("User Settings", () => {
   describe("Settings Page Access", () => {
     it("should navigate to settings page from dashboard", () => {
       cy.visitAndCheck("/dashboard");
-      // Use force:true for fixed sidebar links
+      // Fixed sidebar links may be overflowed, use force click
       cy.get('a[href*="settings"]')
         .first()
         .should("exist")
@@ -74,8 +74,13 @@ describe("User Settings", () => {
       cy.get("body").then(($body) => {
         // Check for queue tab or queue settings
         const hasQueueTab =
-          $body.find('[role="tab"]:contains("Queue"), a[href*="queue"]')
-            .length > 0 || $body.find('button:contains("Queue")').length > 0;
+          $body.find('[role="tab"]').filter((_, el) => {
+            return Cypress.$(el).text().toLowerCase().includes("queue");
+          }).length > 0 ||
+          $body.find('a[href*="queue"]').length > 0 ||
+          $body.find("button").filter((_, el) => {
+            return Cypress.$(el).text().toLowerCase().includes("queue");
+          }).length > 0;
 
         // Or check if queue settings are visible
         const hasQueueSettings =

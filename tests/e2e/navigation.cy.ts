@@ -25,7 +25,7 @@ describe("Navigation and Routing", () => {
       // Wait for dashboard to fully load
       cy.get("body").should("be.visible");
 
-      // Navigate to new post - use force:true for fixed sidebar links
+      // Navigate to new post - fixed sidebar links may be overflowed, use force click
       cy.get('a[href*="newpost"]')
         .first()
         .should("exist")
@@ -37,7 +37,7 @@ describe("Navigation and Routing", () => {
       cy.location("pathname").should("include", "dashboard");
       cy.get("body").should("be.visible");
 
-      // Navigate to drafts - use force:true for fixed sidebar links
+      // Navigate to drafts - fixed sidebar links may be overflowed, use force click
       cy.get('a[href*="drafts"]')
         .first()
         .should("exist")

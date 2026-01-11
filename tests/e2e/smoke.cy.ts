@@ -11,10 +11,6 @@ import { TEST_NPUB } from "./support/nostr-test-keys";
  * These should be fast and reliable.
  */
 describe("Smoke Tests - Critical Paths", () => {
-  afterEach(() => {
-    cy.cleanupNostrUser();
-  });
-
   it("should load the landing page", () => {
     cy.visit("/");
     cy.get("body").should("be.visible");
@@ -28,11 +24,20 @@ describe("Smoke Tests - Critical Paths", () => {
     cy.location("pathname").should("not.include", "dashboard");
   });
 
-  it("should allow authenticated user to access dashboard", () => {
-    cy.loginNostr({ npub: TEST_NPUB });
-    cy.visitAndCheck("/dashboard");
-    cy.location("pathname").should("include", "dashboard");
-    // Verify dashboard content is visible
-    cy.get("body").should("be.visible");
+  describe("Authenticated Access", () => {
+    beforeEach(() => {
+      cy.loginNostr({ npub: TEST_NPUB });
+    });
+
+    afterEach(() => {
+      cy.cleanupNostrUser();
+    });
+
+    it("should allow authenticated user to access dashboard", () => {
+      cy.visitAndCheck("/dashboard");
+      cy.location("pathname").should("include", "dashboard");
+      // Verify dashboard content is visible
+      cy.get("body").should("be.visible");
+    });
   });
 });

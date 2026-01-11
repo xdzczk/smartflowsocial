@@ -21,8 +21,8 @@ describe("Post Creation Flow", () => {
   describe("Navigation", () => {
     it("should navigate to new post page from dashboard", () => {
       cy.visitAndCheck("/dashboard");
-      // Look for new post link/button - use force:true for fixed sidebar links
-      cy.get('a[href*="newpost"], button:contains("New Post")')
+      // Look for new post link - fixed sidebar links may be overflowed, use force click
+      cy.get('a[href*="newpost"]')
         .first()
         .should("exist")
         .click({ force: true });
@@ -52,9 +52,7 @@ describe("Post Creation Flow", () => {
     });
 
     it("should display submit button", () => {
-      cy.get('button[type="submit"], button:contains("Post")')
-        .should("exist")
-        .and("be.visible");
+      cy.get('button[type="submit"]').should("exist").and("be.visible");
     });
   });
 
@@ -70,7 +68,7 @@ describe("Post Creation Flow", () => {
       cy.get("textarea").first().type(postContent);
 
       // Submit
-      cy.get('button[type="submit"], button:contains("Post")').first().click();
+      cy.get('button[type="submit"]').first().should("be.visible").click();
 
       // Wait for redirect or success message
       cy.location("pathname", { timeout: 10000 }).should((pathname) => {
@@ -114,7 +112,7 @@ describe("Post Creation Flow", () => {
 
     it("should validate required fields", () => {
       // Try to submit without content
-      cy.get('button[type="submit"], button:contains("Post")').first().click();
+      cy.get('button[type="submit"]').first().should("be.visible").click();
 
       // Should show validation error or stay on page
       cy.location("pathname").then((pathname) => {

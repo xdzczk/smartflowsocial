@@ -21,7 +21,7 @@ describe("Calendar View", () => {
   describe("Calendar Page Access", () => {
     it("should navigate to calendar page from dashboard", () => {
       cy.visitAndCheck("/dashboard");
-      // Use force:true for fixed sidebar links
+      // Fixed sidebar links may be overflowed, use force click
       cy.get('a[href*="calendar"]')
         .first()
         .should("exist")

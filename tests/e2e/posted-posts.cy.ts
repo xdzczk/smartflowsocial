@@ -21,7 +21,7 @@ describe("Posted Posts Queue", () => {
   describe("Page Access", () => {
     it("should navigate to posted posts page from dashboard", () => {
       cy.visitAndCheck("/dashboard");
-      // Use force:true for fixed sidebar links
+      // Fixed sidebar links may be overflowed, use force click
       cy.get('a[href*="posted"]')
         .first()
         .should("exist")

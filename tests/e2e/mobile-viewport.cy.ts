@@ -50,13 +50,24 @@ describe("Mobile Viewport", () => {
       cy.get("body").then(($body) => {
         const hasMobileMenu =
           $body.find('[data-testid="mobile-menu"]').length > 0 ||
-          $body.find('button:contains("Menu")').length > 0 ||
+          $body.find("button").filter((_, el) => {
+            return Cypress.$(el).text().toLowerCase().includes("menu");
+          }).length > 0 ||
           $body.find('[aria-label*="menu"]').length > 0;
 
         if (hasMobileMenu) {
-          cy.get('[data-testid="mobile-menu"], button:contains("Menu")')
-            .first()
-            .click();
+          cy.get('[data-testid="mobile-menu"]').first().click();
+          cy.then(() => {
+            // If that doesn't work, try finding button with menu text
+            cy.get("body").then(($b) => {
+              const menuButton = $b.find("button").filter((_, el) => {
+                return Cypress.$(el).text().toLowerCase().includes("menu");
+              });
+              if (menuButton.length > 0) {
+                cy.wrap(menuButton.first()).click();
+              }
+            });
+          });
           cy.get("body").should("be.visible");
         }
       });

@@ -18,9 +18,7 @@ node_modules
 
 # Coverage reports
 /coverage
-/.nyc_output
-
-# Performance test results
+/.nyc_output# Performance test results
 tests/performance/results/# Test results
 test-results/# Build artifacts
 eslint-report.json

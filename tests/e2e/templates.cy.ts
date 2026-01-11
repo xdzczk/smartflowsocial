@@ -21,7 +21,7 @@ describe("Templates", () => {
   describe("Templates Page Access", () => {
     it("should navigate to templates page from dashboard", () => {
       cy.visitAndCheck("/dashboard");
-      // Use force:true for fixed sidebar links
+      // Fixed sidebar links may be overflowed, use force click
       cy.get('a[href*="templates"]')
         .first()
         .should("exist")
@@ -70,9 +70,11 @@ describe("Templates", () => {
     it("should display create template button", () => {
       cy.get("body").then(($body) => {
         const hasCreateButton =
-          $body.find(
-            'a[href*="templates"], button:contains("Create"), button:contains("New")'
-          ).length > 0;
+          $body.find('a[href*="templates"]').length > 0 ||
+          $body.find("button").filter((_, el) => {
+            const text = Cypress.$(el).text().toLowerCase();
+            return text.includes("create") || text.includes("new");
+          }).length > 0;
 
         expect(hasCreateButton).to.be.true;
       });

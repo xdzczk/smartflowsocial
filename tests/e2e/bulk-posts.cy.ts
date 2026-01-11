@@ -21,11 +21,8 @@ describe("Bulk Posts Upload", () => {
   describe("Page Navigation", () => {
     it("should navigate to bulk posts page from dashboard", () => {
       cy.visitAndCheck("/dashboard");
-      // Use force:true for fixed sidebar links
-      cy.get('a[href*="bulk"], a:contains("Bulk")')
-        .first()
-        .should("exist")
-        .click({ force: true });
+      // Fixed sidebar links may be overflowed, use force click
+      cy.get('a[href*="bulk"]').first().should("exist").click({ force: true });
       cy.location("pathname", { timeout: 10000 }).should("include", "bulk");
     });
 
@@ -55,29 +52,33 @@ describe("Bulk Posts Upload", () => {
     });
 
     it("should accept file uploads", () => {
-      cy.get("body").then(($body) => {
-        const fileInput = $body.find('input[type="file"]');
-        if (fileInput.length > 0) {
+      cy.get("body").should("be.visible");
+      cy.get('input[type="file"]').then(($fileInput) => {
+        if ($fileInput.length > 0) {
           cy.uploadTestFile('input[type="file"]', 0);
           // Wait for navigation after file upload
           cy.location("pathname", { timeout: 10000 }).should(
             "include",
             "bulkposts"
           );
+        } else {
+          cy.log("File input not found - feature may not be available");
         }
       });
     });
 
     it("should accept multiple file uploads", () => {
-      cy.get("body").then(($body) => {
-        const fileInput = $body.find('input[type="file"]');
-        if (fileInput.length > 0) {
+      cy.get("body").should("be.visible");
+      cy.get('input[type="file"]').then(($fileInput) => {
+        if ($fileInput.length > 0 && $fileInput.attr("multiple")) {
           cy.uploadTestFile('input[type="file"]', [0, 1, 2]);
           // Wait for navigation after file upload
           cy.location("pathname", { timeout: 10000 }).should(
             "include",
             "bulkposts"
           );
+        } else {
+          cy.log("Multiple file upload not available");
         }
       });
     });

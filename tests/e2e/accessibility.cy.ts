@@ -101,11 +101,11 @@ describe("Accessibility", () => {
     it("should handle Enter key on buttons", () => {
       cy.visitAndCheck("/dashboard/newpost");
 
-      cy.get("textarea").first().type("Test");
-      cy.get('button[type="submit"], button:contains("Post")').first().focus();
-      cy.focused().type("{enter}");
+      cy.get("textarea").first().should("be.visible").type("Test");
+      cy.get('button[type="submit"]').first().should("be.visible").focus();
+      cy.focused().should("exist").type("{enter}");
 
-      // Should process submission
+      // Should process submission or stay on page
       cy.location("pathname", { timeout: 10000 }).should((pathname) => {
         expect(pathname).to.satisfy(
           (p: string) => p.includes("dashboard") || p.includes("newpost")
@@ -220,19 +220,17 @@ describe("Accessibility", () => {
       cy.visitAndCheck("/dashboard/newpost");
 
       // Try to submit empty form
-      cy.get('button[type="submit"], button:contains("Post")').first().click();
+      cy.get('button[type="submit"]').first().should("be.visible").click();
 
-      cy.get("body").then(($body) => {
-        // Should show error message or stay on page
-        // Check for error indicators (may or may not be present)
-        $body.find('[role="alert"]').length > 0 ||
-          $body.find('.error, [class*="error"]').length > 0 ||
-          $body.text().toLowerCase().includes("error") ||
-          $body.text().toLowerCase().includes("required");
-
-        // May or may not show error, but should handle gracefully
-        expect($body.length).to.be.greaterThan(0);
+      // Should show error message or stay on page
+      cy.location("pathname", { timeout: 5000 }).should((pathname) => {
+        expect(pathname).to.satisfy(
+          (p: string) => p.includes("newpost") || p.includes("dashboard")
+        );
       });
+
+      // Verify page is still accessible
+      cy.get("body").should("be.visible");
     });
   });
 });

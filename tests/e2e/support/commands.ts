@@ -142,18 +142,74 @@ function loginNostr({ npub = TEST_NPUB }: { npub?: string } = {}) {
   // Delete user first to ensure fresh state, then create
   cy.exec(`npx tsx ./tests/e2e/support/delete-nostr-user.ts "${npub}"`, {
     failOnNonZeroExit: false,
+    env: {
+      ...process.env,
+    },
   }).then(() => {
-    cy.exec(`npx tsx ./tests/e2e/support/create-nostr-user.ts "${npub}"`).then(
-      ({ stdout }) => {
-        const cookieValue = stdout
+    // Get DATABASE_URL from Cypress env or process.env
+    const databaseUrl =
+      (Cypress.env("DATABASE_URL") as string | undefined) ??
+      process.env["DATABASE_URL"];
+    const sessionSecret =
+      (Cypress.env("SESSION_SECRET") as string | undefined) ??
+      process.env["SESSION_SECRET"];
+    const nostrPublisherUrl =
+      (Cypress.env("NOSTR_PUBLISHER_URL") as string | undefined) ??
+      process.env["NOSTR_PUBLISHER_URL"];
+    const redisUrl =
+      (Cypress.env("REDIS_URL") as string | undefined) ??
+      process.env["REDIS_URL"];
+
+    cy.exec(`npx tsx ./tests/e2e/support/create-nostr-user.ts "${npub}"`, {
+      failOnNonZeroExit: false,
+      env: {
+        DATABASE_URL: databaseUrl,
+        SESSION_SECRET: sessionSecret,
+        NOSTR_PUBLISHER_URL: nostrPublisherUrl,
+        REDIS_URL: redisUrl,
+        ...process.env,
+        // Override NODE_ENV after spread to ensure it's set
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- process.env values can be undefined at runtime
+        NODE_ENV: process.env["NODE_ENV"] ?? "test",
+      },
+    }).then((result) => {
+      const { stdout, stderr } = result;
+      const code = "code" in result ? result.code : undefined;
+      // Check if cookie is in stdout (script succeeded even if code is undefined)
+      const cookieMatch = stdout.match(/<cookie>\s*([^<]+)\s*<\/cookie>/s);
+      const cookieValue = cookieMatch?.[1]?.trim();
+      if (cookieValue) {
+        cy.setCookie("__session", cookieValue);
+        return;
+      }
+
+      // If no cookie found, check exit code
+      if (code !== 0 && code !== undefined) {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- stderr/stdout can be undefined
+        const errorMsg = `Failed to create user (exit code ${String(code)}). stderr: ${stderr ?? "none"}. stdout: ${stdout ?? "none"}`;
+        cy.log(errorMsg);
+        throw new Error(errorMsg);
+      }
+
+      // If code is undefined but we have stdout, try to extract cookie anyway
+      if (stdout) {
+        const extractedCookie = stdout
           .replace(
             /.*<cookie>(?<cookieValue>.*)<\/cookie>.*/s,
             "$<cookieValue>"
           )
           .trim();
-        cy.setCookie("__session", cookieValue);
+        if (extractedCookie) {
+          cy.setCookie("__session", extractedCookie);
+          return;
+        }
       }
-    );
+
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- stderr can be undefined
+      throw new Error(
+        `No cookie value found in output. stdout: ${stdout ?? "none"}, stderr: ${stderr ?? "none"}, code: ${code !== undefined ? String(code) : "undefined"}`
+      );
+    });
   });
   return cy.get("@user");
 }
@@ -207,7 +263,21 @@ function deleteUserByEmail(email: string) {
 }
 
 function deleteNostrUserByNpub(npub: string) {
-  void cy.exec(`npx tsx ./tests/e2e/support/delete-nostr-user.ts "${npub}"`);
+  cy.exec(`npx tsx ./tests/e2e/support/delete-nostr-user.ts "${npub}"`, {
+    failOnNonZeroExit: false,
+    env: {
+      ...process.env,
+    },
+  }).then((result) => {
+    const code = "code" in result ? result.code : undefined;
+    const stderr = result.stderr;
+    if (code !== 0) {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- stderr can be undefined
+      cy.log(
+        `Warning: delete-nostr-user exited with code ${String(code)}: ${stderr ?? "unknown error"}`
+      );
+    }
+  });
   cy.clearCookie("__session");
 }
 
@@ -269,13 +339,73 @@ function setSubscriptionStatus(status: TestSubscriptionStatus): void {
         "No npub found on user. Make sure to call cy.loginNostr() first."
       );
     }
+
+    // Get environment variables for the script
+    const databaseUrl =
+      (Cypress.env("DATABASE_URL") as string | undefined) ??
+      process.env["DATABASE_URL"];
+    const sessionSecret =
+      (Cypress.env("SESSION_SECRET") as string | undefined) ??
+      process.env["SESSION_SECRET"];
+    const nostrPublisherUrl =
+      (Cypress.env("NOSTR_PUBLISHER_URL") as string | undefined) ??
+      process.env["NOSTR_PUBLISHER_URL"];
+    const redisUrl =
+      (Cypress.env("REDIS_URL") as string | undefined) ??
+      process.env["REDIS_URL"];
+
     cy.exec(
-      `npx tsx ./tests/e2e/support/update-subscription-status.ts "${npub}" "${status}"`
-    ).then(({ stdout }) => {
-      const resultStatus = stdout
-        .replace(/.*<status>(?<statusValue>.*)<\/status>.*/s, "$<statusValue>")
-        .trim();
-      cy.log(`Subscription status set to: ${resultStatus}`);
+      `npx tsx ./tests/e2e/support/update-subscription-status.ts "${npub}" "${status}"`,
+      {
+        failOnNonZeroExit: false,
+        env: {
+          DATABASE_URL: databaseUrl,
+          SESSION_SECRET: sessionSecret,
+          NOSTR_PUBLISHER_URL: nostrPublisherUrl,
+          REDIS_URL: redisUrl,
+          ...process.env,
+          // Override NODE_ENV after spread to ensure it's set
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- process.env values can be undefined at runtime
+          NODE_ENV: process.env["NODE_ENV"] ?? "test",
+        },
+      }
+    ).then((result) => {
+      const { stdout, stderr } = result;
+      const code = "code" in result ? result.code : undefined;
+      // Check if status is in stdout (script succeeded even if code is undefined)
+      const statusMatch = stdout.match(/<status>\s*([^<]+)\s*<\/status>/s);
+      const resultStatus = statusMatch?.[1]?.trim();
+      if (resultStatus) {
+        cy.log(`Subscription status set to: ${resultStatus}`);
+        return;
+      }
+
+      // If no status found, check exit code
+      if (code !== 0 && code !== undefined) {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- stderr/stdout can be undefined
+        const errorMsg = `Failed to set subscription status (exit code ${String(code)}). stderr: ${stderr ?? "none"}. stdout: ${stdout ?? "none"}`;
+        cy.log(errorMsg);
+        throw new Error(errorMsg);
+      }
+
+      // If code is undefined but we have stdout, try to extract status anyway
+      if (stdout) {
+        const extractedStatus = stdout
+          .replace(
+            /.*<status>(?<statusValue>.*)<\/status>.*/s,
+            "$<statusValue>"
+          )
+          .trim();
+        if (extractedStatus) {
+          cy.log(`Subscription status set to: ${extractedStatus}`);
+          return;
+        }
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- stderr can be undefined
+      cy.log(
+        `Warning: Could not extract subscription status from output. stdout: ${stdout ?? "none"}, stderr: ${stderr ?? "none"}, code: ${code !== undefined ? String(code) : "undefined"}`
+      );
     });
   });
 }

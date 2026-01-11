@@ -6,20 +6,90 @@
 // The user will be created with an ACTIVE subscription if they don't already exist.
 // Each test creates a fresh user, and afterEach cleans it up.
 
+// Load environment variables FIRST using require to ensure it runs before any imports
+// This is critical because PrismaClient reads DATABASE_URL when the module is first loaded
+// Using .js file ensures require() executes synchronously before imports
+require("./load-env.js");
+
+// Import PrismaClient and adapter AFTER env is loaded
+// This ensures PrismaClient reads DATABASE_URL from process.env correctly
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
+// Import these AFTER dotenv has loaded to ensure env vars are available
 import { installGlobals } from "@remix-run/node";
 import { parse } from "cookie";
+import { Pool } from "pg";
 
-import { sessionStorage } from "../../../app/features/auth/session.server";
 installGlobals();
-
-// Create a fresh Prisma client for the script
-const prisma = new PrismaClient();
 
 async function createNostrUserAndLogin(npub: string) {
   if (!npub) {
     throw new Error("npub required for login");
   }
+
+  // Verify DATABASE_URL is set before doing anything
+  let dbUrl = process.env["DATABASE_URL"];
+  if (!dbUrl || dbUrl.trim() === "") {
+    // Try to reload from .env file if not set
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Required for dynamic env loading, require() returns any
+    const dotenv = require("dotenv");
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Required for dynamic env loading, require() returns any
+    const path = require("path");
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- require() returns any
+    const result = dotenv.config({
+      path: path.resolve(process.cwd(), ".env"),
+      override: true,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- require() returns any
+    if (result.parsed) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- require() returns any
+      Object.assign(process.env, result.parsed);
+    }
+    dbUrl = process.env["DATABASE_URL"];
+
+    if (!dbUrl || dbUrl.trim() === "") {
+      const envKeys = Object.keys(process.env).filter(
+        (k) =>
+          k.includes("DATABASE") || k.includes("DB") || k.includes("POSTGRES")
+      );
+      throw new Error(
+        `DATABASE_URL environment variable is not set or is empty. Available env keys: ${envKeys.join(", ")}`
+      );
+    }
+  }
+
+  // Explicitly ensure DATABASE_URL is in process.env for PrismaClient
+  // PrismaClient reads from process.env.DATABASE_URL when the module loads
+  // Set it explicitly to ensure it's available
+  process.env.DATABASE_URL = dbUrl;
+
+  // Verify it's actually set
+  if (!process.env.DATABASE_URL || process.env.DATABASE_URL.trim() === "") {
+    throw new Error("Failed to set DATABASE_URL in process.env");
+  }
+
+  // Create Prisma client using adapter pattern (like app/lib/prisma.server.ts and tests/database/test-db.ts)
+  // This ensures DATABASE_URL is properly used
+  const pool = new Pool({
+    connectionString: dbUrl,
+    max: 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000,
+  });
+
+  const adapter = new PrismaPg(pool);
+
+  const prisma = new PrismaClient({
+    adapter: adapter,
+  });
+
+  // Import sessionStorage AFTER PrismaClient is created
+  // This prevents env.server.ts validation from running before env vars are loaded
+  // Using regular import since env vars are already loaded via require("./load-env.js")
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Required to avoid dynamic import issues, require() returns any
+  const {
+    sessionStorage,
+  } = require("../../../app/features/auth/session.server");
 
   // Create or find the user
   let user = await prisma.user.findUnique({
@@ -180,9 +250,13 @@ async function createNostrUserAndLogin(npub: string) {
   }
 
   // Create session directly without redirect
+  // sessionStorage was dynamically imported above
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call -- require() returns any
   const session = await sessionStorage.getSession();
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call -- require() returns any
   session.set("userId", user.id);
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment -- require() returns any
   const cookieValue = await sessionStorage.commitSession(session, {
     maxAge: 60 * 60 * 24 * 7, // 7 days
   });
@@ -200,6 +274,39 @@ async function createNostrUserAndLogin(npub: string) {
   );
 
   await prisma.$disconnect();
+
+  return user;
 }
 
-void createNostrUserAndLogin(process.argv[2]);
+async function main() {
+  try {
+    const npub = process.argv[2];
+    if (!npub) {
+      console.error("Error: npub required");
+      process.exit(1);
+    }
+
+    // Validate required environment variables
+    if (!process.env["DATABASE_URL"]) {
+      console.error("Error: DATABASE_URL environment variable is required");
+      process.exit(1);
+    }
+    if (!process.env["SESSION_SECRET"]) {
+      console.error("Error: SESSION_SECRET environment variable is required");
+      process.exit(1);
+    }
+
+    await createNostrUserAndLogin(npub);
+    process.exit(0);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error("Error creating user:", errorMessage);
+    if (errorStack) {
+      console.error(errorStack);
+    }
+    process.exit(1);
+  }
+}
+
+void main();

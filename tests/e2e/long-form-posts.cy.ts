@@ -20,7 +20,7 @@ describe("Long Form Posts", () => {
   describe("Long Form Post Creation", () => {
     it("should navigate to new long form post page", () => {
       cy.visitAndCheck("/dashboard");
-      // Fixed sidebar links need force:true or we need to ensure sidebar is visible
+      // Fixed sidebar links may be overflowed, use force click
       cy.get('a[href*="newlongformpost"]')
         .first()
         .should("exist")

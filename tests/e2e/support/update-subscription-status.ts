@@ -4,11 +4,14 @@
 //
 // Where STATUS is one of: FREE, ACTIVE, EXPIRED, CANCELED, PAST_DUE
 
+// Load environment variables FIRST
+require("./load-env.js");
+
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient, SubscriptionStatus } from "@prisma/client";
 import { installGlobals } from "@remix-run/node";
+import { Pool } from "pg";
 installGlobals();
-
-const prisma = new PrismaClient();
 
 type TestSubscriptionStatus =
   | "FREE"
@@ -33,6 +36,25 @@ async function updateSubscriptionStatus(
       "status required (FREE, ACTIVE, EXPIRED, CANCELED, PAST_DUE)"
     );
   }
+
+  // Verify DATABASE_URL is set
+  const dbUrl = process.env["DATABASE_URL"];
+  if (!dbUrl || dbUrl.trim() === "") {
+    throw new Error("DATABASE_URL environment variable is not set");
+  }
+
+  // Create Prisma client using adapter pattern
+  const pool = new Pool({
+    connectionString: dbUrl,
+    max: 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000,
+  });
+
+  const adapter = new PrismaPg(pool);
+  const prisma = new PrismaClient({
+    adapter: adapter,
+  });
 
   // Find the user
   const user = await prisma.user.findUnique({
@@ -236,6 +258,7 @@ async function updateSubscriptionStatus(
   }
 
   await prisma.$disconnect();
+  await pool.end();
 }
 
 void updateSubscriptionStatus(

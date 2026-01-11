@@ -90,7 +90,7 @@ describe("Performance Benchmarks", () => {
       cy.visitAndCheck("/dashboard");
 
       const startTime = Date.now();
-      // Use force:true for fixed sidebar links
+      // Fixed sidebar links may be overflowed, use force click
       cy.get('a[href*="newpost"]')
         .first()
         .should("exist")
