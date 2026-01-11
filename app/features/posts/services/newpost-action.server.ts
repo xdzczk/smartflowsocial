@@ -17,8 +17,8 @@ import {
   getQueueTypes,
   getHashTagPresetById,
 } from "~/features/user";
-import { env } from "~/lib/env.server";
-import { fetchWithRetry } from "~/lib/fetch.server";
+import { getNostrPublisher } from "~/infra/publishers/nostr-publisher.server";
+import { extractCorrelationId } from "~/lib/correlation-context.server";
 import {
   newPostActionSchema,
   validateFormDataOrRespond,
@@ -27,9 +27,6 @@ import { validateSignedEvent } from "~/lib/validation/nostr-events.server";
 
 import { CreatePostUseCase } from "../use-cases/create-post.use-case.server";
 import { PublishNowUseCase } from "../use-cases/publish-now.use-case.server";
-import { resolveQueueTypeId } from "./queue-type-resolver.server";
-import { extractCorrelationId } from "~/lib/correlation-context.server";
-import { getNostrPublisher } from "~/infra/publishers/nostr-publisher.server";
 
 const ERROR_INVALID_SIGNED_EVENT_FORMAT =
   "Invalid signedEvent or nostrEvent format";
@@ -149,7 +146,7 @@ function applyHashtags(
  * Publish event to Nostr publisher
  * @deprecated Use getNostrPublisher().publish() instead
  */
-async function publishToNostr(
+async function _publishToNostr(
   relays: string[],
   signedEvent: SignedEvent
 ): Promise<void> {

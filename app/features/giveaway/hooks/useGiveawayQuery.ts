@@ -127,7 +127,7 @@ export function useGiveawayData() {
     }
   > = Array.isArray(rawData.posts)
     ? rawData.posts.map((dto) => {
-        const postArray = fromPostDTOArray([dto as PostDTO]);
+        const postArray = fromPostDTOArray([dto as unknown as PostDTO]);
         const post = postArray[0];
         if (!post) {
           throw new Error("Failed to deserialize post DTO");

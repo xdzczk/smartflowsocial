@@ -4,8 +4,9 @@
  * Defines retry policies for different job types with exponential backoff and jitter.
  */
 
-import type { QueueType } from "./queue-types";
 import { isRetryableErrorEnhanced } from "~/lib/error-classification.server";
+
+import type { QueueType } from "./queue-types";
 
 /**
  * Retry policy configuration
@@ -45,7 +46,7 @@ export interface RetryPolicy {
 /**
  * Default retry policy
  */
-const DEFAULT_RETRY_POLICY: RetryPolicy = {
+const _DEFAULT_RETRY_POLICY: RetryPolicy = {
   maxAttempts: 3,
   baseDelayMs: 1000, // 1 second
   maxDelayMs: 30000, // 30 seconds
@@ -111,26 +112,21 @@ export function calculateRetryDelay(
  * Get retry policy for a queue type
  */
 export function getRetryPolicy(queueType: QueueType): RetryPolicy {
-  return RETRY_POLICIES[queueType] ?? DEFAULT_RETRY_POLICY;
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Safety fallback for unknown queue types
+  return RETRY_POLICIES[queueType] ?? _DEFAULT_RETRY_POLICY;
 }
 
 /**
  * Check if a job should be retried based on attempt count
  */
-export function shouldRetry(
-  attempt: number,
-  policy: RetryPolicy
-): boolean {
+export function shouldRetry(attempt: number, policy: RetryPolicy): boolean {
   return attempt < policy.maxAttempts;
 }
 
 /**
  * Get retry delay for a specific attempt
  */
-export function getRetryDelay(
-  queueType: QueueType,
-  attempt: number
-): number {
+export function getRetryDelay(queueType: QueueType, attempt: number): number {
   const policy = getRetryPolicy(queueType);
   return calculateRetryDelay(attempt, policy);
 }
@@ -138,7 +134,7 @@ export function getRetryDelay(
 /**
  * Check if error is retryable
  * Some errors should not be retried (e.g., validation errors)
- * 
+ *
  * @deprecated Use isRetryableErrorEnhanced from error-classification.server.ts instead
  * This function is kept for backward compatibility
  */

@@ -4,17 +4,16 @@
  * Handles long form post creation with optional scheduling and outbox pattern.
  */
 
-import { Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 
-import { prisma } from "~/lib/prisma.server";
-import { generateEnqueueIdempotencyKey } from "~/lib/idempotency.server";
-import { createLongFormPost } from "~/models/longformpost.server";
-import { resolveQueueTypeId } from "../services/queue-type-resolver.server";
 import { createOutboxEventInTransaction } from "~/infra/outbox/outbox.server";
 import type { LongFormPostScheduledPayload } from "~/infra/outbox/outbox.server";
+import { generateEnqueueIdempotencyKey } from "~/lib/idempotency.server";
+import { prisma } from "~/lib/prisma.server";
+import { createLongFormPost } from "~/models/longformpost.server";
+
 import { calculateLongFormStatus } from "../server";
-import type { SignedEvent } from "~/features/nostr/types";
-import { calculateLongFormStatus } from "../server";
+import { resolveQueueTypeId } from "../services/queue-type-resolver.server";
 
 import type {
   CreateLongFormPostInput,
@@ -66,8 +65,8 @@ export class CreateLongFormPostUseCase {
             isPublished: false,
             isScheduled,
             draft: isDraft,
-            signedEvent: input.signedEvent as Prisma.InputJsonValue,
-            nostrEvent: input.nostrEvent as Prisma.InputJsonValue,
+            signedEvent: input.signedEvent as unknown as Prisma.InputJsonValue,
+            nostrEvent: input.nostrEvent as unknown as Prisma.InputJsonValue,
             nostrEventId,
             status,
             publishedAt,
@@ -80,19 +79,19 @@ export class CreateLongFormPostUseCase {
         const payload: LongFormPostScheduledPayload = {
           postId: post.id,
           userId: input.userId,
-          signedEvent: input.signedEvent,
-          scheduledFor: input.scheduledFor,
+          signedEvent: input.signedEvent!,
+          scheduledFor: input.scheduledFor!,
           schemaVersion: "1.0",
         };
 
         await createOutboxEventInTransaction(
-          tx,
+          tx as Prisma.TransactionClient,
           "LONGFORM_SCHEDULED",
           post.id,
           "LongFormPost",
           payload,
           scheduledAtUtc,
-          generateEnqueueIdempotencyKey(post.id, input.scheduledFor)
+          generateEnqueueIdempotencyKey(post.id, input.scheduledFor!)
         );
 
         return {
@@ -113,8 +112,8 @@ export class CreateLongFormPostUseCase {
       queueTypeId,
       hashTagPresetId: input.hashTagPresetId,
       isPublished: input.isPublished ?? false,
-      signedEvent: input.signedEvent,
-      nostrEvent: input.nostrEvent,
+      signedEvent: input.signedEvent as unknown as Prisma.JsonValue | undefined,
+      nostrEvent: input.nostrEvent as unknown as Prisma.JsonValue | undefined,
       scheduledFor: input.scheduledFor
         ? input.scheduledFor.toString()
         : undefined,

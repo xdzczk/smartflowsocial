@@ -4,14 +4,37 @@
 
 import { logClientError } from "~/lib/error-handler.client";
 export async function createEditorJSToolsConfig(uploadProvider: string | null) {
-  const Header = (await import("@editorjs/header")).default;
-  const List = (await import("@editorjs/list")).default;
-  const Quote = (await import("@editorjs/quote")).default;
-  const Code = (await import("@editorjs/code")).default;
-  const InlineCode = (await import("@editorjs/inline-code")).default;
-  const LinkTool = (await import("@editorjs/link")).default;
-  const Embed = (await import("@editorjs/embed")).default;
-  const ImageTool = (await import("@editorjs/image")).default;
+  const headerModule = await import("@editorjs/header");
+  const Header = headerModule.default as unknown as new (config?: {
+    placeholder?: string;
+    levels?: number[];
+  }) => unknown;
+  const listModule = await import("@editorjs/list");
+  const List = listModule.default as unknown as new () => unknown;
+  const quoteModule = await import("@editorjs/quote");
+  const Quote = quoteModule.default as unknown as new () => unknown;
+  const codeModule = await import("@editorjs/code");
+  const Code = codeModule.default as unknown as new () => unknown;
+  const inlineCodeModule = await import("@editorjs/inline-code");
+  const InlineCode = inlineCodeModule.default as unknown as new () => unknown;
+  const linkToolModule = await import("@editorjs/link");
+  const LinkTool = linkToolModule.default as unknown as new (config?: {
+    endpoint: string;
+  }) => unknown;
+  const embedModule = (await import("@editorjs/embed")) as { default: unknown };
+  const Embed = embedModule.default as new (config?: {
+    services?: Record<string, boolean>;
+  }) => unknown;
+  const imageToolModule = (await import("@editorjs/image")) as {
+    default: unknown;
+  };
+  const ImageTool = imageToolModule.default as new (config?: {
+    uploader?: {
+      uploadByFile: (
+        file: File
+      ) => Promise<{ success: number; file: { url: string } }>;
+    };
+  }) => unknown;
 
   return {
     header: {

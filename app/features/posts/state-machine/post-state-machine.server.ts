@@ -4,8 +4,6 @@
  * Manages post state transitions with database persistence.
  */
 
-import { Prisma } from "@prisma/client";
-
 import { prisma } from "~/lib/prisma.server";
 
 import {
@@ -35,6 +33,21 @@ export class PostStateMachine {
     }
 
     const currentState = (post.currentState || "DRAFT") as PostState;
+
+    // Skip transition if already in target state (but still record it for history)
+    if (currentState === targetState) {
+      // Still record the transition for audit purposes, even if state doesn't change
+      await prisma.postStateTransition.create({
+        data: {
+          postId,
+          fromState: currentState,
+          toState: targetState,
+          reason: `${reason} (no state change)`,
+        },
+      });
+      return;
+    }
+
     const transition = transitionPost(currentState, targetState, reason);
 
     await prisma.$transaction(async (tx) => {
@@ -56,8 +69,9 @@ export class PostStateMachine {
     });
 
     // Record state transition metric
-    recordPostStateTransition(transition.from, transition.to);
-      }
+    // TODO: Re-enable analytics when analytics.server module is available
+    // recordPostStateTransition(transition.from, transition.to);
+  }
 
   /**
    * Get state transition history for a post
@@ -85,6 +99,6 @@ export class PostStateMachine {
       select: { currentState: true },
     });
 
-    return (post?.currentState || "DRAFT") as PostState;
+    return (post?.currentState ?? "DRAFT") as PostState;
   }
 }

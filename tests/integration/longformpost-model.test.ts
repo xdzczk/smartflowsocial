@@ -381,7 +381,7 @@ describe("LongFormPost Model Functions", () => {
           queueType: true,
         },
         orderBy: {
-          scheduledFor: "asc",
+          scheduledAtUtc: "asc",
         },
       });
       expect(result).toEqual(mockPosts);

@@ -430,6 +430,17 @@ export const deleteRecyclablePostSchema = z.object({
 });
 
 /**
+ * Recycle post schema - creates a new post from a recyclable post
+ */
+export const recyclePostSchema = z.object({
+  _action: z.literal("recycle"),
+  postId: z.string().min(1, ERROR_POST_ID_REQUIRED),
+  scheduledFor: z.string().optional(), // Unix timestamp as string
+  queueTypeId: z.string().optional().nullable(),
+  queueType: z.string().optional(),
+});
+
+/**
  * Discriminated union for all recyclable post actions
  */
 export const recyclableActionSchema = z.discriminatedUnion("_action", [
@@ -440,4 +451,5 @@ export const recyclableActionSchema = z.discriminatedUnion("_action", [
   bulkQuoteSchema,
   repostSchema,
   quoteSchema,
+  recyclePostSchema,
 ]);

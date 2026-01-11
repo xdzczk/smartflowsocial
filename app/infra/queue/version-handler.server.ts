@@ -5,11 +5,11 @@
  * Ensures backward compatibility when schema versions change.
  */
 
-import { logWarning, logError } from "~/lib/error-logger.server";
 import type {
   PostScheduledPayload,
   LongFormPostScheduledPayload,
 } from "~/infra/outbox/outbox.server";
+import { logWarning } from "~/lib/error-logger.server";
 
 /**
  * Supported schema versions
@@ -33,16 +33,16 @@ export const CURRENT_VERSION: SupportedVersion = "1.0";
 /**
  * Check if a version is supported
  */
-export function isVersionSupported(version: string): version is SupportedVersion {
+export function isVersionSupported(
+  version: string
+): version is SupportedVersion {
   return version in SUPPORTED_VERSIONS;
 }
 
 /**
  * Get the version from a payload
  */
-export function getPayloadVersion(
-  payload: unknown
-): string | undefined {
+export function getPayloadVersion(payload: unknown): string | undefined {
   if (
     typeof payload === "object" &&
     payload !== null &&
@@ -99,21 +99,23 @@ export function validatePayloadVersion(
  * Migrate payload to current version
  * Currently all versions are compatible, but this provides a hook for future migrations
  */
-export function migratePayloadToCurrentVersion<T extends PostScheduledPayload | LongFormPostScheduledPayload>(
-  payload: T,
-  fromVersion: string
-): T {
+export function migratePayloadToCurrentVersion<
+  T extends PostScheduledPayload | LongFormPostScheduledPayload,
+>(payload: T, fromVersion: string): T {
   if (fromVersion === CURRENT_VERSION) {
     // Already at current version
     return payload;
   }
 
   // Log migration for monitoring
-  logWarning(`Migrating payload from version ${fromVersion} to ${CURRENT_VERSION}`, {
-    fromVersion,
-    toVersion: CURRENT_VERSION,
-    postId: payload.postId,
-  });
+  logWarning(
+    `Migrating payload from version ${fromVersion} to ${CURRENT_VERSION}`,
+    {
+      fromVersion,
+      toVersion: CURRENT_VERSION,
+      postId: payload.postId,
+    }
+  );
 
   // For now, all versions are compatible, so just return as-is
   // Future versions can add migration logic here
@@ -138,6 +140,8 @@ export function normalizePayload(
   }
 
   // For version 1.0, ensure all required fields are present
+  // This check is intentionally kept for future version support
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Intentional check for future version support
   if (version === "1.0") {
     if (
       typeof payload === "object" &&
@@ -147,8 +151,10 @@ export function normalizePayload(
       "signedEvent" in payload &&
       "scheduledFor" in payload
     ) {
-      const normalized = payload as PostScheduledPayload | LongFormPostScheduledPayload;
-      
+      const normalized = payload as
+        | PostScheduledPayload
+        | LongFormPostScheduledPayload;
+
       // Ensure schemaVersion is set
       if (!normalized.schemaVersion) {
         normalized.schemaVersion = "1.0";
@@ -170,7 +176,9 @@ export function normalizePayload(
  * Process payload with version handling
  * Validates version, migrates if needed, and normalizes
  */
-export function processPayloadWithVersion<T extends PostScheduledPayload | LongFormPostScheduledPayload>(
+export function processPayloadWithVersion<
+  T extends PostScheduledPayload | LongFormPostScheduledPayload,
+>(
   payload: unknown,
   context?: { eventId?: string; aggregateId?: string }
 ): {

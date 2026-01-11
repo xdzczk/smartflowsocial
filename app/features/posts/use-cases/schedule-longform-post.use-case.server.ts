@@ -4,13 +4,13 @@
  * Schedules a long form post for future publication.
  */
 
-import { Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 
-import { prisma } from "~/lib/prisma.server";
-import { getLongFormPost } from "~/models/longformpost.server";
 import { createOutboxEventInTransaction } from "~/infra/outbox/outbox.server";
 import type { LongFormPostScheduledPayload } from "~/infra/outbox/outbox.server";
 import { generateEnqueueIdempotencyKey } from "~/lib/idempotency.server";
+import { prisma } from "~/lib/prisma.server";
+import { getLongFormPost } from "~/models/longformpost.server";
 
 import type { ScheduleLongFormPostInput } from "./longform-types";
 
@@ -37,7 +37,7 @@ export class ScheduleLongFormPostUseCase {
           scheduledAtUtc: input.scheduledAtUtc,
           scheduledFor: scheduledForUnix.toString(), // Legacy field
           isScheduled: true,
-          signedEvent: input.signedEvent as Prisma.InputJsonValue,
+          signedEvent: input.signedEvent as unknown as Prisma.InputJsonValue,
         },
       });
 
@@ -56,7 +56,7 @@ export class ScheduleLongFormPostUseCase {
       };
 
       await createOutboxEventInTransaction(
-        tx,
+        tx as Prisma.TransactionClient,
         "LONGFORM_SCHEDULED",
         input.postId,
         "LongFormPost",

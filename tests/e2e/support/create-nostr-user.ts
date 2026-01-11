@@ -35,14 +35,14 @@ async function createNostrUserAndLogin(npub: string) {
     const dotenv = require("dotenv");
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Required for dynamic env loading, require() returns any
     const path = require("path");
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- require() returns any
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- require() returns any, dotenv.config() returns any
     const result = dotenv.config({
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- require() returns any
       path: path.resolve(process.cwd(), ".env"),
       override: true,
-    });
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- require() returns any
+    }) as { parsed?: Record<string, string>; error?: Error };
+
     if (result.parsed) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- require() returns any
       Object.assign(process.env, result.parsed);
     }
     dbUrl = process.env["DATABASE_URL"];

@@ -188,9 +188,11 @@ async function createInvoice(
   ownerNwc: string,
   amountUsd: number
 ): Promise<unknown> {
-  const ownerLn = new LN(ownerNwc);
+  const ownerLn = new LN(ownerNwc) as unknown as {
+    requestPayment: (amount: { amount: number }) => Promise<unknown>;
+  };
   try {
-    return await ownerLn.requestPayment(USD(amountUsd));
+    return await ownerLn.requestPayment(USD(amountUsd) as { amount: number });
   } catch (error) {
     console.error("[CRON] Failed to request make_invoice", error);
     throw new Error(

@@ -7,11 +7,11 @@
  * Usage: npx tsx scripts/migrate-scheduled-for.ts
  */
 
+import { resolve } from "node:path";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { config } from "dotenv";
 import { Pool } from "pg";
-import { resolve } from "node:path";
 
 // Load environment variables
 config({ path: resolve(process.cwd(), ".env") });
@@ -71,7 +71,9 @@ async function migrateScheduledFor() {
             console.log(`Migrated ${migrated} posts...`);
           }
         } else {
-          console.warn(`Invalid timestamp for post ${post.id}: ${post.scheduledFor}`);
+          console.warn(
+            `Invalid timestamp for post ${post.id}: ${post.scheduledFor}`
+          );
           errors++;
         }
       } catch (error) {
@@ -81,7 +83,9 @@ async function migrateScheduledFor() {
     }
   }
 
-  console.log(`Posts migration complete: ${migrated} migrated, ${errors} errors`);
+  console.log(
+    `Posts migration complete: ${migrated} migrated, ${errors} errors`
+  );
 
   // Migrate LongFormPosts
   console.log("Migrating LongFormPosts...");
@@ -118,7 +122,9 @@ async function migrateScheduledFor() {
             console.log(`Migrated ${longFormMigrated} longform posts...`);
           }
         } else {
-          console.warn(`Invalid timestamp for longform post ${post.id}: ${post.scheduledFor}`);
+          console.warn(
+            `Invalid timestamp for longform post ${post.id}: ${post.scheduledFor}`
+          );
           longFormErrors++;
         }
       } catch (error) {
@@ -134,7 +140,9 @@ async function migrateScheduledFor() {
 
   console.log("\nMigration summary:");
   console.log(`Posts: ${migrated} migrated, ${errors} errors`);
-  console.log(`LongFormPosts: ${longFormMigrated} migrated, ${longFormErrors} errors`);
+  console.log(
+    `LongFormPosts: ${longFormMigrated} migrated, ${longFormErrors} errors`
+  );
 }
 
 migrateScheduledFor()

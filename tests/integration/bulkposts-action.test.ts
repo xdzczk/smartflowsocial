@@ -13,6 +13,7 @@ vi.mock("~/features/auth/session.server", () => ({
 
 vi.mock("~/models/post.commands.server", () => ({
   createPost: vi.fn(),
+  createPostWithOutbox: vi.fn(),
   updatePost: vi.fn(),
 }));
 
@@ -33,7 +34,7 @@ import {
 import { requireUserId } from "~/features/auth/session.server";
 import { bulkPostsAction } from "~/features/posts/bulkposts.action.server";
 import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
-import { createPost, updatePost } from "~/models/post.commands.server";
+import { updatePost } from "~/models/post.commands.server";
 import { getPostsByIds } from "~/models/post.queries.server";
 
 describe("Bulk Posts Action Handler", () => {
@@ -171,9 +172,11 @@ describe("Bulk Posts Action Handler", () => {
       (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
         "queue-1"
       );
-      (createPost as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce(mockPosts[0])
-        .mockResolvedValueOnce(mockPosts[1]);
+      const { createPostWithOutbox } =
+        await import("~/models/post.commands.server");
+      (createPostWithOutbox as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce({ post: mockPosts[0], needsScheduling: true })
+        .mockResolvedValueOnce({ post: mockPosts[1], needsScheduling: true });
 
       const formData = new FormData();
       formData.append("_action", "sign_and_schedule");
@@ -225,7 +228,9 @@ describe("Bulk Posts Action Handler", () => {
         }
       }
       expect(result.status).toBe(302); // Redirect
-      expect(createPost).toHaveBeenCalledTimes(2);
+      const { createPostWithOutbox: createPostWithOutboxCheck2 } =
+        await import("~/models/post.commands.server");
+      expect(createPostWithOutboxCheck2).toHaveBeenCalledTimes(2);
     });
 
     it("should handle recycle mode and mark original posts as non-recyclable", async () => {
@@ -244,9 +249,12 @@ describe("Bulk Posts Action Handler", () => {
       (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
         "queue-1"
       );
-      (createPost as ReturnType<typeof vi.fn>).mockResolvedValue(
-        createMockPost({ id: "new-post-1" })
-      );
+      const { createPostWithOutbox } =
+        await import("~/models/post.commands.server");
+      (createPostWithOutbox as ReturnType<typeof vi.fn>).mockResolvedValue({
+        post: createMockPost({ id: "new-post-1" }),
+        needsScheduling: false,
+      });
       (getPostsByIds as ReturnType<typeof vi.fn>).mockResolvedValue([
         createMockPost({ id: originalPostId, isRecyclable: true }),
       ]);
@@ -338,7 +346,9 @@ describe("Bulk Posts Action Handler", () => {
       (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
         "queue-1"
       );
-      (createPost as ReturnType<typeof vi.fn>)
+      const { createPostWithOutbox } =
+        await import("~/models/post.commands.server");
+      (createPostWithOutbox as ReturnType<typeof vi.fn>)
         .mockResolvedValueOnce(createMockPost({ id: "draft-1" }))
         .mockResolvedValueOnce(createMockPost({ id: "draft-2" }));
 
@@ -367,12 +377,16 @@ describe("Bulk Posts Action Handler", () => {
 
       expect(result).toBeInstanceOf(Response);
       expect(result.status).toBe(302); // Redirect
-      expect(createPost).toHaveBeenCalledTimes(2);
-      expect(createPost).toHaveBeenCalledWith(
+      const { createPostWithOutbox: createPostWithOutbox2 } =
+        await import("~/models/post.commands.server");
+      expect(createPostWithOutbox2).toHaveBeenCalledTimes(2);
+      expect(createPostWithOutbox2).toHaveBeenCalledWith(
         expect.objectContaining({
           draft: true,
           isScheduled: false,
-        })
+        }),
+        undefined, // scheduledForUnix
+        expect.any(String) // correlationId
       );
     });
   });

@@ -5,11 +5,16 @@
  * Provides storage, retrieval, and manual retry capabilities.
  */
 
-import { prisma } from "~/lib/prisma.server";
 import { logError, logWarning, logInfo } from "~/lib/error-logger.server";
+import { prisma } from "~/lib/prisma.server";
 import { recordDeadLetterJob } from "~/lib/queue-metrics.server";
-import type { QueueType, PostJobData, LongFormPostJobData } from "./queue-types";
+
 import { queueClient } from "./queue-client.server";
+import type {
+  QueueType,
+  PostJobData,
+  LongFormPostJobData,
+} from "./queue-types";
 
 /**
  * Dead letter queue entry
@@ -69,15 +74,12 @@ export async function createDeadLetterEntry(
     });
   } catch (dbError) {
     // Log but don't fail - dead letter queue is best effort
-    logError(
-      dbError instanceof Error ? dbError : new Error(String(dbError)),
-      {
-        queueType,
-        jobId,
-        message: "Failed to create dead letter entry",
-        correlationId,
-      }
-    );
+    logError(dbError instanceof Error ? dbError : new Error(String(dbError)), {
+      queueType,
+      jobId,
+      message: "Failed to create dead letter entry",
+      correlationId,
+    });
   }
 }
 
@@ -99,7 +101,7 @@ export async function getDeadLetterEntries(
     queueType: entry.queueType as QueueType,
     jobId: entry.jobId,
     jobName: entry.jobName,
-    jobData: entry.jobData as PostJobData | LongFormPostJobData,
+    jobData: entry.jobData as unknown as PostJobData | LongFormPostJobData,
     error: entry.error,
     errorStack: entry.errorStack ?? undefined,
     attemptsMade: entry.attemptsMade,
@@ -128,7 +130,7 @@ export async function retryDeadLetterJob(
     const result = await queueClient.enqueue(
       entry.queueType as QueueType,
       entry.jobName,
-      entry.jobData as PostJobData | LongFormPostJobData,
+      entry.jobData as unknown as PostJobData | LongFormPostJobData,
       {
         // No delay - retry immediately
       }
@@ -150,22 +152,18 @@ export async function retryDeadLetterJob(
       entryId,
       queueType: entry.queueType,
       jobId: entry.jobId,
-      correlationId: entry.correlationId,
+      correlationId: entry.correlationId ?? undefined,
     });
 
     return { success: true };
   } catch (error) {
-    logError(
-      error instanceof Error ? error : new Error(String(error)),
-      {
-        entryId,
-        message: "Failed to retry dead letter job",
-      }
-    );
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      entryId,
+      message: "Failed to retry dead letter job",
+    });
     return {
       success: false,
-      error:
-        error instanceof Error ? error.message : "Unknown error occurred",
+      error: error instanceof Error ? error.message : "Unknown error occurred",
     };
   }
 }
@@ -184,17 +182,13 @@ export async function deleteDeadLetterEntry(
     logInfo("Dead letter entry deleted", { entryId });
     return { success: true };
   } catch (error) {
-    logError(
-      error instanceof Error ? error : new Error(String(error)),
-      {
-        entryId,
-        message: "Failed to delete dead letter entry",
-      }
-    );
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      entryId,
+      message: "Failed to delete dead letter entry",
+    });
     return {
       success: false,
-      error:
-        error instanceof Error ? error.message : "Unknown error occurred",
+      error: error instanceof Error ? error.message : "Unknown error occurred",
     };
   }
 }
@@ -219,7 +213,7 @@ export async function getDeadLetterStats(): Promise<{
 
   for (const entry of allEntries) {
     // Count by queue type
-    const queueType = entry.queueType as string;
+    const queueType = entry.queueType;
     byQueueType[queueType] = (byQueueType[queueType] ?? 0) + 1;
 
     // Count by error message

@@ -5,24 +5,27 @@
  */
 
 import { getNostrPublisher } from "~/infra/publishers/nostr-publisher.server";
-import { updateLongFormPostStatus } from "~/models/longformpost.server";
-import { getLongFormPost } from "~/models/longformpost.server";
+import {
+  updateLongFormPostStatus,
+  getLongFormPost,
+} from "~/models/longformpost.server";
 
 import type { PublishLongFormNowInput } from "./longform-types";
 
 export class PublishLongFormNowUseCase {
   async execute(input: PublishLongFormNowInput): Promise<void> {
     // Verify post exists and not already published
-    const post = await getLongFormPost({ id: input.postId, userId: input.userId });
+    const post = await getLongFormPost({
+      id: input.postId,
+      userId: input.userId,
+    });
     if (!post) {
       throw new Error(
         `Long form post ${input.postId} not found for user ${input.userId}`
       );
     }
     if (post.isPublished) {
-      throw new Error(
-        `Long form post ${input.postId} already published`
-      );
+      throw new Error(`Long form post ${input.postId} already published`);
     }
 
     // Update status and publish in parallel

@@ -50,13 +50,14 @@ export function sanitizeMarkdown(markdown: string): string {
 
   try {
     // Parse markdown to HTML using marked
-    const htmlResult = marked(markdown, {
+    const markedOptions: Parameters<typeof marked>[1] = {
       gfm: true,
       breaks: false,
       pedantic: false,
       smartLists: true,
       smartypants: false,
-    });
+    };
+    const htmlResult = marked(markdown, markedOptions);
     const html =
       typeof htmlResult === "string" ? htmlResult : String(htmlResult);
 

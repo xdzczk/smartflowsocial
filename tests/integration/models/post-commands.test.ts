@@ -12,6 +12,7 @@ vi.mock("~/lib/prisma.server", () => ({
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
+      findUnique: vi.fn(),
     },
   },
 }));

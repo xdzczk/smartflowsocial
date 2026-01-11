@@ -376,7 +376,7 @@ describe("Post Model Functions", () => {
           template: true,
         },
         orderBy: {
-          scheduledFor: "asc",
+          scheduledAtUtc: "asc",
         },
       });
       expect(result).toEqual(mockPosts);
@@ -418,7 +418,7 @@ describe("Post Model Functions", () => {
           template: true,
         },
         orderBy: {
-          scheduledFor: "asc",
+          scheduledAtUtc: "asc",
         },
       });
       expect(result).toEqual(mockPosts);

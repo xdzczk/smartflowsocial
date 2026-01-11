@@ -420,6 +420,39 @@ export async function handleRecyclablePostAction(
     return handleSingleRepostAction(validatedData, userId);
   }
 
+  // Handle recycle action
+  if (validatedData._action === "recycle") {
+    return handleRecycleAction(validatedData, userId);
+  }
+
   // Handle single quote
   return handleSingleQuoteAction(validatedData, userId);
+}
+
+async function handleRecycleAction(
+  recycleData: { postId: string; scheduledFor?: string; queueType?: string },
+  userId: string
+): Promise<Response> {
+  try {
+    const { RecyclePostUseCase } =
+      await import("~/features/posts/use-cases/recycle-post.use-case.server");
+    const recycleUseCase = new RecyclePostUseCase();
+    const scheduledFor = recycleData.scheduledFor
+      ? parseInt(recycleData.scheduledFor, 10)
+      : undefined;
+    const result = await recycleUseCase.execute({
+      originalPostId: recycleData.postId,
+      userId,
+      scheduledFor,
+      queueType: recycleData.queueType,
+    });
+    return json({
+      success: true,
+      newPostId: result.newPostId,
+      scheduled: result.scheduled,
+    });
+  } catch (error) {
+    const { handleActionError } = await import("~/lib/error-handler.server");
+    return handleActionError(error);
+  }
 }

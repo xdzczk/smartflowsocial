@@ -117,7 +117,26 @@ async function uploadFileToBlossom(
     }
 
     // Dynamic import to avoid SSR issues
-    const { BlossomUploader } = await import("@nostrify/nostrify/uploaders");
+    const uploadersModule = await import("@nostrify/nostrify/uploaders");
+
+    const BlossomUploader =
+      (
+        uploadersModule as {
+          BlossomUploader?: new (...args: unknown[]) => {
+            upload: (file: File) => Promise<string[][]>;
+          };
+        }
+      ).BlossomUploader ??
+      (
+        uploadersModule.default as {
+          BlossomUploader?: new (...args: unknown[]) => {
+            upload: (file: File) => Promise<string[][]>;
+          };
+        }
+      ).BlossomUploader;
+    if (!BlossomUploader) {
+      throw new Error("BlossomUploader not found in module");
+    }
 
     // Determine primary server based on provider
     let primaryServerUrl;

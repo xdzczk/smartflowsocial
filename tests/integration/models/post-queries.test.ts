@@ -362,9 +362,9 @@ describe("Post Queries", () => {
         where: {
           isScheduled: true,
           isPosted: false,
-          scheduledFor: {
+          scheduledAtUtc: {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
-            lte: expect.any(String),
+            lte: expect.any(Date),
           },
         },
       });

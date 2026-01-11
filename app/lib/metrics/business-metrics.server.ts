@@ -91,6 +91,34 @@ export const postPublishFailedCounter = getOrCreateMetric(
 );
 
 /**
+ * Post cancelled counter
+ * Tracks posts that were cancelled
+ */
+export const postCancelledCounter = getOrCreateMetric(
+  "posts_cancelled_total",
+  () =>
+    new promClient.Counter({
+      name: "posts_cancelled_total",
+      help: "Total number of posts cancelled",
+      labelNames: ["post_type"],
+    })
+);
+
+/**
+ * Post recycled counter
+ * Tracks posts that were recycled
+ */
+export const postRecycledCounter = getOrCreateMetric(
+  "posts_recycled_total",
+  () =>
+    new promClient.Counter({
+      name: "posts_recycled_total",
+      help: "Total number of posts recycled",
+      labelNames: ["post_type"],
+    })
+);
+
+/**
  * Post scheduled counter
  * Tracks posts scheduled for future publication
  */
@@ -178,6 +206,24 @@ export function recordPostPublishFailed(
  */
 export function recordPostScheduled(postType: string): void {
   postScheduledCounter.inc({
+    post_type: postType,
+  });
+}
+
+/**
+ * Record post cancelled
+ */
+export function recordPostCancelled(postType: string): void {
+  postCancelledCounter.inc({
+    post_type: postType,
+  });
+}
+
+/**
+ * Record post recycled
+ */
+export function recordPostRecycled(postType: string): void {
+  postRecycledCounter.inc({
     post_type: postType,
   });
 }

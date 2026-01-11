@@ -5,51 +5,70 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// Mock Prisma
-vi.mock("~/lib/prisma.server", () => ({
-  prisma: {
-    payment: {
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-    },
-    subscription: {
-      findUnique: vi.fn(),
-    },
-    plan: {
-      findUnique: vi.fn(),
-    },
-  },
-}));
-
-import { TEST_USER_ID } from "../../utils/test-helpers";
-
-import { prisma } from "~/lib/prisma.server";
 import {
   checkPaymentStatus,
   getUserSubscription,
   getUserPaymentHistory,
   getPlanById,
 } from "~/models/payment.server";
+import {
+  resetMockPaymentPrismaTransaction,
+  createMockPayment,
+  createMockPlan,
+  createMockSubscription,
+  setupPaymentTestEnvironment,
+  TEST_USER_ID,
+  TEST_PLAN_ID,
+  TEST_PAYMENT_ID,
+} from "~/tests/utils/payment-test-helpers";
+
+// Mock Prisma
+
+const { mockPrisma } = vi.hoisted(async () => {
+  // Import inside hoisted to avoid initialization issues
+  const { createMockPaymentPrisma: createMock } =
+    await import("../../utils/payment-test-helpers");
+  const mockPrisma = createMock();
+  return { mockPrisma };
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports -- Dynamic import needed for hoisting
+}) as unknown as {
+  mockPrisma: ReturnType<
+    Awaited<
+      typeof import("../../utils/payment-test-helpers")
+    >["createMockPaymentPrisma"]
+  >;
+};
+
+vi.mock("~/lib/prisma.server", () => ({
+  prisma: mockPrisma,
+}));
 
 describe("Payment Model Queries", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    setupPaymentTestEnvironment();
+    resetMockPaymentPrismaTransaction(mockPrisma);
   });
 
   describe("checkPaymentStatus", () => {
     it("should return payment status for completed payment", async () => {
-      const mockPayment = {
+      const mockPayment = createMockPayment({
         status: "COMPLETED",
-        paidAt: new Date("2024-12-25T12:00:00Z"),
-      };
-      (prisma.payment.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPayment
+      });
+      (mockPayment as unknown as { paidAt: Date }).paidAt = new Date(
+        "2024-12-25T12:00:00Z"
       );
 
-      const result = await checkPaymentStatus("payment-123");
+      (
+        mockPrisma.payment.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPayment);
 
-      expect(prisma.payment.findUnique).toHaveBeenCalledWith({
-        where: { id: "payment-123" },
+      const result = await checkPaymentStatus(TEST_PAYMENT_ID);
+
+      expect(
+        mockPrisma.payment.findUnique as ReturnType<typeof vi.fn>
+      ).toHaveBeenCalledWith({
+        where: { id: TEST_PAYMENT_ID },
         select: {
           status: true,
           paidAt: true,
@@ -57,19 +76,22 @@ describe("Payment Model Queries", () => {
       });
       expect(result.status).toBe("COMPLETED");
       expect(result.paid).toBe(true);
-      expect(result.paidAt).toEqual(mockPayment.paidAt);
+      expect(result.paidAt).toEqual(
+        (mockPayment as unknown as { paidAt: Date | null }).paidAt
+      );
     });
 
     it("should return payment status for pending payment", async () => {
-      const mockPayment = {
+      const mockPayment = createMockPayment({
         status: "PENDING",
-        paidAt: null,
-      };
-      (prisma.payment.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPayment
-      );
+      });
+      (mockPayment as unknown as { paidAt: Date | null }).paidAt = null;
 
-      const result = await checkPaymentStatus("payment-123");
+      (
+        mockPrisma.payment.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPayment);
+
+      const result = await checkPaymentStatus(TEST_PAYMENT_ID);
 
       expect(result.status).toBe("PENDING");
       expect(result.paid).toBe(false);
@@ -77,9 +99,9 @@ describe("Payment Model Queries", () => {
     });
 
     it("should throw error if payment not found", async () => {
-      (prisma.payment.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null
-      );
+      (
+        mockPrisma.payment.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(null);
 
       await expect(checkPaymentStatus("nonexistent")).rejects.toThrow(
         "Payment not found"
@@ -89,24 +111,24 @@ describe("Payment Model Queries", () => {
 
   describe("getUserSubscription", () => {
     it("should get user subscription", async () => {
-      const mockSubscription = {
-        id: "sub-123",
-        userId: TEST_USER_ID,
-        planId: "plan-123",
-        isActive: true,
-        plan: {
-          id: "plan-123",
-          name: "Pro Plan",
-        },
-      };
+      const mockSubscription = createMockSubscription({
+        planId: TEST_PLAN_ID,
+      });
       (
-        prisma.subscription.findUnique as ReturnType<typeof vi.fn>
+        mockSubscription as unknown as { plan: { id: string; name: string } }
+      ).plan = {
+        id: TEST_PLAN_ID,
+        name: "Pro Plan",
+      };
+
+      (
+        mockPrisma.subscription.findUnique as ReturnType<typeof vi.fn>
       ).mockResolvedValue(mockSubscription);
 
       const result = await getUserSubscription(TEST_USER_ID);
 
       const callArgs = (
-        prisma.subscription.findUnique as ReturnType<typeof vi.fn>
+        mockPrisma.subscription.findUnique as ReturnType<typeof vi.fn>
       ).mock.calls[0]?.[0] as { where?: { userId?: string } } | undefined;
       expect(callArgs?.where?.userId).toBe(TEST_USER_ID);
       expect(result).toEqual(mockSubscription);
@@ -114,7 +136,7 @@ describe("Payment Model Queries", () => {
 
     it("should return null if no subscription found", async () => {
       (
-        prisma.subscription.findUnique as ReturnType<typeof vi.fn>
+        mockPrisma.subscription.findUnique as ReturnType<typeof vi.fn>
       ).mockResolvedValue(null);
 
       const result = await getUserSubscription(TEST_USER_ID);
@@ -126,37 +148,36 @@ describe("Payment Model Queries", () => {
   describe("getUserPaymentHistory", () => {
     it("should get user payment history", async () => {
       const mockPayments = [
-        {
+        createMockPayment({
           id: "payment-1",
-          userId: TEST_USER_ID,
           status: "COMPLETED",
           amount: 1000,
-          amountUsd: 10,
-        },
-        {
+        }),
+        createMockPayment({
           id: "payment-2",
-          userId: TEST_USER_ID,
           status: "PENDING",
           amount: 2000,
-          amountUsd: 20,
-        },
+        }),
       ];
-      (prisma.payment.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPayments
-      );
+      (mockPayments[0] as unknown as { amountUsd: number }).amountUsd = 10;
+      (mockPayments[1] as unknown as { amountUsd: number }).amountUsd = 20;
+
+      (
+        mockPrisma.payment.findMany as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPayments);
 
       const result = await getUserPaymentHistory(TEST_USER_ID);
 
-      const callArgs = (prisma.payment.findMany as ReturnType<typeof vi.fn>)
+      const callArgs = (mockPrisma.payment.findMany as ReturnType<typeof vi.fn>)
         .mock.calls[0]?.[0] as { where?: { userId?: string } } | undefined;
       expect(callArgs?.where?.userId).toBe(TEST_USER_ID);
       expect(result).toEqual(mockPayments);
     });
 
     it("should return empty array if no payments found", async () => {
-      (prisma.payment.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
-        []
-      );
+      (
+        mockPrisma.payment.findMany as ReturnType<typeof vi.fn>
+      ).mockResolvedValue([]);
 
       const result = await getUserPaymentHistory(TEST_USER_ID);
 
@@ -166,28 +187,29 @@ describe("Payment Model Queries", () => {
 
   describe("getPlanById", () => {
     it("should get plan by ID", async () => {
-      const mockPlan = {
-        id: "plan-123",
+      const mockPlan = createMockPlan({
         name: "Pro Plan",
-        price: "10.00",
-        isActive: true,
-      };
-      (prisma.plan.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPlan
-      );
+        price: 10,
+      });
 
-      const result = await getPlanById("plan-123");
+      (
+        mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPlan);
 
-      expect(prisma.plan.findUnique).toHaveBeenCalledWith({
-        where: { id: "plan-123" },
+      const result = await getPlanById(TEST_PLAN_ID);
+
+      expect(
+        mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>
+      ).toHaveBeenCalledWith({
+        where: { id: TEST_PLAN_ID },
       });
       expect(result).toEqual(mockPlan);
     });
 
     it("should return null if plan not found", async () => {
-      (prisma.plan.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null
-      );
+      (
+        mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(null);
 
       const result = await getPlanById("nonexistent");
 

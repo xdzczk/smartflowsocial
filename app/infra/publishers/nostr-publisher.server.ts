@@ -7,14 +7,15 @@
 
 import type { SignedEvent } from "~/features/nostr/types";
 import { env } from "~/lib/env.server";
-import { fetchWithRetry } from "~/lib/fetch.server";
 import { logWarning } from "~/lib/error-logger.server";
+import { fetchWithRetry } from "~/lib/fetch.server";
+import { recordRelayRequest } from "~/lib/metrics/relay-metrics.server";
+
 import {
   prioritizeRelaysByHealth,
   recordRelaySuccess,
   recordRelayFailure,
 } from "../relays/relay-health.server";
-import { recordRelayRequest } from "~/lib/metrics/relay-metrics.server";
 
 /**
  * Nostr Publisher Interface
@@ -39,7 +40,7 @@ export interface NostrPublisher {
  * Uses HTTP publisher service with health-aware relay routing
  */
 export class DefaultNostrPublisher implements NostrPublisher {
-  private publisherUrl: string;
+  private readonly publisherUrl: string;
 
   constructor() {
     this.publisherUrl =
@@ -116,9 +117,7 @@ let defaultPublisher: NostrPublisher | null = null;
  * Get the default Nostr publisher instance
  */
 export function getNostrPublisher(): NostrPublisher {
-  if (!defaultPublisher) {
-    defaultPublisher = new DefaultNostrPublisher();
-  }
+  defaultPublisher ??= new DefaultNostrPublisher();
   return defaultPublisher;
 }
 

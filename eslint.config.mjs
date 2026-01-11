@@ -174,6 +174,34 @@ const featureBoundaryRestrictions = [
       "Features must use other features' public API (index.ts), not internal utils. Use relative imports for same-feature imports.",
   },
   {
+    target: ["app/features/**/*.{ts,tsx}", "!app/features/**/index.{ts,tsx}"],
+    from: "~/features/*/types",
+    except: ["app/features/*/types", "app/features/**/types"],
+    message:
+      "Features must use other features' public API (index.ts), not internal types. Use relative imports for same-feature imports.",
+  },
+  {
+    target: ["app/features/**/*.{ts,tsx}", "!app/features/**/index.{ts,tsx}"],
+    from: "~/features/*/dtos",
+    except: ["app/features/*/dtos", "app/features/**/dtos"],
+    message:
+      "Features must use other features' public API (index.ts), not internal dtos. Use relative imports for same-feature imports.",
+  },
+  {
+    target: ["app/features/**/*.{ts,tsx}", "!app/features/**/index.{ts,tsx}"],
+    from: "~/features/*/queue-colors",
+    except: ["app/features/*/queue-colors", "app/features/**/queue-colors"],
+    message:
+      "Features must use other features' public API (index.ts), not internal utilities. Use relative imports for same-feature imports.",
+  },
+  {
+    target: ["app/features/**/*.{ts,tsx}", "!app/features/**/index.{ts,tsx}"],
+    from: "~/features/*/stats.server",
+    except: ["app/features/*/stats.server", "app/features/**/stats.server"],
+    message:
+      "Features must use other features' public API (index.ts), not internal stats. Use relative imports for same-feature imports.",
+  },
+  {
     target: "app/models/**/*",
     from: "app/features/**/services/**",
     message:

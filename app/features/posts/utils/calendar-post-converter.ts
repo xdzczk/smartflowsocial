@@ -56,6 +56,7 @@ export function longFormPostDataToCalendarPost(
     ...post,
     // Override specific fields for CalendarPost
     caption: post.content ?? null,
+    currentState: (post as { currentState?: string }).currentState ?? "DRAFT",
     fileUrl: [],
     hashtags: hashtagsValue,
     isScheduled: post.isScheduled || false,

@@ -29,9 +29,28 @@ vi.mock("~/lib/markdown-sanitizer.server", () => ({
   }),
 }));
 
+const {
+  mockUpdateLongFormPost,
+  mockGetLongFormPost,
+  mockUpdateLongFormPostStatus,
+} = vi.hoisted(() => {
+  const mockUpdateLongFormPost = vi.fn();
+  const mockGetLongFormPost = vi.fn();
+  const mockUpdateLongFormPostStatus = vi.fn();
+  return {
+    mockUpdateLongFormPost,
+    mockGetLongFormPost,
+    mockUpdateLongFormPostStatus,
+  };
+});
+
 vi.mock("~/models/longformpost.server", () => ({
-  updateLongFormPost: vi.fn(),
+  updateLongFormPost: mockUpdateLongFormPost,
+  getLongFormPost: mockGetLongFormPost,
+  updateLongFormPostStatus: mockUpdateLongFormPostStatus,
 }));
+
+// Import the mocked functions for use in tests
 
 vi.mock("~/features/user", () => ({
   getUserById: vi.fn(),
@@ -124,6 +143,7 @@ import {
   getQueueTypes,
 } from "~/features/user";
 import { updateLongFormPost } from "~/models/longformpost.server";
+// Mocks are defined above
 
 describe("Longform Edit Action Handler", () => {
   const POST_ID = "post-123";
@@ -150,6 +170,14 @@ describe("Longform Edit Action Handler", () => {
         hashTagPreset: null,
       },
     ]);
+    // Default mock for getLongFormPost
+    (mockGetLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: POST_ID,
+      userId: TEST_USER_ID,
+      title: "Test Post",
+      content: "Test content",
+      isPublished: false,
+    });
   });
 
   describe("Image Upload Action", () => {

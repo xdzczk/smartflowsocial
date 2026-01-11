@@ -7,11 +7,9 @@
 
 import * as promClient from "prom-client";
 
+import { getAllRelayHealthMetrics } from "~/infra/relays/relay-health.server";
+
 import { singleton } from "../singleton.server";
-import {
-  getAllRelayHealthMetrics,
-  type RelayHealthMetrics,
-} from "~/infra/relays/relay-health.server";
 
 /**
  * Get or create a metric, handling hot-reloads gracefully
@@ -133,23 +131,24 @@ export function updateRelayMetrics(): void {
     relayLatencyGauge.set({ relay: metrics.relay }, metrics.averageLatency);
 
     // Update health status (map to numeric value)
-    const healthStatusValue = {
-      UNKNOWN: 0,
-      HEALTHY: 1,
-      DEGRADED: 2,
-      UNHEALTHY: 3,
-    }[metrics.status] ?? 0;
-    relayHealthStatusGauge.set(
-      { relay: metrics.relay },
-      healthStatusValue
-    );
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Status may not match enum values
+    const healthStatusValue =
+      {
+        UNKNOWN: 0,
+        HEALTHY: 1,
+        DEGRADED: 2,
+        UNHEALTHY: 3,
+      }[metrics.status] ?? 0;
+    relayHealthStatusGauge.set({ relay: metrics.relay }, healthStatusValue);
 
     // Update circuit breaker state (map to numeric value)
-    const circuitBreakerValue = {
-      CLOSED: 0,
-      HALF_OPEN: 1,
-      OPEN: 2,
-    }[metrics.circuitBreakerState] ?? 0;
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- State may not match enum values
+    const circuitBreakerValue =
+      {
+        CLOSED: 0,
+        HALF_OPEN: 1,
+        OPEN: 2,
+      }[metrics.circuitBreakerState] ?? 0;
     relayCircuitBreakerStateGauge.set(
       { relay: metrics.relay },
       circuitBreakerValue
@@ -160,10 +159,7 @@ export function updateRelayMetrics(): void {
 /**
  * Record relay request
  */
-export function recordRelayRequest(
-  relay: string,
-  success: boolean
-): void {
+export function recordRelayRequest(relay: string, success: boolean): void {
   relayTotalRequestsCounter.inc({
     relay,
     status: success ? "success" : "failure",

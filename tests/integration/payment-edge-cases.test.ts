@@ -11,39 +11,37 @@
 
 import { LN } from "@getalby/sdk/lnclient";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
+import {
+  resetMockPaymentPrismaTransaction,
+  createMockPlan,
+  createMockPayment,
+  createMockLN,
+  setupPaymentTestEnvironment,
+  TEST_USER_ID,
+  TEST_PLAN_ID,
+  TEST_PAYMENT_ID,
+} from "../utils/payment-test-helpers";
+
+import { getBitcoinRate } from "~/features/payments/btc.rate";
+import { createPlanInvoice } from "~/models/payment.server";
+
 // Mock Prisma - use vi.hoisted to allow top-level variables in mocks
-const { mockPrisma } = vi.hoisted(() => {
-  const mockPrisma = {
-    plan: {
-      findUnique: vi.fn(),
-    },
-    payment: {
-      create: vi.fn(),
-      findUnique: vi.fn(),
-      update: vi.fn(),
-    },
-    subscription: {
-      upsert: vi.fn(),
-    },
-    user: {
-      update: vi.fn(),
-    },
-    $transaction: vi.fn(
-      async (callback: (tx: typeof mockPrisma) => Promise<unknown>) => {
-        // Create a transaction client that has the same methods as mockPrisma
-        const tx = {
-          plan: mockPrisma.plan,
-          payment: mockPrisma.payment,
-          subscription: mockPrisma.subscription,
-          user: mockPrisma.user,
-          $transaction: mockPrisma.$transaction,
-        };
-        return await callback(tx);
-      }
-    ),
-  };
+
+const { mockPrisma } = vi.hoisted(async () => {
+  // Import inside hoisted to avoid initialization issues
+  const { createMockPaymentPrisma: createMock } =
+    await import("../utils/payment-test-helpers");
+  const mockPrisma = createMock();
   return { mockPrisma };
-});
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports -- Dynamic import needed for hoisting
+}) as unknown as {
+  mockPrisma: ReturnType<
+    Awaited<
+      typeof import("../utils/payment-test-helpers")
+    >["createMockPaymentPrisma"]
+  >;
+};
 
 vi.mock("~/lib/prisma.server", () => ({
   prisma: mockPrisma,
@@ -53,7 +51,7 @@ vi.mock("~/features/payments/btc.rate", () => ({
   getBitcoinRate: vi.fn(),
 }));
 
-// Mock LN as a constructor class - use vi.hoisted to allow per-test configuration
+// Mock LN as a constructor class
 const { MockLN } = vi.hoisted(() => {
   class MockLN {
     credentials: string;
@@ -63,10 +61,9 @@ const { MockLN } = vi.hoisted(() => {
 
     constructor(credentials: string) {
       this.credentials = credentials;
-      // Initialize methods as vi.fn() so they can be mocked per test
       this.requestPayment = vi.fn();
-      this.onPaid = vi.fn().mockReturnValue(this); // Chainable
-      this.onTimeout = vi.fn().mockReturnValue(this); // Chainable
+      this.onPaid = vi.fn().mockReturnValue(this);
+      this.onTimeout = vi.fn().mockReturnValue(this);
     }
   }
 
@@ -79,9 +76,6 @@ vi.mock("@getalby/sdk/lnclient", () => ({
   }),
   USD: vi.fn((amount: unknown) => ({ amount: amount as number })),
 }));
-
-import { getBitcoinRate } from "~/features/payments/btc.rate";
-import { createPlanInvoice } from "~/models/payment.server";
 // handlePaymentCompleted and updateUserSubscription will be dynamically imported
 
 interface MockRequest {
@@ -93,28 +87,12 @@ interface MockRequest {
 }
 
 describe("Payment Processing Edge Cases", () => {
-  const TEST_USER_ID = "user-123";
-  const TEST_PLAN_ID = "plan-123";
-  const TEST_PAYMENT_ID = "payment-123";
-
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env["OWNER_NWC"] = "test-nwc-credentials";
-    // Reset $transaction to default implementation
-    mockPrisma.$transaction.mockImplementation(
-      async (callback: (tx: typeof mockPrisma) => Promise<unknown>) => {
-        // Create a transaction client that has the same methods as mockPrisma
-        const tx = {
-          plan: mockPrisma.plan,
-          payment: mockPrisma.payment,
-          subscription: mockPrisma.subscription,
-          user: mockPrisma.user,
-          $transaction: mockPrisma.$transaction,
-        };
-        return await callback(tx);
-      }
-    );
-    // Reset LN to default implementation - use function, not arrow, so it works as constructor
+    setupPaymentTestEnvironment();
+    resetMockPaymentPrismaTransaction(mockPrisma);
+
+    // Reset LN to default implementation
     const lnMock = LN as unknown as {
       mockImplementation: (
         fn: (credentials: string) => InstanceType<typeof MockLN>
@@ -127,20 +105,17 @@ describe("Payment Processing Edge Cases", () => {
 
   describe("Network Failures", () => {
     it("should handle network failure during invoice creation", async () => {
-      const mockPlan = {
-        id: TEST_PLAN_ID,
+      const mockPlan = createMockPlan({
         name: "Basic Plan",
         price: 10,
-        isActive: true,
-      };
+      });
 
-      const mockLNInstance = new MockLN("test-nwc");
-      mockLNInstance.requestPayment = vi
-        .fn()
-        .mockRejectedValue(new Error("Network request failed: ECONNREFUSED"));
+      const mockLNInstance = createMockLN({
+        requestPayment: vi
+          .fn()
+          .mockRejectedValue(new Error("Network request failed: ECONNREFUSED")),
+      }) as unknown as { requestPayment: ReturnType<typeof vi.fn> };
 
-      // Mock the constructor to return our configured instance
-      // Use a constructor function that returns the instance
       const lnMock = LN as unknown as {
         mockImplementation: (
           fn: (credentials: string) => typeof mockLNInstance
@@ -149,7 +124,9 @@ describe("Payment Processing Edge Cases", () => {
       lnMock.mockImplementation(function (_credentials: string) {
         return mockLNInstance;
       });
-      mockPrisma.plan.findUnique.mockResolvedValue(mockPlan);
+      (
+        mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPlan);
 
       await expect(
         createPlanInvoice({
@@ -163,22 +140,19 @@ describe("Payment Processing Edge Cases", () => {
     });
 
     it("should handle timeout during invoice creation", async () => {
-      const mockPlan = {
-        id: TEST_PLAN_ID,
+      const mockPlan = createMockPlan({
         name: "Basic Plan",
         price: 10,
-        isActive: true,
-      };
-
-      const mockLNInstance = new MockLN("test-nwc");
-      mockLNInstance.requestPayment = vi.fn().mockImplementation(() => {
-        return new Promise((_, reject) => {
-          setTimeout(() => reject(new Error("Request timeout")), 100);
-        });
       });
 
-      // Mock the constructor to return our configured instance
-      // Use a constructor function that returns the instance
+      const mockLNInstance = createMockLN({
+        requestPayment: vi.fn().mockImplementation(() => {
+          return new Promise((_, reject) => {
+            setTimeout(() => reject(new Error("Request timeout")), 100);
+          });
+        }),
+      }) as unknown as { requestPayment: ReturnType<typeof vi.fn> };
+
       const lnMock = LN as unknown as {
         mockImplementation: (
           fn: (credentials: string) => typeof mockLNInstance
@@ -187,7 +161,9 @@ describe("Payment Processing Edge Cases", () => {
       lnMock.mockImplementation(function (_credentials: string) {
         return mockLNInstance;
       });
-      mockPrisma.plan.findUnique.mockResolvedValue(mockPlan);
+      (
+        mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPlan);
 
       await expect(
         createPlanInvoice({
@@ -206,12 +182,16 @@ describe("Payment Processing Edge Cases", () => {
       });
 
       // Mock the plan lookup that updateUserSubscription will do
-      mockPrisma.plan.findUnique.mockResolvedValue({
-        id: TEST_PLAN_ID,
+      const mockPlan = createMockPlan({
         name: "Basic Plan",
         price: 10,
-        enableLifetimeAccess: false,
       });
+      (
+        mockPlan as unknown as { enableLifetimeAccess: boolean }
+      ).enableLifetimeAccess = false;
+      (
+        mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPlan);
 
       // Make the transaction fail to simulate database connection failure
       // This will cause updateUserSubscription to fail
@@ -234,9 +214,13 @@ describe("Payment Processing Edge Cases", () => {
       ).rejects.toThrow("Database connection failed");
 
       // Payment should still be marked as completed (update happens before subscription update)
-      expect(mockPrisma.payment.update).toHaveBeenCalled();
+      expect(
+        mockPrisma.payment.update as ReturnType<typeof vi.fn>
+      ).toHaveBeenCalled();
       // updateUserSubscription should have been attempted (plan lookup should be called)
-      expect(mockPrisma.plan.findUnique).toHaveBeenCalledWith({
+      expect(
+        mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>
+      ).toHaveBeenCalledWith({
         where: { id: TEST_PLAN_ID },
       });
     });
@@ -244,19 +228,15 @@ describe("Payment Processing Edge Cases", () => {
 
   describe("Payment Timeout Edge Cases", () => {
     it("should handle payment timeout after invoice creation", async () => {
-      const mockPlan = {
-        id: TEST_PLAN_ID,
+      const mockPlan = createMockPlan({
         name: "Basic Plan",
         price: 10,
-        isActive: true,
-      };
+      });
 
       const mockInvoice = "lnbc100u1p3example";
       const mockPaymentHash = "payment-hash-123";
       const mockAmountSats = 25000;
 
-      const mockLNInstance = new MockLN("test-nwc");
-      // Create object first, then add methods that reference it
       const mockRequest: MockRequest = {
         invoice: mockInvoice,
         paymentHash: mockPaymentHash,
@@ -270,16 +250,11 @@ describe("Payment Processing Edge Cases", () => {
         setTimeout(() => callback(), 100);
         return mockRequest;
       });
-      mockRequest.onPaid = vi.fn().mockReturnValue(mockRequest);
-      mockRequest.onTimeout = vi.fn((timeout: number, callback: () => void) => {
-        // Simulate timeout after specified seconds
-        setTimeout(() => callback(), 100);
-        return mockRequest;
-      });
-      mockLNInstance.requestPayment = vi.fn().mockResolvedValue(mockRequest);
 
-      // Mock the constructor to return our configured instance
-      // Use a constructor function that returns the instance
+      const mockLNInstance = createMockLN({
+        requestPayment: vi.fn().mockResolvedValue(mockRequest),
+      }) as unknown as { requestPayment: ReturnType<typeof vi.fn> };
+
       const lnMock = LN as unknown as {
         mockImplementation: (
           fn: (credentials: string) => typeof mockLNInstance
@@ -288,11 +263,12 @@ describe("Payment Processing Edge Cases", () => {
       lnMock.mockImplementation(function (_credentials: string) {
         return mockLNInstance;
       });
-      mockPrisma.plan.findUnique.mockResolvedValue(mockPlan);
-      mockPrisma.payment.create.mockResolvedValue({
-        id: TEST_PAYMENT_ID,
-        status: "PENDING",
-      });
+      (
+        mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPlan);
+      (mockPrisma.payment.create as ReturnType<typeof vi.fn>).mockResolvedValue(
+        createMockPayment({ status: "PENDING" })
+      );
 
       const { createPlanInvoice } = await import("~/models/payment.server");
       const paymentModule = await import("~/models/payment.server");
@@ -313,18 +289,14 @@ describe("Payment Processing Edge Cases", () => {
 
   describe("Currency Conversion Edge Cases", () => {
     it("should handle Bitcoin rate API failure gracefully", async () => {
-      const mockPlan = {
-        id: TEST_PLAN_ID,
+      const mockPlan = createMockPlan({
         name: "Basic Plan",
         price: 10,
-        isActive: true,
-      };
+      });
 
       const mockInvoice = "lnbc100u1p3example";
       const mockPaymentHash = "payment-hash-123";
 
-      const mockLNInstance = new MockLN("test-nwc");
-      // Create object first, then add methods that reference it
       interface MockRequestPartial {
         invoice: string;
         paymentHash: string;
@@ -340,10 +312,11 @@ describe("Payment Processing Edge Cases", () => {
       };
       mockRequest.onPaid = vi.fn().mockReturnValue(mockRequest);
       mockRequest.onTimeout = vi.fn().mockReturnValue(mockRequest);
-      mockLNInstance.requestPayment = vi.fn().mockResolvedValue(mockRequest);
 
-      // Mock the constructor to return our configured instance
-      // Use a constructor function that returns the instance
+      const mockLNInstance = createMockLN({
+        requestPayment: vi.fn().mockResolvedValue(mockRequest),
+      }) as unknown as { requestPayment: ReturnType<typeof vi.fn> };
+
       const lnMock = LN as unknown as {
         mockImplementation: (
           fn: (credentials: string) => typeof mockLNInstance
@@ -356,11 +329,12 @@ describe("Payment Processing Edge Cases", () => {
         new Error("Bitcoin rate API unavailable")
       );
 
-      mockPrisma.plan.findUnique.mockResolvedValue(mockPlan);
-      mockPrisma.payment.create.mockResolvedValue({
-        id: TEST_PAYMENT_ID,
-        status: "PENDING",
-      });
+      (
+        mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPlan);
+      (mockPrisma.payment.create as ReturnType<typeof vi.fn>).mockResolvedValue(
+        createMockPayment({ status: "PENDING" })
+      );
 
       const { createPlanInvoice } = await import("~/models/payment.server");
       const paymentModule = await import("~/models/payment.server");
@@ -386,18 +360,14 @@ describe("Payment Processing Edge Cases", () => {
     });
 
     it("should handle very small payment amounts", async () => {
-      const mockPlan = {
-        id: TEST_PLAN_ID,
+      const mockPlan = createMockPlan({
         name: "Micro Plan",
         price: 0.01, // $0.01 USD
-        isActive: true,
-      };
+      });
 
       const mockInvoice = "lnbc1u1p3example"; // 1 satoshi
       const mockPaymentHash = "payment-hash-123";
 
-      const mockLNInstance = new MockLN("test-nwc");
-      // Create object first, then add methods that reference it
       const mockRequest: MockRequest = {
         invoice: mockInvoice,
         paymentHash: mockPaymentHash,
@@ -407,10 +377,11 @@ describe("Payment Processing Edge Cases", () => {
       };
       mockRequest.onPaid = vi.fn().mockReturnValue(mockRequest);
       mockRequest.onTimeout = vi.fn().mockReturnValue(mockRequest);
-      mockLNInstance.requestPayment = vi.fn().mockResolvedValue(mockRequest);
 
-      // Mock the constructor to return our configured instance
-      // Use a constructor function that returns the instance
+      const mockLNInstance = createMockLN({
+        requestPayment: vi.fn().mockResolvedValue(mockRequest),
+      }) as unknown as { requestPayment: ReturnType<typeof vi.fn> };
+
       const lnMock = LN as unknown as {
         mockImplementation: (
           fn: (credentials: string) => typeof mockLNInstance
@@ -419,11 +390,12 @@ describe("Payment Processing Edge Cases", () => {
       lnMock.mockImplementation(function (_credentials: string) {
         return mockLNInstance;
       });
-      mockPrisma.plan.findUnique.mockResolvedValue(mockPlan);
-      mockPrisma.payment.create.mockResolvedValue({
-        id: TEST_PAYMENT_ID,
-        status: "PENDING",
-      });
+      (
+        mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPlan);
+      (mockPrisma.payment.create as ReturnType<typeof vi.fn>).mockResolvedValue(
+        createMockPayment({ status: "PENDING" })
+      );
 
       const { createPlanInvoice } = await import("~/models/payment.server");
       const paymentModule = await import("~/models/payment.server");
@@ -439,19 +411,15 @@ describe("Payment Processing Edge Cases", () => {
     });
 
     it("should handle very large payment amounts", async () => {
-      const mockPlan = {
-        id: TEST_PLAN_ID,
+      const mockPlan = createMockPlan({
         name: "Enterprise Plan",
         price: 10000, // $10,000 USD
-        isActive: true,
-      };
+      });
 
       const mockInvoice = "lnbc100000000u1p3example";
       const mockPaymentHash = "payment-hash-123";
       const largeAmount = 2500000000; // 2.5 billion sats (~$10k at $40k/BTC)
 
-      const mockLNInstance = new MockLN("test-nwc");
-      // Create object first, then add methods that reference it
       const mockRequest: MockRequest = {
         invoice: mockInvoice,
         paymentHash: mockPaymentHash,
@@ -461,10 +429,11 @@ describe("Payment Processing Edge Cases", () => {
       };
       mockRequest.onPaid = vi.fn().mockReturnValue(mockRequest);
       mockRequest.onTimeout = vi.fn().mockReturnValue(mockRequest);
-      mockLNInstance.requestPayment = vi.fn().mockResolvedValue(mockRequest);
 
-      // Mock the constructor to return our configured instance
-      // Use a constructor function that returns the instance
+      const mockLNInstance = createMockLN({
+        requestPayment: vi.fn().mockResolvedValue(mockRequest),
+      }) as unknown as { requestPayment: ReturnType<typeof vi.fn> };
+
       const lnMock = LN as unknown as {
         mockImplementation: (
           fn: (credentials: string) => typeof mockLNInstance
@@ -473,11 +442,12 @@ describe("Payment Processing Edge Cases", () => {
       lnMock.mockImplementation(function (_credentials: string) {
         return mockLNInstance;
       });
-      mockPrisma.plan.findUnique.mockResolvedValue(mockPlan);
-      mockPrisma.payment.create.mockResolvedValue({
-        id: TEST_PAYMENT_ID,
-        status: "PENDING",
-      });
+      (
+        mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPlan);
+      (mockPrisma.payment.create as ReturnType<typeof vi.fn>).mockResolvedValue(
+        createMockPayment({ status: "PENDING" })
+      );
 
       const { createPlanInvoice } = await import("~/models/payment.server");
       const paymentModule = await import("~/models/payment.server");
@@ -495,17 +465,14 @@ describe("Payment Processing Edge Cases", () => {
 
   describe("Concurrent Payment Attempts", () => {
     it("should handle concurrent invoice creation for same user", async () => {
-      const mockPlan = {
-        id: TEST_PLAN_ID,
+      const mockPlan = createMockPlan({
         name: "Basic Plan",
         price: 10,
-        isActive: true,
-      };
+      });
 
       const mockInvoice = "lnbc100u1p3example";
       const mockPaymentHash = "payment-hash-123";
 
-      const mockLNInstance = new MockLN("test-nwc");
       // Create a mock request object with chainable methods
       const createMockRequest = (): MockRequest => {
         const mockRequest: MockRequest = {
@@ -519,13 +486,13 @@ describe("Payment Processing Edge Cases", () => {
         mockRequest.onTimeout = vi.fn().mockReturnValue(mockRequest);
         return mockRequest;
       };
-      // Each call should return a new mock request
-      mockLNInstance.requestPayment = vi
-        .fn()
-        .mockImplementation(() => Promise.resolve(createMockRequest()));
 
-      // Mock the constructor to return our configured instance
-      // Use a constructor function that returns the instance
+      const mockLNInstance = createMockLN({
+        requestPayment: vi
+          .fn()
+          .mockImplementation(() => Promise.resolve(createMockRequest())),
+      }) as unknown as { requestPayment: ReturnType<typeof vi.fn> };
+
       const lnMock = LN as unknown as {
         mockImplementation: (
           fn: (credentials: string) => typeof mockLNInstance
@@ -534,11 +501,12 @@ describe("Payment Processing Edge Cases", () => {
       lnMock.mockImplementation(function (_credentials: string) {
         return mockLNInstance;
       });
-      mockPrisma.plan.findUnique.mockResolvedValue(mockPlan);
-      mockPrisma.payment.create.mockResolvedValue({
-        id: TEST_PAYMENT_ID,
-        status: "PENDING",
-      });
+      (
+        mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPlan);
+      (mockPrisma.payment.create as ReturnType<typeof vi.fn>).mockResolvedValue(
+        createMockPayment({ status: "PENDING" })
+      );
 
       const { createPlanInvoice } = await import("~/models/payment.server");
       const paymentModule = await import("~/models/payment.server");
@@ -559,27 +527,35 @@ describe("Payment Processing Edge Cases", () => {
       });
 
       // Should create multiple payment records
-      expect(mockPrisma.payment.create).toHaveBeenCalledTimes(3);
+      expect(
+        mockPrisma.payment.create as ReturnType<typeof vi.fn>
+      ).toHaveBeenCalledTimes(3);
     });
   });
 
   describe("Transaction Rollback Edge Cases", () => {
     it("should rollback subscription update if payment update fails", async () => {
-      const mockPlan = {
-        id: TEST_PLAN_ID,
+      const mockPlan = createMockPlan({
         name: "Basic Plan",
         price: 10,
-        enableLifetimeAccess: false,
-      };
+      });
+      (
+        mockPlan as unknown as { enableLifetimeAccess: boolean }
+      ).enableLifetimeAccess = false;
 
-      const mockPayment = {
-        id: TEST_PAYMENT_ID,
+      const mockPayment = createMockPayment({
         amount: 25000,
-      };
+      });
 
-      mockPrisma.plan.findUnique.mockResolvedValue(mockPlan);
-      mockPrisma.payment.findUnique.mockResolvedValue(mockPayment);
-      mockPrisma.subscription.upsert.mockResolvedValue({ id: "sub-123" });
+      (
+        mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPlan);
+      (
+        mockPrisma.payment.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPayment);
+      (
+        mockPrisma.subscription.upsert as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({ id: "sub-123" });
 
       // Simulate transaction failure - override the default implementation
       // Must set this BEFORE importing to ensure the function uses it
@@ -603,26 +579,38 @@ describe("Payment Processing Edge Cases", () => {
       ).rejects.toThrow("Transaction failed");
 
       // Verify transaction was called
-      expect(mockPrisma.$transaction).toHaveBeenCalled();
+      expect(
+        mockPrisma.$transaction as ReturnType<typeof vi.fn>
+      ).toHaveBeenCalled();
     });
 
     it("should rollback if user update fails in transaction", async () => {
-      const mockPlan = {
-        id: TEST_PLAN_ID,
+      const mockPlan = createMockPlan({
         name: "Basic Plan",
         price: 10,
-        enableLifetimeAccess: false,
-      };
+      });
+      (
+        mockPlan as unknown as { enableLifetimeAccess: boolean }
+      ).enableLifetimeAccess = false;
 
-      const mockPayment = {
-        id: TEST_PAYMENT_ID,
+      const mockPayment = createMockPayment({
         amount: 25000,
-      };
+      });
 
-      mockPrisma.plan.findUnique.mockResolvedValue(mockPlan);
-      mockPrisma.payment.findUnique.mockResolvedValue(mockPayment);
-      mockPrisma.subscription.upsert.mockResolvedValue({ id: "sub-123" });
-      mockPrisma.payment.update.mockResolvedValue({ id: TEST_PAYMENT_ID });
+      (
+        mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPlan);
+      (
+        mockPrisma.payment.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPayment);
+      (
+        mockPrisma.subscription.upsert as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({ id: "sub-123" });
+      (mockPrisma.payment.update as ReturnType<typeof vi.fn>).mockResolvedValue(
+        {
+          id: TEST_PAYMENT_ID,
+        }
+      );
 
       // Simulate transaction failure - override the default implementation
       // Note: This must be set AFTER importing to ensure the function uses it
@@ -648,15 +636,11 @@ describe("Payment Processing Edge Cases", () => {
 
   describe("Invalid Payment Data Edge Cases", () => {
     it("should handle missing payment amount in response", async () => {
-      const mockPlan = {
-        id: TEST_PLAN_ID,
+      const mockPlan = createMockPlan({
         name: "Basic Plan",
         price: 10,
-        isActive: true,
-      };
+      });
 
-      const mockLNInstance = new MockLN("test-nwc");
-      // Create object first, then add methods that reference it
       interface MockRequestPartial {
         invoice: string;
         paymentHash: string;
@@ -672,10 +656,11 @@ describe("Payment Processing Edge Cases", () => {
       };
       mockRequest.onPaid = vi.fn().mockReturnValue(mockRequest);
       mockRequest.onTimeout = vi.fn().mockReturnValue(mockRequest);
-      mockLNInstance.requestPayment = vi.fn().mockResolvedValue(mockRequest);
 
-      // Mock the constructor to return our configured instance
-      // Use a constructor function that returns the instance
+      const mockLNInstance = createMockLN({
+        requestPayment: vi.fn().mockResolvedValue(mockRequest),
+      }) as unknown as { requestPayment: ReturnType<typeof vi.fn> };
+
       const lnMock = LN as unknown as {
         mockImplementation: (
           fn: (credentials: string) => typeof mockLNInstance
@@ -686,11 +671,12 @@ describe("Payment Processing Edge Cases", () => {
       });
       (getBitcoinRate as ReturnType<typeof vi.fn>).mockResolvedValue(2500);
 
-      mockPrisma.plan.findUnique.mockResolvedValue(mockPlan);
-      mockPrisma.payment.create.mockResolvedValue({
-        id: TEST_PAYMENT_ID,
-        status: "PENDING",
-      });
+      (
+        mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPlan);
+      (mockPrisma.payment.create as ReturnType<typeof vi.fn>).mockResolvedValue(
+        createMockPayment({ status: "PENDING" })
+      );
 
       const { createPlanInvoice } = await import("~/models/payment.server");
       const paymentModule = await import("~/models/payment.server");
@@ -706,15 +692,11 @@ describe("Payment Processing Edge Cases", () => {
     });
 
     it("should handle malformed Lightning invoice", async () => {
-      const mockPlan = {
-        id: TEST_PLAN_ID,
+      const mockPlan = createMockPlan({
         name: "Basic Plan",
         price: 10,
-        isActive: true,
-      };
+      });
 
-      const mockLNInstance = new MockLN("test-nwc");
-      // Create object first, then add methods that reference it
       const mockRequest: MockRequest = {
         invoice: "invalid-invoice-format",
         paymentHash: "hash-123",
@@ -724,10 +706,11 @@ describe("Payment Processing Edge Cases", () => {
       };
       mockRequest.onPaid = vi.fn().mockReturnValue(mockRequest);
       mockRequest.onTimeout = vi.fn().mockReturnValue(mockRequest);
-      mockLNInstance.requestPayment = vi.fn().mockResolvedValue(mockRequest);
 
-      // Mock the constructor to return our configured instance
-      // Use a constructor function that returns the instance
+      const mockLNInstance = createMockLN({
+        requestPayment: vi.fn().mockResolvedValue(mockRequest),
+      }) as unknown as { requestPayment: ReturnType<typeof vi.fn> };
+
       const lnMock = LN as unknown as {
         mockImplementation: (
           fn: (credentials: string) => typeof mockLNInstance
@@ -736,7 +719,9 @@ describe("Payment Processing Edge Cases", () => {
       lnMock.mockImplementation(function (_credentials: string) {
         return mockLNInstance;
       });
-      mockPrisma.plan.findUnique.mockResolvedValue(mockPlan);
+      (
+        mockPrisma.plan.findUnique as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(mockPlan);
 
       const { createPlanInvoice } = await import("~/models/payment.server");
       const paymentModule = await import("~/models/payment.server");

@@ -12,23 +12,23 @@ import type { Job } from "bullmq";
 
 import type { SignedEvent } from "~/features/nostr/types";
 import { getUserById } from "~/features/user";
+import { getNostrPublisher } from "~/infra/publishers/nostr-publisher.server";
 import { getQueueInstance, redis, closeAllQueues } from "~/infra/queue";
 import type { PostJobData, LongFormPostJobData } from "~/infra/queue";
-import { getNostrPublisher } from "~/infra/publishers/nostr-publisher.server";
-import { logError, logInfo } from "~/lib/error-logger.server";
-import { prisma } from "~/lib/prisma.server";
-import { recordJobMetrics, updateActiveJobs } from "~/lib/queue-metrics.server";
-import {
-  recordPostPublished,
-  recordPostPublishFailed,
-} from "~/lib/metrics/business-metrics.server";
-import { recordPublishLatency } from "~/lib/metrics/performance-metrics.server";
+import { createDeadLetterEntry } from "~/infra/queue/dead-letter-queue.server";
 import {
   isRetryableError,
   shouldRetry,
   getRetryPolicy,
 } from "~/infra/queue/retry-policy.server";
-import { createDeadLetterEntry } from "~/infra/queue/dead-letter-queue.server";
+import { logError, logInfo } from "~/lib/error-logger.server";
+import {
+  recordPostPublished,
+  recordPostPublishFailed,
+} from "~/lib/metrics/business-metrics.server";
+import { recordPublishLatency } from "~/lib/metrics/performance-metrics.server";
+import { prisma } from "~/lib/prisma.server";
+import { recordJobMetrics, updateActiveJobs } from "~/lib/queue-metrics.server";
 import {
   updateLongFormPostStatus,
   getCronDueScheduledLongFormPosts,
@@ -246,8 +246,7 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
         postId,
         userId,
         "PUBLISHED",
-        "Successfully published to Nostr",
-        correlationId
+        "Successfully published to Nostr"
       );
 
       const duration = Date.now() - startTime;
@@ -274,25 +273,27 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
       const duration = Date.now() - startTime;
       const err = error instanceof Error ? error : new Error(String(error));
       const errorType = err.constructor.name;
-      const attemptsMade = (job.attemptsMade ?? 0) + 1;
+      const attemptsMade = job.attemptsMade + 1;
       const policy = getRetryPolicy(queueName);
-      
+
       // Check if we should retry
-      const willRetry = shouldRetry(attemptsMade, policy) && isRetryableError(err);
-      
+      const willRetry =
+        shouldRetry(attemptsMade, policy) && isRetryableError(err);
+
       // Transition to FAILED
       try {
         await stateMachine.transition(
           postId,
           userId,
           "FAILED",
-          `Publish failed: ${err.message}`,
-          correlationId
+          `Publish failed: ${err.message}`
         );
       } catch (stateError) {
         // Log but don't fail the job if state transition fails
         logError(
-          stateError instanceof Error ? stateError : new Error(String(stateError)),
+          stateError instanceof Error
+            ? stateError
+            : new Error(String(stateError)),
           {
             postId,
             userId,
@@ -412,11 +413,12 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
     } catch (error) {
       const duration = Date.now() - startTime;
       const err = error instanceof Error ? error : new Error(String(error));
-      const attemptsMade = (job.attemptsMade ?? 0) + 1;
+      const attemptsMade = job.attemptsMade + 1;
       const policy = getRetryPolicy(queueName);
-      
+
       // Check if we should retry
-      const willRetry = shouldRetry(attemptsMade, policy) && isRetryableError(err);
+      const willRetry =
+        shouldRetry(attemptsMade, policy) && isRetryableError(err);
 
       recordJobMetrics(queueName, duration, false, err);
       updateActiveJobs(queueName, -1);

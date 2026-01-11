@@ -361,18 +361,77 @@ model PostStateTransition {
 
 model DeadLetterJob {
   id            String   @id @default(cuid())
-  queueType     String   // "scheduled-posts", "scheduled-longform-posts", etc.
-  jobId         String   // Original BullMQ job ID
-  jobName       String   // Job name (e.g., "publish-post")
-  jobData       Json     // Original job data
-  error         String   // Error message
-  errorStack    String?  // Error stack trace
-  attemptsMade Int      // Number of attempts before failure
-  correlationId String?  // Correlation ID for tracing
+  queueType     String // "scheduled-posts", "scheduled-longform-posts", etc.
+  jobId         String // Original BullMQ job ID
+  jobName       String // Job name (e.g., "publish-post")
+  jobData       Json // Original job data
+  error         String // Error message
+  errorStack    String? // Error stack trace
+  attemptsMade  Int // Number of attempts before failure
+  correlationId String? // Correlation ID for tracing
   createdAt     DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  updatedAt     DateTime @updatedAt
 
   @@index([queueType, createdAt])
   @@index([correlationId])
   @@index([jobId])
+}
+
+// ============================================================================
+// Read Models (Lightweight CQRS)
+// ============================================================================
+
+// Denormalized read model for scheduled posts dashboard
+model ScheduledPostRead {
+  id              String   @id
+  userId          String
+  postId          String   @unique
+  caption         String?
+  scheduledAtUtc  DateTime
+  queueTypeName   String
+  queueTypeColor  String?
+  hashTagPresetId String?
+  templateId      String?
+  createdAt       DateTime
+  updatedAt       DateTime
+
+  @@index([userId, scheduledAtUtc])
+  @@index([userId, queueTypeName])
+  @@index([scheduledAtUtc])
+}
+
+// Denormalized read model for published posts dashboard
+model PublishedPostRead {
+  id              String   @id
+  userId          String
+  postId          String   @unique
+  caption         String?
+  postedAt        DateTime
+  queueTypeName   String
+  queueTypeColor  String?
+  engagementScore Int? // Pre-computed engagement (can be updated later)
+  createdAt       DateTime
+  updatedAt       DateTime
+
+  @@index([userId, postedAt])
+  @@index([userId, queueTypeName])
+  @@index([userId, postedAt, engagementScore])
+  @@index([postedAt])
+}
+
+// Analytics rollup table (daily aggregations)
+model PostAnalyticsDaily {
+  id             String   @id @default(cuid())
+  userId         String
+  date           DateTime @db.Date
+  postsScheduled Int      @default(0)
+  postsPublished Int      @default(0)
+  postsFailed    Int      @default(0)
+  avgEngagement  Float?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@index([userId, date])
+  @@index([date])
 }

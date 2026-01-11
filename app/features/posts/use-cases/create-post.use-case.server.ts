@@ -4,12 +4,13 @@
  * Handles post creation with idempotency and optional scheduling.
  */
 
-import { createPostWithOutbox } from "~/models/post.commands.server";
-import { resolveQueueTypeId } from "../services/queue-type-resolver.server";
-import { generateCreationIdempotencyKey } from "~/lib/idempotency.server";
-import { PostStateMachine } from "../state-machine/post-state-machine.server";
 import { getCorrelationId } from "~/lib/correlation-context.server";
 import { logInfo } from "~/lib/error-logger.server";
+import { generateCreationIdempotencyKey } from "~/lib/idempotency.server";
+import { createPostWithOutbox } from "~/models/post.commands.server";
+
+import { resolveQueueTypeId } from "../services/queue-type-resolver.server";
+import { PostStateMachine } from "../state-machine/post-state-machine.server";
 
 import type { CreatePostInput, CreatePostResult } from "./types";
 
@@ -25,7 +26,7 @@ function applyHashtags(
 }
 
 export class CreatePostUseCase {
-  private stateMachine = new PostStateMachine();
+  private readonly stateMachine = new PostStateMachine();
 
   async execute(input: CreatePostInput): Promise<CreatePostResult> {
     // Get or create correlation ID for this operation
@@ -46,13 +47,14 @@ export class CreatePostUseCase {
     );
 
     // Apply hashtags if provided
-    const content = input.hashTagPresetTags && input.showHashTagsinPosts
-      ? applyHashtags(
-          input.content,
-          input.hashTagPresetTags,
-          input.showHashTagsinPosts
-        )
-      : input.content;
+    const content =
+      input.hashTagPresetTags && input.showHashTagsinPosts
+        ? applyHashtags(
+            input.content,
+            input.hashTagPresetTags,
+            input.showHashTagsinPosts
+          )
+        : input.content;
 
     // Generate idempotency key
     const creationIdempotencyKey = generateCreationIdempotencyKey(
@@ -63,7 +65,8 @@ export class CreatePostUseCase {
 
     // Check for existing post with same idempotency key
     const { prisma } = await import("~/lib/prisma.server");
-    const existing = await prisma.post.findUnique({
+    // Use findFirst instead of findUnique to handle cases where unique constraint might not exist
+    const existing = await prisma.post.findFirst({
       where: { creationIdempotencyKey },
     });
 
@@ -110,8 +113,9 @@ export class CreatePostUseCase {
         "Post created with schedule"
       );
       // Record metrics
-      recordPostCreated(input.postType, true);
-      recordPostScheduled(input.postType);
+      // TODO: Re-enable analytics when analytics.server module is available
+      // recordPostCreated(input.postType, true);
+      // recordPostScheduled(input.postType);
     } else {
       await this.stateMachine.transition(
         post.id,
@@ -120,7 +124,8 @@ export class CreatePostUseCase {
         "Post created as draft"
       );
       // Record metrics
-      recordPostCreated(input.postType, false);
+      // TODO: Re-enable analytics when analytics.server module is available
+      // recordPostCreated(input.postType, false);
     }
 
     logInfo("CreatePostUseCase: Post created successfully", {

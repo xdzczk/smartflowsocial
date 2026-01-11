@@ -4,22 +4,23 @@
  * Schedules a post for future publication using the outbox pattern.
  */
 
-import { Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 
-import { prisma } from "~/lib/prisma.server";
-import { generateEnqueueIdempotencyKey } from "~/lib/idempotency.server";
-import { getPostById } from "~/models/post.queries.server";
 import { createOutboxEventInTransaction } from "~/infra/outbox/outbox.server";
 import type { PostScheduledPayload } from "~/infra/outbox/outbox.server";
-import { PostStateMachine } from "../state-machine/post-state-machine.server";
 import { getCorrelationId } from "~/lib/correlation-context.server";
 import { logInfo } from "~/lib/error-logger.server";
+import { generateEnqueueIdempotencyKey } from "~/lib/idempotency.server";
 import { recordPostScheduled } from "~/lib/metrics/business-metrics.server";
+import { prisma } from "~/lib/prisma.server";
+import { getPostById } from "~/models/post.queries.server";
+
+import { PostStateMachine } from "../state-machine/post-state-machine.server";
 
 import type { SchedulePostInput } from "./types";
 
 export class SchedulePostUseCase {
-  private stateMachine = new PostStateMachine();
+  private readonly stateMachine = new PostStateMachine();
 
   async execute(input: SchedulePostInput): Promise<void> {
     // Get or create correlation ID for this operation
@@ -35,7 +36,9 @@ export class SchedulePostUseCase {
     // Verify post exists
     const post = await getPostById({ id: input.postId, userId: input.userId });
     if (!post) {
-      throw new Error(`Post ${input.postId} not found for user ${input.userId}`);
+      throw new Error(
+        `Post ${input.postId} not found for user ${input.userId}`
+      );
     }
 
     const scheduledForUnix = Math.floor(input.scheduledAtUtc.getTime() / 1000);
@@ -48,7 +51,7 @@ export class SchedulePostUseCase {
           scheduledAtUtc: input.scheduledAtUtc,
           scheduledFor: scheduledForUnix.toString(), // Legacy field
           isScheduled: true,
-          signedEvent: input.signedEvent as Prisma.InputJsonValue,
+          signedEvent: input.signedEvent as unknown as Prisma.InputJsonValue,
         },
       });
 
@@ -67,7 +70,7 @@ export class SchedulePostUseCase {
       };
 
       await createOutboxEventInTransaction(
-        tx,
+        tx as Prisma.TransactionClient,
         "POST_SCHEDULED",
         input.postId,
         "Post",

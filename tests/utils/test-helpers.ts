@@ -81,10 +81,50 @@ export {
 } from "./scheduling-test-helpers";
 
 /**
- * Re-export mock helpers
+ * Re-export mock helpers (using explicit exports to avoid conflicts)
  * Note: TEST_USER_ID, TEST_POST_ID, TEST_LONGFORM_ID are exported from mock-helpers
  */
-export * from "./mock-helpers";
+export {
+  TEST_USER_ID,
+  TEST_POST_ID,
+  TEST_QUEUE_TYPE_ID,
+  TEST_LONGFORM_ID,
+  createMockPrisma,
+  createMockUser,
+  createMockQueueType,
+  createMockPost,
+} from "./mock-helpers";
+
+/**
+ * Re-export payment test helpers (excluding conflicting exports)
+ */
+export {
+  TEST_PLAN_ID,
+  TEST_PAYMENT_ID,
+  TEST_SUBSCRIPTION_ID,
+  createMockPaymentPrisma,
+  resetMockPaymentPrismaTransaction,
+  createMockPlan,
+  createMockPayment,
+  createMockSubscription,
+  createMockLN,
+  type MockLNOptions,
+} from "./payment-test-helpers";
+
+/**
+ * Re-export action test helpers
+ */
+export * from "./action-test-helpers";
+
+/**
+ * Re-export integration test setup helpers
+ */
+export * from "./integration-test-setup";
+
+/**
+ * Re-export test scenario builders
+ */
+export * from "./test-scenario-builders";
 
 /**
  * Create a valid user object that matches userSchema

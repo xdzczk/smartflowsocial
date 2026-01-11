@@ -5,14 +5,14 @@
  */
 
 import * as promClient from "prom-client";
-import { singleton } from "./singleton.server";
-import {
-  classifyError,
+
+import type {
   ErrorCategory,
-  ErrorSeverity,
-  type ErrorClassification,
+  ErrorClassification,
 } from "./error-classification.server";
+import { classifyError, ErrorSeverity } from "./error-classification.server";
 import type { AppError } from "./errors";
+import { singleton } from "./singleton.server";
 
 /**
  * Get or create a Prometheus metric
@@ -73,11 +73,19 @@ export const errorRecoveryAttemptsCounter = getOrCreateMetric(
 class ErrorAggregationStore {
   private readonly errorsByCategory = new Map<
     ErrorCategory,
-    Array<{ error: Error | AppError; classification: ErrorClassification; timestamp: Date }>
+    Array<{
+      error: Error | AppError;
+      classification: ErrorClassification;
+      timestamp: Date;
+    }>
   >();
   private readonly errorsBySeverity = new Map<
     ErrorSeverity,
-    Array<{ error: Error | AppError; classification: ErrorClassification; timestamp: Date }>
+    Array<{
+      error: Error | AppError;
+      classification: ErrorClassification;
+      timestamp: Date;
+    }>
   >();
   private readonly maxErrorsPerCategory = 100; // Keep last 100 errors per category
 
@@ -100,7 +108,8 @@ class ErrorAggregationStore {
     );
 
     // Store error by category
-    const categoryErrors = this.errorsByCategory.get(classification.category) ?? [];
+    const categoryErrors =
+      this.errorsByCategory.get(classification.category) ?? [];
     categoryErrors.unshift({
       error,
       classification,
@@ -114,7 +123,8 @@ class ErrorAggregationStore {
     this.errorsByCategory.set(classification.category, categoryErrors);
 
     // Store error by severity
-    const severityErrors = this.errorsBySeverity.get(classification.severity) ?? [];
+    const severityErrors =
+      this.errorsBySeverity.get(classification.severity) ?? [];
     severityErrors.unshift({
       error,
       classification,
@@ -133,7 +143,11 @@ class ErrorAggregationStore {
   getErrorsByCategory(
     category: ErrorCategory,
     limit = 20
-  ): Array<{ error: Error | AppError; classification: ErrorClassification; timestamp: Date }> {
+  ): Array<{
+    error: Error | AppError;
+    classification: ErrorClassification;
+    timestamp: Date;
+  }> {
     return (this.errorsByCategory.get(category) ?? []).slice(0, limit);
   }
 
@@ -143,7 +157,11 @@ class ErrorAggregationStore {
   getErrorsBySeverity(
     severity: ErrorSeverity,
     limit = 20
-  ): Array<{ error: Error | AppError; classification: ErrorClassification; timestamp: Date }> {
+  ): Array<{
+    error: Error | AppError;
+    classification: ErrorClassification;
+    timestamp: Date;
+  }> {
     return (this.errorsBySeverity.get(severity) ?? []).slice(0, limit);
   }
 
@@ -199,12 +217,14 @@ class ErrorAggregationStore {
   /**
    * Get top error categories
    */
-  getTopCategories(limit = 10): Array<{ category: ErrorCategory; count: number }> {
+  getTopCategories(
+    limit = 10
+  ): Array<{ category: ErrorCategory; count: number }> {
     const summary = this.getSummary();
     return Object.entries(summary.byCategory)
       .map(([category, count]) => ({
         category: category as ErrorCategory,
-        count: count as number,
+        count: count,
       }))
       .sort((a, b) => b.count - a.count)
       .slice(0, limit);
@@ -220,7 +240,10 @@ class ErrorAggregationStore {
 }
 
 // Singleton instance
-const aggregationStore = singleton("errorAggregationStore", () => new ErrorAggregationStore());
+const aggregationStore = singleton(
+  "errorAggregationStore",
+  () => new ErrorAggregationStore()
+);
 
 /**
  * Record an error for aggregation
@@ -235,7 +258,11 @@ export function recordErrorForAggregation(error: Error | AppError): void {
 export function getErrorsByCategory(
   category: ErrorCategory,
   limit = 20
-): Array<{ error: Error | AppError; classification: ErrorClassification; timestamp: Date }> {
+): Array<{
+  error: Error | AppError;
+  classification: ErrorClassification;
+  timestamp: Date;
+}> {
   return aggregationStore.getErrorsByCategory(category, limit);
 }
 
@@ -245,7 +272,11 @@ export function getErrorsByCategory(
 export function getErrorsBySeverity(
   severity: ErrorSeverity,
   limit = 20
-): Array<{ error: Error | AppError; classification: ErrorClassification; timestamp: Date }> {
+): Array<{
+  error: Error | AppError;
+  classification: ErrorClassification;
+  timestamp: Date;
+}> {
   return aggregationStore.getErrorsBySeverity(severity, limit);
 }
 
@@ -266,7 +297,9 @@ export function getErrorAggregationSummary(): {
 /**
  * Get top error categories
  */
-export function getTopErrorCategories(limit = 10): Array<{ category: ErrorCategory; count: number }> {
+export function getTopErrorCategories(
+  limit = 10
+): Array<{ category: ErrorCategory; count: number }> {
   return aggregationStore.getTopCategories(limit);
 }
 

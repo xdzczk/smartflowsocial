@@ -144,10 +144,10 @@ export function useDashboardData() {
     "postStatistics" in typedData ? typedData.postStatistics : undefined;
 
   const scheduledPosts: PostData[] = Array.isArray(scheduledPostsRaw)
-    ? fromPostDTOArray(scheduledPostsRaw as PostDTO[])
+    ? fromPostDTOArray(scheduledPostsRaw as unknown as PostDTO[])
     : [];
   const longformPosts: LongFormPostData[] = Array.isArray(longformPostsRaw)
-    ? fromLongFormPostDTOArray(longformPostsRaw as LongFormPostDTO[])
+    ? fromLongFormPostDTOArray(longformPostsRaw as unknown as LongFormPostDTO[])
     : [];
   // Reconstruct allContent on client from deserialized scheduledPosts/longformPosts
   const allContent: CombinedContent[] = combineContent(

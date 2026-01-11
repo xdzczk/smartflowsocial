@@ -5,13 +5,12 @@
  * Provides automatic and manual recovery mechanisms.
  */
 
-import { logError, logInfo, logWarning } from "./error-logger.server";
 import {
   classifyError,
   type ErrorClassification,
   RecoveryStrategy,
-  type ErrorCategory,
 } from "./error-classification.server";
+import { logError, logInfo, logWarning } from "./error-logger.server";
 import type { AppError } from "./errors";
 
 /**
@@ -257,12 +256,21 @@ async function handleManualIntervention(
  * Initialize default recovery handlers
  */
 function initializeRecoveryHandlers(): void {
-  registerRecoveryHandler(RecoveryStrategy.RETRY_EXPONENTIAL, handleRetryExponential);
+  registerRecoveryHandler(
+    RecoveryStrategy.RETRY_EXPONENTIAL,
+    handleRetryExponential
+  );
   registerRecoveryHandler(RecoveryStrategy.RETRY_FIXED, handleRetryFixed);
-  registerRecoveryHandler(RecoveryStrategy.RETRY_IMMEDIATE, handleRetryImmediate);
+  registerRecoveryHandler(
+    RecoveryStrategy.RETRY_IMMEDIATE,
+    handleRetryImmediate
+  );
   registerRecoveryHandler(RecoveryStrategy.SKIP, handleSkip);
   registerRecoveryHandler(RecoveryStrategy.NO_RECOVERY, handleNoRecovery);
-  registerRecoveryHandler(RecoveryStrategy.MANUAL_INTERVENTION, handleManualIntervention);
+  registerRecoveryHandler(
+    RecoveryStrategy.MANUAL_INTERVENTION,
+    handleManualIntervention
+  );
 }
 
 // Initialize handlers on module load
@@ -291,7 +299,8 @@ export async function attemptRecovery(
     context: options.context,
   };
 
-  const strategy = classification.recoveryStrategy ?? RecoveryStrategy.NO_RECOVERY;
+  const strategy =
+    classification.recoveryStrategy ?? RecoveryStrategy.NO_RECOVERY;
   const handler = recoveryHandlers.get(strategy);
 
   if (!handler) {
@@ -312,7 +321,9 @@ export async function attemptRecovery(
     return await handler(error, recoveryContext);
   } catch (recoveryError) {
     logError(
-      recoveryError instanceof Error ? recoveryError : new Error(String(recoveryError)),
+      recoveryError instanceof Error
+        ? recoveryError
+        : new Error(String(recoveryError)),
       {
         message: "Error during recovery attempt",
         originalError: error.message,
@@ -323,7 +334,10 @@ export async function attemptRecovery(
       success: false,
       shouldRetry: false,
       strategy: RecoveryStrategy.NO_RECOVERY,
-      error: recoveryError instanceof Error ? recoveryError : new Error(String(recoveryError)),
+      error:
+        recoveryError instanceof Error
+          ? recoveryError
+          : new Error(String(recoveryError)),
       context: { recoveryFailed: true },
     };
   }

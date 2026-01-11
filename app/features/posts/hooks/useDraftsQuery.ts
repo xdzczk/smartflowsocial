@@ -129,10 +129,10 @@ export function useDraftsData() {
     "selectedQueueType" in typedData ? typedData.selectedQueueType : "all";
 
   const posts: PostData[] = Array.isArray(postsRaw)
-    ? fromPostDTOArray(postsRaw as PostDTO[])
+    ? fromPostDTOArray(postsRaw as unknown as PostDTO[])
     : [];
   const longformPosts: LongFormPostData[] = Array.isArray(longformPostsRaw)
-    ? fromLongFormPostDTOArray(longformPostsRaw as LongFormPostDTO[])
+    ? fromLongFormPostDTOArray(longformPostsRaw as unknown as LongFormPostDTO[])
     : [];
   // Reconstruct allContent on client from deserialized posts/longformPosts
   const allContent: CombinedContent[] = combineContent(

@@ -146,20 +146,24 @@ export function useCalendarData() {
     "selectedQueueType" in typedData ? typedData.selectedQueueType : "all";
 
   const scheduledPosts: PostData[] = Array.isArray(scheduledPostsRaw)
-    ? fromPostDTOArray(scheduledPostsRaw as PostDTO[])
+    ? fromPostDTOArray(scheduledPostsRaw as unknown as PostDTO[])
     : [];
   const scheduledLongFormPosts: LongFormPostData[] = Array.isArray(
     scheduledLongFormPostsRaw
   )
-    ? fromLongFormPostDTOArray(scheduledLongFormPostsRaw as LongFormPostDTO[])
+    ? fromLongFormPostDTOArray(
+        scheduledLongFormPostsRaw as unknown as LongFormPostDTO[]
+      )
     : [];
   const pastPosts: PostData[] = Array.isArray(pastPostsRaw)
-    ? fromPostDTOArray(pastPostsRaw as PostDTO[])
+    ? fromPostDTOArray(pastPostsRaw as unknown as PostDTO[])
     : [];
   const pastLongFormPosts: LongFormPostData[] = Array.isArray(
     pastLongFormPostsRaw
   )
-    ? fromLongFormPostDTOArray(pastLongFormPostsRaw as LongFormPostDTO[])
+    ? fromLongFormPostDTOArray(
+        pastLongFormPostsRaw as unknown as LongFormPostDTO[]
+      )
     : [];
 
   // Reconstruct allContent on client from deserialized posts

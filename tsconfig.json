@@ -19,11 +19,10 @@
     "lib": ["DOM", "DOM.Iterable", "ES2022", "ES2023"],
 
     // Module system
-    // Note: Using "node" resolution for Remix compatibility
-    // "bundler" requires module: "preserve" or ESM, "node16" requires module: "Node16"
-    // Remix may require CommonJS, so we keep "node" resolution for compatibility
-    "module": "CommonJS",
-    "moduleResolution": "node",
+    // Note: Using "ES2022" to support dynamic imports while maintaining compatibility
+    // Dynamic imports are natively supported in ES2022
+    "module": "ES2022",
+    "moduleResolution": "bundler",
 
     // Target
     "target": "ES2020",

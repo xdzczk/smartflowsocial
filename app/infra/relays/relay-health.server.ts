@@ -10,7 +10,11 @@ import { logInfo, logWarning } from "~/lib/error-logger.server";
 /**
  * Relay health status
  */
-export type RelayHealthStatus = "HEALTHY" | "DEGRADED" | "UNHEALTHY" | "UNKNOWN";
+export type RelayHealthStatus =
+  | "HEALTHY"
+  | "DEGRADED"
+  | "UNHEALTHY"
+  | "UNKNOWN";
 
 /**
  * Relay health metrics
@@ -51,7 +55,7 @@ const DEFAULT_CIRCUIT_BREAKER_CONFIG: CircuitBreakerConfig = {
  * In production, consider using Redis or database for persistence
  */
 class RelayHealthStore {
-  private metrics = new Map<string, RelayHealthMetrics>();
+  private readonly metrics = new Map<string, RelayHealthMetrics>();
 
   getMetrics(relay: string): RelayHealthMetrics | undefined {
     return this.metrics.get(relay);
@@ -158,10 +162,7 @@ function determineHealthStatus(
 /**
  * Record a successful publish to a relay
  */
-export function recordRelaySuccess(
-  relay: string,
-  latency: number
-): void {
+export function recordRelaySuccess(relay: string, latency: number): void {
   const metrics = getOrCreateMetrics(relay);
   const now = new Date();
 
@@ -182,7 +183,8 @@ export function recordRelaySuccess(
   // Update circuit breaker state
   if (metrics.circuitBreakerState === "HALF_OPEN") {
     // If we have enough successes in half-open, close the circuit
-    const recentSuccesses = metrics.successCount - (metrics.totalRequests - metrics.failureCount);
+    const recentSuccesses =
+      metrics.successCount - (metrics.totalRequests - metrics.failureCount);
     if (recentSuccesses >= DEFAULT_CIRCUIT_BREAKER_CONFIG.successThreshold) {
       metrics.circuitBreakerState = "CLOSED";
       metrics.circuitBreakerOpenedAt = null;
@@ -289,7 +291,9 @@ export function getRelayHealth(relay: string): RelayHealthMetrics | null {
 /**
  * Get health for multiple relays
  */
-export function getRelaysHealth(relays: string[]): Map<string, RelayHealthMetrics> {
+export function getRelaysHealth(
+  relays: string[]
+): Map<string, RelayHealthMetrics> {
   const result = new Map<string, RelayHealthMetrics>();
   for (const relay of relays) {
     const metrics = healthStore.getMetrics(relay);
@@ -304,9 +308,7 @@ export function getRelaysHealth(relays: string[]): Map<string, RelayHealthMetric
  * Filter and prioritize relays based on health
  * Returns relays sorted by health (healthiest first)
  */
-export function prioritizeRelaysByHealth(
-  relays: string[]
-): string[] {
+export function prioritizeRelaysByHealth(relays: string[]): string[] {
   const relayMetrics = relays
     .map((relay) => ({
       relay,

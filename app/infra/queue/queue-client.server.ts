@@ -8,7 +8,6 @@ import Redis from "ioredis";
 
 import { env } from "~/lib/env.server";
 import { logError } from "~/lib/error-logger.server";
-import { getBullMQRetryConfig } from "./retry-policy.server";
 
 import type {
   QueueClient,
@@ -19,6 +18,7 @@ import type {
   PostJobData,
   LongFormPostJobData,
 } from "./queue-types";
+import { getBullMQRetryConfig } from "./retry-policy.server";
 
 // Redis connection with BullMQ required config
 const redis = new Redis(env.REDIS_URL, {

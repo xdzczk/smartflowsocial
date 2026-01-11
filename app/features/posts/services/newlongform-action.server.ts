@@ -19,8 +19,6 @@ import {
   getQueueTypes,
   getHashTagPresetById,
 } from "~/features/user";
-import { env } from "~/lib/env.server";
-import { fetchWithRetry } from "~/lib/fetch.server";
 import {
   sanitizeMarkdown,
   generateSummary,
@@ -31,10 +29,9 @@ import {
 } from "~/lib/validation";
 
 import { convertEditorJSToMarkdown } from "../longform.server";
+import { resolveQueueTypeId } from "../server";
 import { CreateLongFormPostUseCase } from "../use-cases/create-longform-post.use-case.server";
 import { PublishLongFormNowUseCase } from "../use-cases/publish-longform-now.use-case.server";
-import { ScheduleLongFormPostUseCase } from "../use-cases/schedule-longform-post.use-case.server";
-import { extractCorrelationId } from "~/lib/correlation-context.server";
 
 const ERROR_TITLE_REQUIRED = "Title is required";
 const ERROR_CONTENT_REQUIRED = "Content is required";
@@ -205,7 +202,7 @@ async function handleSaveDraft(
   formData: FormData,
   queueType: string,
   hashTagPresetId: string | null,
-  correlationId?: string
+  _correlationId?: string
 ): Promise<Response> {
   const title = formData.get("title")?.toString() ?? "";
   const editorContent = formData.get("content")?.toString() ?? "";
@@ -257,7 +254,7 @@ async function handleSaveDraft(
     image,
     tags,
     queueTypeId,
-    queueType: queueType === "Unassigned" ? null : queueType,
+    queueType: queueType === "Unassigned" ? undefined : queueType,
     hashTagPresetId,
     isPublished: false,
     // No scheduledFor = draft
@@ -376,7 +373,7 @@ async function handlePublish(
     image,
     tags,
     queueTypeId,
-    queueType: queueType === "Unassigned" ? null : queueType,
+    queueType: queueType === "Unassigned" ? undefined : queueType,
     hashTagPresetId,
     signedEvent: signedEventJson,
     nostrEvent: nostrEventJson,
@@ -390,7 +387,6 @@ async function handlePublish(
     userId,
     signedEvent: signedEventJson,
     relays: sanitizedRelays,
-    correlationId,
   });
 
   return redirect("/dashboard/posted?tab=longform");
@@ -406,7 +402,7 @@ async function handleScheduleLongform(
   hashTagPresetId: string | null,
   hashTagPresetTags: string,
   showHashTagsinPosts: boolean,
-  correlationId?: string
+  _correlationId?: string
 ): Promise<Response> {
   const title = formData.get("title")?.toString() ?? "";
   const editorContent = formData.get("content")?.toString() ?? "";
@@ -519,7 +515,7 @@ async function handleScheduleLongform(
     image,
     tags,
     queueTypeId,
-    queueType: queueType === "Unassigned" ? null : queueType,
+    queueType: queueType === "Unassigned" ? undefined : queueType,
     hashTagPresetId,
     signedEvent: signedEventJson,
     nostrEvent: nostrEventJson,
@@ -602,7 +598,7 @@ export async function handleNewLongFormAction(
 
   // Handle different actions
   if (_action === "save-draft") {
-    return handleSaveDraft(userId, formData, queueType, finalHashTagPresetId, correlationId);
+    return handleSaveDraft(userId, formData, queueType, finalHashTagPresetId);
   }
 
   if (_action === "publish") {
@@ -613,8 +609,7 @@ export async function handleNewLongFormAction(
       finalHashTagPresetId,
       hashTagPresetTags,
       showHashTagsinPosts,
-      sanitizedRelays,
-      correlationId
+      sanitizedRelays
     );
   }
 
@@ -625,8 +620,7 @@ export async function handleNewLongFormAction(
       queueType,
       finalHashTagPresetId,
       hashTagPresetTags,
-      showHashTagsinPosts,
-      correlationId
+      showHashTagsinPosts
     );
   }
 

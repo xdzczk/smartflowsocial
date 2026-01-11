@@ -5,16 +5,18 @@
  * Runs periodically to process unprocessed events.
  */
 
-import { prisma } from "~/lib/prisma.server";
-import { logError, logInfo } from "~/lib/error-logger.server";
 import {
   processPayloadWithVersion,
   CURRENT_VERSION,
   getPayloadVersion,
 } from "~/infra/queue/version-handler.server";
+import { logError, logInfo } from "~/lib/error-logger.server";
+import { recordOutboxEventProcessed } from "~/lib/metrics/business-metrics.server";
+import { recordOutboxProcessingDuration } from "~/lib/metrics/performance-metrics.server";
 
 import { queueClient } from "../queue/queue-client.server";
 import type { PostJobData, LongFormPostJobData } from "../queue/queue-types";
+
 import {
   getUnprocessedOutboxEvents,
   markOutboxEventProcessed,
@@ -22,6 +24,7 @@ import {
   type LongFormPostScheduledPayload,
   type OutboxEventType,
 } from "./outbox.server";
+import { updateReadModels } from "./read-model-worker.server";
 
 const BATCH_SIZE = 50;
 const POLL_INTERVAL_MS = 5000; // 5 seconds
@@ -99,13 +102,11 @@ async function processEvent(event: {
 
     case "LONGFORM_SCHEDULED": {
       // Process payload with version handling
-      const versionResult = processPayloadWithVersion<LongFormPostScheduledPayload>(
-        event.payload,
-        {
+      const versionResult =
+        processPayloadWithVersion<LongFormPostScheduledPayload>(event.payload, {
           eventId: event.id,
           aggregateId: event.aggregateId,
-        }
-      );
+        });
 
       if (!versionResult.success || !versionResult.payload) {
         throw new Error(
@@ -193,9 +194,51 @@ export async function processOutboxEvents(): Promise<{
   for (const event of events) {
     const startTime = Date.now();
     try {
-      await processEvent(event);
+      await processEvent({
+        id: event.id,
+        eventType: event.eventType as OutboxEventType,
+        aggregateId: event.aggregateId,
+        payload: event.payload,
+        scheduledFor: event.scheduledFor,
+        correlationId: event.correlationId ?? undefined,
+      });
       await markOutboxEventProcessed(event.id);
       processed++;
+
+      // Update read models for read model events
+      if (
+        event.eventType === "POST_CREATED" ||
+        event.eventType === "POST_UPDATED" ||
+        event.eventType === "POST_PUBLISHED" ||
+        event.eventType === "POST_DELETED" ||
+        event.eventType === "LONGFORM_CREATED" ||
+        event.eventType === "LONGFORM_UPDATED" ||
+        event.eventType === "LONGFORM_PUBLISHED" ||
+        event.eventType === "LONGFORM_DELETED"
+      ) {
+        // Update read models asynchronously (don't block event processing)
+        void updateReadModels({
+          id: event.id,
+          eventType: event.eventType,
+          aggregateId: event.aggregateId,
+          aggregateType: event.aggregateType,
+          payload: event.payload,
+          correlationId: event.correlationId,
+          // eslint-disable-next-line promise/prefer-await-to-then -- Fire-and-forget pattern
+        }).catch((readModelError) => {
+          logError(
+            readModelError instanceof Error
+              ? readModelError
+              : new Error(String(readModelError)),
+            {
+              eventId: event.id,
+              eventType: event.eventType,
+              aggregateId: event.aggregateId,
+              message: "Failed to update read models (non-blocking)",
+            }
+          );
+        });
+      }
 
       const duration = Date.now() - startTime;
       recordOutboxEventProcessed(event.eventType, true);
@@ -230,6 +273,7 @@ export function startOutboxWorker() {
   logInfo("Starting outbox worker", { pollInterval: POLL_INTERVAL_MS });
 
   // Process immediately on start
+  // eslint-disable-next-line promise/prefer-await-to-then, promise/prefer-await-to-callbacks -- Fire-and-forget pattern
   void processOutboxEvents().catch((error) => {
     logError(error instanceof Error ? error : new Error(String(error)), {
       message: "Error in initial outbox processing",
@@ -238,6 +282,7 @@ export function startOutboxWorker() {
 
   // Then process periodically
   const interval = setInterval(() => {
+    // eslint-disable-next-line promise/prefer-await-to-then, promise/prefer-await-to-callbacks -- Fire-and-forget pattern
     void processOutboxEvents().catch((error) => {
       logError(error instanceof Error ? error : new Error(String(error)), {
         message: "Error in periodic outbox processing",

@@ -5,40 +5,57 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// Mock Prisma
-vi.mock("~/lib/prisma.server", () => ({
-  prisma: {
-    payment: {
-      create: vi.fn(),
-    },
-  },
-}));
-
-import { TEST_USER_ID } from "../../utils/test-helpers";
-
-import { prisma } from "~/lib/prisma.server";
 import { createRenewalPayment } from "~/models/payment.server";
+import {
+  resetMockPaymentPrismaTransaction,
+  createMockPayment,
+  setupPaymentTestEnvironment,
+  TEST_USER_ID,
+  TEST_PAYMENT_ID,
+} from "~/tests/utils/payment-test-helpers";
+
+// Mock Prisma
+
+const { mockPrisma } = vi.hoisted(async () => {
+  // Import inside hoisted to avoid initialization issues
+  const { createMockPaymentPrisma: createMock } =
+    await import("../../utils/payment-test-helpers");
+  const mockPrisma = createMock();
+  return { mockPrisma };
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports -- Dynamic import needed for hoisting
+}) as unknown as {
+  mockPrisma: ReturnType<
+    Awaited<
+      typeof import("../../utils/payment-test-helpers")
+    >["createMockPaymentPrisma"]
+  >;
+};
+
+vi.mock("~/lib/prisma.server", () => ({
+  prisma: mockPrisma,
+}));
 
 describe("Payment Model Commands", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    setupPaymentTestEnvironment();
+    resetMockPaymentPrismaTransaction(mockPrisma);
   });
 
   describe("createRenewalPayment", () => {
     it("should create a renewal payment", async () => {
-      const mockPayment = {
-        id: "payment-123",
-        userId: TEST_USER_ID,
+      const mockPayment = createMockPayment({
         amount: 1000,
-        amountUsd: 10,
         status: "COMPLETED",
-      };
-      (prisma.payment.create as ReturnType<typeof vi.fn>).mockResolvedValue(
+      });
+      (mockPayment as unknown as { amountUsd: number }).amountUsd = 10;
+
+      (mockPrisma.payment.create as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockPayment
       );
 
       const result = await createRenewalPayment({
-        paymentId: "payment-123",
+        paymentId: TEST_PAYMENT_ID,
         userId: TEST_USER_ID,
         amount: 1000,
         amountUsd: 10,
@@ -47,9 +64,11 @@ describe("Payment Model Commands", () => {
         description: "Renewal payment",
       });
 
-      expect(prisma.payment.create).toHaveBeenCalledWith({
+      expect(
+        mockPrisma.payment.create as ReturnType<typeof vi.fn>
+      ).toHaveBeenCalledWith({
         data: {
-          id: "payment-123",
+          id: TEST_PAYMENT_ID,
           userId: TEST_USER_ID,
           amount: 1000,
           amountUsd: 10,

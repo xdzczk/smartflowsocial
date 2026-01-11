@@ -276,10 +276,26 @@ export async function createPlanInvoice({
   }
 
   const amountUsd = Number(plan.price);
-  const ln = new LN(credentials);
+  const ln = new LN(credentials) as unknown as {
+    requestPayment: (amount: {
+      amount: number;
+    }) => Promise<{
+      onPaid: (callback: () => void) => {
+        onTimeout: (seconds: number, callback: () => void) => void;
+      };
+      onTimeout: (seconds: number, callback: () => void) => void;
+    }>;
+  };
   try {
     // Create payment request using Alby SDK - owner receives payment
-    const request = await ln.requestPayment(USD(amountUsd));
+    const request = (await ln.requestPayment(
+      USD(amountUsd) as unknown as { amount: number }
+    )) as unknown as {
+      onPaid: (callback: () => void) => {
+        onTimeout: (seconds: number, callback: () => void) => void;
+      };
+      onTimeout: (seconds: number, callback: () => void) => void;
+    };
 
     // Generate a unique payment ID
     const paymentId = `${planId}_${Date.now()}_${userId}`;
@@ -301,7 +317,8 @@ export async function createPlanInvoice({
           invoiceString,
           paymentHashString,
           requestStructure: Object.keys(
-            request && typeof request === "object" && !Array.isArray(request) // eslint-disable-line @typescript-eslint/no-unnecessary-condition -- request can be null/undefined, check is necessary
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Defensive check for request type
+            request && typeof request === "object" && !Array.isArray(request)
               ? (request as unknown as Record<string, unknown>)
               : {}
           ),

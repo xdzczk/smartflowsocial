@@ -16,8 +16,20 @@ vi.mock("~/features/user", () => ({
   getHashTagPresetById: vi.fn(),
 }));
 
-vi.mock("~/models/post.commands.server", () => ({
-  createPost: vi.fn(),
+// Mock use cases
+const mockCreatePostExecute = vi.fn();
+const mockPublishNowExecute = vi.fn();
+
+vi.mock("~/features/posts/use-cases/create-post.use-case.server", () => ({
+  CreatePostUseCase: class {
+    execute = mockCreatePostExecute;
+  },
+}));
+
+vi.mock("~/features/posts/use-cases/publish-now.use-case.server", () => ({
+  PublishNowUseCase: class {
+    execute = mockPublishNowExecute;
+  },
 }));
 
 vi.mock("~/features/posts/services/queue-type-resolver.server", () => ({
@@ -40,7 +52,7 @@ import {
   getQueueTypes,
   getHashTagPresetById,
 } from "~/features/user";
-import { createPost } from "~/models/post.commands.server";
+// Use cases are mocked above
 
 describe("New Post Action Handler", () => {
   beforeEach(() => {
@@ -64,18 +76,22 @@ describe("New Post Action Handler", () => {
       id: "preset-1",
       tags: "#custom #tags",
     });
-    (createPost as ReturnType<typeof vi.fn>).mockResolvedValue({
-      id: "post-123",
-      signedEvent: {
-        id: "event-123",
-        pubkey: "test-pubkey",
-        created_at: 1234567890,
-        kind: 1,
-        tags: [],
-        content: "test content",
-        sig: "test-sig",
+    mockCreatePostExecute.mockResolvedValue({
+      post: {
+        id: "post-123",
+        signedEvent: {
+          id: "event-123",
+          pubkey: "test-pubkey",
+          created_at: 1234567890,
+          kind: 1,
+          tags: [],
+          content: "test content",
+          sig: "test-sig",
+        },
       },
+      needsScheduling: false,
     });
+    mockPublishNowExecute.mockResolvedValue(undefined);
     (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockImplementation(
       // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Test functions can be async
       (userId, queueTypeId, queueType): Promise<string | null> => {
@@ -106,12 +122,7 @@ describe("New Post Action Handler", () => {
 
       const result = await handleNewPostAction(TEST_USER_ID, request);
 
-      expect(resolveQueueTypeId).toHaveBeenCalledWith(
-        TEST_USER_ID,
-        "queue-1",
-        "posts"
-      );
-      expect(createPost).toHaveBeenCalledWith(
+      expect(mockCreatePostExecute).toHaveBeenCalledWith(
         expect.objectContaining({
           userId: TEST_USER_ID,
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
@@ -119,11 +130,9 @@ describe("New Post Action Handler", () => {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
           caption: expect.stringContaining("This is a draft post"),
           fileUrl: [],
-          isScheduled: false,
-          isPosted: false,
           postType: "TEXT",
-          draft: true,
-          queueTypeId: "queue-1", // Now only queueTypeId is passed
+          queueTypeId: "queue-1",
+          queueType: "posts",
         })
       );
       expect(result).toBeInstanceOf(Response);
@@ -150,7 +159,7 @@ describe("New Post Action Handler", () => {
 
       await handleNewPostAction(TEST_USER_ID, request);
 
-      expect(createPost).toHaveBeenCalledWith(
+      expect(mockCreatePostExecute).toHaveBeenCalledWith(
         expect.objectContaining({
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
           content: expect.stringContaining("#custom #tags"),
@@ -176,7 +185,7 @@ describe("New Post Action Handler", () => {
 
       await handleNewPostAction(TEST_USER_ID, request);
 
-      expect(createPost).toHaveBeenCalledWith(
+      expect(mockCreatePostExecute).toHaveBeenCalledWith(
         expect.objectContaining({
           content: "Test post",
         })
@@ -198,7 +207,7 @@ describe("New Post Action Handler", () => {
       await handleNewPostAction(TEST_USER_ID, request);
 
       expect(getQueueTypes).toHaveBeenCalledWith(TEST_USER_ID);
-      expect(createPost).toHaveBeenCalledWith(
+      expect(mockCreatePostExecute).toHaveBeenCalledWith(
         expect.objectContaining({
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
           content: expect.stringContaining("#default #tags"),
@@ -240,28 +249,33 @@ describe("New Post Action Handler", () => {
 
       const result = await handleNewPostAction(TEST_USER_ID, request);
 
-      expect(createPost).toHaveBeenCalledWith(
+      expect(mockCreatePostExecute).toHaveBeenCalledWith(
         expect.objectContaining({
           userId: TEST_USER_ID,
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
           content: expect.stringContaining("This is a published post"),
-          isScheduled: false,
-          isPosted: true,
+          postType: "TEXT",
           signedEvent,
           nostrEvent,
         })
       );
-      // fetchWithRetry adds additional options (timeout, maxRetries, correlation ID, etc.)
-      expect(global.fetch).toHaveBeenCalled();
-      const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock
-        .calls[0];
-      if (!fetchCall) {
-        throw new Error("fetch was not called");
-      }
-      expect(fetchCall[0]).toBe("https://api.nostr-publisher.com/publish");
-      const fetchOptions = fetchCall[1] as RequestInit;
-      expect(fetchOptions.method).toBe("POST");
-      expect(fetchOptions.body).toContain("event-123");
+      expect(mockPublishNowExecute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          postId: "post-123",
+          userId: TEST_USER_ID,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.objectContaining returns any
+          signedEvent: expect.objectContaining({
+            id: "event-123",
+          }),
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.arrayContaining returns any
+          relays: expect.arrayContaining([
+            "wss://relay1.com",
+            "wss://relay2.com",
+          ]),
+        })
+      );
+      // Note: fetch is called by PublishNowUseCase internally, but since we're mocking the use case,
+      // we don't verify fetch here. The publisher is tested separately.
       expect(result).toBeInstanceOf(Response);
       expect(result.status).toBe(302); // Redirect to /dashboard/posted
     });
@@ -300,15 +314,14 @@ describe("New Post Action Handler", () => {
 
       const result = await handleNewPostAction(TEST_USER_ID, request);
 
-      expect(createPost).toHaveBeenCalledWith(
+      expect(mockCreatePostExecute).toHaveBeenCalledWith(
         expect.objectContaining({
           userId: TEST_USER_ID,
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
           content: expect.stringContaining("This is a scheduled post"),
-          isScheduled: true,
-          isPosted: false,
+          postType: "TEXT",
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
-          scheduledFor: expect.any(String),
+          scheduledFor: expect.any(Number),
         })
       );
       expect(global.fetch).not.toHaveBeenCalled(); // Should not publish immediately
@@ -401,15 +414,12 @@ describe("New Post Action Handler", () => {
 
       const result = await handleNewPostAction(TEST_USER_ID, request);
 
-      expect(createPost).toHaveBeenCalledWith(
+      expect(mockCreatePostExecute).toHaveBeenCalledWith(
         expect.objectContaining({
           userId: TEST_USER_ID,
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
           fileUrl: expect.arrayContaining(["https://example.com/image.jpg"]),
           postType: "IMAGE",
-          draft: true,
-          isScheduled: false,
-          isPosted: false,
         })
       );
       expect(result).toBeInstanceOf(Response);
@@ -432,7 +442,7 @@ describe("New Post Action Handler", () => {
 
       await handleNewPostAction(TEST_USER_ID, request);
 
-      expect(createPost).toHaveBeenCalledWith(
+      expect(mockCreatePostExecute).toHaveBeenCalledWith(
         expect.objectContaining({
           postType: "VIDEO",
         })
@@ -475,13 +485,10 @@ describe("New Post Action Handler", () => {
 
       const result = await handleNewPostAction(TEST_USER_ID, request);
 
-      expect(createPost).toHaveBeenCalledWith(
-        expect.objectContaining({
-          isPosted: true,
-          isScheduled: false,
-        })
-      );
-      expect(global.fetch).toHaveBeenCalled(); // Should publish to Nostr
+      expect(mockCreatePostExecute).toHaveBeenCalled();
+      expect(mockPublishNowExecute).toHaveBeenCalled();
+      // Note: fetch is called by PublishNowUseCase internally, but since we're mocking the use case,
+      // we don't verify fetch here. The publisher is tested separately.
       expect(result).toBeInstanceOf(Response);
       expect(result.status).toBe(302);
     });
@@ -522,10 +529,10 @@ describe("New Post Action Handler", () => {
 
       const result = await handleNewPostAction(TEST_USER_ID, request);
 
-      expect(createPost).toHaveBeenCalledWith(
+      expect(mockCreatePostExecute).toHaveBeenCalledWith(
         expect.objectContaining({
-          isScheduled: true,
-          isPosted: false,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
+          scheduledFor: expect.any(Number),
         })
       );
       expect(global.fetch).not.toHaveBeenCalled(); // Should not publish immediately
@@ -560,9 +567,7 @@ describe("New Post Action Handler", () => {
     });
 
     it("should handle database errors", async () => {
-      (createPost as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Database error")
-      );
+      mockCreatePostExecute.mockRejectedValue(new Error("Database error"));
 
       const formData = createActionFormData("draft-text", {
         content: "Test post",
@@ -580,10 +585,10 @@ describe("New Post Action Handler", () => {
     });
 
     it("should handle Nostr publisher errors", async () => {
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-        ok: false,
-        statusText: "Internal Server Error",
-      });
+      // Mock PublishNowUseCase to throw an error
+      mockPublishNowExecute.mockRejectedValue(
+        new Error("Failed to post to nostr publisher")
+      );
 
       const signedEvent = {
         id: "event-123",
@@ -633,14 +638,10 @@ describe("New Post Action Handler", () => {
 
       await handleNewPostAction(TEST_USER_ID, request);
 
-      expect(resolveQueueTypeId).toHaveBeenCalledWith(
-        TEST_USER_ID,
-        null,
-        "unassigned"
-      );
-      expect(createPost).toHaveBeenCalledWith(
+      expect(mockCreatePostExecute).toHaveBeenCalledWith(
         expect.objectContaining({
           queueTypeId: null, // Resolved to null for "unassigned"
+          queueType: "unassigned",
         })
       );
     });
@@ -659,7 +660,7 @@ describe("New Post Action Handler", () => {
 
       await handleNewPostAction(TEST_USER_ID, request);
 
-      expect(createPost).toHaveBeenCalledWith(
+      expect(mockCreatePostExecute).toHaveBeenCalledWith(
         expect.objectContaining({
           isRecyclable: true,
         })

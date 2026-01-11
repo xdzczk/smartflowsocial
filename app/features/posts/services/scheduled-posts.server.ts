@@ -14,8 +14,6 @@ import {
   getUserHashTagPresets,
 } from "~/features/user";
 import { cancelPostJob as cancelScheduledPost } from "~/infra/queue";
-import { SchedulePostUseCase } from "../use-cases/schedule-post.use-case.server";
-import { ScheduleLongFormPostUseCase } from "../use-cases/schedule-longform-post.use-case.server";
 import { logError } from "~/lib/error-logger.server";
 import {
   getScheduledLongFormPosts,
@@ -41,6 +39,8 @@ const QUEUE_SCHEDULED_LONGFORM_POSTS = "scheduled-longform-posts";
 import { combineContent } from "../combined.server";
 import { convertPrismaQueueTypeToQueueType } from "../types";
 import type { PostData, LongFormPostData } from "../types";
+import { ScheduleLongFormPostUseCase } from "../use-cases/schedule-longform-post.use-case.server";
+import { SchedulePostUseCase } from "../use-cases/schedule-post.use-case.server";
 
 /**
  * Get scheduled posts dashboard data
@@ -376,9 +376,9 @@ async function handleRescheduleLongform(formData: FormData, userId: string) {
       userId,
       publishedAt: scheduledAtUtc,
       status: "SCHEDULED",
-      signedEvent: parsedSignedEvent
-        ? (JSON.parse(JSON.stringify(parsedSignedEvent)) as Prisma.JsonValue)
-        : undefined,
+      signedEvent: JSON.parse(
+        JSON.stringify(parsedSignedEvent)
+      ) as Prisma.JsonValue,
       nostrEvent: parsedNostrEvent
         ? (JSON.parse(JSON.stringify(parsedNostrEvent)) as Prisma.JsonValue)
         : undefined,

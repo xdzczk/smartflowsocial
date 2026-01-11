@@ -8,13 +8,9 @@
 import { Prisma, type Post } from "@prisma/client";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
-import { prisma } from "~/lib/prisma.server";
-
-import {
-  createOutboxEventInTransaction,
-  type PostScheduledPayload,
-} from "~/infra/outbox/outbox.server";
+import type { PostScheduledPayload } from "~/infra/outbox/outbox.server";
 import { generateEnqueueIdempotencyKey } from "~/lib/idempotency.server";
+import { prisma } from "~/lib/prisma.server";
 
 import type { CreatePostData } from "./post.types";
 
@@ -138,11 +134,7 @@ export async function createPostWithOutbox(
   scheduledForUnix?: number,
   correlationId?: string
 ): Promise<Post> {
-  const {
-    userId,
-    signedEvent,
-    creationIdempotencyKey,
-  } = data;
+  const { userId, signedEvent, creationIdempotencyKey } = data;
 
   return prisma.$transaction(async (tx) => {
     // Create post
@@ -189,6 +181,22 @@ export async function createPostWithOutbox(
       },
     });
 
+    // Create read model event for post creation
+    // @ts-ignore - Dynamic imports work at runtime in CommonJS
+    const { createOutboxEventInTransaction } =
+      await import("~/infra/outbox/outbox.server");
+    await createOutboxEventInTransaction(
+      tx as Prisma.TransactionClient,
+      "POST_CREATED",
+      post.id,
+      "Post",
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Partial payload for read model events
+      { postId: post.id, userId: post.userId } as PostScheduledPayload,
+      undefined,
+      undefined,
+      correlationId
+    );
+
     // If scheduled and has signed event, create outbox event
     if (scheduledForUnix && signedEvent && data.isScheduled) {
       const scheduledAtUtc = new Date(scheduledForUnix * 1000);
@@ -207,7 +215,7 @@ export async function createPostWithOutbox(
       };
 
       await createOutboxEventInTransaction(
-        tx,
+        tx as Prisma.TransactionClient,
         "POST_SCHEDULED",
         post.id,
         "Post",
@@ -222,31 +230,61 @@ export async function createPostWithOutbox(
   });
 }
 
-export function deletePost({
+export async function deletePost({
   id,
   userId,
+  correlationId,
 }: {
   id: string;
   userId: string;
+  correlationId?: string;
 }): Promise<Post> {
-  return prisma.post.delete({
+  const post = await prisma.post.delete({
     where: {
       id,
       userId,
     },
   });
+
+  // Emit POST_DELETED event for read model cleanup
+  // @ts-ignore - Dynamic imports work at runtime in CommonJS
+  const { createOutboxEvent } = await import("~/infra/outbox/outbox.server");
+  void createOutboxEvent(
+    "POST_DELETED",
+    post.id,
+    "Post",
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Partial payload for read model events
+    { postId: post.id, userId: post.userId } as PostScheduledPayload,
+    undefined,
+    undefined,
+    correlationId
+    // eslint-disable-next-line promise/prefer-await-to-then, promise/prefer-await-to-callbacks -- Fire-and-forget pattern
+  ).catch((error) => {
+    // Log but don't throw - read model updates shouldn't block writes
+    console.error("Failed to emit POST_DELETED event", error);
+  });
+
+  return post;
 }
 
-export function updatePostStatus({
+export async function updatePostStatus({
   id,
   userId,
   isPosted,
+  correlationId,
 }: {
   id: string;
   userId: string;
   isPosted: boolean;
+  correlationId?: string;
 }): Promise<Post> {
-  return prisma.post.update({
+  // Get current state to check if this is a state change
+  const currentPost = await prisma.post.findUnique({
+    where: { id, userId },
+    select: { isPosted: true },
+  });
+
+  const post = await prisma.post.update({
     where: {
       id,
       userId,
@@ -256,6 +294,28 @@ export function updatePostStatus({
       postedAt: new Date(),
     },
   });
+
+  // Emit POST_PUBLISHED event if post was just published
+  if (isPosted && currentPost && !currentPost.isPosted) {
+    // @ts-ignore - Dynamic imports work at runtime in CommonJS
+    const { createOutboxEvent } = await import("~/infra/outbox/outbox.server");
+    void createOutboxEvent(
+      "POST_PUBLISHED",
+      post.id,
+      "Post",
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Partial payload for read model events
+      { postId: post.id, userId: post.userId } as PostScheduledPayload,
+      undefined,
+      undefined,
+      correlationId
+      // eslint-disable-next-line promise/prefer-await-to-then, promise/prefer-await-to-callbacks -- Fire-and-forget pattern
+    ).catch((error) => {
+      // Log but don't throw - read model updates shouldn't block writes
+      console.error("Failed to emit POST_PUBLISHED event", error);
+    });
+  }
+
+  return post;
 }
 
 export function reschedulePost({
@@ -320,7 +380,7 @@ export function reschedulePost({
   });
 }
 
-export function updatePost({
+export async function updatePost({
   id,
   userId,
   data,
@@ -336,12 +396,12 @@ export function updatePost({
 
   // Only include defined fields
   if (data.scheduledFor !== undefined) {
-    updateData.scheduledFor = data.scheduledFor.toString();
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Need to check for null to clear the field
+    updateData.scheduledFor =
+      data.scheduledFor === null ? null : data.scheduledFor.toString();
     // Also update scheduledAtUtc for dual-write
     const scheduledAtUtc = convertScheduledForToDateTime(data.scheduledFor);
-    if (scheduledAtUtc) {
-      updateData.scheduledAtUtc = scheduledAtUtc;
-    }
+    updateData.scheduledAtUtc = scheduledAtUtc ?? null;
   }
   if (data.userId !== undefined)
     updateData.user = { connect: { id: data.userId } };
@@ -361,6 +421,8 @@ export function updatePost({
   // They should be set via separate update calls if needed
   if (data.draft !== undefined) updateData.draft = data.draft;
   if (data.isScheduled !== undefined) updateData.isScheduled = data.isScheduled;
+  if (data.isRecyclable !== undefined)
+    updateData.isRecyclable = data.isRecyclable;
   // templateId is not in CreatePostData, handle separately if needed
   if ("templateId" in data && data.templateId !== undefined) {
     if (data.templateId === null) {
@@ -393,11 +455,28 @@ export function updatePost({
     }
   }
 
-  return prisma.post.update({
+  const post = await prisma.post.update({
     where: {
       id,
       userId,
     },
     data: updateData,
   });
+
+  // Emit POST_UPDATED event for read model updates
+  // @ts-ignore - Dynamic imports work at runtime in CommonJS
+  const { createOutboxEvent } = await import("~/infra/outbox/outbox.server");
+  void createOutboxEvent(
+    "POST_UPDATED",
+    post.id,
+    "Post",
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Partial payload for read model events
+    { postId: post.id, userId: post.userId } as PostScheduledPayload
+    // eslint-disable-next-line promise/prefer-await-to-then, promise/prefer-await-to-callbacks -- Fire-and-forget pattern
+  ).catch((error) => {
+    // Log but don't throw - read model updates shouldn't block writes
+    console.error("Failed to emit POST_UPDATED event", error);
+  });
+
+  return post;
 }

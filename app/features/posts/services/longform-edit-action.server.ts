@@ -20,9 +20,11 @@ import {
   getQueueTypeByNameForUser,
   getQueueTypes,
 } from "~/features/user";
-import { env } from "~/lib/env.server";
+import {
+  extractCorrelationId,
+  getCorrelationId,
+} from "~/lib/correlation-context.server";
 import { logError } from "~/lib/error-logger.server";
-import { fetchWithRetry } from "~/lib/fetch.server";
 import {
   sanitizeMarkdown,
   generateSummary,
@@ -36,7 +38,6 @@ import { updateLongFormPost } from "~/models/longformpost.server";
 import { convertEditorJSToMarkdown } from "../longform.server";
 import { PublishLongFormNowUseCase } from "../use-cases/publish-longform-now.use-case.server";
 import { ScheduleLongFormPostUseCase } from "../use-cases/schedule-longform-post.use-case.server";
-import { extractCorrelationId } from "~/lib/correlation-context.server";
 
 const ERROR_TITLE_REQUIRED = "Title is required";
 const ERROR_CONTENT_REQUIRED = "Content is required";
@@ -263,7 +264,8 @@ async function handlePublish(
   hashTagPresetId: string | null,
   effectiveHashtags: string,
   showHashTagsinPosts: boolean,
-  sanitizedRelays: string[]
+  sanitizedRelays: string[],
+  request: Request
 ): Promise<Response> {
   const title = formData.get("title")?.toString() ?? "";
   const editorContent = formData.get("content")?.toString() ?? "";
@@ -369,6 +371,8 @@ async function handlePublish(
   });
 
   // Use PublishLongFormNowUseCase for immediate publishing
+  const correlationId =
+    extractCorrelationId(request.headers) ?? getCorrelationId();
   const publishUseCase = new PublishLongFormNowUseCase();
   await publishUseCase.execute({
     postId,
@@ -612,7 +616,8 @@ export async function handleLongFormEditAction(
       hashTagPresetId,
       effectiveHashtags,
       showHashTagsinPosts,
-      sanitizedRelays
+      sanitizedRelays,
+      request
     );
   }
 

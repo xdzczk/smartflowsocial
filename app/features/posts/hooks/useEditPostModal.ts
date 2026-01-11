@@ -251,7 +251,16 @@ export function useEditPostModal({
               },
             },
             embed: {
-              class: (await import("@editorjs/embed")).default,
+              class: (await (async () => {
+                const embedModule = (await import("@editorjs/embed")) as {
+                  default: unknown;
+                };
+                return embedModule.default as new (config?: {
+                  services?: Record<string, boolean>;
+                }) => unknown;
+              })()) as new (config?: {
+                services?: Record<string, boolean>;
+              }) => unknown,
               config: {
                 services: {
                   youtube: true,

@@ -2,7 +2,9 @@
 
 **Estimated time:** 45 minutes  
 **Difficulty:** Intermediate  
-**Last updated:** 2026-01-03
+**Last updated:** 2026-01-03  
+**Note**: Test structure updated - large test files split into scenario-driven files (see
+[Test Suite Refactoring](../test-suite-refactoring-complete.md))
 
 Comprehensive guide to testing in SmartFlowSocial, covering strategy, patterns, and best practices.
 
@@ -279,12 +281,32 @@ tests/
 ├── integration/             # Integration tests
 │   ├── dashboard-loader.test.ts
 │   ├── api-*.test.ts
-│   └── post-model.test.ts
+│   ├── post-model.test.ts
+│   ├── payments/            # Payment tests (scenario-driven)
+│   │   ├── create-plan-invoice.test.ts
+│   │   ├── check-payment-status.test.ts
+│   │   ├── get-user-subscription.test.ts
+│   │   ├── get-plans.test.ts
+│   │   ├── update-user-subscription.test.ts
+│   │   ├── handle-payment-completed.test.ts
+│   │   ├── handle-payment-timeout.test.ts
+│   │   └── create-renewal-payment.test.ts
+│   └── longform-actions/    # Longform action tests (scenario-driven)
+│       ├── shared-setup.ts
+│       ├── image-upload.test.ts
+│       ├── save-draft.test.ts
+│       ├── publish.test.ts
+│       ├── schedule.test.ts
+│       └── hashtag-preset.test.ts
 ├── property/                # Property-based tests
 ├── security/                # Security tests
 ├── performance/             # Performance tests
 ├── factories/               # Test data factories
 └── utils/                   # Test utilities
+    ├── payment-test-helpers.ts    # Payment test helpers
+    ├── action-test-helpers.ts     # Action handler helpers
+    ├── integration-test-setup.ts  # Integration test setup
+    └── test-scenario-builders.ts  # Scenario builders
 
 tests/e2e/                   # Cypress E2E tests
 ├── smoke.cy.ts
@@ -348,6 +370,50 @@ test.prop([fc.date()])("formatDate handles all dates", (date) => {
   expect(result).toMatch(/\d{2}\/\d{2}\/\d{4}/);
 });
 ```
+
+### Test Organization Best Practices
+
+**Scenario-Driven Test Files**: Large test files are split into scenario-driven files for better
+maintainability.
+
+**Example**: Payment tests are organized by function:
+
+- `payments/create-plan-invoice.test.ts` - Tests invoice creation
+- `payments/check-payment-status.test.ts` - Tests status checking
+- `payments/update-user-subscription.test.ts` - Tests subscription updates
+
+**Shared Test Helpers**: Use shared helpers to reduce duplication:
+
+```typescript
+// Payment tests use payment-test-helpers.ts
+import {
+  createMockPaymentPrisma,
+  createMockPlan,
+  createMockPayment,
+  setupPaymentTestEnvironment,
+} from "~/tests/utils/payment-test-helpers";
+
+// Action handler tests use action-test-helpers.ts
+import { buildActionHandlerScenario } from "~/tests/utils/test-scenario-builders";
+```
+
+**Integration Test Setup**: Use shared setup helpers:
+
+```typescript
+import { setupIntegrationTest, cleanupIntegrationTest } from "~/tests/utils/test-helpers";
+
+describe("My Integration Test", () => {
+  const { userId } = setupIntegrationTest();
+
+  afterEach(async () => {
+    await cleanupIntegrationTest(userId);
+  });
+
+  // Your tests here
+});
+```
+
+See [Test Suite Refactoring](../test-suite-refactoring-complete.md) for details on the refactoring.
 
 ### Test Data Factories
 

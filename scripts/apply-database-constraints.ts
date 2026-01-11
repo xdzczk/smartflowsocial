@@ -1,16 +1,16 @@
 /**
  * Apply database constraints
- * 
+ *
  * This script applies CHECK constraints to enforce data integrity at the database level.
  * Since Prisma doesn't support CHECK constraints directly, we apply them via raw SQL.
  */
 
+import { readFileSync } from "fs";
+import { resolve } from "path";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { config } from "dotenv";
 import { Pool } from "pg";
-import { readFileSync } from "fs";
-import { resolve } from "path";
 
 // Load environment variables
 config({ path: resolve(process.cwd(), ".env") });
@@ -83,7 +83,9 @@ async function applyConstraints() {
 
     // Verify constraints were created
     console.log("\nVerifying constraints...");
-    const constraintCheck = await prisma.$queryRawUnsafe<Array<{ constraint_name: string }>>(`
+    const constraintCheck = await prisma.$queryRawUnsafe<
+      Array<{ constraint_name: string }>
+    >(`
       SELECT constraint_name 
       FROM information_schema.table_constraints 
       WHERE constraint_type = 'CHECK' 
@@ -91,7 +93,7 @@ async function applyConstraints() {
       AND constraint_name LIKE '%_check'
       ORDER BY constraint_name;
     `);
-    
+
     console.log(`Found ${constraintCheck.length} CHECK constraints:`);
     for (const constraint of constraintCheck) {
       console.log(`  - ${constraint.constraint_name}`);

@@ -1,0 +1,179 @@
+/**
+ * Integration tests for PublishLongFormNowUseCase
+ * Tests the use case with real database interactions
+ *
+ * Note: These tests require a test database to be set up.
+ * Run with: pnpm test:db:setup && pnpm test:integration -- --grep "PublishLongFormNowUseCase"
+ */
+
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+
+// Mock Nostr publisher
+const mockPublish = vi.fn();
+vi.mock("~/infra/publishers/nostr-publisher.server", () => ({
+  getNostrPublisher: vi.fn(() => ({
+    publish: mockPublish,
+  })),
+}));
+
+import { CreateLongFormPostUseCase } from "~/features/posts/use-cases/create-longform-post.use-case.server";
+import { PublishLongFormNowUseCase } from "~/features/posts/use-cases/publish-longform-now.use-case.server";
+import { prisma } from "~/lib/prisma.server";
+
+// Skip if no test database configured
+const TEST_DATABASE_URL =
+  process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"];
+
+describe.skipIf(!TEST_DATABASE_URL)(
+  "PublishLongFormNowUseCase Integration",
+  () => {
+    let userId: string;
+    let useCase: PublishLongFormNowUseCase;
+
+    beforeEach(async () => {
+      vi.clearAllMocks();
+      mockPublish.mockResolvedValue(undefined);
+
+      // Create a test user - use upsert to handle duplicates
+      const npub = `test-${Date.now()}-${Math.random()}`;
+      const user = await prisma.user.upsert({
+        where: { npub },
+        update: {},
+        create: {
+          npub,
+          isEnabled: true,
+        },
+      });
+      userId = user.id;
+      useCase = new PublishLongFormNowUseCase();
+    });
+
+    afterEach(async () => {
+      // Clean up test data - handle missing tables gracefully
+      if (userId) {
+        try {
+          await prisma.longFormPost.deleteMany({
+            where: { userId },
+          });
+        } catch {
+          // Table might not exist, ignore
+        }
+        try {
+          await prisma.user.delete({
+            where: { id: userId },
+          });
+        } catch {
+          // Ignore errors
+        }
+      }
+    });
+
+    it("should publish a longform post successfully", async () => {
+      // Create a draft longform post
+      const createUseCase = new CreateLongFormPostUseCase();
+      const createResult = await createUseCase.execute({
+        userId,
+        title: "Test Title",
+        content: "Test content",
+      });
+
+      const postId = createResult.post.id;
+
+      // Publish the post
+      const signedEvent = {
+        id: "test-event-id",
+        pubkey: "test-pubkey",
+        created_at: Math.floor(Date.now() / 1000),
+        kind: 1,
+        content: "test",
+        tags: [],
+        sig: "test-sig",
+      };
+
+      await useCase.execute({
+        postId,
+        userId,
+        signedEvent,
+        relays: ["wss://relay.example.com"],
+      });
+
+      // Verify post is published
+      const publishedPost = await prisma.longFormPost.findUnique({
+        where: { id: postId },
+      });
+      expect(publishedPost?.isPublished).toBe(true);
+
+      // Verify publisher was called
+      expect(mockPublish).toHaveBeenCalledWith(
+        signedEvent,
+        ["wss://relay.example.com"],
+        undefined
+      );
+    });
+
+    it("should throw error if post not found", async () => {
+      await expect(
+        useCase.execute({
+          postId: "non-existent-post-id",
+          userId,
+          signedEvent: {
+            id: "test-event-id",
+            pubkey: "test-pubkey",
+            created_at: Math.floor(Date.now() / 1000),
+            kind: 1,
+            content: "test",
+            tags: [],
+            sig: "test-sig",
+          },
+          relays: ["wss://relay.example.com"],
+        })
+      ).rejects.toThrow("not found for user");
+    });
+
+    it("should throw error if post already published", async () => {
+      // Create and publish a longform post
+      const createUseCase = new CreateLongFormPostUseCase();
+      const createResult = await createUseCase.execute({
+        userId,
+        title: "Test Title",
+        content: "Test content",
+      });
+
+      const postId = createResult.post.id;
+
+      // Publish first time
+      await useCase.execute({
+        postId,
+        userId,
+        signedEvent: {
+          id: "test-event-id",
+          pubkey: "test-pubkey",
+          created_at: Math.floor(Date.now() / 1000),
+          kind: 1,
+          content: "test",
+          tags: [],
+          sig: "test-sig",
+        },
+        relays: ["wss://relay.example.com"],
+      });
+
+      // Try to publish again (should fail)
+      await expect(
+        useCase.execute({
+          postId,
+          userId,
+          signedEvent: {
+            id: "test-event-id-2",
+            pubkey: "test-pubkey",
+            created_at: Math.floor(Date.now() / 1000),
+            kind: 1,
+            content: "test",
+            tags: [],
+            sig: "test-sig",
+          },
+          relays: ["wss://relay.example.com"],
+        })
+      ).rejects.toThrow("already published");
+    });
+  }
+);

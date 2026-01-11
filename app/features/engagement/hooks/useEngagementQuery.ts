@@ -114,7 +114,7 @@ export function useEngagementData() {
 
   // Deserialize DTOs (with string dates) back to PostData (with Date objects)
   const posts: PostData[] = Array.isArray(rawData.posts)
-    ? fromPostDTOArray(rawData.posts as PostDTO[])
+    ? fromPostDTOArray(rawData.posts as unknown as PostDTO[])
     : [];
 
   // Type guard for stats

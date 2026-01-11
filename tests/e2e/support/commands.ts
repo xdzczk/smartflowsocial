@@ -205,8 +205,8 @@ function loginNostr({ npub = TEST_NPUB }: { npub?: string } = {}) {
         }
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- stderr can be undefined
       throw new Error(
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Defensive check for optional values
         `No cookie value found in output. stdout: ${stdout ?? "none"}, stderr: ${stderr ?? "none"}, code: ${code !== undefined ? String(code) : "undefined"}`
       );
     });
@@ -272,8 +272,8 @@ function deleteNostrUserByNpub(npub: string) {
     const code = "code" in result ? result.code : undefined;
     const stderr = result.stderr;
     if (code !== 0) {
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- stderr can be undefined
       cy.log(
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- stderr can be undefined
         `Warning: delete-nostr-user exited with code ${String(code)}: ${stderr ?? "unknown error"}`
       );
     }
@@ -402,8 +402,8 @@ function setSubscriptionStatus(status: TestSubscriptionStatus): void {
         }
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- stderr can be undefined
       cy.log(
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Defensive check for optional values
         `Warning: Could not extract subscription status from output. stdout: ${stdout ?? "none"}, stderr: ${stderr ?? "none"}, code: ${code !== undefined ? String(code) : "undefined"}`
       );
     });

@@ -108,7 +108,7 @@ export function useCalendarQueueData() {
 
   // Deserialize DTOs (with string dates) back to PostData (with Date objects)
   const scheduledPosts: PostData[] = Array.isArray(rawData.scheduledPosts)
-    ? fromPostDTOArray(rawData.scheduledPosts as PostDTO[])
+    ? fromPostDTOArray(rawData.scheduledPosts as unknown as PostDTO[])
     : [];
 
   return {

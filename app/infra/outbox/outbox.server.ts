@@ -5,7 +5,7 @@
  * Ensures that domain changes and job enqueueing are atomic.
  */
 
-import { Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 
 import type { SignedEvent } from "~/features/nostr/types";
 import { prisma } from "~/lib/prisma.server";
@@ -14,7 +14,16 @@ export type OutboxEventType =
   | "POST_SCHEDULED"
   | "LONGFORM_SCHEDULED"
   | "POST_CANCELLED"
-  | "LONGFORM_CANCELLED";
+  | "LONGFORM_CANCELLED"
+  // Read model events
+  | "POST_CREATED"
+  | "POST_UPDATED"
+  | "POST_PUBLISHED"
+  | "POST_DELETED"
+  | "LONGFORM_CREATED"
+  | "LONGFORM_UPDATED"
+  | "LONGFORM_PUBLISHED"
+  | "LONGFORM_DELETED";
 
 export interface PostScheduledPayload {
   postId: string;
@@ -42,7 +51,7 @@ export async function createOutboxEvent(
   eventType: OutboxEventType,
   aggregateId: string,
   aggregateType: "Post" | "LongFormPost",
-  payload: PostScheduledPayload | LongFormPostScheduledPayload | unknown,
+  payload: PostScheduledPayload | LongFormPostScheduledPayload,
   scheduledFor?: Date,
   idempotencyKey?: string,
   correlationId?: string
@@ -52,7 +61,7 @@ export async function createOutboxEvent(
       eventType,
       aggregateId,
       aggregateType,
-      payload: payload as Prisma.InputJsonValue,
+      payload: payload as unknown as Prisma.InputJsonValue,
       scheduledFor,
       idempotencyKey,
       correlationId,
@@ -68,7 +77,7 @@ export async function createOutboxEventInTransaction(
   eventType: OutboxEventType,
   aggregateId: string,
   aggregateType: "Post" | "LongFormPost",
-  payload: PostScheduledPayload | LongFormPostScheduledPayload | unknown,
+  payload: PostScheduledPayload | LongFormPostScheduledPayload,
   scheduledFor?: Date,
   idempotencyKey?: string,
   correlationId?: string
@@ -78,7 +87,7 @@ export async function createOutboxEventInTransaction(
       eventType,
       aggregateId,
       aggregateType,
-      payload: payload as Prisma.InputJsonValue,
+      payload: payload as unknown as Prisma.InputJsonValue,
       scheduledFor,
       idempotencyKey,
       correlationId,
@@ -93,10 +102,7 @@ export async function getUnprocessedOutboxEvents(limit = 50) {
   return prisma.outboxEvent.findMany({
     where: {
       processedAt: null,
-      OR: [
-        { scheduledFor: null },
-        { scheduledFor: { lte: new Date() } },
-      ],
+      OR: [{ scheduledFor: null }, { scheduledFor: { lte: new Date() } }],
     },
     take: limit,
     orderBy: { createdAt: "asc" },
@@ -114,7 +120,7 @@ export async function markOutboxEventProcessed(
     where: { id: eventId },
     data: {
       processedAt: new Date(),
-      processingError: error || null,
+      processingError: error ?? null,
     },
   });
 }

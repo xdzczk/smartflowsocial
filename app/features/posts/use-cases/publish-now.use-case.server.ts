@@ -4,24 +4,23 @@
  * Publishes a post immediately to Nostr relays.
  */
 
+import { getNostrPublisher } from "~/infra/publishers/nostr-publisher.server";
 import { getCorrelationId } from "~/lib/correlation-context.server";
 import { logInfo, logError as logErrorUtil } from "~/lib/error-logger.server";
-import { getNostrPublisher } from "~/infra/publishers/nostr-publisher.server";
 import {
   recordPostPublished,
   recordPostPublishFailed,
 } from "~/lib/metrics/business-metrics.server";
 import { recordPublishLatency } from "~/lib/metrics/performance-metrics.server";
-
-import type { SignedEvent } from "~/features/nostr/types";
 import { updatePostStatus } from "~/models/post.commands.server";
 import { getPostById } from "~/models/post.queries.server";
+
 import { PostStateMachine } from "../state-machine/post-state-machine.server";
 
 import type { PublishNowInput } from "./types";
 
 export class PublishNowUseCase {
-  private stateMachine = new PostStateMachine();
+  private readonly stateMachine = new PostStateMachine();
 
   async execute(input: PublishNowInput): Promise<void> {
     // Get or create correlation ID for this operation
@@ -36,7 +35,9 @@ export class PublishNowUseCase {
     // Verify post exists and not already posted
     const post = await getPostById({ id: input.postId, userId: input.userId });
     if (!post) {
-      throw new Error(`Post ${input.postId} not found for user ${input.userId}`);
+      throw new Error(
+        `Post ${input.postId} not found for user ${input.userId}`
+      );
     }
     if (post.isPosted) {
       throw new Error(`Post ${input.postId} already published`);
@@ -59,6 +60,7 @@ export class PublishNowUseCase {
           id: input.postId,
           userId: input.userId,
           isPosted: true,
+          correlationId,
         }),
         publisher.publish(input.signedEvent, input.relays, correlationId),
       ]);
@@ -99,15 +101,12 @@ export class PublishNowUseCase {
       recordPostPublishFailed(post.postType, "immediate", errorType);
       recordPublishLatency(post.postType, "immediate", publishLatency);
 
-      logErrorUtil(
-        error instanceof Error ? error : new Error(String(error)),
-        {
-          postId: input.postId,
-          userId: input.userId,
-          correlationId,
-          message: "PublishNowUseCase: Failed to publish post",
-        }
-      );
+      logErrorUtil(error instanceof Error ? error : new Error(String(error)), {
+        postId: input.postId,
+        userId: input.userId,
+        correlationId,
+        message: "PublishNowUseCase: Failed to publish post",
+      });
       throw error;
     }
   }

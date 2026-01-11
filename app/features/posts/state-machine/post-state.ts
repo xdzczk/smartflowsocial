@@ -24,7 +24,7 @@ export interface PostStateTransition {
  * Valid state transitions map
  */
 const VALID_TRANSITIONS: Record<PostState, PostState[]> = {
-  DRAFT: ["SCHEDULED", "PUBLISHED", "CANCELLED"],
+  DRAFT: ["SCHEDULED", "PUBLISHED", "PUBLISHING", "CANCELLED", "FAILED"],
   SCHEDULED: ["PUBLISHING", "CANCELLED", "DRAFT"],
   PUBLISHING: ["PUBLISHED", "FAILED"],
   PUBLISHED: [], // Terminal state
@@ -36,7 +36,7 @@ const VALID_TRANSITIONS: Record<PostState, PostState[]> = {
  * Check if a state transition is valid
  */
 export function canTransition(from: PostState, to: PostState): boolean {
-  return VALID_TRANSITIONS[from]?.includes(to) ?? false;
+  return VALID_TRANSITIONS[from].includes(to);
 }
 
 /**
@@ -65,5 +65,5 @@ export function transitionPost(
  * Get valid next states for a given state
  */
 export function getValidNextStates(state: PostState): PostState[] {
-  return VALID_TRANSITIONS[state] ?? [];
+  return VALID_TRANSITIONS[state];
 }
