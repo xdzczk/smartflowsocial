@@ -11,6 +11,7 @@ export interface PostJobData {
   postId: string;
   userId: string;
   signedEvent: SignedEvent;
+  correlationId?: string; // For request tracking
 }
 
 /**
@@ -20,6 +21,7 @@ export interface LongFormPostJobData {
   postId: string;
   userId: string;
   signedEvent: SignedEvent;
+  correlationId?: string; // For request tracking
 }
 
 /**

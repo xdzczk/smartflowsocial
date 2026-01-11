@@ -34,6 +34,9 @@ import {
 import { updateLongFormPost } from "~/models/longformpost.server";
 
 import { convertEditorJSToMarkdown } from "../longform.server";
+import { PublishLongFormNowUseCase } from "../use-cases/publish-longform-now.use-case.server";
+import { ScheduleLongFormPostUseCase } from "../use-cases/schedule-longform-post.use-case.server";
+import { extractCorrelationId } from "~/lib/correlation-context.server";
 
 const ERROR_TITLE_REQUIRED = "Title is required";
 const ERROR_CONTENT_REQUIRED = "Content is required";
@@ -349,6 +352,7 @@ async function handlePublish(
     tags: string[][];
   };
 
+  // Update the post first
   await updateLongFormPost({
     id: postId,
     userId,
@@ -364,28 +368,15 @@ async function handlePublish(
     hashTagPresetId,
   });
 
-  // Read directly from process.env to support test environment changes
-  const publisherUrl =
-    process.env["NOSTR_PUBLISHER_URL"] ?? env.NOSTR_PUBLISHER_URL;
-  if (!publisherUrl) {
-    throw new Error("NOSTR_PUBLISHER_URL environment variable is not set");
-  }
-  const response = await fetchWithRetry(publisherUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      relays: sanitizedRelays,
-      event: signedEventJson,
-    }),
-    timeout: 15000, // 15 seconds for publishing
-    maxRetries: 2,
+  // Use PublishLongFormNowUseCase for immediate publishing
+  const publishUseCase = new PublishLongFormNowUseCase();
+  await publishUseCase.execute({
+    postId,
+    userId,
+    signedEvent: signedEventJson,
+    relays: sanitizedRelays,
+    correlationId,
   });
-
-  if (!response.ok) {
-    throw new Error(`Failed to publish to nostr: ${response.statusText}`);
-  }
 
   return redirect("/dashboard/posted?tab=longform");
 }
@@ -490,15 +481,19 @@ async function handleScheduleLongform(
   };
 
   // Extract published_at from NOSTR event tags for scheduling
-  let scheduledForTimestamp: string | null = null;
+  let scheduledForTimestamp: number | undefined = undefined;
 
   const publishedAtTag = signedEventJson.tags.find(
     (tag: unknown) => Array.isArray(tag) && tag[0] === "published_at"
   );
   if (publishedAtTag?.[1]) {
-    scheduledForTimestamp = publishedAtTag[1].toString();
+    const timestamp = parseInt(publishedAtTag[1].toString(), 10);
+    if (!isNaN(timestamp)) {
+      scheduledForTimestamp = timestamp;
+    }
   }
 
+  // Update the post first
   await updateLongFormPost({
     id: postId,
     userId,
@@ -510,10 +505,22 @@ async function handleScheduleLongform(
     isPublished: false,
     signedEvent: signedEventJson,
     nostrEvent: nostrEventJson,
-    scheduledFor: scheduledForTimestamp,
+    scheduledFor: scheduledForTimestamp?.toString() ?? null,
     queueTypeId,
     hashTagPresetId,
   });
+
+  // Use ScheduleLongFormPostUseCase if we have a scheduled time
+  if (scheduledForTimestamp) {
+    const scheduleLongFormPostUseCase = new ScheduleLongFormPostUseCase();
+    const scheduledAtUtc = new Date(scheduledForTimestamp * 1000);
+    await scheduleLongFormPostUseCase.execute({
+      postId,
+      userId,
+      scheduledAtUtc,
+      signedEvent: signedEventJson,
+    });
+  }
 
   return redirect("/dashboard/scheduled?tab=longform");
 }

@@ -45,7 +45,7 @@ export function getScheduledPosts({
       template: true,
     },
     orderBy: {
-      scheduledFor: "asc",
+      scheduledAtUtc: "asc",
     },
   });
 }
@@ -84,12 +84,12 @@ export function getDraftPosts({
 }
 
 export function getCronDueScheduledPosts(): Promise<Post[]> {
-  const now = Math.floor(Date.now() / 1000).toString();
+  const now = new Date();
   return prisma.post.findMany({
     where: {
       isScheduled: true,
       isPosted: false,
-      scheduledFor: {
+      scheduledAtUtc: {
         lte: now,
       },
     },

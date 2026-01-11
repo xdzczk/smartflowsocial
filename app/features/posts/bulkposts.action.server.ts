@@ -7,7 +7,6 @@ import { z } from "zod";
 
 import { requireUserId } from "~/features/auth";
 import type { NostrEvent, SignedEvent } from "~/features/nostr/types";
-import { resolveQueueTypeId } from "~/features/posts/server";
 import { logInfo } from "~/lib/error-logger.server";
 import {
   uploadImagesPreviewSchema,
@@ -15,8 +14,10 @@ import {
   saveAsDraftSchema,
   validateFormDataOrRespond,
 } from "~/lib/validation";
-import { createPost, updatePost } from "~/models/post.commands.server";
+import { updatePost } from "~/models/post.commands.server";
 import { isVideoUrl } from "~/utils/media-helpers";
+
+import { CreatePostUseCase } from "./use-cases/create-post.use-case.server";
 
 /**
  * Upload result from client-side upload system
@@ -150,39 +151,31 @@ export async function handleSignAndSchedule(
         const isVideo = isVideoUrl(fileUrl);
         const postType = isVideo ? "VIDEO" : "IMAGE";
 
-        // Resolve queue type ID in feature layer (business logic)
-        const resolvedQueueTypeId = await resolveQueueTypeId(
-          userId,
-          null,
-          queueType
-        );
-
-        const post = await createPost({
+        // Use CreatePostUseCase for bulk post creation
+        const createPostUseCase = new CreatePostUseCase();
+        const result = await createPostUseCase.execute({
           userId,
           content,
+          caption: captions[index] ?? undefined,
           fileUrl: [fileUrl],
-          scheduledFor: signedEvent.created_at.toString(),
-          nostrEventId: signedEvent.id,
+          postType,
+          queueType, // Pass queue type name - use case will resolve
+          tags, // Tags extracted from signedEvent
+          isRecyclable,
           signedEvent: signedEvent,
           nostrEvent: nostrEvents[index],
-          tags: tags,
-          caption: captions[index] ?? undefined,
-          isScheduled: true,
-          isPosted: false,
-          postType: postType,
-          queueTypeId: resolvedQueueTypeId,
+          scheduledFor: signedEvent.created_at, // Schedule for the timestamp in the event
           repost: signedEvent.kind === 6, // Mark as repost if it's kind 6
-          isQuotedPost: isQuotePost, // Use the calculated value
-          isRecyclable,
+          isQuotedPost: isQuotePost, // Mark as quoted post
         });
 
         logInfo("Created post", {
-          postId: post.id,
+          postId: result.post.id,
           index,
-          queueTypeId: post.queueTypeId,
+          queueTypeId: result.post.queueTypeId,
           userId,
         });
-        return post;
+        return result.post;
       })
     );
 
@@ -243,26 +236,20 @@ export async function handleSaveAsDraft(
         const isVideo = isVideoUrl(fileUrl);
         const postType = isVideo ? "VIDEO" : "IMAGE";
 
-        // Resolve queue type ID in feature layer (business logic)
-        const resolvedQueueTypeId = await resolveQueueTypeId(
-          userId,
-          null,
-          queueType
-        );
-
-        return await createPost({
+        // Use CreatePostUseCase for bulk draft creation
+        const createPostUseCase = new CreatePostUseCase();
+        const result = await createPostUseCase.execute({
           userId,
           content: caption,
           caption: caption,
           fileUrl: [fileUrl],
-          isScheduled: false,
-          isPosted: false,
-          postType: postType,
-          tags: [],
-          queueTypeId: resolvedQueueTypeId,
-          draft: true,
+          postType,
+          queueType, // Pass queue type name - use case will resolve
           isRecyclable,
+          // No scheduledFor = draft
         });
+
+        return result.post;
       })
     );
 

@@ -10,13 +10,51 @@ import { Prisma, type Post } from "@prisma/client";
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 import { prisma } from "~/lib/prisma.server";
 
+import {
+  createOutboxEventInTransaction,
+  type PostScheduledPayload,
+} from "~/infra/outbox/outbox.server";
+import { generateEnqueueIdempotencyKey } from "~/lib/idempotency.server";
+
 import type { CreatePostData } from "./post.types";
+
+/**
+ * Convert scheduledFor (string or Date) to DateTime
+ */
+function convertScheduledForToDateTime(
+  scheduledFor?: Date | string | number
+): Date | undefined {
+  if (!scheduledFor) return undefined;
+
+  if (scheduledFor instanceof Date) {
+    return scheduledFor;
+  }
+
+  if (typeof scheduledFor === "number") {
+    // Assume Unix timestamp in seconds
+    return new Date(scheduledFor * 1000);
+  }
+
+  if (typeof scheduledFor === "string") {
+    const timestamp = parseInt(scheduledFor, 10);
+    if (!isNaN(timestamp)) {
+      // Assume Unix timestamp in seconds
+      return new Date(timestamp * 1000);
+    }
+  }
+
+  return undefined;
+}
+
 /**
  * Create a new post in the database
  *
  * Note: This is a pure data access function. For best practices,
  * resolve queueTypeId in the feature layer before calling this function.
  * Use resolveQueueTypeId() from app/features/posts/services/queue-type-resolver.server.ts
+ *
+ * This function supports dual-write: writes to both scheduledFor (string) and scheduledAtUtc (DateTime)
+ * for backward compatibility during migration period.
  */
 export function createPost(data: CreatePostData): Promise<Post> {
   const {
@@ -40,13 +78,18 @@ export function createPost(data: CreatePostData): Promise<Post> {
     isQuotedPost,
     isRecyclable,
     hashTagPresetId,
+    creationIdempotencyKey,
   } = data;
+
+  // Convert scheduledFor to DateTime for new field
+  const scheduledAtUtc = convertScheduledForToDateTime(scheduledFor);
 
   return prisma.post.create({
     data: {
       content,
       fileUrl,
-      scheduledFor: scheduledFor?.toString(),
+      scheduledFor: scheduledFor?.toString(), // Legacy field
+      scheduledAtUtc, // New DateTime field
       nostrEventId,
       signedEvent,
       nostrEvent,
@@ -61,6 +104,7 @@ export function createPost(data: CreatePostData): Promise<Post> {
       repost: repost ?? false,
       isQuotedPost: isQuotedPost ?? false,
       isRecyclable: isRecyclable ?? false,
+      creationIdempotencyKey,
       user: {
         connect: {
           id: userId,
@@ -81,6 +125,100 @@ export function createPost(data: CreatePostData): Promise<Post> {
         },
       }),
     },
+  });
+}
+
+/**
+ * Create a post with an outbox event in a single transaction
+ * This ensures atomicity: if post creation succeeds, outbox event is created
+ * The outbox worker will later enqueue the job into BullMQ
+ */
+export async function createPostWithOutbox(
+  data: CreatePostData,
+  scheduledForUnix?: number,
+  correlationId?: string
+): Promise<Post> {
+  const {
+    userId,
+    signedEvent,
+    creationIdempotencyKey,
+  } = data;
+
+  return prisma.$transaction(async (tx) => {
+    // Create post
+    const post = await tx.post.create({
+      data: {
+        content: data.content,
+        fileUrl: data.fileUrl,
+        scheduledFor: data.scheduledFor?.toString(),
+        scheduledAtUtc: convertScheduledForToDateTime(data.scheduledFor),
+        nostrEventId: data.nostrEventId,
+        signedEvent: data.signedEvent,
+        nostrEvent: data.nostrEvent,
+        postType: data.postType,
+        postedAt: data.postedAt,
+        caption: data.caption,
+        isScheduled: data.isScheduled,
+        isPosted: data.isPosted,
+        tags: data.tags,
+        manual_override: data.manual_override ?? false,
+        draft: data.draft ?? false,
+        repost: data.repost ?? false,
+        isQuotedPost: data.isQuotedPost ?? false,
+        isRecyclable: data.isRecyclable ?? false,
+        creationIdempotencyKey,
+        user: {
+          connect: {
+            id: userId,
+          },
+        },
+        ...(data.queueTypeId && {
+          queueType: {
+            connect: {
+              id: data.queueTypeId,
+            },
+          },
+        }),
+        ...(data.hashTagPresetId && {
+          hashTagPreset: {
+            connect: {
+              id: data.hashTagPresetId,
+            },
+          },
+        }),
+      },
+    });
+
+    // If scheduled and has signed event, create outbox event
+    if (scheduledForUnix && signedEvent && data.isScheduled) {
+      const scheduledAtUtc = new Date(scheduledForUnix * 1000);
+      const enqueueIdempotencyKey = generateEnqueueIdempotencyKey(
+        post.id,
+        scheduledForUnix
+      );
+
+      const payload: PostScheduledPayload = {
+        postId: post.id,
+        userId,
+        signedEvent,
+        scheduledFor: scheduledForUnix,
+        schemaVersion: "1.0",
+        correlationId,
+      };
+
+      await createOutboxEventInTransaction(
+        tx,
+        "POST_SCHEDULED",
+        post.id,
+        "Post",
+        payload,
+        scheduledAtUtc,
+        enqueueIdempotencyKey,
+        correlationId
+      );
+    }
+
+    return post;
   });
 }
 
@@ -137,8 +275,10 @@ export function reschedulePost({
   nostrEvent?: NostrEvent;
   queueTypeId?: string | null;
 }): Promise<Post> {
+  const scheduledAtUtc = convertScheduledForToDateTime(newScheduledFor);
   const updateData: Prisma.PostUpdateInput = {
     scheduledFor: newScheduledFor,
+    scheduledAtUtc, // Also update new field
     manual_override: overrideQueue,
     updatedAt: new Date(),
   };
@@ -195,8 +335,14 @@ export function updatePost({
   };
 
   // Only include defined fields
-  if (data.scheduledFor !== undefined)
+  if (data.scheduledFor !== undefined) {
     updateData.scheduledFor = data.scheduledFor.toString();
+    // Also update scheduledAtUtc for dual-write
+    const scheduledAtUtc = convertScheduledForToDateTime(data.scheduledFor);
+    if (scheduledAtUtc) {
+      updateData.scheduledAtUtc = scheduledAtUtc;
+    }
+  }
   if (data.userId !== undefined)
     updateData.user = { connect: { id: data.userId } };
   if (data.content !== undefined) updateData.content = data.content;

@@ -13,10 +13,9 @@ import {
   getQueueTypes,
   getUserHashTagPresets,
 } from "~/features/user";
-import {
-  enqueuePostJob as schedulePost,
-  cancelPostJob as cancelScheduledPost,
-} from "~/infra/queue";
+import { cancelPostJob as cancelScheduledPost } from "~/infra/queue";
+import { SchedulePostUseCase } from "../use-cases/schedule-post.use-case.server";
+import { ScheduleLongFormPostUseCase } from "../use-cases/schedule-longform-post.use-case.server";
 import { logError } from "~/lib/error-logger.server";
 import {
   getScheduledLongFormPosts,
@@ -327,7 +326,15 @@ async function handleReschedule(formData: FormData, userId: string) {
   });
 
   if (parsedSignedEvent && parsedNostrEvent) {
-    await schedulePost(postId, userId, parsedSignedEvent, parseInt(newTime));
+    // Use SchedulePostUseCase for rescheduling
+    const schedulePostUseCase = new SchedulePostUseCase();
+    const scheduledAtUtc = new Date(parseInt(newTime) * 1000);
+    await schedulePostUseCase.execute({
+      postId,
+      userId,
+      scheduledAtUtc,
+      signedEvent: parsedSignedEvent as SignedEvent,
+    });
     return json({ success: true, post: updatedPost, signed: true });
   }
 
@@ -352,23 +359,51 @@ async function handleRescheduleLongform(formData: FormData, userId: string) {
   const { signedEvent: parsedSignedEvent, nostrEvent: parsedNostrEvent } =
     parseSignedEvents(signedEventStr, nostrEventStr, userId, postId);
 
+  if (parsedSignedEvent) {
+    // Use ScheduleLongFormPostUseCase for rescheduling
+    const scheduleLongFormPostUseCase = new ScheduleLongFormPostUseCase();
+    const scheduledAtUtc = new Date(parseInt(newTime) * 1000);
+    await scheduleLongFormPostUseCase.execute({
+      postId,
+      userId,
+      scheduledAtUtc,
+      signedEvent: parsedSignedEvent as SignedEvent,
+    });
+
+    // Also update the post with other fields
+    const updatedPost = await updateLongFormPost({
+      id: postId,
+      userId,
+      publishedAt: scheduledAtUtc,
+      status: "SCHEDULED",
+      signedEvent: parsedSignedEvent
+        ? (JSON.parse(JSON.stringify(parsedSignedEvent)) as Prisma.JsonValue)
+        : undefined,
+      nostrEvent: parsedNostrEvent
+        ? (JSON.parse(JSON.stringify(parsedNostrEvent)) as Prisma.JsonValue)
+        : undefined,
+    });
+
+    return json({
+      success: true,
+      post: updatedPost,
+      signed: true,
+    });
+  }
+
+  // If no signed event, just update the post
   const updatedPost = await updateLongFormPost({
     id: postId,
     userId,
     publishedAt: new Date(parseInt(newTime) * 1000),
     status: "SCHEDULED",
-    signedEvent: parsedSignedEvent
-      ? (JSON.parse(JSON.stringify(parsedSignedEvent)) as Prisma.JsonValue)
-      : undefined,
-    nostrEvent: parsedNostrEvent
-      ? (JSON.parse(JSON.stringify(parsedNostrEvent)) as Prisma.JsonValue)
-      : undefined,
   });
 
   return json({
     success: true,
     post: updatedPost,
-    signed: !!parsedSignedEvent,
+    signed: false,
+    needsSigning: true,
   });
 }
 
@@ -415,7 +450,15 @@ async function handleEditPost(formData: FormData, userId: string) {
 
   if (scheduledFor && parsedSignedEvent) {
     await cancelScheduledPost(postId);
-    await schedulePost(postId, userId, parsedSignedEvent, Number(scheduledFor));
+    // Use SchedulePostUseCase for rescheduling
+    const schedulePostUseCase = new SchedulePostUseCase();
+    const scheduledAtUtc = new Date(Number(scheduledFor) * 1000);
+    await schedulePostUseCase.execute({
+      postId,
+      userId,
+      scheduledAtUtc,
+      signedEvent: parsedSignedEvent as SignedEvent,
+    });
   }
 
   return json({

@@ -14,11 +14,21 @@ import type { SignedEvent } from "~/features/nostr/types";
 import { getUserById } from "~/features/user";
 import { getQueueInstance, redis, closeAllQueues } from "~/infra/queue";
 import type { PostJobData, LongFormPostJobData } from "~/infra/queue";
-import { env } from "~/lib/env.server";
+import { getNostrPublisher } from "~/infra/publishers/nostr-publisher.server";
 import { logError, logInfo } from "~/lib/error-logger.server";
-import { fetchWithRetry } from "~/lib/fetch.server";
 import { prisma } from "~/lib/prisma.server";
 import { recordJobMetrics, updateActiveJobs } from "~/lib/queue-metrics.server";
+import {
+  recordPostPublished,
+  recordPostPublishFailed,
+} from "~/lib/metrics/business-metrics.server";
+import { recordPublishLatency } from "~/lib/metrics/performance-metrics.server";
+import {
+  isRetryableError,
+  shouldRetry,
+  getRetryPolicy,
+} from "~/infra/queue/retry-policy.server";
+import { createDeadLetterEntry } from "~/infra/queue/dead-letter-queue.server";
 import {
   updateLongFormPostStatus,
   getCronDueScheduledLongFormPosts,
@@ -161,13 +171,17 @@ const _scheduledLongFormPostsQueue = getQueueInstance(
 );
 const postCheckerQueue = getQueueInstance(QUEUE_POST_CHECKER);
 
+// Import state machine
+import { PostStateMachine } from "./state-machine/post-state-machine.server";
+
 // Worker to process scheduled posts
 export const scheduledPostsWorker = new Worker<PostJobData>(
   QUEUE_SCHEDULED_POSTS,
   async (job: Job<PostJobData>) => {
-    const { postId, userId, signedEvent } = job.data;
+    const { postId, userId, signedEvent, correlationId } = job.data;
     const startTime = Date.now();
     const queueName = QUEUE_SCHEDULED_POSTS;
+    const stateMachine = new PostStateMachine();
 
     try {
       updateActiveJobs(queueName, 1);
@@ -186,16 +200,18 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
         logInfo("Post already posted, skipping duplicate job", {
           postId,
           userId,
+          correlationId,
         });
         return { success: true, postId, skipped: true };
       }
 
-      // Update post status to posted (atomic operation)
-      await updatePostStatus({
-        id: postId,
-        userId: userId,
-        isPosted: true,
-      });
+      // Transition to PUBLISHING
+      await stateMachine.transition(
+        postId,
+        userId,
+        "PUBLISHING",
+        "Job started processing"
+      );
 
       // Get user relays
       const user = await getUserById(userId);
@@ -212,45 +228,112 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
         return relayStr.trim();
       });
 
-      // Post to nostr publisher endpoint
-      // Read directly from process.env to support test environment changes
-      const publisherUrl =
-        process.env["NOSTR_PUBLISHER_URL"] ?? env.NOSTR_PUBLISHER_URL;
-      if (!publisherUrl) {
-        throw new Error("NOSTR_PUBLISHER_URL environment variable is not set");
-      }
-      const response = await fetchWithRetry(publisherUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          relays: sanitizedRelays,
-          event: signedEvent,
-        }),
-        timeout: 15000, // 15 seconds for publishing
-        maxRetries: 2,
+      // Publish to Nostr using publisher service (with health-aware routing)
+      const publishStartTime = Date.now();
+      const publisher = getNostrPublisher();
+      await publisher.publish(signedEvent, sanitizedRelays, correlationId);
+      const publishLatency = Date.now() - publishStartTime;
+
+      // Update post status to posted (atomic operation)
+      await updatePostStatus({
+        id: postId,
+        userId: userId,
+        isPosted: true,
       });
 
-      if (!response.ok) {
-        throw new Error(
-          `Failed to post to nostr publisher: ${response.statusText}`
-        );
-      }
+      // Transition to PUBLISHED
+      await stateMachine.transition(
+        postId,
+        userId,
+        "PUBLISHED",
+        "Successfully published to Nostr",
+        correlationId
+      );
 
       const duration = Date.now() - startTime;
       recordJobMetrics(queueName, duration, true);
       updateActiveJobs(queueName, -1);
+
+      // Record business metrics
+      const post = await prisma.post.findUnique({
+        where: { id: postId },
+        select: { postType: true },
+      });
+      if (post) {
+        recordPostPublished(post.postType, "scheduled");
+        recordPublishLatency(post.postType, "scheduled", publishLatency);
+      }
+
+      logInfo("Post published successfully from queue", {
+        postId,
+        userId,
+        correlationId,
+      });
       return { success: true, postId };
     } catch (error) {
       const duration = Date.now() - startTime;
       const err = error instanceof Error ? error : new Error(String(error));
+      const errorType = err.constructor.name;
+      const attemptsMade = (job.attemptsMade ?? 0) + 1;
+      const policy = getRetryPolicy(queueName);
+      
+      // Check if we should retry
+      const willRetry = shouldRetry(attemptsMade, policy) && isRetryableError(err);
+      
+      // Transition to FAILED
+      try {
+        await stateMachine.transition(
+          postId,
+          userId,
+          "FAILED",
+          `Publish failed: ${err.message}`,
+          correlationId
+        );
+      } catch (stateError) {
+        // Log but don't fail the job if state transition fails
+        logError(
+          stateError instanceof Error ? stateError : new Error(String(stateError)),
+          {
+            postId,
+            userId,
+            correlationId,
+            message: "Failed to transition post to FAILED state",
+          }
+        );
+      }
+
       recordJobMetrics(queueName, duration, false, err);
       updateActiveJobs(queueName, -1);
+
+      // Record business metrics
+      const post = await prisma.post.findUnique({
+        where: { id: postId },
+        select: { postType: true },
+      });
+      if (post) {
+        recordPostPublishFailed(post.postType, "scheduled", errorType);
+      }
+
+      // If we've exhausted retries or error is not retryable, move to dead letter queue
+      if (!willRetry) {
+        await createDeadLetterEntry(
+          queueName,
+          job.id ?? "unknown",
+          "publish-post",
+          job.data,
+          err,
+          attemptsMade,
+          correlationId
+        );
+      }
+
       logError(err, {
         userId,
         postId,
         message: "Error processing scheduled post",
+        correlationId,
+        attemptsMade,
+        willRetry,
       });
       throw error;
     }
@@ -265,7 +348,7 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
 export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
   QUEUE_SCHEDULED_LONGFORM_POSTS,
   async (job: Job<LongFormPostJobData>) => {
-    const { postId, userId, signedEvent } = job.data;
+    const { postId, userId, signedEvent, correlationId } = job.data;
     const startTime = Date.now();
     const queueName = QUEUE_SCHEDULED_LONGFORM_POSTS;
 
@@ -286,6 +369,7 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
         logInfo("Longform post already published, skipping duplicate job", {
           postId,
           userId,
+          correlationId,
         });
         return { success: true, postId, skipped: true };
       }
@@ -312,45 +396,51 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
         return relayStr.trim();
       });
 
-      // Post to nostr publisher endpoint
-      // Read directly from process.env to support test environment changes
-      const publisherUrl =
-        process.env["NOSTR_PUBLISHER_URL"] ?? env.NOSTR_PUBLISHER_URL;
-      if (!publisherUrl) {
-        throw new Error("NOSTR_PUBLISHER_URL environment variable is not set");
-      }
-      const response = await fetchWithRetry(publisherUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          relays: sanitizedRelays,
-          event: signedEvent,
-        }),
-        timeout: 15000, // 15 seconds for publishing
-        maxRetries: 2,
-      });
-
-      if (!response.ok) {
-        throw new Error(
-          `Failed to post longform to nostr publisher: ${response.statusText}`
-        );
-      }
+      // Publish to Nostr using publisher service (with health-aware routing)
+      const publisher = getNostrPublisher();
+      await publisher.publish(signedEvent, sanitizedRelays, correlationId);
 
       const duration = Date.now() - startTime;
       recordJobMetrics(queueName, duration, true);
       updateActiveJobs(queueName, -1);
+      logInfo("Longform post published successfully from queue", {
+        postId,
+        userId,
+        correlationId,
+      });
       return { success: true, postId };
     } catch (error) {
       const duration = Date.now() - startTime;
       const err = error instanceof Error ? error : new Error(String(error));
+      const attemptsMade = (job.attemptsMade ?? 0) + 1;
+      const policy = getRetryPolicy(queueName);
+      
+      // Check if we should retry
+      const willRetry = shouldRetry(attemptsMade, policy) && isRetryableError(err);
+
       recordJobMetrics(queueName, duration, false, err);
       updateActiveJobs(queueName, -1);
+
+      // If we've exhausted retries or error is not retryable, move to dead letter queue
+      if (!willRetry) {
+        await createDeadLetterEntry(
+          queueName,
+          job.id ?? "unknown",
+          "publish-longform-post",
+          job.data,
+          err,
+          attemptsMade,
+          correlationId
+        );
+      }
+
       logError(err, {
         userId,
         postId,
         message: "Error processing scheduled longform post",
+        correlationId,
+        attemptsMade,
+        willRetry,
       });
       throw error;
     }

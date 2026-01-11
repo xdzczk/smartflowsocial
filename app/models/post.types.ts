@@ -12,7 +12,7 @@ export interface CreatePostData {
   content?: string;
   postedAt?: Date;
   fileUrl: string[];
-  scheduledFor?: Date | string;
+  scheduledFor?: Date | string | number; // Supports string (legacy), Date, or Unix timestamp
   nostrEventId?: string;
   signedEvent?: SignedEvent;
   nostrEvent?: NostrEvent;
@@ -29,6 +29,8 @@ export interface CreatePostData {
   isQuotedPost?: boolean;
   isRecyclable?: boolean;
   hashTagPresetId?: string | null;
+  /** Idempotency key for post creation */
+  creationIdempotencyKey?: string;
 }
 
 export type PostWithQueueType = Post & { queueType: QueueType | null };

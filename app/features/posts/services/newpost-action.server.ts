@@ -24,9 +24,12 @@ import {
   validateFormDataOrRespond,
 } from "~/lib/validation";
 import { validateSignedEvent } from "~/lib/validation/nostr-events.server";
-import { createPost } from "~/models/post.commands.server";
 
+import { CreatePostUseCase } from "../use-cases/create-post.use-case.server";
+import { PublishNowUseCase } from "../use-cases/publish-now.use-case.server";
 import { resolveQueueTypeId } from "./queue-type-resolver.server";
+import { extractCorrelationId } from "~/lib/correlation-context.server";
+import { getNostrPublisher } from "~/infra/publishers/nostr-publisher.server";
 
 const ERROR_INVALID_SIGNED_EVENT_FORMAT =
   "Invalid signedEvent or nostrEvent format";
@@ -144,35 +147,14 @@ function applyHashtags(
 
 /**
  * Publish event to Nostr publisher
+ * @deprecated Use getNostrPublisher().publish() instead
  */
 async function publishToNostr(
   relays: string[],
   signedEvent: SignedEvent
 ): Promise<void> {
-  // Read directly from process.env to support test environment changes
-  const publisherUrl =
-    process.env["NOSTR_PUBLISHER_URL"] ?? env.NOSTR_PUBLISHER_URL;
-  if (!publisherUrl) {
-    throw new Error("NOSTR_PUBLISHER_URL environment variable is not set");
-  }
-  const response = await fetchWithRetry(publisherUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      relays,
-      event: signedEvent,
-    }),
-    timeout: 15000, // 15 seconds for publishing
-    maxRetries: 2,
-  });
-
-  if (!response.ok) {
-    throw new Error(
-      `Failed to post to nostr publisher: ${response.statusText}`
-    );
-  }
+  const publisher = getNostrPublisher();
+  await publisher.publish(signedEvent, relays);
 }
 
 /**
@@ -186,31 +168,34 @@ async function handleDraftText(
   queueType: string,
   queueTypeId: string | null,
   isRecyclable: boolean,
-  hashTagPresetId: string | null
+  hashTagPresetId: string | null,
+  correlationId?: string
 ): Promise<Response> {
   const contentValue = formData.get("content");
   const content = contentValue ? String(contentValue) : "";
 
-  // Resolve queue type ID in feature layer (business logic)
-  const resolvedQueueTypeId = await resolveQueueTypeId(
-    userId,
-    queueTypeId,
-    queueType
+  // Apply hashtags
+  const contentWithHashtags = applyHashtags(
+    content,
+    hashTagPresetTags,
+    showHashTagsinPosts
   );
 
-  await createPost({
+  // Use CreatePostUseCase for draft creation (handles queue type resolution internally)
+  const createPostUseCase = new CreatePostUseCase();
+  await createPostUseCase.execute({
     userId,
-    content: applyHashtags(content, hashTagPresetTags, showHashTagsinPosts),
-    caption: applyHashtags(content, hashTagPresetTags, showHashTagsinPosts),
+    content: contentWithHashtags,
+    caption: contentWithHashtags,
     fileUrl: [],
-    isScheduled: false,
-    isPosted: false,
     postType: "TEXT",
-    tags: [],
-    queueTypeId: resolvedQueueTypeId,
-    draft: true,
-    isRecyclable,
+    queueTypeId, // Pass raw queueTypeId - use case will resolve if needed
+    queueType, // Pass queue type name for resolution
     hashTagPresetId,
+    isRecyclable,
+    hashTagPresetTags,
+    showHashTagsinPosts,
+    correlationId,
   });
 
   return redirect("/dashboard/drafts");
@@ -229,7 +214,8 @@ async function handlePostOrScheduleText(
   isRecyclable: boolean,
   hashTagPresetId: string | null,
   sanitizedRelays: string[],
-  action: "post-text" | "schedule-text"
+  action: "post-text" | "schedule-text",
+  correlationId?: string
 ): Promise<Response> {
   const contentValue = formData.get("content");
   const signedEventValue = formData.get("signedEvent");
@@ -252,66 +238,52 @@ async function handlePostOrScheduleText(
   const nostrEvent: NostrEvent = nostrEventRaw;
   const signedEventJson = signedEvent;
 
+  // Apply hashtags
+  const contentWithHashtags = applyHashtags(
+    content,
+    hashTagPresetTags,
+    showHashTagsinPosts
+  );
+
+  // Use CreatePostUseCase for post creation (handles queue type resolution internally)
+  const createPostUseCase = new CreatePostUseCase();
+  const result = await createPostUseCase.execute({
+    userId,
+    content: contentWithHashtags,
+    caption: contentWithHashtags,
+    fileUrl: [],
+    postType: "TEXT",
+    queueTypeId, // Pass raw queueTypeId - use case will resolve if needed
+    queueType, // Pass queue type name for resolution
+    hashTagPresetId,
+    isRecyclable,
+    signedEvent,
+    nostrEvent,
+    scheduledFor:
+      action === "schedule-text" ? signedEventJson.created_at : undefined,
+    hashTagPresetTags,
+    showHashTagsinPosts,
+  });
+
   if (action === "post-text") {
-    // Resolve queue type ID in feature layer (business logic)
-    const resolvedQueueTypeId = await resolveQueueTypeId(
-      userId,
-      queueTypeId,
-      queueType
-    );
-
-    const post = await createPost({
-      userId,
-      content: applyHashtags(content, hashTagPresetTags, showHashTagsinPosts),
-      caption: applyHashtags(content, hashTagPresetTags, showHashTagsinPosts),
-      postedAt: new Date(),
-      fileUrl: [],
-      scheduledFor: String(signedEventJson.created_at),
-      isScheduled: false,
-      isPosted: true,
-      signedEvent: signedEvent,
-      nostrEvent: nostrEvent,
-      postType: "TEXT",
-      tags: [],
-      queueTypeId: resolvedQueueTypeId,
-      isRecyclable,
-      hashTagPresetId,
-    });
-
-    // Validate Prisma JsonValue - we just created it so it should be valid
-    const validatedSignedEvent = validateSignedEvent(post.signedEvent);
+    // Publish immediately using PublishNowUseCase
+    const validatedSignedEvent = validateSignedEvent(result.post.signedEvent);
     if (!validatedSignedEvent) {
       throw new Error("Invalid signedEvent after post creation");
     }
-    await publishToNostr(sanitizedRelays, validatedSignedEvent);
+
+    const publishUseCase = new PublishNowUseCase();
+    await publishUseCase.execute({
+      postId: result.post.id,
+      userId,
+      signedEvent: validatedSignedEvent,
+      relays: sanitizedRelays,
+      correlationId,
+    });
 
     return redirect("/dashboard/posted");
   } else {
-    // schedule-text
-    // Resolve queue type ID in feature layer (business logic)
-    const resolvedQueueTypeId = await resolveQueueTypeId(
-      userId,
-      queueTypeId,
-      queueType
-    );
-
-    await createPost({
-      userId,
-      content: applyHashtags(content, hashTagPresetTags, showHashTagsinPosts),
-      caption: applyHashtags(content, hashTagPresetTags, showHashTagsinPosts),
-      fileUrl: [],
-      scheduledFor: String(signedEventJson.created_at),
-      isScheduled: true,
-      isPosted: false,
-      signedEvent: signedEvent,
-      nostrEvent: nostrEvent,
-      postType: "TEXT",
-      tags: [],
-      queueTypeId: resolvedQueueTypeId,
-      isRecyclable,
-      hashTagPresetId,
-    });
-
+    // schedule-text - post will be scheduled via outbox pattern
     return redirect("/dashboard/scheduled");
   }
 }
@@ -391,7 +363,8 @@ async function handlePostImages(
   queueTypeId: string | null,
   isRecyclable: boolean,
   hashTagPresetId: string | null,
-  sanitizedRelays: string[]
+  sanitizedRelays: string[],
+  correlationId?: string
 ): Promise<Response> {
   const signedEventValue = formData.get("signedEvent");
   const nostrEventValue = formData.get("nostrEvent");
@@ -417,38 +390,39 @@ async function handlePostImages(
 
   const isVideo = isVideoFile(fileUrl);
 
-  // Resolve queue type ID in feature layer (business logic)
-  const resolvedQueueTypeId = await resolveQueueTypeId(
-    userId,
-    queueTypeId,
-    queueType
-  );
-
-  const post = await createPost({
+  // Use CreatePostUseCase for post creation (handles queue type resolution internally)
+  const createPostUseCase = new CreatePostUseCase();
+  const result = await createPostUseCase.execute({
     userId,
     content: applyHashtags(caption, hashTagPresetTags, showHashTagsinPosts),
     caption: applyHashtags(caption, hashTagPresetTags, showHashTagsinPosts),
-    postedAt: new Date(),
-    isScheduled: false,
-    isPosted: true,
     fileUrl: JSON.parse(fileUrl) as string[],
-    scheduledFor: String(signedEvent.created_at),
-    nostrEventId: signedEvent.id,
-    nostrEvent,
-    signedEvent,
     postType: isVideo ? "VIDEO" : "IMAGE",
-    tags: [],
-    queueTypeId: resolvedQueueTypeId,
-    isRecyclable,
+    queueTypeId, // Pass raw queueTypeId - use case will resolve if needed
+    queueType, // Pass queue type name for resolution
     hashTagPresetId,
+    isRecyclable,
+    signedEvent,
+    nostrEvent,
+    hashTagPresetTags,
+    showHashTagsinPosts,
+    correlationId,
   });
 
-  // Validate Prisma JsonValue - we just created it so it should be valid
-  const validatedSignedEvent = validateSignedEvent(post.signedEvent);
+  // Publish immediately using PublishNowUseCase
+  const validatedSignedEvent = validateSignedEvent(result.post.signedEvent);
   if (!validatedSignedEvent) {
     throw new Error("Invalid signedEvent after post creation");
   }
-  await publishToNostr(sanitizedRelays, validatedSignedEvent);
+
+  const publishUseCase = new PublishNowUseCase();
+  await publishUseCase.execute({
+    postId: result.post.id,
+    userId,
+    signedEvent: validatedSignedEvent,
+    relays: sanitizedRelays,
+    correlationId,
+  });
 
   return redirect("/dashboard/posted");
 }
@@ -464,7 +438,8 @@ async function handleScheduleImages(
   queueType: string,
   queueTypeId: string | null,
   isRecyclable: boolean,
-  hashTagPresetId: string | null
+  hashTagPresetId: string | null,
+  correlationId?: string
 ): Promise<Response> {
   const signedEventValue = formData.get("signedEvent");
   const nostrEventValue = formData.get("nostrEvent");
@@ -487,28 +462,24 @@ async function handleScheduleImages(
 
   const isVideo = isVideoFile(fileUrl);
 
-  // Resolve queue type ID in feature layer (business logic)
-  const resolvedQueueTypeId = await resolveQueueTypeId(
-    userId,
-    queueTypeId,
-    queueType
-  );
-
-  await createPost({
+  // Use CreatePostUseCase for post creation with scheduling (handles queue type resolution internally)
+  const createPostUseCase = new CreatePostUseCase();
+  await createPostUseCase.execute({
     userId,
     content: applyHashtags(caption, hashTagPresetTags, showHashTagsinPosts),
     caption: applyHashtags(caption, hashTagPresetTags, showHashTagsinPosts),
     fileUrl: JSON.parse(fileUrl) as string[],
-    scheduledFor: String(signedEvent.created_at),
-    isScheduled: true,
-    isPosted: false,
+    postType: isVideo ? "VIDEO" : "IMAGE",
+    queueTypeId, // Pass raw queueTypeId - use case will resolve if needed
+    queueType, // Pass queue type name for resolution
+    hashTagPresetId,
+    isRecyclable,
     signedEvent: signedEvent,
     nostrEvent: nostrEvent,
-    postType: isVideo ? "VIDEO" : "IMAGE",
-    tags: [],
-    queueTypeId: resolvedQueueTypeId,
-    isRecyclable,
-    hashTagPresetId,
+    scheduledFor: signedEvent.created_at,
+    hashTagPresetTags,
+    showHashTagsinPosts,
+    correlationId,
   });
 
   return redirect("/dashboard/scheduled");
@@ -525,7 +496,8 @@ async function handleDraftImages(
   queueType: string,
   queueTypeId: string | null,
   isRecyclable: boolean,
-  hashTagPresetId: string | null
+  hashTagPresetId: string | null,
+  correlationId?: string
 ): Promise<Response> {
   const fileUrl = formData.get("fileUrl") as string;
   const caption = formData.get("caption") as string;
@@ -537,26 +509,22 @@ async function handleDraftImages(
     postType = isVideo ? "VIDEO" : "IMAGE";
   }
 
-  // Resolve queue type ID in feature layer (business logic)
-  const resolvedQueueTypeId = await resolveQueueTypeId(
-    userId,
-    queueTypeId,
-    queueType
-  );
-
-  await createPost({
+  // Use CreatePostUseCase for draft creation (handles queue type resolution internally)
+  const createPostUseCase = new CreatePostUseCase();
+  await createPostUseCase.execute({
     userId,
     content: applyHashtags(caption, hashTagPresetTags, showHashTagsinPosts),
     caption: applyHashtags(caption, hashTagPresetTags, showHashTagsinPosts),
     fileUrl: JSON.parse(fileUrl) as string[],
-    isScheduled: false,
-    isPosted: false,
     postType,
-    tags: [],
-    queueTypeId: resolvedQueueTypeId,
-    draft: true,
-    isRecyclable,
+    queueTypeId, // Pass raw queueTypeId - use case will resolve if needed
+    queueType, // Pass queue type name for resolution
     hashTagPresetId,
+    isRecyclable,
+    hashTagPresetTags,
+    showHashTagsinPosts,
+    correlationId,
+    // No scheduledFor = draft
   });
 
   return redirect("/dashboard/drafts");
@@ -569,6 +537,9 @@ export async function handleNewPostAction(
   userId: string,
   request: Request
 ): Promise<Response> {
+  // Extract correlation ID from request headers
+  const correlationId = extractCorrelationId(request.headers);
+
   const user = await getUserById(userId);
   if (!user) {
     return new Response("User not found", { status: 404 });
@@ -660,7 +631,8 @@ export async function handleNewPostAction(
       queueType,
       queueTypeId,
       isRecyclable,
-      hashTagPresetId
+      hashTagPresetId,
+      correlationId
     );
   }
 

@@ -18,6 +18,9 @@ import {
   postCheckerWorker,
 } from "./app/features/posts/queues.server";
 
+// Import outbox worker
+import { startOutboxWorker } from "./app/infra/outbox/outbox-worker.server";
+
 // Import centralized environment validation
 // This validates env vars at module load time and exports typed config
 import "./app/lib/env.server";
@@ -28,9 +31,16 @@ console.log("Workers initialized:", {
   postCheckerWorker: !!postCheckerWorker,
 });
 
+// Start outbox worker to drain events into BullMQ
+const outboxWorkerInterval = startOutboxWorker();
+console.log("📦 Outbox worker started");
+
 // Keep the process alive
 process.on("SIGTERM", () => {
   console.log("Worker shutting down...");
+  if (outboxWorkerInterval) {
+    clearInterval(outboxWorkerInterval);
+  }
   void scheduledPostsWorker.close();
   void postCheckerWorker.close();
   process.exit(0);
@@ -38,6 +48,9 @@ process.on("SIGTERM", () => {
 
 process.on("SIGINT", () => {
   console.log("Worker shutting down...");
+  if (outboxWorkerInterval) {
+    clearInterval(outboxWorkerInterval);
+  }
   void scheduledPostsWorker.close();
   void postCheckerWorker.close();
   process.exit(0);

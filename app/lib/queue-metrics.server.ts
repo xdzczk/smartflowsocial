@@ -210,3 +210,30 @@ export function updateActiveJobs(queue: string, active: number): void {
 export function recordJobRetry(queue: string): void {
   retryCounter.inc({ queue });
 }
+
+/**
+ * Dead letter queue counter
+ * Tracks jobs moved to dead letter queue
+ */
+export const deadLetterCounter = getOrCreateMetric(
+  "queue_dead_letter_total",
+  () =>
+    new promClient.Counter({
+      name: "queue_dead_letter_total",
+      help: "Total number of jobs moved to dead letter queue",
+      labelNames: ["queue", "error_type"],
+    })
+);
+
+/**
+ * Record job moved to dead letter queue
+ */
+export function recordDeadLetterJob(
+  queue: string,
+  errorType?: string
+): void {
+  deadLetterCounter.inc({
+    queue,
+    error_type: errorType ?? "UnknownError",
+  });
+}

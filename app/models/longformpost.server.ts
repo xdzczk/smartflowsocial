@@ -123,6 +123,15 @@ export async function createLongFormPost({
     signedEvent: typedSignedEvent,
   });
 
+  // Convert scheduledFor string to DateTime for new field
+  let scheduledAtUtc: Date | undefined;
+  if (finalScheduledFor) {
+    const timestamp = parseInt(finalScheduledFor, 10);
+    if (!isNaN(timestamp)) {
+      scheduledAtUtc = new Date(timestamp * 1000);
+    }
+  }
+
   return prisma.longFormPost.create({
     data: {
       userId,
@@ -140,7 +149,8 @@ export async function createLongFormPost({
       status,
       publishedAt,
       postedAt: isPublished ? new Date() : null,
-      scheduledFor: finalScheduledFor,
+      scheduledFor: finalScheduledFor, // Legacy field
+      scheduledAtUtc, // New DateTime field
       queueTypeId,
       hashTagPresetId,
     },
@@ -511,7 +521,7 @@ export async function getScheduledLongFormPosts({
     include: {
       queueType: true,
     },
-    orderBy: { scheduledFor: "asc" },
+    orderBy: { scheduledAtUtc: "asc" },
   });
 }
 

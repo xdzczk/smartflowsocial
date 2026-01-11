@@ -29,11 +29,12 @@ import {
   newLongformPostActionSchema,
   validateFormDataOrRespond,
 } from "~/lib/validation";
-import { createLongFormPost } from "~/models/longformpost.server";
 
 import { convertEditorJSToMarkdown } from "../longform.server";
-
-import { resolveQueueTypeId } from "./queue-type-resolver.server";
+import { CreateLongFormPostUseCase } from "../use-cases/create-longform-post.use-case.server";
+import { PublishLongFormNowUseCase } from "../use-cases/publish-longform-now.use-case.server";
+import { ScheduleLongFormPostUseCase } from "../use-cases/schedule-longform-post.use-case.server";
+import { extractCorrelationId } from "~/lib/correlation-context.server";
 
 const ERROR_TITLE_REQUIRED = "Title is required";
 const ERROR_CONTENT_REQUIRED = "Content is required";
@@ -203,7 +204,8 @@ async function handleSaveDraft(
   userId: string,
   formData: FormData,
   queueType: string,
-  hashTagPresetId: string | null
+  hashTagPresetId: string | null,
+  correlationId?: string
 ): Promise<Response> {
   const title = formData.get("title")?.toString() ?? "";
   const editorContent = formData.get("content")?.toString() ?? "";
@@ -245,16 +247,20 @@ async function handleSaveDraft(
   const sanitizedContent = sanitizeMarkdown(markdownContent);
   const finalSummary = summary ?? generateSummary(sanitizedContent);
 
-  await createLongFormPost({
+  // Use CreateLongFormPostUseCase for draft creation
+  const createLongFormPostUseCase = new CreateLongFormPostUseCase();
+  await createLongFormPostUseCase.execute({
     userId,
     title,
     summary: finalSummary,
     content: sanitizedContent, // Save as markdown for consistency
     image,
     tags,
-    isPublished: false,
     queueTypeId,
+    queueType: queueType === "Unassigned" ? null : queueType,
     hashTagPresetId,
+    isPublished: false,
+    // No scheduledFor = draft
   });
 
   return redirect("/dashboard/drafts?tab=longform");
@@ -360,42 +366,32 @@ async function handlePublish(
     tags: string[][];
   };
 
-  await createLongFormPost({
+  // Use CreateLongFormPostUseCase for post creation
+  const createLongFormPostUseCase = new CreateLongFormPostUseCase();
+  const result = await createLongFormPostUseCase.execute({
     userId,
     title,
     summary: finalSummary,
     content: contentWithHashtags,
     image,
     tags,
-    isPublished: true,
+    queueTypeId,
+    queueType: queueType === "Unassigned" ? null : queueType,
+    hashTagPresetId,
     signedEvent: signedEventJson,
     nostrEvent: nostrEventJson,
-    queueTypeId,
-    hashTagPresetId,
+    isPublished: true, // Publish immediately
   });
 
-  // Read directly from process.env to support test environment changes
-  const publisherUrl =
-    process.env["NOSTR_PUBLISHER_URL"] ?? env.NOSTR_PUBLISHER_URL;
-  if (!publisherUrl) {
-    throw new Error("NOSTR_PUBLISHER_URL environment variable is not set");
-  }
-  const response = await fetchWithRetry(publisherUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      relays: sanitizedRelays,
-      event: signedEventJson,
-    }),
-    timeout: 15000, // 15 seconds for publishing
-    maxRetries: 2,
+  // Use PublishLongFormNowUseCase for immediate publishing
+  const publishUseCase = new PublishLongFormNowUseCase();
+  await publishUseCase.execute({
+    postId: result.post.id,
+    userId,
+    signedEvent: signedEventJson,
+    relays: sanitizedRelays,
+    correlationId,
   });
-
-  if (!response.ok) {
-    throw new Error(`Failed to publish to nostr: ${response.statusText}`);
-  }
 
   return redirect("/dashboard/posted?tab=longform");
 }
@@ -409,7 +405,8 @@ async function handleScheduleLongform(
   queueType: string,
   hashTagPresetId: string | null,
   hashTagPresetTags: string,
-  showHashTagsinPosts: boolean
+  showHashTagsinPosts: boolean,
+  correlationId?: string
 ): Promise<Response> {
   const title = formData.get("title")?.toString() ?? "";
   const editorContent = formData.get("content")?.toString() ?? "";
@@ -500,28 +497,34 @@ async function handleScheduleLongform(
   };
 
   // Extract published_at from NOSTR event tags for scheduling
-  let scheduledForTimestamp: string | null = null;
+  let scheduledForTimestamp: number | undefined = undefined;
 
   const publishedAtTag = signedEventJson.tags.find(
     (tag: unknown) => Array.isArray(tag) && tag[0] === "published_at"
   );
   if (publishedAtTag?.[1]) {
-    scheduledForTimestamp = publishedAtTag[1].toString();
+    const timestamp = parseInt(publishedAtTag[1].toString(), 10);
+    if (!isNaN(timestamp)) {
+      scheduledForTimestamp = timestamp;
+    }
   }
 
-  await createLongFormPost({
+  // Use CreateLongFormPostUseCase for post creation with scheduling
+  const createLongFormPostUseCase = new CreateLongFormPostUseCase();
+  await createLongFormPostUseCase.execute({
     userId,
     title,
     summary: finalSummary,
     content: contentWithHashtags,
     image,
     tags,
-    isPublished: false,
+    queueTypeId,
+    queueType: queueType === "Unassigned" ? null : queueType,
+    hashTagPresetId,
     signedEvent: signedEventJson,
     nostrEvent: nostrEventJson,
     scheduledFor: scheduledForTimestamp,
-    queueTypeId,
-    hashTagPresetId,
+    isPublished: false,
   });
 
   return redirect("/dashboard/scheduled?tab=longform");
@@ -599,7 +602,7 @@ export async function handleNewLongFormAction(
 
   // Handle different actions
   if (_action === "save-draft") {
-    return handleSaveDraft(userId, formData, queueType, finalHashTagPresetId);
+    return handleSaveDraft(userId, formData, queueType, finalHashTagPresetId, correlationId);
   }
 
   if (_action === "publish") {
@@ -610,7 +613,8 @@ export async function handleNewLongFormAction(
       finalHashTagPresetId,
       hashTagPresetTags,
       showHashTagsinPosts,
-      sanitizedRelays
+      sanitizedRelays,
+      correlationId
     );
   }
 
@@ -621,7 +625,8 @@ export async function handleNewLongFormAction(
       queueType,
       finalHashTagPresetId,
       hashTagPresetTags,
-      showHashTagsinPosts
+      showHashTagsinPosts,
+      correlationId
     );
   }
 

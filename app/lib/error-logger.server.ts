@@ -8,11 +8,14 @@ import { recordErrorMetric } from "./error-metrics.server";
 import type { AppError } from "./errors";
 import { sanitizeError, sanitizeObject } from "./secrets-sanitizer.server";
 import { captureException } from "./sentry.server";
+import { classifyError } from "./error-classification.server";
+import { recordErrorForAggregation } from "./error-aggregation.server";
 export type LogLevel = "error" | "warn" | "info" | "debug";
 
 export interface LogContext {
   userId?: string;
   requestId?: string;
+  correlationId?: string; // For request tracking
   path?: string;
   method?: string;
   userAgent?: string;
@@ -67,6 +70,7 @@ export function logError(
       isOperational: isAppError(error) ? error.isOperational : false,
       ...(context.includeStack && error.stack && { stack: error.stack }),
       ...(isAppError(error) && error.context && { context: error.context }),
+      ...(context.correlationId && { correlationId: context.correlationId }),
     },
     ...(context.method && {
       request: {
@@ -74,6 +78,7 @@ export function logError(
         path: context.path,
         userAgent: context.userAgent,
         ip: context.ip,
+        ...(context.correlationId && { correlationId: context.correlationId }),
       },
     }),
     ...(context.userId && {
@@ -83,6 +88,7 @@ export function logError(
     }),
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: process.env.NODE_ENV may be undefined in some environments
     environment: process.env.NODE_ENV ?? "development",
+    ...(context.correlationId && { correlationId: context.correlationId }),
   };
 
   // Sanitize log entry to prevent secrets from appearing in logs
@@ -110,15 +116,22 @@ export function logError(
       path: logEntry.request?.path,
       method: logEntry.request?.method,
       userId: logEntry.user?.id,
+      correlationId: context.correlationId,
       ...(context.includeStack &&
         sanitizedError.stack && { stack: sanitizedError.stack }),
     });
   }
 
+  // Classify error for enhanced handling
+  const classification = classifyError(error);
+
   // Record error in metrics
   if (isAppError(error)) {
     recordErrorMetric(error);
   }
+
+  // Record for aggregation
+  recordErrorForAggregation(error);
 
   // Send to Sentry if configured
   captureException(sanitizedError, {
@@ -126,11 +139,22 @@ export function logError(
       code: isAppError(error) ? error.code : "UNKNOWN_ERROR",
       statusCode: String(logEntry.error.statusCode),
       isOperational: String(logEntry.error.isOperational),
+      category: classification.category,
+      severity: classification.severity,
+      retryable: String(classification.retryable),
+      ...(context.correlationId && { correlationId: context.correlationId }),
     },
     extra: {
       ...sanitizedLogEntry,
       // Include sanitized context
       context: sanitizedLogEntry.request ?? sanitizedLogEntry.user ?? {},
+      classification: {
+        category: classification.category,
+        severity: classification.severity,
+        retryable: classification.retryable,
+        recoveryStrategy: classification.recoveryStrategy,
+      },
+      ...(context.correlationId && { correlationId: context.correlationId }),
     },
     user: context.userId ? { id: context.userId } : undefined,
     level: logEntry.error.isOperational ? "warning" : "error",

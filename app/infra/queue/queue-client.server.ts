@@ -8,6 +8,7 @@ import Redis from "ioredis";
 
 import { env } from "~/lib/env.server";
 import { logError } from "~/lib/error-logger.server";
+import { getBullMQRetryConfig } from "./retry-policy.server";
 
 import type {
   QueueClient,
@@ -32,11 +33,16 @@ const queues = new Map<QueueType, Queue>();
  */
 function getQueue(queueName: QueueType): Queue {
   if (!queues.has(queueName)) {
+    // Get retry configuration for this queue type
+    const retryConfig = getBullMQRetryConfig(queueName);
+
     const queue = new Queue(queueName, {
       connection: redis as unknown as { host: string; port: number },
       defaultJobOptions: {
         removeOnComplete: queueName === "post-checker" ? 10 : 100,
-        removeOnFail: queueName === "post-checker" ? 10 : 50,
+        removeOnFail: false, // Keep failed jobs for dead letter queue
+        attempts: retryConfig.attempts,
+        backoff: retryConfig.backoff,
       },
     });
     queues.set(queueName, queue);
