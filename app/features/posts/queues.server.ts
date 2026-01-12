@@ -7,8 +7,7 @@
  */
 
 import type { Prisma } from "@prisma/client";
-import { Worker } from "bullmq";
-import type { Job } from "bullmq";
+import { Worker, type Job } from "bullmq";
 
 import type { SignedEvent } from "~/features/nostr/types";
 import { getUserById } from "~/features/user";
@@ -350,7 +349,9 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
     }
   },
   {
-    connection: redis as unknown as { host: string; port: number },
+    // BullMQ accepts ioredis instances at runtime, but TypeScript types don't reflect this
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment -- BullMQ runtime accepts ioredis instance
+    connection: redis as any,
     concurrency: 5,
   }
 );
@@ -467,7 +468,9 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
     }
   },
   {
-    connection: redis as unknown as { host: string; port: number },
+    // BullMQ accepts ioredis instances at runtime, but TypeScript types don't reflect this
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment -- BullMQ runtime accepts ioredis instance
+    connection: redis as any,
     concurrency: 5,
   }
 );
@@ -508,7 +511,9 @@ export const postCheckerWorker = new Worker(
     }
   },
   {
-    connection: redis as unknown as { host: string; port: number },
+    // BullMQ accepts ioredis instances at runtime, but TypeScript types don't reflect this
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment -- BullMQ runtime accepts ioredis instance
+    connection: redis as any,
     concurrency: 1,
   }
 );

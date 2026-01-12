@@ -37,7 +37,9 @@ function getQueue(queueName: QueueType): Queue {
     const retryConfig = getBullMQRetryConfig(queueName);
 
     const queue = new Queue(queueName, {
-      connection: redis as unknown as { host: string; port: number },
+      // BullMQ accepts ioredis instances at runtime, but TypeScript types don't reflect this
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment -- BullMQ runtime accepts ioredis instance
+      connection: redis as any,
       defaultJobOptions: {
         removeOnComplete: queueName === "post-checker" ? 10 : 100,
         removeOnFail: false, // Keep failed jobs for dead letter queue
