@@ -16,6 +16,8 @@ vi.mock("~/infra/publishers/nostr-publisher.server", () => ({
   })),
 }));
 
+import { createValidSignedEvent } from "../../utils/test-helpers";
+
 import { CreatePostUseCase } from "~/features/posts/use-cases/create-post.use-case.server";
 import { PublishNowUseCase } from "~/features/posts/use-cases/publish-now.use-case.server";
 import { prisma } from "~/lib/prisma.server";
@@ -87,15 +89,7 @@ describe.skipIf(!TEST_DATABASE_URL)("PublishNowUseCase Integration", () => {
     const postId = createResult.post.id;
 
     // Publish the post
-    const signedEvent = {
-      id: "test-event-id",
-      pubkey: "test-pubkey",
-      created_at: Math.floor(Date.now() / 1000),
-      kind: 1,
-      content: "test",
-      tags: [],
-      sig: "test-sig",
-    };
+    const signedEvent = createValidSignedEvent({ content: "test" });
 
     await useCase.execute({
       postId,
@@ -122,8 +116,14 @@ describe.skipIf(!TEST_DATABASE_URL)("PublishNowUseCase Integration", () => {
     expect(states).toContain("PUBLISHED");
 
     // Verify publisher was called
+    // finalizeEvent adds Symbol(verified), so check properties instead
     expect(mockPublish).toHaveBeenCalledWith(
-      signedEvent,
+      expect.objectContaining({
+        id: signedEvent.id,
+        pubkey: signedEvent.pubkey,
+        kind: signedEvent.kind,
+        content: signedEvent.content,
+      }),
       ["wss://relay.example.com"],
       expect.any(String)
     );
@@ -162,35 +162,21 @@ describe.skipIf(!TEST_DATABASE_URL)("PublishNowUseCase Integration", () => {
     const postId = createResult.post.id;
 
     // Publish first time
+    const firstSignedEvent = createValidSignedEvent({ content: "test" });
     await useCase.execute({
       postId,
       userId,
-      signedEvent: {
-        id: "test-event-id",
-        pubkey: "test-pubkey",
-        created_at: Math.floor(Date.now() / 1000),
-        kind: 1,
-        content: "test",
-        tags: [],
-        sig: "test-sig",
-      },
+      signedEvent: firstSignedEvent,
       relays: ["wss://relay.example.com"],
     });
 
     // Try to publish again (should fail)
+    const secondSignedEvent = createValidSignedEvent({ content: "test-2" });
     await expect(
       useCase.execute({
         postId,
         userId,
-        signedEvent: {
-          id: "test-event-id-2",
-          pubkey: "test-pubkey",
-          created_at: Math.floor(Date.now() / 1000),
-          kind: 1,
-          content: "test",
-          tags: [],
-          sig: "test-sig",
-        },
+        signedEvent: secondSignedEvent,
         relays: ["wss://relay.example.com"],
       })
     ).rejects.toThrow("already published");

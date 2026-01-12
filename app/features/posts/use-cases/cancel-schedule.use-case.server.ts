@@ -70,7 +70,7 @@ export class CancelScheduleUseCase {
       userId: input.userId,
       data: {
         isScheduled: false,
-        scheduledFor: undefined,
+        scheduledFor: null,
       },
     });
 

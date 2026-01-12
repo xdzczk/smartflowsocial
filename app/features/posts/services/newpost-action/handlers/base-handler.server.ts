@@ -4,7 +4,7 @@
  */
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
-import { validateSignedEvent } from "~/lib/validation/nostr-events.server";
+import { validateSignedEventCryptographically } from "~/lib/validation/nostr-cryptographic.server";
 
 import { CreatePostUseCase } from "../../../use-cases/create-post.use-case.server";
 import { PublishNowUseCase } from "../../../use-cases/publish-now.use-case.server";
@@ -79,10 +79,11 @@ export async function handlePostCreation(
 
   if (action === "post") {
     // Publish immediately
-    const validatedSignedEvent = validateSignedEvent(result.post.signedEvent);
-    if (!validatedSignedEvent) {
-      throw new Error("Invalid signedEvent after post creation");
-    }
+    // Validate cryptographically (structure + signature) before publishing
+    // Even though we validated at input, we validate again when reading from DB
+    const validatedSignedEvent = validateSignedEventCryptographically(
+      result.post.signedEvent
+    );
 
     const publishUseCase = new PublishNowUseCase();
     await publishUseCase.execute({

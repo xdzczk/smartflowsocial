@@ -46,7 +46,11 @@ vi.mock("~/lib/metrics/performance-metrics.server", () => ({
   recordPublishLatency: vi.fn(),
 }));
 
-import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
+import {
+  TEST_USER_ID,
+  TEST_POST_ID,
+  createValidSignedEvent,
+} from "../../utils/test-helpers";
 
 import { PublishNowUseCase } from "~/features/posts/use-cases/publish-now.use-case.server";
 import {
@@ -76,15 +80,7 @@ describe("PublishNowUseCase", () => {
         isPosted: false,
       };
 
-      const signedEvent = {
-        id: "event-123",
-        pubkey: "test-pubkey",
-        created_at: Math.floor(Date.now() / 1000),
-        kind: 1,
-        content: "test",
-        tags: [],
-        sig: "test-sig",
-      };
+      const signedEvent = createValidSignedEvent({ content: "test" });
 
       const relays = ["wss://relay1.com", "wss://relay2.com"];
 
@@ -118,8 +114,14 @@ describe("PublishNowUseCase", () => {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         correlationId: expect.any(String),
       });
+      // finalizeEvent adds Symbol(verified) property, so check specific properties
       expect(mockPublish).toHaveBeenCalledWith(
-        signedEvent,
+        expect.objectContaining({
+          id: signedEvent.id,
+          pubkey: signedEvent.pubkey,
+          kind: signedEvent.kind,
+          content: signedEvent.content,
+        }),
         relays,
         expect.any(String)
       );
@@ -192,15 +194,7 @@ describe("PublishNowUseCase", () => {
         isPosted: false,
       };
 
-      const signedEvent = {
-        id: "event-123",
-        pubkey: "test-pubkey",
-        created_at: Math.floor(Date.now() / 1000),
-        kind: 1,
-        content: "test",
-        tags: [],
-        sig: "test-sig",
-      };
+      const signedEvent = createValidSignedEvent({ content: "test" });
 
       const publishError = new Error("Publish failed");
 
@@ -238,15 +232,7 @@ describe("PublishNowUseCase", () => {
         isPosted: false,
       };
 
-      const signedEvent = {
-        id: "event-123",
-        pubkey: "test-pubkey",
-        created_at: Math.floor(Date.now() / 1000),
-        kind: 1,
-        content: "test",
-        tags: [],
-        sig: "test-sig",
-      };
+      const signedEvent = createValidSignedEvent({ content: "test" });
 
       (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
       (updatePostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
@@ -268,8 +254,14 @@ describe("PublishNowUseCase", () => {
         isPosted: true,
         correlationId: "custom-correlation-id",
       });
+      // finalizeEvent adds Symbol(verified) property, so we check the call with expect.any(Object)
       expect(mockPublish).toHaveBeenCalledWith(
-        signedEvent,
+        expect.objectContaining({
+          id: signedEvent.id,
+          pubkey: signedEvent.pubkey,
+          kind: signedEvent.kind,
+          content: signedEvent.content,
+        }),
         ["wss://relay1.com"],
         "custom-correlation-id"
       );
@@ -283,15 +275,7 @@ describe("PublishNowUseCase", () => {
         isPosted: false,
       };
 
-      const signedEvent = {
-        id: "event-123",
-        pubkey: "test-pubkey",
-        created_at: Math.floor(Date.now() / 1000),
-        kind: 1,
-        content: "test",
-        tags: [],
-        sig: "test-sig",
-      };
+      const signedEvent = createValidSignedEvent({ content: "test" });
 
       (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
       (updatePostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(

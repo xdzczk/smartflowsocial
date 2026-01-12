@@ -8,6 +8,8 @@ import { z } from "zod";
 import { requireUserId } from "~/features/auth";
 import type { NostrEvent, SignedEvent } from "~/features/nostr/types";
 import { logInfo } from "~/lib/error-logger.server";
+import { RateLimitError } from "~/lib/errors";
+import { checkUserPostCreationLimit } from "~/lib/rate-limit.server";
 import {
   uploadImagesPreviewSchema,
   signAndScheduleSchema,
@@ -102,6 +104,34 @@ export async function handleSignAndSchedule(
     const originalPostIds = validatedData.originalPostId.filter(
       (id: string) => id && id !== ""
     );
+
+    // Check per-user post creation rate limit before processing
+    const postCount = signedEvents.length;
+    const rateLimitCheck = await checkUserPostCreationLimit(
+      userId,
+      postCount,
+      60, // 60 minute window
+      2000 // Max 2000 posts per hour
+    );
+
+    if (!rateLimitCheck.allowed) {
+      throw new RateLimitError(
+        rateLimitCheck.error ??
+          "Post creation limit exceeded. Please try again later.",
+        {
+          remaining: rateLimitCheck.remaining,
+          resetTime: rateLimitCheck.resetTime,
+          requested: postCount,
+        }
+      );
+    }
+
+    logInfo("Bulk post creation rate limit check passed", {
+      userId,
+      postCount,
+      remaining: rateLimitCheck.remaining,
+      resetTime: rateLimitCheck.resetTime,
+    });
 
     await Promise.all(
       signedEvents.map(async (signedEvent, index) => {
@@ -220,6 +250,34 @@ export async function handleSaveAsDraft(
       (id: string) => id && id !== ""
     );
     const isRecyclableFlags = formData.getAll("isRecyclable");
+
+    // Check per-user post creation rate limit before processing
+    const postCount = fileUrls.length;
+    const rateLimitCheck = await checkUserPostCreationLimit(
+      userId,
+      postCount,
+      60, // 60 minute window
+      2000 // Max 2000 posts per hour
+    );
+
+    if (!rateLimitCheck.allowed) {
+      throw new RateLimitError(
+        rateLimitCheck.error ??
+          "Post creation limit exceeded. Please try again later.",
+        {
+          remaining: rateLimitCheck.remaining,
+          resetTime: rateLimitCheck.resetTime,
+          requested: postCount,
+        }
+      );
+    }
+
+    logInfo("Bulk draft creation rate limit check passed", {
+      userId,
+      postCount,
+      remaining: rateLimitCheck.remaining,
+      resetTime: rateLimitCheck.resetTime,
+    });
 
     await Promise.all(
       fileUrls.map(async (fileUrl: string, index: number) => {

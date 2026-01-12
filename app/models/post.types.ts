@@ -12,7 +12,7 @@ export interface CreatePostData {
   content?: string;
   postedAt?: Date;
   fileUrl: string[];
-  scheduledFor?: Date | string | number; // Supports string (legacy), Date, or Unix timestamp
+  scheduledFor?: Date | string | number | null; // Supports string (legacy), Date, Unix timestamp, or null to clear
   nostrEventId?: string;
   signedEvent?: SignedEvent;
   nostrEvent?: NostrEvent;

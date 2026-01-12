@@ -18,7 +18,7 @@ import type { CreatePostData } from "./post.types";
  * Convert scheduledFor (string or Date) to DateTime
  */
 function convertScheduledForToDateTime(
-  scheduledFor?: Date | string | number
+  scheduledFor?: Date | string | number | null
 ): Date | undefined {
   if (!scheduledFor) return undefined;
 
@@ -396,10 +396,17 @@ export async function updatePost({
 
   // Only include defined fields
   if (data.scheduledFor !== undefined) {
-    updateData.scheduledFor = data.scheduledFor.toString();
-    // Also update scheduledAtUtc for dual-write
-    const scheduledAtUtc = convertScheduledForToDateTime(data.scheduledFor);
-    updateData.scheduledAtUtc = scheduledAtUtc ?? null;
+    // Explicitly clear both fields when null, otherwise set them
+    if (data.scheduledFor === null) {
+      updateData.scheduledFor = null;
+      updateData.scheduledAtUtc = null;
+    } else {
+      // TypeScript narrows to Date | string | number here (null excluded)
+      updateData.scheduledFor = data.scheduledFor.toString();
+      // Also update scheduledAtUtc for dual-write
+      const scheduledAtUtc = convertScheduledForToDateTime(data.scheduledFor);
+      updateData.scheduledAtUtc = scheduledAtUtc ?? null;
+    }
   }
   if (data.userId !== undefined)
     updateData.user = { connect: { id: data.userId } };
@@ -448,7 +455,14 @@ export async function updatePost({
     );
   }
   handleRelation(data.hashTagPresetId, "hashTagPreset", "hashTagPreset");
-  handleRelation(data.queueTypeId ?? undefined, "queueType", "queueType");
+  // Handle queueTypeId - check for null explicitly, not just undefined
+  if ("queueTypeId" in data) {
+    handleRelation(
+      data.queueTypeId === null ? null : (data.queueTypeId ?? undefined),
+      "queueType",
+      "queueType"
+    );
+  }
 
   const post = await prisma.post.update({
     where: {

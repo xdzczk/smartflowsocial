@@ -20,6 +20,8 @@ import sourceMapSupport from "source-map-support";
 // This must happen before any imports that use environment variables
 config({ path: path.resolve(process.cwd(), ".env") });
 
+import rateLimit from "express-rate-limit";
+
 import { env } from "./app/lib/env.server";
 import {
   apiLimiter,
@@ -405,6 +407,41 @@ async function run() {
   // Auth endpoints get the strictest limits
   app.use("/login", authLimiter);
   app.use("/nostr-auth", authLimiter);
+
+  // Rate limiting for post creation endpoints
+  // Bulk posts: More lenient (5 requests per minute) since they're expensive but legitimate
+  const isTestEnv =
+    env.NODE_ENV === "test" ||
+    process.env["E2E_TEST"] === "true" ||
+    process.env["DISABLE_RATE_LIMIT"] === "true";
+
+  const bulkPostLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: isTestEnv ? 10000 : 5, // 5 bulk requests per minute per IP
+    standardHeaders: true,
+    legacyHeaders: false,
+    message:
+      "Too many bulk post requests. Please wait before creating more bulk posts.",
+    handler: (req, res) => {
+      res.status(429).json({
+        error: "RATE_LIMIT_EXCEEDED",
+        message:
+          "Too many bulk post requests. Please wait before creating more bulk posts.",
+        retryAfter: Math.ceil(
+          ((req as { rateLimit?: { resetTime?: number } }).rateLimit
+            ?.resetTime ?? Date.now() + 60 * 1000 - Date.now()) / 1000
+        ),
+      });
+    },
+    skip: () => isTestEnv,
+  });
+
+  // Single post creation: Stricter limits (10 requests per 15 minutes)
+  app.use("/dashboard/newpost", strictLimiter);
+  app.use("/dashboard/newlongform", strictLimiter);
+
+  // Bulk post creation: More lenient frequency limit
+  app.use("/dashboard/bulkposts", bulkPostLimiter);
 
   // Express 5: Use app.use() without path for catch-all route handler
   app.use(remixHandler);

@@ -5,6 +5,7 @@
 import { redirect } from "@remix-run/node";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
+import { validateSignedEventCryptographically } from "~/lib/validation/nostr-cryptographic.server";
 
 import { isVideoFile } from "../media-utils.server";
 
@@ -18,7 +19,7 @@ const ERROR_INVALID_SIGNED_EVENT_FORMAT =
   "Invalid signedEvent or nostrEvent format";
 
 /**
- * Parse signed event from form data
+ * Parse and cryptographically validate signed event from form data
  */
 function parseSignedEvent(formData: FormData): {
   signedEvent?: SignedEvent;
@@ -35,10 +36,19 @@ function parseSignedEvent(formData: FormData): {
   const nostrEventStr = String(nostrEventValue);
 
   try {
-    const signedEvent = JSON.parse(signedEventStr) as SignedEvent;
+    const parsedSignedEvent = JSON.parse(signedEventStr) as unknown;
     const nostrEvent = JSON.parse(nostrEventStr) as NostrEvent;
+
+    // Cryptographically validate the signed event
+    // This verifies both structure (Zod) and signature (nostr-tools)
+    const signedEvent = validateSignedEventCryptographically(parsedSignedEvent);
+
     return { signedEvent, nostrEvent };
-  } catch {
+  } catch (error) {
+    // Re-throw ValidationError as-is, wrap others
+    if (error instanceof Error && error.name === "ValidationError") {
+      throw error;
+    }
     throw new Error(ERROR_INVALID_SIGNED_EVENT_FORMAT);
   }
 }

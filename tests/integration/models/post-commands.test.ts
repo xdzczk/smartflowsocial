@@ -443,22 +443,32 @@ describe("Post Commands", () => {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
         data: {
-          queueTypeId: null,
+          queueTypeId: null as unknown as undefined, // Pass null explicitly
         },
       });
 
-      expect(prisma.post.update).toHaveBeenCalledWith({
-        where: {
-          id: TEST_POST_ID,
-          userId: TEST_USER_ID,
-        },
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
-        data: expect.objectContaining({
-          queueType: {
-            disconnect: true,
-          },
-        }),
+      // Check the call was made with correct structure
+      expect(prisma.post.update).toHaveBeenCalled();
+      const updateCall = (prisma.post.update as ReturnType<typeof vi.fn>).mock
+        .calls[0];
+      if (!updateCall?.[0]) {
+        throw new Error("update was not called");
+      }
+      const callArg = updateCall[0] as {
+        where?: { id: string; userId: string };
+        data?: Record<string, unknown>;
+      };
+      expect(callArg.where).toEqual({
+        id: TEST_POST_ID,
+        userId: TEST_USER_ID,
       });
+      // queueType disconnect should be in the data object
+      expect(callArg.data).toBeDefined();
+      // Check if queueType exists in data
+      const queueType = (
+        callArg.data as { queueType?: { disconnect: boolean } }
+      ).queueType;
+      expect(queueType).toEqual({ disconnect: true });
     });
 
     it("should handle hashtag preset connection", async () => {

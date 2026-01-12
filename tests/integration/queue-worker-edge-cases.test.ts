@@ -94,7 +94,7 @@ vi.mock("~/infra/queue", () => ({
 // Mock global fetch
 global.fetch = vi.fn();
 
-import { TEST_USER_ID } from "../utils/test-helpers";
+import { TEST_USER_ID, createValidSignedEvent } from "../utils/test-helpers";
 
 import { getUserById } from "~/features/user";
 import { prisma } from "~/lib/prisma.server";
@@ -118,15 +118,7 @@ beforeAll(async () => {
 
 describe("Queue Worker Edge Cases", () => {
   const TEST_POST_ID = "post-123";
-  const TEST_SIGNED_EVENT = {
-    id: "event-123",
-    kind: 1,
-    content: "Test post",
-    pubkey: "pubkey-123",
-    created_at: Math.floor(Date.now() / 1000),
-    tags: [],
-    sig: "sig-123",
-  };
+  const TEST_SIGNED_EVENT = createValidSignedEvent({ content: "Test post" });
 
   beforeEach(() => {
     vi.clearAllMocks();

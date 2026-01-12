@@ -11,6 +11,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 // Mock global fetch for Nostr publisher
 global.fetch = vi.fn();
 
+import { createValidSignedEvent } from "../../utils/test-helpers";
+
 import { CreatePostUseCase } from "~/features/posts/use-cases/create-post.use-case.server";
 import { PublishNowUseCase } from "~/features/posts/use-cases/publish-now.use-case.server";
 import { RecyclePostUseCase } from "~/features/posts/use-cases/recycle-post.use-case.server";
@@ -93,15 +95,7 @@ describe.skipIf(!TEST_DATABASE_URL)("RecyclePostUseCase Integration", () => {
     await publishUseCase.execute({
       postId: originalPostId,
       userId,
-      signedEvent: {
-        id: "test-event-id",
-        pubkey: "test-pubkey",
-        created_at: Math.floor(Date.now() / 1000),
-        kind: 1,
-        content: "test",
-        tags: [],
-        sig: "test-sig",
-      },
+      signedEvent: createValidSignedEvent({ content: "test" }),
       relays: ["wss://relay.example.com"],
     });
 
@@ -155,15 +149,7 @@ describe.skipIf(!TEST_DATABASE_URL)("RecyclePostUseCase Integration", () => {
     await publishUseCase.execute({
       postId: originalPostId,
       userId,
-      signedEvent: {
-        id: "test-event-id",
-        pubkey: "test-pubkey",
-        created_at: Math.floor(Date.now() / 1000),
-        kind: 1,
-        content: "test",
-        tags: [],
-        sig: "test-sig",
-      },
+      signedEvent: createValidSignedEvent({ content: "test" }),
       relays: ["wss://relay.example.com"],
     });
 
@@ -204,15 +190,7 @@ describe.skipIf(!TEST_DATABASE_URL)("RecyclePostUseCase Integration", () => {
     await publishUseCase.execute({
       postId: originalPostId,
       userId,
-      signedEvent: {
-        id: "test-event-id",
-        pubkey: "test-pubkey",
-        created_at: Math.floor(Date.now() / 1000),
-        kind: 1,
-        content: "test",
-        tags: [],
-        sig: "test-sig",
-      },
+      signedEvent: createValidSignedEvent({ content: "test" }),
       relays: ["wss://relay.example.com"],
     });
 
@@ -265,15 +243,7 @@ describe.skipIf(!TEST_DATABASE_URL)("RecyclePostUseCase Integration", () => {
     await publishUseCase.execute({
       postId: originalPostId,
       userId,
-      signedEvent: {
-        id: "test-event-id",
-        pubkey: "test-pubkey",
-        created_at: Math.floor(Date.now() / 1000),
-        kind: 1,
-        content: "test",
-        tags: [],
-        sig: "test-sig",
-      },
+      signedEvent: createValidSignedEvent({ content: "test" }),
       relays: ["wss://relay.example.com"],
     });
 

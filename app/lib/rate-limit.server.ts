@@ -248,3 +248,121 @@ export async function getRateLimitInfo(userId: string): Promise<{
     return Promise.resolve(null);
   }
 }
+
+/**
+ * Per-user post creation rate limiter
+ * Tracks total posts created by a user over a time window
+ *
+ * @param userId - User ID
+ * @param postCount - Number of posts to create in this request
+ * @param windowMinutes - Time window in minutes (default: 60)
+ * @param maxPosts - Maximum posts allowed in the window (default: 2000)
+ * @returns Object with allowed status, remaining posts, and reset time
+ */
+export async function checkUserPostCreationLimit(
+  userId: string,
+  postCount: number,
+  windowMinutes = 60,
+  maxPosts = 2000
+): Promise<{
+  allowed: boolean;
+  remaining: number;
+  resetTime: number;
+  error?: string;
+}> {
+  // In test environments, allow unlimited posts
+  if (isTestEnvironment()) {
+    return {
+      allowed: true,
+      remaining: maxPosts,
+      resetTime: Date.now() + windowMinutes * 60 * 1000,
+    };
+  }
+
+  if (!isRedisAvailable()) {
+    // If Redis is not available, allow the request but log a warning
+    // In production, you might want to be more strict here
+    console.warn(
+      "Redis not available for post creation rate limiting, allowing request"
+    );
+    return {
+      allowed: true,
+      remaining: maxPosts,
+      resetTime: Date.now() + windowMinutes * 60 * 1000,
+    };
+  }
+
+  try {
+    const postCreationLimiter = new RateLimiterRedis({
+      storeClient: redis,
+      keyPrefix: `rl:posts:user`,
+      points: maxPosts,
+      duration: windowMinutes * 60, // Convert minutes to seconds
+      blockDuration: windowMinutes * 60,
+    });
+
+    // Check current usage
+    const currentInfo = await postCreationLimiter.get(userId);
+
+    if (!currentInfo) {
+      // No previous usage, check if the requested count is within limits
+      if (postCount > maxPosts) {
+        return {
+          allowed: false,
+          remaining: 0,
+          resetTime: Date.now() + windowMinutes * 60 * 1000,
+          error: `Cannot create ${postCount} posts. Maximum ${maxPosts} posts per ${windowMinutes} minutes.`,
+        };
+      }
+
+      // Consume the points for this request
+      const info = await postCreationLimiter.consume(userId, postCount);
+      return {
+        allowed: true,
+        remaining: info.remainingPoints,
+        resetTime: Date.now() + info.msBeforeNext,
+      };
+    }
+
+    // Check if user has enough remaining points
+    if (currentInfo.remainingPoints < postCount) {
+      return {
+        allowed: false,
+        remaining: currentInfo.remainingPoints,
+        resetTime: Date.now() + currentInfo.msBeforeNext,
+        error: `Post creation limit exceeded. You can create ${currentInfo.remainingPoints} more posts. Limit resets in ${Math.ceil(currentInfo.msBeforeNext / 1000)} seconds.`,
+      };
+    }
+
+    // Consume the points for this request
+    const info = await postCreationLimiter.consume(userId, postCount);
+    return {
+      allowed: true,
+      remaining: info.remainingPoints,
+      resetTime: Date.now() + info.msBeforeNext,
+    };
+  } catch (error: unknown) {
+    // If rate limit is exceeded, rate-limiter-flexible throws an error
+    const rateLimitError = error as {
+      msBeforeNext?: number;
+      remainingPoints?: number;
+    };
+
+    if (rateLimitError.msBeforeNext !== undefined) {
+      return {
+        allowed: false,
+        remaining: rateLimitError.remainingPoints ?? 0,
+        resetTime: Date.now() + rateLimitError.msBeforeNext,
+        error: `Post creation limit exceeded. Limit resets in ${Math.ceil(rateLimitError.msBeforeNext / 1000)} seconds.`,
+      };
+    }
+
+    // Unexpected error - log and allow the request (fail open)
+    console.error("Error checking post creation limit:", error);
+    return {
+      allowed: true,
+      remaining: maxPosts,
+      resetTime: Date.now() + windowMinutes * 60 * 1000,
+    };
+  }
+}

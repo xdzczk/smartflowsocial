@@ -29,6 +29,7 @@ import {
 import { recordPublishLatency } from "~/lib/metrics/performance-metrics.server";
 import { prisma } from "~/lib/prisma.server";
 import { recordJobMetrics, updateActiveJobs } from "~/lib/queue-metrics.server";
+import { validateSignedEventCryptographically } from "~/lib/validation/nostr-cryptographic.server";
 import {
   updateLongFormPostStatus,
   getCronDueScheduledLongFormPosts,
@@ -213,6 +214,11 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
         "Job started processing"
       );
 
+      // Cryptographically validate the signed event before publishing
+      // This ensures the event signature and ID are valid
+      const validatedSignedEvent =
+        validateSignedEventCryptographically(signedEvent);
+
       // Get user relays
       const user = await getUserById(userId);
       if (!user) {
@@ -231,7 +237,11 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
       // Publish to Nostr using publisher service (with health-aware routing)
       const publishStartTime = Date.now();
       const publisher = getNostrPublisher();
-      await publisher.publish(signedEvent, sanitizedRelays, correlationId);
+      await publisher.publish(
+        validatedSignedEvent,
+        sanitizedRelays,
+        correlationId
+      );
       const publishLatency = Date.now() - publishStartTime;
 
       // Update post status to posted (atomic operation)
@@ -375,6 +385,11 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
         return { success: true, postId, skipped: true };
       }
 
+      // Cryptographically validate the signed event before publishing
+      // This ensures the event signature and ID are valid
+      const validatedSignedEvent =
+        validateSignedEventCryptographically(signedEvent);
+
       // Update longform post status to published (atomic operation)
       await updateLongFormPostStatus({
         id: postId,
@@ -399,7 +414,11 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
 
       // Publish to Nostr using publisher service (with health-aware routing)
       const publisher = getNostrPublisher();
-      await publisher.publish(signedEvent, sanitizedRelays, correlationId);
+      await publisher.publish(
+        validatedSignedEvent,
+        sanitizedRelays,
+        correlationId
+      );
 
       const duration = Date.now() - startTime;
       recordJobMetrics(queueName, duration, true);

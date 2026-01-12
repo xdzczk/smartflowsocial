@@ -97,7 +97,7 @@ vi.mock("~/lib/prisma.server", () => ({
   prisma: mockPrisma,
 }));
 
-import { TEST_USER_ID } from "../utils/test-helpers";
+import { TEST_USER_ID, createValidSignedEvent } from "../utils/test-helpers";
 
 import { getUserById } from "~/features/user";
 import { enqueuePostJob } from "~/infra/queue";
@@ -136,14 +136,11 @@ describe("Queue Workers", () => {
 
   describe("Scheduled Posts Worker", () => {
     it("should process scheduled post successfully", async () => {
+      const signedEvent = createValidSignedEvent({ content: "Test post" });
       const mockJobData = {
         postId: "post-123",
         userId: TEST_USER_ID,
-        signedEvent: {
-          id: "event-123",
-          kind: 1,
-          content: "Test post",
-        },
+        signedEvent,
       };
       const mockJob: Job = {
         data: mockJobData,
@@ -195,20 +192,27 @@ describe("Queue Workers", () => {
         | Record<string, string>
         | undefined;
       expect(headers?.["Content-Type"]).toBe("application/json");
-      expect(fetchOptions.body).toBe(
-        JSON.stringify({
-          relays: ["wss://relay1.com", "wss://relay2.com"],
-          event: mockJobData.signedEvent,
-        })
-      );
+      // JSON.stringify excludes Symbol(verified), so parse and check properties
+      const body = JSON.parse(fetchOptions.body as string) as {
+        relays: string[];
+        event: { id: string; pubkey: string; kind: number; content: string };
+      };
+      expect(body.relays).toEqual(["wss://relay1.com", "wss://relay2.com"]);
+      expect(body.event).toMatchObject({
+        id: mockJobData.signedEvent.id,
+        pubkey: mockJobData.signedEvent.pubkey,
+        kind: mockJobData.signedEvent.kind,
+        content: mockJobData.signedEvent.content,
+      });
       expect(result).toEqual({ success: true, postId: "post-123" });
     });
 
     it("should sanitize user relays", async () => {
+      const signedEvent = createValidSignedEvent();
       const mockJobData = {
         postId: "post-123",
         userId: TEST_USER_ID,
-        signedEvent: { id: "event-123" },
+        signedEvent,
       };
       const mockJob: Job = {
         data: mockJobData,
@@ -241,19 +245,26 @@ describe("Queue Workers", () => {
         throw new Error("fetch was not called");
       }
       const fetchOptions = fetchCall[1] as RequestInit;
-      expect(fetchOptions.body).toBe(
-        JSON.stringify({
-          relays: ["wss://relay1.com", "wss://relay2.com"],
-          event: mockJobData.signedEvent,
-        })
-      );
+      // JSON.stringify field order may vary, so parse and check properties
+      const body = JSON.parse(fetchOptions.body as string) as {
+        relays: string[];
+        event: { id: string; pubkey: string; kind: number; content: string };
+      };
+      expect(body.relays).toEqual(["wss://relay1.com", "wss://relay2.com"]);
+      expect(body.event).toMatchObject({
+        id: mockJobData.signedEvent.id,
+        pubkey: mockJobData.signedEvent.pubkey,
+        kind: mockJobData.signedEvent.kind,
+        content: mockJobData.signedEvent.content,
+      });
     });
 
     it("should handle missing user", async () => {
+      const signedEvent = createValidSignedEvent();
       const mockJobData = {
         postId: "post-123",
         userId: TEST_USER_ID,
-        signedEvent: { id: "event-123" },
+        signedEvent,
       };
       const mockJob: Job = {
         data: mockJobData,
@@ -277,10 +288,11 @@ describe("Queue Workers", () => {
     });
 
     it("should handle empty user relays", async () => {
+      const signedEvent = createValidSignedEvent();
       const mockJobData = {
         postId: "post-123",
         userId: TEST_USER_ID,
-        signedEvent: { id: "event-123" },
+        signedEvent,
       };
       const mockJob: Job = {
         data: mockJobData,
@@ -313,19 +325,26 @@ describe("Queue Workers", () => {
         throw new Error("fetch was not called");
       }
       const fetchOptions = fetchCall[1] as RequestInit;
-      expect(fetchOptions.body as string).toBe(
-        JSON.stringify({
-          relays: [],
-          event: mockJobData.signedEvent,
-        })
-      );
+      // JSON.stringify excludes Symbol(verified), so parse and check properties
+      const body = JSON.parse(fetchOptions.body as string) as {
+        relays: string[];
+        event: { id: string; pubkey: string; kind: number; content: string };
+      };
+      expect(body.relays).toEqual([]);
+      expect(body.event).toMatchObject({
+        id: mockJobData.signedEvent.id,
+        pubkey: mockJobData.signedEvent.pubkey,
+        kind: mockJobData.signedEvent.kind,
+        content: mockJobData.signedEvent.content,
+      });
     });
 
     it("should handle publisher API errors", async () => {
+      const signedEvent = createValidSignedEvent();
       const mockJobData = {
         postId: "post-123",
         userId: TEST_USER_ID,
-        signedEvent: { id: "event-123" },
+        signedEvent,
       };
       const mockJob: Job = {
         data: mockJobData,
@@ -362,10 +381,11 @@ describe("Queue Workers", () => {
     });
 
     it("should handle fetch errors", async () => {
+      const signedEvent = createValidSignedEvent();
       const mockJobData = {
         postId: "post-123",
         userId: TEST_USER_ID,
-        signedEvent: { id: "event-123" },
+        signedEvent,
       };
       const mockJob: Job = {
         data: mockJobData,
@@ -395,14 +415,14 @@ describe("Queue Workers", () => {
 
   describe("Scheduled Longform Posts Worker", () => {
     it("should process scheduled longform post successfully", async () => {
+      const signedEvent = createValidSignedEvent({
+        kind: 30023,
+        content: "Longform post",
+      });
       const mockJobData = {
         postId: "longform-123",
         userId: TEST_USER_ID,
-        signedEvent: {
-          id: "event-123",
-          kind: 30023,
-          content: "Longform post",
-        },
+        signedEvent,
       };
       const mockJob: Job = {
         data: mockJobData,
@@ -445,10 +465,11 @@ describe("Queue Workers", () => {
     });
 
     it("should handle missing user", async () => {
+      const signedEvent = createValidSignedEvent();
       const mockJobData = {
         postId: "longform-123",
         userId: TEST_USER_ID,
-        signedEvent: { id: "event-123" },
+        signedEvent,
       };
       const mockJob: Job = {
         data: mockJobData,
@@ -465,10 +486,11 @@ describe("Queue Workers", () => {
     });
 
     it("should handle publisher API errors", async () => {
+      const signedEvent = createValidSignedEvent();
       const mockJobData = {
         postId: "longform-123",
         userId: TEST_USER_ID,
-        signedEvent: { id: "event-123" },
+        signedEvent,
       };
       const mockJob: Job = {
         data: mockJobData,

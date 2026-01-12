@@ -127,6 +127,11 @@ export * from "./integration-test-setup";
 export * from "./test-scenario-builders";
 
 /**
+ * Re-export Nostr test helpers
+ */
+export * from "./nostr-test-helpers";
+
+/**
  * Create a valid user object that matches userSchema
  */
 export function createValidUserMock(

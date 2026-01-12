@@ -282,6 +282,12 @@ export const uploadImagesPreviewSchema = z.object({
 });
 
 /**
+ * Maximum number of posts allowed per bulk request
+ * This prevents resource exhaustion from extremely large bulk operations
+ */
+const MAX_POSTS_PER_BULK_REQUEST = 500;
+
+/**
  * Sign and schedule schema
  */
 export const signAndScheduleSchema = z.object({
@@ -300,7 +306,15 @@ export const signAndScheduleSchema = z.object({
         }
       })
     )
-    .pipe(z.array(signedEventSchema).min(1)),
+    .pipe(
+      z
+        .array(signedEventSchema)
+        .min(1, "At least one post is required")
+        .max(
+          MAX_POSTS_PER_BULK_REQUEST,
+          `Maximum ${MAX_POSTS_PER_BULK_REQUEST} posts per bulk request`
+        )
+    ),
   nostrEvent: z
     .array(z.string())
     .transform((arr) =>
@@ -378,7 +392,15 @@ export const saveAsDraftSchema = z.object({
         })
         .flat()
     )
-    .pipe(z.array(z.string()).min(1, "At least one file URL is required")),
+    .pipe(
+      z
+        .array(z.string())
+        .min(1, "At least one file URL is required")
+        .max(
+          MAX_POSTS_PER_BULK_REQUEST,
+          `Maximum ${MAX_POSTS_PER_BULK_REQUEST} posts per bulk request`
+        )
+    ),
   caption: z.array(z.string()),
   queueType: z.array(z.string()),
   scheduledFor: z.array(z.string()),

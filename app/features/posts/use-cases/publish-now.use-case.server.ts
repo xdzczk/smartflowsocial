@@ -12,6 +12,7 @@ import {
   recordPostPublishFailed,
 } from "~/lib/metrics/business-metrics.server";
 import { recordPublishLatency } from "~/lib/metrics/performance-metrics.server";
+import { validateSignedEventCryptographically } from "~/lib/validation/nostr-cryptographic.server";
 import { updatePostStatus } from "~/models/post.commands.server";
 import { getPostById } from "~/models/post.queries.server";
 
@@ -43,6 +44,12 @@ export class PublishNowUseCase {
       throw new Error(`Post ${input.postId} already published`);
     }
 
+    // Cryptographically validate the signed event before publishing
+    // This ensures the event signature and ID are valid
+    const validatedSignedEvent = validateSignedEventCryptographically(
+      input.signedEvent
+    );
+
     // Transition to PUBLISHING
     await this.stateMachine.transition(
       input.postId,
@@ -62,7 +69,7 @@ export class PublishNowUseCase {
           isPosted: true,
           correlationId,
         }),
-        publisher.publish(input.signedEvent, input.relays, correlationId),
+        publisher.publish(validatedSignedEvent, input.relays, correlationId),
       ]);
 
       const publishLatency = Date.now() - publishStartTime;
