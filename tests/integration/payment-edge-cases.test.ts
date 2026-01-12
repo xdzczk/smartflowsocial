@@ -27,21 +27,40 @@ import { getBitcoinRate } from "~/features/payments/btc.rate";
 import { createPlanInvoice } from "~/models/payment.server";
 
 // Mock Prisma - use vi.hoisted to allow top-level variables in mocks
-
-const { mockPrisma } = vi.hoisted(async () => {
-  // Import inside hoisted to avoid initialization issues
-  const { createMockPaymentPrisma: createMock } =
-    await import("../utils/payment-test-helpers");
-  const mockPrisma = createMock();
+// Create mock inline to avoid circular dependency
+const { mockPrisma } = vi.hoisted(() => {
+  // Inline mock creation to avoid import issues
+  const mockPrisma = {
+    plan: {
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+    },
+    payment: {
+      create: vi.fn(),
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+      update: vi.fn(),
+    },
+    subscription: {
+      findUnique: vi.fn(),
+      upsert: vi.fn(),
+    },
+    user: {
+      update: vi.fn(),
+    },
+    $transaction: vi.fn(async (callback) => {
+      const tx = {
+        plan: mockPrisma.plan,
+        payment: mockPrisma.payment,
+        subscription: mockPrisma.subscription,
+        user: mockPrisma.user,
+      };
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Test mock callback has complex types
+      return await callback(tx);
+    }),
+  };
   return { mockPrisma };
-  // eslint-disable-next-line @typescript-eslint/consistent-type-imports -- Dynamic import needed for hoisting
-}) as unknown as {
-  mockPrisma: ReturnType<
-    Awaited<
-      typeof import("../utils/payment-test-helpers")
-    >["createMockPaymentPrisma"]
-  >;
-};
+});
 
 vi.mock("~/lib/prisma.server", () => ({
   prisma: mockPrisma,
@@ -90,6 +109,7 @@ describe("Payment Processing Edge Cases", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     setupPaymentTestEnvironment();
+    // Ensure mockPrisma is initialized before resetting transaction
     resetMockPaymentPrismaTransaction(mockPrisma);
 
     // Reset LN to default implementation

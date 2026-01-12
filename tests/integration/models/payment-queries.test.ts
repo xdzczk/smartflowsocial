@@ -6,12 +6,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import {
-  checkPaymentStatus,
-  getUserSubscription,
-  getUserPaymentHistory,
-  getPlanById,
-} from "~/models/payment.server";
-import {
   resetMockPaymentPrismaTransaction,
   createMockPayment,
   createMockPlan,
@@ -20,24 +14,50 @@ import {
   TEST_USER_ID,
   TEST_PLAN_ID,
   TEST_PAYMENT_ID,
-} from "~/tests/utils/payment-test-helpers";
+} from "../../utils/payment-test-helpers";
 
-// Mock Prisma
+import {
+  checkPaymentStatus,
+  getUserSubscription,
+  getUserPaymentHistory,
+  getPlanById,
+} from "~/models/payment.server";
 
-const { mockPrisma } = vi.hoisted(async () => {
-  // Import inside hoisted to avoid initialization issues
-  const { createMockPaymentPrisma: createMock } =
-    await import("../../utils/payment-test-helpers");
-  const mockPrisma = createMock();
+// Mock Prisma - use vi.hoisted to allow top-level variables in mocks
+// Create mock inline to avoid circular dependency
+const { mockPrisma } = vi.hoisted(() => {
+  // Inline mock creation to avoid import issues
+  const mockPrisma = {
+    plan: {
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+    },
+    payment: {
+      create: vi.fn(),
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+      update: vi.fn(),
+    },
+    subscription: {
+      findUnique: vi.fn(),
+      upsert: vi.fn(),
+    },
+    user: {
+      update: vi.fn(),
+    },
+    $transaction: vi.fn(async (callback) => {
+      const tx = {
+        plan: mockPrisma.plan,
+        payment: mockPrisma.payment,
+        subscription: mockPrisma.subscription,
+        user: mockPrisma.user,
+      };
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Test mock callback has complex types
+      return await callback(tx);
+    }),
+  };
   return { mockPrisma };
-  // eslint-disable-next-line @typescript-eslint/consistent-type-imports -- Dynamic import needed for hoisting
-}) as unknown as {
-  mockPrisma: ReturnType<
-    Awaited<
-      typeof import("../../utils/payment-test-helpers")
-    >["createMockPaymentPrisma"]
-  >;
-};
+});
 
 vi.mock("~/lib/prisma.server", () => ({
   prisma: mockPrisma,
@@ -47,6 +67,7 @@ describe("Payment Model Queries", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     setupPaymentTestEnvironment();
+    // Ensure mockPrisma is initialized before resetting transaction
     resetMockPaymentPrismaTransaction(mockPrisma);
   });
 

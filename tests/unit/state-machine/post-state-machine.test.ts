@@ -112,7 +112,7 @@ describe("PostStateMachine", () => {
     it("should throw error for invalid transition", async () => {
       const mockPost = {
         id: TEST_POST_ID,
-        currentState: "DRAFT",
+        currentState: "SCHEDULED",
       };
 
       (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
@@ -123,10 +123,10 @@ describe("PostStateMachine", () => {
         stateMachine.transition(
           TEST_POST_ID,
           TEST_USER_ID,
-          "PUBLISHING",
+          "PUBLISHED",
           "Invalid transition"
         )
-      ).rejects.toThrow("Invalid transition from DRAFT to PUBLISHING");
+      ).rejects.toThrow(/Invalid transition from SCHEDULED to PUBLISHED/);
     });
 
     it("should use DRAFT as default state if currentState is null", async () => {

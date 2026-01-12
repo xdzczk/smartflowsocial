@@ -64,6 +64,7 @@ export class CancelScheduleUseCase {
     }
 
     // Update post to mark as not scheduled
+    // Pass null explicitly to clear both scheduledFor and scheduledAtUtc
     await updatePost({
       id: input.postId,
       userId: input.userId,

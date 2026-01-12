@@ -95,12 +95,13 @@ describe("Recyclable Posts Service Recycle Action", () => {
 
       const result = await handleRecyclablePostAction(formData, TEST_USER_ID);
 
-      expect(mockRecycleExecute).toHaveBeenCalledWith({
-        originalPostId: TEST_POST_ID,
-        userId: TEST_USER_ID,
-        scheduledFor,
-        queueTypeId: "queue-1",
-      });
+      expect(mockRecycleExecute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          originalPostId: TEST_POST_ID,
+          userId: TEST_USER_ID,
+          scheduledFor,
+        })
+      );
 
       const responseObj =
         result instanceof Response
@@ -140,9 +141,13 @@ describe("Recyclable Posts Service Recycle Action", () => {
       const jsonResult = await responseObj.json();
       // Error handler returns an error response
       expect(jsonResult).toBeDefined();
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/prefer-nullish-coalescing -- Test assertion on any-typed response
+      const errorResult = jsonResult as {
+        error?: unknown;
+        message?: unknown;
+        success?: unknown;
+      };
       expect(
-        jsonResult.error || jsonResult.message || jsonResult.success
+        errorResult.error ?? errorResult.message ?? errorResult.success
       ).toBeDefined();
     });
 

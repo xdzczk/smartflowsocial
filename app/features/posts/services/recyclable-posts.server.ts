@@ -422,7 +422,15 @@ export async function handleRecyclablePostAction(
 
   // Handle recycle action
   if (validatedData._action === "recycle") {
-    return handleRecycleAction(validatedData, userId);
+    return handleRecycleAction(
+      {
+        postId: validatedData.postId,
+        scheduledFor: validatedData.scheduledFor,
+        queueTypeId: validatedData.queueTypeId ?? undefined,
+        queueType: validatedData.queueType,
+      },
+      userId
+    );
   }
 
   // Handle single quote
@@ -430,7 +438,12 @@ export async function handleRecyclablePostAction(
 }
 
 async function handleRecycleAction(
-  recycleData: { postId: string; scheduledFor?: string; queueType?: string },
+  recycleData: {
+    postId: string;
+    scheduledFor?: string;
+    queueTypeId?: string;
+    queueType?: string;
+  },
   userId: string
 ): Promise<Response> {
   try {
@@ -444,6 +457,7 @@ async function handleRecycleAction(
       originalPostId: recycleData.postId,
       userId,
       scheduledFor,
+      queueTypeId: recycleData.queueTypeId,
       queueType: recycleData.queueType,
     });
     return json({

@@ -4,19 +4,29 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-import "./shared-setup";
 import { TEST_USER_ID, createMockFormData } from "../../utils/test-helpers";
 
+import "./shared-setup";
 import { mockPrisma, mockCreateLongFormPostExecute } from "./shared-setup";
 
 import { handleNewLongFormAction } from "~/features/posts/services/newlongform-action.server";
-import { getQueueTypes, getHashTagPresetById } from "~/features/user";
+import {
+  getQueueTypes,
+  getHashTagPresetById,
+  getUserById,
+} from "~/features/user";
 
 describe("Hashtag Preset Handling", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env["NOSTR_PUBLISHER_URL"] =
       "https://api.nostr-publisher.com/publish";
+    // Mock getUserById - required by handleNewLongFormAction
+    (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: TEST_USER_ID,
+      userRelays: ["wss://relay1.com"],
+      showHashTagsinPosts: false,
+    });
     mockCreateLongFormPostExecute.mockResolvedValue({
       post: {
         id: "longform-123",

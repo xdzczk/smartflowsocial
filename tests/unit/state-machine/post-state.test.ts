@@ -50,7 +50,7 @@ describe("Post State Logic", () => {
     });
 
     it("should not allow invalid transitions", () => {
-      expect(canTransition("DRAFT", "PUBLISHING")).toBe(false);
+      // DRAFT -> PUBLISHING and DRAFT -> FAILED are now valid transitions
       expect(canTransition("SCHEDULED", "PUBLISHED")).toBe(false);
       expect(canTransition("PUBLISHING", "DRAFT")).toBe(false);
       expect(canTransition("PUBLISHING", "SCHEDULED")).toBe(false);
@@ -69,8 +69,8 @@ describe("Post State Logic", () => {
 
     it("should throw error for invalid transition", () => {
       expect(() => {
-        transitionPost("DRAFT", "PUBLISHING", "Invalid transition");
-      }).toThrow("Invalid transition from DRAFT to PUBLISHING");
+        transitionPost("SCHEDULED", "PUBLISHED", "Invalid transition");
+      }).toThrow(/Invalid transition from SCHEDULED to PUBLISHED/);
     });
 
     it("should throw error when transitioning from terminal state", () => {
@@ -97,7 +97,13 @@ describe("Post State Logic", () => {
   describe("getValidNextStates", () => {
     it("should return valid next states for DRAFT", () => {
       const nextStates = getValidNextStates("DRAFT");
-      expect(nextStates).toEqual(["SCHEDULED", "PUBLISHED", "CANCELLED"]);
+      expect(nextStates).toEqual([
+        "SCHEDULED",
+        "PUBLISHED",
+        "PUBLISHING",
+        "CANCELLED",
+        "FAILED",
+      ]);
     });
 
     it("should return valid next states for SCHEDULED", () => {
@@ -161,9 +167,8 @@ describe("Post State Logic", () => {
 
     it("should prevent all documented invalid transitions", () => {
       // Test some documented invalid transitions
+      // Note: DRAFT -> PUBLISHING and DRAFT -> FAILED are now valid
       const invalidTransitions: Array<[PostState, PostState]> = [
-        ["DRAFT", "PUBLISHING"],
-        ["DRAFT", "FAILED"],
         ["SCHEDULED", "PUBLISHED"],
         ["PUBLISHING", "DRAFT"],
         ["PUBLISHING", "SCHEDULED"],

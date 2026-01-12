@@ -131,24 +131,20 @@ export function updateRelayMetrics(): void {
     relayLatencyGauge.set({ relay: metrics.relay }, metrics.averageLatency);
 
     // Update health status (map to numeric value)
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Status may not match enum values
-    const healthStatusValue =
-      {
-        UNKNOWN: 0,
-        HEALTHY: 1,
-        DEGRADED: 2,
-        UNHEALTHY: 3,
-      }[metrics.status] ?? 0;
+    const healthStatusValue = {
+      UNKNOWN: 0,
+      HEALTHY: 1,
+      DEGRADED: 2,
+      UNHEALTHY: 3,
+    }[metrics.status];
     relayHealthStatusGauge.set({ relay: metrics.relay }, healthStatusValue);
 
     // Update circuit breaker state (map to numeric value)
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- State may not match enum values
-    const circuitBreakerValue =
-      {
-        CLOSED: 0,
-        HALF_OPEN: 1,
-        OPEN: 2,
-      }[metrics.circuitBreakerState] ?? 0;
+    const circuitBreakerValue = {
+      CLOSED: 0,
+      HALF_OPEN: 1,
+      OPEN: 2,
+    }[metrics.circuitBreakerState];
     relayCircuitBreakerStateGauge.set(
       { relay: metrics.relay },
       circuitBreakerValue

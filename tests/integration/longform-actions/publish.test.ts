@@ -18,13 +18,23 @@ import {
 } from "./shared-setup";
 
 import { handleNewLongFormAction } from "~/features/posts/services/newlongform-action.server";
-import { getQueueTypeByNameForUser, getQueueTypes } from "~/features/user";
+import {
+  getUserById,
+  getQueueTypeByNameForUser,
+  getQueueTypes,
+} from "~/features/user";
 
 describe("Publish Action", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env["NOSTR_PUBLISHER_URL"] =
       "https://api.nostr-publisher.com/publish";
+    // Mock getUserById - required by handleNewLongFormAction
+    (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: TEST_USER_ID,
+      userRelays: ["wss://relay1.com"],
+      showHashTagsinPosts: false,
+    });
     (getQueueTypeByNameForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
       createMockQueueType({ id: "queue-1", name: "posts" })
     );
@@ -195,6 +205,12 @@ describe("Publish Action", () => {
   });
 
   it("should add hashtags to content when enabled", async () => {
+    // Mock getUserById with showHashTagsinPosts: true
+    (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: TEST_USER_ID,
+      userRelays: ["wss://relay1.com"],
+      showHashTagsinPosts: true, // Enable hashtags
+    });
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([
       {
         id: "queue-1",
@@ -269,8 +285,11 @@ describe("Publish Action", () => {
       new Error("Publish failed")
     );
 
-    await expect(
-      handleNewLongFormAction(TEST_USER_ID, request)
-    ).rejects.toThrow("Publish failed");
+    // Handler catches errors and returns error response, doesn't throw
+    const response = await handleNewLongFormAction(TEST_USER_ID, request);
+    expect(response.status).toBeGreaterThanOrEqual(400);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Response.json() returns any
+    const data = await response.json();
+    expect(data).toHaveProperty("error");
   });
 });

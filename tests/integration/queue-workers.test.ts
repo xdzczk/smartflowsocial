@@ -80,15 +80,15 @@ const { mockPrisma } = vi.hoisted(() => {
       findUnique: vi.fn(),
     },
     $use: vi.fn(),
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Test mock callback has complex types
-    $transaction: vi.fn((callback) =>
-      callback({
+    $transaction: vi.fn((callback) => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Test mock callback has complex types
+      return callback({
         post: { findUnique: vi.fn(), update: vi.fn() },
         longFormPost: { findUnique: vi.fn(), update: vi.fn() },
         user: { findUnique: vi.fn() },
         postStateTransition: { create: vi.fn() },
-      })
-    ),
+      });
+    }),
   };
   return { mockPrisma };
 });

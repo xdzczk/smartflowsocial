@@ -50,7 +50,30 @@ vi.mock("~/models/longformpost.server", () => ({
   updateLongFormPostStatus: mockUpdateLongFormPostStatus,
 }));
 
-// Import the mocked functions for use in tests
+// Note: updateLongFormPost is mocked above, do not import it here
+
+// Mock Prisma for ScheduleLongFormPostUseCase
+const { mockPrisma } = vi.hoisted(() => {
+  const mockPrisma = {
+    $transaction: vi.fn(async (callback) => {
+      const tx = {
+        longFormPost: {
+          update: vi.fn().mockResolvedValue({}),
+        },
+        outboxEvent: {
+          create: vi.fn().mockResolvedValue({}),
+        },
+      };
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Test mock callback has complex types
+      return await callback(tx);
+    }),
+  };
+  return { mockPrisma };
+});
+
+vi.mock("~/lib/prisma.server", () => ({
+  prisma: mockPrisma,
+}));
 
 vi.mock("~/features/user", () => ({
   getUserById: vi.fn(),
@@ -142,8 +165,7 @@ import {
   getQueueTypeByNameForUser,
   getQueueTypes,
 } from "~/features/user";
-import { updateLongFormPost } from "~/models/longformpost.server";
-// Mocks are defined above
+// Note: updateLongFormPost is mocked above, do not import it here
 
 describe("Longform Edit Action Handler", () => {
   const POST_ID = "post-123";
@@ -287,7 +309,7 @@ describe("Longform Edit Action Handler", () => {
         request
       );
 
-      expect(updateLongFormPost).toHaveBeenCalledWith(
+      expect(mockUpdateLongFormPost).toHaveBeenCalledWith(
         expect.objectContaining({
           id: POST_ID,
           userId: TEST_USER_ID,
@@ -370,6 +392,14 @@ describe("Longform Edit Action Handler", () => {
         ok: true,
         status: 200,
       });
+      // Mock getLongFormPost for PublishLongFormNowUseCase
+      (mockGetLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: POST_ID,
+        userId: TEST_USER_ID,
+        title: "Test Post",
+        content: "Test content",
+        isPublished: false,
+      });
     });
 
     it("should publish updated post", async () => {
@@ -405,7 +435,7 @@ describe("Longform Edit Action Handler", () => {
         request
       );
 
-      expect(updateLongFormPost).toHaveBeenCalledWith(
+      expect(mockUpdateLongFormPost).toHaveBeenCalledWith(
         expect.objectContaining({
           id: POST_ID,
           userId: TEST_USER_ID,
@@ -532,7 +562,7 @@ describe("Longform Edit Action Handler", () => {
 
       await handleLongFormEditAction(TEST_USER_ID, POST_ID, request);
 
-      expect(updateLongFormPost).toHaveBeenCalledWith(
+      expect(mockUpdateLongFormPost).toHaveBeenCalledWith(
         expect.objectContaining({
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
           content: expect.stringContaining("#marketing #social"),
@@ -549,6 +579,14 @@ describe("Longform Edit Action Handler", () => {
           name: "posts",
         }
       );
+      // Mock getLongFormPost for ScheduleLongFormPostUseCase
+      (mockGetLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: POST_ID,
+        userId: TEST_USER_ID,
+        title: "Test Post",
+        content: "Test content",
+        isPublished: false,
+      });
     });
 
     it("should schedule post with published_at tag", async () => {
@@ -598,7 +636,7 @@ describe("Longform Edit Action Handler", () => {
         request
       );
 
-      expect(updateLongFormPost).toHaveBeenCalledWith(
+      expect(mockUpdateLongFormPost).toHaveBeenCalledWith(
         expect.objectContaining({
           id: POST_ID,
           isPublished: false,
@@ -669,7 +707,7 @@ describe("Longform Edit Action Handler", () => {
         TEST_USER_ID,
         "preset-1"
       );
-      expect(updateLongFormPost).toHaveBeenCalledWith(
+      expect(mockUpdateLongFormPost).toHaveBeenCalledWith(
         expect.objectContaining({
           hashTagPresetId: "preset-1",
         })

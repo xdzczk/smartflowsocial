@@ -15,32 +15,56 @@ import {
   TEST_USER_ID,
   TEST_PLAN_ID,
   paymentScenarios,
-} from "~/tests/utils/payment-test-helpers";
+} from "../../utils/payment-test-helpers";
 
 // Mock Prisma - use vi.hoisted to allow top-level variables in mocks
-
-const { mockPrisma } = vi.hoisted(async () => {
-  // Import inside hoisted to avoid initialization issues
-  const { createMockPaymentPrisma: createMock } =
-    await import("../../utils/payment-test-helpers");
-  const mockPrisma = createMock();
+// Create mock inline to avoid circular dependency
+const { mockPrisma } = vi.hoisted(() => {
+  // Inline mock creation to avoid import issues
+  const mockPrisma = {
+    plan: {
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+    },
+    payment: {
+      create: vi.fn(),
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+      update: vi.fn(),
+    },
+    subscription: {
+      findUnique: vi.fn(),
+      upsert: vi.fn(),
+    },
+    user: {
+      update: vi.fn(),
+    },
+    $transaction: vi.fn(async (callback) => {
+      const tx = {
+        plan: mockPrisma.plan,
+        payment: mockPrisma.payment,
+        subscription: mockPrisma.subscription,
+        user: mockPrisma.user,
+      };
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Test mock callback has complex types
+      return await callback(tx);
+    }),
+  };
   return { mockPrisma };
-  // eslint-disable-next-line @typescript-eslint/consistent-type-imports -- Dynamic import needed for hoisting
-}) as unknown as {
-  mockPrisma: ReturnType<
-    Awaited<
-      typeof import("../../utils/payment-test-helpers")
-    >["createMockPaymentPrisma"]
-  >;
-};
+});
 
 vi.mock("~/lib/prisma.server", () => ({
   prisma: mockPrisma,
 }));
 
 // Mock external dependencies
+const { mockGetBitcoinRate } = vi.hoisted(() => {
+  const mockGetBitcoinRate = vi.fn();
+  return { mockGetBitcoinRate };
+});
+
 vi.mock("~/features/payments/btc.rate", () => ({
-  getBitcoinRate: vi.fn(),
+  getBitcoinRate: mockGetBitcoinRate,
 }));
 
 // Mock LN as a constructor class
@@ -81,6 +105,7 @@ describe("createPlanInvoice", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     setupPaymentTestEnvironment();
+    // Ensure mockPrisma is initialized before resetting transaction
     resetMockPaymentPrismaTransaction(mockPrisma);
 
     // Reset LN to default implementation
@@ -92,6 +117,9 @@ describe("createPlanInvoice", () => {
     lnMock.mockImplementation(function (_credentials: string) {
       return new MockLN(_credentials);
     });
+
+    // Configure getBitcoinRate mock to return a default value if called
+    mockGetBitcoinRate.mockResolvedValue(25000);
   });
 
   it("should create invoice for free plan", async () => {
@@ -170,11 +198,15 @@ describe("createPlanInvoice", () => {
     const mockAmountSats = 25000; // ~$10 at $40k/BTC
 
     // Create and configure mock instance
+    // The request object needs to have invoice and paymentHash at the top level
+    // for extractInvoiceFromRequest and extractPaymentHashFromRequest to work
     const mockRequest: MockRequest = {
       invoice: mockInvoice,
       paymentHash: mockPaymentHash,
       amount: mockAmountSats,
-      onPaid: vi.fn().mockReturnValue({}),
+      onPaid: vi.fn().mockReturnValue({
+        onTimeout: vi.fn().mockReturnValue({}),
+      }),
       onTimeout: vi.fn().mockReturnValue({}),
     };
     const mockLNInstance = createMockLN({

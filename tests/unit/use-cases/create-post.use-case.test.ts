@@ -10,6 +10,7 @@ const { mockPrisma } = vi.hoisted(() => {
   const mockPrisma = {
     post: {
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
     },
   };
   return { mockPrisma };
@@ -87,7 +88,7 @@ describe("CreatePostUseCase", () => {
       (
         generateCreationIdempotencyKey as ReturnType<typeof vi.fn>
       ).mockReturnValue("idempotency-key-1");
-      (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
         null
       );
       (createPostWithOutbox as ReturnType<typeof vi.fn>).mockResolvedValue(
@@ -138,7 +139,7 @@ describe("CreatePostUseCase", () => {
       (
         generateCreationIdempotencyKey as ReturnType<typeof vi.fn>
       ).mockReturnValue("idempotency-key-1");
-      (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
         null
       );
       (createPostWithOutbox as ReturnType<typeof vi.fn>).mockResolvedValue(
@@ -184,7 +185,7 @@ describe("CreatePostUseCase", () => {
       (
         generateCreationIdempotencyKey as ReturnType<typeof vi.fn>
       ).mockReturnValue("idempotency-key-1");
-      (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
         existingPost
       );
 
@@ -219,7 +220,7 @@ describe("CreatePostUseCase", () => {
       (
         generateCreationIdempotencyKey as ReturnType<typeof vi.fn>
       ).mockReturnValue("idempotency-key-1");
-      (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
         null
       );
       (createPostWithOutbox as ReturnType<typeof vi.fn>).mockResolvedValue(
@@ -261,7 +262,7 @@ describe("CreatePostUseCase", () => {
       (
         generateCreationIdempotencyKey as ReturnType<typeof vi.fn>
       ).mockReturnValue("idempotency-key-1");
-      (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
         null
       );
       (createPostWithOutbox as ReturnType<typeof vi.fn>).mockResolvedValue(
@@ -303,7 +304,7 @@ describe("CreatePostUseCase", () => {
       (
         generateCreationIdempotencyKey as ReturnType<typeof vi.fn>
       ).mockReturnValue("idempotency-key-1");
-      (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
         null
       );
       (createPostWithOutbox as ReturnType<typeof vi.fn>).mockResolvedValue(
@@ -342,7 +343,7 @@ describe("CreatePostUseCase", () => {
       (
         generateCreationIdempotencyKey as ReturnType<typeof vi.fn>
       ).mockReturnValue("idempotency-key-1");
-      (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
         null
       );
       (createPostWithOutbox as ReturnType<typeof vi.fn>).mockResolvedValue(
@@ -381,7 +382,7 @@ describe("CreatePostUseCase", () => {
       (
         generateCreationIdempotencyKey as ReturnType<typeof vi.fn>
       ).mockReturnValue("idempotency-key-1");
-      (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
         null
       );
       (createPostWithOutbox as ReturnType<typeof vi.fn>).mockResolvedValue(

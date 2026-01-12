@@ -342,7 +342,7 @@ async function handlePublish(
   // Add hashtags to content if user has enabled it
   const contentWithHashtags =
     showHashTagsinPosts && hashTagPresetTags
-      ? `${sanitizedContent}\\n\\n${hashTagPresetTags}`
+      ? `${sanitizedContent}\n\n${hashTagPresetTags}`
       : sanitizedContent;
 
   const signedEventJson = JSON.parse(signedEvent.toString()) as {
@@ -381,15 +381,20 @@ async function handlePublish(
   });
 
   // Use PublishLongFormNowUseCase for immediate publishing
-  const publishUseCase = new PublishLongFormNowUseCase();
-  await publishUseCase.execute({
-    postId: result.post.id,
-    userId,
-    signedEvent: signedEventJson,
-    relays: sanitizedRelays,
-  });
+  try {
+    const publishUseCase = new PublishLongFormNowUseCase();
+    await publishUseCase.execute({
+      postId: result.post.id,
+      userId,
+      signedEvent: signedEventJson,
+      relays: sanitizedRelays,
+    });
 
-  return redirect("/dashboard/posted?tab=longform");
+    return redirect("/dashboard/posted?tab=longform");
+  } catch (error) {
+    const { handleActionError } = await import("~/lib/error-handler.server");
+    return handleActionError(error);
+  }
 }
 
 /**
@@ -471,7 +476,7 @@ async function handleScheduleLongform(
   // Add hashtags to content if user has enabled it
   const contentWithHashtags =
     showHashTagsinPosts && hashTagPresetTags
-      ? `${sanitizedContent}\\n\\n${hashTagPresetTags}`
+      ? `${sanitizedContent}\n\n${hashTagPresetTags}`
       : sanitizedContent;
 
   const signedEventJson = JSON.parse(signedEvent.toString()) as {

@@ -18,16 +18,30 @@ import {
 } from "./shared-setup";
 
 import { handleNewLongFormAction } from "~/features/posts/services/newlongform-action.server";
-import { getQueueTypeByNameForUser } from "~/features/user";
+import {
+  getUserById,
+  getQueueTypeByNameForUser,
+  getQueueTypes,
+} from "~/features/user";
 
 describe("Schedule Longform Action", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env["NOSTR_PUBLISHER_URL"] =
       "https://api.nostr-publisher.com/publish";
+    // Mock getUserById - required by handleNewLongFormAction
+    (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: TEST_USER_ID,
+      userRelays: ["wss://relay1.com"],
+      showHashTagsinPosts: false,
+    });
     (getQueueTypeByNameForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
       createMockQueueType({ id: "queue-1", name: "posts" })
     );
+    // Mock getQueueTypes for when useHashtagPresets is "off"
+    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([
+      createMockQueueType({ id: "queue-1", name: "posts" }),
+    ]);
     mockCreateLongFormPostExecute.mockResolvedValue({
       post: {
         id: "longform-123",

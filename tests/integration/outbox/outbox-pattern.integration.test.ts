@@ -26,10 +26,12 @@ describe.skipIf(!TEST_DATABASE_URL)("Outbox Pattern Integration", () => {
   let userId: string;
 
   beforeEach(async () => {
-    // Create a test user
+    // Create a test user with a unique npub to avoid collisions
+    // Use timestamp + random number for better uniqueness
+    const uniqueNpub = `test-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     const user = await prisma.user.create({
       data: {
-        npub: `test-${Date.now()}`,
+        npub: uniqueNpub,
         isEnabled: true,
       },
     });
@@ -53,7 +55,8 @@ describe.skipIf(!TEST_DATABASE_URL)("Outbox Pattern Integration", () => {
     await prisma.post.deleteMany({
       where: { userId },
     });
-    await prisma.user.delete({
+    // Use deleteMany with where to handle case where user might not exist
+    await prisma.user.deleteMany({
       where: { id: userId },
     });
   });

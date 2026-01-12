@@ -37,6 +37,7 @@ vi.mock("~/lib/prisma.server", () => ({
   prisma: {
     post: {
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
     },
   },
 }));
@@ -123,7 +124,7 @@ describe("RecyclePostUseCase", () => {
       (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
         "queue-123"
       );
-      (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
         null
       ); // No existing recycled post
       (createPostWithOutbox as ReturnType<typeof vi.fn>).mockResolvedValue(
@@ -215,7 +216,7 @@ describe("RecyclePostUseCase", () => {
       (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
         "queue-123"
       );
-      (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
         existingPost
       );
 
@@ -238,6 +239,10 @@ describe("RecyclePostUseCase", () => {
 
       (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(
         nonRecyclablePost
+      );
+      // Ensure no existing post is found (idempotency check)
+      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
+        null
       );
 
       await expect(
@@ -295,7 +300,8 @@ describe("RecyclePostUseCase", () => {
       (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
         "queue-123"
       );
-      (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+      // Ensure no existing post is found (idempotency check)
+      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
         null
       );
       (createPostWithOutbox as ReturnType<typeof vi.fn>).mockResolvedValue(

@@ -25,6 +25,37 @@ vi.mock("~/features/posts/services/queue-type-resolver.server", () => ({
   resolveQueueTypeId: vi.fn(),
 }));
 
+// Mock Prisma for PostStateMachine
+const { mockPrisma } = vi.hoisted(() => {
+  const mockPrisma = {
+    post: {
+      findUnique: vi.fn(),
+      update: vi.fn(),
+      findFirst: vi.fn(), // For idempotency check in CreatePostUseCase
+    },
+    postStateTransition: {
+      create: vi.fn(),
+    },
+    $transaction: vi.fn(async (callback) => {
+      const tx = {
+        post: {
+          update: vi.fn().mockResolvedValue({}),
+        },
+        postStateTransition: {
+          create: vi.fn().mockResolvedValue({}),
+        },
+      };
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Test mock callback has complex types
+      return await callback(tx);
+    }),
+  };
+  return { mockPrisma };
+});
+
+vi.mock("~/lib/prisma.server", () => ({
+  prisma: mockPrisma,
+}));
+
 import {
   TEST_USER_ID,
   createActionFormData,
@@ -41,6 +72,20 @@ describe("Bulk Posts Action Handler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue(TEST_USER_ID);
+    // Setup default Prisma mocks for PostStateMachine
+    (mockPrisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: "test-post-id",
+      userId: TEST_USER_ID,
+      currentState: "DRAFT",
+    });
+    // Mock findFirst for idempotency check in CreatePostUseCase
+    (mockPrisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
+      null
+    );
+    (mockPrisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue({});
+    (
+      mockPrisma.postStateTransition.create as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({});
   });
 
   describe("Upload Images Preview Action", () => {
@@ -175,8 +220,8 @@ describe("Bulk Posts Action Handler", () => {
       const { createPostWithOutbox } =
         await import("~/models/post.commands.server");
       (createPostWithOutbox as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce({ post: mockPosts[0], needsScheduling: true })
-        .mockResolvedValueOnce({ post: mockPosts[1], needsScheduling: true });
+        .mockResolvedValueOnce(mockPosts[0])
+        .mockResolvedValueOnce(mockPosts[1]);
 
       const formData = new FormData();
       formData.append("_action", "sign_and_schedule");
@@ -251,10 +296,9 @@ describe("Bulk Posts Action Handler", () => {
       );
       const { createPostWithOutbox } =
         await import("~/models/post.commands.server");
-      (createPostWithOutbox as ReturnType<typeof vi.fn>).mockResolvedValue({
-        post: createMockPost({ id: "new-post-1" }),
-        needsScheduling: false,
-      });
+      (createPostWithOutbox as ReturnType<typeof vi.fn>).mockResolvedValue(
+        createMockPost({ id: "new-post-1" })
+      );
       (getPostsByIds as ReturnType<typeof vi.fn>).mockResolvedValue([
         createMockPost({ id: originalPostId, isRecyclable: true }),
       ]);
@@ -380,10 +424,14 @@ describe("Bulk Posts Action Handler", () => {
       const { createPostWithOutbox: createPostWithOutbox2 } =
         await import("~/models/post.commands.server");
       expect(createPostWithOutbox2).toHaveBeenCalledTimes(2);
+      // Verify it was called with draft parameters (isScheduled: false, isPosted: false)
+      // Note: draft field is not passed to createPostWithOutbox, it's inferred from isScheduled/isPosted
       expect(createPostWithOutbox2).toHaveBeenCalledWith(
         expect.objectContaining({
-          draft: true,
           isScheduled: false,
+          isPosted: false,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
+          fileUrl: expect.any(Array),
         }),
         undefined, // scheduledForUnix
         expect.any(String) // correlationId

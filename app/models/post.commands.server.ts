@@ -396,9 +396,7 @@ export async function updatePost({
 
   // Only include defined fields
   if (data.scheduledFor !== undefined) {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Need to check for null to clear the field
-    updateData.scheduledFor =
-      data.scheduledFor === null ? null : data.scheduledFor.toString();
+    updateData.scheduledFor = data.scheduledFor.toString();
     // Also update scheduledAtUtc for dual-write
     const scheduledAtUtc = convertScheduledForToDateTime(data.scheduledFor);
     updateData.scheduledAtUtc = scheduledAtUtc ?? null;
@@ -423,37 +421,34 @@ export async function updatePost({
   if (data.isScheduled !== undefined) updateData.isScheduled = data.isScheduled;
   if (data.isRecyclable !== undefined)
     updateData.isRecyclable = data.isRecyclable;
-  // templateId is not in CreatePostData, handle separately if needed
-  if ("templateId" in data && data.templateId !== undefined) {
-    if (data.templateId === null) {
-      updateData.template = { disconnect: true };
-    } else {
-      updateData.template = { connect: { id: String(data.templateId) } };
-    }
-  }
-  if (data.hashTagPresetId !== undefined) {
-    if (data.hashTagPresetId === null) {
-      updateData.hashTagPreset = { disconnect: true };
-    } else {
-      updateData.hashTagPreset = { connect: { id: data.hashTagPresetId } };
-    }
-  }
-
-  // Handle queueTypeId connection/disconnection
-  if (data.queueTypeId !== undefined) {
-    if (data.queueTypeId) {
-      updateData.queueType = {
-        connect: {
-          id: data.queueTypeId,
-        },
-      };
-    } else {
-      // Disconnect from queue type if null
-      updateData.queueType = {
+  // Helper function to handle relation connect/disconnect
+  const handleRelation = (
+    value: string | null | undefined,
+    connectKey: keyof Prisma.PostUpdateInput,
+    disconnectKey: keyof Prisma.PostUpdateInput
+  ): void => {
+    if (value === undefined) return;
+    if (value === null) {
+      (updateData[disconnectKey] as { disconnect: boolean }) = {
         disconnect: true,
       };
+    } else {
+      (updateData[connectKey] as { connect: { id: string } }) = {
+        connect: { id: value },
+      };
     }
+  };
+
+  // templateId is not in CreatePostData, handle separately if needed
+  if ("templateId" in data && data.templateId !== undefined) {
+    handleRelation(
+      data.templateId ? String(data.templateId) : null,
+      "template",
+      "template"
+    );
   }
+  handleRelation(data.hashTagPresetId, "hashTagPreset", "hashTagPreset");
+  handleRelation(data.queueTypeId ?? undefined, "queueType", "queueType");
 
   const post = await prisma.post.update({
     where: {
