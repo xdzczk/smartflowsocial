@@ -39,14 +39,35 @@ for (const cssFile of cssFiles) {
     "bg-amber": content.includes(".bg-amber"),
   };
 
-  const allPassed = Object.values(checks).every((v) => v);
+  // Also check file size - a proper Tailwind CSS file should be at least 50KB
+  // 16KB is way too small and indicates utility classes weren't generated
+  const minSize = 50 * 1024; // 50KB
+  const sizeCheck = stats.size >= minSize;
+
+  const allPassed = Object.values(checks).every((v) => v) && sizeCheck;
 
   console.log(`CSS file: ${cssFile}`);
-  console.log(`  Size: ${stats.size} bytes`);
+  console.log(
+    `  Size: ${stats.size} bytes (${(stats.size / 1024).toFixed(1)} KB)`
+  );
+  console.log(
+    `  Minimum size check: ${sizeCheck ? "✅ PASS" : "❌ FAIL"} (need at least ${minSize} bytes)`
+  );
   console.log(`  Utility classes check:`, checks);
   console.log(`  Status: ${allPassed ? "✅ PASS" : "❌ FAIL"}`);
 
-  if (!allPassed) {
+  if (!sizeCheck) {
+    hasErrors = true;
+    console.error(`  ERROR: CSS file is too small (${stats.size} bytes)!`);
+    console.error(
+      `  Expected at least ${minSize} bytes for a complete Tailwind CSS file.`
+    );
+    console.error(
+      `  This indicates utility classes were not generated during build.`
+    );
+  }
+
+  if (!allPassed && sizeCheck) {
     hasErrors = true;
     console.error(`  ERROR: CSS file missing required utility classes!`);
     console.error(
