@@ -196,11 +196,10 @@ async function tryConnectToCache(
       }
     };
 
-    ws.onerror = (ev: Event) => {
-      const error =
-        ev instanceof ErrorEvent && ev.error instanceof Error
-          ? ev.error
-          : new Error("WebSocket error");
+    ws.onerror = (ev: Error | Event) => {
+      // In Node.js with 'ws' library, error handler receives Error directly
+      // In browser, it would be ErrorEvent, but we're in Node.js
+      const error = ev instanceof Error ? ev : new Error("WebSocket error");
       console.error(`[WS] WebSocket error on ${endpoint}:`, error);
       ws.close();
       if (!resolved) {
