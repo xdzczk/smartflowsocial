@@ -473,11 +473,13 @@ async function run() {
       let size = 0;
       let sampleContent = "";
       let hasUtilityClasses = false;
+      let fileContentLength = 0;
       if (exists && cssPath) {
         try {
           const stats = fs.statSync(cssPath);
           size = stats.size;
           const content = fs.readFileSync(cssPath, "utf8");
+          fileContentLength = content.length;
           sampleContent = content.substring(0, 500);
           hasUtilityClasses =
             content.includes(".container") ||
@@ -485,23 +487,31 @@ async function run() {
             content.includes(".text-4xl") ||
             content.includes(".grid-cols");
           const cspHeader = res.getHeader("Content-Security-Policy");
+          // Log BEFORE the static middleware serves the file
           fetch(
             "http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a",
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                location: "server.ts:415",
-                message: "CSS file requested",
+                location: "server.ts:476",
+                message: "CSS file found - BEFORE serving",
                 data: {
                   path: req.path,
                   url: req.url,
+                  originalUrl: req.originalUrl,
                   fullPath: cssPath,
                   exists,
-                  size,
+                  fileSize: size,
+                  contentLength: fileContentLength,
                   hasUtilityClasses,
                   firstChars: sampleContent.substring(0, 100),
+                  lastChars: content.substring(
+                    Math.max(0, content.length - 100)
+                  ),
                   cspHeader: String(cspHeader),
+                  buildPath,
+                  cwd: process.cwd(),
                 },
                 timestamp: Date.now(),
                 sessionId: "debug-session",
@@ -510,6 +520,39 @@ async function run() {
               }),
             }
           ).catch(() => {});
+
+          // Also intercept the response to log what's actually sent
+          const originalSend = res.send;
+          res.send = function (body: unknown) {
+            const bodySize =
+              typeof body === "string"
+                ? body.length
+                : (body as Buffer)?.length || 0;
+            fetch(
+              "http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a",
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  location: "server.ts:510",
+                  message: "CSS file response sent",
+                  data: {
+                    path: req.path,
+                    url: req.url,
+                    fileSize: size,
+                    responseBodySize: bodySize,
+                    sizeMatch: size === bodySize,
+                    statusCode: res.statusCode,
+                  },
+                  timestamp: Date.now(),
+                  sessionId: "debug-session",
+                  runId: "run1",
+                  hypothesisId: "A",
+                }),
+              }
+            ).catch(() => {});
+            return originalSend.call(this, body);
+          };
         } catch (err) {
           fetch(
             "http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a",
@@ -517,7 +560,7 @@ async function run() {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                location: "server.ts:415",
+                location: "server.ts:476",
                 message: "CSS file read error",
                 data: { path: req.path, url: req.url, error: String(err) },
                 timestamp: Date.now(),
@@ -535,13 +578,15 @@ async function run() {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              location: "server.ts:415",
+              location: "server.ts:476",
               message: "CSS file not found",
               data: {
                 path: req.path,
                 url: req.url,
                 originalUrl: req.originalUrl,
                 triedPaths: possiblePaths,
+                buildPath,
+                cwd: process.cwd(),
               },
               timestamp: Date.now(),
               sessionId: "debug-session",
@@ -561,6 +606,35 @@ async function run() {
     express.static(buildPath, {
       immutable: true,
       maxAge: "1y",
+      setHeaders: (res, filePath) => {
+        // Add cache-busting and ensure no stale cache for CSS files
+        if (filePath.endsWith(".css")) {
+          res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+          res.setHeader("X-Content-Type-Options", "nosniff");
+          // Log what file is being served
+          const stats = fs.statSync(filePath);
+          fetch(
+            "http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                location: "server.ts:600",
+                message: "Static middleware serving CSS",
+                data: {
+                  filePath,
+                  size: stats.size,
+                  cwd: process.cwd(),
+                },
+                timestamp: Date.now(),
+                sessionId: "debug-session",
+                runId: "run1",
+                hypothesisId: "A",
+              }),
+            }
+          ).catch(() => {});
+        }
+      },
     })
   );
 
