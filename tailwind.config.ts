@@ -8,6 +8,10 @@ export default {
     "./tests/**/*.{ts,tsx}",
     "./server.ts",
     "./worker.ts",
+    // Explicitly include all route files to ensure they're scanned
+    "./app/routes/**/*.{ts,tsx}",
+    "./app/components/**/*.{ts,tsx}",
+    "./app/features/**/*.{ts,tsx}",
   ],
   // Safelist for dynamic classes (critical for dynamic color generation)
   safelist: [
