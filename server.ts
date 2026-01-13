@@ -399,9 +399,124 @@ async function run() {
   });
 
   // Remix fingerprints its assets so we can cache forever.
+  const buildPath = path.resolve("public/build");
+  // #region agent log
+  const buildPathExists = fs.existsSync(buildPath);
+  const buildPathStats = buildPathExists ? fs.statSync(buildPath) : null;
+  const cssFiles = buildPathExists
+    ? fs
+        .readdirSync(buildPath, { recursive: true })
+        .filter((f): f is string => typeof f === "string" && f.endsWith(".css"))
+    : [];
+  fetch("http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      location: "server.ts:402",
+      message: "Static build path resolved",
+      data: {
+        buildPath,
+        exists: buildPathExists,
+        isDirectory: buildPathStats?.isDirectory(),
+        cssFiles,
+        cwd: process.cwd(),
+      },
+      timestamp: Date.now(),
+      sessionId: "debug-session",
+      runId: "run1",
+      hypothesisId: "B",
+    }),
+  }).catch(() => {});
+  // #endregion
+
+  // #region agent log
+  app.use("/build", (req, res, next) => {
+    if (req.path.endsWith(".css")) {
+      const cssPath = path.join(buildPath, req.path);
+      const exists = fs.existsSync(cssPath);
+      let size = 0;
+      let sampleContent = "";
+      let hasUtilityClasses = false;
+      if (exists) {
+        try {
+          const stats = fs.statSync(cssPath);
+          size = stats.size;
+          const content = fs.readFileSync(cssPath, "utf8");
+          sampleContent = content.substring(0, 500);
+          hasUtilityClasses =
+            content.includes(".container") ||
+            content.includes(".grid") ||
+            content.includes(".text-4xl") ||
+            content.includes(".grid-cols");
+          const cspHeader = res.getHeader("Content-Security-Policy");
+          fetch(
+            "http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                location: "server.ts:415",
+                message: "CSS file requested",
+                data: {
+                  path: req.path,
+                  fullPath: cssPath,
+                  exists,
+                  size,
+                  hasUtilityClasses,
+                  firstChars: sampleContent.substring(0, 100),
+                  cspHeader: String(cspHeader),
+                },
+                timestamp: Date.now(),
+                sessionId: "debug-session",
+                runId: "run1",
+                hypothesisId: "A",
+              }),
+            }
+          ).catch(() => {});
+        } catch (err) {
+          fetch(
+            "http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                location: "server.ts:415",
+                message: "CSS file read error",
+                data: { path: req.path, error: String(err) },
+                timestamp: Date.now(),
+                sessionId: "debug-session",
+                runId: "run1",
+                hypothesisId: "A",
+              }),
+            }
+          ).catch(() => {});
+        }
+      } else {
+        fetch(
+          "http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              location: "server.ts:415",
+              message: "CSS file not found",
+              data: { path: req.path, fullPath: cssPath },
+              timestamp: Date.now(),
+              sessionId: "debug-session",
+              runId: "run1",
+              hypothesisId: "B",
+            }),
+          }
+        ).catch(() => {});
+      }
+    }
+    next();
+  });
+  // #endregion
+
   app.use(
     "/build",
-    express.static(path.resolve("public/build"), {
+    express.static(buildPath, {
       immutable: true,
       maxAge: "1y",
     })
