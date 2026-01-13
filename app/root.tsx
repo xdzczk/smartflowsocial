@@ -30,7 +30,7 @@ const APP_TITLE = `${APP_NAME} - Nostr Post Scheduler`;
 const APP_DESCRIPTION =
   "Schedule and automate your Nostr posts with SmartFlow Social. The easiest way to plan and manage your Nostr content calendar.";
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
+export const loader = async ({ request, context }: LoaderFunctionArgs) => {
   try {
     return json({
       user: await getUser(request),
@@ -40,6 +40,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: process.env.NODE_ENV may be undefined in some environments
         NODE_ENV: process.env["NODE_ENV"] ?? "development",
       },
+      // Pass CSP nonce to client for inline scripts
+      nonce:
+        typeof context === "object" && "nonce" in context
+          ? (context["nonce"] as string)
+          : undefined,
     });
   } catch (error) {
     // Handle root loader errors gracefully
@@ -49,6 +54,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         SENTRY_DSN: null,
         NODE_ENV: "development",
       },
+      nonce: undefined,
     });
   }
 };
@@ -84,6 +90,13 @@ export default function App() {
       ? (loaderData.ENV as { SENTRY_DSN: string | null; NODE_ENV: string })
       : { SENTRY_DSN: null, NODE_ENV: "development" };
 
+  const nonce =
+    typeof loaderData === "object" &&
+    "nonce" in loaderData &&
+    typeof loaderData.nonce === "string"
+      ? loaderData.nonce
+      : undefined;
+
   return (
     <html lang="en" className="h-full">
       <head>
@@ -98,11 +111,14 @@ export default function App() {
           <Outlet />
           <ScrollRestoration />
           <Scripts />
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `window.ENV = ${JSON.stringify(ENV)}`,
-            }}
-          />
+          {nonce ? (
+            <script
+              nonce={nonce}
+              dangerouslySetInnerHTML={{
+                __html: `window.ENV = ${JSON.stringify(ENV)}`,
+              }}
+            />
+          ) : null}
           <LiveReload />
         </QueryProvider>
       </body>

@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { webcrypto as nodeWebcrypto } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -94,6 +95,14 @@ async function run() {
       : createRequestHandler({
           build: initialBuild,
           mode: initialBuild.mode,
+          getLoadContext: (req, res) => {
+            // Pass nonce to Remix loaders via context
+            return {
+              nonce: (res.locals as Record<string, unknown>)["nonce"] as
+                | string
+                | undefined,
+            };
+          },
         });
 
   const app = express();
@@ -294,25 +303,33 @@ async function run() {
   // http://expressjs.com/en/advanced/best-practice-security.html#at-a-minimum-disable-x-powered-by-header
   app.disable("x-powered-by");
 
+  // Generate CSP nonce for each request (better security than unsafe-eval)
+  app.use((req, res, next) => {
+    const nonce = randomBytes(16).toString("base64");
+    (res.locals as Record<string, unknown>)["nonce"] = nonce;
+    next();
+  });
+
   // Security headers with Helmet
   // Configure CSP to work with Remix (which uses inline scripts/styles)
-  // In production, we remove 'unsafe-eval' for better security
+  // Use nonces instead of unsafe-eval for better security
   const isDevelopment = env.NODE_ENV === "development";
-  const scriptSrc = [
-    "'self'",
-    "'unsafe-inline'", // Required for Remix
-    ...(isDevelopment ? ["'unsafe-eval'"] : []), // Only in development
-  ];
 
   app.use(
     helmet({
       contentSecurityPolicy: {
+        useDefaults: false,
         directives: {
           defaultSrc: ["'self'"],
-          scriptSrc,
+          scriptSrc: [
+            "'self'",
+            "'unsafe-inline'", // Required for Remix inline styles
+            // Nonce will be added via middleware after helmet
+          ],
           styleSrc: [
             "'self'",
             "'unsafe-inline'", // Required for Remix
+            // Nonce will be added via middleware after helmet
           ],
           imgSrc: ["'self'", "data:", "https:", "blob:"],
           connectSrc: [
@@ -357,6 +374,26 @@ async function run() {
       },
     })
   );
+
+  // Add nonce to CSP header after helmet sets it
+  app.use((req, res, next) => {
+    const nonce = (res.locals as Record<string, unknown>)["nonce"] as
+      | string
+      | undefined;
+    if (nonce) {
+      // Get existing CSP header
+      const existingCSP = res.getHeader("Content-Security-Policy");
+      if (typeof existingCSP === "string") {
+        // Add nonce to script-src and style-src directives
+        // Match script-src and style-src, and append nonce before the semicolon
+        const updatedCSP = existingCSP
+          .replace(/(script-src[^;]+)(;)/, `$1 'nonce-${nonce}'$2`)
+          .replace(/(style-src[^;]+)(;)/, `$1 'nonce-${nonce}'$2`);
+        res.setHeader("Content-Security-Policy", updatedCSP);
+      }
+    }
+    next();
+  });
 
   // Additional custom security headers
   app.use((req, res, next) => {
@@ -507,6 +544,14 @@ async function run() {
         const handler = createRequestHandler({
           build,
           mode: "development",
+          getLoadContext: () => {
+            // Pass nonce to Remix loaders via context
+            return {
+              nonce: (res.locals as Record<string, unknown>)["nonce"] as
+                | string
+                | undefined,
+            };
+          },
         });
         void handler(req, res, next);
       } catch (error) {
