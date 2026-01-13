@@ -68,10 +68,15 @@ function validateRequiredVariable(
       reason: "must be at least 32 characters long",
     };
   }
-  if (key === "DATABASE_URL" && !value.startsWith("postgresql://")) {
+  if (
+    key === "DATABASE_URL" &&
+    !value.startsWith("postgresql://") &&
+    !value.startsWith("postgres://")
+  ) {
     return {
       key,
-      reason: "must be a valid PostgreSQL connection string (postgresql://...)",
+      reason:
+        "must be a valid PostgreSQL connection string (postgresql://... or postgres://...)",
     };
   }
   if (key === "REDIS_URL" && !value.startsWith("redis://")) {
