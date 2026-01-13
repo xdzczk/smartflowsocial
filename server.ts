@@ -431,13 +431,49 @@ async function run() {
 
   // #region agent log
   app.use("/build", (req, res, next) => {
-    if (req.path.endsWith(".css")) {
-      const cssPath = path.join(buildPath, req.path);
-      const exists = fs.existsSync(cssPath);
+    // Log all /build requests to see what's being requested
+    const isCss = req.path.endsWith(".css") || req.url.endsWith(".css");
+    fetch("http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        location: "server.ts:415",
+        message: "Build path request",
+        data: {
+          path: req.path,
+          url: req.url,
+          originalUrl: req.originalUrl,
+          isCss,
+        },
+        timestamp: Date.now(),
+        sessionId: "debug-session",
+        runId: "run1",
+        hypothesisId: "B",
+      }),
+    }).catch(() => {});
+
+    if (isCss) {
+      // Try multiple path resolutions since Express strips mount point
+      const possiblePaths = [
+        path.join(buildPath, req.path),
+        path.join(buildPath, req.url.replace("/build", "")),
+        path.join(buildPath, req.originalUrl.replace("/build", "")),
+      ];
+
+      let cssPath = possiblePaths[0];
+      let exists = false;
+      for (const p of possiblePaths) {
+        if (fs.existsSync(p)) {
+          cssPath = p;
+          exists = true;
+          break;
+        }
+      }
+
       let size = 0;
       let sampleContent = "";
       let hasUtilityClasses = false;
-      if (exists) {
+      if (exists && cssPath) {
         try {
           const stats = fs.statSync(cssPath);
           size = stats.size;
@@ -459,6 +495,7 @@ async function run() {
                 message: "CSS file requested",
                 data: {
                   path: req.path,
+                  url: req.url,
                   fullPath: cssPath,
                   exists,
                   size,
@@ -482,7 +519,7 @@ async function run() {
               body: JSON.stringify({
                 location: "server.ts:415",
                 message: "CSS file read error",
-                data: { path: req.path, error: String(err) },
+                data: { path: req.path, url: req.url, error: String(err) },
                 timestamp: Date.now(),
                 sessionId: "debug-session",
                 runId: "run1",
@@ -500,7 +537,12 @@ async function run() {
             body: JSON.stringify({
               location: "server.ts:415",
               message: "CSS file not found",
-              data: { path: req.path, fullPath: cssPath },
+              data: {
+                path: req.path,
+                url: req.url,
+                originalUrl: req.originalUrl,
+                triedPaths: possiblePaths,
+              },
               timestamp: Date.now(),
               sessionId: "debug-session",
               runId: "run1",

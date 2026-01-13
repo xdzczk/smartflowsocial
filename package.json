@@ -35,7 +35,7 @@
   "scripts": {
     "postinstall": "prisma generate",
     "prepare": "husky",
-    "build": "remix build && esbuild --platform=node --format=cjs ./server.ts --outdir=build --bundle --external:fsevents --external:file-type --external:@prisma/client --external:@prisma/engines && esbuild --platform=node --format=cjs ./worker.ts --outdir=build --bundle --external:fsevents --external:file-type --external:@prisma/client --external:@prisma/engines",
+    "build": "remix build && esbuild --platform=node --format=cjs ./server.ts --outdir=build --bundle --external:fsevents --external:file-type --external:@prisma/client --external:@prisma/engines && esbuild --platform=node --format=cjs ./worker.ts --outdir=build --bundle --external:fsevents --external:file-type --external:@prisma/client --external:@prisma/engines && tsx scripts/verify-css-build.ts",
     "dev": "npm-run-all2 --parallel dev:*",
     "dev:remix": "remix dev --manual -c \"node --watch-path ./build/server.js --watch ./build/server.js\"",
     "dev:server": "cross-env NODE_ENV=development E2E_TEST=${E2E_TEST:-} esbuild --platform=node --format=cjs ./server.ts --outdir=build --bundle --external:fsevents --external:file-type --external:@prisma/client --external:@prisma/engines --watch",

@@ -31,15 +31,25 @@ export const links: LinksFunction = () => {
       runId: "run1",
       hypothesisId: "B",
     };
-    fetch("http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        location: "app/root.tsx:23",
-        message: "Stylesheet href generated",
-        data: logData,
-      }),
-    }).catch(() => {});
+    // Fire-and-forget logging - intentionally not awaited
+    void (async () => {
+      try {
+        await fetch(
+          "http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              location: "app/root.tsx:23",
+              message: "Stylesheet href generated",
+              data: logData,
+            }),
+          }
+        );
+      } catch {
+        // Ignore logging errors
+      }
+    })();
   }
   // #endregion
   return [
