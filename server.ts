@@ -312,7 +312,8 @@ async function run() {
 
   // Security headers with Helmet
   // Configure CSP to work with Remix (which uses inline scripts/styles)
-  // Use nonces instead of unsafe-eval for better security
+  // Remix doesn't support nonces natively, so we use 'unsafe-inline' for Remix's generated content
+  // Nonces are still generated and used for our custom inline scripts (e.g., window.ENV)
   const isDevelopment = env.NODE_ENV === "development";
 
   app.use(
@@ -323,13 +324,11 @@ async function run() {
           defaultSrc: ["'self'"],
           scriptSrc: [
             "'self'",
-            "'unsafe-inline'", // Required for Remix inline styles
-            // Nonce will be added via middleware after helmet
+            "'unsafe-inline'", // Required for Remix's generated scripts
           ],
           styleSrc: [
             "'self'",
-            "'unsafe-inline'", // Required for Remix
-            // Nonce will be added via middleware after helmet
+            "'unsafe-inline'", // Required for Remix's generated styles
           ],
           imgSrc: ["'self'", "data:", "https:", "blob:"],
           connectSrc: [
@@ -374,26 +373,6 @@ async function run() {
       },
     })
   );
-
-  // Add nonce to CSP header after helmet sets it
-  app.use((req, res, next) => {
-    const nonce = (res.locals as Record<string, unknown>)["nonce"] as
-      | string
-      | undefined;
-    if (nonce) {
-      // Get existing CSP header
-      const existingCSP = res.getHeader("Content-Security-Policy");
-      if (typeof existingCSP === "string") {
-        // Add nonce to script-src and style-src directives
-        // Match script-src and style-src, and append nonce before the semicolon
-        const updatedCSP = existingCSP
-          .replace(/(script-src[^;]+)(;)/, `$1 'nonce-${nonce}'$2`)
-          .replace(/(style-src[^;]+)(;)/, `$1 'nonce-${nonce}'$2`);
-        res.setHeader("Content-Security-Policy", updatedCSP);
-      }
-    }
-    next();
-  });
 
   // Additional custom security headers
   app.use((req, res, next) => {
