@@ -100,8 +100,9 @@ async function run() {
   const metricsApp = express();
 
   // Trust proxy for accurate IP extraction (needed for Fly.io and other proxies)
-  app.set("trust proxy", true);
-  metricsApp.set("trust proxy", true);
+  // Trust 1 proxy (Coolify's reverse proxy) to prevent IP spoofing
+  app.set("trust proxy", 1);
+  metricsApp.set("trust proxy", 1);
 
   // Import query metrics to register them
   await import("./app/lib/query-metrics.server");
