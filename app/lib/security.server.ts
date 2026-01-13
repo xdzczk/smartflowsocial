@@ -28,14 +28,26 @@ export class CSRFValidationError extends Error {
 // ============================================================================
 
 function addAppUrlToAllowedOrigins(allowedOrigins: string[]): void {
-  if (!env.APP_URL) {
-    return;
+  // Try APP_URL first
+  if (env.APP_URL) {
+    try {
+      const appUrl = new URL(env.APP_URL);
+      allowedOrigins.push(appUrl.origin);
+      return;
+    } catch {
+      console.warn("Invalid APP_URL in environment:", env.APP_URL);
+    }
   }
-  try {
-    const appUrl = new URL(env.APP_URL);
-    allowedOrigins.push(appUrl.origin);
-  } catch {
-    console.warn("Invalid APP_URL in environment:", env.APP_URL);
+
+  // Fallback to COOLIFY_URL if APP_URL is not set
+  const coolifyUrl = process.env["COOLIFY_URL"];
+  if (coolifyUrl) {
+    try {
+      const url = new URL(coolifyUrl);
+      allowedOrigins.push(url.origin);
+    } catch {
+      console.warn("Invalid COOLIFY_URL in environment:", coolifyUrl);
+    }
   }
 }
 
