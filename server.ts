@@ -488,36 +488,38 @@ async function run() {
             content.includes(".grid-cols");
           const cspHeader = res.getHeader("Content-Security-Policy");
           // Log BEFORE the static middleware serves the file
+          const logData = {
+            location: "server.ts:476",
+            message: "CSS file found - BEFORE serving",
+            data: {
+              path: req.path,
+              url: req.url,
+              originalUrl: req.originalUrl,
+              fullPath: cssPath,
+              exists,
+              fileSize: size,
+              contentLength: fileContentLength,
+              hasUtilityClasses,
+              firstChars: sampleContent.substring(0, 100),
+              lastChars: content.substring(Math.max(0, content.length - 100)),
+              cspHeader: String(cspHeader),
+              buildPath,
+              cwd: process.cwd(),
+            },
+            timestamp: Date.now(),
+            sessionId: "debug-session",
+            runId: "run1",
+            hypothesisId: "A",
+          };
+          // Log to console for Coolify logs
+          console.log("[CSS DEBUG]", JSON.stringify(logData));
+          // Also try to send to debug endpoint (may fail in Docker)
           fetch(
             "http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a",
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                location: "server.ts:476",
-                message: "CSS file found - BEFORE serving",
-                data: {
-                  path: req.path,
-                  url: req.url,
-                  originalUrl: req.originalUrl,
-                  fullPath: cssPath,
-                  exists,
-                  fileSize: size,
-                  contentLength: fileContentLength,
-                  hasUtilityClasses,
-                  firstChars: sampleContent.substring(0, 100),
-                  lastChars: content.substring(
-                    Math.max(0, content.length - 100)
-                  ),
-                  cspHeader: String(cspHeader),
-                  buildPath,
-                  cwd: process.cwd(),
-                },
-                timestamp: Date.now(),
-                sessionId: "debug-session",
-                runId: "run1",
-                hypothesisId: "A",
-              }),
+              body: JSON.stringify(logData),
             }
           ).catch(() => {});
 
@@ -528,27 +530,31 @@ async function run() {
               typeof body === "string"
                 ? body.length
                 : (body as Buffer)?.length || 0;
+            const responseLogData = {
+              location: "server.ts:510",
+              message: "CSS file response sent",
+              data: {
+                path: req.path,
+                url: req.url,
+                fileSize: size,
+                responseBodySize: bodySize,
+                sizeMatch: size === bodySize,
+                statusCode: res.statusCode,
+              },
+              timestamp: Date.now(),
+              sessionId: "debug-session",
+              runId: "run1",
+              hypothesisId: "A",
+            };
+            // Log to console for Coolify logs
+            console.log("[CSS DEBUG]", JSON.stringify(responseLogData));
+            // Also try to send to debug endpoint (may fail in Docker)
             fetch(
               "http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a",
               {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  location: "server.ts:510",
-                  message: "CSS file response sent",
-                  data: {
-                    path: req.path,
-                    url: req.url,
-                    fileSize: size,
-                    responseBodySize: bodySize,
-                    sizeMatch: size === bodySize,
-                    statusCode: res.statusCode,
-                  },
-                  timestamp: Date.now(),
-                  sessionId: "debug-session",
-                  runId: "run1",
-                  hypothesisId: "A",
-                }),
+                body: JSON.stringify(responseLogData),
               }
             ).catch(() => {});
             return originalSend.call(this, body);
@@ -613,24 +619,28 @@ async function run() {
           res.setHeader("X-Content-Type-Options", "nosniff");
           // Log what file is being served
           const stats = fs.statSync(filePath);
+          const staticLogData = {
+            location: "server.ts:600",
+            message: "Static middleware serving CSS",
+            data: {
+              filePath,
+              size: stats.size,
+              cwd: process.cwd(),
+            },
+            timestamp: Date.now(),
+            sessionId: "debug-session",
+            runId: "run1",
+            hypothesisId: "A",
+          };
+          // Log to console for Coolify logs
+          console.log("[CSS DEBUG]", JSON.stringify(staticLogData));
+          // Also try to send to debug endpoint (may fail in Docker)
           fetch(
             "http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a",
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                location: "server.ts:600",
-                message: "Static middleware serving CSS",
-                data: {
-                  filePath,
-                  size: stats.size,
-                  cwd: process.cwd(),
-                },
-                timestamp: Date.now(),
-                sessionId: "debug-session",
-                runId: "run1",
-                hypothesisId: "A",
-              }),
+              body: JSON.stringify(staticLogData),
             }
           ).catch(() => {});
         }
