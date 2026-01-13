@@ -451,23 +451,33 @@ async function run() {
   app.use("/build", (req, res, next) => {
     // Log all /build requests to see what's being requested
     const isCss = req.path.endsWith(".css") || req.url.endsWith(".css");
+    const requestLogData = {
+      location: "server.ts:433",
+      message: "Build path request",
+      data: {
+        path: req.path,
+        url: req.url,
+        originalUrl: req.originalUrl,
+        isCss,
+        method: req.method,
+        headers: {
+          "accept-encoding": req.headers["accept-encoding"],
+          "if-none-match": req.headers["if-none-match"],
+          "if-modified-since": req.headers["if-modified-since"],
+        },
+      },
+      timestamp: Date.now(),
+      sessionId: "debug-session",
+      runId: "run1",
+      hypothesisId: "B",
+    };
+    // Log to console for Coolify logs
+    console.log("[CSS DEBUG]", JSON.stringify(requestLogData));
+    // Also try to send to debug endpoint (may fail in Docker)
     fetch("http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        location: "server.ts:415",
-        message: "Build path request",
-        data: {
-          path: req.path,
-          url: req.url,
-          originalUrl: req.originalUrl,
-          isCss,
-        },
-        timestamp: Date.now(),
-        sessionId: "debug-session",
-        runId: "run1",
-        hypothesisId: "B",
-      }),
+      body: JSON.stringify(requestLogData),
     }).catch(() => {});
 
     if (isCss) {
@@ -669,6 +679,34 @@ async function run() {
   // Everything else (like favicon.ico) is cached for an hour. You may want to be
   // more aggressive with this caching.
   app.use(express.static(path.resolve("public"), { maxAge: "1h" }));
+
+  // Log all requests to see if CSS requests are reaching the server
+  app.use((req, res, next) => {
+    if (req.url.includes(".css") || req.path.includes(".css")) {
+      const allRequestLog = {
+        location: "server.ts:655",
+        message: "CSS request detected",
+        data: {
+          method: req.method,
+          url: req.url,
+          path: req.path,
+          originalUrl: req.originalUrl,
+          headers: {
+            "accept-encoding": req.headers["accept-encoding"],
+            "if-none-match": req.headers["if-none-match"],
+            "if-modified-since": req.headers["if-modified-since"],
+            "cache-control": req.headers["cache-control"],
+          },
+        },
+        timestamp: Date.now(),
+        sessionId: "debug-session",
+        runId: "run1",
+        hypothesisId: "C",
+      };
+      console.log("[CSS DEBUG]", JSON.stringify(allRequestLog));
+    }
+    next();
+  });
 
   app.use(morgan("tiny"));
 
