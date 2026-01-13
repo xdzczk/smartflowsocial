@@ -447,8 +447,9 @@ async function run() {
   app.use(remixHandler);
 
   const port = parseInt(env.PORT ?? "3000", 10);
-  app.listen(port, () => {
-    console.log(`✅ app ready: http://localhost:${port}`);
+  const host = process.env["HOST"] ?? "0.0.0.0"; // Listen on all interfaces for Docker
+  app.listen(port, host, () => {
+    console.log(`✅ app ready: http://${host}:${port}`);
 
     if (env.NODE_ENV === "development") {
       void broadcastDevReady(initialBuild);
@@ -457,8 +458,8 @@ async function run() {
 
   const metricsPort = parseInt(env.METRICS_PORT ?? "3010", 10);
 
-  metricsApp.listen(metricsPort, () => {
-    console.log(`✅ metrics ready: http://localhost:${metricsPort}/metrics`);
+  metricsApp.listen(metricsPort, host, () => {
+    console.log(`✅ metrics ready: http://${host}:${metricsPort}/metrics`);
   });
 
   async function reimportServer(): Promise<ServerBuild> {
