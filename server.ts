@@ -408,24 +408,42 @@ async function run() {
         .readdirSync(buildPath, { recursive: true })
         .filter((f): f is string => typeof f === "string" && f.endsWith(".css"))
     : [];
+
+  // Get detailed info about CSS files including their sizes
+  const cssFileDetails = cssFiles.map((file) => {
+    const fullPath = path.join(buildPath, file);
+    const stats = fs.existsSync(fullPath) ? fs.statSync(fullPath) : null;
+    return {
+      file,
+      fullPath,
+      size: stats?.size ?? 0,
+      exists: stats !== null,
+    };
+  });
+
+  const logData = {
+    location: "server.ts:402",
+    message: "Static build path resolved",
+    data: {
+      buildPath,
+      exists: buildPathExists,
+      isDirectory: buildPathStats?.isDirectory(),
+      cssFiles,
+      cssFileDetails,
+      cwd: process.cwd(),
+    },
+    timestamp: Date.now(),
+    sessionId: "debug-session",
+    runId: "run1",
+    hypothesisId: "B",
+  };
+  // Log to console for Coolify logs
+  console.log("[CSS DEBUG]", JSON.stringify(logData));
+  // Also try to send to debug endpoint (may fail in Docker)
   fetch("http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      location: "server.ts:402",
-      message: "Static build path resolved",
-      data: {
-        buildPath,
-        exists: buildPathExists,
-        isDirectory: buildPathStats?.isDirectory(),
-        cssFiles,
-        cwd: process.cwd(),
-      },
-      timestamp: Date.now(),
-      sessionId: "debug-session",
-      runId: "run1",
-      hypothesisId: "B",
-    }),
+    body: JSON.stringify(logData),
   }).catch(() => {});
   // #endregion
 
