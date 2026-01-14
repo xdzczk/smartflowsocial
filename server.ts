@@ -551,16 +551,36 @@ async function run() {
             }
           ).catch(() => {});
 
-          // Also intercept the response to log what's actually sent
-          const originalSend = res.send;
-          res.send = function (body: unknown) {
+          // Intercept response to log what's actually sent
+          // Express static middleware uses res.sendFile() or streams, so we need to intercept multiple methods
+          // Using 'any' types for debugging instrumentation to avoid TypeScript overload complexity
+          const originalSend = res.send.bind(res);
+          const originalSendFile = res.sendFile.bind(res);
+          const originalEnd = res.end.bind(res);
+
+          // Track response size
+          let responseSize = 0;
+          const originalWrite = res.write.bind(res);
+
+          (res as any).write = function (chunk: unknown, ...args: any[]) {
+            if (chunk) {
+              responseSize +=
+                typeof chunk === "string"
+                  ? Buffer.byteLength(chunk, "utf8")
+                  : (chunk as Buffer)?.length || 0;
+            }
+            return originalWrite(chunk, ...args);
+          };
+
+          (res as any).send = function (body: unknown) {
             const bodySize =
               typeof body === "string"
-                ? body.length
+                ? Buffer.byteLength(body, "utf8")
                 : (body as Buffer)?.length || 0;
+            responseSize = bodySize;
             const responseLogData = {
-              location: "server.ts:510",
-              message: "CSS file response sent",
+              location: "server.ts:528",
+              message: "CSS file response sent (via res.send)",
               data: {
                 path: req.path,
                 url: req.url,
@@ -568,24 +588,67 @@ async function run() {
                 responseBodySize: bodySize,
                 sizeMatch: size === bodySize,
                 statusCode: res.statusCode,
+                contentEncoding: res.getHeader("content-encoding"),
+                contentLength: res.getHeader("content-length"),
               },
               timestamp: Date.now(),
               sessionId: "debug-session",
               runId: "run1",
               hypothesisId: "A",
             };
-            // Log to console for Coolify logs
             console.log("[CSS DEBUG]", JSON.stringify(responseLogData));
-            // Also try to send to debug endpoint (may fail in Docker)
-            fetch(
-              "http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a",
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(responseLogData),
-              }
-            ).catch(() => {});
-            return originalSend.call(this, body);
+            return originalSend(body);
+          };
+
+          (res as any).sendFile = function (filePath: string, ...args: any[]) {
+            const responseLogData = {
+              location: "server.ts:560",
+              message: "CSS file response sent (via res.sendFile)",
+              data: {
+                path: req.path,
+                url: req.url,
+                filePath,
+                fileSize: size,
+                statusCode: res.statusCode,
+                contentEncoding: res.getHeader("content-encoding"),
+                contentLength: res.getHeader("content-length"),
+              },
+              timestamp: Date.now(),
+              sessionId: "debug-session",
+              runId: "run1",
+              hypothesisId: "A",
+            };
+            console.log("[CSS DEBUG]", JSON.stringify(responseLogData));
+            return originalSendFile(filePath, ...args);
+          };
+
+          (res as any).end = function (chunk?: unknown, ...args: any[]) {
+            if (chunk) {
+              responseSize +=
+                typeof chunk === "string"
+                  ? Buffer.byteLength(chunk, "utf8")
+                  : (chunk as Buffer)?.length || 0;
+            }
+            const responseLogData = {
+              location: "server.ts:585",
+              message: "CSS file response ended",
+              data: {
+                path: req.path,
+                url: req.url,
+                fileSize: size,
+                responseSize,
+                sizeMatch: size === responseSize,
+                statusCode: res.statusCode,
+                contentEncoding: res.getHeader("content-encoding"),
+                contentLength: res.getHeader("content-length"),
+              },
+              timestamp: Date.now(),
+              sessionId: "debug-session",
+              runId: "run1",
+              hypothesisId: "A",
+            };
+            console.log("[CSS DEBUG]", JSON.stringify(responseLogData));
+            return originalEnd(chunk, ...args);
           };
         } catch (err) {
           fetch(
