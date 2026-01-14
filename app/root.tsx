@@ -52,9 +52,13 @@ export const links: LinksFunction = () => {
     })();
   }
   // #endregion
+  // Add cache-busting query parameter to force fresh fetch (temporary fix for Cloudflare cache issue)
+  const cacheBuster = `?v=${Date.now()}`;
   return [
-    { rel: "stylesheet", href: stylesheet },
-    ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] : []),
+    { rel: "stylesheet", href: `${stylesheet}${cacheBuster}` },
+    ...(cssBundleHref
+      ? [{ rel: "stylesheet", href: `${cssBundleHref}${cacheBuster}` }]
+      : []),
   ];
 };
 
