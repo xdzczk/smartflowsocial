@@ -706,16 +706,31 @@ async function run() {
       setHeaders: (res, filePath) => {
         // Add cache-busting and ensure no stale cache for CSS files
         if (filePath.endsWith(".css")) {
-          res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-          res.setHeader("X-Content-Type-Options", "nosniff");
-          // Log what file is being served
+          // Force Cloudflare to re-validate cache by adding ETag and Last-Modified
           const stats = fs.statSync(filePath);
+          const etag = `"${stats.size}-${stats.mtimeMs}"`;
+          res.setHeader("ETag", etag);
+          res.setHeader("Last-Modified", stats.mtime.toUTCString());
+          // Temporarily disable caching to force Cloudflare to fetch fresh file
+          // Once confirmed working, we can re-enable caching
+          res.setHeader(
+            "Cache-Control",
+            "no-cache, no-store, must-revalidate, max-age=0"
+          );
+          res.setHeader("Pragma", "no-cache");
+          res.setHeader("Expires", "0");
+          res.setHeader("X-Content-Type-Options", "nosniff");
+          // Add Cloudflare-specific headers to bypass cache
+          res.setHeader("CF-Cache-Status", "DYNAMIC");
+          // Log what file is being served
           const staticLogData = {
-            location: "server.ts:600",
+            location: "server.ts:643",
             message: "Static middleware serving CSS",
             data: {
               filePath,
               size: stats.size,
+              mtime: stats.mtime.toISOString(),
+              etag,
               cwd: process.cwd(),
             },
             timestamp: Date.now(),
