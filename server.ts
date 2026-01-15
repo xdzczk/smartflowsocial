@@ -434,10 +434,10 @@ async function run() {
     process.env["E2E_TEST"] === "true" ||
     process.env["DISABLE_RATE_LIMIT"] === "true";
 
-  // Upload endpoints need higher limits for bulk uploads (200 per 15 min)
+  // Upload endpoints need higher limits for bulk uploads (500 per 15 min)
   const uploadLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: isTestEnv ? 10000 : 200,
+    max: isTestEnv ? 10000 : 500,
     standardHeaders: true,
     legacyHeaders: false,
     message: "Too many upload requests, please try again later.",

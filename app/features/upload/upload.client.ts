@@ -244,10 +244,13 @@ export async function uploadMultipleFiles(
     data.provider === "BLOSSOM";
 
   if (isBlossom) {
-    // Blossom requires sequential uploads due to signer limitations
+    // Blossom requires sequential uploads with delay due to external rate limits
     const results: UploadResult[] = [];
-    for (const file of files) {
-      results.push(await uploadFile(file));
+    for (let i = 0; i < files.length; i++) {
+      if (i > 0) {
+        await new Promise((r) => setTimeout(r, 500)); // 500ms delay between uploads
+      }
+      results.push(await uploadFile(files[i]!));
     }
     return results;
   }
