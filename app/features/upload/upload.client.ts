@@ -230,13 +230,33 @@ async function uploadFileToBlossom(
 }
 
 /**
- * Upload multiple files
+ * Upload multiple files with concurrency control to avoid rate limiting
  */
 export async function uploadMultipleFiles(
-  files: File[]
+  files: File[],
+  concurrency = 3
 ): Promise<UploadResult[]> {
-  const uploadPromises = files.map((file) => uploadFile(file));
-  return Promise.all(uploadPromises);
+  const results: UploadResult[] = new Array<UploadResult>(files.length);
+  let index = 0;
+
+  async function worker(): Promise<void> {
+    while (index < files.length) {
+      const currentIndex = index++;
+      const file = files[currentIndex];
+      if (file) {
+        results[currentIndex] = await uploadFile(file);
+      }
+    }
+  }
+
+  // Create workers up to concurrency limit
+  const workers = Array.from(
+    { length: Math.min(concurrency, files.length) },
+    () => worker()
+  );
+  await Promise.all(workers);
+
+  return results;
 }
 
 /**
