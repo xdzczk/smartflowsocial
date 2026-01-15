@@ -486,11 +486,24 @@ export const postCheckerWorker = new Worker(
       ]);
       const now = Math.floor(Date.now() / 1000);
 
+      logInfo("Post checker running", {
+        postsFound: posts.length,
+        longformPostsFound: longformPosts.length,
+        currentTime: now,
+      });
+
       // Process regular posts
+      let processed = 0;
       for (const post of posts) {
         const postData = extractPostData(post);
         if (postData) {
-          await processPost(postData, now);
+          const success = await processPost(postData, now);
+          if (success) {
+            processed++;
+            logInfo("Enqueued due post for publishing", {
+              postId: postData.id,
+            });
+          }
         }
       }
 
@@ -498,11 +511,17 @@ export const postCheckerWorker = new Worker(
       for (const longformPost of longformPosts) {
         const postData = extractPostData(longformPost);
         if (postData) {
-          await processLongFormPost(postData, now);
+          const success = await processLongFormPost(postData, now);
+          if (success) {
+            processed++;
+            logInfo("Enqueued due longform post for publishing", {
+              postId: postData.id,
+            });
+          }
         }
       }
 
-      return { processed: posts.length + longformPosts.length };
+      return { processed };
     } catch (error) {
       logError(error instanceof Error ? error : new Error(String(error)), {
         message: "Error checking scheduled posts",
@@ -530,12 +549,14 @@ async function startPostChecker() {
       removeOnFail: 1,
     }
   );
+  logInfo("Post checker recurring job registered", { interval: 60000 });
 }
 
 // Initialize the post checker
 void (async () => {
   try {
     await startPostChecker();
+    logInfo("Post checker initialized successfully");
   } catch (error) {
     logError(error instanceof Error ? error : new Error(String(error)), {
       message: "Error starting post checker",
