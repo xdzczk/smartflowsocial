@@ -92,9 +92,13 @@ export async function handleSignAndSchedule(
     const result = validateFormDataOrRespond(formData, scheduleSchema);
     // #region agent log
     if (!result.success) {
-      console.info("[DEBUG] sign_and_schedule validation failed", {
-        errors: JSON.stringify(result.response),
-      });
+      const clonedResponse = result.response.clone();
+      clonedResponse
+        .json()
+        .then((body: unknown) => {
+          console.info("[DEBUG] sign_and_schedule validation failed", body);
+        })
+        .catch(() => {});
       return result.response;
     }
     // #endregion
