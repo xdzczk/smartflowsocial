@@ -419,9 +419,6 @@ async function run() {
 
   // Stricter limits for sensitive endpoints
   app.use("/api/publish", strictLimiter);
-  app.use("/api/upload", strictLimiter);
-  app.use("/api/upload-blossom", strictLimiter);
-  app.use("/api/upload-editorjs-image", strictLimiter);
 
   // Very strict limits for authentication endpoints
   app.use("/api/payment-status", strictLimiter);
@@ -436,6 +433,19 @@ async function run() {
     env.NODE_ENV === "test" ||
     process.env["E2E_TEST"] === "true" ||
     process.env["DISABLE_RATE_LIMIT"] === "true";
+
+  // Upload endpoints need higher limits for bulk uploads (200 per 15 min)
+  const uploadLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: isTestEnv ? 10000 : 200,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: "Too many upload requests, please try again later.",
+    skip: () => isTestEnv,
+  });
+  app.use("/api/upload", uploadLimiter);
+  app.use("/api/upload-blossom", uploadLimiter);
+  app.use("/api/upload-editorjs-image", uploadLimiter);
 
   const bulkPostLimiter = rateLimit({
     windowMs: 60 * 1000, // 1 minute
