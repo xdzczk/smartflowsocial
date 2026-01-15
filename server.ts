@@ -629,6 +629,14 @@ async function run() {
                   ? Buffer.byteLength(chunk, "utf8")
                   : (chunk as Buffer)?.length || 0;
             }
+            // Get actual Content-Length header (compressed size if compression is enabled)
+            const contentLengthHeader = res.getHeader("content-length");
+            const contentLengthValue =
+              typeof contentLengthHeader === "string"
+                ? parseInt(contentLengthHeader, 10)
+                : typeof contentLengthHeader === "number"
+                  ? contentLengthHeader
+                  : null;
             const responseLogData = {
               location: "server.ts:585",
               message: "CSS file response ended",
@@ -640,7 +648,15 @@ async function run() {
                 sizeMatch: size === responseSize,
                 statusCode: res.statusCode,
                 contentEncoding: res.getHeader("content-encoding"),
-                contentLength: res.getHeader("content-length"),
+                contentLengthHeader: contentLengthValue,
+                // Log all response headers to see what's actually being sent
+                responseHeaders: Object.keys(res.getHeaders()).reduce(
+                  (acc, key) => {
+                    acc[key] = String(res.getHeader(key));
+                    return acc;
+                  },
+                  {} as Record<string, string>
+                ),
               },
               timestamp: Date.now(),
               sessionId: "debug-session",
