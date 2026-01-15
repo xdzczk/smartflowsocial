@@ -21,44 +21,9 @@ import { QueryProvider } from "~/lib/query/QueryProvider";
 import stylesheet from "~/tailwind.css";
 
 export const links: LinksFunction = () => {
-  // #region agent log
-  if (typeof window === "undefined") {
-    const logData = {
-      stylesheet,
-      cssBundleHref,
-      timestamp: Date.now(),
-      sessionId: "debug-session",
-      runId: "run1",
-      hypothesisId: "B",
-    };
-    // Fire-and-forget logging - intentionally not awaited
-    void (async () => {
-      try {
-        await fetch(
-          "http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              location: "app/root.tsx:23",
-              message: "Stylesheet href generated",
-              data: logData,
-            }),
-          }
-        );
-      } catch {
-        // Ignore logging errors
-      }
-    })();
-  }
-  // #endregion
-  // Add cache-busting query parameter to force fresh fetch (temporary fix for Cloudflare cache issue)
-  const cacheBuster = `?v=${Date.now()}`;
   return [
-    { rel: "stylesheet", href: `${stylesheet}${cacheBuster}` },
-    ...(cssBundleHref
-      ? [{ rel: "stylesheet", href: `${cssBundleHref}${cacheBuster}` }]
-      : []),
+    { rel: "stylesheet", href: stylesheet },
+    ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] : []),
   ];
 };
 

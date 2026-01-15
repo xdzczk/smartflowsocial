@@ -400,407 +400,16 @@ async function run() {
 
   // Remix fingerprints its assets so we can cache forever.
   const buildPath = path.resolve("public/build");
-  // #region agent log
-  const buildPathExists = fs.existsSync(buildPath);
-  const buildPathStats = buildPathExists ? fs.statSync(buildPath) : null;
-  const cssFiles = buildPathExists
-    ? fs
-        .readdirSync(buildPath, { recursive: true })
-        .filter((f): f is string => typeof f === "string" && f.endsWith(".css"))
-    : [];
-
-  // Get detailed info about CSS files including their sizes
-  const cssFileDetails = cssFiles.map((file) => {
-    const fullPath = path.join(buildPath, file);
-    const stats = fs.existsSync(fullPath) ? fs.statSync(fullPath) : null;
-    return {
-      file,
-      fullPath,
-      size: stats?.size ?? 0,
-      exists: stats !== null,
-    };
-  });
-
-  const logData = {
-    location: "server.ts:402",
-    message: "Static build path resolved",
-    data: {
-      buildPath,
-      exists: buildPathExists,
-      isDirectory: buildPathStats?.isDirectory(),
-      cssFiles,
-      cssFileDetails,
-      cwd: process.cwd(),
-    },
-    timestamp: Date.now(),
-    sessionId: "debug-session",
-    runId: "run1",
-    hypothesisId: "B",
-  };
-  // Log to console for Coolify logs
-  console.log("[CSS DEBUG]", JSON.stringify(logData));
-  // Also try to send to debug endpoint (may fail in Docker)
-  fetch("http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(logData),
-  }).catch(() => {});
-  // #endregion
-
-  // #region agent log
-  app.use("/build", (req, res, next) => {
-    // Log all /build requests to see what's being requested
-    const isCss = req.path.endsWith(".css") || req.url.endsWith(".css");
-    const requestLogData = {
-      location: "server.ts:433",
-      message: "Build path request",
-      data: {
-        path: req.path,
-        url: req.url,
-        originalUrl: req.originalUrl,
-        isCss,
-        method: req.method,
-        headers: {
-          "accept-encoding": req.headers["accept-encoding"],
-          "if-none-match": req.headers["if-none-match"],
-          "if-modified-since": req.headers["if-modified-since"],
-        },
-      },
-      timestamp: Date.now(),
-      sessionId: "debug-session",
-      runId: "run1",
-      hypothesisId: "B",
-    };
-    // Log to console for Coolify logs
-    console.log("[CSS DEBUG]", JSON.stringify(requestLogData));
-    // Also try to send to debug endpoint (may fail in Docker)
-    fetch("http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(requestLogData),
-    }).catch(() => {});
-
-    if (isCss) {
-      // Try multiple path resolutions since Express strips mount point
-      const possiblePaths = [
-        path.join(buildPath, req.path),
-        path.join(buildPath, req.url.replace("/build", "")),
-        path.join(buildPath, req.originalUrl.replace("/build", "")),
-      ];
-
-      let cssPath = possiblePaths[0];
-      let exists = false;
-      for (const p of possiblePaths) {
-        if (fs.existsSync(p)) {
-          cssPath = p;
-          exists = true;
-          break;
-        }
-      }
-
-      let size = 0;
-      let sampleContent = "";
-      let hasUtilityClasses = false;
-      let fileContentLength = 0;
-      if (exists && cssPath) {
-        try {
-          const stats = fs.statSync(cssPath);
-          size = stats.size;
-          const content = fs.readFileSync(cssPath, "utf8");
-          fileContentLength = content.length;
-          sampleContent = content.substring(0, 500);
-          hasUtilityClasses =
-            content.includes(".container") ||
-            content.includes(".grid") ||
-            content.includes(".text-4xl") ||
-            content.includes(".grid-cols");
-          const cspHeader = res.getHeader("Content-Security-Policy");
-          // Log BEFORE the static middleware serves the file
-          const logData = {
-            location: "server.ts:476",
-            message: "CSS file found - BEFORE serving",
-            data: {
-              path: req.path,
-              url: req.url,
-              originalUrl: req.originalUrl,
-              fullPath: cssPath,
-              exists,
-              fileSize: size,
-              contentLength: fileContentLength,
-              hasUtilityClasses,
-              firstChars: sampleContent.substring(0, 100),
-              lastChars: content.substring(Math.max(0, content.length - 100)),
-              cspHeader: String(cspHeader),
-              buildPath,
-              cwd: process.cwd(),
-            },
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            runId: "run1",
-            hypothesisId: "A",
-          };
-          // Log to console for Coolify logs
-          console.log("[CSS DEBUG]", JSON.stringify(logData));
-          // Also try to send to debug endpoint (may fail in Docker)
-          fetch(
-            "http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(logData),
-            }
-          ).catch(() => {});
-
-          // Intercept response to log what's actually sent
-          // Express static middleware uses res.sendFile() or streams, so we need to intercept multiple methods
-          // Using 'any' types for debugging instrumentation to avoid TypeScript overload complexity
-          const originalSend = res.send.bind(res);
-          const originalSendFile = res.sendFile.bind(res);
-          const originalEnd = res.end.bind(res);
-
-          // Track response size
-          let responseSize = 0;
-          const originalWrite = res.write.bind(res);
-
-          (res as any).write = function (chunk: unknown, ...args: any[]) {
-            if (chunk) {
-              responseSize +=
-                typeof chunk === "string"
-                  ? Buffer.byteLength(chunk, "utf8")
-                  : (chunk as Buffer)?.length || 0;
-            }
-            return originalWrite(chunk, ...args);
-          };
-
-          (res as any).send = function (body: unknown) {
-            const bodySize =
-              typeof body === "string"
-                ? Buffer.byteLength(body, "utf8")
-                : (body as Buffer)?.length || 0;
-            responseSize = bodySize;
-            const responseLogData = {
-              location: "server.ts:528",
-              message: "CSS file response sent (via res.send)",
-              data: {
-                path: req.path,
-                url: req.url,
-                fileSize: size,
-                responseBodySize: bodySize,
-                sizeMatch: size === bodySize,
-                statusCode: res.statusCode,
-                contentEncoding: res.getHeader("content-encoding"),
-                contentLength: res.getHeader("content-length"),
-              },
-              timestamp: Date.now(),
-              sessionId: "debug-session",
-              runId: "run1",
-              hypothesisId: "A",
-            };
-            console.log("[CSS DEBUG]", JSON.stringify(responseLogData));
-            return originalSend(body);
-          };
-
-          (res as any).sendFile = function (filePath: string, ...args: any[]) {
-            const responseLogData = {
-              location: "server.ts:560",
-              message: "CSS file response sent (via res.sendFile)",
-              data: {
-                path: req.path,
-                url: req.url,
-                filePath,
-                fileSize: size,
-                statusCode: res.statusCode,
-                contentEncoding: res.getHeader("content-encoding"),
-                contentLength: res.getHeader("content-length"),
-              },
-              timestamp: Date.now(),
-              sessionId: "debug-session",
-              runId: "run1",
-              hypothesisId: "A",
-            };
-            console.log("[CSS DEBUG]", JSON.stringify(responseLogData));
-            return originalSendFile(filePath, ...args);
-          };
-
-          (res as any).end = function (chunk?: unknown, ...args: any[]) {
-            if (chunk) {
-              responseSize +=
-                typeof chunk === "string"
-                  ? Buffer.byteLength(chunk, "utf8")
-                  : (chunk as Buffer)?.length || 0;
-            }
-            // Get actual Content-Length header (compressed size if compression is enabled)
-            const contentLengthHeader = res.getHeader("content-length");
-            const contentLengthValue =
-              typeof contentLengthHeader === "string"
-                ? parseInt(contentLengthHeader, 10)
-                : typeof contentLengthHeader === "number"
-                  ? contentLengthHeader
-                  : null;
-            const responseLogData = {
-              location: "server.ts:585",
-              message: "CSS file response ended",
-              data: {
-                path: req.path,
-                url: req.url,
-                fileSize: size,
-                responseSize,
-                sizeMatch: size === responseSize,
-                statusCode: res.statusCode,
-                contentEncoding: res.getHeader("content-encoding"),
-                contentLengthHeader: contentLengthValue,
-                // Log all response headers to see what's actually being sent
-                responseHeaders: Object.keys(res.getHeaders()).reduce(
-                  (acc, key) => {
-                    acc[key] = String(res.getHeader(key));
-                    return acc;
-                  },
-                  {} as Record<string, string>
-                ),
-              },
-              timestamp: Date.now(),
-              sessionId: "debug-session",
-              runId: "run1",
-              hypothesisId: "A",
-            };
-            console.log("[CSS DEBUG]", JSON.stringify(responseLogData));
-            return originalEnd(chunk, ...args);
-          };
-        } catch (err) {
-          fetch(
-            "http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                location: "server.ts:476",
-                message: "CSS file read error",
-                data: { path: req.path, url: req.url, error: String(err) },
-                timestamp: Date.now(),
-                sessionId: "debug-session",
-                runId: "run1",
-                hypothesisId: "A",
-              }),
-            }
-          ).catch(() => {});
-        }
-      } else {
-        fetch(
-          "http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              location: "server.ts:476",
-              message: "CSS file not found",
-              data: {
-                path: req.path,
-                url: req.url,
-                originalUrl: req.originalUrl,
-                triedPaths: possiblePaths,
-                buildPath,
-                cwd: process.cwd(),
-              },
-              timestamp: Date.now(),
-              sessionId: "debug-session",
-              runId: "run1",
-              hypothesisId: "B",
-            }),
-          }
-        ).catch(() => {});
-      }
-    }
-    next();
-  });
-  // #endregion
-
   app.use(
     "/build",
     express.static(buildPath, {
       immutable: true,
       maxAge: "1y",
-      setHeaders: (res, filePath) => {
-        // Add cache-busting and ensure no stale cache for CSS files
-        if (filePath.endsWith(".css")) {
-          // Force Cloudflare to re-validate cache by adding ETag and Last-Modified
-          const stats = fs.statSync(filePath);
-          const etag = `"${stats.size}-${stats.mtimeMs}"`;
-          res.setHeader("ETag", etag);
-          res.setHeader("Last-Modified", stats.mtime.toUTCString());
-          // Temporarily disable caching to force Cloudflare to fetch fresh file
-          // Once confirmed working, we can re-enable caching
-          res.setHeader(
-            "Cache-Control",
-            "no-cache, no-store, must-revalidate, max-age=0"
-          );
-          res.setHeader("Pragma", "no-cache");
-          res.setHeader("Expires", "0");
-          res.setHeader("X-Content-Type-Options", "nosniff");
-          // Add Cloudflare-specific headers to bypass cache
-          res.setHeader("CF-Cache-Status", "DYNAMIC");
-          // Log what file is being served
-          const staticLogData = {
-            location: "server.ts:643",
-            message: "Static middleware serving CSS",
-            data: {
-              filePath,
-              size: stats.size,
-              mtime: stats.mtime.toISOString(),
-              etag,
-              cwd: process.cwd(),
-            },
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            runId: "run1",
-            hypothesisId: "A",
-          };
-          // Log to console for Coolify logs
-          console.log("[CSS DEBUG]", JSON.stringify(staticLogData));
-          // Also try to send to debug endpoint (may fail in Docker)
-          fetch(
-            "http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(staticLogData),
-            }
-          ).catch(() => {});
-        }
-      },
     })
   );
 
-  // Everything else (like favicon.ico) is cached for an hour. You may want to be
-  // more aggressive with this caching.
+  // Everything else (like favicon.ico) is cached for an hour.
   app.use(express.static(path.resolve("public"), { maxAge: "1h" }));
-
-  // Log all requests to see if CSS requests are reaching the server
-  app.use((req, res, next) => {
-    if (req.url.includes(".css") || req.path.includes(".css")) {
-      const allRequestLog = {
-        location: "server.ts:655",
-        message: "CSS request detected",
-        data: {
-          method: req.method,
-          url: req.url,
-          path: req.path,
-          originalUrl: req.originalUrl,
-          headers: {
-            "accept-encoding": req.headers["accept-encoding"],
-            "if-none-match": req.headers["if-none-match"],
-            "if-modified-since": req.headers["if-modified-since"],
-            "cache-control": req.headers["cache-control"],
-          },
-        },
-        timestamp: Date.now(),
-        sessionId: "debug-session",
-        runId: "run1",
-        hypothesisId: "C",
-      };
-      console.log("[CSS DEBUG]", JSON.stringify(allRequestLog));
-    }
-    next();
-  });
 
   app.use(morgan("tiny"));
 
@@ -862,9 +471,26 @@ async function run() {
   const port = parseInt(env.PORT ?? "3000", 10);
   const host = process.env["HOST"] ?? "0.0.0.0"; // Listen on all interfaces for Docker
 
-  // Auto-seed plans on startup if they don't exist
-  async function seedPlansIfNeeded() {
+  // Run database migrations and seed plans on startup
+  async function initializeDatabase() {
     try {
+      // Run pending migrations
+      const { exec } = await import("node:child_process");
+      const { promisify } = await import("node:util");
+      const execAsync = promisify(exec);
+      console.log("🔄 Running database migrations...");
+      try {
+        const { stdout, stderr } = await execAsync("npx prisma migrate deploy");
+        if (stdout) console.log(stdout);
+        if (stderr) console.error(stderr);
+        console.log("✅ Migrations applied successfully!");
+      } catch (migrationErr) {
+        console.error(
+          "⚠️ Migration failed (may already be applied):",
+          migrationErr
+        );
+      }
+
       const { prisma } = await import("./app/lib/prisma.server");
       const existingPlans = await prisma.plan.count();
       if (existingPlans === 0) {
@@ -975,12 +601,12 @@ async function run() {
         console.log(`📋 ${existingPlans} plans already exist, skipping seed`);
       }
     } catch (err) {
-      console.error("⚠️ Failed to seed plans (non-fatal):", err);
+      console.error("⚠️ Failed to initialize database (non-fatal):", err);
     }
   }
 
-  // Seed plans before starting the server
-  void seedPlansIfNeeded();
+  // Initialize database (migrations + seeding) before starting the server
+  void initializeDatabase();
 
   app.listen(port, host, () => {
     console.log(`✅ app ready: http://${host}:${port}`);
