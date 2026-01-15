@@ -124,9 +124,9 @@ export function usePlansState({ user, actionData }: UsePlansStateProps) {
   // Start polling when invoiceData is set (only once per paymentId)
   const lastPolledPaymentIdRef = useRef<string | null>(null);
   useEffect(() => {
+    // Start polling when we have invoice data and haven't polled this payment yet
     if (
       invoiceData?.paymentId &&
-      invoiceData.paymentId === processedPaymentIdRef.current &&
       lastPolledPaymentIdRef.current !== invoiceData.paymentId
     ) {
       lastPolledPaymentIdRef.current = invoiceData.paymentId;

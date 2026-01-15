@@ -1,5 +1,7 @@
 import { useNavigate } from "@remix-run/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+const PAYMENT_ID_FIELD = "paymentId";
+
 interface UsePaymentPollingProps {
   paymentId: string | null;
   onPaymentComplete: () => void;
@@ -23,7 +25,7 @@ export function usePaymentPolling({
   const checkPaymentStatusNow = async (paymentId: string) => {
     try {
       const formData = new FormData();
-      formData.append("paymentId", paymentId);
+      formData.append(PAYMENT_ID_FIELD, paymentId);
 
       const response = await fetch("/api/payment-status", {
         method: "POST",
@@ -79,6 +81,7 @@ export function usePaymentPolling({
       // Reset the stopping ref
       shouldStopPolling.current = false;
       setIsPolling(true);
+
       const interval = setInterval(() => {
         if (shouldStopPolling.current) {
           clearInterval(interval);
@@ -88,7 +91,7 @@ export function usePaymentPolling({
         void (async () => {
           try {
             const formData = new FormData();
-            formData.append("paymentId", paymentId);
+            formData.append(PAYMENT_ID_FIELD, paymentId);
 
             const response = await fetch("/api/payment-status", {
               method: "POST",
