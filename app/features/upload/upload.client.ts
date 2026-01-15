@@ -76,15 +76,17 @@ async function uploadFileToS3(file: File): Promise<UploadResult> {
 
   const result = (await response.json()) as {
     success?: boolean;
+    data?: { fileUrl?: string };
     fileUrl?: string;
     error?: string;
   };
 
-  if (result.success && result.fileUrl) {
+  const fileUrl = result.data?.fileUrl ?? result.fileUrl;
+  if (result.success && fileUrl) {
     return {
       success: true,
       file: {
-        url: result.fileUrl,
+        url: fileUrl,
         size: file.size,
         name: file.name,
         extension: file.name.split(".").pop() ?? "",
