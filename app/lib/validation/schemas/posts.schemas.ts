@@ -348,18 +348,25 @@ export const signAndScheduleSchema = z.object({
     })
   ),
   fileUrl: z.array(z.string()).transform((arr) =>
-    arr
-      .map((str) => {
-        try {
-          const parsed = JSON.parse(str) as unknown;
-          return Array.isArray(parsed)
-            ? parsed.filter((item): item is string => typeof item === "string")
-            : [];
-        } catch {
-          return [];
+    arr.map((str) => {
+      try {
+        const parsed = JSON.parse(str) as unknown;
+        // Handle both array format and single string format
+        if (Array.isArray(parsed)) {
+          return (
+            parsed.find((item): item is string => typeof item === "string") ??
+            ""
+          );
         }
-      })
-      .flat()
+        if (typeof parsed === "string") {
+          return parsed;
+        }
+        return "";
+      } catch {
+        // If not valid JSON, use the string as-is
+        return str;
+      }
+    })
   ),
   queueType: z.array(z.string()),
   isRecyclable: z
