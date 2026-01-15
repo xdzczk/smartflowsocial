@@ -230,12 +230,29 @@ async function uploadFileToBlossom(
 }
 
 /**
- * Upload multiple files with concurrency control
+ * Upload multiple files - sequential for Blossom (signer limitation), parallel for S3
  */
 export async function uploadMultipleFiles(
-  files: File[],
-  concurrency = 5
+  files: File[]
 ): Promise<UploadResult[]> {
+  // Check upload provider first
+  const { getUploadProvider } = await import("~/lib/query");
+  const data = await getUploadProvider();
+  const isBlossom =
+    data.provider === "BLOSSOM_PRIMAL" ||
+    data.provider === "BLOSSOM_BLOSSTR" ||
+    data.provider === "BLOSSOM";
+
+  if (isBlossom) {
+    // Blossom requires sequential uploads due to signer limitations
+    const results: UploadResult[] = [];
+    for (const file of files) {
+      results.push(await uploadFile(file));
+    }
+    return results;
+  }
+
+  // S3 can handle parallel uploads
   const results: UploadResult[] = new Array<UploadResult>(files.length);
   let index = 0;
 
@@ -249,9 +266,8 @@ export async function uploadMultipleFiles(
     }
   }
 
-  const workers = Array.from(
-    { length: Math.min(concurrency, files.length) },
-    () => worker()
+  const workers = Array.from({ length: Math.min(5, files.length) }, () =>
+    worker()
   );
   await Promise.all(workers);
 
