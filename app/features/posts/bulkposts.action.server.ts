@@ -90,19 +90,9 @@ export async function handleSignAndSchedule(
       .merge(signAndScheduleSchema);
 
     const result = validateFormDataOrRespond(formData, scheduleSchema);
-    // #region agent log
     if (!result.success) {
-      const clonedResponse = result.response.clone();
-
-      clonedResponse
-        .json()
-        .then((body: unknown) => {
-          console.info("[DEBUG] sign_and_schedule validation failed", body);
-        })
-        .catch(() => {});
       return result.response;
     }
-    // #endregion
 
     const validatedData = result.data;
     const signedEvents = validatedData.signedEvents as SignedEvent[];
@@ -110,13 +100,6 @@ export async function handleSignAndSchedule(
     const captions = validatedData.caption;
     const fileUrls = validatedData.fileUrl;
     const queueTypes = validatedData.queueType;
-    // #region agent log
-    console.info("[DEBUG] fileUrls after validation", {
-      fileUrlsLength: fileUrls.length,
-      fileUrlsSample: fileUrls.slice(0, 3),
-      rawFileUrls: formData.getAll("fileUrl").slice(0, 3),
-    });
-    // #endregion
     const isRecyclableFlags = validatedData.isRecyclable;
     const originalPostIds = validatedData.originalPostId.filter(
       (id: string) => id && id !== ""
@@ -410,14 +393,6 @@ export async function bulkPostsAction({ request }: { request: Request }) {
 
     // Sign and schedule posts
     if (_action === "sign_and_schedule") {
-      // #region agent log
-
-      console.info("[DEBUG] sign_and_schedule action called", {
-        formDataKeys: Array.from(formData.keys()),
-        signedEventsCount: formData.getAll("signedEvents").length,
-        nostrEventCount: formData.getAll("nostrEvent").length,
-      });
-      // #endregion
       return handleSignAndSchedule(formData, userId, mode);
     }
 
