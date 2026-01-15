@@ -74,8 +74,47 @@ class BullMQClient implements QueueClient {
       if (options?.scheduledFor !== undefined) {
         // Calculate delay from scheduled timestamp (in seconds) to now
         delay = options.scheduledFor * 1000 - Date.now();
+        // #region agent log
+        fetch(
+          "http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              location: "queue-client.server.ts:enqueue",
+              message: "Delay calculation",
+              data: {
+                scheduledFor: options.scheduledFor,
+                nowMs: Date.now(),
+                delay,
+                jobName,
+              },
+              timestamp: Date.now(),
+              sessionId: "debug-session",
+              hypothesisId: "C",
+            }),
+          }
+        ).catch(() => {}); // eslint-disable-line promise/prefer-await-to-then
+        // #endregion
         // Allow delay: 0 for immediate processing
         if (delay < 0) {
+          // #region agent log
+          fetch(
+            "http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                location: "queue-client.server.ts:enqueue",
+                message: "Job rejected - scheduled in past",
+                data: { scheduledFor: options.scheduledFor, delay, jobName },
+                timestamp: Date.now(),
+                sessionId: "debug-session",
+                hypothesisId: "C",
+              }),
+            }
+          ).catch(() => {}); // eslint-disable-line promise/prefer-await-to-then
+          // #endregion
           return {
             success: false,
             error: "Scheduled time must be in the future",

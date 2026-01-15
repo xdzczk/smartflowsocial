@@ -188,6 +188,23 @@ export async function processOutboxEvents(): Promise<{
   errors: number;
 }> {
   const events = await getUnprocessedOutboxEvents(BATCH_SIZE);
+  // #region agent log
+  fetch("http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      location: "outbox-worker.server.ts:processOutboxEvents",
+      message: "Outbox events fetched",
+      data: {
+        eventCount: events.length,
+        eventTypes: events.map((e) => e.eventType),
+      },
+      timestamp: Date.now(),
+      sessionId: "debug-session",
+      hypothesisId: "B",
+    }),
+  }).catch(() => {}); // eslint-disable-line promise/prefer-await-to-then
+  // #endregion
   let processed = 0;
   let errors = 0;
 

@@ -179,6 +179,20 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
   QUEUE_SCHEDULED_POSTS,
   async (job: Job<PostJobData>) => {
     const { postId, userId, signedEvent, correlationId } = job.data;
+    // #region agent log
+    fetch("http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        location: "queues.server.ts:scheduledPostsWorker",
+        message: "Processing scheduled post job",
+        data: { postId, userId, jobId: job.id },
+        timestamp: Date.now(),
+        sessionId: "debug-session",
+        hypothesisId: "A",
+      }),
+    }).catch(() => {}); // eslint-disable-line promise/prefer-await-to-then
+    // #endregion
     const startTime = Date.now();
     const queueName = QUEUE_SCHEDULED_POSTS;
     const stateMachine = new PostStateMachine();
@@ -484,6 +498,27 @@ export const postCheckerWorker = new Worker(
         getCronDueScheduledPosts(),
         getCronDueScheduledLongFormPosts(),
       ]);
+      // #region agent log
+      fetch(
+        "http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            location: "queues.server.ts:postCheckerWorker",
+            message: "Due posts found",
+            data: {
+              postsCount: posts.length,
+              longformCount: longformPosts.length,
+              postIds: posts.map((p) => p.id),
+            },
+            timestamp: Date.now(),
+            sessionId: "debug-session",
+            hypothesisId: "E",
+          }),
+        }
+      ).catch(() => {}); // eslint-disable-line promise/prefer-await-to-then
+      // #endregion
       const now = Math.floor(Date.now() / 1000);
 
       // Process regular posts

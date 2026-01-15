@@ -41,7 +41,7 @@ const RATE_LIMIT_EXCEEDED_ERROR = "Rate limit exceeded";
 
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: isTestEnvironment() ? 10000 : 100, // Very high limit in tests, normal in production
+  max: isTestEnvironment() ? 10000 : 1000, // Very high limit in tests, generous in production
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
   message: RATE_LIMIT_MESSAGE,
@@ -66,7 +66,7 @@ export const apiLimiter = rateLimit({
  */
 export const strictLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: isTestEnvironment() ? 10000 : 10, // Very high limit in tests, normal in production
+  max: isTestEnvironment() ? 10000 : 100, // Very high limit in tests, reasonable in production
   standardHeaders: true,
   legacyHeaders: false,
   message: "Rate limit exceeded for this endpoint.",
@@ -90,7 +90,7 @@ export const strictLimiter = rateLimit({
  */
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: isTestEnvironment() ? 10000 : 5, // Very high limit in tests, normal in production
+  max: isTestEnvironment() ? 10000 : 20, // Very high limit in tests, strict but usable in production
   standardHeaders: true,
   legacyHeaders: false,
   message: "Too many authentication attempts, please try again later.",

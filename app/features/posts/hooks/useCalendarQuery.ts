@@ -47,12 +47,10 @@ export function useCalendarQuery() {
   const fetcher = useFetcher();
 
   // Validate initial loader data
-  let validatedLoaderData: CalendarLoaderData | null = null;
-  try {
-    validatedLoaderData = calendarLoaderDataSchema.parse(loaderDataRaw);
-  } catch (e) {
-    console.error("[Calendar] Loader validation failed:", e);
-  }
+  const validatedLoaderData = safeValidateLoaderResponse(
+    loaderDataRaw,
+    calendarLoaderDataSchema
+  );
 
   return useQuery({
     queryKey: calendarKeys.list(queueType),
