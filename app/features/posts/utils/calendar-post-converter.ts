@@ -18,9 +18,13 @@ export function postDataToCalendarPost(post: PostData): CalendarPost {
           ? post.publishedAt
           : null
       : null;
+  // Convert Date to Unix timestamp in seconds (as string) for CalendarPost
+  const scheduledForValue = post.scheduledFor
+    ? String(Math.floor(new Date(post.scheduledFor).getTime() / 1000))
+    : null;
   const result: CalendarPost = {
     ...post,
-    scheduledFor: post.scheduledFor ?? null,
+    scheduledFor: scheduledForValue,
     postedAt: post.postedAt ?? null,
     publishedAt: publishedAtValue,
     queueType: post.queueType ?? null,
@@ -72,7 +76,9 @@ export function longFormPostDataToCalendarPost(
     image: post.image ?? undefined,
     publishedAt: publishedAtValue,
     postedAt: publishedAtValue,
-    scheduledFor: post.scheduledFor ?? null,
+    scheduledFor: post.scheduledFor
+      ? String(Math.floor(new Date(post.scheduledFor).getTime() / 1000))
+      : null,
     queueType: post.queueType ?? null,
     manual_override: false,
     isPast: false,
