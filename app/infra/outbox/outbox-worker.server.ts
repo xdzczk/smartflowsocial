@@ -175,8 +175,22 @@ async function processEvent(event: {
       break;
     }
 
-    default:
-      throw new Error(`Unknown event type: ${event.eventType}`);
+    // Read model events - no queue action needed, handled by read model worker
+    case "POST_CREATED":
+    case "POST_UPDATED":
+    case "POST_PUBLISHED":
+    case "POST_DELETED":
+    case "LONGFORM_CREATED":
+    case "LONGFORM_UPDATED":
+    case "LONGFORM_PUBLISHED":
+    case "LONGFORM_DELETED":
+      // These events don't need queue processing
+      break;
+
+    default: {
+      const _exhaustiveCheck: never = event.eventType;
+      throw new Error(`Unknown event type: ${_exhaustiveCheck as string}`);
+    }
   }
 }
 
@@ -188,23 +202,6 @@ export async function processOutboxEvents(): Promise<{
   errors: number;
 }> {
   const events = await getUnprocessedOutboxEvents(BATCH_SIZE);
-  // #region agent log
-  fetch("http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      location: "outbox-worker.server.ts:processOutboxEvents",
-      message: "Outbox events fetched",
-      data: {
-        eventCount: events.length,
-        eventTypes: events.map((e) => e.eventType),
-      },
-      timestamp: Date.now(),
-      sessionId: "debug-session",
-      hypothesisId: "B",
-    }),
-  }).catch(() => {}); // eslint-disable-line promise/prefer-await-to-then
-  // #endregion
   let processed = 0;
   let errors = 0;
 
