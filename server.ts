@@ -861,6 +861,127 @@ async function run() {
 
   const port = parseInt(env.PORT ?? "3000", 10);
   const host = process.env["HOST"] ?? "0.0.0.0"; // Listen on all interfaces for Docker
+
+  // Auto-seed plans on startup if they don't exist
+  async function seedPlansIfNeeded() {
+    try {
+      const { prisma } = await import("./app/lib/prisma.server");
+      const existingPlans = await prisma.plan.count();
+      if (existingPlans === 0) {
+        console.log("🌱 No plans found, seeding...");
+        const plans = [
+          {
+            id: "free",
+            name: "Free",
+            price: 0,
+            description: "Perfect for getting started",
+            features: { basicScheduling: true },
+            maxPostsPerMonth: 10,
+            maxQueueTypes: 1,
+            maxTemplates: 3,
+            maxAssets: 10,
+            maxLongFormPosts: 2,
+            enableBasicScheduling: true,
+            enableEngagementFeed: true,
+            enableGiveaways: true,
+          },
+          {
+            id: "basic",
+            name: "Basic",
+            price: 28,
+            description: "For growing creators",
+            features: { basicScheduling: true, multipleQueues: true },
+            maxPostsPerMonth: 100,
+            maxQueueTypes: 5,
+            maxTemplates: 20,
+            maxAssets: 100,
+            maxLongFormPosts: 10,
+            enableBasicScheduling: true,
+            enableMultipleQueues: true,
+            enableBulkScheduling: true,
+            enableRepostsAndQuotes: true,
+            enableEngagementFeed: true,
+            enableGiveaways: true,
+            enableLeaderboards: true,
+            enableWolfFilteringAndVortex: true,
+            enableNativeS3BlossomStorage: true,
+          },
+          {
+            id: "premium",
+            name: "Premium",
+            price: 71,
+            description: "For serious content creators",
+            features: {
+              basicScheduling: true,
+              multipleQueues: true,
+              advancedAnalytics: true,
+            },
+            maxPostsPerMonth: 500,
+            maxQueueTypes: 15,
+            maxTemplates: 50,
+            maxAssets: 500,
+            maxLongFormPosts: 25,
+            enableBasicScheduling: true,
+            enableMultipleQueues: true,
+            enableBulkScheduling: true,
+            enableRepostsAndQuotes: true,
+            enableEngagementFeed: true,
+            enableGiveaways: true,
+            enableLeaderboards: true,
+            enableAdvancedAnalytics: true,
+            enableMultiAccountSwitching: true,
+            enableWolfFilteringAndVortex: true,
+            enableNativeS3BlossomStorage: true,
+            enableRelayBlast: true,
+          },
+          {
+            id: "founder",
+            name: "Founder",
+            price: 2600,
+            description: "For early supporters",
+            features: {
+              basicScheduling: true,
+              multipleQueues: true,
+              lifetimeAccess: true,
+            },
+            maxPostsPerMonth: null,
+            maxQueueTypes: null,
+            maxTemplates: null,
+            maxAssets: null,
+            maxLongFormPosts: null,
+            enableBasicScheduling: true,
+            enableMultipleQueues: true,
+            enableBulkScheduling: true,
+            enableRepostsAndQuotes: true,
+            enableEngagementFeed: true,
+            enableGiveaways: true,
+            enableLeaderboards: true,
+            enableAdvancedAnalytics: true,
+            enableMultiAccountSwitching: true,
+            enableWolfFilteringAndVortex: true,
+            enableNativeS3BlossomStorage: true,
+            enableRelayBlast: true,
+            enableVisualPerks: true,
+            enableLifetimeAccess: true,
+          },
+        ];
+        for (const plan of plans) {
+          await prisma.plan.create({
+            data: { ...plan, isActive: true, updatedAt: new Date() },
+          });
+        }
+        console.log("✅ Plans seeded successfully!");
+      } else {
+        console.log(`📋 ${existingPlans} plans already exist, skipping seed`);
+      }
+    } catch (err) {
+      console.error("⚠️ Failed to seed plans (non-fatal):", err);
+    }
+  }
+
+  // Seed plans before starting the server
+  void seedPlansIfNeeded();
+
   app.listen(port, host, () => {
     console.log(`✅ app ready: http://${host}:${port}`);
 

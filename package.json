@@ -35,7 +35,7 @@
   "scripts": {
     "postinstall": "prisma generate",
     "prepare": "husky",
-    "build": "remix build && esbuild --platform=node --format=cjs ./server.ts --outdir=build --bundle --external:fsevents --external:file-type --external:@prisma/client --external:@prisma/engines && esbuild --platform=node --format=cjs ./worker.ts --outdir=build --bundle --external:fsevents --external:file-type --external:@prisma/client --external:@prisma/engines && esbuild --platform=node --format=cjs ./prisma/seed.ts --outfile=build/seed.js --bundle --external:@prisma/client --external:@prisma/engines && tsx scripts/verify-css-build.ts",
+    "build": "remix build && esbuild --platform=node --format=cjs ./server.ts --outdir=build --bundle --external:fsevents --external:file-type --external:@prisma/client --external:@prisma/engines && esbuild --platform=node --format=cjs ./worker.ts --outdir=build --bundle --external:fsevents --external:file-type --external:@prisma/client --external:@prisma/engines && tsx scripts/verify-css-build.ts",
     "dev": "npm-run-all2 --parallel dev:*",
     "dev:remix": "remix dev --manual -c \"node --watch-path ./build/server.js --watch ./build/server.js\"",
     "dev:server": "cross-env NODE_ENV=development E2E_TEST=${E2E_TEST:-} esbuild --platform=node --format=cjs ./server.ts --outdir=build --bundle --external:fsevents --external:file-type --external:@prisma/client --external:@prisma/engines --watch",
@@ -45,7 +45,7 @@
     "format:check": "prettier --check .",
     "lint": "eslint --cache --cache-location ./node_modules/.cache/eslint .; LINT_EXIT=$?; eslint --format json . > eslint-report.json 2>&1; exit $LINT_EXIT",
     "lint:ci": "eslint . --format json --output-file eslint-report.json || exit 1",
-    "start": "cross-env NODE_ENV=production node ./build/seed.js && node ./build/server.js",
+    "start": "cross-env NODE_ENV=production node ./build/server.js",
     "start:worker": "cross-env NODE_ENV=production node ./build/worker.js",
     "db:seed": "tsx prisma/seed.ts",
     "test": "vitest run",
