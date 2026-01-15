@@ -57,21 +57,41 @@ export function useUploadProvider() {
   });
 }
 
+interface UploadProviderData {
+  provider?: string;
+  enableMirrorBlossom?: boolean;
+  mirrorUploadUrls?: string[];
+}
+
 /**
  * Get upload provider data (for use in non-React contexts)
  * This is a utility function that can be used outside of React components
  * Note: This doesn't use caching, use the hook in components instead
  */
-export async function getUploadProvider(): Promise<{
-  provider?: string;
-  enableMirrorBlossom?: boolean;
-  mirrorUploadUrls?: string[];
-}> {
-  const response = await fetch("/api/user-upload-provider");
-  if (!response.ok) {
-    throw new Error("Failed to get upload provider");
+let _uploadProviderCache: UploadProviderData | null = null;
+let _uploadProviderPromise: Promise<UploadProviderData> | null = null;
+
+export async function getUploadProvider(): Promise<UploadProviderData> {
+  if (_uploadProviderCache) {
+    return _uploadProviderCache;
   }
-  return response.json();
+  if (_uploadProviderPromise) {
+    return _uploadProviderPromise;
+  }
+  _uploadProviderPromise = (async () => {
+    try {
+      const response = await fetch("/api/user-upload-provider");
+      if (!response.ok) {
+        throw new Error("Failed to get upload provider");
+      }
+      const result = (await response.json()) as UploadProviderData;
+      _uploadProviderCache = result;
+      return result;
+    } finally {
+      _uploadProviderPromise = null;
+    }
+  })();
+  return _uploadProviderPromise;
 }
 
 /**
