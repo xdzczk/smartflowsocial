@@ -6,3 +6,6 @@ cmds = ["corepack enable", "pnpm install --frozen-lockfile"]
 
 [phases.build]
 cmds = ["pnpm run build"]
+
+[start]
+cmd = "node ./build/server.js & node ./build/worker.js & wait"
