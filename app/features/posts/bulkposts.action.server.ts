@@ -90,9 +90,14 @@ export async function handleSignAndSchedule(
       .merge(signAndScheduleSchema);
 
     const result = validateFormDataOrRespond(formData, scheduleSchema);
+    // #region agent log
     if (!result.success) {
+      console.info("[DEBUG] sign_and_schedule validation failed", {
+        errors: JSON.stringify(result.response),
+      });
       return result.response;
     }
+    // #endregion
 
     const validatedData = result.data;
     const signedEvents = validatedData.signedEvents as SignedEvent[];
@@ -393,6 +398,14 @@ export async function bulkPostsAction({ request }: { request: Request }) {
 
     // Sign and schedule posts
     if (_action === "sign_and_schedule") {
+      // #region agent log
+
+      console.info("[DEBUG] sign_and_schedule action called", {
+        formDataKeys: Array.from(formData.keys()),
+        signedEventsCount: formData.getAll("signedEvents").length,
+        nostrEventCount: formData.getAll("nostrEvent").length,
+      });
+      // #endregion
       return handleSignAndSchedule(formData, userId, mode);
     }
 
