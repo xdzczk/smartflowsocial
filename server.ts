@@ -448,8 +448,8 @@ async function run() {
   app.use("/api/upload-editorjs-image", uploadLimiter);
 
   const bulkPostLimiter = rateLimit({
-    windowMs: 60 * 1000, // 1 minute
-    max: isTestEnv ? 10000 : 5, // 5 bulk requests per minute per IP
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: isTestEnv ? 10000 : 200, // 100 bulk page requests per 15 min per IP
     standardHeaders: true,
     legacyHeaders: false,
     message:
