@@ -93,10 +93,12 @@ export async function handleSignAndSchedule(
     // #region agent log
     if (!result.success) {
       const clonedResponse = result.response.clone();
+      // eslint-disable-next-line promise/prefer-await-to-then, promise/always-return
       clonedResponse
         .json()
         .then((body: unknown) => {
           console.info("[DEBUG] sign_and_schedule validation failed", body);
+          // eslint-disable-next-line promise/prefer-await-to-then
         })
         .catch(() => {});
       return result.response;

@@ -232,8 +232,8 @@ const signedEventSchema = z.object({
 });
 
 const nostrEventSchema = z.object({
-  id: z.string(),
-  pubkey: z.string(),
+  id: z.string().optional(),
+  pubkey: z.string().optional(),
   created_at: z.number(),
   kind: z.number(),
   content: z.string(),
