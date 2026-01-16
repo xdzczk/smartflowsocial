@@ -449,7 +449,7 @@ async function run() {
 
   const bulkPostLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: isTestEnv ? 10000 : 200, // 100 bulk page requests per 15 min per IP
+    max: isTestEnv ? 10000 : 200, // 200 bulk page requests per 15 min per IP
     standardHeaders: true,
     legacyHeaders: false,
     message:

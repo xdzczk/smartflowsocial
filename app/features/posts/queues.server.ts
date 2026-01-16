@@ -56,12 +56,26 @@ function extractPostData(post: unknown): PostData | null {
   const postUserId =
     "userId" in post && typeof post.userId === "string" ? post.userId : null;
   const postSignedEvent = "signedEvent" in post ? post.signedEvent : null;
-  const postScheduledFor =
-    "scheduledFor" in post && typeof post.scheduledFor === "string"
-      ? post.scheduledFor
-      : null;
+
+  // Handle both scheduledFor (legacy string) and scheduledAtUtc (DateTime)
+  let postScheduledFor: string | null = null;
+  if ("scheduledFor" in post && typeof post.scheduledFor === "string") {
+    postScheduledFor = post.scheduledFor;
+  } else if ("scheduledAtUtc" in post && post.scheduledAtUtc instanceof Date) {
+    // Convert DateTime to Unix timestamp (seconds)
+    postScheduledFor = Math.floor(
+      post.scheduledAtUtc.getTime() / 1000
+    ).toString();
+  }
 
   if (!postUserId || !postSignedEvent || !postScheduledFor || !postId) {
+    logInfo("extractPostData: Missing required fields", {
+      hasId: !!postId,
+      hasUserId: !!postUserId,
+      hasSignedEvent: !!postSignedEvent,
+      hasScheduledFor: !!postScheduledFor,
+      hasScheduledAtUtc: "scheduledAtUtc" in post,
+    });
     return null;
   }
 
@@ -76,15 +90,27 @@ function extractPostData(post: unknown): PostData | null {
 async function processPost(postData: PostData, now: number): Promise<boolean> {
   const signedEvent = toSignedEvent(postData.signedEvent);
   if (!signedEvent) {
+    logInfo("processPost: Invalid signedEvent", { postId: postData.id });
     return false;
   }
 
   const scheduledTime = parseInt(postData.scheduledFor, 10);
   if (isNaN(scheduledTime)) {
+    logInfo("processPost: Invalid scheduledFor", {
+      postId: postData.id,
+      scheduledFor: postData.scheduledFor,
+    });
     return false;
   }
 
   const timeDiff = scheduledTime - now;
+  logInfo("processPost: Checking post", {
+    postId: postData.id,
+    scheduledTime,
+    now,
+    timeDiff,
+  });
+
   if (timeDiff <= 1) {
     const { enqueuePostJob } = await import("~/infra/queue");
     await enqueuePostJob(
@@ -96,6 +122,10 @@ async function processPost(postData: PostData, now: number): Promise<boolean> {
     return true;
   }
 
+  logInfo("processPost: Post not yet due", {
+    postId: postData.id,
+    timeDiff,
+  });
   return false;
 }
 
