@@ -349,40 +349,6 @@ function createQuotePostEvent(
   );
 }
 
-async function getEffectiveHashtags(
-  post: BulkPost,
-  useHashtagPresets: boolean,
-  selectedHashtags: string,
-  userId: string | undefined,
-  tags: string[]
-): Promise<string> {
-  if (useHashtagPresets && selectedHashtags) {
-    return selectedHashtags;
-  }
-
-  try {
-    const res = await fetch("/api/effective-hashtags", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        userId,
-        queueTypeName: post.queueType,
-      }),
-    });
-    const dataRaw: unknown = await res.json();
-    const data =
-      dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
-        ? (dataRaw as { hashtags?: unknown })
-        : {};
-    const hashtags = typeof data.hashtags === "string" ? data.hashtags : null;
-    return hashtags ?? tags.join(" ");
-  } catch {
-    return tags.join(" ");
-  }
-}
-
 interface UseBulkPostEventsProps {
   posts: BulkPost[];
   fetcher: FetcherWithComponents<FetcherData>;
@@ -463,16 +429,68 @@ export function useBulkPostEvents({
   };
 
   const processEvents = useCallback(async () => {
-    // Create events with image URLs and hashtags
+    // First, collect unique queue types and fetch hashtags in batch
+    // This prevents making one API call per post, which can be very slow for bulk operations
+    const uniqueQueueTypes = new Set(
+      posts
+        .map((post) => post.queueType)
+        .filter((qt) => qt && qt !== "unassigned")
+    );
+
+    // Fetch hashtags for all unique queue types in parallel
+    const hashtagCache = new Map<string, string>();
+
+    if (!useHashtagPresets && uniqueQueueTypes.size > 0) {
+      const hashtagPromises = Array.from(uniqueQueueTypes).map(
+        async (queueType) => {
+          try {
+            const res = await fetch("/api/effective-hashtags", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                userId: user?.id,
+                queueTypeName: queueType,
+              }),
+            });
+            const dataRaw: unknown = await res.json();
+            const data =
+              dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+                ? (dataRaw as { hashtags?: unknown })
+                : {};
+            const hashtags =
+              typeof data.hashtags === "string" ? data.hashtags : null;
+            return {
+              queueType,
+              hashtags: hashtags ?? tags.join(" "),
+            };
+          } catch {
+            return { queueType, hashtags: tags.join(" ") };
+          }
+        }
+      );
+
+      const hashtagResults = await Promise.all(hashtagPromises);
+      hashtagResults.forEach(({ queueType, hashtags }) => {
+        hashtagCache.set(queueType, hashtags);
+      });
+    }
+
+    // Now create events using cached hashtags
     const events = await Promise.all(
       posts.map(async (post, index) => {
-        const effectiveHashtags = await getEffectiveHashtags(
-          post,
-          useHashtagPresets,
-          selectedHashtags,
-          user?.id,
-          tags
-        );
+        // Get effective hashtags from cache or use preset
+        let effectiveHashtags: string;
+        if (useHashtagPresets && selectedHashtags) {
+          effectiveHashtags = selectedHashtags;
+        } else if (post.queueType && post.queueType !== "unassigned") {
+          effectiveHashtags =
+            hashtagCache.get(post.queueType) ?? tags.join(" ");
+        } else {
+          effectiveHashtags = tags.join(" ");
+        }
+
         const tagsString = effectiveHashtags;
         const { fileUrl, scheduledFor: scheduledForValue } =
           getFileUrlFromFetcher(fetcher, index);
