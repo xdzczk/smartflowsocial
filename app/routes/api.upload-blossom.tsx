@@ -19,89 +19,13 @@ export const action = withCSRFProtection(
       const assert: AssertFunction = errorHandler.assert;
       const { createSuccessResponse } = errorHandler;
 
-      // #region agent log
-      await fetch(
-        "http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "api.upload-blossom.tsx:17",
-            message: "Upload-blossom action started",
-            data: { method: request.method },
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            runId: "run1",
-            hypothesisId: "C",
-          }),
-        }
-      ).catch(() => {});
-      // #endregion
-
       // Ensure user is authenticated
       const userId = await requireUserId(request);
-      // #region agent log
-      await fetch(
-        "http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "api.upload-blossom.tsx:24",
-            message: "User authenticated",
-            data: { userId },
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            runId: "run1",
-            hypothesisId: "C",
-          }),
-        }
-      ).catch(() => {});
-      // #endregion
 
       // Check if user has any Blossom provider as their preferred upload provider
       const { provider } = await loadUploadProviderSettings(userId);
       const uploadProvider = provider;
-      // #region agent log
-      await fetch(
-        "http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "api.upload-blossom.tsx:27",
-            message: "Upload provider checked",
-            data: {
-              uploadProvider,
-              includesBlossom: uploadProvider.includes("BLOSSOM"),
-            },
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            runId: "run1",
-            hypothesisId: "C",
-          }),
-        }
-      ).catch(() => {});
-      // #endregion
       if (!uploadProvider.includes("BLOSSOM")) {
-        // #region agent log
-        await fetch(
-          "http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              location: "api.upload-blossom.tsx:29",
-              message: "Blossom not enabled for user",
-              data: { uploadProvider },
-              timestamp: Date.now(),
-              sessionId: "debug-session",
-              runId: "run1",
-              hypothesisId: "C",
-            }),
-          }
-        ).catch(() => {});
-        // #endregion
         throw new AuthorizationError(
           "Blossom uploads not enabled for this user",
           {
@@ -115,50 +39,7 @@ export const action = withCSRFProtection(
       let data: { tags?: unknown; fileName?: string };
       try {
         data = (await request.json()) as { tags?: unknown; fileName?: string };
-        // #region agent log
-        await fetch(
-          "http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              location: "api.upload-blossom.tsx:42",
-              message: "Request body parsed",
-              data: {
-                hasTags: !!data.tags,
-                hasFileName: !!data.fileName,
-                tagsIsArray: Array.isArray(data.tags),
-                tagsLength: Array.isArray(data.tags) ? data.tags.length : 0,
-              },
-              timestamp: Date.now(),
-              sessionId: "debug-session",
-              runId: "run1",
-              hypothesisId: "B",
-            }),
-          }
-        ).catch(() => {});
-        // #endregion
       } catch (error) {
-        // #region agent log
-        await fetch(
-          "http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              location: "api.upload-blossom.tsx:45",
-              message: "JSON parse error",
-              data: {
-                error: error instanceof Error ? error.message : String(error),
-              },
-              timestamp: Date.now(),
-              sessionId: "debug-session",
-              runId: "run1",
-              hypothesisId: "B",
-            }),
-          }
-        ).catch(() => {});
-        // #endregion
         throw new ValidationError("Invalid JSON in request body", {
           originalError: error instanceof Error ? error.message : String(error),
         });
@@ -217,28 +98,9 @@ export const action = withCSRFProtection(
         ? mimeTypeTag[1]
         : "application/octet-stream";
 
-      // #region agent log
-      await fetch(
-        "http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "api.upload-blossom.tsx:95",
-            message: "Tags extracted successfully",
-            data: { fileUrl, sha256, fileSize, mimeType },
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            runId: "run1",
-            hypothesisId: "A",
-          }),
-        }
-      ).catch(() => {});
-      // #endregion
-
       // Return success response with processed data
       // This matches the S3 upload response format for compatibility
-      const responseData = {
+      return createSuccessResponse({
         file: {
           url: fileUrl,
           size: fileSize,
@@ -248,55 +110,8 @@ export const action = withCSRFProtection(
           mimeType,
           provider: uploadProvider,
         },
-      };
-      // #region agent log
-      await fetch(
-        "http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "api.upload-blossom.tsx:113",
-            message: "Returning success response",
-            data: {
-              responseStructure: JSON.stringify({
-                success: true,
-                data: responseData,
-              }),
-            },
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            runId: "run1",
-            hypothesisId: "D",
-          }),
-        }
-      ).catch(() => {});
-      // #endregion
-      return createSuccessResponse(responseData);
+      });
     } catch (error) {
-      // #region agent log
-      await fetch(
-        "http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "api.upload-blossom.tsx:115",
-            message: "Exception caught in action",
-            data: {
-              errorMessage:
-                error instanceof Error ? error.message : String(error),
-              errorType: error?.constructor?.name,
-              isResponse: error instanceof Response,
-            },
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            runId: "run1",
-            hypothesisId: "E",
-          }),
-        }
-      ).catch(() => {});
-      // #endregion
       // If error is a Response (e.g., redirect from requireUserId), return it
       if (error instanceof Response) {
         return error;

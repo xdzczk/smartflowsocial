@@ -112,61 +112,13 @@ async function uploadFileToBlossom(
 ): Promise<UploadResult> {
   try {
     // Check if NOSTR is available
-    // #region agent log
-    fetch("http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        location: "upload.client.ts:115",
-        message: "Checking NOSTR availability",
-        data: { hasNostr: !!window.nostr, provider },
-        timestamp: Date.now(),
-        sessionId: "debug-session",
-        runId: "run1",
-        hypothesisId: "E",
-      }),
-    }).catch(() => {});
-    // #endregion
     if (!window.nostr) {
-      // #region agent log
-      fetch(
-        "http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "upload.client.ts:118",
-            message: "NOSTR extension not available",
-            data: {},
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            runId: "run1",
-            hypothesisId: "E",
-          }),
-        }
-      ).catch(() => {});
-      // #endregion
       throw new Error(
         "NOSTR extension not available. Please install a NOSTR browser extension like Alby, Amber, or nos2x."
       );
     }
 
     // Dynamic import to avoid SSR issues
-    // #region agent log
-    fetch("http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        location: "upload.client.ts:123",
-        message: "Importing BlossomUploader module",
-        data: {},
-        timestamp: Date.now(),
-        sessionId: "debug-session",
-        runId: "run1",
-        hypothesisId: "E",
-      }),
-    }).catch(() => {});
-    // #endregion
     const uploadersModule = await import("@nostrify/nostrify/uploaders");
 
     const BlossomUploader =
@@ -184,43 +136,7 @@ async function uploadFileToBlossom(
           };
         }
       ).BlossomUploader;
-    // #region agent log
-    fetch("http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        location: "upload.client.ts:141",
-        message: "BlossomUploader import result",
-        data: {
-          hasBlossomUploader: !!BlossomUploader,
-          hasDefault: !!uploadersModule.default,
-        },
-        timestamp: Date.now(),
-        sessionId: "debug-session",
-        runId: "run1",
-        hypothesisId: "E",
-      }),
-    }).catch(() => {});
-    // #endregion
     if (!BlossomUploader) {
-      // #region agent log
-      fetch(
-        "http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "upload.client.ts:143",
-            message: "BlossomUploader not found",
-            data: {},
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            runId: "run1",
-            hypothesisId: "E",
-          }),
-        }
-      ).catch(() => {});
-      // #endregion
       throw new Error("BlossomUploader not found in module");
     }
 
@@ -252,84 +168,16 @@ async function uploadFileToBlossom(
     });
 
     // Upload the file
-    // #region agent log
-    fetch("http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        location: "upload.client.ts:171",
-        message: "Starting BlossomUploader.upload",
-        data: { fileName: file.name, fileSize: file.size, provider },
-        timestamp: Date.now(),
-        sessionId: "debug-session",
-        runId: "run1",
-        hypothesisId: "A",
-      }),
-    }).catch(() => {});
-    // #endregion
     const tags = await uploader.upload(file);
-
-    // #region agent log
-    fetch("http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        location: "upload.client.ts:174",
-        message: "BlossomUploader.upload completed",
-        data: {
-          tagsIsArray: Array.isArray(tags),
-          tagsLength: tags?.length,
-          tags: JSON.stringify(tags),
-        },
-        timestamp: Date.now(),
-        sessionId: "debug-session",
-        runId: "run1",
-        hypothesisId: "A",
-      }),
-    }).catch(() => {});
-    // #endregion
 
     // Validate that we got the expected tag format
     if (!Array.isArray(tags)) {
-      // #region agent log
-      fetch(
-        "http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "upload.client.ts:178",
-            message: "Tags validation failed - not an array",
-            data: { tagsType: typeof tags },
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            runId: "run1",
-            hypothesisId: "B",
-          }),
-        }
-      ).catch(() => {});
-      // #endregion
       throw new Error(
         "BlossomUploader returned invalid format - expected array of tags"
       );
     }
 
     // Send the result to server for processing
-    // #region agent log
-    fetch("http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        location: "upload.client.ts:186",
-        message: "Sending tags to server",
-        data: { tagsCount: tags.length, fileName: file.name },
-        timestamp: Date.now(),
-        sessionId: "debug-session",
-        runId: "run1",
-        hypothesisId: "C",
-      }),
-    }).catch(() => {});
-    // #endregion
     const response = await fetch("/api/upload-blossom", {
       method: "POST",
       headers: {
@@ -341,49 +189,12 @@ async function uploadFileToBlossom(
       }),
     });
 
-    // #region agent log
-    fetch("http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        location: "upload.client.ts:197",
-        message: "Received server response",
-        data: { status: response.status, statusText: response.statusText },
-        timestamp: Date.now(),
-        sessionId: "debug-session",
-        runId: "run1",
-        hypothesisId: "C",
-      }),
-    }).catch(() => {});
-    // #endregion
     const result = (await response.json()) as {
       success?: boolean;
       file?: { url: string };
       error?: string;
       data?: { file?: { url: string } };
     };
-
-    // #region agent log
-    fetch("http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        location: "upload.client.ts:204",
-        message: "Parsed response data",
-        data: {
-          success: result.success,
-          hasFile: !!result.file,
-          hasDataFile: !!result.data?.file,
-          resultKeys: Object.keys(result),
-          fullResult: JSON.stringify(result),
-        },
-        timestamp: Date.now(),
-        sessionId: "debug-session",
-        runId: "run1",
-        hypothesisId: "D",
-      }),
-    }).catch(() => {});
-    // #endregion
 
     // Server returns { success: true, data: { file: {...} } }
     const fileData = result.data?.file ?? result.file;
@@ -399,53 +210,12 @@ async function uploadFileToBlossom(
         },
       };
     } else {
-      // #region agent log
-      fetch(
-        "http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "upload.client.ts:214",
-            message: "Response validation failed",
-            data: {
-              success: result.success,
-              hasFile: !!result.file,
-              hasDataFile: !!result.data?.file,
-              error: result.error,
-            },
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            runId: "run1",
-            hypothesisId: "D",
-          }),
-        }
-      ).catch(() => {});
-      // #endregion
       return {
         success: false,
         error: result.error ?? "Blossom upload failed",
       };
     }
   } catch (error) {
-    // #region agent log
-    fetch("http://127.0.0.1:7242/ingest/62e703ab-39e5-421d-8502-3e6f7b70e06a", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        location: "upload.client.ts:222",
-        message: "Exception caught in uploadFileToBlossom",
-        data: {
-          errorMessage: error instanceof Error ? error.message : String(error),
-          errorType: error?.constructor?.name,
-        },
-        timestamp: Date.now(),
-        sessionId: "debug-session",
-        runId: "run1",
-        hypothesisId: "E",
-      }),
-    }).catch(() => {});
-    // #endregion
     const { handleAsyncError, getErrorMessage } =
       await import("~/lib/error-handler.client");
     handleAsyncError(
