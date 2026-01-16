@@ -63,9 +63,29 @@ export function useScheduledState({
       const newCountdowns: Record<string, string> = {};
 
       scheduledPosts.forEach((post) => {
-        const scheduledFor =
-          typeof post.scheduledFor === "string" ? post.scheduledFor : "0";
-        const utcTime = parseInt(scheduledFor) * 1000;
+        let scheduledForString = "0";
+        if (post.scheduledFor) {
+          const scheduledForValue = post.scheduledFor as
+            | Date
+            | string
+            | number
+            | null
+            | undefined;
+          if (scheduledForValue instanceof Date) {
+            // Convert Date to Unix timestamp string (seconds)
+            scheduledForString = Math.floor(
+              scheduledForValue.getTime() / 1000
+            ).toString();
+          } else if (typeof scheduledForValue === "string") {
+            scheduledForString = scheduledForValue;
+          } else if (typeof scheduledForValue === "number") {
+            scheduledForString = Math.floor(
+              scheduledForValue / 1000
+            ).toString();
+          }
+        }
+
+        const utcTime = parseInt(scheduledForString) * 1000;
         const userTime = new Date(utcTime).toLocaleString("en-US", {
           timeZone: tz,
         });
