@@ -379,9 +379,15 @@ export async function uploadMultipleFiles(
     const results: UploadResult[] = new Array<UploadResult>(files.length);
     let completed = 0;
 
+    // Show initial progress
+    onProgress?.(
+      0,
+      files.length,
+      `Starting upload of ${files.length} files...`
+    );
+
     const uploadPromises = files.map(async (file, index) => {
       const uploadStart = Date.now();
-      onProgress?.(index + 1, files.length, file.name);
 
       // Use the shared uploader instance
       const result = await uploadFileToBlossom(
@@ -394,7 +400,16 @@ export async function uploadMultipleFiles(
 
       const uploadTime = Date.now() - uploadStart;
       results[index] = result;
+
+      // Update progress when file completes (not when it starts)
       completed++;
+      const percentage = Math.round((completed / files.length) * 100);
+      onProgress?.(
+        completed,
+        files.length,
+        `Uploading... ${completed} of ${files.length} files completed (${percentage}%)`
+      );
+
       console.info(
         `[BulkPosts] File ${completed}/${files.length} (${file.name}) uploaded in ${uploadTime}ms`
       );
@@ -415,6 +430,9 @@ export async function uploadMultipleFiles(
   let index = 0;
   let completed = 0;
 
+  // Show initial progress
+  onProgress?.(0, files.length, `Starting upload of ${files.length} files...`);
+
   async function worker(): Promise<void> {
     while (index < files.length) {
       const currentIndex = index++;
@@ -425,7 +443,12 @@ export async function uploadMultipleFiles(
         const uploadTime = Date.now() - uploadStart;
         results[currentIndex] = result;
         completed++;
-        onProgress?.(completed, files.length, file.name);
+        const percentage = Math.round((completed / files.length) * 100);
+        onProgress?.(
+          completed,
+          files.length,
+          `Uploading... ${completed} of ${files.length} files completed (${percentage}%)`
+        );
         console.info(
           `[BulkPosts] File ${completed}/${files.length} (${file.name}) uploaded in ${uploadTime}ms`
         );

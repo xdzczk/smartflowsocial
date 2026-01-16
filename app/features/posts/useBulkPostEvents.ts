@@ -693,18 +693,19 @@ export function useBulkPostEvents({
             setPreparationProgress?.({
               current: 0,
               total: filesToUpload.length + 3, // Uploads + 3 preparation steps
-              stage: `Uploading file 1 of ${filesToUpload.length}...`,
+              stage: `Starting upload of ${filesToUpload.length} files...`,
             });
 
             const uploadStartTime = Date.now();
             // Upload all files using the new upload system with progress tracking
             const uploadResults = await uploadMultipleFiles(
               filesToUpload,
-              (current, total, fileName) => {
+              (completed, total, message) => {
                 setPreparationProgress?.({
-                  current,
+                  current: completed,
                   total: total + 3, // Total includes uploads + 3 preparation steps
-                  stage: `Uploading file ${current} of ${total}... (${fileName})`,
+                  stage:
+                    message ?? `Uploading... ${completed} of ${total} files`,
                 });
               }
             );
