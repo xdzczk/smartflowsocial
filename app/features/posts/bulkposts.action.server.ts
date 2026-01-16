@@ -11,7 +11,6 @@ import { logInfo } from "~/lib/error-logger.server";
 import { RateLimitError } from "~/lib/errors";
 import { checkUserPostCreationLimit } from "~/lib/rate-limit.server";
 import {
-  uploadImagesPreviewSchema,
   signAndScheduleSchema,
   saveAsDraftSchema,
   validateFormDataOrRespond,
@@ -42,29 +41,68 @@ interface UploadResult {
  * Handle file upload preview results from client-side upload system
  */
 export async function handleUploadImagesPreview(formData: FormData) {
+  const startTime = Date.now();
   try {
-    const previewSchema = z
-      .object({
-        _action: z.literal("_upload_images_preview"),
-      })
-      .merge(uploadImagesPreviewSchema);
+    // Optimize: Parse JSON first for large datasets to avoid full Zod validation overhead
+    const uploadResultsRaw = formData.get("uploadResults");
+    let uploadResults: UploadResult[] = [];
 
-    const result = validateFormDataOrRespond(formData, previewSchema);
-    if (!result.success) {
-      return result.response;
+    if (typeof uploadResultsRaw === "string") {
+      try {
+        const parsed = JSON.parse(uploadResultsRaw) as unknown;
+        if (Array.isArray(parsed)) {
+          uploadResults = parsed as UploadResult[];
+        } else {
+          return json(
+            { error: "Invalid upload results format" },
+            { status: 400 }
+          );
+        }
+      } catch {
+        return json({ error: "Invalid upload results JSON" }, { status: 400 });
+      }
+    } else {
+      return json({ error: "Upload results missing" }, { status: 400 });
     }
 
-    const validatedData = result.data;
-    const uploadResults = validatedData.uploadResults as UploadResult[];
-    const scheduledDates = validatedData.scheduledDates;
-    const queueTypes = validatedData.queueTypes;
+    // Get arrays directly (faster than full Zod validation for large arrays)
+    const scheduledDates = formData.getAll("scheduledDates");
+    const queueTypes = formData.getAll("queueTypes");
+
+    // Basic validation
+    if (uploadResults.length === 0) {
+      return json(
+        { error: "At least one upload result is required" },
+        { status: 400 }
+      );
+    }
+
+    if (
+      scheduledDates.length !== uploadResults.length ||
+      queueTypes.length !== uploadResults.length
+    ) {
+      return json(
+        { error: "Mismatch between upload results and post data" },
+        { status: 400 }
+      );
+    }
+
+    const parseTime = Date.now() - startTime;
+    console.info(
+      `[BulkPosts Server] Parsed ${uploadResults.length} upload results in ${parseTime}ms`
+    );
 
     const fileUrls = uploadResults.map(
       (result: UploadResult, index: number) => ({
         fileUrl: result.file?.url ?? "",
-        scheduledFor: scheduledDates[index],
-        queueType: queueTypes[index],
+        scheduledFor: String(scheduledDates[index] ?? ""),
+        queueType: String(queueTypes[index] ?? ""),
       })
+    );
+
+    const totalTime = Date.now() - startTime;
+    console.info(
+      `[BulkPosts Server] handleUploadImagesPreview completed in ${totalTime}ms`
     );
 
     return json({ success: true, fileUrls });

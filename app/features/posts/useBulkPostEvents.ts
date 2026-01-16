@@ -435,7 +435,11 @@ export function useBulkPostEvents({
   };
 
   const processEvents = useCallback(async () => {
-    const totalSteps = 3; // Fetching hashtags, Preparing events, Finalizing
+    const processStartTime = Date.now();
+    console.info(
+      `[BulkPosts] processEvents started at ${new Date().toISOString()}`
+    );
+    const totalSteps = 4; // Server processing, Fetching hashtags, Preparing events, Finalizing
 
     const updateProgress = (stage: string, step: number) => {
       setPreparationProgress?.({
@@ -445,8 +449,9 @@ export function useBulkPostEvents({
       });
     };
 
-    // Step 1: Fetch hashtags
-    updateProgress("Fetching hashtags...", 1);
+    // Step 2: Fetch hashtags (step 1 was server processing)
+    updateProgress("Fetching hashtags...", 2);
+    const hashtagStartTime = Date.now();
     // First, collect unique queue types and fetch hashtags in batch
     // This prevents making one API call per post, which can be very slow for bulk operations
     const uniqueQueueTypes = new Set(
@@ -493,10 +498,20 @@ export function useBulkPostEvents({
       hashtagResults.forEach(({ queueType, hashtags }) => {
         hashtagCache.set(queueType, hashtags);
       });
+      const hashtagTime = Date.now() - hashtagStartTime;
+      console.info(
+        `[BulkPosts] Hashtags fetched in ${hashtagTime}ms (${uniqueQueueTypes.size} unique queue types)`
+      );
+    } else {
+      const hashtagTime = Date.now() - hashtagStartTime;
+      console.info(
+        `[BulkPosts] Skipped hashtag fetch (using presets) in ${hashtagTime}ms`
+      );
     }
 
-    // Step 2: Prepare events
-    updateProgress("Preparing events...", 2);
+    // Step 3: Prepare events
+    updateProgress("Preparing events...", 3);
+    const eventCreationStartTime = Date.now();
     // Now create events using cached hashtags
     const events = await Promise.all(
       posts.map(async (post, index) => {
@@ -562,11 +577,18 @@ export function useBulkPostEvents({
         };
       })
     );
+    const eventCreationTime = Date.now() - eventCreationStartTime;
+    console.info(
+      `[BulkPosts] Events created in ${eventCreationTime}ms (${posts.length} posts)`
+    );
 
-    // Step 3: Finalize
-    updateProgress("Finalizing...", 3);
+    // Step 4: Finalize
+    updateProgress("Finalizing...", 4);
     setPreparedEvents(events);
     setShowConfirmation(true);
+
+    const totalTime = Date.now() - processStartTime;
+    console.info(`[BulkPosts] processEvents completed in ${totalTime}ms total`);
 
     // Reset loading state when events are processed successfully
     setIsPreviewSubmitting(false);
@@ -590,6 +612,10 @@ export function useBulkPostEvents({
 
   const prepareEvents = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.info(
+      "[BulkPosts] Starting preparation at",
+      new Date().toISOString()
+    );
 
     // Validate posts before proceeding
     const { isValid, errors } = validatePostsForPreview();
@@ -613,6 +639,13 @@ export function useBulkPostEvents({
     // Set loading state for preview submission
     setIsPreviewSubmitting(true);
 
+    // Show initial progress immediately
+    setPreparationProgress?.({
+      current: 0,
+      total: 4, // Uploading (if needed), Waiting for server, Fetching hashtags, Preparing events, Finalizing
+      stage: "Preparing...",
+    });
+
     try {
       // Check if this is a repost with existing URLs, kind 6 repost, or quote post
       const hasRepostData = posts.some((post) => post.isRepost && post.fileUrl);
@@ -627,6 +660,13 @@ export function useBulkPostEvents({
         // Note: Direct assignment to fetcher.data is not recommended, but this is a workaround for repost flow
         (fetcher as { data?: unknown }).data = { fileUrls: fakeFileUrls };
 
+        // Update progress - skipping upload, going straight to processing
+        setPreparationProgress?.({
+          current: 1,
+          total: 4,
+          stage: "Processing reposts...",
+        });
+
         // Trigger the event creation manually
         const customEvent = new CustomEvent("repostEventsPrepared");
         document.dispatchEvent(customEvent);
@@ -638,8 +678,20 @@ export function useBulkPostEvents({
 
         if (filesToUpload.length > 0) {
           try {
+            // Update progress for upload phase
+            setPreparationProgress?.({
+              current: 0,
+              total: 4,
+              stage: "Uploading files...",
+            });
+
+            const uploadStartTime = Date.now();
             // Upload all files using the new upload system
             const uploadResults = await uploadMultipleFiles(filesToUpload);
+            const uploadTime = Date.now() - uploadStartTime;
+            console.info(
+              `[BulkPosts] Uploads completed in ${uploadTime}ms (${filesToUpload.length} files)`
+            );
 
             // Check for failed uploads
             const failedUploads = uploadResults.filter(
@@ -661,6 +713,13 @@ export function useBulkPostEvents({
               return { success: true, file: { url: "" } }; // Placeholder for posts without files
             });
 
+            // Update progress - waiting for server
+            setPreparationProgress?.({
+              current: 1,
+              total: 4,
+              stage: "Processing uploads...",
+            });
+
             // Send results to server
             const formData = new FormData();
             formData.append("uploadResults", JSON.stringify(mappedResults));
@@ -670,6 +729,10 @@ export function useBulkPostEvents({
               formData.append("isRecyclable", post.isRecyclable.toString());
             });
             formData.append("_action", "_upload_images_preview");
+
+            console.info(
+              `[BulkPosts] Submitting to server at ${new Date().toISOString()}`
+            );
 
             // Submit to server for processing
             isWaitingForUpload.current = true;
@@ -699,6 +762,13 @@ export function useBulkPostEvents({
           }
         } else {
           // No files to upload, just proceed with existing URLs (for reposts/quotes)
+          // Update progress - waiting for server
+          setPreparationProgress?.({
+            current: 1,
+            total: 4,
+            stage: "Processing...",
+          });
+
           const formData = new FormData();
           formData.append("uploadResults", JSON.stringify([])); // Empty results for no uploads
           posts.forEach((post) => {
@@ -707,6 +777,10 @@ export function useBulkPostEvents({
             formData.append("isRecyclable", post.isRecyclable.toString());
           });
           formData.append("_action", "_upload_images_preview");
+
+          console.info(
+            `[BulkPosts] Submitting to server (no uploads) at ${new Date().toISOString()}`
+          );
 
           // Submit to server for processing
           isWaitingForUpload.current = true;
@@ -754,6 +828,12 @@ export function useBulkPostEvents({
         "fileUrls" in fetcherData &&
         Array.isArray(fetcherData.fileUrls)
       ) {
+        // Update progress - server processing complete, starting event preparation
+        setPreparationProgress?.({
+          current: 1,
+          total: 4,
+          stage: "Processing reposts, preparing events...",
+        });
         void processEvents();
       }
     };
@@ -769,7 +849,7 @@ export function useBulkPostEvents({
         handleRepostEventsPrepared
       );
     };
-  }, [fetcher.data, processEvents]);
+  }, [fetcher.data, processEvents, setPreparationProgress]);
 
   // Watch for upload completion
   useEffect(() => {
@@ -787,10 +867,21 @@ export function useBulkPostEvents({
       "fileUrls" in fetcherData &&
       Array.isArray(fetcherData.fileUrls)
     ) {
+      console.info(
+        `[BulkPosts] Server response received at ${new Date().toISOString()}`
+      );
       isWaitingForUpload.current = false;
+
+      // Update progress - server processing complete, starting event preparation
+      setPreparationProgress?.({
+        current: 1,
+        total: 4,
+        stage: "Server processing complete, preparing events...",
+      });
+
       void processEvents();
     }
-  }, [fetcher.state, fetcher.data, processEvents]);
+  }, [fetcher.state, fetcher.data, processEvents, setPreparationProgress]);
 
   return { prepareEvents };
 }
