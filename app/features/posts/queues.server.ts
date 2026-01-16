@@ -58,14 +58,33 @@ function extractPostData(post: unknown): PostData | null {
   const postSignedEvent = "signedEvent" in post ? post.signedEvent : null;
 
   // Handle both scheduledFor (legacy string) and scheduledAtUtc (DateTime)
+  // Prefer scheduledAtUtc (newer field), fall back to scheduledFor
   let postScheduledFor: string | null = null;
-  if ("scheduledFor" in post && typeof post.scheduledFor === "string") {
-    postScheduledFor = post.scheduledFor;
-  } else if ("scheduledAtUtc" in post && post.scheduledAtUtc instanceof Date) {
+  if ("scheduledAtUtc" in post && post.scheduledAtUtc instanceof Date) {
     // Convert DateTime to Unix timestamp (seconds)
     postScheduledFor = Math.floor(
       post.scheduledAtUtc.getTime() / 1000
     ).toString();
+  } else if ("scheduledFor" in post) {
+    const scheduledForValue = post.scheduledFor;
+    if (scheduledForValue instanceof Date) {
+      // scheduledFor is a Date object
+      postScheduledFor = Math.floor(
+        scheduledForValue.getTime() / 1000
+      ).toString();
+    } else if (typeof scheduledForValue === "string") {
+      // Check if it's a Unix timestamp (all digits) or a Date string
+      if (/^\d+$/.test(scheduledForValue)) {
+        // It's a Unix timestamp string
+        postScheduledFor = scheduledForValue;
+      } else {
+        // It's a Date string, parse it
+        const date = new Date(scheduledForValue);
+        if (!isNaN(date.getTime())) {
+          postScheduledFor = Math.floor(date.getTime() / 1000).toString();
+        }
+      }
+    }
   }
 
   if (!postUserId || !postSignedEvent || !postScheduledFor || !postId) {
