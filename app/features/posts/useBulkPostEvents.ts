@@ -439,11 +439,17 @@ export function useBulkPostEvents({
     console.info(
       `[BulkPosts] processEvents started at ${new Date().toISOString()}`
     );
-    const totalSteps = 4; // Server processing, Fetching hashtags, Preparing events, Finalizing
+
+    // Calculate total steps based on whether we had uploads
+    const filesToUpload = posts
+      .map((post) => post.file)
+      .filter((file) => file !== null);
+    const totalSteps = filesToUpload.length > 0 ? filesToUpload.length + 3 : 4;
+    const baseStep = filesToUpload.length > 0 ? filesToUpload.length + 1 : 1;
 
     const updateProgress = (stage: string, step: number) => {
       setPreparationProgress?.({
-        current: step,
+        current: baseStep + step - 1,
         total: totalSteps,
         stage,
       });
@@ -640,9 +646,14 @@ export function useBulkPostEvents({
     setIsPreviewSubmitting(true);
 
     // Show initial progress immediately
+    // Calculate total steps: uploads (if any) + 3 preparation steps
+    const filesToUpload = posts
+      .map((post) => post.file)
+      .filter((file) => file !== null);
+    const totalSteps = filesToUpload.length > 0 ? filesToUpload.length + 3 : 4;
     setPreparationProgress?.({
       current: 0,
-      total: 4, // Uploading (if needed), Waiting for server, Fetching hashtags, Preparing events, Finalizing
+      total: totalSteps,
       stage: "Preparing...",
     });
 
@@ -681,13 +692,22 @@ export function useBulkPostEvents({
             // Update progress for upload phase
             setPreparationProgress?.({
               current: 0,
-              total: 4,
-              stage: "Uploading files...",
+              total: filesToUpload.length + 3, // Uploads + 3 preparation steps
+              stage: `Uploading file 1 of ${filesToUpload.length}...`,
             });
 
             const uploadStartTime = Date.now();
-            // Upload all files using the new upload system
-            const uploadResults = await uploadMultipleFiles(filesToUpload);
+            // Upload all files using the new upload system with progress tracking
+            const uploadResults = await uploadMultipleFiles(
+              filesToUpload,
+              (current, total, fileName) => {
+                setPreparationProgress?.({
+                  current,
+                  total: total + 3, // Total includes uploads + 3 preparation steps
+                  stage: `Uploading file ${current} of ${total}... (${fileName})`,
+                });
+              }
+            );
             const uploadTime = Date.now() - uploadStartTime;
             console.info(
               `[BulkPosts] Uploads completed in ${uploadTime}ms (${filesToUpload.length} files)`
@@ -715,8 +735,8 @@ export function useBulkPostEvents({
 
             // Update progress - waiting for server
             setPreparationProgress?.({
-              current: 1,
-              total: 4,
+              current: filesToUpload.length + 1,
+              total: filesToUpload.length + 3,
               stage: "Processing uploads...",
             });
 

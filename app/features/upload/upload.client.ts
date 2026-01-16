@@ -110,6 +110,7 @@ async function uploadFileToBlossom(
   enableMirrorBlossom = false,
   mirrorUploadUrls: string[] = []
 ): Promise<UploadResult> {
+  const fileUploadStart = Date.now();
   try {
     // Check if NOSTR is available
     if (!window.nostr) {
@@ -119,7 +120,12 @@ async function uploadFileToBlossom(
     }
 
     // Dynamic import to avoid SSR issues
+    const importStart = Date.now();
     const uploadersModule = await import("@nostrify/nostrify/uploaders");
+    const importTime = Date.now() - importStart;
+    console.info(
+      `[Blossom Upload] Module import for ${file.name} took ${importTime}ms`
+    );
 
     const BlossomUploader =
       (
@@ -168,7 +174,12 @@ async function uploadFileToBlossom(
     });
 
     // Upload the file
+    const blossomUploadStart = Date.now();
     const tags = await uploader.upload(file);
+    const blossomUploadTime = Date.now() - blossomUploadStart;
+    console.info(
+      `[Blossom Upload] File ${file.name} (${(file.size / 1024).toFixed(1)}KB) uploaded to Blossom in ${blossomUploadTime}ms`
+    );
 
     // Validate that we got the expected tag format
     if (!Array.isArray(tags)) {
@@ -178,6 +189,7 @@ async function uploadFileToBlossom(
     }
 
     // Send the result to server for processing
+    const serverCallStart = Date.now();
     const response = await fetch("/api/upload-blossom", {
       method: "POST",
       headers: {
@@ -188,6 +200,10 @@ async function uploadFileToBlossom(
         fileName: file.name,
       }),
     });
+    const serverCallTime = Date.now() - serverCallStart;
+    console.info(
+      `[Blossom Upload] Server processing for ${file.name} took ${serverCallTime}ms`
+    );
 
     const result = (await response.json()) as {
       success?: boolean;
@@ -198,7 +214,11 @@ async function uploadFileToBlossom(
 
     // Server returns { success: true, data: { file: {...} } }
     const fileData = result.data?.file ?? result.file;
+    const totalTime = Date.now() - fileUploadStart;
     if (result.success && fileData) {
+      console.info(
+        `[Blossom Upload] File ${file.name} completed successfully in ${totalTime}ms total (Blossom: ${blossomUploadTime}ms, Server: ${serverCallTime}ms)`
+      );
       return {
         success: true,
         file: {
@@ -210,12 +230,19 @@ async function uploadFileToBlossom(
         },
       };
     } else {
+      console.info(
+        `[Blossom Upload] File ${file.name} failed after ${totalTime}ms`
+      );
       return {
         success: false,
         error: result.error ?? "Blossom upload failed",
       };
     }
   } catch (error) {
+    const totalTime = Date.now() - fileUploadStart;
+    console.info(
+      `[Blossom Upload] File ${file.name} errored after ${totalTime}ms`
+    );
     const { handleAsyncError, getErrorMessage } =
       await import("~/lib/error-handler.client");
     handleAsyncError(
@@ -235,10 +262,11 @@ async function uploadFileToBlossom(
 }
 
 /**
- * Upload multiple files - sequential for Blossom (signer limitation), parallel for S3
+ * Upload multiple files - parallel with concurrency limit for Blossom, parallel for S3
  */
 export async function uploadMultipleFiles(
-  files: File[]
+  files: File[],
+  onProgress?: (current: number, total: number, fileName: string) => void
 ): Promise<UploadResult[]> {
   // Check upload provider first
   const { getUploadProvider } = await import("~/lib/query");
@@ -249,27 +277,57 @@ export async function uploadMultipleFiles(
     data.provider === "BLOSSOM";
 
   if (isBlossom) {
-    // Blossom requires sequential uploads with delay due to external rate limits
-    const results: UploadResult[] = [];
-    for (let i = 0; i < files.length; i++) {
-      if (i > 0) {
-        await new Promise((r) => setTimeout(r, 500)); // 500ms delay between uploads
+    // Blossom: Use parallel uploads with concurrency limit (3 at a time)
+    // This is much faster than sequential while still respecting rate limits
+    const results: UploadResult[] = new Array<UploadResult>(files.length);
+    let index = 0;
+    let completed = 0;
+
+    async function worker(): Promise<void> {
+      while (index < files.length) {
+        const currentIndex = index++;
+        const file = files[currentIndex];
+        if (file) {
+          const uploadStart = Date.now();
+          onProgress?.(currentIndex + 1, files.length, file.name);
+          const result = await uploadFile(file);
+          const uploadTime = Date.now() - uploadStart;
+          results[currentIndex] = result;
+          completed++;
+          console.info(
+            `[BulkPosts] File ${completed}/${files.length} (${file.name}) uploaded in ${uploadTime}ms`
+          );
+        }
       }
-      results.push(await uploadFile(files[i]!));
     }
+
+    // Use concurrency limit of 3 for Blossom to balance speed and rate limits
+    const concurrency = Math.min(3, files.length);
+    const workers = Array.from({ length: concurrency }, () => worker());
+    await Promise.all(workers);
+
     return results;
   }
 
-  // S3 can handle parallel uploads
+  // S3 can handle parallel uploads with higher concurrency
   const results: UploadResult[] = new Array<UploadResult>(files.length);
   let index = 0;
+  let completed = 0;
 
   async function worker(): Promise<void> {
     while (index < files.length) {
       const currentIndex = index++;
       const file = files[currentIndex];
       if (file) {
-        results[currentIndex] = await uploadFile(file);
+        const uploadStart = Date.now();
+        const result = await uploadFile(file);
+        const uploadTime = Date.now() - uploadStart;
+        results[currentIndex] = result;
+        completed++;
+        onProgress?.(completed, files.length, file.name);
+        console.info(
+          `[BulkPosts] File ${completed}/${files.length} (${file.name}) uploaded in ${uploadTime}ms`
+        );
       }
     }
   }
