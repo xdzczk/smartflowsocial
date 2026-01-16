@@ -336,6 +336,7 @@ async function run() {
             "'self'",
             "wss:", // WebSocket connections for Nostr
             "https:", // External API calls
+            "http://127.0.0.1:7242", // Debug logging server
             ...(isDevelopment ? ["ws://localhost:3001"] : []), // Remix dev server WebSocket
           ],
           workerSrc: [
