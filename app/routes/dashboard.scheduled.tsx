@@ -41,6 +41,7 @@ import {
   extractLongFormPostData,
 } from "~/lib/validation/combined-content";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
+import { convertPostDataArrayToScheduledTablePosts } from "~/lib/validation/post-data-conversion";
 import { scheduledPostsLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
 import { validateUserData } from "~/lib/validation/user-data";
 
@@ -233,46 +234,7 @@ export default function ScheduledPosts() {
           />
 
           <ScheduledPostsTable
-            posts={filteredPosts.map(
-              (
-                post
-              ): {
-                id: string;
-                caption?: string | null;
-                scheduledFor: string;
-                fileUrl?: string[] | null;
-                queueType?: { name: string; color?: string | null } | null;
-                repost?: boolean;
-                isQuotedPost?: boolean;
-                isPostSigned?: boolean;
-              } => ({
-                id: post.id,
-                caption: post.caption ?? null,
-                scheduledFor: (() => {
-                  const scheduledForValue: unknown = post.scheduledFor;
-                  if (typeof scheduledForValue === "string")
-                    return scheduledForValue;
-                  if (scheduledForValue instanceof Date)
-                    return scheduledForValue.toISOString();
-                  return "";
-                })(),
-                fileUrl: Array.isArray(post.fileUrl)
-                  ? post.fileUrl
-                  : // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: fileUrl may be a string from legacy data
-                    post.fileUrl
-                    ? [post.fileUrl]
-                    : null,
-                queueType: post.queueType
-                  ? {
-                      name: post.queueType.name,
-                      color: post.queueType.color ?? null,
-                    }
-                  : null,
-                repost: post.repost || false,
-                isQuotedPost: post.isQuotedPost || false,
-                isPostSigned: !!post.signedEvent,
-              })
-            )}
+            posts={convertPostDataArrayToScheduledTablePosts(filteredPosts)}
             sortConfig={sortConfig}
             onRequestSort={requestSort}
             selectedPosts={selectedPosts}
