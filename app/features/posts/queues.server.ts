@@ -88,13 +88,6 @@ function extractPostData(post: unknown): PostData | null {
   }
 
   if (!postUserId || !postSignedEvent || !postScheduledFor || !postId) {
-    logInfo("extractPostData: Missing required fields", {
-      hasId: !!postId,
-      hasUserId: !!postUserId,
-      hasSignedEvent: !!postSignedEvent,
-      hasScheduledFor: !!postScheduledFor,
-      hasScheduledAtUtc: "scheduledAtUtc" in post,
-    });
     return null;
   }
 
@@ -109,27 +102,15 @@ function extractPostData(post: unknown): PostData | null {
 async function processPost(postData: PostData, now: number): Promise<boolean> {
   const signedEvent = toSignedEvent(postData.signedEvent);
   if (!signedEvent) {
-    logInfo("processPost: Invalid signedEvent", { postId: postData.id });
     return false;
   }
 
   const scheduledTime = parseInt(postData.scheduledFor, 10);
   if (isNaN(scheduledTime)) {
-    logInfo("processPost: Invalid scheduledFor", {
-      postId: postData.id,
-      scheduledFor: postData.scheduledFor,
-    });
     return false;
   }
 
   const timeDiff = scheduledTime - now;
-  logInfo("processPost: Checking post", {
-    postId: postData.id,
-    scheduledTime,
-    now,
-    timeDiff,
-  });
-
   if (timeDiff <= 1) {
     const { enqueuePostJob } = await import("~/infra/queue");
     await enqueuePostJob(
@@ -141,10 +122,6 @@ async function processPost(postData: PostData, now: number): Promise<boolean> {
     return true;
   }
 
-  logInfo("processPost: Post not yet due", {
-    postId: postData.id,
-    timeDiff,
-  });
   return false;
 }
 
@@ -535,12 +512,6 @@ export const postCheckerWorker = new Worker(
       ]);
       const now = Math.floor(Date.now() / 1000);
 
-      logInfo("Post checker running", {
-        postsFound: posts.length,
-        longformPostsFound: longformPosts.length,
-        currentTime: now,
-      });
-
       // Process regular posts
       let processed = 0;
       for (const post of posts) {
@@ -549,9 +520,6 @@ export const postCheckerWorker = new Worker(
           const success = await processPost(postData, now);
           if (success) {
             processed++;
-            logInfo("Enqueued due post for publishing", {
-              postId: postData.id,
-            });
           }
         }
       }
@@ -563,9 +531,6 @@ export const postCheckerWorker = new Worker(
           const success = await processLongFormPost(postData, now);
           if (success) {
             processed++;
-            logInfo("Enqueued due longform post for publishing", {
-              postId: postData.id,
-            });
           }
         }
       }

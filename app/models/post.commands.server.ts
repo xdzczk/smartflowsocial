@@ -281,8 +281,16 @@ export async function updatePostStatus({
   // Get current state to check if this is a state change
   const currentPost = await prisma.post.findUnique({
     where: { id, userId },
-    select: { isPosted: true },
+    select: { isPosted: true, scheduledAtUtc: true },
   });
+
+  // Use scheduled time if available, otherwise use current time
+  const postedAt =
+    isPosted && currentPost?.scheduledAtUtc
+      ? currentPost.scheduledAtUtc
+      : isPosted
+        ? new Date()
+        : undefined;
 
   const post = await prisma.post.update({
     where: {
@@ -291,7 +299,7 @@ export async function updatePostStatus({
     },
     data: {
       isPosted,
-      postedAt: new Date(),
+      ...(postedAt && { postedAt }),
     },
   });
 
