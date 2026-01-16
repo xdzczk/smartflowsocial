@@ -355,19 +355,31 @@ const eventStatsSchema = z.object({
 });
 
 /**
- * Schema for GroupedNotification (simplified - allows passthrough for flexibility)
+ * Schema for ParentPost
  */
-const groupedNotificationSchema = z
-  .object({
-    id: z.string(),
-    eventId: z.string(),
-    pubkey: z.string(),
-    createdAt: z.number(),
-    kind: z.number(),
-    content: z.string().optional(),
-    tags: z.array(z.array(z.string())).optional(),
-  })
-  .passthrough();
+const parentPostSchema = z.object({
+  id: z.string(),
+  eventId: z.string(),
+  pubkey: z.string(),
+  caption: z.string().nullable().optional(),
+  fileUrl: z
+    .union([z.string(), z.array(z.string())])
+    .nullable()
+    .optional(),
+  title: z.string().nullable().optional(),
+  content: z.string().nullable().optional(),
+  postedAt: z.string().nullable(), // ISO string
+  isLongform: z.boolean(),
+  stats: eventStatsSchema.optional(),
+});
+
+/**
+ * Schema for GroupedNotification (matches actual structure)
+ */
+const groupedNotificationSchema = z.object({
+  parentPost: parentPostSchema,
+  notifications: z.array(z.unknown()), // Notifications are complex, use unknown for flexibility
+});
 
 /**
  * Schema for EngagementLoaderData

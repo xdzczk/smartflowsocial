@@ -5,6 +5,7 @@
 
 import { connectToPrimalCache } from "~/features/cache/primalCache.server";
 import type { SignedEvent } from "~/features/nostr/types";
+import { toPostDTOArray } from "~/features/posts/dtos";
 import type { PostData, QueueType } from "~/features/posts/types";
 import { convertJsonValueToScheduleConfig } from "~/features/posts/types";
 import type { UserWithHashTagPresets } from "~/features/user";
@@ -481,23 +482,6 @@ export async function loadEngagementFeedData(
     ),
   };
 
-  // Filter posts to only show those with replies
-  const postsWithReplies = posts.filter((post) => {
-    const se = post.signedEvent;
-    if (
-      !se ||
-      typeof se !== "object" ||
-      Array.isArray(se) ||
-      !("id" in se) ||
-      typeof (se as { id: unknown }).id !== "string"
-    ) {
-      return false;
-    }
-    const eventId = (se as { id: string }).id;
-    const postStats = stats[eventId];
-    return postStats && postStats.replies > 0;
-  });
-
   // Fetch quote reposts using get_notifications
   let quoteRepostNotifications: Notification[] = [];
   let groupedQuoteReposts: GroupedNotification[] = [];
@@ -646,14 +630,54 @@ export async function loadEngagementFeedData(
     trustScores[pubkey] = score;
   });
 
+  // Convert posts to DTOs (serialize Date objects to strings)
+  // Filter postsAsPostData to only include posts with replies, then convert to DTOs
+  const postsWithRepliesAsPostData = postsAsPostData.filter((post) => {
+    const se = post.signedEvent;
+    if (
+      !se ||
+      typeof se !== "object" ||
+      Array.isArray(se) ||
+      !("id" in se) ||
+      typeof (se as { id: unknown }).id !== "string"
+    ) {
+      return false;
+    }
+    const eventId = (se as { id: string }).id;
+    const postStats = stats[eventId];
+    return postStats && postStats.replies > 0;
+  });
+  const postsAsDTOs = toPostDTOArray(postsWithRepliesAsPostData);
+
+  // Serialize dates in groupedNotifications
+  const serializedGroupedReplies = groupedByParent.replies.map((group) => ({
+    ...group,
+    parentPost: {
+      ...group.parentPost,
+      postedAt: group.parentPost.postedAt
+        ? group.parentPost.postedAt.toISOString()
+        : null,
+    },
+  }));
+
+  const serializedGroupedQuotes = groupedQuoteReposts.map((group) => ({
+    ...group,
+    parentPost: {
+      ...group.parentPost,
+      postedAt: group.parentPost.postedAt
+        ? group.parentPost.postedAt.toISOString()
+        : null,
+    },
+  }));
+
   return {
-    posts: postsWithReplies,
+    posts: postsAsDTOs,
     stats,
     user,
     notifications: groupedNotifications,
     groupedNotifications: {
-      replies: groupedByParent.replies,
-      quotes: groupedQuoteReposts,
+      replies: serializedGroupedReplies,
+      quotes: serializedGroupedQuotes,
     },
     trustScores,
   };
