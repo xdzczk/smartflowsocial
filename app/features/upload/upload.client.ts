@@ -102,80 +102,161 @@ async function uploadFileToS3(file: File): Promise<UploadResult> {
 }
 
 /**
+ * Test network connectivity to Blossom server
+ */
+async function testBlossomNetworkLatency(
+  serverUrl: string
+): Promise<number | null> {
+  try {
+    const testStart = Date.now();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 second timeout
+
+    await fetch(serverUrl, {
+      method: "HEAD",
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    const latency = Date.now() - testStart;
+    console.info(
+      `[Blossom Network] Connectivity test to ${serverUrl} took ${latency}ms`
+    );
+    return latency;
+  } catch (error) {
+    console.warn(
+      `[Blossom Network] Connectivity test to ${serverUrl} failed: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+    return null;
+  }
+}
+
+interface BlossomUploaderInstance {
+  upload: (file: File) => Promise<string[][]>;
+}
+
+/**
+ * Create a Blossom uploader instance (can be reused for multiple files)
+ */
+async function createBlossomUploader(
+  provider: string,
+  enableMirrorBlossom: boolean,
+  mirrorUploadUrls: string[]
+): Promise<{
+  uploader: BlossomUploaderInstance;
+  primaryServerUrl: string;
+  servers: string[];
+}> {
+  // Check if NOSTR is available
+  if (!window.nostr) {
+    throw new Error(
+      "NOSTR extension not available. Please install a NOSTR browser extension like Alby, Amber, or nos2x."
+    );
+  }
+
+  // Dynamic import to avoid SSR issues
+  const importStart = Date.now();
+  const uploadersModule = await import("@nostrify/nostrify/uploaders");
+  const importTime = Date.now() - importStart;
+  console.info(`[Blossom Upload] Module import took ${importTime}ms`);
+
+  const BlossomUploader =
+    (
+      uploadersModule as {
+        BlossomUploader?: new (...args: unknown[]) => {
+          upload: (file: File) => Promise<string[][]>;
+        };
+      }
+    ).BlossomUploader ??
+    (
+      uploadersModule.default as {
+        BlossomUploader?: new (...args: unknown[]) => {
+          upload: (file: File) => Promise<string[][]>;
+        };
+      }
+    ).BlossomUploader;
+  if (!BlossomUploader) {
+    throw new Error("BlossomUploader not found in module");
+  }
+
+  // Determine primary server based on provider
+  let primaryServerUrl: string;
+  if (provider === "BLOSSOM_BLOSSTR") {
+    primaryServerUrl = "https://blosstr.com";
+  } else {
+    // Default to Primal for BLOSSOM_PRIMAL or legacy BLOSSOM
+    primaryServerUrl = "https://blossom.primal.net";
+  }
+
+  // Test network latency to primary server
+  const networkLatency = await testBlossomNetworkLatency(primaryServerUrl);
+  if (networkLatency !== null) {
+    console.info(
+      `[Blossom Network] Primary server ${primaryServerUrl} latency: ${networkLatency}ms`
+    );
+  }
+
+  // Build servers array starting with primary server
+  const servers = [primaryServerUrl];
+
+  // Add mirror URLs if enabled and available
+  if (
+    enableMirrorBlossom &&
+    Array.isArray(mirrorUploadUrls) &&
+    mirrorUploadUrls.length > 0
+  ) {
+    servers.push(...mirrorUploadUrls);
+    // Test latency to mirror servers as well
+    for (const mirrorUrl of mirrorUploadUrls) {
+      const mirrorLatency = await testBlossomNetworkLatency(mirrorUrl);
+      if (mirrorLatency !== null) {
+        console.info(
+          `[Blossom Network] Mirror server ${mirrorUrl} latency: ${mirrorLatency}ms`
+        );
+      }
+    }
+  }
+
+  // Create uploader with NOSTR signer and all servers
+  const uploader = new BlossomUploader({
+    servers: servers,
+    signer: window.nostr,
+  });
+
+  return { uploader, primaryServerUrl, servers };
+}
+
+/**
  * Upload file to Blossom via client-side processing
  */
 async function uploadFileToBlossom(
   file: File,
   provider = "BLOSSOM_PRIMAL",
   enableMirrorBlossom = false,
-  mirrorUploadUrls: string[] = []
+  mirrorUploadUrls: string[] = [],
+  uploader?: BlossomUploaderInstance
 ): Promise<UploadResult> {
   const fileUploadStart = Date.now();
   try {
-    // Check if NOSTR is available
-    if (!window.nostr) {
-      throw new Error(
-        "NOSTR extension not available. Please install a NOSTR browser extension like Alby, Amber, or nos2x."
-      );
-    }
-
-    // Dynamic import to avoid SSR issues
-    const importStart = Date.now();
-    const uploadersModule = await import("@nostrify/nostrify/uploaders");
-    const importTime = Date.now() - importStart;
-    console.info(
-      `[Blossom Upload] Module import for ${file.name} took ${importTime}ms`
-    );
-
-    const BlossomUploader =
-      (
-        uploadersModule as {
-          BlossomUploader?: new (...args: unknown[]) => {
-            upload: (file: File) => Promise<string[][]>;
-          };
-        }
-      ).BlossomUploader ??
-      (
-        uploadersModule.default as {
-          BlossomUploader?: new (...args: unknown[]) => {
-            upload: (file: File) => Promise<string[][]>;
-          };
-        }
-      ).BlossomUploader;
-    if (!BlossomUploader) {
-      throw new Error("BlossomUploader not found in module");
-    }
-
-    // Determine primary server based on provider
-    let primaryServerUrl;
-    if (provider === "BLOSSOM_BLOSSTR") {
-      primaryServerUrl = "https://blosstr.com";
+    // Use provided uploader or create a new one
+    let uploaderInstance: BlossomUploaderInstance;
+    if (uploader) {
+      uploaderInstance = uploader;
     } else {
-      // Default to Primal for BLOSSOM_PRIMAL or legacy BLOSSOM
-      primaryServerUrl = "https://blossom.primal.net";
+      // Create a new uploader for single file uploads
+      const uploaderResult = await createBlossomUploader(
+        provider,
+        enableMirrorBlossom,
+        mirrorUploadUrls
+      );
+      uploaderInstance = uploaderResult.uploader;
     }
-
-    // Build servers array starting with primary server
-    const servers = [primaryServerUrl];
-
-    // Add mirror URLs if enabled and available
-    if (
-      enableMirrorBlossom &&
-      Array.isArray(mirrorUploadUrls) &&
-      mirrorUploadUrls.length > 0
-    ) {
-      servers.push(...mirrorUploadUrls);
-    }
-
-    // Create uploader with NOSTR signer and all servers
-    const uploader = new BlossomUploader({
-      servers: servers,
-      signer: window.nostr,
-    });
 
     // Upload the file
     const blossomUploadStart = Date.now();
-    const tags = await uploader.upload(file);
+    const tags = await uploaderInstance.upload(file);
     const blossomUploadTime = Date.now() - blossomUploadStart;
     console.info(
       `[Blossom Upload] File ${file.name} (${(file.size / 1024).toFixed(1)}KB) uploaded to Blossom in ${blossomUploadTime}ms`
@@ -262,7 +343,7 @@ async function uploadFileToBlossom(
 }
 
 /**
- * Upload multiple files - parallel with concurrency limit for Blossom, parallel for S3
+ * Upload multiple files - unlimited concurrency for Blossom, parallel for S3
  */
 export async function uploadMultipleFiles(
   files: File[],
@@ -277,34 +358,54 @@ export async function uploadMultipleFiles(
     data.provider === "BLOSSOM";
 
   if (isBlossom) {
-    // Blossom: Use parallel uploads with concurrency limit (3 at a time)
-    // This is much faster than sequential while still respecting rate limits
+    // Blossom: Upload all files concurrently with shared uploader instance
+    // Each upload takes 18-19s independently, so parallelizing all of them
+    // will give us the best performance (total time ≈ slowest file)
+    console.info(
+      `[BulkPosts] Starting concurrent upload of ${files.length} files to Blossom`
+    );
+
+    // Create a single uploader instance to reuse for all files
+    // This avoids recreating the uploader and re-testing network latency for each file
+    const provider = data.provider ?? "BLOSSOM_PRIMAL";
+    const uploaderResult = await createBlossomUploader(
+      provider,
+      data.enableMirrorBlossom ?? false,
+      data.mirrorUploadUrls ?? []
+    );
+    const sharedUploader = uploaderResult.uploader;
+
+    // Upload all files in parallel using the shared uploader
     const results: UploadResult[] = new Array<UploadResult>(files.length);
-    let index = 0;
     let completed = 0;
 
-    async function worker(): Promise<void> {
-      while (index < files.length) {
-        const currentIndex = index++;
-        const file = files[currentIndex];
-        if (file) {
-          const uploadStart = Date.now();
-          onProgress?.(currentIndex + 1, files.length, file.name);
-          const result = await uploadFile(file);
-          const uploadTime = Date.now() - uploadStart;
-          results[currentIndex] = result;
-          completed++;
-          console.info(
-            `[BulkPosts] File ${completed}/${files.length} (${file.name}) uploaded in ${uploadTime}ms`
-          );
-        }
-      }
-    }
+    const uploadPromises = files.map(async (file, index) => {
+      const uploadStart = Date.now();
+      onProgress?.(index + 1, files.length, file.name);
 
-    // Use concurrency limit of 3 for Blossom to balance speed and rate limits
-    const concurrency = Math.min(3, files.length);
-    const workers = Array.from({ length: concurrency }, () => worker());
-    await Promise.all(workers);
+      // Use the shared uploader instance
+      const result = await uploadFileToBlossom(
+        file,
+        provider,
+        data.enableMirrorBlossom ?? false,
+        data.mirrorUploadUrls ?? [],
+        sharedUploader
+      );
+
+      const uploadTime = Date.now() - uploadStart;
+      results[index] = result;
+      completed++;
+      console.info(
+        `[BulkPosts] File ${completed}/${files.length} (${file.name}) uploaded in ${uploadTime}ms`
+      );
+      return result;
+    });
+
+    await Promise.all(uploadPromises);
+
+    console.info(
+      `[BulkPosts] All ${files.length} files uploaded concurrently to Blossom`
+    );
 
     return results;
   }
