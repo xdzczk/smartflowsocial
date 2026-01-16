@@ -385,11 +385,13 @@ async function uploadFileToBlossom(
     }).catch(() => {});
     // #endregion
 
-    if (result.success && result.file) {
+    // Server returns { success: true, data: { file: {...} } }
+    const fileData = result.data?.file ?? result.file;
+    if (result.success && fileData) {
       return {
         success: true,
         file: {
-          url: result.file.url,
+          url: fileData.url,
           size: file.size,
           name: file.name,
           extension: file.name.split(".").pop() ?? "",
