@@ -168,21 +168,34 @@ export function WeeklyView({
     // Create an ISO string that represents the local time in the user's timezone
     const isoString = `${date}T${safeHours.toString().padStart(2, "0")}:${safeMinutes.toString().padStart(2, "0")}:00`;
 
-    // Use a library approach - create the date as if it's in user's timezone
-    // This is the reverse of how we display dates - we convert from user timezone to UTC
     try {
-      // Create a temporary date in browser's local timezone
-      const tempDate = new Date(isoString);
+      let newDateTime: Date;
 
-      // Convert to user's timezone and back to get the right UTC offset
-      const userTzDate = new Date(
-        tempDate.toLocaleString("sv-SE", { timeZone: userTimezone })
-      );
-      const localTzDate = new Date(tempDate.toLocaleString("sv-SE"));
+      // Only convert timezone if not UTC/Etc/GMT
+      if (userTimezone !== "UTC" && userTimezone !== "Etc/GMT") {
+        // Create a date from the ISO string (interpreted as local browser time)
+        const localDate = new Date(isoString);
 
-      // Calculate the difference and apply it
-      const diff = localTzDate.getTime() - userTzDate.getTime();
-      const newDateTime = new Date(tempDate.getTime() + diff);
+        // Get what that time would be in the user's timezone
+        const userDateStr = new Date(isoString).toLocaleString("en-US", {
+          timeZone: userTimezone,
+        });
+        const userDate = new Date(userDateStr);
+        const scheduledDate = new Date(isoString);
+
+        // Calculate the offset in minutes between user timezone and local browser time
+        const userOffset =
+          (userDate.getTime() - scheduledDate.getTime()) / 60000;
+
+        // Adjust the date by the offset to get the correct UTC time
+        const utcDate = new Date(localDate);
+        utcDate.setMinutes(utcDate.getMinutes() - userOffset);
+        newDateTime = utcDate;
+      } else {
+        // For UTC timezone, parse date string and ensure it's in UTC
+        const dateObj = new Date(isoString + "Z");
+        newDateTime = dateObj;
+      }
 
       onPostDrop(postData, newDateTime);
     } catch (error) {
@@ -193,9 +206,9 @@ export function WeeklyView({
           action: "handleDrop",
         },
         () => {
-          // Fallback to simple date creation
-          const newDateTime = new Date(isoString);
-          onPostDrop(postData, newDateTime);
+          // Fallback: try to create date as UTC
+          const dateObj = new Date(isoString + "Z");
+          onPostDrop(postData, dateObj);
         }
       );
     }
@@ -268,7 +281,7 @@ export function WeeklyView({
                     key={`${dateKey}-${time}`}
                     role="gridcell"
                     tabIndex={-1}
-                    className={`relative min-w-0 flex-1 overflow-visible border-r border-gray-100 p-1 last:border-r-0 dark:border-gray-800 ${
+                    className={`relative min-w-0 flex-1 overflow-hidden border-r border-gray-100 p-1 last:border-r-0 dark:border-gray-800 ${
                       isDragOver
                         ? "bg-blue-100 dark:bg-blue-900/30"
                         : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
@@ -278,34 +291,38 @@ export function WeeklyView({
                     onDragLeave={handleDragLeave}
                   >
                     {posts.length === 1 ? (
-                      // Single post - full width
+                      // Single post - full width with height constraint
                       posts[0] ? (
-                        <PostBlock
-                          post={posts[0]}
-                          compact={true}
-                          user={user}
-                          queueTypes={queueTypes}
-                          onEdit={onPostEdit}
-                          isLongform={
-                            isAll
-                              ? Boolean(posts[0].title && posts[0].publishedAt)
-                              : isLongform
-                          }
-                          isPast={
-                            typeof posts[0].isPast === "boolean"
-                              ? posts[0].isPast
-                              : false
-                          }
-                        />
+                        <div className="h-full">
+                          <PostBlock
+                            post={posts[0]}
+                            compact={true}
+                            user={user}
+                            queueTypes={queueTypes}
+                            onEdit={onPostEdit}
+                            isLongform={
+                              isAll
+                                ? Boolean(
+                                    posts[0].title && posts[0].publishedAt
+                                  )
+                                : isLongform
+                            }
+                            isPast={
+                              typeof posts[0].isPast === "boolean"
+                                ? posts[0].isPast
+                                : false
+                            }
+                          />
+                        </div>
                       ) : null
                     ) : posts.length <= 6 ? (
-                      // 2-6 posts - dynamic equal width distribution with smaller labels
+                      // 2-6 posts - dynamic equal width distribution with height constraint
                       <div className="flex h-full space-x-0.5">
                         {posts.map((post, postIndex) => (
                           <div
                             // eslint-disable-next-line react/no-array-index-key -- Composite key with stable post ID
                             key={`${post.id}-${postIndex}`}
-                            className="min-w-0 flex-1"
+                            className="h-full min-w-0 flex-1 overflow-hidden"
                           >
                             <PostBlock
                               post={post}
@@ -336,7 +353,7 @@ export function WeeklyView({
                           <div
                             // eslint-disable-next-line react/no-array-index-key -- Composite key with post.id ensures uniqueness
                             key={`${post.id}-${postIndex}`}
-                            className="min-w-0 flex-1"
+                            className="h-full min-w-0 flex-1 overflow-hidden"
                           >
                             <PostBlock
                               post={post}

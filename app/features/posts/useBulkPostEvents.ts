@@ -9,6 +9,20 @@ import { logClientError } from "~/lib/error-handler.client";
 
 import { type BulkPost, type PreparedEvent } from "./types";
 
+/**
+ * Check if we're in development mode for conditional logging
+ */
+const isDevelopment = process.env.NODE_ENV === "development";
+
+/**
+ * Development-only logging helper
+ */
+function devLog(...args: unknown[]): void {
+  if (isDevelopment) {
+    console.info(...args);
+  }
+}
+
 const DEFAULT_RELAY_URL = "wss://relay.primal.net";
 
 interface FetcherData {
@@ -436,9 +450,7 @@ export function useBulkPostEvents({
 
   const processEvents = useCallback(async () => {
     const processStartTime = Date.now();
-    console.info(
-      `[BulkPosts] processEvents started at ${new Date().toISOString()}`
-    );
+    devLog(`[BulkPosts] processEvents started at ${new Date().toISOString()}`);
 
     // Calculate total steps based on whether we had uploads
     const filesToUpload = posts
@@ -505,12 +517,12 @@ export function useBulkPostEvents({
         hashtagCache.set(queueType, hashtags);
       });
       const hashtagTime = Date.now() - hashtagStartTime;
-      console.info(
+      devLog(
         `[BulkPosts] Hashtags fetched in ${hashtagTime}ms (${uniqueQueueTypes.size} unique queue types)`
       );
     } else {
       const hashtagTime = Date.now() - hashtagStartTime;
-      console.info(
+      devLog(
         `[BulkPosts] Skipped hashtag fetch (using presets) in ${hashtagTime}ms`
       );
     }
@@ -584,7 +596,7 @@ export function useBulkPostEvents({
       })
     );
     const eventCreationTime = Date.now() - eventCreationStartTime;
-    console.info(
+    devLog(
       `[BulkPosts] Events created in ${eventCreationTime}ms (${posts.length} posts)`
     );
 
@@ -594,7 +606,7 @@ export function useBulkPostEvents({
     setShowConfirmation(true);
 
     const totalTime = Date.now() - processStartTime;
-    console.info(`[BulkPosts] processEvents completed in ${totalTime}ms total`);
+    devLog(`[BulkPosts] processEvents completed in ${totalTime}ms total`);
 
     // Reset loading state when events are processed successfully
     setIsPreviewSubmitting(false);
@@ -618,10 +630,7 @@ export function useBulkPostEvents({
 
   const prepareEvents = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.info(
-      "[BulkPosts] Starting preparation at",
-      new Date().toISOString()
-    );
+    devLog("[BulkPosts] Starting preparation at", new Date().toISOString());
 
     // Validate posts before proceeding
     const { isValid, errors } = validatePostsForPreview();
@@ -704,13 +713,12 @@ export function useBulkPostEvents({
                 setPreparationProgress?.({
                   current: completed,
                   total: total + 3, // Total includes uploads + 3 preparation steps
-                  stage:
-                    message ?? `Uploading... ${completed} of ${total} files`,
+                  stage: message,
                 });
               }
             );
             const uploadTime = Date.now() - uploadStartTime;
-            console.info(
+            devLog(
               `[BulkPosts] Uploads completed in ${uploadTime}ms (${filesToUpload.length} files)`
             );
 
@@ -751,7 +759,7 @@ export function useBulkPostEvents({
             });
             formData.append("_action", "_upload_images_preview");
 
-            console.info(
+            devLog(
               `[BulkPosts] Submitting to server at ${new Date().toISOString()}`
             );
 
@@ -799,7 +807,7 @@ export function useBulkPostEvents({
           });
           formData.append("_action", "_upload_images_preview");
 
-          console.info(
+          devLog(
             `[BulkPosts] Submitting to server (no uploads) at ${new Date().toISOString()}`
           );
 
@@ -888,7 +896,7 @@ export function useBulkPostEvents({
       "fileUrls" in fetcherData &&
       Array.isArray(fetcherData.fileUrls)
     ) {
-      console.info(
+      devLog(
         `[BulkPosts] Server response received at ${new Date().toISOString()}`
       );
       isWaitingForUpload.current = false;

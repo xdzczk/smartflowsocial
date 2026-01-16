@@ -2,6 +2,29 @@
 
 const COMPONENT_UPLOAD_CLIENT = "upload.client";
 
+/**
+ * Check if we're in development mode for conditional logging
+ */
+const isDevelopment = process.env.NODE_ENV === "development";
+
+/**
+ * Development-only logging helper
+ */
+function devLog(...args: unknown[]): void {
+  if (isDevelopment) {
+    console.info(...args);
+  }
+}
+
+/**
+ * Development-only warning helper
+ */
+function devWarn(...args: unknown[]): void {
+  if (isDevelopment) {
+    console.warn(...args);
+  }
+}
+
 interface UploadResult {
   success: boolean;
   file?: {
@@ -119,12 +142,12 @@ async function testBlossomNetworkLatency(
     clearTimeout(timeoutId);
 
     const latency = Date.now() - testStart;
-    console.info(
+    devLog(
       `[Blossom Network] Connectivity test to ${serverUrl} took ${latency}ms`
     );
     return latency;
   } catch (error) {
-    console.warn(
+    devWarn(
       `[Blossom Network] Connectivity test to ${serverUrl} failed: ${
         error instanceof Error ? error.message : String(error)
       }`
@@ -160,7 +183,7 @@ async function createBlossomUploader(
   const importStart = Date.now();
   const uploadersModule = await import("@nostrify/nostrify/uploaders");
   const importTime = Date.now() - importStart;
-  console.info(`[Blossom Upload] Module import took ${importTime}ms`);
+  devLog(`[Blossom Upload] Module import took ${importTime}ms`);
 
   const BlossomUploader =
     (
@@ -193,7 +216,7 @@ async function createBlossomUploader(
   // Test network latency to primary server
   const networkLatency = await testBlossomNetworkLatency(primaryServerUrl);
   if (networkLatency !== null) {
-    console.info(
+    devLog(
       `[Blossom Network] Primary server ${primaryServerUrl} latency: ${networkLatency}ms`
     );
   }
@@ -212,7 +235,7 @@ async function createBlossomUploader(
     for (const mirrorUrl of mirrorUploadUrls) {
       const mirrorLatency = await testBlossomNetworkLatency(mirrorUrl);
       if (mirrorLatency !== null) {
-        console.info(
+        devLog(
           `[Blossom Network] Mirror server ${mirrorUrl} latency: ${mirrorLatency}ms`
         );
       }
@@ -258,7 +281,7 @@ async function uploadFileToBlossom(
     const blossomUploadStart = Date.now();
     const tags = await uploaderInstance.upload(file);
     const blossomUploadTime = Date.now() - blossomUploadStart;
-    console.info(
+    devLog(
       `[Blossom Upload] File ${file.name} (${(file.size / 1024).toFixed(1)}KB) uploaded to Blossom in ${blossomUploadTime}ms`
     );
 
@@ -282,7 +305,7 @@ async function uploadFileToBlossom(
       }),
     });
     const serverCallTime = Date.now() - serverCallStart;
-    console.info(
+    devLog(
       `[Blossom Upload] Server processing for ${file.name} took ${serverCallTime}ms`
     );
 
@@ -297,7 +320,7 @@ async function uploadFileToBlossom(
     const fileData = result.data?.file ?? result.file;
     const totalTime = Date.now() - fileUploadStart;
     if (result.success && fileData) {
-      console.info(
+      devLog(
         `[Blossom Upload] File ${file.name} completed successfully in ${totalTime}ms total (Blossom: ${blossomUploadTime}ms, Server: ${serverCallTime}ms)`
       );
       return {
@@ -311,9 +334,7 @@ async function uploadFileToBlossom(
         },
       };
     } else {
-      console.info(
-        `[Blossom Upload] File ${file.name} failed after ${totalTime}ms`
-      );
+      devLog(`[Blossom Upload] File ${file.name} failed after ${totalTime}ms`);
       return {
         success: false,
         error: result.error ?? "Blossom upload failed",
@@ -321,9 +342,7 @@ async function uploadFileToBlossom(
     }
   } catch (error) {
     const totalTime = Date.now() - fileUploadStart;
-    console.info(
-      `[Blossom Upload] File ${file.name} errored after ${totalTime}ms`
-    );
+    devLog(`[Blossom Upload] File ${file.name} errored after ${totalTime}ms`);
     const { handleAsyncError, getErrorMessage } =
       await import("~/lib/error-handler.client");
     handleAsyncError(
@@ -361,7 +380,7 @@ export async function uploadMultipleFiles(
     // Blossom: Upload all files concurrently with shared uploader instance
     // Each upload takes 18-19s independently, so parallelizing all of them
     // will give us the best performance (total time ≈ slowest file)
-    console.info(
+    devLog(
       `[BulkPosts] Starting concurrent upload of ${files.length} files to Blossom`
     );
 
@@ -410,7 +429,7 @@ export async function uploadMultipleFiles(
         `Uploading... ${completed} of ${files.length} files completed (${percentage}%)`
       );
 
-      console.info(
+      devLog(
         `[BulkPosts] File ${completed}/${files.length} (${file.name}) uploaded in ${uploadTime}ms`
       );
       return result;
@@ -418,7 +437,7 @@ export async function uploadMultipleFiles(
 
     await Promise.all(uploadPromises);
 
-    console.info(
+    devLog(
       `[BulkPosts] All ${files.length} files uploaded concurrently to Blossom`
     );
 
@@ -449,7 +468,7 @@ export async function uploadMultipleFiles(
           files.length,
           `Uploading... ${completed} of ${files.length} files completed (${percentage}%)`
         );
-        console.info(
+        devLog(
           `[BulkPosts] File ${completed}/${files.length} (${file.name}) uploaded in ${uploadTime}ms`
         );
       }

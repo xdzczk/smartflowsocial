@@ -141,18 +141,33 @@ export function MonthlyView({
     const isoString = `${year}-${month}-${day}T09:00:00`;
 
     try {
-      // Create a temporary date in browser's local timezone
-      const tempDate = new Date(isoString);
+      let newDateTime: Date;
 
-      // Convert to user's timezone and back to get the right UTC offset
-      const userTzDate = new Date(
-        tempDate.toLocaleString("sv-SE", { timeZone: userTimezone })
-      );
-      const localTzDate = new Date(tempDate.toLocaleString("sv-SE"));
+      // Only convert timezone if not UTC/Etc/GMT
+      if (userTimezone !== "UTC" && userTimezone !== "Etc/GMT") {
+        // Create a date from the ISO string (interpreted as local browser time)
+        const localDate = new Date(isoString);
 
-      // Calculate the difference and apply it
-      const diff = localTzDate.getTime() - userTzDate.getTime();
-      const newDateTime = new Date(tempDate.getTime() + diff);
+        // Get what that time would be in the user's timezone
+        const userDateStr = new Date(isoString).toLocaleString("en-US", {
+          timeZone: userTimezone,
+        });
+        const userDate = new Date(userDateStr);
+        const scheduledDate = new Date(isoString);
+
+        // Calculate the offset in minutes between user timezone and local browser time
+        const userOffset =
+          (userDate.getTime() - scheduledDate.getTime()) / 60000;
+
+        // Adjust the date by the offset to get the correct UTC time
+        const utcDate = new Date(localDate);
+        utcDate.setMinutes(utcDate.getMinutes() - userOffset);
+        newDateTime = utcDate;
+      } else {
+        // For UTC timezone, parse date string and ensure it's in UTC
+        const dateObj = new Date(isoString + "Z");
+        newDateTime = dateObj;
+      }
 
       onPostDrop(postData, newDateTime);
     } catch (error) {
@@ -163,10 +178,9 @@ export function MonthlyView({
           action: "handlePostDrop",
         },
         () => {
-          // Fallback to simple date creation
-          const newDateTime = new Date(date);
-          newDateTime.setHours(9, 0, 0, 0);
-          onPostDrop(postData, newDateTime);
+          // Fallback: try to create date as UTC
+          const dateObj = new Date(isoString + "Z");
+          onPostDrop(postData, dateObj);
         }
       );
     }

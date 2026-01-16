@@ -137,19 +137,19 @@ function MediaPreview({
 }) {
   if (!firstImage) {
     return (
-      <p className="truncate-2-lines text-xs leading-relaxed">
+      <p className="truncate-2-lines overflow-hidden text-xs leading-relaxed">
         {isLongform ? (post.summary ?? postPreview) : postPreview}
       </p>
     );
   }
 
   return (
-    <div className="space-y-1">
-      <div className="post-thumbnail relative h-16 w-full overflow-hidden rounded-md">
+    <div className="flex h-full min-h-0 flex-col space-y-1">
+      <div className="post-thumbnail relative min-h-0 w-full flex-1 overflow-hidden rounded-md">
         <MediaThumbnail
           src={firstImage}
           alt="Post preview"
-          className="h-full w-full rounded-md"
+          className="h-full w-full rounded-md object-cover"
           forceType={isVideoFile(firstImage) ? "video" : "image"}
           hidePlayButton={false}
           fallback={
@@ -163,7 +163,7 @@ function MediaPreview({
         <PostBadges post={post} size="md" position="absolute-large" />
       </div>
       {(post.caption ?? (isLongform && post.summary)) ? (
-        <p className="truncate-2-lines text-xs leading-relaxed text-gray-600 dark:text-gray-400">
+        <p className="truncate-2-lines flex-shrink-0 text-xs leading-relaxed text-gray-600 dark:text-gray-400">
           {isLongform ? (post.summary ?? postPreview) : postPreview}
         </p>
       ) : null}
@@ -209,13 +209,13 @@ export function CompactPostBlock({
         displayTime,
         userTimezone
       )}
-      className={getClassName(
+      className={`${getClassName(
         isPast,
         isDragging,
         queueColorStyle,
         post,
         isLongform
-      )}
+      )} flex h-full flex-col overflow-hidden`}
       style={
         queueColorStyle
           ? (queueColorStyle as unknown as React.CSSProperties)
@@ -229,7 +229,7 @@ export function CompactPostBlock({
         userTimezone
       )}
     >
-      <div className="mb-1 flex items-start justify-between">
+      <div className="mb-1 flex flex-shrink-0 items-start justify-between">
         <div className="flex items-center space-x-1">
           {firstImage ? (
             <ThumbnailSection
@@ -246,12 +246,14 @@ export function CompactPostBlock({
         <PostStatusIcons post={post} isLongform={isLongform ?? false} />
       </div>
 
-      <MediaPreview
-        firstImage={firstImage}
-        post={post}
-        isLongform={isLongform}
-        postPreview={postPreview}
-      />
+      <div className="min-h-0 flex-1 overflow-hidden">
+        <MediaPreview
+          firstImage={firstImage}
+          post={post}
+          isLongform={isLongform}
+          postPreview={postPreview}
+        />
+      </div>
     </div>
   );
 }
