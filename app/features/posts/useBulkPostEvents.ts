@@ -361,6 +361,11 @@ interface UseBulkPostEventsProps {
   setShowConfirmation: (show: boolean) => void;
   setIsPreviewSubmitting: (isSubmitting: boolean) => void;
   setIsProcessing: (isProcessing: boolean) => void;
+  setPreparationProgress?: (progress: {
+    current: number;
+    total: number;
+    stage: string;
+  }) => void;
 }
 
 export function useBulkPostEvents({
@@ -375,6 +380,7 @@ export function useBulkPostEvents({
   setShowConfirmation,
   setIsPreviewSubmitting,
   setIsProcessing: _setIsProcessing,
+  setPreparationProgress,
 }: UseBulkPostEventsProps) {
   const isWaitingForUpload = useRef(false);
 
@@ -429,6 +435,18 @@ export function useBulkPostEvents({
   };
 
   const processEvents = useCallback(async () => {
+    const totalSteps = 3; // Fetching hashtags, Preparing events, Finalizing
+
+    const updateProgress = (stage: string, step: number) => {
+      setPreparationProgress?.({
+        current: step,
+        total: totalSteps,
+        stage,
+      });
+    };
+
+    // Step 1: Fetch hashtags
+    updateProgress("Fetching hashtags...", 1);
     // First, collect unique queue types and fetch hashtags in batch
     // This prevents making one API call per post, which can be very slow for bulk operations
     const uniqueQueueTypes = new Set(
@@ -477,6 +495,8 @@ export function useBulkPostEvents({
       });
     }
 
+    // Step 2: Prepare events
+    updateProgress("Preparing events...", 2);
     // Now create events using cached hashtags
     const events = await Promise.all(
       posts.map(async (post, index) => {
@@ -543,11 +563,18 @@ export function useBulkPostEvents({
       })
     );
 
+    // Step 3: Finalize
+    updateProgress("Finalizing...", 3);
     setPreparedEvents(events);
     setShowConfirmation(true);
 
     // Reset loading state when events are processed successfully
     setIsPreviewSubmitting(false);
+
+    // Reset progress after a short delay to show completion
+    setTimeout(() => {
+      setPreparationProgress?.({ current: 0, total: 0, stage: "" });
+    }, 500);
   }, [
     posts,
     useHashtagPresets,
@@ -558,6 +585,7 @@ export function useBulkPostEvents({
     setPreparedEvents,
     setShowConfirmation,
     setIsPreviewSubmitting,
+    setPreparationProgress,
   ]);
 
   const prepareEvents = async (e: React.FormEvent) => {

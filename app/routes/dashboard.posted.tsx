@@ -1,4 +1,5 @@
 import { useParams } from "@remix-run/react";
+import { useMemo } from "react";
 
 import Toast from "~/components/ui/Toast";
 import { requireUserId } from "~/features/auth";
@@ -205,6 +206,25 @@ export default function PostedPosts() {
     posts,
   });
 
+  // Memoize sorted posts to prevent unnecessary re-sorting on every render
+  // Must be called before any early returns to follow React Hooks rules
+  const sortedPosts = useMemo(() => {
+    return sortPosts(
+      posts,
+      sortConfig,
+      typeof stats === "object" && !Array.isArray(stats)
+        ? (stats as Record<string, unknown>)
+        : undefined
+    );
+  }, [posts, sortConfig, stats]);
+
+  // Memoize filtered posts to prevent unnecessary filtering on every render
+  const filteredPosts = useMemo(() => {
+    return sortedPosts.filter((post) =>
+      post.caption?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [sortedPosts, searchTerm]);
+
   // Handle nullable user - if user is null, we should not render the component
   // This is a legitimate error state that should be handled properly
   if (!user) {
@@ -234,18 +254,6 @@ export default function PostedPosts() {
       },
     });
   };
-
-  const sortedPosts = sortPosts(
-    posts,
-    sortConfig,
-    typeof stats === "object" && !Array.isArray(stats)
-      ? (stats as Record<string, unknown>)
-      : undefined
-  );
-
-  const filteredPosts = sortedPosts.filter((post) =>
-    post.caption?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   return (
     <div>

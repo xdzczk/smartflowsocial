@@ -121,6 +121,11 @@ interface SubmitButtonProps {
   isProcessing: boolean;
   isPreviewSubmitting: boolean;
   postsCount: number;
+  preparationProgress?: {
+    current: number;
+    total: number;
+    stage: string;
+  };
 }
 
 function SubmitButton({
@@ -128,31 +133,58 @@ function SubmitButton({
   isProcessing,
   isPreviewSubmitting,
   postsCount,
+  preparationProgress,
 }: SubmitButtonProps) {
   const disabled = isSubmitting || isProcessing || isPreviewSubmitting;
+  const showProgress =
+    isPreviewSubmitting &&
+    preparationProgress !== undefined &&
+    preparationProgress.total > 0;
 
   const getButtonContent = () => {
     if (isPreviewSubmitting) {
       return (
-        <span className="flex items-center justify-center gap-2">
-          <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-              fill="none"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            />
-          </svg>
-          Validating & Preparing...
-        </span>
+        <div className="flex w-full flex-col items-center gap-2">
+          <span className="flex items-center justify-center gap-2">
+            <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+                fill="none"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
+            </svg>
+            {preparationProgress?.stage ?? "Validating & Preparing..."}
+          </span>
+          {showProgress ? (
+            <div className="w-full">
+              <div className="mb-1 text-xs text-white/80">
+                Step {preparationProgress.current} of{" "}
+                {preparationProgress.total}
+              </div>
+              <div className="h-2 w-full rounded-full bg-white/20">
+                <div
+                  className="h-2 rounded-full bg-white transition-all duration-300"
+                  style={{
+                    width: `${
+                      (preparationProgress.current /
+                        preparationProgress.total) *
+                      100
+                    }%`,
+                  }}
+                />
+              </div>
+            </div>
+          ) : null}
+        </div>
       );
     }
     if (isSubmitting) {
@@ -234,6 +266,11 @@ export default function BulkPosts() {
     current: 0,
     total: 0,
   });
+  const [preparationProgress, setPreparationProgress] = useState({
+    current: 0,
+    total: 0,
+    stage: "",
+  });
   const [firstItemTimeManuallyChanged, setFirstItemTimeManuallyChanged] =
     useState(false);
   const [isPreviewSubmitting, setIsPreviewSubmitting] = useState(false);
@@ -261,6 +298,7 @@ export default function BulkPosts() {
     setShowConfirmation,
     setIsPreviewSubmitting,
     setIsProcessing,
+    setPreparationProgress,
   });
 
   // Fetch upload provider on component mount
@@ -517,6 +555,7 @@ export default function BulkPosts() {
                 isProcessing={isProcessing}
                 isPreviewSubmitting={isPreviewSubmitting}
                 postsCount={posts.length}
+                preparationProgress={preparationProgress}
               />
             </>
           ) : null}

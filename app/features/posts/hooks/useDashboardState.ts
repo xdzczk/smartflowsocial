@@ -112,37 +112,41 @@ export function useDashboardState({
     }
   }, [bulkDeleteFetcher.data]);
 
-  // Sort posts
-  const sortedPosts = [...scheduledPosts].sort((a, b) => {
-    if (sortConfig.key === "scheduledFor") {
-      const aScheduled = a.scheduledFor;
-      const bScheduled = b.scheduledFor;
-      const aValue =
-        typeof aScheduled === "string" || typeof aScheduled === "number"
-          ? aScheduled
-          : "0";
-      const bValue =
-        typeof bScheduled === "string" || typeof bScheduled === "number"
-          ? bScheduled
-          : "0";
-      const dateA = parseInt(String(aValue)) * 1000;
-      const dateB = parseInt(String(bValue)) * 1000;
-      return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
-    }
-    // For other keys, access safely
-    const key = sortConfig.key as keyof PostData;
-    const aValue = a[key] as string | number | undefined;
-    const bValue = b[key] as string | number | undefined;
-    if (aValue === undefined || bValue === undefined) return 0;
-    if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
-    if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
-    return 0;
-  });
+  // Sort posts - memoized to prevent unnecessary re-sorting on every render
+  const sortedPosts = useMemo(() => {
+    return [...scheduledPosts].sort((a, b) => {
+      if (sortConfig.key === "scheduledFor") {
+        const aScheduled = a.scheduledFor;
+        const bScheduled = b.scheduledFor;
+        const aValue =
+          typeof aScheduled === "string" || typeof aScheduled === "number"
+            ? aScheduled
+            : "0";
+        const bValue =
+          typeof bScheduled === "string" || typeof bScheduled === "number"
+            ? bScheduled
+            : "0";
+        const dateA = parseInt(String(aValue)) * 1000;
+        const dateB = parseInt(String(bValue)) * 1000;
+        return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
+      }
+      // For other keys, access safely
+      const key = sortConfig.key as keyof PostData;
+      const aValue = a[key] as string | number | undefined;
+      const bValue = b[key] as string | number | undefined;
+      if (aValue === undefined || bValue === undefined) return 0;
+      if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [scheduledPosts, sortConfig.key, sortConfig.direction]);
 
-  // Filter posts
-  const filteredPosts = sortedPosts.filter((post) =>
-    post.caption?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter posts - memoized to prevent unnecessary filtering on every render
+  const filteredPosts = useMemo(() => {
+    return sortedPosts.filter((post) =>
+      post.caption?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [sortedPosts, searchTerm]);
 
   const requestSort = (key: string) => {
     setSortConfig((current) => ({

@@ -1,5 +1,5 @@
 import { useFetcher } from "@remix-run/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 interface Post {
   id: string;
   caption?: string | null;
@@ -29,25 +29,29 @@ export function useDraftsState({ posts }: UseDraftsStateProps) {
   const bulkDeleteFetcher = useFetcher<FetcherData>();
   const bulkResumeFetcher = useFetcher<FetcherData>();
 
-  // Sort posts
-  const sortedPosts = [...posts].sort((a, b) => {
-    if (sortConfig.key === "createdAt") {
-      const dateA = new Date(a[sortConfig.key]).getTime();
-      const dateB = new Date(b[sortConfig.key]).getTime();
-      return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
-    }
-    const aValue = a[sortConfig.key] as string | number | undefined;
-    const bValue = b[sortConfig.key] as string | number | undefined;
-    if (aValue === undefined || bValue === undefined) return 0;
-    if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
-    if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
-    return 0;
-  });
+  // Sort posts - memoized to prevent unnecessary re-sorting on every render
+  const sortedPosts = useMemo(() => {
+    return [...posts].sort((a, b) => {
+      if (sortConfig.key === "createdAt") {
+        const dateA = new Date(a[sortConfig.key]).getTime();
+        const dateB = new Date(b[sortConfig.key]).getTime();
+        return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
+      }
+      const aValue = a[sortConfig.key] as string | number | undefined;
+      const bValue = b[sortConfig.key] as string | number | undefined;
+      if (aValue === undefined || bValue === undefined) return 0;
+      if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [posts, sortConfig.key, sortConfig.direction]);
 
-  // Filter posts
-  const filteredPosts = sortedPosts.filter((post) =>
-    post.caption?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter posts - memoized to prevent unnecessary filtering on every render
+  const filteredPosts = useMemo(() => {
+    return sortedPosts.filter((post) =>
+      post.caption?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [sortedPosts, searchTerm]);
 
   const requestSort = (key: string) => {
     setSortConfig((current) => ({

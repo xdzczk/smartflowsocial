@@ -1,5 +1,5 @@
 import type { FetcherWithComponents, useFetcher } from "@remix-run/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 
@@ -235,15 +235,18 @@ export function useRecyclablesState({
     });
   }
 
-  const sortedPosts = sortRecyclablePosts(
-    posts as PostData[],
-    sortConfig,
-    stats
-  );
+  // Sort posts - memoized to prevent unnecessary re-sorting on every render
+  const sortedPosts = useMemo(() => {
+    return sortRecyclablePosts(posts as PostData[], sortConfig, stats);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- sortRecyclablePosts is a stable function defined in the same scope
+  }, [posts, sortConfig, stats]);
 
-  const filteredPosts = sortedPosts.filter((post) =>
-    post.caption?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter posts - memoized to prevent unnecessary filtering on every render
+  const filteredPosts = useMemo(() => {
+    return sortedPosts.filter((post) =>
+      post.caption?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [sortedPosts, searchTerm]);
 
   const requestSort = (key: string) => {
     setSortConfig((current) => ({

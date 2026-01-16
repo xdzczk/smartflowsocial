@@ -374,6 +374,61 @@ export default function DraftBulkResume({
   const handleSignAndResume = async () => {
     setIsSubmitting(true);
     try {
+      // First, collect unique queue types and fetch hashtags in batch
+      // This prevents making one API call per post, which can be very slow for bulk operations
+      // Helper function to extract queue type name (handles both string and QueueType object)
+      const getQueueTypeName = (qt: string | QueueType | undefined): string => {
+        if (!qt) return "";
+        return typeof qt === "string" ? qt : qt.name;
+      };
+
+      const uniqueQueueTypes = new Set(
+        posts
+          .map((post) => getQueueTypeName(post.queueType))
+          .filter((qt) => qt && qt !== "unassigned")
+      );
+
+      // Fetch hashtags for all unique queue types in parallel
+      const hashtagCache = new Map<string, string>();
+
+      if (uniqueQueueTypes.size > 0) {
+        const hashtagPromises = Array.from(uniqueQueueTypes).map(
+          async (queueType) => {
+            try {
+              const response = await fetch("/api/effective-hashtags", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  userId: user?.id,
+                  queueTypeName: queueType,
+                }),
+              });
+              const data = (await response.json()) as { hashtags?: string };
+              return {
+                queueType,
+                hashtags: data.hashtags ?? "",
+              };
+            } catch (error) {
+              const { handleErrorSafely } =
+                await import("~/lib/error-handler.client");
+              handleErrorSafely(error, {
+                component: "DraftBulkResume",
+                action: "getEffectiveHashtags",
+              });
+              return { queueType, hashtags: "" };
+            }
+          }
+        );
+
+        const hashtagResults = await Promise.all(hashtagPromises);
+        hashtagResults.forEach(({ queueType, hashtags }) => {
+          hashtagCache.set(queueType, hashtags);
+        });
+      }
+
+      // Now create signed posts using cached hashtags
       const signedPosts = await Promise.all(
         posts.map(async (post) => {
           const userTimezone = user?.timezone ?? "UTC";
@@ -400,32 +455,12 @@ export default function DraftBulkResume({
 
           const scheduledForUnix = Math.floor(scheduledTime / 1000);
 
-          // Get effective hashtags based on queue type
-          let tagsString = "";
-          try {
-            const response = await fetch("/api/effective-hashtags", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                userId: user?.id,
-                queueTypeName: post.queueType,
-              }),
-            });
-            const data = (await response.json()) as { hashtags?: string };
-            tagsString = data.hashtags ?? "";
-          } catch (error) {
-            const { handleErrorSafely } =
-              await import("~/lib/error-handler.client");
-            handleErrorSafely(error, {
-              component: "DraftBulkResume",
-              action: "getEffectiveHashtags",
-            });
-            // Fallback to user's default hashtags
-            // Note: User doesn't have hashTags property - this would need to come from hashTagPresets relation
-            tagsString = "";
-          }
+          // Get effective hashtags from cache
+          const queueTypeName = getQueueTypeName(post.queueType);
+          const tagsString =
+            queueTypeName && queueTypeName !== "unassigned"
+              ? (hashtagCache.get(queueTypeName) ?? "")
+              : "";
 
           const tagArray = tagsString
             .split(" ")
