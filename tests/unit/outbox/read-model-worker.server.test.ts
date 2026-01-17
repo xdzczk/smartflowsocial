@@ -47,7 +47,7 @@ describe("Read Model Worker", () => {
         userId: "user-1",
         caption: "Test caption",
         scheduledAtUtc: new Date("2024-01-01T12:00:00Z"),
-        isScheduled: true,
+        currentState: "SCHEDULED",
         queueType: {
           name: "posts",
           color: "#000000",
@@ -103,7 +103,7 @@ describe("Read Model Worker", () => {
       const mockPost = {
         id: "post-1",
         userId: "user-1",
-        isScheduled: false,
+        currentState: "DRAFT",
         scheduledAtUtc: null,
         queueType: null,
       };
@@ -135,7 +135,7 @@ describe("Read Model Worker", () => {
         userId: "user-1",
         caption: "Test caption",
         postedAt: new Date("2024-01-01T12:00:00Z"),
-        isPosted: true,
+        currentState: "PUBLISHED",
         queueType: {
           name: "posts",
           color: "#000000",

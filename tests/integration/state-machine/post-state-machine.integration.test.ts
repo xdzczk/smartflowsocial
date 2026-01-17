@@ -6,8 +6,17 @@
  * Run with: pnpm test:db:setup && pnpm test:integration -- --grep "PostStateMachine"
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  vi,
+} from "vitest";
 
+import { setupTestDatabase } from "../../database/test-db";
 import { createValidSignedEvent } from "../../utils/test-helpers";
 
 import { PostStateMachine } from "~/features/posts/state-machine/post-state-machine.server";
@@ -29,32 +38,61 @@ const TEST_DATABASE_URL =
   process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"];
 
 describe.skipIf(!TEST_DATABASE_URL)("PostStateMachine Integration", () => {
+  // Setup database before all tests in this suite
+  beforeAll(async () => {
+    await setupTestDatabase();
+  });
   let userId: string;
   let stateMachine: PostStateMachine;
 
   beforeEach(async () => {
-    // Create a test user
-    const user = await prisma.user.create({
-      data: {
-        npub: `test-${Date.now()}`,
+    // Create a test user with unique identifier to avoid race conditions
+    const uniqueId = `${Date.now()}-${Math.random()}`;
+    const npub = `test-${uniqueId}`;
+    // Use upsert to handle potential race conditions
+    const user = await prisma.user.upsert({
+      where: { npub },
+      update: {},
+      create: {
+        npub,
         isEnabled: true,
       },
     });
     userId = user.id;
     stateMachine = new PostStateMachine();
+
+    // Verify user was created successfully
+    const verifyUser = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!verifyUser) {
+      throw new Error(`Failed to create test user with id ${userId}`);
+    }
   });
 
   afterEach(async () => {
-    // Clean up test data
-    await prisma.postStateTransition.deleteMany({
-      where: { post: { userId } },
-    });
-    await prisma.post.deleteMany({
-      where: { userId },
-    });
-    await prisma.user.delete({
-      where: { id: userId },
-    });
+    // Clean up test data - handle errors gracefully
+    try {
+      await prisma.postStateTransition.deleteMany({
+        where: { post: { userId } },
+      });
+    } catch {
+      // Ignore errors
+    }
+    try {
+      await prisma.post.deleteMany({
+        where: { userId },
+      });
+    } catch {
+      // Ignore errors
+    }
+    try {
+      await prisma.user.delete({
+        where: { id: userId },
+      });
+    } catch {
+      // Ignore errors (user might already be deleted)
+    }
   });
 
   describe("transition", () => {
@@ -160,6 +198,16 @@ describe.skipIf(!TEST_DATABASE_URL)("PostStateMachine Integration", () => {
 
       const postId = createResult.post.id;
 
+      // Verify post exists before transitions (handles race conditions)
+      const postBeforeTransition = await prisma.post.findUnique({
+        where: { id: postId, userId },
+      });
+      if (!postBeforeTransition) {
+        throw new Error(
+          `Post ${postId} not found before transition - possible race condition`
+        );
+      }
+
       // Transition to PUBLISHING
       await stateMachine.transition(
         postId,
@@ -167,6 +215,28 @@ describe.skipIf(!TEST_DATABASE_URL)("PostStateMachine Integration", () => {
         "PUBLISHING",
         "Starting publish"
       );
+
+      // Verify post still exists and is in PUBLISHING state before next transition
+      // Use a retry mechanism to handle potential race conditions
+      let postBeforeFailed = await prisma.post.findUnique({
+        where: { id: postId, userId },
+        select: { id: true, currentState: true },
+      });
+      if (!postBeforeFailed) {
+        // Retry once after a short delay
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        postBeforeFailed = await prisma.post.findUnique({
+          where: { id: postId, userId },
+          select: { id: true, currentState: true },
+        });
+        if (!postBeforeFailed) {
+          throw new Error(
+            `Post ${postId} not found before FAILED transition - possible race condition`
+          );
+        }
+      }
+      // Verify we're in the expected state
+      expect(postBeforeFailed.currentState).toBe("PUBLISHING");
 
       // Transition to FAILED
       await stateMachine.transition(
@@ -179,6 +249,16 @@ describe.skipIf(!TEST_DATABASE_URL)("PostStateMachine Integration", () => {
       // Verify state
       const post = await prisma.post.findUnique({ where: { id: postId } });
       expect(post?.currentState).toBe("FAILED");
+
+      // Verify post still exists before recovery transition
+      const postBeforeRecovery = await prisma.post.findUnique({
+        where: { id: postId, userId },
+      });
+      if (!postBeforeRecovery) {
+        throw new Error(
+          `Post ${postId} not found before recovery transition - possible race condition`
+        );
+      }
 
       // Verify can recover from FAILED
       await stateMachine.transition(postId, userId, "DRAFT", "Retry as draft");
@@ -201,6 +281,16 @@ describe.skipIf(!TEST_DATABASE_URL)("PostStateMachine Integration", () => {
 
       const postId = createResult.post.id;
 
+      // Verify post exists before publishing (handles race conditions)
+      const postBeforePublish = await prisma.post.findUnique({
+        where: { id: postId, userId },
+      });
+      if (!postBeforePublish) {
+        throw new Error(
+          `Post ${postId} not found before publish - possible race condition`
+        );
+      }
+
       // Publish the post to get it to PUBLISHED state
       const publishUseCase = new PublishNowUseCase();
       await publishUseCase.execute({
@@ -209,6 +299,16 @@ describe.skipIf(!TEST_DATABASE_URL)("PostStateMachine Integration", () => {
         signedEvent: createValidSignedEvent({ content: "test" }),
         relays: ["wss://relay.example.com"],
       });
+
+      // Verify post still exists after publish (handles race conditions)
+      const postAfterPublish = await prisma.post.findUnique({
+        where: { id: postId, userId },
+      });
+      if (!postAfterPublish) {
+        throw new Error(
+          `Post ${postId} not found after publish - possible race condition`
+        );
+      }
 
       // Try invalid transition: PUBLISHED -> SCHEDULED (PUBLISHED is terminal)
       await expect(
@@ -244,7 +344,29 @@ describe.skipIf(!TEST_DATABASE_URL)("PostStateMachine Integration", () => {
 
       // Make multiple transitions
       await stateMachine.transition(postId, userId, "SCHEDULED", "Scheduled");
+
+      // Verify post exists before next transition
+      const postBeforePublishing = await prisma.post.findUnique({
+        where: { id: postId, userId },
+      });
+      if (!postBeforePublishing) {
+        throw new Error(
+          `Post ${postId} not found before PUBLISHING transition - possible race condition`
+        );
+      }
+
       await stateMachine.transition(postId, userId, "PUBLISHING", "Publishing");
+
+      // Verify post exists before next transition
+      const postBeforePublished = await prisma.post.findUnique({
+        where: { id: postId, userId },
+      });
+      if (!postBeforePublished) {
+        throw new Error(
+          `Post ${postId} not found before PUBLISHED transition - possible race condition`
+        );
+      }
+
       await stateMachine.transition(postId, userId, "PUBLISHED", "Published");
 
       // Get history

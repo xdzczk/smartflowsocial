@@ -151,8 +151,6 @@ describeDatabase("Database Integration Example", () => {
         queueTypeId: queue.id,
         fileUrl: [],
         tags: [],
-        isScheduled: false,
-        isPosted: false,
         postType: "TEXT",
       });
 

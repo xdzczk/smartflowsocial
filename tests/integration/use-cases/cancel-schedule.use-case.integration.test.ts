@@ -79,7 +79,8 @@ describe.skipIf(!TEST_DATABASE_URL)("CancelScheduleUseCase Integration", () => {
 
     // Schedule the post
     const scheduleUseCase = new SchedulePostUseCase();
-    const scheduledAtUtc = new Date(Date.now() + 3600000); // 1 hour from now
+    const { fromDate } = await import("~/lib/temporal");
+    const scheduledAtUtc = fromDate(new Date(Date.now() + 3600000), "UTC"); // 1 hour from now
     await scheduleUseCase.execute({
       postId,
       userId,
@@ -99,7 +100,9 @@ describe.skipIf(!TEST_DATABASE_URL)("CancelScheduleUseCase Integration", () => {
     const scheduledPost = await prisma.post.findUnique({
       where: { id: postId },
     });
-    expect(scheduledPost?.isScheduled).toBe(true);
+    const { deriveIsScheduled } =
+      await import("~/features/posts/state-machine/post-state");
+    expect(deriveIsScheduled(scheduledPost?.currentState)).toBe(true);
     expect(scheduledPost?.currentState).toBe("SCHEDULED");
 
     // Cancel the scheduled post
@@ -114,7 +117,9 @@ describe.skipIf(!TEST_DATABASE_URL)("CancelScheduleUseCase Integration", () => {
     const cancelledPost = await prisma.post.findUnique({
       where: { id: postId },
     });
-    expect(cancelledPost?.isScheduled).toBe(false);
+    const { deriveIsScheduled: deriveIsScheduled2 } =
+      await import("~/features/posts/state-machine/post-state");
+    expect(deriveIsScheduled2(cancelledPost?.currentState)).toBe(false);
     expect(cancelledPost?.currentState).toBe("CANCELLED");
     // scheduledAtUtc may be null or undefined depending on how Prisma handles it
     expect(cancelledPost?.scheduledAtUtc).toBeFalsy();

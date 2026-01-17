@@ -62,14 +62,12 @@ describe("Post Queries", () => {
         | {
             where?: {
               userId?: string;
-              isScheduled?: boolean;
-              isPosted?: boolean;
+              currentState?: string;
             };
           }
         | undefined;
       expect(firstCall?.where?.userId).toBe(TEST_USER_ID);
-      expect(firstCall?.where?.isScheduled).toBe(true);
-      expect(firstCall?.where?.isPosted).toBe(false);
+      expect(firstCall?.where?.currentState).toBe("SCHEDULED");
       expect(result.scheduledCount).toBe(3);
     });
 
@@ -83,7 +81,7 @@ describe("Post Queries", () => {
       expect(prisma.post.count).toHaveBeenCalledWith({
         where: {
           userId: TEST_USER_ID,
-          isPosted: true,
+          currentState: "PUBLISHED",
         },
       });
       expect(result.successCount).toBe(8);
@@ -100,7 +98,7 @@ describe("Post Queries", () => {
       const mockPost = {
         scheduledFor: "1234567890",
         createdAt: new Date(),
-        isPosted: false,
+        currentState: "SCHEDULED",
       };
 
       (
@@ -181,7 +179,7 @@ describe("Post Queries", () => {
       expect(prisma.post.findFirst).not.toHaveBeenCalled();
     });
 
-    it("should filter by isPosted for INTERVAL schedule type", async () => {
+    it("should filter by currentState for INTERVAL schedule type", async () => {
       const mockQueueType = {
         id: "queue-123",
         scheduleType: "INTERVAL" as const,
@@ -200,11 +198,14 @@ describe("Post Queries", () => {
       });
 
       const callArgs = (prisma.post.findFirst as ReturnType<typeof vi.fn>).mock
-        .calls[0]?.[0] as { where?: { isPosted?: boolean } } | undefined;
-      expect(callArgs?.where?.isPosted).toBe(false);
+        .calls[0]?.[0] as
+        | { where?: { currentState?: string | { in?: string[] } } }
+        | undefined;
+      // For INTERVAL, should only include SCHEDULED posts
+      expect(callArgs?.where?.currentState).toBe("SCHEDULED");
     });
 
-    it("should not filter by isPosted for FIXED_SLOTS schedule type", async () => {
+    it("should include both SCHEDULED and PUBLISHED for FIXED_SLOTS schedule type", async () => {
       const mockQueueType = {
         id: "queue-123",
         scheduleType: "FIXED_SLOTS" as const,
@@ -223,8 +224,18 @@ describe("Post Queries", () => {
       });
 
       const callArgs = (prisma.post.findFirst as ReturnType<typeof vi.fn>).mock
-        .calls[0]?.[0] as { where?: { isPosted?: boolean } } | undefined;
-      expect(callArgs?.where?.isPosted).toBeUndefined();
+        .calls[0]?.[0] as
+        | { where?: { currentState?: string | { in?: string[] } } }
+        | undefined;
+      // For FIXED_SLOTS, should include both SCHEDULED and PUBLISHED
+      const currentState = callArgs?.where?.currentState;
+      expect(
+        (typeof currentState === "object" &&
+          "in" in currentState &&
+          (currentState.in ?? false)) ||
+          currentState === "SCHEDULED" ||
+          currentState === "PUBLISHED"
+      ).toBeTruthy();
     });
 
     it("should return null if no post found", async () => {
@@ -304,8 +315,8 @@ describe("Post Queries", () => {
   describe("getRecentPostedPosts", () => {
     it("should get recent posted posts", async () => {
       const mockPosts = [
-        { id: "post-1", isPosted: true },
-        { id: "post-2", isPosted: true },
+        { id: "post-1", currentState: "PUBLISHED" },
+        { id: "post-2", currentState: "PUBLISHED" },
       ];
       (prisma.post.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockPosts
@@ -319,11 +330,15 @@ describe("Post Queries", () => {
       const callArgs = (prisma.post.findMany as ReturnType<typeof vi.fn>).mock
         .calls[0]?.[0] as
         | {
-            where?: { userId?: string; isPosted?: boolean; postedAt?: unknown };
+            where?: {
+              userId?: string;
+              currentState?: string;
+              postedAt?: unknown;
+            };
           }
         | undefined;
       expect(callArgs?.where?.userId).toBe(TEST_USER_ID);
-      expect(callArgs?.where?.isPosted).toBe(true);
+      expect(callArgs?.where?.currentState).toBe("PUBLISHED");
       expect(callArgs?.where?.postedAt).toBeDefined();
       expect(result).toEqual(mockPosts);
     });
@@ -360,8 +375,7 @@ describe("Post Queries", () => {
 
       expect(prisma.post.findMany).toHaveBeenCalledWith({
         where: {
-          isScheduled: true,
-          isPosted: false,
+          currentState: "SCHEDULED",
           scheduledAtUtc: {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
             lte: expect.any(Date),

@@ -1,6 +1,13 @@
 import { useFetcher } from "@remix-run/react";
 import { useState, useEffect, useMemo } from "react";
 
+import {
+  difference,
+  fromDate,
+  fromUnixTimestamp,
+  nowInTimezone,
+} from "~/lib/temporal";
+
 import type { CombinedContent, LongFormPostData, PostData } from "../types";
 // Union type for posts that can be edited/rescheduled
 type EditablePost = PostData | LongFormPostData;
@@ -57,51 +64,60 @@ export function useScheduledState({
   useEffect(() => {
     const updateCountdowns = () => {
       const tz = userTimezone ?? "UTC";
-      const now = new Date(
-        new Date().toLocaleString("en-US", { timeZone: tz })
-      ).getTime();
+      const now = nowInTimezone(tz);
       const newCountdowns: Record<string, string> = {};
 
       scheduledPosts.forEach((post) => {
-        let scheduledForString = "0";
-        if (post.scheduledFor) {
-          const scheduledForValue = post.scheduledFor as
-            | Date
-            | string
-            | number
-            | null
-            | undefined;
-          if (scheduledForValue instanceof Date) {
-            // Convert Date to Unix timestamp string (seconds)
-            scheduledForString = Math.floor(
-              scheduledForValue.getTime() / 1000
-            ).toString();
-          } else if (typeof scheduledForValue === "string") {
-            scheduledForString = scheduledForValue;
-          } else if (typeof scheduledForValue === "number") {
-            scheduledForString = Math.floor(
-              scheduledForValue / 1000
-            ).toString();
-          }
+        if (!post.scheduledFor) {
+          return;
         }
 
-        const utcTime = parseInt(scheduledForString) * 1000;
-        const userTime = new Date(utcTime).toLocaleString("en-US", {
-          timeZone: tz,
-        });
-        const scheduledTime = new Date(userTime).getTime();
-        const distance = scheduledTime - now;
+        try {
+          // Convert scheduledFor to Temporal ZonedDateTime
+          let scheduledZoned;
+          const scheduledForValue = post.scheduledFor;
 
-        if (distance > 0) {
-          const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-          const hours = Math.floor(
-            (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-          );
-          const minutes = Math.floor(
-            (distance % (1000 * 60 * 60)) / (1000 * 60)
-          );
-          newCountdowns[post.id] = `${days}d ${hours}h ${minutes}m`;
-        } else {
+          if (
+            scheduledForValue &&
+            typeof scheduledForValue === "object" &&
+            "getTime" in scheduledForValue
+          ) {
+            scheduledZoned = fromDate(scheduledForValue, "UTC");
+          } else if (typeof scheduledForValue === "string") {
+            const timestamp = parseInt(scheduledForValue, 10);
+            if (!isNaN(timestamp)) {
+              scheduledZoned = fromUnixTimestamp(timestamp, "UTC");
+            } else {
+              return;
+            }
+          } else if (typeof scheduledForValue === "number") {
+            scheduledZoned = fromUnixTimestamp(
+              Math.floor(scheduledForValue / 1000),
+              "UTC"
+            );
+          } else {
+            return;
+          }
+
+          // Convert to user's timezone for comparison
+          const scheduledInUserTz = scheduledZoned.withTimeZone(tz);
+
+          // Calculate difference
+          const duration = difference(scheduledInUserTz, now);
+
+          if (duration.sign === 1) {
+            // Future time
+            const days = Math.floor(duration.total({ unit: "days" }));
+            const hours = Math.floor(duration.total({ unit: "hours" }) % 24);
+            const minutes = Math.floor(
+              duration.total({ unit: "minutes" }) % 60
+            );
+            newCountdowns[post.id] = `${days}d ${hours}h ${minutes}m`;
+          } else {
+            newCountdowns[post.id] = "Due now";
+          }
+        } catch {
+          // If conversion fails, skip this post
           newCountdowns[post.id] = "Due now";
         }
       });

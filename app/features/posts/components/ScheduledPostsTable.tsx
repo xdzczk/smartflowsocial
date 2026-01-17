@@ -5,6 +5,7 @@
 import { useFetcher } from "@remix-run/react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
+import { formatForDisplay, fromUnixTimestamp } from "~/lib/temporal";
 import type { ScheduledPostTablePost } from "~/lib/validation/post-data-conversion.server";
 
 import { getQueueColor } from "../queue-colors";
@@ -69,17 +70,53 @@ export function ScheduledPostsTable({
   const deleteFetcher = useFetcher();
 
   const formatDate = (unixTimestamp: string) => {
-    const tz = userTimezone ?? "UTC";
-    const date = new Date(parseInt(unixTimestamp) * 1000);
-    return date.toLocaleString("en-US", {
-      timeZone: tz,
-      month: "2-digit",
-      day: "2-digit",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
+    try {
+      const tz = userTimezone ?? "UTC";
+      const timestamp = parseInt(unixTimestamp, 10);
+      if (isNaN(timestamp)) return "Invalid date";
+
+      const zoned = fromUnixTimestamp(timestamp, "UTC");
+      const userZoned = zoned.withTimeZone(tz);
+
+      return formatForDisplay(userZoned, tz, {
+        month: "2-digit",
+        day: "2-digit",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+    } catch {
+      // Fallback - still use Temporal for consistency
+      try {
+        const tz = userTimezone ?? "UTC";
+        const timestamp = parseInt(unixTimestamp, 10);
+        if (isNaN(timestamp)) return "Invalid date";
+        const zoned = fromUnixTimestamp(timestamp, "UTC");
+        const userZoned = zoned.withTimeZone(tz);
+        return formatForDisplay(userZoned, tz, {
+          month: "2-digit",
+          day: "2-digit",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        });
+      } catch {
+        // Final fallback
+        const tz = userTimezone ?? "UTC";
+        const date = new Date(parseInt(unixTimestamp, 10) * 1000);
+        return date.toLocaleString("en-US", {
+          timeZone: tz,
+          month: "2-digit",
+          day: "2-digit",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        });
+      }
+    }
   };
 
   const getImageUrls = (fileUrl: string[] | null | undefined) => {

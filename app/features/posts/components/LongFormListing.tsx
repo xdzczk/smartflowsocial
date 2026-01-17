@@ -2,6 +2,15 @@ import { useFetcher, Link } from "@remix-run/react";
 import { useState, useEffect, useMemo } from "react";
 
 import type { LongFormPostType } from "~/features/posts/server";
+import { handleErrorSafely } from "~/lib/error-handler.client";
+import {
+  difference,
+  formatForDisplay,
+  fromDate,
+  fromISOString,
+  fromUnixTimestamp,
+  nowInTimezone,
+} from "~/lib/temporal";
 
 import type { PostFetcher, LongFormPostData } from "../types";
 import type { EditorJSBlock } from "../types/editorjs.types";
@@ -55,17 +64,38 @@ function getDefaultSortDirection(
 }
 
 function getSortValue(post: LongFormPostType, key: string): number {
-  if (key === "publishedAt") {
-    return post.publishedAt ? new Date(post.publishedAt).getTime() : 0;
+  try {
+    if (key === "publishedAt") {
+      if (!post.publishedAt) return 0;
+      const zoned = fromISOString(
+        post.publishedAt instanceof Date
+          ? post.publishedAt.toISOString()
+          : String(post.publishedAt),
+        "UTC"
+      );
+      return Number(zoned.epochMilliseconds);
+    }
+    if (key === "scheduledFor") {
+      if (!post.scheduledFor) return 0;
+      const timestamp = parseInt(post.scheduledFor, 10);
+      if (isNaN(timestamp)) return 0;
+      const zoned = fromUnixTimestamp(timestamp, "UTC");
+      return Number(zoned.epochMilliseconds);
+    }
+    if (key === "createdAt") {
+      const zoned = fromISOString(
+        post.createdAt instanceof Date
+          ? post.createdAt.toISOString()
+          : String(post.createdAt),
+        "UTC"
+      );
+      return Number(zoned.epochMilliseconds);
+    }
+    const val = post[key as keyof LongFormPostType];
+    return typeof val === "number" ? val : 0;
+  } catch {
+    return 0;
   }
-  if (key === "scheduledFor") {
-    return post.scheduledFor ? parseInt(post.scheduledFor) * 1000 : 0;
-  }
-  if (key === "createdAt") {
-    return new Date(post.createdAt).getTime();
-  }
-  const val = post[key as keyof LongFormPostType];
-  return typeof val === "number" ? val : 0;
 }
 
 function compareStringValues(
@@ -139,38 +169,71 @@ export default function LongFormListing({
   const formatDate = (dateInput?: string | Date | number) => {
     if (!dateInput) return "—";
 
-    let date: Date;
-
     // Handle different input formats
-    if (typeof dateInput === "string") {
-      // Check if it's a Unix timestamp string
-      const unixTimestamp = parseInt(dateInput);
-      if (!isNaN(unixTimestamp) && dateInput.length <= 13) {
+    try {
+      let zonedDateTime;
+      if (typeof dateInput === "string") {
+        // Check if it's a Unix timestamp string
+        const unixTimestamp = parseInt(dateInput, 10);
+        if (!isNaN(unixTimestamp) && dateInput.length <= 13) {
+          // Unix timestamp (seconds or milliseconds)
+          const timestamp =
+            dateInput.length <= 10 ? unixTimestamp : unixTimestamp;
+          zonedDateTime = fromUnixTimestamp(
+            dateInput.length <= 10 ? timestamp : Math.floor(timestamp / 1000),
+            "UTC"
+          );
+        } else {
+          // ISO string
+          zonedDateTime = fromISOString(String(dateInput), "UTC");
+        }
+      } else if (typeof dateInput === "number") {
         // Unix timestamp (seconds or milliseconds)
-        date = new Date(unixTimestamp * (dateInput.length <= 10 ? 1000 : 1));
+        const timestamp =
+          dateInput.toString().length <= 10
+            ? dateInput
+            : Math.floor(dateInput / 1000);
+        zonedDateTime = fromUnixTimestamp(timestamp, "UTC");
       } else {
-        // ISO string
-        date = new Date(dateInput);
+        // Date object
+        zonedDateTime = fromDate(new Date(dateInput), "UTC");
       }
-    } else if (typeof dateInput === "number") {
-      // Unix timestamp (seconds or milliseconds)
-      date = new Date(
-        dateInput * (dateInput.toString().length <= 10 ? 1000 : 1)
-      );
-    } else {
-      // Date object
-      date = new Date(dateInput);
-    }
 
-    return date.toLocaleString("en-US", {
-      timeZone: userTimezone,
-      month: "2-digit",
-      day: "2-digit",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
+      // Convert to user's timezone for display
+      const userZoned = zonedDateTime.withTimeZone(userTimezone);
+      return formatForDisplay(userZoned, userTimezone, {
+        month: "2-digit",
+        day: "2-digit",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+    } catch (error) {
+      handleErrorSafely(error, {
+        component: "LongFormListing",
+        action: "formatDate",
+      });
+      // Fallback to simple date formatting
+      try {
+        const dateObj =
+          typeof dateInput === "string"
+            ? new Date(dateInput)
+            : typeof dateInput === "number"
+              ? new Date(dateInput * 1000)
+              : dateInput;
+        return dateObj.toLocaleDateString("en-US", {
+          month: "2-digit",
+          day: "2-digit",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        });
+      } catch {
+        return "—";
+      }
+    }
   };
 
   const getReadingTime = (content?: string) => {
@@ -258,35 +321,37 @@ export default function LongFormListing({
     if (type !== "scheduled") return;
 
     const updateCountdowns = () => {
-      // Get current time in user's timezone
-      const now = new Date(
-        new Date().toLocaleString("en-US", { timeZone: userTimezone })
-      ).getTime();
+      // Get current time in user's timezone using Temporal
+      const now = nowInTimezone(userTimezone);
       const newCountdowns: Record<string, string> = {};
 
       posts.forEach((post) => {
         if (!post.scheduledFor) return;
 
-        // Handle scheduledFor as Unix timestamp string (similar to regular posts)
-        const utcTime = parseInt(post.scheduledFor) * 1000;
-        const userTime = new Date(utcTime).toLocaleString("en-US", {
-          timeZone: userTimezone,
-        });
-        const scheduledTime = new Date(userTime).getTime();
+        try {
+          // Handle scheduledFor as Unix timestamp string
+          const timestamp = parseInt(post.scheduledFor, 10);
+          if (isNaN(timestamp)) return;
 
-        const distance = scheduledTime - now;
+          const scheduledZoned = fromUnixTimestamp(timestamp, "UTC");
+          const scheduledInUserTz = scheduledZoned.withTimeZone(userTimezone);
 
-        if (distance > 0) {
-          const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-          const hours = Math.floor(
-            (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-          );
-          const minutes = Math.floor(
-            (distance % (1000 * 60 * 60)) / (1000 * 60)
-          );
+          // Calculate difference
+          const duration = difference(scheduledInUserTz, now);
 
-          newCountdowns[post.id] = `${days}d ${hours}h ${minutes}m`;
-        } else {
+          if (duration.sign === 1) {
+            // Future time
+            const days = Math.floor(duration.total({ unit: "days" }));
+            const hours = Math.floor(duration.total({ unit: "hours" }) % 24);
+            const minutes = Math.floor(
+              duration.total({ unit: "minutes" }) % 60
+            );
+            newCountdowns[post.id] = `${days}d ${hours}h ${minutes}m`;
+          } else {
+            newCountdowns[post.id] = "Due now";
+          }
+        } catch {
+          // If conversion fails, skip this post
           newCountdowns[post.id] = "Due now";
         }
       });

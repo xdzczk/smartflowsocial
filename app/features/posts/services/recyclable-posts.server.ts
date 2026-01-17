@@ -8,6 +8,7 @@ import { json } from "@remix-run/node";
 
 import type { UserWithHashTagPresets } from "~/features/user";
 import { getUserById, getQueueTypes } from "~/features/user";
+import { nowSeconds } from "~/lib/temporal";
 import {
   recyclableActionSchema,
   validateFormDataOrRespond,
@@ -279,7 +280,7 @@ async function handleSingleRepostAction(
         ["e", eventId, "wss://relay.primal.net"],
         ["p", eventPubkey],
       ],
-      created_at: Math.floor(Date.now() / 1000),
+      created_at: nowSeconds(),
     };
 
     return json({

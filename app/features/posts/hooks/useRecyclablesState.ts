@@ -2,6 +2,16 @@ import type { FetcherWithComponents, useFetcher } from "@remix-run/react";
 import { useState, useEffect, useMemo } from "react";
 
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
+import {
+  addHours,
+  compareZonedDateTime,
+  formatForDateTimeLocal,
+  fromDate,
+  fromUnixTimestamp,
+  nowInTimezone,
+  nowSeconds,
+  toDate,
+} from "~/lib/temporal";
 
 import type { PostData } from "../types";
 
@@ -169,13 +179,36 @@ export function useRecyclablesState({
     sortKey: string,
     direction: "asc" | "desc"
   ): number {
-    const dateA = new Date(
-      (a[sortKey as keyof PostData] ?? 0) as Date | string | number
-    ).getTime();
-    const dateB = new Date(
-      (b[sortKey as keyof PostData] ?? 0) as Date | string | number
-    ).getTime();
-    return direction === "asc" ? dateA - dateB : dateB - dateA;
+    try {
+      const valueA = a[sortKey as keyof PostData];
+      const valueB = b[sortKey as keyof PostData];
+
+      const zonedA =
+        valueA instanceof Date
+          ? fromDate(valueA, "UTC")
+          : typeof valueA === "string"
+            ? fromUnixTimestamp(parseInt(valueA, 10), "UTC")
+            : typeof valueA === "number"
+              ? fromUnixTimestamp(Math.floor(valueA / 1000), "UTC")
+              : null;
+
+      const zonedB =
+        valueB instanceof Date
+          ? fromDate(valueB, "UTC")
+          : typeof valueB === "string"
+            ? fromUnixTimestamp(parseInt(valueB, 10), "UTC")
+            : typeof valueB === "number"
+              ? fromUnixTimestamp(Math.floor(valueB / 1000), "UTC")
+              : null;
+
+      if (!zonedA || !zonedB) return 0;
+
+      const comparison = compareZonedDateTime(zonedA, zonedB);
+      return direction === "asc" ? comparison : -comparison;
+    } catch {
+      // Fallback to 0 if conversion fails
+      return 0;
+    }
   }
 
   function compareByGenericValue(
@@ -347,7 +380,6 @@ export function useRecyclablesState({
       const postsData = fetcherData.repostData;
 
       // Prepare repost data with 1 hour default scheduling
-      const now = new Date();
       const userTimezone =
         user &&
         typeof user === "object" &&
@@ -355,14 +387,16 @@ export function useRecyclablesState({
         typeof user.timezone === "string"
           ? user.timezone
           : "UTC";
-      const localDate = new Date(
-        now.toLocaleString("en-US", { timeZone: userTimezone })
-      );
-      localDate.setHours(localDate.getHours() + 1);
+
+      const now = nowInTimezone(userTimezone);
+      const baseTime = addHours(now, 1);
 
       const repostData = postsData.map((post: PostData, index: number) => {
-        const scheduleDate = new Date(localDate);
-        scheduleDate.setHours(scheduleDate.getHours() + index);
+        const scheduleZoned = addHours(baseTime, index);
+        const scheduledFor = formatForDateTimeLocal(
+          scheduleZoned,
+          userTimezone
+        );
 
         return {
           caption: post.caption ?? "",
@@ -371,16 +405,7 @@ export function useRecyclablesState({
               ? post.fileUrl[0]
               : "",
           queueType: post.queueType?.name ?? "unassigned",
-          scheduledFor: scheduleDate
-            .toLocaleString("en-US", {
-              year: "numeric",
-              month: "2-digit",
-              day: "2-digit",
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: false,
-            })
-            .replace(/(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+)/, "$3-$1-$2T$4:$5"),
+          scheduledFor,
           originalPostId: post.id,
         };
       });
@@ -397,7 +422,6 @@ export function useRecyclablesState({
     ) {
       const postsData = fetcherData.scheduledRepostData;
 
-      const now = new Date();
       const userTimezoneForScheduled =
         user &&
         typeof user === "object" &&
@@ -405,15 +429,14 @@ export function useRecyclablesState({
         typeof user.timezone === "string"
           ? user.timezone
           : "UTC";
-      const localDate = new Date(
-        now.toLocaleString("en-US", { timeZone: userTimezoneForScheduled })
-      );
-      localDate.setHours(localDate.getHours() + 1);
+
+      const now = nowInTimezone(userTimezoneForScheduled);
+      const baseTime = addHours(now, 1);
 
       const scheduledRepostData = postsData.map(
         (post: PostData, index: number) => {
-          const scheduleDate = new Date(localDate);
-          scheduleDate.setHours(scheduleDate.getHours() + index);
+          const scheduleZoned = addHours(baseTime, index);
+          const scheduleDate = toDate(scheduleZoned);
 
           return {
             caption: "",
@@ -512,7 +535,7 @@ export function useRecyclablesState({
             created_at:
               typeof eventDataRaw.created_at === "number"
                 ? eventDataRaw.created_at
-                : Math.floor(Date.now() / 1000),
+                : nowSeconds(),
             pubkey:
               typeof eventDataRaw.pubkey === "string"
                 ? eventDataRaw.pubkey

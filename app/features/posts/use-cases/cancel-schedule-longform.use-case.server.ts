@@ -12,6 +12,9 @@ import {
   updateLongFormPost,
 } from "~/models/longformpost.server";
 
+import { deriveIsScheduledLongForm } from "../state-machine/longform-post-state";
+import { LongFormPostStateMachine } from "../state-machine/longform-post-state-machine.server";
+
 export interface CancelLongFormPostInput {
   postId: string;
   userId: string;
@@ -19,6 +22,8 @@ export interface CancelLongFormPostInput {
 }
 
 export class CancelScheduleLongFormUseCase {
+  private readonly stateMachine = new LongFormPostStateMachine();
+
   async execute(
     input: CancelLongFormPostInput
   ): Promise<{ cancelled: boolean }> {
@@ -46,7 +51,9 @@ export class CancelScheduleLongFormUseCase {
     }
 
     // Check if post is actually scheduled
-    if (!post.isScheduled) {
+    // Use currentState as single source of truth
+    const isScheduled = deriveIsScheduledLongForm(post.currentState);
+    if (!isScheduled) {
       logInfo(
         "CancelScheduleLongFormUseCase: Post is not scheduled, nothing to cancel",
         {
@@ -72,7 +79,7 @@ export class CancelScheduleLongFormUseCase {
       );
     }
 
-    // Update post to mark as not scheduled
+    // Clear scheduled time (flags will be set by state machine)
     try {
       await updateLongFormPost({
         id: input.postId,
@@ -87,6 +94,24 @@ export class CancelScheduleLongFormUseCase {
         message: "Failed to update longform post",
       });
       throw error;
+    }
+
+    // Transition to CANCELLED state (this will automatically sync flags)
+    try {
+      await this.stateMachine.transition(
+        input.postId,
+        input.userId,
+        "CANCELLED",
+        "Longform post schedule cancelled by user"
+      );
+    } catch (error) {
+      // Log but don't throw - state transition failure shouldn't block cancellation
+      logError(error instanceof Error ? error : new Error(String(error)), {
+        postId: input.postId,
+        userId: input.userId,
+        correlationId,
+        message: "Failed to transition to CANCELLED state",
+      });
     }
 
     logInfo(

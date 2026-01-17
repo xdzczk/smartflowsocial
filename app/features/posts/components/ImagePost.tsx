@@ -1,9 +1,14 @@
 import { useFetcher } from "@remix-run/react";
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { toast } from "react-hot-toast";
 
 import { resizeImage } from "~/features/upload/image-resize";
 import { useOptionalUser } from "~/lib/remix-utils";
+import {
+  addHours,
+  formatForDateTimeLocal,
+  nowInTimezone,
+} from "~/lib/temporal";
 
 import { getDynamicQueueStyle } from "../queue-colors";
 import type { QueueType } from "../types";
@@ -276,43 +281,19 @@ export default function ImagePost({
       return;
     }
 
-    const now = new Date();
+    const userTimezone = user?.timezone ?? "UTC";
+    const now = nowInTimezone(userTimezone);
     const intervalHoursNum =
       typeof intervalHours === "string"
         ? parseInt(intervalHours, 10)
         : intervalHours;
-    const hoursLater = new Date(
-      now.getTime() + intervalHoursNum * 60 * 60 * 1000
+    const hoursLaterZoned = addHours(now, intervalHoursNum);
+
+    // Format the date using Temporal (already in datetime-local format)
+    const formattedForInput = formatForDateTimeLocal(
+      hoursLaterZoned,
+      userTimezone
     );
-
-    // Format the date in the user's timezone
-    const userTimezone =
-      user &&
-      typeof user === "object" &&
-      "timezone" in user &&
-      typeof user.timezone === "string"
-        ? user.timezone
-        : "UTC";
-    const formattedDate = hoursLater.toLocaleString("en-US", {
-      timeZone: userTimezone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-
-    // Parse the formatted date back into components
-    const [datePart, timePart] = formattedDate.split(", ");
-    const [month, day, year] = datePart?.split("/") ?? ["", "", ""];
-    const [hours, minutes] = timePart?.split(":") ?? ["", ""];
-
-    // Create the datetime-local format (YYYY-MM-DDTHH:mm)
-    if (!year || !month || !day || !hours || !minutes) {
-      return "";
-    }
-    const formattedForInput = `${year}-${month}-${day}T${hours}:${minutes}`;
 
     setScheduledFor(formattedForInput);
     setTimeError("");
@@ -631,7 +612,9 @@ export default function ImagePost({
                       </button>
                     );
                   })
-                  .filter((button): button is JSX.Element => button !== null);
+                  .filter(
+                    (button): button is React.ReactElement => button !== null
+                  );
               }
               return null;
             })()}

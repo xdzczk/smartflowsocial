@@ -3,6 +3,7 @@ import { useFetcher } from "@remix-run/react";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { logClientError } from "~/lib/error-handler.client";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
+import { fromUnixTimestamp, formatForDisplay } from "~/lib/temporal";
 
 import { getSelectedQueueStyle } from "../queue-colors";
 import type { PreparedEvent } from "../types";
@@ -365,15 +366,23 @@ export default function PostConfirmation({
                       Scheduled for
                     </h4>
                     <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                      {new Date(
-                        getCreatedAtTimestamp(eventsData) * 1000
-                      ).toLocaleDateString("en-US", {
-                        weekday: "short",
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {(() => {
+                        try {
+                          const timestamp = getCreatedAtTimestamp(eventsData);
+                          const zoned = fromUnixTimestamp(timestamp, "UTC");
+                          const userTimezone = "UTC"; // Default timezone - user prop not available in this scope
+                          const userZoned = zoned.withTimeZone(userTimezone);
+                          return formatForDisplay(userZoned, userTimezone, {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          });
+                        } catch {
+                          return "Invalid date";
+                        }
+                      })()}
                     </p>
                   </div>
                 </div>

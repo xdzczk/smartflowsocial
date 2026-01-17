@@ -1,4 +1,10 @@
 import { useState, useCallback } from "react";
+
+import {
+  addHours,
+  formatForDateTimeLocal,
+  nowInTimezone,
+} from "~/lib/temporal";
 interface QueueType {
   id?: string;
   name: string;
@@ -154,32 +160,15 @@ export function useLongFormScheduling({
         return;
       }
 
-      const now = new Date();
-      const hoursLater = new Date(
-        now.getTime() + intervalHours * 60 * 60 * 1000
+      // Use Temporal for consistency
+      const now = nowInTimezone(userTimezone);
+      const hoursLaterZoned = addHours(now, intervalHours);
+
+      // Format the date using Temporal (already in datetime-local format)
+      const formattedForInput = formatForDateTimeLocal(
+        hoursLaterZoned,
+        userTimezone
       );
-
-      // Format the date in the user's timezone
-      const formattedDate = hoursLater.toLocaleString("en-US", {
-        timeZone: userTimezone,
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      });
-
-      // Parse the formatted date back into components
-      const [datePart, timePart] = formattedDate.split(", ");
-      const [month, day, year] = datePart?.split("/") ?? ["", "", ""];
-      const [hours, minutes] = timePart?.split(":") ?? ["", ""];
-
-      // Create the datetime-local format (YYYY-MM-DDTHH:mm)
-      if (!year || !month || !day || !hours || !minutes) {
-        return "";
-      }
-      const formattedForInput = `${year}-${month}-${day}T${hours}:${minutes}`;
 
       setScheduledFor(formattedForInput);
     },

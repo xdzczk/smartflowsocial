@@ -60,7 +60,7 @@ describe("CancelScheduleUseCase", () => {
       const mockPost = {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
-        isScheduled: true,
+        currentState: "SCHEDULED",
         postType: "IMAGE",
       };
 
@@ -83,8 +83,8 @@ describe("CancelScheduleUseCase", () => {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
         data: {
-          isScheduled: false,
           scheduledFor: null,
+          // Note: isScheduled flag removed - state machine handles state transitions
         },
       });
       expect(mockTransition).toHaveBeenCalledWith(
@@ -100,7 +100,7 @@ describe("CancelScheduleUseCase", () => {
       const mockPost = {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
-        isScheduled: false,
+        currentState: "DRAFT",
         postType: "IMAGE",
       };
 
@@ -121,7 +121,7 @@ describe("CancelScheduleUseCase", () => {
       const mockPost = {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
-        isScheduled: true,
+        currentState: "SCHEDULED",
         postType: "IMAGE",
       };
 
@@ -156,7 +156,7 @@ describe("CancelScheduleUseCase", () => {
       const mockPost = {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
-        isScheduled: true,
+        currentState: "SCHEDULED",
         postType: "IMAGE",
       };
 
@@ -179,7 +179,7 @@ describe("CancelScheduleUseCase", () => {
       const mockPost = {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
-        isScheduled: true,
+        currentState: "SCHEDULED",
         postType: "IMAGE",
       };
 

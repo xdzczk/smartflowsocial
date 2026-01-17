@@ -85,8 +85,6 @@ describe("Database Failure Edge Cases", () => {
           postType: "TEXT",
           fileUrl: [],
           tags: [],
-          isScheduled: false,
-          isPosted: false,
         })
       ).rejects.toThrow("Database unavailable");
     });
@@ -149,8 +147,6 @@ describe("Database Failure Edge Cases", () => {
           postType: "TEXT",
           fileUrl: [],
           tags: [],
-          isScheduled: false,
-          isPosted: false,
         })
       ).rejects.toThrow("Unique constraint violation");
     });
@@ -167,8 +163,6 @@ describe("Database Failure Edge Cases", () => {
           postType: "TEXT",
           fileUrl: [],
           tags: [],
-          isScheduled: false,
-          isPosted: false,
         })
       ).rejects.toThrow("Foreign key constraint violation");
     });

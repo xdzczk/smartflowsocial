@@ -6,6 +6,7 @@
  */
 
 import type { SignedEvent } from "~/features/nostr/types";
+import { fromUnixTimestamp, nowUTC, toPrismaDate } from "~/lib/temporal";
 export type LongFormStatus = "DRAFT" | "ACTIVE" | "SCHEDULED";
 
 export interface LongFormStatusCalculation {
@@ -77,11 +78,16 @@ export function calculateLongFormStatus({
       }
     }
     publishedAt = publishedAtTimestamp
-      ? new Date(publishedAtTimestamp * 1000)
-      : new Date();
+      ? toPrismaDate(fromUnixTimestamp(publishedAtTimestamp, "UTC"))
+      : toPrismaDate(nowUTC());
   } else if (isScheduled && finalScheduledFor) {
     // For scheduled posts, set publishedAt to the scheduled time
-    publishedAt = new Date(parseInt(finalScheduledFor) * 1000);
+    const timestamp = parseInt(finalScheduledFor, 10);
+    if (!isNaN(timestamp)) {
+      publishedAt = toPrismaDate(fromUnixTimestamp(timestamp, "UTC"));
+    } else {
+      publishedAt = toPrismaDate(nowUTC());
+    }
   }
 
   return {

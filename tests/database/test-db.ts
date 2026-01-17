@@ -113,7 +113,7 @@ export async function withTransaction<T>(
 /**
  * Setup test database
  * Syncs schema and seeds test data
- * Uses `db push` for test databases as it doesn't require migrations
+ * Tries to use migrations first, falls back to db push if migrations aren't available
  */
 export function setupTestDatabase(): Promise<void> {
   const testDatabaseUrl =
@@ -129,22 +129,52 @@ export function setupTestDatabase(): Promise<void> {
   }
 
   try {
-    // Use db push for test databases - it syncs schema without requiring migrations
-    // This works even if the database already has schema
-    // db push is safer than migrate deploy for test databases as it doesn't require
-    // migration history or baseline setup
-    execSync("npx prisma db push --skip-generate", {
-      env: { ...process.env, DATABASE_URL: testDatabaseUrl },
-      stdio: "inherit",
-    });
-    return Promise.resolve();
+    // First, try to run migrations to ensure all migration-specific changes are applied
+    // This is important for columns like creationIdempotencyKey that might be added in migrations
+    try {
+      execSync("npx prisma migrate deploy", {
+        env: { ...process.env, DATABASE_URL: testDatabaseUrl },
+        stdio: "pipe", // Use pipe to suppress output unless there's an error
+      });
+      console.log("✅ Migrations applied successfully");
+      return Promise.resolve();
+    } catch (migrateError) {
+      // If migrate deploy fails (e.g., no migration history, database doesn't exist, etc.), fall back to db push
+      const errorMessage =
+        migrateError instanceof Error
+          ? migrateError.message
+          : String(migrateError);
+      console.warn(
+        "⚠️  Migrate deploy failed, falling back to db push:",
+        errorMessage
+      );
+
+      // Use db push as fallback - it syncs schema without requiring migrations
+      // This works even if the database already has schema
+      try {
+        execSync("npx prisma db push --accept-data-loss", {
+          env: { ...process.env, DATABASE_URL: testDatabaseUrl },
+          stdio: "inherit",
+        });
+        console.log("✅ Database schema synced with db push");
+        return Promise.resolve();
+      } catch (pushError) {
+        // If db push also fails, it might be a connection issue
+        const pushErrorMessage =
+          pushError instanceof Error ? pushError.message : String(pushError);
+        console.error("❌ Both migrate deploy and db push failed");
+        console.error("Migrate error:", errorMessage);
+        console.error("Db push error:", pushErrorMessage);
+        throw pushError;
+      }
+    }
   } catch (error) {
-    console.error("Failed to sync database schema:", error);
+    console.error("Failed to setup database schema:", error);
     // If SKIP_DATABASE_TESTS is set, don't throw - allow tests to be skipped
     if (process.env["SKIP_DATABASE_TESTS"] === "true") {
       return Promise.resolve();
     }
-    // If db push fails, it might be due to breaking schema changes
+    // If both methods fail, it might be due to breaking schema changes
     // In that case, use a fresh test database or manually resolve conflicts
     throw error;
   }

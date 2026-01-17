@@ -9,6 +9,12 @@ import type {
 } from "~/features/nostr/types";
 import { logError } from "~/lib/error-logger.server";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
+import {
+  fromDate,
+  fromISOString,
+  parseDateTimeLocal,
+  toUnixTimestamp,
+} from "~/lib/temporal";
 
 import type { UserData, PostData } from "../types";
 
@@ -118,18 +124,28 @@ function calculateScheduledTime(
 ): number {
   let scheduledTime: number;
 
-  if (userTimezone !== "UTC" && userTimezone !== "Etc/GMT") {
-    const utcDate = new Date(scheduledFor);
-    const userDate = new Date(scheduledFor).toLocaleString("en-US", {
-      timeZone: userTimezone,
-    });
-    const userOffset =
-      (new Date(userDate).getTime() - new Date(scheduledFor).getTime()) / 60000;
-    utcDate.setMinutes(utcDate.getMinutes() - userOffset);
-    scheduledTime = utcDate.getTime();
-  } else {
-    const dateObj = new Date(scheduledFor + "Z");
-    scheduledTime = dateObj.getTime();
+  // Use Temporal for timezone conversion
+  try {
+    const zonedDateTime = parseDateTimeLocal(scheduledFor, userTimezone);
+    const utcZoned = zonedDateTime.withTimeZone("UTC");
+    scheduledTime = toUnixTimestamp(utcZoned) * 1000;
+  } catch {
+    // Fallback - still use Temporal for 100% consistency
+    try {
+      const zoned = fromISOString(scheduledFor + "Z", "UTC");
+      scheduledTime = toUnixTimestamp(zoned) * 1000;
+    } catch {
+      // Fallback - try with Date conversion
+      try {
+        const dateObj = new Date(scheduledFor + "Z");
+        const zoned = fromDate(dateObj, "UTC");
+        scheduledTime = toUnixTimestamp(zoned) * 1000;
+      } catch {
+        // Ultimate fallback
+        const dateObj = new Date(scheduledFor + "Z");
+        scheduledTime = dateObj.getTime();
+      }
+    }
   }
 
   return Math.floor(scheduledTime / 1000);

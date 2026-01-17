@@ -11,6 +11,7 @@ import { recordPostCancelled } from "~/lib/metrics/business-metrics.server";
 import { updatePost } from "~/models/post.commands.server";
 import { getPostById } from "~/models/post.queries.server";
 
+import { deriveIsScheduled } from "../state-machine/post-state";
 import { PostStateMachine } from "../state-machine/post-state-machine.server";
 
 import type { CancelPostInput } from "./types";
@@ -37,7 +38,9 @@ export class CancelScheduleUseCase {
     }
 
     // Check if post is actually scheduled
-    if (!post.isScheduled) {
+    // Use currentState as single source of truth
+    const isScheduled = deriveIsScheduled(post.currentState);
+    if (!isScheduled) {
       logInfo(
         "CancelScheduleUseCase: Post is not scheduled, nothing to cancel",
         {
@@ -63,18 +66,17 @@ export class CancelScheduleUseCase {
       );
     }
 
-    // Update post to mark as not scheduled
-    // Pass null explicitly to clear both scheduledFor and scheduledAtUtc
+    // Clear scheduled time (flags will be set by state machine)
     await updatePost({
       id: input.postId,
       userId: input.userId,
       data: {
-        isScheduled: false,
         scheduledFor: null,
+        // @deprecated - isScheduled flag removed. State machine will set it via transition.
       },
     });
 
-    // Transition to CANCELLED state
+    // Transition to CANCELLED state (this will automatically sync flags)
     try {
       await this.stateMachine.transition(
         input.postId,

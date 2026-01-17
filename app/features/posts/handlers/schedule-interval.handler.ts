@@ -4,6 +4,13 @@
  * Handles applying schedule intervals to all posts
  */
 
+import {
+  addHours,
+  formatForDateTimeLocal,
+  nowUTC,
+  parseDateTimeLocal,
+} from "~/lib/temporal";
+
 import type { BulkPost } from "../types";
 /**
  * Apply schedule interval to all posts
@@ -18,37 +25,32 @@ export function handleScheduleIntervalClick(
 
   const updatedPosts = [...posts];
 
-  let baseDate: Date;
+  let baseZonedDateTime;
 
   // If first item time was manually changed, use it as base
   const firstPost = updatedPosts[0];
   if (firstItemTimeManuallyChanged && firstPost?.scheduledFor) {
-    baseDate = new Date(firstPost.scheduledFor);
+    // Parse datetime-local string (assumed to be in UTC for consistency)
+    baseZonedDateTime = parseDateTimeLocal(firstPost.scheduledFor, "UTC");
   } else {
     // Original behavior - use first post's scheduled time or current time
     const firstPost = updatedPosts[0];
     if (!firstPost) {
-      baseDate = new Date();
+      baseZonedDateTime = nowUTC();
     } else {
-      baseDate = firstPost.scheduledFor
-        ? new Date(firstPost.scheduledFor)
-        : new Date();
+      baseZonedDateTime = firstPost.scheduledFor
+        ? parseDateTimeLocal(firstPost.scheduledFor, "UTC")
+        : nowUTC();
     }
   }
 
   // Update each post's scheduled time based on the interval
   updatedPosts.forEach((post, index) => {
-    const newDate = new Date(baseDate);
-    newDate.setHours(baseDate.getHours() + index * interval);
+    // Add hours using Temporal (immutable operation)
+    const newZonedDateTime = addHours(baseZonedDateTime, index * interval);
 
-    // Format the date string
-    const year = newDate.getFullYear();
-    const month = String(newDate.getMonth() + 1).padStart(2, "0");
-    const day = String(newDate.getDate()).padStart(2, "0");
-    const hours = String(newDate.getHours()).padStart(2, "0");
-    const minutes = String(newDate.getMinutes()).padStart(2, "0");
-
-    post.scheduledFor = `${year}-${month}-${day}T${hours}:${minutes}`;
+    // Format back to datetime-local string
+    post.scheduledFor = formatForDateTimeLocal(newZonedDateTime, "UTC");
   });
 
   setPosts(updatedPosts);

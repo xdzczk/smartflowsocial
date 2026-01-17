@@ -24,6 +24,7 @@ import type { LongFormPost, User, Prisma } from "@prisma/client";
 
 import type { SignedEvent } from "~/features/nostr/types";
 import { calculateLongFormStatus } from "~/features/posts/server";
+import { LongFormPostStateMachine } from "~/features/posts/state-machine/longform-post-state-machine.server";
 import { prisma } from "~/lib/prisma.server";
 
 export type { LongFormPost } from "@prisma/client";
@@ -99,7 +100,7 @@ export async function createLongFormPost({
   content: LongFormPost["content"];
   image?: LongFormPost["image"];
   tags?: LongFormPost["tags"];
-  isPublished?: LongFormPost["isPublished"];
+  isPublished?: boolean; // Parameter kept for backward compatibility, but flags removed from schema
   signedEvent?: LongFormPost["signedEvent"];
   nostrEvent?: LongFormPost["nostrEvent"];
   scheduledFor?: string | null;
@@ -110,18 +111,12 @@ export async function createLongFormPost({
   // Convert Prisma JsonValue to SignedEvent type
   const typedSignedEvent = signedEvent ? toSignedEvent(signedEvent) : null;
 
-  const {
-    status,
-    isScheduled,
-    isDraft,
-    publishedAt,
-    nostrEventId,
-    finalScheduledFor,
-  } = calculateLongFormStatus({
-    isPublished,
-    scheduledFor,
-    signedEvent: typedSignedEvent,
-  });
+  const { status, publishedAt, nostrEventId, finalScheduledFor } =
+    calculateLongFormStatus({
+      isPublished,
+      scheduledFor,
+      signedEvent: typedSignedEvent,
+    });
 
   // Convert scheduledFor string to DateTime for new field
   let scheduledAtUtc: Date | undefined;
@@ -132,6 +127,13 @@ export async function createLongFormPost({
     }
   }
 
+  // Determine initial state based on status calculation
+  const initialState = isPublished
+    ? "PUBLISHED"
+    : finalScheduledFor
+      ? "SCHEDULED"
+      : "DRAFT";
+
   return prisma.longFormPost.create({
     data: {
       userId,
@@ -140,17 +142,17 @@ export async function createLongFormPost({
       content,
       image,
       tags: tags ?? [],
-      isPublished,
-      isScheduled,
-      draft: isDraft,
+      // Note: Flag fields (isPublished, isScheduled, draft) have been removed.
+      // Use LongFormPostStateMachine.transition() to change state instead.
       signedEvent: signedEvent as Prisma.InputJsonValue,
       nostrEvent: nostrEvent as Prisma.InputJsonValue,
       nostrEventId,
       status,
       publishedAt,
-      postedAt: isPublished ? new Date() : null,
+      postedAt: initialState === "PUBLISHED" ? new Date() : null,
       scheduledFor: finalScheduledFor, // Legacy field
       scheduledAtUtc, // New DateTime field
+      currentState: initialState, // Single source of truth
       queueTypeId,
       hashTagPresetId,
     },
@@ -265,32 +267,6 @@ function getPublishedAtFromSignedEvent(signedEvent: unknown): Date {
   return new Date();
 }
 
-function setPublicationStatus(
-  updateData: Prisma.LongFormPostUpdateInput,
-  isPublished: boolean | undefined,
-  finalScheduledFor: string | null | undefined,
-  signedEvent: unknown
-): void {
-  const finalIsPublished = isPublished ?? false;
-  const isScheduled = Boolean(finalScheduledFor && !finalIsPublished);
-  const isDraft = !finalIsPublished && !isScheduled;
-
-  updateData.isPublished = finalIsPublished;
-  updateData.isScheduled = isScheduled;
-  updateData.draft = isDraft;
-
-  if (finalIsPublished) {
-    updateData.status = "ACTIVE";
-    updateData.publishedAt = getPublishedAtFromSignedEvent(signedEvent);
-    updateData.postedAt = new Date();
-  } else if (isScheduled && finalScheduledFor) {
-    updateData.status = "SCHEDULED";
-    updateData.publishedAt = new Date(parseInt(finalScheduledFor) * 1000);
-  } else {
-    updateData.status = "DRAFT";
-  }
-}
-
 export async function updateLongFormPost({
   id,
   userId,
@@ -314,7 +290,7 @@ export async function updateLongFormPost({
   content?: LongFormPost["content"];
   image?: LongFormPost["image"];
   tags?: LongFormPost["tags"];
-  isPublished?: LongFormPost["isPublished"];
+  isPublished?: boolean; // Parameter kept for backward compatibility, but flags removed from schema
   signedEvent?: LongFormPost["signedEvent"];
   nostrEvent?: LongFormPost["nostrEvent"];
   scheduledFor?: string | null;
@@ -341,13 +317,42 @@ export async function updateLongFormPost({
   setQueueTypeUpdate(updateData, queueTypeId);
   setEventData(updateData, signedEvent, nostrEvent);
 
+  // Handle state transitions using state machine if state needs to change
   if (isPublished !== undefined || finalScheduledFor !== undefined) {
-    setPublicationStatus(
-      updateData,
-      isPublished,
-      finalScheduledFor,
-      signedEvent
+    const finalIsPublished = isPublished ?? false;
+    const isScheduled = Boolean(finalScheduledFor && !finalIsPublished);
+
+    // Determine target state
+    const targetState = finalIsPublished
+      ? "PUBLISHED"
+      : isScheduled
+        ? "SCHEDULED"
+        : "DRAFT";
+
+    // Use state machine to transition state
+    const stateMachine = new LongFormPostStateMachine();
+    await stateMachine.transition(
+      id,
+      userId,
+      targetState,
+      finalIsPublished
+        ? "Longform post published"
+        : isScheduled
+          ? "Longform post scheduled"
+          : "Longform post saved as draft"
     );
+
+    // Update status and dates based on state
+    if (finalIsPublished) {
+      updateData.status = "ACTIVE";
+      updateData.publishedAt = getPublishedAtFromSignedEvent(signedEvent);
+      updateData.postedAt = new Date();
+    } else if (isScheduled && finalScheduledFor) {
+      updateData.status = "SCHEDULED";
+      updateData.publishedAt = new Date(parseInt(finalScheduledFor) * 1000);
+    } else {
+      updateData.status = "DRAFT";
+    }
   }
 
   return prisma.longFormPost.update({
@@ -400,7 +405,8 @@ export async function getUserLongFormPosts({
 
   const where: Prisma.LongFormPostWhereInput = { userId };
   if (isPublished !== undefined) {
-    where.isPublished = isPublished;
+    // Use currentState as single source of truth
+    where.currentState = isPublished ? "PUBLISHED" : { not: "PUBLISHED" };
   }
 
   const [posts, total] = await Promise.all([
@@ -447,9 +453,11 @@ export async function publishLongFormPost({
   return prisma.longFormPost.update({
     where: { id, userId },
     data: {
-      isPublished: true,
+      // Note: Flag fields (isPublished) have been removed.
+      // Use LongFormPostStateMachine.transition() to change state instead.
       status: "ACTIVE",
       publishedAt: new Date(),
+      currentState: "PUBLISHED", // Single source of truth
       signedEvent: signedEvent as Prisma.InputJsonValue,
       nostrEvent: nostrEvent as Prisma.InputJsonValue,
       nostrEventId:
@@ -469,7 +477,11 @@ export async function getDraftLongFormPosts({
   userId: User["id"];
 }) {
   return prisma.longFormPost.findMany({
-    where: { userId, isPublished: false, draft: true },
+    where: {
+      userId,
+      // Use currentState as single source of truth
+      currentState: "DRAFT",
+    },
     include: {
       queueType: true,
     },
@@ -490,13 +502,21 @@ export async function getPublishedLongFormPosts({
 
   const [posts, total] = await Promise.all([
     prisma.longFormPost.findMany({
-      where: { userId, isPublished: true },
+      where: {
+        userId,
+        // Use currentState as single source of truth
+        currentState: "PUBLISHED",
+      },
       orderBy: { publishedAt: "desc" },
       skip,
       take: limit,
     }),
     prisma.longFormPost.count({
-      where: { userId, isPublished: true },
+      where: {
+        userId,
+        // Use currentState as single source of truth
+        currentState: "PUBLISHED",
+      },
     }),
   ]);
 
@@ -517,7 +537,11 @@ export async function getScheduledLongFormPosts({
   userId: User["id"];
 }) {
   return prisma.longFormPost.findMany({
-    where: { userId, status: "SCHEDULED" },
+    where: {
+      userId,
+      // Use currentState as single source of truth
+      currentState: "SCHEDULED",
+    },
     include: {
       queueType: true,
     },
@@ -543,37 +567,14 @@ export async function getLongFormPostsByIds({
 }
 
 export function getCronDueScheduledLongFormPosts(): Promise<LongFormPost[]> {
-  const now = Math.floor(Date.now() / 1000).toString();
+  const now = new Date();
   return prisma.longFormPost.findMany({
     where: {
-      status: "SCHEDULED",
-      isScheduled: true,
-      isPublished: false,
-      scheduledFor: {
+      // Use currentState as single source of truth
+      currentState: "SCHEDULED",
+      scheduledAtUtc: {
         lte: now,
       },
-    },
-  });
-}
-
-export function updateLongFormPostStatus({
-  id,
-  userId,
-  isPublished,
-}: {
-  id: string;
-  userId: string;
-  isPublished: boolean;
-}): Promise<LongFormPost> {
-  return prisma.longFormPost.update({
-    where: {
-      id,
-      userId,
-    },
-    data: {
-      isPublished,
-      status: isPublished ? "ACTIVE" : "SCHEDULED",
-      postedAt: isPublished ? new Date() : null,
     },
   });
 }
@@ -591,32 +592,23 @@ export function getPastLongFormPosts({
 }): Promise<LongFormPost[]> {
   const whereClause: Prisma.LongFormPostWhereInput = {
     userId,
-    // Look for posts that are published OR have active status
-    AND: [
+    // Use currentState as single source of truth
+    currentState: "PUBLISHED",
+    // Check both postedAt and publishedAt for date filtering
+    OR: [
       {
-        OR: [{ isPublished: true }, { status: "ACTIVE" }],
+        postedAt: {
+          gte: startDate,
+          lte: endDate,
+          not: null,
+        },
       },
       {
-        // Check both postedAt and publishedAt for date filtering
-        OR: [
-          {
-            postedAt: {
-              gte: startDate,
-              lte: endDate,
-              not: null,
-            },
-          },
-          {
-            postedAt: null,
-            publishedAt: {
-              gte: startDate,
-              lte: endDate,
-              not: null,
-            },
-            // Only use publishedAt if the post is actually published
-            isPublished: true,
-          },
-        ],
+        publishedAt: {
+          gte: startDate,
+          lte: endDate,
+          not: null,
+        },
       },
     ],
   };

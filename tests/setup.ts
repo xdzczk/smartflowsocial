@@ -31,7 +31,12 @@ process.env["TEST_DATABASE_URL"] ??=
 // Users can set SKIP_DATABASE_TESTS=false to enable them
 // or set a real TEST_DATABASE_URL to enable them
 // This prevents tests from failing when a database is not available
-process.env["SKIP_DATABASE_TESTS"] ??= "true";
+// If TEST_DATABASE_URL or DATABASE_URL is set, don't skip database tests
+if (!process.env["SKIP_DATABASE_TESTS"]) {
+  const hasDatabaseUrl =
+    process.env["TEST_DATABASE_URL"] || process.env["DATABASE_URL"];
+  process.env["SKIP_DATABASE_TESTS"] = hasDatabaseUrl ? "false" : "true";
+}
 
 process.env["SESSION_SECRET"] ??=
   "test-session-secret-very-long-and-secure-32-chars-minimum";

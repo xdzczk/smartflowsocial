@@ -5,6 +5,14 @@
  */
 
 import { logClientError } from "~/lib/error-handler.client";
+import {
+  addDays,
+  addHours,
+  formatForDateTimeLocal,
+  fromDate,
+  parseDateTimeLocal,
+  toDate,
+} from "~/lib/temporal";
 
 import type { BulkPostsHandlerDeps } from "../types";
 import { isIntervalScheduleConfig, isFixedSlotsScheduleConfig } from "../types";
@@ -15,13 +23,10 @@ import { updateDisplayedHashtags } from "./hashtag.handler";
 // Helper Functions for Schedule Calculation
 // ============================================================================
 
-function formatDateToDateTimeLocal(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
+function formatDateToDateTimeLocal(date: Date, userTimezone = "UTC"): string {
+  // Use Temporal for consistency
+  const zoned = fromDate(date, userTimezone);
+  return formatForDateTimeLocal(zoned, userTimezone);
 }
 
 function getIntervalHours(
@@ -44,9 +49,10 @@ function calculateIntervalScheduleTime(
   user: BulkPostsHandlerDeps["user"]
 ): string {
   const intervalHours = getIntervalHours(config, user);
-  const newDate = new Date(baseDate);
-  newDate.setHours(newDate.getHours() + index * intervalHours);
-  return formatDateToDateTimeLocal(newDate);
+  const userTimezone = user?.timezone ?? "UTC";
+  const baseZoned = fromDate(baseDate, userTimezone);
+  const newZoned = addHours(baseZoned, index * intervalHours);
+  return formatDateToDateTimeLocal(toDate(newZoned), userTimezone);
 }
 
 interface SlotInfo {
@@ -111,11 +117,17 @@ function calculateFixedSlotsScheduleTime(
   }
 
   const daysToAdd = Math.floor((currentSlotIndex + index) / sortedSlots.length);
-  const newDate = new Date(baseDate);
-  newDate.setHours(targetSlot.hours, targetSlot.minutes, 0, 0);
-  newDate.setDate(newDate.getDate() + daysToAdd);
-
-  return formatDateToDateTimeLocal(newDate);
+  // user is not available in this scope - use UTC as default
+  const userTimezone = "UTC";
+  const baseZoned = fromDate(baseDate, userTimezone);
+  const dateWithSlot = baseZoned.with({
+    hour: targetSlot.hours,
+    minute: targetSlot.minutes,
+    second: 0,
+    millisecond: 0,
+  });
+  const newZoned = addDays(dateWithSlot, daysToAdd);
+  return formatDateToDateTimeLocal(toDate(newZoned), userTimezone);
 }
 
 function calculateScheduleTime(
@@ -125,7 +137,10 @@ function calculateScheduleTime(
   user: BulkPostsHandlerDeps["user"],
   fallbackTime: string
 ): string {
-  const baseDate = new Date(baseTime);
+  // Use Temporal for consistency
+  const userTimezone = user?.timezone ?? "UTC";
+  const baseZoned = parseDateTimeLocal(baseTime, userTimezone);
+  const baseDate = toDate(baseZoned);
 
   if (queueTypeConfig.scheduleType === "INTERVAL") {
     return calculateIntervalScheduleTime(

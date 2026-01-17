@@ -12,10 +12,11 @@ import {
   recordPostPublishFailed,
 } from "~/lib/metrics/business-metrics.server";
 import { recordPublishLatency } from "~/lib/metrics/performance-metrics.server";
+import { nowMillis } from "~/lib/temporal";
 import { validateSignedEventCryptographically } from "~/lib/validation/nostr-cryptographic.server";
-import { updatePostStatus } from "~/models/post.commands.server";
 import { getPostById } from "~/models/post.queries.server";
 
+import { deriveIsPosted } from "../state-machine/post-state";
 import { PostStateMachine } from "../state-machine/post-state-machine.server";
 
 import type { PublishNowInput } from "./types";
@@ -40,7 +41,9 @@ export class PublishNowUseCase {
         `Post ${input.postId} not found for user ${input.userId}`
       );
     }
-    if (post.isPosted) {
+    // Use currentState as single source of truth
+    const isAlreadyPosted = deriveIsPosted(post.currentState);
+    if (isAlreadyPosted) {
       throw new Error(`Post ${input.postId} already published`);
     }
 
@@ -58,23 +61,19 @@ export class PublishNowUseCase {
       "Publishing post immediately"
     );
 
-    const publishStartTime = Date.now();
+    const publishStartTime = nowMillis();
     try {
-      // Update status and publish in parallel
+      // Publish to Nostr (flags will be set by state machine transition)
       const publisher = getNostrPublisher();
-      await Promise.all([
-        updatePostStatus({
-          id: input.postId,
-          userId: input.userId,
-          isPosted: true,
-          correlationId,
-        }),
-        publisher.publish(validatedSignedEvent, input.relays, correlationId),
-      ]);
+      await publisher.publish(
+        validatedSignedEvent,
+        input.relays,
+        correlationId
+      );
 
-      const publishLatency = Date.now() - publishStartTime;
+      const publishLatency = nowMillis() - publishStartTime;
 
-      // Transition to PUBLISHED
+      // Transition to PUBLISHED (this will automatically sync flags including isPosted)
       await this.stateMachine.transition(
         input.postId,
         input.userId,
@@ -92,7 +91,7 @@ export class PublishNowUseCase {
         correlationId,
       });
     } catch (error) {
-      const publishLatency = Date.now() - publishStartTime;
+      const publishLatency = nowMillis() - publishStartTime;
       const errorType =
         error instanceof Error ? error.constructor.name : "UnknownError";
 

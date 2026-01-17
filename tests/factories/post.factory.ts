@@ -17,13 +17,11 @@ export interface PostFactoryOptions {
   fileUrl?: string[];
   scheduledFor?: string | null;
   postedAt?: Date | null;
-  isPosted?: boolean;
-  isScheduled?: boolean;
+  currentState?: string; // State machine state - single source of truth
   postType?: PostType;
   repost?: boolean;
   isQuotedPost?: boolean;
   isRecyclable?: boolean;
-  draft?: boolean;
   status?: Status;
   signedEvent?: SignedEvent;
   nostrEvent?: NostrEvent;
@@ -35,6 +33,7 @@ export interface PostFactoryOptions {
   manual_override?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
+  publishAttemptId?: string | null;
 }
 
 export class PostFactory {
@@ -49,13 +48,11 @@ export class PostFactory {
       fileUrl: [],
       scheduledFor: null,
       postedAt: null,
-      isPosted: false,
-      isScheduled: false,
+      currentState: "DRAFT",
       postType: "IMAGE",
       repost: false,
       isQuotedPost: false,
       isRecyclable: false,
-      draft: false,
       status: "ACTIVE",
       signedEvent: undefined,
       nostrEvent: undefined,
@@ -67,6 +64,7 @@ export class PostFactory {
       manual_override: false,
       createdAt: new Date(),
       updatedAt: new Date(),
+      publishAttemptId: null,
       ...options,
     };
   }
@@ -115,16 +113,12 @@ export class PostFactory {
   }
 
   asDraft(): this {
-    this.options.draft = true;
-    this.options.isPosted = false;
-    this.options.isScheduled = false;
+    this.options.currentState = "DRAFT";
     return this;
   }
 
   asScheduled(scheduledFor: string | Date): this {
-    this.options.isScheduled = true;
-    this.options.draft = false;
-    this.options.isPosted = false;
+    this.options.currentState = "SCHEDULED";
     this.options.scheduledFor =
       scheduledFor instanceof Date
         ? Math.floor(scheduledFor.getTime() / 1000).toString()
@@ -133,9 +127,7 @@ export class PostFactory {
   }
 
   asPosted(postedAt?: Date): this {
-    this.options.isPosted = true;
-    this.options.draft = false;
-    this.options.isScheduled = false;
+    this.options.currentState = "PUBLISHED";
     this.options.postedAt = postedAt ?? new Date();
     this.options.nostrEventId = `event-${Date.now()}`;
     return this;
@@ -198,15 +190,13 @@ export class PostFactory {
       fileUrl: this.options.fileUrl ?? [],
       scheduledFor: this.options.scheduledFor ?? null,
       postedAt: this.options.postedAt ?? null,
-      isPosted: this.options.isPosted ?? false,
-      isScheduled: this.options.isScheduled ?? false,
+      currentState: this.options.currentState ?? "DRAFT",
       postType: this.options.postType ?? "IMAGE",
       repost: this.options.repost ?? false,
       isQuotedPost: this.options.isQuotedPost ?? false,
       isRecyclable: this.options.isRecyclable ?? false,
       createdAt: this.options.createdAt ?? new Date(),
       updatedAt: this.options.updatedAt ?? new Date(),
-      draft: this.options.draft ?? false,
       status: this.options.status ?? "ACTIVE",
       signedEvent: (this.options.signedEvent ??
         null) as unknown as Prisma.JsonValue,
@@ -218,6 +208,7 @@ export class PostFactory {
       templateId: this.options.templateId ?? null,
       nostrEventId: this.options.nostrEventId ?? null,
       manual_override: this.options.manual_override ?? false,
+      publishAttemptId: this.options.publishAttemptId ?? null,
     } as Post;
   }
 }

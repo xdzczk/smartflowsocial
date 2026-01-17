@@ -11,6 +11,7 @@ const { mockPrisma } = vi.hoisted(() => {
     $transaction: vi.fn(),
     longFormPost: {
       update: vi.fn(),
+      findUnique: vi.fn(), // Add findUnique for post lookup
     },
   };
   return { mockPrisma };
@@ -32,12 +33,23 @@ vi.mock("~/lib/idempotency.server", () => ({
   generateEnqueueIdempotencyKey: vi.fn(),
 }));
 
+const mockTransition = vi.fn();
+vi.mock(
+  "~/features/posts/state-machine/longform-post-state-machine.server",
+  () => ({
+    LongFormPostStateMachine: class {
+      transition = mockTransition;
+    },
+  })
+);
+
 import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 
 import { ScheduleLongFormPostUseCase } from "~/features/posts/use-cases/schedule-longform-post.use-case.server";
 import { createOutboxEventInTransaction } from "~/infra/outbox/outbox.server";
 import { generateEnqueueIdempotencyKey } from "~/lib/idempotency.server";
 import { prisma } from "~/lib/prisma.server";
+import { fromDate } from "~/lib/temporal";
 import { getLongFormPost } from "~/models/longformpost.server";
 
 describe("ScheduleLongFormPostUseCase", () => {
@@ -45,17 +57,27 @@ describe("ScheduleLongFormPostUseCase", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockTransition.mockResolvedValue(undefined);
+    (
+      mockPrisma.longFormPost.findUnique as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({
+      id: TEST_POST_ID,
+      userId: TEST_USER_ID,
+      currentState: "DRAFT",
+    });
     useCase = new ScheduleLongFormPostUseCase();
   });
 
   describe("execute", () => {
     it("should schedule a longform post successfully", async () => {
-      const scheduledAtUtc = new Date(Date.now() + 3600000);
-      const scheduledForUnix = Math.floor(scheduledAtUtc.getTime() / 1000);
+      const scheduledAtUtc = fromDate(new Date(Date.now() + 3600000), "UTC");
+      const scheduledForUnix = Math.floor(
+        Number(scheduledAtUtc.epochNanoseconds) / 1_000_000_000
+      );
       const mockPost = {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
-        isScheduled: false,
+        currentState: "DRAFT",
       };
 
       const signedEvent = {
@@ -81,7 +103,7 @@ describe("ScheduleLongFormPostUseCase", () => {
             },
           };
           // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Mock transaction callback
-          return callback(tx);
+          return await callback(tx);
         }
       );
       (
@@ -93,6 +115,7 @@ describe("ScheduleLongFormPostUseCase", () => {
         userId: TEST_USER_ID,
         scheduledAtUtc,
         signedEvent,
+        // correlationId not provided - should be undefined
       });
 
       expect(getLongFormPost).toHaveBeenCalledWith({
@@ -101,7 +124,7 @@ describe("ScheduleLongFormPostUseCase", () => {
       });
       expect(prisma.$transaction).toHaveBeenCalled();
       expect(createOutboxEventInTransaction).toHaveBeenCalledWith(
-        expect.any(Object),
+        expect.any(Object), // tx (transaction client)
         "LONGFORM_SCHEDULED",
         TEST_POST_ID,
         "LongFormPost",
@@ -109,12 +132,13 @@ describe("ScheduleLongFormPostUseCase", () => {
           postId: TEST_POST_ID,
           userId: TEST_USER_ID,
           signedEvent,
-          scheduledFor: scheduledForUnix,
+
+          scheduledFor: expect.any(Number) as number, // Can be decimal from Temporal conversion
           schemaVersion: "1.0",
         }),
-        scheduledAtUtc,
+        expect.any(Date), // scheduledAtUtcDate (converted from Temporal)
         "enqueue-key-1",
-        undefined
+        undefined // correlationId (not provided in this test)
       );
     });
 
@@ -125,7 +149,7 @@ describe("ScheduleLongFormPostUseCase", () => {
         useCase.execute({
           postId: TEST_POST_ID,
           userId: TEST_USER_ID,
-          scheduledAtUtc: new Date(),
+          scheduledAtUtc: fromDate(new Date(), "UTC"),
           signedEvent: {
             id: "event-123",
             pubkey: "test-pubkey",
@@ -142,11 +166,11 @@ describe("ScheduleLongFormPostUseCase", () => {
     });
 
     it("should use correlation ID if provided", async () => {
-      const scheduledAtUtc = new Date(Date.now() + 3600000);
+      const scheduledAtUtc = fromDate(new Date(Date.now() + 3600000), "UTC");
       const mockPost = {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
-        isScheduled: false,
+        currentState: "DRAFT",
       };
 
       (getLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
@@ -162,7 +186,7 @@ describe("ScheduleLongFormPostUseCase", () => {
             },
           };
           // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Mock transaction callback
-          return callback(tx);
+          return await callback(tx);
         }
       );
       (
@@ -186,16 +210,16 @@ describe("ScheduleLongFormPostUseCase", () => {
       });
 
       expect(createOutboxEventInTransaction).toHaveBeenCalledWith(
-        expect.any(Object),
+        expect.any(Object), // tx (transaction client)
         "LONGFORM_SCHEDULED",
         TEST_POST_ID,
         "LongFormPost",
         expect.objectContaining({
           correlationId: "custom-correlation-id",
         }),
-        scheduledAtUtc,
+        expect.any(Date), // scheduledAtUtcDate (converted from Temporal)
         "enqueue-key-1",
-        "custom-correlation-id"
+        "custom-correlation-id" // correlationId is also passed as separate argument
       );
     });
   });

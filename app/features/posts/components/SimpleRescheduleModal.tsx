@@ -5,6 +5,16 @@ import type { z } from "zod";
 import { handleErrorSafely } from "~/lib/error-handler.client";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import {
+  formatForDateTimeLocal,
+  formatForDisplay,
+  fromDate,
+  fromUnixTimestamp,
+  nowUTC,
+  parseDateTimeLocal,
+  toDate,
+  toUnixTimestamp,
+} from "~/lib/temporal";
+import {
   rescheduleModalClientSchema,
   rescheduleLongformModalClientSchema,
 } from "~/lib/validation";
@@ -20,19 +30,49 @@ function getInitialScheduledFor(
   post: PostData | LongFormPostData,
   isLongform: boolean
 ): Date {
-  if (isLongform && "publishedAt" in post && post.publishedAt) {
-    return new Date(post.publishedAt);
-  }
-  if ("scheduledFor" in post && post.scheduledFor) {
-    const scheduledForValue = post.scheduledFor;
-    if (typeof scheduledForValue === "string") {
-      return new Date(parseInt(scheduledForValue, 10) * 1000);
+  try {
+    if (isLongform && "publishedAt" in post && post.publishedAt) {
+      const zoned = fromDate(new Date(post.publishedAt), "UTC");
+      return toDate(zoned);
     }
-    if (typeof scheduledForValue === "number") {
-      return new Date(scheduledForValue * 1000);
+    if ("scheduledFor" in post && post.scheduledFor) {
+      const scheduledForValue = post.scheduledFor;
+      if (typeof scheduledForValue === "string") {
+        const timestamp = parseInt(scheduledForValue, 10);
+        if (!isNaN(timestamp)) {
+          const zoned = fromUnixTimestamp(timestamp, "UTC");
+          return toDate(zoned);
+        }
+      }
+      if (typeof scheduledForValue === "number") {
+        const zoned = fromUnixTimestamp(
+          Math.floor(scheduledForValue / 1000),
+          "UTC"
+        );
+        return toDate(zoned);
+      }
+      if (
+        scheduledForValue &&
+        typeof scheduledForValue === "object" &&
+        "getTime" in scheduledForValue
+      ) {
+        // It's a Date object
+        const zoned = fromDate(scheduledForValue as Date, "UTC");
+        return toDate(zoned);
+      }
+    }
+    const now = nowUTC();
+    return toDate(now);
+  } catch {
+    // Final fallback - still use Temporal for consistency
+    try {
+      const now = nowUTC();
+      return toDate(now);
+    } catch {
+      // Final fallback - still use Temporal
+      return toDate(nowUTC());
     }
   }
-  return new Date();
 }
 
 interface SimpleRescheduleModalProps {
@@ -102,15 +142,8 @@ export function SimpleRescheduleModal({
 
   const formatDateTimeForInput = (date: Date) => {
     const userTimezone = user?.timezone ?? "UTC";
-    const dateInUserTz = new Date(
-      date.toLocaleString("en-US", { timeZone: userTimezone })
-    );
-    const year = dateInUserTz.getFullYear();
-    const month = String(dateInUserTz.getMonth() + 1).padStart(2, "0");
-    const day = String(dateInUserTz.getDate()).padStart(2, "0");
-    const hours = String(dateInUserTz.getHours()).padStart(2, "0");
-    const minutes = String(dateInUserTz.getMinutes()).padStart(2, "0");
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
+    const zonedDateTime = fromDate(date, userTimezone);
+    return formatForDateTimeLocal(zonedDateTime, userTimezone);
   };
 
   const handleSubmit = form.handleSubmit(async (data) => {
@@ -118,7 +151,9 @@ export function SimpleRescheduleModal({
       setIsSigningEvent(true);
       setSigningError(null);
 
-      const newTimeUnix = Math.floor(data.scheduledFor.getTime() / 1000);
+      // Use Temporal for Unix timestamp conversion
+      const scheduledZoned = fromDate(data.scheduledFor, "UTC");
+      const newTimeUnix = toUnixTimestamp(scheduledZoned);
 
       // Use the exact same content and tags from the original signed event
       const originalSignedEvent = post.signedEvent;
@@ -205,13 +240,13 @@ export function SimpleRescheduleModal({
 
   const formatDateTime = (date: Date) => {
     const userTimezone = user?.timezone ?? "UTC";
-    return date.toLocaleDateString("en-US", {
+    const zonedDateTime = fromDate(date, userTimezone);
+    return formatForDisplay(zonedDateTime, userTimezone, {
       weekday: "long",
       month: "long",
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
-      timeZone: userTimezone,
     });
   };
 
@@ -308,13 +343,38 @@ export function SimpleRescheduleModal({
                   type="datetime-local"
                   value={formatDateTimeForInput(scheduledFor)}
                   onChange={(e) => {
-                    const newValue = e.target.value
-                      ? new Date(e.target.value)
-                      : null;
-                    if (newValue) {
-                      form.setValue("scheduledFor", newValue, {
-                        shouldValidate: true,
-                      });
+                    if (e.target.value) {
+                      try {
+                        // Parse datetime-local string using Temporal
+                        const userTimezone = user?.timezone ?? "UTC";
+                        const zonedDateTime = parseDateTimeLocal(
+                          e.target.value,
+                          userTimezone
+                        );
+                        const utcZoned = zonedDateTime.withTimeZone("UTC");
+                        const newValue = toDate(utcZoned);
+                        form.setValue("scheduledFor", newValue, {
+                          shouldValidate: true,
+                        });
+                      } catch {
+                        // Fallback to Date parsing - still convert through Temporal for consistency
+                        try {
+                          const dateObj = new Date(e.target.value);
+                          const userTimezone = user?.timezone ?? "UTC";
+                          const zoned = fromDate(dateObj, userTimezone);
+                          const utcZoned = zoned.withTimeZone("UTC");
+                          const newValue = toDate(utcZoned);
+                          form.setValue("scheduledFor", newValue, {
+                            shouldValidate: true,
+                          });
+                        } catch {
+                          // Ultimate fallback - only if Temporal completely fails
+                          const newValue = new Date(e.target.value);
+                          form.setValue("scheduledFor", newValue, {
+                            shouldValidate: true,
+                          });
+                        }
+                      }
                     }
                   }}
                   className="flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"

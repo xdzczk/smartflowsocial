@@ -17,7 +17,6 @@ import {
   createPost,
   deletePost,
   updatePost,
-  updatePostStatus,
 } from "~/models/post.commands.server";
 import {
   getScheduledPosts,
@@ -59,6 +58,7 @@ describe("Post Model Functions", () => {
 
   describe("createPost", () => {
     it("should create a post with all fields", async () => {
+      const scheduledForUnix = Math.floor(Date.now() / 1000) + 3600;
       const postData = {
         userId: TEST_USER_ID,
         content: "Test content",
@@ -66,13 +66,13 @@ describe("Post Model Functions", () => {
         fileUrl: ["https://example.com/image.jpg"],
         postType: "IMAGE" as const,
         tags: ["tag1", "tag2"],
-        isScheduled: true,
-        isPosted: false,
+        scheduledFor: scheduledForUnix,
         queueTypeId: TEST_QUEUE_TYPE_ID,
       };
 
       const mockPost = {
         id: TEST_POST_ID,
+        currentState: "SCHEDULED",
         ...postData,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -94,8 +94,7 @@ describe("Post Model Functions", () => {
           fileUrl: ["https://example.com/image.jpg"],
           postType: "IMAGE",
           tags: ["tag1", "tag2"],
-          isScheduled: true,
-          isPosted: false,
+          currentState: "SCHEDULED",
           queueType: {
             connect: {
               id: TEST_QUEUE_TYPE_ID,
@@ -113,8 +112,6 @@ describe("Post Model Functions", () => {
         postType: "TEXT" as const,
         tags: [],
         fileUrl: [],
-        isScheduled: false,
-        isPosted: false,
         queueTypeId: TEST_QUEUE_TYPE_ID,
       };
 
@@ -143,8 +140,7 @@ describe("Post Model Functions", () => {
         data: expect.objectContaining({
           content: "Test content",
           postType: "TEXT",
-          isScheduled: false,
-          isPosted: false,
+          currentState: "DRAFT",
           queueType: {
             connect: {
               id: TEST_QUEUE_TYPE_ID,
@@ -162,8 +158,6 @@ describe("Post Model Functions", () => {
         postType: "TEXT" as const,
         tags: [],
         fileUrl: [],
-        isScheduled: false,
-        isPosted: false,
         queueTypeId: null,
       };
 
@@ -197,19 +191,19 @@ describe("Post Model Functions", () => {
 
     it("should convert scheduledFor to string", async () => {
       const scheduledDate = new Date("2024-01-15T10:00:00Z");
+      const scheduledForUnix = Math.floor(scheduledDate.getTime() / 1000);
       const postData = {
         userId: TEST_USER_ID,
         content: "Test content",
         postType: "TEXT" as const,
         tags: [],
         fileUrl: [],
-        isScheduled: true,
-        isPosted: false,
-        scheduledFor: scheduledDate,
+        scheduledFor: scheduledForUnix,
       };
 
       (mockPrisma.post.create as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: TEST_POST_ID,
+        currentState: "SCHEDULED",
         ...postData,
       });
 
@@ -220,7 +214,8 @@ describe("Post Model Functions", () => {
       ).toHaveBeenCalledWith({
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         data: expect.objectContaining({
-          scheduledFor: scheduledDate.toString(),
+          scheduledFor: String(scheduledForUnix),
+          currentState: "SCHEDULED",
         }),
       });
     });
@@ -232,13 +227,12 @@ describe("Post Model Functions", () => {
         postType: "TEXT" as const,
         tags: [],
         fileUrl: [],
-        isScheduled: false,
-        isPosted: false,
-        draft: true,
+        // No scheduledFor = DRAFT state
       };
 
       (mockPrisma.post.create as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: TEST_POST_ID,
+        currentState: "DRAFT",
         ...postData,
       });
 
@@ -249,7 +243,7 @@ describe("Post Model Functions", () => {
       ).toHaveBeenCalledWith({
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         data: expect.objectContaining({
-          draft: true,
+          currentState: "DRAFT",
         }),
       });
       expect(result).toBeDefined();
@@ -290,12 +284,13 @@ describe("Post Model Functions", () => {
       const updateData = {
         content: "Updated content",
         caption: "Updated caption",
-        isScheduled: true,
+        // Note: isScheduled flag removed - use state machine to change state
       };
 
       const mockUpdatedPost = {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
+        currentState: "DRAFT",
         ...updateData,
       };
 
@@ -320,7 +315,6 @@ describe("Post Model Functions", () => {
         data: expect.objectContaining({
           content: "Updated content",
           caption: "Updated caption",
-          isScheduled: true,
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
           updatedAt: expect.any(Date),
         }),
@@ -335,15 +329,13 @@ describe("Post Model Functions", () => {
         {
           id: "post-1",
           userId: TEST_USER_ID,
-          isScheduled: true,
-          isPosted: false,
+          currentState: "SCHEDULED",
           queueType: { name: "posts" },
         },
         {
           id: "post-2",
           userId: TEST_USER_ID,
-          isScheduled: true,
-          isPosted: false,
+          currentState: "SCHEDULED",
           queueType: { name: "posts" },
         },
       ];
@@ -363,9 +355,7 @@ describe("Post Model Functions", () => {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         where: expect.objectContaining({
           userId: TEST_USER_ID,
-          isScheduled: true,
-          isPosted: false,
-          draft: false,
+          currentState: "SCHEDULED",
           queueType: {
             name: "posts",
           },
@@ -387,8 +377,7 @@ describe("Post Model Functions", () => {
         {
           id: "post-1",
           userId: TEST_USER_ID,
-          isScheduled: true,
-          isPosted: false,
+          currentState: "SCHEDULED",
           queueType: { name: "posts" },
         },
       ];
@@ -408,9 +397,7 @@ describe("Post Model Functions", () => {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         where: expect.objectContaining({
           userId: TEST_USER_ID,
-          isScheduled: true,
-          isPosted: false,
-          draft: false,
+          currentState: "SCHEDULED",
         }),
         include: {
           queueType: true,
@@ -431,7 +418,7 @@ describe("Post Model Functions", () => {
         {
           id: "post-1",
           userId: TEST_USER_ID,
-          isPosted: true,
+          currentState: "PUBLISHED",
           postedAt: new Date(),
           queueType: { name: "posts" },
         },
@@ -455,7 +442,7 @@ describe("Post Model Functions", () => {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         where: expect.objectContaining({
           userId: TEST_USER_ID,
-          isPosted: true,
+          currentState: "PUBLISHED",
           queueType: {
             name: "posts",
           },
@@ -544,41 +531,7 @@ describe("Post Model Functions", () => {
     });
   });
 
-  describe("updatePostStatus", () => {
-    it("should update post status to posted", async () => {
-      const mockUpdatedPost = {
-        id: TEST_POST_ID,
-        userId: TEST_USER_ID,
-        isPosted: true,
-        postedAt: new Date(),
-      };
-
-      (mockPrisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockUpdatedPost
-      );
-
-      const result = await updatePostStatus({
-        id: TEST_POST_ID,
-        userId: TEST_USER_ID,
-        isPosted: true,
-      });
-
-      expect(
-        mockPrisma.post.update as ReturnType<typeof vi.fn>
-      ).toHaveBeenCalledWith({
-        where: {
-          id: TEST_POST_ID,
-          userId: TEST_USER_ID,
-        },
-        data: {
-          isPosted: true,
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
-          postedAt: expect.any(Date),
-        },
-      });
-      expect(result).toEqual(mockUpdatedPost);
-    });
-  });
+  // updatePostStatus was removed - state transitions now use PostStateMachine
 
   describe("getPostStatistics", () => {
     it("should get post statistics for a user", async () => {

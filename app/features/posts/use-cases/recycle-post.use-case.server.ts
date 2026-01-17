@@ -11,12 +11,18 @@ import { logInfo, logError } from "~/lib/error-logger.server";
 import { generateCreationIdempotencyKey } from "~/lib/idempotency.server";
 import { recordPostRecycled } from "~/lib/metrics/business-metrics.server";
 import {
+  fromUnixTimestamp,
+  formatForDisplay,
+  toPrismaDate,
+} from "~/lib/temporal";
+import {
   createPostWithOutbox,
   updatePost,
 } from "~/models/post.commands.server";
 import { getPostById } from "~/models/post.queries.server";
 
 import { resolveQueueTypeId } from "../services/queue-type-resolver.server";
+import { deriveIsPosted, deriveIsScheduled } from "../state-machine/post-state";
 import { PostStateMachine } from "../state-machine/post-state-machine.server";
 
 export interface RecyclePostInput {
@@ -68,7 +74,9 @@ export class RecyclePostUseCase {
 
     // Verify post is recyclable and published
     // We validate first to catch invalid recycle attempts early
-    if (!originalPost.isPosted) {
+    // Use currentState as single source of truth
+    const isOriginalPosted = deriveIsPosted(originalPost.currentState);
+    if (!isOriginalPosted) {
       throw new Error(
         `Post ${input.originalPostId} must be published before recycling`
       );
@@ -103,7 +111,10 @@ export class RecyclePostUseCase {
       );
       return {
         newPostId: existing.id,
-        scheduled: existing.isScheduled && !existing.isPosted,
+        // Use currentState as single source of truth
+        scheduled:
+          deriveIsScheduled(existing.currentState) &&
+          !deriveIsPosted(existing.currentState),
       };
     }
 
@@ -138,10 +149,8 @@ export class RecyclePostUseCase {
         nostrEvent: originalPost.nostrEvent as unknown as
           | NostrEvent
           | undefined,
-        isScheduled: !!input.scheduledFor,
-        isPosted: false, // New post is not yet posted
         scheduledFor: input.scheduledFor
-          ? new Date(input.scheduledFor * 1000)
+          ? toPrismaDate(fromUnixTimestamp(input.scheduledFor, "UTC"))
           : undefined,
         tags: originalPost.tags,
         repost: originalPost.repost,
@@ -176,7 +185,7 @@ export class RecyclePostUseCase {
         newPost.id,
         input.userId,
         "SCHEDULED",
-        `Post recycled and scheduled for ${new Date(input.scheduledFor * 1000).toISOString()}`
+        `Post recycled and scheduled for ${formatForDisplay(fromUnixTimestamp(input.scheduledFor, "UTC"), "UTC")}`
       );
     } else {
       await this.stateMachine.transition(

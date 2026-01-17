@@ -36,6 +36,7 @@ import {
 import { updateLongFormPost } from "~/models/longformpost.server";
 
 import { convertEditorJSToMarkdown } from "../longform.server";
+import { LongFormPostStateMachine } from "../state-machine/longform-post-state-machine.server";
 import { PublishLongFormNowUseCase } from "../use-cases/publish-longform-now.use-case.server";
 import { ScheduleLongFormPostUseCase } from "../use-cases/schedule-longform-post.use-case.server";
 
@@ -245,10 +246,20 @@ async function handleSaveDraft(
     content: sanitizedContent, // Save as markdown for consistency
     image,
     tags,
-    isPublished: false,
+    // Note: Flag fields (isPublished, isScheduled, draft) have been removed.
+    // Use LongFormPostStateMachine.transition() to change state instead.
     queueTypeId,
     hashTagPresetId,
   });
+
+  // Transition to DRAFT state using state machine (flags will be synced automatically)
+  const stateMachine = new LongFormPostStateMachine();
+  await stateMachine.transition(
+    postId,
+    userId,
+    "DRAFT",
+    "Longform post saved as draft"
+  );
 
   return redirect("/dashboard/drafts?tab=longform");
 }
@@ -355,6 +366,7 @@ async function handlePublish(
   };
 
   // Update the post first
+  // Note: Flag fields (isPublished) have been removed. State machine will handle state transition.
   await updateLongFormPost({
     id: postId,
     userId,
@@ -363,7 +375,6 @@ async function handlePublish(
     content: contentWithHashtags,
     image,
     tags,
-    isPublished: true,
     signedEvent: signedEventJson,
     nostrEvent: nostrEventJson,
     queueTypeId,
@@ -498,6 +509,7 @@ async function handleScheduleLongform(
   }
 
   // Update the post first
+  // Note: Flag fields (isPublished) have been removed. State machine will handle state transition.
   await updateLongFormPost({
     id: postId,
     userId,
@@ -506,7 +518,6 @@ async function handleScheduleLongform(
     content: contentWithHashtags,
     image,
     tags,
-    isPublished: false,
     signedEvent: signedEventJson,
     nostrEvent: nostrEventJson,
     scheduledFor: scheduledForTimestamp?.toString() ?? null,
@@ -517,11 +528,12 @@ async function handleScheduleLongform(
   // Use ScheduleLongFormPostUseCase if we have a scheduled time
   if (scheduledForTimestamp) {
     const scheduleLongFormPostUseCase = new ScheduleLongFormPostUseCase();
-    const scheduledAtUtc = new Date(scheduledForTimestamp * 1000);
+    const { fromUnixTimestamp } = await import("~/lib/temporal");
+    const scheduledAtUtcZoned = fromUnixTimestamp(scheduledForTimestamp, "UTC");
     await scheduleLongFormPostUseCase.execute({
       postId,
       userId,
-      scheduledAtUtc,
+      scheduledAtUtc: scheduledAtUtcZoned,
       signedEvent: signedEventJson,
     });
   }

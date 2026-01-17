@@ -81,7 +81,7 @@ describe("RecyclePostUseCase", () => {
       id: TEST_POST_ID,
       userId: TEST_USER_ID,
       isRecyclable: true,
-      isPosted: true,
+      currentState: "PUBLISHED",
       postType: "IMAGE",
       content: "Original content",
       caption: "Original caption",
@@ -115,7 +115,7 @@ describe("RecyclePostUseCase", () => {
       const mockNewPost = {
         id: newPostId,
         userId: TEST_USER_ID,
-        isScheduled: false,
+        currentState: "DRAFT",
       };
 
       (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(
@@ -166,7 +166,7 @@ describe("RecyclePostUseCase", () => {
       const mockNewPost = {
         id: newPostId,
         userId: TEST_USER_ID,
-        isScheduled: true,
+        currentState: "SCHEDULED",
       };
 
       (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(
@@ -206,8 +206,7 @@ describe("RecyclePostUseCase", () => {
       const existingPost = {
         id: existingPostId,
         userId: TEST_USER_ID,
-        isScheduled: true,
-        isPosted: false,
+        currentState: "SCHEDULED",
       };
 
       (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(
@@ -256,7 +255,7 @@ describe("RecyclePostUseCase", () => {
     it("should throw error if post is not published", async () => {
       const unpublishedPost = {
         ...mockOriginalPost,
-        isPosted: false,
+        currentState: "DRAFT",
       };
 
       (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(
@@ -291,7 +290,7 @@ describe("RecyclePostUseCase", () => {
       const mockNewPost = {
         id: newPostId,
         userId: TEST_USER_ID,
-        isScheduled: false,
+        currentState: "DRAFT",
       };
 
       (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(

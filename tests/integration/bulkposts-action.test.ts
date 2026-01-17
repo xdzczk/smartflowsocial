@@ -17,6 +17,17 @@ vi.mock("~/models/post.commands.server", () => ({
   updatePost: vi.fn(),
 }));
 
+const { mockExecute } = vi.hoisted(() => {
+  const mockExecute = vi.fn();
+  return { mockExecute };
+});
+
+vi.mock("~/features/posts/use-cases/create-post.use-case.server", () => ({
+  CreatePostUseCase: class {
+    execute = mockExecute;
+  },
+}));
+
 vi.mock("~/models/post.queries.server", () => ({
   getPostsByIds: vi.fn(),
 }));
@@ -32,6 +43,7 @@ const { mockPrisma } = vi.hoisted(() => {
       findUnique: vi.fn(),
       update: vi.fn(),
       findFirst: vi.fn(), // For idempotency check in CreatePostUseCase
+      create: vi.fn(), // For post creation
     },
     postStateTransition: {
       create: vi.fn(),
@@ -40,6 +52,7 @@ const { mockPrisma } = vi.hoisted(() => {
       const tx = {
         post: {
           update: vi.fn().mockResolvedValue({}),
+          create: vi.fn().mockResolvedValue({}),
         },
         postStateTransition: {
           create: vi.fn().mockResolvedValue({}),
@@ -71,6 +84,7 @@ import { getPostsByIds } from "~/models/post.queries.server";
 describe("Bulk Posts Action Handler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockExecute.mockClear();
     (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue(TEST_USER_ID);
     // Setup default Prisma mocks for PostStateMachine
     (mockPrisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -79,8 +93,12 @@ describe("Bulk Posts Action Handler", () => {
       currentState: "DRAFT",
     });
     // Mock findFirst for idempotency check in CreatePostUseCase
-    (mockPrisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
-      null
+    (mockPrisma.post.findFirst as ReturnType<typeof vi.fn>).mockImplementation(
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Mock implementation needs to be async
+      async (_args: { where: { creationIdempotencyKey?: string } }) => {
+        // Return null to indicate no existing post with this idempotency key
+        return null;
+      }
     );
     (mockPrisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue({});
     (
@@ -217,11 +235,9 @@ describe("Bulk Posts Action Handler", () => {
       (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
         "queue-1"
       );
-      const { createPostWithOutbox } =
-        await import("~/models/post.commands.server");
-      (createPostWithOutbox as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce(mockPosts[0])
-        .mockResolvedValueOnce(mockPosts[1]);
+      mockExecute
+        .mockResolvedValueOnce({ post: mockPosts[0], needsScheduling: true })
+        .mockResolvedValueOnce({ post: mockPosts[1], needsScheduling: true });
 
       const formData = new FormData();
       formData.append("_action", "sign_and_schedule");
@@ -273,9 +289,7 @@ describe("Bulk Posts Action Handler", () => {
         }
       }
       expect(result.status).toBe(302); // Redirect
-      const { createPostWithOutbox: createPostWithOutboxCheck2 } =
-        await import("~/models/post.commands.server");
-      expect(createPostWithOutboxCheck2).toHaveBeenCalledTimes(2);
+      expect(mockExecute).toHaveBeenCalledTimes(2);
     });
 
     it("should handle recycle mode and mark original posts as non-recyclable", async () => {
@@ -294,11 +308,10 @@ describe("Bulk Posts Action Handler", () => {
       (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
         "queue-1"
       );
-      const { createPostWithOutbox } =
-        await import("~/models/post.commands.server");
-      (createPostWithOutbox as ReturnType<typeof vi.fn>).mockResolvedValue(
-        createMockPost({ id: "new-post-1" })
-      );
+      mockExecute.mockResolvedValue({
+        post: createMockPost({ id: "new-post-1" }),
+        needsScheduling: false,
+      });
       (getPostsByIds as ReturnType<typeof vi.fn>).mockResolvedValue([
         createMockPost({ id: originalPostId, isRecyclable: true }),
       ]);
@@ -390,11 +403,15 @@ describe("Bulk Posts Action Handler", () => {
       (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
         "queue-1"
       );
-      const { createPostWithOutbox } =
-        await import("~/models/post.commands.server");
-      (createPostWithOutbox as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce(createMockPost({ id: "draft-1" }))
-        .mockResolvedValueOnce(createMockPost({ id: "draft-2" }));
+      mockExecute
+        .mockResolvedValueOnce({
+          post: createMockPost({ id: "draft-1" }),
+          needsScheduling: false,
+        })
+        .mockResolvedValueOnce({
+          post: createMockPost({ id: "draft-2" }),
+          needsScheduling: false,
+        });
 
       const formData = new FormData();
       formData.append("_action", "save_as_draft");
@@ -421,21 +438,24 @@ describe("Bulk Posts Action Handler", () => {
 
       expect(result).toBeInstanceOf(Response);
       expect(result.status).toBe(302); // Redirect
-      const { createPostWithOutbox: createPostWithOutbox2 } =
-        await import("~/models/post.commands.server");
-      expect(createPostWithOutbox2).toHaveBeenCalledTimes(2);
-      // Verify it was called with draft parameters (isScheduled: false, isPosted: false)
-      // Note: draft field is not passed to createPostWithOutbox, it's inferred from isScheduled/isPosted
-      expect(createPostWithOutbox2).toHaveBeenCalledWith(
+      expect(mockExecute).toHaveBeenCalledTimes(2);
+      // Verify execute was called with draft parameters (no scheduledFor = DRAFT state)
+      // Note: state is determined by scheduledFor - null/undefined = DRAFT
+      // The caption comes from FormData which may have JSON stringified values
+      expect(mockExecute).toHaveBeenCalledWith(
         expect.objectContaining({
-          isScheduled: false,
-          isPosted: false,
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
           fileUrl: expect.any(Array),
-        }),
-        undefined, // scheduledForUnix
-        expect.any(String) // correlationId
+          // scheduledFor should be undefined/null/empty for drafts
+        })
       );
+      // Verify scheduledFor is not set (empty string from FormData becomes undefined)
+      const calls = mockExecute.mock.calls;
+      expect(calls.length).toBeGreaterThan(0);
+      calls.forEach((call) => {
+        const args = call[0] as { scheduledFor?: number | string | undefined };
+        expect(args.scheduledFor).toBeUndefined();
+      });
     });
   });
 

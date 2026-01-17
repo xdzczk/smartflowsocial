@@ -115,7 +115,8 @@ describe.skipIf(!TEST_DATABASE_URL)("Outbox Pattern Integration", () => {
 
       // Schedule the post (which creates outbox event in transaction)
       const scheduleUseCase = new SchedulePostUseCase();
-      const scheduledAtUtc = new Date(Date.now() + 3600000);
+      const { fromDate } = await import("~/lib/temporal");
+      const scheduledAtUtc = fromDate(new Date(Date.now() + 3600000), "UTC");
       await scheduleUseCase.execute({
         postId,
         userId,

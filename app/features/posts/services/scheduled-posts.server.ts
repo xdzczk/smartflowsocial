@@ -15,6 +15,7 @@ import {
 } from "~/features/user";
 import { cancelPostJob as cancelScheduledPost } from "~/infra/queue";
 import { logError } from "~/lib/error-logger.server";
+import { fromUnixTimestamp, toDate, toPrismaDate } from "~/lib/temporal";
 import {
   getScheduledLongFormPosts,
   deleteLongFormPost,
@@ -328,7 +329,8 @@ async function handleReschedule(formData: FormData, userId: string) {
   if (parsedSignedEvent && parsedNostrEvent) {
     // Use SchedulePostUseCase for rescheduling
     const schedulePostUseCase = new SchedulePostUseCase();
-    const scheduledAtUtc = new Date(parseInt(newTime) * 1000);
+    // Convert Unix timestamp (seconds) to Temporal ZonedDateTime
+    const scheduledAtUtc = fromUnixTimestamp(parseInt(newTime), "UTC");
     await schedulePostUseCase.execute({
       postId,
       userId,
@@ -362,7 +364,8 @@ async function handleRescheduleLongform(formData: FormData, userId: string) {
   if (parsedSignedEvent) {
     // Use ScheduleLongFormPostUseCase for rescheduling
     const scheduleLongFormPostUseCase = new ScheduleLongFormPostUseCase();
-    const scheduledAtUtc = new Date(parseInt(newTime) * 1000);
+    // Convert Unix timestamp (seconds) to Temporal ZonedDateTime
+    const scheduledAtUtc = fromUnixTimestamp(parseInt(newTime), "UTC");
     await scheduleLongFormPostUseCase.execute({
       postId,
       userId,
@@ -374,7 +377,7 @@ async function handleRescheduleLongform(formData: FormData, userId: string) {
     const updatedPost = await updateLongFormPost({
       id: postId,
       userId,
-      publishedAt: scheduledAtUtc,
+      publishedAt: toPrismaDate(scheduledAtUtc),
       status: "SCHEDULED",
       signedEvent: JSON.parse(
         JSON.stringify(parsedSignedEvent)
@@ -395,7 +398,7 @@ async function handleRescheduleLongform(formData: FormData, userId: string) {
   const updatedPost = await updateLongFormPost({
     id: postId,
     userId,
-    publishedAt: new Date(parseInt(newTime) * 1000),
+    publishedAt: toDate(fromUnixTimestamp(parseInt(newTime), "UTC")), // Keep as Date for Prisma
     status: "SCHEDULED",
   });
 
@@ -452,7 +455,8 @@ async function handleEditPost(formData: FormData, userId: string) {
     await cancelScheduledPost(postId);
     // Use SchedulePostUseCase for rescheduling
     const schedulePostUseCase = new SchedulePostUseCase();
-    const scheduledAtUtc = new Date(Number(scheduledFor) * 1000);
+    // Convert Unix timestamp (seconds) to Temporal ZonedDateTime
+    const scheduledAtUtc = fromUnixTimestamp(Number(scheduledFor), "UTC");
     await schedulePostUseCase.execute({
       postId,
       userId,
@@ -493,7 +497,7 @@ async function handleEditLongform(formData: FormData, userId: string) {
     content,
     image,
     publishedAt: scheduledFor
-      ? new Date(Number(scheduledFor) * 1000)
+      ? toDate(fromUnixTimestamp(Number(scheduledFor), "UTC"))
       : undefined,
     status: "SCHEDULED",
     signedEvent: parsedSignedEvent

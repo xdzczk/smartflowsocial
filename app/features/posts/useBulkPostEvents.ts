@@ -6,6 +6,16 @@ import { type ToastMessage } from "~/components/types";
 import { uploadMultipleFiles } from "~/features/upload/upload.client";
 import type { User } from "~/features/user";
 import { logClientError } from "~/lib/error-handler.client";
+import {
+  formatForDateTimeLocal,
+  fromDate,
+  fromISOString,
+  nowInTimezone,
+  nowMillis,
+  nowUTC,
+  parseDateTimeLocal,
+  toUnixTimestamp,
+} from "~/lib/temporal";
 
 import { type BulkPost, type PreparedEvent } from "./types";
 
@@ -104,19 +114,34 @@ function convertScheduledTime(
   scheduledForValue: string,
   userTimezone: string
 ): number {
-  if (userTimezone !== "UTC" && userTimezone !== "Etc/GMT") {
-    const utcDate = new Date(scheduledForValue);
-    const userDate = new Date(scheduledForValue).toLocaleString("en-US", {
-      timeZone: userTimezone,
-    });
-    const userOffset =
-      (new Date(userDate).getTime() - new Date(scheduledForValue).getTime()) /
-      60000;
-    utcDate.setMinutes(utcDate.getMinutes() - userOffset);
-    return utcDate.getTime();
+  // Parse datetime-local string (YYYY-MM-DDTHH:mm) in user's timezone
+  // Then convert to UTC and return as Unix timestamp (milliseconds)
+  try {
+    // Parse the datetime-local string in the user's timezone
+    const zonedDateTime = parseDateTimeLocal(scheduledForValue, userTimezone);
+
+    // Convert to UTC and get Unix timestamp in milliseconds
+    const utcZoned = zonedDateTime.withTimeZone("UTC");
+    return toUnixTimestamp(utcZoned) * 1000; // Convert seconds to milliseconds
+  } catch {
+    // Fallback: treat as UTC if parsing fails
+    // Use Temporal for 100% consistency
+    try {
+      const zoned = fromISOString(scheduledForValue + "Z", "UTC");
+      return toUnixTimestamp(zoned) * 1000;
+    } catch {
+      // Fallback - try with Date conversion
+      try {
+        const dateObj = new Date(scheduledForValue + "Z");
+        const zoned = fromDate(dateObj, "UTC");
+        return toUnixTimestamp(zoned) * 1000;
+      } catch {
+        // Ultimate fallback
+        const dateObj = new Date(scheduledForValue + "Z");
+        return dateObj.getTime();
+      }
+    }
   }
-  const dateObj = new Date(scheduledForValue + "Z");
-  return dateObj.getTime();
 }
 
 function parseOriginalFileUrl(originalFileUrl: string | string[]): string {
@@ -209,8 +234,11 @@ function createKind6RepostEvent(
   return {
     fileUrl: displayFileUrl,
     scheduledFor: Math.floor(
-      (post.scheduledFor ? new Date(post.scheduledFor).getTime() : Date.now()) /
-        1000
+      (post.scheduledFor
+        ? Number(
+            fromISOString(String(post.scheduledFor), "UTC").epochMilliseconds
+          )
+        : nowMillis()) / 1000
     ),
     caption: "",
     queueType: post.queueType,
@@ -414,22 +442,13 @@ export function useBulkPostEvents({
 
         // The scheduledFor value is in user's timezone (from datetime-local input)
         // We need to compare it with current time in the same user timezone
-        // Get current time in user's timezone as a comparable string
-        const nowInUserTz = new Date()
-          .toLocaleString("en-US", {
-            timeZone: userTimezone,
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: false,
-          })
-          .replace(/(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+)/, "$3-$1-$2T$4:$5");
+        // Use Temporal for consistency
+        const nowInUserTz = nowInTimezone(userTimezone);
+        const nowFormatted = formatForDateTimeLocal(nowInUserTz, userTimezone);
 
         // Compare as strings since both are in the same format (YYYY-MM-DDTHH:mm)
         // This avoids timezone conversion issues
-        if (post.scheduledFor <= nowInUserTz) {
+        if (post.scheduledFor <= nowFormatted) {
           errors.push(`Post ${index + 1}: Schedule time must be in the future`);
         }
       }
@@ -449,8 +468,11 @@ export function useBulkPostEvents({
   };
 
   const processEvents = useCallback(async () => {
-    const processStartTime = Date.now();
-    devLog(`[BulkPosts] processEvents started at ${new Date().toISOString()}`);
+    const processStartTime = nowMillis();
+    const { nowUTC } = await import("~/lib/temporal");
+    devLog(
+      `[BulkPosts] processEvents started at ${nowUTC().toInstant().toString()}`
+    );
 
     // Calculate total steps based on whether we had uploads
     const filesToUpload = posts
@@ -469,7 +491,7 @@ export function useBulkPostEvents({
 
     // Step 2: Fetch hashtags (step 1 was server processing)
     updateProgress("Fetching hashtags...", 2);
-    const hashtagStartTime = Date.now();
+    const hashtagStartTime = nowMillis();
     // First, collect unique queue types and fetch hashtags in batch
     // This prevents making one API call per post, which can be very slow for bulk operations
     const uniqueQueueTypes = new Set(
@@ -516,12 +538,12 @@ export function useBulkPostEvents({
       hashtagResults.forEach(({ queueType, hashtags }) => {
         hashtagCache.set(queueType, hashtags);
       });
-      const hashtagTime = Date.now() - hashtagStartTime;
+      const hashtagTime = nowMillis() - hashtagStartTime;
       devLog(
         `[BulkPosts] Hashtags fetched in ${hashtagTime}ms (${uniqueQueueTypes.size} unique queue types)`
       );
     } else {
-      const hashtagTime = Date.now() - hashtagStartTime;
+      const hashtagTime = nowMillis() - hashtagStartTime;
       devLog(
         `[BulkPosts] Skipped hashtag fetch (using presets) in ${hashtagTime}ms`
       );
@@ -529,7 +551,7 @@ export function useBulkPostEvents({
 
     // Step 3: Prepare events
     updateProgress("Preparing events...", 3);
-    const eventCreationStartTime = Date.now();
+    const eventCreationStartTime = nowMillis();
     // Now create events using cached hashtags
     const events = await Promise.all(
       posts.map(async (post, index) => {
@@ -595,7 +617,7 @@ export function useBulkPostEvents({
         };
       })
     );
-    const eventCreationTime = Date.now() - eventCreationStartTime;
+    const eventCreationTime = nowMillis() - eventCreationStartTime;
     devLog(
       `[BulkPosts] Events created in ${eventCreationTime}ms (${posts.length} posts)`
     );
@@ -605,7 +627,7 @@ export function useBulkPostEvents({
     setPreparedEvents(events);
     setShowConfirmation(true);
 
-    const totalTime = Date.now() - processStartTime;
+    const totalTime = nowMillis() - processStartTime;
     devLog(`[BulkPosts] processEvents completed in ${totalTime}ms total`);
 
     // Reset loading state when events are processed successfully
@@ -630,7 +652,10 @@ export function useBulkPostEvents({
 
   const prepareEvents = async (e: React.FormEvent) => {
     e.preventDefault();
-    devLog("[BulkPosts] Starting preparation at", new Date().toISOString());
+    devLog(
+      "[BulkPosts] Starting preparation at",
+      nowUTC().toInstant().toString()
+    );
 
     // Validate posts before proceeding
     const { isValid, errors } = validatePostsForPreview();
@@ -705,7 +730,7 @@ export function useBulkPostEvents({
               stage: `Starting upload of ${filesToUpload.length} files...`,
             });
 
-            const uploadStartTime = Date.now();
+            const uploadStartTime = nowMillis();
             // Upload all files using the new upload system with progress tracking
             const uploadResults = await uploadMultipleFiles(
               filesToUpload,
@@ -717,7 +742,7 @@ export function useBulkPostEvents({
                 });
               }
             );
-            const uploadTime = Date.now() - uploadStartTime;
+            const uploadTime = nowMillis() - uploadStartTime;
             devLog(
               `[BulkPosts] Uploads completed in ${uploadTime}ms (${filesToUpload.length} files)`
             );
@@ -760,7 +785,7 @@ export function useBulkPostEvents({
             formData.append("_action", "_upload_images_preview");
 
             devLog(
-              `[BulkPosts] Submitting to server at ${new Date().toISOString()}`
+              `[BulkPosts] Submitting to server at ${nowUTC().toInstant().toString()}`
             );
 
             // Submit to server for processing
@@ -808,7 +833,7 @@ export function useBulkPostEvents({
           formData.append("_action", "_upload_images_preview");
 
           devLog(
-            `[BulkPosts] Submitting to server (no uploads) at ${new Date().toISOString()}`
+            `[BulkPosts] Submitting to server (no uploads) at ${nowUTC().toInstant().toString()}`
           );
 
           // Submit to server for processing
@@ -897,7 +922,7 @@ export function useBulkPostEvents({
       Array.isArray(fetcherData.fileUrls)
     ) {
       devLog(
-        `[BulkPosts] Server response received at ${new Date().toISOString()}`
+        `[BulkPosts] Server response received at ${nowUTC().toInstant().toString()}`
       );
       isWaitingForUpload.current = false;
 

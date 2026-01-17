@@ -8,6 +8,13 @@ import {
 import { resizeImage } from "~/features/upload/image-resize";
 import { logClientError } from "~/lib/error-handler.client";
 import {
+  formatForDateTimeLocal,
+  fromDate,
+  fromISOString,
+  fromUnixTimestamp,
+  toDate,
+} from "~/lib/temporal";
+import {
   editPostClientSchema,
   editLongformPostClientSchema,
 } from "~/lib/validation";
@@ -91,14 +98,66 @@ function getHashTagPresetId(
   return undefined;
 }
 
-function formatScheduledForFromDate(date: Date | string | null): string {
+function formatScheduledForFromDate(
+  date: Date | string | null,
+  userTimezone = "UTC"
+): string {
   if (!date) return "";
-  return new Date(date).toISOString().slice(0, 16);
+  try {
+    const zoned = fromDate(new Date(date), userTimezone);
+    return formatForDateTimeLocal(zoned, userTimezone);
+  } catch {
+    // Fallback - still use Temporal for 100% consistency
+    try {
+      const zoned = fromISOString(String(date), userTimezone);
+      return formatForDateTimeLocal(zoned, userTimezone);
+    } catch {
+      // Fallback - try with Date conversion
+      try {
+        const zoned = fromDate(new Date(date), userTimezone);
+        return formatForDateTimeLocal(zoned, userTimezone);
+      } catch {
+        return new Date(date).toISOString().slice(0, 16);
+      }
+    }
+  }
 }
 
-function formatScheduledForFromUnixTimestamp(timestamp: unknown): string {
+function formatScheduledForFromUnixTimestamp(
+  timestamp: unknown,
+  userTimezone = "UTC"
+): string {
   if (!timestamp || typeof timestamp !== "string") return "";
-  return new Date(parseInt(timestamp, 10) * 1000).toISOString().slice(0, 16);
+  try {
+    const ts = parseInt(timestamp, 10);
+    if (isNaN(ts)) return "";
+    const zoned = fromUnixTimestamp(ts, "UTC");
+    const userZoned = zoned.withTimeZone(userTimezone);
+    return formatForDateTimeLocal(userZoned, userTimezone);
+  } catch {
+    // Fallback
+    // Fallback - still use Temporal for consistency
+    try {
+      const ts = parseInt(timestamp, 10);
+      if (isNaN(ts)) return "";
+      const zoned = fromUnixTimestamp(ts, "UTC");
+      const userZoned = zoned.withTimeZone(userTimezone);
+      return formatForDateTimeLocal(userZoned, userTimezone);
+    } catch {
+      // Fallback - still use Temporal
+      try {
+        const ts = parseInt(timestamp, 10);
+        if (isNaN(ts)) return "";
+        const zoned = fromUnixTimestamp(ts, "UTC");
+        const userZoned = zoned.withTimeZone(userTimezone);
+        return formatForDateTimeLocal(userZoned, userTimezone);
+      } catch {
+        return new Date(parseInt(timestamp, 10) * 1000)
+          .toISOString()
+          .slice(0, 16);
+      }
+    }
+  }
 }
 
 function getLongformInitialValues(post: PostData | LongFormPostData): {
@@ -120,7 +179,7 @@ function getLongformInitialValues(post: PostData | LongFormPostData): {
     summary: getStringValue(post, "summary"),
     content: "",
     image: getStringValue(post, "image"),
-    scheduledFor: formatScheduledForFromDate(publishedAt),
+    scheduledFor: formatScheduledForFromDate(publishedAt, "UTC"),
     queueType: getQueueTypeName(post),
     useHashtagPresets: !!getHashTagPresetId(post),
     hashTagPresetId: getHashTagPresetId(post),
@@ -145,7 +204,7 @@ function getRegularPostInitialValues(post: PostData | LongFormPostData): {
   return {
     caption: getStringValue(post, "caption"),
     queueType: getQueueTypeId(post),
-    scheduledFor: formatScheduledForFromUnixTimestamp(scheduledForValue),
+    scheduledFor: formatScheduledForFromUnixTimestamp(scheduledForValue, "UTC"),
     isRecyclable: false,
     useHashtagPresets: !!getHashTagPresetId(post),
     hashTagPresetId: getHashTagPresetId(post),
@@ -440,15 +499,21 @@ export function useEditPostModal({
       typeof user.timezone === "string"
         ? user.timezone
         : "UTC";
-    const dateInUserTz = new Date(
-      date.toLocaleString("en-US", { timeZone: userTimezone })
-    );
-    const year = dateInUserTz.getFullYear();
-    const month = String(dateInUserTz.getMonth() + 1).padStart(2, "0");
-    const day = String(dateInUserTz.getDate()).padStart(2, "0");
-    const hours = String(dateInUserTz.getHours()).padStart(2, "0");
-    const minutes = String(dateInUserTz.getMinutes()).padStart(2, "0");
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
+    try {
+      const zoned = fromDate(date, userTimezone);
+      return formatForDateTimeLocal(zoned, userTimezone);
+    } catch {
+      // Fallback
+      const dateInUserTz = new Date(
+        date.toLocaleString("en-US", { timeZone: userTimezone })
+      );
+      const year = dateInUserTz.getFullYear();
+      const month = String(dateInUserTz.getMonth() + 1).padStart(2, "0");
+      const day = String(dateInUserTz.getDate()).padStart(2, "0");
+      const hours = String(dateInUserTz.getHours()).padStart(2, "0");
+      const minutes = String(dateInUserTz.getMinutes()).padStart(2, "0");
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -495,7 +560,23 @@ export function useEditPostModal({
   const content = isLongform ? String(form.watch("content") ?? "") : "";
   const image = isLongform ? String(form.watch("image") ?? "") : "";
   const scheduledForStr = form.watch("scheduledFor");
-  const scheduledFor = scheduledForStr ? new Date(scheduledForStr) : null;
+  // Use Temporal for consistency
+  const scheduledFor = scheduledForStr
+    ? (() => {
+        try {
+          const zoned = fromISOString(scheduledForStr, "UTC");
+          return toDate(zoned);
+        } catch {
+          // Fallback - try with Date conversion
+          try {
+            const zoned = fromDate(new Date(scheduledForStr), "UTC");
+            return toDate(zoned);
+          } catch {
+            return new Date(scheduledForStr);
+          }
+        }
+      })()
+    : null;
   const selectedQueueType = String(form.watch("queueType") ?? "");
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data
   const useHashtagPresets = Boolean(form.watch("useHashtagPresets") ?? false);

@@ -11,6 +11,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { CreateLongFormPostUseCase } from "~/features/posts/use-cases/create-longform-post.use-case.server";
 import { ScheduleLongFormPostUseCase } from "~/features/posts/use-cases/schedule-longform-post.use-case.server";
 import { prisma } from "~/lib/prisma.server";
+import { fromDate } from "~/lib/temporal";
 
 // Skip if no test database configured
 const TEST_DATABASE_URL =
@@ -84,7 +85,7 @@ describe.skipIf(!TEST_DATABASE_URL)(
       const postId = createResult.post.id;
 
       // Schedule the post
-      const scheduledAtUtc = new Date(Date.now() + 3600000); // 1 hour from now
+      const scheduledAtUtc = fromDate(new Date(Date.now() + 3600000), "UTC"); // 1 hour from now
       await useCase.execute({
         postId,
         userId,
@@ -104,8 +105,22 @@ describe.skipIf(!TEST_DATABASE_URL)(
       const scheduledPost = await prisma.longFormPost.findUnique({
         where: { id: postId },
       });
-      expect(scheduledPost?.isScheduled).toBe(true);
-      expect(scheduledPost?.scheduledAtUtc).toEqual(scheduledAtUtc);
+      const { deriveIsScheduledLongForm } =
+        await import("~/features/posts/state-machine/longform-post-state");
+      expect(deriveIsScheduledLongForm(scheduledPost?.currentState)).toBe(true);
+      // scheduledAtUtc is stored as Date in database, compare as Date objects
+      expect(scheduledPost?.scheduledAtUtc).toBeInstanceOf(Date);
+      if (scheduledPost?.scheduledAtUtc) {
+        const expectedDate = new Date(
+          scheduledAtUtc.toInstant().epochMilliseconds
+        );
+        // Allow small difference due to database precision
+        expect(
+          Math.abs(
+            scheduledPost.scheduledAtUtc.getTime() - expectedDate.getTime()
+          )
+        ).toBeLessThan(1000);
+      }
 
       // Verify outbox event was created
       const outboxEvents = await prisma.outboxEvent.findMany({
@@ -122,7 +137,7 @@ describe.skipIf(!TEST_DATABASE_URL)(
         useCase.execute({
           postId: "non-existent-post-id",
           userId,
-          scheduledAtUtc: new Date(),
+          scheduledAtUtc: fromDate(new Date(), "UTC"),
           signedEvent: {
             id: "test-event-id",
             pubkey: "test-pubkey",

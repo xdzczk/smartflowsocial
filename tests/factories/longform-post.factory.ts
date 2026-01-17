@@ -17,11 +17,9 @@ export interface LongFormPostFactoryOptions {
   content?: string;
   image?: string | null;
   scheduledFor?: string | null;
-  isScheduled?: boolean;
+  currentState?: string; // State machine state - single source of truth
   postedAt?: Date | null;
   publishedAt?: Date | null;
-  isPublished?: boolean;
-  draft?: boolean;
   status?: Status;
   signedEvent?: SignedEvent;
   nostrEvent?: NostrEvent;
@@ -45,11 +43,9 @@ export class LongFormPostFactory {
       content: "Test content",
       image: null,
       scheduledFor: null,
-      isScheduled: false,
+      currentState: "DRAFT",
       postedAt: null,
       publishedAt: null,
-      isPublished: false,
-      draft: true,
       status: "DRAFT",
       signedEvent: undefined,
       nostrEvent: undefined,
@@ -94,17 +90,13 @@ export class LongFormPostFactory {
   }
 
   asDraft(): this {
-    this.options.draft = true;
-    this.options.isPublished = false;
-    this.options.isScheduled = false;
+    this.options.currentState = "DRAFT";
     this.options.status = "DRAFT";
     return this;
   }
 
   asScheduled(scheduledFor: string | Date): this {
-    this.options.isScheduled = true;
-    this.options.draft = false;
-    this.options.isPublished = false;
+    this.options.currentState = "SCHEDULED";
     this.options.scheduledFor =
       scheduledFor instanceof Date
         ? Math.floor(scheduledFor.getTime() / 1000).toString()
@@ -113,9 +105,7 @@ export class LongFormPostFactory {
   }
 
   asPublished(publishedAt?: Date): this {
-    this.options.isPublished = true;
-    this.options.draft = false;
-    this.options.isScheduled = false;
+    this.options.currentState = "PUBLISHED";
     this.options.status = "ACTIVE";
     this.options.publishedAt = publishedAt ?? new Date();
     this.options.postedAt = publishedAt ?? new Date();
@@ -165,11 +155,9 @@ export class LongFormPostFactory {
       content: this.options.content ?? null,
       image: this.options.image ?? null,
       scheduledFor: this.options.scheduledFor ?? null,
-      isScheduled: this.options.isScheduled ?? false,
+      currentState: this.options.currentState ?? "DRAFT",
       postedAt: this.options.postedAt ?? null,
       publishedAt: this.options.publishedAt ?? null,
-      isPublished: this.options.isPublished ?? false,
-      draft: this.options.draft ?? false,
       status: this.options.status ?? "DRAFT",
       signedEvent: (this.options.signedEvent ??
         null) as unknown as Prisma.JsonValue,

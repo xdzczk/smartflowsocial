@@ -2,6 +2,8 @@
  * Resume draft confirmation modal
  */
 
+import { formatForDisplay, fromISOString } from "~/lib/temporal";
+
 interface ResumeModalProps {
   isOpen: boolean;
   selectedQueue: string;
@@ -75,7 +77,14 @@ export function ResumeModal({
             </p>
             <p>
               <strong>Scheduled for:</strong>{" "}
-              {new Date(scheduledFor).toLocaleString()}
+              {(() => {
+                try {
+                  const zoned = fromISOString(scheduledFor, "UTC");
+                  return formatForDisplay(zoned, "UTC");
+                } catch {
+                  return scheduledFor;
+                }
+              })()}
             </p>
             <p>
               <strong>Content:</strong> {(content || caption).substring(0, 100)}

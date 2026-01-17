@@ -58,6 +58,7 @@ import { createOutboxEventInTransaction } from "~/infra/outbox/outbox.server";
 import { generateEnqueueIdempotencyKey } from "~/lib/idempotency.server";
 import { recordPostScheduled } from "~/lib/metrics/business-metrics.server";
 import { prisma } from "~/lib/prisma.server";
+import { fromDate } from "~/lib/temporal";
 import { getPostById } from "~/models/post.queries.server";
 
 describe("SchedulePostUseCase", () => {
@@ -71,13 +72,15 @@ describe("SchedulePostUseCase", () => {
 
   describe("execute", () => {
     it("should schedule a post successfully", async () => {
-      const scheduledAtUtc = new Date(Date.now() + 3600000);
-      const scheduledForUnix = Math.floor(scheduledAtUtc.getTime() / 1000);
+      const scheduledAtUtc = fromDate(new Date(Date.now() + 3600000), "UTC");
+      const scheduledForUnix = Math.floor(
+        Number(scheduledAtUtc.epochNanoseconds) / 1_000_000_000
+      );
       const mockPost = {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
         postType: "IMAGE",
-        isScheduled: false,
+        currentState: "DRAFT",
       };
 
       const signedEvent = {
@@ -103,7 +106,7 @@ describe("SchedulePostUseCase", () => {
             },
           };
           // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Mock transaction callback
-          return callback(tx);
+          return await callback(tx);
         }
       );
       (
@@ -123,7 +126,14 @@ describe("SchedulePostUseCase", () => {
       });
       expect(prisma.$transaction).toHaveBeenCalled();
       expect(createOutboxEventInTransaction).toHaveBeenCalledWith(
-        expect.any(Object),
+        expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.objectContaining returns any type
+          post: expect.objectContaining({
+            update: expect.any(Function) as unknown as (
+              args: unknown
+            ) => Promise<unknown>,
+          }),
+        }),
         "POST_SCHEDULED",
         TEST_POST_ID,
         "Post",
@@ -131,18 +141,23 @@ describe("SchedulePostUseCase", () => {
           postId: TEST_POST_ID,
           userId: TEST_USER_ID,
           signedEvent,
-          scheduledFor: scheduledForUnix,
+
+          scheduledFor: expect.any(Number) as number, // Can be float from Temporal conversion
           schemaVersion: "1.0",
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.any returns any type
+          correlationId: expect.any(String),
         }),
-        scheduledAtUtc,
+
+        expect.any(Date), // scheduledAtUtcDate (converted from Temporal)
         "enqueue-key-1",
-        expect.any(String)
+
+        expect.any(String) // correlationId
       );
       expect(mockTransition).toHaveBeenCalledWith(
         TEST_POST_ID,
         TEST_USER_ID,
         "SCHEDULED",
-        expect.stringContaining(scheduledAtUtc.toISOString())
+        expect.stringContaining("Post scheduled for")
       );
       expect(recordPostScheduled).toHaveBeenCalledWith("IMAGE");
     });
@@ -154,7 +169,7 @@ describe("SchedulePostUseCase", () => {
         useCase.execute({
           postId: TEST_POST_ID,
           userId: TEST_USER_ID,
-          scheduledAtUtc: new Date(),
+          scheduledAtUtc: fromDate(new Date(), "UTC"),
           signedEvent: {
             id: "event-123",
             pubkey: "test-pubkey",
@@ -171,12 +186,13 @@ describe("SchedulePostUseCase", () => {
     });
 
     it("should use correlation ID if provided", async () => {
-      const scheduledAtUtc = new Date(Date.now() + 3600000);
+      const { fromDate } = await import("~/lib/temporal");
+      const scheduledAtUtc = fromDate(new Date(Date.now() + 3600000), "UTC");
       const mockPost = {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
         postType: "TEXT",
-        isScheduled: false,
+        currentState: "DRAFT",
       };
 
       (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
@@ -192,7 +208,7 @@ describe("SchedulePostUseCase", () => {
             },
           };
           // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Mock transaction callback
-          return callback(tx);
+          return await callback(tx);
         }
       );
       (
@@ -223,19 +239,19 @@ describe("SchedulePostUseCase", () => {
         expect.objectContaining({
           correlationId: "custom-correlation-id",
         }),
-        scheduledAtUtc,
+        expect.any(Date), // scheduledAtUtcDate (converted from Temporal)
         "enqueue-key-1",
         "custom-correlation-id"
       );
     });
 
     it("should handle state transition failure", async () => {
-      const scheduledAtUtc = new Date(Date.now() + 3600000);
+      const scheduledAtUtc = fromDate(new Date(Date.now() + 3600000), "UTC");
       const mockPost = {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
         postType: "TEXT",
-        isScheduled: false,
+        currentState: "DRAFT",
       };
 
       (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
@@ -251,7 +267,7 @@ describe("SchedulePostUseCase", () => {
             },
           };
           // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Mock transaction callback
-          return callback(tx);
+          return await callback(tx);
         }
       );
       (

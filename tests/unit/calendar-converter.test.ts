@@ -17,10 +17,15 @@ import {
 describe("Calendar Post Converter", () => {
   describe("postDataToCalendarPost", () => {
     it("should convert PostData to CalendarPost", () => {
+      // scheduledFor should be a Unix timestamp string (in seconds)
+      const scheduledForUnix = Math.floor(
+        new Date("2024-01-15T10:00:00Z").getTime() / 1000
+      );
       const postData: PostData = {
         id: "post-1",
         caption: "Test post",
-        scheduledFor: "2024-01-15T10:00",
+        scheduledFor: String(scheduledForUnix),
+        currentState: "SCHEDULED",
         postedAt: null,
         queueType: null,
       } as unknown as PostData;
@@ -29,7 +34,7 @@ describe("Calendar Post Converter", () => {
 
       expect(result.id).toBe("post-1");
       expect(result.caption).toBe("Test post");
-      expect(result.scheduledFor).toBe("2024-01-15T10:00");
+      expect(result.scheduledFor).toBe(String(scheduledForUnix));
       expect(result.postedAt).toBeNull();
       expect(result.queueType).toBeNull();
       expect(result.manual_override).toBe(false);
@@ -69,13 +74,16 @@ describe("Calendar Post Converter", () => {
 
   describe("longFormPostDataToCalendarPost", () => {
     it("should convert LongFormPostData to CalendarPost", () => {
+      // scheduledFor should be a Unix timestamp string (in seconds)
+      const scheduledForUnix = Math.floor(
+        new Date("2024-01-15T10:00:00Z").getTime() / 1000
+      );
       const longFormData: LongFormPostData = {
         id: "longform-1",
         title: "Test Article",
         content: "Article content",
-        scheduledFor: "2024-01-15T10:00",
-        isScheduled: true,
-        isPublished: false,
+        scheduledFor: String(scheduledForUnix),
+        currentState: "SCHEDULED",
       } as unknown as LongFormPostData;
 
       const result = longFormPostDataToCalendarPost(longFormData);
@@ -83,9 +91,10 @@ describe("Calendar Post Converter", () => {
       expect(result.id).toBe("longform-1");
       expect(result.title).toBe("Test Article");
       expect(result.caption).toBe("Article content");
-      expect(result.scheduledFor).toBe("2024-01-15T10:00");
-      expect(result.isScheduled).toBe(true);
-      expect(result.isPosted).toBe(false);
+      expect(result.scheduledFor).toBe(String(scheduledForUnix));
+      expect(result.currentState).toBe("SCHEDULED");
+      expect(result.isScheduled).toBe(true); // Derived from currentState
+      expect(result.isPosted).toBe(false); // Derived from currentState
       expect(result.fileUrl).toEqual([]);
       expect(result.manual_override).toBe(false);
     });

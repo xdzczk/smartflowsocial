@@ -5,6 +5,7 @@
 
 import { uploadMultipleFiles } from "~/features/upload/upload.client";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
+import { nowSeconds } from "~/lib/temporal";
 
 import type { PostData, LongFormPostData, UserData } from "../types";
 
@@ -164,7 +165,7 @@ export async function prepareEditPostSubmission({
   const eventKind = isLongform ? 30023 : 1;
   const eventTime = scheduledFor
     ? Math.floor(scheduledFor.getTime() / 1000)
-    : Math.floor(Date.now() / 1000);
+    : nowSeconds();
 
   // Re-sign the event with new content
   const { nostrEvent, signedEvent } = await nostrAdapter.signEvent({

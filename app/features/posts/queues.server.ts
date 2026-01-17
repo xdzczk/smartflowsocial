@@ -10,6 +10,8 @@ import type { Prisma } from "@prisma/client";
 import { Worker, type Job } from "bullmq";
 
 import type { SignedEvent } from "~/features/nostr/types";
+import { LongFormPostStateMachine } from "~/features/posts/state-machine/longform-post-state-machine.server";
+import { PostStateMachine } from "~/features/posts/state-machine/post-state-machine.server";
 import { getUserById } from "~/features/user";
 import { getNostrPublisher } from "~/infra/publishers/nostr-publisher.server";
 import { getQueueInstance, redis, closeAllQueues } from "~/infra/queue";
@@ -21,6 +23,7 @@ import {
   getRetryPolicy,
 } from "~/infra/queue/retry-policy.server";
 import { logError, logInfo } from "~/lib/error-logger.server";
+import { generatePublishAttemptId } from "~/lib/idempotency.server";
 import {
   recordPostPublished,
   recordPostPublishFailed,
@@ -28,12 +31,9 @@ import {
 import { recordPublishLatency } from "~/lib/metrics/performance-metrics.server";
 import { prisma } from "~/lib/prisma.server";
 import { recordJobMetrics, updateActiveJobs } from "~/lib/queue-metrics.server";
+import { fromPrismaDate, nowMillis, toUnixTimestamp } from "~/lib/temporal";
 import { validateSignedEventCryptographically } from "~/lib/validation/nostr-cryptographic.server";
-import {
-  updateLongFormPostStatus,
-  getCronDueScheduledLongFormPosts,
-} from "~/models/longformpost.server";
-import { updatePostStatus } from "~/models/post.commands.server";
+import { getCronDueScheduledLongFormPosts } from "~/models/longformpost.server";
 import { getCronDueScheduledPosts } from "~/models/post.queries.server";
 
 // ============================================================================
@@ -47,7 +47,58 @@ interface PostData {
   scheduledFor: string;
 }
 
-function extractPostData(post: unknown): PostData | null {
+/**
+ * Extract scheduledFor value from post object, handling both legacy and new fields
+ */
+async function extractScheduledFor(
+  post: Record<string, unknown>
+): Promise<string | null> {
+  // Prefer scheduledAtUtc (newer field), fall back to scheduledFor
+  if ("scheduledAtUtc" in post && post["scheduledAtUtc"] instanceof Date) {
+    return Math.floor(post["scheduledAtUtc"].getTime() / 1000).toString();
+  }
+
+  if (!("scheduledFor" in post)) {
+    return null;
+  }
+
+  const scheduledForValue = post["scheduledFor"];
+  if (scheduledForValue instanceof Date) {
+    return Math.floor(scheduledForValue.getTime() / 1000).toString();
+  }
+
+  if (typeof scheduledForValue !== "string") {
+    return null;
+  }
+
+  // Check if it's a Unix timestamp (all digits) or a Date string
+  if (/^\d+$/.test(scheduledForValue)) {
+    return scheduledForValue;
+  }
+
+  // It's a Date string, parse it using Temporal for 100% consistency
+  try {
+    const { fromISOString, toUnixTimestamp } = await import("~/lib/temporal");
+    const zonedDateTime = fromISOString(scheduledForValue, "UTC");
+    return String(toUnixTimestamp(zonedDateTime));
+  } catch {
+    // Fallback - try with Date conversion
+    try {
+      const { fromDate, toUnixTimestamp } = await import("~/lib/temporal");
+      const date = new Date(scheduledForValue);
+      if (!isNaN(date.getTime())) {
+        const zonedDateTime = fromDate(date, "UTC");
+        return String(toUnixTimestamp(zonedDateTime));
+      }
+    } catch {
+      // If parsing fails, leave as is
+    }
+  }
+
+  return null;
+}
+
+async function extractPostData(post: unknown): Promise<PostData | null> {
   if (typeof post !== "object" || post === null) {
     return null;
   }
@@ -58,34 +109,9 @@ function extractPostData(post: unknown): PostData | null {
   const postSignedEvent = "signedEvent" in post ? post.signedEvent : null;
 
   // Handle both scheduledFor (legacy string) and scheduledAtUtc (DateTime)
-  // Prefer scheduledAtUtc (newer field), fall back to scheduledFor
-  let postScheduledFor: string | null = null;
-  if ("scheduledAtUtc" in post && post.scheduledAtUtc instanceof Date) {
-    // Convert DateTime to Unix timestamp (seconds)
-    postScheduledFor = Math.floor(
-      post.scheduledAtUtc.getTime() / 1000
-    ).toString();
-  } else if ("scheduledFor" in post) {
-    const scheduledForValue = post.scheduledFor;
-    if (scheduledForValue instanceof Date) {
-      // scheduledFor is a Date object
-      postScheduledFor = Math.floor(
-        scheduledForValue.getTime() / 1000
-      ).toString();
-    } else if (typeof scheduledForValue === "string") {
-      // Check if it's a Unix timestamp (all digits) or a Date string
-      if (/^\d+$/.test(scheduledForValue)) {
-        // It's a Unix timestamp string
-        postScheduledFor = scheduledForValue;
-      } else {
-        // It's a Date string, parse it
-        const date = new Date(scheduledForValue);
-        if (!isNaN(date.getTime())) {
-          postScheduledFor = Math.floor(date.getTime() / 1000).toString();
-        }
-      }
-    }
-  }
+  const postScheduledFor = await extractScheduledFor(
+    post as Record<string, unknown>
+  );
 
   if (!postUserId || !postSignedEvent || !postScheduledFor || !postId) {
     return null;
@@ -197,24 +223,27 @@ const _scheduledLongFormPostsQueue = getQueueInstance(
 );
 const postCheckerQueue = getQueueInstance(QUEUE_POST_CHECKER);
 
-// Import state machine
-import { PostStateMachine } from "./state-machine/post-state-machine.server";
-
 // Worker to process scheduled posts
 export const scheduledPostsWorker = new Worker<PostJobData>(
   QUEUE_SCHEDULED_POSTS,
   async (job: Job<PostJobData>) => {
     const { postId, userId, signedEvent, correlationId } = job.data;
-    const startTime = Date.now();
+    const startTime = nowMillis();
     const queueName = QUEUE_SCHEDULED_POSTS;
     const stateMachine = new PostStateMachine();
 
     try {
       updateActiveJobs(queueName, 1);
-      // Idempotency check: verify post exists and is not already posted
+      // Idempotency check: verify post exists and get scheduled time
       const existingPost = await prisma.post.findUnique({
         where: { id: postId, userId },
-        select: { isPosted: true, nostrEventId: true },
+        select: {
+          nostrEventId: true,
+          scheduledAtUtc: true,
+          scheduledFor: true,
+          publishAttemptId: true,
+          currentState: true, // Include state for state-based checks
+        },
       });
 
       if (!existingPost) {
@@ -222,10 +251,43 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
       }
 
       // If already posted, skip processing (idempotency)
-      if (existingPost.isPosted) {
+      // Use currentState as single source of truth
+      const isAlreadyPosted = existingPost.currentState === "PUBLISHED";
+      if (isAlreadyPosted) {
         logInfo("Post already posted, skipping duplicate job", {
           postId,
           userId,
+          correlationId,
+        });
+        return { success: true, postId, skipped: true };
+      }
+
+      // Generate publish attempt ID (first-class idempotency for publish attempts)
+      const scheduledForUnix = existingPost.scheduledAtUtc
+        ? (() => {
+            const zoned = fromPrismaDate(existingPost.scheduledAtUtc, "UTC");
+            return zoned
+              ? toUnixTimestamp(zoned)
+              : Math.floor(Date.now() / 1000);
+          })()
+        : existingPost.scheduledFor
+          ? parseInt(existingPost.scheduledFor, 10)
+          : Math.floor(Date.now() / 1000);
+
+      const attemptNumber = job.attemptsMade;
+      const publishAttemptId = generatePublishAttemptId(
+        postId,
+        scheduledForUnix,
+        attemptNumber
+      );
+
+      // Check if this publish attempt already succeeded (idempotency check)
+      // This prevents duplicate publishes if worker crashes mid-publish and job retries
+      if (existingPost.publishAttemptId === publishAttemptId) {
+        logInfo("Publish attempt already processed, skipping duplicate", {
+          postId,
+          userId,
+          publishAttemptId,
           correlationId,
         });
         return { success: true, postId, skipped: true };
@@ -260,23 +322,27 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
       });
 
       // Publish to Nostr using publisher service (with health-aware routing)
-      const publishStartTime = Date.now();
+      const publishStartTime = nowMillis();
       const publisher = getNostrPublisher();
       await publisher.publish(
         validatedSignedEvent,
         sanitizedRelays,
         correlationId
       );
-      const publishLatency = Date.now() - publishStartTime;
+      const publishLatency = nowMillis() - publishStartTime;
 
-      // Update post status to posted (atomic operation)
-      await updatePostStatus({
-        id: postId,
-        userId: userId,
-        isPosted: true,
+      // Store publish attempt ID and postedAt (flags will be set by state machine)
+      // This ensures idempotency: if worker crashes after this, retry will see publishAttemptId and skip
+      await prisma.post.update({
+        where: { id: postId, userId },
+        data: {
+          publishAttemptId,
+          postedAt: new Date(),
+          // @deprecated - isPosted flag removed. State machine will set it via transition.
+        },
       });
 
-      // Transition to PUBLISHED
+      // Transition to PUBLISHED (this will automatically sync flags including isPosted)
       await stateMachine.transition(
         postId,
         userId,
@@ -284,7 +350,7 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
         "Successfully published to Nostr"
       );
 
-      const duration = Date.now() - startTime;
+      const duration = nowMillis() - startTime;
       recordJobMetrics(queueName, duration, true);
       updateActiveJobs(queueName, -1);
 
@@ -305,7 +371,7 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
       });
       return { success: true, postId };
     } catch (error) {
-      const duration = Date.now() - startTime;
+      const duration = nowMillis() - startTime;
       const err = error instanceof Error ? error : new Error(String(error));
       const errorType = err.constructor.name;
       const attemptsMade = job.attemptsMade + 1;
@@ -316,7 +382,26 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
         shouldRetry(attemptsMade, policy) && isRetryableError(err);
 
       // Transition to FAILED
+      // If post is still in SCHEDULED (error occurred before PUBLISHING transition),
+      // we need to transition through PUBLISHING first
       try {
+        // Get current state to determine transition path
+        const currentPost = await prisma.post.findUnique({
+          where: { id: postId },
+          select: { currentState: true },
+        });
+
+        const currentState = currentPost?.currentState;
+        if (currentState === "SCHEDULED") {
+          // Transition to PUBLISHING first, then to FAILED
+          await stateMachine.transition(
+            postId,
+            userId,
+            "PUBLISHING",
+            "Job started processing (before error)"
+          );
+        }
+        // Now transition to FAILED (from either SCHEDULED->PUBLISHING or directly from PUBLISHING)
         await stateMachine.transition(
           postId,
           userId,
@@ -387,7 +472,7 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
   QUEUE_SCHEDULED_LONGFORM_POSTS,
   async (job: Job<LongFormPostJobData>) => {
     const { postId, userId, signedEvent, correlationId } = job.data;
-    const startTime = Date.now();
+    const startTime = nowMillis();
     const queueName = QUEUE_SCHEDULED_LONGFORM_POSTS;
 
     try {
@@ -395,7 +480,7 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
       // Idempotency check: verify post exists and is not already published
       const existingPost = await prisma.longFormPost.findUnique({
         where: { id: postId, userId },
-        select: { isPublished: true, nostrEventId: true },
+        select: { nostrEventId: true, currentState: true },
       });
 
       if (!existingPost) {
@@ -403,7 +488,9 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
       }
 
       // If already published, skip processing (idempotency)
-      if (existingPost.isPublished) {
+      // Use currentState as single source of truth
+      const isAlreadyPublished = existingPost.currentState === "PUBLISHED";
+      if (isAlreadyPublished) {
         logInfo("Longform post already published, skipping duplicate job", {
           postId,
           userId,
@@ -417,12 +504,14 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
       const validatedSignedEvent =
         validateSignedEventCryptographically(signedEvent);
 
-      // Update longform post status to published (atomic operation)
-      await updateLongFormPostStatus({
-        id: postId,
-        userId: userId,
-        isPublished: true,
-      });
+      // Transition to PUBLISHING state
+      const stateMachine = new LongFormPostStateMachine();
+      await stateMachine.transition(
+        postId,
+        userId,
+        "PUBLISHING",
+        "Publishing longform post from queue"
+      );
 
       // Get user relays
       const user = await getUserById(userId);
@@ -447,7 +536,15 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
         correlationId
       );
 
-      const duration = Date.now() - startTime;
+      // Transition to PUBLISHED state (this will automatically sync flags including isPublished)
+      await stateMachine.transition(
+        postId,
+        userId,
+        "PUBLISHED",
+        "Successfully published to Nostr"
+      );
+
+      const duration = nowMillis() - startTime;
       recordJobMetrics(queueName, duration, true);
       updateActiveJobs(queueName, -1);
       logInfo("Longform post published successfully from queue", {
@@ -457,7 +554,7 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
       });
       return { success: true, postId };
     } catch (error) {
-      const duration = Date.now() - startTime;
+      const duration = nowMillis() - startTime;
       const err = error instanceof Error ? error : new Error(String(error));
       const attemptsMade = job.attemptsMade + 1;
       const policy = getRetryPolicy(queueName);
@@ -480,6 +577,49 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
           attemptsMade,
           correlationId
         );
+      }
+
+      // Transition to FAILED state if not retrying
+      if (!willRetry) {
+        try {
+          const stateMachine = new LongFormPostStateMachine();
+          // Get current state to determine transition path
+          const currentPost = await prisma.longFormPost.findUnique({
+            where: { id: postId },
+            select: { currentState: true },
+          });
+
+          const currentState = currentPost?.currentState;
+          if (currentState === "SCHEDULED") {
+            // Transition to PUBLISHING first, then to FAILED
+            await stateMachine.transition(
+              postId,
+              userId,
+              "PUBLISHING",
+              "Job started processing (before error)"
+            );
+          }
+          // Now transition to FAILED (from either SCHEDULED->PUBLISHING or directly from PUBLISHING)
+          await stateMachine.transition(
+            postId,
+            userId,
+            "FAILED",
+            `Publish failed: ${err.message}`
+          );
+        } catch (stateError) {
+          // Log but don't throw - state transition failure shouldn't block error handling
+          logError(
+            stateError instanceof Error
+              ? stateError
+              : new Error(String(stateError)),
+            {
+              postId,
+              userId,
+              correlationId,
+              message: "Failed to transition to FAILED state",
+            }
+          );
+        }
       }
 
       logError(err, {
@@ -510,12 +650,13 @@ export const postCheckerWorker = new Worker(
         getCronDueScheduledPosts(),
         getCronDueScheduledLongFormPosts(),
       ]);
-      const now = Math.floor(Date.now() / 1000);
+      const { nowSeconds } = await import("~/lib/temporal");
+      const now = nowSeconds();
 
       // Process regular posts
       let processed = 0;
       for (const post of posts) {
-        const postData = extractPostData(post);
+        const postData = await extractPostData(post);
         if (postData) {
           const success = await processPost(postData, now);
           if (success) {
@@ -526,7 +667,7 @@ export const postCheckerWorker = new Worker(
 
       // Process longform posts
       for (const longformPost of longformPosts) {
-        const postData = extractPostData(longformPost);
+        const postData = await extractPostData(longformPost);
         if (postData) {
           const success = await processLongFormPost(postData, now);
           if (success) {

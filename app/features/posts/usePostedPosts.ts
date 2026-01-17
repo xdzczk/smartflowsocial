@@ -4,6 +4,11 @@ import { useState, useEffect } from "react";
 import type { ToastMessage } from "~/components/types";
 import type { User } from "~/features/user";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
+import {
+  addHours,
+  formatForDateTimeLocal,
+  nowInTimezone,
+} from "~/lib/temporal";
 
 import type { CombinedContent, PostData, LongFormPostData } from "./types";
 
@@ -272,16 +277,16 @@ export function usePostedPosts({
       const postsData = repostFetcher.data.repostData;
 
       // Prepare repost data with 1 hour default scheduling
-      const now = new Date();
       const userTimezone = user.timezone ?? "UTC";
-      const localDate = new Date(
-        now.toLocaleString("en-US", { timeZone: userTimezone })
-      );
-      localDate.setHours(localDate.getHours() + 1);
+      const now = nowInTimezone(userTimezone);
+      const baseTime = addHours(now, 1);
 
       const repostData = postsData.map((post, index: number) => {
-        const scheduleDate = new Date(localDate);
-        scheduleDate.setHours(scheduleDate.getHours() + index);
+        const scheduleZoned = addHours(baseTime, index);
+        const scheduledFor = formatForDateTimeLocal(
+          scheduleZoned,
+          userTimezone
+        );
 
         return {
           caption: post.caption,
@@ -290,16 +295,7 @@ export function usePostedPosts({
               ? post.fileUrl[0]
               : "",
           queueType: post.queueType,
-          scheduledFor: scheduleDate
-            .toLocaleString("en-US", {
-              year: "numeric",
-              month: "2-digit",
-              day: "2-digit",
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: false,
-            })
-            .replace(/(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+)/, "$3-$1-$2T$4:$5"),
+          scheduledFor,
         };
       });
 
@@ -320,31 +316,22 @@ export function usePostedPosts({
       const postsData = repostFetcher.data.scheduledRepostData;
 
       // Prepare scheduled repost data with 1 hour default scheduling
-      const now = new Date();
       const userTimezone = user.timezone ?? "UTC";
-      const localDate = new Date(
-        now.toLocaleString("en-US", { timeZone: userTimezone })
-      );
-      localDate.setHours(localDate.getHours() + 1);
+      const now = nowInTimezone(userTimezone);
+      const baseTime = addHours(now, 1);
 
       const scheduledRepostData = postsData.map((post, index: number) => {
-        const scheduleDate = new Date(localDate);
-        scheduleDate.setHours(scheduleDate.getHours() + index);
+        const scheduleZoned = addHours(baseTime, index);
+        const scheduledFor = formatForDateTimeLocal(
+          scheduleZoned,
+          userTimezone
+        );
 
         return {
           caption: "", // Empty content for kind 6 reposts
           fileUrl: "", // No file URL for kind 6 reposts
           queueType: post.queueType,
-          scheduledFor: scheduleDate
-            .toLocaleString("en-US", {
-              year: "numeric",
-              month: "2-digit",
-              day: "2-digit",
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: false,
-            })
-            .replace(/(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+)/, "$3-$1-$2T$4:$5"),
+          scheduledFor,
           originalPostId: post.id,
           originalEventId: post.signedEvent?.id,
           originalEventPubkey: post.signedEvent?.pubkey,

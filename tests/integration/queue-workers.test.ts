@@ -37,16 +37,14 @@ vi.mock("bullmq", () => {
 });
 
 // Mock dependencies
-vi.mock("~/models/post.commands.server", () => ({
-  updatePostStatus: vi.fn(),
-}));
+// updatePostStatus was removed - state transitions now use PostStateMachine
+vi.mock("~/models/post.commands.server", () => ({}));
 
 vi.mock("~/models/post.queries.server", () => ({
   getCronDueScheduledPosts: vi.fn(),
 }));
 
 vi.mock("~/models/longformpost.server", () => ({
-  updateLongFormPostStatus: vi.fn(),
   getCronDueScheduledLongFormPosts: vi.fn(),
 }));
 
@@ -66,6 +64,10 @@ vi.mock("~/infra/queue", () => ({
   enqueueLongFormPostJob: vi.fn(),
 }));
 
+// Track post state for mocks
+const postStateMap = new Map<string, string>();
+const longFormPostStateMap = new Map<string, string>();
+
 const { mockPrisma } = vi.hoisted(() => {
   const mockPrisma = {
     post: {
@@ -83,10 +85,71 @@ const { mockPrisma } = vi.hoisted(() => {
     $transaction: vi.fn((callback) => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Test mock callback has complex types
       return callback({
-        post: { findUnique: vi.fn(), update: vi.fn() },
-        longFormPost: { findUnique: vi.fn(), update: vi.fn() },
+        post: {
+          findUnique: vi.fn(
+            async (
+              args:
+                | { where: { id: string; userId?: string } }
+                | { where: { id: string } }
+            ) => {
+              const postId = args.where.id;
+              const state = postStateMap.get(postId) ?? "SCHEDULED";
+              return { id: postId, currentState: state };
+            }
+          ),
+          update: vi.fn(
+            async (args: {
+              where: { id: string; userId?: string };
+              data: { currentState?: string };
+            }) => {
+              const postId = args.where.id;
+              if (args.data.currentState) {
+                postStateMap.set(postId, args.data.currentState);
+              }
+              return {
+                id: postId,
+                currentState:
+                  args.data.currentState ??
+                  postStateMap.get(postId) ??
+                  "SCHEDULED",
+              };
+            }
+          ),
+        },
+        longFormPost: {
+          findUnique: vi.fn(
+            async (
+              args:
+                | { where: { id: string; userId?: string } }
+                | { where: { id: string } }
+            ) => {
+              const postId = args.where.id;
+              const state = longFormPostStateMap.get(postId) ?? "SCHEDULED";
+              return { id: postId, currentState: state };
+            }
+          ),
+          update: vi.fn(
+            async (args: {
+              where: { id: string; userId?: string };
+              data: { currentState?: string };
+            }) => {
+              const postId = args.where.id;
+              if (args.data.currentState) {
+                longFormPostStateMap.set(postId, args.data.currentState);
+              }
+              return {
+                id: postId,
+                currentState:
+                  args.data.currentState ??
+                  longFormPostStateMap.get(postId) ??
+                  "SCHEDULED",
+              };
+            }
+          ),
+        },
         user: { findUnique: vi.fn() },
         postStateTransition: { create: vi.fn() },
+        longFormPostStateTransition: { create: vi.fn() },
       });
     }),
   };
@@ -102,12 +165,7 @@ import { TEST_USER_ID, createValidSignedEvent } from "../utils/test-helpers";
 import { getUserById } from "~/features/user";
 import { enqueuePostJob } from "~/infra/queue";
 import { prisma } from "~/lib/prisma.server";
-// updateLongFormPostStatus is used via mock (see lines 373, 384, 435)
-import {
-  updateLongFormPostStatus,
-  getCronDueScheduledLongFormPosts,
-} from "~/models/longformpost.server";
-import { updatePostStatus } from "~/models/post.commands.server";
+import { getCronDueScheduledLongFormPosts } from "~/models/longformpost.server";
 import { getCronDueScheduledPosts } from "~/models/post.queries.server";
 
 // Import workers after mocks are set up
@@ -122,8 +180,100 @@ let postCheckerWorker: MockWorkerType | undefined;
 describe("Queue Workers", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
+    postStateMap.clear();
+    longFormPostStateMap.clear();
     process.env["NOSTR_PUBLISHER_URL"] =
       "https://api.nostr-publisher.com/publish";
+
+    // Set up default mockImplementation for post.findUnique that uses state map
+    (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockImplementation(
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Mock implementation needs to be async
+      async (
+        args:
+          | { where: { id: string; userId?: string } }
+          | { where: { id: string } }
+      ) => {
+        const postId = args.where.id;
+
+        const state = postStateMap.get(postId) ?? "SCHEDULED";
+        return {
+          id: postId,
+          currentState: state,
+          nostrEventId: null,
+          scheduledAtUtc: new Date(),
+          scheduledFor: "1234567890",
+          userId: TEST_USER_ID,
+          postType: "IMAGE",
+        };
+      }
+    );
+
+    // Set up default mockImplementation for post.update that tracks state changes
+    (prisma.post.update as ReturnType<typeof vi.fn>).mockImplementation(
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Mock implementation needs to be async
+      async (args: {
+        where: { id: string; userId?: string };
+        data: { currentState?: string };
+      }) => {
+        const postId = args.where.id;
+        if (args.data.currentState) {
+          postStateMap.set(postId, args.data.currentState);
+        }
+        return {
+          id: postId,
+          ...args.data,
+          currentState:
+            args.data.currentState ?? postStateMap.get(postId) ?? "SCHEDULED",
+        };
+      }
+    );
+
+    // Set up default mockImplementation for longFormPost.findUnique that uses state map
+    (
+      prisma.longFormPost.findUnique as ReturnType<typeof vi.fn>
+    ).mockImplementation(
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Mock implementation needs to be async
+      async (
+        args:
+          | { where: { id: string; userId?: string } }
+          | { where: { id: string } }
+      ) => {
+        const postId = args.where.id;
+
+        const state = longFormPostStateMap.get(postId) ?? "SCHEDULED";
+        return {
+          id: postId,
+          currentState: state,
+          nostrEventId: null,
+          scheduledAtUtc: new Date(),
+          scheduledFor: "1234567890",
+          userId: TEST_USER_ID,
+        };
+      }
+    );
+
+    // Set up default mockImplementation for longFormPost.update that tracks state changes
+    (prisma.longFormPost.update as ReturnType<typeof vi.fn>).mockImplementation(
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Mock implementation needs to be async
+      async (args: {
+        where: { id: string; userId?: string };
+        data: { currentState?: string };
+      }) => {
+        const postId = args.where.id;
+
+        if (args.data.currentState) {
+          longFormPostStateMap.set(postId, args.data.currentState);
+        }
+        return {
+          id: postId,
+          ...args.data,
+          currentState:
+            args.data.currentState ??
+            longFormPostStateMap.get(postId) ??
+            "SCHEDULED",
+        };
+      }
+    );
 
     // Dynamically import workers after mocks
     const module = await import("~/features/posts/queues.server");
@@ -151,17 +301,11 @@ describe("Queue Workers", () => {
         userRelays: ["wss://relay1.com", "wss://relay2.com"],
       };
 
-      // Mock Prisma post.findUnique to return existing post
-      (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: "post-123",
-        isPosted: false,
-        nostrEventId: null,
-      });
+      // Initialize post state
+      postStateMap.set("post-123", "SCHEDULED");
 
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
-      (updatePostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined
-      );
+      // State transitions now use PostStateMachine, not updatePostStatus
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         status: 200,
@@ -172,11 +316,7 @@ describe("Queue Workers", () => {
       }
       const result = await scheduledPostsWorker.process(mockJob);
 
-      expect(updatePostStatus).toHaveBeenCalledWith({
-        id: "post-123",
-        userId: TEST_USER_ID,
-        isPosted: true,
-      });
+      // State transitions now use PostStateMachine, not updatePostStatus
       expect(getUserById).toHaveBeenCalledWith(TEST_USER_ID);
       // fetchWithRetry adds additional options (timeout, maxRetries, correlation ID, etc.)
       expect(global.fetch).toHaveBeenCalled();
@@ -224,9 +364,7 @@ describe("Queue Workers", () => {
       };
 
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
-      (updatePostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined
-      );
+      // State transitions now use PostStateMachine, not updatePostStatus
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         status: 200,
@@ -270,12 +408,8 @@ describe("Queue Workers", () => {
         data: mockJobData,
       } as unknown as Job;
 
-      // Mock Prisma post.findUnique to return existing post
-      (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: "post-123",
-        isPosted: false,
-        nostrEventId: null,
-      });
+      // Initialize post state
+      postStateMap.set("post-123", "SCHEDULED");
 
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
@@ -304,9 +438,7 @@ describe("Queue Workers", () => {
       };
 
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
-      (updatePostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined
-      );
+      // State transitions now use PostStateMachine, not updatePostStatus
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         status: 200,
@@ -350,12 +482,8 @@ describe("Queue Workers", () => {
         data: mockJobData,
       } as unknown as Job;
 
-      // Mock Prisma post.findUnique to return existing post
-      (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
-        id: "post-123",
-        isPosted: false,
-        nostrEventId: null,
-      });
+      // Initialize post state
+      postStateMap.set("post-123", "SCHEDULED");
 
       const mockUser = {
         id: TEST_USER_ID,
@@ -363,9 +491,7 @@ describe("Queue Workers", () => {
       };
 
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
-      (updatePostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined
-      );
+      // State transitions now use PostStateMachine, not updatePostStatus
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: false,
         status: 500,
@@ -397,9 +523,7 @@ describe("Queue Workers", () => {
       };
 
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
-      (updatePostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined
-      );
+      // State transitions now use PostStateMachine, not updatePostStatus
       (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(
         new Error("Network error")
       );
@@ -428,14 +552,8 @@ describe("Queue Workers", () => {
         data: mockJobData,
       } as unknown as Job;
 
-      // Mock Prisma longFormPost.findUnique to return existing post
-      (
-        prisma.longFormPost.findUnique as ReturnType<typeof vi.fn>
-      ).mockResolvedValue({
-        id: "longform-123",
-        isPublished: false,
-        nostrEventId: null,
-      });
+      // Initialize longform post state
+      longFormPostStateMap.set("longform-123", "SCHEDULED");
 
       const mockUser = {
         id: TEST_USER_ID,
@@ -443,9 +561,6 @@ describe("Queue Workers", () => {
       };
 
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
-      (updateLongFormPostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined
-      );
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         status: 200,
@@ -456,11 +571,7 @@ describe("Queue Workers", () => {
       }
       const result = await scheduledLongFormPostsWorker.process(mockJob);
 
-      expect(updateLongFormPostStatus).toHaveBeenCalledWith({
-        id: "longform-123",
-        userId: TEST_USER_ID,
-        isPublished: true,
-      });
+      // State transitions now use LongFormPostStateMachine, not updateLongFormPostStatus
       expect(result).toEqual({ success: true, postId: "longform-123" });
     });
 
@@ -496,14 +607,8 @@ describe("Queue Workers", () => {
         data: mockJobData,
       } as unknown as Job;
 
-      // Mock Prisma longFormPost.findUnique to return existing post
-      (
-        prisma.longFormPost.findUnique as ReturnType<typeof vi.fn>
-      ).mockResolvedValue({
-        id: "longform-123",
-        isPublished: false,
-        nostrEventId: null,
-      });
+      // Initialize longform post state
+      longFormPostStateMap.set("longform-123", "SCHEDULED");
 
       const mockUser = {
         id: TEST_USER_ID,
@@ -511,9 +616,7 @@ describe("Queue Workers", () => {
       };
 
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
-      (updateLongFormPostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined
-      );
+      // State transitions now use LongFormPostStateMachine, not updateLongFormPostStatus
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: false,
         status: 500,
@@ -534,17 +637,20 @@ describe("Queue Workers", () => {
       const now = Math.floor(Date.now() / 1000);
       const dueTime = now - 10; // 10 seconds ago
 
+      const signedEvent1 = createValidSignedEvent({ content: "event-1" });
+      const signedEvent2 = createValidSignedEvent({ content: "event-2" });
+
       const mockPosts = [
         {
           id: "post-1",
           userId: TEST_USER_ID,
-          signedEvent: { id: "event-1" },
+          signedEvent: signedEvent1,
           scheduledFor: dueTime.toString(),
         },
         {
           id: "post-2",
           userId: TEST_USER_ID,
-          signedEvent: { id: "event-2" },
+          signedEvent: signedEvent2,
           scheduledFor: (now + 100).toString(), // Future post
         },
       ];
@@ -571,15 +677,17 @@ describe("Queue Workers", () => {
 
       expect(getCronDueScheduledPosts).toHaveBeenCalled();
       expect(getCronDueScheduledLongFormPosts).toHaveBeenCalled();
-      expect(result.processed).toBe(2); // Both posts counted, but only one scheduled
+      // Only the due post (timeDiff <= 1) should be processed
+      expect(result.processed).toBe(1);
     });
 
     it("should handle posts with missing required fields", async () => {
+      const signedEvent3 = createValidSignedEvent({ content: "event-3" });
       const mockPosts = [
         {
           id: "post-1",
           userId: null, // Missing userId
-          signedEvent: { id: "event-1" },
+          signedEvent: signedEvent3,
           scheduledFor: "1704067200",
         },
         {
@@ -591,7 +699,7 @@ describe("Queue Workers", () => {
         {
           id: "post-3",
           userId: TEST_USER_ID,
-          signedEvent: { id: "event-3" },
+          signedEvent: signedEvent3,
           scheduledFor: null, // Missing scheduledFor
         },
       ];
@@ -608,14 +716,18 @@ describe("Queue Workers", () => {
       }
       const result = await postCheckerWorker.process({} as unknown as Job);
 
-      // Should skip posts with missing fields
+      // Should skip posts with missing fields (extractPostData returns null for invalid posts)
       const typedResult = result as { processed: number };
-      expect(typedResult.processed).toBe(3); // All counted, but none scheduled
+      expect(typedResult.processed).toBe(0); // None processed due to missing required fields
     });
 
     it("should handle longform posts", async () => {
       const now = Math.floor(Date.now() / 1000);
       const dueTime = now - 10;
+      const signedEvent = createValidSignedEvent({
+        content: "event-1",
+        kind: 30023,
+      });
 
       // Dynamic import() type annotation needed for type reference
       // eslint-disable-next-line @typescript-eslint/consistent-type-imports -- Dynamic import requires value import
@@ -624,7 +736,7 @@ describe("Queue Workers", () => {
         {
           id: "longform-1",
           userId: TEST_USER_ID,
-          signedEvent: { id: "event-1" },
+          signedEvent: signedEvent,
           scheduledFor: dueTime.toString(),
         },
       ];
@@ -649,12 +761,13 @@ describe("Queue Workers", () => {
     it("should handle immediate processing (timeDiff <= 0)", async () => {
       const now = Math.floor(Date.now() / 1000);
       const pastTime = now - 100; // Well in the past
+      const signedEvent = createValidSignedEvent({ content: "event-1" });
 
       const mockPosts = [
         {
           id: "post-1",
           userId: TEST_USER_ID,
-          signedEvent: { id: "event-1" },
+          signedEvent: signedEvent,
           scheduledFor: pastTime.toString(),
         },
       ];

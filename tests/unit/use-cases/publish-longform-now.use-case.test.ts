@@ -8,7 +8,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock dependencies
 vi.mock("~/models/longformpost.server", () => ({
   getLongFormPost: vi.fn(),
-  updateLongFormPostStatus: vi.fn(),
 }));
 
 const mockPublish = vi.fn();
@@ -18,13 +17,33 @@ vi.mock("~/infra/publishers/nostr-publisher.server", () => ({
   })),
 }));
 
+const { mockPrisma } = vi.hoisted(() => {
+  const mockPrisma = {
+    longFormPost: {
+      findUnique: vi.fn(),
+    },
+  };
+  return { mockPrisma };
+});
+
+vi.mock("~/lib/prisma.server", () => ({
+  prisma: mockPrisma,
+}));
+
+const mockTransition = vi.fn();
+vi.mock(
+  "~/features/posts/state-machine/longform-post-state-machine.server",
+  () => ({
+    LongFormPostStateMachine: class {
+      transition = mockTransition;
+    },
+  })
+);
+
 import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 
 import { PublishLongFormNowUseCase } from "~/features/posts/use-cases/publish-longform-now.use-case.server";
-import {
-  getLongFormPost,
-  updateLongFormPostStatus,
-} from "~/models/longformpost.server";
+import { getLongFormPost } from "~/models/longformpost.server";
 
 describe("PublishLongFormNowUseCase", () => {
   let useCase: PublishLongFormNowUseCase;
@@ -32,6 +51,14 @@ describe("PublishLongFormNowUseCase", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockPublish.mockResolvedValue(undefined);
+    mockTransition.mockResolvedValue(undefined);
+    (
+      mockPrisma.longFormPost.findUnique as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({
+      id: TEST_POST_ID,
+      userId: TEST_USER_ID,
+      currentState: "DRAFT",
+    });
     useCase = new PublishLongFormNowUseCase();
   });
 
@@ -41,7 +68,7 @@ describe("PublishLongFormNowUseCase", () => {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
         title: "Test Title",
-        isPublished: false,
+        currentState: "DRAFT",
       };
 
       const signedEvent = {
@@ -57,9 +84,6 @@ describe("PublishLongFormNowUseCase", () => {
       const relays = ["wss://relay1.com", "wss://relay2.com"];
 
       (getLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
-      (updateLongFormPostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined
-      );
       mockPublish.mockResolvedValue(undefined);
 
       await useCase.execute({
@@ -73,11 +97,7 @@ describe("PublishLongFormNowUseCase", () => {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
       });
-      expect(updateLongFormPostStatus).toHaveBeenCalledWith({
-        id: TEST_POST_ID,
-        userId: TEST_USER_ID,
-        isPublished: true,
-      });
+      // State transitions now use LongFormPostStateMachine, not updateLongFormPostStatus
       expect(mockPublish).toHaveBeenCalledWith(signedEvent, relays, undefined);
     });
 
@@ -109,7 +129,7 @@ describe("PublishLongFormNowUseCase", () => {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
         title: "Test Title",
-        isPublished: true,
+        currentState: "PUBLISHED",
       };
 
       (getLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
@@ -137,7 +157,7 @@ describe("PublishLongFormNowUseCase", () => {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
         title: "Test Title",
-        isPublished: false,
+        currentState: "DRAFT",
       };
 
       const signedEvent = {
@@ -151,9 +171,6 @@ describe("PublishLongFormNowUseCase", () => {
       };
 
       (getLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
-      (updateLongFormPostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined
-      );
       mockPublish.mockResolvedValue(undefined);
 
       await useCase.execute({
@@ -176,7 +193,7 @@ describe("PublishLongFormNowUseCase", () => {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
         title: "Test Title",
-        isPublished: false,
+        currentState: "DRAFT",
       };
 
       const signedEvent = {

@@ -4,6 +4,8 @@
  * Use these functions in React components to deserialize DTOs received from loaders
  */
 
+import { fromISOString, toDate } from "~/lib/temporal";
+
 import type { PostDTO, LongFormPostDTO } from "./dtos";
 import type { PostData, LongFormPostData } from "./types";
 
@@ -11,11 +13,12 @@ import type { PostData, LongFormPostData } from "./types";
  * Deserializes a PostDTO (with string dates) to PostData (with Date objects)
  */
 export function deserializePostDTO(dto: PostDTO): PostData {
+  // Use Temporal for 100% consistency, convert to Date at boundary
   const result: PostData = {
     ...dto,
-    createdAt: new Date(dto.createdAt),
-    updatedAt: new Date(dto.updatedAt),
-    postedAt: dto.postedAt ? new Date(dto.postedAt) : null,
+    createdAt: toDate(fromISOString(dto.createdAt, "UTC")),
+    updatedAt: toDate(fromISOString(dto.updatedAt, "UTC")),
+    postedAt: dto.postedAt ? toDate(fromISOString(dto.postedAt, "UTC")) : null,
     scheduledFor: dto.scheduledFor ?? null,
   };
   return result;
@@ -34,11 +37,14 @@ export function deserializePostDTOArray(dtos: PostDTO[]): PostData[] {
 export function deserializeLongFormPostDTO(
   dto: LongFormPostDTO
 ): LongFormPostData {
+  // Use Temporal for 100% consistency, convert to Date at boundary
   const result: LongFormPostData = {
     ...dto,
-    createdAt: new Date(dto.createdAt),
-    updatedAt: new Date(dto.updatedAt),
-    publishedAt: dto.publishedAt ? new Date(dto.publishedAt) : null,
+    createdAt: toDate(fromISOString(dto.createdAt, "UTC")),
+    updatedAt: toDate(fromISOString(dto.updatedAt, "UTC")),
+    publishedAt: dto.publishedAt
+      ? toDate(fromISOString(dto.publishedAt, "UTC"))
+      : null,
     scheduledFor: dto.scheduledFor ?? null,
   };
   return result;

@@ -5,6 +5,7 @@ import { useState } from "react";
 import MediaModal from "~/components/ui/MediaModal";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { formatDate, getImageUrls } from "~/lib/helpers";
+import { formatForDisplay, fromUnixTimestamp } from "~/lib/temporal";
 
 import { getQueueColor } from "../queue-colors";
 import type { CombinedContent, PostData } from "../types";
@@ -50,19 +51,35 @@ export default function PostDetailsModal({
   const formatScheduledDate = (scheduledFor: string | null | undefined) => {
     if (!scheduledFor) return "Not scheduled";
 
-    // Use the same logic as the table formatDate function
-    const timezone = userTimezone ?? "UTC";
-    const date = new Date(parseInt(scheduledFor) * 1000);
+    try {
+      // Use Temporal for consistent formatting
+      const timezone = userTimezone ?? "UTC";
+      const timestamp = parseInt(scheduledFor, 10);
+      if (isNaN(timestamp)) return "Not scheduled";
 
-    return date.toLocaleString("en-US", {
-      timeZone: timezone,
-      month: "2-digit",
-      day: "2-digit",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
+      const zoned = fromUnixTimestamp(timestamp, "UTC");
+      const userZoned = zoned.withTimeZone(timezone);
+
+      return formatForDisplay(userZoned, timezone, {
+        month: "2-digit",
+        day: "2-digit",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+    } catch {
+      // Fallback to simple formatting
+      const dateObj = new Date(parseInt(scheduledFor, 10) * 1000);
+      return dateObj.toLocaleDateString("en-US", {
+        month: "2-digit",
+        day: "2-digit",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+    }
   };
 
   const getModalTitle = () => {

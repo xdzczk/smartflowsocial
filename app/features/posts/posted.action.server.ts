@@ -7,6 +7,7 @@ import { nip19 } from "nostr-tools";
 
 import { requireUserId } from "~/features/auth/session.server";
 import { logError } from "~/lib/error-logger.server";
+import { nowSeconds } from "~/lib/temporal";
 import {
   bulkRepostSchema,
   bulkScheduledRepostSchema,
@@ -241,7 +242,7 @@ async function handleRepost(formData: FormData, userId: string) {
         // p tag with the pubkey of the event being reposted
         ["p", eventPubkey],
       ],
-      created_at: Math.floor(Date.now() / 1000),
+      created_at: nowSeconds(),
     };
 
     // Return the unsigned event data for client-side signing
@@ -416,7 +417,7 @@ async function handleLongformRepost(formData: FormData, userId: string) {
         // p tag with the pubkey of the event being reposted
         ["p", eventPubkey],
       ],
-      created_at: Math.floor(Date.now() / 1000),
+      created_at: nowSeconds(),
     };
 
     // Return the unsigned event data for client-side signing

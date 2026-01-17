@@ -1,5 +1,17 @@
 import { useState, useCallback } from "react";
 
+import {
+  addDays,
+  addMonths,
+  formatForDisplay,
+  fromDate,
+  fromISOString,
+  fromUnixTimestamp,
+  nowInTimezone,
+  nowUTC,
+  toDate,
+} from "~/lib/temporal";
+
 import type { QueueType, UserData } from "../../types";
 
 import { MonthlyView } from "./MonthlyView";
@@ -34,7 +46,11 @@ export function Calendar({
   isAll = false,
 }: CalendarProps) {
   const [view, setView] = useState<"week" | "month">("week");
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const userTimezone = user?.timezone ?? "Etc/UTC";
+  const [currentDate, setCurrentDate] = useState(() => {
+    const now = nowInTimezone(userTimezone);
+    return toDate(now);
+  });
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [rescheduleData, setRescheduleData] = useState<RescheduleData | null>(
     null
@@ -70,8 +86,26 @@ export function Calendar({
       const wasAutoScheduled = postIsLongform ? false : !post.manual_override;
       // For longform posts, use publishedAt instead of scheduledFor
       const currentDateTime = postIsLongform
-        ? new Date(post.publishedAt as string)
-        : new Date(Number(post.scheduledFor) * 1000);
+        ? (() => {
+            try {
+              const zoned = fromISOString(post.publishedAt as string, "UTC");
+              return toDate(zoned);
+            } catch {
+              return toDate(nowUTC());
+            }
+          })()
+        : (() => {
+            try {
+              const timestamp = Number(post.scheduledFor);
+              if (!isNaN(timestamp)) {
+                const zoned = fromUnixTimestamp(timestamp, "UTC");
+                return toDate(zoned);
+              }
+              return toDate(nowUTC());
+            } catch {
+              return toDate(nowUTC());
+            }
+          })();
 
       setRescheduleData({
         post,
@@ -95,13 +129,12 @@ export function Calendar({
             {/* Navigation */}
             <button
               onClick={() => {
-                const newDate = new Date(currentDate);
-                if (view === "week") {
-                  newDate.setDate(newDate.getDate() - 7);
-                } else {
-                  newDate.setMonth(newDate.getMonth() - 1);
-                }
-                setCurrentDate(newDate);
+                const currentZoned = fromDate(currentDate, userTimezone);
+                const newZoned =
+                  view === "week"
+                    ? addDays(currentZoned, -7)
+                    : addMonths(currentZoned, -1);
+                setCurrentDate(toDate(newZoned));
               }}
               className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
             >
@@ -121,24 +154,29 @@ export function Calendar({
             </button>
 
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {view === "week"
-                ? `Week of ${currentDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: user?.timezone ?? "Etc/UTC" })}`
-                : currentDate.toLocaleDateString("en-US", {
-                    month: "long",
-                    year: "numeric",
-                    timeZone: user?.timezone ?? "Etc/UTC",
-                  })}
+              {(() => {
+                const currentZoned = fromDate(currentDate, userTimezone);
+                return view === "week"
+                  ? `Week of ${formatForDisplay(currentZoned, userTimezone, {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}`
+                  : formatForDisplay(currentZoned, userTimezone, {
+                      month: "long",
+                      year: "numeric",
+                    });
+              })()}
             </h2>
 
             <button
               onClick={() => {
-                const newDate = new Date(currentDate);
-                if (view === "week") {
-                  newDate.setDate(newDate.getDate() + 7);
-                } else {
-                  newDate.setMonth(newDate.getMonth() + 1);
-                }
-                setCurrentDate(newDate);
+                const currentZoned = fromDate(currentDate, userTimezone);
+                const newZoned =
+                  view === "week"
+                    ? addDays(currentZoned, 7)
+                    : addMonths(currentZoned, 1);
+                setCurrentDate(toDate(newZoned));
               }}
               className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
             >
@@ -158,7 +196,10 @@ export function Calendar({
             </button>
 
             <button
-              onClick={() => setCurrentDate(new Date())}
+              onClick={() => {
+                const now = nowInTimezone(userTimezone);
+                setCurrentDate(toDate(now));
+              }}
               className="px-3 py-1 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
             >
               Today

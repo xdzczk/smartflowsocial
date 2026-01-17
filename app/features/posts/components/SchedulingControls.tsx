@@ -10,6 +10,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import {
+  addHours,
+  formatForDateTimeLocal,
+  nowInTimezone,
+} from "~/lib/temporal";
 
 import { getDynamicQueueStyle } from "../queue-colors";
 import type { QueueType } from "../types";
@@ -92,28 +97,11 @@ export default function SchedulingControls({
   }, [selectedQueueType, calculateQueueScheduleTime]);
 
   const _handleScheduleIntervalClick = (intervalHours: string) => {
-    const now = new Date();
-    const hoursLater = new Date(
-      now.getTime() + parseInt(intervalHours) * 60 * 60 * 1000
-    );
-
-    const formattedDate = hoursLater.toLocaleString("en-US", {
-      timeZone: userTimezone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: false,
-    });
-
-    const [datePart, timePart] = formattedDate.split(", ");
-    const [month, day, year] = datePart?.split("/") ?? ["", "", ""];
-    if (!year || !month || !day || !timePart) {
-      return;
-    }
-    const datetimeLocal = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}T${timePart}`;
+    const tz = userTimezone || "UTC";
+    const now = nowInTimezone(tz);
+    const hoursLaterZoned = addHours(now, parseInt(intervalHours, 10));
+    // formatForDateTimeLocal already returns datetime-local format
+    const datetimeLocal = formatForDateTimeLocal(hoursLaterZoned, tz);
 
     setLocalScheduledFor(datetimeLocal);
     onScheduleChange(datetimeLocal);
@@ -176,9 +164,10 @@ export default function SchedulingControls({
                 size="sm"
                 onClick={() => {
                   const hoursFromNow = interval;
-                  const newDate = new Date();
-                  newDate.setHours(newDate.getHours() + hoursFromNow);
-                  const formattedDate = newDate.toISOString().slice(0, 16);
+                  const tz = userTimezone || "UTC";
+                  const now = nowInTimezone(tz);
+                  const laterZoned = addHours(now, hoursFromNow);
+                  const formattedDate = formatForDateTimeLocal(laterZoned, tz);
                   setLocalScheduledFor(formattedDate);
                   onScheduleChange(formattedDate);
                 }}

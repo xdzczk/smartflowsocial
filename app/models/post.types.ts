@@ -19,12 +19,9 @@ export interface CreatePostData {
   postType: PostType;
   tags: string[];
   caption?: string;
-  isScheduled: boolean;
-  isPosted: boolean;
   manual_override?: boolean;
   /** Resolved queue type ID. Use resolveQueueTypeId() from features layer before calling. */
   queueTypeId?: string | null;
-  draft?: boolean;
   repost?: boolean;
   isQuotedPost?: boolean;
   isRecyclable?: boolean;

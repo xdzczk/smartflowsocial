@@ -20,6 +20,36 @@ vi.mock("~/features/posts/services/queue-type-resolver.server", () => ({
   resolveQueueTypeId: vi.fn(),
 }));
 
+// Mock Prisma for PostStateMachine
+const { mockPrisma } = vi.hoisted(() => {
+  const mockPrisma = {
+    post: {
+      findUnique: vi.fn(),
+      update: vi.fn(),
+    },
+    postStateTransition: {
+      create: vi.fn(),
+    },
+    $transaction: vi.fn(async (callback) => {
+      const tx = {
+        post: {
+          update: vi.fn().mockResolvedValue({}),
+        },
+        postStateTransition: {
+          create: vi.fn().mockResolvedValue({}),
+        },
+      };
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Test mock callback has complex types
+      return await callback(tx);
+    }),
+  };
+  return { mockPrisma };
+});
+
+vi.mock("~/lib/prisma.server", () => ({
+  prisma: mockPrisma,
+}));
+
 import {
   createActionFormData,
   TEST_USER_ID,
@@ -46,6 +76,21 @@ describe("Drafts Action Handler", () => {
         return Promise.resolve(null);
       }
     );
+    // Setup default Prisma mocks for PostStateMachine
+    (mockPrisma.post.findUnique as ReturnType<typeof vi.fn>).mockImplementation(
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Mock implementation needs to be async
+      async (args: { where: { id: string; userId: string } }) => {
+        return {
+          id: args.where.id,
+          userId: args.where.userId,
+          currentState: "DRAFT", // Default state for draft posts
+        };
+      }
+    );
+    (mockPrisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue({});
+    (
+      mockPrisma.postStateTransition.create as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({});
   });
 
   describe("Delete Post Action", () => {
@@ -164,9 +209,7 @@ describe("Drafts Action Handler", () => {
           scheduledFor: "2024-01-01T10:00:00Z",
           signedEvent: { id: "event-1", pubkey: "pk1" },
           nostrEvent: { id: "nostr-1" },
-          draft: false,
-          isScheduled: true,
-          isPosted: false,
+          // Note: draft, isScheduled, isPosted flags removed - state machine handles transitions
         },
       });
       expect(updatePost).toHaveBeenCalledWith({
@@ -179,9 +222,7 @@ describe("Drafts Action Handler", () => {
           scheduledFor: "2024-01-01T11:00:00Z",
           signedEvent: { id: "event-2", pubkey: "pk2" },
           nostrEvent: { id: "nostr-2" },
-          draft: false,
-          isScheduled: true,
-          isPosted: false,
+          // Note: draft, isScheduled, isPosted flags removed - state machine handles transitions
         },
       });
       expect(result).toEqual({ success: true });

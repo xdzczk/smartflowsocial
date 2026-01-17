@@ -13,6 +13,7 @@ import { logInfo } from "~/lib/error-logger.server";
 import { generateEnqueueIdempotencyKey } from "~/lib/idempotency.server";
 import { recordPostScheduled } from "~/lib/metrics/business-metrics.server";
 import { prisma } from "~/lib/prisma.server";
+import { toPrismaDate, toUnixTimestamp } from "~/lib/temporal";
 import { getPostById } from "~/models/post.queries.server";
 
 import { PostStateMachine } from "../state-machine/post-state-machine.server";
@@ -26,10 +27,16 @@ export class SchedulePostUseCase {
     // Get or create correlation ID for this operation
     const correlationId = getCorrelationId(input.correlationId);
 
+    // Convert Temporal to Date for database and logging
+    const scheduledAtUtcDate = toPrismaDate(input.scheduledAtUtc);
+    if (!scheduledAtUtcDate) {
+      throw new Error("Invalid scheduledAtUtc provided");
+    }
+
     logInfo("SchedulePostUseCase: Starting post scheduling", {
       postId: input.postId,
       userId: input.userId,
-      scheduledAtUtc: input.scheduledAtUtc.toISOString(),
+      scheduledAtUtc: scheduledAtUtcDate.toISOString(),
       correlationId,
     });
 
@@ -41,16 +48,17 @@ export class SchedulePostUseCase {
       );
     }
 
-    const scheduledForUnix = Math.floor(input.scheduledAtUtc.getTime() / 1000);
+    // Convert Temporal to Unix timestamp for legacy field
+    const scheduledForUnix = toUnixTimestamp(input.scheduledAtUtc);
 
     // Update post and create outbox event in transaction
     await prisma.$transaction(async (tx) => {
       await tx.post.update({
         where: { id: input.postId },
         data: {
-          scheduledAtUtc: input.scheduledAtUtc,
+          scheduledAtUtc: scheduledAtUtcDate,
           scheduledFor: scheduledForUnix.toString(), // Legacy field
-          isScheduled: true,
+          // @deprecated - isScheduled flag removed. State machine will set it via transition.
           signedEvent: input.signedEvent as unknown as Prisma.InputJsonValue,
         },
       });
@@ -75,7 +83,7 @@ export class SchedulePostUseCase {
         input.postId,
         "Post",
         payload,
-        input.scheduledAtUtc,
+        scheduledAtUtcDate,
         enqueueIdempotencyKey,
         correlationId
       );
@@ -86,7 +94,7 @@ export class SchedulePostUseCase {
       input.postId,
       input.userId,
       "SCHEDULED",
-      `Post scheduled for ${input.scheduledAtUtc.toISOString()}`
+      `Post scheduled for ${scheduledAtUtcDate.toISOString()}`
     );
 
     // Record metrics

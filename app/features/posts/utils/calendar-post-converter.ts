@@ -4,7 +4,14 @@
  * Utility functions to convert PostData and LongFormPostData to CalendarPost format
  */
 
+import { fromDate, fromUnixTimestamp, toUnixTimestamp } from "~/lib/temporal";
+
 import type { CalendarPost } from "../components/Calendar/PostBlock.types";
+import {
+  deriveIsScheduledLongForm,
+  deriveIsPublishedLongForm,
+} from "../state-machine/longform-post-state";
+import { deriveIsScheduled, deriveIsPosted } from "../state-machine/post-state";
 import type { PostData, LongFormPostData } from "../types";
 /**
  * Convert PostData to CalendarPost
@@ -19,16 +26,42 @@ export function postDataToCalendarPost(post: PostData): CalendarPost {
           : null
       : null;
   // Convert Date to Unix timestamp in seconds (as string) for CalendarPost
-  const scheduledForValue = post.scheduledFor
-    ? String(Math.floor(new Date(post.scheduledFor).getTime() / 1000))
-    : null;
+  let scheduledForValue: string | null = null;
+  if (post.scheduledFor) {
+    try {
+      const scheduledZoned =
+        post.scheduledFor &&
+        typeof post.scheduledFor === "object" &&
+        "getTime" in post.scheduledFor
+          ? fromDate(post.scheduledFor as Date, "UTC")
+          : typeof post.scheduledFor === "string"
+            ? fromUnixTimestamp(parseInt(post.scheduledFor, 10), "UTC")
+            : typeof post.scheduledFor === "number"
+              ? fromUnixTimestamp(Math.floor(post.scheduledFor / 1000), "UTC")
+              : null;
+      if (scheduledZoned) {
+        scheduledForValue = String(toUnixTimestamp(scheduledZoned));
+      }
+    } catch {
+      scheduledForValue = null;
+    }
+  }
+  // Use currentState as single source of truth (flags removed from Post model)
+  const currentState =
+    (post as { currentState?: string }).currentState ?? "DRAFT";
+  const isScheduled = deriveIsScheduled(currentState);
+  const isPosted = deriveIsPosted(currentState);
+
   const result: CalendarPost = {
     ...post,
+    currentState,
     scheduledFor: scheduledForValue,
     postedAt: post.postedAt ?? null,
     publishedAt: publishedAtValue,
     queueType: post.queueType ?? null,
     manual_override: post.manual_override || false,
+    isScheduled,
+    isPosted,
   };
   return result;
 }
@@ -56,15 +89,21 @@ export function longFormPostDataToCalendarPost(
   const hashtagsValue = Array.isArray(post.tags)
     ? post.tags.join(" ")
     : undefined;
+  // Use currentState as single source of truth (flags removed from LongFormPost model)
+  const currentState =
+    (post as { currentState?: string }).currentState ?? "DRAFT";
+  const isScheduled = deriveIsScheduledLongForm(currentState);
+  const isPosted = deriveIsPublishedLongForm(currentState);
+
   const result: CalendarPost = {
     ...post,
     // Override specific fields for CalendarPost
     caption: post.content ?? null,
-    currentState: (post as { currentState?: string }).currentState ?? "DRAFT",
+    currentState,
     fileUrl: [],
     hashtags: hashtagsValue,
-    isScheduled: post.isScheduled || false,
-    isPosted: post.isPublished || false,
+    isScheduled,
+    isPosted,
     templateId: templateIdValue,
     isRecyclable:
       "isRecyclable" in post && typeof post.isRecyclable === "boolean"
@@ -76,12 +115,29 @@ export function longFormPostDataToCalendarPost(
     image: post.image ?? undefined,
     publishedAt: publishedAtValue,
     postedAt: publishedAtValue,
-    scheduledFor: post.scheduledFor
-      ? String(Math.floor(new Date(post.scheduledFor).getTime() / 1000))
-      : null,
+    scheduledFor: (() => {
+      if (!post.scheduledFor) return null;
+      try {
+        const scheduledZoned =
+          post.scheduledFor &&
+          typeof post.scheduledFor === "object" &&
+          "getTime" in post.scheduledFor
+            ? fromDate(post.scheduledFor as Date, "UTC")
+            : typeof post.scheduledFor === "string"
+              ? fromUnixTimestamp(parseInt(post.scheduledFor, 10), "UTC")
+              : typeof post.scheduledFor === "number"
+                ? fromUnixTimestamp(Math.floor(post.scheduledFor / 1000), "UTC")
+                : null;
+        return scheduledZoned ? String(toUnixTimestamp(scheduledZoned)) : null;
+      } catch {
+        return null;
+      }
+    })(),
     queueType: post.queueType ?? null,
     manual_override: false,
     isPast: false,
+    // LongFormPost doesn't have publishAttemptId, but CalendarPost requires it (from PostData)
+    publishAttemptId: null,
   };
   return result;
 }

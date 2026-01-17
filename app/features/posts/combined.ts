@@ -4,6 +4,18 @@
  * Reconstructs CombinedContent from DTOs
  */
 
+import { fromDate, fromISOString } from "~/lib/temporal";
+
+import {
+  deriveIsScheduledLongForm,
+  deriveIsPublishedLongForm,
+  deriveIsDraftLongForm,
+} from "./state-machine/longform-post-state";
+import {
+  deriveIsScheduled,
+  deriveIsPosted,
+  deriveIsDraft,
+} from "./state-machine/post-state";
 import type { CombinedContent, PostData, LongFormPostData } from "./types";
 
 /**
@@ -28,10 +40,14 @@ function postToCombinedContent(post: PostData): CombinedContent {
     postedAt: nullToUndefined(post.postedAt),
     createdAt: post.createdAt,
     updatedAt: post.updatedAt,
-    isScheduled: post.isScheduled,
-    isPosted: post.isPosted,
-    draft: post.draft,
+    // Derive flags from currentState (flags removed from Post model)
+    isScheduled: post.currentState
+      ? deriveIsScheduled(post.currentState)
+      : undefined,
+    isPosted: post.currentState ? deriveIsPosted(post.currentState) : undefined,
+    draft: post.currentState ? deriveIsDraft(post.currentState) : undefined,
     status: post.status,
+    currentState: post.currentState, // Include state machine state
     queueType:
       post.queueType &&
       typeof post.queueType === "object" &&
@@ -98,11 +114,21 @@ function longFormPostToCombinedContent(
     postedAt: nullToUndefined(longFormPost.publishedAt), // Map publishedAt to postedAt for consistency
     createdAt: longFormPost.createdAt,
     updatedAt: longFormPost.updatedAt,
-    isScheduled: longFormPost.isScheduled,
-    isPublished: longFormPost.isPublished,
-    isPosted: longFormPost.isPublished, // Map isPublished to isPosted for consistency
-    draft: longFormPost.draft,
+    // Derive flags from currentState (flags removed from LongFormPost model)
+    isScheduled: longFormPost.currentState
+      ? deriveIsScheduledLongForm(longFormPost.currentState)
+      : undefined,
+    isPublished: longFormPost.currentState
+      ? deriveIsPublishedLongForm(longFormPost.currentState)
+      : undefined,
+    isPosted: longFormPost.currentState
+      ? deriveIsPublishedLongForm(longFormPost.currentState)
+      : undefined, // Map isPublished to isPosted for consistency
+    draft: longFormPost.currentState
+      ? deriveIsDraftLongForm(longFormPost.currentState)
+      : undefined,
     status: longFormPost.status,
+    currentState: longFormPost.currentState, // Include state machine state
     queueType: longFormPost.queueType
       ? {
           id: longFormPost.queueType.id,
@@ -142,11 +168,40 @@ function getSortValue(item: CombinedContent, sortBy: string): number {
     return parseScheduledFor(item.scheduledFor);
   }
   if (sortBy === "postedAt" || sortBy === "publishedAt") {
-    return item.postedAt ? new Date(item.postedAt).getTime() : 0;
+    try {
+      return item.postedAt
+        ? Number(fromDate(new Date(item.postedAt), "UTC").epochMilliseconds)
+        : 0;
+    } catch {
+      // Fallback - still use Temporal for 100% consistency
+      try {
+        return item.postedAt
+          ? Number(
+              fromISOString(
+                item.postedAt instanceof Date
+                  ? item.postedAt.toISOString()
+                  : String(item.postedAt),
+                "UTC"
+              ).epochMilliseconds
+            )
+          : 0;
+      } catch {
+        return item.postedAt ? new Date(item.postedAt).getTime() : 0;
+      }
+    }
   }
   if (sortBy === "createdAt" || sortBy === "updatedAt") {
     const dateValue = item[sortBy];
-    return new Date(dateValue).getTime();
+    try {
+      return Number(fromISOString(String(dateValue), "UTC").epochMilliseconds);
+    } catch {
+      // Fallback - still use Temporal
+      try {
+        return Number(fromDate(new Date(dateValue), "UTC").epochMilliseconds);
+      } catch {
+        return new Date(dateValue).getTime();
+      }
+    }
   }
   return 0;
 }

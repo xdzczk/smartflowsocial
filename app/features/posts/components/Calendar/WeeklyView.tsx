@@ -1,6 +1,15 @@
 import { useState, useMemo } from "react";
 
 import { handleErrorSafely } from "~/lib/error-handler.client";
+import {
+  addDays,
+  fromDate,
+  fromISOString,
+  fromUnixTimestamp,
+  nowInTimezone,
+  parseDateTimeLocal,
+  toDate,
+} from "~/lib/temporal";
 
 import type { QueueType, UserData } from "../../types";
 
@@ -42,15 +51,15 @@ export function WeeklyView({
   // Generate week days starting from Monday
   const weekDays = useMemo(() => {
     const days: Date[] = [];
-    const startOfWeek = new Date(currentDate);
-    const day = startOfWeek.getDay();
-    const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1); // Adjust for Monday start
-    startOfWeek.setDate(diff);
+    const currentZoned = fromDate(currentDate, "UTC");
+    // dayOfWeek: 1 = Monday, 2 = Tuesday, ..., 7 = Sunday
+    const dayOfWeek = currentZoned.dayOfWeek;
+    const daysFromMonday = dayOfWeek === 7 ? 6 : dayOfWeek - 1; // Convert Sunday (7) to 6 days back
+    const startOfWeekZoned = addDays(currentZoned, -daysFromMonday);
 
     for (let i = 0; i < 7; i++) {
-      const date = new Date(startOfWeek);
-      date.setDate(startOfWeek.getDate() + i);
-      days.push(date);
+      const dayZoned = addDays(startOfWeekZoned, i);
+      days.push(toDate(dayZoned));
     }
     return days;
   }, [currentDate]);
@@ -72,9 +81,10 @@ export function WeeklyView({
 
     // Initialize grid with user timezone date keys
     weekDays.forEach((day) => {
-      const year = day.getFullYear();
-      const month = String(day.getMonth() + 1).padStart(2, "0");
-      const dayStr = String(day.getDate()).padStart(2, "0");
+      const dayZoned = fromDate(day, userTimezone);
+      const year = dayZoned.year;
+      const month = String(dayZoned.month).padStart(2, "0");
+      const dayStr = String(dayZoned.day).padStart(2, "0");
       const dateKey = `${year}-${month}-${dayStr}`;
       grid[dateKey] = {};
     });
@@ -88,19 +98,17 @@ export function WeeklyView({
       // For longform posts, use publishedAt, for regular posts use scheduledFor
       const timestamp = postIsLongform ? post.publishedAt : post.scheduledFor;
       if (timestamp) {
-        const postDate = postIsLongform
-          ? new Date(timestamp as string)
-          : new Date(Number(timestamp) * 1000);
-        // Convert to user's timezone for display
-        const timeInUserTz = new Date(
-          postDate.toLocaleString("en-US", { timeZone: userTimezone })
-        );
-        const year = timeInUserTz.getFullYear();
-        const month = String(timeInUserTz.getMonth() + 1).padStart(2, "0");
-        const dayStr = String(timeInUserTz.getDate()).padStart(2, "0");
+        // Parse timestamp and convert to user's timezone
+        const postZoned = postIsLongform
+          ? fromISOString(timestamp as string, "UTC")
+          : fromUnixTimestamp(Number(timestamp), "UTC");
+        const timeInUserTz = postZoned.withTimeZone(userTimezone);
+        const year = timeInUserTz.year;
+        const month = String(timeInUserTz.month).padStart(2, "0");
+        const dayStr = String(timeInUserTz.day).padStart(2, "0");
         const dateKey = `${year}-${month}-${dayStr}`;
-        const hour = timeInUserTz.getHours();
-        const minutes = timeInUserTz.getMinutes();
+        const hour = timeInUserTz.hour;
+        const minutes = timeInUserTz.minute;
         const timeSlot = `${hour.toString().padStart(2, "0")}:${minutes >= 30 ? "30" : "00"}`;
 
         if (grid[dateKey]) {
@@ -115,17 +123,15 @@ export function WeeklyView({
       // Use postedAt for past posts
       const timestamp = post.postedAt;
       if (timestamp) {
-        const postDate = new Date(timestamp as string);
-        // Convert to user's timezone for display
-        const timeInUserTz = new Date(
-          postDate.toLocaleString("en-US", { timeZone: userTimezone })
-        );
-        const year = timeInUserTz.getFullYear();
-        const month = String(timeInUserTz.getMonth() + 1).padStart(2, "0");
-        const dayStr = String(timeInUserTz.getDate()).padStart(2, "0");
+        // Parse timestamp and convert to user's timezone
+        const postZoned = fromISOString(timestamp as string, "UTC");
+        const timeInUserTz = postZoned.withTimeZone(userTimezone);
+        const year = timeInUserTz.year;
+        const month = String(timeInUserTz.month).padStart(2, "0");
+        const dayStr = String(timeInUserTz.day).padStart(2, "0");
         const dateKey = `${year}-${month}-${dayStr}`;
-        const hour = timeInUserTz.getHours();
-        const minutes = timeInUserTz.getMinutes();
+        const hour = timeInUserTz.hour;
+        const minutes = timeInUserTz.minute;
         const timeSlot = `${hour.toString().padStart(2, "0")}:${minutes >= 30 ? "30" : "00"}`;
 
         if (grid[dateKey]) {
@@ -169,33 +175,11 @@ export function WeeklyView({
     const isoString = `${date}T${safeHours.toString().padStart(2, "0")}:${safeMinutes.toString().padStart(2, "0")}:00`;
 
     try {
-      let newDateTime: Date;
-
-      // Only convert timezone if not UTC/Etc/GMT
-      if (userTimezone !== "UTC" && userTimezone !== "Etc/GMT") {
-        // Create a date from the ISO string (interpreted as local browser time)
-        const localDate = new Date(isoString);
-
-        // Get what that time would be in the user's timezone
-        const userDateStr = new Date(isoString).toLocaleString("en-US", {
-          timeZone: userTimezone,
-        });
-        const userDate = new Date(userDateStr);
-        const scheduledDate = new Date(isoString);
-
-        // Calculate the offset in minutes between user timezone and local browser time
-        const userOffset =
-          (userDate.getTime() - scheduledDate.getTime()) / 60000;
-
-        // Adjust the date by the offset to get the correct UTC time
-        const utcDate = new Date(localDate);
-        utcDate.setMinutes(utcDate.getMinutes() - userOffset);
-        newDateTime = utcDate;
-      } else {
-        // For UTC timezone, parse date string and ensure it's in UTC
-        const dateObj = new Date(isoString + "Z");
-        newDateTime = dateObj;
-      }
+      // Parse datetime-local string (YYYY-MM-DDTHH:mm) in user's timezone
+      // Then convert to UTC Date for storage
+      const zonedDateTime = parseDateTimeLocal(isoString, userTimezone);
+      const utcZoned = zonedDateTime.withTimeZone("UTC");
+      const newDateTime = toDate(utcZoned);
 
       onPostDrop(postData, newDateTime);
     } catch (error) {
@@ -206,9 +190,29 @@ export function WeeklyView({
           action: "handleDrop",
         },
         () => {
-          // Fallback: try to create date as UTC
-          const dateObj = new Date(isoString + "Z");
-          onPostDrop(postData, dateObj);
+          // Fallback: try to parse as UTC
+          try {
+            const zonedDateTime = parseDateTimeLocal(isoString, "UTC");
+            const newDateTime = toDate(zonedDateTime);
+            onPostDrop(postData, newDateTime);
+          } catch {
+            // Last resort: use Temporal for 100% consistency
+            try {
+              const zoned = fromISOString(isoString + "Z", "UTC");
+              onPostDrop(postData, toDate(zoned));
+            } catch {
+              // Fallback - try with Date conversion
+              try {
+                const dateObj = new Date(isoString + "Z");
+                const zoned = fromDate(dateObj, "UTC");
+                onPostDrop(postData, toDate(zoned));
+              } catch {
+                // Ultimate fallback
+                const dateObj = new Date(isoString + "Z");
+                onPostDrop(postData, dateObj);
+              }
+            }
+          }
         }
       );
     }
@@ -224,7 +228,13 @@ export function WeeklyView({
       <div className="flex border-b border-gray-200 dark:border-gray-700">
         <div className="w-16 flex-shrink-0"></div>
         {weekDays.map((day) => {
-          const isToday = day.toDateString() === new Date().toDateString();
+          const userTimezone = user?.timezone ?? "Etc/UTC";
+          const todayZoned = nowInTimezone(userTimezone);
+          const dayZoned = fromDate(day, userTimezone);
+          const isToday =
+            dayZoned.year === todayZoned.year &&
+            dayZoned.month === todayZoned.month &&
+            dayZoned.day === todayZoned.day;
           return (
             <div
               key={day.toISOString()}
@@ -397,19 +407,20 @@ export function WeeklyView({
 
 function CurrentTimeIndicator({ user, weekDays }: CurrentTimeIndicatorProps) {
   const userTimezone = user?.timezone ?? "Etc/UTC";
-  const now = new Date();
-  const nowInUserTz = new Date(
-    now.toLocaleString("en-US", { timeZone: userTimezone })
-  );
-  const currentHour = nowInUserTz.getHours();
-  const currentMinutes = nowInUserTz.getMinutes();
+  const nowZoned = nowInTimezone(userTimezone);
+  const currentHour = nowZoned.hour;
+  const currentMinutes = nowZoned.minute;
 
   // Check if today is in the current week view
-  const today = new Date();
-  const todayString = today.toDateString();
-  const isTodayInWeek = weekDays.some(
-    (day) => day.toDateString() === todayString
-  );
+  const todayZoned = nowZoned;
+  const isTodayInWeek = weekDays.some((day) => {
+    const dayZoned = fromDate(day, userTimezone);
+    return (
+      dayZoned.year === todayZoned.year &&
+      dayZoned.month === todayZoned.month &&
+      dayZoned.day === todayZoned.day
+    );
+  });
 
   if (!isTodayInWeek) return null;
 

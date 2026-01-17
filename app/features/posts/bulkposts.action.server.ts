@@ -10,6 +10,7 @@ import type { NostrEvent, SignedEvent } from "~/features/nostr/types";
 import { logInfo } from "~/lib/error-logger.server";
 import { RateLimitError } from "~/lib/errors";
 import { checkUserPostCreationLimit } from "~/lib/rate-limit.server";
+import { nowMillis } from "~/lib/temporal";
 import {
   signAndScheduleSchema,
   saveAsDraftSchema,
@@ -41,7 +42,7 @@ interface UploadResult {
  * Handle file upload preview results from client-side upload system
  */
 export async function handleUploadImagesPreview(formData: FormData) {
-  const startTime = Date.now();
+  const startTime = nowMillis();
   try {
     // Optimize: Parse JSON first for large datasets to avoid full Zod validation overhead
     const uploadResultsRaw = formData.get("uploadResults");
@@ -87,7 +88,7 @@ export async function handleUploadImagesPreview(formData: FormData) {
       );
     }
 
-    const parseTime = Date.now() - startTime;
+    const parseTime = nowMillis() - startTime;
     console.info(
       `[BulkPosts Server] Parsed ${uploadResults.length} upload results in ${parseTime}ms`
     );
@@ -100,7 +101,7 @@ export async function handleUploadImagesPreview(formData: FormData) {
       })
     );
 
-    const totalTime = Date.now() - startTime;
+    const totalTime = nowMillis() - startTime;
     console.info(
       `[BulkPosts Server] handleUploadImagesPreview completed in ${totalTime}ms`
     );

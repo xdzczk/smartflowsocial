@@ -10,11 +10,16 @@ import { createOutboxEventInTransaction } from "~/infra/outbox/outbox.server";
 import type { LongFormPostScheduledPayload } from "~/infra/outbox/outbox.server";
 import { generateEnqueueIdempotencyKey } from "~/lib/idempotency.server";
 import { prisma } from "~/lib/prisma.server";
+import { toPrismaDate, toUnixTimestamp } from "~/lib/temporal";
 import { getLongFormPost } from "~/models/longformpost.server";
+
+import { LongFormPostStateMachine } from "../state-machine/longform-post-state-machine.server";
 
 import type { ScheduleLongFormPostInput } from "./longform-types";
 
 export class ScheduleLongFormPostUseCase {
+  private readonly stateMachine = new LongFormPostStateMachine();
+
   async execute(input: ScheduleLongFormPostInput): Promise<void> {
     // Verify post exists
     const post = await getLongFormPost({
@@ -27,16 +32,23 @@ export class ScheduleLongFormPostUseCase {
       );
     }
 
-    const scheduledForUnix = Math.floor(input.scheduledAtUtc.getTime() / 1000);
+    // Convert Temporal to Date for database
+    const scheduledAtUtcDate = toPrismaDate(input.scheduledAtUtc);
+    if (!scheduledAtUtcDate) {
+      throw new Error("Invalid scheduledAtUtc provided");
+    }
+
+    // Convert Temporal to Unix timestamp for legacy field
+    const scheduledForUnix = toUnixTimestamp(input.scheduledAtUtc);
 
     // Update post and create outbox event in transaction
     await prisma.$transaction(async (tx) => {
       await tx.longFormPost.update({
         where: { id: input.postId },
         data: {
-          scheduledAtUtc: input.scheduledAtUtc,
+          scheduledAtUtc: scheduledAtUtcDate,
           scheduledFor: scheduledForUnix.toString(), // Legacy field
-          isScheduled: true,
+          // @deprecated - isScheduled flag removed. State machine will set it via transition.
           signedEvent: input.signedEvent as unknown as Prisma.InputJsonValue,
         },
       });
@@ -61,10 +73,18 @@ export class ScheduleLongFormPostUseCase {
         input.postId,
         "LongFormPost",
         payload,
-        input.scheduledAtUtc,
+        scheduledAtUtcDate,
         enqueueIdempotencyKey,
         input.correlationId
       );
     });
+
+    // Transition to SCHEDULED state (this will automatically sync flags)
+    await this.stateMachine.transition(
+      input.postId,
+      input.userId,
+      "SCHEDULED",
+      `Longform post scheduled for ${scheduledAtUtcDate.toISOString()}`
+    );
   }
 }

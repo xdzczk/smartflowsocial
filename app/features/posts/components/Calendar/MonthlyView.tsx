@@ -1,6 +1,16 @@
 import { useMemo } from "react";
 
 import { handleErrorSafely } from "~/lib/error-handler.client";
+import {
+  addDays,
+  createZonedDateTime,
+  fromDate,
+  fromISOString,
+  fromUnixTimestamp,
+  nowInTimezone,
+  parseDateTimeLocal,
+  toDate,
+} from "~/lib/temporal";
 
 import type { QueueType, UserData } from "../../types";
 
@@ -40,28 +50,31 @@ export function MonthlyView({
 }: MonthlyViewProps) {
   // Generate calendar grid
   const calendarDays = useMemo(() => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
+    const currentZoned = fromDate(currentDate, "UTC");
+    const year = currentZoned.year;
+    const month = currentZoned.month;
 
     // First day of the month
-    const firstDay = new Date(year, month, 1);
+    const firstDayZoned = createZonedDateTime(year, month, 1, 0, 0, "UTC");
 
     // Start from the Monday of the week containing the first day
-    const startDate = new Date(firstDay);
-    const startDayOfWeek = startDate.getDay();
-    startDate.setDate(
-      startDate.getDate() - (startDayOfWeek === 0 ? 6 : startDayOfWeek - 1)
-    );
+    const dayOfWeek = firstDayZoned.dayOfWeek; // 1 = Monday, 7 = Sunday
+    const daysFromMonday = dayOfWeek === 7 ? 6 : dayOfWeek - 1;
+    const startDateZoned = addDays(firstDayZoned, -daysFromMonday);
 
     // Generate 6 weeks (42 days)
+    const todayZoned = nowInTimezone("UTC");
     const days: CalendarDay[] = [];
     for (let i = 0; i < 42; i++) {
-      const date = new Date(startDate);
-      date.setDate(startDate.getDate() + i);
+      const dateZoned = addDays(startDateZoned, i);
+      const date = toDate(dateZoned);
       days.push({
         date,
-        isCurrentMonth: date.getMonth() === month,
-        isToday: date.toDateString() === new Date().toDateString(),
+        isCurrentMonth: dateZoned.month === month,
+        isToday:
+          dateZoned.year === todayZoned.year &&
+          dateZoned.month === todayZoned.month &&
+          dateZoned.day === todayZoned.day,
       });
     }
 
@@ -82,16 +95,14 @@ export function MonthlyView({
       // For longform posts, use publishedAt, for regular posts use scheduledFor
       const timestamp = postIsLongform ? post.publishedAt : post.scheduledFor;
       if (timestamp) {
-        const postDate = postIsLongform
-          ? new Date(timestamp as string)
-          : new Date(Number(timestamp) * 1000);
-        // Convert to user's timezone for display
-        const timeInUserTz = new Date(
-          postDate.toLocaleString("en-US", { timeZone: userTimezone })
-        );
-        const year = timeInUserTz.getFullYear();
-        const month = String(timeInUserTz.getMonth() + 1).padStart(2, "0");
-        const day = String(timeInUserTz.getDate()).padStart(2, "0");
+        // Parse timestamp and convert to user's timezone
+        const postZoned = postIsLongform
+          ? fromISOString(timestamp as string, "UTC")
+          : fromUnixTimestamp(Number(timestamp), "UTC");
+        const timeInUserTz = postZoned.withTimeZone(userTimezone);
+        const year = timeInUserTz.year;
+        const month = String(timeInUserTz.month).padStart(2, "0");
+        const day = String(timeInUserTz.day).padStart(2, "0");
         const dateKey = `${year}-${month}-${day}`;
 
         grouped[dateKey] ??= [];
@@ -104,14 +115,12 @@ export function MonthlyView({
       // Use postedAt for past posts
       const timestamp = post.postedAt;
       if (timestamp) {
-        const postDate = new Date(timestamp as string);
-        // Convert to user's timezone for display
-        const timeInUserTz = new Date(
-          postDate.toLocaleString("en-US", { timeZone: userTimezone })
-        );
-        const year = timeInUserTz.getFullYear();
-        const month = String(timeInUserTz.getMonth() + 1).padStart(2, "0");
-        const day = String(timeInUserTz.getDate()).padStart(2, "0");
+        // Parse timestamp and convert to user's timezone
+        const postZoned = fromISOString(timestamp as string, "UTC");
+        const timeInUserTz = postZoned.withTimeZone(userTimezone);
+        const year = timeInUserTz.year;
+        const month = String(timeInUserTz.month).padStart(2, "0");
+        const day = String(timeInUserTz.day).padStart(2, "0");
         const dateKey = `${year}-${month}-${day}`;
 
         grouped[dateKey] ??= [];
@@ -135,39 +144,18 @@ export function MonthlyView({
     const userTimezone = user?.timezone ?? "Etc/UTC";
 
     // For monthly view, we'll set time to 9:00 AM by default in user's timezone
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const isoString = `${year}-${month}-${day}T09:00:00`;
+    const dateZoned = fromDate(date, userTimezone);
+    const year = dateZoned.year;
+    const month = String(dateZoned.month).padStart(2, "0");
+    const day = String(dateZoned.day).padStart(2, "0");
+    const isoString = `${year}-${month}-${day}T09:00`;
 
     try {
-      let newDateTime: Date;
-
-      // Only convert timezone if not UTC/Etc/GMT
-      if (userTimezone !== "UTC" && userTimezone !== "Etc/GMT") {
-        // Create a date from the ISO string (interpreted as local browser time)
-        const localDate = new Date(isoString);
-
-        // Get what that time would be in the user's timezone
-        const userDateStr = new Date(isoString).toLocaleString("en-US", {
-          timeZone: userTimezone,
-        });
-        const userDate = new Date(userDateStr);
-        const scheduledDate = new Date(isoString);
-
-        // Calculate the offset in minutes between user timezone and local browser time
-        const userOffset =
-          (userDate.getTime() - scheduledDate.getTime()) / 60000;
-
-        // Adjust the date by the offset to get the correct UTC time
-        const utcDate = new Date(localDate);
-        utcDate.setMinutes(utcDate.getMinutes() - userOffset);
-        newDateTime = utcDate;
-      } else {
-        // For UTC timezone, parse date string and ensure it's in UTC
-        const dateObj = new Date(isoString + "Z");
-        newDateTime = dateObj;
-      }
+      // Parse datetime-local string (YYYY-MM-DDTHH:mm) in user's timezone
+      // Then convert to UTC Date for storage
+      const zonedDateTime = parseDateTimeLocal(isoString, userTimezone);
+      const utcZoned = zonedDateTime.withTimeZone("UTC");
+      const newDateTime = toDate(utcZoned);
 
       onPostDrop(postData, newDateTime);
     } catch (error) {
@@ -178,9 +166,29 @@ export function MonthlyView({
           action: "handlePostDrop",
         },
         () => {
-          // Fallback: try to create date as UTC
-          const dateObj = new Date(isoString + "Z");
-          onPostDrop(postData, dateObj);
+          // Fallback: try to parse as UTC
+          try {
+            const zonedDateTime = parseDateTimeLocal(isoString, "UTC");
+            const newDateTime = toDate(zonedDateTime);
+            onPostDrop(postData, newDateTime);
+          } catch {
+            // Last resort: use Temporal for 100% consistency
+            try {
+              const zoned = fromISOString(isoString + "Z", "UTC");
+              onPostDrop(postData, toDate(zoned));
+            } catch {
+              // Fallback - try with Date conversion
+              try {
+                const dateObj = new Date(isoString + "Z");
+                const zoned = fromDate(dateObj, "UTC");
+                onPostDrop(postData, toDate(zoned));
+              } catch {
+                // Ultimate fallback
+                const dateObj = new Date(isoString + "Z");
+                onPostDrop(postData, dateObj);
+              }
+            }
+          }
         }
       );
     }

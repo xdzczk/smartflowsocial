@@ -6,6 +6,11 @@
 
 import { resizeImage } from "~/features/upload/image-resize";
 import { logClientError } from "~/lib/error-handler.client";
+import {
+  addHours,
+  formatForDateTimeLocal,
+  nowInTimezone,
+} from "~/lib/temporal";
 import { isVideoFile } from "~/utils/media-helpers";
 
 import type { BulkPostsHandlerDeps } from "../types";
@@ -108,34 +113,23 @@ export async function handleFileChange(
   }
 
   const newPosts = processedFiles.map((file, index) => {
-    // Get current date in user's timezone
-    const now = new Date();
-    const userTimezone = user?.timezone;
-
-    const localDate = new Date(
-      now.toLocaleString("en-US", { timeZone: userTimezone })
-    );
+    // Get current date in user's timezone using Temporal
+    const userTimezone = user?.timezone ?? "UTC";
+    const now = nowInTimezone(userTimezone);
 
     // Add index+4 hours to schedule 4 post per hour (default)
-    localDate.setHours(
-      localDate.getHours() + (index + Number(scheduleIntervals?.[0] ?? 4))
-    );
+    const hoursToAdd = index + Number(scheduleIntervals?.[0] ?? 4);
+    const scheduledZoned = addHours(now, hoursToAdd);
+
+    // Format for datetime-local input
+    const scheduledFor = formatForDateTimeLocal(scheduledZoned, userTimezone);
 
     return {
       file,
       caption: "",
       queueType: "unassigned",
       isRecyclable: false,
-      scheduledFor: localDate
-        .toLocaleString("en-US", {
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: false,
-        })
-        .replace(/(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+)/, "$3-$1-$2T$4:$5"),
+      scheduledFor,
     };
   });
 

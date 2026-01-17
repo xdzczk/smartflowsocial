@@ -11,6 +11,7 @@ import {
 import { getPostById } from "~/models/post.queries.server";
 
 import { toPostDTO, type PostDTO } from "../dtos";
+import { deriveIsDraft } from "../state-machine/post-state";
 import type { PostData } from "../types";
 import { convertPrismaQueueTypeToQueueType } from "../types";
 
@@ -25,7 +26,12 @@ export async function loadDraftEditData(userId: string, postId: string) {
     getUserHashTagPresets(userId),
   ]);
 
-  if (!post?.draft) {
+  // Use currentState as single source of truth (flags removed from Post model)
+  if (!post) {
+    throw new Response("Draft not found", { status: 404 });
+  }
+  const isDraft = deriveIsDraft(post.currentState);
+  if (!isDraft) {
     throw new Response("Draft not found", { status: 404 });
   }
 

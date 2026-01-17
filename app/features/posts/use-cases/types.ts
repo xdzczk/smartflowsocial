@@ -7,6 +7,7 @@
 import type { Post, PostType } from "@prisma/client";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
+import type { Temporal } from "~/lib/temporal";
 
 export interface CreatePostInput {
   userId: string;
@@ -37,7 +38,7 @@ export interface CreatePostResult {
 export interface SchedulePostInput {
   postId: string;
   userId: string;
-  scheduledAtUtc: Date;
+  scheduledAtUtc: Temporal.ZonedDateTime; // Use Temporal for better timezone handling
   signedEvent: SignedEvent;
   correlationId?: string; // For request tracking
 }

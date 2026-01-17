@@ -65,11 +65,8 @@ export function createPost(data: CreatePostData): Promise<Post> {
     postType,
     tags,
     caption,
-    isScheduled,
-    isPosted,
     manual_override,
     queueTypeId,
-    draft,
     repost,
     isQuotedPost,
     isRecyclable,
@@ -79,6 +76,9 @@ export function createPost(data: CreatePostData): Promise<Post> {
 
   // Convert scheduledFor to DateTime for new field
   const scheduledAtUtc = convertScheduledForToDateTime(scheduledFor);
+
+  // Determine initial state based on whether scheduledFor is provided
+  const initialState = scheduledFor ? "SCHEDULED" : "DRAFT";
 
   return prisma.post.create({
     data: {
@@ -92,11 +92,9 @@ export function createPost(data: CreatePostData): Promise<Post> {
       postType,
       postedAt,
       caption,
-      isScheduled,
-      isPosted,
       tags,
       manual_override: manual_override ?? false,
-      draft: draft ?? false,
+      currentState: initialState, // Single source of truth
       repost: repost ?? false,
       isQuotedPost: isQuotedPost ?? false,
       isRecyclable: isRecyclable ?? false,
@@ -137,6 +135,9 @@ export async function createPostWithOutbox(
   const { userId, signedEvent, creationIdempotencyKey } = data;
 
   return prisma.$transaction(async (tx) => {
+    // Determine initial state based on whether scheduledFor is provided
+    const initialState = data.scheduledFor ? "SCHEDULED" : "DRAFT";
+
     // Create post
     const post = await tx.post.create({
       data: {
@@ -150,11 +151,9 @@ export async function createPostWithOutbox(
         postType: data.postType,
         postedAt: data.postedAt,
         caption: data.caption,
-        isScheduled: data.isScheduled,
-        isPosted: data.isPosted,
         tags: data.tags,
         manual_override: data.manual_override ?? false,
-        draft: data.draft ?? false,
+        currentState: initialState, // Single source of truth
         repost: data.repost ?? false,
         isQuotedPost: data.isQuotedPost ?? false,
         isRecyclable: data.isRecyclable ?? false,
@@ -198,7 +197,7 @@ export async function createPostWithOutbox(
     );
 
     // If scheduled and has signed event, create outbox event
-    if (scheduledForUnix && signedEvent && data.isScheduled) {
+    if (scheduledForUnix && signedEvent && data.scheduledFor) {
       const scheduledAtUtc = new Date(scheduledForUnix * 1000);
       const enqueueIdempotencyKey = generateEnqueueIdempotencyKey(
         post.id,
@@ -263,65 +262,6 @@ export async function deletePost({
     // Log but don't throw - read model updates shouldn't block writes
     console.error("Failed to emit POST_DELETED event", error);
   });
-
-  return post;
-}
-
-export async function updatePostStatus({
-  id,
-  userId,
-  isPosted,
-  correlationId,
-}: {
-  id: string;
-  userId: string;
-  isPosted: boolean;
-  correlationId?: string;
-}): Promise<Post> {
-  // Get current state to check if this is a state change
-  const currentPost = await prisma.post.findUnique({
-    where: { id, userId },
-    select: { isPosted: true, scheduledAtUtc: true },
-  });
-
-  // Use scheduled time if available, otherwise use current time
-  const postedAt =
-    isPosted && currentPost?.scheduledAtUtc
-      ? currentPost.scheduledAtUtc
-      : isPosted
-        ? new Date()
-        : undefined;
-
-  const post = await prisma.post.update({
-    where: {
-      id,
-      userId,
-    },
-    data: {
-      isPosted,
-      ...(postedAt && { postedAt }),
-    },
-  });
-
-  // Emit POST_PUBLISHED event if post was just published
-  if (isPosted && currentPost && !currentPost.isPosted) {
-    // @ts-ignore - Dynamic imports work at runtime in CommonJS
-    const { createOutboxEvent } = await import("~/infra/outbox/outbox.server");
-    void createOutboxEvent(
-      "POST_PUBLISHED",
-      post.id,
-      "Post",
-      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Partial payload for read model events
-      { postId: post.id, userId: post.userId } as PostScheduledPayload,
-      undefined,
-      undefined,
-      correlationId
-      // eslint-disable-next-line promise/prefer-await-to-then, promise/prefer-await-to-callbacks -- Fire-and-forget pattern
-    ).catch((error) => {
-      // Log but don't throw - read model updates shouldn't block writes
-      console.error("Failed to emit POST_PUBLISHED event", error);
-    });
-  }
 
   return post;
 }
@@ -430,10 +370,8 @@ export async function updatePost({
   if (data.nostrEvent !== undefined)
     updateData.nostrEvent = data.nostrEvent as unknown as Prisma.InputJsonValue;
   if (data.tags !== undefined) updateData.tags = data.tags;
-  // Note: status, isPublished, isScheduled, draft are Prisma Post model fields, not in CreatePostData
-  // They should be set via separate update calls if needed
-  if (data.draft !== undefined) updateData.draft = data.draft;
-  if (data.isScheduled !== undefined) updateData.isScheduled = data.isScheduled;
+  // Note: Flag fields (draft, isScheduled, isPosted) have been removed.
+  // Use PostStateMachine.transition() to change state instead.
   if (data.isRecyclable !== undefined)
     updateData.isRecyclable = data.isRecyclable;
   // Helper function to handle relation connect/disconnect

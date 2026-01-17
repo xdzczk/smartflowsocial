@@ -19,9 +19,8 @@ vi.mock("~/lib/prisma.server", () => ({
   },
 }));
 
-vi.mock("~/models/post.commands.server", () => ({
-  updatePostStatus: vi.fn(),
-}));
+// updatePostStatus was removed - state transitions now use PostStateMachine
+vi.mock("~/models/post.commands.server", () => ({}));
 
 vi.mock("~/features/user", () => ({
   getUserById: vi.fn(),
@@ -29,7 +28,6 @@ vi.mock("~/features/user", () => ({
 
 import { getUserById } from "~/features/user";
 import { prisma } from "~/lib/prisma.server";
-import { updatePostStatus } from "~/models/post.commands.server";
 
 describe("Property-Based Tests: Queue Operations", () => {
   beforeEach(() => {
@@ -40,16 +38,15 @@ describe("Property-Based Tests: Queue Operations", () => {
     it("should be idempotent: processing same job multiple times has same effect", async () => {
       const mockPost = {
         id: "post-123",
-        isPosted: false,
+        currentState: "SCHEDULED",
         nostrEventId: null,
       };
 
       const mockFindUnique = prisma.post.findUnique as ReturnType<typeof vi.fn>;
-      const mockUpdatePostStatus = updatePostStatus as ReturnType<typeof vi.fn>;
+      // State transitions now use PostStateMachine, not updatePostStatus
       const mockGetUserById = getUserById as ReturnType<typeof vi.fn>;
 
       mockFindUnique.mockResolvedValue(mockPost);
-      mockUpdatePostStatus.mockResolvedValue(undefined);
       mockGetUserById.mockResolvedValue({
         userRelays: ["wss://relay1.com"],
       });
@@ -79,36 +76,27 @@ describe("Property-Based Tests: Queue Operations", () => {
       const mockPostFindUnique = prisma.post
         .findUnique as unknown as ReturnType<typeof vi.fn> &
         ((args: unknown) => Promise<{
-          isPosted: boolean;
+          currentState: string;
           nostrEventId: string | null;
         } | null>);
-      const mockUpdatePostStatus = updatePostStatus as unknown as ReturnType<
-        typeof vi.fn
-      > &
-        ((args: {
-          id: string;
-          userId: string;
-          isPosted: boolean;
-        }) => Promise<void>);
+      // State transitions now use PostStateMachine, not updatePostStatus
 
       const existingPost = (await mockPostFindUnique({
         where: { id: postId, userId },
-        select: { isPosted: true, nostrEventId: true },
-      })) as { isPosted: boolean; nostrEventId: string | null } | null;
+        select: { currentState: true, nostrEventId: true },
+      })) as { currentState: string; nostrEventId: string | null } | null;
 
       if (!existingPost) {
         return { success: false, error: "Post not found" };
       }
 
-      if (existingPost.isPosted) {
+      // Check if already published using currentState
+      if (existingPost.currentState === "PUBLISHED") {
         return { success: true, skipped: true };
       }
 
-      await mockUpdatePostStatus({
-        id: postId,
-        userId,
-        isPosted: true,
-      });
+      // State transitions now use PostStateMachine, not updatePostStatus
+      // In real code, this would call PostStateMachine.transition()
 
       return { success: true };
     }

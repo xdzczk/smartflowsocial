@@ -318,13 +318,15 @@ export default function LongFormPost({
         <LongFormPublishingOptions
           queueTypes={queueTypes}
           selectedQueueType={selectedQueueType}
-          onQueueTypeChange={(name) => void updateDisplayedHashtags(name)}
+          onQueueTypeChange={(name) => {
+            void updateDisplayedHashtags(name);
+          }}
           scheduledFor={scheduledFor}
           onScheduledForChange={setScheduledFor}
           scheduleIntervals={scheduleIntervals}
-          onScheduleIntervalClick={(intervalHours) =>
-            void handleScheduleIntervalClick(intervalHours)
-          }
+          onScheduleIntervalClick={(intervalHours) => {
+            handleScheduleIntervalClick(intervalHours);
+          }}
           onNextSlotClick={() => {
             void calculateQueueScheduleTime(selectedQueueType);
           }}

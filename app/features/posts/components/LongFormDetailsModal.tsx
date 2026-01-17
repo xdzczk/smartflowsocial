@@ -8,6 +8,12 @@ import type {
   LongFormPostData,
 } from "~/features/posts/server";
 import { handleErrorSafely } from "~/lib/error-handler.client";
+import {
+  formatForDisplay,
+  fromDate,
+  fromISOString,
+  fromUnixTimestamp,
+} from "~/lib/temporal";
 
 import type { EditorJSBlock } from "../types/editorjs.types";
 
@@ -205,38 +211,65 @@ export default function LongFormDetailsModal({
   const formatDate = (dateInput?: string | Date | number) => {
     if (!dateInput) return "—";
 
-    let date: Date;
-
-    // Handle different input formats
-    if (typeof dateInput === "string") {
-      // Check if it's a Unix timestamp string
-      const unixTimestamp = parseInt(dateInput);
-      if (!isNaN(unixTimestamp) && dateInput.length <= 13) {
+    try {
+      let zonedDateTime;
+      if (typeof dateInput === "string") {
+        // Check if it's a Unix timestamp string
+        const unixTimestamp = parseInt(dateInput, 10);
+        if (!isNaN(unixTimestamp) && dateInput.length <= 13) {
+          // Unix timestamp (seconds or milliseconds)
+          const timestamp =
+            dateInput.length <= 10
+              ? unixTimestamp
+              : Math.floor(unixTimestamp / 1000);
+          zonedDateTime = fromUnixTimestamp(timestamp, "UTC");
+        } else {
+          // ISO string
+          zonedDateTime = fromISOString(String(dateInput), "UTC");
+        }
+      } else if (typeof dateInput === "number") {
         // Unix timestamp (seconds or milliseconds)
-        date = new Date(unixTimestamp * (dateInput.length <= 10 ? 1000 : 1));
+        const timestamp =
+          dateInput.toString().length <= 10
+            ? dateInput
+            : Math.floor(dateInput / 1000);
+        zonedDateTime = fromUnixTimestamp(timestamp, "UTC");
       } else {
-        // ISO string
-        date = new Date(dateInput);
+        // Date object
+        zonedDateTime = fromDate(new Date(dateInput), "UTC");
       }
-    } else if (typeof dateInput === "number") {
-      // Unix timestamp (seconds or milliseconds)
-      date = new Date(
-        dateInput * (dateInput.toString().length <= 10 ? 1000 : 1)
-      );
-    } else {
-      // Date object
-      date = new Date(dateInput);
-    }
 
-    return date.toLocaleString("en-US", {
-      timeZone: userTimezone,
-      month: "2-digit",
-      day: "2-digit",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
+      // Convert to user's timezone for display
+      const userZoned = zonedDateTime.withTimeZone(userTimezone);
+      return formatForDisplay(userZoned, userTimezone, {
+        month: "2-digit",
+        day: "2-digit",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+    } catch (error) {
+      handleErrorSafely(error, {
+        component: "LongFormDetailsModal",
+        action: "formatDate",
+      });
+      // Fallback to simple date formatting
+      const dateObj =
+        typeof dateInput === "string"
+          ? new Date(dateInput)
+          : typeof dateInput === "number"
+            ? new Date(dateInput * 1000)
+            : dateInput;
+      return dateObj.toLocaleDateString("en-US", {
+        month: "2-digit",
+        day: "2-digit",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+    }
   };
 
   const getReadingTime = (content?: string) => {

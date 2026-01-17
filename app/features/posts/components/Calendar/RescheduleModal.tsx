@@ -11,6 +11,16 @@ import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { handleErrorSafely } from "~/lib/error-handler.client";
 import { isVideoFile } from "~/lib/helpers";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
+import {
+  formatForDateTimeLocal,
+  formatForDisplay,
+  fromDate,
+  isAfter,
+  nowInTimezone,
+  parseDateTimeLocal,
+  toDate,
+  toUnixTimestamp,
+} from "~/lib/temporal";
 
 import type { QueueType, UserData } from "../../types";
 
@@ -73,13 +83,13 @@ function getFirstMedia(data: RescheduleData): string | null {
 }
 
 function formatDateTime(date: Date, userTimezone: string): string {
-  return date.toLocaleDateString("en-US", {
+  const zonedDateTime = fromDate(date, userTimezone);
+  return formatForDisplay(zonedDateTime, userTimezone, {
     weekday: "long",
     month: "long",
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: userTimezone,
   });
 }
 
@@ -89,31 +99,28 @@ function validateDateTime(
   setValidationError: (error: string | null) => void
 ): boolean {
   if (!dateTime) return false;
-  const now = new Date();
-  const nowInUserTz = new Date(
-    now.toLocaleString("en-US", { timeZone: userTimezone })
-  );
 
-  if (dateTime <= nowInUserTz) {
-    setValidationError("Cannot schedule posts in the past");
+  try {
+    const now = nowInTimezone(userTimezone);
+    const dateTimeZoned = fromDate(dateTime, userTimezone);
+
+    if (!isAfter(dateTimeZoned, now)) {
+      setValidationError("Cannot schedule posts in the past");
+      return false;
+    }
+
+    setValidationError(null);
+    return true;
+  } catch {
+    setValidationError("Invalid date/time");
     return false;
   }
-
-  setValidationError(null);
-  return true;
 }
 
 function formatDateTimeForInput(date: Date, userTimezone: string): string {
-  // Create date string in format needed for datetime-local input
-  const dateInUserTz = new Date(
-    date.toLocaleString("en-US", { timeZone: userTimezone })
-  );
-  const year = dateInUserTz.getFullYear();
-  const month = String(dateInUserTz.getMonth() + 1).padStart(2, "0");
-  const day = String(dateInUserTz.getDate()).padStart(2, "0");
-  const hours = String(dateInUserTz.getHours()).padStart(2, "0");
-  const minutes = String(dateInUserTz.getMinutes()).padStart(2, "0");
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
+  // Use Temporal for consistent datetime-local formatting
+  const zonedDateTime = fromDate(date, userTimezone);
+  return formatForDateTimeLocal(zonedDateTime, userTimezone);
 }
 
 function renderModalContent(
@@ -317,7 +324,9 @@ async function handleSignAndSubmitLogic(
   setIsSigningEvent: (isSigning: boolean) => void,
   setSigningError: (error: string | null) => void
 ): Promise<void> {
-  const newTimeUnix = Math.floor(editableDateTime.getTime() / 1000);
+  // Use Temporal for Unix timestamp conversion
+  const editableZoned = fromDate(editableDateTime, "UTC");
+  const newTimeUnix = toUnixTimestamp(editableZoned);
 
   try {
     setIsSigningEvent(true);
@@ -424,9 +433,28 @@ export function RescheduleModal({
   const userTimezone = user?.timezone ?? "Etc/UTC";
 
   const handleDateTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = new Date(e.target.value);
-    setEditableDateTime(newValue);
-    validateDateTime(newValue, userTimezone, setValidationError);
+    try {
+      // Parse datetime-local string using Temporal
+      const zonedDateTime = parseDateTimeLocal(e.target.value, userTimezone);
+      // Convert to UTC ZonedDateTime, then to Date using Temporal helper
+      const utcZoned = zonedDateTime.withTimeZone("UTC");
+      const dateValue = toDate(utcZoned);
+      setEditableDateTime(dateValue);
+      validateDateTime(dateValue, userTimezone, setValidationError);
+    } catch {
+      // If parsing fails, try fallback - still use Temporal for consistency
+      try {
+        const dateObj = new Date(e.target.value);
+        const zoned = fromDate(dateObj, userTimezone);
+        const utcZoned = zoned.withTimeZone("UTC");
+        const newValue = toDate(utcZoned);
+        setEditableDateTime(newValue);
+        validateDateTime(newValue, userTimezone, setValidationError);
+      } catch {
+        // Ultimate fallback - only if Temporal completely fails
+        setValidationError("Invalid date/time format");
+      }
+    }
   };
 
   const handleConfirm = async (shouldOverride = false) => {

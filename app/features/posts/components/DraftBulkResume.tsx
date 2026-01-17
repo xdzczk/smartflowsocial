@@ -3,6 +3,16 @@ import { useState, useEffect } from "react";
 
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
+import {
+  addDays,
+  addHours,
+  formatForDateTimeLocal,
+  fromDate,
+  nowInTimezone,
+  parseDateTimeLocal,
+  toDate,
+  toUnixTimestamp,
+} from "~/lib/temporal";
 
 import { getSelectedQueueStyle } from "../queue-colors";
 import { isIntervalScheduleConfig, isFixedSlotsScheduleConfig } from "../types";
@@ -30,16 +40,13 @@ export default function DraftBulkResume({
   // State for bulk operations similar to bulkposts
   const [posts, setPosts] = useState(
     selectedDrafts.map((draft, index) => {
-      const now = new Date();
       const userTimezone = user?.timezone ?? "UTC";
-      const localDate = new Date(
-        now.toLocaleString("en-US", { timeZone: userTimezone })
-      );
+      const now = nowInTimezone(userTimezone);
 
       // Schedule posts with 2-hour intervals by default
-      localDate.setHours(
-        localDate.getHours() + index * (Number(scheduleIntervals?.[0]) || 2)
-      );
+      const hoursToAdd = index * (Number(scheduleIntervals?.[0]) || 2);
+      const scheduledZoned = addHours(now, hoursToAdd);
+      const scheduledFor = formatForDateTimeLocal(scheduledZoned, userTimezone);
       return {
         id: draft.id,
         content: draft.content ?? draft.caption,
@@ -47,16 +54,7 @@ export default function DraftBulkResume({
         fileUrl: draft.fileUrl,
         postType: draft.postType,
         queueType: draft.queueType?.name ?? draft.queueType ?? "unassigned",
-        scheduledFor: localDate
-          .toLocaleString("en-US", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: false,
-          })
-          .replace(/(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+)/, "$3-$1-$2T$4:$5"),
+        scheduledFor,
       };
     })
   );
@@ -65,14 +63,8 @@ export default function DraftBulkResume({
   // Helper Functions
   // ============================================================================
 
-  const formatDateTimeLocal = (date: Date): string => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-  };
+  // formatDateTimeLocal is now replaced by formatForDateTimeLocal from temporal
+  // Keeping this wrapper for backward compatibility (currently unused)
 
   const getIntervalHours = (
     config: unknown,
@@ -110,9 +102,9 @@ export default function DraftBulkResume({
     userData: typeof user
   ): Date => {
     const intervalHours = getIntervalHours(config, userData);
-    const offsetDate = new Date(baseDate);
-    offsetDate.setHours(offsetDate.getHours() + baseIndex * intervalHours);
-    return offsetDate;
+    const baseZoned = fromDate(baseDate, "UTC");
+    const offsetZoned = addHours(baseZoned, baseIndex * intervalHours);
+    return toDate(offsetZoned);
   };
 
   interface ParsedSlot {
@@ -150,9 +142,8 @@ export default function DraftBulkResume({
     const sortedSlots = parseAndSortSlots(slots);
 
     // Get the current slot index based on the base time
-    const baseHours = baseDate.getHours();
-    const baseMinutes = baseDate.getMinutes();
-    const baseTotalMinutes = baseHours * 60 + baseMinutes;
+    const baseZoned1 = fromDate(baseDate, "UTC");
+    const baseTotalMinutes = baseZoned1.hour * 60 + baseZoned1.minute;
 
     let currentSlotIndex = 0;
     for (let i = 0; i < sortedSlots.length; i++) {
@@ -176,11 +167,16 @@ export default function DraftBulkResume({
       (currentSlotIndex + baseIndex) / sortedSlots.length
     );
 
-    // Set the time to the target slot
-    const offsetDate = new Date(baseDate);
-    offsetDate.setHours(targetSlot.hours, targetSlot.minutes, 0, 0);
-    offsetDate.setDate(offsetDate.getDate() + daysToAdd);
-    return offsetDate;
+    // Set the time to the target slot using Temporal
+    const baseZoned2 = fromDate(baseDate, "UTC");
+    const dateWithSlot = baseZoned2.with({
+      hour: targetSlot.hours,
+      minute: targetSlot.minutes,
+      second: 0,
+      millisecond: 0,
+    });
+    const offsetZoned = addDays(dateWithSlot, daysToAdd);
+    return toDate(offsetZoned);
   };
 
   const applyScheduleOffset = (
@@ -274,9 +270,13 @@ export default function DraftBulkResume({
       });
 
       if (queueType && typeof queueType === "object") {
-        const baseDate = new Date(scheduledTime);
+        // Parse scheduledTime and apply offset
+        const userTimezone = user?.timezone ?? "UTC";
+        const baseZoned = parseDateTimeLocal(scheduledTime, userTimezone);
+        const baseDate = toDate(baseZoned);
         const offsetDate = applyScheduleOffset(baseDate, baseIndex, queueType);
-        return formatDateTimeLocal(offsetDate);
+        const offsetZoned = fromDate(offsetDate, userTimezone);
+        return formatForDateTimeLocal(offsetZoned, userTimezone);
       }
     }
 
@@ -320,19 +320,14 @@ export default function DraftBulkResume({
     const updatedPosts = [...posts];
     const firstPost = updatedPosts[0];
     if (!firstPost?.scheduledFor) return;
-    const baseDate = new Date(firstPost.scheduledFor);
+    const userTimezone = user?.timezone ?? "UTC";
+    const baseZoned = parseDateTimeLocal(firstPost.scheduledFor, userTimezone);
 
     updatedPosts.forEach((post, index) => {
-      const newDate = new Date(baseDate);
-      newDate.setHours(baseDate.getHours() + index * interval);
+      const newZoned = addHours(baseZoned, index * interval);
+      const scheduledFor = formatForDateTimeLocal(newZoned, userTimezone);
 
-      const year = newDate.getFullYear();
-      const month = String(newDate.getMonth() + 1).padStart(2, "0");
-      const day = String(newDate.getDate()).padStart(2, "0");
-      const hours = String(newDate.getHours()).padStart(2, "0");
-      const minutes = String(newDate.getMinutes()).padStart(2, "0");
-
-      post.scheduledFor = `${year}-${month}-${day}T${hours}:${minutes}`;
+      post.scheduledFor = scheduledFor;
     });
 
     setPosts(updatedPosts);
@@ -432,28 +427,14 @@ export default function DraftBulkResume({
       const signedPosts = await Promise.all(
         posts.map(async (post) => {
           const userTimezone = user?.timezone ?? "UTC";
-          let scheduledTime;
 
-          if (userTimezone !== "UTC" && userTimezone !== "Etc/GMT") {
-            const utcDate = new Date(post.scheduledFor);
-            const userDate = new Date(post.scheduledFor).toLocaleString(
-              "en-US",
-              {
-                timeZone: userTimezone,
-              }
-            );
-            const userOffset =
-              (new Date(userDate).getTime() -
-                new Date(post.scheduledFor).getTime()) /
-              60000;
-            utcDate.setMinutes(utcDate.getMinutes() - userOffset);
-            scheduledTime = utcDate.getTime();
-          } else {
-            const dateObj = new Date(post.scheduledFor + "Z");
-            scheduledTime = dateObj.getTime();
-          }
-
-          const scheduledForUnix = Math.floor(scheduledTime / 1000);
+          // Use Temporal for timezone conversion
+          const scheduledZoned = parseDateTimeLocal(
+            post.scheduledFor,
+            userTimezone
+          );
+          const utcZoned = scheduledZoned.withTimeZone("UTC");
+          const scheduledForUnix = toUnixTimestamp(utcZoned);
 
           // Get effective hashtags from cache
           const queueTypeName = getQueueTypeName(post.queueType);

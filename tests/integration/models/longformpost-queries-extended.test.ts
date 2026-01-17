@@ -30,7 +30,6 @@ import {
   getScheduledLongFormPosts,
   getLongFormPostsByIds,
   getCronDueScheduledLongFormPosts,
-  updateLongFormPostStatus,
   getPastLongFormPosts,
 } from "~/models/longformpost.server";
 
@@ -86,7 +85,7 @@ describe("Longform Post Queries - Extended", () => {
       });
 
       expect(prisma.longFormPost.findMany).toHaveBeenCalledWith({
-        where: { userId: TEST_USER_ID, isPublished: true },
+        where: { userId: TEST_USER_ID, currentState: "PUBLISHED" },
         orderBy: { updatedAt: "desc" },
         skip: 0,
         take: 10,
@@ -133,7 +132,7 @@ describe("Longform Post Queries - Extended", () => {
 
   describe("publishLongFormPost", () => {
     it("should publish a longform post", async () => {
-      const mockPost = { id: TEST_LONGFORM_ID, isPublished: true };
+      const mockPost = { id: TEST_LONGFORM_ID, currentState: "PUBLISHED" };
       const signedEvent = {
         id: "event-123",
         pubkey: "pk-123",
@@ -167,7 +166,7 @@ describe("Longform Post Queries - Extended", () => {
         where: { id: TEST_LONGFORM_ID, userId: TEST_USER_ID },
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         data: expect.objectContaining({
-          isPublished: true,
+          currentState: "PUBLISHED",
           status: "ACTIVE",
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
           publishedAt: expect.any(Date),
@@ -183,7 +182,7 @@ describe("Longform Post Queries - Extended", () => {
   describe("getDraftLongFormPosts", () => {
     it("should get draft longform posts", async () => {
       const mockPosts = [
-        { id: "longform-1", userId: TEST_USER_ID, draft: true },
+        { id: "longform-1", userId: TEST_USER_ID, currentState: "DRAFT" },
       ];
       (
         prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
@@ -192,7 +191,7 @@ describe("Longform Post Queries - Extended", () => {
       const result = await getDraftLongFormPosts({ userId: TEST_USER_ID });
 
       expect(prisma.longFormPost.findMany).toHaveBeenCalledWith({
-        where: { userId: TEST_USER_ID, isPublished: false, draft: true },
+        where: { userId: TEST_USER_ID, currentState: "DRAFT" },
         include: { queueType: true },
         orderBy: { updatedAt: "desc" },
       });
@@ -203,7 +202,7 @@ describe("Longform Post Queries - Extended", () => {
   describe("getPublishedLongFormPosts", () => {
     it("should get published longform posts with pagination", async () => {
       const mockPosts = [
-        { id: "longform-1", userId: TEST_USER_ID, isPublished: true },
+        { id: "longform-1", userId: TEST_USER_ID, currentState: "PUBLISHED" },
       ];
       (
         prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
@@ -221,10 +220,10 @@ describe("Longform Post Queries - Extended", () => {
       const callArgs = (
         prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
       ).mock.calls[0]?.[0] as
-        | { where?: { userId?: string; isPublished?: boolean } }
+        | { where?: { userId?: string; currentState?: string } }
         | undefined;
       expect(callArgs?.where?.userId).toBe(TEST_USER_ID);
-      expect(callArgs?.where?.isPublished).toBe(true);
+      expect(callArgs?.where?.currentState).toBe("PUBLISHED");
       expect(result.posts).toEqual(mockPosts);
       expect(result.pagination.total).toBe(5);
       expect(result.pagination.currentPage).toBe(1);
@@ -234,7 +233,7 @@ describe("Longform Post Queries - Extended", () => {
   describe("getScheduledLongFormPosts", () => {
     it("should get scheduled longform posts", async () => {
       const mockPosts = [
-        { id: "longform-1", userId: TEST_USER_ID, isScheduled: true },
+        { id: "longform-1", userId: TEST_USER_ID, currentState: "SCHEDULED" },
       ];
       (
         prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
@@ -245,10 +244,10 @@ describe("Longform Post Queries - Extended", () => {
       const callArgs = (
         prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
       ).mock.calls[0]?.[0] as
-        | { where?: { userId?: string; status?: string } }
+        | { where?: { userId?: string; currentState?: string } }
         | undefined;
       expect(callArgs?.where?.userId).toBe(TEST_USER_ID);
-      expect(callArgs?.where?.status).toBe("SCHEDULED");
+      expect(callArgs?.where?.currentState).toBe("SCHEDULED");
       expect(result).toEqual(mockPosts);
     });
   });
@@ -282,7 +281,13 @@ describe("Longform Post Queries - Extended", () => {
   describe("getCronDueScheduledLongFormPosts", () => {
     it("should get longform posts due for posting", async () => {
       const now = Math.floor(Date.now() / 1000);
-      const mockPosts = [{ id: "longform-1", scheduledFor: String(now - 100) }];
+      const mockPosts = [
+        {
+          id: "longform-1",
+          scheduledFor: String(now - 100),
+          currentState: "SCHEDULED",
+        },
+      ];
       (
         prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
       ).mockResolvedValue(mockPosts);
@@ -294,82 +299,25 @@ describe("Longform Post Queries - Extended", () => {
       ).mock.calls[0]?.[0] as
         | {
             where?: {
-              status?: string;
-              isScheduled?: boolean;
-              isPublished?: boolean;
+              currentState?: string;
+              scheduledAtUtc?: { lte?: Date };
             };
           }
         | undefined;
-      expect(callArgs?.where?.status).toBe("SCHEDULED");
-      expect(callArgs?.where?.isScheduled).toBe(true);
-      expect(callArgs?.where?.isPublished).toBe(false);
+      expect(callArgs?.where?.currentState).toBe("SCHEDULED");
+      expect(callArgs?.where?.scheduledAtUtc).toBeDefined();
       expect(result).toEqual(mockPosts);
     });
   });
 
-  describe("updateLongFormPostStatus", () => {
-    it("should update longform post status to published", async () => {
-      const mockPost = {
-        id: TEST_LONGFORM_ID,
-        status: "ACTIVE",
-        isPublished: true,
-      };
-      (
-        prisma.longFormPost.update as ReturnType<typeof vi.fn>
-      ).mockResolvedValue(mockPost);
-
-      const result = await updateLongFormPostStatus({
-        id: TEST_LONGFORM_ID,
-        userId: TEST_USER_ID,
-        isPublished: true,
-      });
-
-      const callArgs = (prisma.longFormPost.update as ReturnType<typeof vi.fn>)
-        .mock.calls[0]?.[0] as
-        | {
-            where?: { id?: string; userId?: string };
-            data?: { isPublished?: boolean; status?: string };
-          }
-        | undefined;
-      expect(callArgs?.where?.id).toBe(TEST_LONGFORM_ID);
-      expect(callArgs?.where?.userId).toBe(TEST_USER_ID);
-      expect(callArgs?.data?.isPublished).toBe(true);
-      expect(callArgs?.data?.status).toBe("ACTIVE");
-      expect(result).toEqual(mockPost);
-    });
-
-    it("should update longform post status to scheduled", async () => {
-      const mockPost = {
-        id: TEST_LONGFORM_ID,
-        status: "SCHEDULED",
-        isPublished: false,
-      };
-      (
-        prisma.longFormPost.update as ReturnType<typeof vi.fn>
-      ).mockResolvedValue(mockPost);
-
-      const result = await updateLongFormPostStatus({
-        id: TEST_LONGFORM_ID,
-        userId: TEST_USER_ID,
-        isPublished: false,
-      });
-
-      const callArgs = (prisma.longFormPost.update as ReturnType<typeof vi.fn>)
-        .mock.calls[0]?.[0] as
-        | { data?: { isPublished?: boolean; status?: string } }
-        | undefined;
-      expect(callArgs?.data?.isPublished).toBe(false);
-      expect(callArgs?.data?.status).toBe("SCHEDULED");
-      expect(result).toEqual(mockPost);
-    });
-  });
+  // updateLongFormPostStatus was removed - state transitions now use LongFormPostStateMachine
 
   describe("getPastLongFormPosts", () => {
     it("should get past longform posts", async () => {
       const startDate = new Date("2024-01-01");
       const endDate = new Date("2024-12-31");
       const mockPosts = [
-        { id: "longform-1", userId: TEST_USER_ID, isPublished: true },
+        { id: "longform-1", userId: TEST_USER_ID, currentState: "PUBLISHED" },
       ];
       (
         prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
@@ -384,10 +332,11 @@ describe("Longform Post Queries - Extended", () => {
       const callArgs = (
         prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
       ).mock.calls[0]?.[0] as
-        | { where?: { userId?: string; AND?: unknown } }
+        | { where?: { userId?: string; currentState?: string; OR?: unknown } }
         | undefined;
       expect(callArgs?.where?.userId).toBe(TEST_USER_ID);
-      expect(callArgs?.where?.AND).toBeDefined();
+      expect(callArgs?.where?.currentState).toBe("PUBLISHED");
+      expect(callArgs?.where?.OR).toBeDefined(); // Query uses OR for date filtering
       expect(result).toEqual(mockPosts);
     });
 

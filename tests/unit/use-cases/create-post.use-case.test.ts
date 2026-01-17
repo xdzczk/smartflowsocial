@@ -12,6 +12,7 @@ const { mockPrisma } = vi.hoisted(() => {
       findUnique: vi.fn(),
       findFirst: vi.fn(),
     },
+    $queryRawUnsafe: vi.fn(), // Add raw query support for idempotency checks
   };
   return { mockPrisma };
 });
@@ -78,8 +79,7 @@ describe("CreatePostUseCase", () => {
         userId: TEST_USER_ID,
         content: "Test content",
         postType: "TEXT",
-        isScheduled: false,
-        isPosted: false,
+        currentState: "DRAFT",
       };
 
       (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
@@ -88,8 +88,9 @@ describe("CreatePostUseCase", () => {
       (
         generateCreationIdempotencyKey as ReturnType<typeof vi.fn>
       ).mockReturnValue("idempotency-key-1");
-      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null
+      // Mock $queryRawUnsafe to return empty array (no existing post with this key)
+      (prisma.$queryRawUnsafe as ReturnType<typeof vi.fn>).mockResolvedValue(
+        []
       );
       (createPostWithOutbox as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockPost
@@ -129,8 +130,7 @@ describe("CreatePostUseCase", () => {
         userId: TEST_USER_ID,
         content: "Test content",
         postType: "IMAGE",
-        isScheduled: true,
-        isPosted: false,
+        currentState: "SCHEDULED",
       };
 
       (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
@@ -139,8 +139,9 @@ describe("CreatePostUseCase", () => {
       (
         generateCreationIdempotencyKey as ReturnType<typeof vi.fn>
       ).mockReturnValue("idempotency-key-1");
-      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null
+      // Mock $queryRawUnsafe to return empty array (no existing post with this key)
+      (prisma.$queryRawUnsafe as ReturnType<typeof vi.fn>).mockResolvedValue(
+        []
       );
       (createPostWithOutbox as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockPost
@@ -175,8 +176,7 @@ describe("CreatePostUseCase", () => {
         userId: TEST_USER_ID,
         content: "Test content",
         postType: "TEXT",
-        isScheduled: true,
-        isPosted: false,
+        currentState: "SCHEDULED",
       };
 
       (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
@@ -185,7 +185,12 @@ describe("CreatePostUseCase", () => {
       (
         generateCreationIdempotencyKey as ReturnType<typeof vi.fn>
       ).mockReturnValue("idempotency-key-1");
-      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
+      // Mock $queryRawUnsafe to return the existing post ID
+      (prisma.$queryRawUnsafe as ReturnType<typeof vi.fn>).mockResolvedValue([
+        { id: existingPost.id },
+      ]);
+      // Mock findUnique to return the full post
+      (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
         existingPost
       );
 
@@ -210,8 +215,7 @@ describe("CreatePostUseCase", () => {
         userId: TEST_USER_ID,
         content: "Test content\n#hashtag1 #hashtag2",
         postType: "TEXT",
-        isScheduled: false,
-        isPosted: false,
+        currentState: "DRAFT",
       };
 
       (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
@@ -220,8 +224,9 @@ describe("CreatePostUseCase", () => {
       (
         generateCreationIdempotencyKey as ReturnType<typeof vi.fn>
       ).mockReturnValue("idempotency-key-1");
-      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null
+      // Mock $queryRawUnsafe to return empty array (no existing post with this key)
+      (prisma.$queryRawUnsafe as ReturnType<typeof vi.fn>).mockResolvedValue(
+        []
       );
       (createPostWithOutbox as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockPost
@@ -252,8 +257,7 @@ describe("CreatePostUseCase", () => {
         userId: TEST_USER_ID,
         content: "Test content",
         postType: "TEXT",
-        isScheduled: false,
-        isPosted: false,
+        currentState: "DRAFT",
       };
 
       (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
@@ -262,8 +266,9 @@ describe("CreatePostUseCase", () => {
       (
         generateCreationIdempotencyKey as ReturnType<typeof vi.fn>
       ).mockReturnValue("idempotency-key-1");
-      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null
+      // Mock $queryRawUnsafe to return empty array (no existing post with this key)
+      (prisma.$queryRawUnsafe as ReturnType<typeof vi.fn>).mockResolvedValue(
+        []
       );
       (createPostWithOutbox as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockPost
@@ -294,8 +299,7 @@ describe("CreatePostUseCase", () => {
         userId: TEST_USER_ID,
         content: "Test content",
         postType: "TEXT",
-        isScheduled: false,
-        isPosted: false,
+        currentState: "DRAFT",
       };
 
       (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
@@ -304,8 +308,9 @@ describe("CreatePostUseCase", () => {
       (
         generateCreationIdempotencyKey as ReturnType<typeof vi.fn>
       ).mockReturnValue("idempotency-key-1");
-      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null
+      // Mock $queryRawUnsafe to return empty array (no existing post with this key)
+      (prisma.$queryRawUnsafe as ReturnType<typeof vi.fn>).mockResolvedValue(
+        []
       );
       (createPostWithOutbox as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockPost
@@ -333,8 +338,7 @@ describe("CreatePostUseCase", () => {
         userId: TEST_USER_ID,
         content: "Test content",
         postType: "TEXT",
-        isScheduled: false,
-        isPosted: false,
+        currentState: "DRAFT",
       };
 
       (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
@@ -343,8 +347,9 @@ describe("CreatePostUseCase", () => {
       (
         generateCreationIdempotencyKey as ReturnType<typeof vi.fn>
       ).mockReturnValue("idempotency-key-1");
-      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null
+      // Mock $queryRawUnsafe to return empty array (no existing post with this key)
+      (prisma.$queryRawUnsafe as ReturnType<typeof vi.fn>).mockResolvedValue(
+        []
       );
       (createPostWithOutbox as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockPost
@@ -372,8 +377,7 @@ describe("CreatePostUseCase", () => {
         userId: TEST_USER_ID,
         content: "Test content",
         postType: "TEXT",
-        isScheduled: false,
-        isPosted: false,
+        currentState: "DRAFT",
       };
 
       (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
@@ -382,8 +386,9 @@ describe("CreatePostUseCase", () => {
       (
         generateCreationIdempotencyKey as ReturnType<typeof vi.fn>
       ).mockReturnValue("idempotency-key-1");
-      (prisma.post.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
-        null
+      // Mock $queryRawUnsafe to return empty array (no existing post with this key)
+      (prisma.$queryRawUnsafe as ReturnType<typeof vi.fn>).mockResolvedValue(
+        []
       );
       (createPostWithOutbox as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockPost

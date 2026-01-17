@@ -1,7 +1,12 @@
 import { useLoaderData } from "@remix-run/react";
 import { useState } from "react";
 
+import { formatForDisplay, fromUnixTimestamp } from "~/lib/temporal";
+
 import type { PostData } from "../types";
+
+const INVALID_DATE = "Invalid date";
+
 interface ScheduledPostsLoaderData {
   scheduledPosts: PostData[];
 }
@@ -128,9 +133,16 @@ export default function ScheduledPosts() {
                         {post.postType}
                       </td>
                       <td className="p-3">
-                        {new Date(
-                          Number(post.scheduledFor) * 1000
-                        ).toLocaleString()}
+                        {(() => {
+                          try {
+                            const timestamp = Number(post.scheduledFor);
+                            if (isNaN(timestamp)) return INVALID_DATE;
+                            const zoned = fromUnixTimestamp(timestamp, "UTC");
+                            return formatForDisplay(zoned, "UTC");
+                          } catch {
+                            return INVALID_DATE;
+                          }
+                        })()}
                       </td>
                       <td className="p-3 text-center">
                         <div
@@ -236,9 +248,16 @@ export default function ScheduledPosts() {
                 <div>
                   <span className="font-semibold">Scheduled For:</span>
                   <p className="mt-1">
-                    {new Date(
-                      Number(selectedPost.scheduledFor) * 1000
-                    ).toLocaleString()}
+                    {(() => {
+                      try {
+                        const timestamp = Number(selectedPost.scheduledFor);
+                        if (isNaN(timestamp)) return INVALID_DATE;
+                        const zoned = fromUnixTimestamp(timestamp, "UTC");
+                        return formatForDisplay(zoned, "UTC");
+                      } catch {
+                        return INVALID_DATE;
+                      }
+                    })()}
                   </p>
                 </div>
                 <div>

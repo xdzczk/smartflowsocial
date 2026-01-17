@@ -3,6 +3,15 @@ import { useFetcher } from "@remix-run/react";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
+import {
+  formatForDisplay,
+  fromDate,
+  fromISOString,
+  fromUnixTimestamp,
+  nowMillis,
+  parseDateTimeLocal,
+  toUnixTimestamp,
+} from "~/lib/temporal";
 interface PreparedEventData {
   content: {
     fileUrl: string;
@@ -99,23 +108,36 @@ function calculateScheduledTime(
   userTimezone: string
 ): number {
   if (isImmediate) {
-    return Date.now();
+    // Use Temporal for consistency
+    return nowMillis();
   }
 
-  if (userTimezone !== "UTC" && userTimezone !== "Etc/GMT") {
-    const utcDate = new Date(scheduledForStr);
-    const userDate = new Date(scheduledForStr).toLocaleString("en-US", {
-      timeZone: userTimezone,
-    });
-    const userOffset =
-      (new Date(userDate).getTime() - new Date(scheduledForStr).getTime()) /
-      60000;
-    utcDate.setMinutes(utcDate.getMinutes() - userOffset);
-    return utcDate.getTime();
-  }
+  // Use Temporal for timezone conversion
+  try {
+    // Parse datetime-local string in user's timezone
+    const zonedDateTime = parseDateTimeLocal(scheduledForStr, userTimezone);
 
-  const dateObj = new Date(scheduledForStr + "Z");
-  return dateObj.getTime();
+    // Convert to UTC and get Unix timestamp in milliseconds
+    const utcZoned = zonedDateTime.withTimeZone("UTC");
+    return toUnixTimestamp(utcZoned) * 1000; // Convert seconds to milliseconds
+  } catch {
+    // Fallback: treat as UTC if parsing fails - use Temporal for 100% consistency
+    try {
+      const zoned = fromISOString(scheduledForStr + "Z", "UTC");
+      return toUnixTimestamp(zoned) * 1000;
+    } catch {
+      // Fallback - try with Date conversion
+      try {
+        const dateObj = new Date(scheduledForStr + "Z");
+        const zoned = fromDate(dateObj, "UTC");
+        return toUnixTimestamp(zoned) * 1000;
+      } catch {
+        // Ultimate fallback
+        const dateObj = new Date(scheduledForStr + "Z");
+        return dateObj.getTime();
+      }
+    }
+  }
 }
 
 function extractFileUrls(events: PreparedEventData[]): string[] {
@@ -418,15 +440,27 @@ export default function NewPostImagesConfirmation({
                 </h4>
                 <p className="text-sm font-semibold text-gray-900 dark:text-white">
                   {events[0]?.content.scheduledFor
-                    ? new Date(
-                        events[0].content.scheduledFor
-                      ).toLocaleDateString("en-US", {
-                        weekday: "short",
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
+                    ? (() => {
+                        try {
+                          const timestamp = parseInt(
+                            events[0].content.scheduledFor,
+                            10
+                          );
+                          if (isNaN(timestamp)) return "Invalid date";
+                          const zoned = fromUnixTimestamp(timestamp, "UTC");
+                          const userTimezone = user?.timezone ?? "UTC";
+                          const userZoned = zoned.withTimeZone(userTimezone);
+                          return formatForDisplay(userZoned, userTimezone, {
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          });
+                        } catch {
+                          return "Invalid date";
+                        }
+                      })()
                     : "Not scheduled"}
                 </p>
               </div>

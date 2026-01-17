@@ -1,6 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
 import { useOptionalUser } from "~/lib/remix-utils";
+import {
+  addHours,
+  formatForDateTimeLocal,
+  nowInTimezone,
+} from "~/lib/temporal";
 
 import type { QueueType } from "../types";
 
@@ -100,33 +105,16 @@ export function usePostScheduling({
       return;
     }
 
-    const now = new Date();
-    const hoursLater = new Date(
-      now.getTime() + parseInt(String(intervalHours)) * 60 * 60 * 1000
-    );
-
-    // Format the date in the user's timezone
+    // Use Temporal for cleaner date arithmetic and formatting
     const effectiveTimezone = userTimezone || (user?.timezone ?? "UTC");
-    const formattedDate = hoursLater.toLocaleString("en-US", {
-      timeZone: effectiveTimezone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
+    const now = nowInTimezone(effectiveTimezone);
+    const hoursLater = addHours(now, parseInt(String(intervalHours)));
 
-    // Parse the formatted date back into components
-    const [datePart, timePart] = formattedDate.split(", ");
-    const [month, day, year] = datePart?.split("/") ?? ["", "", ""];
-    const [hours, minutes] = timePart?.split(":") ?? ["", ""];
-
-    // Create the datetime-local format (YYYY-MM-DDTHH:mm)
-    if (!year || !month || !day || !hours || !minutes) {
-      return "";
-    }
-    const formattedForInput = `${year}-${month}-${day}T${hours}:${minutes}`;
+    // Format for datetime-local input in user's timezone
+    const formattedForInput = formatForDateTimeLocal(
+      hoursLater,
+      effectiveTimezone
+    );
 
     setScheduledFor(formattedForInput);
     setTimeError("");

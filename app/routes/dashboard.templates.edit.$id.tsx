@@ -1,6 +1,6 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, Link, useFetcher } from "@remix-run/react";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 import { requireUserId } from "~/features/auth";
 import { getQueueColor } from "~/features/posts/queue-colors";
@@ -439,7 +439,7 @@ export default function EditTemplate() {
                     </div>
                   );
                 })
-                .filter((item): item is JSX.Element => item !== null)
+                .filter((item): item is React.ReactElement => item !== null)
             : null}
         </div>
       )}

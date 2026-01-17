@@ -10,10 +10,12 @@ import { createOutboxEventInTransaction } from "~/infra/outbox/outbox.server";
 import type { LongFormPostScheduledPayload } from "~/infra/outbox/outbox.server";
 import { generateEnqueueIdempotencyKey } from "~/lib/idempotency.server";
 import { prisma } from "~/lib/prisma.server";
+import { fromUnixTimestamp, toPrismaDate } from "~/lib/temporal";
 import { createLongFormPost } from "~/models/longformpost.server";
 
 import { calculateLongFormStatus } from "../server";
 import { resolveQueueTypeId } from "../services/queue-type-resolver.server";
+import { LongFormPostStateMachine } from "../state-machine/longform-post-state-machine.server";
 
 import type {
   CreateLongFormPostInput,
@@ -21,6 +23,7 @@ import type {
 } from "./longform-types";
 
 export class CreateLongFormPostUseCase {
+  private readonly stateMachine = new LongFormPostStateMachine();
   async execute(
     input: CreateLongFormPostInput
   ): Promise<CreateLongFormPostResult> {
@@ -33,22 +36,18 @@ export class CreateLongFormPostUseCase {
 
     // If scheduled, create post with outbox event in transaction
     if (input.scheduledFor && input.signedEvent && !input.isPublished) {
-      const scheduledAtUtc = new Date(input.scheduledFor * 1000);
+      const scheduledAtUtc = toPrismaDate(
+        fromUnixTimestamp(input.scheduledFor, "UTC")
+      );
       const scheduledForStr = input.scheduledFor.toString();
 
       // Calculate status using business logic
-      const {
-        status,
-        isScheduled,
-        isDraft,
-        publishedAt,
-        nostrEventId,
-        finalScheduledFor,
-      } = calculateLongFormStatus({
-        isPublished: false,
-        scheduledFor: scheduledForStr,
-        signedEvent: input.signedEvent,
-      });
+      const { status, publishedAt, nostrEventId, finalScheduledFor } =
+        calculateLongFormStatus({
+          isPublished: false,
+          scheduledFor: scheduledForStr,
+          signedEvent: input.signedEvent,
+        });
 
       return prisma.$transaction(async (tx) => {
         // Create long form post
@@ -62,16 +61,14 @@ export class CreateLongFormPostUseCase {
             tags: input.tags ?? [],
             queueTypeId,
             hashTagPresetId: input.hashTagPresetId,
-            isPublished: false,
-            isScheduled,
-            draft: isDraft,
             signedEvent: input.signedEvent as unknown as Prisma.InputJsonValue,
             nostrEvent: input.nostrEvent as unknown as Prisma.InputJsonValue,
             nostrEventId,
             status,
-            publishedAt,
+            publishedAt: publishedAt ?? undefined,
             scheduledFor: finalScheduledFor,
             scheduledAtUtc,
+            currentState: "SCHEDULED", // Single source of truth
           },
         });
 
@@ -90,7 +87,7 @@ export class CreateLongFormPostUseCase {
           post.id,
           "LongFormPost",
           payload,
-          scheduledAtUtc,
+          scheduledAtUtc ?? new Date(),
           generateEnqueueIdempotencyKey(post.id, input.scheduledFor!)
         );
 
@@ -118,6 +115,17 @@ export class CreateLongFormPostUseCase {
         ? input.scheduledFor.toString()
         : undefined,
     });
+
+    // Set initial state using state machine
+    const initialState = input.isPublished ? "PUBLISHED" : "DRAFT";
+    await this.stateMachine.transition(
+      post.id,
+      input.userId,
+      initialState,
+      input.isPublished
+        ? "Longform post created and published"
+        : "Longform post created as draft"
+    );
 
     return {
       post,

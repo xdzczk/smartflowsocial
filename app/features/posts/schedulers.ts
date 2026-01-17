@@ -2,6 +2,16 @@ import type { QueueType } from "@prisma/client";
 
 import { getScheduleInterval } from "~/features/user";
 import { logError } from "~/lib/error-logger.server";
+import {
+  addDays,
+  addHours,
+  compareZonedDateTime,
+  createZonedDateTime,
+  fromDate,
+  isAfter,
+  nowUTC,
+  toDate,
+} from "~/lib/temporal";
 import { getLastPostTimeForQueue } from "~/models/post.queries.server";
 
 import { isIntervalScheduleConfig, isFixedSlotsScheduleConfig } from "./types";
@@ -23,11 +33,15 @@ function isValidDate(date: unknown): date is Date {
 }
 
 function getValidBaseTime(baseTime?: Date): Date {
-  return isValidDate(baseTime) ? baseTime : new Date();
+  if (isValidDate(baseTime)) return baseTime;
+  // Use Temporal for consistency
+  return toDate(nowUTC());
 }
 
 function getDefaultFutureTime(baseTime: Date): Date {
-  return new Date(baseTime.getTime() + 1000);
+  const zonedDateTime = fromDate(baseTime, "UTC");
+  const futureZoned = zonedDateTime.add({ seconds: 1 });
+  return toDate(futureZoned);
 }
 
 // ============================================================================
@@ -61,15 +75,20 @@ function calculateIntervalTime(
     return getDefaultFutureTime(baseTime);
   }
 
-  const nextTime = new Date(
-    lastPostTime.getTime() + intervalHours * 60 * 60 * 1000
-  );
+  // Use Temporal for date arithmetic
+  const lastPostZoned = fromDate(lastPostTime, "UTC");
+  const nextZoned = addHours(lastPostZoned, intervalHours);
+  const nextTime = toDate(nextZoned);
 
   if (!isValidDate(nextTime)) {
     return baseTime;
   }
 
-  return nextTime >= baseTime ? nextTime : getDefaultFutureTime(baseTime);
+  const baseZoned = fromDate(baseTime, "UTC");
+  return isAfter(nextZoned, baseZoned) ||
+    compareZonedDateTime(nextZoned, baseZoned) === 0
+    ? nextTime
+    : getDefaultFutureTime(baseTime);
 }
 
 async function calculateIntervalSchedule(
@@ -165,63 +184,27 @@ function createSlotInUserTimezone(
   fallbackTime: Date
 ): Date {
   try {
-    // For UTC/GMT timezones, no conversion needed
-    if (userTimezone === "UTC" || userTimezone === "Etc/GMT") {
-      const utcSlot = new Date(baseDate);
-      utcSlot.setUTCHours(hours, minutes, 0, 0);
-      return isValidDate(utcSlot) ? utcSlot : fallbackTime;
-    }
+    // Convert base date to Temporal ZonedDateTime in user's timezone
+    const baseZoned = fromDate(baseDate, userTimezone);
 
-    // Get the date string in the user's timezone (YYYY-MM-DD format)
-    const userDateStr = baseDate.toLocaleDateString("en-CA", {
-      timeZone: userTimezone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    });
+    // Get the date components in user's timezone
+    const year = baseZoned.year;
+    const month = baseZoned.month;
+    const day = baseZoned.day;
 
-    // Start with a UTC date for the desired time
-    const [year, month, day] = userDateStr.split("-").map(Number);
-    let testUTC = new Date(
-      Date.UTC(year ?? 0, (month ?? 1) - 1, day ?? 1, hours, minutes, 0, 0)
+    // Create a ZonedDateTime with the desired time in user's timezone
+    const slotZoned = createZonedDateTime(
+      year,
+      month,
+      day,
+      hours,
+      minutes,
+      userTimezone
     );
 
-    // Adjust to match user's timezone
-    let attempts = 0;
-    const maxAttempts = 24;
-
-    while (attempts < maxAttempts) {
-      const testInUserTz = testUTC.toLocaleString("en-US", {
-        timeZone: userTimezone,
-        hour12: false,
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-
-      const [testHours, testMinutes] = testInUserTz.split(":").map(Number);
-
-      const safeTestHours = testHours ?? 0;
-      const safeTestMinutes = testMinutes ?? 0;
-      if (safeTestHours === hours && safeTestMinutes === minutes) {
-        return isValidDate(testUTC) ? testUTC : fallbackTime;
-      }
-
-      // Calculate the difference and adjust
-      const hourDiff = hours - safeTestHours;
-      const minuteDiff = minutes - safeTestMinutes;
-      const totalMinuteDiff = hourDiff * 60 + minuteDiff;
-
-      testUTC = new Date(testUTC.getTime() + totalMinuteDiff * 60 * 1000);
-      attempts++;
-
-      // Handle day boundary crossing
-      if (Math.abs(hourDiff) > 12) {
-        const dayAdjust = hourDiff > 0 ? -24 : 24;
-        testUTC = new Date(testUTC.getTime() + dayAdjust * 60 * 60 * 1000);
-      }
-    }
-
-    return isValidDate(testUTC) ? testUTC : fallbackTime;
+    // Convert back to Date for compatibility
+    const slotDate = toDate(slotZoned);
+    return isValidDate(slotDate) ? slotDate : fallbackTime;
   } catch (error) {
     logError(error instanceof Error ? error : new Error(String(error)), {
       userId,
@@ -230,18 +213,32 @@ function createSlotInUserTimezone(
       message: "Error in createSlotInUserTimezone",
       userTimezone,
     });
-    // Fallback to UTC
-    const utcSlot = new Date(baseDate);
-    utcSlot.setUTCHours(hours, minutes, 0, 0);
-    return isValidDate(utcSlot) ? utcSlot : fallbackTime;
+    // Fallback: create in UTC
+    try {
+      const baseZoned = fromDate(baseDate, "UTC");
+      const slotZoned = createZonedDateTime(
+        baseZoned.year,
+        baseZoned.month,
+        baseZoned.day,
+        hours,
+        minutes,
+        "UTC"
+      );
+      const slotDate = toDate(slotZoned);
+      return isValidDate(slotDate) ? slotDate : fallbackTime;
+    } catch {
+      return fallbackTime;
+    }
   }
 }
 
 function isSameDay(date1: Date, date2: Date): boolean {
+  const zoned1 = fromDate(date1, "UTC");
+  const zoned2 = fromDate(date2, "UTC");
   return (
-    date1.getUTCFullYear() === date2.getUTCFullYear() &&
-    date1.getUTCMonth() === date2.getUTCMonth() &&
-    date1.getUTCDate() === date2.getUTCDate()
+    zoned1.year === zoned2.year &&
+    zoned1.month === zoned2.month &&
+    zoned1.day === zoned2.day
   );
 }
 
@@ -253,12 +250,15 @@ function findNextSlotWithLastPost(
   userId: string,
   fallbackTime: Date
 ): Date {
-  const oneDayAgo = new Date(baseTime);
-  oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+  // Use Temporal for date arithmetic
+  const baseZoned = fromDate(baseTime, "UTC");
+  const oneDayAgoZoned = addDays(baseZoned, -1);
+  const oneDayAgo = toDate(oneDayAgoZoned);
 
   const baseDate = lastPostTime < oneDayAgo ? baseTime : lastPostTime;
-  const dayAfterBase = new Date(baseDate);
-  dayAfterBase.setDate(dayAfterBase.getDate() + 1);
+  const baseDateZoned = fromDate(baseDate, "UTC");
+  const dayAfterBaseZoned = addDays(baseDateZoned, 1);
+  const dayAfterBase = toDate(dayAfterBaseZoned);
 
   // Create slots for the base date and day after
   const baseDateSlots = sortedSlots.map((slotInfo) =>
@@ -283,22 +283,26 @@ function findNextSlotWithLastPost(
     )
   );
 
-  // Combine and sort all slots
+  // Combine and sort all slots using Temporal for comparison
+  const lastPostZoned = fromDate(lastPostTime, "UTC");
+  const baseTimeZoned = fromDate(baseTime, "UTC");
+
   const allSlots = [
     ...baseDateSlots
       .filter((slot) => isValidDate(slot))
-      .map((slot) => ({ slot })),
+      .map((slot) => ({ slot, zoned: fromDate(slot, "UTC") })),
     ...dayAfterBaseSlots
       .filter((slot) => isValidDate(slot))
-      .map((slot) => ({ slot })),
-  ].sort((a, b) => a.slot.getTime() - b.slot.getTime());
+      .map((slot) => ({ slot, zoned: fromDate(slot, "UTC") })),
+  ].sort((a, b) => compareZonedDateTime(a.zoned, b.zoned));
 
   // Find the next slot after the last post time
-  for (const { slot: slotTime } of allSlots) {
+  for (const { slot: slotTime, zoned: slotZoned } of allSlots) {
     if (
       isValidDate(slotTime) &&
-      slotTime > lastPostTime &&
-      slotTime >= baseTime
+      isAfter(slotZoned, lastPostZoned) &&
+      (isAfter(slotZoned, baseTimeZoned) ||
+        compareZonedDateTime(slotZoned, baseTimeZoned) === 0)
     ) {
       return slotTime;
     }
@@ -306,8 +310,8 @@ function findNextSlotWithLastPost(
 
   // Fallback: first slot two days after base date
   if (sortedSlots.length > 0) {
-    const twoDaysAfterBase = new Date(baseDate);
-    twoDaysAfterBase.setDate(twoDaysAfterBase.getDate() + 2);
+    const twoDaysAfterBaseZoned = addDays(baseDateZoned, 2);
+    const twoDaysAfterBase = toDate(twoDaysAfterBaseZoned);
     const firstSlot = sortedSlots[0];
     if (firstSlot) {
       const fallbackSlot = createSlotInUserTimezone(
@@ -318,8 +322,15 @@ function findNextSlotWithLastPost(
         userId,
         fallbackTime
       );
-      if (isValidDate(fallbackSlot) && fallbackSlot >= baseTime) {
-        return fallbackSlot;
+      if (isValidDate(fallbackSlot)) {
+        const fallbackZoned = fromDate(fallbackSlot, "UTC");
+        const baseZoned = fromDate(baseTime, "UTC");
+        if (
+          isAfter(fallbackZoned, baseZoned) ||
+          compareZonedDateTime(fallbackZoned, baseZoned) === 0
+        ) {
+          return fallbackSlot;
+        }
       }
     }
   }
@@ -362,8 +373,9 @@ function findNextSlotWithoutLastPost(
 
   // If no slots today work, get first slot of tomorrow
   if (sortedSlots.length > 0) {
-    const tomorrow = new Date(baseTime);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    const baseZoned = fromDate(baseTime, "UTC");
+    const tomorrowZoned = addDays(baseZoned, 1);
+    const tomorrow = toDate(tomorrowZoned);
     const firstSlot = sortedSlots[0];
     if (firstSlot) {
       const tomorrowSlot = createSlotInUserTimezone(
@@ -374,8 +386,15 @@ function findNextSlotWithoutLastPost(
         userId,
         fallbackTime
       );
-      if (isValidDate(tomorrowSlot) && tomorrowSlot >= baseTime) {
-        return tomorrowSlot;
+      if (isValidDate(tomorrowSlot)) {
+        const tomorrowSlotZoned = fromDate(tomorrowSlot, "UTC");
+        const baseZoned = fromDate(baseTime, "UTC");
+        if (
+          isAfter(tomorrowSlotZoned, baseZoned) ||
+          compareZonedDateTime(tomorrowSlotZoned, baseZoned) === 0
+        ) {
+          return tomorrowSlot;
+        }
       }
     }
   }
@@ -453,7 +472,7 @@ export async function calculateNextScheduleTime({
   const fallbackDate =
     baseTime && baseTime instanceof Date && !isNaN(baseTime.getTime())
       ? baseTime
-      : new Date();
+      : toDate(nowUTC());
 
   try {
     const result = await calculateNextScheduleTimeInternal({

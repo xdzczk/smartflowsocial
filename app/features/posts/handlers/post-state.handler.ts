@@ -4,6 +4,8 @@
  * Handles individual post state changes (caption, date, removal)
  */
 
+import { formatForDateTimeLocal, parseDateTimeLocal } from "~/lib/temporal";
+
 import type { BulkPost } from "../types";
 /**
  * Handle caption change for a post
@@ -42,39 +44,31 @@ export function handleDateChange(
     return;
   }
 
-  // Parse the input value
-  const localDate = new Date(value);
+  try {
+    // Parse the datetime-local input string (assumed to be in UTC for consistency)
+    // The datetime-local format doesn't include timezone, so we interpret as UTC
+    const zonedDateTime = parseDateTimeLocal(value, "UTC");
 
-  // Check if date is invalid
-  if (isNaN(localDate.getTime())) {
+    // Format back to datetime-local string (maintains the exact time components)
+    const formattedDate = formatForDateTimeLocal(zonedDateTime, "UTC");
+
+    const post = updatedPosts[index];
+    if (!post) return;
+    post.scheduledFor = formattedDate;
+
+    // Set flag if user manually changed the first item's time
+    if (index === 0) {
+      setFirstItemTimeManuallyChanged(true);
+    }
+
+    setPosts(updatedPosts);
+  } catch {
+    // If parsing fails, clear the scheduled time
     const post = updatedPosts[index];
     if (!post) return;
     post.scheduledFor = "";
     setPosts(updatedPosts);
-    return;
   }
-
-  const hours = localDate.getHours();
-
-  // Create a new date string maintaining the hours exactly as input
-  const year = localDate.getFullYear();
-  const month = String(localDate.getMonth() + 1).padStart(2, "0");
-  const day = String(localDate.getDate()).padStart(2, "0");
-  const minutes = String(localDate.getMinutes()).padStart(2, "0");
-
-  // Format the date string manually to ensure hour isn't converted
-  const formattedDate = `${year}-${month}-${day}T${String(hours).padStart(2, "0")}:${minutes}`;
-
-  const post = updatedPosts[index];
-  if (!post) return;
-  post.scheduledFor = formattedDate;
-
-  // Set flag if user manually changed the first item's time
-  if (index === 0) {
-    setFirstItemTimeManuallyChanged(true);
-  }
-
-  setPosts(updatedPosts);
 }
 
 /**

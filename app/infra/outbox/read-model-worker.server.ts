@@ -5,6 +5,7 @@
  * This provides fast dashboard queries without impacting write performance.
  */
 
+import { deriveIsPosted } from "~/features/posts/state-machine/post-state";
 import { logError, logInfo } from "~/lib/error-logger.server";
 import { prisma } from "~/lib/prisma.server";
 
@@ -104,8 +105,11 @@ async function updateScheduledPostRead(postId: string): Promise<void> {
     return;
   }
 
-  // Only update if post is scheduled
-  if (!post.isScheduled || !post.scheduledAtUtc) {
+  // Only update if post is scheduled - use currentState as single source of truth
+  const { deriveIsScheduled } =
+    await import("~/features/posts/state-machine/post-state");
+  const isScheduled = deriveIsScheduled(post.currentState);
+  if (!isScheduled || !post.scheduledAtUtc) {
     // Remove from scheduled read model if it exists
     await prisma.scheduledPostRead.deleteMany({
       where: { postId: post.id },
@@ -157,7 +161,9 @@ async function movePostToPublishedRead(postId: string): Promise<void> {
     return;
   }
 
-  if (!post.isPosted || !post.postedAt) {
+  // Use currentState as single source of truth (flags removed from Post model)
+  const isPosted = deriveIsPosted(post.currentState);
+  if (!isPosted || !post.postedAt) {
     logInfo("Post not published, skipping published read model update", {
       postId,
     });

@@ -24,7 +24,6 @@ import {
   createPost,
   updatePost,
   reschedulePost,
-  updatePostStatus,
   deletePost,
 } from "~/models/post.commands.server";
 
@@ -50,9 +49,8 @@ describe("Post Commands", () => {
         fileUrl: ["https://example.com/image.jpg"],
         postType: "IMAGE" as const,
         tags: ["tag1", "tag2"],
-        isScheduled: false,
-        isPosted: true,
         caption: "Test caption",
+        // Note: isScheduled and isPosted flags removed - state determined by scheduledFor
       };
 
       const result = await createPost(postData);
@@ -65,10 +63,8 @@ describe("Post Commands", () => {
             fileUrl: ["https://example.com/image.jpg"],
             postType: "IMAGE",
             tags: ["tag1", "tag2"],
-            isScheduled: false,
-            isPosted: true,
             caption: "Test caption",
-            draft: false,
+            currentState: "DRAFT", // State determined by scheduledFor (null = DRAFT)
             repost: false,
             isQuotedPost: false,
             isRecyclable: false,
@@ -91,8 +87,6 @@ describe("Post Commands", () => {
         fileUrl: [],
         postType: "TEXT" as const,
         tags: [],
-        isScheduled: false,
-        isPosted: false,
         queueTypeId: "queue-123",
       };
 
@@ -122,8 +116,6 @@ describe("Post Commands", () => {
         fileUrl: [],
         postType: "TEXT" as const,
         tags: [],
-        isScheduled: false,
-        isPosted: false,
         hashTagPresetId: "preset-123",
       };
 
@@ -148,15 +140,14 @@ describe("Post Commands", () => {
       );
 
       const scheduledFor = new Date("2024-12-31T12:00:00Z");
+      const scheduledForUnix = Math.floor(scheduledFor.getTime() / 1000);
       const postData = {
         userId: TEST_USER_ID,
         content: "Test",
         fileUrl: [],
         postType: "TEXT" as const,
         tags: [],
-        isScheduled: true,
-        isPosted: false,
-        scheduledFor: scheduledFor.toString(),
+        scheduledFor: scheduledForUnix,
       };
 
       await createPost(postData);
@@ -165,74 +156,16 @@ describe("Post Commands", () => {
         expect.objectContaining({
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
           data: expect.objectContaining({
-            scheduledFor: scheduledFor.toString(),
-            isScheduled: true,
+            scheduledFor: String(scheduledForUnix),
+            currentState: "SCHEDULED", // State determined by scheduledFor (non-null = SCHEDULED)
           }),
         })
       );
     });
   });
 
-  describe("updatePostStatus", () => {
-    it("should update post status to posted", async () => {
-      const mockPost = {
-        id: TEST_POST_ID,
-        isPosted: true,
-        postedAt: new Date(),
-      };
-      (prisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPost
-      );
-
-      const result = await updatePostStatus({
-        id: TEST_POST_ID,
-        userId: TEST_USER_ID,
-        isPosted: true,
-      });
-
-      expect(prisma.post.update).toHaveBeenCalledWith({
-        where: {
-          id: TEST_POST_ID,
-          userId: TEST_USER_ID,
-        },
-        data: {
-          isPosted: true,
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
-          postedAt: expect.any(Date),
-        },
-      });
-      expect(result).toEqual(mockPost);
-    });
-
-    it("should update post status to not posted", async () => {
-      const mockPost = {
-        id: TEST_POST_ID,
-        isPosted: false,
-        postedAt: new Date(),
-      };
-      (prisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockPost
-      );
-
-      await updatePostStatus({
-        id: TEST_POST_ID,
-        userId: TEST_USER_ID,
-        isPosted: false,
-      });
-
-      expect(prisma.post.update).toHaveBeenCalledWith({
-        where: {
-          id: TEST_POST_ID,
-          userId: TEST_USER_ID,
-        },
-        data: {
-          isPosted: false,
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
-          postedAt: expect.any(Date),
-        },
-      });
-    });
-  });
+  // updatePostStatus was removed - state transitions now use PostStateMachine
+  // Tests for state transitions should be in post-state-machine.integration.test.ts
 
   describe("reschedulePost", () => {
     it("should reschedule post with new time", async () => {

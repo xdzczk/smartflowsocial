@@ -101,7 +101,9 @@ describe.skipIf(!TEST_DATABASE_URL)(
       const publishedPost = await prisma.longFormPost.findUnique({
         where: { id: postId },
       });
-      expect(publishedPost?.isPublished).toBe(true);
+      const { deriveIsPublishedLongForm } =
+        await import("~/features/posts/state-machine/longform-post-state");
+      expect(deriveIsPublishedLongForm(publishedPost?.currentState)).toBe(true);
 
       // Verify publisher was called
       expect(mockPublish).toHaveBeenCalledWith(

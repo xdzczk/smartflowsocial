@@ -4,6 +4,7 @@
  */
 
 import { getUserById, getQueueTypes } from "~/features/user";
+import { addDays, nowUTC, toPrismaDate } from "~/lib/temporal";
 import {
   getScheduledLongFormPosts,
   getPastLongFormPosts,
@@ -28,8 +29,15 @@ import { filterPostsByQueueType } from "./post-filtering.server";
  */
 export async function loadCalendarData(userId: string, queueType: string) {
   // Calculate date range for past posts (90 days back for better history)
-  const now = new Date();
-  const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+  // Use Temporal for date arithmetic
+  const nowZoned = nowUTC();
+  const ninetyDaysAgoZoned = addDays(nowZoned, -90);
+  const now = toPrismaDate(nowZoned);
+  const ninetyDaysAgo = toPrismaDate(ninetyDaysAgoZoned);
+
+  if (!now || !ninetyDaysAgo) {
+    throw new Error("Failed to convert Temporal dates to Date");
+  }
 
   const [
     allScheduledPosts,

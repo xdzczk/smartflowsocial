@@ -1,5 +1,6 @@
 import { Button } from "~/components/ui/button";
 import { handleErrorSafely } from "~/lib/error-handler.client";
+import { formatForDisplay, nowUTC } from "~/lib/temporal";
 
 import type { EditorJSBlock } from "../types/editorjs.types";
 
@@ -199,7 +200,8 @@ export default function LongFormPreviewModal({
   };
 
   const formatDate = () => {
-    return new Date().toLocaleDateString("en-US", {
+    const now = nowUTC();
+    return formatForDisplay(now, "UTC", {
       year: "numeric",
       month: "long",
       day: "numeric",

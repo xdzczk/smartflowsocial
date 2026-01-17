@@ -47,10 +47,8 @@ describe("Combined Content Utilities", () => {
         fileUrl: ["https://example.com/image.jpg"],
         createdAt: new Date(),
         updatedAt: new Date(),
-        isScheduled: false,
-        isPosted: true,
-        draft: false,
-        status: "POSTED",
+        currentState: "PUBLISHED",
+        status: "ACTIVE",
         postType: "IMAGE",
         tags: [],
         manual_override: false,
@@ -60,7 +58,7 @@ describe("Combined Content Utilities", () => {
         hashTagPresetId: null,
         nostrEventId: null,
         scheduledFor: null,
-        postedAt: null,
+        postedAt: new Date(),
         signedEvent: null,
         nostrEvent: null,
       } as unknown as PostData;
@@ -72,8 +70,9 @@ describe("Combined Content Utilities", () => {
       expect(result.content).toBe("Test content");
       expect(result.caption).toBe("Test caption");
       expect(result.fileUrl).toEqual(["https://example.com/image.jpg"]);
-      expect(result.isScheduled).toBe(false);
-      expect(result.isPosted).toBe(true);
+      expect(result.currentState).toBe("PUBLISHED");
+      expect(result.isScheduled).toBe(false); // Derived from currentState
+      expect(result.isPosted).toBe(true); // Derived from currentState
       expect(result.originalData).toEqual(post);
     });
 
@@ -86,9 +85,7 @@ describe("Combined Content Utilities", () => {
         fileUrl: [],
         createdAt: new Date(),
         updatedAt: new Date(),
-        isScheduled: false,
-        isPosted: false,
-        draft: true,
+        currentState: "DRAFT",
         status: "DRAFT",
         postType: "TEXT",
         tags: [],
@@ -117,9 +114,7 @@ describe("Combined Content Utilities", () => {
         fileUrl: [],
         createdAt: new Date(),
         updatedAt: new Date(),
-        isScheduled: false,
-        isPosted: false,
-        draft: false,
+        currentState: "DRAFT",
         status: "DRAFT",
         postType: "TEXT",
         tags: [],
@@ -159,15 +154,14 @@ describe("Combined Content Utilities", () => {
         image: "https://example.com/image.jpg",
         createdAt: new Date(),
         updatedAt: new Date(),
-        isScheduled: false,
-        isPublished: true,
-        draft: false,
+        currentState: "PUBLISHED",
         status: "ACTIVE",
         tags: [],
         hashTagPresetId: null,
         nostrEventId: null,
         scheduledFor: null,
         postedAt: null,
+        publishedAt: new Date(),
         signedEvent: null,
         nostrEvent: null,
       } as unknown as LongFormPostData;
@@ -180,8 +174,9 @@ describe("Combined Content Utilities", () => {
       expect(result.content).toBe("Test content");
       expect(result.summary).toBe("Test summary");
       expect(result.image).toBe("https://example.com/image.jpg");
-      expect(result.isPublished).toBe(true);
-      expect(result.isPosted).toBe(true); // Mapped from isPublished
+      expect(result.currentState).toBe("PUBLISHED");
+      expect(result.isPublished).toBe(true); // Derived from currentState
+      expect(result.isPosted).toBe(true); // Derived from currentState
       expect(result.originalData).toEqual(longFormPost);
     });
 
@@ -192,9 +187,7 @@ describe("Combined Content Utilities", () => {
         userId: TEST_USER_ID,
         createdAt: new Date(),
         updatedAt: new Date(),
-        isScheduled: false,
-        isPublished: true,
-        draft: false,
+        currentState: "PUBLISHED",
         status: "ACTIVE",
         tags: [],
         publishedAt,
@@ -226,9 +219,7 @@ describe("Combined Content Utilities", () => {
           fileUrl: [],
           createdAt: new Date("2024-01-01"),
           updatedAt: new Date("2024-01-01"),
-          isScheduled: false,
-          isPosted: false,
-          draft: false,
+          currentState: "DRAFT",
           status: "DRAFT",
           postType: "TEXT",
           tags: [],
@@ -244,9 +235,7 @@ describe("Combined Content Utilities", () => {
           userId: TEST_USER_ID,
           createdAt: new Date("2024-01-02"),
           updatedAt: new Date("2024-01-02"),
-          isScheduled: false,
-          isPublished: false,
-          draft: false,
+          currentState: "DRAFT",
           status: "DRAFT",
           tags: [],
         },
@@ -268,9 +257,7 @@ describe("Combined Content Utilities", () => {
           fileUrl: [],
           createdAt: new Date("2024-01-01"),
           updatedAt: new Date("2024-01-01"),
-          isScheduled: false,
-          isPosted: false,
-          draft: false,
+          currentState: "DRAFT",
           status: "DRAFT",
           postType: "TEXT",
           tags: [],
@@ -286,9 +273,7 @@ describe("Combined Content Utilities", () => {
           userId: TEST_USER_ID,
           createdAt: new Date("2024-01-02"),
           updatedAt: new Date("2024-01-02"),
-          isScheduled: false,
-          isPublished: false,
-          draft: false,
+          currentState: "DRAFT",
           status: "DRAFT",
           tags: [],
         },
@@ -309,9 +294,7 @@ describe("Combined Content Utilities", () => {
           scheduledFor: "1704067200", // 2024-01-01
           createdAt: new Date(),
           updatedAt: new Date(),
-          isScheduled: true,
-          isPosted: false,
-          draft: false,
+          currentState: "SCHEDULED",
           status: "SCHEDULED",
           postType: "TEXT",
           tags: [],
@@ -328,9 +311,7 @@ describe("Combined Content Utilities", () => {
           scheduledFor: "1704153600", // 2024-01-02
           createdAt: new Date(),
           updatedAt: new Date(),
-          isScheduled: true,
-          isPublished: false,
-          draft: false,
+          currentState: "SCHEDULED",
           status: "SCHEDULED",
           tags: [],
         },
@@ -364,9 +345,7 @@ describe("Combined Content Utilities", () => {
           fileUrl: [],
           createdAt: new Date(),
           updatedAt: new Date(),
-          isScheduled: false,
-          isPosted: false,
-          draft: false,
+          currentState: "DRAFT",
           status: "DRAFT" as const,
           userId: TEST_USER_ID,
           tags: [],
@@ -383,9 +362,7 @@ describe("Combined Content Utilities", () => {
           fileUrl: [],
           createdAt: new Date(),
           updatedAt: new Date(),
-          isScheduled: false,
-          isPosted: false,
-          draft: false,
+          currentState: "DRAFT",
           status: "DRAFT" as const,
           userId: TEST_USER_ID,
           tags: [],
@@ -403,9 +380,7 @@ describe("Combined Content Utilities", () => {
           fileUrl: [],
           createdAt: new Date(),
           updatedAt: new Date(),
-          isScheduled: false,
-          isPosted: false,
-          draft: false,
+          currentState: "DRAFT",
           status: "DRAFT" as const,
           userId: TEST_USER_ID,
           tags: [],
@@ -433,9 +408,7 @@ describe("Combined Content Utilities", () => {
           fileUrl: [],
           createdAt: new Date(),
           updatedAt: new Date(),
-          isScheduled: false,
-          isPublished: false,
-          draft: false,
+          currentState: "DRAFT",
           status: "DRAFT" as const,
           userId: TEST_USER_ID,
           tags: [],
@@ -456,9 +429,7 @@ describe("Combined Content Utilities", () => {
           fileUrl: [],
           createdAt: new Date(),
           updatedAt: new Date(),
-          isScheduled: false,
-          isPosted: false,
-          draft: false,
+          currentState: "DRAFT",
           status: "DRAFT" as const,
           userId: TEST_USER_ID,
           tags: [],
@@ -485,9 +456,7 @@ describe("Combined Content Utilities", () => {
           fileUrl: [],
           createdAt: new Date(),
           updatedAt: new Date(),
-          isScheduled: false,
-          isPosted: false,
-          draft: false,
+          currentState: "DRAFT",
           status: "DRAFT" as const,
           userId: TEST_USER_ID,
           tags: [],

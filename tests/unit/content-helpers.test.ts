@@ -140,7 +140,7 @@ describe("Content Helpers", () => {
     it("should return orange for drafts", () => {
       const item: CombinedContent = {
         id: "1",
-        draft: true,
+        currentState: "DRAFT",
       } as unknown as CombinedContent;
       const result = getStatusColor(item);
       expect(result).toContain("orange");
@@ -149,7 +149,8 @@ describe("Content Helpers", () => {
     it("should return green for posted items", () => {
       const item: CombinedContent = {
         id: "1",
-        isPosted: true,
+        currentState: "PUBLISHED",
+        type: "post",
       } as unknown as CombinedContent;
       const result = getStatusColor(item);
       expect(result).toContain("green");
@@ -158,7 +159,8 @@ describe("Content Helpers", () => {
     it("should return green for published items", () => {
       const item: CombinedContent = {
         id: "1",
-        isPublished: true,
+        currentState: "PUBLISHED",
+        type: "longform",
       } as unknown as CombinedContent;
       const result = getStatusColor(item);
       expect(result).toContain("green");
@@ -167,7 +169,7 @@ describe("Content Helpers", () => {
     it("should return blue for scheduled items", () => {
       const item: CombinedContent = {
         id: "1",
-        isScheduled: true,
+        currentState: "SCHEDULED",
       } as unknown as CombinedContent;
       const result = getStatusColor(item);
       expect(result).toContain("blue");
@@ -186,7 +188,7 @@ describe("Content Helpers", () => {
     it("should return 'Draft' for drafts", () => {
       const item: CombinedContent = {
         id: "1",
-        draft: true,
+        currentState: "DRAFT",
       } as unknown as CombinedContent;
       expect(getStatusText(item)).toBe("Draft");
     });
@@ -194,23 +196,25 @@ describe("Content Helpers", () => {
     it("should return 'Posted' for posted items", () => {
       const item: CombinedContent = {
         id: "1",
-        isPosted: true,
+        currentState: "PUBLISHED",
+        type: "post",
       } as unknown as CombinedContent;
       expect(getStatusText(item)).toBe("Posted");
     });
 
-    it("should return 'Posted' for published items", () => {
+    it("should return 'Published' for published longform items", () => {
       const item: CombinedContent = {
         id: "1",
-        isPublished: true,
+        currentState: "PUBLISHED",
+        type: "longform",
       } as unknown as CombinedContent;
-      expect(getStatusText(item)).toBe("Posted");
+      expect(getStatusText(item)).toBe("Published");
     });
 
     it("should return 'Scheduled' for scheduled items", () => {
       const item: CombinedContent = {
         id: "1",
-        isScheduled: true,
+        currentState: "SCHEDULED",
       } as unknown as CombinedContent;
       expect(getStatusText(item)).toBe("Scheduled");
     });

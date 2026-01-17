@@ -98,6 +98,15 @@ Complete reference documentation.
 - [Error Codes](./reference/error-codes.md) - Complete error code reference
 - [Plan Features](./reference/plan-features.md) - Subscription plans and features
 
+#### Architectural Reference
+
+- [Failure Semantics](./reference/failure-semantics.md) - Failure handling and retry strategy
+- [Time Semantics](./reference/time-semantics.md) - Timezone handling and scheduling behavior
+- [Threat Model](./reference/threat-model.md) - Security and privacy boundaries
+- [Strategic Boundaries](./reference/strategic-boundaries.md) - Product scope and focus
+- [User-Facing Guarantees](./reference/user-facing-guarantees.md) - Operational promises
+- [Temporal Quick Reference](./reference/temporal-quick-reference.md) - Temporal API usage guide
+
 ### Examples
 
 Working code examples and recipes.

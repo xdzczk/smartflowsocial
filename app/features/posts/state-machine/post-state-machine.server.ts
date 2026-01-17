@@ -51,11 +51,30 @@ export class PostStateMachine {
     const transition = transitionPost(currentState, targetState, reason);
 
     await prisma.$transaction(async (tx) => {
-      // Update post state
-      await tx.post.update({
-        where: { id: postId },
-        data: { currentState: targetState },
-      });
+      // Update post state (flags have been removed)
+      // Include userId in where clause for consistency and security
+      // If post was deleted between check and transaction, this will throw a clear error
+      try {
+        await tx.post.update({
+          where: { id: postId, userId },
+          data: {
+            currentState: targetState,
+          },
+        });
+      } catch (error) {
+        // Provide clearer error message if post was deleted
+        if (
+          error &&
+          typeof error === "object" &&
+          "code" in error &&
+          error.code === "P2025"
+        ) {
+          throw new Error(
+            `Post ${postId} not found for user ${userId} (may have been deleted)`
+          );
+        }
+        throw error;
+      }
 
       // Record transition
       await tx.postStateTransition.create({

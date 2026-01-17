@@ -11,6 +11,7 @@ const { mockPrisma } = vi.hoisted(() => {
     $transaction: vi.fn(),
     longFormPost: {
       create: vi.fn(),
+      findUnique: vi.fn(),
     },
   };
   return { mockPrisma };
@@ -40,6 +41,16 @@ vi.mock("~/features/posts/server", () => ({
   calculateLongFormStatus: vi.fn(),
 }));
 
+const mockTransition = vi.fn();
+vi.mock(
+  "~/features/posts/state-machine/longform-post-state-machine.server",
+  () => ({
+    LongFormPostStateMachine: class {
+      transition = mockTransition;
+    },
+  })
+);
+
 import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 
 import { calculateLongFormStatus } from "~/features/posts/server";
@@ -55,6 +66,14 @@ describe("CreateLongFormPostUseCase", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockTransition.mockResolvedValue(undefined);
+    (
+      mockPrisma.longFormPost.findUnique as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({
+      id: TEST_POST_ID,
+      userId: TEST_USER_ID,
+      currentState: "DRAFT",
+    });
     useCase = new CreateLongFormPostUseCase();
   });
 
@@ -65,9 +84,7 @@ describe("CreateLongFormPostUseCase", () => {
         userId: TEST_USER_ID,
         title: "Test Title",
         content: "Test content",
-        isPublished: false,
-        isScheduled: false,
-        draft: true,
+        currentState: "DRAFT",
       };
 
       (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
@@ -102,9 +119,7 @@ describe("CreateLongFormPostUseCase", () => {
         userId: TEST_USER_ID,
         title: "Test Title",
         content: "Test content",
-        isPublished: false,
-        isScheduled: true,
-        draft: false,
+        currentState: "SCHEDULED",
         status: "SCHEDULED",
         scheduledAtUtc,
         scheduledFor: scheduledFor.toString(),
@@ -184,9 +199,7 @@ describe("CreateLongFormPostUseCase", () => {
         userId: TEST_USER_ID,
         title: "Test Title",
         content: "Test content",
-        isPublished: false,
-        isScheduled: false,
-        draft: true,
+        currentState: "DRAFT",
       };
 
       (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
@@ -217,9 +230,7 @@ describe("CreateLongFormPostUseCase", () => {
         userId: TEST_USER_ID,
         title: "Test Title",
         content: "Test content",
-        isPublished: true,
-        isScheduled: false,
-        draft: false,
+        currentState: "PUBLISHED",
       };
 
       (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(

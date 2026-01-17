@@ -14,14 +14,19 @@ import {
   PostFactory,
   UserFactory,
 } from "./index";
+import {
+  deriveIsDraft,
+  deriveIsScheduled,
+  deriveIsPosted,
+} from "~/features/posts/state-machine/post-state";
 
 describe("Factory Usage Examples", () => {
   it("should create a draft post using convenience function", () => {
     const post = postFactory.draft();
 
-    expect(post.draft).toBe(true);
-    expect(post.isPosted).toBe(false);
-    expect(post.isScheduled).toBe(false);
+    expect(deriveIsDraft(post.currentState)).toBe(true);
+    expect(deriveIsPosted(post.currentState)).toBe(false);
+    expect(deriveIsScheduled(post.currentState)).toBe(false);
   });
 
   it("should create a scheduled post using builder pattern", () => {
@@ -32,8 +37,8 @@ describe("Factory Usage Examples", () => {
       .asScheduled(scheduledFor)
       .build();
 
-    expect(post.isScheduled).toBe(true);
-    expect(post.draft).toBe(false);
+    expect(deriveIsScheduled(post.currentState)).toBe(true);
+    expect(deriveIsDraft(post.currentState)).toBe(false);
     expect(post.scheduledFor).toBeDefined();
   });
 
@@ -53,11 +58,11 @@ describe("Factory Usage Examples", () => {
   });
 
   it("should create multiple posts", () => {
-    const posts = postFactory.many(5, { draft: true });
+    const posts = postFactory.many(5, { currentState: "DRAFT" });
 
     expect(posts).toHaveLength(5);
     posts.forEach((post) => {
-      expect(post.draft).toBe(true);
+      expect(deriveIsDraft(post.currentState)).toBe(true);
     });
   });
 

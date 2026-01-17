@@ -10,9 +10,8 @@ vi.mock("~/models/post.queries.server", () => ({
   getPostById: vi.fn(),
 }));
 
-vi.mock("~/models/post.commands.server", () => ({
-  updatePostStatus: vi.fn(),
-}));
+// updatePostStatus was removed - state transitions now use PostStateMachine
+vi.mock("~/models/post.commands.server", () => ({}));
 
 const mockPublish = vi.fn();
 vi.mock("~/infra/publishers/nostr-publisher.server", () => ({
@@ -58,7 +57,6 @@ import {
   recordPostPublishFailed,
 } from "~/lib/metrics/business-metrics.server";
 import { recordPublishLatency } from "~/lib/metrics/performance-metrics.server";
-import { updatePostStatus } from "~/models/post.commands.server";
 import { getPostById } from "~/models/post.queries.server";
 
 describe("PublishNowUseCase", () => {
@@ -77,7 +75,7 @@ describe("PublishNowUseCase", () => {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
         postType: "IMAGE",
-        isPosted: false,
+        currentState: "DRAFT",
       };
 
       const signedEvent = createValidSignedEvent({ content: "test" });
@@ -85,9 +83,7 @@ describe("PublishNowUseCase", () => {
       const relays = ["wss://relay1.com", "wss://relay2.com"];
 
       (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
-      (updatePostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined
-      );
+      // State transitions now use PostStateMachine, not updatePostStatus
       mockPublish.mockResolvedValue(undefined);
 
       await useCase.execute({
@@ -107,13 +103,7 @@ describe("PublishNowUseCase", () => {
         "PUBLISHING",
         "Publishing post immediately"
       );
-      expect(updatePostStatus).toHaveBeenCalledWith({
-        id: TEST_POST_ID,
-        userId: TEST_USER_ID,
-        isPosted: true,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
-        correlationId: expect.any(String),
-      });
+      // State transitions now use PostStateMachine, not updatePostStatus
       // finalizeEvent adds Symbol(verified) property, so check specific properties
       expect(mockPublish).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -163,7 +153,7 @@ describe("PublishNowUseCase", () => {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
         postType: "IMAGE",
-        isPosted: true,
+        currentState: "PUBLISHED",
       };
 
       (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
@@ -191,7 +181,7 @@ describe("PublishNowUseCase", () => {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
         postType: "TEXT",
-        isPosted: false,
+        currentState: "DRAFT",
       };
 
       const signedEvent = createValidSignedEvent({ content: "test" });
@@ -229,15 +219,13 @@ describe("PublishNowUseCase", () => {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
         postType: "IMAGE",
-        isPosted: false,
+        currentState: "DRAFT",
       };
 
       const signedEvent = createValidSignedEvent({ content: "test" });
 
       (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
-      (updatePostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined
-      );
+      // State transitions now use PostStateMachine, not updatePostStatus
       mockPublish.mockResolvedValue(undefined);
 
       await useCase.execute({
@@ -248,12 +236,7 @@ describe("PublishNowUseCase", () => {
         correlationId: "custom-correlation-id",
       });
 
-      expect(updatePostStatus).toHaveBeenCalledWith({
-        id: TEST_POST_ID,
-        userId: TEST_USER_ID,
-        isPosted: true,
-        correlationId: "custom-correlation-id",
-      });
+      // State transitions now use PostStateMachine, not updatePostStatus
       // finalizeEvent adds Symbol(verified) property, so we check the call with expect.any(Object)
       expect(mockPublish).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -272,15 +255,13 @@ describe("PublishNowUseCase", () => {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
         postType: "TEXT",
-        isPosted: false,
+        currentState: "DRAFT",
       };
 
       const signedEvent = createValidSignedEvent({ content: "test" });
 
       (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
-      (updatePostStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined
-      );
+      // State transitions now use PostStateMachine, not updatePostStatus
       mockPublish.mockResolvedValue(undefined);
       mockTransition
         .mockResolvedValueOnce(undefined) // PUBLISHING transition succeeds

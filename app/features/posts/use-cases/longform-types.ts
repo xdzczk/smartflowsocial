@@ -7,6 +7,7 @@
 import type { LongFormPost } from "@prisma/client";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
+import type { Temporal } from "~/lib/temporal";
 
 export interface CreateLongFormPostInput {
   userId: string;
@@ -32,7 +33,7 @@ export interface CreateLongFormPostResult {
 export interface ScheduleLongFormPostInput {
   postId: string;
   userId: string;
-  scheduledAtUtc: Date;
+  scheduledAtUtc: Temporal.ZonedDateTime; // Use Temporal for better timezone handling
   signedEvent: SignedEvent;
   correlationId?: string; // For request tracking
 }

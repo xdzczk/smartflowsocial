@@ -3,9 +3,28 @@
  */
 
 import { handleErrorSafely } from "~/lib/error-handler.client";
+import {
+  fromDate,
+  fromISOString,
+  fromUnixTimestamp,
+  formatForDisplay,
+  type Temporal,
+} from "~/lib/temporal";
 
 import type { CombinedContent } from "../combined.server";
 import { getQueueColor } from "../queue-colors";
+import {
+  deriveIsDraftLongForm,
+  deriveIsScheduledLongForm,
+  deriveIsPublishedLongForm,
+  getStatusTextFromStateLongForm,
+} from "../state-machine/longform-post-state";
+import {
+  deriveIsDraft,
+  deriveIsScheduled,
+  deriveIsPosted,
+  getStatusTextFromState,
+} from "../state-machine/post-state";
 
 export function getImageUrls(fileUrl: string[] | undefined): string[] {
   if (!fileUrl || fileUrl.length === 0) return [];
@@ -47,24 +66,138 @@ export function getContentPreview(item: CombinedContent): string | null {
   return null; // Posts show caption in title column
 }
 
+// Status color constants
+const DRAFT_COLOR =
+  "bg-orange-100 text-orange-900 dark:border-orange-900/75 dark:bg-orange-700/10 dark:text-orange-200";
+const PUBLISHED_COLOR =
+  "bg-green-100 text-green-900 dark:border-green-900/75 dark:bg-green-700/10 dark:text-green-200";
+const SCHEDULED_COLOR =
+  "bg-blue-100 text-blue-900 dark:border-blue-900/75 dark:bg-blue-700/10 dark:text-blue-200";
+
 export function getStatusColor(item: CombinedContent): string {
+  // Use currentState as single source of truth
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Optional chaining needed for runtime safety (tests may create incomplete objects)
+  const currentState = item.currentState ?? item.originalData?.currentState;
+
+  if (currentState) {
+    // Use state machine as source of truth
+    const state = currentState;
+
+    // Use appropriate derive functions based on post type
+    if (item.type === "longform") {
+      if (deriveIsDraftLongForm(state)) {
+        return DRAFT_COLOR;
+      }
+      if (deriveIsPublishedLongForm(state)) {
+        return PUBLISHED_COLOR;
+      }
+      if (deriveIsScheduledLongForm(state)) {
+        return SCHEDULED_COLOR;
+      }
+    } else {
+      if (deriveIsDraft(state)) {
+        return DRAFT_COLOR;
+      }
+      if (deriveIsPosted(state)) {
+        return PUBLISHED_COLOR;
+      }
+      if (deriveIsScheduled(state)) {
+        return SCHEDULED_COLOR;
+      }
+    }
+
+    if (state === "FAILED") {
+      return "bg-red-100 text-red-900 dark:border-red-900/75 dark:bg-red-700/10 dark:text-red-200";
+    }
+    if (state === "CANCELLED") {
+      return "bg-gray-100 text-gray-900 dark:border-gray-900/75 dark:bg-gray-700/10 dark:text-gray-200";
+    }
+  }
+
+  // Fallback to derived flags if currentState not available (shouldn't happen after migration)
   if (item.draft) {
-    return "bg-orange-100 text-orange-900 dark:border-orange-900/75 dark:bg-orange-700/10 dark:text-orange-200";
+    return DRAFT_COLOR;
   }
   if (item.isPosted ?? item.isPublished) {
-    return "bg-green-100 text-green-900 dark:border-green-900/75 dark:bg-green-700/10 dark:text-green-200";
+    return PUBLISHED_COLOR;
   }
   if (item.isScheduled) {
-    return "bg-blue-100 text-blue-900 dark:border-blue-900/75 dark:bg-blue-700/10 dark:text-blue-200";
+    return SCHEDULED_COLOR;
   }
   return "bg-gray-100 text-gray-900 dark:border-gray-900/75 dark:bg-gray-700/10 dark:text-gray-200";
 }
 
 export function getStatusText(item: CombinedContent): string {
+  // Use currentState as single source of truth
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Optional chaining needed for runtime safety (tests may create incomplete objects)
+  const currentState = item.currentState ?? item.originalData?.currentState;
+
+  if (currentState) {
+    // Use appropriate function based on post type
+    if (item.type === "longform") {
+      return getStatusTextFromStateLongForm(currentState);
+    }
+    return getStatusTextFromState(currentState);
+  }
+
+  // Fallback to derived flags if currentState not available (shouldn't happen after migration)
   if (item.draft) return "Draft";
   if (item.isPosted ?? item.isPublished) return "Posted";
   if (item.isScheduled) return "Scheduled";
   return "Unknown";
+}
+
+const DATE_FORMAT_OPTIONS = {
+  month: "2-digit",
+  day: "2-digit",
+  year: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+  hour12: true,
+} as const;
+
+/**
+ * Convert date input to Temporal ZonedDateTime
+ */
+function convertToZonedDateTime(
+  date: Date | string,
+  isUnixTimestamp: boolean,
+  timezone: string
+): Temporal.ZonedDateTime | null {
+  try {
+    if (isUnixTimestamp && typeof date === "string") {
+      return fromUnixTimestamp(parseInt(date), timezone);
+    }
+    const dateObj = typeof date === "string" ? new Date(date) : date;
+    return fromDate(dateObj, timezone);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Convert date input to Temporal ZonedDateTime with fallback
+ */
+function convertToZonedDateTimeWithFallback(
+  date: Date | string,
+  isUnixTimestamp: boolean,
+  timezone: string
+): Temporal.ZonedDateTime | null {
+  const zoned = convertToZonedDateTime(date, isUnixTimestamp, timezone);
+  if (zoned) return zoned;
+
+  // Fallback - try alternative parsing
+  try {
+    if (isUnixTimestamp && typeof date === "string") {
+      return fromUnixTimestamp(parseInt(date), timezone);
+    }
+    if (typeof date === "string") {
+      return fromISOString(date, timezone);
+    }
+    return fromDate(date, timezone);
+  } catch {
+    return null;
+  }
 }
 
 export function formatDate(
@@ -74,22 +207,30 @@ export function formatDate(
 ): string {
   if (!date) return "-";
 
-  let dateObj: Date;
-  if (isUnixTimestamp && typeof date === "string") {
-    dateObj = new Date(parseInt(date) * 1000);
-  } else {
-    dateObj = new Date(date);
+  // Handle invalid Date objects (NaN)
+  if (date instanceof Date && isNaN(date.getTime())) {
+    return "-";
   }
 
-  return dateObj.toLocaleString("en-US", {
-    timeZone: userTimezone ?? "UTC",
-    month: "2-digit",
-    day: "2-digit",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
+  const timezone = userTimezone ?? "UTC";
+  const zonedDateTime = convertToZonedDateTime(date, isUnixTimestamp, "UTC");
+
+  if (zonedDateTime) {
+    return formatForDisplay(zonedDateTime, timezone, DATE_FORMAT_OPTIONS);
+  }
+
+  // Fallback - still use Temporal for consistency
+  const fallbackZoned = convertToZonedDateTimeWithFallback(
+    date,
+    isUnixTimestamp,
+    timezone
+  );
+  if (fallbackZoned) {
+    return formatForDisplay(fallbackZoned, timezone, DATE_FORMAT_OPTIONS);
+  }
+
+  // Final fallback
+  return "-";
 }
 
 export function getQueueTypeDisplay(queueType: CombinedContent["queueType"]): {

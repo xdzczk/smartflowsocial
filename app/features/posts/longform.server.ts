@@ -1,6 +1,7 @@
 import { getPublicKey, finalizeEvent, nip19 } from "nostr-tools";
 
 import { sanitizeMarkdown } from "~/lib/markdown-sanitizer.server";
+import { nowSeconds } from "~/lib/temporal";
 
 import type { EditorJSOutput, EditorJSBlock } from "./types/editorjs.types";
 
@@ -81,7 +82,7 @@ export function createLongFormEvent({
   const event = {
     kind: 30023,
     pubkey: publicKey,
-    created_at: Math.floor(Date.now() / 1000),
+    created_at: nowSeconds(),
     tags: eventTags,
     content: sanitizedContent,
   };

@@ -9,6 +9,7 @@ import type { Post, LongFormPost } from "@prisma/client";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 import { serializeDates } from "~/lib/serialization.server";
+import { fromISOString, toDate } from "~/lib/temporal";
 
 import type {
   PostData,
@@ -93,14 +94,16 @@ export function fromPostDTO(dto: PostDTO): PostData {
     scheduledFor: _scheduledFor,
     ...rest
   } = dto;
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Type assertion needed for DTO conversion with spread operator
-  return {
+  // Use Temporal for 100% consistency, convert to Date at boundary
+  // Note: scheduledFor is String? in Prisma schema, so keep it as string
+  const result: PostData = {
     ...rest,
-    createdAt: new Date(dto.createdAt),
-    updatedAt: new Date(dto.updatedAt),
-    postedAt: dto.postedAt ? new Date(dto.postedAt) : null,
-    scheduledFor: dto.scheduledFor ? new Date(dto.scheduledFor) : null,
-  } as PostData;
+    createdAt: toDate(fromISOString(dto.createdAt, "UTC")),
+    updatedAt: toDate(fromISOString(dto.updatedAt, "UTC")),
+    postedAt: dto.postedAt ? toDate(fromISOString(dto.postedAt, "UTC")) : null,
+    scheduledFor: dto.scheduledFor, // Keep as string (Prisma schema has scheduledFor as String?)
+  };
+  return result;
 }
 
 /**
@@ -142,14 +145,19 @@ export function fromLongFormPostDTO(dto: LongFormPostDTO): LongFormPostData {
     scheduledFor: _scheduledFor,
     ...rest
   } = dto;
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Type assertion needed for DTO conversion with spread operator
-  return {
+  // Use Temporal for 100% consistency, convert to Date at boundary
+  // Note: scheduledFor is String? in Prisma schema, so keep it as string
+  // publishedAt is DateTime? in Prisma schema, so convert to Date
+  const result: LongFormPostData = {
     ...rest,
-    createdAt: new Date(dto.createdAt),
-    updatedAt: new Date(dto.updatedAt),
-    publishedAt: dto.publishedAt ? new Date(dto.publishedAt) : null,
-    scheduledFor: dto.scheduledFor ? new Date(dto.scheduledFor) : null,
-  } as LongFormPostData;
+    createdAt: toDate(fromISOString(dto.createdAt, "UTC")),
+    updatedAt: toDate(fromISOString(dto.updatedAt, "UTC")),
+    publishedAt: dto.publishedAt
+      ? toDate(fromISOString(dto.publishedAt, "UTC"))
+      : null,
+    scheduledFor: dto.scheduledFor, // Keep as string (Prisma schema has scheduledFor as String?)
+  };
+  return result;
 }
 
 /**

@@ -232,6 +232,10 @@ describe("Property-Based Tests: Date Formatting", () => {
           fc.date({ min: new Date("2000-01-01"), max: new Date("2100-12-31") }),
           fc.constantFrom(...validTimezones),
           (date: Date, timezone: string) => {
+            // Filter out invalid dates (NaN)
+            if (isNaN(date.getTime())) {
+              return true; // Skip invalid dates
+            }
             try {
               const formatted = formatDateWithTimezone(date, false, timezone);
               return formatted !== "-" && formatted.length > 0;

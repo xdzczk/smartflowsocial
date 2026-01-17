@@ -1,4 +1,5 @@
 import { handleErrorSafely } from "~/lib/error-handler.client";
+import { fromDate, fromUnixTimestamp, nowUTC, toDate } from "~/lib/temporal";
 
 import type {
   CalendarPost,
@@ -158,13 +159,44 @@ export function getDisplayTime(
   isLongform: boolean,
   isPast: boolean
 ): Date {
-  if (isPast) {
-    return isLongform
-      ? new Date(post.postedAt as string)
-      : new Date(post.postedAt as string);
-  } else {
-    return isLongform
-      ? new Date(post.publishedAt as string)
-      : new Date(Number(post.scheduledFor) * 1000);
+  try {
+    if (isPast) {
+      const postedAt = post.postedAt;
+      if (typeof postedAt === "string") {
+        const zoned = fromDate(new Date(postedAt), "UTC");
+        return toDate(zoned);
+      }
+      // Use Temporal for consistency even in fallback
+      return toDate(nowUTC());
+    } else {
+      if (isLongform) {
+        const publishedAt = post.publishedAt;
+        if (typeof publishedAt === "string") {
+          const zoned = fromDate(new Date(publishedAt), "UTC");
+          return toDate(zoned);
+        }
+        // Use Temporal for consistency even in fallback
+        return toDate(nowUTC());
+      } else {
+        const scheduledFor = post.scheduledFor;
+        if (typeof scheduledFor === "string") {
+          const timestamp = Number(scheduledFor);
+          if (!isNaN(timestamp)) {
+            const zoned = fromUnixTimestamp(timestamp, "UTC");
+            return toDate(zoned);
+          }
+        }
+        // Use Temporal for consistency even in fallback
+        return toDate(nowUTC());
+      }
+    }
+  } catch {
+    // Final fallback - still use Temporal
+    try {
+      return toDate(nowUTC());
+    } catch {
+      // Final fallback - still use Temporal
+      return toDate(nowUTC());
+    }
   }
 }

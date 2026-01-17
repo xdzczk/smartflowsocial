@@ -24,9 +24,8 @@ export function getScheduledPosts({
   queueType?: string;
 }): Promise<PostWithQueueType[]> {
   const whereClause: Prisma.PostWhereInput = {
-    isScheduled: true,
-    isPosted: false,
-    draft: false,
+    // Use currentState as single source of truth
+    currentState: "SCHEDULED",
     userId: userId,
   };
 
@@ -58,8 +57,8 @@ export function getDraftPosts({
   queueType?: string;
 }): Promise<PostWithQueueType[]> {
   const whereClause: Prisma.PostWhereInput = {
-    draft: true,
-    isPosted: false,
+    // Use currentState as single source of truth
+    currentState: "DRAFT",
     userId: userId,
   };
 
@@ -87,8 +86,8 @@ export function getCronDueScheduledPosts(): Promise<Post[]> {
   const now = new Date();
   return prisma.post.findMany({
     where: {
-      isScheduled: true,
-      isPosted: false,
+      // Use currentState as single source of truth
+      currentState: "SCHEDULED",
       scheduledAtUtc: {
         lte: now,
       },
@@ -110,7 +109,8 @@ export async function getPostedPosts({
   const skip = (page - 1) * limit;
 
   const whereClause: Prisma.PostWhereInput = {
-    isPosted: true,
+    // Use currentState as single source of truth
+    currentState: "PUBLISHED",
     userId: userId,
   };
 
@@ -162,7 +162,8 @@ export async function getRecentPostedPosts({
   startDate.setDate(startDate.getDate() - days);
 
   const whereClause: Prisma.PostWhereInput = {
-    isPosted: true,
+    // Use currentState as single source of truth
+    currentState: "PUBLISHED",
     userId: userId,
     postedAt: {
       gte: startDate,
@@ -199,8 +200,8 @@ export async function getPostStatistics({
     prisma.post.count({
       where: {
         userId,
-        isPosted: false,
-        isScheduled: true,
+        // Use currentState as single source of truth
+        currentState: "SCHEDULED",
       },
     }),
 
@@ -208,7 +209,8 @@ export async function getPostStatistics({
     prisma.post.count({
       where: {
         userId,
-        isPosted: true,
+        // Use currentState as single source of truth
+        currentState: "PUBLISHED",
       },
     }),
   ]);
@@ -232,8 +234,8 @@ export function getPastPosts({
 }): Promise<PostWithQueueType[]> {
   const whereClause: Prisma.PostWhereInput = {
     userId,
-    // Look for posts that are either marked as posted OR have a posted status
-    OR: [{ isPosted: true }, { status: "POSTED" }],
+    // Use currentState as single source of truth
+    currentState: "PUBLISHED",
     postedAt: {
       gte: startDate,
       lte: endDate,
@@ -318,7 +320,8 @@ export async function getRecyclablePosts({
 
   const whereClause: Prisma.PostWhereInput = {
     isRecyclable: true,
-    isPosted: true,
+    // Use currentState as single source of truth
+    currentState: "PUBLISHED",
     userId: userId,
   };
 
@@ -403,21 +406,19 @@ export async function getLastPostTimeForQueue({
   // For FIXED_SLOTS scheduling, we need to consider ALL scheduled posts (both posted and unposted)
   // to find the actual last scheduled time, regardless of posting status
   // For INTERVAL scheduling, we can stick with the original logic of only considering unposted posts
-  const whereCondition = {
+  const whereCondition: Prisma.PostWhereInput = {
     userId,
     queueTypeId: queueType.id,
-    isScheduled: true,
-    NOT: {
-      draft: true, // Exclude drafts
-    },
+    // Use currentState as single source of truth
+    // For FIXED_SLOTS: include both SCHEDULED and PUBLISHED (scheduled posts that were published)
+    // For INTERVAL: only include SCHEDULED (not yet published)
+    currentState:
+      queueType.scheduleType === "INTERVAL"
+        ? "SCHEDULED"
+        : { in: ["SCHEDULED", "PUBLISHED"] }, // FIXED_SLOTS can include published posts
     scheduledFor: {
       not: null, // Ensure scheduledFor is not null
     },
-    // For FIXED_SLOTS: include both posted and unposted posts
-    // For INTERVAL: only include unposted posts (original behavior)
-    ...(queueType.scheduleType === "INTERVAL" && {
-      isPosted: false, // Only for interval-based scheduling
-    }),
   };
 
   // Get the most recent scheduled post for this queue
@@ -429,7 +430,7 @@ export async function getLastPostTimeForQueue({
     select: {
       scheduledFor: true,
       createdAt: true,
-      isPosted: true,
+      currentState: true,
     },
   });
 

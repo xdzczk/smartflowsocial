@@ -4,6 +4,8 @@
 
 import { Link, useFetcher } from "@remix-run/react";
 
+import { formatForDisplay, fromISOString } from "~/lib/temporal";
+
 import { getQueueColor } from "../queue-colors";
 interface Post {
   id: string;
@@ -63,15 +65,41 @@ export function DraftsTable({
   const deleteFetcher = useFetcher();
 
   const formatDate = (isoString: string) => {
-    const date = new Date(isoString);
-    return date.toLocaleString("en-US", {
-      month: "2-digit",
-      day: "2-digit",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
+    try {
+      const zoned = fromISOString(isoString, "UTC");
+      return formatForDisplay(zoned, "UTC", {
+        month: "2-digit",
+        day: "2-digit",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+    } catch {
+      // Fallback - still use Temporal for consistency
+      try {
+        const zoned = fromISOString(isoString, "UTC");
+        return formatForDisplay(zoned, "UTC", {
+          month: "2-digit",
+          day: "2-digit",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        });
+      } catch {
+        // Final fallback
+        const date = new Date(isoString);
+        return date.toLocaleString("en-US", {
+          month: "2-digit",
+          day: "2-digit",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        });
+      }
+    }
   };
 
   const getImageUrls = (fileUrl: string[] | null | undefined) => {

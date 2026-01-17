@@ -1,11 +1,13 @@
 /**
- * Pure utility functions for schedule time formatting
+ * Pure utility functions for schedule time formatting using Temporal API
  * This file has no server-side dependencies and can be safely imported in tests
  */
 
+import { formatForDateTimeLocal, fromDate } from "./temporal";
+
 /**
  * Formats a Date object for use in HTML datetime-local input
- * @param date - The date to format
+ * @param date - The date to format (assumed to be in UTC)
  * @param userTimezone - The user's timezone (defaults to UTC)
  * @returns Formatted date string in YYYY-MM-DDTHH:mm format
  */
@@ -14,55 +16,28 @@ export function formatScheduleTimeForInput(
   userTimezone = "UTC"
 ): string {
   try {
-    // For UTC/GMT timezones, use the date directly
-    if (userTimezone === "UTC" || userTimezone === "Etc/GMT") {
-      const year = date.getUTCFullYear();
-      const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-      const day = String(date.getUTCDate()).padStart(2, "0");
-      const hours = String(date.getUTCHours()).padStart(2, "0");
-      const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+    // Convert Date to Temporal ZonedDateTime (assuming Date is in UTC)
+    const zonedDateTime = fromDate(date, "UTC");
 
-      return `${year}-${month}-${day}T${hours}:${minutes}`;
-    }
-
-    // Convert UTC date to user's timezone for display in datetime-local input
-    // Use a more reliable approach: get individual date components in user timezone
-    const formatter = new Intl.DateTimeFormat("en-CA", {
-      timeZone: userTimezone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-
-    const parts = formatter.formatToParts(date);
-    const initialParts: Record<string, string> = {};
-    const partsObj = parts.reduce((acc, part) => {
-      acc[part.type] = part.value;
-      return acc;
-    }, initialParts);
-
-    // Format for datetime-local input: YYYY-MM-DDTHH:MM
-    const year = partsObj["year"] ?? "";
-    const month = partsObj["month"] ?? "";
-    const day = partsObj["day"] ?? "";
-    const hour = partsObj["hour"] ?? "";
-    const minute = partsObj["minute"] ?? "";
-    return `${year}-${month}-${day}T${hour}:${minute}`;
+    // Format for datetime-local input in user's timezone
+    return formatForDateTimeLocal(zonedDateTime, userTimezone);
   } catch (error) {
     console.error("Error in formatScheduleTimeForInput:", error, {
       date,
       userTimezone,
     });
-    // Fallback to UTC formatting
-    const year = date.getUTCFullYear();
-    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-    const day = String(date.getUTCDate()).padStart(2, "0");
-    const hours = String(date.getUTCHours()).padStart(2, "0");
-    const minutes = String(date.getUTCMinutes()).padStart(2, "0");
-
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
+    // Fallback: try to format using UTC components directly
+    // This maintains backward compatibility if Temporal fails
+    try {
+      const year = date.getUTCFullYear();
+      const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+      const day = String(date.getUTCDate()).padStart(2, "0");
+      const hours = String(date.getUTCHours()).padStart(2, "0");
+      const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
+    } catch {
+      // If even fallback fails, return empty string
+      return "";
+    }
   }
 }

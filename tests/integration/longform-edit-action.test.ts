@@ -50,17 +50,52 @@ vi.mock("~/models/longformpost.server", () => ({
   updateLongFormPostStatus: mockUpdateLongFormPostStatus,
 }));
 
+const { mockPublishExecute, mockScheduleExecute } = vi.hoisted(() => {
+  const mockPublishExecute = vi.fn();
+  const mockScheduleExecute = vi.fn();
+  return { mockPublishExecute, mockScheduleExecute };
+});
+
+vi.mock(
+  "~/features/posts/use-cases/publish-longform-now.use-case.server",
+  () => ({
+    PublishLongFormNowUseCase: class {
+      execute = mockPublishExecute;
+    },
+  })
+);
+
+vi.mock(
+  "~/features/posts/use-cases/schedule-longform-post.use-case.server",
+  () => ({
+    ScheduleLongFormPostUseCase: class {
+      execute = mockScheduleExecute;
+    },
+  })
+);
+
 // Note: updateLongFormPost is mocked above, do not import it here
 
-// Mock Prisma for ScheduleLongFormPostUseCase
+// Mock Prisma for ScheduleLongFormPostUseCase and LongFormPostStateMachine
 const { mockPrisma } = vi.hoisted(() => {
   const mockPrisma = {
+    longFormPost: {
+      findUnique: vi.fn(),
+      update: vi.fn(),
+    },
+    longFormPostStateTransition: {
+      create: vi.fn(),
+    },
     $transaction: vi.fn(async (callback) => {
       const tx = {
         longFormPost: {
           update: vi.fn().mockResolvedValue({}),
+          findUnique: vi.fn().mockResolvedValue({}),
         },
         outboxEvent: {
+          create: vi.fn().mockResolvedValue({}),
+        },
+        longFormPostStateTransition: {
           create: vi.fn().mockResolvedValue({}),
         },
       };
@@ -172,6 +207,8 @@ describe("Longform Edit Action Handler", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockPublishExecute.mockClear();
+    mockScheduleExecute.mockClear();
     process.env["NOSTR_PUBLISHER_URL"] =
       "https://api.nostr-publisher.com/publish";
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -198,8 +235,27 @@ describe("Longform Edit Action Handler", () => {
       userId: TEST_USER_ID,
       title: "Test Post",
       content: "Test content",
-      isPublished: false,
+      currentState: "DRAFT", // Use currentState instead of isPublished
     });
+    // Setup default Prisma mocks for LongFormPostStateMachine
+    (
+      mockPrisma.longFormPost.findUnique as ReturnType<typeof vi.fn>
+    ).mockImplementation(
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Mock implementation needs to be async
+      async (args: { where: { id: string; userId: string } }) => {
+        return {
+          id: args.where.id,
+          userId: args.where.userId,
+          currentState: "DRAFT", // Default state for draft posts
+        };
+      }
+    );
+    (
+      mockPrisma.longFormPost.update as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({});
+    (
+      mockPrisma.longFormPostStateTransition.create as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({});
   });
 
   describe("Image Upload Action", () => {
@@ -309,12 +365,13 @@ describe("Longform Edit Action Handler", () => {
         request
       );
 
+      // The handler calls updateLongFormPost, then state machine transitions to DRAFT
       expect(mockUpdateLongFormPost).toHaveBeenCalledWith(
         expect.objectContaining({
           id: POST_ID,
           userId: TEST_USER_ID,
           title: "Updated Post",
-          isPublished: false,
+          // Note: currentState is set by state machine, not updateLongFormPost
         })
       );
       expect(response.status).toBe(302);
@@ -435,19 +492,22 @@ describe("Longform Edit Action Handler", () => {
         request
       );
 
+      // The handler calls updateLongFormPost first, then PublishLongFormNowUseCase
       expect(mockUpdateLongFormPost).toHaveBeenCalledWith(
         expect.objectContaining({
           id: POST_ID,
           userId: TEST_USER_ID,
           title: "Updated Post",
-          isPublished: true,
-          signedEvent: mockSignedEvent,
-          nostrEvent: mockNostrEvent,
+          // Note: currentState is set by state machine, not updateLongFormPost
         })
       );
-      expect(global.fetch).toHaveBeenCalledWith(
-        "https://api.nostr-publisher.com/publish",
-        expect.any(Object)
+      // Verify PublishLongFormNowUseCase was called
+      expect(mockPublishExecute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          postId: POST_ID,
+          userId: TEST_USER_ID,
+          signedEvent: mockSignedEvent,
+        })
       );
       expect(response.status).toBe(302);
     });
@@ -636,11 +696,19 @@ describe("Longform Edit Action Handler", () => {
         request
       );
 
+      // The handler calls updateLongFormPost first, then ScheduleLongFormPostUseCase
       expect(mockUpdateLongFormPost).toHaveBeenCalledWith(
         expect.objectContaining({
           id: POST_ID,
-          isPublished: false,
           scheduledFor: "1704067200",
+          // Note: currentState is set by state machine via ScheduleLongFormPostUseCase
+        })
+      );
+      // Verify ScheduleLongFormPostUseCase was called
+      expect(mockScheduleExecute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          postId: POST_ID,
+          userId: TEST_USER_ID,
         })
       );
       expect(response.status).toBe(302);

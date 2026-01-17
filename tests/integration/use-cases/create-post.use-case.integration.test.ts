@@ -6,7 +6,9 @@
  * Run with: pnpm test:db:setup && pnpm test:integration -- --grep "CreatePostUseCase"
  */
 
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, beforeAll } from "vitest";
+
+import { setupTestDatabase } from "../../database/test-db";
 
 import { CreatePostUseCase } from "~/features/posts/use-cases/create-post.use-case.server";
 import { prisma } from "~/lib/prisma.server";
@@ -16,17 +18,19 @@ const TEST_DATABASE_URL =
   process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"];
 
 describe.skipIf(!TEST_DATABASE_URL)("CreatePostUseCase Integration", () => {
+  // Setup database before all tests in this suite
+  beforeAll(async () => {
+    await setupTestDatabase();
+  });
   let userId: string;
   let useCase: CreatePostUseCase;
 
   beforeEach(async () => {
-    // Create a test user - use upsert to handle duplicates
-    const npub = `test-${Date.now()}-${Math.random()}`;
-    const user = await prisma.user.upsert({
-      where: { npub },
-      update: {},
-      create: {
-        npub,
+    // Create a test user with unique identifier to avoid race conditions
+    const uniqueId = `${Date.now()}-${Math.random()}`;
+    const user = await prisma.user.create({
+      data: {
+        npub: `test-${uniqueId}`,
         isEnabled: true,
       },
     });
@@ -74,8 +78,10 @@ describe.skipIf(!TEST_DATABASE_URL)("CreatePostUseCase Integration", () => {
     expect(result.post.userId).toBe(userId);
     expect(result.post.content).toBe("Test draft post");
     expect(result.post.postType).toBe("TEXT");
-    expect(result.post.isScheduled).toBe(false);
-    expect(result.post.isPosted).toBe(false);
+    const { deriveIsScheduled, deriveIsPosted } =
+      await import("~/features/posts/state-machine/post-state");
+    expect(deriveIsScheduled(result.post.currentState)).toBe(false);
+    expect(deriveIsPosted(result.post.currentState)).toBe(false);
     expect(result.needsScheduling).toBe(false);
 
     // Verify state transition
@@ -101,7 +107,9 @@ describe.skipIf(!TEST_DATABASE_URL)("CreatePostUseCase Integration", () => {
 
     expect(result.post).toBeDefined();
     expect(result.post.userId).toBe(userId);
-    expect(result.post.isScheduled).toBe(true);
+    const { deriveIsScheduled } =
+      await import("~/features/posts/state-machine/post-state");
+    expect(deriveIsScheduled(result.post.currentState)).toBe(true);
     expect(result.needsScheduling).toBe(true);
 
     // Verify state transition

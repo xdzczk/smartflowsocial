@@ -9,6 +9,8 @@ import {
 } from "~/lib/validation";
 import { updatePost } from "~/models/post.commands.server";
 
+import { PostStateMachine } from "../state-machine/post-state-machine.server";
+
 import { resolveQueueTypeId } from "./queue-type-resolver.server";
 
 export async function handleDraftEditAction(
@@ -65,6 +67,7 @@ export async function handleDraftEditAction(
     ? resumeData.hashTagPresetId
     : null;
 
+  // Update post data (flags will be set by state machine transition)
   await updatePost({
     id: postId,
     userId,
@@ -75,12 +78,20 @@ export async function handleDraftEditAction(
       scheduledFor: resumeData.scheduledFor,
       signedEvent: resumeData.signedEvent,
       nostrEvent: resumeData.nostrEvent,
-      draft: false,
-      isScheduled: true,
-      isPosted: false,
       hashTagPresetId,
+      // Note: Flags (draft, isScheduled, isPosted) should be derived from currentState
+      // State machine transition will update currentState, which is the source of truth
     },
   });
+
+  // Transition to SCHEDULED state using state machine (single source of truth)
+  const stateMachine = new PostStateMachine();
+  await stateMachine.transition(
+    postId,
+    userId,
+    "SCHEDULED",
+    "Draft resumed and scheduled"
+  );
 
   return { redirect: "/dashboard/scheduled" };
 }

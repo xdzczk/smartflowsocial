@@ -10,6 +10,7 @@ import AssetBrowser from "~/features/assets/components/AssetBrowser";
 import type { Asset } from "~/features/assets/types";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
+import { nowMillis, parseDateTimeLocal, toUnixTimestamp } from "~/lib/temporal";
 import { textPostClientSchema } from "~/lib/validation";
 import { useZodForm } from "~/lib/validation/utils.client-safe";
 
@@ -96,6 +97,37 @@ export default function TextPost({
     }
   }, [formScheduledFor, schedulingScheduledFor, setSchedulingScheduledFor]);
 
+  /**
+   * Parse scheduled time from datetime-local string with fallbacks
+   */
+  async function parseScheduledTime(
+    scheduledForStr: string,
+    userTimezone: string
+  ): Promise<number> {
+    try {
+      const zonedDateTime = parseDateTimeLocal(scheduledForStr, userTimezone);
+      const utcZoned = zonedDateTime.withTimeZone("UTC");
+      return toUnixTimestamp(utcZoned) * 1000;
+    } catch {
+      try {
+        const { fromISOString, toUnixTimestamp } =
+          await import("~/lib/temporal");
+        const zoned = fromISOString(scheduledForStr + "Z", "UTC");
+        return toUnixTimestamp(zoned) * 1000;
+      } catch {
+        try {
+          const { fromDate, toUnixTimestamp } = await import("~/lib/temporal");
+          const dateObj = new Date(scheduledForStr + "Z");
+          const zoned = fromDate(dateObj, "UTC");
+          return toUnixTimestamp(zoned) * 1000;
+        } catch {
+          const dateObj = new Date(scheduledForStr + "Z");
+          return dateObj.getTime();
+        }
+      }
+    }
+  }
+
   const handleSubmit = form.handleSubmit(async (data, event) => {
     const submitter = event?.nativeEvent
       ? ((event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement)
@@ -121,38 +153,10 @@ export default function TextPost({
 
     try {
       const userTimezone = user?.timezone ?? "UTC";
-      let scheduledTime;
-
-      if (submitType === "post-text") {
-        scheduledTime = Date.now();
-      } else {
-        const scheduledForStr = data.scheduledFor ?? "";
-
-        // Only convert timezone if not UTC/Etc/GMT
-        if (userTimezone !== "UTC" && userTimezone !== "Etc/GMT") {
-          const utcDate = new Date(scheduledForStr);
-
-          // Get timezone offset in minutes between user timezone and UTC
-          const userDateStr = new Date(scheduledForStr).toLocaleString(
-            "en-US",
-            {
-              timeZone: userTimezone,
-            }
-          );
-          const userDate = new Date(userDateStr);
-          const scheduledDate = new Date(scheduledForStr);
-          const userOffset =
-            (userDate.getTime() - scheduledDate.getTime()) / 60000;
-
-          // Adjust the date by the offset
-          utcDate.setMinutes(utcDate.getMinutes() - userOffset);
-          scheduledTime = utcDate.getTime();
-        } else {
-          // Parse date string and ensure it's in UTC
-          const dateObj = new Date(scheduledForStr + "Z");
-          scheduledTime = dateObj.getTime();
-        }
-      }
+      const scheduledTime =
+        submitType === "post-text"
+          ? nowMillis()
+          : await parseScheduledTime(data.scheduledFor ?? "", userTimezone);
 
       const scheduledForUnix = Math.floor(scheduledTime / 1000);
 
@@ -426,9 +430,9 @@ export default function TextPost({
               scheduleIntervals={scheduleIntervals}
               queueTypes={queueTypes}
               selectedQueue={selectedQueue}
-              onScheduleIntervalClick={(intervalHours) =>
-                void handleScheduleIntervalClick(intervalHours)
-              }
+              onScheduleIntervalClick={(intervalHours) => {
+                handleScheduleIntervalClick(intervalHours);
+              }}
               onCalculateNextSlot={() => {
                 void calculateQueueScheduleTime(selectedQueue);
               }}

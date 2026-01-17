@@ -15,7 +15,6 @@ import {
   getDraftLongFormPosts,
   getPublishedLongFormPosts,
   getScheduledLongFormPosts,
-  updateLongFormPostStatus,
 } from "~/models/longformpost.server";
 
 // Mock Prisma - use vi.hoisted to allow top-level variables in mocks
@@ -86,11 +85,8 @@ describe("LongFormPost Model Functions", () => {
           summary: "Article summary",
           image: "https://example.com/image.jpg",
           tags: ["article", "longform"],
-          isPublished: false,
           queueTypeId: TEST_QUEUE_TYPE_ID,
-          status: "DRAFT",
-          draft: true,
-          isScheduled: false,
+          currentState: "DRAFT",
         }),
       });
       expect(result).toEqual(mockLongFormPost);
@@ -102,14 +98,14 @@ describe("LongFormPost Model Functions", () => {
         title: "Draft Article",
         content: "Draft content",
         tags: [],
-        draft: true,
-        isPublished: false,
+        isPublished: false, // Parameter kept for backward compatibility
       };
 
       (
         mockPrisma.longFormPost.create as ReturnType<typeof vi.fn>
       ).mockResolvedValue({
         id: TEST_LONGFORM_ID,
+        currentState: "DRAFT",
         ...postData,
       });
 
@@ -120,7 +116,7 @@ describe("LongFormPost Model Functions", () => {
       ).toHaveBeenCalledWith({
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         data: expect.objectContaining({
-          draft: true,
+          currentState: "DRAFT",
         }),
       });
       expect(result).toBeDefined();
@@ -128,20 +124,21 @@ describe("LongFormPost Model Functions", () => {
 
     it("should handle scheduled longform posts", async () => {
       const scheduledDate = new Date("2024-01-15T10:00:00Z");
+      const scheduledForUnix = Math.floor(scheduledDate.getTime() / 1000);
       const postData = {
         userId: TEST_USER_ID,
         title: "Scheduled Article",
         content: "Scheduled content",
         tags: [],
-        isScheduled: true,
-        isPublished: false,
-        scheduledFor: scheduledDate.toString(),
+        isPublished: false, // Parameter kept for backward compatibility
+        scheduledFor: String(scheduledForUnix),
       };
 
       (
         mockPrisma.longFormPost.create as ReturnType<typeof vi.fn>
       ).mockResolvedValue({
         id: TEST_LONGFORM_ID,
+        currentState: "SCHEDULED",
         ...postData,
       });
 
@@ -152,8 +149,8 @@ describe("LongFormPost Model Functions", () => {
       ).toHaveBeenCalledWith({
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         data: expect.objectContaining({
-          isScheduled: true,
-          scheduledFor: scheduledDate.toString(),
+          currentState: "SCHEDULED",
+          scheduledFor: String(scheduledForUnix),
         }),
       });
       expect(result).toBeDefined();
@@ -270,8 +267,7 @@ describe("LongFormPost Model Functions", () => {
         {
           id: "longform-1",
           userId: TEST_USER_ID,
-          draft: true,
-          isPublished: false,
+          currentState: "DRAFT",
           queueType: { name: "articles" },
         },
       ];
@@ -289,8 +285,7 @@ describe("LongFormPost Model Functions", () => {
       ).toHaveBeenCalledWith({
         where: {
           userId: TEST_USER_ID,
-          isPublished: false,
-          draft: true,
+          currentState: "DRAFT",
         },
         include: {
           queueType: true,
@@ -309,7 +304,7 @@ describe("LongFormPost Model Functions", () => {
         {
           id: "longform-1",
           userId: TEST_USER_ID,
-          isPublished: true,
+          currentState: "PUBLISHED",
           publishedAt: new Date(),
           queueType: { name: "articles" },
         },
@@ -330,7 +325,7 @@ describe("LongFormPost Model Functions", () => {
       ).toHaveBeenCalledWith({
         where: {
           userId: TEST_USER_ID,
-          isPublished: true,
+          currentState: "PUBLISHED",
         },
         orderBy: {
           publishedAt: "desc",
@@ -343,7 +338,7 @@ describe("LongFormPost Model Functions", () => {
       ).toHaveBeenCalledWith({
         where: {
           userId: TEST_USER_ID,
-          isPublished: true,
+          currentState: "PUBLISHED",
         },
       });
       expect(result.posts).toEqual(mockPosts);
@@ -356,8 +351,7 @@ describe("LongFormPost Model Functions", () => {
         {
           id: "longform-1",
           userId: TEST_USER_ID,
-          isScheduled: true,
-          isPublished: false,
+          currentState: "SCHEDULED",
           queueType: { name: "articles" },
         },
       ];
@@ -375,7 +369,7 @@ describe("LongFormPost Model Functions", () => {
       ).toHaveBeenCalledWith({
         where: {
           userId: TEST_USER_ID,
-          status: "SCHEDULED",
+          currentState: "SCHEDULED",
         },
         include: {
           queueType: true,
@@ -388,40 +382,6 @@ describe("LongFormPost Model Functions", () => {
     });
   });
 
-  describe("updateLongFormPostStatus", () => {
-    it("should update longform post status to published", async () => {
-      const mockUpdatedPost = {
-        id: TEST_LONGFORM_ID,
-        userId: TEST_USER_ID,
-        isPublished: true,
-        publishedAt: new Date(),
-      };
-
-      (
-        mockPrisma.longFormPost.update as ReturnType<typeof vi.fn>
-      ).mockResolvedValue(mockUpdatedPost);
-
-      const result = await updateLongFormPostStatus({
-        id: TEST_LONGFORM_ID,
-        userId: TEST_USER_ID,
-        isPublished: true,
-      });
-
-      expect(
-        mockPrisma.longFormPost.update as ReturnType<typeof vi.fn>
-      ).toHaveBeenCalledWith({
-        where: {
-          id: TEST_LONGFORM_ID,
-          userId: TEST_USER_ID,
-        },
-        data: {
-          isPublished: true,
-          status: "ACTIVE",
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
-          postedAt: expect.any(Date),
-        },
-      });
-      expect(result).toEqual(mockUpdatedPost);
-    });
-  });
+  // updateLongFormPostStatus was removed - state transitions now use LongFormPostStateMachine
+  // Tests for state transitions should be in longform-post-state-machine.integration.test.ts
 });

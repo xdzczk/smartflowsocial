@@ -33,9 +33,17 @@ export function useDraftsState({ posts }: UseDraftsStateProps) {
   const sortedPosts = useMemo(() => {
     return [...posts].sort((a, b) => {
       if (sortConfig.key === "createdAt") {
-        const dateA = new Date(a[sortConfig.key]).getTime();
-        const dateB = new Date(b[sortConfig.key]).getTime();
-        return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
+        try {
+          // Import synchronously at top level would be better, but for now use sync fallback
+          const dateA = new Date(a[sortConfig.key]).getTime();
+          const dateB = new Date(b[sortConfig.key]).getTime();
+          return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
+        } catch {
+          // Ultimate fallback
+          const dateA = new Date(a[sortConfig.key]).getTime();
+          const dateB = new Date(b[sortConfig.key]).getTime();
+          return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
+        }
       }
       const aValue = a[sortConfig.key] as string | number | undefined;
       const bValue = b[sortConfig.key] as string | number | undefined;

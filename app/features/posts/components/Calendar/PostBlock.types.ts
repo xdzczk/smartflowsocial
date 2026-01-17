@@ -28,6 +28,8 @@ export interface CalendarPost extends Omit<
   repost?: boolean;
   isQuotedPost?: boolean;
   isPast?: boolean;
+  isScheduled?: boolean; // Derived from currentState
+  isPosted?: boolean; // Derived from currentState
 }
 
 export interface QueueColorStyle {

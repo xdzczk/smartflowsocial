@@ -102,7 +102,9 @@ describe.skipIf(!TEST_DATABASE_URL)("PublishNowUseCase Integration", () => {
     const publishedPost = await prisma.post.findUnique({
       where: { id: postId },
     });
-    expect(publishedPost?.isPosted).toBe(true);
+    const { deriveIsPosted } =
+      await import("~/features/posts/state-machine/post-state");
+    expect(deriveIsPosted(publishedPost?.currentState)).toBe(true);
     expect(publishedPost?.currentState).toBe("PUBLISHED");
 
     // Verify state transitions

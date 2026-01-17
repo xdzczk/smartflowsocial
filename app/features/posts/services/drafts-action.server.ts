@@ -10,6 +10,8 @@ import {
 import { deleteLongFormPost } from "~/models/longformpost.server";
 import { deletePost, updatePost } from "~/models/post.commands.server";
 
+import { PostStateMachine } from "../state-machine/post-state-machine.server";
+
 import { resolveQueueTypeId } from "./queue-type-resolver.server";
 
 export async function handleDraftsAction(formData: FormData, userId: string) {
@@ -48,6 +50,7 @@ export async function handleDraftsAction(formData: FormData, userId: string) {
 
   // TypeScript guarantees this is "bulkSignAndResume" after previous checks
   const bulkData = result.data;
+  const stateMachine = new PostStateMachine();
 
   await Promise.all(
     bulkData.postIds.map(async (id, index) => {
@@ -64,7 +67,8 @@ export async function handleDraftsAction(formData: FormData, userId: string) {
         bulkData.queueTypes[index] ?? null
       );
 
-      return updatePost({
+      // Update post data (without flags - flags will be set by state machine)
+      await updatePost({
         id,
         userId,
         data: {
@@ -74,11 +78,18 @@ export async function handleDraftsAction(formData: FormData, userId: string) {
           scheduledFor: bulkData.scheduledFors[index],
           signedEvent: bulkData.signedEvents[index],
           nostrEvent: bulkData.nostrEvents[index],
-          draft: false,
-          isScheduled: true,
-          isPosted: false,
+          // @deprecated - Flags removed. State machine will set them via transition.
         },
       });
+
+      // Use state machine to transition to SCHEDULED state
+      // This will automatically sync the flags
+      await stateMachine.transition(
+        id,
+        userId,
+        "SCHEDULED",
+        "Draft signed and scheduled"
+      );
     })
   );
   return { success: true };

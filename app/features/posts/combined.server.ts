@@ -3,6 +3,18 @@
  * Used by the "All" tab to display both types of content together
  */
 
+import { fromDate, fromISOString } from "~/lib/temporal";
+
+import {
+  deriveIsScheduledLongForm,
+  deriveIsPublishedLongForm,
+  deriveIsDraftLongForm,
+} from "./state-machine/longform-post-state";
+import {
+  deriveIsScheduled,
+  deriveIsPosted,
+  deriveIsDraft,
+} from "./state-machine/post-state";
 import type { CombinedContent, PostData, LongFormPostData } from "./types";
 // Re-export the type
 export type { CombinedContent } from "~/features/posts/types";
@@ -24,16 +36,54 @@ function parseScheduledFor(value: unknown): number {
   return 0;
 }
 
+/**
+ * Parse postedAt or publishedAt date value
+ */
+function parsePostedAtDate(postedAt: Date | string | undefined): number {
+  if (!postedAt) return 0;
+
+  try {
+    const dateObj = postedAt instanceof Date ? postedAt : new Date(postedAt);
+    return Number(fromDate(dateObj, "UTC").epochMilliseconds);
+  } catch {
+    try {
+      const isoString =
+        postedAt instanceof Date ? postedAt.toISOString() : String(postedAt);
+      return Number(fromISOString(isoString, "UTC").epochMilliseconds);
+    } catch {
+      return postedAt instanceof Date
+        ? postedAt.getTime()
+        : new Date(postedAt).getTime();
+    }
+  }
+}
+
+/**
+ * Parse createdAt or updatedAt date value
+ */
+function parseDateField(dateValue: Date | string): number {
+  try {
+    return Number(fromISOString(String(dateValue), "UTC").epochMilliseconds);
+  } catch {
+    try {
+      const dateObj =
+        dateValue instanceof Date ? dateValue : new Date(dateValue);
+      return Number(fromDate(dateObj, "UTC").epochMilliseconds);
+    } catch {
+      return new Date(dateValue).getTime();
+    }
+  }
+}
+
 function getSortValue(item: CombinedContent, sortBy: string): number {
   if (sortBy === "scheduledFor") {
     return parseScheduledFor(item.scheduledFor);
   }
   if (sortBy === "postedAt" || sortBy === "publishedAt") {
-    return item.postedAt ? new Date(item.postedAt).getTime() : 0;
+    return parsePostedAtDate(item.postedAt);
   }
   if (sortBy === "createdAt" || sortBy === "updatedAt") {
-    const dateValue = item[sortBy];
-    return new Date(dateValue).getTime();
+    return parseDateField(item[sortBy]);
   }
   return 0;
 }
@@ -67,10 +117,14 @@ export function postToCombinedContent(post: PostData): CombinedContent {
     postedAt: nullToUndefined(post.postedAt),
     createdAt: post.createdAt,
     updatedAt: post.updatedAt,
-    isScheduled: post.isScheduled,
-    isPosted: post.isPosted,
-    draft: post.draft,
+    // Derive flags from currentState (flags removed from Post model)
+    isScheduled: post.currentState
+      ? deriveIsScheduled(post.currentState)
+      : undefined,
+    isPosted: post.currentState ? deriveIsPosted(post.currentState) : undefined,
+    draft: post.currentState ? deriveIsDraft(post.currentState) : undefined,
     status: post.status,
+    currentState: post.currentState, // Include state machine state
     queueType:
       post.queueType &&
       typeof post.queueType === "object" &&
@@ -136,11 +190,21 @@ export function longFormPostToCombinedContent(
     postedAt: nullToUndefined(longFormPost.publishedAt), // Map publishedAt to postedAt for consistency
     createdAt: longFormPost.createdAt,
     updatedAt: longFormPost.updatedAt,
-    isScheduled: longFormPost.isScheduled,
-    isPublished: longFormPost.isPublished,
-    isPosted: longFormPost.isPublished, // Map isPublished to isPosted for consistency
-    draft: longFormPost.draft,
+    // Derive flags from currentState (flags removed from LongFormPost model)
+    isScheduled: longFormPost.currentState
+      ? deriveIsScheduledLongForm(longFormPost.currentState)
+      : undefined,
+    isPublished: longFormPost.currentState
+      ? deriveIsPublishedLongForm(longFormPost.currentState)
+      : undefined,
+    isPosted: longFormPost.currentState
+      ? deriveIsPublishedLongForm(longFormPost.currentState)
+      : undefined, // Map isPublished to isPosted for consistency
+    draft: longFormPost.currentState
+      ? deriveIsDraftLongForm(longFormPost.currentState)
+      : undefined,
     status: longFormPost.status,
+    currentState: longFormPost.currentState, // Include state machine state
     queueType: longFormPost.queueType
       ? {
           id: longFormPost.queueType.id,

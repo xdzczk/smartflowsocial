@@ -1,6 +1,8 @@
 import { useFetcher } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
+import { parseDateTimeLocal, toDate, fromDate } from "~/lib/temporal";
+
 import { useEditPostModal } from "../hooks/useEditPostModal";
 import type {
   PostData,
@@ -231,11 +233,33 @@ export function EditPostModal({
                   value={
                     scheduledFor ? formatDateTimeForInput(scheduledFor) : ""
                   }
-                  onChange={(e) =>
-                    setScheduledFor(
-                      e.target.value ? new Date(e.target.value) : null
-                    )
-                  }
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      try {
+                        const userTimezone = user?.timezone ?? "UTC";
+                        const zoned = parseDateTimeLocal(
+                          e.target.value,
+                          userTimezone
+                        );
+                        const utcZoned = zoned.withTimeZone("UTC");
+                        setScheduledFor(toDate(utcZoned));
+                      } catch {
+                        // Fallback - still use Temporal for consistency
+                        try {
+                          const dateObj = new Date(e.target.value);
+                          const userTimezone = user?.timezone ?? "UTC";
+                          const zoned = fromDate(dateObj, userTimezone);
+                          const utcZoned = zoned.withTimeZone("UTC");
+                          setScheduledFor(toDate(utcZoned));
+                        } catch {
+                          // Ultimate fallback - only if Temporal completely fails
+                          setScheduledFor(new Date(e.target.value));
+                        }
+                      }
+                    } else {
+                      setScheduledFor(null);
+                    }
+                  }}
                   className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                 />
               </div>

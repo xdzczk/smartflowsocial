@@ -52,6 +52,9 @@ importers:
       "@hookform/resolvers":
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.70.0(react@18.3.1))
+      "@js-temporal/polyfill":
+        specifier: ^0.5.1
+        version: 0.5.1
       "@nostr-dev-kit/ndk":
         specifier: ^2.18.1
         version: 2.18.1(nostr-tools@2.19.4(typescript@5.9.3))
@@ -1654,6 +1657,10 @@ packages:
 
   "@jridgewell/trace-mapping@0.3.31":
     resolution: { integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw== }
+
+  "@js-temporal/polyfill@0.5.1":
+    resolution: { integrity: sha512-hloP58zRVCRSpgDxmqCWJNlizAlUgJFqG2ypq79DCvyv9tHjRYMDOcPFjzfl/A1/YxDvRCZz8wvZvmapQnKwFQ== }
+    engines: { node: ">=12" }
 
   "@jspm/core@2.1.0":
     resolution: { integrity: sha512-3sRl+pkyFY/kLmHl0cgHiFp2xEqErA8N3ECjMs7serSUBmoJ70lBa0PG5t0IM6WJgdZNyyI0R8YFfi5wM8+mzg== }
@@ -5507,6 +5514,9 @@ packages:
   js-yaml@4.1.1:
     resolution: { integrity: sha512-qQKT4zQxXl8lLwBtHMWwaTcGfFOZviOJet3Oy/xmGk2gZH677CJM9EvtfdSkgWcATZhj/55JZ0rmy3myCT5lsA== }
     hasBin: true
+
+  jsbi@4.3.2:
+    resolution: { integrity: sha512-9fqMSQbhJykSeii05nxKl4m6Eqn2P6rOlYiS+C5Dr/HPIU/7yZxu5qzbs40tgaFORiw2Amd0mirjxatXYMkIew== }
 
   jsbn@0.1.1:
     resolution: { integrity: sha512-UVU9dibq2JcFWxQPA6KCqj5O42VOmAY3zQUfEKxU0KpTGXwNoCjkX1e13eHNvw/xPynt6pU0rZ1htjWTNTSXsg== }
@@ -9470,6 +9480,10 @@ snapshots:
     dependencies:
       "@jridgewell/resolve-uri": 3.1.2
       "@jridgewell/sourcemap-codec": 1.5.5
+
+  "@js-temporal/polyfill@0.5.1":
+    dependencies:
+      jsbi: 4.3.2
 
   "@jspm/core@2.1.0": {}
 
@@ -14097,6 +14111,8 @@ snapshots:
   js-yaml@4.1.1:
     dependencies:
       argparse: 2.0.1
+
+  jsbi@4.3.2: {}
 
   jsbn@0.1.1: {}
 

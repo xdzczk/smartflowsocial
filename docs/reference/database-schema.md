@@ -64,31 +64,29 @@ The primary user model, representing a Nostr user.
 
 Represents a short-form Nostr post (note).
 
-| Field             | Type     | Description                    |
-| ----------------- | -------- | ------------------------------ |
-| `id`              | String   | Unique identifier              |
-| `nostrEventId`    | String   | Published Nostr event ID       |
-| `caption`         | String   | Post caption/description       |
-| `content`         | String   | Full post content              |
-| `fileUrl`         | String[] | Attached media URLs            |
-| `scheduledFor`    | String   | Scheduled timestamp            |
-| `postedAt`        | DateTime | Actual post time               |
-| `isPosted`        | Boolean  | Publication status             |
-| `isScheduled`     | Boolean  | Scheduling status              |
-| `postType`        | PostType | IMAGE, CAROUSEL, TEXT, VIDEO   |
-| `repost`          | Boolean  | Is a repost                    |
-| `isQuotedPost`    | Boolean  | Is a quote post                |
-| `isRecyclable`    | Boolean  | Can be recycled/reused         |
-| `draft`           | Boolean  | Draft status                   |
-| `status`          | Status   | DRAFT, ACTIVE, SCHEDULED, etc. |
-| `signedEvent`     | Json     | Signed Nostr event data        |
-| `nostrEvent`      | Json     | Full Nostr event object        |
-| `tags`            | String[] | Post tags                      |
-| `manual_override` | Boolean  | Override auto-scheduling       |
-| `userId`          | String   | Owner user ID                  |
-| `queueTypeId`     | String   | Associated queue               |
-| `templateId`      | String   | Template used                  |
-| `hashTagPresetId` | String   | Hashtag preset used            |
+| Field             | Type     | Description                                                                      |
+| ----------------- | -------- | -------------------------------------------------------------------------------- |
+| `id`              | String   | Unique identifier                                                                |
+| `nostrEventId`    | String   | Published Nostr event ID                                                         |
+| `caption`         | String   | Post caption/description                                                         |
+| `content`         | String   | Full post content                                                                |
+| `fileUrl`         | String[] | Attached media URLs                                                              |
+| `scheduledFor`    | String   | Scheduled timestamp                                                              |
+| `postedAt`        | DateTime | Actual post time                                                                 |
+| `currentState`    | String   | State machine state (DRAFT, SCHEDULED, PUBLISHING, PUBLISHED, FAILED, CANCELLED) |
+| `postType`        | PostType | IMAGE, CAROUSEL, TEXT, VIDEO                                                     |
+| `repost`          | Boolean  | Is a repost                                                                      |
+| `isQuotedPost`    | Boolean  | Is a quote post                                                                  |
+| `isRecyclable`    | Boolean  | Can be recycled/reused                                                           |
+| `status`          | Status   | DRAFT, ACTIVE, SCHEDULED, etc.                                                   |
+| `signedEvent`     | Json     | Signed Nostr event data                                                          |
+| `nostrEvent`      | Json     | Full Nostr event object                                                          |
+| `tags`            | String[] | Post tags                                                                        |
+| `manual_override` | Boolean  | Override auto-scheduling                                                         |
+| `userId`          | String   | Owner user ID                                                                    |
+| `queueTypeId`     | String   | Associated queue                                                                 |
+| `templateId`      | String   | Template used                                                                    |
+| `hashTagPresetId` | String   | Hashtag preset used                                                              |
 
 ---
 
@@ -96,27 +94,25 @@ Represents a short-form Nostr post (note).
 
 Represents a long-form article (NIP-23).
 
-| Field             | Type     | Description              |
-| ----------------- | -------- | ------------------------ |
-| `id`              | String   | Unique identifier        |
-| `nostrEventId`    | String   | Published Nostr event ID |
-| `title`           | String   | Article title            |
-| `summary`         | String   | Article summary          |
-| `content`         | String   | Full markdown content    |
-| `image`           | String   | Cover image URL          |
-| `scheduledFor`    | String   | Scheduled timestamp      |
-| `isScheduled`     | Boolean  | Scheduling status        |
-| `postedAt`        | DateTime | Post time                |
-| `publishedAt`     | DateTime | Publication time         |
-| `isPublished`     | Boolean  | Publication status       |
-| `draft`           | Boolean  | Draft status             |
-| `status`          | Status   | Current status           |
-| `tags`            | String[] | Article tags             |
-| `signedEvent`     | Json     | Signed Nostr event       |
-| `nostrEvent`      | Json     | Full event object        |
-| `userId`          | String   | Owner user ID            |
-| `queueTypeId`     | String   | Associated queue         |
-| `hashTagPresetId` | String   | Hashtag preset           |
+| Field             | Type     | Description                                                                      |
+| ----------------- | -------- | -------------------------------------------------------------------------------- |
+| `id`              | String   | Unique identifier                                                                |
+| `nostrEventId`    | String   | Published Nostr event ID                                                         |
+| `title`           | String   | Article title                                                                    |
+| `summary`         | String   | Article summary                                                                  |
+| `content`         | String   | Full markdown content                                                            |
+| `image`           | String   | Cover image URL                                                                  |
+| `scheduledFor`    | String   | Scheduled timestamp                                                              |
+| `postedAt`        | DateTime | Post time                                                                        |
+| `publishedAt`     | DateTime | Publication time                                                                 |
+| `currentState`    | String   | State machine state (DRAFT, SCHEDULED, PUBLISHING, PUBLISHED, FAILED, CANCELLED) |
+| `status`          | Status   | Current status                                                                   |
+| `tags`            | String[] | Article tags                                                                     |
+| `signedEvent`     | Json     | Signed Nostr event                                                               |
+| `nostrEvent`      | Json     | Full event object                                                                |
+| `userId`          | String   | Owner user ID                                                                    |
+| `queueTypeId`     | String   | Associated queue                                                                 |
+| `hashTagPresetId` | String   | Hashtag preset                                                                   |
 
 ---
 

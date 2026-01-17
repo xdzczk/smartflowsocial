@@ -103,7 +103,9 @@ describe.skipIf(!TEST_DATABASE_URL)("RecyclePostUseCase Integration", () => {
     const originalPost = await prisma.post.findUnique({
       where: { id: originalPostId },
     });
-    expect(originalPost?.isPosted).toBe(true);
+    const { deriveIsPosted } =
+      await import("~/features/posts/state-machine/post-state");
+    expect(deriveIsPosted(originalPost?.currentState)).toBe(true);
     expect(originalPost?.isRecyclable).toBe(true);
 
     // Recycle the post
@@ -121,7 +123,9 @@ describe.skipIf(!TEST_DATABASE_URL)("RecyclePostUseCase Integration", () => {
     });
     expect(newPost).toBeDefined();
     expect(newPost?.userId).toBe(userId);
-    expect(newPost?.isPosted).toBe(false);
+    const { deriveIsPosted: deriveIsPosted2 } =
+      await import("~/features/posts/state-machine/post-state");
+    expect(deriveIsPosted2(newPost?.currentState)).toBe(false);
     expect(newPost?.isRecyclable).toBe(true); // Inherited from original
 
     // Verify original post is marked as non-recyclable
@@ -168,7 +172,9 @@ describe.skipIf(!TEST_DATABASE_URL)("RecyclePostUseCase Integration", () => {
     const newPost = await prisma.post.findUnique({
       where: { id: result.newPostId },
     });
-    expect(newPost?.isScheduled).toBe(true);
+    const { deriveIsScheduled } =
+      await import("~/features/posts/state-machine/post-state");
+    expect(deriveIsScheduled(newPost?.currentState)).toBe(true);
     expect(newPost?.currentState).toBe("SCHEDULED");
   });
 

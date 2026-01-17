@@ -249,6 +249,7 @@ export interface CombinedContent {
   isPublished?: boolean;
   draft?: boolean;
   status: string;
+  currentState?: string; // State machine state (single source of truth)
   queueType?: {
     id: string;
     name: string;

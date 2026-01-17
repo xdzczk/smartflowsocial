@@ -11,6 +11,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { CreatePostUseCase } from "~/features/posts/use-cases/create-post.use-case.server";
 import { SchedulePostUseCase } from "~/features/posts/use-cases/schedule-post.use-case.server";
 import { prisma } from "~/lib/prisma.server";
+import { fromDate } from "~/lib/temporal";
 
 // Skip if no test database configured
 const TEST_DATABASE_URL =
@@ -91,7 +92,7 @@ describe.skipIf(!TEST_DATABASE_URL)("SchedulePostUseCase Integration", () => {
     const postId = createResult.post.id;
 
     // Schedule the post
-    const scheduledAtUtc = new Date(Date.now() + 3600000); // 1 hour from now
+    const scheduledAtUtc = fromDate(new Date(Date.now() + 3600000), "UTC"); // 1 hour from now
     await useCase.execute({
       postId,
       userId,
@@ -111,8 +112,22 @@ describe.skipIf(!TEST_DATABASE_URL)("SchedulePostUseCase Integration", () => {
     const scheduledPost = await prisma.post.findUnique({
       where: { id: postId },
     });
-    expect(scheduledPost?.isScheduled).toBe(true);
-    expect(scheduledPost?.scheduledAtUtc).toEqual(scheduledAtUtc);
+    const { deriveIsScheduled } =
+      await import("~/features/posts/state-machine/post-state");
+    expect(deriveIsScheduled(scheduledPost?.currentState)).toBe(true);
+    // scheduledAtUtc is stored as Date in database, compare as Date objects
+    expect(scheduledPost?.scheduledAtUtc).toBeInstanceOf(Date);
+    if (scheduledPost?.scheduledAtUtc) {
+      const expectedDate = new Date(
+        scheduledAtUtc.toInstant().epochMilliseconds
+      );
+      // Allow small difference due to database precision
+      expect(
+        Math.abs(
+          scheduledPost.scheduledAtUtc.getTime() - expectedDate.getTime()
+        )
+      ).toBeLessThan(1000);
+    }
     expect(scheduledPost?.currentState).toBe("SCHEDULED");
 
     // Verify outbox event was created
@@ -139,7 +154,7 @@ describe.skipIf(!TEST_DATABASE_URL)("SchedulePostUseCase Integration", () => {
       useCase.execute({
         postId: "non-existent-post-id",
         userId,
-        scheduledAtUtc: new Date(),
+        scheduledAtUtc: fromDate(new Date(), "UTC"),
         signedEvent: {
           id: "test-event-id",
           pubkey: "test-pubkey",

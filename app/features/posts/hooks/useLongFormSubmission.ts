@@ -8,6 +8,13 @@ import {
   generateArticleIdentifier,
 } from "~/features/posts/utils/editorjs-conversion";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
+import {
+  fromDate,
+  fromISOString,
+  nowSeconds,
+  parseDateTimeLocal,
+  toUnixTimestamp,
+} from "~/lib/temporal";
 
 import type { EditorJSBlock } from "../types";
 import { generateSummaryFromContent } from "../utils/editorjs-content";
@@ -56,13 +63,43 @@ export function useLongFormSubmission({
       const finalSummary = summary || generateSummaryFromContent(content);
       const identifier = generateArticleIdentifier(title);
 
-      let scheduledTimestamp: number | undefined;
-      if (actionType === "schedule" && scheduledFor) {
-        const scheduledTime = new Date(scheduledFor);
-        if (!isNaN(scheduledTime.getTime())) {
-          scheduledTimestamp = Math.floor(scheduledTime.getTime() / 1000);
+      /**
+       * Parse scheduled timestamp with fallbacks
+       */
+      async function parseScheduledTimestamp(
+        scheduledForValue: string
+      ): Promise<number | undefined> {
+        try {
+          const userTimezone = "UTC"; // Default, could be passed as prop
+          const zoned = parseDateTimeLocal(scheduledForValue, userTimezone);
+          const utcZoned = zoned.withTimeZone("UTC");
+          return toUnixTimestamp(utcZoned);
+        } catch {
+          try {
+            const zoned = fromISOString(scheduledForValue, "UTC");
+            return toUnixTimestamp(zoned);
+          } catch {
+            try {
+              const scheduledTime = new Date(scheduledForValue);
+              if (!isNaN(scheduledTime.getTime())) {
+                const zoned = fromDate(scheduledTime, "UTC");
+                return toUnixTimestamp(zoned);
+              }
+            } catch {
+              const scheduledTime = new Date(scheduledForValue);
+              if (!isNaN(scheduledTime.getTime())) {
+                return Math.floor(scheduledTime.getTime() / 1000);
+              }
+            }
+          }
         }
+        return undefined;
       }
+
+      const scheduledTimestamp =
+        actionType === "schedule" && scheduledFor
+          ? await parseScheduledTimestamp(scheduledFor)
+          : undefined;
 
       // Get effective hashtags - prioritize manual selection over queue defaults
       let effectiveHashtags = "";
@@ -107,9 +144,7 @@ export function useLongFormSubmission({
         tags: uniqueTags,
         identifier,
         publishedAt:
-          actionType === "publish"
-            ? Math.floor(Date.now() / 1000)
-            : scheduledTimestamp,
+          actionType === "publish" ? nowSeconds() : scheduledTimestamp,
       };
 
       const { nostrEvent, signedEvent } =

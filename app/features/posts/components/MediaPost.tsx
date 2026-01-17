@@ -419,9 +419,9 @@ export default function MediaPost({
             scheduleIntervals={scheduleIntervals}
             queueTypes={queueTypes}
             selectedQueue={selectedQueue}
-            onScheduleIntervalClick={(intervalHours) =>
-              void handleScheduleIntervalClick(intervalHours)
-            }
+            onScheduleIntervalClick={(intervalHours) => {
+              handleScheduleIntervalClick(intervalHours);
+            }}
             onCalculateNextSlot={() => {
               void calculateQueueScheduleTime(selectedQueue);
             }}

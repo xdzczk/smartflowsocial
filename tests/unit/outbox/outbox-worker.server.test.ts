@@ -272,16 +272,28 @@ describe("Outbox Worker", () => {
         mockEvent
       );
 
+      const { updateReadModels } =
+        await import("~/infra/outbox/read-model-worker.server");
+      // Mock updateReadModels to resolve successfully (it's called with void, so errors are non-blocking)
+      (updateReadModels as ReturnType<typeof vi.fn>).mockResolvedValue(
+        undefined
+      );
+
       const result = await processOutboxEvents();
 
-      // POST_CREATED is not handled by processEvent, it's only handled by read model worker
-      // So it will throw "Unknown event type" error
-      expect(result.processed).toBe(0);
-      expect(result.errors).toBe(1);
-      expect(markOutboxEventProcessed).toHaveBeenCalledWith(
-        "event-5",
-        expect.stringContaining("Unknown event type")
+      // POST_CREATED is handled by read model worker, not the main outbox worker
+      // The outbox worker should call updateReadModels for read model events
+      expect(updateReadModels).toHaveBeenCalledWith(
+        expect.objectContaining({
+          eventType: "POST_CREATED",
+          aggregateId: "post-1",
+        })
       );
+      // POST_CREATED events are processed (marked as processed) but don't enqueue jobs
+      expect(result.processed).toBe(1);
+      expect(result.errors).toBe(0);
+      // markOutboxEventProcessed is called with just the event ID when successful (no error)
+      expect(markOutboxEventProcessed).toHaveBeenCalledWith("event-5");
     });
 
     it("should handle processing errors", async () => {

@@ -35,7 +35,7 @@ describe("Draft Edit Loader", () => {
     const mockPost = {
       id: TEST_POST_ID,
       userId: TEST_USER_ID,
-      draft: true,
+      currentState: "DRAFT", // Use currentState instead of draft flag
       content: "Draft content",
     };
     const mockUser = { id: TEST_USER_ID };
@@ -66,7 +66,7 @@ describe("Draft Edit Loader", () => {
     const mockPost = {
       id: TEST_POST_ID,
       userId: TEST_USER_ID,
-      draft: false,
+      currentState: "SCHEDULED", // Use currentState instead of draft flag
     };
 
     (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
@@ -95,7 +95,11 @@ describe("Draft Edit Loader", () => {
   });
 
   it("should filter out disabled queue types", async () => {
-    const mockPost = { id: TEST_POST_ID, userId: TEST_USER_ID, draft: true };
+    const mockPost = {
+      id: TEST_POST_ID,
+      userId: TEST_USER_ID,
+      currentState: "DRAFT",
+    };
     const mockQueueTypes = [
       { id: "queue-1", name: "Queue 1", isEnabled: true },
       { id: "queue-2", name: "Queue 2", isEnabled: false },

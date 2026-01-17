@@ -1,6 +1,8 @@
 import { useFetcher } from "@remix-run/react";
 import { useState } from "react";
 
+import { fromISOString } from "~/lib/temporal";
+
 import type {
   CombinedContent,
   LongFormPostData,
@@ -91,40 +93,67 @@ export default function AllContentListing({
     }));
   };
 
-  const sortedContent = [...content].sort((a, b) => {
-    let aValue: number | string;
-    let bValue: number | string;
+  /**
+   * Get sort value for scheduledFor field
+   */
+  function getScheduledForSortValue(scheduledFor: string | undefined): number {
+    return scheduledFor && typeof scheduledFor === "string"
+      ? parseInt(scheduledFor, 10) * 1000
+      : 0;
+  }
 
-    if (sortConfig.key === "scheduledFor") {
-      const aScheduled = a.scheduledFor;
-      const bScheduled = b.scheduledFor;
-      aValue =
-        aScheduled && typeof aScheduled === "string"
-          ? parseInt(aScheduled, 10) * 1000
-          : 0;
-      bValue =
-        bScheduled && typeof bScheduled === "string"
-          ? parseInt(bScheduled, 10) * 1000
-          : 0;
-    } else if (sortConfig.key === "postedAt") {
-      const aPosted = a.postedAt;
-      const bPosted = b.postedAt;
-      aValue = aPosted ? new Date(aPosted).getTime() : 0;
-      bValue = bPosted ? new Date(bPosted).getTime() : 0;
-    } else if (
-      sortConfig.key === "createdAt" ||
-      sortConfig.key === "updatedAt"
-    ) {
-      const aKey = a[sortConfig.key];
-      const bKey = b[sortConfig.key];
-      aValue = new Date(aKey).getTime();
-      bValue = new Date(bKey).getTime();
-    } else {
-      const aKey = a[sortConfig.key as keyof CombinedContent];
-      const bKey = b[sortConfig.key as keyof CombinedContent];
-      aValue = aKey ? (typeof aKey === "string" ? aKey : String(aKey)) : "";
-      bValue = bKey ? (typeof bKey === "string" ? bKey : String(bKey)) : "";
+  /**
+   * Get sort value for postedAt field
+   */
+  function getPostedAtSortValue(postedAt: Date | string | undefined): number {
+    if (!postedAt) return 0;
+    try {
+      const isoString =
+        postedAt instanceof Date ? postedAt.toISOString() : String(postedAt);
+      return Number(fromISOString(isoString, "UTC").epochMilliseconds);
+    } catch {
+      return 0;
     }
+  }
+
+  /**
+   * Get sort value for date fields (createdAt, updatedAt)
+   */
+  function getDateFieldSortValue(dateValue: Date | string): number {
+    try {
+      return Number(fromISOString(String(dateValue), "UTC").epochMilliseconds);
+    } catch {
+      return 0;
+    }
+  }
+
+  /**
+   * Get sort value for a content item based on sort key
+   */
+  function getSortValueForItem(
+    item: CombinedContent,
+    sortKey: string
+  ): number | string {
+    if (sortKey === "scheduledFor") {
+      return getScheduledForSortValue(item.scheduledFor);
+    }
+    if (sortKey === "postedAt") {
+      return getPostedAtSortValue(item.postedAt);
+    }
+    if (sortKey === "createdAt" || sortKey === "updatedAt") {
+      return getDateFieldSortValue(item[sortKey]);
+    }
+    const keyValue = item[sortKey as keyof CombinedContent];
+    return keyValue
+      ? typeof keyValue === "string"
+        ? keyValue
+        : String(keyValue)
+      : "";
+  }
+
+  const sortedContent = [...content].sort((a, b) => {
+    const aValue = getSortValueForItem(a, sortConfig.key);
+    const bValue = getSortValueForItem(b, sortConfig.key);
 
     if (aValue < bValue) {
       return sortConfig.direction === "asc" ? -1 : 1;
