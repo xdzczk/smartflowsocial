@@ -5,7 +5,7 @@ import { useState } from "react";
 import MediaModal from "~/components/ui/MediaModal";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
 import { formatDate, getImageUrls } from "~/lib/helpers";
-import { formatForDisplay, fromUnixTimestamp } from "~/lib/temporal";
+import { formatForDisplay, fromDate } from "~/lib/temporal";
 
 import { getQueueColor } from "../queue-colors";
 import type { CombinedContent, PostData } from "../types";
@@ -48,16 +48,13 @@ export default function PostDetailsModal({
 
   const queueType = hasQueueType(post) ? post.queueType : null;
 
-  const formatScheduledDate = (scheduledFor: string | null | undefined) => {
-    if (!scheduledFor) return "Not scheduled";
+  const formatScheduledDate = (scheduledAtUtc: Date | null | undefined) => {
+    if (!scheduledAtUtc) return "Not scheduled";
 
     try {
       // Use Temporal for consistent formatting
       const timezone = userTimezone ?? "UTC";
-      const timestamp = parseInt(scheduledFor, 10);
-      if (isNaN(timestamp)) return "Not scheduled";
-
-      const zoned = fromUnixTimestamp(timestamp, "UTC");
+      const zoned = fromDate(scheduledAtUtc, "UTC");
       const userZoned = zoned.withTimeZone(timezone);
 
       return formatForDisplay(userZoned, timezone, {
@@ -70,8 +67,7 @@ export default function PostDetailsModal({
       });
     } catch {
       // Fallback to simple formatting
-      const dateObj = new Date(parseInt(scheduledFor, 10) * 1000);
-      return dateObj.toLocaleDateString("en-US", {
+      return scheduledAtUtc.toLocaleDateString("en-US", {
         month: "2-digit",
         day: "2-digit",
         year: "numeric",
@@ -207,11 +203,7 @@ export default function PostDetailsModal({
                         Scheduled For
                       </h3>
                       <p className="text-gray-900 dark:text-white">
-                        {formatScheduledDate(
-                          Math.floor(
-                            post.scheduledAtUtc.getTime() / 1000
-                          ).toString()
-                        )}
+                        {formatScheduledDate(post.scheduledAtUtc)}
                       </p>
                     </div>
                   ) : null}

@@ -138,7 +138,7 @@ export function ContentTableRow({
       </td>
       <td className="p-3">
         {type === "scheduled"
-          ? formatDate(item.scheduledFor, true, userTimezone)
+          ? formatDate(item.scheduledAtUtc ?? undefined, false, userTimezone)
           : type === "posted"
             ? formatDate(item.postedAt, false, userTimezone)
             : formatDate(item.createdAt, false, userTimezone)}

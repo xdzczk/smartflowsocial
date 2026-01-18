@@ -114,16 +114,6 @@ export function getStatusColor(item: CombinedContent): string {
     }
   }
 
-  // Fallback to derived flags if currentState not available (shouldn't happen after migration)
-  if (item.draft) {
-    return DRAFT_COLOR;
-  }
-  if (item.isPosted ?? item.isPublished) {
-    return PUBLISHED_COLOR;
-  }
-  if (item.isScheduled) {
-    return SCHEDULED_COLOR;
-  }
   return "bg-gray-100 text-gray-900 dark:border-gray-900/75 dark:bg-gray-700/10 dark:text-gray-200";
 }
 
@@ -140,10 +130,6 @@ export function getStatusText(item: CombinedContent): string {
     return getStatusTextFromState(currentState);
   }
 
-  // Fallback to derived flags if currentState not available (shouldn't happen after migration)
-  if (item.draft) return "Draft";
-  if (item.isPosted ?? item.isPublished) return "Posted";
-  if (item.isScheduled) return "Scheduled";
   return "Unknown";
 }
 

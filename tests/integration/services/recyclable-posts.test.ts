@@ -86,7 +86,10 @@ describe("Recyclable Posts Service", () => {
         url,
       });
 
-      expect(result.posts).toEqual(mockPosts.posts);
+      expect(result.posts).toHaveLength(1);
+      expect(result.posts[0]).toEqual(
+        expect.objectContaining(mockPosts.posts[0])
+      );
       expect(result.pagination).toEqual(mockPosts.pagination);
       expect(result.stats).toEqual(mockStats);
       expect(result.user).toEqual(mockUser);

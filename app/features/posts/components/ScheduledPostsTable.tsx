@@ -5,13 +5,13 @@
 import { useFetcher } from "@remix-run/react";
 
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
-import { formatForDisplay, fromUnixTimestamp } from "~/lib/temporal";
-import type { ScheduledPostTablePost } from "~/lib/validation/post-data-conversion.server";
+import { formatForDisplay, fromDate } from "~/lib/temporal";
 
 import { getQueueColor } from "../queue-colors";
+import type { PostData } from "../types";
 
 interface ScheduledPostsTableProps {
-  posts: ScheduledPostTablePost[];
+  posts: PostData[];
   sortConfig: { key: string; direction: "asc" | "desc" };
   onRequestSort: (key: string) => void;
   selectedPosts: Set<string>;
@@ -19,9 +19,9 @@ interface ScheduledPostsTableProps {
   onToggleSelectAll: () => void;
   countdowns: Record<string, string>;
   userTimezone?: string | null;
-  onPostClick: (post: ScheduledPostTablePost) => void;
-  onEditPost: (post: ScheduledPostTablePost) => void;
-  onReschedulePost: (post: ScheduledPostTablePost) => void;
+  onPostClick: (post: PostData) => void;
+  onEditPost: (post: PostData) => void;
+  onReschedulePost: (post: PostData) => void;
   onMediaClick: (src: string) => void;
   bulkDeleteState: string;
 }
@@ -69,13 +69,12 @@ export function ScheduledPostsTable({
 }: ScheduledPostsTableProps) {
   const deleteFetcher = useFetcher();
 
-  const formatDate = (unixTimestamp: string) => {
+  const formatDate = (scheduledAtUtc: Date | null) => {
     try {
+      if (!scheduledAtUtc) return "-";
       const tz = userTimezone ?? "UTC";
-      const timestamp = parseInt(unixTimestamp, 10);
-      if (isNaN(timestamp)) return "Invalid date";
 
-      const zoned = fromUnixTimestamp(timestamp, "UTC");
+      const zoned = fromDate(scheduledAtUtc, "UTC");
       const userZoned = zoned.withTimeZone(tz);
 
       return formatForDisplay(userZoned, tz, {
@@ -89,10 +88,9 @@ export function ScheduledPostsTable({
     } catch {
       // Fallback - still use Temporal for consistency
       try {
+        if (!scheduledAtUtc) return "-";
         const tz = userTimezone ?? "UTC";
-        const timestamp = parseInt(unixTimestamp, 10);
-        if (isNaN(timestamp)) return "Invalid date";
-        const zoned = fromUnixTimestamp(timestamp, "UTC");
+        const zoned = fromDate(scheduledAtUtc, "UTC");
         const userZoned = zoned.withTimeZone(tz);
         return formatForDisplay(userZoned, tz, {
           month: "2-digit",
@@ -104,9 +102,9 @@ export function ScheduledPostsTable({
         });
       } catch {
         // Final fallback
+        if (!scheduledAtUtc) return "-";
         const tz = userTimezone ?? "UTC";
-        const date = new Date(parseInt(unixTimestamp, 10) * 1000);
-        return date.toLocaleString("en-US", {
+        return scheduledAtUtc.toLocaleString("en-US", {
           timeZone: tz,
           month: "2-digit",
           day: "2-digit",
@@ -158,7 +156,7 @@ export function ScheduledPostsTable({
               onRequestSort={onRequestSort}
             />
             <SortableHeader
-              sortKey="scheduledFor"
+              sortKey="scheduledAtUtc"
               label="Scheduled For"
               sortConfig={sortConfig}
               onRequestSort={onRequestSort}
@@ -195,7 +193,7 @@ export function ScheduledPostsTable({
               </td>
               <td className="p-3">
                 <div className="relative">
-                  {post.fileUrl && post.fileUrl.length > 0 ? (
+                  {post.fileUrl.length > 0 ? (
                     <MediaThumbnail
                       src={getImageUrls(post.fileUrl)[0]}
                       alt="Post preview"
@@ -225,7 +223,7 @@ export function ScheduledPostsTable({
                       TEXT
                     </div>
                   )}
-                  {post.repost && post.fileUrl && post.fileUrl.length > 0 ? (
+                  {post.repost && post.fileUrl.length > 0 ? (
                     <div className="absolute -top-1 -right-1 rounded-full bg-purple-500 p-1">
                       <svg
                         className="h-3 w-3 text-white"
@@ -242,9 +240,7 @@ export function ScheduledPostsTable({
                       </svg>
                     </div>
                   ) : null}
-                  {post.isQuotedPost &&
-                  post.fileUrl &&
-                  post.fileUrl.length > 0 ? (
+                  {post.isQuotedPost && post.fileUrl.length > 0 ? (
                     <div className="absolute -top-1 -right-1 rounded-full bg-green-500 p-1">
                       <svg
                         className="h-3 w-3 text-white"
@@ -270,7 +266,7 @@ export function ScheduledPostsTable({
                     : post.caption}
                 </p>
               </td>
-              <td className="p-3">{formatDate(post.scheduledFor)}</td>
+              <td className="p-3">{formatDate(post.scheduledAtUtc)}</td>
               <td className="p-3 text-center">
                 <div className="text-sm font-medium text-blue-600 dark:text-blue-400">
                   {countdowns[post.id] ?? "—"}
@@ -306,12 +302,12 @@ export function ScheduledPostsTable({
               <td className="p-3 text-center">
                 <div
                   className={`inline-flex rounded-full border border-transparent px-2 py-1 text-xs leading-4 font-semibold ${
-                    post.isPostSigned
+                    post.signedEvent
                       ? "bg-blue-100 text-blue-900 dark:border-blue-900/75 dark:bg-blue-700/10 dark:text-blue-200"
                       : "bg-emerald-100 text-emerald-900 dark:border-emerald-900 dark:bg-emerald-700/10 dark:text-emerald-200"
                   }`}
                 >
-                  {post.isPostSigned ? "Signed" : "Scheduled"}
+                  {post.signedEvent ? "Signed" : "Scheduled"}
                 </div>
               </td>
               <td className="p-3 text-center">

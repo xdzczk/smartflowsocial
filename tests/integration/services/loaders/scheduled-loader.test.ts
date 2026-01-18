@@ -81,7 +81,8 @@ describe("Scheduled Loader", () => {
 
     const result = await loadScheduledData(TEST_USER_ID, "all");
 
-    expect(result.posts).toEqual(mockPosts);
+    expect(result.posts).toHaveLength(1);
+    expect(result.posts[0]).toEqual(expect.objectContaining(mockPosts[0]));
     expect(result.longformPosts).toBeDefined();
     expect(result.user).toEqual(mockUser);
     expect(result.queueTypes).toHaveLength(1);

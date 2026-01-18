@@ -24,7 +24,7 @@ describe("Calendar Post Converter", () => {
       const postData: PostData = {
         id: "post-1",
         caption: "Test post",
-        scheduledFor: String(scheduledForUnix),
+        scheduledAtUtc: new Date("2024-01-15T10:00:00Z"),
         currentState: "SCHEDULED",
         postedAt: null,
         queueType: null,
@@ -82,7 +82,7 @@ describe("Calendar Post Converter", () => {
         id: "longform-1",
         title: "Test Article",
         content: "Article content",
-        scheduledFor: String(scheduledForUnix),
+        scheduledAtUtc: new Date("2024-01-15T10:00:00Z"),
         currentState: "SCHEDULED",
       } as unknown as LongFormPostData;
 

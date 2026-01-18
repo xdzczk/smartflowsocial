@@ -24,7 +24,7 @@ export function ContentTableHeader({
     type === "posted"
       ? "postedAt"
       : type === "scheduled"
-        ? "scheduledFor"
+        ? "scheduledAtUtc"
         : "createdAt";
 
   return (

@@ -22,7 +22,6 @@ import {
   extractLongFormPostData,
   extractPostData,
 } from "~/lib/validation/combined-content";
-import { convertPostDataArrayToScheduledTablePosts } from "~/lib/validation/post-data-conversion";
 import { validateUserData } from "~/lib/validation/user-data";
 
 export default function ScheduledPostsPage() {
@@ -150,7 +149,7 @@ export default function ScheduledPostsPage() {
           />
 
           <ScheduledPostsTable
-            posts={convertPostDataArrayToScheduledTablePosts(filteredPosts)}
+            posts={filteredPosts}
             sortConfig={sortConfig}
             onRequestSort={requestSort}
             selectedPosts={selectedPosts}
@@ -158,7 +157,7 @@ export default function ScheduledPostsPage() {
             onToggleSelectAll={toggleSelectAll}
             countdowns={countdowns}
             userTimezone={user?.timezone ?? undefined}
-            onPostClick={(post) => setSelectedPost(post as PostData)}
+            onPostClick={(post) => setSelectedPost(post)}
             onEditPost={(post) =>
               handleEditPost(post as PostData | LongFormPostData)
             }

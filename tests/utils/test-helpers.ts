@@ -180,23 +180,22 @@ export function createValidPostDTOMock(
     content: string | null;
     postType: "IMAGE" | "CAROUSEL" | "TEXT" | "VIDEO";
     status: "DRAFT" | "ACTIVE" | "SCHEDULED" | "PAUSED" | "POSTED" | "FAILED";
-    scheduledFor: string | null;
+    currentState: string;
+    scheduledAtUtc: string | null;
     postedAt: string | null;
   }> = {}
 ): {
   id: string;
   fileUrl: string[];
-  scheduledFor: string | null;
+  scheduledAtUtc: string | null;
   postedAt: string | null;
-  isPosted: boolean;
-  isScheduled: boolean;
+  currentState: string;
   postType: "IMAGE" | "CAROUSEL" | "TEXT" | "VIDEO";
   repost: boolean;
   isQuotedPost: boolean;
   isRecyclable: boolean;
   createdAt: string;
   updatedAt: string;
-  draft: boolean;
   status: "DRAFT" | "ACTIVE" | "SCHEDULED" | "PAUSED" | "POSTED" | "FAILED";
   tags: string[];
   manual_override: boolean;
@@ -204,21 +203,21 @@ export function createValidPostDTOMock(
   caption: string | null;
   content: string | null;
 } {
+  const status = overrides.status ?? "SCHEDULED";
+  const currentState = overrides.currentState ?? status;
   return {
     id: overrides.id ?? "post-1",
     fileUrl: [],
-    scheduledFor: overrides.scheduledFor ?? null,
+    scheduledAtUtc: overrides.scheduledAtUtc ?? null,
     postedAt: overrides.postedAt ?? null,
-    isPosted: false,
-    isScheduled: overrides.status === "SCHEDULED",
+    currentState,
     postType: overrides.postType ?? "TEXT",
     repost: false,
     isQuotedPost: false,
     isRecyclable: false,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    draft: overrides.status === "DRAFT",
-    status: overrides.status ?? "SCHEDULED",
+    status,
     tags: [],
     manual_override: false,
     userId: overrides.userId ?? "user-123",

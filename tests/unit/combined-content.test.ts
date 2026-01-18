@@ -57,7 +57,7 @@ describe("Combined Content Utilities", () => {
         isRecyclable: false,
         hashTagPresetId: null,
         nostrEventId: null,
-        scheduledFor: null,
+        scheduledAtUtc: null,
         postedAt: new Date(),
         signedEvent: null,
         nostrEvent: null,
@@ -71,8 +71,6 @@ describe("Combined Content Utilities", () => {
       expect(result.caption).toBe("Test caption");
       expect(result.fileUrl).toEqual(["https://example.com/image.jpg"]);
       expect(result.currentState).toBe("PUBLISHED");
-      expect(result.isScheduled).toBe(false); // Derived from currentState
-      expect(result.isPosted).toBe(true); // Derived from currentState
       expect(result.originalData).toEqual(post);
     });
 
@@ -95,7 +93,7 @@ describe("Combined Content Utilities", () => {
         isRecyclable: false,
         hashTagPresetId: null,
         nostrEventId: null,
-        scheduledFor: null,
+        scheduledAtUtc: null,
         postedAt: null,
         signedEvent: null,
         nostrEvent: null,
@@ -129,7 +127,7 @@ describe("Combined Content Utilities", () => {
         },
         hashTagPresetId: null,
         nostrEventId: null,
-        scheduledFor: null,
+        scheduledAtUtc: null,
         postedAt: null,
         signedEvent: null,
         nostrEvent: null,
@@ -159,7 +157,7 @@ describe("Combined Content Utilities", () => {
         tags: [],
         hashTagPresetId: null,
         nostrEventId: null,
-        scheduledFor: null,
+        scheduledAtUtc: null,
         postedAt: null,
         publishedAt: new Date(),
         signedEvent: null,
@@ -175,8 +173,6 @@ describe("Combined Content Utilities", () => {
       expect(result.summary).toBe("Test summary");
       expect(result.image).toBe("https://example.com/image.jpg");
       expect(result.currentState).toBe("PUBLISHED");
-      expect(result.isPublished).toBe(true); // Derived from currentState
-      expect(result.isPosted).toBe(true); // Derived from currentState
       expect(result.originalData).toEqual(longFormPost);
     });
 
@@ -197,7 +193,7 @@ describe("Combined Content Utilities", () => {
         image: null,
         hashTagPresetId: null,
         nostrEventId: null,
-        scheduledFor: null,
+        scheduledAtUtc: null,
         postedAt: null,
         signedEvent: null,
         nostrEvent: null,
@@ -285,13 +281,13 @@ describe("Combined Content Utilities", () => {
       expect(result[1]?.["id"]).toBe("post-1");
     });
 
-    it("should sort by scheduledFor", () => {
+    it("should sort by scheduledAtUtc", () => {
       const posts: PostData[] = [
         {
           id: "post-1",
           userId: TEST_USER_ID,
           fileUrl: [],
-          scheduledFor: "1704067200", // 2024-01-01
+          scheduledAtUtc: new Date("2024-01-01T00:00:00Z"),
           createdAt: new Date(),
           updatedAt: new Date(),
           currentState: "SCHEDULED",
@@ -308,7 +304,7 @@ describe("Combined Content Utilities", () => {
         {
           id: "longform-1",
           userId: TEST_USER_ID,
-          scheduledFor: "1704153600", // 2024-01-02
+          scheduledAtUtc: new Date("2024-01-02T00:00:00Z"),
           createdAt: new Date(),
           updatedAt: new Date(),
           currentState: "SCHEDULED",
@@ -320,7 +316,7 @@ describe("Combined Content Utilities", () => {
       const result = combineContent(
         posts,
         longFormPosts,
-        "scheduledFor",
+        "scheduledAtUtc",
         "asc"
       );
 

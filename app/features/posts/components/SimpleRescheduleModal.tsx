@@ -8,7 +8,6 @@ import {
   formatForDateTimeLocal,
   formatForDisplay,
   fromDate,
-  fromUnixTimestamp,
   nowUTC,
   parseDateTimeLocal,
   toDate,
@@ -31,36 +30,18 @@ function getInitialScheduledFor(
   isLongform: boolean
 ): Date {
   try {
+    const scheduledAtUtc = post.scheduledAtUtc;
+    if (scheduledAtUtc instanceof Date && !isNaN(scheduledAtUtc.getTime())) {
+      const zoned = fromDate(scheduledAtUtc, "UTC");
+      return toDate(zoned);
+    }
+
+    // Longform fallback: if already published, use publishedAt for display/edit convenience
     if (isLongform && "publishedAt" in post && post.publishedAt) {
       const zoned = fromDate(new Date(post.publishedAt), "UTC");
       return toDate(zoned);
     }
-    if ("scheduledFor" in post && post.scheduledFor) {
-      const scheduledForValue = post.scheduledFor;
-      if (typeof scheduledForValue === "string") {
-        const timestamp = parseInt(scheduledForValue, 10);
-        if (!isNaN(timestamp)) {
-          const zoned = fromUnixTimestamp(timestamp, "UTC");
-          return toDate(zoned);
-        }
-      }
-      if (typeof scheduledForValue === "number") {
-        const zoned = fromUnixTimestamp(
-          Math.floor(scheduledForValue / 1000),
-          "UTC"
-        );
-        return toDate(zoned);
-      }
-      if (
-        scheduledForValue &&
-        typeof scheduledForValue === "object" &&
-        "getTime" in scheduledForValue
-      ) {
-        // It's a Date object
-        const zoned = fromDate(scheduledForValue as Date, "UTC");
-        return toDate(zoned);
-      }
-    }
+
     const now = nowUTC();
     return toDate(now);
   } catch {

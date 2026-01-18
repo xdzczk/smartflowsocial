@@ -11,7 +11,6 @@ import {
   formatForDateTimeLocal,
   fromDate,
   fromISOString,
-  fromUnixTimestamp,
   toDate,
 } from "~/lib/temporal";
 import {
@@ -123,43 +122,6 @@ function formatScheduledForFromDate(
   }
 }
 
-function formatScheduledForFromUnixTimestamp(
-  timestamp: unknown,
-  userTimezone = "UTC"
-): string {
-  if (!timestamp || typeof timestamp !== "string") return "";
-  try {
-    const ts = parseInt(timestamp, 10);
-    if (isNaN(ts)) return "";
-    const zoned = fromUnixTimestamp(ts, "UTC");
-    const userZoned = zoned.withTimeZone(userTimezone);
-    return formatForDateTimeLocal(userZoned, userTimezone);
-  } catch {
-    // Fallback
-    // Fallback - still use Temporal for consistency
-    try {
-      const ts = parseInt(timestamp, 10);
-      if (isNaN(ts)) return "";
-      const zoned = fromUnixTimestamp(ts, "UTC");
-      const userZoned = zoned.withTimeZone(userTimezone);
-      return formatForDateTimeLocal(userZoned, userTimezone);
-    } catch {
-      // Fallback - still use Temporal
-      try {
-        const ts = parseInt(timestamp, 10);
-        if (isNaN(ts)) return "";
-        const zoned = fromUnixTimestamp(ts, "UTC");
-        const userZoned = zoned.withTimeZone(userTimezone);
-        return formatForDateTimeLocal(userZoned, userTimezone);
-      } catch {
-        return new Date(parseInt(timestamp, 10) * 1000)
-          .toISOString()
-          .slice(0, 16);
-      }
-    }
-  }
-}
-
 function getLongformInitialValues(post: PostData | LongFormPostData): {
   title: string;
   summary: string;
@@ -173,13 +135,24 @@ function getLongformInitialValues(post: PostData | LongFormPostData): {
 } {
   const publishedAt =
     typeof post === "object" && "publishedAt" in post ? post.publishedAt : null;
+  const scheduledAtUtc =
+    typeof post === "object" && "scheduledAtUtc" in post
+      ? (post as { scheduledAtUtc?: unknown }).scheduledAtUtc
+      : null;
+  const scheduledCandidateRaw = scheduledAtUtc ?? publishedAt;
+  const scheduledCandidate =
+    scheduledCandidateRaw instanceof Date
+      ? scheduledCandidateRaw
+      : typeof scheduledCandidateRaw === "string"
+        ? scheduledCandidateRaw
+        : null;
 
   return {
     title: getStringValue(post, "title"),
     summary: getStringValue(post, "summary"),
     content: "",
     image: getStringValue(post, "image"),
-    scheduledFor: formatScheduledForFromDate(publishedAt, "UTC"),
+    scheduledFor: formatScheduledForFromDate(scheduledCandidate, "UTC"),
     queueType: getQueueTypeName(post),
     useHashtagPresets: !!getHashTagPresetId(post),
     hashTagPresetId: getHashTagPresetId(post),
@@ -196,15 +169,21 @@ function getRegularPostInitialValues(post: PostData | LongFormPostData): {
   hashTagPresetId: string | undefined;
   manualHashtags: string;
 } {
-  const scheduledForValue =
-    typeof post === "object" && "scheduledFor" in post
-      ? (post as { scheduledFor?: unknown }).scheduledFor
+  const scheduledAtUtcValue =
+    typeof post === "object" && "scheduledAtUtc" in post
+      ? (post as { scheduledAtUtc?: unknown }).scheduledAtUtc
       : null;
+  const scheduledAtUtc =
+    scheduledAtUtcValue instanceof Date
+      ? scheduledAtUtcValue
+      : typeof scheduledAtUtcValue === "string"
+        ? scheduledAtUtcValue
+        : null;
 
   return {
     caption: getStringValue(post, "caption"),
     queueType: getQueueTypeId(post),
-    scheduledFor: formatScheduledForFromUnixTimestamp(scheduledForValue, "UTC"),
+    scheduledFor: formatScheduledForFromDate(scheduledAtUtc, "UTC"),
     isRecyclable: false,
     useHashtagPresets: !!getHashTagPresetId(post),
     hashTagPresetId: getHashTagPresetId(post),

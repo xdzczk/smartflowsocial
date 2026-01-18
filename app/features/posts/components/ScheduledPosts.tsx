@@ -1,7 +1,7 @@
 import { useLoaderData } from "@remix-run/react";
 import { useState } from "react";
 
-import { formatForDisplay, fromUnixTimestamp } from "~/lib/temporal";
+import { formatForDisplay, fromDate } from "~/lib/temporal";
 
 import type { PostData } from "../types";
 
@@ -135,9 +135,16 @@ export default function ScheduledPosts() {
                       <td className="p-3">
                         {(() => {
                           try {
-                            const timestamp = Number(post.scheduledFor);
-                            if (isNaN(timestamp)) return INVALID_DATE;
-                            const zoned = fromUnixTimestamp(timestamp, "UTC");
+                            if (!post.scheduledAtUtc) return INVALID_DATE;
+                            const rawScheduledAtUtc =
+                              post.scheduledAtUtc as unknown;
+                            const scheduledAtUtc =
+                              rawScheduledAtUtc instanceof Date
+                                ? rawScheduledAtUtc
+                                : new Date(String(rawScheduledAtUtc));
+                            if (isNaN(scheduledAtUtc.getTime()))
+                              return INVALID_DATE;
+                            const zoned = fromDate(scheduledAtUtc, "UTC");
                             return formatForDisplay(zoned, "UTC");
                           } catch {
                             return INVALID_DATE;
@@ -250,9 +257,16 @@ export default function ScheduledPosts() {
                   <p className="mt-1">
                     {(() => {
                       try {
-                        const timestamp = Number(selectedPost.scheduledFor);
-                        if (isNaN(timestamp)) return INVALID_DATE;
-                        const zoned = fromUnixTimestamp(timestamp, "UTC");
+                        if (!selectedPost.scheduledAtUtc) return INVALID_DATE;
+                        const rawScheduledAtUtc =
+                          selectedPost.scheduledAtUtc as unknown;
+                        const scheduledAtUtc =
+                          rawScheduledAtUtc instanceof Date
+                            ? rawScheduledAtUtc
+                            : new Date(String(rawScheduledAtUtc));
+                        if (isNaN(scheduledAtUtc.getTime()))
+                          return INVALID_DATE;
+                        const zoned = fromDate(scheduledAtUtc, "UTC");
                         return formatForDisplay(zoned, "UTC");
                       } catch {
                         return INVALID_DATE;

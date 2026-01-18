@@ -56,7 +56,7 @@ describe("Draft Edit Loader", () => {
 
     const result = await loadDraftEditData(TEST_USER_ID, TEST_POST_ID);
 
-    expect(result.post).toEqual(mockPost);
+    expect(result.post).toEqual(expect.objectContaining(mockPost));
     expect(result.user).toEqual(mockUser);
     expect(result.queueTypes).toHaveLength(1); // Only enabled
     expect(result.hashTagPresets).toEqual(mockHashTagPresets);

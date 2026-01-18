@@ -154,12 +154,12 @@ describe("Scheduled Posts Loader Integration", () => {
           createValidPostDTOMock({
             id: "1",
             caption: "Post 1",
-            scheduledFor: new Date().toISOString(),
+            scheduledAtUtc: new Date().toISOString(),
           }),
           createValidPostDTOMock({
             id: "2",
             caption: "Post 2",
-            scheduledFor: new Date().toISOString(),
+            scheduledAtUtc: new Date().toISOString(),
           }),
         ],
         longformPosts: [],

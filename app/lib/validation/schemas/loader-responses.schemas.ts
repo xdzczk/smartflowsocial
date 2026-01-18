@@ -113,21 +113,18 @@ const postDTOSchema = z
       .nullish()
       .transform((val) => val ?? null),
     fileUrl: z.array(z.string()),
-    scheduledFor: z.string().nullable(),
+    scheduledAtUtc: z.string().nullable(),
     postedAt: z.string().nullable(),
     content: z
       .string()
       .nullish()
       .transform((val) => val ?? null),
-    isPosted: z.boolean(),
-    isScheduled: z.boolean(),
     postType: z.enum(["IMAGE", "CAROUSEL", "TEXT", "VIDEO"]),
     repost: z.boolean(),
     isQuotedPost: z.boolean(),
     isRecyclable: z.boolean(),
     createdAt: z.string(),
     updatedAt: z.string(),
-    draft: z.boolean(),
     status: z.enum([
       "DRAFT",
       "ACTIVE",
@@ -136,6 +133,7 @@ const postDTOSchema = z
       "POSTED",
       "FAILED",
     ]),
+    currentState: z.string(),
     signedEvent: signedEventSchema.nullable().optional(),
     nostrEvent: nostrEventSchema.nullable().optional(),
     queueTypeId: z.string().nullable().optional(),
@@ -175,14 +173,11 @@ const longFormPostDTOSchema = z
       .nullish()
       .transform((val) => val ?? null),
     image: z.string().nullable().optional(),
-    scheduledFor: z.string().nullable(),
-    isScheduled: z.boolean(),
+    scheduledAtUtc: z.string().nullable(),
     postedAt: z.string().nullable(),
     publishedAt: z.string().nullable(),
     updatedAt: z.string(),
     createdAt: z.string(),
-    isPublished: z.boolean(),
-    draft: z.boolean(),
     status: z.enum([
       "DRAFT",
       "ACTIVE",
@@ -191,6 +186,7 @@ const longFormPostDTOSchema = z
       "POSTED",
       "FAILED",
     ]),
+    currentState: z.string(),
     queueTypeId: z.string().nullable().optional(),
     tags: z.array(z.string()),
     signedEvent: signedEventSchema.nullable().optional(),
@@ -214,16 +210,13 @@ const _combinedContentSchema = z
     summary: z.string().optional(),
     image: z.string().optional(),
     fileUrl: z.array(z.string()).optional(),
-    scheduledFor: z.string().optional(),
+    scheduledAtUtc: z.union([z.string(), z.date()]).nullable().optional(),
     publishedAt: z.union([z.string(), z.date()]).optional(),
     postedAt: z.union([z.string(), z.date()]).optional(),
     createdAt: z.union([z.string(), z.date()]),
     updatedAt: z.union([z.string(), z.date()]),
-    isScheduled: z.boolean().optional(),
-    isPosted: z.boolean().optional(),
-    isPublished: z.boolean().optional(),
-    draft: z.boolean().optional(),
     status: z.string(),
+    currentState: z.string().optional(),
     queueType: queueTypeSchema.nullable().optional(),
     originalData: z.unknown(), // Allow any original data
   })

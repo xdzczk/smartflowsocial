@@ -13,63 +13,39 @@ import {
 
 describe("Post Data Conversion", () => {
   describe("convertPostDataToScheduledTablePost", () => {
-    it("should convert PostData with Date scheduledFor to unix timestamp string", () => {
+    it("should include scheduledAtUtc from PostData", () => {
       const post: PostData = {
         id: "post-1",
         caption: "Test caption",
-        scheduledFor: new Date("2024-01-01T12:00:00Z"),
+        scheduledAtUtc: new Date("2024-01-01T12:00:00Z"),
       } as unknown as PostData;
 
       const result = convertPostDataToScheduledTablePost(post);
 
       expect(result.id).toBe("post-1");
       expect(result.caption).toBe("Test caption");
-      expect(result.scheduledFor).toBe(
-        Math.floor(new Date("2024-01-01T12:00:00Z").getTime() / 1000).toString()
-      );
+      expect(result.scheduledAtUtc).toEqual(new Date("2024-01-01T12:00:00Z"));
     });
 
-    it("should handle string scheduledFor", () => {
+    it("should handle null scheduledAtUtc", () => {
       const post: PostData = {
         id: "post-1",
-        scheduledFor: "1234567890",
+        scheduledAtUtc: null,
       } as unknown as PostData;
 
       const result = convertPostDataToScheduledTablePost(post);
 
-      expect(result.scheduledFor).toBe("1234567890");
+      expect(result.scheduledAtUtc).toBeNull();
     });
 
-    it("should handle number scheduledFor", () => {
-      const post: PostData = {
-        id: "post-1",
-        scheduledFor: 1234567890000 as unknown as Date, // milliseconds
-      } as unknown as PostData;
-
-      const result = convertPostDataToScheduledTablePost(post);
-
-      expect(result.scheduledFor).toBe("1234567890"); // converted to seconds
-    });
-
-    it("should handle null scheduledFor", () => {
-      const post: PostData = {
-        id: "post-1",
-        scheduledFor: null,
-      } as unknown as PostData;
-
-      const result = convertPostDataToScheduledTablePost(post);
-
-      expect(result.scheduledFor).toBe("");
-    });
-
-    it("should handle undefined scheduledFor", () => {
+    it("should handle undefined scheduledAtUtc", () => {
       const post: PostData = {
         id: "post-1",
       } as unknown as PostData;
 
       const result = convertPostDataToScheduledTablePost(post);
 
-      expect(result.scheduledFor).toBe("");
+      expect(result.scheduledAtUtc).toBeNull();
     });
 
     it("should convert queueType correctly", () => {
@@ -210,12 +186,12 @@ describe("Post Data Conversion", () => {
         {
           id: "post-1",
           caption: "Post 1",
-          scheduledFor: new Date("2024-01-01T12:00:00Z"),
+          scheduledAtUtc: new Date("2024-01-01T12:00:00Z"),
         } as unknown as PostData,
         {
           id: "post-2",
           caption: "Post 2",
-          scheduledFor: new Date("2024-01-02T12:00:00Z"),
+          scheduledAtUtc: new Date("2024-01-02T12:00:00Z"),
         } as unknown as PostData,
       ];
 

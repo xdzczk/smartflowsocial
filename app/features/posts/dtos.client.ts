@@ -19,7 +19,15 @@ export function deserializePostDTO(dto: PostDTO): PostData {
     createdAt: toDate(fromISOString(dto.createdAt, "UTC")),
     updatedAt: toDate(fromISOString(dto.updatedAt, "UTC")),
     postedAt: dto.postedAt ? toDate(fromISOString(dto.postedAt, "UTC")) : null,
-    scheduledFor: dto.scheduledFor ?? null,
+    scheduledAtUtc: dto.scheduledAtUtc
+      ? toDate(fromISOString(dto.scheduledAtUtc, "UTC"))
+      : null,
+    publishingLockExpiresAt: dto.publishingLockExpiresAt
+      ? toDate(fromISOString(dto.publishingLockExpiresAt, "UTC"))
+      : null,
+    publishingStartedAt: dto.publishingStartedAt
+      ? toDate(fromISOString(dto.publishingStartedAt, "UTC"))
+      : null,
   };
   return result;
 }
@@ -45,7 +53,15 @@ export function deserializeLongFormPostDTO(
     publishedAt: dto.publishedAt
       ? toDate(fromISOString(dto.publishedAt, "UTC"))
       : null,
-    scheduledFor: dto.scheduledFor ?? null,
+    scheduledAtUtc: dto.scheduledAtUtc
+      ? toDate(fromISOString(dto.scheduledAtUtc, "UTC"))
+      : null,
+    publishingLockExpiresAt: dto.publishingLockExpiresAt
+      ? toDate(fromISOString(dto.publishingLockExpiresAt, "UTC"))
+      : null,
+    publishingStartedAt: dto.publishingStartedAt
+      ? toDate(fromISOString(dto.publishingStartedAt, "UTC"))
+      : null,
   };
   return result;
 }

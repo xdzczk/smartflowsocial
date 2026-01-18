@@ -213,12 +213,6 @@ export interface PostData extends Omit<Post, "signedEvent" | "nostrEvent"> {
   queueType?: QueueType | null;
   hashTagPreset?: HashTagPreset | null;
   hashtags?: string; // Space-separated hashtags string
-  /**
-   * Legacy scheduled value (Unix seconds as string).
-   *
-   * This is now derived from `scheduledAtUtc` and kept for UI/backward compatibility.
-   */
-  scheduledFor?: string | null;
 }
 
 /**
@@ -231,12 +225,6 @@ export interface LongFormPostData extends Omit<
   signedEvent?: SignedEvent | null;
   nostrEvent?: NostrEvent | null;
   queueType?: QueueType | null;
-  /**
-   * Legacy scheduled value (Unix seconds as string).
-   *
-   * This is now derived from `scheduledAtUtc` and kept for UI/backward compatibility.
-   */
-  scheduledFor?: string | null;
 }
 
 /**
@@ -251,15 +239,11 @@ export interface CombinedContent {
   summary?: string;
   image?: string;
   fileUrl?: string[];
-  scheduledFor?: string;
+  scheduledAtUtc?: Date | null;
   publishedAt?: Date;
   postedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
-  isScheduled?: boolean;
-  isPosted?: boolean;
-  isPublished?: boolean;
-  draft?: boolean;
   status: string;
   currentState?: string; // State machine state (single source of truth)
   queueType?: {

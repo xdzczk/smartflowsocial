@@ -4,7 +4,7 @@
  * Utility functions to convert PostData and LongFormPostData to CalendarPost format
  */
 
-import { fromDate, fromUnixTimestamp, toUnixTimestamp } from "~/lib/temporal";
+import { fromDate, toUnixTimestamp } from "~/lib/temporal";
 
 import type { CalendarPost } from "../components/Calendar/PostBlock.types";
 import {
@@ -27,18 +27,12 @@ export function postDataToCalendarPost(post: PostData): CalendarPost {
       : null;
   // Convert Date to Unix timestamp in seconds (as string) for CalendarPost
   let scheduledForValue: string | null = null;
-  if (post.scheduledFor) {
+  if (post.scheduledAtUtc) {
     try {
       const scheduledZoned =
-        post.scheduledFor &&
-        typeof post.scheduledFor === "object" &&
-        "getTime" in post.scheduledFor
-          ? fromDate(post.scheduledFor as Date, "UTC")
-          : typeof post.scheduledFor === "string"
-            ? fromUnixTimestamp(parseInt(post.scheduledFor, 10), "UTC")
-            : typeof post.scheduledFor === "number"
-              ? fromUnixTimestamp(Math.floor(post.scheduledFor / 1000), "UTC")
-              : null;
+        post.scheduledAtUtc instanceof Date
+          ? fromDate(post.scheduledAtUtc, "UTC")
+          : null;
       if (scheduledZoned) {
         scheduledForValue = String(toUnixTimestamp(scheduledZoned));
       }
@@ -116,18 +110,12 @@ export function longFormPostDataToCalendarPost(
     publishedAt: publishedAtValue,
     postedAt: publishedAtValue,
     scheduledFor: (() => {
-      if (!post.scheduledFor) return null;
+      if (!post.scheduledAtUtc) return null;
       try {
         const scheduledZoned =
-          post.scheduledFor &&
-          typeof post.scheduledFor === "object" &&
-          "getTime" in post.scheduledFor
-            ? fromDate(post.scheduledFor as Date, "UTC")
-            : typeof post.scheduledFor === "string"
-              ? fromUnixTimestamp(parseInt(post.scheduledFor, 10), "UTC")
-              : typeof post.scheduledFor === "number"
-                ? fromUnixTimestamp(Math.floor(post.scheduledFor / 1000), "UTC")
-                : null;
+          post.scheduledAtUtc instanceof Date
+            ? fromDate(post.scheduledAtUtc, "UTC")
+            : null;
         return scheduledZoned ? String(toUnixTimestamp(scheduledZoned)) : null;
       } catch {
         return null;

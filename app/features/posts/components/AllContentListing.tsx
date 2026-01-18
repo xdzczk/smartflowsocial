@@ -80,7 +80,7 @@ export default function AllContentListing({
       type === "posted"
         ? "postedAt"
         : type === "scheduled"
-          ? "scheduledFor"
+          ? "scheduledAtUtc"
           : "createdAt",
     direction: "desc",
   });
@@ -93,13 +93,19 @@ export default function AllContentListing({
     }));
   };
 
-  /**
-   * Get sort value for scheduledFor field
-   */
-  function getScheduledForSortValue(scheduledFor: string | undefined): number {
-    return scheduledFor && typeof scheduledFor === "string"
-      ? parseInt(scheduledFor, 10) * 1000
-      : 0;
+  function getScheduledAtUtcSortValue(scheduledAtUtc: unknown): number {
+    if (!scheduledAtUtc) return 0;
+    try {
+      const dateObj =
+        scheduledAtUtc instanceof Date
+          ? scheduledAtUtc
+          : new Date(String(scheduledAtUtc));
+      return isNaN(dateObj.getTime())
+        ? 0
+        : Number(fromISOString(dateObj.toISOString(), "UTC").epochMilliseconds);
+    } catch {
+      return 0;
+    }
   }
 
   /**
@@ -134,8 +140,8 @@ export default function AllContentListing({
     item: CombinedContent,
     sortKey: string
   ): number | string {
-    if (sortKey === "scheduledFor") {
-      return getScheduledForSortValue(item.scheduledFor);
+    if (sortKey === "scheduledAtUtc" || sortKey === "scheduledFor") {
+      return getScheduledAtUtcSortValue(item.scheduledAtUtc);
     }
     if (sortKey === "postedAt") {
       return getPostedAtSortValue(item.postedAt);

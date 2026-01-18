@@ -5,16 +5,6 @@
 
 import { fromDate, fromISOString } from "~/lib/temporal";
 
-import {
-  deriveIsScheduledLongForm,
-  deriveIsPublishedLongForm,
-  deriveIsDraftLongForm,
-} from "./state-machine/longform-post-state";
-import {
-  deriveIsScheduled,
-  deriveIsPosted,
-  deriveIsDraft,
-} from "./state-machine/post-state";
 import type { CombinedContent, PostData, LongFormPostData } from "./types";
 // Re-export the type
 export type { CombinedContent } from "~/features/posts/types";
@@ -23,17 +13,20 @@ export type { CombinedContent } from "~/features/posts/types";
 // Sorting Helper Functions
 // ============================================================================
 
-function parseScheduledFor(value: unknown): number {
-  if (!value) {
-    return 0;
+function parseScheduledAtUtc(value: unknown): number {
+  if (!value) return 0;
+  try {
+    const dateObj = value instanceof Date ? value : new Date(String(value));
+    if (isNaN(dateObj.getTime())) return 0;
+    return Number(fromDate(dateObj, "UTC").epochMilliseconds);
+  } catch {
+    try {
+      return Number(fromISOString(String(value), "UTC").epochMilliseconds);
+    } catch {
+      const dateObj = new Date(String(value));
+      return isNaN(dateObj.getTime()) ? 0 : dateObj.getTime();
+    }
   }
-  if (typeof value === "string") {
-    return parseInt(value, 10) * 1000;
-  }
-  if (typeof value === "number") {
-    return value * 1000;
-  }
-  return 0;
 }
 
 /**
@@ -76,8 +69,8 @@ function parseDateField(dateValue: Date | string): number {
 }
 
 function getSortValue(item: CombinedContent, sortBy: string): number {
-  if (sortBy === "scheduledFor") {
-    return parseScheduledFor(item.scheduledFor);
+  if (sortBy === "scheduledAtUtc" || sortBy === "scheduledFor") {
+    return parseScheduledAtUtc(item.scheduledAtUtc);
   }
   if (sortBy === "postedAt" || sortBy === "publishedAt") {
     return parsePostedAtDate(item.postedAt);
@@ -113,16 +106,10 @@ export function postToCombinedContent(post: PostData): CombinedContent {
     caption: nullToUndefined(post.caption),
     content: nullToUndefined(post.content),
     fileUrl: post.fileUrl,
-    scheduledFor: nullToUndefined(post.scheduledFor),
+    scheduledAtUtc: nullToUndefined(post.scheduledAtUtc),
     postedAt: nullToUndefined(post.postedAt),
     createdAt: post.createdAt,
     updatedAt: post.updatedAt,
-    // Derive flags from currentState (flags removed from Post model)
-    isScheduled: post.currentState
-      ? deriveIsScheduled(post.currentState)
-      : undefined,
-    isPosted: post.currentState ? deriveIsPosted(post.currentState) : undefined,
-    draft: post.currentState ? deriveIsDraft(post.currentState) : undefined,
     status: post.status,
     currentState: post.currentState, // Include state machine state
     queueType:
@@ -185,24 +172,11 @@ export function longFormPostToCombinedContent(
     content: nullToUndefined(longFormPost.content),
     summary: nullToUndefined(longFormPost.summary),
     image: nullToUndefined(longFormPost.image),
-    scheduledFor: nullToUndefined(longFormPost.scheduledFor),
+    scheduledAtUtc: nullToUndefined(longFormPost.scheduledAtUtc),
     publishedAt: nullToUndefined(longFormPost.publishedAt),
     postedAt: nullToUndefined(longFormPost.publishedAt), // Map publishedAt to postedAt for consistency
     createdAt: longFormPost.createdAt,
     updatedAt: longFormPost.updatedAt,
-    // Derive flags from currentState (flags removed from LongFormPost model)
-    isScheduled: longFormPost.currentState
-      ? deriveIsScheduledLongForm(longFormPost.currentState)
-      : undefined,
-    isPublished: longFormPost.currentState
-      ? deriveIsPublishedLongForm(longFormPost.currentState)
-      : undefined,
-    isPosted: longFormPost.currentState
-      ? deriveIsPublishedLongForm(longFormPost.currentState)
-      : undefined, // Map isPublished to isPosted for consistency
-    draft: longFormPost.currentState
-      ? deriveIsDraftLongForm(longFormPost.currentState)
-      : undefined,
     status: longFormPost.status,
     currentState: longFormPost.currentState, // Include state machine state
     queueType: longFormPost.queueType

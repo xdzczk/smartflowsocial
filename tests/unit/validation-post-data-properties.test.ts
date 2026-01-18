@@ -49,7 +49,7 @@ describe("Post Data Properties", () => {
       const date = new Date("2024-01-01T12:00:00Z");
       const post: PostData = {
         id: "post-1",
-        scheduledFor: date,
+        scheduledAtUtc: date,
       } as unknown as PostData;
 
       const result = getPostDataProperty(post, "scheduledFor");
@@ -61,7 +61,7 @@ describe("Post Data Properties", () => {
     it("should convert string scheduledFor to Date", () => {
       const post: PostData = {
         id: "post-1",
-        scheduledFor: "2024-01-01T12:00:00Z",
+        scheduledAtUtc: "2024-01-01T12:00:00Z" as unknown as Date,
       } as unknown as PostData;
 
       const result = getPostDataProperty(post, "scheduledFor");
@@ -75,7 +75,7 @@ describe("Post Data Properties", () => {
     it("should return undefined for null scheduledFor", () => {
       const post: PostData = {
         id: "post-1",
-        scheduledFor: null,
+        scheduledAtUtc: null,
       } as unknown as PostData;
 
       const result = getPostDataProperty(post, "scheduledFor");
@@ -219,11 +219,11 @@ describe("Post Data Properties", () => {
     it("should compare Date values", () => {
       const a: PostData = {
         id: "post-1",
-        scheduledFor: new Date("2024-01-01T12:00:00Z"),
+        scheduledAtUtc: new Date("2024-01-01T12:00:00Z"),
       } as unknown as PostData;
       const b: PostData = {
         id: "post-2",
-        scheduledFor: new Date("2024-01-02T12:00:00Z"),
+        scheduledAtUtc: new Date("2024-01-02T12:00:00Z"),
       } as unknown as PostData;
 
       const result = comparePostDataByProperty(a, b, "scheduledFor", "asc");

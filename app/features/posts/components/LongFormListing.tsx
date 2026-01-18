@@ -46,7 +46,7 @@ function getDefaultSortKey(type: "draft" | "scheduled" | "posted"): string {
     return "publishedAt";
   }
   if (type === "scheduled") {
-    return "scheduledFor";
+    return "scheduledAtUtc";
   }
   return "createdAt";
 }
@@ -75,7 +75,7 @@ function getSortValue(post: LongFormPostType, key: string): number {
       );
       return Number(zoned.epochMilliseconds);
     }
-    if (key === "scheduledFor") {
+    if (key === "scheduledAtUtc" || key === "scheduledFor") {
       const scheduledAt =
         "scheduledAtUtc" in post && post.scheduledAtUtc instanceof Date
           ? post.scheduledAtUtc
@@ -98,26 +98,6 @@ function getSortValue(post: LongFormPostType, key: string): number {
   } catch {
     return 0;
   }
-}
-
-function getScheduledForUnixSeconds(post: unknown): number | null {
-  if (!post || typeof post !== "object") return null;
-  const rec = post as Record<string, unknown>;
-  const scheduledAtUtc = rec["scheduledAtUtc"];
-  if (scheduledAtUtc instanceof Date) {
-    return Math.floor(scheduledAtUtc.getTime() / 1000);
-  }
-  const scheduledFor = rec["scheduledFor"];
-  if (typeof scheduledFor === "string") {
-    const ts = parseInt(scheduledFor, 10);
-    return Number.isFinite(ts) ? ts : null;
-  }
-  return null;
-}
-
-function getScheduledForString(post: unknown): string | undefined {
-  const ts = getScheduledForUnixSeconds(post);
-  return ts !== null ? String(ts) : undefined;
 }
 
 function compareStringValues(
@@ -348,11 +328,18 @@ export default function LongFormListing({
       const newCountdowns: Record<string, string> = {};
 
       posts.forEach((post) => {
-        const scheduledForUnix = getScheduledForUnixSeconds(post);
-        if (!scheduledForUnix) return;
+        const scheduledAtUtcRaw = (post as { scheduledAtUtc?: unknown })
+          .scheduledAtUtc;
+        const scheduledAtUtc =
+          scheduledAtUtcRaw instanceof Date
+            ? scheduledAtUtcRaw
+            : typeof scheduledAtUtcRaw === "string"
+              ? new Date(scheduledAtUtcRaw)
+              : null;
+        if (!scheduledAtUtc || isNaN(scheduledAtUtc.getTime())) return;
 
         try {
-          const scheduledZoned = fromUnixTimestamp(scheduledForUnix, "UTC");
+          const scheduledZoned = fromDate(scheduledAtUtc, "UTC");
           const scheduledInUserTz = scheduledZoned.withTimeZone(userTimezone);
 
           // Calculate difference
@@ -545,7 +532,7 @@ export default function LongFormListing({
                     type === "posted"
                       ? "publishedAt"
                       : type === "scheduled"
-                        ? "scheduledFor"
+                        ? "scheduledAtUtc"
                         : "createdAt"
                   )
                 }
@@ -556,7 +543,7 @@ export default function LongFormListing({
                       type === "posted"
                         ? "publishedAt"
                         : type === "scheduled"
-                          ? "scheduledFor"
+                          ? "scheduledAtUtc"
                           : "createdAt"
                     );
                   }
@@ -574,7 +561,7 @@ export default function LongFormListing({
                 (type === "posted"
                   ? "publishedAt"
                   : type === "scheduled"
-                    ? "scheduledFor"
+                    ? "scheduledAtUtc"
                     : "createdAt")
                   ? sortConfig.direction === "asc"
                     ? "↑"
@@ -655,7 +642,12 @@ export default function LongFormListing({
                     type === "posted"
                       ? (post.publishedAt ?? undefined)
                       : type === "scheduled"
-                        ? getScheduledForString(post)
+                        ? ((post as { scheduledAtUtc?: unknown })
+                            .scheduledAtUtc as
+                            | string
+                            | Date
+                            | number
+                            | undefined)
                         : post.createdAt
                   )}
                 </td>

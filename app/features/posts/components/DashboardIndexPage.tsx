@@ -31,7 +31,6 @@ import {
   extractLongFormPostData,
   extractPostData,
 } from "~/lib/validation/combined-content";
-import { convertPostDataArrayToScheduledTablePosts } from "~/lib/validation/post-data-conversion";
 import { validateUserData } from "~/lib/validation/user-data";
 
 function getUserTimezone(user: unknown): string | undefined {
@@ -121,7 +120,7 @@ function renderPostsTabContent(props: {
       />
 
       <ScheduledPostsTable
-        posts={convertPostDataArrayToScheduledTablePosts(filteredPosts)}
+        posts={filteredPosts}
         sortConfig={sortConfig}
         onRequestSort={requestSort}
         selectedPosts={selectedPosts}
@@ -130,7 +129,7 @@ function renderPostsTabContent(props: {
         countdowns={countdowns}
         userTimezone={userTimezone}
         onPostClick={(post) => {
-          setSelectedPost(post as PostData);
+          setSelectedPost(post);
         }}
         onEditPost={(post) => {
           handleEditPost(post as PostData | LongFormPostData);

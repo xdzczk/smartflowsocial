@@ -11,7 +11,7 @@ import type { PostData } from "~/features/posts/types";
 export interface ScheduledPostTablePost {
   id: string;
   caption?: string | null;
-  scheduledFor: string; // Unix timestamp as string
+  scheduledAtUtc: Date | null;
   fileUrl?: string[] | null;
   queueType?: { name: string; color?: string | null } | null;
   repost?: boolean;
@@ -26,24 +26,10 @@ export interface ScheduledPostTablePost {
 export function convertPostDataToScheduledTablePost(
   post: PostData
 ): ScheduledPostTablePost {
-  // Convert scheduledFor Date to unix timestamp string
-  // PostData.scheduledFor can be Date | string | null | undefined
-  let scheduledForString = "";
-  if (post.scheduledFor) {
-    const scheduledFor = post.scheduledFor as Date | string | null | undefined;
-    if (scheduledFor instanceof Date) {
-      scheduledForString = Math.floor(scheduledFor.getTime() / 1000).toString();
-    } else if (typeof scheduledFor === "string") {
-      scheduledForString = scheduledFor;
-    } else if (typeof scheduledFor === "number") {
-      scheduledForString = Math.floor(scheduledFor / 1000).toString();
-    }
-  }
-
   return {
     id: post.id,
     caption: post.caption ?? null,
-    scheduledFor: scheduledForString,
+    scheduledAtUtc: post.scheduledAtUtc ?? null,
     // fileUrl is always string[] in PostData (from Prisma schema), but target type allows null
     fileUrl: post.fileUrl,
     queueType: post.queueType

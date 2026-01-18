@@ -1,12 +1,7 @@
 import { useFetcher } from "@remix-run/react";
 import { useState, useEffect, useMemo } from "react";
 
-import {
-  difference,
-  fromDate,
-  fromUnixTimestamp,
-  nowInTimezone,
-} from "~/lib/temporal";
+import { difference, fromDate, nowInTimezone } from "~/lib/temporal";
 
 import type { CombinedContent, LongFormPostData, PostData } from "../types";
 // Union type for posts that can be edited/rescheduled
@@ -30,7 +25,7 @@ export function useScheduledState({
   currentTab,
 }: UseScheduledStateProps) {
   const [sortConfig, setSortConfig] = useState({
-    key: "scheduledFor",
+    key: "scheduledAtUtc",
     direction: "asc" as "asc" | "desc",
   });
   const [searchTerm, setSearchTerm] = useState("");
@@ -68,36 +63,19 @@ export function useScheduledState({
       const newCountdowns: Record<string, string> = {};
 
       scheduledPosts.forEach((post) => {
-        if (!post.scheduledFor) {
+        if (!post.scheduledAtUtc) {
           return;
         }
 
         try {
-          // Convert scheduledFor to Temporal ZonedDateTime
-          let scheduledZoned;
-          const scheduledForValue = post.scheduledFor;
+          const scheduledAtUtc = post.scheduledAtUtc;
+          const scheduledDate =
+            scheduledAtUtc instanceof Date
+              ? scheduledAtUtc
+              : new Date(String(scheduledAtUtc));
+          if (isNaN(scheduledDate.getTime())) return;
 
-          if (
-            scheduledForValue &&
-            typeof scheduledForValue === "object" &&
-            "getTime" in scheduledForValue
-          ) {
-            scheduledZoned = fromDate(scheduledForValue, "UTC");
-          } else if (typeof scheduledForValue === "string") {
-            const timestamp = parseInt(scheduledForValue, 10);
-            if (!isNaN(timestamp)) {
-              scheduledZoned = fromUnixTimestamp(timestamp, "UTC");
-            } else {
-              return;
-            }
-          } else if (typeof scheduledForValue === "number") {
-            scheduledZoned = fromUnixTimestamp(
-              Math.floor(scheduledForValue / 1000),
-              "UTC"
-            );
-          } else {
-            return;
-          }
+          const scheduledZoned = fromDate(scheduledDate, "UTC");
 
           // Convert to user's timezone for comparison
           const scheduledInUserTz = scheduledZoned.withTimeZone(tz);
@@ -155,13 +133,12 @@ export function useScheduledState({
   // Sort posts - memoized to prevent unnecessary re-sorting on every render
   const sortedPosts = useMemo(() => {
     return [...scheduledPosts].sort((a, b) => {
-      if (sortConfig.key === "scheduledFor") {
-        const aScheduledFor =
-          typeof a.scheduledFor === "string" ? a.scheduledFor : "0";
-        const bScheduledFor =
-          typeof b.scheduledFor === "string" ? b.scheduledFor : "0";
-        const dateA = parseInt(aScheduledFor) * 1000;
-        const dateB = parseInt(bScheduledFor) * 1000;
+      if (
+        sortConfig.key === "scheduledAtUtc" ||
+        sortConfig.key === "scheduledFor"
+      ) {
+        const dateA = a.scheduledAtUtc ? a.scheduledAtUtc.getTime() : 0;
+        const dateB = b.scheduledAtUtc ? b.scheduledAtUtc.getTime() : 0;
         return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
       }
       const aValue = (a as unknown as Record<string, unknown>)[

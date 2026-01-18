@@ -19,21 +19,14 @@ export function getPostDataProperty(
       return post.id;
     case "caption":
       return post.caption ?? undefined;
-    case "scheduledFor":
-      if (post.scheduledFor) {
-        const scheduledFor = post.scheduledFor as
-          | Date
-          | string
-          | null
-          | undefined;
-        if (scheduledFor instanceof Date) {
-          return scheduledFor;
-        }
-        if (typeof scheduledFor === "string") {
-          return new Date(scheduledFor);
-        }
-      }
+    case "scheduledAtUtc":
+    case "scheduledFor": {
+      const scheduledAtUtc = (post as unknown as { scheduledAtUtc?: unknown })
+        .scheduledAtUtc;
+      if (scheduledAtUtc instanceof Date) return scheduledAtUtc;
+      if (typeof scheduledAtUtc === "string") return new Date(scheduledAtUtc);
       return undefined;
+    }
     case "postedAt":
       return post.postedAt instanceof Date
         ? post.postedAt

@@ -27,14 +27,18 @@ export interface PostDTO extends Omit<
   | "createdAt"
   | "updatedAt"
   | "postedAt"
-  | "scheduledFor"
+  | "scheduledAtUtc"
+  | "publishingLockExpiresAt"
+  | "publishingStartedAt"
   | "signedEvent"
   | "nostrEvent"
 > {
   createdAt: string;
   updatedAt: string;
   postedAt: string | null;
-  scheduledFor: string | null;
+  scheduledAtUtc: string | null;
+  publishingLockExpiresAt: string | null;
+  publishingStartedAt: string | null;
   signedEvent?: SignedEvent | null;
   nostrEvent?: NostrEvent | null;
   queueType?: QueueType | null;
@@ -51,14 +55,18 @@ export interface LongFormPostDTO extends Omit<
   | "createdAt"
   | "updatedAt"
   | "publishedAt"
-  | "scheduledFor"
+  | "scheduledAtUtc"
+  | "publishingLockExpiresAt"
+  | "publishingStartedAt"
   | "signedEvent"
   | "nostrEvent"
 > {
   createdAt: string;
   updatedAt: string;
   publishedAt: string | null;
-  scheduledFor: string | null;
+  scheduledAtUtc: string | null;
+  publishingLockExpiresAt: string | null;
+  publishingStartedAt: string | null;
   signedEvent?: SignedEvent | null;
   nostrEvent?: NostrEvent | null;
   queueType?: QueueType | null;
@@ -91,17 +99,26 @@ export function fromPostDTO(dto: PostDTO): PostData {
     createdAt: _createdAt,
     updatedAt: _updatedAt,
     postedAt: _postedAt,
-    scheduledFor: _scheduledFor,
+    scheduledAtUtc: _scheduledAtUtc,
+    publishingLockExpiresAt: _publishingLockExpiresAt,
+    publishingStartedAt: _publishingStartedAt,
     ...rest
   } = dto;
   // Use Temporal for 100% consistency, convert to Date at boundary
-  // Note: scheduledFor is String? in Prisma schema, so keep it as string
   const result: PostData = {
     ...rest,
     createdAt: toDate(fromISOString(dto.createdAt, "UTC")),
     updatedAt: toDate(fromISOString(dto.updatedAt, "UTC")),
     postedAt: dto.postedAt ? toDate(fromISOString(dto.postedAt, "UTC")) : null,
-    scheduledFor: dto.scheduledFor, // Keep as string (Prisma schema has scheduledFor as String?)
+    scheduledAtUtc: dto.scheduledAtUtc
+      ? toDate(fromISOString(dto.scheduledAtUtc, "UTC"))
+      : null,
+    publishingLockExpiresAt: dto.publishingLockExpiresAt
+      ? toDate(fromISOString(dto.publishingLockExpiresAt, "UTC"))
+      : null,
+    publishingStartedAt: dto.publishingStartedAt
+      ? toDate(fromISOString(dto.publishingStartedAt, "UTC"))
+      : null,
   };
   return result;
 }
@@ -142,12 +159,12 @@ export function fromLongFormPostDTO(dto: LongFormPostDTO): LongFormPostData {
     createdAt: _createdAt,
     updatedAt: _updatedAt,
     publishedAt: _publishedAt,
-    scheduledFor: _scheduledFor,
+    scheduledAtUtc: _scheduledAtUtc,
+    publishingLockExpiresAt: _publishingLockExpiresAt,
+    publishingStartedAt: _publishingStartedAt,
     ...rest
   } = dto;
   // Use Temporal for 100% consistency, convert to Date at boundary
-  // Note: scheduledFor is String? in Prisma schema, so keep it as string
-  // publishedAt is DateTime? in Prisma schema, so convert to Date
   const result: LongFormPostData = {
     ...rest,
     createdAt: toDate(fromISOString(dto.createdAt, "UTC")),
@@ -155,7 +172,15 @@ export function fromLongFormPostDTO(dto: LongFormPostDTO): LongFormPostData {
     publishedAt: dto.publishedAt
       ? toDate(fromISOString(dto.publishedAt, "UTC"))
       : null,
-    scheduledFor: dto.scheduledFor, // Keep as string (Prisma schema has scheduledFor as String?)
+    scheduledAtUtc: dto.scheduledAtUtc
+      ? toDate(fromISOString(dto.scheduledAtUtc, "UTC"))
+      : null,
+    publishingLockExpiresAt: dto.publishingLockExpiresAt
+      ? toDate(fromISOString(dto.publishingLockExpiresAt, "UTC"))
+      : null,
+    publishingStartedAt: dto.publishingStartedAt
+      ? toDate(fromISOString(dto.publishingStartedAt, "UTC"))
+      : null,
   };
   return result;
 }
