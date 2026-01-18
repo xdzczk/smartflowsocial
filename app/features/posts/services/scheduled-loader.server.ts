@@ -46,10 +46,9 @@ export async function loadScheduledData(userId: string, queueType: string) {
   // Convert PostWithQueueType[] to PostData[] for combineContent
   const postsData: PostData[] = posts.map((post) => {
     const { queueType, ...rest } = post;
-    const signedEventValue: PostData["signedEvent"] =
-      post.signedEvent as PostData["signedEvent"];
-    const nostrEventValue: PostData["nostrEvent"] =
-      post.nostrEvent as PostData["nostrEvent"];
+    // Validate Prisma JsonValue with Zod schemas (prevents DbNull / invalid-shape issues)
+    const signedEventValue = validateSignedEvent(post.signedEvent);
+    const nostrEventValue = validateNostrEvent(post.nostrEvent);
     const result: PostData = {
       ...rest,
       queueType: convertPrismaQueueTypeToQueueType(queueType),
