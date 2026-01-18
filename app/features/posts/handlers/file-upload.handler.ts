@@ -14,6 +14,7 @@ import {
 import { isVideoFile } from "~/utils/media-helpers";
 
 import type { BulkPostsHandlerDeps } from "../types";
+import { createBulkPostClientId } from "../utils/client-id";
 // File size limits
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB for images
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB for videos
@@ -125,6 +126,7 @@ export async function handleFileChange(
     const scheduledFor = formatForDateTimeLocal(scheduledZoned, userTimezone);
 
     return {
+      clientId: createBulkPostClientId(),
       file,
       caption: "",
       queueType: "unassigned",

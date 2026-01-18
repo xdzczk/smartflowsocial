@@ -16,6 +16,7 @@ describe("Recyclable Handler", () => {
     it("should update recyclable status for a single post", () => {
       const posts: BulkPost[] = [
         {
+          clientId: "post-1",
           file: null,
           caption: "",
           queueType: "unassigned",
@@ -23,6 +24,7 @@ describe("Recyclable Handler", () => {
           isRecyclable: false,
         },
         {
+          clientId: "post-2",
           file: null,
           caption: "",
           queueType: "unassigned",
@@ -36,6 +38,7 @@ describe("Recyclable Handler", () => {
 
       expect(setPosts).toHaveBeenCalledWith([
         {
+          clientId: "post-1",
           file: null,
           caption: "",
           queueType: "unassigned",
@@ -43,6 +46,7 @@ describe("Recyclable Handler", () => {
           isRecyclable: true,
         },
         {
+          clientId: "post-2",
           file: null,
           caption: "",
           queueType: "unassigned",
@@ -55,6 +59,7 @@ describe("Recyclable Handler", () => {
     it("should set recyclable to false", () => {
       const posts: BulkPost[] = [
         {
+          clientId: "post-1",
           file: null,
           caption: "",
           queueType: "unassigned",
@@ -68,6 +73,7 @@ describe("Recyclable Handler", () => {
 
       expect(setPosts).toHaveBeenCalledWith([
         {
+          clientId: "post-1",
           file: null,
           caption: "",
           queueType: "unassigned",
@@ -82,6 +88,7 @@ describe("Recyclable Handler", () => {
     it("should toggle all posts to recyclable when none are recyclable", () => {
       const posts: BulkPost[] = [
         {
+          clientId: "post-1",
           file: null,
           caption: "",
           queueType: "unassigned",
@@ -89,6 +96,7 @@ describe("Recyclable Handler", () => {
           isRecyclable: false,
         },
         {
+          clientId: "post-2",
           file: null,
           caption: "",
           queueType: "unassigned",
@@ -102,6 +110,7 @@ describe("Recyclable Handler", () => {
 
       expect(setPosts).toHaveBeenCalledWith([
         {
+          clientId: "post-1",
           file: null,
           caption: "",
           queueType: "unassigned",
@@ -109,6 +118,7 @@ describe("Recyclable Handler", () => {
           isRecyclable: true,
         },
         {
+          clientId: "post-2",
           file: null,
           caption: "",
           queueType: "unassigned",
@@ -121,6 +131,7 @@ describe("Recyclable Handler", () => {
     it("should toggle all posts to non-recyclable when all are recyclable", () => {
       const posts: BulkPost[] = [
         {
+          clientId: "post-1",
           file: null,
           caption: "",
           queueType: "unassigned",
@@ -128,6 +139,7 @@ describe("Recyclable Handler", () => {
           isRecyclable: true,
         },
         {
+          clientId: "post-2",
           file: null,
           caption: "",
           queueType: "unassigned",
@@ -141,6 +153,7 @@ describe("Recyclable Handler", () => {
 
       expect(setPosts).toHaveBeenCalledWith([
         {
+          clientId: "post-1",
           file: null,
           caption: "",
           queueType: "unassigned",
@@ -148,6 +161,7 @@ describe("Recyclable Handler", () => {
           isRecyclable: false,
         },
         {
+          clientId: "post-2",
           file: null,
           caption: "",
           queueType: "unassigned",
@@ -160,6 +174,7 @@ describe("Recyclable Handler", () => {
     it("should toggle all to recyclable when mixed states", () => {
       const posts: BulkPost[] = [
         {
+          clientId: "post-1",
           file: null,
           caption: "",
           queueType: "unassigned",
@@ -167,6 +182,7 @@ describe("Recyclable Handler", () => {
           isRecyclable: true,
         },
         {
+          clientId: "post-2",
           file: null,
           caption: "",
           queueType: "unassigned",
@@ -181,6 +197,7 @@ describe("Recyclable Handler", () => {
       // When not all are recyclable, it toggles all to true
       expect(setPosts).toHaveBeenCalledWith([
         {
+          clientId: "post-1",
           file: null,
           caption: "",
           queueType: "unassigned",
@@ -188,6 +205,7 @@ describe("Recyclable Handler", () => {
           isRecyclable: true,
         },
         {
+          clientId: "post-2",
           file: null,
           caption: "",
           queueType: "unassigned",

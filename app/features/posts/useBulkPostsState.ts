@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { handleErrorSafely } from "~/lib/error-handler.client";
 
 import { type BulkPost } from "./components/BulkPostCard";
+import { createBulkPostClientId } from "./utils/client-id";
 interface RepostDataItem {
   fileUrl?: string | string[];
   caption?: string;
@@ -54,6 +55,7 @@ export function useBulkPostsState({
               }
 
               return {
+                clientId: createBulkPostClientId(),
                 file: null, // We'll handle URL-based files differently
                 caption: item.caption ?? "",
                 queueType: item.queueType ?? "unassigned",
@@ -151,6 +153,7 @@ export function useBulkPostsState({
                     : originalFileUrl;
 
                   return {
+                    clientId: createBulkPostClientId(),
                     file: null, // No file for kind 6 reposts
                     caption: item.caption ?? "", // Empty for kind 6
                     queueType: item.queueType ?? "unassigned",
@@ -229,6 +232,7 @@ export function useBulkPostsState({
             }
 
             return {
+              clientId: createBulkPostClientId(),
               file: null, // We'll handle URL-based files differently
               caption: item.caption ?? "", // Start with empty caption for user to add content
               queueType: item.queueType ?? "unassigned",

@@ -40,6 +40,7 @@ describe("Queue Type Handler Integration Tests", () => {
     it("should update post queue type", async () => {
       const posts: BulkPost[] = [
         {
+          clientId: "post-1",
           file: null,
           caption: "",
           queueType: "unassigned",
@@ -84,6 +85,7 @@ describe("Queue Type Handler Integration Tests", () => {
     it("should clear scheduledFor for unassigned queue type", async () => {
       const posts: BulkPost[] = [
         {
+          clientId: "post-1",
           file: null,
           caption: "",
           queueType: "Morning",
@@ -117,6 +119,7 @@ describe("Queue Type Handler Integration Tests", () => {
     it("should fetch scheduled time for assigned queue type", async () => {
       const posts: BulkPost[] = [
         {
+          clientId: "post-1",
           file: null,
           caption: "",
           queueType: "unassigned",
@@ -171,6 +174,7 @@ describe("Queue Type Handler Integration Tests", () => {
     it("should handle API errors gracefully", async () => {
       const posts: BulkPost[] = [
         {
+          clientId: "post-1",
           file: null,
           caption: "",
           queueType: "unassigned",
@@ -215,6 +219,7 @@ describe("Queue Type Handler Integration Tests", () => {
       // Evening is most used (2 posts)
       const posts: BulkPost[] = [
         {
+          clientId: "post-1",
           file: null,
           caption: "",
           queueType: "Evening",
@@ -222,6 +227,7 @@ describe("Queue Type Handler Integration Tests", () => {
           isRecyclable: false,
         },
         {
+          clientId: "post-2",
           file: null,
           caption: "",
           queueType: "Evening",
@@ -229,6 +235,7 @@ describe("Queue Type Handler Integration Tests", () => {
           isRecyclable: false,
         },
         {
+          clientId: "post-3",
           file: null,
           caption: "",
           queueType: "Morning",
@@ -302,6 +309,7 @@ describe("Queue Type Handler Integration Tests", () => {
     it("should update all posts to new queue type", async () => {
       const posts: BulkPost[] = [
         {
+          clientId: "post-1",
           file: null,
           caption: "",
           queueType: "unassigned",
@@ -309,6 +317,7 @@ describe("Queue Type Handler Integration Tests", () => {
           isRecyclable: false,
         },
         {
+          clientId: "post-2",
           file: null,
           caption: "",
           queueType: "unassigned",
@@ -359,6 +368,7 @@ describe("Queue Type Handler Integration Tests", () => {
     it("should use first item time if manually changed", async () => {
       const posts: BulkPost[] = [
         {
+          clientId: "post-1",
           file: null,
           caption: "",
           queueType: "unassigned",
@@ -366,6 +376,7 @@ describe("Queue Type Handler Integration Tests", () => {
           isRecyclable: false,
         },
         {
+          clientId: "post-2",
           file: null,
           caption: "",
           queueType: "unassigned",
@@ -408,6 +419,7 @@ describe("Queue Type Handler Integration Tests", () => {
     it("should calculate interval-based schedule times", async () => {
       const posts: BulkPost[] = [
         {
+          clientId: "post-1",
           file: null,
           caption: "",
           queueType: "unassigned",
@@ -415,6 +427,7 @@ describe("Queue Type Handler Integration Tests", () => {
           isRecyclable: false,
         },
         {
+          clientId: "post-2",
           file: null,
           caption: "",
           queueType: "unassigned",
@@ -422,6 +435,7 @@ describe("Queue Type Handler Integration Tests", () => {
           isRecyclable: false,
         },
         {
+          clientId: "post-3",
           file: null,
           caption: "",
           queueType: "unassigned",
@@ -476,6 +490,7 @@ describe("Queue Type Handler Integration Tests", () => {
     it("should clear scheduledFor for unassigned queue type", async () => {
       const posts: BulkPost[] = [
         {
+          clientId: "post-1",
           file: null,
           caption: "",
           queueType: "Morning",

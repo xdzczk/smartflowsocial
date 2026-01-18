@@ -167,6 +167,11 @@ export type QueueTypeWithRelations = PrismaQueueType & {
  * Bulk post data for scheduling
  */
 export interface BulkPost {
+  /**
+   * Stable per-row id for React keys in bulk UI.
+   * Must NOT change when user edits fields like caption/scheduledFor.
+   */
+  clientId: string;
   file: File | null;
   caption: string;
   queueType: string;

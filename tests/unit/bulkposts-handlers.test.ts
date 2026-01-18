@@ -17,14 +17,23 @@ import {
 import type { BulkPost } from "~/features/posts/types";
 
 // Helper to create minimal BulkPost objects for testing
-const createBulkPost = (overrides: Partial<BulkPost> = {}): BulkPost => ({
-  caption: "",
-  queueType: "unassigned",
-  file: null,
-  scheduledFor: "",
-  isRecyclable: false,
-  ...overrides,
-});
+const createBulkPost = (overrides: Partial<BulkPost> = {}): BulkPost => {
+  const base: BulkPost = {
+    clientId: "test-client-id",
+    caption: "",
+    queueType: "unassigned",
+    file: null,
+    scheduledFor: "",
+    isRecyclable: false,
+  };
+
+  // Ensure `clientId` is always a required string.
+  return {
+    ...base,
+    ...overrides,
+    clientId: overrides.clientId ?? base.clientId,
+  };
+};
 
 describe("Bulk Posts Handlers", () => {
   describe("handleCaptionChange", () => {

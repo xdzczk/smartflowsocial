@@ -273,11 +273,7 @@ export default function BulkPostsTable({
         </thead>
         <tbody>
           {posts.map((post, index) => (
-            <tr
-              // eslint-disable-next-line react/no-array-index-key -- Composite key with post data ensures uniqueness
-              key={`${index}-${post.caption.substring(0, 20)}-${post.scheduledFor}`}
-              className="border-b"
-            >
+            <tr key={post.clientId} className="border-b">
               <td className="p-4">
                 {renderMediaCell(post, index, previewData, handleMediaClick)}
                 <input type="file" name="files" hidden />
@@ -348,7 +344,7 @@ export default function BulkPostsTable({
               <td className="p-4">
                 <div className="flex items-center">
                   <input
-                    id={`bulk-recyclable-${index}`}
+                    id={`bulk-recyclable-${post.clientId}`}
                     type="checkbox"
                     checked={post.isRecyclable}
                     onChange={(e) =>
@@ -357,7 +353,7 @@ export default function BulkPostsTable({
                     className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                   <label
-                    htmlFor={`bulk-recyclable-${index}`}
+                    htmlFor={`bulk-recyclable-${post.clientId}`}
                     className="ml-2 text-sm text-gray-700 dark:text-gray-300"
                   >
                     Recyclable

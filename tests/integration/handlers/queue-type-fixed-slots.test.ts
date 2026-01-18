@@ -28,6 +28,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
   it("should calculate FIXED_SLOTS schedule times correctly", async () => {
     const posts: BulkPost[] = [
       {
+        clientId: "post-1",
         file: null,
         caption: "",
         queueType: "Queue 1",
@@ -35,6 +36,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
         isRecyclable: false,
       },
       {
+        clientId: "post-2",
         file: null,
         caption: "",
         queueType: "Queue 1",
@@ -42,6 +44,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
         isRecyclable: false,
       },
       {
+        clientId: "post-3",
         file: null,
         caption: "",
         queueType: "Queue 1",
@@ -110,6 +113,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
   it("should wrap to next day when slots are exhausted", async () => {
     const posts: BulkPost[] = [
       {
+        clientId: "post-1",
         file: null,
         caption: "",
         queueType: "Queue 1",
@@ -117,6 +121,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
         isRecyclable: false,
       },
       {
+        clientId: "post-2",
         file: null,
         caption: "",
         queueType: "Queue 1",
@@ -124,6 +129,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
         isRecyclable: false,
       },
       {
+        clientId: "post-3",
         file: null,
         caption: "",
         queueType: "Queue 1",
@@ -206,6 +212,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
   it("should handle useGlobalInterval for INTERVAL schedule type", async () => {
     const posts: BulkPost[] = [
       {
+        clientId: "post-1",
         file: null,
         caption: "",
         queueType: "Queue 1",
@@ -213,6 +220,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
         isRecyclable: false,
       },
       {
+        clientId: "post-2",
         file: null,
         caption: "",
         queueType: "Queue 1",
@@ -279,6 +287,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
   it("should use queue-specific interval when useGlobalInterval is false", async () => {
     const posts: BulkPost[] = [
       {
+        clientId: "post-1",
         file: null,
         caption: "",
         queueType: "Queue 1",
@@ -286,6 +295,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
         isRecyclable: false,
       },
       {
+        clientId: "post-2",
         file: null,
         caption: "",
         queueType: "Queue 1",
@@ -353,6 +363,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
   it("should handle unassigned queue type", async () => {
     const posts: BulkPost[] = [
       {
+        clientId: "post-1",
         file: null,
         caption: "",
         queueType: "unassigned",
@@ -393,6 +404,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
   it("should sort slots correctly by time", async () => {
     const posts: BulkPost[] = [
       {
+        clientId: "post-1",
         file: null,
         caption: "",
         queueType: "Queue 1",
@@ -452,6 +464,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
   it("should handle empty slots array", async () => {
     const posts: BulkPost[] = [
       {
+        clientId: "post-1",
         file: null,
         caption: "",
         queueType: "Queue 1",
@@ -511,6 +524,7 @@ describe("Queue Type Handler - FIXED_SLOTS Logic", () => {
   it("should handle missing scheduleInterval in user", async () => {
     const posts: BulkPost[] = [
       {
+        clientId: "post-1",
         file: null,
         caption: "",
         queueType: "Queue 1",
