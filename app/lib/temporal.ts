@@ -89,13 +89,18 @@ export function fromUnixTimestamp(
 
 /**
  * Parse an ISO string directly to ZonedDateTime (replaces new Date(isoString))
- * @param isoString - ISO 8601 date string (e.g., "2024-01-15T14:30:00Z")
+ * Also accepts a JS Date for runtime safety (some callsites may pass Date objects).
+ * @param isoString - ISO 8601 date string (e.g., "2024-01-15T14:30:00Z") or Date
  * @param timezone - Target timezone (defaults to UTC)
  */
 export function fromISOString(
-  isoString: string,
+  isoString: string | Date,
   timezone = "UTC"
 ): Temporal.ZonedDateTime {
+  // Runtime safety: some callers may pass Date objects (TS casts don't convert values)
+  if (isoString instanceof Date) {
+    return fromDate(isoString, timezone);
+  }
   return Temporal.Instant.from(isoString).toZonedDateTimeISO(timezone);
 }
 
