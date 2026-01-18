@@ -76,10 +76,12 @@ function getSortValue(post: LongFormPostType, key: string): number {
       return Number(zoned.epochMilliseconds);
     }
     if (key === "scheduledFor") {
-      if (!post.scheduledFor) return 0;
-      const timestamp = parseInt(post.scheduledFor, 10);
-      if (isNaN(timestamp)) return 0;
-      const zoned = fromUnixTimestamp(timestamp, "UTC");
+      const scheduledAt =
+        "scheduledAtUtc" in post && post.scheduledAtUtc instanceof Date
+          ? post.scheduledAtUtc
+          : null;
+      if (!scheduledAt) return 0;
+      const zoned = fromDate(scheduledAt, "UTC");
       return Number(zoned.epochMilliseconds);
     }
     if (key === "createdAt") {
@@ -96,6 +98,26 @@ function getSortValue(post: LongFormPostType, key: string): number {
   } catch {
     return 0;
   }
+}
+
+function getScheduledForUnixSeconds(post: unknown): number | null {
+  if (!post || typeof post !== "object") return null;
+  const rec = post as Record<string, unknown>;
+  const scheduledAtUtc = rec["scheduledAtUtc"];
+  if (scheduledAtUtc instanceof Date) {
+    return Math.floor(scheduledAtUtc.getTime() / 1000);
+  }
+  const scheduledFor = rec["scheduledFor"];
+  if (typeof scheduledFor === "string") {
+    const ts = parseInt(scheduledFor, 10);
+    return Number.isFinite(ts) ? ts : null;
+  }
+  return null;
+}
+
+function getScheduledForString(post: unknown): string | undefined {
+  const ts = getScheduledForUnixSeconds(post);
+  return ts !== null ? String(ts) : undefined;
 }
 
 function compareStringValues(
@@ -326,14 +348,11 @@ export default function LongFormListing({
       const newCountdowns: Record<string, string> = {};
 
       posts.forEach((post) => {
-        if (!post.scheduledFor) return;
+        const scheduledForUnix = getScheduledForUnixSeconds(post);
+        if (!scheduledForUnix) return;
 
         try {
-          // Handle scheduledFor as Unix timestamp string
-          const timestamp = parseInt(post.scheduledFor, 10);
-          if (isNaN(timestamp)) return;
-
-          const scheduledZoned = fromUnixTimestamp(timestamp, "UTC");
+          const scheduledZoned = fromUnixTimestamp(scheduledForUnix, "UTC");
           const scheduledInUserTz = scheduledZoned.withTimeZone(userTimezone);
 
           // Calculate difference
@@ -636,7 +655,7 @@ export default function LongFormListing({
                     type === "posted"
                       ? (post.publishedAt ?? undefined)
                       : type === "scheduled"
-                        ? (post.scheduledFor ?? undefined)
+                        ? getScheduledForString(post)
                         : post.createdAt
                   )}
                 </td>

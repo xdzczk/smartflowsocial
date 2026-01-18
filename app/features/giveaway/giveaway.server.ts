@@ -1,4 +1,5 @@
 import { connectToPrimalCache } from "~/features/cache/primalCache.server";
+import { logError } from "~/lib/error-logger.server";
 
 import type { RelatedEvent, PrimalEvent } from "./types";
 
@@ -177,7 +178,10 @@ async function fetchLikes(
       )
       .map((item: PrimalEvent) => item[2] as RelatedEvent);
   } catch (error) {
-    console.error(`Error fetching likes for event ${eventId}:`, error);
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "Error fetching likes for event",
+      eventId,
+    });
     return [];
   }
 }
@@ -207,7 +211,10 @@ async function fetchReposts(
       )
       .map((item: PrimalEvent) => item[2] as RelatedEvent);
   } catch (error) {
-    console.error(`Error fetching reposts for event ${eventId}:`, error);
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "Error fetching reposts for event",
+      eventId,
+    });
     return [];
   }
 }
@@ -277,10 +284,10 @@ export const fetchGiveawayParticipants = async (
         const repostEvents = await fetchReposts(eventId, connectToPrimalCache);
         events.push(...repostEvents);
       } catch (error) {
-        console.error(
-          `Error fetching engagement data for event ${eventId}:`,
-          error
-        );
+        logError(error instanceof Error ? error : new Error(String(error)), {
+          message: "Error fetching engagement data for event",
+          eventId,
+        });
       }
 
       return events;
@@ -303,7 +310,10 @@ export const fetchGiveawayParticipants = async (
       stats: aggregatedStats,
     };
   } catch (error) {
-    console.error("Error fetching giveaway participants:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "Error fetching giveaway participants",
+      eventIds,
+    });
     throw error;
   }
 };

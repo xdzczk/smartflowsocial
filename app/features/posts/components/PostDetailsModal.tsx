@@ -201,13 +201,17 @@ export default function PostDetailsModal({
 
               {type === "scheduled" ? (
                 <>
-                  {post.scheduledFor ? (
+                  {"scheduledAtUtc" in post && post.scheduledAtUtc ? (
                     <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
                       <h3 className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
                         Scheduled For
                       </h3>
                       <p className="text-gray-900 dark:text-white">
-                        {formatScheduledDate(post.scheduledFor)}
+                        {formatScheduledDate(
+                          Math.floor(
+                            post.scheduledAtUtc.getTime() / 1000
+                          ).toString()
+                        )}
                       </p>
                     </div>
                   ) : null}

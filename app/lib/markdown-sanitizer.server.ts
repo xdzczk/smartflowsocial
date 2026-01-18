@@ -1,6 +1,8 @@
 import { marked } from "marked";
 import sanitizeHtml from "sanitize-html";
 
+import { logError } from "./error-logger.server";
+
 /**
  * Allowed HTML tags for markdown content
  */
@@ -135,7 +137,9 @@ export function sanitizeMarkdown(markdown: string): string {
 
     return finalHtml;
   } catch (error) {
-    console.error("Error sanitizing markdown:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "Error sanitizing markdown",
+    });
     return "";
   }
 }

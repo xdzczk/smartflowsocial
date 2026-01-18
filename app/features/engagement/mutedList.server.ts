@@ -1,4 +1,5 @@
 import { connectToPrimalCache } from "~/features/cache/primalCache.server";
+import { logError } from "~/lib/error-logger.server";
 
 import type { MutedListData, PrimalEvent } from "./types";
 // Re-export the type
@@ -8,19 +9,6 @@ export type { MutedListData } from "~/features/engagement/types";
  * Get muted list for a user (alias for fetchMutedList)
  */
 export const getMutedList = fetchMutedList;
-
-/**
- * Update muted list for a user
- * Note: This function should be implemented based on your requirements
- */
-export function updateMutedList(
-  pubkey: string,
-  mutedList: MutedListData
-): MutedListData {
-  // TODO: Implement actual update logic
-  // This is a placeholder that returns the provided muted list
-  return mutedList;
-}
 
 /**
  * Fetches and parses the muted list for a user from Primal cache
@@ -86,7 +74,10 @@ export async function fetchMutedList(
       lastSynced: new Date().toISOString(),
     };
   } catch (error) {
-    console.error("[MutedList] Error fetching muted list:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "[MutedList] Error fetching muted list",
+      pubkey,
+    });
     throw error;
   }
 }

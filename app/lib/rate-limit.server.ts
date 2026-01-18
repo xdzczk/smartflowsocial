@@ -10,6 +10,7 @@ import rateLimit from "express-rate-limit";
 import { RateLimiterRedis } from "rate-limiter-flexible";
 
 import { redis } from "~/infra/queue/queue-client.server";
+import { logError, logWarning } from "~/lib/error-logger.server";
 
 /**
  * Check if we're in a test environment
@@ -244,7 +245,10 @@ export async function getRateLimitInfo(userId: string): Promise<{
       resetTime: Date.now() + info.msBeforeNext,
     });
   } catch (error) {
-    console.error("Error getting rate limit info:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "Error getting rate limit info",
+      userId,
+    });
     return Promise.resolve(null);
   }
 }
@@ -282,7 +286,7 @@ export async function checkUserPostCreationLimit(
   if (!isRedisAvailable()) {
     // If Redis is not available, allow the request but log a warning
     // In production, you might want to be more strict here
-    console.warn(
+    logWarning(
       "Redis not available for post creation rate limiting, allowing request"
     );
     return {
@@ -358,7 +362,13 @@ export async function checkUserPostCreationLimit(
     }
 
     // Unexpected error - log and allow the request (fail open)
-    console.error("Error checking post creation limit:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "Error checking post creation limit",
+      userId,
+      postCount,
+      windowMinutes,
+      maxPosts,
+    });
     return {
       allowed: true,
       remaining: maxPosts,

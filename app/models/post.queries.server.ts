@@ -16,37 +16,47 @@ import type {
   PostStatistics,
 } from "./post.types";
 
-export function getScheduledPosts({
+export async function getScheduledPosts({
   userId,
   queueType,
 }: {
   userId: string;
   queueType?: string;
 }): Promise<PostWithQueueType[]> {
-  const whereClause: Prisma.PostWhereInput = {
-    // Use currentState as single source of truth
-    currentState: "SCHEDULED",
-    userId: userId,
-  };
-
-  // Add queue type filter if specified
-  if (queueType && queueType !== "all") {
-    whereClause.queueType = {
-      name: queueType,
+  try {
+    const whereClause: Prisma.PostWhereInput = {
+      // Use currentState as single source of truth
+      currentState: "SCHEDULED",
+      userId: userId,
     };
-  }
 
-  return prisma.post.findMany({
-    where: whereClause,
-    include: {
-      queueType: true,
-      hashTagPreset: true,
-      template: true,
-    },
-    orderBy: {
-      scheduledAtUtc: "asc",
-    },
-  });
+    // Add queue type filter if specified
+    if (queueType && queueType !== "all") {
+      whereClause.queueType = {
+        name: queueType,
+      };
+    }
+
+    return await prisma.post.findMany({
+      where: whereClause,
+      include: {
+        queueType: true,
+        hashTagPreset: true,
+        template: true,
+      },
+      orderBy: {
+        scheduledAtUtc: "asc",
+      },
+    });
+  } catch (error) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    logError(err, {
+      message: "Error fetching scheduled posts",
+      userId,
+      queueType,
+    });
+    throw err;
+  }
 }
 
 export function getDraftPosts({
@@ -195,30 +205,42 @@ export async function getPostStatistics({
 }: {
   userId: string;
 }): Promise<PostStatistics> {
-  const [scheduledCount, successCount] = await Promise.all([
-    // Get count of scheduled posts
-    prisma.post.count({
-      where: {
-        userId,
-        // Use currentState as single source of truth
-        currentState: "SCHEDULED",
-      },
-    }),
+  try {
+    const [scheduledCount, successCount] = await Promise.all([
+      // Get count of scheduled posts
+      prisma.post.count({
+        where: {
+          userId,
+          // Use currentState as single source of truth
+          currentState: "SCHEDULED",
+        },
+      }),
 
-    // Get count of successfully posted
-    prisma.post.count({
-      where: {
-        userId,
-        // Use currentState as single source of truth
-        currentState: "PUBLISHED",
-      },
-    }),
-  ]);
+      // Get count of successfully posted
+      prisma.post.count({
+        where: {
+          userId,
+          // Use currentState as single source of truth
+          currentState: "PUBLISHED",
+        },
+      }),
+    ]);
 
-  return {
-    scheduledCount,
-    successCount,
-  };
+    return {
+      scheduledCount,
+      successCount,
+    };
+  } catch (error) {
+    // Log error but return safe defaults
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "Error fetching post statistics",
+      userId,
+    });
+    return {
+      scheduledCount: 0,
+      successCount: 0,
+    };
+  }
 }
 
 export function getPastPosts({
@@ -416,8 +438,8 @@ export async function getLastPostTimeForQueue({
       queueType.scheduleType === "INTERVAL"
         ? "SCHEDULED"
         : { in: ["SCHEDULED", "PUBLISHED"] }, // FIXED_SLOTS can include published posts
-    scheduledFor: {
-      not: null, // Ensure scheduledFor is not null
+    scheduledAtUtc: {
+      not: null,
     },
   };
 
@@ -425,36 +447,16 @@ export async function getLastPostTimeForQueue({
   const lastPost = await prisma.post.findFirst({
     where: whereCondition,
     orderBy: {
-      scheduledFor: "desc", // Order by scheduled time to get the latest scheduled post
+      scheduledAtUtc: "desc",
     },
     select: {
-      scheduledFor: true,
-      createdAt: true,
-      currentState: true,
+      scheduledAtUtc: true,
     },
   });
 
-  if (!lastPost?.scheduledFor) {
+  if (!lastPost?.scheduledAtUtc) {
     return null;
   }
 
-  // Convert scheduledFor string to Date
-  // scheduledFor appears to be a Unix timestamp string
-  try {
-    const timestamp = parseInt(lastPost.scheduledFor);
-    if (isNaN(timestamp)) {
-      // If it's not a timestamp, try parsing as ISO string
-      return new Date(lastPost.scheduledFor);
-    }
-    // Convert Unix timestamp (seconds) to Date
-    return new Date(timestamp * 1000);
-  } catch (error) {
-    logError(error instanceof Error ? error : new Error(String(error)), {
-      postId: "id" in lastPost ? String(lastPost.id) : "unknown",
-      scheduledFor:
-        "scheduledFor" in lastPost ? String(lastPost.scheduledFor) : "unknown",
-      message: "Error parsing scheduledFor",
-    });
-    return null;
-  }
+  return lastPost.scheduledAtUtc;
 }

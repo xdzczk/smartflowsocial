@@ -22,8 +22,7 @@ export function convertToHex(key: string): string | null {
   try {
     const { data } = nip19.decode(key);
     return typeof data === "string" ? data : null;
-  } catch (error) {
-    console.error("Error decoding npub:", error);
+  } catch (_error) {
     return null;
   }
 }
@@ -46,8 +45,7 @@ export const getImageUrls = (fileUrl: string[]): string[] => {
   if (typeof fileUrl[0] === "string" && fileUrl[0].startsWith("[")) {
     try {
       return JSON.parse(fileUrl[0]) as string[];
-    } catch (e) {
-      console.error("Error parsing fileUrl:", e);
+    } catch (_e) {
       return [];
     }
   }

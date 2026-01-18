@@ -85,83 +85,89 @@ model HashTagPreset {
 }
 
 model Post {
-  id                     String                @id @default(cuid())
-  nostrEventId           String?
-  caption                String?
-  fileUrl                String[]
-  scheduledFor           String? // Legacy field - kept for backward compatibility
-  scheduledAtUtc         DateTime? // New DateTime field (UTC)
-  postedAt               DateTime?
-  content                String?
-  postType               PostType              @default(IMAGE)
-  repost                 Boolean               @default(false)
-  isQuotedPost           Boolean               @default(false)
-  isRecyclable           Boolean               @default(false)
-  createdAt              DateTime              @default(now())
-  updatedAt              DateTime              @updatedAt
-  status                 Status                @default(ACTIVE)
-  currentState           String                @default("DRAFT") // State machine state - single source of truth
-  signedEvent            Json?
-  nostrEvent             Json?
-  queueTypeId            String?
-  tags                   String[]
-  manual_override        Boolean               @default(false)
-  userId                 String
-  templateId             String?
-  hashTagPresetId        String?
+  id                      String                @id @default(cuid())
+  nostrEventId            String?
+  caption                 String?
+  fileUrl                 String[]
+  scheduledAtUtc          DateTime? // New DateTime field (UTC)
+  postedAt                DateTime?
+  content                 String?
+  postType                PostType              @default(IMAGE)
+  repost                  Boolean               @default(false)
+  isQuotedPost            Boolean               @default(false)
+  isRecyclable            Boolean               @default(false)
+  createdAt               DateTime              @default(now())
+  updatedAt               DateTime              @updatedAt
+  status                  Status                @default(ACTIVE)
+  currentState            String                @default("DRAFT") // State machine state - single source of truth
+  signedEvent             Json?
+  nostrEvent              Json?
+  queueTypeId             String?
+  tags                    String[]
+  manual_override         Boolean               @default(false)
+  userId                  String
+  templateId              String?
+  hashTagPresetId         String?
   // Idempotency keys
-  creationIdempotencyKey String?               @unique
-  enqueueIdempotencyKey  String?               @unique
-  publishAttemptId      String?               @unique // First-class idempotency for publish attempts
-  hashTagPreset          HashTagPreset?        @relation(fields: [hashTagPresetId], references: [id])
-  queueType              QueueType?            @relation(fields: [queueTypeId], references: [id])
-  template               Template?             @relation(fields: [templateId], references: [id])
-  user                   User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  stateTransitions       PostStateTransition[]
+  creationIdempotencyKey  String?               @unique
+  enqueueIdempotencyKey   String?               @unique
+  publishAttemptId        String?               @unique // First-class idempotency for publish attempts
+  // Publish lease (supports safe retries + future multi-worker)
+  publishingLockId        String?
+  publishingLockExpiresAt DateTime?
+  publishingStartedAt     DateTime?
+  hashTagPreset           HashTagPreset?        @relation(fields: [hashTagPresetId], references: [id])
+  queueType               QueueType?            @relation(fields: [queueTypeId], references: [id])
+  template                Template?             @relation(fields: [templateId], references: [id])
+  user                    User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stateTransitions        PostStateTransition[]
 
   // Indexes for common query patterns
   // State machine indexes (use currentState as single source of truth)
   @@index([userId, currentState])
   @@index([currentState, scheduledAtUtc])
   @@index([userId, currentState, scheduledAtUtc])
-  @@index([userId, scheduledFor])
   @@index([userId, scheduledAtUtc])
 }
 
 model LongFormPost {
-  id                     String         @id @default(cuid())
-  nostrEventId           String?
-  title                  String?
-  summary                String?
-  content                String?
-  image                  String?
-  scheduledFor           String? // Legacy field - kept for backward compatibility
-  scheduledAtUtc         DateTime? // New DateTime field (UTC)
-  postedAt               DateTime?
-  publishedAt            DateTime?
-  updatedAt              DateTime       @updatedAt
-  createdAt              DateTime       @default(now())
-  status                 Status         @default(DRAFT)
-  currentState           String         @default("DRAFT") // State machine state - single source of truth
-  queueTypeId            String?
-  tags                   String[]
-  signedEvent            Json?
-  nostrEvent             Json?
-  userId                 String
-  hashTagPresetId        String?
+  id                      String                        @id @default(cuid())
+  nostrEventId            String?
+  title                   String?
+  summary                 String?
+  content                 String?
+  image                   String?
+  scheduledAtUtc          DateTime? // New DateTime field (UTC)
+  postedAt                DateTime?
+  publishedAt             DateTime?
+  updatedAt               DateTime                      @updatedAt
+  createdAt               DateTime                      @default(now())
+  status                  Status                        @default(DRAFT)
+  currentState            String                        @default("DRAFT") // State machine state - single source of truth
+  queueTypeId             String?
+  tags                    String[]
+  signedEvent             Json?
+  nostrEvent              Json?
+  userId                  String
+  hashTagPresetId         String?
   // Idempotency keys
-  creationIdempotencyKey String?        @unique
-  enqueueIdempotencyKey  String?        @unique
-  hashTagPreset          HashTagPreset? @relation(fields: [hashTagPresetId], references: [id])
-  queueType              QueueType?     @relation(fields: [queueTypeId], references: [id])
-  user                   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  creationIdempotencyKey  String?                       @unique
+  enqueueIdempotencyKey   String?                       @unique
+  publishAttemptId        String?                       @unique // First-class idempotency for publish attempts
+  // Publish lease (supports safe retries + future multi-worker)
+  publishingLockId        String?
+  publishingLockExpiresAt DateTime?
+  publishingStartedAt     DateTime?
+  hashTagPreset           HashTagPreset?                @relation(fields: [hashTagPresetId], references: [id])
+  queueType               QueueType?                    @relation(fields: [queueTypeId], references: [id])
+  user                    User                          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stateTransitions        LongFormPostStateTransition[]
 
   // Indexes for common query patterns
   // State machine indexes (use currentState as single source of truth)
   @@index([userId, currentState])
   @@index([currentState, scheduledAtUtc])
   @@index([userId, currentState, scheduledAtUtc])
-  @@index([userId, scheduledFor])
   @@index([userId, scheduledAtUtc])
 }
 
@@ -349,6 +355,19 @@ model PostStateTransition {
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@index([postId, createdAt])
+}
+
+// State machine for longform post lifecycle
+model LongFormPostStateTransition {
+  id             String       @id @default(cuid())
+  longFormPostId String
+  fromState      String
+  toState        String
+  reason         String
+  createdAt      DateTime     @default(now())
+  longFormPost   LongFormPost @relation(fields: [longFormPostId], references: [id], onDelete: Cascade)
+
+  @@index([longFormPostId, createdAt])
 }
 
 model DeadLetterJob {

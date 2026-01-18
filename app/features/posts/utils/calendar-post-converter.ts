@@ -136,8 +136,10 @@ export function longFormPostDataToCalendarPost(
     queueType: post.queueType ?? null,
     manual_override: false,
     isPast: false,
-    // LongFormPost doesn't have publishAttemptId, but CalendarPost requires it (from PostData)
-    publishAttemptId: null,
+    publishAttemptId:
+      "publishAttemptId" in post && typeof post.publishAttemptId === "string"
+        ? post.publishAttemptId
+        : null,
   };
   return result;
 }

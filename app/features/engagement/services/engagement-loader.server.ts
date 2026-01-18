@@ -10,6 +10,7 @@ import type { PostData, QueueType } from "~/features/posts/types";
 import { convertJsonValueToScheduleConfig } from "~/features/posts/types";
 import type { UserWithHashTagPresets } from "~/features/user";
 import { getUserById } from "~/features/user";
+import { logError } from "~/lib/error-logger.server";
 import { getPostedPosts } from "~/models/post.queries.server";
 
 import {
@@ -72,7 +73,10 @@ async function fetchUserProfile(pubkey: string): Promise<User | null> {
       try {
         profile = JSON.parse(profileEvent.content) as EngagementProfile;
       } catch (e) {
-        console.error("Failed to parse profile content:", e);
+        logError(e instanceof Error ? e : new Error(String(e)), {
+          message: "Failed to parse profile content",
+          pubkey,
+        });
       }
     }
 
@@ -82,7 +86,10 @@ async function fetchUserProfile(pubkey: string): Promise<User | null> {
       try {
         stats = JSON.parse(statsEvent.content) as EngagementStats;
       } catch (e) {
-        console.error("Failed to parse stats content:", e);
+        logError(e instanceof Error ? e : new Error(String(e)), {
+          message: "Failed to parse stats content",
+          pubkey,
+        });
       }
     }
 
@@ -109,7 +116,10 @@ async function fetchUserProfile(pubkey: string): Promise<User | null> {
 
     return user;
   } catch (error) {
-    console.error(`Failed to fetch user profile for ${pubkey}:`, error);
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "Failed to fetch user profile",
+      pubkey,
+    });
     return null;
   }
 }
@@ -400,7 +410,9 @@ export async function loadEngagementFeedData(
       );
     }
   } catch (error) {
-    console.error("📊 [SERVER] Error fetching stats:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "Error fetching engagement stats",
+    });
     // Gracefully handle errors
     stats = posts
       .filter((post) => {
@@ -618,10 +630,9 @@ export async function loadEngagementFeedData(
       }
     }
   } catch (error) {
-    console.error(
-      "🔍 [QUOTE REPOST DEBUG] Error fetching quote reposts:",
-      error
-    );
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "Error fetching quote reposts",
+    });
   }
 
   // Convert trust scores map to object for JSON serialization

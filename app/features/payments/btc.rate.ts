@@ -1,4 +1,6 @@
 import axios from "axios";
+
+import { logError } from "~/lib/error-logger.server";
 // Function to get Bitcoin rate in USD
 export async function getBitcoinRate(dollarAmount: number): Promise<number> {
   try {
@@ -14,7 +16,10 @@ export async function getBitcoinRate(dollarAmount: number): Promise<number> {
     // Convert BTC to sats (1 BTC = 100,000,000 sats)
     return Math.round(btcAmount * 100_000_000);
   } catch (error) {
-    console.error("Error fetching Bitcoin rate:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "Error fetching Bitcoin rate",
+      dollarAmount,
+    });
     throw error;
   }
 }

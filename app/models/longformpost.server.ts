@@ -25,6 +25,8 @@ import type { LongFormPost, User, Prisma } from "@prisma/client";
 import type { SignedEvent } from "~/features/nostr/types";
 import { calculateLongFormStatus } from "~/features/posts/server";
 import { LongFormPostStateMachine } from "~/features/posts/state-machine/longform-post-state-machine.server";
+import { logError } from "~/lib/error-logger.server";
+import { generatePublishAttemptId } from "~/lib/idempotency.server";
 import { prisma } from "~/lib/prisma.server";
 
 export type { LongFormPost } from "@prisma/client";
@@ -150,7 +152,6 @@ export async function createLongFormPost({
       status,
       publishedAt,
       postedAt: initialState === "PUBLISHED" ? new Date() : null,
-      scheduledFor: finalScheduledFor, // Legacy field
       scheduledAtUtc, // New DateTime field
       currentState: initialState, // Single source of truth
       queueTypeId,
@@ -218,8 +219,13 @@ function buildBasicUpdateData(
       .filter(Boolean);
     updateData.tags = tagsArray;
   }
-  if (finalScheduledFor !== undefined)
-    updateData.scheduledFor = finalScheduledFor;
+  if (finalScheduledFor !== undefined) {
+    // scheduledFor legacy column removed; store only scheduledAtUtc
+    const timestamp = finalScheduledFor ? parseInt(finalScheduledFor, 10) : NaN;
+    updateData.scheduledAtUtc = !isNaN(timestamp)
+      ? new Date(timestamp * 1000)
+      : null;
+  }
 
   return updateData;
 }
@@ -450,25 +456,50 @@ export async function publishLongFormPost({
   signedEvent: LongFormPost["signedEvent"];
   nostrEvent: LongFormPost["nostrEvent"];
 }) {
-  return prisma.longFormPost.update({
+  const nostrEventId =
+    signedEvent &&
+    typeof signedEvent === "object" &&
+    "id" in signedEvent &&
+    typeof signedEvent["id"] === "string"
+      ? signedEvent["id"]
+      : null;
+
+  const publishAttemptId =
+    signedEvent &&
+    typeof signedEvent === "object" &&
+    "created_at" in signedEvent &&
+    typeof signedEvent["created_at"] === "number"
+      ? generatePublishAttemptId(id, signedEvent["created_at"], 0)
+      : null;
+
+  const stateMachine = new LongFormPostStateMachine();
+  await stateMachine.transition(
+    id,
+    userId,
+    "PUBLISHED",
+    "Longform post published",
+    {
+      additionalPostData: {
+        status: "ACTIVE",
+        publishedAt: new Date(),
+        postedAt: new Date(),
+        nostrEventId,
+        publishAttemptId,
+        signedEvent: signedEvent as Prisma.InputJsonValue,
+        nostrEvent: nostrEvent as Prisma.InputJsonValue,
+        publishingLockId: null,
+        publishingLockExpiresAt: null,
+      },
+    }
+  );
+
+  const updated = await prisma.longFormPost.findUnique({
     where: { id, userId },
-    data: {
-      // Note: Flag fields (isPublished) have been removed.
-      // Use LongFormPostStateMachine.transition() to change state instead.
-      status: "ACTIVE",
-      publishedAt: new Date(),
-      currentState: "PUBLISHED", // Single source of truth
-      signedEvent: signedEvent as Prisma.InputJsonValue,
-      nostrEvent: nostrEvent as Prisma.InputJsonValue,
-      nostrEventId:
-        signedEvent &&
-        typeof signedEvent === "object" &&
-        "id" in signedEvent &&
-        typeof signedEvent["id"] === "string"
-          ? signedEvent["id"]
-          : null,
-    },
   });
+  if (!updated) {
+    throw new Error(`LongFormPost ${id} not found for user ${userId}`);
+  }
+  return updated;
 }
 
 export async function getDraftLongFormPosts({
@@ -536,17 +567,25 @@ export async function getScheduledLongFormPosts({
 }: {
   userId: User["id"];
 }) {
-  return prisma.longFormPost.findMany({
-    where: {
+  try {
+    return await prisma.longFormPost.findMany({
+      where: {
+        userId,
+        // Use currentState as single source of truth
+        currentState: "SCHEDULED",
+      },
+      include: {
+        queueType: true,
+      },
+      orderBy: { scheduledAtUtc: "asc" },
+    });
+  } catch (error) {
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "Error fetching scheduled longform posts",
       userId,
-      // Use currentState as single source of truth
-      currentState: "SCHEDULED",
-    },
-    include: {
-      queueType: true,
-    },
-    orderBy: { scheduledAtUtc: "asc" },
-  });
+    });
+    return [];
+  }
 }
 
 export async function getLongFormPostsByIds({

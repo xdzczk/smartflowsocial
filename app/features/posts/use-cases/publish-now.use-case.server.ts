@@ -5,8 +5,14 @@
  */
 
 import { getNostrPublisher } from "~/infra/publishers/nostr-publisher.server";
+import {
+  acquirePostPublishLease,
+  releasePostPublishLease,
+  type PublishLease,
+} from "~/infra/publishing/publish-lease.server";
 import { getCorrelationId } from "~/lib/correlation-context.server";
 import { logInfo, logError as logErrorUtil } from "~/lib/error-logger.server";
+import { generatePublishAttemptId } from "~/lib/idempotency.server";
 import {
   recordPostPublished,
   recordPostPublishFailed,
@@ -61,6 +67,31 @@ export class PublishNowUseCase {
       "Publishing post immediately"
     );
 
+    // Acquire a DB-backed publish lease. This prevents concurrent publishes and makes retries safe.
+    // Note: we acquire after transitioning to PUBLISHING because the lease guard is state-based.
+    let lease: PublishLease | null = null;
+    lease = await acquirePostPublishLease({
+      postId: input.postId,
+      userId: input.userId,
+    });
+    if (!lease) {
+      logInfo(
+        "PublishNowUseCase: Publish lease held, skipping duplicate publish",
+        {
+          postId: input.postId,
+          userId: input.userId,
+          correlationId,
+        }
+      );
+      return;
+    }
+
+    const publishAttemptId = generatePublishAttemptId(
+      input.postId,
+      validatedSignedEvent.created_at,
+      0
+    );
+
     const publishStartTime = nowMillis();
     try {
       // Publish to Nostr (flags will be set by state machine transition)
@@ -73,12 +104,21 @@ export class PublishNowUseCase {
 
       const publishLatency = nowMillis() - publishStartTime;
 
-      // Transition to PUBLISHED (this will automatically sync flags including isPosted)
+      // Transition to PUBLISHED and atomically persist publish metadata.
       await this.stateMachine.transition(
         input.postId,
         input.userId,
         "PUBLISHED",
-        "Successfully published to Nostr"
+        "Successfully published to Nostr",
+        {
+          additionalPostData: {
+            nostrEventId: validatedSignedEvent.id,
+            publishAttemptId,
+            postedAt: new Date(),
+            publishingLockId: null,
+            publishingLockExpiresAt: null,
+          },
+        }
       );
 
       // Record metrics
@@ -96,12 +136,28 @@ export class PublishNowUseCase {
         error instanceof Error ? error.constructor.name : "UnknownError";
 
       // Transition to FAILED
-      await this.stateMachine.transition(
-        input.postId,
-        input.userId,
-        "FAILED",
-        `Publish failed: ${error instanceof Error ? error.message : String(error)}`
-      );
+      try {
+        await this.stateMachine.transition(
+          input.postId,
+          input.userId,
+          "FAILED",
+          `Publish failed: ${error instanceof Error ? error.message : String(error)}`,
+          {
+            additionalPostData: {
+              publishingLockId: null,
+              publishingLockExpiresAt: null,
+            },
+          }
+        );
+      } catch (transitionError) {
+        // Best-effort release: avoid wedging this post until lease expiry.
+        await releasePostPublishLease({
+          postId: input.postId,
+          userId: input.userId,
+          lockId: lease.lockId,
+        });
+        throw transitionError;
+      }
 
       // Record metrics
       recordPostPublishFailed(post.postType, "immediate", errorType);

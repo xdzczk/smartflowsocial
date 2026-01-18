@@ -29,6 +29,12 @@ export interface LongFormPostFactoryOptions {
   nostrEventId?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
+  publishAttemptId?: string | null;
+  creationIdempotencyKey?: string | null;
+  enqueueIdempotencyKey?: string | null;
+  publishingLockId?: string | null;
+  publishingLockExpiresAt?: Date | null;
+  publishingStartedAt?: Date | null;
 }
 
 export class LongFormPostFactory {
@@ -55,6 +61,12 @@ export class LongFormPostFactory {
       nostrEventId: null,
       createdAt: new Date(),
       updatedAt: new Date(),
+      publishAttemptId: null,
+      creationIdempotencyKey: null,
+      enqueueIdempotencyKey: null,
+      publishingLockId: null,
+      publishingLockExpiresAt: null,
+      publishingStartedAt: null,
       ...options,
     };
   }
@@ -146,15 +158,23 @@ export class LongFormPostFactory {
   }
 
   build(): LongFormPost {
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Factory pattern requires type assertion for partial data
-    return {
+    const scheduledAtUtc = (() => {
+      const raw = this.options.scheduledFor;
+      if (!raw) return null;
+      const ts = parseInt(raw, 10);
+      if (!isNaN(ts)) return new Date(ts * 1000);
+      const parsed = new Date(raw);
+      return !isNaN(parsed.getTime()) ? parsed : null;
+    })();
+
+    const post: LongFormPost = {
       id: this.options.id!,
       userId: this.options.userId!,
       title: this.options.title ?? null,
       summary: this.options.summary ?? null,
       content: this.options.content ?? null,
       image: this.options.image ?? null,
-      scheduledFor: this.options.scheduledFor ?? null,
+      scheduledAtUtc,
       currentState: this.options.currentState ?? "DRAFT",
       postedAt: this.options.postedAt ?? null,
       publishedAt: this.options.publishedAt ?? null,
@@ -169,7 +189,14 @@ export class LongFormPostFactory {
       nostrEventId: this.options.nostrEventId ?? null,
       createdAt: this.options.createdAt ?? new Date(),
       updatedAt: this.options.updatedAt ?? new Date(),
-    } as LongFormPost;
+      publishAttemptId: this.options.publishAttemptId ?? null,
+      creationIdempotencyKey: this.options.creationIdempotencyKey ?? null,
+      enqueueIdempotencyKey: this.options.enqueueIdempotencyKey ?? null,
+      publishingLockId: this.options.publishingLockId ?? null,
+      publishingLockExpiresAt: this.options.publishingLockExpiresAt ?? null,
+      publishingStartedAt: this.options.publishingStartedAt ?? null,
+    };
+    return post;
   }
 }
 

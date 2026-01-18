@@ -3,27 +3,14 @@
 const COMPONENT_UPLOAD_CLIENT = "upload.client";
 
 /**
- * Check if we're in development mode for conditional logging
- */
-const isDevelopment = process.env.NODE_ENV === "development";
-
-/**
  * Development-only logging helper
  */
-function devLog(...args: unknown[]): void {
-  if (isDevelopment) {
-    console.info(...args);
-  }
-}
+function devLog(..._args: unknown[]): void {}
 
 /**
  * Development-only warning helper
  */
-function devWarn(...args: unknown[]): void {
-  if (isDevelopment) {
-    console.warn(...args);
-  }
-}
+function devWarn(..._args: unknown[]): void {}
 
 interface UploadResult {
   success: boolean;

@@ -16,6 +16,8 @@ vi.mock("~/infra/publishers/nostr-publisher.server", () => ({
   })),
 }));
 
+import { createValidSignedEvent } from "../../utils/test-helpers";
+
 import { CreateLongFormPostUseCase } from "~/features/posts/use-cases/create-longform-post.use-case.server";
 import { PublishLongFormNowUseCase } from "~/features/posts/use-cases/publish-longform-now.use-case.server";
 import { prisma } from "~/lib/prisma.server";
@@ -23,16 +25,18 @@ import { prisma } from "~/lib/prisma.server";
 // Skip if no test database configured
 const TEST_DATABASE_URL =
   process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"];
+const SHOULD_SKIP_DB_TESTS = process.env["SKIP_DATABASE_TESTS"] === "true";
 
-describe.skipIf(!TEST_DATABASE_URL)(
+describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
   "PublishLongFormNowUseCase Integration",
   () => {
     let userId: string;
     let useCase: PublishLongFormNowUseCase;
+    const correlationId = "test-correlation-id";
 
     beforeEach(async () => {
       vi.clearAllMocks();
-      mockPublish.mockResolvedValue(undefined);
+      mockPublish.mockResolvedValue({ results: [] });
 
       // Create a test user - use upsert to handle duplicates
       const npub = `test-${Date.now()}-${Math.random()}`;
@@ -80,21 +84,14 @@ describe.skipIf(!TEST_DATABASE_URL)(
       const postId = createResult.post.id;
 
       // Publish the post
-      const signedEvent = {
-        id: "test-event-id",
-        pubkey: "test-pubkey",
-        created_at: Math.floor(Date.now() / 1000),
-        kind: 1,
-        content: "test",
-        tags: [],
-        sig: "test-sig",
-      };
+      const signedEvent = createValidSignedEvent({ content: "test" });
 
       await useCase.execute({
         postId,
         userId,
         signedEvent,
         relays: ["wss://relay.example.com"],
+        correlationId,
       });
 
       // Verify post is published
@@ -107,9 +104,15 @@ describe.skipIf(!TEST_DATABASE_URL)(
 
       // Verify publisher was called
       expect(mockPublish).toHaveBeenCalledWith(
-        signedEvent,
+        expect.objectContaining({
+          id: signedEvent.id,
+          pubkey: signedEvent.pubkey,
+          sig: signedEvent.sig,
+          kind: signedEvent.kind,
+          created_at: signedEvent.created_at,
+        }),
         ["wss://relay.example.com"],
-        undefined
+        correlationId
       );
     });
 
@@ -118,15 +121,7 @@ describe.skipIf(!TEST_DATABASE_URL)(
         useCase.execute({
           postId: "non-existent-post-id",
           userId,
-          signedEvent: {
-            id: "test-event-id",
-            pubkey: "test-pubkey",
-            created_at: Math.floor(Date.now() / 1000),
-            kind: 1,
-            content: "test",
-            tags: [],
-            sig: "test-sig",
-          },
+          signedEvent: createValidSignedEvent({ content: "test" }),
           relays: ["wss://relay.example.com"],
         })
       ).rejects.toThrow("not found for user");
@@ -147,15 +142,7 @@ describe.skipIf(!TEST_DATABASE_URL)(
       await useCase.execute({
         postId,
         userId,
-        signedEvent: {
-          id: "test-event-id",
-          pubkey: "test-pubkey",
-          created_at: Math.floor(Date.now() / 1000),
-          kind: 1,
-          content: "test",
-          tags: [],
-          sig: "test-sig",
-        },
+        signedEvent: createValidSignedEvent({ content: "test" }),
         relays: ["wss://relay.example.com"],
       });
 
@@ -164,15 +151,7 @@ describe.skipIf(!TEST_DATABASE_URL)(
         useCase.execute({
           postId,
           userId,
-          signedEvent: {
-            id: "test-event-id-2",
-            pubkey: "test-pubkey",
-            created_at: Math.floor(Date.now() / 1000),
-            kind: 1,
-            content: "test",
-            tags: [],
-            sig: "test-sig",
-          },
+          signedEvent: createValidSignedEvent({ content: "test 2" }),
           relays: ["wss://relay.example.com"],
         })
       ).rejects.toThrow("already published");

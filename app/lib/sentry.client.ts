@@ -5,6 +5,8 @@
  * Only initializes if SENTRY_DSN is configured
  */
 
+import { safeConsoleError } from "./safe-console.client";
+
 let sentryInitialized = false;
 
 /**
@@ -63,13 +65,13 @@ export function initSentry(): void {
       } catch (error) {
         // Fail silently if Sentry can't be initialized
         // This allows the app to continue working even if Sentry is misconfigured
-        console.error("Failed to initialize Sentry:", error);
+        safeConsoleError("Failed to initialize Sentry:", error);
       }
     })();
   } catch (error) {
     // Fail silently if Sentry can't be initialized
     // This allows the app to continue working even if Sentry is misconfigured
-    console.error("Failed to initialize Sentry:", error);
+    safeConsoleError("Failed to initialize Sentry:", error);
   }
 }
 
@@ -114,7 +116,7 @@ export function captureException(
     })();
   } catch (err) {
     // Fail silently - don't break the app if Sentry fails
-    console.error("Failed to capture exception in Sentry:", err);
+    safeConsoleError("Failed to capture exception in Sentry:", err);
   }
 }
 
@@ -149,7 +151,7 @@ export function captureMessage(
     })();
   } catch (err) {
     // Fail silently
-    console.error("Failed to capture message in Sentry:", err);
+    safeConsoleError("Failed to capture message in Sentry:", err);
   }
 }
 
@@ -177,7 +179,7 @@ export function setUser(user: {
     })();
   } catch (err) {
     // Fail silently
-    console.error("Failed to set user in Sentry:", err);
+    safeConsoleError("Failed to set user in Sentry:", err);
   }
 }
 
@@ -201,6 +203,6 @@ export function clearUser(): void {
     })();
   } catch (err) {
     // Fail silently
-    console.error("Failed to clear user in Sentry:", err);
+    safeConsoleError("Failed to clear user in Sentry:", err);
   }
 }

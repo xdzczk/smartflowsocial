@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { toast } from "react-hot-toast";
 
 import { resizeImage } from "~/features/upload/image-resize";
+import { logClientError } from "~/lib/error-handler.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import {
   addHours,
@@ -237,7 +238,15 @@ export default function ImagePost({
           setTimeError("");
         }
       } catch (error: unknown) {
-        console.error("Error calculating schedule time:", error);
+        logClientError(
+          error instanceof Error ? error : new Error(String(error)),
+          {
+            component: "ImagePost",
+            action: "calculateQueueScheduleTime",
+            queueTypeName,
+            queueTypeId,
+          }
+        );
       }
     },
     [queueTypes, user]

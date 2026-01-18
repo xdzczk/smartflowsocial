@@ -3,8 +3,7 @@ export function convertToHex(key: string): string | null {
   try {
     const { data } = nip19.decode(key);
     return typeof data === "string" ? data : null;
-  } catch (error) {
-    console.error("Error decoding npub:", error);
+  } catch (_error) {
     return null;
   }
 }
@@ -12,8 +11,7 @@ export function convertToHex(key: string): string | null {
 export function convertHexToNpub(hexKey: string): string {
   try {
     return nip19.npubEncode(hexKey);
-  } catch (error) {
-    console.error("Error encoding hex to npub:", error);
+  } catch (_error) {
     return hexKey; // Return original hex if conversion fails
   }
 }

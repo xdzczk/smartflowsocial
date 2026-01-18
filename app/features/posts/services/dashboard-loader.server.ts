@@ -34,14 +34,7 @@ import { filterPostsByQueueType } from "./post-filtering.server";
  * Load dashboard data
  */
 export async function loadDashboardData(userId: string, queueType: string) {
-  const [
-    scheduledPosts,
-    allLongformPosts,
-    postStatistics,
-    user,
-    queueTypes,
-    hashTagPresets,
-  ] = await Promise.all([
+  const results = await Promise.allSettled([
     getScheduledPosts({ userId, queueType }),
     getScheduledLongFormPosts({ userId }),
     getPostStatistics({ userId }),
@@ -49,6 +42,35 @@ export async function loadDashboardData(userId: string, queueType: string) {
     getQueueTypes(userId),
     getUserHashTagPresets(userId),
   ]);
+
+  const [
+    scheduledPostsResult,
+    allLongformPostsResult,
+    postStatisticsResult,
+    userResult,
+    queueTypesResult,
+    hashTagPresetsResult,
+  ] = results;
+
+  const scheduledPosts =
+    scheduledPostsResult.status === "fulfilled"
+      ? scheduledPostsResult.value
+      : [];
+  const allLongformPosts =
+    allLongformPostsResult.status === "fulfilled"
+      ? allLongformPostsResult.value
+      : [];
+  const postStatistics =
+    postStatisticsResult.status === "fulfilled"
+      ? postStatisticsResult.value
+      : { scheduledCount: 0, successCount: 0 };
+  const user = userResult.status === "fulfilled" ? userResult.value : null;
+  const queueTypes =
+    queueTypesResult.status === "fulfilled" ? queueTypesResult.value : [];
+  const hashTagPresets =
+    hashTagPresetsResult.status === "fulfilled"
+      ? hashTagPresetsResult.value
+      : [];
 
   // Filter longform posts by queue type if specific queue is selected
   const longformPosts = filterPostsByQueueType(allLongformPosts, queueType);

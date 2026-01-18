@@ -268,6 +268,10 @@ describe("Property-Based Tests: Date Formatting", () => {
           fc.constantFrom(...validTimezones),
           fc.constantFrom(...validTimezones),
           (date: Date, tz1: string, tz2: string) => {
+            // Filter out invalid dates (NaN)
+            if (isNaN(date.getTime())) {
+              return true; // Skip invalid dates
+            }
             try {
               const formatted1 = formatDateWithTimezone(date, false, tz1);
               const formatted2 = formatDateWithTimezone(date, false, tz2);

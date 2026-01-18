@@ -6,6 +6,7 @@
  */
 
 import { env } from "./env.server";
+import { logWarning } from "./error-logger.server";
 
 /**
  * CSRF validation error
@@ -35,7 +36,7 @@ function addAppUrlToAllowedOrigins(allowedOrigins: string[]): void {
       allowedOrigins.push(appUrl.origin);
       return;
     } catch {
-      console.warn("Invalid APP_URL in environment:", env.APP_URL);
+      logWarning("Invalid APP_URL in environment", { appUrl: env.APP_URL });
     }
   }
 
@@ -46,7 +47,7 @@ function addAppUrlToAllowedOrigins(allowedOrigins: string[]): void {
       const url = new URL(coolifyUrl);
       allowedOrigins.push(url.origin);
     } catch {
-      console.warn("Invalid COOLIFY_URL in environment:", coolifyUrl);
+      logWarning("Invalid COOLIFY_URL in environment", { coolifyUrl });
     }
   }
 }
@@ -61,7 +62,7 @@ function addAllowedOriginsFromEnv(allowedOrigins: string[]): void {
       const originUrl = new URL(originStr);
       allowedOrigins.push(originUrl.origin);
     } catch {
-      console.warn("Invalid origin in ALLOWED_ORIGINS:", originStr);
+      logWarning("Invalid origin in ALLOWED_ORIGINS", { originStr });
     }
   }
 }

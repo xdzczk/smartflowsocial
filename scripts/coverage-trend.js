@@ -6,6 +6,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const { log, error } = require("./logger");
 
 const COVERAGE_DIR = path.join(__dirname, "../coverage");
 const TREND_FILE = path.join(__dirname, "../coverage/.coverage-trend.json");
@@ -15,7 +16,7 @@ function loadTrendData() {
     try {
       return JSON.parse(fs.readFileSync(TREND_FILE, "utf8"));
     } catch (error) {
-      console.error("Error loading trend data:", error);
+      error("Error loading trend data:", error);
       return { history: [] };
     }
   }
@@ -33,9 +34,7 @@ function saveTrendData(data) {
 function getCurrentCoverage() {
   const summaryFile = path.join(COVERAGE_DIR, "coverage-summary.json");
   if (!fs.existsSync(summaryFile)) {
-    console.error(
-      "Coverage summary not found. Run 'npm run test:coverage' first."
-    );
+    error("Coverage summary not found. Run 'npm run test:coverage' first.");
     process.exit(1);
   }
 
@@ -51,21 +50,21 @@ function getCurrentCoverage() {
 function generateTrendReport(trendData) {
   const history = trendData.history || [];
   if (history.length === 0) {
-    console.log("No coverage history available yet.");
+    log("No coverage history available yet.");
     return;
   }
 
-  console.log("\n📈 Coverage Trend Report");
-  console.log("=".repeat(50));
-  console.log(`Total snapshots: ${history.length}`);
-  console.log("");
+  log("\n📈 Coverage Trend Report");
+  log("=".repeat(50));
+  log(`Total snapshots: ${history.length}`);
+  log("");
 
   // Show last 5 entries
   const recent = history.slice(-5);
-  console.log("Recent coverage:");
+  log("Recent coverage:");
   recent.forEach((entry) => {
     const date = new Date(entry.timestamp).toLocaleDateString();
-    console.log(
+    log(
       `  ${date}: Lines ${entry.coverage.lines.toFixed(2)}% | Functions ${entry.coverage.functions.toFixed(2)}% | Branches ${entry.coverage.branches.toFixed(2)}% | Statements ${entry.coverage.statements.toFixed(2)}%`
     );
   });
@@ -81,12 +80,12 @@ function generateTrendReport(trendData) {
       statements: latest.coverage.statements - previous.coverage.statements,
     };
 
-    console.log("");
-    console.log("Trend (vs previous snapshot):");
+    log("");
+    log("Trend (vs previous snapshot):");
     Object.entries(diff).forEach(([metric, change]) => {
       const symbol = change >= 0 ? "📈" : "📉";
       const sign = change >= 0 ? "+" : "";
-      console.log(`  ${symbol} ${metric}: ${sign}${change.toFixed(2)}%`);
+      log(`  ${symbol} ${metric}: ${sign}${change.toFixed(2)}%`);
     });
   }
 }
@@ -113,21 +112,19 @@ function main() {
     }
 
     saveTrendData(trendData);
-    console.log("✅ Coverage snapshot recorded");
-    console.log(`   Lines: ${coverage.lines.toFixed(2)}%`);
-    console.log(`   Functions: ${coverage.functions.toFixed(2)}%`);
-    console.log(`   Branches: ${coverage.branches.toFixed(2)}%`);
-    console.log(`   Statements: ${coverage.statements.toFixed(2)}%`);
+    log("✅ Coverage snapshot recorded");
+    log(`   Lines: ${coverage.lines.toFixed(2)}%`);
+    log(`   Functions: ${coverage.functions.toFixed(2)}%`);
+    log(`   Branches: ${coverage.branches.toFixed(2)}%`);
+    log(`   Statements: ${coverage.statements.toFixed(2)}%`);
   } else if (command === "report") {
     // Show trend report
     const trendData = loadTrendData();
     generateTrendReport(trendData);
   } else {
-    console.log("Usage:");
-    console.log(
-      "  node scripts/coverage-trend.js record  - Record current coverage"
-    );
-    console.log("  node scripts/coverage-trend.js report  - Show trend report");
+    log("Usage:");
+    log("  node scripts/coverage-trend.js record  - Record current coverage");
+    log("  node scripts/coverage-trend.js report  - Show trend report");
     process.exit(1);
   }
 }

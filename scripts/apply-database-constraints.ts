@@ -12,6 +12,13 @@ import { PrismaClient } from "@prisma/client";
 import { config } from "dotenv";
 import { Pool } from "pg";
 
+// Script logger (avoids console.*)
+
+const { log, error: logError } = require("./logger") as {
+  log: (..._args: unknown[]) => void;
+  error: (..._args: unknown[]) => void;
+};
+
 // Load environment variables
 config({ path: resolve(process.cwd(), ".env") });
 
@@ -34,7 +41,7 @@ const prisma = new PrismaClient({ adapter });
 
 async function applyConstraints() {
   try {
-    console.log("Applying database constraints...");
+    log("Applying database constraints...");
 
     const migrationPath = resolve(
       __dirname,
@@ -62,7 +69,7 @@ async function applyConstraints() {
     for (const statement of statements) {
       try {
         await prisma.$executeRawUnsafe(statement);
-        console.log(`✓ Applied: ${statement.substring(0, 60)}...`);
+        log(`✓ Applied: ${statement.substring(0, 60)}...`);
       } catch (error) {
         // Ignore errors for constraints that already exist or comments on non-existent constraints
         const errorMessage =
@@ -73,16 +80,16 @@ async function applyConstraints() {
           errorMessage.includes("does not exist") ||
           errorMessage.includes("42704") // PostgreSQL error code for undefined object
         ) {
-          console.log(`⚠ Skipped: ${statement.substring(0, 60)}...`);
+          log(`⚠ Skipped: ${statement.substring(0, 60)}...`);
         } else {
-          console.error(`✗ Failed: ${statement.substring(0, 60)}...`);
-          console.error(`  Error: ${errorMessage}`);
+          logError(`✗ Failed: ${statement.substring(0, 60)}...`);
+          logError(`  Error: ${errorMessage}`);
         }
       }
     }
 
     // Verify constraints were created
-    console.log("\nVerifying constraints...");
+    log("\nVerifying constraints...");
     const constraintCheck = await prisma.$queryRawUnsafe<
       Array<{ constraint_name: string }>
     >(`
@@ -94,14 +101,14 @@ async function applyConstraints() {
       ORDER BY constraint_name;
     `);
 
-    console.log(`Found ${constraintCheck.length} CHECK constraints:`);
+    log(`Found ${constraintCheck.length} CHECK constraints:`);
     for (const constraint of constraintCheck) {
-      console.log(`  - ${constraint.constraint_name}`);
+      log(`  - ${constraint.constraint_name}`);
     }
 
-    console.log("\n✅ Database constraints applied successfully!");
+    log("\n✅ Database constraints applied successfully!");
   } catch (error) {
-    console.error("❌ Error applying constraints:", error);
+    logError("❌ Error applying constraints:", error);
     process.exit(1);
   } finally {
     await prisma.$disconnect();

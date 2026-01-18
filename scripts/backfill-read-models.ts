@@ -14,6 +14,13 @@ import { PrismaClient } from "@prisma/client";
 import { config } from "dotenv";
 import { Pool } from "pg";
 
+// Script logger (avoids console.*)
+
+const { log, error: logError } = require("./logger") as {
+  log: (..._args: unknown[]) => void;
+  error: (..._args: unknown[]) => void;
+};
+
 // Load environment variables
 config({ path: resolve(process.cwd(), ".env") });
 
@@ -35,7 +42,7 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function backfillScheduledPosts() {
-  console.log("Backfilling scheduled posts read model...");
+  log("Backfilling scheduled posts read model...");
 
   // Get all scheduled posts
   const scheduledPosts = await prisma.post.findMany({
@@ -49,7 +56,7 @@ async function backfillScheduledPosts() {
     },
   });
 
-  console.log(`Found ${scheduledPosts.length} scheduled posts to backfill`);
+  log(`Found ${scheduledPosts.length} scheduled posts to backfill`);
 
   let created = 0;
   let updated = 0;
@@ -99,17 +106,17 @@ async function backfillScheduledPosts() {
       }
     } catch (error) {
       errors++;
-      console.error(`Error backfilling post ${post.id}:`, error);
+      logError(`Error backfilling post ${post.id}:`, error);
     }
   }
 
-  console.log(
+  log(
     `Scheduled posts backfill complete: ${created} created, ${updated} updated, ${errors} errors`
   );
 }
 
 async function backfillPublishedPosts() {
-  console.log("Backfilling published posts read model...");
+  log("Backfilling published posts read model...");
 
   // Get all published posts
   const publishedPosts = await prisma.post.findMany({
@@ -122,7 +129,7 @@ async function backfillPublishedPosts() {
     },
   });
 
-  console.log(`Found ${publishedPosts.length} published posts to backfill`);
+  log(`Found ${publishedPosts.length} published posts to backfill`);
 
   let created = 0;
   let updated = 0;
@@ -168,28 +175,28 @@ async function backfillPublishedPosts() {
       }
     } catch (error) {
       errors++;
-      console.error(`Error backfilling post ${post.id}:`, error);
+      logError(`Error backfilling post ${post.id}:`, error);
     }
   }
 
-  console.log(
+  log(
     `Published posts backfill complete: ${created} created, ${updated} updated, ${errors} errors`
   );
 }
 
 async function main() {
-  console.log("Starting read models backfill...");
-  console.log("=".repeat(50));
+  log("Starting read models backfill...");
+  log("=".repeat(50));
 
   try {
     await backfillScheduledPosts();
-    console.log("");
+    log("");
     await backfillPublishedPosts();
-    console.log("");
-    console.log("=".repeat(50));
-    console.log("Read models backfill complete!");
+    log("");
+    log("=".repeat(50));
+    log("Read models backfill complete!");
   } catch (error) {
-    console.error("Error during backfill:", error);
+    logError("Error during backfill:", error);
     process.exit(1);
   } finally {
     await prisma.$disconnect();

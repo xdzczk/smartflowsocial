@@ -89,9 +89,10 @@ export async function handleUploadImagesPreview(formData: FormData) {
     }
 
     const parseTime = nowMillis() - startTime;
-    console.info(
-      `[BulkPosts Server] Parsed ${uploadResults.length} upload results in ${parseTime}ms`
-    );
+    logInfo("[BulkPosts] Parsed upload results", {
+      uploadResultsCount: uploadResults.length,
+      parseTimeMs: parseTime,
+    });
 
     const fileUrls = uploadResults.map(
       (result: UploadResult, index: number) => ({
@@ -102,9 +103,9 @@ export async function handleUploadImagesPreview(formData: FormData) {
     );
 
     const totalTime = nowMillis() - startTime;
-    console.info(
-      `[BulkPosts Server] handleUploadImagesPreview completed in ${totalTime}ms`
-    );
+    logInfo("[BulkPosts] handleUploadImagesPreview completed", {
+      totalTimeMs: totalTime,
+    });
 
     return json({ success: true, fileUrls });
   } catch (error) {

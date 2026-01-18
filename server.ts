@@ -24,6 +24,8 @@ config({ path: path.resolve(process.cwd(), ".env") });
 import rateLimit from "express-rate-limit";
 
 import { env } from "./app/lib/env.server";
+import { logInfo, logWarning } from "./app/lib/error-logger.server";
+import { updateRelayMetrics } from "./app/lib/metrics/relay-metrics.server";
 import {
   apiLimiter,
   strictLimiter,
@@ -46,7 +48,9 @@ if (env.NODE_ENV === "production" || env.ENABLE_SOURCE_MAPS === "true") {
     });
   } catch (error) {
     // If source map support fails to install, log but don't crash
-    console.warn("[Source Maps] Failed to install source map support:", error);
+    logWarning("[Source Maps] Failed to install source map support", {
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 }
 installGlobals();
@@ -118,6 +122,18 @@ async function run() {
 
   // Collect default metrics (CPU, memory, process info, etc.)
   promClient.collectDefaultMetrics();
+
+  // Periodically export relay health into Prometheus gauges.
+  // Note: relay health is updated during publish; this just syncs the latest values into the registry.
+  const relayMetricsIntervalMs = 10_000;
+  updateRelayMetrics();
+  setInterval(() => {
+    try {
+      updateRelayMetrics();
+    } catch {
+      // Best-effort: never crash the web server because metrics export failed.
+    }
+  }, relayMetricsIntervalMs);
 
   // Expose Prometheus metrics endpoint with security protection
   metricsApp.get("/metrics", (req, res) => {
@@ -222,7 +238,10 @@ async function run() {
           });
         } catch (error) {
           // Invalid client IP format
-          console.warn("Invalid client IP format:", clientIp, error);
+          logWarning("Invalid client IP format", {
+            clientIp,
+            error: error instanceof Error ? error.message : String(error),
+          });
           isAllowed = false;
         }
 
@@ -241,8 +260,9 @@ async function run() {
         !env.METRICS_ALLOWED_IPS &&
         env.NODE_ENV === "production"
       ) {
-        console.warn(
-          "⚠️  Metrics endpoint is unprotected in production. Set METRICS_TOKEN or METRICS_ALLOWED_IPS."
+        logWarning(
+          "Metrics endpoint is unprotected in production. Set METRICS_TOKEN or METRICS_ALLOWED_IPS.",
+          { metricsPort }
         );
         // Still allow access but log warning
       }
@@ -287,13 +307,13 @@ async function run() {
 
     if (!shouldReplay) return next();
 
-    const logInfo = {
+    const replayInfo = {
       pathname,
       method,
       PRIMARY_REGION,
       FLY_REGION,
     };
-    console.info(`Replaying:`, logInfo);
+    logInfo("Replaying request to primary region", replayInfo);
     res.set("fly-replay", `region=${PRIMARY_REGION}`);
     return res.sendStatus(409);
   });
@@ -489,23 +509,29 @@ async function run() {
       const { exec } = await import("node:child_process");
       const { promisify } = await import("node:util");
       const execAsync = promisify(exec);
-      console.log("🔄 Running database migrations...");
+      logInfo("Running database migrations...");
       try {
         const { stdout, stderr } = await execAsync("npx prisma migrate deploy");
-        if (stdout) console.log(stdout);
-        if (stderr) console.error(stderr);
-        console.log("✅ Migrations applied successfully!");
+        if (stdout) {
+          logInfo("Database migrations output", { stdout });
+        }
+        if (stderr) {
+          logWarning("Database migrations stderr output", { stderr });
+        }
+        logInfo("Migrations applied successfully");
       } catch (migrationErr) {
-        console.error(
-          "⚠️ Migration failed (may already be applied):",
-          migrationErr
-        );
+        logWarning("Migration failed (may already be applied)", {
+          error:
+            migrationErr instanceof Error
+              ? migrationErr.message
+              : String(migrationErr),
+        });
       }
 
       const { prisma } = await import("./app/lib/prisma.server");
       const existingPlans = await prisma.plan.count();
       if (existingPlans === 0) {
-        console.log("🌱 No plans found, seeding...");
+        logInfo("No plans found, seeding...");
         const plans = [
           {
             id: "free",
@@ -607,12 +633,14 @@ async function run() {
             data: { ...plan, isActive: true, updatedAt: new Date() },
           });
         }
-        console.log("✅ Plans seeded successfully!");
+        logInfo("Plans seeded successfully");
       } else {
-        console.log(`📋 ${existingPlans} plans already exist, skipping seed`);
+        logInfo("Plans already exist, skipping seed", { existingPlans });
       }
     } catch (err) {
-      console.error("⚠️ Failed to initialize database (non-fatal):", err);
+      logWarning("Failed to initialize database (non-fatal)", {
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
   }
 
@@ -620,7 +648,7 @@ async function run() {
   void initializeDatabase();
 
   app.listen(port, host, () => {
-    console.log(`✅ app ready: http://${host}:${port}`);
+    logInfo("App ready", { host, port });
 
     if (env.NODE_ENV === "development") {
       void broadcastDevReady(initialBuild);
@@ -630,7 +658,7 @@ async function run() {
   const metricsPort = parseInt(env.METRICS_PORT ?? "3010", 10);
 
   metricsApp.listen(metricsPort, host, () => {
-    console.log(`✅ metrics ready: http://${host}:${metricsPort}/metrics`);
+    logInfo("Metrics ready", { host, metricsPort });
   });
 
   async function reimportServer(): Promise<ServerBuild> {

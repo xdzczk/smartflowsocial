@@ -9,6 +9,11 @@
  *   const url = env.NOSTR_PUBLISHER_URL; // Type-safe, guaranteed to exist
  */
 
+import {
+  safeConsoleError,
+  safeConsoleLog,
+} from "~/lib/secrets-sanitizer.server";
+
 interface EnvConfig {
   // Required
   DATABASE_URL: string;
@@ -27,9 +32,11 @@ interface EnvConfig {
   OWNER_NWC?: string;
   NOSTR_NSEC?: string;
   SENTRY_DSN?: string;
+  RELAY_HEALTH_STORE?: string; // "memory" | "redis" (optional)
   NODE_ENV?: string;
   PORT?: string;
   METRICS_PORT?: string;
+  WORKER_METRICS_PORT?: string;
   FLY_REGION?: string;
   PRIMARY_REGION?: string;
   TEST_DATABASE_URL?: string;
@@ -133,8 +140,10 @@ function addOptionalConfig(config: EnvConfig): void {
     "OWNER_NWC",
     "NOSTR_NSEC",
     "SENTRY_DSN",
+    "RELAY_HEALTH_STORE",
     "PORT",
     "METRICS_PORT",
+    "WORKER_METRICS_PORT",
     "FLY_REGION",
     "PRIMARY_REGION",
     "TEST_DATABASE_URL",
@@ -161,22 +170,24 @@ function reportValidationErrors(
   missing: string[],
   invalid: ValidationError[]
 ): void {
-  console.error("❌ Environment validation failed:");
+  safeConsoleError("❌ Environment validation failed:");
 
   if (missing.length > 0) {
-    console.error("\nMissing required environment variables:");
-    missing.forEach((key) => console.error(`  - ${key}`));
+    safeConsoleError("\nMissing required environment variables:");
+    missing.forEach((key) => safeConsoleError(`  - ${key}`));
   }
 
   if (invalid.length > 0) {
-    console.error("\nInvalid environment variables:");
+    safeConsoleError("\nInvalid environment variables:");
     invalid.forEach(({ key, reason }) =>
-      console.error(`  - ${key}: ${reason}`)
+      safeConsoleError(`  - ${key}: ${reason}`)
     );
   }
 
-  console.error("\nPlease check your .env file or environment configuration.");
-  console.error(
+  safeConsoleError(
+    "\nPlease check your .env file or environment configuration."
+  );
+  safeConsoleError(
     "See docs/getting-started/environment-setup.md for detailed configuration instructions."
   );
 
@@ -253,7 +264,7 @@ function validateAndGetEnv(): EnvConfig {
   // Add other optional variables
   addOptionalConfig(config);
 
-  console.info("✅ Environment variables validated");
+  safeConsoleLog("✅ Environment variables validated");
   return config;
 }
 

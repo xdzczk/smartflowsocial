@@ -51,22 +51,22 @@ export class SchedulePostUseCase {
     // Convert Temporal to Unix timestamp for legacy field
     const scheduledForUnix = toUnixTimestamp(input.scheduledAtUtc);
 
+    const enqueueIdempotencyKey = generateEnqueueIdempotencyKey(
+      input.postId,
+      scheduledForUnix
+    );
+
     // Update post and create outbox event in transaction
     await prisma.$transaction(async (tx) => {
       await tx.post.update({
         where: { id: input.postId },
         data: {
           scheduledAtUtc: scheduledAtUtcDate,
-          scheduledFor: scheduledForUnix.toString(), // Legacy field
+          enqueueIdempotencyKey,
           // @deprecated - isScheduled flag removed. State machine will set it via transition.
           signedEvent: input.signedEvent as unknown as Prisma.InputJsonValue,
         },
       });
-
-      const enqueueIdempotencyKey = generateEnqueueIdempotencyKey(
-        input.postId,
-        scheduledForUnix
-      );
 
       const payload: PostScheduledPayload = {
         postId: input.postId,

@@ -4,8 +4,11 @@ import { Card, CardContent } from "~/components/ui/card";
 import type { PostStatistics } from "~/models/post.types";
 export default function Statistics() {
   const { postStatistics } = useLoaderData<{
-    postStatistics: PostStatistics;
+    postStatistics: PostStatistics | undefined;
   }>();
+
+  // Provide fallback if postStatistics is undefined
+  const stats = postStatistics ?? { scheduledCount: 0, successCount: 0 };
 
   return (
     <>
@@ -29,9 +32,7 @@ export default function Statistics() {
               </svg>
             </div>
             <dl className="space-y-1 text-right">
-              <dt className="text-2xl font-bold">
-                {postStatistics.scheduledCount}
-              </dt>
+              <dt className="text-2xl font-bold">{stats.scheduledCount}</dt>
               <dd className="text-sm font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
                 Scheduled Posts
               </dd>
@@ -58,9 +59,7 @@ export default function Statistics() {
               </svg>
             </div>
             <dl className="space-y-1 text-right">
-              <dt className="text-2xl font-bold">
-                {postStatistics.successCount}
-              </dt>
+              <dt className="text-2xl font-bold">{stats.successCount}</dt>
               <dd className="text-sm font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
                 Posted Successfully
               </dd>

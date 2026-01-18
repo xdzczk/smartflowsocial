@@ -20,6 +20,17 @@ vi.mock("~/infra/publishers/nostr-publisher.server", () => ({
   })),
 }));
 
+const { mockAcquirePostPublishLease, mockReleasePostPublishLease } = vi.hoisted(
+  () => ({
+    mockAcquirePostPublishLease: vi.fn(),
+    mockReleasePostPublishLease: vi.fn(),
+  })
+);
+vi.mock("~/infra/publishing/publish-lease.server", () => ({
+  acquirePostPublishLease: mockAcquirePostPublishLease,
+  releasePostPublishLease: mockReleasePostPublishLease,
+}));
+
 const mockTransition = vi.fn();
 vi.mock("~/features/posts/state-machine/post-state-machine.server", () => ({
   PostStateMachine: class {
@@ -65,7 +76,11 @@ describe("PublishNowUseCase", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockTransition.mockResolvedValue(undefined);
-    mockPublish.mockResolvedValue(undefined);
+    mockPublish.mockResolvedValue({ results: [] });
+    mockAcquirePostPublishLease.mockResolvedValue({
+      lockId: "test-lock-id",
+      expiresAt: new Date(Date.now() + 30_000),
+    });
     useCase = new PublishNowUseCase();
   });
 
@@ -119,7 +134,19 @@ describe("PublishNowUseCase", () => {
         TEST_POST_ID,
         TEST_USER_ID,
         "PUBLISHED",
-        "Successfully published to Nostr"
+        "Successfully published to Nostr",
+        expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
+          additionalPostData: expect.objectContaining({
+            nostrEventId: signedEvent.id,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
+            publishAttemptId: expect.any(String),
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
+            postedAt: expect.any(Date),
+            publishingLockId: null,
+            publishingLockExpiresAt: null,
+          }),
+        })
       );
       expect(recordPostPublished).toHaveBeenCalledWith("IMAGE", "immediate");
       expect(recordPublishLatency).toHaveBeenCalled();
@@ -204,7 +231,14 @@ describe("PublishNowUseCase", () => {
         TEST_POST_ID,
         TEST_USER_ID,
         "FAILED",
-        expect.stringContaining("Publish failed")
+        expect.stringContaining("Publish failed"),
+        expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
+          additionalPostData: expect.objectContaining({
+            publishingLockId: null,
+            publishingLockExpiresAt: null,
+          }),
+        })
       );
       expect(recordPostPublishFailed).toHaveBeenCalledWith(
         "TEXT",

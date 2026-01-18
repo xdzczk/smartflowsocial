@@ -366,6 +366,70 @@ SENTRY_DSN=https://abc123@o123456.ingest.sentry.io/123456
 
 ---
 
+### SENTRY_TRACES_SAMPLE_RATE
+
+Sentry performance tracing sample rate.
+
+**Format:** Number between 0 and 1 (inclusive).
+
+**Example:**
+
+```env
+SENTRY_TRACES_SAMPLE_RATE=0.1
+```
+
+---
+
+### SENTRY_PROFILES_SAMPLE_RATE
+
+Sentry profiling sample rate.
+
+**Format:** Number between 0 and 1 (inclusive).
+
+**Example:**
+
+```env
+SENTRY_PROFILES_SAMPLE_RATE=0.05
+```
+
+---
+
+### METRICS_PORT
+
+Port for the web process Prometheus endpoint (`GET /metrics`).
+
+**Example:**
+
+```env
+METRICS_PORT=3010
+```
+
+---
+
+### WORKER_METRICS_PORT
+
+Port for the worker process Prometheus endpoint (`GET /metrics`).
+
+**Example:**
+
+```env
+WORKER_METRICS_PORT=3011
+```
+
+---
+
+### METRICS_TOKEN
+
+Optional token to protect Prometheus endpoints.
+
+---
+
+### METRICS_ALLOWED_IPS
+
+Optional allowlist of source IPs that can access Prometheus endpoints.
+
+---
+
 ## Storage Configuration
 
 ### AWS S3

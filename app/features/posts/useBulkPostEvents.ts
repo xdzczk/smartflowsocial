@@ -6,6 +6,7 @@ import { type ToastMessage } from "~/components/types";
 import { uploadMultipleFiles } from "~/features/upload/upload.client";
 import type { User } from "~/features/user";
 import { logClientError } from "~/lib/error-handler.client";
+import { safeConsoleInfo } from "~/lib/safe-console.client";
 import {
   formatForDateTimeLocal,
   fromDate,
@@ -29,7 +30,7 @@ const isDevelopment = process.env.NODE_ENV === "development";
  */
 function devLog(...args: unknown[]): void {
   if (isDevelopment) {
-    console.info(...args);
+    safeConsoleInfo(...args);
   }
 }
 

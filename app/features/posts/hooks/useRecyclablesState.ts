@@ -1,6 +1,7 @@
 import type { FetcherWithComponents, useFetcher } from "@remix-run/react";
 import { useState, useEffect, useMemo } from "react";
 
+import { logClientError } from "~/lib/error-handler.client";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import {
   addHours,
@@ -495,134 +496,140 @@ export function useRecyclablesState({
 
   // Handle individual repost actions
   useEffect(() => {
-    const handleRepost = async () => {
-      const dataRaw = individualRepostFetcher.data;
-      const data =
-        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
-          ? (dataRaw as {
-              repostEventData?: unknown;
-              quotePostData?: unknown;
-              error?: unknown;
-              message?: unknown;
-            })
-          : null;
+    const asRecord = (value: unknown): Record<string, unknown> | null =>
+      value && typeof value === "object" && !Array.isArray(value)
+        ? (value as Record<string, unknown>)
+        : null;
 
+    const parseIndividualRepostData = (
+      value: unknown
+    ): {
+      repostEventData?: Record<string, unknown>;
+      quotePostData?: unknown;
+      error?: unknown;
+      message?: unknown;
+    } | null => {
+      const record = asRecord(value);
+      if (!record) return null;
+      const repostEventData = asRecord(record["repostEventData"]);
+      return {
+        repostEventData: repostEventData ?? undefined,
+        quotePostData: record["quotePostData"],
+        error: record["error"],
+        message: record["message"],
+      };
+    };
+
+    const getUserRelaysForPublish = (): string[] => {
       if (
-        data &&
-        "repostEventData" in data &&
-        data.repostEventData &&
-        typeof data.repostEventData === "object" &&
-        !Array.isArray(data.repostEventData)
+        user &&
+        typeof user === "object" &&
+        "relays" in user &&
+        Array.isArray(user.relays)
       ) {
+        return user.relays.map((r) => String(r)).filter(Boolean);
+      }
+      return ["wss://relay.primal.net"];
+    };
+
+    const buildEventData = (raw: Record<string, unknown>) => {
+      return {
+        kind: typeof raw["kind"] === "number" ? raw["kind"] : 1,
+        content: typeof raw["content"] === "string" ? raw["content"] : "",
+        tags: Array.isArray(raw["tags"]) ? raw["tags"] : [],
+        created_at:
+          typeof raw["created_at"] === "number"
+            ? raw["created_at"]
+            : nowSeconds(),
+        pubkey: typeof raw["pubkey"] === "string" ? raw["pubkey"] : "",
+      };
+    };
+
+    const extractETagEventId = (tags: unknown): string | null => {
+      const isUnknownArray = (value: unknown): value is unknown[] =>
+        Array.isArray(value);
+      if (!isUnknownArray(tags)) return null;
+      const eTag = tags.find((tag) => Array.isArray(tag) && tag[0] === "e");
+      return Array.isArray(eTag) && typeof eTag[1] === "string"
+        ? eTag[1]
+        : null;
+    };
+
+    const showErrorToast = (message: string) => {
+      setToast({ type: "error", message });
+      setTimeout(() => setToast(null), 5000);
+    };
+
+    const showRepostSuccessToast = (eventTags: unknown) => {
+      const eventId = extractETagEventId(eventTags);
+      setToast({
+        type: "success",
+        message: "Post reposted successfully!",
+        link: eventId ? `https://primal.net/e/${eventId}` : undefined,
+        linkText: "View Original Post",
+      });
+      setTimeout(() => setToast(null), 8000);
+    };
+
+    const publishRepost = async (repostEventData: Record<string, unknown>) => {
+      const eventData = buildEventData(repostEventData);
+      const { signedEvent } = await nostrAdapter.signEvent(eventData);
+
+      const response = await fetch("/api/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          relays: getUserRelaysForPublish(),
+          event: signedEvent,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to publish repost");
+      }
+
+      setTimeout(() => showRepostSuccessToast(eventData.tags), 1000);
+    };
+
+    const handleRepost = async () => {
+      const data = parseIndividualRepostData(individualRepostFetcher.data);
+      if (!data) return;
+
+      if (data.repostEventData) {
         try {
-          const eventDataRaw = data.repostEventData as {
-            kind?: unknown;
-            content?: unknown;
-            tags?: unknown;
-            created_at?: unknown;
-            pubkey?: unknown;
-            [key: string]: unknown;
-          };
-
-          // Convert to NostrEventData format expected by signEventFn
-          const eventData = {
-            kind: typeof eventDataRaw.kind === "number" ? eventDataRaw.kind : 1,
-            content:
-              typeof eventDataRaw.content === "string"
-                ? eventDataRaw.content
-                : "",
-            tags: Array.isArray(eventDataRaw.tags) ? eventDataRaw.tags : [],
-            created_at:
-              typeof eventDataRaw.created_at === "number"
-                ? eventDataRaw.created_at
-                : nowSeconds(),
-            pubkey:
-              typeof eventDataRaw.pubkey === "string"
-                ? eventDataRaw.pubkey
-                : "",
-          };
-
-          // Sign the event using client-side signing
-          const { signedEvent } = await nostrAdapter.signEvent(eventData);
-
-          // Get user relays from user data
-          const sanitizedRelays =
-            user &&
-            typeof user === "object" &&
-            "relays" in user &&
-            Array.isArray(user.relays)
-              ? user.relays
-              : ["wss://relay.primal.net"];
-
-          // Publish the signed event
-          const response = await fetch("/api/publish", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              relays: sanitizedRelays,
-              event: signedEvent,
-            }),
-          });
-
-          if (!response.ok) {
-            throw new Error("Failed to publish repost");
-          }
-
-          // Add delay before showing success toast
-          setTimeout(() => {
-            const tags = Array.isArray(eventData.tags) ? eventData.tags : [];
-            const eTag: unknown = tags.find(
-              (tag: unknown) => Array.isArray(tag) && tag[0] === "e"
-            );
-            const eventId =
-              Array.isArray(eTag) && typeof eTag[1] === "string" ? eTag[1] : "";
-            setToast({
-              type: "success",
-              message: "Post reposted successfully!",
-              link: eventId ? `https://primal.net/e/${eventId}` : undefined,
-              linkText: "View Original Post",
-            });
-
-            // Hide toast after 8 seconds for success with link
-            setTimeout(() => setToast(null), 8000);
-          }, 1000); // 1 second delay
+          await publishRepost(data.repostEventData);
         } catch (error: unknown) {
-          console.error("Repost signing/publishing error:", error);
+          logClientError(
+            error instanceof Error ? error : new Error(String(error)),
+            {
+              component: "useRecyclablesState",
+              action: "repostSignOrPublish",
+            }
+          );
           const errorMessage =
             error instanceof Error
               ? error.message
               : "Failed to sign or publish repost";
-          setToast({
-            type: "error",
-            message: errorMessage,
-          });
-
-          // Hide toast after 5 seconds for errors
-          setTimeout(() => setToast(null), 5000);
+          showErrorToast(errorMessage);
         }
-      } else if (data && "quotePostData" in data && data.quotePostData) {
-        // Handle individual quote post - redirect to bulk posts with single item
-        const quoteData = data.quotePostData;
+        return;
+      }
 
-        // Store quote post data in sessionStorage
-        sessionStorage.setItem("quotePostData", JSON.stringify(quoteData));
-
-        // Navigate to bulk posts page with quote mode
+      if (data.quotePostData) {
+        sessionStorage.setItem(
+          "quotePostData",
+          JSON.stringify(data.quotePostData)
+        );
         window.location.href = "/dashboard/bulkposts?mode=quote";
-      } else if (data && "error" in data && data.error) {
+        return;
+      }
+
+      if (data.error) {
         const message =
           typeof data.message === "string"
             ? data.message
             : "Failed to create repost";
-        setToast({
-          type: "error",
-          message,
-        });
-
-        // Hide toast after 5 seconds for errors
-        setTimeout(() => setToast(null), 5000);
+        showErrorToast(message);
       }
     };
 

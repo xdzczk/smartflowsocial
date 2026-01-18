@@ -1,6 +1,7 @@
 import { useFetcher } from "@remix-run/react";
 import { useState, useEffect, useCallback, useRef } from "react";
 
+import { logClientError } from "~/lib/error-handler.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { draftEditClientSchema } from "~/lib/validation/schemas/posts.client.schemas";
 import { useZodForm } from "~/lib/validation/utils.client";
@@ -108,7 +109,14 @@ export function useDraftEditState({
           }
         }
       } catch (error) {
-        console.error("Error calculating schedule time:", error);
+        logClientError(
+          error instanceof Error ? error : new Error(String(error)),
+          {
+            component: "useDraftEditState",
+            action: "calculateQueueScheduleTime",
+            queueTypeName,
+          }
+        );
       }
     },
     []
@@ -161,7 +169,13 @@ export function useDraftEditState({
       fetcher.submit(formData, { method: "post" });
       setShowResumeModal(false);
     } catch (error) {
-      console.error("Error signing event:", error);
+      logClientError(
+        error instanceof Error ? error : new Error(String(error)),
+        {
+          component: "useDraftEditState",
+          action: "signDraftForScheduling",
+        }
+      );
       alert("Error signing the post. Please try again.");
     }
   };

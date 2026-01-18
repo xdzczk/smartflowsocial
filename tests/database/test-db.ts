@@ -6,6 +6,16 @@
  */
 
 import { execSync } from "child_process";
+import {
+  readFileSync,
+  statSync,
+  unlinkSync,
+  writeFileSync,
+  openSync,
+  closeSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 
 import { PrismaPg } from "@prisma/adapter-pg";
 import type { Prisma } from "@prisma/client";
@@ -14,6 +24,58 @@ import { Pool } from "pg";
 
 let testPrisma: PrismaClient | null = null;
 let transactionClient: PrismaClient | null = null;
+
+const SETUP_LOCK_PATH = join(tmpdir(), "smartflow_test_db_setup.lock");
+const SETUP_DONE_PATH = join(tmpdir(), "smartflow_test_db_setup.done");
+
+function getSchemaFingerprint(): string {
+  try {
+    const schemaPath = resolve(process.cwd(), "prisma", "schema.prisma");
+    const stat = statSync(schemaPath);
+    return String(stat.mtimeMs);
+  } catch {
+    return "unknown";
+  }
+}
+
+async function sleep(ms: number): Promise<void> {
+  await new Promise((resolvePromise) => setTimeout(resolvePromise, ms));
+}
+
+async function withSetupLock<T>(fn: () => Promise<T> | T): Promise<T> {
+  const start = Date.now();
+  const timeoutMs = 120_000;
+
+  for (;;) {
+    try {
+      const fd = openSync(SETUP_LOCK_PATH, "wx");
+      closeSync(fd);
+      break;
+    } catch (error) {
+      const code =
+        error && typeof error === "object" && "code" in error
+          ? String(error.code)
+          : null;
+      if (code !== "EEXIST") {
+        throw error;
+      }
+      if (Date.now() - start > timeoutMs) {
+        throw new Error("Timed out waiting for test DB setup lock");
+      }
+      await sleep(200);
+    }
+  }
+
+  try {
+    return await fn();
+  } finally {
+    try {
+      unlinkSync(SETUP_LOCK_PATH);
+    } catch {
+      // best-effort
+    }
+  }
+}
 
 /**
  * Get or create test Prisma client
@@ -128,56 +190,57 @@ export function setupTestDatabase(): Promise<void> {
     return Promise.resolve();
   }
 
-  try {
-    // First, try to run migrations to ensure all migration-specific changes are applied
-    // This is important for columns like creationIdempotencyKey that might be added in migrations
-    try {
-      execSync("npx prisma migrate deploy", {
-        env: { ...process.env, DATABASE_URL: testDatabaseUrl },
-        stdio: "pipe", // Use pipe to suppress output unless there's an error
-      });
-      console.log("✅ Migrations applied successfully");
-      return Promise.resolve();
-    } catch (migrateError) {
-      // If migrate deploy fails (e.g., no migration history, database doesn't exist, etc.), fall back to db push
-      const errorMessage =
-        migrateError instanceof Error
-          ? migrateError.message
-          : String(migrateError);
-      console.warn(
-        "⚠️  Migrate deploy failed, falling back to db push:",
-        errorMessage
-      );
+  const fingerprint = getSchemaFingerprint();
 
-      // Use db push as fallback - it syncs schema without requiring migrations
-      // This works even if the database already has schema
+  return withSetupLock(async () => {
+    // If another worker already set up the schema for this fingerprint, do nothing.
+    try {
+      const done = readFileSync(SETUP_DONE_PATH, "utf8").trim();
+      if (done === fingerprint) {
+        return;
+      }
+    } catch {
+      // done marker missing/unreadable
+    }
+
+    try {
+      // First, try to run migrations to ensure all migration-specific changes are applied
+      // This is important for columns like creationIdempotencyKey that might be added in migrations
       try {
+        execSync("npx prisma migrate deploy", {
+          env: { ...process.env, DATABASE_URL: testDatabaseUrl },
+          stdio: "pipe", // Use pipe to suppress output unless there's an error
+        });
+        console.log("✅ Migrations applied successfully");
+      } catch (migrateError) {
+        // If migrate deploy fails (e.g., no migration history, database doesn't exist, etc.), fall back to db push
+        const errorMessage =
+          migrateError instanceof Error
+            ? migrateError.message
+            : String(migrateError);
+        console.warn(
+          "⚠️  Migrate deploy failed, falling back to db push:",
+          errorMessage
+        );
+
         execSync("npx prisma db push --accept-data-loss", {
           env: { ...process.env, DATABASE_URL: testDatabaseUrl },
           stdio: "inherit",
         });
         console.log("✅ Database schema synced with db push");
-        return Promise.resolve();
-      } catch (pushError) {
-        // If db push also fails, it might be a connection issue
-        const pushErrorMessage =
-          pushError instanceof Error ? pushError.message : String(pushError);
-        console.error("❌ Both migrate deploy and db push failed");
-        console.error("Migrate error:", errorMessage);
-        console.error("Db push error:", pushErrorMessage);
-        throw pushError;
       }
+
+      // Mark schema as ready for this fingerprint so other workers skip re-running db push.
+      writeFileSync(SETUP_DONE_PATH, fingerprint, "utf8");
+    } catch (error) {
+      console.error("Failed to setup database schema:", error);
+      // If SKIP_DATABASE_TESTS is set, don't throw - allow tests to be skipped
+      if (process.env["SKIP_DATABASE_TESTS"] === "true") {
+        return;
+      }
+      throw error;
     }
-  } catch (error) {
-    console.error("Failed to setup database schema:", error);
-    // If SKIP_DATABASE_TESTS is set, don't throw - allow tests to be skipped
-    if (process.env["SKIP_DATABASE_TESTS"] === "true") {
-      return Promise.resolve();
-    }
-    // If both methods fail, it might be due to breaking schema changes
-    // In that case, use a fresh test database or manually resolve conflicts
-    throw error;
-  }
+  });
 }
 
 /**

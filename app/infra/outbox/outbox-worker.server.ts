@@ -13,6 +13,7 @@ import {
 import { logError, logInfo } from "~/lib/error-logger.server";
 import { recordOutboxEventProcessed } from "~/lib/metrics/business-metrics.server";
 import { recordOutboxProcessingDuration } from "~/lib/metrics/performance-metrics.server";
+import { recordJobMetrics, recordJobStarted } from "~/lib/queue-metrics.server";
 
 import { queueClient } from "../queue/queue-client.server";
 import type { PostJobData, LongFormPostJobData } from "../queue/queue-types";
@@ -207,6 +208,7 @@ export async function processOutboxEvents(): Promise<{
 
   for (const event of events) {
     const startTime = Date.now();
+    recordJobStarted("outbox");
     try {
       await processEvent({
         id: event.id,
@@ -257,6 +259,7 @@ export async function processOutboxEvents(): Promise<{
       const duration = Date.now() - startTime;
       recordOutboxEventProcessed(event.eventType, true);
       recordOutboxProcessingDuration(event.eventType, duration, true);
+      recordJobMetrics("outbox", duration, true);
     } catch (error) {
       errors++;
       const errorMessage =
@@ -266,6 +269,12 @@ export async function processOutboxEvents(): Promise<{
       const duration = Date.now() - startTime;
       recordOutboxEventProcessed(event.eventType, false);
       recordOutboxProcessingDuration(event.eventType, duration, false);
+      recordJobMetrics(
+        "outbox",
+        duration,
+        false,
+        error instanceof Error ? error : new Error(errorMessage)
+      );
 
       logError(error instanceof Error ? error : new Error(errorMessage), {
         eventId: event.id,

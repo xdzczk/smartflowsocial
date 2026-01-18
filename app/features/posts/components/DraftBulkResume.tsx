@@ -1,6 +1,7 @@
 import { useFetcher } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
+import { logClientError } from "~/lib/error-handler.client";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import {
@@ -489,7 +490,13 @@ export default function DraftBulkResume({
 
       fetcher.submit(formData, { method: "post", action: "/dashboard/drafts" });
     } catch (error) {
-      console.error("Error signing drafts:", error);
+      logClientError(
+        error instanceof Error ? error : new Error(String(error)),
+        {
+          component: "DraftBulkResume",
+          action: "signDrafts",
+        }
+      );
       alert("Error signing drafts. Please try again.");
       setIsSubmitting(false);
     }
@@ -501,8 +508,7 @@ export default function DraftBulkResume({
     if (typeof fileUrl[0] === "string" && fileUrl[0].startsWith("[")) {
       try {
         return JSON.parse(fileUrl[0]) as string[];
-      } catch (e) {
-        console.error("Error parsing fileUrl:", e);
+      } catch (_e) {
         return [];
       }
     }

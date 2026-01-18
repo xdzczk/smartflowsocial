@@ -7,6 +7,11 @@
 import { toast } from "react-hot-toast";
 
 import type { ErrorResponse } from "./error-handler.server";
+import {
+  safeConsoleError,
+  safeConsoleInfo,
+  safeConsoleWarn,
+} from "./safe-console.client";
 import { captureException } from "./sentry.client";
 export type ClientErrorLevel = "error" | "warning" | "info";
 
@@ -59,15 +64,17 @@ function logToConsole(
   context: ClientErrorContext | undefined
 ): void {
   const emoji = level === "error" ? "❌" : level === "warning" ? "⚠️" : "ℹ️";
-  const consoleMethod =
-    level === "error" ? "error" : level === "warning" ? "warn" : "info";
-  console[consoleMethod](
-    `${emoji} [CLIENT ${level.toUpperCase()}]`,
-    errorMessage,
-    context ? String(context) : ""
-  );
+  const prefix = `${emoji} [CLIENT ${level.toUpperCase()}]`;
+  const contextString = context ? String(context) : "";
+  if (level === "error") {
+    safeConsoleError(prefix, errorMessage, contextString);
+  } else if (level === "warning") {
+    safeConsoleWarn(prefix, errorMessage, contextString);
+  } else {
+    safeConsoleInfo(prefix, errorMessage, contextString);
+  }
   if (errorStack && level === "error") {
-    console.error("Stack:", errorStack);
+    safeConsoleError("Stack:", errorStack);
   }
 }
 
@@ -109,7 +116,7 @@ export function logClientError(
 
   if (process.env.NODE_ENV === "production") {
     const logEntry = buildLogEntry(errorMessage, errorStack, level, context);
-    console.error(JSON.stringify(logEntry));
+    safeConsoleError(JSON.stringify(logEntry));
   } else {
     logToConsole(errorMessage, errorStack, level, context);
   }
@@ -238,7 +245,7 @@ export function handleErrorSafely(
     }
   } catch (handlingError) {
     // Even error handling can fail, so we catch it
-    console.error("Error in error handler:", handlingError);
+    safeConsoleError("Error in error handler:", handlingError);
   }
 }
 

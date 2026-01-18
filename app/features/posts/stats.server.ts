@@ -1,4 +1,5 @@
 import { env } from "~/lib/env.server";
+import { logError } from "~/lib/error-logger.server";
 import { fetchJsonWithRetry } from "~/lib/fetch.server";
 
 export interface PostStats {
@@ -178,7 +179,10 @@ export async function getPostStats(
     stats = statsResults.reduce((acc, curr) => ({ ...acc, ...curr }), {});
     clearTimeout(timeoutId);
   } catch (error) {
-    console.error("Error fetching stats:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "Error fetching stats",
+      eventIdsCount: eventIds.length,
+    });
     // Initialize empty stats object with 0 values for each post
     const emptyStats: Record<string, PostStats> = {};
     stats = eventIds.reduce((acc, eventId) => {

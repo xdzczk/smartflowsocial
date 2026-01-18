@@ -108,8 +108,7 @@ export function DraftsTable({
     if (typeof fileUrl[0] === "string" && fileUrl[0].startsWith("[")) {
       try {
         return JSON.parse(fileUrl[0]) as string[];
-      } catch (e) {
-        console.error("Error parsing fileUrl:", e);
+      } catch (_e) {
         return [];
       }
     }

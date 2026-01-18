@@ -21,11 +21,10 @@ export function formatScheduleTimeForInput(
 
     // Format for datetime-local input in user's timezone
     return formatForDateTimeLocal(zonedDateTime, userTimezone);
-  } catch (error) {
-    console.error("Error in formatScheduleTimeForInput:", error, {
-      date,
-      userTimezone,
-    });
+  } catch (_error) {
+    // Intentionally do not log here:
+    // this module is a pure utility and may run in both server and client contexts.
+    // Fallback formatting below preserves behavior without introducing side effects.
     // Fallback: try to format using UTC components directly
     // This maintains backward compatibility if Temporal fails
     try {

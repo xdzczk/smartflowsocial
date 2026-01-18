@@ -147,6 +147,20 @@ export const postStateTransitionCounter = getOrCreateMetric(
 );
 
 /**
+ * Longform post state transition counter
+ * Tracks state transitions for longform posts
+ */
+export const longFormPostStateTransitionCounter = getOrCreateMetric(
+  "longform_posts_state_transitions_total",
+  () =>
+    new promClient.Counter({
+      name: "longform_posts_state_transitions_total",
+      help: "Total number of longform post state transitions",
+      labelNames: ["from_state", "to_state"],
+    })
+);
+
+/**
  * Outbox events processed counter
  * Tracks outbox events processed
  */
@@ -236,6 +250,19 @@ export function recordPostStateTransition(
   toState: string
 ): void {
   postStateTransitionCounter.inc({
+    from_state: fromState,
+    to_state: toState,
+  });
+}
+
+/**
+ * Record longform post state transition
+ */
+export function recordLongFormPostStateTransition(
+  fromState: string,
+  toState: string
+): void {
+  longFormPostStateTransitionCounter.inc({
     from_state: fromState,
     to_state: toState,
   });

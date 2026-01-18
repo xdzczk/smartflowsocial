@@ -2,10 +2,10 @@ import { json } from "@remix-run/node";
 import type { ActionFunctionArgs } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
+import { publishSignedEventToRelays } from "~/features/nostr/server";
+import type { SignedEvent } from "~/features/nostr/types";
 import { withCSRFProtection } from "~/lib/csrf";
-import { ValidationError, ExternalServiceError } from "~/lib/errors";
-
-const CONTENT_TYPE_JSON = "application/json";
+import { ValidationError } from "~/lib/errors";
 
 type AssertFunction = (
   condition: boolean,
@@ -43,99 +43,23 @@ export const action = withCSRFProtection(
           : {};
       const { relays, event } = body;
 
-      // Validate event
+      // Validate event presence (cryptographic validation happens in feature layer)
       assert(event !== null && event !== undefined, "Event is required", {
         hasEvent: event !== null && event !== undefined,
       });
 
-      // Validate relays
-      assert(
-        Array.isArray(relays) && relays.length > 0,
-        "Relays array is required and must not be empty",
-        { relaysType: typeof relays, isArray: Array.isArray(relays) }
-      );
+      const relaysArray = Array.isArray(relays) ? relays : [];
+      const sanitizedRelays = relaysArray
+        .map((relay: unknown) =>
+          (typeof relay === "string" ? relay : String(relay)).trim()
+        )
+        .filter((relay) => relay.length > 0);
 
-      // Validate NOSTR_PUBLISHER_URL is configured
-      const publisherUrl = process.env["NOSTR_PUBLISHER_URL"];
-      assert(
-        publisherUrl !== undefined && publisherUrl !== "",
-        "NOSTR publisher URL is not configured"
-      );
+      await publishSignedEventToRelays({
+        signedEvent: event as SignedEvent,
+        relays: sanitizedRelays,
+      });
 
-      // Publish to NOSTR_PUBLISHER_URL
-      let publishResponse: Response;
-      try {
-        publishResponse = await fetch(publisherUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": CONTENT_TYPE_JSON,
-          },
-          body: JSON.stringify({
-            relays,
-            event,
-          }),
-        });
-      } catch (error) {
-        throw new ExternalServiceError(
-          "Failed to connect to NOSTR publisher service",
-          503,
-          {
-            service: "NOSTR_PUBLISHER",
-            originalError:
-              error instanceof Error ? error.message : String(error),
-          }
-        );
-      }
-
-      if (!publishResponse.ok) {
-        const errorText = await publishResponse
-          .text()
-          .catch(() => "Unknown error");
-        throw new ExternalServiceError(
-          `Failed to publish to nostr: ${publishResponse.status}`,
-          publishResponse.status >= 500 ? 502 : publishResponse.status,
-          {
-            service: "NOSTR_PUBLISHER",
-            status: publishResponse.status,
-            statusText: publishResponse.statusText,
-            errorText,
-          }
-        );
-      }
-
-      // Handle both JSON and text responses
-      const contentType = publishResponse.headers.get("content-type");
-      let result: unknown;
-
-      try {
-        if (
-          contentType &&
-          typeof contentType === "string" &&
-          contentType.includes(CONTENT_TYPE_JSON)
-        ) {
-          const jsonResult: unknown = await publishResponse.json();
-          result = jsonResult;
-        } else {
-          result = await publishResponse.text();
-        }
-      } catch (error) {
-        throw new ExternalServiceError(
-          "Failed to parse response from NOSTR publisher",
-          502,
-          {
-            service: "NOSTR_PUBLISHER",
-            originalError:
-              error instanceof Error ? error.message : String(error),
-          }
-        );
-      }
-
-      // Return simple success response
-      // If result is a string (text response), include it as message
-      if (typeof result === "string") {
-        return json({ success: true, message: result });
-      }
-      // For JSON responses, just return success
       return json({ success: true });
     } catch (error) {
       // If error is a Response (e.g., redirect from requireUserId), return it

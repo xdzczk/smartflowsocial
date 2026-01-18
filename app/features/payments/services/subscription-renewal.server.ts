@@ -12,6 +12,7 @@ import {
 } from "~/features/user";
 import { decrypt } from "~/lib/encryption.server";
 import { createErrorResponse } from "~/lib/error-handler.server";
+import { logError } from "~/lib/error-logger.server";
 import { normalizeError } from "~/lib/errors";
 import { sendNostrDirectMessage } from "~/lib/nostr.messenger.server";
 import {
@@ -112,6 +113,30 @@ async function extractAmountInSats(
   invoiceString: string,
   amountUsd: number
 ): Promise<number> {
+  const parseLnInvoiceAmountToSats = (invoice: string): number | null => {
+    if (typeof invoice !== "string") return null;
+    const invoiceStr = invoice.toLowerCase();
+    if (!invoiceStr.startsWith("lnbc")) return null;
+
+    const amountMatch = invoiceStr.match(/lnbc([0-9]+)([munp]?)/);
+    if (!amountMatch) return null;
+
+    const amountPart = amountMatch[1];
+    if (!amountPart) return null;
+
+    const baseAmount = parseInt(amountPart, 10);
+    if (Number.isNaN(baseAmount)) return null;
+
+    const unit = amountMatch[2];
+    // https://github.com/lightning/bolts/blob/master/11-payment-encoding.md
+    // lnbc<milli-btc><u|n|p?>
+    if (unit === "m") return baseAmount * 100000;
+    if (unit === "u") return baseAmount * 100;
+    if (unit === "n") return Math.round(baseAmount * 0.1);
+    if (unit === "p") return Math.round(baseAmount * 0.0001);
+    return baseAmount * 100000000;
+  };
+
   const requestAny: Record<string, unknown> =
     typeof invoiceRequest === "object" && !Array.isArray(invoiceRequest)
       ? (invoiceRequest as unknown as Record<string, unknown>)
@@ -145,40 +170,23 @@ async function extractAmountInSats(
 
   // Parse from Lightning invoice string
   try {
-    if (typeof invoiceString === "string") {
-      const invoiceStr = invoiceString.toLowerCase();
-      if (invoiceStr.startsWith("lnbc")) {
-        const amountMatch = invoiceStr.match(/lnbc([0-9]+)([munp]?)/);
-        if (amountMatch?.[1]) {
-          const baseAmount = parseInt(amountMatch[1], 10);
-          const unit = amountMatch[2];
-
-          if (unit === "m") {
-            return baseAmount * 100000;
-          } else if (unit === "u") {
-            return baseAmount * 100;
-          } else if (unit === "n") {
-            return Math.round(baseAmount * 0.1);
-          } else if (unit === "p") {
-            return Math.round(baseAmount * 0.0001);
-          } else {
-            return baseAmount * 100000000;
-          }
-        }
-      }
-    }
+    const parsed = parseLnInvoiceAmountToSats(invoiceString);
+    if (typeof parsed === "number") return parsed;
   } catch (error) {
-    console.error("[CRON] Error parsing Lightning invoice amount:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "[CRON] Error parsing Lightning invoice amount",
+      amountUsd,
+    });
   }
 
   // Fallback: use live Bitcoin rate
   try {
     return await getBitcoinRate(amountUsd);
   } catch (error) {
-    console.error(
-      "[CRON] Failed to fetch Bitcoin rate, using fallback:",
-      error
-    );
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "[CRON] Failed to fetch Bitcoin rate, using fallback",
+      amountUsd,
+    });
     // Fallback approximation: $1 ≈ 2,500 sats (at $40,000 per BTC)
     return Math.round(amountUsd * 2500);
   }
@@ -194,7 +202,10 @@ async function createInvoice(
   try {
     return await ownerLn.requestPayment(USD(amountUsd) as { amount: number });
   } catch (error) {
-    console.error("[CRON] Failed to request make_invoice", error);
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "[CRON] Failed to request make_invoice",
+      amountUsd,
+    });
     throw new Error(
       `Failed to create invoice: ${
         error instanceof Error ? error.message : String(error)
@@ -327,7 +338,15 @@ async function handleRenewalWithNWC(
         : String(renewalError)
     }`;
     results.errors.push(errorMsg);
-    console.error(`[CRON] ${errorMsg}`, renewalError);
+    logError(
+      renewalError instanceof Error
+        ? renewalError
+        : new Error(String(renewalError)),
+      {
+        message: `[CRON] ${errorMsg}`,
+        userId: user.id,
+      }
+    );
 
     await disableUserAccount(user.id);
     results.disabled++;
@@ -452,7 +471,13 @@ export async function checkAndRenewSubscriptions(): Promise<
           userError instanceof Error ? userError.message : String(userError)
         }`;
         results.errors.push(errorMsg);
-        console.error(errorMsg, userError);
+        logError(
+          userError instanceof Error ? userError : new Error(String(userError)),
+          {
+            message: errorMsg,
+            userId: user.id,
+          }
+        );
       }
     }
 
@@ -538,16 +563,14 @@ async function attemptRenewal(
   const paymentHashString = extractPaymentHash(invoiceRequest, invoiceValue);
 
   if (!invoiceString || !paymentHashString) {
-    console.error(
-      "[CRON] Failed to extract invoice or paymentHash from request:",
-      {
-        invoiceString,
-        paymentHashString,
-        requestStructure: Object.keys(
-          invoiceRequest as unknown as Record<string, unknown>
-        ),
-      }
-    );
+    logError(new Error("Missing invoiceString or paymentHashString"), {
+      message: "[CRON] Failed to extract invoice or paymentHash from request",
+      invoiceString,
+      paymentHashString,
+      requestStructure: Object.keys(
+        invoiceRequest as unknown as Record<string, unknown>
+      ),
+    });
     throw new Error(
       "Invalid response from payment provider - missing invoice or paymentHash"
     );
@@ -589,7 +612,10 @@ async function sendRenewalNotification(
   try {
     await sendNostrDirectMessage(pubkeyHex, message);
   } catch (error) {
-    console.error(`[CRON] Failed to send notification to ${pubkeyHex}:`, error);
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "[CRON] Failed to send renewal notification",
+      pubkeyHex,
+    });
     // Don't throw - notification failure shouldn't break the cron job
   }
 }

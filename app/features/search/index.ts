@@ -25,6 +25,7 @@ export { handleSearchEvent as handleSearchAction } from "./services/search-actio
 export { SearchForm } from "./components/SearchForm";
 export { SearchResult } from "./components/SearchResult";
 export { SearchToast } from "./components/SearchToast";
+export { default as SearchPostsPage } from "./components/SearchPostsPage";
 
 // ============================================================================
 // Hooks (Public API)

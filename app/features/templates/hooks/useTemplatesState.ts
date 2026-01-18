@@ -7,6 +7,7 @@ import {
   uploadFile,
   uploadMultipleFiles,
 } from "~/features/upload";
+import { logClientError } from "~/lib/error-handler.client";
 
 import type { Template, ScheduleData, TemplateFetcher } from "../types";
 
@@ -61,7 +62,10 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
           typeof data.provider === "string" ? data.provider : null;
         setUploadProvider(provider);
       } catch (err) {
-        console.error("Failed to get upload provider:", err);
+        logClientError(err instanceof Error ? err : new Error(String(err)), {
+          component: "useTemplatesState",
+          action: "fetchUploadProvider",
+        });
       }
     })();
   }, []);
@@ -258,7 +262,14 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
 
       assetFetcher.submit(serverFormData, { method: "post" });
     } catch (error: unknown) {
-      console.error("Upload error:", error);
+      logClientError(
+        error instanceof Error ? error : new Error(String(error)),
+        {
+          component: "useTemplatesState",
+          action: "handleSingleFileUpload",
+          message: "Upload error",
+        }
+      );
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
       setToastMessage(`Upload failed: ${errorMessage}`);
@@ -304,7 +315,14 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
 
       assetFetcher.submit(serverFormData, { method: "post" });
     } catch (error: unknown) {
-      console.error("Bulk upload error:", error);
+      logClientError(
+        error instanceof Error ? error : new Error(String(error)),
+        {
+          component: "useTemplatesState",
+          action: "handleBulkFileUpload",
+          message: "Bulk upload error",
+        }
+      );
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
       setToastMessage(`Bulk upload failed: ${errorMessage}`);
@@ -332,7 +350,14 @@ export function useTemplatesState({ searchTerm }: UseTemplatesStateProps) {
         );
         setBulkUploadFiles(processedFiles);
       } catch (error) {
-        console.error("Error processing media files:", error);
+        logClientError(
+          error instanceof Error ? error : new Error(String(error)),
+          {
+            component: "useTemplatesState",
+            action: "handleBulkFileChange",
+            message: "Error processing media files",
+          }
+        );
         setBulkUploadFiles(selectedFiles);
       }
     }

@@ -77,6 +77,34 @@ export const jobCounter = getOrCreateMetric(
 );
 
 /**
+ * Job started counter
+ * Tracks job processing starts (useful for distinguishing skipped vs processed)
+ */
+export const jobStartedCounter = getOrCreateMetric(
+  "queue_job_started_total",
+  () =>
+    new promClient.Counter({
+      name: "queue_job_started_total",
+      help: "Total number of queue jobs started",
+      labelNames: ["queue"],
+    })
+);
+
+/**
+ * Job skipped counter
+ * Tracks jobs skipped due to idempotency/locking.
+ */
+export const jobSkippedCounter = getOrCreateMetric(
+  "queue_job_skipped_total",
+  () =>
+    new promClient.Counter({
+      name: "queue_job_skipped_total",
+      help: "Total number of queue jobs skipped",
+      labelNames: ["queue", "reason"],
+    })
+);
+
+/**
  * Failed job counter
  * Tracks number of failed jobs
  */
@@ -191,6 +219,20 @@ export function recordJobMetrics(
 }
 
 /**
+ * Record that a job started processing.
+ */
+export function recordJobStarted(queue: string): void {
+  jobStartedCounter.inc({ queue });
+}
+
+/**
+ * Record that a job was skipped (idempotency / locking).
+ */
+export function recordJobSkipped(queue: string, reason: string): void {
+  jobSkippedCounter.inc({ queue, reason });
+}
+
+/**
  * Update queue length gauge
  */
 export function updateQueueLength(queue: string, length: number): void {
@@ -201,7 +243,9 @@ export function updateQueueLength(queue: string, length: number): void {
  * Update active jobs gauge
  */
 export function updateActiveJobs(queue: string, active: number): void {
-  activeJobsGauge.set({ queue }, active);
+  // `active` is treated as a delta (+1 on start, -1 on finish).
+  // This avoids needing each worker to maintain its own absolute active count.
+  activeJobsGauge.inc({ queue }, active);
 }
 
 /**
@@ -228,10 +272,7 @@ export const deadLetterCounter = getOrCreateMetric(
 /**
  * Record job moved to dead letter queue
  */
-export function recordDeadLetterJob(
-  queue: string,
-  errorType?: string
-): void {
+export function recordDeadLetterJob(queue: string, errorType?: string): void {
   deadLetterCounter.inc({
     queue,
     error_type: errorType ?? "UnknownError",

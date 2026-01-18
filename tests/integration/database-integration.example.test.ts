@@ -26,35 +26,43 @@ import { getTestPrisma } from "../database/test-db";
 import { getUserById } from "~/features/user";
 import { createPost } from "~/models/post.commands.server";
 
+// This file is an example and should not affect the rest of the suite.
+// Only run it when explicitly enabled.
+const RUN_DATABASE_EXAMPLES = process.env["RUN_DATABASE_EXAMPLES"] === "true";
+
 // Don't mock Prisma - this test uses the real database
 // Model functions will use the real Prisma client from getTestPrisma()
 // We need to ensure prisma.server.ts uses getTestPrisma() in test mode
 // For now, we'll mock it minimally to prevent $use errors, but the actual
 // database operations will use the real client from withDatabase
-vi.mock("~/lib/prisma.server", async () => {
-  // Return a proxy that forwards to getTestPrisma() when accessed
-  // Handle case where database URL is not set (tests will be skipped)
-  const { getTestPrisma } = await import("../database/test-db");
-  return {
-    get prisma() {
-      try {
-        return getTestPrisma();
-      } catch (_error) {
-        // If database URL is not set, return a mock Prisma client
-        // The describeDatabase helper will skip the tests anyway
-        return {
-          $use: vi.fn(),
-          $transaction: vi.fn(),
-          user: { findUnique: vi.fn(), create: vi.fn() },
-          post: { findUnique: vi.fn(), create: vi.fn() },
-        } as unknown as PrismaClient;
-      }
-    },
-  };
-});
+if (RUN_DATABASE_EXAMPLES) {
+  vi.mock("~/lib/prisma.server", async () => {
+    // Return a proxy that forwards to getTestPrisma() when accessed
+    // Handle case where database URL is not set (tests will be skipped)
+    const { getTestPrisma } = await import("../database/test-db");
+    return {
+      get prisma() {
+        try {
+          return getTestPrisma();
+        } catch (_error) {
+          // If database URL is not set, return a mock Prisma client
+          // The describeDatabase helper will skip the tests anyway
+          return {
+            $use: vi.fn(),
+            $transaction: vi.fn(),
+            user: { findUnique: vi.fn(), create: vi.fn() },
+            post: { findUnique: vi.fn(), create: vi.fn() },
+          } as unknown as PrismaClient;
+        }
+      },
+    };
+  });
+}
 
 // Example: Test with database using transactions
-describeDatabase("Database Integration Example", () => {
+const describeDb = RUN_DATABASE_EXAMPLES ? describeDatabase : describe.skip;
+
+describeDb("Database Integration Example", () => {
   it("should create and retrieve a user", async () => {
     await withDatabase(async (prisma) => {
       // Create user

@@ -1,6 +1,7 @@
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
 
 import { ValidationError, ExternalServiceError } from "~/lib/errors";
+import { buildCacheKey, getOrSetJson } from "~/lib/redis-cache.server";
 
 type AssertFunction = (
   condition: boolean,
@@ -35,46 +36,66 @@ export async function loader({ request }: LoaderFunctionArgs) {
       { targetUrl }
     );
 
-    // Fetch the URL
-    let response: Response;
-    try {
-      response = await fetch(targetUrl, {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (compatible; LinkPreview/1.0)",
-        },
-        signal: AbortSignal.timeout(5000),
-      });
-    } catch (error) {
-      throw new ExternalServiceError("Failed to fetch URL", 502, {
-        service: "LinkPreview",
-        targetUrl,
-        originalError: error instanceof Error ? error.message : String(error),
-      });
-    }
+    const cacheKey = buildCacheKey({
+      namespace: "link-preview",
+      version: "v1",
+      parts: { targetUrl },
+    });
 
-    if (!response.ok) {
-      throw new ExternalServiceError(
-        `Failed to fetch URL: HTTP ${response.status}`,
-        response.status >= 500 ? 502 : response.status,
-        {
-          service: "LinkPreview",
-          targetUrl,
-          status: response.status,
-          statusText: response.statusText,
+    const html = await getOrSetJson<string>({
+      cache: "link-preview",
+      key: cacheKey,
+      ttlSeconds: 3600, // 1h: link metadata is relatively stable
+      negativeTtlSeconds: 60, // 1m: avoid hammering broken URLs
+      shouldNegativeCache: (value) => !value || value.trim().length === 0,
+      compute: async () => {
+        // Fetch the URL
+        let response: Response;
+        try {
+          response = await fetch(targetUrl, {
+            headers: {
+              "User-Agent": "Mozilla/5.0 (compatible; LinkPreview/1.0)",
+            },
+            signal: AbortSignal.timeout(5000),
+          });
+        } catch (error) {
+          throw new ExternalServiceError("Failed to fetch URL", 502, {
+            service: "LinkPreview",
+            targetUrl,
+            originalError:
+              error instanceof Error ? error.message : String(error),
+          });
         }
-      );
-    }
 
-    let html: string;
-    try {
-      html = await response.text();
-    } catch (error) {
-      throw new ExternalServiceError("Failed to read response from URL", 502, {
-        service: "LinkPreview",
-        targetUrl,
-        originalError: error instanceof Error ? error.message : String(error),
-      });
-    }
+        if (!response.ok) {
+          throw new ExternalServiceError(
+            `Failed to fetch URL: HTTP ${response.status}`,
+            response.status >= 500 ? 502 : response.status,
+            {
+              service: "LinkPreview",
+              targetUrl,
+              status: response.status,
+              statusText: response.statusText,
+            }
+          );
+        }
+
+        try {
+          return await response.text();
+        } catch (error) {
+          throw new ExternalServiceError(
+            "Failed to read response from URL",
+            502,
+            {
+              service: "LinkPreview",
+              targetUrl,
+              originalError:
+                error instanceof Error ? error.message : String(error),
+            }
+          );
+        }
+      },
+    });
 
     const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
     const descriptionMatch =

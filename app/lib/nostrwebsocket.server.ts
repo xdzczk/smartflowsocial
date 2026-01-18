@@ -3,6 +3,8 @@ import { WebSocket } from "ws";
 type CacheParams = Record<string, unknown>;
 type CacheResponse = unknown[];
 
+import { logError } from "./error-logger.server";
+
 /**
  * Gets Primal cache endpoints from environment variable or uses defaults
  * Supports comma-separated list of WebSocket URLs
@@ -200,7 +202,10 @@ async function tryConnectToCache(
       // In Node.js with 'ws' library, error handler receives Error directly
       // In browser, it would be ErrorEvent, but we're in Node.js
       const error = ev instanceof Error ? ev : new Error("WebSocket error");
-      console.error(`[WS] WebSocket error on ${endpoint}:`, error);
+      logError(error, {
+        message: "WebSocket error on Primal cache endpoint",
+        endpoint,
+      });
       ws.close();
       if (!resolved) {
         resolved = true;
@@ -256,12 +261,22 @@ export async function connectToPrimalCache(
       }
       // else, try next endpoint
     } catch (err) {
-      console.error(`[Cache] ${endpoint} failed with error:`, err);
+      logError(err instanceof Error ? err : new Error(String(err)), {
+        message: "Primal cache endpoint failed",
+        endpoint,
+        requestType,
+      });
       // try next endpoint
       continue;
     }
   }
   // All endpoints failed or gave empty responses
-  console.error("[Cache] All endpoints failed or gave empty responses");
+  logError(
+    new Error("All Primal cache endpoints failed or gave empty responses"),
+    {
+      message: "All Primal cache endpoints failed or returned empty responses",
+      requestType,
+    }
+  );
   throw new Error("All Primal cache endpoints failed or gave empty responses.");
 }

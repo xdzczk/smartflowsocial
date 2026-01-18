@@ -9,6 +9,7 @@ import { Prisma, type Post } from "@prisma/client";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 import type { PostScheduledPayload } from "~/infra/outbox/outbox.server";
+import { logError } from "~/lib/error-logger.server";
 import { generateEnqueueIdempotencyKey } from "~/lib/idempotency.server";
 import { prisma } from "~/lib/prisma.server";
 
@@ -84,7 +85,6 @@ export function createPost(data: CreatePostData): Promise<Post> {
     data: {
       content,
       fileUrl,
-      scheduledFor: scheduledFor?.toString(), // Legacy field
       scheduledAtUtc, // New DateTime field
       nostrEventId,
       signedEvent,
@@ -143,7 +143,6 @@ export async function createPostWithOutbox(
       data: {
         content: data.content,
         fileUrl: data.fileUrl,
-        scheduledFor: data.scheduledFor?.toString(),
         scheduledAtUtc: convertScheduledForToDateTime(data.scheduledFor),
         nostrEventId: data.nostrEventId,
         signedEvent: data.signedEvent,
@@ -177,6 +176,20 @@ export async function createPostWithOutbox(
             },
           },
         }),
+      },
+    });
+
+    // Record an initial transition for audit/history.
+    // Use a no-op transition (STATE -> STATE) to avoid inventing an invalid "NONE" state.
+    await tx.postStateTransition.create({
+      data: {
+        postId: post.id,
+        fromState: initialState,
+        toState: initialState,
+        reason:
+          initialState === "SCHEDULED"
+            ? "Post created with schedule"
+            : "Post created as draft",
       },
     });
 
@@ -260,7 +273,12 @@ export async function deletePost({
     // eslint-disable-next-line promise/prefer-await-to-then, promise/prefer-await-to-callbacks -- Fire-and-forget pattern
   ).catch((error) => {
     // Log but don't throw - read model updates shouldn't block writes
-    console.error("Failed to emit POST_DELETED event", error);
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "Failed to emit POST_DELETED event",
+      postId: post.id,
+      userId: post.userId,
+      correlationId,
+    });
   });
 
   return post;
@@ -285,7 +303,6 @@ export function reschedulePost({
 }): Promise<Post> {
   const scheduledAtUtc = convertScheduledForToDateTime(newScheduledFor);
   const updateData: Prisma.PostUpdateInput = {
-    scheduledFor: newScheduledFor,
     scheduledAtUtc, // Also update new field
     manual_override: overrideQueue,
     updatedAt: new Date(),
@@ -346,12 +363,10 @@ export async function updatePost({
   if (data.scheduledFor !== undefined) {
     // Explicitly clear both fields when null, otherwise set them
     if (data.scheduledFor === null) {
-      updateData.scheduledFor = null;
       updateData.scheduledAtUtc = null;
     } else {
       // TypeScript narrows to Date | string | number here (null excluded)
-      updateData.scheduledFor = data.scheduledFor.toString();
-      // Also update scheduledAtUtc for dual-write
+      // Update scheduledAtUtc only (scheduledFor legacy field removed)
       const scheduledAtUtc = convertScheduledForToDateTime(data.scheduledFor);
       updateData.scheduledAtUtc = scheduledAtUtc ?? null;
     }
@@ -430,7 +445,11 @@ export async function updatePost({
     // eslint-disable-next-line promise/prefer-await-to-then, promise/prefer-await-to-callbacks -- Fire-and-forget pattern
   ).catch((error) => {
     // Log but don't throw - read model updates shouldn't block writes
-    console.error("Failed to emit POST_UPDATED event", error);
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "Failed to emit POST_UPDATED event",
+      postId: post.id,
+      userId: post.userId,
+    });
   });
 
   return post;

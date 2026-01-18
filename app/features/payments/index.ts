@@ -85,6 +85,7 @@ export { FeatureComparisonTable } from "./components/FeatureComparisonTable";
 export { InvoiceModal } from "./components/InvoiceModal";
 export { PaymentSuccessModal } from "./components/PaymentSuccessModal";
 export { PricingCard } from "./components/PricingCard";
+export { PlansPage } from "./components/PlansPage";
 
 // ============================================================================
 // Hooks (Public API)

@@ -1,6 +1,8 @@
 import { useNavigate } from "@remix-run/react";
 import { useState, useCallback } from "react";
 import { toast } from "react-hot-toast";
+
+import { logClientError } from "~/lib/error-handler.client";
 interface UploadProvider {
   provider: "S3" | "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR";
   isUsingBlossom: boolean;
@@ -65,7 +67,13 @@ export function useBlossomAwareUpload() {
         mirrorUploadUrls: [],
       };
     } catch (error) {
-      console.error("Failed to check upload provider:", error);
+      logClientError(
+        error instanceof Error ? error : new Error(String(error)),
+        {
+          component: "useBlossomAwareUpload",
+          action: "checkUploadProvider",
+        }
+      );
       return {
         provider: "S3",
         isUsingBlossom: false,

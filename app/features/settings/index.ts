@@ -22,3 +22,9 @@ export { loadSettingsData } from "./settings-loader.server";
 // ============================================================================
 
 export { handleSettingsAction } from "./settings-actions.server";
+
+// ============================================================================
+// Components (Public API)
+// ============================================================================
+
+export { default as SettingsPage } from "./components/SettingsPage";

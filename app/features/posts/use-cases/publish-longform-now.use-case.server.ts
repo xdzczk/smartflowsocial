@@ -5,6 +5,16 @@
  */
 
 import { getNostrPublisher } from "~/infra/publishers/nostr-publisher.server";
+import {
+  acquireLongFormPostPublishLease,
+  releaseLongFormPostPublishLease,
+  type PublishLease,
+} from "~/infra/publishing/publish-lease.server";
+import { getCorrelationId } from "~/lib/correlation-context.server";
+import { logError, logInfo } from "~/lib/error-logger.server";
+import { generatePublishAttemptId } from "~/lib/idempotency.server";
+import { nowMillis } from "~/lib/temporal";
+import { validateSignedEventCryptographically } from "~/lib/validation/nostr-cryptographic.server";
 import { getLongFormPost } from "~/models/longformpost.server";
 
 import { deriveIsPublishedLongForm } from "../state-machine/longform-post-state";
@@ -16,6 +26,8 @@ export class PublishLongFormNowUseCase {
   private readonly stateMachine = new LongFormPostStateMachine();
 
   async execute(input: PublishLongFormNowInput): Promise<void> {
+    const correlationId = getCorrelationId(input.correlationId);
+
     // Verify post exists and not already published
     const post = await getLongFormPost({
       id: input.postId,
@@ -32,6 +44,10 @@ export class PublishLongFormNowUseCase {
       throw new Error(`Long form post ${input.postId} already published`);
     }
 
+    const validatedSignedEvent = validateSignedEventCryptographically(
+      input.signedEvent
+    );
+
     // Transition to PUBLISHING
     await this.stateMachine.transition(
       input.postId,
@@ -40,20 +56,91 @@ export class PublishLongFormNowUseCase {
       "Publishing longform post immediately"
     );
 
-    // Publish to Nostr (flags will be set by state machine transition)
-    const publisher = getNostrPublisher();
-    await publisher.publish(
-      input.signedEvent,
-      input.relays,
-      input.correlationId
+    // Acquire a DB-backed publish lease. This prevents concurrent publishes and makes retries safe.
+    let lease: PublishLease | null = null;
+    lease = await acquireLongFormPostPublishLease({
+      postId: input.postId,
+      userId: input.userId,
+    });
+    if (!lease) {
+      logInfo(
+        "PublishLongFormNowUseCase: Publish lease held, skipping duplicate publish",
+        {
+          postId: input.postId,
+          userId: input.userId,
+          correlationId,
+        }
+      );
+      return;
+    }
+
+    const publishAttemptId = generatePublishAttemptId(
+      input.postId,
+      validatedSignedEvent.created_at,
+      0
     );
 
-    // Transition to PUBLISHED (this will automatically sync flags including isPublished)
-    await this.stateMachine.transition(
-      input.postId,
-      input.userId,
-      "PUBLISHED",
-      "Successfully published to Nostr"
-    );
+    // Publish to Nostr (flags will be set by state machine transition)
+    const publisher = getNostrPublisher();
+    const publishStartTime = nowMillis();
+    try {
+      await publisher.publish(
+        validatedSignedEvent,
+        input.relays,
+        correlationId
+      );
+
+      // Transition to PUBLISHED and atomically persist publish metadata.
+      await this.stateMachine.transition(
+        input.postId,
+        input.userId,
+        "PUBLISHED",
+        "Successfully published to Nostr",
+        {
+          additionalPostData: {
+            nostrEventId: validatedSignedEvent.id,
+            publishAttemptId,
+            publishedAt: new Date(),
+            postedAt: new Date(),
+            publishingLockId: null,
+            publishingLockExpiresAt: null,
+          },
+        }
+      );
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+
+      try {
+        await this.stateMachine.transition(
+          input.postId,
+          input.userId,
+          "FAILED",
+          `Publish failed: ${err.message}`,
+          {
+            additionalPostData: {
+              publishingLockId: null,
+              publishingLockExpiresAt: null,
+            },
+          }
+        );
+      } catch (transitionError) {
+        // Best-effort release: avoid wedging this post until lease expiry.
+        await releaseLongFormPostPublishLease({
+          postId: input.postId,
+          userId: input.userId,
+          lockId: lease.lockId,
+        });
+        throw transitionError;
+      }
+
+      logError(err, {
+        postId: input.postId,
+        userId: input.userId,
+        correlationId,
+        message: "PublishLongFormNowUseCase: Failed to publish longform post",
+        publishLatencyMs: nowMillis() - publishStartTime,
+      });
+      throw err;
+    }
   }
 }

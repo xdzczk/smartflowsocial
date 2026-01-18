@@ -4,11 +4,15 @@
  * Manages longform post state transitions with database persistence.
  */
 
+import type { Prisma } from "@prisma/client";
+
+import { recordLongFormPostStateTransition } from "~/lib/metrics/business-metrics.server";
 import { prisma } from "~/lib/prisma.server";
 
 import {
   transitionLongFormPost,
   type LongFormPostState,
+  type LongFormPostStateTransition,
 } from "./longform-post-state";
 
 export class LongFormPostStateMachine {
@@ -20,7 +24,14 @@ export class LongFormPostStateMachine {
     postId: string,
     userId: string,
     targetState: LongFormPostState,
-    reason: string
+    reason: string,
+    options?: {
+      /**
+       * Additional LongFormPost fields to update atomically with the state transition.
+       * Used by queue workers to avoid stuck states under crashes/retries.
+       */
+      additionalPostData?: Prisma.LongFormPostUpdateInput;
+    }
   ): Promise<void> {
     const post = await prisma.longFormPost.findUnique({
       where: { id: postId, userId },
@@ -33,32 +44,66 @@ export class LongFormPostStateMachine {
 
     const currentState = (post.currentState || "DRAFT") as LongFormPostState;
 
-    // Skip transition if already in target state (but still record it for history)
+    // Skip transition if already in target state.
+    // If additional fields need updating (e.g. releasing locks), update them and return.
     if (currentState === targetState) {
-      // Still record the transition for audit purposes, even if state doesn't change
-      // Note: LongFormPost doesn't have a state transition table yet
-      // TODO: Add LongFormPostStateTransition table if audit trail is needed
+      if (options?.additionalPostData) {
+        await prisma.longFormPost.update({
+          where: { id: postId, userId },
+          data: options.additionalPostData,
+        });
+      }
       return;
     }
 
-    transitionLongFormPost(currentState, targetState, reason);
+    const transition = transitionLongFormPost(
+      currentState,
+      targetState,
+      reason
+    );
 
     await prisma.$transaction(async (tx) => {
       // Update post state (flags have been removed)
       await tx.longFormPost.update({
-        where: { id: postId },
+        where: { id: postId, userId },
         data: {
           currentState: targetState,
+          ...(options?.additionalPostData ?? {}),
         },
       });
 
-      // TODO: Record transition in LongFormPostStateTransition table if needed
-      // For now, we'll rely on the state field itself for audit
+      // Record transition
+      await tx.longFormPostStateTransition.create({
+        data: {
+          longFormPostId: postId,
+          fromState: transition.from,
+          toState: transition.to,
+          reason: transition.reason,
+        },
+      });
     });
 
     // Record state transition metric
-    // TODO: Re-enable analytics when analytics.server module is available
-    // recordLongFormPostStateTransition(transition.from, transition.to);
+    recordLongFormPostStateTransition(transition.from, transition.to);
+  }
+
+  /**
+   * Get state transition history for a longform post
+   */
+  async getStateHistory(
+    postId: string
+  ): Promise<LongFormPostStateTransition[]> {
+    const transitions = await prisma.longFormPostStateTransition.findMany({
+      where: { longFormPostId: postId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return transitions.map((t) => ({
+      from: t.fromState as LongFormPostState,
+      to: t.toState as LongFormPostState,
+      reason: t.reason,
+      timestamp: t.createdAt,
+    }));
   }
 
   /**

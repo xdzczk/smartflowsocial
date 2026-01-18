@@ -14,9 +14,17 @@ import { LongFormPostStateMachine } from "~/features/posts/state-machine/longfor
 import { PostStateMachine } from "~/features/posts/state-machine/post-state-machine.server";
 import { getUserById } from "~/features/user";
 import { getNostrPublisher } from "~/infra/publishers/nostr-publisher.server";
+import type { PublishLease } from "~/infra/publishing/publish-lease.server";
+import {
+  acquireLongFormPostPublishLease,
+  acquirePostPublishLease,
+  releaseLongFormPostPublishLease,
+  releasePostPublishLease,
+} from "~/infra/publishing/publish-lease.server";
 import { getQueueInstance, redis, closeAllQueues } from "~/infra/queue";
 import type { PostJobData, LongFormPostJobData } from "~/infra/queue";
 import { createDeadLetterEntry } from "~/infra/queue/dead-letter-queue.server";
+import type { QueueType } from "~/infra/queue/queue-types";
 import {
   isRetryableError,
   shouldRetry,
@@ -30,7 +38,18 @@ import {
 } from "~/lib/metrics/business-metrics.server";
 import { recordPublishLatency } from "~/lib/metrics/performance-metrics.server";
 import { prisma } from "~/lib/prisma.server";
-import { recordJobMetrics, updateActiveJobs } from "~/lib/queue-metrics.server";
+import {
+  recordJobMetrics,
+  recordJobSkipped,
+  recordJobStarted,
+  recordJobRetry,
+  updateActiveJobs,
+} from "~/lib/queue-metrics.server";
+import {
+  addBreadcrumb,
+  captureException,
+  withSentrySpan,
+} from "~/lib/sentry.server";
 import { fromPrismaDate, nowMillis, toUnixTimestamp } from "~/lib/temporal";
 import { validateSignedEventCryptographically } from "~/lib/validation/nostr-cryptographic.server";
 import { getCronDueScheduledLongFormPosts } from "~/models/longformpost.server";
@@ -211,10 +230,634 @@ function toSignedEvent(
 
 // Queue name constants
 
-const QUEUE_SCHEDULED_POSTS = "scheduled-posts";
+const QUEUE_SCHEDULED_POSTS: QueueType = "scheduled-posts";
 
-const QUEUE_SCHEDULED_LONGFORM_POSTS = "scheduled-longform-posts";
-const QUEUE_POST_CHECKER = "post-checker";
+const QUEUE_SCHEDULED_LONGFORM_POSTS: QueueType = "scheduled-longform-posts";
+const QUEUE_POST_CHECKER: QueueType = "post-checker";
+
+const SENTRY_QUEUE_PUBLISH_NAME = "queue.publish";
+const SENTRY_QUEUE_PUBLISH_OP = "queue.publish";
+
+interface WorkerSuccessResult {
+  success: true;
+  postId: string;
+  skipped?: boolean;
+}
+
+function sanitizeRelayStrings(relays: unknown): string[] {
+  if (!Array.isArray(relays)) return [];
+  return relays
+    .map((relay) => {
+      const relayStr = typeof relay === "string" ? relay : String(relay);
+      return relayStr.trim();
+    })
+    .filter((r) => r.length > 0);
+}
+
+async function getSanitizedUserRelays(userId: string): Promise<string[]> {
+  const user = await getUserById(userId);
+  if (!user) {
+    throw new Error(`User ${userId} not found`);
+  }
+  const userRelays = (user as unknown as { userRelays?: unknown }).userRelays;
+  return sanitizeRelayStrings(userRelays);
+}
+
+function computeScheduledForUnix(
+  scheduledAtUtc: Date | null | undefined
+): number {
+  if (!scheduledAtUtc) return Math.floor(Date.now() / 1000);
+  const zoned = fromPrismaDate(scheduledAtUtc, "UTC");
+  return zoned ? toUnixTimestamp(zoned) : Math.floor(Date.now() / 1000);
+}
+
+async function publishWithQueueSpan(input: {
+  queueName: QueueType;
+  attributes: Record<string, unknown>;
+  event: SignedEvent;
+  relays: string[];
+  correlationId?: string;
+}): Promise<{ publishLatencyMs: number }> {
+  const publisher = getNostrPublisher();
+  const publishStartTime = nowMillis();
+  await withSentrySpan(
+    {
+      name: SENTRY_QUEUE_PUBLISH_NAME,
+      op: SENTRY_QUEUE_PUBLISH_OP,
+      attributes: input.attributes,
+    },
+    async () =>
+      await publisher.publish(input.event, input.relays, input.correlationId)
+  );
+  return { publishLatencyMs: nowMillis() - publishStartTime };
+}
+
+function computeWillRetry(input: {
+  queueName: QueueType;
+  attemptsMade: number;
+  error: Error;
+}): boolean {
+  const policy = getRetryPolicy(input.queueName);
+  return (
+    shouldRetry(input.attemptsMade, policy) && isRetryableError(input.error)
+  );
+}
+
+async function transitionPostToFailed(input: {
+  stateMachine: PostStateMachine;
+  postId: string;
+  userId: string;
+  errorMessage: string;
+  lockId?: string | null;
+}): Promise<void> {
+  const currentPost = await prisma.post.findUnique({
+    where: { id: input.postId },
+    select: { currentState: true },
+  });
+
+  const currentState = currentPost?.currentState;
+  if (currentState === "SCHEDULED") {
+    await input.stateMachine.transition(
+      input.postId,
+      input.userId,
+      "PUBLISHING",
+      "Job started processing (before error)"
+    );
+  }
+
+  await input.stateMachine.transition(
+    input.postId,
+    input.userId,
+    "FAILED",
+    input.errorMessage,
+    input.lockId
+      ? {
+          additionalPostData: {
+            publishingLockId: null,
+            publishingLockExpiresAt: null,
+          },
+        }
+      : undefined
+  );
+}
+
+async function transitionLongFormPostToFailed(input: {
+  stateMachine: LongFormPostStateMachine;
+  postId: string;
+  userId: string;
+  errorMessage: string;
+  lockId?: string | null;
+}): Promise<void> {
+  const currentPost = await prisma.longFormPost.findUnique({
+    where: { id: input.postId },
+    select: { currentState: true },
+  });
+
+  const currentState = currentPost?.currentState;
+  if (currentState === "SCHEDULED") {
+    await input.stateMachine.transition(
+      input.postId,
+      input.userId,
+      "PUBLISHING",
+      "Job started processing (before error)"
+    );
+  }
+
+  await input.stateMachine.transition(
+    input.postId,
+    input.userId,
+    "FAILED",
+    input.errorMessage,
+    input.lockId
+      ? {
+          additionalPostData: {
+            publishingLockId: null,
+            publishingLockExpiresAt: null,
+          },
+        }
+      : undefined
+  );
+}
+
+async function handleScheduledPostJobError(input: {
+  job: Job<PostJobData>;
+  startTime: number;
+  lease: PublishLease | null;
+  error: unknown;
+}): Promise<void> {
+  const { postId, userId, correlationId } = input.job.data;
+  const queueName = QUEUE_SCHEDULED_POSTS;
+
+  const duration = nowMillis() - input.startTime;
+  const err =
+    input.error instanceof Error ? input.error : new Error(String(input.error));
+  const errorType = err.constructor.name;
+  const attemptsMade = input.job.attemptsMade + 1;
+  const willRetry = computeWillRetry({ queueName, attemptsMade, error: err });
+  const lockId = input.lease?.lockId;
+
+  if (willRetry) {
+    recordJobRetry(queueName);
+  }
+
+  try {
+    const stateMachine = new PostStateMachine();
+    await transitionPostToFailed({
+      stateMachine,
+      postId,
+      userId,
+      errorMessage: `Publish failed: ${err.message}`,
+      lockId,
+    });
+  } catch (stateError) {
+    logError(
+      stateError instanceof Error ? stateError : new Error(String(stateError)),
+      {
+        postId,
+        userId,
+        correlationId,
+        message: "Failed to transition post to FAILED state",
+      }
+    );
+    if (lockId) {
+      await releasePostPublishLease({ postId, userId, lockId });
+    }
+  }
+
+  recordJobMetrics(queueName, duration, false, err);
+
+  if (willRetry && lockId) {
+    await releasePostPublishLease({ postId, userId, lockId });
+  }
+
+  const post = await prisma.post.findUnique({
+    where: { id: postId },
+    select: { postType: true },
+  });
+  if (post) {
+    recordPostPublishFailed(post.postType, "scheduled", errorType);
+  }
+
+  if (!willRetry) {
+    await createDeadLetterEntry(
+      queueName,
+      input.job.id ?? "unknown",
+      "publish-post",
+      input.job.data,
+      err,
+      attemptsMade,
+      correlationId
+    );
+  }
+
+  logError(err, {
+    userId,
+    postId,
+    message: "Error processing scheduled post",
+    correlationId,
+    attemptsMade,
+    willRetry,
+  });
+
+  captureException(err, {
+    tags: { queue: queueName, job: "scheduled-post" },
+    extra: {
+      postId,
+      userId,
+      correlationId,
+      jobId: input.job.id ?? "unknown",
+      attempt: input.job.attemptsMade,
+      attemptsMade,
+      willRetry,
+      errorType,
+    },
+    level: willRetry ? "warning" : "error",
+  });
+}
+
+async function handleScheduledLongFormPostJobError(input: {
+  job: Job<LongFormPostJobData>;
+  startTime: number;
+  lease: PublishLease | null;
+  error: unknown;
+}): Promise<void> {
+  const { postId, userId, correlationId } = input.job.data;
+  const queueName = QUEUE_SCHEDULED_LONGFORM_POSTS;
+
+  const duration = nowMillis() - input.startTime;
+  const err =
+    input.error instanceof Error ? input.error : new Error(String(input.error));
+  const attemptsMade = input.job.attemptsMade + 1;
+  const willRetry = computeWillRetry({ queueName, attemptsMade, error: err });
+  const lockId = input.lease?.lockId;
+
+  if (willRetry) {
+    recordJobRetry(queueName);
+  }
+
+  recordJobMetrics(queueName, duration, false, err);
+
+  if (willRetry && lockId) {
+    await releaseLongFormPostPublishLease({ postId, userId, lockId });
+  }
+
+  if (!willRetry) {
+    await createDeadLetterEntry(
+      queueName,
+      input.job.id ?? "unknown",
+      "publish-longform-post",
+      input.job.data,
+      err,
+      attemptsMade,
+      correlationId
+    );
+  }
+
+  if (!willRetry) {
+    try {
+      const stateMachine = new LongFormPostStateMachine();
+      await transitionLongFormPostToFailed({
+        stateMachine,
+        postId,
+        userId,
+        errorMessage: `Publish failed: ${err.message}`,
+        lockId,
+      });
+    } catch (stateError) {
+      logError(
+        stateError instanceof Error
+          ? stateError
+          : new Error(String(stateError)),
+        {
+          postId,
+          userId,
+          correlationId,
+          message: "Failed to transition to FAILED state",
+        }
+      );
+      if (lockId) {
+        await releaseLongFormPostPublishLease({ postId, userId, lockId });
+      }
+    }
+  }
+
+  logError(err, {
+    userId,
+    postId,
+    message: "Error processing scheduled longform post",
+    correlationId,
+    attemptsMade,
+    willRetry,
+  });
+
+  captureException(err, {
+    tags: { queue: queueName, job: "scheduled-longform" },
+    extra: {
+      postId,
+      userId,
+      correlationId,
+      jobId: input.job.id ?? "unknown",
+      attempt: input.job.attemptsMade,
+      attemptsMade,
+      willRetry,
+    },
+    level: willRetry ? "warning" : "error",
+  });
+}
+
+async function runScheduledPostJob(input: {
+  job: Job<PostJobData>;
+  startTime: number;
+  ctx: { lease: PublishLease | null };
+}): Promise<WorkerSuccessResult> {
+  const job = input.job;
+  const { postId, userId, signedEvent, correlationId } = job.data;
+  const queueName = QUEUE_SCHEDULED_POSTS;
+  const stateMachine = new PostStateMachine();
+
+  // Idempotency check: verify post exists and get scheduled time
+  const existingPost = await prisma.post.findUnique({
+    where: { id: postId, userId },
+    select: {
+      scheduledAtUtc: true,
+      currentState: true,
+    },
+  });
+
+  if (!existingPost) {
+    throw new Error(`Post ${postId} not found for user ${userId}`);
+  }
+
+  const isAlreadyPosted = existingPost.currentState === "PUBLISHED";
+  if (isAlreadyPosted) {
+    logInfo("Post already posted, skipping duplicate job", {
+      postId,
+      userId,
+      correlationId,
+    });
+    recordJobSkipped(queueName, "already_published");
+    addBreadcrumb({
+      message: "scheduled_post_job_skipped_already_published",
+      category: "worker",
+      level: "info",
+      data: { queue: queueName, postId, userId, correlationId },
+    });
+    return { success: true, postId, skipped: true };
+  }
+
+  const scheduledForUnix = computeScheduledForUnix(existingPost.scheduledAtUtc);
+  const publishAttemptId = generatePublishAttemptId(
+    postId,
+    scheduledForUnix,
+    job.attemptsMade
+  );
+
+  // Acquire a DB-backed publish lease.
+  const lease = await acquirePostPublishLease({ postId, userId });
+  input.ctx.lease = lease;
+  if (!lease) {
+    logInfo("Publish lease held by another worker, skipping duplicate job", {
+      postId,
+      userId,
+      publishAttemptId,
+      correlationId,
+    });
+    recordJobSkipped(queueName, "publish_lease_held");
+    addBreadcrumb({
+      message: "scheduled_post_job_skipped_lease_held",
+      category: "worker",
+      level: "info",
+      data: {
+        queue: queueName,
+        postId,
+        userId,
+        correlationId,
+        publishAttemptId,
+      },
+    });
+    return { success: true, postId, skipped: true };
+  }
+
+  // Transition to PUBLISHING
+  await stateMachine.transition(
+    postId,
+    userId,
+    "PUBLISHING",
+    "Job started processing"
+  );
+
+  const validatedSignedEvent =
+    validateSignedEventCryptographically(signedEvent);
+  const sanitizedRelays = await getSanitizedUserRelays(userId);
+
+  const { publishLatencyMs } = await publishWithQueueSpan({
+    queueName,
+    attributes: {
+      queue: queueName,
+      postId,
+      userId,
+      correlationId,
+      relayCount: sanitizedRelays.length,
+      attempt: job.attemptsMade,
+    },
+    event: validatedSignedEvent,
+    relays: sanitizedRelays,
+    correlationId,
+  });
+
+  try {
+    await stateMachine.transition(
+      postId,
+      userId,
+      "PUBLISHED",
+      "Successfully published to Nostr",
+      {
+        additionalPostData: {
+          nostrEventId: validatedSignedEvent.id,
+          publishAttemptId,
+          postedAt: new Date(),
+          publishingLockId: null,
+          publishingLockExpiresAt: null,
+        },
+      }
+    );
+  } catch (transitionError) {
+    await releasePostPublishLease({
+      postId,
+      userId,
+      lockId: lease.lockId,
+    });
+    throw transitionError;
+  }
+
+  const duration = nowMillis() - input.startTime;
+  recordJobMetrics(queueName, duration, true);
+
+  const post = await prisma.post.findUnique({
+    where: { id: postId },
+    select: { postType: true },
+  });
+  if (post) {
+    recordPostPublished(post.postType, "scheduled");
+    recordPublishLatency(post.postType, "scheduled", publishLatencyMs);
+  }
+
+  logInfo("Post published successfully from queue", {
+    postId,
+    userId,
+    correlationId,
+  });
+  addBreadcrumb({
+    message: "scheduled_post_job_succeeded",
+    category: "worker",
+    level: "info",
+    data: { queue: queueName, postId, userId, correlationId },
+  });
+
+  return { success: true, postId };
+}
+
+async function runScheduledLongFormPostJob(input: {
+  job: Job<LongFormPostJobData>;
+  startTime: number;
+  ctx: { lease: PublishLease | null };
+}): Promise<WorkerSuccessResult> {
+  const job = input.job;
+  const { postId, userId, signedEvent, correlationId } = job.data;
+  const queueName = QUEUE_SCHEDULED_LONGFORM_POSTS;
+  const stateMachine = new LongFormPostStateMachine();
+
+  const existingPost = await prisma.longFormPost.findUnique({
+    where: { id: postId, userId },
+    select: {
+      scheduledAtUtc: true,
+      currentState: true,
+    },
+  });
+
+  if (!existingPost) {
+    throw new Error(`Longform post ${postId} not found for user ${userId}`);
+  }
+
+  const isAlreadyPublished = existingPost.currentState === "PUBLISHED";
+  if (isAlreadyPublished) {
+    logInfo("Longform post already published, skipping duplicate job", {
+      postId,
+      userId,
+      correlationId,
+    });
+    recordJobSkipped(queueName, "already_published");
+    addBreadcrumb({
+      message: "scheduled_longform_job_skipped_already_published",
+      category: "worker",
+      level: "info",
+      data: { queue: queueName, postId, userId, correlationId },
+    });
+    return { success: true, postId, skipped: true };
+  }
+
+  const validatedSignedEvent =
+    validateSignedEventCryptographically(signedEvent);
+  const scheduledForUnix = computeScheduledForUnix(existingPost.scheduledAtUtc);
+  const publishAttemptId = generatePublishAttemptId(
+    postId,
+    scheduledForUnix,
+    job.attemptsMade
+  );
+
+  const lease = await acquireLongFormPostPublishLease({ postId, userId });
+  input.ctx.lease = lease;
+  if (!lease) {
+    logInfo(
+      "Publish lease held by another worker, skipping duplicate longform job",
+      {
+        postId,
+        userId,
+        publishAttemptId,
+        correlationId,
+      }
+    );
+    recordJobSkipped(queueName, "publish_lease_held");
+    addBreadcrumb({
+      message: "scheduled_longform_job_skipped_lease_held",
+      category: "worker",
+      level: "info",
+      data: {
+        queue: queueName,
+        postId,
+        userId,
+        correlationId,
+        publishAttemptId,
+      },
+    });
+    return { success: true, postId, skipped: true };
+  }
+
+  await stateMachine.transition(
+    postId,
+    userId,
+    "PUBLISHING",
+    "Publishing longform post from queue"
+  );
+
+  const sanitizedRelays = await getSanitizedUserRelays(userId);
+
+  await publishWithQueueSpan({
+    queueName,
+    attributes: {
+      queue: queueName,
+      longFormPostId: postId,
+      userId,
+      correlationId,
+      relayCount: sanitizedRelays.length,
+      attempt: job.attemptsMade,
+    },
+    event: validatedSignedEvent,
+    relays: sanitizedRelays,
+    correlationId,
+  });
+
+  try {
+    await stateMachine.transition(
+      postId,
+      userId,
+      "PUBLISHED",
+      "Successfully published to Nostr",
+      {
+        additionalPostData: {
+          nostrEventId: validatedSignedEvent.id,
+          publishAttemptId,
+          publishedAt: new Date(),
+          postedAt: new Date(),
+          publishingLockId: null,
+          publishingLockExpiresAt: null,
+        },
+      }
+    );
+  } catch (transitionError) {
+    await releaseLongFormPostPublishLease({
+      postId,
+      userId,
+      lockId: lease.lockId,
+    });
+    throw transitionError;
+  }
+
+  recordJobMetrics(queueName, nowMillis() - input.startTime, true);
+  logInfo("Longform post published successfully from queue", {
+    postId,
+    userId,
+    correlationId,
+  });
+  addBreadcrumb({
+    message: "scheduled_longform_job_succeeded",
+    category: "worker",
+    level: "info",
+    data: { queue: queueName, postId, userId, correlationId },
+  });
+
+  return { success: true, postId };
+}
 
 // Get queue instances using the abstraction
 const _scheduledPostsQueue = getQueueInstance(QUEUE_SCHEDULED_POSTS);
@@ -227,236 +870,38 @@ const postCheckerQueue = getQueueInstance(QUEUE_POST_CHECKER);
 export const scheduledPostsWorker = new Worker<PostJobData>(
   QUEUE_SCHEDULED_POSTS,
   async (job: Job<PostJobData>) => {
-    const { postId, userId, signedEvent, correlationId } = job.data;
     const startTime = nowMillis();
     const queueName = QUEUE_SCHEDULED_POSTS;
-    const stateMachine = new PostStateMachine();
+    const ctx: { lease: PublishLease | null } = { lease: null };
+    const { postId, userId, correlationId } = job.data;
 
     try {
       updateActiveJobs(queueName, 1);
-      // Idempotency check: verify post exists and get scheduled time
-      const existingPost = await prisma.post.findUnique({
-        where: { id: postId, userId },
-        select: {
-          nostrEventId: true,
-          scheduledAtUtc: true,
-          scheduledFor: true,
-          publishAttemptId: true,
-          currentState: true, // Include state for state-based checks
-        },
-      });
-
-      if (!existingPost) {
-        throw new Error(`Post ${postId} not found for user ${userId}`);
-      }
-
-      // If already posted, skip processing (idempotency)
-      // Use currentState as single source of truth
-      const isAlreadyPosted = existingPost.currentState === "PUBLISHED";
-      if (isAlreadyPosted) {
-        logInfo("Post already posted, skipping duplicate job", {
-          postId,
-          userId,
-          correlationId,
-        });
-        return { success: true, postId, skipped: true };
-      }
-
-      // Generate publish attempt ID (first-class idempotency for publish attempts)
-      const scheduledForUnix = existingPost.scheduledAtUtc
-        ? (() => {
-            const zoned = fromPrismaDate(existingPost.scheduledAtUtc, "UTC");
-            return zoned
-              ? toUnixTimestamp(zoned)
-              : Math.floor(Date.now() / 1000);
-          })()
-        : existingPost.scheduledFor
-          ? parseInt(existingPost.scheduledFor, 10)
-          : Math.floor(Date.now() / 1000);
-
-      const attemptNumber = job.attemptsMade;
-      const publishAttemptId = generatePublishAttemptId(
-        postId,
-        scheduledForUnix,
-        attemptNumber
-      );
-
-      // Check if this publish attempt already succeeded (idempotency check)
-      // This prevents duplicate publishes if worker crashes mid-publish and job retries
-      if (existingPost.publishAttemptId === publishAttemptId) {
-        logInfo("Publish attempt already processed, skipping duplicate", {
-          postId,
-          userId,
-          publishAttemptId,
-          correlationId,
-        });
-        return { success: true, postId, skipped: true };
-      }
-
-      // Transition to PUBLISHING
-      await stateMachine.transition(
-        postId,
-        userId,
-        "PUBLISHING",
-        "Job started processing"
-      );
-
-      // Cryptographically validate the signed event before publishing
-      // This ensures the event signature and ID are valid
-      const validatedSignedEvent =
-        validateSignedEventCryptographically(signedEvent);
-
-      // Get user relays
-      const user = await getUserById(userId);
-      if (!user) {
-        throw new Error(`User ${userId} not found`);
-      }
-      const userRelays =
-        typeof user === "object" && "userRelays" in user
-          ? user.userRelays
-          : null;
-      const relaysArray = Array.isArray(userRelays) ? userRelays : [];
-      const sanitizedRelays = relaysArray.map((relay: unknown) => {
-        const relayStr = typeof relay === "string" ? relay : String(relay);
-        return relayStr.trim();
-      });
-
-      // Publish to Nostr using publisher service (with health-aware routing)
-      const publishStartTime = nowMillis();
-      const publisher = getNostrPublisher();
-      await publisher.publish(
-        validatedSignedEvent,
-        sanitizedRelays,
-        correlationId
-      );
-      const publishLatency = nowMillis() - publishStartTime;
-
-      // Store publish attempt ID and postedAt (flags will be set by state machine)
-      // This ensures idempotency: if worker crashes after this, retry will see publishAttemptId and skip
-      await prisma.post.update({
-        where: { id: postId, userId },
+      recordJobStarted(queueName);
+      addBreadcrumb({
+        message: "scheduled_post_job_started",
+        category: "worker",
+        level: "info",
         data: {
-          publishAttemptId,
-          postedAt: new Date(),
-          // @deprecated - isPosted flag removed. State machine will set it via transition.
-        },
-      });
-
-      // Transition to PUBLISHED (this will automatically sync flags including isPosted)
-      await stateMachine.transition(
-        postId,
-        userId,
-        "PUBLISHED",
-        "Successfully published to Nostr"
-      );
-
-      const duration = nowMillis() - startTime;
-      recordJobMetrics(queueName, duration, true);
-      updateActiveJobs(queueName, -1);
-
-      // Record business metrics
-      const post = await prisma.post.findUnique({
-        where: { id: postId },
-        select: { postType: true },
-      });
-      if (post) {
-        recordPostPublished(post.postType, "scheduled");
-        recordPublishLatency(post.postType, "scheduled", publishLatency);
-      }
-
-      logInfo("Post published successfully from queue", {
-        postId,
-        userId,
-        correlationId,
-      });
-      return { success: true, postId };
-    } catch (error) {
-      const duration = nowMillis() - startTime;
-      const err = error instanceof Error ? error : new Error(String(error));
-      const errorType = err.constructor.name;
-      const attemptsMade = job.attemptsMade + 1;
-      const policy = getRetryPolicy(queueName);
-
-      // Check if we should retry
-      const willRetry =
-        shouldRetry(attemptsMade, policy) && isRetryableError(err);
-
-      // Transition to FAILED
-      // If post is still in SCHEDULED (error occurred before PUBLISHING transition),
-      // we need to transition through PUBLISHING first
-      try {
-        // Get current state to determine transition path
-        const currentPost = await prisma.post.findUnique({
-          where: { id: postId },
-          select: { currentState: true },
-        });
-
-        const currentState = currentPost?.currentState;
-        if (currentState === "SCHEDULED") {
-          // Transition to PUBLISHING first, then to FAILED
-          await stateMachine.transition(
-            postId,
-            userId,
-            "PUBLISHING",
-            "Job started processing (before error)"
-          );
-        }
-        // Now transition to FAILED (from either SCHEDULED->PUBLISHING or directly from PUBLISHING)
-        await stateMachine.transition(
+          queue: queueName,
           postId,
           userId,
-          "FAILED",
-          `Publish failed: ${err.message}`
-        );
-      } catch (stateError) {
-        // Log but don't fail the job if state transition fails
-        logError(
-          stateError instanceof Error
-            ? stateError
-            : new Error(String(stateError)),
-          {
-            postId,
-            userId,
-            correlationId,
-            message: "Failed to transition post to FAILED state",
-          }
-        );
-      }
-
-      recordJobMetrics(queueName, duration, false, err);
-      updateActiveJobs(queueName, -1);
-
-      // Record business metrics
-      const post = await prisma.post.findUnique({
-        where: { id: postId },
-        select: { postType: true },
+          correlationId,
+          jobId: job.id ?? "unknown",
+          attempt: job.attemptsMade,
+        },
       });
-      if (post) {
-        recordPostPublishFailed(post.postType, "scheduled", errorType);
-      }
-
-      // If we've exhausted retries or error is not retryable, move to dead letter queue
-      if (!willRetry) {
-        await createDeadLetterEntry(
-          queueName,
-          job.id ?? "unknown",
-          "publish-post",
-          job.data,
-          err,
-          attemptsMade,
-          correlationId
-        );
-      }
-
-      logError(err, {
-        userId,
-        postId,
-        message: "Error processing scheduled post",
-        correlationId,
-        attemptsMade,
-        willRetry,
+      return await runScheduledPostJob({ job, startTime, ctx });
+    } catch (error) {
+      await handleScheduledPostJobError({
+        job,
+        startTime,
+        lease: ctx.lease,
+        error,
       });
       throw error;
+    } finally {
+      updateActiveJobs(queueName, -1);
     }
   },
   {
@@ -471,166 +916,38 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
 export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
   QUEUE_SCHEDULED_LONGFORM_POSTS,
   async (job: Job<LongFormPostJobData>) => {
-    const { postId, userId, signedEvent, correlationId } = job.data;
     const startTime = nowMillis();
     const queueName = QUEUE_SCHEDULED_LONGFORM_POSTS;
+    const ctx: { lease: PublishLease | null } = { lease: null };
+    const { postId, userId, correlationId } = job.data;
 
     try {
       updateActiveJobs(queueName, 1);
-      // Idempotency check: verify post exists and is not already published
-      const existingPost = await prisma.longFormPost.findUnique({
-        where: { id: postId, userId },
-        select: { nostrEventId: true, currentState: true },
-      });
-
-      if (!existingPost) {
-        throw new Error(`Longform post ${postId} not found for user ${userId}`);
-      }
-
-      // If already published, skip processing (idempotency)
-      // Use currentState as single source of truth
-      const isAlreadyPublished = existingPost.currentState === "PUBLISHED";
-      if (isAlreadyPublished) {
-        logInfo("Longform post already published, skipping duplicate job", {
+      recordJobStarted(queueName);
+      addBreadcrumb({
+        message: "scheduled_longform_job_started",
+        category: "worker",
+        level: "info",
+        data: {
+          queue: queueName,
           postId,
           userId,
           correlationId,
-        });
-        return { success: true, postId, skipped: true };
-      }
-
-      // Cryptographically validate the signed event before publishing
-      // This ensures the event signature and ID are valid
-      const validatedSignedEvent =
-        validateSignedEventCryptographically(signedEvent);
-
-      // Transition to PUBLISHING state
-      const stateMachine = new LongFormPostStateMachine();
-      await stateMachine.transition(
-        postId,
-        userId,
-        "PUBLISHING",
-        "Publishing longform post from queue"
-      );
-
-      // Get user relays
-      const user = await getUserById(userId);
-      if (!user) {
-        throw new Error(`User ${userId} not found`);
-      }
-      const userRelays =
-        typeof user === "object" && "userRelays" in user
-          ? user.userRelays
-          : null;
-      const relaysArray = Array.isArray(userRelays) ? userRelays : [];
-      const sanitizedRelays = relaysArray.map((relay: unknown) => {
-        const relayStr = typeof relay === "string" ? relay : String(relay);
-        return relayStr.trim();
+          jobId: job.id ?? "unknown",
+          attempt: job.attemptsMade,
+        },
       });
-
-      // Publish to Nostr using publisher service (with health-aware routing)
-      const publisher = getNostrPublisher();
-      await publisher.publish(
-        validatedSignedEvent,
-        sanitizedRelays,
-        correlationId
-      );
-
-      // Transition to PUBLISHED state (this will automatically sync flags including isPublished)
-      await stateMachine.transition(
-        postId,
-        userId,
-        "PUBLISHED",
-        "Successfully published to Nostr"
-      );
-
-      const duration = nowMillis() - startTime;
-      recordJobMetrics(queueName, duration, true);
-      updateActiveJobs(queueName, -1);
-      logInfo("Longform post published successfully from queue", {
-        postId,
-        userId,
-        correlationId,
-      });
-      return { success: true, postId };
+      return await runScheduledLongFormPostJob({ job, startTime, ctx });
     } catch (error) {
-      const duration = nowMillis() - startTime;
-      const err = error instanceof Error ? error : new Error(String(error));
-      const attemptsMade = job.attemptsMade + 1;
-      const policy = getRetryPolicy(queueName);
-
-      // Check if we should retry
-      const willRetry =
-        shouldRetry(attemptsMade, policy) && isRetryableError(err);
-
-      recordJobMetrics(queueName, duration, false, err);
-      updateActiveJobs(queueName, -1);
-
-      // If we've exhausted retries or error is not retryable, move to dead letter queue
-      if (!willRetry) {
-        await createDeadLetterEntry(
-          queueName,
-          job.id ?? "unknown",
-          "publish-longform-post",
-          job.data,
-          err,
-          attemptsMade,
-          correlationId
-        );
-      }
-
-      // Transition to FAILED state if not retrying
-      if (!willRetry) {
-        try {
-          const stateMachine = new LongFormPostStateMachine();
-          // Get current state to determine transition path
-          const currentPost = await prisma.longFormPost.findUnique({
-            where: { id: postId },
-            select: { currentState: true },
-          });
-
-          const currentState = currentPost?.currentState;
-          if (currentState === "SCHEDULED") {
-            // Transition to PUBLISHING first, then to FAILED
-            await stateMachine.transition(
-              postId,
-              userId,
-              "PUBLISHING",
-              "Job started processing (before error)"
-            );
-          }
-          // Now transition to FAILED (from either SCHEDULED->PUBLISHING or directly from PUBLISHING)
-          await stateMachine.transition(
-            postId,
-            userId,
-            "FAILED",
-            `Publish failed: ${err.message}`
-          );
-        } catch (stateError) {
-          // Log but don't throw - state transition failure shouldn't block error handling
-          logError(
-            stateError instanceof Error
-              ? stateError
-              : new Error(String(stateError)),
-            {
-              postId,
-              userId,
-              correlationId,
-              message: "Failed to transition to FAILED state",
-            }
-          );
-        }
-      }
-
-      logError(err, {
-        userId,
-        postId,
-        message: "Error processing scheduled longform post",
-        correlationId,
-        attemptsMade,
-        willRetry,
+      await handleScheduledLongFormPostJobError({
+        job,
+        startTime,
+        lease: ctx.lease,
+        error,
       });
       throw error;
+    } finally {
+      updateActiveJobs(queueName, -1);
     }
   },
   {
@@ -645,6 +962,10 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
 export const postCheckerWorker = new Worker(
   QUEUE_POST_CHECKER,
   async () => {
+    const startTime = nowMillis();
+    const queueName = QUEUE_POST_CHECKER;
+    updateActiveJobs(queueName, 1);
+    recordJobStarted(queueName);
     try {
       const [posts, longformPosts] = await Promise.all([
         getCronDueScheduledPosts(),
@@ -676,12 +997,19 @@ export const postCheckerWorker = new Worker(
         }
       }
 
+      const duration = nowMillis() - startTime;
+      recordJobMetrics(queueName, duration, true);
       return { processed };
     } catch (error) {
+      const duration = nowMillis() - startTime;
+      const err = error instanceof Error ? error : new Error(String(error));
+      recordJobMetrics(queueName, duration, false, err);
       logError(error instanceof Error ? error : new Error(String(error)), {
         message: "Error checking scheduled posts",
       });
       throw error;
+    } finally {
+      updateActiveJobs(queueName, -1);
     }
   },
   {

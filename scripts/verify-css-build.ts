@@ -7,10 +7,17 @@
 import fs from "node:fs";
 import path from "node:path";
 
+// Script logger (avoids console.*)
+
+const { log, error } = require("./logger") as {
+  log: (..._args: unknown[]) => void;
+  error: (..._args: unknown[]) => void;
+};
+
 const buildAssetsDir = path.join(process.cwd(), "public", "build", "_assets");
 
 if (!fs.existsSync(buildAssetsDir)) {
-  console.error("ERROR: Build assets directory not found:", buildAssetsDir);
+  error("ERROR: Build assets directory not found:", buildAssetsDir);
   process.exit(1);
 }
 
@@ -19,7 +26,7 @@ const cssFiles = fs
   .filter((f): f is string => typeof f === "string" && f.endsWith(".css"));
 
 if (cssFiles.length === 0) {
-  console.error("ERROR: No CSS files found in build output");
+  error("ERROR: No CSS files found in build output");
   process.exit(1);
 }
 
@@ -46,42 +53,38 @@ for (const cssFile of cssFiles) {
 
   const allPassed = Object.values(checks).every((v) => v) && sizeCheck;
 
-  console.log(`CSS file: ${cssFile}`);
-  console.log(
-    `  Size: ${stats.size} bytes (${(stats.size / 1024).toFixed(1)} KB)`
-  );
-  console.log(
+  log(`CSS file: ${cssFile}`);
+  log(`  Size: ${stats.size} bytes (${(stats.size / 1024).toFixed(1)} KB)`);
+  log(
     `  Minimum size check: ${sizeCheck ? "✅ PASS" : "❌ FAIL"} (need at least ${minSize} bytes)`
   );
-  console.log(`  Utility classes check:`, checks);
-  console.log(`  Status: ${allPassed ? "✅ PASS" : "❌ FAIL"}`);
+  log(`  Utility classes check:`, checks);
+  log(`  Status: ${allPassed ? "✅ PASS" : "❌ FAIL"}`);
 
   if (!sizeCheck) {
     hasErrors = true;
-    console.error(`  ERROR: CSS file is too small (${stats.size} bytes)!`);
-    console.error(
+    error(`  ERROR: CSS file is too small (${stats.size} bytes)!`);
+    error(
       `  Expected at least ${minSize} bytes for a complete Tailwind CSS file.`
     );
-    console.error(
-      `  This indicates utility classes were not generated during build.`
-    );
+    error(`  This indicates utility classes were not generated during build.`);
   }
 
   if (!allPassed && sizeCheck) {
     hasErrors = true;
-    console.error(`  ERROR: CSS file missing required utility classes!`);
-    console.error(
+    error(`  ERROR: CSS file missing required utility classes!`);
+    error(
       `  This usually means Tailwind didn't scan files correctly during build.`
     );
   }
 }
 
 if (hasErrors) {
-  console.error("\n❌ Build verification failed!");
-  console.error("The CSS file is missing utility classes.");
-  console.error("This will cause pages to appear unstyled in production.");
+  error("\n❌ Build verification failed!");
+  error("The CSS file is missing utility classes.");
+  error("This will cause pages to appear unstyled in production.");
   process.exit(1);
 }
 
-console.log("\n✅ Build verification passed!");
-console.log("CSS file contains all required utility classes.");
+log("\n✅ Build verification passed!");
+log("CSS file contains all required utility classes.");

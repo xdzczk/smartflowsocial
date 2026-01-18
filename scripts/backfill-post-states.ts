@@ -18,72 +18,71 @@ import {
   validateAllPostStates,
 } from "~/features/posts/state-machine/post-state-validator.server";
 
+// Script logger (avoids console.*)
+
+const { log, error: logError } = require("./logger") as {
+  log: (..._args: unknown[]) => void;
+  error: (..._args: unknown[]) => void;
+};
+
 async function main() {
   const args = process.argv.slice(2);
   const fixInconsistencies = args.includes("--fix-inconsistencies");
   const validateOnly = args.includes("--validate-only");
 
   if (validateOnly) {
-    console.log("Validating post state consistency...");
+    log("Validating post state consistency...");
     const inconsistencies = await validateAllPostStates(10000);
 
     if (inconsistencies.length === 0) {
-      console.log("✅ All posts have consistent state and flags!");
+      log("✅ All posts have consistent state and flags!");
       return;
     }
 
-    console.log(
-      `\n⚠️  Found ${inconsistencies.length} posts with inconsistencies:\n`
-    );
+    log(`\n⚠️  Found ${inconsistencies.length} posts with inconsistencies:\n`);
 
     for (const inconsistency of inconsistencies.slice(0, 10)) {
-      console.log(`Post ${inconsistency.postId}:`);
+      log(`Post ${inconsistency.postId}:`);
       for (const issue of inconsistency.inconsistencies) {
-        console.log(`  - ${issue}`);
+        log(`  - ${issue}`);
       }
     }
 
     if (inconsistencies.length > 10) {
-      console.log(`\n... and ${inconsistencies.length - 10} more`);
+      log(`\n... and ${inconsistencies.length - 10} more`);
     }
 
     if (fixInconsistencies) {
-      console.log("\nFixing inconsistencies...");
+      log("\nFixing inconsistencies...");
       const result = await fixPostStateInconsistencies(inconsistencies);
-      console.log(`✅ Fixed ${result.fixed} posts, ${result.errors} errors`);
+      log(`✅ Fixed ${result.fixed} posts, ${result.errors} errors`);
     } else {
-      console.log(
-        "\n💡 Run with --fix-inconsistencies to automatically fix these"
-      );
+      log("\n💡 Run with --fix-inconsistencies to automatically fix these");
     }
     return;
   }
 
-  console.log("Backfilling currentState for posts without state...");
+  log("Backfilling currentState for posts without state...");
   const result = await backfillCurrentState(10000);
 
-  console.log(
-    `✅ Backfilled ${result.backfilled} posts, ${result.errors} errors`
-  );
+  log(`✅ Backfilled ${result.backfilled} posts, ${result.errors} errors`);
 
   if (result.backfilled > 0) {
-    console.log("\nValidating consistency after backfill...");
+    log("\nValidating consistency after backfill...");
     const inconsistencies = await validateAllPostStates(10000);
 
     if (inconsistencies.length === 0) {
-      console.log("✅ All posts now have consistent state and flags!");
+      log("✅ All posts now have consistent state and flags!");
     } else {
-      console.log(
+      log(
         `⚠️  Found ${inconsistencies.length} posts with remaining inconsistencies`
       );
-      console.log(
-        "💡 Run with --validate-only --fix-inconsistencies to fix them"
-      );
+      log("💡 Run with --validate-only --fix-inconsistencies to fix them");
     }
   }
 }
 
-main().catch((error) => {
-  console.error("Error:", error);
+main().catch((err) => {
+  logError("Error:", err);
   process.exit(1);
 });

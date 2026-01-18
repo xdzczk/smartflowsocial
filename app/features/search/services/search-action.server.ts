@@ -7,6 +7,7 @@ import { nip19 } from "nostr-tools";
 
 import { connectToPrimalCache } from "~/features/cache/primalCache.server";
 import type { NostrEvent } from "~/features/nostr/types";
+import { logError } from "~/lib/error-logger.server";
 /**
  * Extended NostrEvent with pubkey and id (from Primal cache)
  */
@@ -96,7 +97,10 @@ async function fetchAuthorInfo(pubkey: string): Promise<{
       authorImage = metadata.picture ?? null;
     }
   } catch (error) {
-    console.error("[Search] Error fetching author info:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "[Search] Error fetching author info",
+      pubkey,
+    });
   }
 
   return { name: authorName, image: authorImage };

@@ -3,6 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import { Pool } from "pg";
 
 import { env } from "./env.server";
+import { logError, logWarning } from "./error-logger.server";
 import { recordQueryMetrics } from "./query-metrics.server";
 import { singleton } from "./singleton.server";
 // Hard-code a unique key, so we can look up the client when this module gets re-imported
@@ -85,15 +86,12 @@ function getPrismaClient() {
 
             // Log slow queries (over 100ms)
             if (duration > 100) {
-              console.warn(
-                `⚠️ Slow query detected: ${model}.${operation} took ${duration}ms`,
-                {
-                  model,
-                  operation,
-                  duration,
-                  args,
-                }
-              );
+              logWarning("Slow query detected", {
+                model,
+                operation,
+                durationMs: duration,
+                args,
+              });
             }
 
             return result;
@@ -108,15 +106,12 @@ function getPrismaClient() {
 
             // Log query errors
 
-            console.error(
-              `❌ Query error: ${model}.${operation} failed after ${duration}ms`,
-              {
-                model,
-                operation,
-                error: error.message,
-                duration,
-              }
-            );
+            logError(error, {
+              message: "Query error",
+              model,
+              operation,
+              durationMs: duration,
+            });
 
             throw err;
           }

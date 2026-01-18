@@ -1,5 +1,7 @@
 import imageCompression from "browser-image-compression";
 
+import { logClientError } from "~/lib/error-handler.client";
+
 const IMAGE_JPEG_MIME_TYPE = "image/jpeg";
 
 /**
@@ -48,7 +50,13 @@ export async function resizeImage(
       lastModified: new Date().getTime(), // Update last modified time
     });
   } catch (error) {
-    console.error("Error processing image:", error);
+    logClientError(error instanceof Error ? error : new Error(String(error)), {
+      component: "resizeImage",
+      action: "process",
+      fileName: file.name,
+      fileType: file.type,
+      fileSize: file.size,
+    });
     throw error;
   }
 }

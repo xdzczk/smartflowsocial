@@ -19,73 +19,72 @@ import {
 } from "~/features/posts/state-machine/longform-post-state-validator.server";
 import { logInfo } from "~/lib/error-logger.server";
 
+// Script logger (avoids console.*)
+
+const { log, error: logError } = require("./logger") as {
+  log: (..._args: unknown[]) => void;
+  error: (..._args: unknown[]) => void;
+};
+
 async function main() {
   const args = process.argv.slice(2);
   const fixInconsistencies = args.includes("--fix-inconsistencies");
   const validateOnly = args.includes("--validate-only");
 
   if (validateOnly) {
-    console.log("Validating longform post state consistency...");
+    log("Validating longform post state consistency...");
     const inconsistencies = await validateAllLongFormPostStates(10000);
 
     if (inconsistencies.length === 0) {
-      console.log("✅ All longform posts have consistent state and flags!");
+      log("✅ All longform posts have consistent state and flags!");
       return;
     }
 
-    console.log(
+    log(
       `\n⚠️  Found ${inconsistencies.length} longform posts with inconsistencies:\n`
     );
 
     for (const inconsistency of inconsistencies.slice(0, 10)) {
-      console.log(`LongFormPost ${inconsistency.postId}:`);
-      console.log(`  Current State: ${inconsistency.currentState ?? "null"}`);
-      console.log(
+      log(`LongFormPost ${inconsistency.postId}:`);
+      log(`  Current State: ${inconsistency.currentState ?? "null"}`);
+      log(
         `  Flags: isPublished=${inconsistency.isPublished}, isScheduled=${inconsistency.isScheduled}, draft=${inconsistency.draft}`
       );
       for (const issue of inconsistency.inconsistencies) {
-        console.log(`  - ${issue}`);
+        log(`  - ${issue}`);
       }
-      console.log();
+      log("");
     }
 
     if (inconsistencies.length > 10) {
-      console.log(`\n... and ${inconsistencies.length - 10} more`);
+      log(`\n... and ${inconsistencies.length - 10} more`);
     }
 
     if (fixInconsistencies) {
-      console.log("\nFixing inconsistencies...");
+      log("\nFixing inconsistencies...");
       const result = await fixLongFormPostStateInconsistencies(inconsistencies);
-      console.log(
-        `✅ Fixed ${result.fixed} longform posts, ${result.errors} errors`
-      );
+      log(`✅ Fixed ${result.fixed} longform posts, ${result.errors} errors`);
     } else {
-      console.log(
-        "\n💡 Run with --fix-inconsistencies to automatically fix these"
-      );
+      log("\n💡 Run with --fix-inconsistencies to automatically fix these");
     }
     return;
   }
 
-  console.log("Backfilling currentState for longform posts without state...");
+  log("Backfilling currentState for longform posts without state...");
   const result = await backfillLongFormPostCurrentState(10000);
 
-  console.log(
+  log(
     `✅ Backfilled ${result.backfilled} longform posts, ${result.errors} errors`
   );
 
   if (result.backfilled > 0) {
-    console.log("\nValidating consistency after backfill...");
+    log("\nValidating consistency after backfill...");
     const inconsistencies = await validateAllLongFormPostStates(10000);
     if (inconsistencies.length === 0) {
-      console.log("✅ All longform posts now have consistent state!");
+      log("✅ All longform posts now have consistent state!");
     } else {
-      console.log(
-        `⚠️  Found ${inconsistencies.length} remaining inconsistencies`
-      );
-      console.log(
-        "💡 Run with --validate-only --fix-inconsistencies to fix them"
-      );
+      log(`⚠️  Found ${inconsistencies.length} remaining inconsistencies`);
+      log("💡 Run with --validate-only --fix-inconsistencies to fix them");
     }
   }
 
@@ -95,7 +94,7 @@ async function main() {
   });
 }
 
-main().catch((error) => {
-  console.error("Error:", error);
+main().catch((err) => {
+  logError("Error:", err);
   process.exit(1);
 });

@@ -677,6 +677,12 @@ Prometheus metrics available at `/metrics` (port 3010 by default):
 curl http://localhost:3010/metrics
 ```
 
+Worker Prometheus metrics (if enabled via `WORKER_METRICS_PORT`):
+
+```bash
+curl "http://localhost:${WORKER_METRICS_PORT}/metrics"
+```
+
 ---
 
 ## Post-Deployment Verification

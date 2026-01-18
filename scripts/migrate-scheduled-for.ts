@@ -8,10 +8,15 @@
  */
 
 import { resolve } from "node:path";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "@prisma/client";
 import { config } from "dotenv";
 import { Pool } from "pg";
+
+// Script logger (avoids console.*)
+
+const { log, error } = require("./logger") as {
+  log: (..._args: unknown[]) => void;
+  error: (..._args: unknown[]) => void;
+};
 
 // Load environment variables
 config({ path: resolve(process.cwd(), ".env") });
@@ -22,7 +27,6 @@ if (!DATABASE_URL) {
   throw new Error("DATABASE_URL environment variable is required");
 }
 
-// Create Prisma client with adapter (required for Prisma 7)
 const pool = new Pool({
   connectionString: DATABASE_URL,
   max: 10,
@@ -30,126 +34,97 @@ const pool = new Pool({
   connectionTimeoutMillis: 2000,
 });
 
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
-
 async function migrateScheduledFor() {
-  console.log("Starting migration of scheduledFor to scheduledAtUtc...");
+  log("Starting migration of scheduledFor to scheduledAtUtc...");
 
-  // Migrate Posts
-  console.log("Migrating Posts...");
-  const posts = await prisma.post.findMany({
-    where: {
-      scheduledFor: { not: null },
-      scheduledAtUtc: null, // Only migrate unmigrated
-    },
-    select: {
-      id: true,
-      scheduledFor: true,
-    },
-  });
-
-  console.log(`Found ${posts.length} posts to migrate`);
-
-  let migrated = 0;
-  let errors = 0;
-
-  for (const post of posts) {
-    if (post.scheduledFor) {
-      try {
-        const timestamp = parseInt(post.scheduledFor, 10);
-        if (!isNaN(timestamp)) {
-          const scheduledAtUtc = new Date(timestamp * 1000); // Convert seconds to ms
-
-          await prisma.post.update({
-            where: { id: post.id },
-            data: { scheduledAtUtc },
-          });
-
-          migrated++;
-          if (migrated % 100 === 0) {
-            console.log(`Migrated ${migrated} posts...`);
-          }
-        } else {
-          console.warn(
-            `Invalid timestamp for post ${post.id}: ${post.scheduledFor}`
-          );
-          errors++;
-        }
-      } catch (error) {
-        console.error(`Error migrating post ${post.id}:`, error);
-        errors++;
-      }
+  const client = await pool.connect();
+  try {
+    // Verify columns exist (script is safe to run multiple times).
+    const { rows: postCols } = await client.query<{
+      column_name: string;
+    }>(
+      `select column_name
+       from information_schema.columns
+       where table_schema = 'public' and table_name = 'Post'`
+    );
+    const postColSet = new Set(postCols.map((r) => r.column_name));
+    if (!postColSet.has("scheduledFor")) {
+      log(
+        "Post.scheduledFor column not found (already removed). Nothing to migrate."
+      );
+      return;
     }
-  }
-
-  console.log(
-    `Posts migration complete: ${migrated} migrated, ${errors} errors`
-  );
-
-  // Migrate LongFormPosts
-  console.log("Migrating LongFormPosts...");
-  const longFormPosts = await prisma.longFormPost.findMany({
-    where: {
-      scheduledFor: { not: null },
-      scheduledAtUtc: null,
-    },
-    select: {
-      id: true,
-      scheduledFor: true,
-    },
-  });
-
-  console.log(`Found ${longFormPosts.length} longform posts to migrate`);
-
-  let longFormMigrated = 0;
-  let longFormErrors = 0;
-
-  for (const post of longFormPosts) {
-    if (post.scheduledFor) {
-      try {
-        const timestamp = parseInt(post.scheduledFor, 10);
-        if (!isNaN(timestamp)) {
-          const scheduledAtUtc = new Date(timestamp * 1000);
-
-          await prisma.longFormPost.update({
-            where: { id: post.id },
-            data: { scheduledAtUtc },
-          });
-
-          longFormMigrated++;
-          if (longFormMigrated % 100 === 0) {
-            console.log(`Migrated ${longFormMigrated} longform posts...`);
-          }
-        } else {
-          console.warn(
-            `Invalid timestamp for longform post ${post.id}: ${post.scheduledFor}`
-          );
-          longFormErrors++;
-        }
-      } catch (error) {
-        console.error(`Error migrating longform post ${post.id}:`, error);
-        longFormErrors++;
-      }
+    if (!postColSet.has("scheduledAtUtc")) {
+      throw new Error(
+        "Post.scheduledAtUtc column not found. Deploy schema changes before running migration."
+      );
     }
+
+    const { rows: longCols } = await client.query<{
+      column_name: string;
+    }>(
+      `select column_name
+       from information_schema.columns
+       where table_schema = 'public' and table_name = 'LongFormPost'`
+    );
+    const longColSet = new Set(longCols.map((r) => r.column_name));
+    if (!longColSet.has("scheduledFor")) {
+      log(
+        "LongFormPost.scheduledFor column not found (already removed). Nothing to migrate."
+      );
+    }
+    if (!longColSet.has("scheduledAtUtc")) {
+      throw new Error(
+        "LongFormPost.scheduledAtUtc column not found. Deploy schema changes before running migration."
+      );
+    }
+
+    // Posts: migrate numeric unix seconds in scheduledFor -> scheduledAtUtc
+    log("Migrating Posts...");
+    const postResult = await client.query(
+      `update "Post"
+       set "scheduledAtUtc" = to_timestamp(("scheduledFor")::bigint)::timestamp
+       where "scheduledAtUtc" is null
+         and "scheduledFor" is not null
+         and "scheduledFor" ~ '^[0-9]+$'`
+    );
+    log(`Posts migrated: ${postResult.rowCount ?? 0}`);
+
+    // LongFormPosts
+    log("Migrating LongFormPosts...");
+    const longResult = await client.query(
+      `update "LongFormPost"
+       set "scheduledAtUtc" = to_timestamp(("scheduledFor")::bigint)::timestamp
+       where "scheduledAtUtc" is null
+         and "scheduledFor" is not null
+         and "scheduledFor" ~ '^[0-9]+$'`
+    );
+    log(`LongFormPosts migrated: ${longResult.rowCount ?? 0}`);
+
+    // Report rows that still have scheduledFor but no scheduledAtUtc (non-numeric legacy values)
+    const remainingPosts = await client.query(
+      `select count(*)::int as count
+       from "Post"
+       where "scheduledAtUtc" is null and "scheduledFor" is not null`
+    );
+    const remainingLong = await client.query(
+      `select count(*)::int as count
+       from "LongFormPost"
+       where "scheduledAtUtc" is null and "scheduledFor" is not null`
+    );
+    log("Remaining (non-numeric) legacy rows:");
+    log(`Post: ${remainingPosts.rows[0]?.count ?? 0}`);
+    log(`LongFormPost: ${remainingLong.rows[0]?.count ?? 0}`);
+  } finally {
+    client.release();
   }
-
-  console.log(
-    `LongFormPosts migration complete: ${longFormMigrated} migrated, ${longFormErrors} errors`
-  );
-
-  console.log("\nMigration summary:");
-  console.log(`Posts: ${migrated} migrated, ${errors} errors`);
-  console.log(
-    `LongFormPosts: ${longFormMigrated} migrated, ${longFormErrors} errors`
-  );
 }
 
 migrateScheduledFor()
-  .catch((error) => {
-    console.error("Migration failed:", error);
+  .catch((err) => {
+    error("Migration failed:", err);
     process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect();
+    await pool.end();
   });

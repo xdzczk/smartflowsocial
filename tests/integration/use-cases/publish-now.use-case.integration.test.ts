@@ -25,162 +25,166 @@ import { prisma } from "~/lib/prisma.server";
 // Skip if no test database configured
 const TEST_DATABASE_URL =
   process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"];
+const SHOULD_SKIP_DB_TESTS = process.env["SKIP_DATABASE_TESTS"] === "true";
 
-describe.skipIf(!TEST_DATABASE_URL)("PublishNowUseCase Integration", () => {
-  let userId: string;
-  let useCase: PublishNowUseCase;
+describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
+  "PublishNowUseCase Integration",
+  () => {
+    let userId: string;
+    let useCase: PublishNowUseCase;
 
-  beforeEach(async () => {
-    vi.clearAllMocks();
-    mockPublish.mockResolvedValue(undefined);
+    beforeEach(async () => {
+      vi.clearAllMocks();
+      mockPublish.mockResolvedValue(undefined);
 
-    // Create a test user - use upsert to handle duplicates
-    const npub = `test-${Date.now()}-${Math.random()}`;
-    const user = await prisma.user.upsert({
-      where: { npub },
-      update: {},
-      create: {
-        npub,
-        isEnabled: true,
-      },
-    });
-    userId = user.id;
-    useCase = new PublishNowUseCase();
-  });
-
-  afterEach(async () => {
-    // Clean up test data - handle missing tables gracefully
-    if (userId) {
-      try {
-        await prisma.postStateTransition.deleteMany({
-          where: { post: { userId } },
-        });
-      } catch {
-        // Table might not exist, ignore
-      }
-      try {
-        await prisma.post.deleteMany({
-          where: { userId },
-        });
-      } catch {
-        // Ignore errors
-      }
-      try {
-        await prisma.user.delete({
-          where: { id: userId },
-        });
-      } catch {
-        // Ignore errors
-      }
-    }
-  });
-
-  it("should publish a post successfully", async () => {
-    // Create a draft post
-    const createUseCase = new CreatePostUseCase();
-    const createResult = await createUseCase.execute({
-      userId,
-      content: "Test post",
-      fileUrl: [],
-      postType: "TEXT",
-      isRecyclable: false,
-    });
-
-    const postId = createResult.post.id;
-
-    // Publish the post
-    const signedEvent = createValidSignedEvent({ content: "test" });
-
-    await useCase.execute({
-      postId,
-      userId,
-      signedEvent,
-      relays: ["wss://relay.example.com"],
-    });
-
-    // Verify post is published
-    const publishedPost = await prisma.post.findUnique({
-      where: { id: postId },
-    });
-    const { deriveIsPosted } =
-      await import("~/features/posts/state-machine/post-state");
-    expect(deriveIsPosted(publishedPost?.currentState)).toBe(true);
-    expect(publishedPost?.currentState).toBe("PUBLISHED");
-
-    // Verify state transitions
-    const transitions = await prisma.postStateTransition.findMany({
-      where: { postId },
-      orderBy: { createdAt: "asc" },
-    });
-    expect(transitions.length).toBeGreaterThanOrEqual(2);
-    const states = transitions.map((t) => t.toState);
-    expect(states).toContain("PUBLISHING");
-    expect(states).toContain("PUBLISHED");
-
-    // Verify publisher was called
-    // finalizeEvent adds Symbol(verified), so check properties instead
-    expect(mockPublish).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: signedEvent.id,
-        pubkey: signedEvent.pubkey,
-        kind: signedEvent.kind,
-        content: signedEvent.content,
-      }),
-      ["wss://relay.example.com"],
-      expect.any(String)
-    );
-  });
-
-  it("should throw error if post not found", async () => {
-    await expect(
-      useCase.execute({
-        postId: "non-existent-post-id",
-        userId,
-        signedEvent: {
-          id: "test-event-id",
-          pubkey: "test-pubkey",
-          created_at: Math.floor(Date.now() / 1000),
-          kind: 1,
-          content: "test",
-          tags: [],
-          sig: "test-sig",
+      // Create a test user - use upsert to handle duplicates
+      const npub = `test-${Date.now()}-${Math.random()}`;
+      const user = await prisma.user.upsert({
+        where: { npub },
+        update: {},
+        create: {
+          npub,
+          isEnabled: true,
         },
-        relays: ["wss://relay.example.com"],
-      })
-    ).rejects.toThrow("not found for user");
-  });
-
-  it("should throw error if post already published", async () => {
-    // Create and publish a post
-    const createUseCase = new CreatePostUseCase();
-    const createResult = await createUseCase.execute({
-      userId,
-      content: "Test post",
-      fileUrl: [],
-      postType: "TEXT",
-      isRecyclable: false,
+      });
+      userId = user.id;
+      useCase = new PublishNowUseCase();
     });
 
-    const postId = createResult.post.id;
-
-    // Publish first time
-    const firstSignedEvent = createValidSignedEvent({ content: "test" });
-    await useCase.execute({
-      postId,
-      userId,
-      signedEvent: firstSignedEvent,
-      relays: ["wss://relay.example.com"],
+    afterEach(async () => {
+      // Clean up test data - handle missing tables gracefully
+      if (userId) {
+        try {
+          await prisma.postStateTransition.deleteMany({
+            where: { post: { userId } },
+          });
+        } catch {
+          // Table might not exist, ignore
+        }
+        try {
+          await prisma.post.deleteMany({
+            where: { userId },
+          });
+        } catch {
+          // Ignore errors
+        }
+        try {
+          await prisma.user.delete({
+            where: { id: userId },
+          });
+        } catch {
+          // Ignore errors
+        }
+      }
     });
 
-    // Try to publish again (should fail)
-    const secondSignedEvent = createValidSignedEvent({ content: "test-2" });
-    await expect(
-      useCase.execute({
+    it("should publish a post successfully", async () => {
+      // Create a draft post
+      const createUseCase = new CreatePostUseCase();
+      const createResult = await createUseCase.execute({
+        userId,
+        content: "Test post",
+        fileUrl: [],
+        postType: "TEXT",
+        isRecyclable: false,
+      });
+
+      const postId = createResult.post.id;
+
+      // Publish the post
+      const signedEvent = createValidSignedEvent({ content: "test" });
+
+      await useCase.execute({
         postId,
         userId,
-        signedEvent: secondSignedEvent,
+        signedEvent,
         relays: ["wss://relay.example.com"],
-      })
-    ).rejects.toThrow("already published");
-  });
-});
+      });
+
+      // Verify post is published
+      const publishedPost = await prisma.post.findUnique({
+        where: { id: postId },
+      });
+      const { deriveIsPosted } =
+        await import("~/features/posts/state-machine/post-state");
+      expect(deriveIsPosted(publishedPost?.currentState)).toBe(true);
+      expect(publishedPost?.currentState).toBe("PUBLISHED");
+
+      // Verify state transitions
+      const transitions = await prisma.postStateTransition.findMany({
+        where: { postId },
+        orderBy: { createdAt: "asc" },
+      });
+      expect(transitions.length).toBeGreaterThanOrEqual(2);
+      const states = transitions.map((t) => t.toState);
+      expect(states).toContain("PUBLISHING");
+      expect(states).toContain("PUBLISHED");
+
+      // Verify publisher was called
+      // finalizeEvent adds Symbol(verified), so check properties instead
+      expect(mockPublish).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: signedEvent.id,
+          pubkey: signedEvent.pubkey,
+          kind: signedEvent.kind,
+          content: signedEvent.content,
+        }),
+        ["wss://relay.example.com"],
+        expect.any(String)
+      );
+    });
+
+    it("should throw error if post not found", async () => {
+      await expect(
+        useCase.execute({
+          postId: "non-existent-post-id",
+          userId,
+          signedEvent: {
+            id: "test-event-id",
+            pubkey: "test-pubkey",
+            created_at: Math.floor(Date.now() / 1000),
+            kind: 1,
+            content: "test",
+            tags: [],
+            sig: "test-sig",
+          },
+          relays: ["wss://relay.example.com"],
+        })
+      ).rejects.toThrow("not found for user");
+    });
+
+    it("should throw error if post already published", async () => {
+      // Create and publish a post
+      const createUseCase = new CreatePostUseCase();
+      const createResult = await createUseCase.execute({
+        userId,
+        content: "Test post",
+        fileUrl: [],
+        postType: "TEXT",
+        isRecyclable: false,
+      });
+
+      const postId = createResult.post.id;
+
+      // Publish first time
+      const firstSignedEvent = createValidSignedEvent({ content: "test" });
+      await useCase.execute({
+        postId,
+        userId,
+        signedEvent: firstSignedEvent,
+        relays: ["wss://relay.example.com"],
+      });
+
+      // Try to publish again (should fail)
+      const secondSignedEvent = createValidSignedEvent({ content: "test-2" });
+      await expect(
+        useCase.execute({
+          postId,
+          userId,
+          signedEvent: secondSignedEvent,
+          relays: ["wss://relay.example.com"],
+        })
+      ).rejects.toThrow("already published");
+    });
+  }
+);

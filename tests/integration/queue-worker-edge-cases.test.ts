@@ -48,10 +48,12 @@ vi.mock("~/lib/prisma.server", () => ({
     post: {
       findUnique: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
     },
     longFormPost: {
       findUnique: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
     },
     user: {
       findUnique: vi.fn(),
@@ -132,6 +134,16 @@ describe("Queue Worker Edge Cases", () => {
     mockTransition.mockResolvedValue(undefined);
     process.env["NOSTR_PUBLISHER_URL"] =
       "https://api.nostr-publisher.com/publish";
+
+    // By default, allow lease acquisition/release
+    (prisma.post.updateMany as ReturnType<typeof vi.fn>).mockResolvedValue({
+      count: 1,
+    });
+    (
+      prisma.longFormPost.updateMany as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({
+      count: 1,
+    });
   });
 
   describe("Worker Crash Scenarios", () => {
@@ -331,28 +343,30 @@ describe("Queue Worker Edge Cases", () => {
 
   describe("Concurrent Job Processing", () => {
     it("should handle multiple workers processing same job", async () => {
-      // Mock post state - simulate idempotency: first call returns SCHEDULED,
-      // subsequent calls return PUBLISHING (first worker already started)
-      // The idempotency check (publishAttemptId) will prevent duplicate publishes
-      let callCount = 0;
-      // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Mock implementation needs to be async
+      // Simulate a multi-worker environment:
+      // - Only one worker should acquire the publish lease and proceed
+      // - Others should skip idempotently
+      let _callCount = 0;
+
       (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockImplementation(
-        async () => {
-          callCount++;
-          // First call: SCHEDULED with no publishAttemptId
-          // Subsequent calls: PUBLISHING (first worker transitioned) OR PUBLISHED (first worker completed)
-          const state = callCount === 1 ? "SCHEDULED" : "PUBLISHING";
-          const publishAttemptId = callCount === 1 ? null : "attempt-1"; // First worker set this
+        () => {
+          _callCount++;
+          const state = "SCHEDULED";
           return {
             id: TEST_POST_ID,
             currentState: state,
-            nostrEventId: callCount > 1 ? "event-123" : null, // First worker published
+            nostrEventId: null,
             scheduledAtUtc: null,
             scheduledFor: null,
-            publishAttemptId,
+            publishAttemptId: null,
           };
         }
       );
+
+      // First lease acquisition succeeds, the rest fail
+      (prisma.post.updateMany as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce({ count: 1 })
+        .mockResolvedValue({ count: 0 });
 
       // Mock post update to track state changes
       (prisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue({});
@@ -393,10 +407,17 @@ describe("Queue Worker Edge Cases", () => {
 
       const results = await Promise.allSettled(promises);
 
-      // At least one should succeed, others may fail due to state conflicts (expected behavior)
-      // The idempotency check (publishAttemptId) should prevent duplicate publishes
-      const successful = results.filter((r) => r.status === "fulfilled");
-      expect(successful.length).toBeGreaterThan(0);
+      const fulfilled = results.filter((r) => r.status === "fulfilled");
+      expect(fulfilled.length).toBe(3);
+
+      const values = fulfilled.map((r) => r.value);
+      const nonSkipped = values.filter((v) => {
+        if (!v || typeof v !== "object") return false;
+        return (v as { skipped?: boolean }).skipped !== true;
+      });
+
+      // Exactly one worker should have acquired the lease and proceeded
+      expect(nonSkipped.length).toBe(1);
     });
   });
 

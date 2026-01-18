@@ -1,4 +1,6 @@
 import sharp from "sharp";
+
+import { logError } from "~/lib/error-logger.server";
 /**
  * Server-side image processing using Sharp
  * Optimizes images for web use while removing metadata
@@ -56,7 +58,11 @@ export async function processImageForWeb(
 
     return await sharpInstance.toBuffer();
   } catch (error) {
-    console.error("Sharp image processing error:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "Sharp image processing error",
+      options,
+      bufferSize: buffer.length,
+    });
     const errorMessage = error instanceof Error ? error.message : String(error);
     throw new Error(`Image processing failed: ${errorMessage}`);
   }
@@ -77,7 +83,10 @@ export async function getImageInfo(buffer: Buffer) {
       channels: metadata.channels,
     };
   } catch (error) {
-    console.error("Error getting image info:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "Error getting image info",
+      bufferSize: buffer.length,
+    });
     const errorMessage = error instanceof Error ? error.message : String(error);
     throw new Error(`Failed to read image metadata: ${errorMessage}`);
   }
@@ -91,7 +100,10 @@ export async function validateImageBuffer(buffer: Buffer): Promise<boolean> {
     await sharp(buffer).metadata();
     return true;
   } catch (error) {
-    console.error("Image validation failed:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "Image validation failed",
+      bufferSize: buffer.length,
+    });
     return false;
   }
 }

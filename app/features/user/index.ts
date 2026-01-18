@@ -129,3 +129,4 @@ export { loadUploadProviderSettings } from "./services/upload-provider.server";
 // ============================================================================
 
 export { AccountsSettings } from "./components/AccountsSettings";
+export { DashboardLayoutPage } from "./components/DashboardLayoutPage";

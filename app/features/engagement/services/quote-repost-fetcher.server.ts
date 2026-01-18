@@ -4,6 +4,7 @@
  */
 
 import { connectToPrimalCache } from "~/features/cache/primalCache.server";
+import { logError } from "~/lib/error-logger.server";
 
 import { processQuoteReposts } from "../engagement.server";
 import type {
@@ -121,10 +122,10 @@ export async function fetchQuoteReposts(
 
     return await processQuoteReposts(rawQuoteReposts, connectToPrimalCache);
   } catch (error) {
-    console.error(
-      "🔍 [QUOTE REPOST DEBUG] Error fetching quote reposts:",
-      error
-    );
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "Error fetching quote reposts",
+      userNpub,
+    });
     return [];
   }
 }

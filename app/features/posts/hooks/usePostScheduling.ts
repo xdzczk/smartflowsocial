@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
+import { logClientError } from "~/lib/error-handler.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import {
   addHours,
@@ -82,7 +83,15 @@ export function usePostScheduling({
           }
         }
       } catch (error) {
-        console.error("Error calculating schedule time:", error);
+        logClientError(
+          error instanceof Error ? error : new Error(String(error)),
+          {
+            component: "usePostScheduling",
+            action: "calculateQueueScheduleTime",
+            queueTypeId,
+            queueTypeName,
+          }
+        );
       }
     },
     []

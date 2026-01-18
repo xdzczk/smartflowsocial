@@ -39,7 +39,7 @@ describe("Factory Usage Examples", () => {
 
     expect(deriveIsScheduled(post.currentState)).toBe(true);
     expect(deriveIsDraft(post.currentState)).toBe(false);
-    expect(post.scheduledFor).toBeDefined();
+    expect(post.scheduledAtUtc).toBeDefined();
   });
 
   it("should create related entities", () => {

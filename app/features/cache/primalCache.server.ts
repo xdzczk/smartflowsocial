@@ -1,9 +1,40 @@
 import { env } from "~/lib/env.server";
 import { logError } from "~/lib/error-logger.server";
 import { fetchJsonWithRetry } from "~/lib/fetch.server";
+import { buildCacheKey, getOrSetJson } from "~/lib/redis-cache.server";
+import { withSentrySpan } from "~/lib/sentry.server";
 
 type CacheParams = Record<string, unknown>;
 type CacheResponse = unknown[];
+
+function cacheTtlSecondsForRequestType(requestType: string): {
+  ttlSeconds: number | null;
+  negativeTtlSeconds?: number;
+} {
+  // Conservative TTLs: enough to reduce load but avoid stale UX.
+  switch (requestType) {
+    case "thread_view":
+      return { ttlSeconds: 30, negativeTtlSeconds: 5 };
+    case "user_profile":
+      return { ttlSeconds: 300, negativeTtlSeconds: 30 };
+    case "user_infos":
+      return { ttlSeconds: 300, negativeTtlSeconds: 30 };
+    case "event_actions":
+      return { ttlSeconds: 30, negativeTtlSeconds: 5 };
+    case "get_notifications":
+      return { ttlSeconds: 15, negativeTtlSeconds: 5 };
+    default:
+      return { ttlSeconds: null };
+  }
+}
+
+function isEmptyCacheResponse(value: CacheResponse): boolean {
+  if (!Array.isArray(value) || value.length === 0) return true;
+  const nonEose = value.filter(
+    (res) => Array.isArray(res) && res[0] !== "EOSE"
+  );
+  return nonEose.length === 0;
+}
 
 /**
  * Fetches data from the Primal cache REST API
@@ -20,18 +51,57 @@ export async function fetchFromCache(
   }
 
   try {
-    return await fetchJsonWithRetry<CacheResponse>(primalUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        requestType,
-        params,
-      }),
-      timeout: 5000, // 5 seconds for cache requests
-      maxRetries: 2,
-      retryOn5xx: true,
+    const { ttlSeconds, negativeTtlSeconds } =
+      cacheTtlSecondsForRequestType(requestType);
+
+    if (!ttlSeconds) {
+      return await withSentrySpan(
+        {
+          name: "primal_cache.fetch",
+          op: "http.client",
+          attributes: { requestType },
+        },
+        async () =>
+          await fetchJsonWithRetry<CacheResponse>(primalUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ requestType, params }),
+            timeout: 5000,
+            maxRetries: 2,
+            retryOn5xx: true,
+          })
+      );
+    }
+
+    const key = buildCacheKey({
+      namespace: "primal",
+      version: "v1",
+      parts: { requestType, params },
+    });
+
+    return await getOrSetJson<CacheResponse>({
+      cache: "primal",
+      key,
+      ttlSeconds,
+      negativeTtlSeconds,
+      shouldNegativeCache: isEmptyCacheResponse,
+      compute: async () =>
+        await withSentrySpan(
+          {
+            name: "primal_cache.fetch",
+            op: "http.client",
+            attributes: { requestType, cache: "redis" },
+          },
+          async () =>
+            await fetchJsonWithRetry<CacheResponse>(primalUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ requestType, params }),
+              timeout: 5000,
+              maxRetries: 2,
+              retryOn5xx: true,
+            })
+        ),
     });
   } catch (error) {
     logError(error instanceof Error ? error : new Error(String(error)), {

@@ -33,7 +33,7 @@ export { getEngagementData } from "./engagement.server";
 // Muted List
 // ============================================================================
 
-export { getMutedList, updateMutedList } from "./mutedList.server";
+export { getMutedList } from "./mutedList.server";
 
 // ============================================================================
 // Engagement Loader
@@ -58,6 +58,7 @@ export { MutedListSettings } from "./components/MutedListSettings";
 export { EngagementContent } from "./components/EngagementContent";
 export { EngagementHeader } from "./components/EngagementHeader";
 export { EngagementTabs } from "./components/EngagementTabs";
+export { default as EngagementFeedPage } from "./components/EngagementFeedPage";
 
 // ============================================================================
 // Hooks (Public API)

@@ -365,7 +365,11 @@ async function handleSignAndSubmitLogic(
 
     fetcher.submit(formData, { method: "post" });
   } catch (error) {
-    console.error("Error re-signing event:", error);
+    handleErrorSafely(error, {
+      component: "RescheduleModal",
+      action: "reSignEvent",
+      message: "Error re-signing event",
+    });
     setIsSigningEvent(false);
     const errorMessage =
       error instanceof Error

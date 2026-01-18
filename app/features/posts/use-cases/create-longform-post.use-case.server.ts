@@ -42,12 +42,11 @@ export class CreateLongFormPostUseCase {
       const scheduledForStr = input.scheduledFor.toString();
 
       // Calculate status using business logic
-      const { status, publishedAt, nostrEventId, finalScheduledFor } =
-        calculateLongFormStatus({
-          isPublished: false,
-          scheduledFor: scheduledForStr,
-          signedEvent: input.signedEvent,
-        });
+      const { status, publishedAt, nostrEventId } = calculateLongFormStatus({
+        isPublished: false,
+        scheduledFor: scheduledForStr,
+        signedEvent: input.signedEvent,
+      });
 
       return prisma.$transaction(async (tx) => {
         // Create long form post
@@ -66,7 +65,6 @@ export class CreateLongFormPostUseCase {
             nostrEventId,
             status,
             publishedAt: publishedAt ?? undefined,
-            scheduledFor: finalScheduledFor,
             scheduledAtUtc,
             currentState: "SCHEDULED", // Single source of truth
           },

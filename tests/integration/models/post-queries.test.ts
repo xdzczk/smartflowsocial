@@ -96,9 +96,7 @@ describe("Post Queries", () => {
         name: "Test Queue",
       };
       const mockPost = {
-        scheduledFor: "1234567890",
-        createdAt: new Date(),
-        currentState: "SCHEDULED",
+        scheduledAtUtc: new Date(1234567890 * 1000),
       };
 
       (
@@ -134,9 +132,7 @@ describe("Post Queries", () => {
         name: "Test Queue",
       };
       const mockPost = {
-        scheduledFor: "1234567890",
-        createdAt: new Date(),
-        isPosted: true,
+        scheduledAtUtc: new Date(1234567890 * 1000),
       };
 
       (

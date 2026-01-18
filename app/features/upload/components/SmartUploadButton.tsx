@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 
 import { Button } from "~/components/ui/button";
+import { logClientError } from "~/lib/error-handler.client";
 interface SmartUploadButtonProps {
   onUploadStart?: () => void;
   onUploadProgress?: (progress: number) => void;
@@ -143,7 +144,14 @@ export function SmartUploadButton({
         onUploadProgress?.(100); // Complete
         onUploadComplete?.(fileUrl, providerInfo.provider);
       } catch (error) {
-        console.error("Upload error:", error);
+        logClientError(
+          error instanceof Error ? error : new Error(String(error)),
+          {
+            component: "SmartUploadButton",
+            action: "handleFileUpload",
+            message: "Upload error",
+          }
+        );
         const errorMessage =
           error instanceof Error ? error.message : "Upload failed";
         onUploadError?.(errorMessage);

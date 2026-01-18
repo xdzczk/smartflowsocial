@@ -6,17 +6,40 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock Prisma
-vi.mock("~/lib/prisma.server", () => ({
-  prisma: {
+vi.mock("~/lib/prisma.server", () => {
+  interface Tx {
+    longFormPost: {
+      findMany: ReturnType<typeof vi.fn>;
+      findUnique: ReturnType<typeof vi.fn>;
+      findFirst: ReturnType<typeof vi.fn>;
+      delete: ReturnType<typeof vi.fn>;
+      update: ReturnType<typeof vi.fn>;
+      count: ReturnType<typeof vi.fn>;
+    };
+    longFormPostStateTransition: {
+      create: ReturnType<typeof vi.fn>;
+      findMany: ReturnType<typeof vi.fn>;
+    };
+    $transaction: ReturnType<typeof vi.fn>;
+  }
+
+  const prisma: Tx = {
     longFormPost: {
       findMany: vi.fn(),
+      findUnique: vi.fn(),
       findFirst: vi.fn(),
       delete: vi.fn(),
       update: vi.fn(),
       count: vi.fn(),
     },
-  },
-}));
+    longFormPostStateTransition: {
+      create: vi.fn(),
+      findMany: vi.fn(),
+    },
+    $transaction: vi.fn(async (fn: (tx: Tx) => Promise<unknown>) => fn(prisma)),
+  };
+  return { prisma };
+});
 
 import { TEST_USER_ID, TEST_LONGFORM_ID } from "../../utils/test-helpers";
 
@@ -151,6 +174,11 @@ describe("Longform Post Queries - Extended", () => {
         tags: [],
       };
 
+      // State machine reads current state first, then publishLongFormPost reads the updated row.
+      (prisma.longFormPost.findUnique as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce({ currentState: "DRAFT" })
+        .mockResolvedValueOnce(mockPost);
+
       (
         prisma.longFormPost.update as ReturnType<typeof vi.fn>
       ).mockResolvedValue(mockPost);
@@ -170,11 +198,16 @@ describe("Longform Post Queries - Extended", () => {
           status: "ACTIVE",
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
           publishedAt: expect.any(Date),
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
+          postedAt: expect.any(Date),
           signedEvent,
           nostrEvent,
           nostrEventId: "event-123",
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
+          publishAttemptId: expect.any(String),
         }),
       });
+      expect(prisma.longFormPostStateTransition.create).toHaveBeenCalled();
       expect(result).toEqual(mockPost);
     });
   });

@@ -150,7 +150,7 @@ describe("LongFormPost Model Functions", () => {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         data: expect.objectContaining({
           currentState: "SCHEDULED",
-          scheduledFor: String(scheduledForUnix),
+          scheduledAtUtc: scheduledDate,
         }),
       });
       expect(result).toBeDefined();

@@ -29,7 +29,7 @@ and maintenance.
 SmartFlowSocial provides several built-in monitoring and observability features:
 
 - ✅ Health check endpoint (`/healthcheck`)
-- ✅ Prometheus metrics endpoint (`/metrics`)
+- ✅ Prometheus metrics endpoints (`/metrics`)
 - ✅ Error metrics API (`/api/error-metrics`)
 - ✅ Structured logging
 - ✅ Error tracking
@@ -201,7 +201,10 @@ logError(error, {
 
 ### Prometheus Metrics
 
-The application exposes Prometheus metrics on port `3010` (configurable via `METRICS_PORT`).
+The application exposes Prometheus metrics on:
+
+- **Web**: port `3010` (configurable via `METRICS_PORT`)
+- **Worker**: port `WORKER_METRICS_PORT` (disabled unless set)
 
 **Endpoint:** `GET /metrics`
 
@@ -209,6 +212,15 @@ The application exposes Prometheus metrics on port `3010` (configurable via `MET
 
 ```bash
 curl http://localhost:3010/metrics
+```
+
+#### Worker metrics (separate process)
+
+When `WORKER_METRICS_PORT` is set, the worker exposes its own `/metrics` endpoint. You can secure it
+via `METRICS_TOKEN` and `METRICS_ALLOWED_IPS`.
+
+```bash
+curl "http://localhost:${WORKER_METRICS_PORT}/metrics"
 ```
 
 **Default Metrics:**

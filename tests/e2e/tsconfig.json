@@ -5,7 +5,9 @@
     "**/*.config.ts",
     "support/**/*",
     "../../node_modules/cypress",
-    "../../node_modules/@testing-library/cypress"
+    "../../node_modules/@testing-library/cypress",
+    "../../remix.env.d.ts",
+    "../../app/types/**/*.d.ts"
   ],
   "compilerOptions": {
     "baseUrl": ".",
@@ -13,6 +15,7 @@
     "types": ["node", "cypress", "@testing-library/cypress"],
     "esModuleInterop": true,
     "jsx": "react-jsx",
+    "module": "ES2022",
     "moduleResolution": "Bundler",
     "target": "ES2020",
     "strict": true,

@@ -12,7 +12,7 @@ const path = require("path");
 const PROJECT_ROOT = path.resolve(__dirname, "..");
 
 function log(message) {
-  console.log(message);
+  process.stdout.write(`${String(message)}\n`);
 }
 
 function main() {

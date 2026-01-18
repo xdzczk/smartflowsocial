@@ -39,6 +39,8 @@ export { TemplateDetailsModal } from "./components/TemplateDetailsModal";
 export { TemplatesHeader } from "./components/TemplatesHeader";
 export { TemplatesTabs } from "./components/TemplatesTabs";
 export { ToastNotification } from "./components/ToastNotification";
+export { default as TemplatesPage } from "./components/TemplatesPage";
+export { default as TemplateEditPage } from "./components/TemplateEditPage";
 
 // ============================================================================
 // Hooks (Public API)

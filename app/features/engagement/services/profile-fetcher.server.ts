@@ -4,6 +4,7 @@
  */
 
 import { connectToPrimalCache } from "~/features/cache/primalCache.server";
+import { logError } from "~/lib/error-logger.server";
 
 import { calculateTrustScore, type User } from "../trust-score";
 import type { EngagementProfile, EngagementStats } from "../types";
@@ -50,7 +51,10 @@ export async function fetchUserProfile(pubkey: string): Promise<User | null> {
       try {
         profile = JSON.parse(profileEvent.content) as EngagementProfile;
       } catch (e) {
-        console.error("Failed to parse profile content:", e);
+        logError(e instanceof Error ? e : new Error(String(e)), {
+          message: "Failed to parse profile content",
+          pubkey,
+        });
       }
     }
 
@@ -60,7 +64,10 @@ export async function fetchUserProfile(pubkey: string): Promise<User | null> {
       try {
         stats = JSON.parse(statsEvent.content) as EngagementStats;
       } catch (e) {
-        console.error("Failed to parse stats content:", e);
+        logError(e instanceof Error ? e : new Error(String(e)), {
+          message: "Failed to parse stats content",
+          pubkey,
+        });
       }
     }
 
@@ -87,7 +94,10 @@ export async function fetchUserProfile(pubkey: string): Promise<User | null> {
 
     return user;
   } catch (error) {
-    console.error(`Failed to fetch user profile for ${pubkey}:`, error);
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "Failed to fetch user profile",
+      pubkey,
+    });
     return null;
   }
 }

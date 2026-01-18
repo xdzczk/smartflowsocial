@@ -89,10 +89,10 @@ export default defineConfig({
       // Coverage thresholds - adjusted to be more realistic
       // These will be enforced on files that are actually tested
       thresholds: {
-        lines: 50, // Lowered from 70% - more realistic for current state
-        functions: 45, // Lowered from 65%
-        branches: 40, // Lowered from 60%
-        statements: 50, // Lowered from 70%
+        lines: 70,
+        functions: 70,
+        branches: 65,
+        statements: 70,
       },
       // Report uncovered lines
       reportOnFailure: true,
@@ -111,6 +111,8 @@ export default defineConfig({
     watch: false,
     // Pool for parallel execution
     pool: "threads",
+    // Ensure mocks/module state don't leak across test files.
+    isolate: true,
   },
   resolve: {
     alias: {

@@ -7,6 +7,10 @@
 import { getCorrelationId } from "~/lib/correlation-context.server";
 import { logInfo } from "~/lib/error-logger.server";
 import { generateCreationIdempotencyKey } from "~/lib/idempotency.server";
+import {
+  recordPostCreated,
+  recordPostScheduled,
+} from "~/lib/metrics/business-metrics.server";
 import { fromUnixTimestamp, toPrismaDate } from "~/lib/temporal";
 import { createPostWithOutbox } from "~/models/post.commands.server";
 
@@ -158,9 +162,8 @@ export class CreatePostUseCase {
         "Post created with schedule"
       );
       // Record metrics
-      // TODO: Re-enable analytics when analytics.server module is available
-      // recordPostCreated(input.postType, true);
-      // recordPostScheduled(input.postType);
+      recordPostCreated(input.postType, true);
+      recordPostScheduled(input.postType);
     } else {
       await this.stateMachine.transition(
         post.id,
@@ -169,8 +172,7 @@ export class CreatePostUseCase {
         "Post created as draft"
       );
       // Record metrics
-      // TODO: Re-enable analytics when analytics.server module is available
-      // recordPostCreated(input.postType, false);
+      recordPostCreated(input.postType, false);
     }
 
     logInfo("CreatePostUseCase: Post created successfully", {

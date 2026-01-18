@@ -4,6 +4,9 @@
  * Manages post state transitions with database persistence.
  */
 
+import type { Prisma } from "@prisma/client";
+
+import { recordPostStateTransition } from "~/lib/metrics/business-metrics.server";
 import { prisma } from "~/lib/prisma.server";
 
 import {
@@ -21,7 +24,17 @@ export class PostStateMachine {
     postId: string,
     userId: string,
     targetState: PostState,
-    reason: string
+    reason: string,
+    options?: {
+      /**
+       * Additional Post fields to update atomically with the state transition.
+       *
+       * This is used by queue workers to make \"attempt succeeded\" updates (e.g. `postedAt`,
+       * `publishAttemptId`) atomic with the transition to `PUBLISHED`, preventing stuck states
+       * under crashes/retries.
+       */
+      additionalPostData?: Prisma.PostUpdateInput;
+    }
   ): Promise<void> {
     const post = await prisma.post.findUnique({
       where: { id: postId, userId },
@@ -34,17 +47,15 @@ export class PostStateMachine {
 
     const currentState = (post.currentState || "DRAFT") as PostState;
 
-    // Skip transition if already in target state (but still record it for history)
+    // Skip transition if already in target state.
+    // If additional fields need updating (e.g. releasing locks), update them and return.
     if (currentState === targetState) {
-      // Still record the transition for audit purposes, even if state doesn't change
-      await prisma.postStateTransition.create({
-        data: {
-          postId,
-          fromState: currentState,
-          toState: targetState,
-          reason: `${reason} (no state change)`,
-        },
-      });
+      if (options?.additionalPostData) {
+        await prisma.post.update({
+          where: { id: postId, userId },
+          data: options.additionalPostData,
+        });
+      }
       return;
     }
 
@@ -59,6 +70,7 @@ export class PostStateMachine {
           where: { id: postId, userId },
           data: {
             currentState: targetState,
+            ...(options?.additionalPostData ?? {}),
           },
         });
       } catch (error) {
@@ -88,8 +100,7 @@ export class PostStateMachine {
     });
 
     // Record state transition metric
-    // TODO: Re-enable analytics when analytics.server module is available
-    // recordPostStateTransition(transition.from, transition.to);
+    recordPostStateTransition(transition.from, transition.to);
   }
 
   /**

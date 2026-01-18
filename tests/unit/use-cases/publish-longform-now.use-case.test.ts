@@ -17,6 +17,22 @@ vi.mock("~/infra/publishers/nostr-publisher.server", () => ({
   })),
 }));
 
+const {
+  mockAcquireLongFormPostPublishLease,
+  mockReleaseLongFormPostPublishLease,
+} = vi.hoisted(() => ({
+  mockAcquireLongFormPostPublishLease: vi.fn(),
+  mockReleaseLongFormPostPublishLease: vi.fn(),
+}));
+vi.mock("~/infra/publishing/publish-lease.server", () => ({
+  acquireLongFormPostPublishLease: mockAcquireLongFormPostPublishLease,
+  releaseLongFormPostPublishLease: mockReleaseLongFormPostPublishLease,
+}));
+
+vi.mock("~/lib/correlation-context.server", () => ({
+  getCorrelationId: vi.fn((id) => id ?? "test-correlation-id"),
+}));
+
 const { mockPrisma } = vi.hoisted(() => {
   const mockPrisma = {
     longFormPost: {
@@ -40,6 +56,7 @@ vi.mock(
   })
 );
 
+import { createValidSignedEvent } from "../../utils/nostr-test-helpers";
 import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 
 import { PublishLongFormNowUseCase } from "~/features/posts/use-cases/publish-longform-now.use-case.server";
@@ -50,8 +67,12 @@ describe("PublishLongFormNowUseCase", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockPublish.mockResolvedValue(undefined);
+    mockPublish.mockResolvedValue({ results: [] });
     mockTransition.mockResolvedValue(undefined);
+    mockAcquireLongFormPostPublishLease.mockResolvedValue({
+      lockId: "test-lock-id",
+      expiresAt: new Date(Date.now() + 30_000),
+    });
     (
       mockPrisma.longFormPost.findUnique as ReturnType<typeof vi.fn>
     ).mockResolvedValue({
@@ -71,20 +92,12 @@ describe("PublishLongFormNowUseCase", () => {
         currentState: "DRAFT",
       };
 
-      const signedEvent = {
-        id: "event-123",
-        pubkey: "test-pubkey",
-        created_at: Math.floor(Date.now() / 1000),
-        kind: 1,
-        content: "test",
-        tags: [],
-        sig: "test-sig",
-      };
+      const signedEvent = createValidSignedEvent({ content: "test" });
 
       const relays = ["wss://relay1.com", "wss://relay2.com"];
 
       (getLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
-      mockPublish.mockResolvedValue(undefined);
+      mockPublish.mockResolvedValue({ results: [] });
 
       await useCase.execute({
         postId: TEST_POST_ID,
@@ -98,7 +111,16 @@ describe("PublishLongFormNowUseCase", () => {
         userId: TEST_USER_ID,
       });
       // State transitions now use LongFormPostStateMachine, not updateLongFormPostStatus
-      expect(mockPublish).toHaveBeenCalledWith(signedEvent, relays, undefined);
+      expect(mockPublish).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: signedEvent.id,
+          pubkey: signedEvent.pubkey,
+          kind: signedEvent.kind,
+          content: signedEvent.content,
+        }),
+        relays,
+        expect.any(String)
+      );
     });
 
     it("should throw error if post not found", async () => {
@@ -160,18 +182,10 @@ describe("PublishLongFormNowUseCase", () => {
         currentState: "DRAFT",
       };
 
-      const signedEvent = {
-        id: "event-123",
-        pubkey: "test-pubkey",
-        created_at: Math.floor(Date.now() / 1000),
-        kind: 1,
-        content: "test",
-        tags: [],
-        sig: "test-sig",
-      };
+      const signedEvent = createValidSignedEvent({ content: "test" });
 
       (getLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
-      mockPublish.mockResolvedValue(undefined);
+      mockPublish.mockResolvedValue({ results: [] });
 
       await useCase.execute({
         postId: TEST_POST_ID,
@@ -182,7 +196,12 @@ describe("PublishLongFormNowUseCase", () => {
       });
 
       expect(mockPublish).toHaveBeenCalledWith(
-        signedEvent,
+        expect.objectContaining({
+          id: signedEvent.id,
+          pubkey: signedEvent.pubkey,
+          kind: signedEvent.kind,
+          content: signedEvent.content,
+        }),
         ["wss://relay1.com"],
         "custom-correlation-id"
       );
@@ -196,15 +215,7 @@ describe("PublishLongFormNowUseCase", () => {
         currentState: "DRAFT",
       };
 
-      const signedEvent = {
-        id: "event-123",
-        pubkey: "test-pubkey",
-        created_at: Math.floor(Date.now() / 1000),
-        kind: 1,
-        content: "test",
-        tags: [],
-        sig: "test-sig",
-      };
+      const signedEvent = createValidSignedEvent({ content: "test" });
 
       const publishError = new Error("Publish failed");
 

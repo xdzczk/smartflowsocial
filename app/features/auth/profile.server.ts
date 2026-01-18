@@ -9,6 +9,7 @@ import type {
   ProfileData,
   StatsData,
 } from "~/features/nostr/types";
+import { logError } from "~/lib/error-logger.server";
 import { nostrAdapter } from "~/lib/nostr-adapter.server";
 import { connectToPrimalCache } from "~/lib/nostrwebsocket.server";
 
@@ -37,7 +38,10 @@ export async function fetchPrimalProfileData(
     });
     return responses as PrimalEvent[];
   } catch (error) {
-    console.error("Failed to fetch profile data from Primal cache:", error);
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      message: "Failed to fetch profile data from Primal cache",
+      npub,
+    });
     // Return empty array to allow login to proceed without profile data
     return [];
   }

@@ -1,6 +1,7 @@
 import { useFetcher } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
+import { logClientError } from "~/lib/error-handler.client";
 import { parseDateTimeLocal, toDate, fromDate } from "~/lib/temporal";
 
 import { useEditPostModal } from "../hooks/useEditPostModal";
@@ -141,7 +142,14 @@ export function EditPostModal({
       setIsUploadingImages(false);
       fetcher.submit(formData, { method: "post" });
     } catch (error: unknown) {
-      console.error("Error re-signing event:", error);
+      logClientError(
+        error instanceof Error ? error : new Error(String(error)),
+        {
+          component: "EditPostModal",
+          action: "prepareEditPostSubmission",
+          message: "Error re-signing event",
+        }
+      );
       setIsSigningEvent(false);
       setIsUploadingImages(false);
       const errorMessage =

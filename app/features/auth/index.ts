@@ -41,3 +41,4 @@ export { authenticateNostrUser } from "./services/nostr-auth.server";
 // ============================================================================
 
 export { default as NostrAuthButton } from "./components/NostrAuthButton";
+export { default as LoginPage } from "./components/LoginPage";

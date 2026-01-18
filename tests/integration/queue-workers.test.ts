@@ -73,10 +73,12 @@ const { mockPrisma } = vi.hoisted(() => {
     post: {
       findUnique: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
     },
     longFormPost: {
       findUnique: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
     },
     user: {
       findUnique: vi.fn(),
@@ -165,6 +167,7 @@ import { TEST_USER_ID, createValidSignedEvent } from "../utils/test-helpers";
 import { getUserById } from "~/features/user";
 import { enqueuePostJob } from "~/infra/queue";
 import { prisma } from "~/lib/prisma.server";
+import { relaysArray as systemDefaultRelays } from "~/lib/relays";
 import { getCronDueScheduledLongFormPosts } from "~/models/longformpost.server";
 import { getCronDueScheduledPosts } from "~/models/post.queries.server";
 
@@ -184,6 +187,16 @@ describe("Queue Workers", () => {
     longFormPostStateMap.clear();
     process.env["NOSTR_PUBLISHER_URL"] =
       "https://api.nostr-publisher.com/publish";
+
+    // Publish-lease mocks (acquire/release use updateMany)
+    (prisma.post.updateMany as ReturnType<typeof vi.fn>).mockResolvedValue({
+      count: 1,
+    });
+    (
+      prisma.longFormPost.updateMany as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({
+      count: 1,
+    });
 
     // Set up default mockImplementation for post.findUnique that uses state map
     (prisma.post.findUnique as ReturnType<typeof vi.fn>).mockImplementation(
@@ -462,7 +475,7 @@ describe("Queue Workers", () => {
         relays: string[];
         event: { id: string; pubkey: string; kind: number; content: string };
       };
-      expect(body.relays).toEqual([]);
+      expect([...body.relays].sort()).toEqual([...systemDefaultRelays].sort());
       expect(body.event).toMatchObject({
         id: mockJobData.signedEvent.id,
         pubkey: mockJobData.signedEvent.pubkey,

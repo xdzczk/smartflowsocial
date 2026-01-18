@@ -139,9 +139,9 @@ export function isCancelledState(
  * Derive isPosted flag from currentState
  * Published posts are considered "posted"
  */
-// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents -- string is included for runtime safety with database values
+
 export function deriveIsPosted(
-  currentState: PostState | string | null | undefined
+  currentState: string | null | undefined
 ): boolean {
   if (!currentState) return false;
   return isPublishedState(currentState);
@@ -151,9 +151,9 @@ export function deriveIsPosted(
  * Derive isScheduled flag from currentState
  * Scheduled or publishing posts are considered "scheduled"
  */
-// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents -- string is included for runtime safety with database values
+
 export function deriveIsScheduled(
-  currentState: PostState | string | null | undefined
+  currentState: string | null | undefined
 ): boolean {
   if (!currentState) return false;
   return isScheduledState(currentState) || isPublishingState(currentState);
@@ -163,9 +163,9 @@ export function deriveIsScheduled(
  * Derive draft flag from currentState
  * Only DRAFT state is considered a draft
  */
-// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents -- string is included for runtime safety with database values
+
 export function deriveIsDraft(
-  currentState: PostState | string | null | undefined
+  currentState: string | null | undefined
 ): boolean {
   if (!currentState) return true; // Default to draft if no state
   return isDraftState(currentState);

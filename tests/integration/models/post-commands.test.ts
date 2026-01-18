@@ -156,7 +156,7 @@ describe("Post Commands", () => {
         expect.objectContaining({
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
           data: expect.objectContaining({
-            scheduledFor: String(scheduledForUnix),
+            scheduledAtUtc: scheduledFor,
             currentState: "SCHEDULED", // State determined by scheduledFor (non-null = SCHEDULED)
           }),
         })
@@ -169,7 +169,7 @@ describe("Post Commands", () => {
 
   describe("reschedulePost", () => {
     it("should reschedule post with new time", async () => {
-      const mockPost = { id: TEST_POST_ID, scheduledFor: "1234567890" };
+      const mockPost = { id: TEST_POST_ID };
       (prisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue(
         mockPost
       );
@@ -188,7 +188,7 @@ describe("Post Commands", () => {
         },
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         data: expect.objectContaining({
-          scheduledFor: "1234567890",
+          scheduledAtUtc: new Date(1234567890 * 1000),
           manual_override: false,
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
           updatedAt: expect.any(Date),

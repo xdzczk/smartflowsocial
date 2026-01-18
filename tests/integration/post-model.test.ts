@@ -214,7 +214,7 @@ describe("Post Model Functions", () => {
       ).toHaveBeenCalledWith({
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
         data: expect.objectContaining({
-          scheduledFor: String(scheduledForUnix),
+          scheduledAtUtc: scheduledDate,
           currentState: "SCHEDULED",
         }),
       });

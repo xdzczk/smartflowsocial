@@ -34,6 +34,11 @@ export interface PostFactoryOptions {
   createdAt?: Date;
   updatedAt?: Date;
   publishAttemptId?: string | null;
+  creationIdempotencyKey?: string | null;
+  enqueueIdempotencyKey?: string | null;
+  publishingLockId?: string | null;
+  publishingLockExpiresAt?: Date | null;
+  publishingStartedAt?: Date | null;
 }
 
 export class PostFactory {
@@ -65,6 +70,11 @@ export class PostFactory {
       createdAt: new Date(),
       updatedAt: new Date(),
       publishAttemptId: null,
+      creationIdempotencyKey: null,
+      enqueueIdempotencyKey: null,
+      publishingLockId: null,
+      publishingLockExpiresAt: null,
+      publishingStartedAt: null,
       ...options,
     };
   }
@@ -181,14 +191,22 @@ export class PostFactory {
   }
 
   build(): Post {
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Factory pattern requires type assertion for partial data
-    return {
+    const scheduledAtUtc = (() => {
+      const raw = this.options.scheduledFor;
+      if (!raw) return null;
+      const ts = parseInt(raw, 10);
+      if (!isNaN(ts)) return new Date(ts * 1000);
+      const parsed = new Date(raw);
+      return !isNaN(parsed.getTime()) ? parsed : null;
+    })();
+
+    const post: Post = {
       id: this.options.id!,
       userId: this.options.userId!,
       caption: this.options.caption ?? null,
       content: this.options.content ?? null,
       fileUrl: this.options.fileUrl ?? [],
-      scheduledFor: this.options.scheduledFor ?? null,
+      scheduledAtUtc,
       postedAt: this.options.postedAt ?? null,
       currentState: this.options.currentState ?? "DRAFT",
       postType: this.options.postType ?? "IMAGE",
@@ -209,7 +227,13 @@ export class PostFactory {
       nostrEventId: this.options.nostrEventId ?? null,
       manual_override: this.options.manual_override ?? false,
       publishAttemptId: this.options.publishAttemptId ?? null,
-    } as Post;
+      creationIdempotencyKey: this.options.creationIdempotencyKey ?? null,
+      enqueueIdempotencyKey: this.options.enqueueIdempotencyKey ?? null,
+      publishingLockId: this.options.publishingLockId ?? null,
+      publishingLockExpiresAt: this.options.publishingLockExpiresAt ?? null,
+      publishingStartedAt: this.options.publishingStartedAt ?? null,
+    };
+    return post;
   }
 }
 

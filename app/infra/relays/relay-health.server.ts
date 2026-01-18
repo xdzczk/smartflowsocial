@@ -5,6 +5,7 @@
  * Provides adaptive routing based on relay health.
  */
 
+import { env } from "~/lib/env.server";
 import { logInfo, logWarning } from "~/lib/error-logger.server";
 
 /**
@@ -31,8 +32,10 @@ export interface RelayHealthMetrics {
   lastFailureAt: Date | null;
   lastCheckedAt: Date | null;
   consecutiveFailures: number;
+  halfOpenSuccesses: number;
   circuitBreakerState: "CLOSED" | "OPEN" | "HALF_OPEN";
   circuitBreakerOpenedAt: Date | null;
+  score: number; // 0-100 (higher is better)
 }
 
 /**
@@ -49,6 +52,13 @@ const DEFAULT_CIRCUIT_BREAKER_CONFIG: CircuitBreakerConfig = {
   successThreshold: 2, // Close after 2 successes in half-open
   timeoutMs: 60000, // Wait 60 seconds before half-open
 };
+
+const RELAY_HEALTH_STORE_MODE = (
+  env.RELAY_HEALTH_STORE ?? "memory"
+).toLowerCase();
+const USE_REDIS_RELAY_HEALTH_STORE = RELAY_HEALTH_STORE_MODE === "redis";
+const REDIS_KEY_PREFIX = "relayHealth:";
+const REDIS_KEYS_SET = `${REDIS_KEY_PREFIX}keys`;
 
 /**
  * In-memory relay health store
@@ -76,11 +86,54 @@ class RelayHealthStore {
 
 const healthStore = new RelayHealthStore();
 
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function computeRelayScore(metrics: RelayHealthMetrics): number {
+  // Circuit breaker dominates (OPEN relays should never be preferred).
+  if (metrics.circuitBreakerState === "OPEN") return 0;
+
+  // Base score from success rate (0..1) scaled.
+  const successComponent = clamp(metrics.successRate, 0, 1) * 70;
+
+  // Latency penalty: 0ms -> 0, 5000ms -> 20, >5000ms capped.
+  const latencyPenalty = clamp(metrics.averageLatency / 5000, 0, 1) * 20;
+
+  // Failure penalty: 0 failures -> 0, 5 failures -> 15, >5 capped.
+  const failurePenalty = clamp(metrics.consecutiveFailures / 5, 0, 1) * 15;
+
+  // Status adjustment.
+  const statusAdjustment =
+    metrics.status === "HEALTHY"
+      ? 10
+      : metrics.status === "DEGRADED"
+        ? 0
+        : metrics.status === "UNHEALTHY"
+          ? -10
+          : 0;
+
+  // HALF_OPEN should be treated cautiously.
+  const halfOpenPenalty = metrics.circuitBreakerState === "HALF_OPEN" ? 5 : 0;
+
+  return clamp(
+    Math.round(
+      successComponent -
+        latencyPenalty -
+        failurePenalty +
+        statusAdjustment -
+        halfOpenPenalty
+    ),
+    0,
+    100
+  );
+}
+
 /**
  * Initialize relay health metrics
  */
 function initializeRelayMetrics(relay: string): RelayHealthMetrics {
-  return {
+  const base: RelayHealthMetrics = {
     relay,
     status: "UNKNOWN",
     successCount: 0,
@@ -92,9 +145,83 @@ function initializeRelayMetrics(relay: string): RelayHealthMetrics {
     lastFailureAt: null,
     lastCheckedAt: new Date(),
     consecutiveFailures: 0,
+    halfOpenSuccesses: 0,
     circuitBreakerState: "CLOSED",
     circuitBreakerOpenedAt: null,
+    score: 50,
   };
+  base.score = computeRelayScore(base);
+  return base;
+}
+
+async function persistRelayMetricsToRedis(
+  metrics: RelayHealthMetrics
+): Promise<void> {
+  if (!USE_REDIS_RELAY_HEALTH_STORE) return;
+
+  const { redis } = await import("~/infra/queue");
+
+  const key = `${REDIS_KEY_PREFIX}${metrics.relay}`;
+  const payload = JSON.stringify({
+    ...metrics,
+    lastSuccessAt: metrics.lastSuccessAt?.toISOString() ?? null,
+    lastFailureAt: metrics.lastFailureAt?.toISOString() ?? null,
+    lastCheckedAt: metrics.lastCheckedAt?.toISOString() ?? null,
+    circuitBreakerOpenedAt:
+      metrics.circuitBreakerOpenedAt?.toISOString() ?? null,
+  });
+
+  await redis.set(key, payload, "EX", 60 * 60); // 1 hour TTL
+  await redis.sadd(REDIS_KEYS_SET, key);
+}
+
+async function hydrateRelayMetricsFromRedis(relay: string): Promise<void> {
+  if (!USE_REDIS_RELAY_HEALTH_STORE) return;
+
+  const { redis } = await import("~/infra/queue");
+
+  const key = `${REDIS_KEY_PREFIX}${relay}`;
+  const raw = await redis.get(key);
+  if (!raw) return;
+
+  try {
+    const parsed = JSON.parse(raw) as Omit<
+      RelayHealthMetrics,
+      | "lastSuccessAt"
+      | "lastFailureAt"
+      | "lastCheckedAt"
+      | "circuitBreakerOpenedAt"
+      | "score"
+    > & {
+      lastSuccessAt: string | null;
+      lastFailureAt: string | null;
+      lastCheckedAt: string | null;
+      circuitBreakerOpenedAt: string | null;
+      score?: number;
+    };
+
+    const hydrated: RelayHealthMetrics = {
+      ...parsed,
+      lastSuccessAt: parsed.lastSuccessAt
+        ? new Date(parsed.lastSuccessAt)
+        : null,
+      lastFailureAt: parsed.lastFailureAt
+        ? new Date(parsed.lastFailureAt)
+        : null,
+      lastCheckedAt: parsed.lastCheckedAt
+        ? new Date(parsed.lastCheckedAt)
+        : null,
+      circuitBreakerOpenedAt: parsed.circuitBreakerOpenedAt
+        ? new Date(parsed.circuitBreakerOpenedAt)
+        : null,
+      score: typeof parsed.score === "number" ? parsed.score : 50,
+    };
+
+    hydrated.score = computeRelayScore(hydrated);
+    healthStore.setMetrics(relay, hydrated);
+  } catch {
+    // ignore hydration failures
+  }
 }
 
 /**
@@ -107,6 +234,10 @@ function getOrCreateMetrics(relay: string): RelayHealthMetrics {
   }
   const metrics = initializeRelayMetrics(relay);
   healthStore.setMetrics(relay, metrics);
+  if (USE_REDIS_RELAY_HEALTH_STORE) {
+    // Best-effort hydration for cross-process deployments.
+    void hydrateRelayMetricsFromRedis(relay);
+  }
   return metrics;
 }
 
@@ -182,12 +313,15 @@ export function recordRelaySuccess(relay: string, latency: number): void {
 
   // Update circuit breaker state
   if (metrics.circuitBreakerState === "HALF_OPEN") {
+    metrics.halfOpenSuccesses++;
     // If we have enough successes in half-open, close the circuit
-    const recentSuccesses =
-      metrics.successCount - (metrics.totalRequests - metrics.failureCount);
-    if (recentSuccesses >= DEFAULT_CIRCUIT_BREAKER_CONFIG.successThreshold) {
+    if (
+      metrics.halfOpenSuccesses >=
+      DEFAULT_CIRCUIT_BREAKER_CONFIG.successThreshold
+    ) {
       metrics.circuitBreakerState = "CLOSED";
       metrics.circuitBreakerOpenedAt = null;
+      metrics.halfOpenSuccesses = 0;
       logInfo("Relay circuit breaker closed", { relay });
     }
   }
@@ -197,8 +331,10 @@ export function recordRelaySuccess(relay: string, latency: number): void {
     metrics.consecutiveFailures,
     metrics.averageLatency
   );
+  metrics.score = computeRelayScore(metrics);
 
   healthStore.setMetrics(relay, metrics);
+  void persistRelayMetricsToRedis(metrics);
 }
 
 /**
@@ -226,6 +362,7 @@ export function recordRelayFailure(relay: string, error?: string): void {
     ) {
       metrics.circuitBreakerState = "OPEN";
       metrics.circuitBreakerOpenedAt = now;
+      metrics.halfOpenSuccesses = 0;
       logWarning("Relay circuit breaker opened", {
         relay,
         consecutiveFailures: metrics.consecutiveFailures,
@@ -236,6 +373,7 @@ export function recordRelayFailure(relay: string, error?: string): void {
     // If we fail in half-open, go back to open
     metrics.circuitBreakerState = "OPEN";
     metrics.circuitBreakerOpenedAt = now;
+    metrics.halfOpenSuccesses = 0;
     logWarning("Relay circuit breaker reopened", { relay, error });
   }
 
@@ -244,8 +382,10 @@ export function recordRelayFailure(relay: string, error?: string): void {
     metrics.consecutiveFailures,
     metrics.averageLatency
   );
+  metrics.score = computeRelayScore(metrics);
 
   healthStore.setMetrics(relay, metrics);
+  void persistRelayMetricsToRedis(metrics);
 }
 
 /**
@@ -269,6 +409,7 @@ export function canUseRelay(
       if (timeSinceOpen >= config.timeoutMs) {
         // Transition to half-open
         metrics.circuitBreakerState = "HALF_OPEN";
+        metrics.halfOpenSuccesses = 0;
         healthStore.setMetrics(relay, metrics);
         logInfo("Relay circuit breaker half-open", { relay });
         return true;
@@ -309,34 +450,18 @@ export function getRelaysHealth(
  * Returns relays sorted by health (healthiest first)
  */
 export function prioritizeRelaysByHealth(relays: string[]): string[] {
-  const relayMetrics = relays
-    .map((relay) => ({
-      relay,
-      metrics: getOrCreateMetrics(relay),
-    }))
+  const normalized = Array.from(
+    new Set(relays.map((r) => r.trim()).filter((r) => r.length > 0))
+  );
+
+  const relayMetrics = normalized
+    .map((relay) => ({ relay, metrics: getOrCreateMetrics(relay) }))
     .filter(({ relay }) => canUseRelay(relay)) // Filter out relays with open circuit breakers
     .sort((a, b) => {
-      // Sort by:
-      // 1. Circuit breaker state (CLOSED > HALF_OPEN)
-      // 2. Health status (HEALTHY > DEGRADED > UNHEALTHY)
-      // 3. Success rate (higher is better)
-      // 4. Average latency (lower is better)
-
-      const stateOrder = { CLOSED: 0, HALF_OPEN: 1, OPEN: 2 };
-      const stateDiff =
-        stateOrder[a.metrics.circuitBreakerState] -
-        stateOrder[b.metrics.circuitBreakerState];
-      if (stateDiff !== 0) return stateDiff;
-
-      const statusOrder = { HEALTHY: 0, DEGRADED: 1, UNHEALTHY: 2, UNKNOWN: 3 };
-      const statusDiff =
-        statusOrder[a.metrics.status] - statusOrder[b.metrics.status];
-      if (statusDiff !== 0) return statusDiff;
-
-      const successRateDiff = b.metrics.successRate - a.metrics.successRate;
-      if (Math.abs(successRateDiff) > 0.01) return successRateDiff;
-
-      return a.metrics.averageLatency - b.metrics.averageLatency;
+      // Higher score first; tie-break by relay string for determinism.
+      const scoreDiff = b.metrics.score - a.metrics.score;
+      if (scoreDiff !== 0) return scoreDiff;
+      return a.relay.localeCompare(b.relay);
     });
 
   return relayMetrics.map(({ relay }) => relay);

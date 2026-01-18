@@ -22,7 +22,7 @@ const colors = {
 };
 
 function log(message, color = "reset") {
-  console.log(`${colors[color]}${message}${colors.reset}`);
+  process.stdout.write(`${colors[color]}${message}${colors.reset}\n`);
 }
 
 /**

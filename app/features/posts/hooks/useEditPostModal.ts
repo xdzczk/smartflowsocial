@@ -425,7 +425,15 @@ export function useEditPostModal({
                 const markdownContent = convertEditorJSToMarkdown(outputData);
                 form.setValue("content", markdownContent);
               } catch (error: unknown) {
-                console.error("Editor save error:", error);
+                logClientError(
+                  error instanceof Error ? error : new Error(String(error)),
+                  {
+                    component: "useEditPostModal",
+                    action: "editorOnChangeSave",
+                    message: "Editor save error",
+                  },
+                  "warning"
+                );
               }
             },
           }) as EditorJSInstanceType;
@@ -434,7 +442,14 @@ export function useEditPostModal({
           await editorRef.current.isReady;
           setEditorReady(true);
         } catch (error: unknown) {
-          console.error("Error loading EditorJS:", error);
+          logClientError(
+            error instanceof Error ? error : new Error(String(error)),
+            {
+              component: "useEditPostModal",
+              action: "loadEditor",
+              message: "Error loading EditorJS",
+            }
+          );
           editorInitialized.current = false;
         }
       }
@@ -481,7 +496,15 @@ export function useEditPostModal({
         const editorJSData = convertMarkdownToEditorJS(contentString);
         await editorRef.current.render(editorJSData);
       } catch (error: unknown) {
-        console.error("Error loading initial content into EditorJS:", error);
+        logClientError(
+          error instanceof Error ? error : new Error(String(error)),
+          {
+            component: "useEditPostModal",
+            action: "loadInitialContent",
+            message: "Error loading initial content into EditorJS",
+          },
+          "warning"
+        );
       }
     };
 
@@ -531,7 +554,14 @@ export function useEditPostModal({
       );
       setNewFiles((prev) => [...prev, ...processedFiles]);
     } catch (error: unknown) {
-      console.error("Error processing files:", error);
+      logClientError(
+        error instanceof Error ? error : new Error(String(error)),
+        {
+          component: "useEditPostModal",
+          action: "handleFileChange",
+          message: "Error processing files",
+        }
+      );
       toast.error("Error processing files");
     }
   };

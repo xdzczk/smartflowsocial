@@ -1,5 +1,7 @@
 import { useNavigation } from "@remix-run/react";
 import { useState } from "react";
+
+import { logClientError } from "~/lib/error-handler.client";
 interface UseNewLongFormStateProps {
   userTags: string;
 }
@@ -67,7 +69,14 @@ export function useNewLongFormState({ userTags }: UseNewLongFormStateProps) {
         setDisplayedHashtags(userTags);
       }
     } catch (error) {
-      console.error("Error fetching effective hashtags:", error);
+      logClientError(
+        error instanceof Error ? error : new Error(String(error)),
+        {
+          component: "useNewLongFormState",
+          action: "updateDisplayedHashtags",
+          queueTypeName,
+        }
+      );
       setDisplayedHashtags(userTags);
     }
   };
