@@ -365,7 +365,8 @@ async function run() {
           ],
           fontSrc: ["'self'", "data:"],
           objectSrc: ["'none'"],
-          mediaSrc: ["'self'"],
+          // Allow local previews (blob:) and external video hosts (e.g. Blossom)
+          mediaSrc: ["'self'", "blob:", "https:"],
           frameSrc: ["'none'"],
           baseUri: ["'self'"],
           formAction: ["'self'"],
