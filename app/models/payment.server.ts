@@ -12,6 +12,7 @@ if (
   globalThis.WebSocket = WebSocket;
 }
 
+import { NWCClient } from "@getalby/sdk";
 import { LN, USD } from "@getalby/sdk/lnclient";
 
 import { getBitcoinRate } from "~/features/payments/btc.rate";
@@ -504,6 +505,15 @@ export async function manuallyVerifyPayment(paymentId: string): Promise<{
     };
   }
 
+  const ownerNwc = process.env["OWNER_NWC"];
+  if (!ownerNwc) {
+    return {
+      success: false,
+      paid: false,
+      message: "Owner NWC credentials not configured",
+    };
+  }
+
   // Get planId from subscription or extract from paymentId
   // PaymentId format is: `${planId}_${Date.now()}_${userId}`
   let planId: string | null = null;
@@ -517,35 +527,87 @@ export async function manuallyVerifyPayment(paymentId: string): Promise<{
     }
   }
 
-  // If payment is still PENDING and recent, manually mark it as completed
-  // This assumes the payment was actually received (user confirms they paid)
-  // Note: This is a workaround for cases where onPaid callback didn't fire
-  if (payment.status === "PENDING" && payment.userId && planId) {
-    try {
-      await handlePaymentCompleted(paymentId, payment.userId, planId);
-      return {
-        success: true,
-        paid: true,
-        message: "Payment verified and completed",
-      };
-    } catch (error) {
-      logError(error instanceof Error ? error : new Error(String(error)), {
-        paymentId,
-        message: "Failed to manually verify payment",
-      });
-      return {
-        success: false,
-        paid: false,
-        message: "Failed to verify payment",
-      };
-    }
+  if (!planId) {
+    return {
+      success: false,
+      paid: false,
+      message: "Could not determine plan for this payment",
+    };
   }
 
-  return {
-    success: false,
-    paid: false,
-    message: "Payment cannot be verified",
-  };
+  if (payment.status !== "PENDING" || !payment.userId) {
+    return {
+      success: true,
+      paid: false,
+      message: "Payment is not pending",
+    };
+  }
+
+  // Verify against owner's wallet (NIP-47 lookup_invoice) using the stored payment_hash.
+  // This makes payment detection resilient even if websocket notifications drop.
+  const { credentials: ownerNwcCredentials, relays: ownerRelays } =
+    getOwnerNwcWithRelayOverrides(ownerNwc);
+
+  const nwcClient = new NWCClient({
+    nostrWalletConnectUrl: ownerNwcCredentials,
+  });
+
+  try {
+    const tx = (await nwcClient.lookupInvoice({
+      payment_hash: payment.paymentHash,
+    })) as unknown;
+
+    const txObj: Record<string, unknown> =
+      tx && typeof tx === "object" && !Array.isArray(tx)
+        ? (tx as Record<string, unknown>)
+        : {};
+
+    const state = typeof txObj["state"] === "string" ? txObj["state"] : "";
+    const settledAt =
+      typeof txObj["settled_at"] === "number" ? txObj["settled_at"] : 0;
+    const preimage =
+      typeof txObj["preimage"] === "string" ? txObj["preimage"] : null;
+
+    const isSettled =
+      state === "settled" || (settledAt > 0 && typeof preimage === "string");
+
+    if (!isSettled) {
+      return {
+        success: true,
+        paid: false,
+        message: "Payment not settled yet",
+      };
+    }
+
+    await handlePaymentCompleted(paymentId, payment.userId, planId);
+
+    // Best-effort store preimage (optional)
+    if (preimage) {
+      await prisma.payment.update({
+        where: { id: paymentId },
+        data: { preimage },
+      });
+    }
+
+    return {
+      success: true,
+      paid: true,
+      message: "Payment verified and completed",
+    };
+  } catch (error) {
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      paymentId,
+      ownerRelays,
+      message: "Failed to verify payment via lookup_invoice",
+    });
+    return {
+      success: false,
+      paid: false,
+      message: "Failed to verify payment",
+    };
+  } finally {
+    nwcClient.close();
+  }
 }
 
 /**

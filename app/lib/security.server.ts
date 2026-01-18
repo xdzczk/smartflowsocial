@@ -166,6 +166,14 @@ export function validateOrigin(request: Request): void {
   }
 
   const allowedOrigins = buildAllowedOrigins();
+  // Always allow the request's own origin. This supports deployments where the
+  // hostname/subdomain is dynamic (e.g., preview URLs) while still preventing
+  // cross-site POSTs because Origin/Referer must match this host.
+  try {
+    allowedOrigins.push(new URL(request.url).origin);
+  } catch {
+    // ignore
+  }
   checkProductionStrictMode(origin, referer, allowedOrigins);
 
   if (origin) {

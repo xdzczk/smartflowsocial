@@ -1,7 +1,77 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="30" failures="0" errors="0" time="0.388205458">
-    <testsuite name="tests/integration/payment-edge-cases.test.ts" timestamp="2026-01-18T18:38:51.493Z" hostname="Ivans-MacBook-Pro.local" tests="12" failures="0" errors="0" skipped="0" time="0.26472525">
-        <testcase classname="tests/integration/payment-edge-cases.test.ts" name="Payment Processing Edge Cases &gt; Network Failures &gt; should handle network failure during invoice creation" time="0.005063875">
+<testsuites name="vitest tests" tests="38" failures="0" errors="0" time="0.4104315">
+    <testsuite name="tests/integration/api-payment-status.test.ts" timestamp="2026-01-18T18:55:23.532Z" hostname="Ivans-MacBook-Pro.local" tests="8" failures="0" errors="0" skipped="0" time="0.014049584">
+        <testcase classname="tests/integration/api-payment-status.test.ts" name="API: Payment Status &gt; Action Handler &gt; Successful Requests &gt; should return paid status for completed payment" time="0.00640975">
+        </testcase>
+        <testcase classname="tests/integration/api-payment-status.test.ts" name="API: Payment Status &gt; Action Handler &gt; Successful Requests &gt; should return unpaid status for pending payment" time="0.000616">
+        </testcase>
+        <testcase classname="tests/integration/api-payment-status.test.ts" name="API: Payment Status &gt; Action Handler &gt; Successful Requests &gt; should return unpaid status for failed payment" time="0.0005115">
+        </testcase>
+        <testcase classname="tests/integration/api-payment-status.test.ts" name="API: Payment Status &gt; Action Handler &gt; Error Handling &gt; should reject non-POST methods" time="0.003123375">
+            <system-err>
+
+❌ Error: {
+  message: &apos;Method not allowed&apos;,
+  code: &apos;VALIDATION_ERROR&apos;,
+  statusCode: 400,
+  path: undefined,
+  method: undefined,
+  userId: undefined,
+  correlationId: undefined
+}
+
+            </system-err>
+        </testcase>
+        <testcase classname="tests/integration/api-payment-status.test.ts" name="API: Payment Status &gt; Action Handler &gt; Error Handling &gt; should return validation error when paymentId is missing" time="0.000692041">
+            <system-err>
+
+❌ Error: {
+  message: &apos;Payment ID is required&apos;,
+  code: &apos;VALIDATION_ERROR&apos;,
+  statusCode: 400,
+  path: undefined,
+  method: undefined,
+  userId: undefined,
+  correlationId: undefined
+}
+
+            </system-err>
+        </testcase>
+        <testcase classname="tests/integration/api-payment-status.test.ts" name="API: Payment Status &gt; Action Handler &gt; Error Handling &gt; should return validation error when paymentId is empty string" time="0.00079775">
+            <system-err>
+
+❌ Error: {
+  message: &apos;Payment ID is required&apos;,
+  code: &apos;VALIDATION_ERROR&apos;,
+  statusCode: 400,
+  path: undefined,
+  method: undefined,
+  userId: undefined,
+  correlationId: undefined
+}
+
+            </system-err>
+        </testcase>
+        <testcase classname="tests/integration/api-payment-status.test.ts" name="API: Payment Status &gt; Action Handler &gt; Error Handling &gt; should handle database errors" time="0.0009335">
+            <system-err>
+
+❌ Error: {
+  message: &apos;Failed to check payment status&apos;,
+  code: &apos;DATABASE_ERROR&apos;,
+  statusCode: 500,
+  path: undefined,
+  method: undefined,
+  userId: undefined,
+  correlationId: undefined
+}
+
+            </system-err>
+        </testcase>
+        <testcase classname="tests/integration/api-payment-status.test.ts" name="API: Payment Status &gt; Loader Handler &gt; should return method not allowed for GET requests" time="0.000192875">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/integration/payment-edge-cases.test.ts" timestamp="2026-01-18T18:55:23.534Z" hostname="Ivans-MacBook-Pro.local" tests="12" failures="0" errors="0" skipped="0" time="0.268133375">
+        <testcase classname="tests/integration/payment-edge-cases.test.ts" name="Payment Processing Edge Cases &gt; Network Failures &gt; should handle network failure during invoice creation" time="0.0058395">
             <system-err>
 
 ❌ Error: {
@@ -16,7 +86,7 @@
 
             </system-err>
         </testcase>
-        <testcase classname="tests/integration/payment-edge-cases.test.ts" name="Payment Processing Edge Cases &gt; Network Failures &gt; should handle timeout during invoice creation" time="0.101012625">
+        <testcase classname="tests/integration/payment-edge-cases.test.ts" name="Payment Processing Edge Cases &gt; Network Failures &gt; should handle timeout during invoice creation" time="0.103567166">
             <system-err>
 
 ❌ Error: {
@@ -31,7 +101,7 @@
 
             </system-err>
         </testcase>
-        <testcase classname="tests/integration/payment-edge-cases.test.ts" name="Payment Processing Edge Cases &gt; Network Failures &gt; should handle network failure during payment completion" time="0.002774375">
+        <testcase classname="tests/integration/payment-edge-cases.test.ts" name="Payment Processing Edge Cases &gt; Network Failures &gt; should handle network failure during payment completion" time="0.002840708">
             <system-err>
 
 ❌ Error: {
@@ -46,33 +116,33 @@
 
             </system-err>
         </testcase>
-        <testcase classname="tests/integration/payment-edge-cases.test.ts" name="Payment Processing Edge Cases &gt; Payment Timeout Edge Cases &gt; should handle payment timeout after invoice creation" time="0.150190084">
+        <testcase classname="tests/integration/payment-edge-cases.test.ts" name="Payment Processing Edge Cases &gt; Payment Timeout Edge Cases &gt; should handle payment timeout after invoice creation" time="0.150460375">
         </testcase>
-        <testcase classname="tests/integration/payment-edge-cases.test.ts" name="Payment Processing Edge Cases &gt; Currency Conversion Edge Cases &gt; should handle Bitcoin rate API failure gracefully" time="0.001499333">
+        <testcase classname="tests/integration/payment-edge-cases.test.ts" name="Payment Processing Edge Cases &gt; Currency Conversion Edge Cases &gt; should handle Bitcoin rate API failure gracefully" time="0.001298125">
         </testcase>
-        <testcase classname="tests/integration/payment-edge-cases.test.ts" name="Payment Processing Edge Cases &gt; Currency Conversion Edge Cases &gt; should handle very small payment amounts" time="0.000380084">
+        <testcase classname="tests/integration/payment-edge-cases.test.ts" name="Payment Processing Edge Cases &gt; Currency Conversion Edge Cases &gt; should handle very small payment amounts" time="0.000317542">
         </testcase>
-        <testcase classname="tests/integration/payment-edge-cases.test.ts" name="Payment Processing Edge Cases &gt; Currency Conversion Edge Cases &gt; should handle very large payment amounts" time="0.000234375">
+        <testcase classname="tests/integration/payment-edge-cases.test.ts" name="Payment Processing Edge Cases &gt; Currency Conversion Edge Cases &gt; should handle very large payment amounts" time="0.000219">
         </testcase>
-        <testcase classname="tests/integration/payment-edge-cases.test.ts" name="Payment Processing Edge Cases &gt; Concurrent Payment Attempts &gt; should handle concurrent invoice creation for same user" time="0.000417166">
+        <testcase classname="tests/integration/payment-edge-cases.test.ts" name="Payment Processing Edge Cases &gt; Concurrent Payment Attempts &gt; should handle concurrent invoice creation for same user" time="0.00039425">
         </testcase>
-        <testcase classname="tests/integration/payment-edge-cases.test.ts" name="Payment Processing Edge Cases &gt; Transaction Rollback Edge Cases &gt; should rollback subscription update if payment update fails" time="0.000882625">
+        <testcase classname="tests/integration/payment-edge-cases.test.ts" name="Payment Processing Edge Cases &gt; Transaction Rollback Edge Cases &gt; should rollback subscription update if payment update fails" time="0.000951583">
         </testcase>
-        <testcase classname="tests/integration/payment-edge-cases.test.ts" name="Payment Processing Edge Cases &gt; Transaction Rollback Edge Cases &gt; should rollback if user update fails in transaction" time="0.000783709">
+        <testcase classname="tests/integration/payment-edge-cases.test.ts" name="Payment Processing Edge Cases &gt; Transaction Rollback Edge Cases &gt; should rollback if user update fails in transaction" time="0.000721459">
         </testcase>
-        <testcase classname="tests/integration/payment-edge-cases.test.ts" name="Payment Processing Edge Cases &gt; Invalid Payment Data Edge Cases &gt; should handle missing payment amount in response" time="0.00027025">
+        <testcase classname="tests/integration/payment-edge-cases.test.ts" name="Payment Processing Edge Cases &gt; Invalid Payment Data Edge Cases &gt; should handle missing payment amount in response" time="0.000269583">
         </testcase>
-        <testcase classname="tests/integration/payment-edge-cases.test.ts" name="Payment Processing Edge Cases &gt; Invalid Payment Data Edge Cases &gt; should handle malformed Lightning invoice" time="0.000190917">
+        <testcase classname="tests/integration/payment-edge-cases.test.ts" name="Payment Processing Edge Cases &gt; Invalid Payment Data Edge Cases &gt; should handle malformed Lightning invoice" time="0.000188">
         </testcase>
     </testsuite>
-    <testsuite name="tests/integration/plans-action.test.ts" timestamp="2026-01-18T18:38:51.495Z" hostname="Ivans-MacBook-Pro.local" tests="11" failures="0" errors="0" skipped="0" time="0.018892">
-        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Check Payment Status &gt; should check payment status without authentication" time="0.003207917">
+    <testsuite name="tests/integration/plans-action.test.ts" timestamp="2026-01-18T18:55:23.535Z" hostname="Ivans-MacBook-Pro.local" tests="11" failures="0" errors="0" skipped="0" time="0.018255458">
+        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Check Payment Status &gt; should check payment status without authentication" time="0.003094375">
         </testcase>
-        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Check Payment Status &gt; should return unpaid status when payment not completed" time="0.000268584">
+        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Check Payment Status &gt; should return unpaid status when payment not completed" time="0.000237833">
         </testcase>
-        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Check Payment Status &gt; should return error when paymentId is missing" time="0.002717125">
+        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Check Payment Status &gt; should return error when paymentId is missing" time="0.002603042">
         </testcase>
-        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Check Payment Status &gt; should handle payment status check errors gracefully" time="0.008183417">
+        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Check Payment Status &gt; should handle payment status check errors gracefully" time="0.007553208">
             <system-err>
 
 ❌ Error: {
@@ -87,13 +157,13 @@
 
             </system-err>
         </testcase>
-        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Select Plan Action &gt; should create invoice for selected plan" time="0.001002">
+        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Select Plan Action &gt; should create invoice for selected plan" time="0.001182583">
         </testcase>
-        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Select Plan Action &gt; should return redirect for free plan" time="0.000187459">
+        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Select Plan Action &gt; should return redirect for free plan" time="0.000246417">
         </testcase>
-        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Select Plan Action &gt; should return error when planId is missing" time="0.000358625">
+        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Select Plan Action &gt; should return error when planId is missing" time="0.000412708">
         </testcase>
-        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Select Plan Action &gt; should handle invoice creation errors" time="0.0005455">
+        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Select Plan Action &gt; should handle invoice creation errors" time="0.000617084">
             <system-err>
 
 ❌ Error: {
@@ -108,7 +178,7 @@
 
             </system-err>
         </testcase>
-        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Select Plan Action &gt; should handle generic errors in invoice creation" time="0.000317708">
+        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Select Plan Action &gt; should handle generic errors in invoice creation" time="0.000344125">
             <system-err>
 
 ❌ Error: {
@@ -123,23 +193,23 @@
 
             </system-err>
         </testcase>
-        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Error Handling &gt; should return error for invalid intent" time="0.000433833">
+        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Error Handling &gt; should return error for invalid intent" time="0.000325208">
         </testcase>
-        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Error Handling &gt; should handle authentication errors for select_plan" time="0.000839417">
+        <testcase classname="tests/integration/plans-action.test.ts" name="Plans Action Handler &gt; Error Handling &gt; should handle authentication errors for select_plan" time="0.000793875">
         </testcase>
     </testsuite>
-    <testsuite name="tests/integration/payments/create-plan-invoice.test.ts" timestamp="2026-01-18T18:38:51.496Z" hostname="Ivans-MacBook-Pro.local" tests="7" failures="0" errors="0" skipped="0" time="0.104588208">
-        <testcase classname="tests/integration/payments/create-plan-invoice.test.ts" name="createPlanInvoice &gt; should create invoice for free plan" time="0.096835292">
+    <testsuite name="tests/integration/payments/create-plan-invoice.test.ts" timestamp="2026-01-18T18:55:23.536Z" hostname="Ivans-MacBook-Pro.local" tests="7" failures="0" errors="0" skipped="0" time="0.109993083">
+        <testcase classname="tests/integration/payments/create-plan-invoice.test.ts" name="createPlanInvoice &gt; should create invoice for free plan" time="0.10116725">
         </testcase>
-        <testcase classname="tests/integration/payments/create-plan-invoice.test.ts" name="createPlanInvoice &gt; should throw error for non-existent plan" time="0.000968875">
+        <testcase classname="tests/integration/payments/create-plan-invoice.test.ts" name="createPlanInvoice &gt; should throw error for non-existent plan" time="0.001621917">
         </testcase>
-        <testcase classname="tests/integration/payments/create-plan-invoice.test.ts" name="createPlanInvoice &gt; should throw error for inactive plan" time="0.000240125">
+        <testcase classname="tests/integration/payments/create-plan-invoice.test.ts" name="createPlanInvoice &gt; should throw error for inactive plan" time="0.000315375">
         </testcase>
-        <testcase classname="tests/integration/payments/create-plan-invoice.test.ts" name="createPlanInvoice &gt; should throw error if OWNER_NWC not configured" time="0.000220917">
+        <testcase classname="tests/integration/payments/create-plan-invoice.test.ts" name="createPlanInvoice &gt; should throw error if OWNER_NWC not configured" time="0.000206584">
         </testcase>
-        <testcase classname="tests/integration/payments/create-plan-invoice.test.ts" name="createPlanInvoice &gt; should create invoice for paid plan" time="0.001141042">
+        <testcase classname="tests/integration/payments/create-plan-invoice.test.ts" name="createPlanInvoice &gt; should create invoice for paid plan" time="0.001280875">
         </testcase>
-        <testcase classname="tests/integration/payments/create-plan-invoice.test.ts" name="createPlanInvoice &gt; should handle Lightning invoice creation errors" time="0.003309667">
+        <testcase classname="tests/integration/payments/create-plan-invoice.test.ts" name="createPlanInvoice &gt; should handle Lightning invoice creation errors" time="0.003430584">
             <system-err>
 
 ❌ Error: {
@@ -154,7 +224,7 @@
 
             </system-err>
         </testcase>
-        <testcase classname="tests/integration/payments/create-plan-invoice.test.ts" name="createPlanInvoice &gt; should handle missing invoice or paymentHash in response" time="0.001076541">
+        <testcase classname="tests/integration/payments/create-plan-invoice.test.ts" name="createPlanInvoice &gt; should handle missing invoice or paymentHash in response" time="0.001212">
             <system-err>
 
 ❌ Error: {

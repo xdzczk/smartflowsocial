@@ -100,7 +100,7 @@ export async function handlePlansAction(formData: FormData, request: Request) {
     });
     const status =
       typeof (error as { statusCode?: unknown }).statusCode === "number"
-        ? ((error as { statusCode: number }).statusCode ?? 500)
+        ? (error as { statusCode: number }).statusCode
         : 500;
     return {
       error:
