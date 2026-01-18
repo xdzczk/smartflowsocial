@@ -225,6 +225,7 @@ describe("Plans Action Handler", () => {
 
       expect(result).toEqual({
         error: "Plan not found",
+        status: 500,
       });
     });
 
@@ -243,6 +244,7 @@ describe("Plans Action Handler", () => {
 
       expect(result).toEqual({
         error: "Failed to create payment invoice",
+        status: 500,
       });
     });
   });

@@ -52,7 +52,11 @@ export const action = withCSRFProtection(
       result.error
     ) {
       /* eslint-enable @typescript-eslint/no-unnecessary-condition */
-      return json(result, { status: 400 });
+      const status =
+        "status" in result && typeof result.status === "number"
+          ? result.status
+          : 400;
+      return json(result, { status });
     }
 
     return json(result);

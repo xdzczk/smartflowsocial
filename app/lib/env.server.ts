@@ -30,6 +30,8 @@ interface EnvConfig {
   // Optional
   PRIMAL_CACHING_URL?: string;
   OWNER_NWC?: string;
+  OWNER_NWC_RELAY?: string;
+  OWNER_NWC_RELAYS?: string;
   NOSTR_NSEC?: string;
   SENTRY_DSN?: string;
   RELAY_HEALTH_STORE?: string; // "memory" | "redis" (optional)
@@ -138,6 +140,8 @@ function addOptionalConfig(config: EnvConfig): void {
   const optionalVars: Array<keyof EnvConfig> = [
     "PRIMAL_CACHING_URL",
     "OWNER_NWC",
+    "OWNER_NWC_RELAY",
+    "OWNER_NWC_RELAYS",
     "NOSTR_NSEC",
     "SENTRY_DSN",
     "RELAY_HEALTH_STORE",

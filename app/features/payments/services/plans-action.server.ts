@@ -98,11 +98,16 @@ export async function handlePlansAction(formData: FormData, request: Request) {
       planId: selectData.planId,
       message: "Error creating plan invoice",
     });
+    const status =
+      typeof (error as { statusCode?: unknown }).statusCode === "number"
+        ? ((error as { statusCode: number }).statusCode ?? 500)
+        : 500;
     return {
       error:
         error instanceof Error
           ? error.message
           : "Failed to create payment invoice",
+      status,
     };
   }
 }

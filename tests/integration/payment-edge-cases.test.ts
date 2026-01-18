@@ -153,7 +153,7 @@ describe("Payment Processing Edge Cases", () => {
           planId: TEST_PLAN_ID,
           userId: TEST_USER_ID,
         })
-      ).rejects.toThrow("Failed to create payment invoice");
+      ).rejects.toThrow("Payments are temporarily unavailable");
 
       // Should not create payment record on failure
       expect(mockPrisma.payment.create).not.toHaveBeenCalled();
@@ -190,7 +190,7 @@ describe("Payment Processing Edge Cases", () => {
           planId: TEST_PLAN_ID,
           userId: TEST_USER_ID,
         })
-      ).rejects.toThrow("Failed to create payment invoice");
+      ).rejects.toThrow("Payments are temporarily unavailable");
     });
 
     it("should handle network failure during payment completion", async () => {

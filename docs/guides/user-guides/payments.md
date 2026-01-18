@@ -37,6 +37,12 @@ with the selected plan features.
 ```env
 # Owner's Nostr Wallet Connect string for receiving payments
 OWNER_NWC=nostr+walletconnect://...
+
+# Optional: override relay(s) inside OWNER_NWC
+# Useful if your host can't reach the default relay, or you want to use a different relay.
+OWNER_NWC_RELAY=wss://relay.example.com
+# Or multiple:
+OWNER_NWC_RELAYS=wss://relay1.example.com,wss://relay2.example.com
 ```
 
 ## Usage Examples

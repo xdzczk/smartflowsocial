@@ -299,7 +299,7 @@ describe("createPlanInvoice", () => {
         planId: TEST_PLAN_ID,
         userId: TEST_USER_ID,
       })
-    ).rejects.toThrow("Failed to create payment invoice");
+    ).rejects.toThrow("Payments are temporarily unavailable");
   });
 
   it("should handle missing invoice or paymentHash in response", async () => {
@@ -333,6 +333,8 @@ describe("createPlanInvoice", () => {
         planId: TEST_PLAN_ID,
         userId: TEST_USER_ID,
       })
-    ).rejects.toThrow("Failed to create payment invoice");
+    ).rejects.toThrow(
+      "Failed to create payment invoice. Please try again later."
+    );
   });
 });

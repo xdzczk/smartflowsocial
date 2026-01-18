@@ -21,6 +21,7 @@ import type {
   CreateRenewalPaymentParams,
 } from "~/features/payments/types";
 import { logError } from "~/lib/error-logger.server";
+import { ExternalServiceError } from "~/lib/errors";
 import { prisma } from "~/lib/prisma.server";
 
 import {
@@ -32,6 +33,71 @@ import {
 // ============================================================================
 // Helper Functions
 // ============================================================================
+
+function parseCsvEnv(value: string | undefined): string[] {
+  if (!value) return [];
+  return value
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean);
+}
+
+function isLikelyWebsocketRelayError(message: string): boolean {
+  const m = message.toLowerCase();
+  return (
+    m.includes("failed to connect to any relay") ||
+    m.includes("failed to connect to wss://") ||
+    m.includes("network error") ||
+    m.includes("received network error") ||
+    m.includes("non-101 status code") ||
+    m.includes("econnrefused") ||
+    m.includes("timeout") ||
+    m.includes("nip47networkerror")
+  );
+}
+
+/**
+ * Apply relay overrides to an OWNER_NWC (nostr+walletconnect://...) URL.
+ *
+ * Supported env vars:
+ * - OWNER_NWC_RELAYS: comma-separated list of relay URLs (overrides relays in OWNER_NWC)
+ * - OWNER_NWC_RELAY: single relay URL (same as OWNER_NWC_RELAYS with one entry)
+ */
+export function getOwnerNwcWithRelayOverrides(ownerNwc: string): {
+  credentials: string;
+  relays: string[];
+} {
+  const overrideRelays =
+    parseCsvEnv(process.env["OWNER_NWC_RELAYS"]).length > 0
+      ? parseCsvEnv(process.env["OWNER_NWC_RELAYS"])
+      : parseCsvEnv(process.env["OWNER_NWC_RELAY"]);
+
+  if (overrideRelays.length === 0) {
+    // Best-effort parse existing relays for logging/debugging
+    try {
+      const url = new URL(ownerNwc);
+      return {
+        credentials: ownerNwc,
+        relays: url.searchParams.getAll("relay"),
+      };
+    } catch {
+      return { credentials: ownerNwc, relays: [] };
+    }
+  }
+
+  try {
+    const url = new URL(ownerNwc);
+    // Remove existing relay params and apply overrides
+    url.searchParams.delete("relay");
+    for (const relay of overrideRelays) {
+      url.searchParams.append("relay", relay);
+    }
+    return { credentials: url.toString(), relays: overrideRelays };
+  } catch {
+    // If URL parsing fails (e.g. tests), just return original string
+    return { credentials: ownerNwc, relays: overrideRelays };
+  }
+}
 
 async function handleFreePlanInvoice(
   userId: string,
@@ -110,7 +176,9 @@ export async function createPlanInvoice({
   }
 
   const amountUsd = Number(plan.price);
-  const ln = new LN(credentials) as unknown as {
+  const { credentials: ownerNwcCredentials, relays: ownerRelays } =
+    getOwnerNwcWithRelayOverrides(credentials);
+  const ln = new LN(ownerNwcCredentials) as unknown as {
     requestPayment: (amount: { amount: number }) => Promise<{
       onPaid: (callback: () => void) => {
         onTimeout: (seconds: number, callback: () => void) => void;
@@ -200,12 +268,37 @@ export async function createPlanInvoice({
       planId: plan.id,
     };
   } catch (error) {
-    logError(error instanceof Error ? error : new Error(String(error)), {
+    const err = error instanceof Error ? error : new Error(String(error));
+    logError(err, {
       planId,
       userId,
+      ownerRelays,
       message: "Failed to create invoice",
     });
-    throw new Error("Failed to create payment invoice");
+
+    if (isLikelyWebsocketRelayError(err.message)) {
+      throw new ExternalServiceError(
+        "Payments are temporarily unavailable (cannot reach the Lightning relay). Please try again in a few minutes.",
+        503,
+        {
+          planId,
+          userId,
+          ownerRelays,
+          originalError: err.message,
+        }
+      );
+    }
+
+    throw new ExternalServiceError(
+      "Failed to create payment invoice. Please try again later.",
+      502,
+      {
+        planId,
+        userId,
+        ownerRelays,
+        originalError: err.message,
+      }
+    );
   }
 }
 

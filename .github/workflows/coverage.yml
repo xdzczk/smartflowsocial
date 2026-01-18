@@ -113,9 +113,6 @@ jobs:
           flags: unittests
           name: codecov-umbrella
           fail_ci_if_error: false
-          # Use dynamic key lookup to avoid editor/schema false-positive warnings
-          # about unknown secret names (still resolves to CODECOV_TOKEN at runtime).
-          token: ${{ secrets[format('CODECOV_{0}', 'TOKEN')] }}
 
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4

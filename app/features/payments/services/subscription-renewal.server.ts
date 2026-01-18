@@ -17,6 +17,7 @@ import { normalizeError } from "~/lib/errors";
 import { sendNostrDirectMessage } from "~/lib/nostr.messenger.server";
 import {
   createRenewalPayment,
+  getOwnerNwcWithRelayOverrides,
   updateUserSubscription,
 } from "~/models/payment.server";
 
@@ -196,7 +197,9 @@ async function createInvoice(
   ownerNwc: string,
   amountUsd: number
 ): Promise<unknown> {
-  const ownerLn = new LN(ownerNwc) as unknown as {
+  const { credentials: ownerNwcCredentials } =
+    getOwnerNwcWithRelayOverrides(ownerNwc);
+  const ownerLn = new LN(ownerNwcCredentials) as unknown as {
     requestPayment: (amount: { amount: number }) => Promise<unknown>;
   };
   try {
