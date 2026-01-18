@@ -18,7 +18,6 @@ import {
   usePostedPostsData,
   useBulkDeletePostsMutation,
 } from "~/features/posts/ui";
-import type { User } from "~/features/user";
 import {
   extractPostData,
   extractLongFormPostData,
@@ -155,7 +154,7 @@ export default function PostedPostsPage() {
     handleBulkQuote,
     setSelectedPost,
   } = usePostedPosts({
-    user: user as unknown as User,
+    user,
     allContent,
     posts,
   });

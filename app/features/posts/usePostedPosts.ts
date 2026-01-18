@@ -2,13 +2,13 @@ import { useFetcher, useRevalidator, useSearchParams } from "@remix-run/react";
 import { useState, useEffect } from "react";
 
 import type { ToastMessage } from "~/components/types";
-import type { User } from "~/features/user";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import {
   addHours,
   formatForDateTimeLocal,
   nowInTimezone,
 } from "~/lib/temporal";
+import type { UserData } from "~/lib/validation/user-data";
 
 import type { CombinedContent, PostData, LongFormPostData } from "./types";
 
@@ -49,7 +49,7 @@ interface FetcherErrorResponse {
 }
 
 interface UsePostedPostsProps {
-  user: User;
+  user: UserData | null;
   allContent: CombinedContent[];
   posts: PostData[];
 }
@@ -277,7 +277,7 @@ export function usePostedPosts({
       const postsData = repostFetcher.data.repostData;
 
       // Prepare repost data with 1 hour default scheduling
-      const userTimezone = user.timezone ?? "UTC";
+      const userTimezone = user?.timezone ?? "UTC";
       const now = nowInTimezone(userTimezone);
       const baseTime = addHours(now, 1);
 
@@ -316,7 +316,7 @@ export function usePostedPosts({
       const postsData = repostFetcher.data.scheduledRepostData;
 
       // Prepare scheduled repost data with 1 hour default scheduling
-      const userTimezone = user.timezone ?? "UTC";
+      const userTimezone = user?.timezone ?? "UTC";
       const now = nowInTimezone(userTimezone);
       const baseTime = addHours(now, 1);
 
@@ -380,13 +380,22 @@ export function usePostedPosts({
       // Clear selection
       setSelectedPosts(new Set());
     }
-  }, [repostFetcher.data, user.timezone]);
+  }, [repostFetcher.data, user?.timezone]);
 
   // Handle longform repost responses
   useEffect(() => {
     const handleLongformRepost = async () => {
       if (longformRepostFetcher.data?.longformRepostEventData) {
         try {
+          if (!user) {
+            setToast({
+              type: "error",
+              message: "User data not available. Please refresh the page.",
+            });
+            setTimeout(() => setToast(null), 5000);
+            return;
+          }
+
           const eventData = longformRepostFetcher.data.longformRepostEventData;
           const originalPost = longformRepostFetcher.data.originalPost;
 
@@ -394,7 +403,7 @@ export function usePostedPosts({
           const { signedEvent } = await nostrAdapter.signEvent(eventData);
 
           // Get user relays from user data
-          const sanitizedRelays = user.userRelays;
+          const sanitizedRelays = user.userRelays ?? [];
 
           // Publish the signed event
           const response = await fetch("/api/publish", {
@@ -490,13 +499,22 @@ export function usePostedPosts({
     const handleRepost = async () => {
       if (individualRepostFetcher.data?.repostEventData) {
         try {
+          if (!user) {
+            setToast({
+              type: "error",
+              message: "User data not available. Please refresh the page.",
+            });
+            setTimeout(() => setToast(null), 5000);
+            return;
+          }
+
           const eventData = individualRepostFetcher.data.repostEventData;
 
           // Sign the event using client-side signing
           const { signedEvent } = await nostrAdapter.signEvent(eventData);
 
           // Get user relays from user data
-          const sanitizedRelays = user.userRelays;
+          const sanitizedRelays = user.userRelays ?? [];
 
           // Publish the signed event
           const response = await fetch("/api/publish", {
@@ -570,7 +588,7 @@ export function usePostedPosts({
     if (individualRepostFetcher.data) {
       void handleRepost();
     }
-  }, [individualRepostFetcher.data, user.userRelays]);
+  }, [individualRepostFetcher.data, user]);
 
   return {
     currentTab,
